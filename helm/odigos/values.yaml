@@ -1542,12 +1542,12 @@ sampling:
     #   this is a global knob to enable health probes auto-detection and sampling completely for all sources in the cluster.
     #   users that are uninterested in tracing health probes (or collect less of these traces) can set this to true.
     # @schema
-    enabled: true
+    # enabled: true
 
     # @schema
     # description: percentage % (0-100) of health probes to keep.
     # @schema
-    keepPercentage: 20
+    # keepPercentage: 2
 
 # @schema
 # description: |-

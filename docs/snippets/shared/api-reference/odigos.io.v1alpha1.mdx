@@ -2068,7 +2068,6 @@ If not specified, defaults to &quot;all&quot;.</p>
 **Appears in:**
 
 - [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
-- [SdkConfig](#odigos-io-v1alpha1-SdkConfig)
 
 <p>HeadSamplingConfig is a set of attribute rules.
 The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.</p>
@@ -2081,14 +2080,28 @@ The first attribute rule that evaluates to true is used to determine the samplin
 
 <tr>
 <td>
+<code>noisyOperations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#NoisyOperation"><code>[]common/api/sampling.NoisyOperation</code></a>
+</td>
+<td>
+   <p>Noisy operations are categories of matchers that are used on the root span.
+If match, the fraction is used to determine the sampling decision for the entire trace.
+If multiple noisy operations match, the lowest fraction is used.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>attributesAndSamplerRules</code> <B>[Required]</B>
 </td>
 <td>
 <a href="#odigos-io-v1alpha1-AttributesAndSamplerRule"><code>[]AttributesAndSamplerRule</code></a>
 </td>
 <td>
-   <span class="text-muted">No description provided.</span>
-   </td>
+   <p>Deprecated: do not use. will be removed in the future.
+Use NoisyOperations instead.</p>
+</td>
 </tr>
 <tr>
 <td>
@@ -2101,7 +2114,9 @@ The first attribute rule that evaluates to true is used to determine the samplin
    <p>Used as a fallback if all rules evaluate to false,
 it may be empty - in this case the default value will be 1 - all spans are sampled.
 it should be a float value in the range [0, 1] - the fraction of spans to sample.
-a value of 0 means no spans are sampled if none of the rules evaluate to true.</p>
+a value of 0 means no spans are sampled if none of the rules evaluate to true.
+Deprecated: do not use.
+Use NoisyOperations instead. will be removed in the future.</p>
 </td>
 </tr>
 </tbody>
@@ -3805,19 +3820,6 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </td>
 <td>
    <p>configurations for the instrumentation libraries the the SDK should use</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>headSamplerConfig</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-HeadSamplingConfig"><code>HeadSamplingConfig</code></a>
-</td>
-<td>
-   <p>HeadSamplingConfig is a set sampling rules.
-This config currently only applies to root spans.
-In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)</p>
 </td>
 </tr>
 <tr>
