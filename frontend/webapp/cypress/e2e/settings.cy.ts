@@ -174,17 +174,56 @@ describe('Settings CRUD', () => {
 
   it(`Should have written the changes to the ${CONFIG_MAPS.LOCAL_UI_CONFIG} ConfigMap`, () => {
     getConfigMapYaml(CONFIG_MAPS.LOCAL_UI_CONFIG, (yaml) => {
+      // ─ General (input) ─
       expect(yaml).to.contain(`clusterName: ${testClusterName}`);
-      expect(yaml).to.contain('goAutoOffsetsMode: cypress-test');
+
+      // ─ Instrumentation (toggles — key presence confirms the toggle fired) ─
+      expect(yaml).to.contain('allowConcurrentAgents:');
+      expect(yaml).to.contain('checkDeviceHealthBeforeInjection:');
+      expect(yaml).to.contain('waspEnabled:');
+
+      // ─ Rollout & Rollback (inputs + toggles) ─
+      expect(yaml).to.contain('automaticRolloutDisabled:');
+      expect(yaml).to.contain('maxConcurrentRollouts: 5');
+      expect(yaml).to.contain('rollbackDisabled:');
       expect(yaml).to.satisfy((s: string) => s.includes('rollbackGraceTime: 60s') || s.includes('rollbackGraceTime: "60s"'));
       expect(yaml).to.satisfy((s: string) => s.includes('rollbackStabilityWindow: 120s') || s.includes('rollbackStabilityWindow: "120s"'));
+
+      // ─ Namespaces & Filtering (multiInputs + toggle) ─
+      expect(yaml).to.contain('cypress-test-ns');
+      expect(yaml).to.contain('cypress-test-container');
+      expect(yaml).to.contain('ignoreOdigosNamespace:');
+
+      // ─ Advanced (inputs) ─
+      expect(yaml).to.contain('goAutoOffsetsCron: 0 0 * * *');
+      expect(yaml).to.contain('goAutoOffsetsMode: cypress-test');
     });
   });
 
   it(`Should have reconciled changes into the ${CONFIG_MAPS.EFFECTIVE_CONFIG} ConfigMap`, () => {
     cy.wait(5000).then(() => {
       getConfigMapYaml(CONFIG_MAPS.EFFECTIVE_CONFIG, (yaml) => {
+        // ─ General (input) ─
         expect(yaml).to.contain(`clusterName: ${testClusterName}`);
+
+        // ─ Instrumentation (toggles) ─
+        expect(yaml).to.contain('allowConcurrentAgents:');
+        expect(yaml).to.contain('checkDeviceHealthBeforeInjection:');
+        expect(yaml).to.contain('waspEnabled:');
+
+        // ─ Rollout & Rollback (inputs + toggles) ─
+        expect(yaml).to.contain('automaticRolloutDisabled:');
+        expect(yaml).to.contain('maxConcurrentRollouts: 5');
+        expect(yaml).to.contain('rollbackDisabled:');
+        expect(yaml).to.satisfy((s: string) => s.includes('rollbackGraceTime: 60s') || s.includes('rollbackGraceTime: "60s"'));
+        expect(yaml).to.satisfy((s: string) => s.includes('rollbackStabilityWindow: 120s') || s.includes('rollbackStabilityWindow: "120s"'));
+
+        // ─ Namespaces & Filtering (multiInputs) ─
+        expect(yaml).to.contain('cypress-test-ns');
+        expect(yaml).to.contain('cypress-test-container');
+
+        // ─ Advanced (inputs) ─
+        expect(yaml).to.contain('goAutoOffsetsCron: 0 0 * * *');
         expect(yaml).to.contain('goAutoOffsetsMode: cypress-test');
       });
     });
@@ -199,6 +238,9 @@ describe('Settings CRUD', () => {
       getConfigMapYaml(CONFIG_MAPS.EFFECTIVE_CONFIG, (yaml) => {
         expect(yaml).to.not.contain(`clusterName: ${testClusterName}`);
         expect(yaml).to.not.contain('goAutoOffsetsMode: cypress-test');
+        expect(yaml).to.not.contain('cypress-test-ns');
+        expect(yaml).to.not.contain('cypress-test-container');
+        expect(yaml).to.not.contain('maxConcurrentRollouts: 5');
       });
     });
   });
