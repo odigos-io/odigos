@@ -23,98 +23,76 @@ var (
 	ErrCSRFTokenExpired = errors.New("CSRF token expired")
 )
 
-type CSRFToken struct {
-	Value     string
-	ExpiresAt time.Time
-}
-
-type CSRFService struct {
-	tokens map[string]CSRFToken
-	mu     sync.RWMutex
-}
+// CSRFService holds CSRF helpers. Validation uses the double-submit cookie pattern
+// (header/form/query token must match the csrf_token cookie) so it works across
+// multiple UI/backend replicas without shared in-memory state.
+type CSRFService struct{}
 
 var csrfService *CSRFService
 var csrfOnce sync.Once
 
 func GetCSRFService() *CSRFService {
 	csrfOnce.Do(func() {
-		csrfService = &CSRFService{
-			tokens: make(map[string]CSRFToken),
-		}
-		// Start cleanup goroutine
-		go csrfService.cleanup()
+		csrfService = &CSRFService{}
 	})
 	return csrfService
 }
 
-// GenerateToken creates a new CSRF token
+func looksLikeIssuedCSRFToken(token string) bool {
+	if token == "" {
+		return false
+	}
+	decoded, err := base64.URLEncoding.DecodeString(token)
+	if err != nil {
+		return false
+	}
+	return len(decoded) == CSRFTokenLength
+}
+
+// GenerateToken creates a new CSRF token (entropy only; validity is double-submit vs cookie).
 func (c *CSRFService) GenerateToken() (string, error) {
-	// Generate random bytes
 	bytes := make([]byte, CSRFTokenLength)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
 	}
-
-	// Encode to base64
-	token := base64.URLEncoding.EncodeToString(bytes)
-
-	// Store token with expiration
-	c.mu.Lock()
-	c.tokens[token] = CSRFToken{
-		Value:     token,
-		ExpiresAt: time.Now().Add(CSRFTokenTTL),
-	}
-	c.mu.Unlock()
-
-	return token, nil
+	return base64.URLEncoding.EncodeToString(bytes), nil
 }
 
-// ValidateToken checks if the provided token is valid and not expired
+// ValidateToken reports whether a value looks like a token we would issue (shape check only).
+// Per-request validation is ValidateRequest (double-submit).
 func (c *CSRFService) ValidateToken(token string) error {
 	if token == "" {
 		return ErrCSRFTokenMissing
 	}
-
-	c.mu.RLock()
-	storedToken, exists := c.tokens[token]
-	c.mu.RUnlock()
-
-	if !exists {
+	if !looksLikeIssuedCSRFToken(token) {
 		return ErrCSRFTokenInvalid
 	}
-
-	if time.Now().After(storedToken.ExpiresAt) {
-		// Clean up expired token
-		c.mu.Lock()
-		delete(c.tokens, token)
-		c.mu.Unlock()
-		return ErrCSRFTokenExpired
-	}
-
-	// Use constant-time comparison to prevent timing attacks
-	if subtle.ConstantTimeCompare([]byte(token), []byte(storedToken.Value)) != 1 {
-		return ErrCSRFTokenInvalid
-	}
-
 	return nil
 }
 
-// ValidateRequest validates CSRF token from request header or form
+// ValidateRequest checks double-submit: submitted token must match the csrf_token cookie.
 func (c *CSRFService) ValidateRequest(r *http.Request) error {
-	// Try to get token from header first
-	token := r.Header.Get(CSRFTokenHeader)
-
-	// If not in header, try form value
-	if token == "" {
-		token = r.FormValue("csrf_token")
+	submit := r.Header.Get(CSRFTokenHeader)
+	if submit == "" {
+		submit = r.FormValue("csrf_token")
 	}
-
-	// If still not found, try from query parameters
-	if token == "" {
-		token = r.URL.Query().Get("csrf_token")
+	if submit == "" {
+		submit = r.URL.Query().Get("csrf_token")
 	}
-
-	return c.ValidateToken(token)
+	if submit == "" {
+		return ErrCSRFTokenMissing
+	}
+	cookie := c.GetCSRFToken(r)
+	if cookie == "" {
+		return ErrCSRFTokenMissing
+	}
+	if subtle.ConstantTimeCompare([]byte(submit), []byte(cookie)) != 1 {
+		return ErrCSRFTokenInvalid
+	}
+	if !looksLikeIssuedCSRFToken(submit) {
+		return ErrCSRFTokenInvalid
+	}
+	return nil
 }
 
 // SetCSRFCookie sets the CSRF token as a cookie
@@ -140,32 +118,7 @@ func (c *CSRFService) GetCSRFToken(r *http.Request) string {
 	return cookie.Value
 }
 
-// RefreshToken generates a new token and invalidates the old one
-func (c *CSRFService) RefreshToken(oldToken string) (string, error) {
-	// Remove old token if it exists
-	if oldToken != "" {
-		c.mu.Lock()
-		delete(c.tokens, oldToken)
-		c.mu.Unlock()
-	}
-
-	// Generate new token
+// RefreshToken generates a new token and replaces the prior cookie on the next SetCSRFCookie.
+func (c *CSRFService) RefreshToken(_ string) (string, error) {
 	return c.GenerateToken()
-}
-
-// cleanup removes expired tokens periodically
-func (c *CSRFService) cleanup() {
-	ticker := time.NewTicker(time.Hour)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		now := time.Now()
-		c.mu.Lock()
-		for token, csrfToken := range c.tokens {
-			if now.After(csrfToken.ExpiresAt) {
-				delete(c.tokens, token)
-			}
-		}
-		c.mu.Unlock()
-	}
 }

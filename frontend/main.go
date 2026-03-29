@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/collector/consumer/xconsumer"
 	"k8s.io/klog/v2"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -36,6 +38,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/middlewares"
 	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
+	collectorprofiles "github.com/odigos-io/odigos/frontend/services/collector_profiles"
 	"github.com/odigos-io/odigos/frontend/services/db"
 	metrics "github.com/odigos-io/odigos/frontend/services/metrics"
 	"github.com/odigos-io/odigos/frontend/services/sse"
@@ -112,7 +115,11 @@ func startWatchers(ctx context.Context) error {
 }
 
 func startDatabase(logger *commonlogger.OdigosLogger) error {
-	database, err := db.NewSQLiteDB("/data/data.db")
+	dbPath := os.Getenv("ODIGOS_UI_DB_PATH")
+	if dbPath == "" {
+		dbPath = "/data/data.db"
+	}
+	database, err := db.NewSQLiteDB(dbPath)
 	if err != nil {
 		// TODO: Move to fatal once db required
 		// return err
@@ -152,7 +159,7 @@ func serveClientFiles(ctx context.Context, r *gin.Engine, dist fs.FS) {
 	})
 }
 
-func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, k8sCacheClient client.Client, promAPI v1.API) (*gin.Engine, error) {
+func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, k8sCacheClient client.Client, promAPI v1.API, profileStore collectorprofiles.ProfileStoreRef) (*gin.Engine, error) {
 	var r *gin.Engine
 	if flags.Debug {
 		r = gin.Default()
@@ -162,8 +169,12 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 		r.Use(gin.Recovery())
 	}
 
-	// Enable CORS
-	r.Use(cors.Default())
+	// Enable CORS (allow dev UI on different port to send X-CSRF-Token and X-Odigos-Dev)
+	r.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:    []string{"Origin", "Content-Type", "Accept", "Authorization", "X-CSRF-Token", "X-Odigos-Dev"},
+	}))
 
 	// Add security headers middleware
 	r.Use(middlewares.SecurityHeadersMiddleware)
@@ -177,6 +188,10 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready"})
 			return
 		}
+		if !odigosMetrics.OTLPGRPCReady() {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready", "reason": "otlp_grpc_not_listening"})
+			return
+		}
 		c.JSON(http.StatusOK, gin.H{"status": "ready"})
 	})
 	r.GET("/healthz", func(c *gin.Context) {
@@ -186,6 +201,9 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
+
+	// Prometheus metrics (e.g. odigos_ui_profiling_* when profiling OTLP ingest is enabled).
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// CSRF token endpoint
 	r.GET("/auth/csrf-token", middlewares.CSRFTokenHandler())
@@ -198,6 +216,7 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 			Logger:          logger,
 			PromAPI:         promAPI,
 			K8sCacheClient:  k8sCacheClient,
+			ProfileStore:    profileStore,
 		},
 	})
 	gqlExecutor := executor.New(gqlExecutableSchema)
@@ -258,6 +277,33 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 
 	// Diagnose download endpoint (used by GraphQL diagnose query)
 	r.GET("/diagnose/download", services.DiagnoseDownload)
+
+	// Dev-only: inject synthetic OTLP profile chunk (testdata) so Profiler shows a flame graph without live ebpf.
+	// Enable with ODIGOS_PROFILE_DEBUG_INJECT=true on the UI pod; POST JSON {"namespace","kind","name"}.
+	if v := os.Getenv("ODIGOS_PROFILE_DEBUG_INJECT"); v == "true" || v == "1" {
+		if ps, ok := profileStore.(*collectorprofiles.ProfileStore); ok {
+			r.POST("/api/debug/profiling/inject-sample", func(c *gin.Context) {
+				var req struct {
+					Namespace string `json:"namespace"`
+					Kind      string `json:"kind"`
+					Name      string `json:"name"`
+				}
+				if err := c.ShouldBindJSON(&req); err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+					return
+				}
+				if req.Namespace == "" || req.Kind == "" || req.Name == "" {
+					c.JSON(http.StatusBadRequest, gin.H{"error": "namespace, kind, and name are required"})
+					return
+				}
+				if err := ps.InjectDebugSample(req.Namespace, req.Kind, req.Name); err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
+				}
+				c.JSON(http.StatusOK, gin.H{"ok": true, "message": "debug profile chunk stored"})
+			})
+		}
+	}
 
 	return r, nil
 }
@@ -323,12 +369,30 @@ func main() {
 		os.Exit(1)
 	}
 
+	recvOn, otlpGrpcPort, maxSlots, ttlSec, slotMaxBytes, cleanupInt, profCfgErr := services.ResolveProfilingFromEffectiveConfig(ctx, k8sCacheClient)
+	if profCfgErr != nil {
+		log.Info("profiling: could not load effective config; receiver will stay disabled", "err", profCfgErr)
+	}
+	profileStore := collectorprofiles.NewProfileStore(maxSlots, ttlSec, slotMaxBytes, cleanupInt)
+	profileStore.RunCleanup(ctx)
+	defer profileStore.StopCleanup()
+	var profConsumer xconsumer.Profiles
+	if recvOn {
+		var err error
+		profConsumer, err = collectorprofiles.NewProfilesConsumer(profileStore)
+		if err != nil {
+			log.Error("profiling: failed to create profiles consumer", "err", err)
+			recvOn = false
+		}
+	}
+	var profileStoreRef collectorprofiles.ProfileStoreRef = profileStore
+
 	odigosMetrics := collectormetrics.NewOdigosMetrics()
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		odigosMetrics.Run(ctx, flags.Namespace)
+		odigosMetrics.Run(ctx, flags.Namespace, profConsumer, recvOn, otlpGrpcPort)
 	}()
 
 	// Start watchers
@@ -339,7 +403,10 @@ func main() {
 	}
 
 	var promAPI v1.API
-	metricsURL := fmt.Sprintf("http://%s.%s.svc:8428", metrics.VictoriaMetricsServiceName, flags.Namespace)
+	metricsURL := os.Getenv("VICTORIA_METRICS_URL")
+	if metricsURL == "" {
+		metricsURL = fmt.Sprintf("http://%s.%s.svc:8428", metrics.VictoriaMetricsServiceName, flags.Namespace)
+	}
 	if api, err := metrics.NewAPIFromURL(metricsURL); err != nil {
 		log.Warn("failed to initialize VictoriaMetrics API", "url", metricsURL, "err", err)
 	} else {
@@ -347,7 +414,7 @@ func main() {
 	}
 
 	// Start server
-	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient, promAPI)
+	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient, promAPI, profileStoreRef)
 	if err != nil {
 		log.Error("Error starting server", "err", err)
 		os.Exit(1)

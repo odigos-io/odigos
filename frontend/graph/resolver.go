@@ -3,6 +3,7 @@ package graph
 import (
 	"github.com/go-logr/logr"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
+	collectorprofiles "github.com/odigos-io/odigos/frontend/services/collector_profiles"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -17,4 +18,6 @@ type Resolver struct {
 	// K8sCacheClient is the controller-runtime client that reads from the informer cache (fast, no API round-trip).
 	// Use this in resolvers for read-only access to cluster state.
 	K8sCacheClient client.Client
+	// ProfileStore is the on-demand profiling buffer (OTLP → Flamebearer); nil disables profiling GraphQL fields.
+	ProfileStore collectorprofiles.ProfileStoreRef
 }

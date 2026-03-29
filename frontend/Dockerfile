@@ -1,6 +1,7 @@
 FROM --platform=$BUILDPLATFORM node:20.19.0 AS deps
 WORKDIR /app
 COPY frontend/webapp/package.json frontend/webapp/yarn.lock ./
+COPY frontend/webapp/patches ./patches
 COPY frontend/webapp/.yalc* ./.yalc/
 
 # This allows us to deploy the UI to local clusters with the yalc-linked version of the UI kit.

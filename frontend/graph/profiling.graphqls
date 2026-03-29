@@ -1,0 +1,59 @@
+# On-demand continuous profiling via GraphQL.
+
+extend type Query {
+  """
+  Active profiling slots and which sources have buffered OTLP data.
+  """
+  profilingSlots: ProfilingSlots!
+
+  """
+  Aggregated Pyroscope-shaped profile for a source.
+  profileJson is a JSON-encoded FlamebearerProfile.
+  When debug is true, debugJson contains build stats (ProfileBuildDebug) and debugReason if the slot was empty.
+  """
+  sourceProfiling(
+    namespace: String!
+    kind: String!
+    name: String!
+    debug: Boolean
+  ): SourceProfilingResult!
+}
+
+extend type Mutation {
+  """
+  Enable or refresh the profiling slot for a workload. Must be called before sourceProfiling returns data.
+  """
+  enableSourceProfiling(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): EnableProfilingResult!
+}
+
+type ProfilingSlots {
+  activeKeys: [String!]!
+  keysWithData: [String!]!
+  """Total bytes currently buffered across all active slots (rolling OTLP chunks)."""
+  totalBytesUsed: Int!
+  """Configured max bytes per workload slot (rolling buffer)."""
+  slotMaxBytes: Int!
+  """Configured max concurrent workloads (LRU eviction when exceeded)."""
+  maxSlots: Int!
+  """Upper bound for total buffered bytes (maxSlots * slotMaxBytes)."""
+  maxTotalBytesBudget: Int!
+  """Seconds after last view request before a slot is TTL-evicted."""
+  slotTtlSeconds: Int!
+}
+
+type EnableProfilingResult {
+  status: String!
+  sourceKey: String!
+  maxSlots: Int!
+  activeSlots: Int!
+}
+
+type SourceProfilingResult {
+  profileJson: String!
+  debugJson: String
+  debugReason: String
+}
