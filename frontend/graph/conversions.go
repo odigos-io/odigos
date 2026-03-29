@@ -153,129 +153,183 @@ func provenanceFor(prov map[string]string, path string) string {
 	return defaultProvenanceSource
 }
 
-func reconciledBool(val bool, path string, prov map[string]string) *model.ReconciledBoolean {
-	return &model.ReconciledBoolean{ReconciledFrom: provenanceFor(prov, path), Value: &val}
+type provenanceCollector struct {
+	prov    map[string]string
+	entries []*model.ProvenanceEntry
 }
 
-func reconciledBoolPtr(val *bool, path string, prov map[string]string) *model.ReconciledBoolean {
-	if val == nil {
-		return nil
-	}
-	return &model.ReconciledBoolean{ReconciledFrom: provenanceFor(prov, path), Value: val}
+func newProvenanceCollector(prov map[string]string) *provenanceCollector {
+	return &provenanceCollector{prov: prov}
 }
 
-func reconciledStr(val string, path string, prov map[string]string) *model.ReconciledString {
-	if val == "" {
-		return nil
-	}
-	return &model.ReconciledString{ReconciledFrom: provenanceFor(prov, path), Value: &val}
+func (pc *provenanceCollector) record(path string) {
+	pc.entries = append(pc.entries, &model.ProvenanceEntry{
+		HelmPath:       path,
+		ReconciledFrom: provenanceFor(pc.prov, path),
+	})
 }
 
-func reconciledStrAlways(val string, path string, prov map[string]string) *model.ReconciledString {
-	return &model.ReconciledString{ReconciledFrom: provenanceFor(prov, path), Value: &val}
-}
-
-func reconciledStrPtr(val *string, path string, prov map[string]string) *model.ReconciledString {
-	if val == nil {
-		return nil
-	}
-	return &model.ReconciledString{ReconciledFrom: provenanceFor(prov, path), Value: val}
-}
-
-func reconciledIntNonZero(val int, path string, prov map[string]string) *model.ReconciledInt {
-	if val == 0 {
-		return nil
-	}
-	return &model.ReconciledInt{ReconciledFrom: provenanceFor(prov, path), Value: &val}
-}
-
-func reconciledStrArray(val []string, path string, prov map[string]string) *model.ReconciledStringArray {
-	return &model.ReconciledStringArray{ReconciledFrom: provenanceFor(prov, path), Value: val}
-}
+func ptrBool(v bool) *bool       { return &v }
+func ptrStr(v string) *string    { return &v }
+func ptrInt(v int) *int          { return &v }
 
 func EffectiveConfigToModel(config *common.OdigosConfiguration, prov map[string]string) (*model.EffectiveConfig, error) {
 	if config == nil {
 		return nil, nil
 	}
 
+	pc := newProvenanceCollector(prov)
+
 	result := &model.EffectiveConfig{
 		ConfigVersion: config.ConfigVersion,
 	}
 
 	// Non-pointer booleans (always present)
-	result.TelemetryEnabled = reconciledBool(config.TelemetryEnabled, "telemetryEnabled", prov)
-	result.OpenshiftEnabled = reconciledBool(config.OpenshiftEnabled, "openshiftEnabled", prov)
-	result.Psp = reconciledBool(config.Psp, "psp", prov)
-	result.SkipWebhookIssuerCreation = reconciledBool(config.SkipWebhookIssuerCreation, "skipWebhookIssuerCreation", prov)
+	result.TelemetryEnabled = ptrBool(config.TelemetryEnabled)
+	pc.record("telemetryEnabled")
+	result.OpenshiftEnabled = ptrBool(config.OpenshiftEnabled)
+	pc.record("openshiftEnabled")
+	result.Psp = ptrBool(config.Psp)
+	pc.record("psp")
+	result.SkipWebhookIssuerCreation = ptrBool(config.SkipWebhookIssuerCreation)
+	pc.record("skipWebhookIssuerCreation")
 
 	// Pointer booleans (nil when unset)
-	result.IgnoreOdigosNamespace = reconciledBoolPtr(config.IgnoreOdigosNamespace, "ignoreOdigosNamespace", prov)
-	result.AllowConcurrentAgents = reconciledBoolPtr(config.AllowConcurrentAgents, "allowConcurrentAgents", prov)
-	result.KarpenterEnabled = reconciledBoolPtr(config.KarpenterEnabled, "karpenterEnabled", prov)
-	result.RollbackDisabled = reconciledBoolPtr(config.RollbackDisabled, "rollbackDisabled", prov)
-	result.ClickhouseJSONTypeEnabled = reconciledBoolPtr(config.ClickhouseJsonTypeEnabledProperty, "clickhouseJsonTypeEnabled", prov)
-	result.CheckDeviceHealthBeforeInjection = reconciledBoolPtr(config.CheckDeviceHealthBeforeInjection, "checkDeviceHealthBeforeInjection", prov)
-	result.WaspEnabled = reconciledBoolPtr(config.WaspEnabled, "waspEnabled", prov)
+	if config.IgnoreOdigosNamespace != nil {
+		result.IgnoreOdigosNamespace = config.IgnoreOdigosNamespace
+		pc.record("ignoreOdigosNamespace")
+	}
+	if config.AllowConcurrentAgents != nil {
+		result.AllowConcurrentAgents = config.AllowConcurrentAgents
+		pc.record("allowConcurrentAgents")
+	}
+	if config.KarpenterEnabled != nil {
+		result.KarpenterEnabled = config.KarpenterEnabled
+		pc.record("karpenterEnabled")
+	}
+	if config.RollbackDisabled != nil {
+		result.RollbackDisabled = config.RollbackDisabled
+		pc.record("rollbackDisabled")
+	}
+	if config.ClickhouseJsonTypeEnabledProperty != nil {
+		result.ClickhouseJSONTypeEnabled = config.ClickhouseJsonTypeEnabledProperty
+		pc.record("clickhouseJsonTypeEnabled")
+	}
+	if config.CheckDeviceHealthBeforeInjection != nil {
+		result.CheckDeviceHealthBeforeInjection = config.CheckDeviceHealthBeforeInjection
+		pc.record("checkDeviceHealthBeforeInjection")
+	}
+	if config.WaspEnabled != nil {
+		result.WaspEnabled = config.WaspEnabled
+		pc.record("waspEnabled")
+	}
 
 	// Strings (nil when empty)
-	result.ImagePrefix = reconciledStr(config.ImagePrefix, "imagePrefix", prov)
-	result.UIRemoteURL = reconciledStr(config.UiRemoteUrl, "uiRemoteUrl", prov)
-	result.CentralBackendURL = reconciledStr(config.CentralBackendURL, "centralBackendURL", prov)
-	result.ClusterName = reconciledStr(config.ClusterName, "clusterName", prov)
-	result.CustomContainerRuntimeSocketPath = reconciledStr(config.CustomContainerRuntimeSocketPath, "customContainerRuntimeSocketPath", prov)
-	result.RollbackGraceTime = reconciledStr(config.RollbackGraceTime, "rollbackGraceTime", prov)
-	result.RollbackStabilityWindow = reconciledStr(config.RollbackStabilityWindow, "rollbackStabilityWindow", prov)
-	result.GoAutoOffsetsCron = reconciledStr(config.GoAutoOffsetsCron, "goAutoOffsetsCron", prov)
-	result.GoAutoOffsetsMode = reconciledStr(config.GoAutoOffsetsMode, "goAutoOffsetsMode", prov)
-	result.ResourceSizePreset = reconciledStr(config.ResourceSizePreset, "resourceSizePreset", prov)
-	result.TraceIDSuffix = reconciledStr(config.TraceIdSuffix, "traceIdSuffix", prov)
+	if config.ImagePrefix != "" {
+		result.ImagePrefix = ptrStr(config.ImagePrefix)
+		pc.record("imagePrefix")
+	}
+	if config.UiRemoteUrl != "" {
+		result.UIRemoteURL = ptrStr(config.UiRemoteUrl)
+		pc.record("uiRemoteUrl")
+	}
+	if config.CentralBackendURL != "" {
+		result.CentralBackendURL = ptrStr(config.CentralBackendURL)
+		pc.record("centralBackendURL")
+	}
+	if config.ClusterName != "" {
+		result.ClusterName = ptrStr(config.ClusterName)
+		pc.record("clusterName")
+	}
+	if config.CustomContainerRuntimeSocketPath != "" {
+		result.CustomContainerRuntimeSocketPath = ptrStr(config.CustomContainerRuntimeSocketPath)
+		pc.record("customContainerRuntimeSocketPath")
+	}
+	if config.RollbackGraceTime != "" {
+		result.RollbackGraceTime = ptrStr(config.RollbackGraceTime)
+		pc.record("rollbackGraceTime")
+	}
+	if config.RollbackStabilityWindow != "" {
+		result.RollbackStabilityWindow = ptrStr(config.RollbackStabilityWindow)
+		pc.record("rollbackStabilityWindow")
+	}
+	if config.GoAutoOffsetsCron != "" {
+		result.GoAutoOffsetsCron = ptrStr(config.GoAutoOffsetsCron)
+		pc.record("goAutoOffsetsCron")
+	}
+	if config.GoAutoOffsetsMode != "" {
+		result.GoAutoOffsetsMode = ptrStr(config.GoAutoOffsetsMode)
+		pc.record("goAutoOffsetsMode")
+	}
+	if config.ResourceSizePreset != "" {
+		result.ResourceSizePreset = ptrStr(config.ResourceSizePreset)
+		pc.record("resourceSizePreset")
+	}
+	if config.TraceIdSuffix != "" {
+		result.TraceIDSuffix = ptrStr(config.TraceIdSuffix)
+		pc.record("traceIdSuffix")
+	}
 
 	// Ints (nil when zero)
-	result.UIPaginationLimit = reconciledIntNonZero(config.UiPaginationLimit, "uiPaginationLimit", prov)
-	result.OdigletHealthProbeBindPort = reconciledIntNonZero(config.OdigletHealthProbeBindPort, "odigletHealthProbeBindPort", prov)
+	if config.UiPaginationLimit != 0 {
+		result.UIPaginationLimit = ptrInt(config.UiPaginationLimit)
+		pc.record("uiPaginationLimit")
+	}
+	if config.OdigletHealthProbeBindPort != 0 {
+		result.OdigletHealthProbeBindPort = ptrInt(config.OdigletHealthProbeBindPort)
+		pc.record("odigletHealthProbeBindPort")
+	}
 
 	// Arrays
-	result.IgnoredNamespaces = reconciledStrArray(config.IgnoredNamespaces, "ignoredNamespaces", prov)
-	result.IgnoredContainers = reconciledStrArray(config.IgnoredContainers, "ignoredContainers", prov)
-	result.AllowedTestConnectionHosts = reconciledStrArray(config.AllowedTestConnectionHosts, "allowedTestConnectionHosts", prov)
-	result.ImagePullSecrets = reconciledStrArray(config.ImagePullSecrets, "imagePullSecrets", prov)
+	result.IgnoredNamespaces = config.IgnoredNamespaces
+	pc.record("ignoredNamespaces")
+	result.IgnoredContainers = config.IgnoredContainers
+	pc.record("ignoredContainers")
+	result.AllowedTestConnectionHosts = config.AllowedTestConnectionHosts
+	pc.record("allowedTestConnectionHosts")
+	result.ImagePullSecrets = config.ImagePullSecrets
+	pc.record("imagePullSecrets")
 
 	if len(config.Profiles) > 0 {
 		profiles := make([]string, len(config.Profiles))
 		for i, p := range config.Profiles {
 			profiles[i] = string(p)
 		}
-		result.Profiles = reconciledStrArray(profiles, "profiles", prov)
-	} else {
-		result.Profiles = reconciledStrArray(nil, "profiles", prov)
+		result.Profiles = profiles
 	}
+	pc.record("profiles")
 
 	// Enums
 	if config.UiMode != "" {
 		uiMode := convertUiModeToModel(config.UiMode)
-		result.UIMode = &model.ReconciledUIMode{ReconciledFrom: provenanceFor(prov, "uiMode"), Value: &uiMode}
+		result.UIMode = &uiMode
+		pc.record("uiMode")
 	}
 	if config.MountMethod != nil {
 		mountMethod := convertMountMethodToModel(*config.MountMethod)
-		result.MountMethod = &model.ReconciledMountMethod{ReconciledFrom: provenanceFor(prov, "mountMethod"), Value: &mountMethod}
+		result.MountMethod = &mountMethod
+		pc.record("mountMethod")
 	}
 	if config.AgentEnvVarsInjectionMethod != nil {
 		injMethod := convertEnvInjectionMethodToModel(*config.AgentEnvVarsInjectionMethod)
-		result.AgentEnvVarsInjectionMethod = &model.ReconciledEnvInjectionMethod{ReconciledFrom: provenanceFor(prov, "agentEnvVarsInjectionMethod"), Value: &injMethod}
+		result.AgentEnvVarsInjectionMethod = &injMethod
+		pc.record("agentEnvVarsInjectionMethod")
 	}
 
 	// Component log levels
-	setEffectiveConfigComponentLogLevels(result, config, prov)
+	setEffectiveConfigComponentLogLevels(result, config, pc)
 
 	// Nested structs
-	if err := setEffectiveConfigNestedStructs(result, config, prov); err != nil {
+	if err := setEffectiveConfigNestedStructs(result, config, pc); err != nil {
 		return nil, err
 	}
+
+	result.Provenance = pc.entries
 
 	return result, nil
 }
 
-func setEffectiveConfigComponentLogLevels(result *model.EffectiveConfig, config *common.OdigosConfiguration, prov map[string]string) {
+func setEffectiveConfigComponentLogLevels(result *model.EffectiveConfig, config *common.OdigosConfiguration, pc *provenanceCollector) {
 	out := &model.ComponentLogLevelsConfig{}
 	resolve := func(component string) model.OdigosLogLevel {
 		if config.ComponentLogLevels == nil {
@@ -283,33 +337,35 @@ func setEffectiveConfigComponentLogLevels(result *model.EffectiveConfig, config 
 		}
 		return model.OdigosLogLevel(config.ComponentLogLevels.Resolve(component))
 	}
-	reconciledLogLevel := func(component, path string) *model.ReconciledOdigosLogLevel {
+	setLogLevel := func(component, path string) *model.OdigosLogLevel {
 		lvl := resolve(component)
-		return &model.ReconciledOdigosLogLevel{ReconciledFrom: provenanceFor(prov, path), Value: &lvl}
+		pc.record(path)
+		return &lvl
 	}
-	out.Default = reconciledLogLevel("default", "componentLogLevels.default")
-	out.Autoscaler = reconciledLogLevel("autoscaler", "componentLogLevels.autoscaler")
-	out.Scheduler = reconciledLogLevel("scheduler", "componentLogLevels.scheduler")
-	out.Instrumentor = reconciledLogLevel("instrumentor", "componentLogLevels.instrumentor")
-	out.Odiglet = reconciledLogLevel("odiglet", "componentLogLevels.odiglet")
-	out.Deviceplugin = reconciledLogLevel("deviceplugin", "componentLogLevels.deviceplugin")
-	out.UI = reconciledLogLevel("ui", "componentLogLevels.ui")
-	out.Collector = reconciledLogLevel("collector", "componentLogLevels.collector")
+	out.Default = setLogLevel("default", "componentLogLevels.default")
+	out.Autoscaler = setLogLevel("autoscaler", "componentLogLevels.autoscaler")
+	out.Scheduler = setLogLevel("scheduler", "componentLogLevels.scheduler")
+	out.Instrumentor = setLogLevel("instrumentor", "componentLogLevels.instrumentor")
+	out.Odiglet = setLogLevel("odiglet", "componentLogLevels.odiglet")
+	out.Deviceplugin = setLogLevel("deviceplugin", "componentLogLevels.deviceplugin")
+	out.UI = setLogLevel("ui", "componentLogLevels.ui")
+	out.Collector = setLogLevel("collector", "componentLogLevels.collector")
 	result.ComponentLogLevels = out
 }
 
-func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *common.OdigosConfiguration, prov map[string]string) error {
+func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *common.OdigosConfiguration, pc *provenanceCollector) error {
 	if len(config.NodeSelector) > 0 {
 		nodeSelectorJSON, err := json.Marshal(config.NodeSelector)
 		if err != nil {
 			return fmt.Errorf("failed to marshal nodeSelector: %w", err)
 		}
 		nodeSelectorStr := string(nodeSelectorJSON)
-		result.NodeSelector = &model.ReconciledString{ReconciledFrom: provenanceFor(prov, "nodeSelector"), Value: &nodeSelectorStr}
+		result.NodeSelector = &nodeSelectorStr
+		pc.record("nodeSelector")
 	}
 
 	if config.CollectorGateway != nil {
-		collectorGateway, err := convertCollectorGatewayToModel(config.CollectorGateway, prov)
+		collectorGateway, err := convertCollectorGatewayToModel(config.CollectorGateway, pc)
 		if err != nil {
 			return err
 		}
@@ -317,21 +373,22 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 	}
 
 	if config.CollectorNode != nil {
-		result.CollectorNode = convertCollectorNodeToModel(config.CollectorNode, prov)
+		result.CollectorNode = convertCollectorNodeToModel(config.CollectorNode, pc)
 	}
 
 	if config.Rollout != nil {
 		result.Rollout = &model.RolloutConfig{
-			AutomaticRolloutDisabled: reconciledBoolPtr(config.Rollout.AutomaticRolloutDisabled, "rollout.automaticRolloutDisabled", prov),
+			AutomaticRolloutDisabled: config.Rollout.AutomaticRolloutDisabled,
 		}
+		pc.record("rollout.automaticRolloutDisabled")
 	}
 
 	if config.Oidc != nil {
-		result.Oidc = convertOidcToModel(config.Oidc, prov)
+		result.Oidc = convertOidcToModel(config.Oidc, pc)
 	}
 
 	if config.UserInstrumentationEnvs != nil {
-		userInstrumentationEnvs, err := convertUserInstrumentationEnvsToModel(config.UserInstrumentationEnvs, prov)
+		userInstrumentationEnvs, err := convertUserInstrumentationEnvsToModel(config.UserInstrumentationEnvs, pc)
 		if err != nil {
 			return err
 		}
@@ -339,37 +396,59 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 	}
 
 	if config.MetricsSources != nil {
-		result.MetricsSources = convertMetricsSourcesToModel(config.MetricsSources, prov)
+		result.MetricsSources = convertMetricsSourcesToModel(config.MetricsSources, pc)
 	}
 
 	if config.AgentsInitContainerResources != nil {
-		result.AgentsInitContainerResources = convertAgentsInitContainerResourcesToModel(config.AgentsInitContainerResources, prov)
+		result.AgentsInitContainerResources = convertAgentsInitContainerResourcesToModel(config.AgentsInitContainerResources, pc)
 	}
 
 	if config.OdigosOwnTelemetryStore != nil {
 		result.OdigosOwnTelemetryStore = &model.OdigosOwnTelemetryConfig{
-			MetricsStoreDisabled: reconciledBoolPtr(config.OdigosOwnTelemetryStore.MetricsStoreDisabled, "odigosOwnTelemetryStore.metricsStoreDisabled", prov),
+			MetricsStoreDisabled: config.OdigosOwnTelemetryStore.MetricsStoreDisabled,
 		}
+		pc.record("odigosOwnTelemetryStore.metricsStoreDisabled")
 	}
 
 	return nil
 }
 
-func convertOidcToModel(oidc *common.OidcConfiguration, prov map[string]string) *model.OidcConfig {
-	return &model.OidcConfig{
-		TenantURL:    reconciledStr(oidc.TenantUrl, "oidc.tenantUrl", prov),
-		ClientID:     reconciledStr(oidc.ClientId, "oidc.clientId", prov),
-		ClientSecret: reconciledStr(oidc.ClientSecret, "oidc.clientSecret", prov),
+func convertOidcToModel(oidc *common.OidcConfiguration, pc *provenanceCollector) *model.OidcConfig {
+	result := &model.OidcConfig{}
+	if oidc.TenantUrl != "" {
+		result.TenantURL = ptrStr(oidc.TenantUrl)
+		pc.record("oidc.tenantUrl")
 	}
+	if oidc.ClientId != "" {
+		result.ClientID = ptrStr(oidc.ClientId)
+		pc.record("oidc.clientId")
+	}
+	if oidc.ClientSecret != "" {
+		result.ClientSecret = ptrStr(oidc.ClientSecret)
+		pc.record("oidc.clientSecret")
+	}
+	return result
 }
 
-func convertAgentsInitContainerResourcesToModel(resources *common.AgentsInitContainerResources, prov map[string]string) *model.AgentsInitContainerResourcesConfig {
-	return &model.AgentsInitContainerResourcesConfig{
-		RequestCPUm:      reconciledIntNonZero(resources.RequestCPUm, "agentsInitContainerResources.requestCPUm", prov),
-		LimitCPUm:        reconciledIntNonZero(resources.LimitCPUm, "agentsInitContainerResources.limitCPUm", prov),
-		RequestMemoryMiB: reconciledIntNonZero(resources.RequestMemoryMiB, "agentsInitContainerResources.requestMemoryMiB", prov),
-		LimitMemoryMiB:   reconciledIntNonZero(resources.LimitMemoryMiB, "agentsInitContainerResources.limitMemoryMiB", prov),
+func convertAgentsInitContainerResourcesToModel(resources *common.AgentsInitContainerResources, pc *provenanceCollector) *model.AgentsInitContainerResourcesConfig {
+	result := &model.AgentsInitContainerResourcesConfig{}
+	if resources.RequestCPUm != 0 {
+		result.RequestCPUm = ptrInt(resources.RequestCPUm)
+		pc.record("agentsInitContainerResources.requestCPUm")
 	}
+	if resources.LimitCPUm != 0 {
+		result.LimitCPUm = ptrInt(resources.LimitCPUm)
+		pc.record("agentsInitContainerResources.limitCPUm")
+	}
+	if resources.RequestMemoryMiB != 0 {
+		result.RequestMemoryMiB = ptrInt(resources.RequestMemoryMiB)
+		pc.record("agentsInitContainerResources.requestMemoryMiB")
+	}
+	if resources.LimitMemoryMiB != 0 {
+		result.LimitMemoryMiB = ptrInt(resources.LimitMemoryMiB)
+		pc.record("agentsInitContainerResources.limitMemoryMiB")
+	}
+	return result
 }
 
 func convertUiModeToModel(uiMode common.UiMode) model.UIMode {
@@ -403,28 +482,44 @@ func convertEnvInjectionMethodToModel(method common.EnvInjectionMethod) model.En
 	}
 }
 
-func convertCollectorGatewayToModel(gw *common.CollectorGatewayConfiguration, prov map[string]string) (*model.CollectorGatewayConfig, error) {
+func convertCollectorGatewayToModel(gw *common.CollectorGatewayConfiguration, pc *provenanceCollector) (*model.CollectorGatewayConfig, error) {
 	if gw == nil {
 		return nil, nil
 	}
 
 	p := func(field string) string { return "collectorGateway." + field }
-	result := &model.CollectorGatewayConfig{
-		MinReplicas:                reconciledIntNonZero(gw.MinReplicas, p("minReplicas"), prov),
-		MaxReplicas:                reconciledIntNonZero(gw.MaxReplicas, p("maxReplicas"), prov),
-		RequestMemoryMiB:           reconciledIntNonZero(gw.RequestMemoryMiB, p("requestMemoryMiB"), prov),
-		LimitMemoryMiB:             reconciledIntNonZero(gw.LimitMemoryMiB, p("limitMemoryMiB"), prov),
-		RequestCPUm:                reconciledIntNonZero(gw.RequestCPUm, p("requestCPUm"), prov),
-		LimitCPUm:                  reconciledIntNonZero(gw.LimitCPUm, p("limitCPUm"), prov),
-		MemoryLimiterLimitMiB:      reconciledIntNonZero(gw.MemoryLimiterLimitMiB, p("memoryLimiterLimitMiB"), prov),
-		MemoryLimiterSpikeLimitMiB: reconciledIntNonZero(gw.MemoryLimiterSpikeLimitMiB, p("memoryLimiterSpikeLimitMiB"), prov),
-		GoMemLimitMiB:              reconciledIntNonZero(gw.GoMemLimitMib, p("goMemLimitMiB"), prov),
-		ClusterMetricsEnabled:      reconciledBoolPtr(gw.ClusterMetricsEnabled, p("clusterMetricsEnabled"), prov),
-		HTTPSProxyAddress:          reconciledStrPtr(gw.HttpsProxyAddress, p("httpsProxyAddress"), prov),
+	result := &model.CollectorGatewayConfig{}
+
+	setInt := func(val int, field string) *int {
+		if val == 0 {
+			return nil
+		}
+		pc.record(p(field))
+		return ptrInt(val)
 	}
 
-	if gw.ServiceGraph != nil {
-		result.ServiceGraphDisabled = reconciledBoolPtr(gw.ServiceGraph.Disabled, p("serviceGraphDisabled"), prov)
+	result.MinReplicas = setInt(gw.MinReplicas, "minReplicas")
+	result.MaxReplicas = setInt(gw.MaxReplicas, "maxReplicas")
+	result.RequestMemoryMiB = setInt(gw.RequestMemoryMiB, "requestMemoryMiB")
+	result.LimitMemoryMiB = setInt(gw.LimitMemoryMiB, "limitMemoryMiB")
+	result.RequestCPUm = setInt(gw.RequestCPUm, "requestCPUm")
+	result.LimitCPUm = setInt(gw.LimitCPUm, "limitCPUm")
+	result.MemoryLimiterLimitMiB = setInt(gw.MemoryLimiterLimitMiB, "memoryLimiterLimitMiB")
+	result.MemoryLimiterSpikeLimitMiB = setInt(gw.MemoryLimiterSpikeLimitMiB, "memoryLimiterSpikeLimitMiB")
+	result.GoMemLimitMiB = setInt(gw.GoMemLimitMib, "goMemLimitMiB")
+
+	if gw.ClusterMetricsEnabled != nil {
+		result.ClusterMetricsEnabled = gw.ClusterMetricsEnabled
+		pc.record(p("clusterMetricsEnabled"))
+	}
+	if gw.HttpsProxyAddress != nil {
+		result.HTTPSProxyAddress = gw.HttpsProxyAddress
+		pc.record(p("httpsProxyAddress"))
+	}
+
+	if gw.ServiceGraph != nil && gw.ServiceGraph.Disabled != nil {
+		result.ServiceGraphDisabled = gw.ServiceGraph.Disabled
+		pc.record(p("serviceGraphDisabled"))
 	}
 
 	if gw.NodeSelector != nil && len(*gw.NodeSelector) > 0 {
@@ -433,62 +528,93 @@ func convertCollectorGatewayToModel(gw *common.CollectorGatewayConfiguration, pr
 			return nil, fmt.Errorf("failed to marshal collectorGateway.nodeSelector: %w", err)
 		}
 		nodeSelectorStr := string(nodeSelectorJSON)
-		result.NodeSelector = &model.ReconciledString{ReconciledFrom: provenanceFor(prov, p("nodeSelector")), Value: &nodeSelectorStr}
+		result.NodeSelector = &nodeSelectorStr
+		pc.record(p("nodeSelector"))
 	}
 
 	return result, nil
 }
 
-func convertCollectorNodeToModel(node *common.CollectorNodeConfiguration, prov map[string]string) *model.CollectorNodeConfig {
+func convertCollectorNodeToModel(node *common.CollectorNodeConfiguration, pc *provenanceCollector) *model.CollectorNodeConfig {
 	if node == nil {
 		return nil
 	}
 
 	p := func(field string) string { return "collectorNode." + field }
-	result := &model.CollectorNodeConfig{
-		CollectorOwnMetricsPort:    reconciledIntNonZero(int(node.CollectorOwnMetricsPort), p("collectorOwnMetricsPort"), prov),
-		RequestMemoryMiB:           reconciledIntNonZero(node.RequestMemoryMiB, p("requestMemoryMiB"), prov),
-		LimitMemoryMiB:             reconciledIntNonZero(node.LimitMemoryMiB, p("limitMemoryMiB"), prov),
-		RequestCPUm:                reconciledIntNonZero(node.RequestCPUm, p("requestCPUm"), prov),
-		LimitCPUm:                  reconciledIntNonZero(node.LimitCPUm, p("limitCPUm"), prov),
-		MemoryLimiterLimitMiB:      reconciledIntNonZero(node.MemoryLimiterLimitMiB, p("memoryLimiterLimitMiB"), prov),
-		MemoryLimiterSpikeLimitMiB: reconciledIntNonZero(node.MemoryLimiterSpikeLimitMiB, p("memoryLimiterSpikeLimitMiB"), prov),
-		GoMemLimitMiB:              reconciledIntNonZero(node.GoMemLimitMib, p("goMemLimitMiB"), prov),
-		EnableDataCompression:      reconciledBoolPtr(node.EnableDataCompression, p("enableDataCompression"), prov),
+	result := &model.CollectorNodeConfig{}
+
+	setInt := func(val int, field string) *int {
+		if val == 0 {
+			return nil
+		}
+		pc.record(p(field))
+		return ptrInt(val)
+	}
+
+	result.CollectorOwnMetricsPort = setInt(int(node.CollectorOwnMetricsPort), "collectorOwnMetricsPort")
+	result.RequestMemoryMiB = setInt(node.RequestMemoryMiB, "requestMemoryMiB")
+	result.LimitMemoryMiB = setInt(node.LimitMemoryMiB, "limitMemoryMiB")
+	result.RequestCPUm = setInt(node.RequestCPUm, "requestCPUm")
+	result.LimitCPUm = setInt(node.LimitCPUm, "limitCPUm")
+	result.MemoryLimiterLimitMiB = setInt(node.MemoryLimiterLimitMiB, "memoryLimiterLimitMiB")
+	result.MemoryLimiterSpikeLimitMiB = setInt(node.MemoryLimiterSpikeLimitMiB, "memoryLimiterSpikeLimitMiB")
+	result.GoMemLimitMiB = setInt(node.GoMemLimitMib, "goMemLimitMiB")
+
+	if node.EnableDataCompression != nil {
+		result.EnableDataCompression = node.EnableDataCompression
+		pc.record(p("enableDataCompression"))
 	}
 
 	if node.OtlpExporterConfiguration != nil {
-		result.OtlpExporterConfiguration = convertOtlpExporterToModel(node.OtlpExporterConfiguration, prov)
+		result.OtlpExporterConfiguration = convertOtlpExporterToModel(node.OtlpExporterConfiguration, pc)
 	}
 
 	return result
 }
 
-func convertOtlpExporterToModel(otlp *common.OtlpExporterConfiguration, prov map[string]string) *model.OtlpExporterConfig {
+func convertOtlpExporterToModel(otlp *common.OtlpExporterConfiguration, pc *provenanceCollector) *model.OtlpExporterConfig {
 	if otlp == nil {
 		return nil
 	}
 
 	p := func(field string) string { return "collectorNode.otlpExporterConfiguration." + field }
-	result := &model.OtlpExporterConfig{
-		EnableDataCompression: reconciledBoolPtr(otlp.EnableDataCompression, p("enableDataCompression"), prov),
-		Timeout:               reconciledStr(otlp.Timeout, p("timeout"), prov),
+	result := &model.OtlpExporterConfig{}
+
+	if otlp.EnableDataCompression != nil {
+		result.EnableDataCompression = otlp.EnableDataCompression
+		pc.record(p("enableDataCompression"))
+	}
+	if otlp.Timeout != "" {
+		result.Timeout = ptrStr(otlp.Timeout)
+		pc.record(p("timeout"))
 	}
 
 	if otlp.RetryOnFailure != nil {
 		rp := func(field string) string { return p("retryOnFailure." + field) }
-		result.RetryOnFailure = &model.RetryOnFailureConfig{
-			Enabled:         reconciledBoolPtr(otlp.RetryOnFailure.Enabled, rp("enabled"), prov),
-			InitialInterval: reconciledStr(otlp.RetryOnFailure.InitialInterval, rp("initialInterval"), prov),
-			MaxInterval:     reconciledStr(otlp.RetryOnFailure.MaxInterval, rp("maxInterval"), prov),
-			MaxElapsedTime:  reconciledStr(otlp.RetryOnFailure.MaxElapsedTime, rp("maxElapsedTime"), prov),
+		rf := &model.RetryOnFailureConfig{}
+		if otlp.RetryOnFailure.Enabled != nil {
+			rf.Enabled = otlp.RetryOnFailure.Enabled
+			pc.record(rp("enabled"))
 		}
+		if otlp.RetryOnFailure.InitialInterval != "" {
+			rf.InitialInterval = ptrStr(otlp.RetryOnFailure.InitialInterval)
+			pc.record(rp("initialInterval"))
+		}
+		if otlp.RetryOnFailure.MaxInterval != "" {
+			rf.MaxInterval = ptrStr(otlp.RetryOnFailure.MaxInterval)
+			pc.record(rp("maxInterval"))
+		}
+		if otlp.RetryOnFailure.MaxElapsedTime != "" {
+			rf.MaxElapsedTime = ptrStr(otlp.RetryOnFailure.MaxElapsedTime)
+			pc.record(rp("maxElapsedTime"))
+		}
+		result.RetryOnFailure = rf
 	}
 
 	return result
 }
 
-func convertUserInstrumentationEnvsToModel(envs *common.UserInstrumentationEnvs, prov map[string]string) (*model.UserInstrumentationEnvsConfig, error) {
+func convertUserInstrumentationEnvsToModel(envs *common.UserInstrumentationEnvs, pc *provenanceCollector) (*model.UserInstrumentationEnvsConfig, error) {
 	if envs == nil {
 		return nil, nil
 	}
@@ -501,7 +627,8 @@ func convertUserInstrumentationEnvsToModel(envs *common.UserInstrumentationEnvs,
 			return nil, fmt.Errorf("failed to marshal userInstrumentationEnvs.languages: %w", err)
 		}
 		languagesStr := string(languagesJSON)
-		result.Languages = &model.ReconciledString{ReconciledFrom: provenanceFor(prov, "userInstrumentationEnvs.languages"), Value: &languagesStr}
+		result.Languages = &languagesStr
+		pc.record("userInstrumentationEnvs.languages")
 	}
 
 	return result, nil
@@ -599,7 +726,7 @@ func containerAgentConfigToAgentConfigModel(c *v1alpha1.ContainerAgentConfig) *m
 	}
 }
 
-func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration, prov map[string]string) *model.MetricsSourceConfig {
+func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration, pc *provenanceCollector) *model.MetricsSourceConfig {
 	if ms == nil {
 		return nil
 	}
@@ -609,41 +736,75 @@ func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration, prov ma
 	if ms.SpanMetrics != nil {
 		sm := ms.SpanMetrics
 		p := func(f string) string { return "metricsSources.spanMetrics." + f }
-		result.SpanMetrics = &model.MetricsSourceSpanMetricsConfig{
-			Disabled:                     reconciledBoolPtr(sm.Disabled, p("disabled"), prov),
-			Interval:                     reconciledStr(sm.Interval, p("interval"), prov),
-			MetricsExpiration:            reconciledStr(sm.MetricsExpiration, p("metricsExpiration"), prov),
-			AdditionalDimensions:         reconciledStrArray(sm.AdditionalDimensions, p("additionalDimensions"), prov),
-			HistogramBuckets:             reconciledStrArray(sm.ExplicitHistogramBuckets, p("histogramBuckets"), prov),
-			IncludedProcessInDimensions:  reconciledBoolPtr(sm.IncludedProcessInDimensions, p("includedProcessInDimensions"), prov),
-			ExcludedResourceAttributes:   reconciledStrArray(sm.ExcludedResourceAttributes, p("excludedResourceAttributes"), prov),
-			ResourceMetricsKeyAttributes: reconciledStrArray(sm.ResourceMetricsKeyAttributes, p("resourceMetricsKeyAttributes"), prov),
+		spanMetrics := &model.MetricsSourceSpanMetricsConfig{}
+
+		if sm.Disabled != nil {
+			spanMetrics.Disabled = sm.Disabled
+			pc.record(p("disabled"))
 		}
+		if sm.Interval != "" {
+			spanMetrics.Interval = ptrStr(sm.Interval)
+			pc.record(p("interval"))
+		}
+		if sm.MetricsExpiration != "" {
+			spanMetrics.MetricsExpiration = ptrStr(sm.MetricsExpiration)
+			pc.record(p("metricsExpiration"))
+		}
+		spanMetrics.AdditionalDimensions = sm.AdditionalDimensions
+		pc.record(p("additionalDimensions"))
+		spanMetrics.HistogramBuckets = sm.ExplicitHistogramBuckets
+		pc.record(p("histogramBuckets"))
+		if sm.IncludedProcessInDimensions != nil {
+			spanMetrics.IncludedProcessInDimensions = sm.IncludedProcessInDimensions
+			pc.record(p("includedProcessInDimensions"))
+		}
+		spanMetrics.ExcludedResourceAttributes = sm.ExcludedResourceAttributes
+		pc.record(p("excludedResourceAttributes"))
+		spanMetrics.ResourceMetricsKeyAttributes = sm.ResourceMetricsKeyAttributes
+		pc.record(p("resourceMetricsKeyAttributes"))
 		if sm.HistogramDisabled {
-			result.SpanMetrics.HistogramDisabled = reconciledBool(sm.HistogramDisabled, p("histogramDisabled"), prov)
+			spanMetrics.HistogramDisabled = ptrBool(sm.HistogramDisabled)
+			pc.record(p("histogramDisabled"))
 		}
+
+		result.SpanMetrics = spanMetrics
 	}
 
 	if ms.HostMetrics != nil {
 		p := func(f string) string { return "metricsSources.hostMetrics." + f }
-		result.HostMetrics = &model.MetricsSourceHostMetricsConfig{
-			Disabled: reconciledBoolPtr(ms.HostMetrics.Disabled, p("disabled"), prov),
-			Interval: reconciledStr(ms.HostMetrics.Interval, p("interval"), prov),
+		hm := &model.MetricsSourceHostMetricsConfig{}
+		if ms.HostMetrics.Disabled != nil {
+			hm.Disabled = ms.HostMetrics.Disabled
+			pc.record(p("disabled"))
 		}
+		if ms.HostMetrics.Interval != "" {
+			hm.Interval = ptrStr(ms.HostMetrics.Interval)
+			pc.record(p("interval"))
+		}
+		result.HostMetrics = hm
 	}
 
 	if ms.KubeletStats != nil {
 		p := func(f string) string { return "metricsSources.kubeletStats." + f }
-		result.KubeletStats = &model.MetricsSourceKubeletStatsConfig{
-			Disabled: reconciledBoolPtr(ms.KubeletStats.Disabled, p("disabled"), prov),
-			Interval: reconciledStr(ms.KubeletStats.Interval, p("interval"), prov),
+		ks := &model.MetricsSourceKubeletStatsConfig{}
+		if ms.KubeletStats.Disabled != nil {
+			ks.Disabled = ms.KubeletStats.Disabled
+			pc.record(p("disabled"))
 		}
+		if ms.KubeletStats.Interval != "" {
+			ks.Interval = ptrStr(ms.KubeletStats.Interval)
+			pc.record(p("interval"))
+		}
+		result.KubeletStats = ks
 	}
 
 	if ms.OdigosOwnMetrics != nil {
-		result.OdigosOwnMetrics = &model.MetricsSourceOdigosOwnMetricsConfig{
-			Interval: reconciledStr(ms.OdigosOwnMetrics.Interval, "metricsSources.odigosOwnMetrics.interval", prov),
+		oom := &model.MetricsSourceOdigosOwnMetricsConfig{}
+		if ms.OdigosOwnMetrics.Interval != "" {
+			oom.Interval = ptrStr(ms.OdigosOwnMetrics.Interval)
+			pc.record("metricsSources.odigosOwnMetrics.interval")
 		}
+		result.OdigosOwnMetrics = oom
 	}
 
 	if ms.AgentMetrics != nil {
@@ -651,15 +812,16 @@ func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration, prov ma
 
 		if ms.AgentMetrics.SpanMetrics != nil {
 			result.AgentMetrics.SpanMetrics = &model.MetricsSourceAgentSpanMetricsConfig{
-				Enabled: reconciledBool(ms.AgentMetrics.SpanMetrics.Enabled, "metricsSources.agentMetrics.spanMetrics.enabled", prov),
+				Enabled: ptrBool(ms.AgentMetrics.SpanMetrics.Enabled),
 			}
+			pc.record("metricsSources.agentMetrics.spanMetrics.enabled")
 		}
 
 		if ms.AgentMetrics.RuntimeMetrics != nil && ms.AgentMetrics.RuntimeMetrics.Java != nil {
-			result.AgentMetrics.RuntimeMetrics = &model.MetricsSourceAgentRuntimeMetricsConfig{
-				Java: &model.MetricsSourceAgentJavaRuntimeMetricsConfig{
-					Disabled: reconciledBoolPtr(ms.AgentMetrics.RuntimeMetrics.Java.Disabled, "metricsSources.agentMetrics.runtimeMetrics.java.disabled", prov),
-				},
+			javaConfig := &model.MetricsSourceAgentJavaRuntimeMetricsConfig{}
+			if ms.AgentMetrics.RuntimeMetrics.Java.Disabled != nil {
+				javaConfig.Disabled = ms.AgentMetrics.RuntimeMetrics.Java.Disabled
+				pc.record("metricsSources.agentMetrics.runtimeMetrics.java.disabled")
 			}
 
 			if len(ms.AgentMetrics.RuntimeMetrics.Java.Metrics) > 0 {
@@ -667,11 +829,19 @@ func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration, prov ma
 				for i, m := range ms.AgentMetrics.RuntimeMetrics.Java.Metrics {
 					basePath := fmt.Sprintf("metricsSources.agentMetrics.runtimeMetrics.java.metrics.%d", i)
 					metrics[i] = &model.MetricsSourceAgentRuntimeMetricConfig{
-						Name:     reconciledStrAlways(m.Name, basePath+".name", prov),
-						Disabled: reconciledBoolPtr(m.Disabled, basePath+".disabled", prov),
+						Name: ptrStr(m.Name),
+					}
+					pc.record(basePath + ".name")
+					if m.Disabled != nil {
+						metrics[i].Disabled = m.Disabled
+						pc.record(basePath + ".disabled")
 					}
 				}
-				result.AgentMetrics.RuntimeMetrics.Java.Metrics = metrics
+				javaConfig.Metrics = metrics
+			}
+
+			result.AgentMetrics.RuntimeMetrics = &model.MetricsSourceAgentRuntimeMetricsConfig{
+				Java: javaConfig,
 			}
 		}
 	}
