@@ -6,20 +6,19 @@ import (
 )
 
 const (
-	CurrentNamespaceEnvVar                = "CURRENT_NS"
-	OdigosVersionEnvVarName               = "ODIGOS_VERSION"
-	OdigosComponentDeploymentNameEnvVar   = "ODIGOS_COMPONENT_DEPLOYMENT_NAME"
-	OdigosTierEnvVarName                  = "ODIGOS_TIER"
-	DefaultOdigosNamespace                = "odigos-system"
-	OdigosConfigurationName               = "odigos-configuration"
-	OdigosEffectiveConfigName             = "effective-config"
-	OdigosRemoteConfigName                = "odigos-remote-config"   // backend/GraphQL overlay (e.g. rollout)
-	OdigosLocalUiConfigName               = "odigos-local-ui-config" // UI overlay (log level, sampling)
-	OdigosLegacyConfigName                = "odigos-config"          // Deprecated: only used for migrations
-	OdigosConfigurationFileName           = "config.yaml"
-	OdigosConfigurationProvenanceFileName = "provenance.yaml"
-	OTLPPort                              = 4317
-	OTLPHttpPort                          = 4318
+	CurrentNamespaceEnvVar              = "CURRENT_NS"
+	OdigosVersionEnvVarName             = "ODIGOS_VERSION"
+	OdigosComponentDeploymentNameEnvVar = "ODIGOS_COMPONENT_DEPLOYMENT_NAME"
+	OdigosTierEnvVarName                = "ODIGOS_TIER"
+	DefaultOdigosNamespace              = "odigos-system"
+	OdigosConfigurationName             = "odigos-configuration"
+	OdigosEffectiveConfigName           = "effective-config"
+	OdigosRemoteConfigName              = "odigos-remote-config"   // backend/GraphQL overlay (e.g. rollout)
+	OdigosLocalUiConfigName             = "odigos-local-ui-config" // UI overlay (log level, sampling)
+	OdigosLegacyConfigName              = "odigos-config"          // Deprecated: only used for migrations
+	OdigosConfigurationFileName         = "config.yaml"
+	OTLPPort                            = 4317
+	OTLPHttpPort                        = 4318
 
 	// DefaultDataStream is the default data stream name used for telemetry data.
 	DefaultDataStream = "default"

@@ -41,7 +41,7 @@ func getOdigosConfigFromConfigMap(ctx context.Context, c client.Client, configMa
 
 // GetEffectiveConfig retrieves the current effective configuration from the effective-config ConfigMap.
 func GetEffectiveConfig(ctx context.Context, c client.Client) (*common.OdigosConfiguration, error) {
-	config, _, _, err := GetEffectiveConfigWithRawYAML(ctx, c)
+	config, _, err := GetEffectiveConfigWithRawYAML(ctx, c)
 	return config, err
 }
 
@@ -100,36 +100,28 @@ func GetConfigYamls() ([]*model.ConfigYaml, error) {
 	return resp, nil
 }
 
-// GetEffectiveConfigWithRawYAML retrieves the effective config along with its raw YAML representation
-// and the provenance map that records which ConfigMap each field originated from.
-func GetEffectiveConfigWithRawYAML(ctx context.Context, c client.Client) (*common.OdigosConfiguration, string, map[string]string, error) {
+// GetEffectiveConfigWithRawYAML retrieves the effective config along with its raw YAML representation.
+func GetEffectiveConfigWithRawYAML(ctx context.Context, c client.Client) (*common.OdigosConfiguration, string, error) {
 	ns := env.GetCurrentNamespace()
 
 	var cm v1.ConfigMap
 	err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosEffectiveConfigName}, &cm)
 	if err != nil {
-		return nil, "", nil, client.IgnoreNotFound(err)
+		return nil, "", client.IgnoreNotFound(err)
 	}
 
 	if cm.Data == nil || cm.Data[consts.OdigosConfigurationFileName] == "" {
-		return nil, "", nil, nil
+		return nil, "", nil
 	}
 
 	rawYAML := cm.Data[consts.OdigosConfigurationFileName]
 
 	var odigosConfig common.OdigosConfiguration
 	if err := yaml.Unmarshal([]byte(rawYAML), &odigosConfig); err != nil {
-		return nil, "", nil, fmt.Errorf("failed to parse odigos config: %w", err)
+		return nil, "", fmt.Errorf("failed to parse odigos config: %w", err)
 	}
 
-	provenance := make(map[string]string)
-	if provenanceYAML, ok := cm.Data[consts.OdigosConfigurationProvenanceFileName]; ok && provenanceYAML != "" {
-		if err := yaml.Unmarshal([]byte(provenanceYAML), &provenance); err != nil {
-			return nil, "", nil, fmt.Errorf("failed to parse provenance data: %w", err)
-		}
-	}
-
-	return &odigosConfig, rawYAML, provenance, nil
+	return &odigosConfig, rawYAML, nil
 }
 
 func PersistUiLocalSamplingConfig(ctx context.Context, c client.Client, samplingConfig *common.SamplingConfiguration) error {
