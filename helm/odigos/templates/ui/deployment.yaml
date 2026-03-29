@@ -55,6 +55,10 @@ spec:
                 fieldPath: metadata.namespace
           - name: ODIGOS_LOG_LEVEL
             value: {{ .Values.ui.logLevel | default .Values.logLevel | default "info" | quote }}
+          {{- if .Values.ui.profilingDebugInject }}
+          - name: ODIGOS_PROFILE_DEBUG_INJECT
+            value: "true"
+          {{- end }}
           {{- if .Values.ui.centralBackendURL }}
           - name: CENTRAL_BACKEND_WS_URL
             valueFrom:
@@ -71,6 +75,9 @@ spec:
         ports:
           - containerPort: 3000
             name: ui
+          - containerPort: 4317
+            name: otlp-grpc
+            protocol: TCP
         livenessProbe:
           httpGet:
             path: /healthz
