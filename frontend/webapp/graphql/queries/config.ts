@@ -19,437 +19,147 @@ export const GET_EFFECTIVE_CONFIG = gql`
   query GetEffectiveConfig {
     effectiveConfig {
       configVersion
-      telemetryEnabled {
-        reconciledFrom
-        value
-      }
-      openshiftEnabled {
-        reconciledFrom
-        value
-      }
-      ignoredNamespaces {
-        reconciledFrom
-        value
-      }
-      ignoredContainers {
-        reconciledFrom
-        value
-      }
-      ignoreOdigosNamespace {
-        reconciledFrom
-        value
-      }
-      psp {
-        reconciledFrom
-        value
-      }
-      imagePrefix {
-        reconciledFrom
-        value
-      }
-      skipWebhookIssuerCreation {
-        reconciledFrom
-        value
-      }
+      telemetryEnabled
+      openshiftEnabled
+      ignoredNamespaces
+      ignoredContainers
+      ignoreOdigosNamespace
+      psp
+      imagePrefix
+      skipWebhookIssuerCreation
       collectorGateway {
-        minReplicas {
-          reconciledFrom
-          value
-        }
-        maxReplicas {
-          reconciledFrom
-          value
-        }
-        requestMemoryMiB {
-          reconciledFrom
-          value
-        }
-        limitMemoryMiB {
-          reconciledFrom
-          value
-        }
-        requestCPUm {
-          reconciledFrom
-          value
-        }
-        limitCPUm {
-          reconciledFrom
-          value
-        }
-        memoryLimiterLimitMiB {
-          reconciledFrom
-          value
-        }
-        memoryLimiterSpikeLimitMiB {
-          reconciledFrom
-          value
-        }
-        goMemLimitMiB {
-          reconciledFrom
-          value
-        }
-        serviceGraphDisabled {
-          reconciledFrom
-          value
-        }
-        clusterMetricsEnabled {
-          reconciledFrom
-          value
-        }
-        httpsProxyAddress {
-          reconciledFrom
-          value
-        }
-        nodeSelector {
-          reconciledFrom
-          value
-        }
+        minReplicas
+        maxReplicas
+        requestMemoryMiB
+        limitMemoryMiB
+        requestCPUm
+        limitCPUm
+        memoryLimiterLimitMiB
+        memoryLimiterSpikeLimitMiB
+        goMemLimitMiB
+        serviceGraphDisabled
+        clusterMetricsEnabled
+        httpsProxyAddress
+        nodeSelector
       }
       collectorNode {
-        collectorOwnMetricsPort {
-          reconciledFrom
-          value
-        }
-        requestMemoryMiB {
-          reconciledFrom
-          value
-        }
-        limitMemoryMiB {
-          reconciledFrom
-          value
-        }
-        requestCPUm {
-          reconciledFrom
-          value
-        }
-        limitCPUm {
-          reconciledFrom
-          value
-        }
-        memoryLimiterLimitMiB {
-          reconciledFrom
-          value
-        }
-        memoryLimiterSpikeLimitMiB {
-          reconciledFrom
-          value
-        }
-        goMemLimitMiB {
-          reconciledFrom
-          value
-        }
-        k8sNodeLogsDirectory {
-          reconciledFrom
-          value
-        }
-        enableDataCompression {
-          reconciledFrom
-          value
-        }
+        collectorOwnMetricsPort
+        requestMemoryMiB
+        limitMemoryMiB
+        requestCPUm
+        limitCPUm
+        memoryLimiterLimitMiB
+        memoryLimiterSpikeLimitMiB
+        goMemLimitMiB
+        k8sNodeLogsDirectory
+        enableDataCompression
         otlpExporterConfiguration {
-          enableDataCompression {
-            reconciledFrom
-            value
-          }
-          timeout {
-            reconciledFrom
-            value
-          }
+          enableDataCompression
+          timeout
           retryOnFailure {
-            enabled {
-              reconciledFrom
-              value
-            }
-            initialInterval {
-              reconciledFrom
-              value
-            }
-            maxInterval {
-              reconciledFrom
-              value
-            }
-            maxElapsedTime {
-              reconciledFrom
-              value
-            }
+            enabled
+            initialInterval
+            maxInterval
+            maxElapsedTime
           }
         }
       }
-      profiles {
-        reconciledFrom
-        value
-      }
-      allowConcurrentAgents {
-        reconciledFrom
-        value
-      }
-      uiMode {
-        reconciledFrom
-        value
-      }
-      uiPaginationLimit {
-        reconciledFrom
-        value
-      }
-      uiRemoteUrl {
-        reconciledFrom
-        value
-      }
-      centralBackendURL {
-        reconciledFrom
-        value
-      }
-      clusterName {
-        reconciledFrom
-        value
-      }
-      mountMethod {
-        reconciledFrom
-        value
-      }
-      customContainerRuntimeSocketPath {
-        reconciledFrom
-        value
-      }
-      agentEnvVarsInjectionMethod {
-        reconciledFrom
-        value
-      }
+      profiles
+      allowConcurrentAgents
+      uiMode
+      uiPaginationLimit
+      uiRemoteUrl
+      centralBackendURL
+      clusterName
+      mountMethod
+      customContainerRuntimeSocketPath
+      agentEnvVarsInjectionMethod
       userInstrumentationEnvs {
-        languages {
-          reconciledFrom
-          value
-        }
+        languages
       }
-      nodeSelector {
-        reconciledFrom
-        value
-      }
-      karpenterEnabled {
-        reconciledFrom
-        value
-      }
+      nodeSelector
+      karpenterEnabled
       rollout {
-        automaticRolloutDisabled {
-          reconciledFrom
-          value
-        }
+        automaticRolloutDisabled
       }
-      rollbackDisabled {
-        reconciledFrom
-        value
-      }
-      rollbackGraceTime {
-        reconciledFrom
-        value
-      }
-      rollbackStabilityWindow {
-        reconciledFrom
-        value
-      }
+      rollbackDisabled
+      rollbackGraceTime
+      rollbackStabilityWindow
       oidc {
-        tenantUrl {
-          reconciledFrom
-          value
-        }
-        clientId {
-          reconciledFrom
-          value
-        }
-        clientSecret {
-          reconciledFrom
-          value
-        }
+        tenantUrl
+        clientId
+        clientSecret
       }
-      odigletHealthProbeBindPort {
-        reconciledFrom
-        value
-      }
-      goAutoOffsetsCron {
-        reconciledFrom
-        value
-      }
-      goAutoOffsetsMode {
-        reconciledFrom
-        value
-      }
-      clickhouseJsonTypeEnabled {
-        reconciledFrom
-        value
-      }
-      checkDeviceHealthBeforeInjection {
-        reconciledFrom
-        value
-      }
-      resourceSizePreset {
-        reconciledFrom
-        value
-      }
-      waspEnabled {
-        reconciledFrom
-        value
-      }
+      odigletHealthProbeBindPort
+      goAutoOffsetsCron
+      goAutoOffsetsMode
+      clickhouseJsonTypeEnabled
+      checkDeviceHealthBeforeInjection
+      resourceSizePreset
+      waspEnabled
       metricsSources {
         spanMetrics {
-          disabled {
-            reconciledFrom
-            value
-          }
-          interval {
-            reconciledFrom
-            value
-          }
-          metricsExpiration {
-            reconciledFrom
-            value
-          }
-          additionalDimensions {
-            reconciledFrom
-            value
-          }
-          histogramDisabled {
-            reconciledFrom
-            value
-          }
-          histogramBuckets {
-            reconciledFrom
-            value
-          }
-          includedProcessInDimensions {
-            reconciledFrom
-            value
-          }
-          excludedResourceAttributes {
-            reconciledFrom
-            value
-          }
-          resourceMetricsKeyAttributes {
-            reconciledFrom
-            value
-          }
+          disabled
+          interval
+          metricsExpiration
+          additionalDimensions
+          histogramDisabled
+          histogramBuckets
+          includedProcessInDimensions
+          excludedResourceAttributes
+          resourceMetricsKeyAttributes
         }
         hostMetrics {
-          disabled {
-            reconciledFrom
-            value
-          }
-          interval {
-            reconciledFrom
-            value
-          }
+          disabled
+          interval
         }
         kubeletStats {
-          disabled {
-            reconciledFrom
-            value
-          }
-          interval {
-            reconciledFrom
-            value
-          }
+          disabled
+          interval
         }
         odigosOwnMetrics {
-          interval {
-            reconciledFrom
-            value
-          }
+          interval
         }
         agentMetrics {
           spanMetrics {
-            enabled {
-              reconciledFrom
-              value
-            }
+            enabled
           }
           runtimeMetrics {
             java {
-              disabled {
-                reconciledFrom
-                value
-              }
+              disabled
               metrics {
-                name {
-                  reconciledFrom
-                  value
-                }
-                disabled {
-                  reconciledFrom
-                  value
-                }
+                name
+                disabled
               }
             }
           }
         }
       }
       agentsInitContainerResources {
-        requestCPUm {
-          reconciledFrom
-          value
-        }
-        limitCPUm {
-          reconciledFrom
-          value
-        }
-        requestMemoryMiB {
-          reconciledFrom
-          value
-        }
-        limitMemoryMiB {
-          reconciledFrom
-          value
-        }
+        requestCPUm
+        limitCPUm
+        requestMemoryMiB
+        limitMemoryMiB
       }
-      traceIdSuffix {
-        reconciledFrom
-        value
-      }
-      allowedTestConnectionHosts {
-        reconciledFrom
-        value
-      }
+      traceIdSuffix
+      allowedTestConnectionHosts
       odigosOwnTelemetryStore {
-        metricsStoreDisabled {
-          reconciledFrom
-          value
-        }
+        metricsStoreDisabled
       }
-      imagePullSecrets {
-        reconciledFrom
-        value
-      }
+      imagePullSecrets
       componentLogLevels {
-        default {
-          reconciledFrom
-          value
-        }
-        autoscaler {
-          reconciledFrom
-          value
-        }
-        scheduler {
-          reconciledFrom
-          value
-        }
-        instrumentor {
-          reconciledFrom
-          value
-        }
-        odiglet {
-          reconciledFrom
-          value
-        }
-        deviceplugin {
-          reconciledFrom
-          value
-        }
-        ui {
-          reconciledFrom
-          value
-        }
-        collector {
-          reconciledFrom
-          value
-        }
+        default
+        autoscaler
+        scheduler
+        instrumentor
+        odiglet
+        deviceplugin
+        ui
+        collector
+      }
+      provenance {
+        helmPath
+        reconciledFrom
       }
       manifestYAML
     }
