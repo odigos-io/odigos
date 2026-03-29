@@ -6,7 +6,7 @@ import { GET_WORKLOADS } from '@/graphql';
 import { useSamplingRuleCRUD } from '@/hooks';
 import styled from 'styled-components';
 import { FlexColumn, FlexRow, PageContent } from '@odigos/ui-kit/components';
-import { BookIcon, PlusIcon, RefreshIcon, SamplingIcon } from '@odigos/ui-kit/icons';
+import { PlusIcon, RefreshIcon, SamplingIcon } from '@odigos/ui-kit/icons';
 import {
   RichTitle,
   AutoRuleCard,
@@ -32,7 +32,7 @@ import {
   type SamplingRuleFormState,
 } from '@odigos/ui-kit/containers/v2';
 import { StatusType } from '@odigos/ui-kit/types';
-import { DOCS_URL, PAGE_TITLE, PAGE_DESCRIPTION, BTN_SAMPLING_DOCS, BTN_REFRESH, BTN_CREATE_RULE, DELETE_MODAL_TITLE, DELETE_MODAL_DESCRIPTION, DELETE_MODAL_APPROVE, DELETE_MODAL_CANCEL, AUTO_RULE_TITLE } from './constants';
+import { PAGE_TITLE, PAGE_DESCRIPTION, BTN_REFRESH, BTN_CREATE_RULE, DELETE_MODAL_TITLE, DELETE_MODAL_DESCRIPTION, DELETE_MODAL_APPROVE, DELETE_MODAL_CANCEL, AUTO_RULE_TITLE } from './constants';
 import { Button, ButtonSize, ButtonVariants, Note, Segment, SegmentVariant, WarningModal } from '@odigos/ui-kit/components/v2';
 
 const Header = styled(FlexRow)`
@@ -55,7 +55,9 @@ export default function Page() {
     deleteSamplingRule,
     updateK8sHealthProbesConfig,
   } = useSamplingRuleCRUD();
-  const { data: workloadsData } = useQuery<{ workloads: { id: { namespace: string; kind: string; name: string } }[] }>(GET_WORKLOADS);
+  const { data: workloadsData } = useQuery<{ workloads: { id: { namespace: string; kind: string; name: string } }[] }>(GET_WORKLOADS, {
+    variables: { filter: { markedForInstrumentation: true } },
+  });
   const [selectedCategory, setSelectedCategory] = useState<SamplingCategory>(SamplingCategory.Noisy);
   const [viewRuleData, setViewRuleData] = useState<ViewRuleData | null>(null);
   const [viewEditMode, setViewEditMode] = useState(false);
@@ -85,19 +87,12 @@ export default function Page() {
 
   const workloads = workloadsData?.workloads ?? [];
 
-  const sourceOptions = useMemo(
-    () => workloads.map(({ id: w }) => ({ id: `${w.namespace}/${w.kind}/${w.name}`, label: `${w.namespace} / ${w.kind} / ${w.name}` })),
-    [workloads],
-  );
+  const sourceOptions = useMemo(() => workloads.map(({ id: w }) => ({ id: `${w.namespace}/${w.kind}/${w.name}`, label: `${w.namespace} / ${w.kind} / ${w.name}` })), [workloads]);
 
   const namespaceOptions = useMemo(() => {
     const unique = Array.from(new Set(workloads.map(({ id: w }) => w.namespace))).sort();
     return unique.map((ns) => ({ id: ns, label: ns }));
   }, [workloads]);
-
-  const handleDocs = useCallback(() => {
-    window.open(DOCS_URL, '_blank', 'noopener,noreferrer');
-  }, []);
 
   const handleCreateRule = useCallback(() => {
     setIsCreateOpen(true);
@@ -194,28 +189,6 @@ export default function Page() {
     [viewRuleData, updateNoisyOperationRule, updateHighlyRelevantOperationRule, updateCostReductionRule],
   );
 
-  const handleToggleDisabled = useCallback(
-    (ruleId: string, samplingId: string, enabled: boolean) => {
-      if (!viewRuleData) return;
-
-      const { category, rule } = viewRuleData;
-      const base = { name: rule.name, disabled: !enabled, sourceScopes: rule.sourceScopes, operation: rule.operation, notes: rule.notes };
-
-      switch (category) {
-        case 'noisy':
-          updateNoisyOperationRule(samplingId, ruleId, { ...base, percentageAtMost: rule.percentageAtMost });
-          break;
-        case 'highlyRelevant':
-          updateHighlyRelevantOperationRule(samplingId, ruleId, { ...base, error: rule.error, durationAtLeastMs: rule.durationAtLeastMs, percentageAtLeast: rule.percentageAtLeast });
-          break;
-        case 'costReduction':
-          updateCostReductionRule(samplingId, ruleId, { ...base, percentageAtMost: rule.percentageAtMost });
-          break;
-      }
-    },
-    [viewRuleData, updateNoisyOperationRule, updateHighlyRelevantOperationRule, updateCostReductionRule],
-  );
-
   const handleDeleteRule = useCallback((ruleId: string, samplingId: string) => {
     setDeleteTarget({ ruleId, samplingId });
   }, []);
@@ -257,7 +230,6 @@ export default function Page() {
         <RichTitle icon={SamplingIcon} title={PAGE_TITLE} subTitle={PAGE_DESCRIPTION} />
 
         <FlexRow $gap={8} $alignItems='center'>
-          <Button label={BTN_SAMPLING_DOCS} leftIcon={BookIcon} size={ButtonSize.S} variant={ButtonVariants.Text} onClick={handleDocs} />
           <Button label={BTN_REFRESH} leftIcon={RefreshIcon} size={ButtonSize.S} variant={ButtonVariants.Text} onClick={fetchSamplingRules} loading={loading} />
           <Button label={BTN_CREATE_RULE} rightIcon={PlusIcon} size={ButtonSize.S} variant={ButtonVariants.Primary} onClick={handleCreateRule} />
         </FlexRow>
@@ -285,13 +257,19 @@ export default function Page() {
         defaultEditMode={viewEditMode}
         onClose={handleCloseDrawer}
         onDelete={handleDeleteRule}
-        onToggleDisabled={handleToggleDisabled}
         onSaveEdit={handleSaveEdit}
         sourceOptions={sourceOptions}
         namespaceOptions={namespaceOptions}
       />
 
-      <CreateSamplingRuleDrawer isOpen={isCreateOpen} category={CATEGORY_TO_RULE_CATEGORY[selectedCategory]} onClose={handleCloseCreateDrawer} onSubmit={handleCreateSubmit} sourceOptions={sourceOptions} namespaceOptions={namespaceOptions} />
+      <CreateSamplingRuleDrawer
+        isOpen={isCreateOpen}
+        category={CATEGORY_TO_RULE_CATEGORY[selectedCategory]}
+        onClose={handleCloseCreateDrawer}
+        onSubmit={handleCreateSubmit}
+        sourceOptions={sourceOptions}
+        namespaceOptions={namespaceOptions}
+      />
 
       <EditAutoRuleDrawer
         isOpen={isAutoRuleDrawerOpen}
