@@ -7,9 +7,14 @@ on:
         description: "version to create a patch for (format: vX.Y)"
         required: true
 
+
+permissions: read-all
+
 jobs:
   create-patch-release:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - name: Check Input Format
         id: release_branch
@@ -22,11 +27,20 @@ jobs:
           RELEASE_BRANCH_NAME="releases/${{ github.event.inputs.base_minor_version }}.0"
           echo "release_branch_name=$RELEASE_BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - uses: actions/checkout@v5
+
+      - name: Get sts tokens
+        id: sts-create-patch
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: create-prerelease
+          output-git-config: "true"
+
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ steps.release_branch.outputs.release_branch_name }}
-          token: ${{ secrets.RELEASE_BOT_TOKEN }}
+          token: ${{ steps.sts-create-patch.outputs.GH_TOKEN }}
 
       - name: Calculate Patch Version
         id: calculate_patch_version
@@ -44,17 +58,19 @@ jobs:
           target_patch=$((patch + 1))
           NEW_PATCH_VERSION="v$major.$minor.$target_patch"
           echo "patch_version=$NEW_PATCH_VERSION" >> $GITHUB_OUTPUT
+          echo "pr_branch=patch-release/$NEW_PATCH_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Configure Git for bot commits
+        run: |
+          git config user.email "bot@odigos.io"
+          git config user.name "Odigos Release Bot"
 
       - name: Create or Update Patch Release PR
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
+          GH_TOKEN: ${{ steps.sts-create-patch.outputs.GH_TOKEN }}
+          PR_BRANCH: ${{ steps.calculate_patch_version.outputs.pr_branch }}
+          RELEASE_BRANCH: ${{ steps.release_branch.outputs.release_branch_name }}
         run: |
-            # Configure Git user identity for the workflow using the actor who triggered it
-            git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-            git config --global user.name "${{ github.actor }}"
-
-            RELEASE_BRANCH="${{ steps.release_branch.outputs.release_branch_name }}"
-            PR_BRANCH="patch-release/${{ steps.calculate_patch_version.outputs.patch_version }}"
             PR_TITLE="Patch release PR for stable version ${{ steps.calculate_patch_version.outputs.patch_version }}"
 
             # Escape all regex metacharacters properly for branch detection

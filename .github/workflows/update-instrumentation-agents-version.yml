@@ -119,7 +119,7 @@ jobs:
           merge-method: squash
 
       - name: Notify Slack
-        if: steps.cpr.outputs.pull-request-number != ''
+        if: always() && steps.cpr.outputs.pull-request-number != ''
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
