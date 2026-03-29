@@ -152,12 +152,20 @@ jobs:
 
           - uses: ko-build/setup-ko@v0.9
 
+          - name: Set ko ldflags env (matches cli/.ko.yaml)
+            id: vars
+            run: |
+              echo "short_commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+              echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
+
           - name: Publish CLI certified image to GCR registry
             working-directory: ./cli
             env:
               KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-certified
               KO_CONFIG_PATH: ./.ko.yaml
               VERSION: ${{ inputs.tag }}
+              SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
+              DATE: ${{ steps.vars.outputs.date }}
               KO_DEFAULTBASEIMAGE: registry.access.redhat.com/ubi9/ubi-micro:latest
             run: |
               ko build --bare --tags latest --tags ${{ inputs.tag }} \

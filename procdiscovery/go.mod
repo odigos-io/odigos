@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/procdiscovery
 
-go 1.26.0
+go 1.26.1
 
 require github.com/odigos-io/odigos/common v0.0.0
 
