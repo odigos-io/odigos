@@ -169,9 +169,17 @@ func (pc *provenanceCollector) record(path string) {
 	})
 }
 
-func ptrBool(v bool) *bool       { return &v }
-func ptrStr(v string) *string    { return &v }
-func ptrInt(v int) *int          { return &v }
+// recordAs looks up provenance using the YAML config key but records the helm value path.
+func (pc *provenanceCollector) recordAs(yamlKey, helmPath string) {
+	pc.entries = append(pc.entries, &model.ProvenanceEntry{
+		HelmPath:       helmPath,
+		ReconciledFrom: provenanceFor(pc.prov, yamlKey),
+	})
+}
+
+func ptrBool(v bool) *bool    { return &v }
+func ptrStr(v string) *string { return &v }
+func ptrInt(v int) *int       { return &v }
 
 func EffectiveConfigToModel(config *common.OdigosConfiguration, prov map[string]string) (*model.EffectiveConfig, error) {
 	if config == nil {
@@ -199,29 +207,34 @@ func EffectiveConfigToModel(config *common.OdigosConfiguration, prov map[string]
 		result.IgnoreOdigosNamespace = config.IgnoreOdigosNamespace
 		pc.record("ignoreOdigosNamespace")
 	}
-	if config.AllowConcurrentAgents != nil {
-		result.AllowConcurrentAgents = config.AllowConcurrentAgents
-		pc.record("allowConcurrentAgents")
-	}
-	if config.KarpenterEnabled != nil {
-		result.KarpenterEnabled = config.KarpenterEnabled
-		pc.record("karpenterEnabled")
-	}
-	if config.RollbackDisabled != nil {
-		result.RollbackDisabled = config.RollbackDisabled
-		pc.record("rollbackDisabled")
-	}
 	if config.ClickhouseJsonTypeEnabledProperty != nil {
 		result.ClickhouseJSONTypeEnabled = config.ClickhouseJsonTypeEnabledProperty
 		pc.record("clickhouseJsonTypeEnabled")
 	}
-	if config.CheckDeviceHealthBeforeInjection != nil {
-		result.CheckDeviceHealthBeforeInjection = config.CheckDeviceHealthBeforeInjection
-		pc.record("checkDeviceHealthBeforeInjection")
+
+	// Nested wrapper types that match LocalUiConfigInput structure / helm value paths
+	result.AllowConcurrentAgents = &model.AllowConcurrentAgentsConfig{}
+	if config.AllowConcurrentAgents != nil {
+		result.AllowConcurrentAgents.Enabled = config.AllowConcurrentAgents
+		pc.recordAs("allowConcurrentAgents", "allowConcurrentAgents.enabled")
 	}
+
+	result.Karpenter = &model.KarpenterConfig{}
+	if config.KarpenterEnabled != nil {
+		result.Karpenter.Enabled = config.KarpenterEnabled
+		pc.recordAs("karpenterEnabled", "karpenter.enabled")
+	}
+
+	result.Wasp = &model.WaspConfig{}
 	if config.WaspEnabled != nil {
-		result.WaspEnabled = config.WaspEnabled
-		pc.record("waspEnabled")
+		result.Wasp.Enabled = config.WaspEnabled
+		pc.recordAs("waspEnabled", "wasp.enabled")
+	}
+
+	result.Instrumentor = &model.InstrumentorConfig{}
+	if config.CheckDeviceHealthBeforeInjection != nil {
+		result.Instrumentor.CheckDeviceHealthBeforeInjection = config.CheckDeviceHealthBeforeInjection
+		pc.recordAs("checkDeviceHealthBeforeInjection", "instrumentor.checkDeviceHealthBeforeInjection")
 	}
 
 	// Strings (nil when empty)
@@ -244,14 +257,6 @@ func EffectiveConfigToModel(config *common.OdigosConfiguration, prov map[string]
 	if config.CustomContainerRuntimeSocketPath != "" {
 		result.CustomContainerRuntimeSocketPath = ptrStr(config.CustomContainerRuntimeSocketPath)
 		pc.record("customContainerRuntimeSocketPath")
-	}
-	if config.RollbackGraceTime != "" {
-		result.RollbackGraceTime = ptrStr(config.RollbackGraceTime)
-		pc.record("rollbackGraceTime")
-	}
-	if config.RollbackStabilityWindow != "" {
-		result.RollbackStabilityWindow = ptrStr(config.RollbackStabilityWindow)
-		pc.record("rollbackStabilityWindow")
 	}
 	if config.GoAutoOffsetsCron != "" {
 		result.GoAutoOffsetsCron = ptrStr(config.GoAutoOffsetsCron)
@@ -307,13 +312,13 @@ func EffectiveConfigToModel(config *common.OdigosConfiguration, prov map[string]
 	}
 	if config.MountMethod != nil {
 		mountMethod := convertMountMethodToModel(*config.MountMethod)
-		result.MountMethod = &mountMethod
-		pc.record("mountMethod")
+		result.Instrumentor.MountMethod = &mountMethod
+		pc.recordAs("mountMethod", "instrumentor.mountMethod")
 	}
 	if config.AgentEnvVarsInjectionMethod != nil {
 		injMethod := convertEnvInjectionMethodToModel(*config.AgentEnvVarsInjectionMethod)
-		result.AgentEnvVarsInjectionMethod = &injMethod
-		pc.record("agentEnvVarsInjectionMethod")
+		result.Instrumentor.AgentEnvVarsInjectionMethod = &injMethod
+		pc.recordAs("agentEnvVarsInjectionMethod", "instrumentor.agentEnvVarsInjectionMethod")
 	}
 
 	// Component log levels
@@ -381,6 +386,20 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 			AutomaticRolloutDisabled: config.Rollout.AutomaticRolloutDisabled,
 		}
 		pc.record("rollout.automaticRolloutDisabled")
+	}
+
+	result.AutoRollback = &model.AutoRollbackConfig{}
+	if config.RollbackDisabled != nil {
+		result.AutoRollback.Disabled = config.RollbackDisabled
+		pc.recordAs("rollbackDisabled", "autoRollback.disabled")
+	}
+	if config.RollbackGraceTime != "" {
+		result.AutoRollback.GraceTime = ptrStr(config.RollbackGraceTime)
+		pc.recordAs("rollbackGraceTime", "autoRollback.graceTime")
+	}
+	if config.RollbackStabilityWindow != "" {
+		result.AutoRollback.StabilityWindowTime = ptrStr(config.RollbackStabilityWindow)
+		pc.recordAs("rollbackStabilityWindow", "autoRollback.stabilityWindowTime")
 	}
 
 	if config.Oidc != nil {

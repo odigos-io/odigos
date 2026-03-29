@@ -65,26 +65,35 @@ export const GET_EFFECTIVE_CONFIG = gql`
         }
       }
       profiles
-      allowConcurrentAgents
+      allowConcurrentAgents {
+        enabled
+      }
       uiMode
       uiPaginationLimit
       uiRemoteUrl
       centralBackendURL
       clusterName
-      mountMethod
+      instrumentor {
+        mountMethod
+        agentEnvVarsInjectionMethod
+        checkDeviceHealthBeforeInjection
+      }
       customContainerRuntimeSocketPath
-      agentEnvVarsInjectionMethod
       userInstrumentationEnvs {
         languages
       }
       nodeSelector
-      karpenterEnabled
+      karpenter {
+        enabled
+      }
       rollout {
         automaticRolloutDisabled
       }
-      rollbackDisabled
-      rollbackGraceTime
-      rollbackStabilityWindow
+      autoRollback {
+        disabled
+        graceTime
+        stabilityWindowTime
+      }
       oidc {
         tenantUrl
         clientId
@@ -94,9 +103,10 @@ export const GET_EFFECTIVE_CONFIG = gql`
       goAutoOffsetsCron
       goAutoOffsetsMode
       clickhouseJsonTypeEnabled
-      checkDeviceHealthBeforeInjection
       resourceSizePreset
-      waspEnabled
+      wasp {
+        enabled
+      }
       metricsSources {
         spanMetrics {
           disabled

@@ -123,6 +123,30 @@ type RolloutConfig {
   automaticRolloutDisabled: Boolean
 }
 
+type AutoRollbackConfig {
+  disabled: Boolean
+  graceTime: String
+  stabilityWindowTime: String
+}
+
+type InstrumentorConfig {
+  mountMethod: MountMethod
+  agentEnvVarsInjectionMethod: EnvInjectionMethod
+  checkDeviceHealthBeforeInjection: Boolean
+}
+
+type AllowConcurrentAgentsConfig {
+  enabled: Boolean
+}
+
+type WaspConfig {
+  enabled: Boolean
+}
+
+type KarpenterConfig {
+  enabled: Boolean
+}
+
 type OidcConfig {
   tenantUrl: String
   clientId: String
@@ -210,30 +234,26 @@ type EffectiveConfig {
   collectorGateway: CollectorGatewayConfig
   collectorNode: CollectorNodeConfig
   profiles: [String!]
-  allowConcurrentAgents: Boolean
+  allowConcurrentAgents: AllowConcurrentAgentsConfig
   uiMode: UiMode
   uiPaginationLimit: Int
   uiRemoteUrl: String
   centralBackendURL: String
   clusterName: String
-  mountMethod: MountMethod
+  instrumentor: InstrumentorConfig
   customContainerRuntimeSocketPath: String
-  agentEnvVarsInjectionMethod: EnvInjectionMethod
   userInstrumentationEnvs: UserInstrumentationEnvsConfig
   nodeSelector: String # JSON string representation of map[string]string
-  karpenterEnabled: Boolean
+  karpenter: KarpenterConfig
   rollout: RolloutConfig
-  rollbackDisabled: Boolean
-  rollbackGraceTime: String
-  rollbackStabilityWindow: String
+  autoRollback: AutoRollbackConfig
   oidc: OidcConfig
   odigletHealthProbeBindPort: Int
   goAutoOffsetsCron: String
   goAutoOffsetsMode: String
   clickhouseJsonTypeEnabled: Boolean
-  checkDeviceHealthBeforeInjection: Boolean
   resourceSizePreset: String
-  waspEnabled: Boolean
+  wasp: WaspConfig
   metricsSources: MetricsSourceConfig
   agentsInitContainerResources: AgentsInitContainerResourcesConfig
   traceIdSuffix: String

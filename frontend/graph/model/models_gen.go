@@ -75,6 +75,10 @@ type AgentsInitContainerResourcesConfig struct {
 	LimitMemoryMiB   *int `json:"limitMemoryMiB,omitempty"`
 }
 
+type AllowConcurrentAgentsConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
 type APIToken struct {
 	Token     string  `json:"token"`
 	Name      string  `json:"name"`
@@ -102,6 +106,12 @@ type AttributeFiltersConditionInput struct {
 	NumberCondition  *NumberConditionInput  `json:"numberCondition,omitempty"`
 	BooleanCondition *BooleanConditionInput `json:"booleanCondition,omitempty"`
 	JSONCondition    *JSONConditionInput    `json:"jsonCondition,omitempty"`
+}
+
+type AutoRollbackConfig struct {
+	Disabled            *bool   `json:"disabled,omitempty"`
+	GraceTime           *string `json:"graceTime,omitempty"`
+	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
 }
 
 type BooleanCondition struct {
@@ -443,30 +453,26 @@ type EffectiveConfig struct {
 	CollectorGateway                 *CollectorGatewayConfig             `json:"collectorGateway,omitempty"`
 	CollectorNode                    *CollectorNodeConfig                `json:"collectorNode,omitempty"`
 	Profiles                         []string                            `json:"profiles,omitempty"`
-	AllowConcurrentAgents            *bool                               `json:"allowConcurrentAgents,omitempty"`
+	AllowConcurrentAgents            *AllowConcurrentAgentsConfig        `json:"allowConcurrentAgents,omitempty"`
 	UIMode                           *UIMode                             `json:"uiMode,omitempty"`
 	UIPaginationLimit                *int                                `json:"uiPaginationLimit,omitempty"`
 	UIRemoteURL                      *string                             `json:"uiRemoteUrl,omitempty"`
 	CentralBackendURL                *string                             `json:"centralBackendURL,omitempty"`
 	ClusterName                      *string                             `json:"clusterName,omitempty"`
-	MountMethod                      *MountMethod                        `json:"mountMethod,omitempty"`
+	Instrumentor                     *InstrumentorConfig                 `json:"instrumentor,omitempty"`
 	CustomContainerRuntimeSocketPath *string                             `json:"customContainerRuntimeSocketPath,omitempty"`
-	AgentEnvVarsInjectionMethod      *EnvInjectionMethod                 `json:"agentEnvVarsInjectionMethod,omitempty"`
 	UserInstrumentationEnvs          *UserInstrumentationEnvsConfig      `json:"userInstrumentationEnvs,omitempty"`
 	NodeSelector                     *string                             `json:"nodeSelector,omitempty"`
-	KarpenterEnabled                 *bool                               `json:"karpenterEnabled,omitempty"`
+	Karpenter                        *KarpenterConfig                    `json:"karpenter,omitempty"`
 	Rollout                          *RolloutConfig                      `json:"rollout,omitempty"`
-	RollbackDisabled                 *bool                               `json:"rollbackDisabled,omitempty"`
-	RollbackGraceTime                *string                             `json:"rollbackGraceTime,omitempty"`
-	RollbackStabilityWindow          *string                             `json:"rollbackStabilityWindow,omitempty"`
+	AutoRollback                     *AutoRollbackConfig                 `json:"autoRollback,omitempty"`
 	Oidc                             *OidcConfig                         `json:"oidc,omitempty"`
 	OdigletHealthProbeBindPort       *int                                `json:"odigletHealthProbeBindPort,omitempty"`
 	GoAutoOffsetsCron                *string                             `json:"goAutoOffsetsCron,omitempty"`
 	GoAutoOffsetsMode                *string                             `json:"goAutoOffsetsMode,omitempty"`
 	ClickhouseJSONTypeEnabled        *bool                               `json:"clickhouseJsonTypeEnabled,omitempty"`
-	CheckDeviceHealthBeforeInjection *bool                               `json:"checkDeviceHealthBeforeInjection,omitempty"`
 	ResourceSizePreset               *string                             `json:"resourceSizePreset,omitempty"`
-	WaspEnabled                      *bool                               `json:"waspEnabled,omitempty"`
+	Wasp                             *WaspConfig                         `json:"wasp,omitempty"`
 	MetricsSources                   *MetricsSourceConfig                `json:"metricsSources,omitempty"`
 	AgentsInitContainerResources     *AgentsInitContainerResourcesConfig `json:"agentsInitContainerResources,omitempty"`
 	TraceIDSuffix                    *string                             `json:"traceIdSuffix,omitempty"`
@@ -698,6 +704,12 @@ type InstrumentationSourcesAnalyze struct {
 	Workload         *EntityProperty `json:"workload,omitempty"`
 	Namespace        *EntityProperty `json:"namespace,omitempty"`
 	InstrumentedText *EntityProperty `json:"instrumentedText,omitempty"`
+}
+
+type InstrumentorConfig struct {
+	MountMethod                      *MountMethod        `json:"mountMethod,omitempty"`
+	AgentEnvVarsInjectionMethod      *EnvInjectionMethod `json:"agentEnvVarsInjectionMethod,omitempty"`
+	CheckDeviceHealthBeforeInjection *bool               `json:"checkDeviceHealthBeforeInjection,omitempty"`
 }
 
 type JavaCustomProbe struct {
@@ -999,6 +1011,10 @@ type K8sWorkloadTelemetryMetrics struct {
 type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
 	IsExpectingTelemetry    *bool                   `json:"isExpectingTelemetry,omitempty"`
 	TelemetryObservedStatus *DesiredConditionStatus `json:"telemetryObservedStatus"`
+}
+
+type KarpenterConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type LanguageConfig struct {
@@ -1630,6 +1646,10 @@ type URLTemplatizationRulesGroupInput struct {
 
 type UserInstrumentationEnvsConfig struct {
 	Languages *string `json:"languages,omitempty"`
+}
+
+type WaspConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type WorkloadFilter struct {
