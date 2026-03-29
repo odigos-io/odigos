@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { sleep } from '@odigos/ui-kit/functions';
 import { Settings } from '@odigos/ui-kit/containers/v2';
 import { LocalUiConfigInput } from '@odigos/ui-kit/types';
 import { useConfigYamls, useEffectiveConfig, useUpdateLocalUiConfig } from '@/hooks';
