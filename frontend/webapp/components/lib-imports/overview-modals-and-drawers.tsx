@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, SourceDrawer, SourceModal } from '@odigos/ui-kit/containers';
+import { ProfilerTabBridge } from '@/components/source-drawer/ProfilerTabBridge';
 import {
   useActionCRUD,
   useDescribe,
@@ -27,6 +28,7 @@ const OverviewModalsAndDrawers = () => {
 
   return (
     <>
+      <ProfilerTabBridge />
       {/* modals */}
       <SourceModal fetchNamespacesWithWorkloads={fetchNamespacesWithWorkloads} persistSources={persistSources} />
       <DestinationModal
