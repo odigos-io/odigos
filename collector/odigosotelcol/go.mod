@@ -779,6 +779,8 @@ replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ..
 
 replace github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
 
+replace github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector => ../connectors/servicegraphconnector
+
 replace github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
 
 replace github.com/odigos-io/odigos/common => ../../common

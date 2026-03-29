@@ -3,6 +3,12 @@
 package main
 
 import (
+	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
+	odigosconfigk8sextension "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension"
+	odigoslogsresourceattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor"
+	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
+	odigostailsamplingprocessor "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor"
+	odigosebpfreceiver "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
 	countconnector "github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector"
 	datadogconnector "github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector"
 	exceptionsconnector "github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector"
@@ -98,13 +104,6 @@ import (
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
 	otelconftelemetry "go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
 	collector "go.opentelemetry.io/ebpf-profiler/collector"
-
-	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
-	odigosconfigk8sextension "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension"
-	odigoslogsresourceattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor"
-	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
-	odigostailsamplingprocessor "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor"
-	odigosebpfreceiver "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
 )
 
 type aliasProvider interface{ DeprecatedAlias() component.Type }
