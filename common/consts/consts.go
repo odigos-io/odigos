@@ -20,6 +20,11 @@ const (
 	OTLPPort                            = 4317
 	OTLPHttpPort                        = 4318
 
+	// OdigosCollectorTelemetryServiceName is the default OpenTelemetry service.name on the
+	// odigosotelcol binary's internal telemetry (matches collector builder-config dist.name).
+	// Used to drop self-reported profiles in filter processors so they are not enriched as workloads.
+	OdigosCollectorTelemetryServiceName = "odigosotelcol"
+
 	// DefaultDataStream is the default data stream name used for telemetry data.
 	DefaultDataStream = "default"
 

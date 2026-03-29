@@ -285,9 +285,36 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 	}
 
+	if addtionalConfig.Profiling != nil {
+		if baseConfig.Profiling == nil {
+			baseConfig.Profiling = &common.ProfilingConfiguration{}
+		}
+		ap, bp := addtionalConfig.Profiling, baseConfig.Profiling
+		if ap.Enabled != nil {
+			bp.Enabled = ap.Enabled
+		}
+		if ap.Exporter != nil {
+			bp.Exporter = ap.Exporter
+		}
+		if ap.Ui != nil {
+			if bp.Ui == nil {
+				bp.Ui = &common.ProfilingUiConfiguration{}
+			}
+			if ap.Ui.MaxSlots > 0 {
+				bp.Ui.MaxSlots = ap.Ui.MaxSlots
+			}
+			if ap.Ui.SlotTTLSeconds > 0 {
+				bp.Ui.SlotTTLSeconds = ap.Ui.SlotTTLSeconds
+			}
+			if ap.Ui.SlotMaxBytes > 0 {
+				bp.Ui.SlotMaxBytes = ap.Ui.SlotMaxBytes
+			}
+		}
+	}
+
 	// Future fields can be added here following the same pattern:
 	// - ignoredNamespaces, ignoredContainers
-	// - profiles
+	// - profiles (ProfileName list; distinct from Profiling feature)
 	// - ...
 }
 

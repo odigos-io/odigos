@@ -13,7 +13,6 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
-	"github.com/odigos-io/odigos/common/consts"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
@@ -186,8 +185,12 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	}
 
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
-	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil && odigosCfg.ComponentLogLevels != nil {
-		collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
+	var profilingCfg *odigoscommon.ProfilingConfiguration
+	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
+		profilingCfg = odigosCfg.Profiling
+		if odigosCfg.ComponentLogLevels != nil {
+			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
+		}
 	}
 
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
@@ -196,6 +199,9 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
 			// Creating a metric pipeline (throughput metrics) for the gateway to be sent to the UI
 			if err := addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines); err != nil {
+				return err
+			}
+			if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
 				return err
 			}
 			c.Service.Telemetry.Logs = config.LogsConfig{Level: collectorLogLevel}
@@ -357,7 +363,7 @@ func calculateDataStreams(
 		// Otherwise, use the data streams specified in the source selector
 		dataStreams := []string{}
 		if dest.Spec.SourceSelector == nil {
-			dataStreams = append(dataStreams, consts.DefaultDataStream)
+			dataStreams = append(dataStreams, odigosconsts.DefaultDataStream)
 		} else {
 			dataStreams = dest.Spec.SourceSelector.DataStreams
 		}
@@ -417,7 +423,7 @@ func getSourcesForDataStream(
 
 	instrumentationConfigsList := &odigosv1.InstrumentationConfigList{}
 
-	if dataStream == consts.DefaultDataStream {
+	if dataStream == odigosconsts.DefaultDataStream {
 		var err error
 		instrumentationConfigsList, err = getSourcesForDefaultDataStream(ctx, kubeClient, dataStream)
 		if err != nil {

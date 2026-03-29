@@ -148,6 +148,11 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		gatewayReplicas = int32(*gateway.Spec.ResourcesSettings.MinReplicas)
 	}
 
+	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to get current odigos configuration"))
+	}
+
 	extraEnvVars := []corev1.EnvVar{}
 	if gateway.Spec.HttpsProxyAddress != nil {
 		odigosNs := env.GetCurrentNamespace()
@@ -155,9 +160,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 			Name:  "HTTPS_PROXY",
 			Value: *gateway.Spec.HttpsProxyAddress,
 		}, corev1.EnvVar{
-			// prevent the own telemetry metrics from using the https proxy if set.
-			// gRPC uses the HTTPS_PROXY even for non tls connections
-			// since it's always uses HTTP CONNECT, so we need to blacklist the ui service.
+			// Own-telemetry gRPC to the UI must bypass HTTPS_PROXY; blacklist ui.<ns>:<otlp>.
 			Name:  "NO_PROXY",
 			Value: fmt.Sprintf("%s.%s:%d", k8sconsts.UIServiceName, odigosNs, odigosconsts.OTLPPort),
 		})
@@ -297,11 +300,6 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		}
 	}
 
-	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
-	if err != nil {
-		return nil, errors.Join(err, errors.New("failed to get current odigos configuration"))
-	}
-
 	if len(odigosConfiguration.ImagePullSecrets) > 0 {
 		desiredDeployment.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
 		for _, secret := range odigosConfiguration.ImagePullSecrets {
@@ -320,12 +318,14 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = adjusted
 	}
 
+	featureGates := "service.profilesSupport"
 	if odigosConfiguration.ClickhouseJsonTypeEnabledProperty != nil && *odigosConfiguration.ClickhouseJsonTypeEnabledProperty {
-		desiredDeployment.Spec.Template.Spec.Containers[0].Args = append(
-			desiredDeployment.Spec.Template.Spec.Containers[0].Args,
-			"--feature-gates=clickhouse.json",
-		)
+		featureGates += ",clickhouse.json"
 	}
+	desiredDeployment.Spec.Template.Spec.Containers[0].Args = append(
+		desiredDeployment.Spec.Template.Spec.Containers[0].Args,
+		fmt.Sprintf("--feature-gates=%s", featureGates),
+	)
 
 	err = ctrl.SetControllerReference(gateway, desiredDeployment, scheme)
 	if err != nil {
