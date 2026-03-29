@@ -5,6 +5,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	commonapi "github.com/odigos-io/odigos/common/api"
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -498,11 +499,6 @@ type SdkConfig struct {
 	// configurations for the instrumentation libraries the the SDK should use
 	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs,omitempty"`
 
-	// HeadSamplingConfig is a set sampling rules.
-	// This config currently only applies to root spans.
-	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
-	HeadSamplingConfig *HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
-
 	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 
 	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
@@ -565,13 +561,24 @@ type AttributesAndSamplerRule struct {
 //
 // If none of the rules evaluate to true, the fallback fraction is used to determine the sampling decision.
 type HeadSamplingConfig struct {
+
+	// Noisy operations are categories of matchers that are used on the root span.
+	// If match, the fraction is used to determine the sampling decision for the entire trace.
+	// If multiple noisy operations match, the lowest fraction is used.
+	NoisyOperations []commonapisampling.NoisyOperation `json:"noisyOperations,omitempty"`
+
+	// Deprecated: do not use. will be removed in the future.
+	// Use NoisyOperations instead.
 	AttributesAndSamplerRules []AttributesAndSamplerRule `json:"attributesAndSamplerRules,omitempty"`
+
 	// Used as a fallback if all rules evaluate to false,
 	// it may be empty - in this case the default value will be 1 - all spans are sampled.
 	// it should be a float value in the range [0, 1] - the fraction of spans to sample.
 	// a value of 0 means no spans are sampled if none of the rules evaluate to true.
 	// +kubebuilder:default:=1
-	FallbackFraction float64 `json:"fallbackFraction"`
+	// Deprecated: do not use.
+	// Use NoisyOperations instead. will be removed in the future.
+	FallbackFraction float64 `json:"fallbackFraction,omitempty"`
 }
 
 type InstrumentationLibraryConfig struct {

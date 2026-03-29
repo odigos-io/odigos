@@ -213,6 +213,9 @@ spec:
                             In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
                           properties:
                             attributesAndSamplerRules:
+                              description: |-
+                                Deprecated: do not use. will be removed in the future.
+                                Use NoisyOperations instead.
                               items:
                                 description: |-
                                   AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
@@ -270,9 +273,84 @@ spec:
                                 it may be empty - in this case the default value will be 1 - all spans are sampled.
                                 it should be a float value in the range [0, 1] - the fraction of spans to sample.
                                 a value of 0 means no spans are sampled if none of the rules evaluate to true.
+                                Deprecated: do not use.
+                                Use NoisyOperations instead. will be removed in the future.
                               type: number
-                          required:
-                          - fallbackFraction
+                            noisyOperations:
+                              description: |-
+                                Noisy operations are categories of matchers that are used on the root span.
+                                If match, the fraction is used to determine the sampling decision for the entire trace.
+                                If multiple noisy operations match, the lowest fraction is used.
+                              items:
+                                description: |-
+                                  Noisy operation configuration used by the instrumentation config.
+                                  It is similar to the NoisyOperation struct, but includes a rule id and excludes irrelevant fields.
+                                  The original struct cannot be used as the id property is internal and should not appear in user-facing API.
+                                properties:
+                                  disabled:
+                                    description: If set to true, the rule will not
+                                      be taken into account for any sampling decisions,
+                                      but still participate in metrics calculations.
+                                    type: boolean
+                                  id:
+                                    description: The id of the rule (auto-generated
+                                      by the system)
+                                    type: string
+                                  name:
+                                    description: The name of the rule (user-provided)
+                                      used for display, reference, sampling-metrics
+                                      attricute and span attributes enhancments.
+                                    type: string
+                                  operation:
+                                    description: The operation to match for sampling.
+                                    properties:
+                                      httpClient:
+                                        description: |-
+                                          match http client operation (trace that starts with an http client operation)
+                                          common for agents that are internally calling home over http, and exporting data.
+                                        properties:
+                                          method:
+                                            description: match method exactly, can
+                                              be empty to match any method
+                                            type: string
+                                          serverAddress:
+                                            description: match server address exactly
+                                              (e.g. collector.my.vendor.com)
+                                            type: string
+                                          templatedPath:
+                                            description: match templated path exactly
+                                            type: string
+                                          templatedPathPrefix:
+                                            description: match preffix of templated
+                                              path
+                                            type: string
+                                        type: object
+                                      httpServer:
+                                        description: match http server operation (trace
+                                          that starts with an http endpoint)
+                                        properties:
+                                          method:
+                                            description: match method exactly, can
+                                              be empty to match any method
+                                            type: string
+                                          route:
+                                            description: match route exactly
+                                            type: string
+                                          routePrefix:
+                                            description: match preffix of route
+                                            type: string
+                                        type: object
+                                    type: object
+                                  percentageAtMost:
+                                    description: |-
+                                      The percentage of spans to sample for this rule.
+                                      traces will be sampled "at most" this percentage
+                                      (meaning, we can sample less than this percentage if other rules requires more aggressive sampling).
+                                    type: number
+                                required:
+                                - id
+                                type: object
+                              type: array
                           type: object
                         headersCollection:
                           description: Configuration for headers collection. If not
@@ -656,73 +734,6 @@ spec:
                                 type: string
                             type: object
                           type: array
-                      type: object
-                    headSamplerConfig:
-                      description: |-
-                        HeadSamplingConfig is a set sampling rules.
-                        This config currently only applies to root spans.
-                        In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
-                      properties:
-                        attributesAndSamplerRules:
-                          items:
-                            description: |-
-                              AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
-                              If all attribute conditions evaluate to true, the AND sampler evaluates to true,
-                              and the fraction is used to determine the sampling decision.
-                              If any of the attribute compare samplers evaluate to false,
-                              the fraction is not used and the rule is skipped.
-                              An "empty" AttributesAndSamplerRule with no attribute conditions is considered to always evaluate to true.
-                              and the fraction is used to determine the sampling decision.
-                              This entity is refered to a rule in Odigos terminology for head-sampling.
-                            properties:
-                              attributeConditions:
-                                items:
-                                  description: '''Operand'' represents the attributes
-                                    and values that an operator acts upon in an expression'
-                                  properties:
-                                    key:
-                                      description: attribute key (e.g. "url.path")
-                                      type: string
-                                    operator:
-                                      description: The operator to use to compare
-                                        the attribute value.
-                                      enum:
-                                      - equals
-                                      - notEquals
-                                      - endWith
-                                      - startWith
-                                      type: string
-                                    val:
-                                      description: currently only string values are
-                                        supported.
-                                      type: string
-                                  required:
-                                  - key
-                                  - val
-                                  type: object
-                                type: array
-                              fraction:
-                                default: 1
-                                description: |-
-                                  The fraction of spans to sample, in the range [0, 1].
-                                  If the fraction is 0, no spans are sampled.
-                                  If the fraction is 1, all spans are sampled.
-                                type: number
-                            required:
-                            - attributeConditions
-                            - fraction
-                            type: object
-                          type: array
-                        fallbackFraction:
-                          default: 1
-                          description: |-
-                            Used as a fallback if all rules evaluate to false,
-                            it may be empty - in this case the default value will be 1 - all spans are sampled.
-                            it should be a float value in the range [0, 1] - the fraction of spans to sample.
-                            a value of 0 means no spans are sampled if none of the rules evaluate to true.
-                          type: number
-                      required:
-                      - fallbackFraction
                       type: object
                     headersCollection:
                       description: default configuration for collecting http headers,

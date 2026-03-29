@@ -17,9 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	sampling "github.com/odigos-io/odigos/common/api/sampling"
+)
+
 // HeadSamplingConfigApplyConfiguration represents a declarative configuration of the HeadSamplingConfig type for use
 // with apply.
 type HeadSamplingConfigApplyConfiguration struct {
+	NoisyOperations           []sampling.NoisyOperation                    `json:"noisyOperations,omitempty"`
 	AttributesAndSamplerRules []AttributesAndSamplerRuleApplyConfiguration `json:"attributesAndSamplerRules,omitempty"`
 	FallbackFraction          *float64                                     `json:"fallbackFraction,omitempty"`
 }
@@ -28,6 +33,16 @@ type HeadSamplingConfigApplyConfiguration struct {
 // apply.
 func HeadSamplingConfig() *HeadSamplingConfigApplyConfiguration {
 	return &HeadSamplingConfigApplyConfiguration{}
+}
+
+// WithNoisyOperations adds the given value to the NoisyOperations field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the NoisyOperations field.
+func (b *HeadSamplingConfigApplyConfiguration) WithNoisyOperations(values ...sampling.NoisyOperation) *HeadSamplingConfigApplyConfiguration {
+	for i := range values {
+		b.NoisyOperations = append(b.NoisyOperations, values[i])
+	}
+	return b
 }
 
 // WithAttributesAndSamplerRules adds the given value to the AttributesAndSamplerRules field in the declarative configuration
