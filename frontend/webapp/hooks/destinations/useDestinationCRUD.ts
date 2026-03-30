@@ -14,6 +14,7 @@ interface UseDestinationCrud {
   destinationsLoading: boolean;
   fetchDestinations: () => Promise<void>;
   createDestination: (destination: DestinationFormData) => Promise<void>;
+  createDestinationV2: (...args: Parameters<UseDestinationCrud['createDestination']>) => Promise<{ error?: string } | undefined>;
   updateDestination: (id: string, destination: DestinationFormData) => Promise<void>;
   deleteDestination: (id: string) => Promise<void>;
 }
@@ -34,7 +35,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.Destination, target: id ? getSseTargetFromId(id, EntityTypes.Destination) : undefined, hideFromHistory });
   };
 
-  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }, {}>(GET_DESTINATIONS);
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }, object>(GET_DESTINATIONS);
 
   const [mutateCreate] = useMutation<{ createNewDestination: Destination }, { destination: DestinationFormData }>(CREATE_DESTINATION, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Create, error.cause?.message || error.message),
@@ -66,6 +67,15 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       await mutateCreate({ variables: { destination: mapNoUndefinedFields(destination, selectedStreamName) } });
       // !! no "fetch", and no "notifyUser"
       // !! we should wait for SSE to handle that
+    }
+  };
+
+  const createDestinationV2: UseDestinationCrud['createDestinationV2'] = async (...args) => {
+    try {
+      await createDestination(...args);
+      return undefined;
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to create destination' };
     }
   };
 
@@ -102,6 +112,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     destinationsLoading,
     fetchDestinations,
     createDestination,
+    createDestinationV2,
     updateDestination,
     deleteDestination,
   };
