@@ -30,7 +30,7 @@ func createDefaultConfig() component.Config {
 		RejectFraction:   0,
 		TimeoutConfig:    exporterhelper.NewDefaultTimeoutConfig(),
 		RetryConfig:      configretry.NewDefaultBackOffConfig(),
-		QueueConfig:      exporterhelper.NewDefaultQueueConfig(),
+		QueueConfig:      configoptional.Some(exporterhelper.NewDefaultQueueConfig()),
 	}
 }
 
@@ -53,7 +53,7 @@ func createLogsExporter(
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
-		exporterhelper.WithQueue(configoptional.Some(pCfg.QueueConfig)),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
 	)
 }
 
@@ -76,7 +76,7 @@ func createTracesExporter(
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
-		exporterhelper.WithQueue(configoptional.Some(pCfg.QueueConfig)),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
 	)
 }
 
@@ -99,6 +99,6 @@ func createMetricsExporter(
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
-		exporterhelper.WithQueue(configoptional.Some(pCfg.QueueConfig)),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
 	)
 }
