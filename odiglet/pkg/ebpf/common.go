@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	cilumebpf "github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/rlimit"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -75,50 +76,19 @@ func NewManager(
 		return nil, fmt.Errorf("failed to create metrics attributes eBPF maps: %w", err)
 	}
 
-	// Create the logs eBPF map - same type as traces (RingBuf or PerfEventArray depending on kernel support).
-	// MaxEntries must match the BPF program's log_events map size (256KB) defined in
-	// ebpf-core/pkg/instrumentors/logs/capture/bpf/probe.bpf.c so that MapReplacements works.
-	logsSpec := &cilumebpf.MapSpec{
-		Type: mapType,
-		Name: "logs",
-	}
-	if ringEn {
-		logsSpec.MaxEntries = 256 * 1024 // 256KB - must match BPF log_events map size
-	}
-
-	logsMap, err := cilumebpf.NewMap(logsSpec)
+	logsMap, logsExtMap, err := ebpfcommon.CreateLogsMaps()
 	if err != nil {
 		tracesMap.Close()
 		metricsMap.Close()
 		metricsAttributesMap.Close()
-		return nil, fmt.Errorf("failed to create logs eBPF map: %w", err)
+		return nil, fmt.Errorf("failed to create logs eBPF maps: %w", err)
 	}
 
-	if opts.OnLogsMapCreated != nil {
+	if logsMap != nil && opts.OnLogsMapCreated != nil {
 		opts.OnLogsMapCreated(logsMap)
 	}
 
-	// Create the logs ext (attributes) eBPF map — a simple Hash map for TGID -> packed resource attributes.
-	// This map stores per-process resource attributes that the receiver uses to enrich log events,
-	// allowing the gateway's router to route eBPF-captured logs correctly.
-	logsExtSpec := &cilumebpf.MapSpec{
-		Type:       cilumebpf.Hash,
-		Name:       "logs_ext",
-		KeySize:    4,                   // uint32 TGID
-		ValueSize:  AttributesValueSize, // 1024 bytes packed attributes
-		MaxEntries: MaxProcessesCount,   // 512
-	}
-
-	logsExtMap, err := cilumebpf.NewMap(logsExtSpec)
-	if err != nil {
-		tracesMap.Close()
-		metricsMap.Close()
-		metricsAttributesMap.Close()
-		logsMap.Close()
-		return nil, fmt.Errorf("failed to create logs ext eBPF map: %w", err)
-	}
-
-	if opts.OnLogsExtMapCreated != nil {
+	if logsExtMap != nil && opts.OnLogsExtMapCreated != nil {
 		opts.OnLogsExtMapCreated(logsExtMap)
 	}
 
