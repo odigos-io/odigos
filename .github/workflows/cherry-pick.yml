@@ -92,17 +92,21 @@ jobs:
           fi
 
           echo "Found cherry-pick line: $CHERRY_PICK_LINE"
-          VERSIONS_STR=$(echo "$CHERRY_PICK_LINE" | sed -E 's/^[Cc]herry-pick:\s*//')
+          # Strip CR (Windows/CRLF PR bodies); command substitution strips trailing LF but not CR.
+          VERSIONS_STR=$(printf '%s' "$CHERRY_PICK_LINE" | tr -d '\r' | sed -E 's/^[Cc]herry-pick:\s*//')
 
           VALID_VERSIONS=()
           IFS=',' read -ra VERSION_ARRAY <<< "$VERSIONS_STR"
           for version in "${VERSION_ARRAY[@]}"; do
-            version=$(echo "$version" | xargs)
+            version=$(printf '%s' "$version" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            if [[ "$version" =~ ^1\.[0-9]+$ ]]; then
+              version="v${version}"
+            fi
             if [[ "$version" =~ ^v1\.[0-9]+$ ]]; then
               VALID_VERSIONS+=("\"$version\"")
               echo "Valid version found: $version"
             else
-              echo "Warning: Invalid version format '$version' (expected v1.X format)"
+              echo "Warning: Invalid version format '$version' (expected v1.X or 1.X)"
             fi
           done
 
