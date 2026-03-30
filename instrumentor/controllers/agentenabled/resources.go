@@ -65,7 +65,8 @@ func getAllSamplingRules(ctx context.Context, c client.Client) (*[]odigosv1.Samp
 	if err != nil {
 		return nil, err
 	}
-	return &samplingList.Items, nil
+	samplingObjects := samplingList.Items
+	return &samplingObjects, nil
 }
 
 func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigosv1.Action, error) {

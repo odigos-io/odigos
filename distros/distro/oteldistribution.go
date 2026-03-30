@@ -157,18 +157,6 @@ type AgentMetrics struct {
 type HeadSampling struct {
 	// if true, the distro supports head sampling for health checks.
 	Supported bool `yaml:"supported,omitempty"`
-
-	// the attribute to check for head sampling url.path
-	// support for old semantic convention ("http.target" -> "url.path")
-	UrlPathAttributeKey string `yaml:"urlPathAttributeKey,omitempty"`
-
-	// the attribute to check for head sampling http.method
-	// support for old semantic convention ("http.method" -> "http.request.method")
-	HttpRequestMethodAttributeKey string `yaml:"httpRequestMethodAttributeKey,omitempty"`
-
-	// the attribute to check for head sampling server.address
-	// support for old semantic convention ("net.peer.name" -> "server.address")
-	ServerAddressAttributeKey string `yaml:"serverAddressAttributeKey,omitempty"`
 }
 
 type HeadersCollection struct {
