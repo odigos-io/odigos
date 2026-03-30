@@ -22,7 +22,7 @@ const OverviewModalsAndDrawers = () => {
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
   const { fetchNamespacesWithWorkloads } = useNamespace();
-  const { getPotentialDestinations } = usePotentialDestinations();
+  const { potentialDestinations } = usePotentialDestinations();
   const { createActionV2, updateAction, deleteAction } = useActionCRUD();
   const { categories, getDestinationCategories } = useDestinationCategories();
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
@@ -41,7 +41,7 @@ const OverviewModalsAndDrawers = () => {
           <AddDestinationDrawer
             onClose={handleCloseModal}
             getDestinationCategories={getDestinationCategories}
-            getPotentialDestinations={getPotentialDestinations}
+            getPotentialDestinations={() => Promise.resolve({ potentialDestinations })}
             testConnection={testConnection}
             createDestination={createDestinationV2}
           />

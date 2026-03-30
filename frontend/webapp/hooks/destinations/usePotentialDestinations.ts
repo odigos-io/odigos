@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
-import { useLazyQuery, useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import { GET_POTENTIAL_DESTINATIONS } from '@/graphql';
 import { deepClone, safeJsonParse } from '@odigos/ui-kit/functions';
 import { useDestinationCategories } from './useDestinationCategories';
 import { useSetupStore, type ISetupState } from '@odigos/ui-kit/store';
-import type { GetPotentialDestinationsResult } from '@odigos/ui-kit/types';
 
 interface PotentialDestination {
   type: string;
@@ -42,7 +41,6 @@ export const usePotentialDestinations = () => {
   const { configuredDestinations } = useSetupStore();
   const { categories } = useDestinationCategories();
   const { loading, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
-  const [queryPotentialDests] = useLazyQuery<GetPotentialDestinationsResult>(GET_POTENTIAL_DESTINATIONS);
 
   const mappedPotentialDestinations = useMemo(() => {
     if (!categories || !potentialDestinations) return [];
@@ -78,14 +76,8 @@ export const usePotentialDestinations = () => {
       .filter((pd) => pd);
   }, [configuredDestinations, categories, potentialDestinations]);
 
-  const getPotentialDestinations = async (): Promise<GetPotentialDestinationsResult | undefined> => {
-    const { data } = await queryPotentialDests();
-    return data;
-  };
-
   return {
     loading,
     potentialDestinations: mappedPotentialDestinations,
-    getPotentialDestinations,
   };
 };
