@@ -36,7 +36,7 @@ func (f *fakeVersionInspector) DeepScan(pcx *process.ProcessContext) (common.Pro
 	return f.lang, f.deepDetected
 }
 
-func (f *fakeVersionInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
+func (f *fakeVersionInspector) GetRuntimeVersion(pcx *process.ProcessContext) string {
 	return f.versionString
 }
 
@@ -49,7 +49,7 @@ func TestConflictWithCppPrefersOtherLanguage_QuickScan(t *testing.T) {
 		common.CPlusPlusProgrammingLanguage: &fakeInspector{lang: common.CPlusPlusProgrammingLanguage, quickDetected: true, deepDetected: false},
 	}
 
-	res, err := DetectLanguage(process.Details{}, "")
+	res, err := DetectLanguage(process.Details{})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -70,7 +70,7 @@ func TestConflictWithoutCppReturnsError_QuickScan(t *testing.T) {
 		common.PythonProgrammingLanguage: &fakeInspector{lang: common.PythonProgrammingLanguage, quickDetected: true, deepDetected: false},
 	}
 
-	res, err := DetectLanguage(process.Details{}, "")
+	res, err := DetectLanguage(process.Details{})
 	if err == nil {
 		t.Fatalf("expected conflict error, got nil")
 	}
@@ -91,7 +91,7 @@ func TestConflictWithCppPrefersOtherLanguage_DeepScan(t *testing.T) {
 		common.CPlusPlusProgrammingLanguage: &fakeInspector{lang: common.CPlusPlusProgrammingLanguage, quickDetected: false, deepDetected: true},
 	}
 
-	res, err := DetectLanguage(process.Details{}, "")
+	res, err := DetectLanguage(process.Details{})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

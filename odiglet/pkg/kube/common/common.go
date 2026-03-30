@@ -3,7 +3,6 @@ package common
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	k8spod "github.com/odigos-io/odigos/k8sutils/pkg/pod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -16,14 +15,6 @@ import (
 
 func IsPodInCurrentNode(pod *corev1.Pod) bool {
 	return pod.Spec.NodeName == env.Current.NodeName
-}
-
-func GetPodExternalURL(ip string, ports []corev1.ContainerPort) string {
-	if ports != nil && len(ports) > 0 {
-		return fmt.Sprintf("http://%s:%d", ip, ports[0].ContainerPort)
-	}
-
-	return ""
 }
 
 func WorkloadPodsOnCurrentNode(c client.Client, ctx context.Context, ic *odigosv1.InstrumentationConfig) ([]corev1.Pod, error) {
