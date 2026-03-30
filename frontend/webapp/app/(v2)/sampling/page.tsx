@@ -11,13 +11,21 @@ import {
   RichTitle,
   AutoRuleCard,
   buildAutoRuleSummary,
+  findHighlyRelevantAutoRule,
+  buildHighlyRelevantAutoRuleSummary,
+  findCostReductionAutoRule,
+  buildCostReductionAutoRuleSummary,
   EditAutoRuleDrawer,
+  EditHighlyRelevantAutoRuleDrawer,
+  EditCostReductionAutoRuleDrawer,
   SamplingRulesList,
   ViewSamplingRuleDrawer,
   CreateSamplingRuleDrawer,
   formStateToNoisyInput,
   formStateToHighlyRelevantInput,
   formStateToCostReductionInput,
+  findDuplicateRuleId,
+  type DuplicateValidationResult,
   SamplingCategory,
   SAMPLING_SEGMENT_OPTIONS,
   SAMPLING_CATEGORY_NOTES,
@@ -32,7 +40,7 @@ import {
   type SamplingRuleFormState,
 } from '@odigos/ui-kit/containers/v2';
 import { StatusType } from '@odigos/ui-kit/types';
-import { PAGE_TITLE, PAGE_DESCRIPTION, BTN_REFRESH, BTN_CREATE_RULE, DELETE_MODAL_TITLE, DELETE_MODAL_DESCRIPTION, DELETE_MODAL_APPROVE, DELETE_MODAL_CANCEL, AUTO_RULE_TITLE } from './constants';
+import { PAGE_TITLE, PAGE_DESCRIPTION, BTN_REFRESH, BTN_CREATE_RULE, DELETE_MODAL_TITLE, DELETE_MODAL_DESCRIPTION, DELETE_MODAL_APPROVE, DELETE_MODAL_CANCEL, AUTO_RULE_TITLE, HIGHLY_RELEVANT_AUTO_RULE_TITLE, COST_REDUCTION_AUTO_RULE_TITLE, DUPLICATE_RULE_WARNING } from './constants';
 import { Button, ButtonSize, ButtonVariants, Note, Segment, SegmentVariant, WarningModal } from '@odigos/ui-kit/components/v2';
 
 const Header = styled(FlexRow)`
@@ -64,8 +72,16 @@ export default function Page() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ ruleId: string; samplingId: string } | null>(null);
   const [isAutoRuleDrawerOpen, setIsAutoRuleDrawerOpen] = useState(false);
+  const [isHRAutoRuleDrawerOpen, setIsHRAutoRuleDrawerOpen] = useState(false);
+  const [isCRAutoRuleDrawerOpen, setIsCRAutoRuleDrawerOpen] = useState(false);
 
   const autoRuleSummary = useMemo(() => buildAutoRuleSummary(k8sHealthProbesConfig), [k8sHealthProbesConfig]);
+
+  const highlyRelevantAutoRule = useMemo(() => findHighlyRelevantAutoRule(samplingRules), [samplingRules]);
+  const highlyRelevantAutoSummary = useMemo(() => buildHighlyRelevantAutoRuleSummary(highlyRelevantAutoRule?.rule ?? null), [highlyRelevantAutoRule]);
+
+  const costReductionAutoRule = useMemo(() => findCostReductionAutoRule(samplingRules), [samplingRules]);
+  const costReductionAutoSummary = useMemo(() => buildCostReductionAutoRuleSummary(costReductionAutoRule?.rule ?? null), [costReductionAutoRule]);
 
   const viewRuleRef = useRef(viewRuleData);
   viewRuleRef.current = viewRuleData;
@@ -83,7 +99,14 @@ export default function Page() {
     }
   }, [samplingRules]);
 
-  const ruleItems = useMemo(() => buildSamplingRuleItems(samplingRules, selectedCategory), [samplingRules, selectedCategory]);
+  const excludeRuleIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (highlyRelevantAutoRule) ids.add(highlyRelevantAutoRule.rule.ruleId);
+    if (costReductionAutoRule) ids.add(costReductionAutoRule.rule.ruleId);
+    return ids;
+  }, [highlyRelevantAutoRule, costReductionAutoRule]);
+
+  const ruleItems = useMemo(() => buildSamplingRuleItems(samplingRules, selectedCategory, excludeRuleIds), [samplingRules, selectedCategory, excludeRuleIds]);
 
   const workloads = workloadsData?.workloads ?? [];
 
@@ -224,6 +247,160 @@ export default function Page() {
     [updateK8sHealthProbesConfig],
   );
 
+  const handleEditHRAutoRule = useCallback(() => {
+    setIsHRAutoRuleDrawerOpen(true);
+  }, []);
+
+  const handleCloseHRAutoRuleDrawer = useCallback(() => {
+    setIsHRAutoRuleDrawerOpen(false);
+  }, []);
+
+  const handleSaveHRAutoRule = useCallback(
+    (enabled: boolean) => {
+      const samplingId = samplingRules[0]?.id ?? 'default';
+      const existing = highlyRelevantAutoRule;
+
+      if (existing) {
+        updateHighlyRelevantOperationRule(existing.samplingId, existing.rule.ruleId, {
+          name: existing.rule.name,
+          disabled: !enabled,
+          error: true,
+          sourceScopes: [],
+          operation: null,
+          percentageAtLeast: null,
+          notes: existing.rule.notes,
+        });
+      } else if (enabled) {
+        createHighlyRelevantOperationRule(samplingId, {
+          name: 'Auto - Keep All Error Traces',
+          disabled: false,
+          error: true,
+          sourceScopes: [],
+          operation: null,
+          percentageAtLeast: null,
+        });
+      }
+
+      setIsHRAutoRuleDrawerOpen(false);
+    },
+    [samplingRules, highlyRelevantAutoRule, createHighlyRelevantOperationRule, updateHighlyRelevantOperationRule],
+  );
+
+  const handleEditCRAutoRule = useCallback(() => {
+    setIsCRAutoRuleDrawerOpen(true);
+  }, []);
+
+  const handleCloseCRAutoRuleDrawer = useCallback(() => {
+    setIsCRAutoRuleDrawerOpen(false);
+  }, []);
+
+  const handleSaveCRAutoRule = useCallback(
+    (enabled: boolean, dropPercentage: number) => {
+      const samplingId = samplingRules[0]?.id ?? 'default';
+      const existing = costReductionAutoRule;
+
+      if (existing) {
+        updateCostReductionRule(existing.samplingId, existing.rule.ruleId, {
+          name: existing.rule.name,
+          disabled: !enabled,
+          sourceScopes: [],
+          operation: null,
+          percentageAtMost: dropPercentage,
+          notes: existing.rule.notes,
+        });
+      } else if (enabled) {
+        createCostReductionRule(samplingId, {
+          name: 'Auto - Drop Traces Cluster-Wide',
+          disabled: false,
+          sourceScopes: [],
+          operation: null,
+          percentageAtMost: dropPercentage,
+        });
+      }
+
+      setIsCRAutoRuleDrawerOpen(false);
+    },
+    [samplingRules, costReductionAutoRule, createCostReductionRule, updateCostReductionRule],
+  );
+
+  const validateCreateForm = useCallback(
+    (formState: SamplingRuleFormState): DuplicateValidationResult | null => {
+      const category = CATEGORY_TO_RULE_CATEGORY[selectedCategory];
+      let dupId: string | null = null;
+      switch (category) {
+        case 'noisy': {
+          const input = formStateToNoisyInput(formState);
+          dupId = findDuplicateRuleId(samplingRules, category, { sourceScopes: input.sourceScopes, operation: input.operation });
+          break;
+        }
+        case 'highlyRelevant': {
+          const input = formStateToHighlyRelevantInput(formState);
+          dupId = findDuplicateRuleId(samplingRules, category, { sourceScopes: input.sourceScopes, operation: input.operation, error: input.error ?? false, durationAtLeastMs: input.durationAtLeastMs });
+          break;
+        }
+        case 'costReduction': {
+          const input = formStateToCostReductionInput(formState);
+          dupId = findDuplicateRuleId(samplingRules, category, { sourceScopes: input.sourceScopes, operation: input.operation });
+          break;
+        }
+      }
+      return dupId ? { message: DUPLICATE_RULE_WARNING, ruleId: dupId } : null;
+    },
+    [samplingRules, selectedCategory],
+  );
+
+  const validateEditForm = useCallback(
+    (formState: SamplingRuleFormState): DuplicateValidationResult | null => {
+      const category = viewRuleData?.category;
+      const excludeId = viewRuleData?.rule.ruleId;
+      if (!category) return null;
+
+      let dupId: string | null = null;
+      switch (category) {
+        case 'noisy': {
+          const input = formStateToNoisyInput(formState);
+          dupId = findDuplicateRuleId(samplingRules, category, { sourceScopes: input.sourceScopes, operation: input.operation }, excludeId);
+          break;
+        }
+        case 'highlyRelevant': {
+          const input = formStateToHighlyRelevantInput(formState);
+          dupId = findDuplicateRuleId(samplingRules, category, { sourceScopes: input.sourceScopes, operation: input.operation, error: input.error ?? false, durationAtLeastMs: input.durationAtLeastMs }, excludeId);
+          break;
+        }
+        case 'costReduction': {
+          const input = formStateToCostReductionInput(formState);
+          dupId = findDuplicateRuleId(samplingRules, category, { sourceScopes: input.sourceScopes, operation: input.operation }, excludeId);
+          break;
+        }
+      }
+      return dupId ? { message: DUPLICATE_RULE_WARNING, ruleId: dupId } : null;
+    },
+    [samplingRules, viewRuleData],
+  );
+
+  const handleNavigateToDuplicate = useCallback(
+    (ruleId: string) => {
+      setIsCreateOpen(false);
+      const category = CATEGORY_TO_RULE_CATEGORY[selectedCategory];
+      const samplingId = samplingRules[0]?.id ?? 'default';
+
+      for (const group of samplingRules) {
+        const all = [
+          ...group.noisyOperations.map((r) => ({ category: 'noisy' as const, rule: r })),
+          ...group.highlyRelevantOperations.map((r) => ({ category: 'highlyRelevant' as const, rule: r })),
+          ...group.costReductionRules.map((r) => ({ category: 'costReduction' as const, rule: r })),
+        ];
+        const match = all.find((x) => x.rule.ruleId === ruleId);
+        if (match) {
+          setViewEditMode(true);
+          setViewRuleData({ category: match.category, rule: match.rule, samplingId: group.id, summary: buildSummaryForRule(match.category, match.rule) } as ViewRuleData);
+          return;
+        }
+      }
+    },
+    [samplingRules, selectedCategory],
+  );
+
   return (
     <PageContent>
       <Header>
@@ -241,6 +418,8 @@ export default function Page() {
       </FlexColumn>
 
       {selectedCategory === SamplingCategory.Noisy && <AutoRuleCard title={AUTO_RULE_TITLE} summary={autoRuleSummary} onEdit={handleEditAutoRule} />}
+      {selectedCategory === SamplingCategory.HighlyRelevant && <AutoRuleCard title={HIGHLY_RELEVANT_AUTO_RULE_TITLE} summary={highlyRelevantAutoSummary} onEdit={handleEditHRAutoRule} />}
+      {selectedCategory === SamplingCategory.CostReduction && <AutoRuleCard title={COST_REDUCTION_AUTO_RULE_TITLE} summary={costReductionAutoSummary} onEdit={handleEditCRAutoRule} />}
 
       <SamplingRulesList
         title={SAMPLING_CATEGORY_LIST_TITLES[selectedCategory]}
@@ -260,6 +439,8 @@ export default function Page() {
         onSaveEdit={handleSaveEdit}
         sourceOptions={sourceOptions}
         namespaceOptions={namespaceOptions}
+        validateForm={validateEditForm}
+        onNavigateToDuplicate={handleNavigateToDuplicate}
       />
 
       <CreateSamplingRuleDrawer
@@ -269,6 +450,8 @@ export default function Page() {
         onSubmit={handleCreateSubmit}
         sourceOptions={sourceOptions}
         namespaceOptions={namespaceOptions}
+        validateForm={validateCreateForm}
+        onNavigateToDuplicate={handleNavigateToDuplicate}
       />
 
       <EditAutoRuleDrawer
@@ -277,6 +460,21 @@ export default function Page() {
         keepPercentage={k8sHealthProbesConfig?.keepPercentage ?? 0}
         onClose={handleCloseAutoRuleDrawer}
         onSave={handleSaveAutoRule}
+      />
+
+      <EditHighlyRelevantAutoRuleDrawer
+        isOpen={isHRAutoRuleDrawerOpen}
+        enabled={!!highlyRelevantAutoRule && !highlyRelevantAutoRule.rule.disabled}
+        onClose={handleCloseHRAutoRuleDrawer}
+        onSave={handleSaveHRAutoRule}
+      />
+
+      <EditCostReductionAutoRuleDrawer
+        isOpen={isCRAutoRuleDrawerOpen}
+        enabled={!!costReductionAutoRule && !costReductionAutoRule.rule.disabled}
+        dropPercentage={costReductionAutoRule?.rule.percentageAtMost ?? 25}
+        onClose={handleCloseCRAutoRuleDrawer}
+        onSave={handleSaveCRAutoRule}
       />
 
       <WarningModal

@@ -13,3 +13,7 @@ export const DELETE_MODAL_APPROVE = 'Delete';
 export const DELETE_MODAL_CANCEL = 'Cancel';
 
 export const AUTO_RULE_TITLE = 'Auto rule - Kubernetes Health Probes';
+export const HIGHLY_RELEVANT_AUTO_RULE_TITLE = 'Auto rule - Keep All Error Traces';
+export const COST_REDUCTION_AUTO_RULE_TITLE = 'Auto rule - Drop Traces Cluster-Wide';
+
+export const DUPLICATE_RULE_WARNING = 'A rule with the same matching conditions already exists.';
