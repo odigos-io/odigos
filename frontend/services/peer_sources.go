@@ -1,6 +1,7 @@
 package services
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -61,6 +62,23 @@ func BaseServiceName(compositeID string) string {
 	return compositeID
 }
 
+// Builds []*NonIdentifyingAttribute from a string map (e.g. service-graph labels).
+func convertStringMapToNonIdentifyingAttributes(m map[string]string) []*model.NonIdentifyingAttribute {
+	if len(m) == 0 {
+		return []*model.NonIdentifyingAttribute{}
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := make([]*model.NonIdentifyingAttribute, 0, len(keys))
+	for _, k := range keys {
+		out = append(out, &model.NonIdentifyingAttribute{Key: k, Value: m[k]})
+	}
+	return out
+}
+
 // Maps a collector service-graph edge metric to the GraphQL ServiceMapToSource type.
 func EdgeToModel(compositeKey string, edge collectormetrics.ServiceGraphEdge, nodeAttrs map[string]string) *model.ServiceMapToSource {
 	return &model.ServiceMapToSource{
@@ -69,7 +87,7 @@ func EdgeToModel(compositeKey string, edge collectormetrics.ServiceGraphEdge, no
 		IsVirtual:      edge.ToNodeIsVirtual,
 		Requests:       int(edge.RequestCount),
 		DateTime:       edge.LastUpdated.Format(time.RFC3339),
-		NodeAttributes: model.NonIdentifyingAttribute{}.FromStringMap(nodeAttrs),
+		NodeAttributes: convertStringMapToNonIdentifyingAttributes(nodeAttrs),
 	}
 }
 
@@ -82,7 +100,7 @@ func mergeEdge(m map[string]*model.ServiceMapToSource, compositeKey string, edge
 		ts := edge.LastUpdated.Format(time.RFC3339)
 		if ts > existing.DateTime {
 			existing.DateTime = ts
-			existing.NodeAttributes = model.NonIdentifyingAttribute{}.FromStringMap(nodeAttrs)
+			existing.NodeAttributes = convertStringMapToNonIdentifyingAttributes(nodeAttrs)
 		}
 		if edge.ToNodeIsVirtual {
 			existing.IsVirtual = true

@@ -25,10 +25,10 @@ This package is copied from [opentelemetry-collector-contrib](https://github.com
 
 ---
 
-## 3. `addVirtualNodePeerDimensions` + `sortedMapKeys` (exported metric labels)
+## 3. `buildDimensions` virtual-node peer labels + `sortedMapKeys`
 
 | Item | Detail |
 |------|--------|
-| **Where** | `connector.go` — `buildDimensions` + helpers |
+| **Where** | `connector.go` — `buildDimensions` (virtual-node branch) and `sortedMapKeys` |
 | **Why** | Odigos UI expects `server_*` labels for virtual-node peers (e.g. `server_db.system`). Upstream only copies `e.Dimensions` onto the datapoint. |
-| **What it does** | Adds `server_<peerKey>` for each `e.Peer` entry unless already in `edgeDims`. Uses **sorted** peer keys (same order as §2). |
+| **What it does** | For `virtual_node` + non-empty `e.Peer`, adds `server_<peerKey>` unless already in `e.Dimensions`. Uses **sorted** peer keys (same order as §2). |

@@ -492,29 +492,19 @@ func buildDimensions(e *store.Edge) pcommon.Map {
 		dims.PutStr(k, v)
 	}
 
+	// Virtual-node edges: peer attributes describe the downstream from the client span. Emit as
+	// server_* for consistency with other server-side dimensions. Skip keys already in e.Dimensions
+	// to avoid duplicate label names. Sorted peer keys align with buildMetricKeyFromEdge.
 	if e.ConnectionType == store.VirtualNode && len(e.Peer) > 0 {
-		addVirtualNodePeerDimensions(dims, e.Peer, e.Dimensions)
+		for _, key := range sortedMapKeys(e.Peer) {
+			dim := serverKind + "_" + key
+			if _, exists := e.Dimensions[dim]; exists {
+				continue
+			}
+			dims.PutStr(dim, e.Peer[key])
+		}
 	}
 	return dims
-}
-
-// Peer holds span attributes collected from the client side for virtual-node edges (e.g. db.system,
-// peer.service); they describe the downstream dependency. Normal edges already label that side as
-// "server", so we use the same server_* prefix here for consistency with the rest of the metric.
-// If edgeDims already contains server_<attr> (e.g. from configured extra dimensions), we skip to avoid
-// duplicate label names on the same datapoint.
-//
-// Keys are processed in sorted order so this path stays aligned with buildMetricKeyFromEdge, which
-// builds the internal series key from the same peer map—stable order avoids flaky or duplicate series.
-func addVirtualNodePeerDimensions(dims pcommon.Map, peer, edgeDims map[string]string) {
-	prefix := serverKind + "_"
-	for _, key := range sortedMapKeys(peer) {
-		dim := prefix + key
-		if _, exists := edgeDims[dim]; exists {
-			continue
-		}
-		dims.PutStr(dim, peer[key])
-	}
 }
 
 // sortedMapKeys returns map keys in sorted order (required for deterministic metric key strings).
