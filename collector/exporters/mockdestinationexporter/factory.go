@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter/internal/metadata"
+	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/exporter"
@@ -29,7 +30,7 @@ func createDefaultConfig() component.Config {
 		RejectFraction:   0,
 		TimeoutConfig:    exporterhelper.NewDefaultTimeoutConfig(),
 		RetryConfig:      configretry.NewDefaultBackOffConfig(),
-		QueueConfig:      exporterhelper.NewDefaultQueueConfig(),
+		QueueConfig:      configoptional.Some(exporterhelper.NewDefaultQueueConfig()),
 	}
 }
 
