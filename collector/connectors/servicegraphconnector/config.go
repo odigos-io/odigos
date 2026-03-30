@@ -41,7 +41,9 @@ type Config struct {
 	// CacheLoop is the time to expire old entries from the store periodically.
 	StoreExpirationLoop time.Duration `mapstructure:"store_expiration_loop"`
 
-	// VirtualNodePeerAttributes the list of attributes need to match, the higher the front, the higher the priority.
+	// VirtualNodePeerAttributes lists span attributes used for virtual nodes. Order defines priority
+	// for the primary `server` label (first present key wins in getPeerHost); all present keys are
+	// collected and emitted as extra metric attributes.
 	VirtualNodePeerAttributes []string `mapstructure:"virtual_node_peer_attributes"`
 
 	// VirtualNodeExtraLabel enables the `virtual_node` label to be added to the spans.

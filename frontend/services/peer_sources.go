@@ -10,6 +10,47 @@ import (
 
 type ServiceGraphEdges = map[string]map[string]collectormetrics.ServiceGraphEdge
 
+// ServiceGraphNodeAttributesForServer returns metric-derived labels for the destination node on an edge.
+// Keys drop the server_ role prefix (the row is already the server side), use dots like semantic
+// conventions (Prometheus uses underscores). server_service_name is omitted because it duplicates ServiceName.
+func ServiceGraphNodeAttributesForServer(attrs map[string]string) map[string]string {
+	return serviceGraphLabelsForPrefix(attrs, "server")
+}
+
+// ServiceGraphNodeAttributesForClient returns metric-derived labels for the caller node on an edge.
+// Keys drop the client_ prefix and use dots for display. client_service_name is omitted (same as ServiceName).
+func ServiceGraphNodeAttributesForClient(attrs map[string]string) map[string]string {
+	return serviceGraphLabelsForPrefix(attrs, "client")
+}
+
+func serviceGraphLabelsForPrefix(attrs map[string]string, prefix string) map[string]string {
+	if len(attrs) == 0 {
+		return nil
+	}
+	prefixUnderscore := prefix + "_"
+	// Prometheus normalizes service.name → service_name on the wire.
+	skipServiceName := prefixUnderscore + "service_name"
+	out := make(map[string]string)
+	for k, v := range attrs {
+		if k == prefix || !strings.HasPrefix(k, prefixUnderscore) {
+			continue
+		}
+		if k == skipServiceName {
+			continue
+		}
+		suffix := strings.TrimPrefix(k, prefixUnderscore)
+		if suffix == "" {
+			continue
+		}
+		// turns a metric label tail (underscores) into a UI-friendly dotted key.
+		out[strings.ReplaceAll(suffix, "_", ".")] = v
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
 // BaseServiceName extracts the service name from a composite node ID.
 // Composite IDs follow the format "serviceName|dim1|dim2|..." where the
 // service name is everything before the first "|" separator.
@@ -21,31 +62,34 @@ func BaseServiceName(compositeID string) string {
 	return compositeID
 }
 
-func edgeToModel(compositeKey string, edge collectormetrics.ServiceGraphEdge) *model.ServiceMapToSource {
+// Maps a collector service-graph edge metric to the GraphQL ServiceMapToSource type.
+func EdgeToModel(compositeKey string, edge collectormetrics.ServiceGraphEdge, nodeAttrs map[string]string) *model.ServiceMapToSource {
 	return &model.ServiceMapToSource{
-		NodeID:      compositeKey,
-		ServiceName: BaseServiceName(compositeKey),
-		IsVirtual:   edge.ToNodeIsVirtual,
-		Requests:    int(edge.RequestCount),
-		DateTime:    edge.LastUpdated.Format(time.RFC3339),
+		NodeID:         compositeKey,
+		ServiceName:    BaseServiceName(compositeKey),
+		IsVirtual:      edge.ToNodeIsVirtual,
+		Requests:       int(edge.RequestCount),
+		DateTime:       edge.LastUpdated.Format(time.RFC3339),
+		NodeAttributes: model.NonIdentifyingAttribute{}.FromStringMap(nodeAttrs),
 	}
 }
 
 // mergeEdge aggregates an edge into m keyed by base service name,
 // summing request counts and keeping the most recent timestamp.
-func mergeEdge(m map[string]*model.ServiceMapToSource, compositeKey string, edge collectormetrics.ServiceGraphEdge) {
+func mergeEdge(m map[string]*model.ServiceMapToSource, compositeKey string, edge collectormetrics.ServiceGraphEdge, nodeAttrs map[string]string) {
 	base := BaseServiceName(compositeKey)
 	if existing, ok := m[base]; ok {
 		existing.Requests += int(edge.RequestCount)
 		ts := edge.LastUpdated.Format(time.RFC3339)
 		if ts > existing.DateTime {
 			existing.DateTime = ts
+			existing.NodeAttributes = model.NonIdentifyingAttribute{}.FromStringMap(nodeAttrs)
 		}
 		if edge.ToNodeIsVirtual {
 			existing.IsVirtual = true
 		}
 	} else {
-		m[base] = edgeToModel(compositeKey, edge)
+		m[base] = EdgeToModel(compositeKey, edge, nodeAttrs)
 	}
 }
 
@@ -68,12 +112,12 @@ func PeerSources(allEdges ServiceGraphEdges, serviceName string) *model.PeerSour
 	for callerKey, targets := range allEdges {
 		if BaseServiceName(callerKey) == serviceName {
 			for targetKey, edge := range targets {
-				mergeEdge(outboundMap, targetKey, edge)
+				mergeEdge(outboundMap, targetKey, edge, ServiceGraphNodeAttributesForServer(edge.Attributes))
 			}
 		}
 		for targetKey, edge := range targets {
 			if BaseServiceName(targetKey) == serviceName {
-				mergeEdge(inboundMap, callerKey, edge)
+				mergeEdge(inboundMap, callerKey, edge, ServiceGraphNodeAttributesForClient(edge.Attributes))
 			}
 		}
 	}

@@ -339,7 +339,6 @@ func (*serviceGraphConnector) upsertPeerAttributes(m []string, peers map[string]
 	for _, s := range m {
 		if v, ok := pdatautil.GetAttributeValue(s, spanAttr); ok {
 			peers[s] = v
-			break
 		}
 	}
 }
@@ -387,7 +386,7 @@ func (p *serviceGraphConnector) onExpire(e *store.Edge) {
 }
 
 func (p *serviceGraphConnector) aggregateMetricsForEdge(e *store.Edge) {
-	metricKey := p.buildMetricKey(e.ClientService, e.ServerService, string(e.ConnectionType), strconv.FormatBool(e.Failed), e.Dimensions)
+	metricKey := p.buildMetricKeyFromEdge(e)
 	dimensions := buildDimensions(e)
 
 	if p.config.VirtualNodeExtraLabel {
@@ -492,7 +491,40 @@ func buildDimensions(e *store.Edge) pcommon.Map {
 	for k, v := range e.Dimensions {
 		dims.PutStr(k, v)
 	}
+
+	if e.ConnectionType == store.VirtualNode && len(e.Peer) > 0 {
+		addVirtualNodePeerDimensions(dims, e.Peer, e.Dimensions)
+	}
 	return dims
+}
+
+// Peer holds span attributes collected from the client side for virtual-node edges (e.g. db.system,
+// peer.service); they describe the downstream dependency. Normal edges already label that side as
+// "server", so we use the same server_* prefix here for consistency with the rest of the metric.
+// If edgeDims already contains server_<attr> (e.g. from configured extra dimensions), we skip to avoid
+// duplicate label names on the same datapoint.
+//
+// Keys are processed in sorted order so this path stays aligned with buildMetricKeyFromEdge, which
+// builds the internal series key from the same peer map—stable order avoids flaky or duplicate series.
+func addVirtualNodePeerDimensions(dims pcommon.Map, peer, edgeDims map[string]string) {
+	prefix := serverKind + "_"
+	for _, key := range sortedMapKeys(peer) {
+		dim := prefix + key
+		if _, exists := edgeDims[dim]; exists {
+			continue
+		}
+		dims.PutStr(dim, peer[key])
+	}
+}
+
+// sortedMapKeys returns map keys in sorted order (required for deterministic metric key strings).
+func sortedMapKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func addExtraLabel(dimensions pcommon.Map, label, value string) pcommon.Map {
@@ -705,6 +737,29 @@ func (p *serviceGraphConnector) buildMetricKey(clientName, serverName, connectio
 	}
 
 	return metricKey.String()
+}
+
+// For virtual-node edges the metric "server" label is only one chosen peer field; other peer
+// fields still live in e.Peer. buildMetricKey ignores those, so we append them here—otherwise two
+// edges with the same server name but different peer details would share one counter. Skip a peer
+// key if it is already part of base via e.Dimensions (client_/server_ + key) so we do not double-count.
+func (p *serviceGraphConnector) buildMetricKeyFromEdge(e *store.Edge) string {
+	base := p.buildMetricKey(e.ClientService, e.ServerService, string(e.ConnectionType), strconv.FormatBool(e.Failed), e.Dimensions)
+	if e.ConnectionType != store.VirtualNode || len(e.Peer) == 0 {
+		return base
+	}
+	var b strings.Builder
+	b.WriteString(base)
+	for _, k := range sortedMapKeys(e.Peer) {
+		if _, ok := e.Dimensions[clientKind+"_"+k]; ok {
+			continue
+		}
+		if _, ok := e.Dimensions[serverKind+"_"+k]; ok {
+			continue
+		}
+		b.WriteString(metricKeySeparator + "peer" + metricKeySeparator + k + metricKeySeparator + e.Peer[k])
+	}
+	return b.String()
 }
 
 // storeExpirationLoop periodically expires old entries from the store.

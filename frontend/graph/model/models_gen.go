@@ -5,6 +5,7 @@ package model
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strconv"
 )
 
@@ -1357,11 +1358,29 @@ type ServiceMapFromSource struct {
 }
 
 type ServiceMapToSource struct {
-	NodeID      string `json:"nodeId"`
-	IsVirtual   bool   `json:"isVirtual"`
-	ServiceName string `json:"serviceName"`
-	Requests    int    `json:"requests"`
-	DateTime    string `json:"dateTime"`
+	NodeID         string                     `json:"nodeId"`
+	IsVirtual      bool                       `json:"isVirtual"`
+	ServiceName    string                     `json:"serviceName"`
+	Requests       int                        `json:"requests"`
+	DateTime       string                     `json:"dateTime"`
+	NodeAttributes []*NonIdentifyingAttribute `json:"nodeAttributes"`
+}
+
+// Builds []*NonIdentifyingAttribute from a string map (e.g. service-graph labels).
+func (NonIdentifyingAttribute) FromStringMap(m map[string]string) []*NonIdentifyingAttribute {
+	if len(m) == 0 {
+		return []*NonIdentifyingAttribute{}
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := make([]*NonIdentifyingAttribute, 0, len(keys))
+	for _, k := range keys {
+		out = append(out, &NonIdentifyingAttribute{Key: k, Value: m[k]})
+	}
+	return out
 }
 
 type ServiceNameFilter struct {

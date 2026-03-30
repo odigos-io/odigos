@@ -893,6 +893,9 @@ type ServiceMapToSource {
   serviceName: String!
   requests: Int!
   dateTime: String!
+  # Extra attributes for this node (from service-graph metrics). Dotted keys (e.g. k8s.namespace.name);
+  # no client_/server_ prefix; service.name omitted (same as serviceName).
+  nodeAttributes: [NonIdentifyingAttribute!]!
 }
 
 type PeerSources {

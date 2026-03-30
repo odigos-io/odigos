@@ -766,6 +766,70 @@ func TestVirtualNodeClientLabels(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestVirtualNodeEmitsAllPeerAttributesOnMetrics(t *testing.T) {
+	tStart := time.Date(2022, 1, 2, 3, 4, 5, 6, time.UTC)
+	tEnd := time.Date(2022, 1, 2, 3, 4, 6, 6, time.UTC)
+
+	traces := ptrace.NewTraces()
+	rs := traces.ResourceSpans().AppendEmpty()
+	rs.Resource().Attributes().PutStr(string(semconv.ServiceNameKey), "shop-service")
+	ss := rs.ScopeSpans().AppendEmpty()
+	traceID := pcommon.TraceID([16]byte{9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9})
+	spanID := pcommon.SpanID([8]byte{8, 8, 8, 8, 8, 8, 8, 8})
+	span := ss.Spans().AppendEmpty()
+	span.SetName("client db")
+	span.SetSpanID(spanID)
+	span.SetTraceID(traceID)
+	span.SetKind(ptrace.SpanKindClient)
+	span.SetStartTimestamp(pcommon.NewTimestampFromTime(tStart))
+	span.SetEndTimestamp(pcommon.NewTimestampFromTime(tEnd))
+	span.Attributes().PutStr(string(semconv.PeerServiceKey), "downstream-svc")
+	span.Attributes().PutStr(string(semconv.DBSystemKey), "postgresql")
+
+	cfg := &Config{
+		Dimensions:                nil,
+		LatencyHistogramBuckets:   []time.Duration{time.Duration(0.1 * float64(time.Second)), time.Duration(1 * float64(time.Second)), time.Duration(10 * float64(time.Second))},
+		Store:                     StoreConfig{MaxItems: 10, TTL: time.Nanosecond},
+		VirtualNodePeerAttributes: []string{string(semconv.PeerServiceKey), string(semconv.DBSystemKey)},
+		VirtualNodeExtraLabel:     true,
+		MetricsFlushInterval:      ptr(time.Millisecond),
+	}
+
+	set := componenttest.NewNopTelemetrySettings()
+	set.Logger = zaptest.NewLogger(t)
+	conn, err := newConnector(set, cfg, newMockMetricsExporter())
+	require.NoError(t, err)
+	require.NoError(t, conn.Start(t.Context(), componenttest.NewNopHost()))
+	require.NoError(t, conn.ConsumeTraces(t.Context(), traces))
+	conn.store.Expire()
+
+	var metrics []pmetric.Metrics
+	require.Eventually(t, func() bool {
+		metrics = conn.metricsConsumer.(*mockMetricsExporter).GetMetrics()
+		return len(metrics) > 0
+	}, 5*time.Second, 10*time.Millisecond)
+	require.NoError(t, conn.Shutdown(t.Context()))
+
+	ms := metrics[0].ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
+	var sumDP pmetric.Sum
+	for i := 0; i < ms.Len(); i++ {
+		if ms.At(i).Name() == "traces_service_graph_request_total" {
+			sumDP = ms.At(i).Sum()
+			break
+		}
+	}
+	require.Equal(t, 1, sumDP.DataPoints().Len())
+	attrs := sumDP.DataPoints().At(0).Attributes()
+	v, ok := attrs.Get("server")
+	require.True(t, ok)
+	assert.Equal(t, "downstream-svc", v.Str())
+	_, ok = attrs.Get("server_peer.service")
+	require.True(t, ok, "expected server_peer.service label")
+	_, ok = attrs.Get("server_db.system")
+	require.True(t, ok, "expected server_db.system label")
+	assert.Equal(t, "postgresql", attrs.AsRaw()["server_db.system"])
+}
+
 func TestExponentialHistogram(t *testing.T) {
 	// Prepare
 	set := componenttest.NewNopTelemetrySettings()
