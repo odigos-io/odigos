@@ -10,19 +10,18 @@ import (
 
 type ServiceGraphEdges = map[string]map[string]collectormetrics.ServiceGraphEdge
 
-// ServiceGraphNodeAttributesForServer returns metric-derived labels for the destination node on an edge.
-// Keys drop the server_ role prefix (the row is already the server side), use dots like semantic
-// conventions (Prometheus uses underscores). server_service_name is omitted because it duplicates ServiceName.
+// ServiceGraphNodeAttributesForServer prepares labels for the TO node row (metrics are edge-centric; API is node-centric).
 func ServiceGraphNodeAttributesForServer(attrs map[string]string) map[string]string {
 	return serviceGraphLabelsForPrefix(attrs, "server")
 }
 
-// ServiceGraphNodeAttributesForClient returns metric-derived labels for the caller node on an edge.
-// Keys drop the client_ prefix and use dots for display. client_service_name is omitted (same as ServiceName).
+// ServiceGraphNodeAttributesForClient prepares labels for the FROM node row (inbound peers).
 func ServiceGraphNodeAttributesForClient(attrs map[string]string) map[string]string {
 	return serviceGraphLabelsForPrefix(attrs, "client")
 }
 
+// serviceGraphLabelsForPrefix filters to one edge side, strips the role prefix, converts underscores to dots for UI,
+// and omits *service_name (already in serviceName).
 func serviceGraphLabelsForPrefix(attrs map[string]string, prefix string) map[string]string {
 	if len(attrs) == 0 {
 		return nil
