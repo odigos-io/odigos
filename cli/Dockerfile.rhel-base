@@ -1,0 +1,5 @@
+# RHEL-certified ko base: ubi-micro plus OpenShift preflight /licenses requirement.
+# Built multi-arch and pushed before `ko build` in publish-modules-rhel.
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
+COPY licenses /licenses
+COPY LICENSE /licenses/.
