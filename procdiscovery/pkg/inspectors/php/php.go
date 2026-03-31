@@ -56,7 +56,7 @@ func (n *PhpInspector) DeepScan(pcx *process.ProcessContext) (common.Programming
 	return "", false
 }
 
-func (n *PhpInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
+func (n *PhpInspector) GetRuntimeVersion(pcx *process.ProcessContext) string {
 	if value, exists := pcx.GetDetailedEnvsValue(process.PhpVersionConst); exists {
 		return value
 	}

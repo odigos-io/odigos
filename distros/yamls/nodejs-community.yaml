@@ -28,8 +28,5 @@ spec:
   traces:
     headSampling:
       supported: true
-      urlPathAttributeKey: "http.target"
-      httpRequestMethodAttributeKey: "http.method"
-      serverAddressAttributeKey: "net.peer.name"
     headersCollection:
       supported: true

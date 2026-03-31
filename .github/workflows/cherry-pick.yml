@@ -1,8 +1,7 @@
 name: Cherry Pick to Release Branches
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - main
 
@@ -10,62 +9,166 @@ permissions: read-all
 
 jobs:
   extract-versions:
-    if: github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
+    permissions:
+      id-token: write
     outputs:
-      versions: ${{ steps.extract_versions.outputs.versions }}
-    steps: 
-      - name: Extract Cherry Pick Versions
-        id: extract_versions
+      run_cherry_pick: ${{ steps.publish_job_outputs.outputs.run_cherry_pick }}
+      versions: ${{ steps.publish_job_outputs.outputs.versions }}
+      pr_number: ${{ steps.publish_job_outputs.outputs.pr_number }}
+      merge_commit_sha: ${{ steps.publish_job_outputs.outputs.merge_commit_sha }}
+      pr_title: ${{ steps.publish_job_outputs.outputs.pr_title }}
+      pr_user_login: ${{ steps.publish_job_outputs.outputs.pr_user_login }}
+      original_pr_body: ${{ steps.publish_job_outputs.outputs.original_pr_body }}
+    steps:
+
+      - name: Get sts tokens
+        id: sts-cherry-pick-decision
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: cherry-pick-decision
+          output-git-config: "false"
+
+      - name: Find merged PR for commit
+        id: find_pr
+        env:
+          GH_TOKEN: ${{ steps.sts-cherry-pick-decision.outputs.GH_TOKEN }}
         run: |
-          # Get the PR description
-          PR_BODY="${{ github.event.pull_request.body }}"
-          
-          # Look for the cherry-pick marker (case insensitive)
-          # Format: "cherry-pick: v1.16, v1.15" or "cherry-pick: v1.16"
-          CHERRY_PICK_LINE=$(echo "$PR_BODY" | grep -i "^cherry-pick:" || true)
-          
-          if [[ -z "$CHERRY_PICK_LINE" ]]; then
-            echo "No cherry-pick marker found in PR description"
-            echo "versions=[]" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          SHA="${{ github.sha }}"
+          REPO="${{ github.repository }}"
+          mkdir -p .cherry-pick-workflow
+          ERR_LOG=".cherry-pick-workflow/gh-api-stderr.log"
+
+          set +e
+          PR_JSON=$(gh api "repos/${REPO}/commits/${SHA}/pulls" \
+            --jq '[.[] | select(.merged_at != null and .base.ref == "main")] | sort_by(.merged_at) | reverse | .[0] // empty' 2>"$ERR_LOG")
+          GH_EXIT=$?
+          set -euo pipefail
+
+          if [[ -s "$ERR_LOG" ]]; then
+            echo "::warning::gh api stderr while listing PRs for commit $SHA:"
+            cat "$ERR_LOG"
+          fi
+
+          if [[ "$GH_EXIT" -ne 0 ]]; then
+            echo "::error::gh api failed (exit $GH_EXIT) listing pull requests for commit $SHA. This is not the same as having no linked PR; fix auth, rate limits, or API usage. See stderr in the warning above."
+            exit 1
+          fi
+
+          if [[ -z "$PR_JSON" || "$PR_JSON" == "null" ]]; then
+            echo "No merged PR associated with commit $SHA (e.g. direct push to main)"
+            echo "has_pr=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          
+
+          printf '%s\n' "$PR_JSON" > .cherry-pick-workflow/pr.json
+          echo "has_pr=true" >> "$GITHUB_OUTPUT"
+          echo "Found merged PR $(jq -r '.number' .cherry-pick-workflow/pr.json) for commit $SHA"
+
+      - name: Write PR metadata and body files
+        id: pr_files
+        if: steps.find_pr.outputs.has_pr == 'true'
+        run: |
+          set -euo pipefail
+          PR_JSON=".cherry-pick-workflow/pr.json"
+          jq -r '.body // empty' "$PR_JSON" > .cherry-pick-workflow/pr_body.txt
+          jq -r '.title // empty' "$PR_JSON" > .cherry-pick-workflow/pr_title.txt
+
+      - name: Parse cherry-pick versions from PR body
+        id: parse_versions
+        if: steps.find_pr.outputs.has_pr == 'true' && steps.pr_files.outcome == 'success'
+        run: |
+          set -euo pipefail
+          PR_BODY_FILE=".cherry-pick-workflow/pr_body.txt"
+          PR_BODY=$(cat "$PR_BODY_FILE")
+
+          CHERRY_PICK_LINE=$(echo "$PR_BODY" | grep -i "^cherry-pick:" || true)
+          if [[ -z "$CHERRY_PICK_LINE" ]]; then
+            echo "No cherry-pick marker found in PR description"
+            echo "versions=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           echo "Found cherry-pick line: $CHERRY_PICK_LINE"
-          
-          # Extract the versions part (everything after "cherry-pick:")
-          VERSIONS_STR=$(echo "$CHERRY_PICK_LINE" | sed -E 's/^[Cc]herry-pick:\s*//')
-          
-          # Parse and validate each version (format: v1.X)
+          # Strip CR (Windows/CRLF PR bodies); command substitution strips trailing LF but not CR.
+          VERSIONS_STR=$(printf '%s' "$CHERRY_PICK_LINE" | tr -d '\r' | sed -E 's/^[Cc]herry-pick:\s*//')
+
           VALID_VERSIONS=()
           IFS=',' read -ra VERSION_ARRAY <<< "$VERSIONS_STR"
           for version in "${VERSION_ARRAY[@]}"; do
-            # Trim whitespace
-            version=$(echo "$version" | xargs)
-            
-            # Validate format v1.X (where X is a number, must start with v1.)
+            version=$(printf '%s' "$version" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            if [[ "$version" =~ ^1\.[0-9]+$ ]]; then
+              version="v${version}"
+            fi
             if [[ "$version" =~ ^v1\.[0-9]+$ ]]; then
               VALID_VERSIONS+=("\"$version\"")
               echo "Valid version found: $version"
             else
-              echo "Warning: Invalid version format '$version' (expected v1.X format)"
+              echo "Warning: Invalid version format '$version' (expected v1.X or 1.X)"
             fi
           done
-          
-          # Create JSON array
+
           if [[ ${#VALID_VERSIONS[@]} -eq 0 ]]; then
-            echo "versions=[]" >> $GITHUB_OUTPUT
+            echo "versions=[]" >> "$GITHUB_OUTPUT"
             echo "No valid cherry-pick versions found"
           else
             JSON_ARRAY="[$(IFS=,; echo "${VALID_VERSIONS[*]}")]"
-            echo "versions=$JSON_ARRAY" >> $GITHUB_OUTPUT
+            echo "versions=$JSON_ARRAY" >> "$GITHUB_OUTPUT"
             echo "Cherry-pick versions to process: $JSON_ARRAY"
+          fi
+
+      - name: Publish job outputs
+        id: publish_job_outputs
+        if: always() && steps.find_pr.outcome == 'success'
+        env:
+          PARSE_VERSIONS: ${{ steps.parse_versions.outputs.versions }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ steps.find_pr.outputs.has_pr }}" != "true" ]]; then
+            echo "run_cherry_pick=false" >> "$GITHUB_OUTPUT"
+            echo "versions=[]" >> "$GITHUB_OUTPUT"
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
+            echo "merge_commit_sha=" >> "$GITHUB_OUTPUT"
+            echo "pr_title=" >> "$GITHUB_OUTPUT"
+            echo "pr_user_login=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${{ steps.pr_files.outcome }}" != "success" || "${{ steps.parse_versions.outcome }}" != "success" ]]; then
+            echo "::error::PR file or version parse step did not succeed"
+            exit 1
+          fi
+
+          PR_JSON=".cherry-pick-workflow/pr.json"
+          echo "pr_number=$(jq -r '.number' "$PR_JSON")" >> "$GITHUB_OUTPUT"
+          echo "merge_commit_sha=$(jq -r '.merge_commit_sha' "$PR_JSON")" >> "$GITHUB_OUTPUT"
+          echo "pr_user_login=$(jq -r '.user.login // empty' "$PR_JSON")" >> "$GITHUB_OUTPUT"
+
+          echo "pr_title<<EOF" >> "$GITHUB_OUTPUT"
+          cat .cherry-pick-workflow/pr_title.txt >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+          VERSIONS="${PARSE_VERSIONS:-[]}"
+          echo "versions=$VERSIONS" >> "$GITHUB_OUTPUT"
+
+          if [[ "$VERSIONS" != "[]" ]]; then
+            echo "run_cherry_pick=true" >> "$GITHUB_OUTPUT"
+            {
+              echo 'original_pr_body<<PRBODY'
+              cat .cherry-pick-workflow/pr_body.txt
+              echo 'PRBODY'
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "run_cherry_pick=false" >> "$GITHUB_OUTPUT"
           fi
 
   cherry-pick:
     needs: extract-versions
-    if: needs.extract-versions.outputs.versions != '[]'
-    runs-on: ubuntu-latest
+    if: needs.extract-versions.outputs.run_cherry_pick == 'true'
+    runs-on: depot-ubuntu-latest
     permissions:
       id-token: write
     strategy:
@@ -98,6 +201,8 @@ jobs:
           token: ${{ steps.cherry-pick-pr-sts.outputs.GH_TOKEN }}
 
       - name: Verify Release Branch Exists
+        env:
+          GH_TOKEN: ${{ steps.cherry-pick-pr-sts.outputs.GH_TOKEN }}
         run: |
           RELEASE_BRANCH="${{ steps.branch.outputs.release_branch }}"
           if ! git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" > /dev/null 2>&1; then
@@ -109,16 +214,28 @@ jobs:
       - name: Cherry Pick Commit
         id: cherry_pick
         run: |
-          MERGE_COMMIT="${{ github.event.pull_request.merge_commit_sha }}"
+          MERGE_COMMIT="${{ needs.extract-versions.outputs.merge_commit_sha }}"
           echo "Cherry-picking commit $MERGE_COMMIT"
-          
-          # Cherry-pick the merge commit with mainline parent 1 (the main branch)
-          if ! git cherry-pick -m 1 "$MERGE_COMMIT"; then
-            echo "Cherry-pick failed. There may be conflicts."
-            git cherry-pick --abort || true
-            exit 1
+
+          git fetch origin main
+
+          PARENT_COUNT=$(git rev-list --parents -n 1 "$MERGE_COMMIT" 2>/dev/null | awk '{print NF-1}' || echo 0)
+          if [[ "$PARENT_COUNT" -gt 1 ]]; then
+            echo "Merge commit detected; using cherry-pick -m 1"
+            if ! git cherry-pick -m 1 "$MERGE_COMMIT"; then
+              echo "Cherry-pick failed. There may be conflicts."
+              git cherry-pick --abort || true
+              exit 1
+            fi
+          else
+            echo "Single-parent commit (e.g. squash merge); cherry-pick without -m"
+            if ! git cherry-pick "$MERGE_COMMIT"; then
+              echo "Cherry-pick failed. There may be conflicts."
+              git cherry-pick --abort || true
+              exit 1
+            fi
           fi
-          
+
           echo "Successfully cherry-picked commit $MERGE_COMMIT"
 
       - name: Create Pull Request
@@ -126,18 +243,18 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.cherry-pick-pr-sts.outputs.GH_TOKEN }}
-          branch: cherry-pick/${{ matrix.version }}/${{ github.event.pull_request.number }}
+          branch: cherry-pick/${{ matrix.version }}/${{ needs.extract-versions.outputs.pr_number }}
           base: ${{ steps.branch.outputs.release_branch }}
-          title: "Cherry-pick: ${{ github.event.pull_request.title }} (backport to ${{ matrix.version }})"
+          title: "Cherry-pick: ${{ needs.extract-versions.outputs.pr_title }} (backport to ${{ matrix.version }})"
           body: |
-            This PR cherry-picks #${{ github.event.pull_request.number }} to the ${{ matrix.version }} release branch.
-            
-            Original PR: #${{ github.event.pull_request.number }}
-            Original Author: @${{ github.event.pull_request.user.login }}
-            
+            This PR cherry-picks #${{ needs.extract-versions.outputs.pr_number }} to the ${{ matrix.version }} release branch.
+
+            Original PR: #${{ needs.extract-versions.outputs.pr_number }}
+            Original Author: @${{ needs.extract-versions.outputs.pr_user_login }}
+
             ---
-            
-            ${{ github.event.pull_request.body }}
+
+            ${{ needs.extract-versions.outputs.original_pr_body }}
           labels: cherry-pick
 
       - name: Notify Slack
@@ -146,5 +263,5 @@ jobs:
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Cherry-pick PR created for ${{ matrix.version }}: ${{ steps.create_pr.outputs.pull-request-url }}"
-          failure-description: "ERROR: Failed to cherry-pick PR #${{ github.event.pull_request.number }} to ${{ matrix.version }}"
+          failure-description: "ERROR: Failed to cherry-pick PR #${{ needs.extract-versions.outputs.pr_number }} to ${{ matrix.version }}"
           tag: ${{ matrix.version }}
