@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_POTENTIAL_DESTINATIONS } from '@/graphql';
 import { deepClone, safeJsonParse } from '@odigos/ui-kit/functions';
-import { useDestinationCategories } from './useDestinationCategories';
+import { useDestinationCategoriesLegacy } from './useDestinationCategoriesLegacy';
 import { useSetupStore, type ISetupState } from '@odigos/ui-kit/store';
 
 interface PotentialDestination {
@@ -39,7 +39,7 @@ const checkIfConfigured = (configuredDest: ISetupState['configuredDestinations']
 
 export const usePotentialDestinationsLegacy = () => {
   const { configuredDestinations } = useSetupStore();
-  const { categories } = useDestinationCategories();
+  const { categories } = useDestinationCategoriesLegacy();
   const { loading, data: { potentialDestinations } = {} } = useQuery<GetPotentialDestinationsData>(GET_POTENTIAL_DESTINATIONS);
 
   const mappedPotentialDestinations = useMemo(() => {

@@ -16,6 +16,7 @@ import {
   useActionCRUD,
   useDescribe,
   useDestinationCategories,
+  useDestinationCategoriesLegacy,
   useDestinationCRUD,
   useInstrumentationRuleCRUD,
   useNamespace,
@@ -31,9 +32,10 @@ const OverviewModalsAndDrawers = () => {
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
   const { fetchNamespacesWithWorkloads } = useNamespace();
+  const { categories } = useDestinationCategoriesLegacy();
+  const { getDestinationCategories } = useDestinationCategories();
   const { getPotentialDestinations } = usePotentialDestinations();
   const { createActionV2, updateAction, deleteAction } = useActionCRUD();
-  const { categories, getDestinationCategories } = useDestinationCategories();
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
   const { createDestinationV2, updateDestination, deleteDestination } = useDestinationCRUD();
   const { createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
