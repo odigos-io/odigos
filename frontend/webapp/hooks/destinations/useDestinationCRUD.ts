@@ -14,7 +14,6 @@ interface UseDestinationCrud {
   destinationsLoading: boolean;
   fetchDestinations: () => Promise<void>;
   createDestination: (destination: DestinationFormData) => Promise<void>;
-  createDestinationV2: (...args: Parameters<UseDestinationCrud['createDestination']>) => Promise<{ error?: string } | undefined>;
   updateDestination: (id: string, destination: DestinationFormData) => Promise<void>;
   deleteDestination: (id: string) => Promise<void>;
 }
@@ -70,15 +69,6 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     }
   };
 
-  const createDestinationV2: UseDestinationCrud['createDestinationV2'] = async (...args) => {
-    try {
-      await createDestination(...args);
-      return undefined;
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Failed to create destination' };
-    }
-  };
-
   const updateDestination: UseDestinationCrud['updateDestination'] = async (id, destination) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
@@ -112,7 +102,6 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     destinationsLoading,
     fetchDestinations,
     createDestination,
-    createDestinationV2,
     updateDestination,
     deleteDestination,
   };

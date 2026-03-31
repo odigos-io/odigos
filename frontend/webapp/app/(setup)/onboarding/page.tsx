@@ -10,10 +10,10 @@ export default function Page() {
   const router = useRouter();
   const { persistSourcesV2 } = useSourceCRUD();
   const { testConnection } = useTestConnection();
-  const { getDestinationCategories } = useDestinationCategories();
-  const { createDestination } = useDestinationCRUD();
   const { fetchNamespacesWithWorkloads } = useNamespace();
+  const { getDestinationCategories } = useDestinationCategories();
   const { getPotentialDestinations } = usePotentialDestinations();
+  const { createDestination, updateDestination } = useDestinationCRUD();
 
   return (
     <Onboarding
@@ -23,6 +23,7 @@ export default function Page() {
       getPotentialDestinations={getPotentialDestinations}
       testConnection={testConnection}
       createDestination={createDestination}
+      updateDestination={updateDestination}
       onDone={() => router.push(ROUTES.OVERVIEW)}
     />
   );

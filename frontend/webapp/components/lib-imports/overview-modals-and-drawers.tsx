@@ -37,7 +37,7 @@ const OverviewModalsAndDrawers = () => {
   const { getPotentialDestinations } = usePotentialDestinations();
   const { createActionV2, updateAction, deleteAction } = useActionCRUD();
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
-  const { createDestinationV2, updateDestination, deleteDestination } = useDestinationCRUD();
+  const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
   const { persistSources, persistSourcesV2, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
 
@@ -48,7 +48,7 @@ const OverviewModalsAndDrawers = () => {
       {/* add drawers (v2) */}
       {currentModal === EntityTypes.Source && (
         <AddSourceFormContextProvider fetchNamespacesWithWorkloads={fetchNamespacesWithWorkloads}>
-          <AddSourceDrawer onClose={handleCloseModal} persistSources={persistSourcesV2} />
+          <AddSourceDrawer onClose={handleCloseModal} persistSources={persistSourcesV2} withOverlay />
         </AddSourceFormContextProvider>
       )}
       {currentModal === EntityTypes.Destination && (
@@ -58,18 +58,20 @@ const OverviewModalsAndDrawers = () => {
             getDestinationCategories={getDestinationCategories}
             getPotentialDestinations={getPotentialDestinations}
             testConnection={testConnection}
-            createDestination={createDestinationV2}
+            createDestination={createDestination}
+            updateDestination={updateDestination}
+            withOverlay
           />
         </AddDestinationFormContextProvider>
       )}
       {currentModal === EntityTypes.InstrumentationRule && (
         <AddRuleFormContextProvider>
-          <AddRuleDrawer onClose={handleCloseModal} createInstrumentationRule={createInstrumentationRuleV2} />
+          <AddRuleDrawer onClose={handleCloseModal} createInstrumentationRule={createInstrumentationRuleV2} withOverlay />
         </AddRuleFormContextProvider>
       )}
       {currentModal === EntityTypes.Action && (
         <AddActionFormContextProvider>
-          <AddActionDrawer onClose={handleCloseModal} createAction={createActionV2} />
+          <AddActionDrawer onClose={handleCloseModal} createAction={createActionV2} withOverlay />
         </AddActionFormContextProvider>
       )}
 

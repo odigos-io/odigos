@@ -72,23 +72,19 @@ describe('Actions CRUD', () => {
             break;
           }
           case 'SpanAttributeSampler': {
-            cy.get('[data-id=attributeFilters]').find('input[placeholder="e.g. my-service"]').type('service');
-            cy.get('[data-id=attributeFilters]').find('input[placeholder="e.g. http.request.method"]').type('attribute');
-            cy.get('[data-id=attributeFilters]').find('input[placeholder="e.g. 100"]').first().type('1');
+            cy.get('[data-id=attributeFilters]').find('input[data-id=serviceName]').type('service');
+            cy.get('[data-id=attributeFilters]').find('input[data-id=attributeKey]').type('attribute');
+            cy.get('[data-id=attributeFilters]').find('input[data-id=fallbackSamplingRatio]').first().type('1');
 
-            // Click the Condition dropdown: trigger click on the native input, then select option
-            cy.get('[data-id=attributeFilters]').find('input[placeholder="Condition"]').as('conditionInput');
-            cy.get('@conditionInput').scrollIntoView();
-            cy.get('@conditionInput').trigger('mousedown', { force: true }).trigger('mouseup', { force: true }).trigger('click', { force: true });
-            cy.contains('String condition').should('exist').click({ force: true });
+            // Click the Condition dropdown and select "String condition"
+            cy.get('[data-id=attributeFilters]').find('input[data-id=condition]').scrollIntoView().click({ force: true });
+            cy.get('[data-id=option-stringCondition]').click({ force: true });
 
-            // Click the Operation dropdown
-            cy.get('[data-id=attributeFilters]').find('input[placeholder="Operation"]').as('operationInput');
-            cy.get('@operationInput').scrollIntoView();
-            cy.get('@operationInput').trigger('mousedown', { force: true }).trigger('mouseup', { force: true }).trigger('click', { force: true });
-            cy.contains('Equals').should('exist').click({ force: true });
+            // Click the Operation dropdown and select "Equals"
+            cy.get('[data-id=attributeFilters]').find('input[data-id=operation]').scrollIntoView().click({ force: true });
+            cy.get('[data-id=option-equals]').click({ force: true });
 
-            cy.get('[data-id=attributeFilters]').find('input[placeholder="e.g. GET"]').type('x');
+            cy.get('[data-id=attributeFilters]').find('input[data-id=expectedValue]').type('x');
             break;
           }
 
