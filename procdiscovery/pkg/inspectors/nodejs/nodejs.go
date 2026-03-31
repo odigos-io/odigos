@@ -27,7 +27,7 @@ func (n *NodejsInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 	return "", false
 }
 
-func (n *NodejsInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
+func (n *NodejsInspector) GetRuntimeVersion(pcx *process.ProcessContext) string {
 	if value, exists := pcx.GetDetailedEnvsValue(process.NodeVersionConst); exists {
 		return value
 	}

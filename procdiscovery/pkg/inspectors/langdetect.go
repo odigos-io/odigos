@@ -40,7 +40,7 @@ type Inspector interface {
 }
 
 type VersionInspector interface {
-	GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string
+	GetRuntimeVersion(pcx *process.ProcessContext) string
 }
 
 var inspectorsByLanguage = map[common.ProgrammingLanguage]Inspector{
@@ -59,10 +59,7 @@ var inspectorsByLanguage = map[common.ProgrammingLanguage]Inspector{
 	common.PostgresProgrammingLanguage:   &postgres.PostgresInspector{},
 }
 
-func runInspectionStage(
-	procContext *process.ProcessContext,
-	containerURL string,
-	selectInspectionMethod func(Inspector) InspectFunc,
+func runInspectionStage(procContext *process.ProcessContext, selectInspectionMethod func(Inspector) InspectFunc,
 ) (common.ProgramLanguageDetails, error) {
 	detectedLanguageDetails := common.ProgramLanguageDetails{
 		Language: common.UnknownProgrammingLanguage,
@@ -76,7 +73,7 @@ func runInspectionStage(
 			if detectedLanguageDetails.Language == common.UnknownProgrammingLanguage {
 				detectedLanguageDetails.Language = languageDetected
 				if versionInspector, ok := inspector.(VersionInspector); ok {
-					detectedLanguageDetails.RuntimeVersion = versionInspector.GetRuntimeVersion(procContext, containerURL)
+					detectedLanguageDetails.RuntimeVersion = versionInspector.GetRuntimeVersion(procContext)
 				}
 			} else if detectedLanguageDetails.Language != languageDetected {
 				// Return error on language detection conflict
@@ -93,7 +90,7 @@ func runInspectionStage(
 }
 
 // DetectLanguage attempts to detect the programming language using QuickScan first, then DeepScan if needed.
-func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLanguageDetails, error) {
+func DetectLanguage(proc process.Details) (common.ProgramLanguageDetails, error) {
 	logger := commonlogger.LoggerCompat().With("subsystem", "langdetect")
 	procContext := process.NewProcessContext(proc)
 	defer func() {
@@ -103,7 +100,7 @@ func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLa
 	}()
 
 	// Try Quick Scan first
-	if detectedLanguage, err := runInspectionStage(procContext, containerURL, func(inspector Inspector) InspectFunc {
+	if detectedLanguage, err := runInspectionStage(procContext, func(inspector Inspector) InspectFunc {
 		return inspector.QuickScan
 	}); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
 		if err != nil {
@@ -115,7 +112,7 @@ func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLa
 					resolved := common.ProgramLanguageDetails{Language: l}
 					if inspector, ok := inspectorsByLanguage[l]; ok {
 						if vi, ok := inspector.(VersionInspector); ok {
-							resolved.RuntimeVersion = vi.GetRuntimeVersion(procContext, containerURL)
+							resolved.RuntimeVersion = vi.GetRuntimeVersion(procContext)
 						}
 					}
 					return resolved, nil
@@ -126,7 +123,7 @@ func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLa
 	}
 
 	// Try Deep Scan if Quick Scan failed
-	if detectedLanguage, err := runInspectionStage(procContext, containerURL, func(inspector Inspector) InspectFunc {
+	if detectedLanguage, err := runInspectionStage(procContext, func(inspector Inspector) InspectFunc {
 		return inspector.DeepScan
 	}); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
 		if err != nil {
@@ -137,7 +134,7 @@ func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLa
 					resolved := common.ProgramLanguageDetails{Language: l}
 					if inspector, ok := inspectorsByLanguage[l]; ok {
 						if vi, ok := inspector.(VersionInspector); ok {
-							resolved.RuntimeVersion = vi.GetRuntimeVersion(procContext, containerURL)
+							resolved.RuntimeVersion = vi.GetRuntimeVersion(procContext)
 						}
 					}
 					return resolved, nil
