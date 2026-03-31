@@ -446,7 +446,6 @@ status:
       secureExecutionMode: false
   (runtimeDetailsByContainer[?containerName=='nginx']):
     - language: nginx
-      runtimeVersion: 1.27.5
       secureExecutionMode: false
 ---
 apiVersion: odigos.io/v1alpha1
