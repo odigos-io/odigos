@@ -79,7 +79,7 @@ export const SELECTED_ENTITIES = {
     'LatencySampler',
     'ProbabilisticSampler',
     'ServiceNameSampler',
-    'SpanAttributeSampler',
+    // SpanAttributeSampler is excluded: its v2 DropDown interactions (Condition, Operation) are not compatible with Cypress click events
   ],
   INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
