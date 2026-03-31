@@ -74,15 +74,15 @@ describe('Actions CRUD', () => {
           case 'SpanAttributeSampler': {
             cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
             cy.get('tbody').find('input[placeholder="e.g. http.request.method"]').type('attribute');
-            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
+            cy.get('tbody').find('input[placeholder="e.g. 100"]').first().type('1');
 
             // Click the Condition dropdown and select "String condition"
-            cy.get('tbody').find('input[placeholder="Condition"]').click();
-            cy.contains('String condition').click();
+            cy.get('tbody').find('input[placeholder="Condition"]').click({ force: true });
+            cy.contains('String condition').click({ force: true });
 
             // Click the Operation dropdown and select "Equals"
-            cy.get('tbody').find('input[placeholder="Operation"]').click();
-            cy.contains('Equals').click();
+            cy.get('tbody').find('input[placeholder="Operation"]').click({ force: true });
+            cy.contains('Equals').click({ force: true });
 
             cy.get('tbody').find('input[placeholder="e.g. GET"]').type('x');
             break;

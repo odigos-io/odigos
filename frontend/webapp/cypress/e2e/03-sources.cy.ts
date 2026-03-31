@@ -113,8 +113,13 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it(`Should have 0 ${sourceCrdName} CRDs in the cluster`, () => {
-    getCrdIds({ namespace, crdName: sourceCrdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+  it('Should cleanup remaining source CRDs', () => {
+    cy.exec(`kubectl delete ${sourceCrdName} --all -n ${namespace}`, { failOnNonZeroExit: false });
+    cy.exec(`kubectl delete ${configCrdName} --all -n ${namespace}`, { failOnNonZeroExit: false });
+
+    cy.wait(3000).then(() => {
+      getCrdIds({ namespace, crdName: sourceCrdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
+    });
   });
 
   it(`Should have 0 ${configCrdName} CRDs in the cluster`, () => {

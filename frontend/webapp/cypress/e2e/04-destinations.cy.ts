@@ -24,8 +24,8 @@ describe('Destinations CRUD', () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_DESTINATION).click();
 
-      // Select destination from the drawer's list
-      cy.get(DATA_IDS.SELECT_DESTINATION).first().should('exist').click();
+      // Select destination from the drawer's list (force needed for virtualized lists)
+      cy.get(DATA_IDS.SELECT_DESTINATION).first().should('exist').click({ force: true });
       cy.get(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).should('have.value', SELECTED_ENTITIES.DESTINATION.AUTOFILL_VALUE);
 
       // Add destination to unsaved list, then save
