@@ -43,7 +43,7 @@ jobs:
           mv /tmp/scan-results/odigos-autoscaler_enriched.json /tmp/scan-results/odigos-autoscaler.json
       - name: Upload autoscaler scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vuln-scan-result-autoscaler-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-autoscaler.json
@@ -90,7 +90,7 @@ jobs:
           mv /tmp/scan-results/odigos-scheduler_enriched.json /tmp/scan-results/odigos-scheduler.json
       - name: Upload scheduler scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vuln-scan-result-scheduler-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-scheduler.json
@@ -134,7 +134,7 @@ jobs:
           mv /tmp/scan-results/odigos-agents_enriched.json /tmp/scan-results/odigos-agents.json
       - name: Upload agents scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vuln-scan-result-agents-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-agents.json
@@ -180,7 +180,7 @@ jobs:
           mv /tmp/scan-results/odigos-instrumentor_enriched.json /tmp/scan-results/odigos-instrumentor.json
       - name: Upload instrumentor scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vuln-scan-result-instrumentor-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-instrumentor.json
@@ -226,7 +226,7 @@ jobs:
           mv /tmp/scan-results/odigos-collector_enriched.json /tmp/scan-results/odigos-collector.json
       - name: Upload collector scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vuln-scan-result-collector-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-collector.json
@@ -275,7 +275,7 @@ jobs:
           mv /tmp/scan-results/odigos-odiglet_enriched.json /tmp/scan-results/odigos-odiglet.json
       - name: Upload odiglet scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vuln-scan-result-odiglet-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-odiglet.json
@@ -319,7 +319,7 @@ jobs:
           mv /tmp/scan-results/odigos-ui-webapp_enriched.json /tmp/scan-results/odigos-ui-webapp.json
       - name: Upload frontend webapp scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vuln-scan-result-frontend-webapp-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-ui-webapp.json
@@ -357,7 +357,7 @@ jobs:
           mv /tmp/scan-results/odigos-ui_enriched.json /tmp/scan-results/odigos-ui.json
       - name: Upload frontend scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vuln-scan-result-frontend-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-ui.json
@@ -402,7 +402,7 @@ jobs:
           mv /tmp/scan-results/odigos-operator_enriched.json /tmp/scan-results/odigos-operator.json
       - name: Upload operator scan results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vuln-scan-result-operator-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-operator.json
@@ -440,7 +440,7 @@ jobs:
           fi
 
       - name: Upload scan results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vulnerability-report
           path: scan-results.zip
