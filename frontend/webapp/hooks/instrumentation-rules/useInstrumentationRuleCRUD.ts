@@ -13,6 +13,7 @@ interface UseInstrumentationRuleCrud {
   instrumentationRulesLoading: boolean;
   fetchInstrumentationRules: () => void;
   createInstrumentationRule: (instrumentationRule: InstrumentationRuleFormData) => void;
+  createInstrumentationRuleV2: (...args: Parameters<UseInstrumentationRuleCrud['createInstrumentationRule']>) => Promise<{ error?: string } | undefined>;
   updateInstrumentationRule: (ruleId: string, instrumentationRule: InstrumentationRuleFormData) => void;
   deleteInstrumentationRule: (ruleId: string) => void;
 }
@@ -83,6 +84,15 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     }
   };
 
+  const createInstrumentationRuleV2: UseInstrumentationRuleCrud['createInstrumentationRuleV2'] = async (...args) => {
+    try {
+      await createInstrumentationRule(...args);
+      return undefined;
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to create rule' };
+    }
+  };
+
   const updateInstrumentationRule: UseInstrumentationRuleCrud['updateInstrumentationRule'] = (ruleId, instrumentationRule) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
@@ -112,6 +122,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     instrumentationRulesLoading,
     fetchInstrumentationRules,
     createInstrumentationRule,
+    createInstrumentationRuleV2,
     updateInstrumentationRule,
     deleteInstrumentationRule,
   };

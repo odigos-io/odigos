@@ -1,11 +1,11 @@
-import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 import { aliasQuery, awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, hasOperationName, updateEntity, visitPage } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
-const namespace = NAMESPACES.ODIGOS_TEST;
+const namespace = NAMESPACES.ODIGOS;
 const crdName = CRD_NAMES.INSTRUMENTATION_RULE;
 const totalEntities = SELECTED_ENTITIES.INSTRUMENTATION_RULES.length;
 
@@ -33,11 +33,11 @@ describe('Instrumentation Rules CRUD', () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType) => {
         cy.get(DATA_IDS.ADD_INSTRUMENTATION_RULE).click();
-        cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).should('exist');
-        cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).find('input').should('have.attr', 'placeholder', INPUTS.RULE_DROPDOWN).click();
-        cy.get(DATA_IDS.RULE_OPTION(ruleType)).click();
+
+        // Select rule type from the drawer's left column list
+        cy.get(DATA_IDS.RULE_OPTION(ruleType)).should('exist').click();
         // No need to fill form (as we did in actions), because default values are enough 👍 for all rules
-        cy.get('button').contains(BUTTONS.DONE).click();
+        cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
 
         // Wait for rule to create
         cy.wait('@gql').then(() => {

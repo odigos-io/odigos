@@ -1,15 +1,16 @@
 'use client';
 
-import React, { type CSSProperties, useMemo, type PropsWithChildren } from 'react';
+import React, { type CSSProperties, useMemo, type PropsWithChildren, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import styled from 'styled-components';
-import { EntityTypes } from '@odigos/ui-kit/types';
+import { EntityTypes, OtherEntityTypes } from '@odigos/ui-kit/types';
 import { OdigosProvider } from '@odigos/ui-kit/contexts';
 import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
-import { DataFlowActionsMenu, ToastList } from '@odigos/ui-kit/containers';
+import { DataFlowActionsMenu, DataStreamModal, ToastList } from '@odigos/ui-kit/containers';
 import { ErrorBoundary, FlexColumn, IconsNav } from '@odigos/ui-kit/components';
 import { useConfig, useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
 import { DATA_FLOW_HEIGHT, MENU_BAR_HEIGHT, ROUTES, getNavbarIcons } from '@/utils';
+import { useModalStore } from '@odigos/ui-kit/store';
 
 const PageContent = styled(FlexColumn)`
   width: 100%;
@@ -52,6 +53,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
   useSSE();
   useTokenTracker();
 
+  const { setCurrentModal } = useModalStore();
   const { updateDataStream, deleteDataStream } = useDataStreamsCRUD();
 
   const router = useRouter();
@@ -70,7 +72,12 @@ function OverviewLayout({ children }: PropsWithChildren) {
             {pathname === ROUTES.SERVICE_MAP ? (
               <div style={{ height: `${MENU_BAR_HEIGHT}px` }} />
             ) : (
-              <DataFlowActionsMenu addEntity={entityType} onClickNewDataStream={() => router.push(ROUTES.CHOOSE_STREAM)} updateDataStream={updateDataStream} deleteDataStream={deleteDataStream} />
+              <DataFlowActionsMenu
+                addEntity={entityType}
+                onClickNewDataStream={() => setCurrentModal(OtherEntityTypes.DataStream)}
+                updateDataStream={updateDataStream}
+                deleteDataStream={deleteDataStream}
+              />
             )}
 
             <ContentUnderActions>
@@ -79,6 +86,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
             </ContentUnderActions>
           </ContentWithActions>
 
+          <DataStreamModal />
           <OverviewModalsAndDrawers />
           <ToastList />
         </PageContent>
