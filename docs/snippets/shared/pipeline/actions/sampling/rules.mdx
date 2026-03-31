@@ -1,0 +1,45 @@
+This page describes how **sampling rules** are evaluated in Odigos: **evaluate-all** semantics, **categories** (noisy, highly relevant, cost reduction), and how that ties to **full-trace** evaluation and **tail sampling**.
+
+## How rules are evaluated
+
+Odigos evaluates **all** rules for a trace instead of stopping at the **first match**. That differs from many “firewall-style” systems, where rule **order** determines the outcome and reordering rules can silently change behavior—especially with many rules.
+
+With **evaluate all**, rule **order does not matter**. Every applicable rule is considered; conflicts are resolved with explicit **at least** / **at most** semantics (see below).
+
+## Rule categories and flow
+
+Processing follows three buckets:
+
+1. **Noisy traces** — Traffic you treat as low value (for example health checks and infra noise). These are identified so they can be dropped or de-prioritized early.
+2. **Highly relevant** — Traces you want to treat as **important**, aligned with **RED**-style signals (request, **error**, **duration**). This category is sometimes referred to as “highly relevant rules.”
+3. **Cost reduction** — After noisy handling and importance, remaining traffic can be sampled down to **control** cost and volume (for example a percentage across the cluster or a specific endpoint).
+
+A trace can be marked **important** if **any span** matches a highly relevant criterion—one **error** span can mark the **entire** trace as important. **Important** traces are **not** “everything else is dropped.” You can list **multiple** important conditions; if **any** matches, the trace is important. Traces that are **not** important then fall through to **cost reduction** rules (for example “keep 10% of this endpoint” or “keep 1% of the cluster”).
+
+If you only define **important** rules and **no** cost-reduction rules, **unimportant** traffic is not aggressively reduced by those rules—so defining importance without any cost-reduction policy can still increase gateway work (full trace context is required to evaluate importance) without reducing volume. Use **important** and **cost reduction** together when you need both signal and volume control.
+
+## At least and at most (conflict resolution)
+
+Highly relevant rules use **at least** semantics: you specify a **minimum** fraction of matching traces to keep (many users choose **100%** for errors). When several **at least** rules match, the effective rate is the **maximum** of those rates so **all** matching rules remain satisfied (for example 50% and 100% → **100%**).
+
+Cost reduction rules use **at most** semantics: you cap how much **matching** traffic is kept. When several **at most** rules match, the effective rate is the **minimum** of those rates—the **tightest** cap wins (for example 10% and 1% → **1%**).
+
+This avoids hidden ordering effects: you don’t “win” by putting one rule above another in a list.
+
+## What you can match on
+
+Rules can be scoped and filtered in several dimensions:
+
+- **Scope** — Whole cluster, a **namespace**, a **specific service** (source), or a **programming language** (for example all Java or Python spans).
+- **Operation** — All operations for a service, or a **specific** HTTP route, Kafka topic, database operation, or similar.
+- **Conditions** — **Errors**, **duration** thresholds, and how much to **keep** for that rule (depending on category and **at least** / **at most** semantics).
+
+Each rule can have an **optional name** (free text for your own reference; it may also appear on metrics and span attributes) and **notes** explaining why the rule exists.
+
+## Why full traces matter
+
+To decide whether **any** span matches an important rule, the evaluator needs the **assembled** trace. That is why **tail sampling** and aggregation (including a time-bounded window such as the **[aggregation window](./head-and-tail-sampling#aggregation-window)** from the first observed span) are part of the pipeline: the system must see spans **before** it can apply these rules reliably.
+
+## UI and YAML
+
+You can configure sampling in the **UI** or **YAML** (Kubernetes **CRDs**). The **schema** is the same idea as in the UI, so GitOps workflows can define the same sampling behavior as in the product.

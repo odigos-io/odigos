@@ -1,0 +1,75 @@
+## Types of sampling implementation
+
+This page contrasts head sampling (decisions in the **Data Collector** when a trace starts) and tail sampling (decisions at the **Odigos Gateway** after spans are brought together). For how Odigos treats whole traces and root-span decisions, see [Introduction to Sampling](./introduction).
+
+### Head sampling (Data Collector)
+
+Head sampling is the most basic and efficient form of sampling. The decision is made at the root span before child spans are processed; the trace in its entirety is either kept or dropped to match that decision.
+
+- **Decision point** — At the root span as the trace starts, inside the Data Collector. The same keep or drop applies to the entire trace (parent-based).
+- **Context** — Limited to root-level fields: service name, entry endpoint, and similar. Typical rule inputs are things like service, root span details, and specific routes (e.g. `foo/about`). You cannot base the decision on errors or latency that appear only on child spans.
+- **Efficiency** — High for the pipeline: for traces that are dropped, only the root span is processed, and Odigos Gateway work stays low on that path. Volume is cut early, before downstream storage, indexing, and query cost.
+- **Accuracy** — The choice is early: you do not yet know how the trace will finish, so you cannot guarantee keeping traces based on downstream failures or slowness. Percentage-based cuts behave statistically—rare one-offs may be missed, while frequent behavior still tends to show up in the retained sample over time.
+- **Best for** — Noise you can recognize at the start (health checks, scrapes, probes, low-value traffic); percentage-based sampling when Odigos Gateway or destination capacity is tight; cost and volume control in environments where root-only policy is enough.
+
+### Tail sampling (Odigos Gateway)
+
+Tail sampling defers the keep/drop decision until spans for a trace are buffered and aggregated into a single unit the evaluator can read. The decision uses the full span set, not only the root span, so it can reflect the whole request path before anything is exported downstream. Timing, buffering, and delay are covered in [Aggregation window](#aggregation-window).
+
+- **Decision point** — After spans for a trace are buffered and aggregated, in the Odigos Gateway.
+- **Context** — Full trace: errors, duration, services and endpoints anywhere in the tree, including off the critical path. Rules can target behavior that only shows up on nested spans.
+- **Efficiency** — CPU and memory requirements on the Odigos Gateway are increased compared with head sampling: buffering and per-trace evaluation need more resources. Most volume is still dropped before destinations, which can ease storage and downstream cost.
+- **Accuracy** — Full-trace context lets retention match policy on errors, latency, or any span—but evaluation runs only after the [aggregation window](#aggregation-window), so traces show up later in UIs, and very long requests may be judged on a partial trace.
+- **Best for** — Debugging errors and slow requests end-to-end; full-trace sampling goals; percentage-style or volume cuts after you have full-path context; policies that need services or routes off the entry span.
+
+#### Aggregation window
+
+The pipeline does not wait for a definitive “end of trace” event, because that would require an indefinite wait. Instead, spans are held up to a bounded window to bound memory and latency. The implementation uses a 30-second interval from the first observed span for a trace ID, consistent with OpenTelemetry-style tail processing, then forwards the trace to the sampler with the spans received by then. Evaluation can therefore run on partial traces for very long requests.
+
+<Note>
+  Observability UIs typically show tail-sampled data about 30 seconds later than head-sampled data for the same workload. Export, queueing, storage, and indexing add further delay on top of that gap.
+</Note>
+
+## Head vs. tail: quick comparison
+
+| | Head | Tail (Odigos Gateway) |
+| --- | --- | --- |
+| **Decision point** | Start of trace (root span) | After aggregation |
+| **Context** | Root only (service, endpoint, …) | Full trace (errors, latency, any span) |
+| **Efficiency** | High; low gateway load for the decision | Higher CPU and memory on the gateway |
+| **Accuracy** | Early decision; percentage cuts are statistical | Full-trace policy; aggregation window tradeoffs |
+| **Best for** | Noise, cost control, root-level rules | Errors, latency, nested routes, full-path rules |
+
+## Choosing the Right Sampling Strategy: Head vs. Tail
+
+Sampling is primarily a tool for cost and volume management. While both head and tail sampling aim to reduce the amount of data sent to your backend, they differ significantly in when the decision is made and what information is used to make it.
+
+### Head-Based Sampling
+
+Head-based sampling makes a decision at the very beginning of a trace—usually at the root span. This decision is then propagated to all downstream services (often called "parent-based sampling"), ensuring that either the entire trace is kept or the entire trace is dropped.
+
+**When to use it:**
+
+- **High-Volume Environments:** If your system generates an overwhelming number of traces, head sampling is the most efficient way to drop data early, saving CPU and memory on your application agents and reducing network traffic immediately.
+
+- **Simple Logic:** Use it when you only need to sample based on known "head" attributes, such as the service name, the initial endpoint (e.g., /health vs. /api/orders), or a simple percentage (e.g., "keep 5% of all traffic").
+
+- **Resource Constraints on Collectors:** Since decisions happen at the source, your collectors/gateways don't need to buffer or process data that is already marked to be dropped.
+
+**The Trade-off:** <br/>
+It is a "blind" decision. Because the decision is made at the start, you cannot know if that specific trace will eventually encounter an error or experience high latency. You risk losing the exact "needle in the haystack" traces you might need for debugging.
+
+### Tail-Based Sampling
+
+Tail-based sampling waits until the trace is complete (or a timeout is reached) before deciding whether to keep it. This is typically handled at the collector or gateway level.
+
+**When to use it:**
+
+- **Ensuring Visibility of Errors:** If your goal is to "keep 100% of traces with errors," tail sampling is essential. You can inspect every span in the trace for an error status before making the final call.
+
+- **Latency-Based Sampling:** Use this when you want to capture traces that exceed a specific duration (e.g., "keep any trace longer than 500ms").
+
+- **Complex Business Rules:** When the importance of a trace depends on something that happens deep in the call stack—such as hitting a specific database or a legacy third-party API—tail sampling provides the necessary full context.
+
+**The Trade-off:** <br/>
+It is resource-intensive. The gateway must buffer all spans for a trace (often for 30 seconds or more) to ensure it has the "full picture" before deciding. This increases memory usage at the gateway and introduces a delay before traces appear in your UI. Furthermore, it requires "trace-aware load balancing" to ensure all spans for a single trace arrive at the same collector.

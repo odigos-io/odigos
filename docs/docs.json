@@ -209,11 +209,12 @@
                         "group": "Sampling",
                         "icon": "tag",
                         "pages": [
-                          "oss/pipeline/actions/sampling/errorsampler",
-                          "oss/pipeline/actions/sampling/latencysampler",
-                          "oss/pipeline/actions/sampling/probabilisticsampler",
-                          "oss/pipeline/actions/sampling/servicenamesampler",
-                          "oss/pipeline/actions/sampling/spanattributesampler"
+                          "oss/pipeline/actions/sampling/introduction",
+                          "oss/pipeline/actions/sampling/head-and-tail-sampling",
+                          "oss/pipeline/actions/sampling/rules",
+                          "oss/pipeline/actions/sampling/configuration",
+                          "oss/pipeline/actions/sampling/considerations",
+                          "oss/pipeline/actions/sampling/faqs"
                         ]
                       },
                       "oss/pipeline/actions/crd",
@@ -507,11 +508,12 @@
                         "group": "Sampling",
                         "icon": "tag",
                         "pages": [
-                          "enterprise/pipeline/actions/sampling/errorsampler",
-                          "enterprise/pipeline/actions/sampling/latencysampler",
-                          "enterprise/pipeline/actions/sampling/probabilisticsampler",
-                          "enterprise/pipeline/actions/sampling/servicenamesampler",
-                          "enterprise/pipeline/actions/sampling/spanattributesampler"
+                          "enterprise/pipeline/actions/sampling/introduction",
+                          "enterprise/pipeline/actions/sampling/head-and-tail-sampling",
+                          "enterprise/pipeline/actions/sampling/rules",
+                          "enterprise/pipeline/actions/sampling/configuration",
+                          "enterprise/pipeline/actions/sampling/considerations",
+                          "enterprise/pipeline/actions/sampling/faqs"
                         ]
                       },
                       "enterprise/pipeline/actions/crd",
@@ -803,6 +805,14 @@
     {
       "source": "/debugging",
       "destination": "/oss/debugging"
+    },
+    {
+      "source": "/oss/pipeline/actions/sampling/framework",
+      "destination": "/oss/pipeline/actions/sampling/head-and-tail-sampling"
+    },
+    {
+      "source": "/enterprise/pipeline/actions/sampling/framework",
+      "destination": "/enterprise/pipeline/actions/sampling/head-and-tail-sampling"
     }
   ]
 }
