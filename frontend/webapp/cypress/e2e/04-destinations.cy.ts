@@ -1,4 +1,4 @@
-import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
@@ -23,10 +23,14 @@ describe('Destinations CRUD', () => {
   it(`Should create ${totalEntities} destinations via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_DESTINATION).click();
-      cy.get(DATA_IDS.MODAL_ADD_DESTINATION).should('exist');
-      cy.get(DATA_IDS.SELECT_DESTINATION).contains(SELECTED_ENTITIES.DESTINATION.DISPLAY_NAME).should('exist').click();
+
+      // Select destination from the drawer's list
+      cy.get(DATA_IDS.SELECT_DESTINATION).should('exist').click();
       cy.get(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).should('have.value', SELECTED_ENTITIES.DESTINATION.AUTOFILL_VALUE);
-      cy.get('button').contains(BUTTONS.DONE).click();
+
+      // Add destination to unsaved list, then save
+      cy.get(DATA_IDS.DEST_FORM_ADD).click();
+      cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
 
       // Wait for destinations to create
       cy.wait('@gql').then(() => {

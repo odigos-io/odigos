@@ -1,4 +1,4 @@
-import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
 import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
@@ -23,9 +23,9 @@ describe('Actions CRUD', () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.ACTIONS.forEach((actionType) => {
         cy.get(DATA_IDS.ADD_ACTION).click();
-        cy.get(DATA_IDS.MODAL_ADD_ACTION).should('exist');
-        cy.get(DATA_IDS.MODAL_ADD_ACTION).find('input').should('have.attr', 'placeholder', INPUTS.ACTION_DROPDOWN).click();
-        cy.get(DATA_IDS.ACTION_OPTION(actionType)).click();
+
+        // Select action type from the drawer's left column list
+        cy.get(DATA_IDS.ACTION_OPTION(actionType)).should('exist').click();
 
         switch (actionType) {
           case 'K8sAttributesResolver': {
@@ -97,7 +97,7 @@ describe('Actions CRUD', () => {
           }
         }
 
-        cy.get('button').contains(BUTTONS.DONE).click();
+        cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
 
         // Wait for action to create
         cy.wait('@gql').then(() => {

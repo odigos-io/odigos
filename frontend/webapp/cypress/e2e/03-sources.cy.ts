@@ -29,16 +29,18 @@ describe('Sources CRUD', () => {
   it(`Should instrument ${totalEntities} sources via API`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_SOURCE).click();
-      cy.get(DATA_IDS.MODAL_ADD_SOURCE).should('exist');
+
+      // Wait for the drawer to load namespaces
+      cy.get(DATA_IDS.SELECT_NAMESPACE).should('exist');
       cy.get(DATA_IDS.SELECT_NAMESPACE).find(DATA_IDS.CHECKBOX).click();
 
-      // Wait for the namespace sources to load
+      // Wait for the workloads to render after namespace selection
       cy.wait(500).then(() => {
         SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach(({ name }) => {
-          cy.get(DATA_IDS.SELECT_NAMESPACE).get(DATA_IDS.SELECT_SOURCE(name)).should('exist');
+          cy.get(DATA_IDS.SELECT_SOURCE(name)).should('exist');
         });
 
-        cy.contains('button', BUTTONS.DONE).click();
+        cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
 
         awaitToast({ message: TEXTS.NOTIF_SOURCES_PERSISTING });
       });

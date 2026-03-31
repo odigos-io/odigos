@@ -82,24 +82,30 @@ export const SELECTED_ENTITIES = {
 };
 
 export const DATA_IDS = {
+  // v2 add-drawer selectors (sources)
   SELECT_NAMESPACE: `[data-id=namespace-${SELECTED_ENTITIES.NAMESPACE}]`,
   SELECT_SOURCE: (sourceName: string) => `[data-id=source-${sourceName}]`,
-  SELECT_DESTINATION: `[data-id^=select-detected-destination-${SELECTED_ENTITIES.DESTINATION.TYPE}]`,
-  SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION.AUTOFILL_FIELD}]`,
 
+  // v2 add-drawer selectors (destinations)
+  SELECT_DESTINATION: `[data-id="list-item-${SELECTED_ENTITIES.DESTINATION.DISPLAY_NAME}"]`,
+  SELECT_DESTINATION_AUTOFILL_FIELD: `[name=${SELECTED_ENTITIES.DESTINATION.AUTOFILL_FIELD}]`,
+  DEST_FORM_ADD: '[data-id=dest-form-add]',
+
+  // v2 add-drawer selectors (actions & rules)
+  ACTION_OPTION: (type: string) => `[data-id=option-${type}]`,
+  RULE_OPTION: (type: string) => `[data-id=option-${type}]`,
+
+  // data-flow "add" buttons (trigger drawer open)
   ADD_SOURCE: '[data-id=add-Source]',
   ADD_DESTINATION: '[data-id=add-Destination]',
   ADD_ACTION: '[data-id=add-Action]',
   ADD_INSTRUMENTATION_RULE: '[data-id=add-InstrumentationRule]',
 
-  MODAL: '[data-id=modal]',
-  MODAL_ADD_SOURCE: '[data-id=modal-Add-Source]',
-  MODAL_ADD_DESTINATION: '[data-id=modal-Add-Destination]',
-  MODAL_ADD_ACTION: '[data-id=modal-Add-Action]',
-  MODAL_ADD_INSTRUMENTATION_RULE: '[data-id=modal-Add-Instrumentation-Rule]',
-  ACTION_OPTION: (type: string) => `[data-id=option-${type}]`,
-  RULE_OPTION: (type: string) => `[data-id=option-${type}]`,
+  // v2 wide-drawer buttons
+  WIDE_DRAWER_SAVE: '[data-id=wide-drawer-save]',
 
+  // legacy modals & edit-drawers
+  MODAL: '[data-id=modal]',
   DRAWER: '[data-id=drawer]',
   DRAWER_EDIT: '[data-id=drawer-edit]',
   DRAWER_SAVE: '[data-id=drawer-save]',
@@ -128,11 +134,6 @@ export const BUTTONS = {
   DONE: 'DONE',
   ADD_DESTINATION: 'Add Destination',
   UNINSTRUMENT: 'Uninstrument',
-};
-
-export const INPUTS = {
-  ACTION_DROPDOWN: 'Type to search...',
-  RULE_DROPDOWN: 'Type to search...',
 };
 
 const CYPRESS_TEST = 'Cypress Test';
