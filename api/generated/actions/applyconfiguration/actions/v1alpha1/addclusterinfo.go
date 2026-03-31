@@ -25,6 +25,9 @@ import (
 
 // AddClusterInfoApplyConfiguration represents a declarative configuration of the AddClusterInfo type for use
 // with apply.
+//
+// AddClusterInfo is the Schema for the addclusterinfo odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type AddClusterInfoApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +45,7 @@ func AddClusterInfo(name, namespace string) *AddClusterInfoApplyConfiguration {
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+
 func (b AddClusterInfoApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

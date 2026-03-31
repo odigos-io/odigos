@@ -16,8 +16,7 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development
 
     ebpf_memory_pressure_wait_time_total:
       enabled: true
@@ -26,8 +25,7 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development
 
     ebpf_total_bytes_read:
       enabled: true
@@ -36,5 +34,4 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development

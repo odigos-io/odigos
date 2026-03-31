@@ -25,16 +25,25 @@ import (
 // RuntimeDetailsByContainerApplyConfiguration represents a declarative configuration of the RuntimeDetailsByContainer type for use
 // with apply.
 type RuntimeDetailsByContainerApplyConfiguration struct {
-	ContainerName           *string                         `json:"containerName,omitempty"`
-	Language                *common.ProgrammingLanguage     `json:"language,omitempty"`
-	RuntimeVersion          *string                         `json:"runtimeVersion,omitempty"`
-	EnvVars                 []EnvVarApplyConfiguration      `json:"envVars,omitempty"`
-	OtherAgent              *OtherAgentApplyConfiguration   `json:"otherAgent,omitempty"`
-	LibCType                *common.LibCType                `json:"libCType,omitempty"`
-	SecureExecutionMode     *bool                           `json:"secureExecutionMode,omitempty"`
-	CriErrorMessage         *string                         `json:"criErrorMessage,omitempty"`
-	EnvFromContainerRuntime []EnvVarApplyConfiguration      `json:"envFromContainerRuntime,omitempty"`
-	RuntimeUpdateState      *odigosv1alpha1.ProcessingState `json:"runtimeUpdateState,omitempty"`
+	ContainerName  *string                       `json:"containerName,omitempty"`
+	Language       *common.ProgrammingLanguage   `json:"language,omitempty"`
+	RuntimeVersion *string                       `json:"runtimeVersion,omitempty"`
+	EnvVars        []EnvVarApplyConfiguration    `json:"envVars,omitempty"`
+	OtherAgent     *OtherAgentApplyConfiguration `json:"otherAgent,omitempty"`
+	LibCType       *common.LibCType              `json:"libCType,omitempty"`
+	// Indicates whether the target process is running is secure-execution mode.
+	// nil means we were unable to determine the secure-execution mode.
+	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
+	// CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+	// Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+	// Thus, this field is set only when there is:
+	// - Actual CRI check failed
+	// - The observed environment variables might come from container runtime
+	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
+	// Holds the environment variables retrieved from the container runtime.
+	EnvFromContainerRuntime []EnvVarApplyConfiguration `json:"envFromContainerRuntime,omitempty"`
+	// A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.
+	RuntimeUpdateState *odigosv1alpha1.ProcessingState `json:"runtimeUpdateState,omitempty"`
 }
 
 // RuntimeDetailsByContainerApplyConfiguration constructs a declarative configuration of the RuntimeDetailsByContainer type for use with

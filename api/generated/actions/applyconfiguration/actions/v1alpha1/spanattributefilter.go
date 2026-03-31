@@ -19,12 +19,31 @@ package v1alpha1
 
 // SpanAttributeFilterApplyConfiguration represents a declarative configuration of the SpanAttributeFilter type for use
 // with apply.
+//
+// SpanAttributeFilter allows sampling traces based on specific span attributes and conditions.
 type SpanAttributeFilterApplyConfiguration struct {
-	ServiceName           *string                               `json:"service_name,omitempty"`
-	AttributeKey          *string                               `json:"attribute_key,omitempty"`
-	Condition             *AttributeConditionApplyConfiguration `json:"condition,omitempty"`
-	SamplingRatio         *float64                              `json:"sampling_ratio,omitempty"`
-	FallbackSamplingRatio *float64                              `json:"fallback_sampling_ratio,omitempty"`
+	// ServiceName specifies which service this filter applies to. Only spans
+	// originating from the given service will be evaluated against this filter.
+	ServiceName *string `json:"service_name,omitempty"`
+	// AttributeKey indicates which attribute on the span to evaluate.
+	AttributeKey *string `json:"attribute_key,omitempty"`
+	// Condition is the rule or expression that will be used to evaluate
+	// the attribute's value. Exactly one of the condition types must be set:
+	// - StringCondition
+	// - NumberCondition
+	// - BooleanCondition
+	// - JsonCondition
+	Condition *AttributeConditionApplyConfiguration `json:"condition,omitempty"`
+	// SamplingRatio determines the percentage (0–100) of traces to sample
+	// when the specified attribute satisfies the filter.
+	//
+	// For example, a value of 100 means all such traces will be kept,
+	// while a value of 0 means all will be dropped.
+	SamplingRatio *float64 `json:"sampling_ratio,omitempty"`
+	// FallbackSamplingRatio is the percentage (0–100) of spans to sample
+	// when the condition does not explicitly match. For example, if set to 50,
+	// then half of non-matching spans would be sampled.
+	FallbackSamplingRatio *float64 `json:"fallback_sampling_ratio,omitempty"`
 }
 
 // SpanAttributeFilterApplyConfiguration constructs a declarative configuration of the SpanAttributeFilter type for use with

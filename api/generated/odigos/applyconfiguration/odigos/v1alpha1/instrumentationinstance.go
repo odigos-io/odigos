@@ -25,6 +25,8 @@ import (
 
 // InstrumentationInstanceApplyConfiguration represents a declarative configuration of the InstrumentationInstance type for use
 // with apply.
+//
+// InstrumentationInstance is the Schema for the InstrumentationInstances API
 type InstrumentationInstanceApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +44,7 @@ func InstrumentationInstance(name, namespace string) *InstrumentationInstanceApp
 	b.WithAPIVersion("odigos.io/v1alpha1")
 	return b
 }
+
 func (b InstrumentationInstanceApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

@@ -54,5 +54,4 @@ The code in this module is copied from the collector repository using the curren
 ### Current Version
 
 - **Collector Version**: v0.148.0
-- **Last Updated**: 30/03/2026
-
+- **Last Updated**: 31/03/2026
