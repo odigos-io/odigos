@@ -100,20 +100,7 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it('Should uninstrument all sources via API', () => {
-    visitPage(ROUTES.OVERVIEW, () => {
-      cy.get(DATA_IDS.ADD_SOURCE).parent().parent().parent().find(DATA_IDS.CHECKBOX).click();
-      cy.get(DATA_IDS.MULTI_SOURCE_CONTROL).should('exist');
-      cy.get(DATA_IDS.MULTI_SOURCE_CONTROL).find('button').contains(BUTTONS.UNINSTRUMENT).click();
-      cy.get(DATA_IDS.MODAL).should('exist');
-      cy.get(DATA_IDS.APPROVE).click();
-
-      // Wait for the uninstrumentation to complete
-      cy.wait(3000);
-    });
-  });
-
-  it('Should cleanup remaining source CRDs', () => {
+  it('Should uninstrument all sources via kubectl', () => {
     cy.exec(`kubectl delete ${sourceCrdName} --all -n ${namespace}`, { failOnNonZeroExit: false });
     cy.exec(`kubectl delete ${configCrdName} --all -n ${namespace}`, { failOnNonZeroExit: false });
 

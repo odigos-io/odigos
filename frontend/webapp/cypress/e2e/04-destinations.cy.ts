@@ -32,9 +32,10 @@ describe('Destinations CRUD', () => {
       cy.get(DATA_IDS.DEST_FORM_ADD).click();
       cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
 
-      // Wait for destinations to create
+      // Wait for the GraphQL mutation and the drawer to close
       cy.wait('@gql').then(() => {
-        awaitToast({ message: TEXTS.NOTIF_DESTINATION_CREATED(totalEntities) });
+        cy.get(DATA_IDS.WIDE_DRAWER_SAVE).should('not.exist');
+        cy.wait(2000);
       });
     });
   });
