@@ -5,6 +5,7 @@ export const ROUTES = {
   CHOOSE_DESTINATION: '/choose-destination',
   SETUP_SUMMARY: '/setup-summary',
   OVERVIEW: '/overview',
+  SETTINGS: '/settings',
 };
 
 export const CRD_NAMES = {
@@ -13,6 +14,11 @@ export const CRD_NAMES = {
   DESTINATION: 'destinations.odigos.io',
   ACTION: 'actions.odigos.io',
   INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
+};
+
+export const CONFIG_MAPS = {
+  LOCAL_UI_CONFIG: 'odigos-local-ui-config',
+  EFFECTIVE_CONFIG: 'effective-config',
 };
 
 export const NAMESPACES = {
@@ -120,6 +126,10 @@ export const DATA_IDS = {
   TITLE: '[data-id=title]',
   SOURCE_TITLE: '[data-id=sourceName]',
   CHECKBOX: '[data-id=checkbox]',
+
+  SETTINGS_SAVE: '[data-id=settings-save]',
+  SETTINGS_CANCEL: '[data-id=settings-cancel]',
+  SETTINGS_FIELD: (helmPath: string) => `[data-id="${helmPath}"]`,
 };
 
 export const BUTTONS = {
@@ -171,4 +181,6 @@ export const TEXTS = {
   NOTIF_INSTRUMENTATION_RULE_CREATED: (ruleType: string) => `Successfully created "${ruleType}" rule`,
   NOTIF_INSTRUMENTATION_RULE_UPDATED: (ruleType: string) => `Successfully updated "${ruleType}" rule`,
   NOTIF_INSTRUMENTATION_RULE_DELETED: (ruleType: string) => `Successfully deleted "${ruleType}" rule`,
+
+  NOTIF_CONFIG_UPDATED: 'Local UI configuration updated successfully',
 };
