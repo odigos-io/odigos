@@ -3,7 +3,7 @@
 import React, { type PropsWithChildren, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { getNavbarIcons } from '@/utils';
-import { OverviewHeader } from '@/components';
+import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
 import { useDarkMode } from '@odigos/ui-kit/store';
 import { Navbar } from '@odigos/ui-kit/components/v2';
 import { ToastList } from '@odigos/ui-kit/containers';
@@ -34,10 +34,11 @@ function OverviewLayout({ children }: PropsWithChildren) {
           <OverviewHeader v2 />
           <FlexRow $gap={0}>
             <Navbar height='calc(100vh - 60px)' icons={getNavbarIcons(router, pathname)} />
-            {children}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>{children}</div>
           </FlexRow>
         </FlexColumn>
 
+        <OverviewModalsAndDrawers />
         <ToastList />
       </OdigosProvider>
     </ErrorBoundary>

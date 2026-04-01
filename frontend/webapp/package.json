@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "check-peer-dependencies --runOnlyOnRootDependencies",
-    "dev": "next dev --turbopack",
+    "postinstall": "check-peer-dependencies --runOnlyOnRootDependencies && patch-package",
+    "dev": "cross-env ODIGOS_DEV_BACKEND=http://127.0.0.1:3000 next dev --turbopack -H 127.0.0.1 -p 3001",
+    "dev:standalone": "next dev --turbopack",
+    "dev:profiling": "yarn dev",
     "prebuild": "rm -rf out .next",
     "build": "cross-env NODE_ENV=production next build --turbopack",
     "back:build": "cd .. && go build -o odigos-backend",
@@ -18,11 +20,13 @@
     "@apollo/experimental-nextjs-app-support": "^0.12.3",
     "@odigos/ui-kit": "0.0.211",
     "graphql": "^16.12.0",
+    "graphviz-react": "^1.2.5",
     "next": "15.5.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-error-boundary": "^6.1.0",
     "styled-components": "6.2.0",
+    "true-myth": "^5.1.2",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
@@ -36,6 +40,7 @@
     "cypress": "^15.10.0",
     "eslint": "9.39.2",
     "eslint-config-next": "16.1.6",
+    "patch-package": "8.0.0",
     "postcss": "^8.5.6",
     "typescript": "5.9.3"
   }

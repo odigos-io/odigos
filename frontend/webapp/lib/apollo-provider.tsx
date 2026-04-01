@@ -8,6 +8,7 @@ import { ApolloLink, HttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 import { ApolloNextAppProvider, InMemoryCache, ApolloClient, SSRMultipartLink } from '@apollo/client-integration-nextjs';
+import { getCSRFTokenFromCookie } from '@/hooks/tokens/useCSRF';
 
 const makeClient = (csrfToken: string | null) => {
   const httpLink = new HttpLink({
@@ -20,13 +21,16 @@ const makeClient = (csrfToken: string | null) => {
     if (networkError) console.warn(`[Network error]: ${networkError}`);
   });
 
-  // Add CSRF token to headers for mutations
+  // Prefer token from document.cookie so X-CSRF-Token always matches the cookie the browser sends
+  // (avoids drift from React state; cookie values can include '=' padding — never parse with split('=')[1]).
   const authLink = setContext((_, ctx) => {
     const headers = {
       ...ctx.headers,
     };
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
+    const fromCookie = typeof document !== 'undefined' ? getCSRFTokenFromCookie().token : null;
+    const t = fromCookie ?? csrfToken;
+    if (t) {
+      headers['X-CSRF-Token'] = t;
     }
 
     return { headers };
@@ -64,9 +68,9 @@ const makeClient = (csrfToken: string | null) => {
 };
 
 const ApolloProvider: FC<PropsWithChildren> = ({ children }) => {
-  const { token } = useCSRF();
+  const { token, isLoading, error } = useCSRF();
 
-  if (!token && !IS_LOCAL) {
+  if (isLoading) {
     return (
       <CenterThis style={{ height: '100%' }}>
         <FadeLoader scale={2} />
@@ -74,7 +78,22 @@ const ApolloProvider: FC<PropsWithChildren> = ({ children }) => {
     );
   }
 
-  return <ApolloNextAppProvider makeClient={() => makeClient(token)}>{children}</ApolloNextAppProvider>;
+  if (!token && error) {
+    return (
+      <CenterThis style={{ height: '100%', padding: 24, textAlign: 'center' }}>
+        Could not load security token (CSRF). Try refreshing the page or clearing cookies for this host.
+        {IS_LOCAL
+          ? ' Dev: run kubectl port-forward svc/ui -n odigos-system 3000:3000 when using Next on :3001.'
+          : ''}
+      </CenterThis>
+    );
+  }
+
+  return (
+    <ApolloNextAppProvider key={token ?? ''} makeClient={() => makeClient(token)}>
+      {children}
+    </ApolloNextAppProvider>
+  );
 };
 
 export default ApolloProvider;

@@ -10,6 +10,7 @@ export * from './metrics';
 export * from './namespaces';
 export * from './notification';
 export * from './pipeline-collectors';
+export * from './profiling';
 export * from './metrics';
 export * from './sampling';
 export * from './sources';

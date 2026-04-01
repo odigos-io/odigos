@@ -32,6 +32,15 @@ const ContentUnderActions = styled.div`
   width: calc(100% - 24px);
 `;
 
+/** Wraps route content so App Router children are not multiple direct siblings (avoids React key warnings). */
+const MainColumn = styled.div`
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+`;
+
 const getEntityType = (pathname: string) => {
   switch (pathname) {
     case ROUTES.SOURCES:
@@ -75,7 +84,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
 
             <ContentUnderActions>
               <IconsNav orientation='vertical' mainIcons={getNavbarIcons(router, pathname)} subIcons={[]} />
-              {children}
+              <MainColumn>{children}</MainColumn>
             </ContentUnderActions>
           </ContentWithActions>
 
