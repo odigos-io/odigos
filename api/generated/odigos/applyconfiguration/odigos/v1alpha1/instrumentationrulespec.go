@@ -25,18 +25,36 @@ import (
 // InstrumentationRuleSpecApplyConfiguration represents a declarative configuration of the InstrumentationRuleSpec type for use
 // with apply.
 type InstrumentationRuleSpecApplyConfiguration struct {
-	RuleName                     *string                                             `json:"ruleName,omitempty"`
-	Notes                        *string                                             `json:"notes,omitempty"`
-	Disabled                     *bool                                               `json:"disabled,omitempty"`
-	Workloads                    *[]k8sconsts.PodWorkload                            `json:"workloads,omitempty"`
-	InstrumentationLibraries     *[]InstrumentationLibraryGlobalIdApplyConfiguration `json:"instrumentationLibraries,omitempty"`
-	PayloadCollection            *instrumentationrules.PayloadCollection             `json:"payloadCollection,omitempty"`
-	OtelDistros                  *instrumentationrules.OtelDistros                   `json:"otelDistros,omitempty"`
-	CodeAttributes               *instrumentationrules.CodeAttributes                `json:"codeAttributes,omitempty"`
-	HeadersCollection            *instrumentationrules.HttpHeadersCollection         `json:"headersCollection,omitempty"`
-	TraceConfig                  *instrumentationrules.TraceConfig                   `json:"traceConfig,omitempty"`
-	CustomInstrumentations       *instrumentationrules.CustomInstrumentations        `json:"customInstrumentations,omitempty"`
-	HeadSamplingFallbackFraction *instrumentationrules.HeadSamplingFallbackFraction  `json:"headSamplingFallbackFraction,omitempty"`
+	// Allows you to attach a meaningful name to the rule for convenience. Odigos does not use or assume any meaning from this field.
+	RuleName *string `json:"ruleName,omitempty"`
+	// A free-form text field that allows you to attach notes regarding the rule for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.
+	Notes *string `json:"notes,omitempty"`
+	// A boolean field allowing to temporarily disable the rule, but keep it around for future use
+	Disabled *bool `json:"disabled,omitempty"`
+	// An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.
+	Workloads *[]k8sconsts.PodWorkload `json:"workloads,omitempty"`
+	// For fine grained control, the user can specify the instrumentation library to use.
+	// One can specify same rule for multiple languages and libraries at the same time.
+	// If nil, all instrumentation libraries will be used.
+	// If empty, no instrumentation libraries will be used.
+	InstrumentationLibraries *[]InstrumentationLibraryGlobalIdApplyConfiguration `json:"instrumentationLibraries,omitempty"`
+	// Allows to configure payload collection aspects for different types of payloads.
+	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
+	// Set the otel distros to use instead of the defaults.
+	OtelDistros *instrumentationrules.OtelDistros `json:"otelDistros,omitempty"`
+	// Configure which code attributes should be recorded as span attributes.
+	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+	// Allows to configure the collection of http headers for different types of payloads.
+	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
+	// Configure the tracing configuration for the library.
+	TraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
+	// Add custom instrumentation probes
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+	// Configure general fraction of traces to record if none of the rules evaluate to true.
+	// this can help in reducing very noisy and heavy traffic services.
+	// note that traces will be dropped regardless of thier attributes/errors/importance.
+	// @deprecated: use odigos config to set this value instead.
+	HeadSamplingFallbackFraction *instrumentationrules.HeadSamplingFallbackFraction `json:"headSamplingFallbackFraction,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with

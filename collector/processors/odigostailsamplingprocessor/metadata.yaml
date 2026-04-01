@@ -16,8 +16,7 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development
     odigos.sampling.trace.match_count:
       enabled: true # collected by default by the processor.
       description: "Number of traces where this rule was matched at least once."
@@ -25,5 +24,4 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development

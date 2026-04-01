@@ -2,8 +2,9 @@ package testconnection
 
 import (
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/exporter"
-
+	"go.opentelemetry.io/collector/exporter/exporterhelper"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 )
 
@@ -30,8 +31,8 @@ func (t *otlpExporterConnectionTester) ModifyConfigForConnectionTest(cfg compone
 	}
 
 	// currently using the default timeout config of the collector - 5 seconds
-	// Avoid batching and retries
-	otlpConf.QueueConfig.Enabled = false
+	// Avoid batching and retries (QueueBatchConfig zero value has enabled: false)
+	otlpConf.QueueConfig = configoptional.Some(exporterhelper.QueueBatchConfig{})
 	otlpConf.RetryConfig.Enabled = false
 	return otlpConf
 }
