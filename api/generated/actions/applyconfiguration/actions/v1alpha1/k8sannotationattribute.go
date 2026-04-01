@@ -24,10 +24,22 @@ import (
 // K8sAnnotationAttributeApplyConfiguration represents a declarative configuration of the K8sAnnotationAttribute type for use
 // with apply.
 type K8sAnnotationAttributeApplyConfiguration struct {
-	AnnotationKey *string                              `json:"annotationKey,omitempty"`
-	AttributeKey  *string                              `json:"attributeKey,omitempty"`
-	From          *string                              `json:"from,omitempty"`
-	FromSources   []actionsv1alpha1.K8sAttributeSource `json:"fromSources,omitempty"`
+	// The annotation name to be extracted.
+	// e.g. "kubectl.kubernetes.io/restartedAt"
+	AnnotationKey *string `json:"annotationKey,omitempty"`
+	// The attribute key to be used for the resource attribute created from the annotation.
+	// e.g. "kubectl.kubernetes.restartedAt"
+	AttributeKey *string `json:"attributeKey,omitempty"`
+	// The source of the annotation.
+	// e.g. "pod" or "namespace"
+	// Deprecated: Use FromSources instead for specifying multiple sources with precedence.
+	From *string `json:"from,omitempty"`
+	// The sources from which to extract the annotation, in order of precedence (most specific first).
+	// When multiple sources are specified, the most specific source (e.g., pod) takes precedence
+	// over less specific sources (e.g., namespace).
+	// If an annotation exists in multiple sources, the value from the most specific source will be used.
+	// Supported sources: "pod", "namespace", "node"
+	FromSources []actionsv1alpha1.K8sAttributeSource `json:"fromSources,omitempty"`
 }
 
 // K8sAnnotationAttributeApplyConfiguration constructs a declarative configuration of the K8sAnnotationAttribute type for use with

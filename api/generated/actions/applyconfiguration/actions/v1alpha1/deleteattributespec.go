@@ -23,6 +23,8 @@ import (
 
 // DeleteAttributeSpecApplyConfiguration represents a declarative configuration of the DeleteAttributeSpec type for use
 // with apply.
+//
+// DeleteAttributeSpec defines the desired state of DeleteAttribute action
 type DeleteAttributeSpecApplyConfiguration struct {
 	ActionName             *string                      `json:"actionName,omitempty"`
 	Notes                  *string                      `json:"notes,omitempty"`

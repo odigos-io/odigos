@@ -24,8 +24,13 @@ import (
 // HeadSamplingConfigApplyConfiguration represents a declarative configuration of the HeadSamplingConfig type for use
 // with apply.
 type HeadSamplingConfigApplyConfiguration struct {
-	NoisyOperations  []sampling.NoisyOperation `json:"noisyOperations,omitempty"`
-	FallbackFraction *float64                  `json:"fallbackFraction,omitempty"`
+	// Noisy operations are categories of matchers that are used on the root span.
+	// If match, the fraction is used to determine the sampling decision for the entire trace.
+	// If multiple noisy operations match, the lowest fraction is used.
+	NoisyOperations []sampling.NoisyOperation `json:"noisyOperations,omitempty"`
+	// Deprecated: do not use. Will be removed once python and node migration is complete.
+	// Use NoisyOperations instead.
+	FallbackFraction *float64 `json:"fallbackFraction,omitempty"`
 }
 
 // HeadSamplingConfigApplyConfiguration constructs a declarative configuration of the HeadSamplingConfig type for use with

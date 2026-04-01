@@ -23,8 +23,18 @@ import (
 
 // AgentMetricsConfigApplyConfiguration represents a declarative configuration of the AgentMetricsConfig type for use
 // with apply.
+//
+// all "metrics" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
 type AgentMetricsConfigApplyConfiguration struct {
-	SpanMetrics    *AgentSpanMetricsConfigApplyConfiguration             `json:"spanMetrics,omitempty"`
+	// if not nil, it means agent should report span metrics,
+	// calculated directly in the agent.
+	// this is most accurate as it includes any sampled spans,
+	// and is not affected if spans are dropped anywhere in the pipeline.
+	SpanMetrics *AgentSpanMetricsConfigApplyConfiguration `json:"spanMetrics,omitempty"`
+	// if not nil, it means agent should report runtime metrics,
+	// such as JVM metrics for Java applications.
+	// these metrics provide insights into the runtime environment performance.
 	RuntimeMetrics *common.MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
 }
 

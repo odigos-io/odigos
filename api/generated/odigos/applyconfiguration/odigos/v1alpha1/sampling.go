@@ -25,6 +25,8 @@ import (
 
 // SamplingApplyConfiguration represents a declarative configuration of the Sampling type for use
 // with apply.
+//
+// Sampling is the Schema for the sampling rules API.
 type SamplingApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +44,7 @@ func Sampling(name, namespace string) *SamplingApplyConfiguration {
 	b.WithAPIVersion("odigos.io/v1alpha1")
 	return b
 }
+
 func (b SamplingApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

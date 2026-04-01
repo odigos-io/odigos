@@ -19,9 +19,20 @@ package v1alpha1
 
 // ServiceNameFilterApplyConfiguration represents a declarative configuration of the ServiceNameFilter type for use
 // with apply.
+//
+// ServiceNameFilter defines a single rule that maps a service name to a sampling decision.
 type ServiceNameFilterApplyConfiguration struct {
-	ServiceName           *string  `json:"service_name,omitempty"`
-	SamplingRatio         *float64 `json:"sampling_ratio,omitempty"`
+	// ServiceName specifies the name of the service to look for within a trace.
+	// If any span in the trace comes from this service, the rule will apply.
+	ServiceName *string `json:"service_name,omitempty"`
+	// SamplingRatio determines the percentage (0–100) of traces to sample
+	// when the specified service is present in the trace.
+	//
+	// For example, a value of 100 means all such traces will be kept,
+	// while a value of 0 means all will be dropped.
+	SamplingRatio *float64 `json:"sampling_ratio,omitempty"`
+	// FallbackSamplingRatio is the percentage (0–100) of traces to sample
+	// if the specified service is not present in the trace.
 	FallbackSamplingRatio *float64 `json:"fallback_sampling_ratio,omitempty"`
 }
 

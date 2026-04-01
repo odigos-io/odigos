@@ -25,6 +25,9 @@ import (
 
 // ProbabilisticSamplerApplyConfiguration represents a declarative configuration of the ProbabilisticSampler type for use
 // with apply.
+//
+// ProbabilisticSampler is the Schema for the ProbabilisticSampler odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type ProbabilisticSamplerApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +45,7 @@ func ProbabilisticSampler(name, namespace string) *ProbabilisticSamplerApplyConf
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+
 func (b ProbabilisticSamplerApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

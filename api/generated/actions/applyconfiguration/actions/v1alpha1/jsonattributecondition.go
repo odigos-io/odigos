@@ -19,9 +19,46 @@ package v1alpha1
 
 // JsonAttributeConditionApplyConfiguration represents a declarative configuration of the JsonAttributeCondition type for use
 // with apply.
+//
+// JsonAttributeCondition defines conditions for evaluating JSON-encoded span attributes.
+// It supports structural and value-based filtering using key lookups and JSONPath expressions.
+//
+// Supported operations:
+// - "exists": Checks that the attribute is a non-empty string.
+// - "is_valid_json": Ensures the string parses as valid JSON.
+// - "is_invalid_json": Ensures the string is not valid JSON.
+// - "equals": Compares the full JSON string to expected_value.
+// - "not_equals": Verifies the full JSON string is not equal to expected_value.
+// - "jsonpath_exists": Asserts that the specified json_path resolves to a non-empty result.
+// - "key_equals": Compares the value at json_path to expected_value.
+// - "key_not_equals": Verifies the value at json_path is not equal to expected_value.
 type JsonAttributeConditionApplyConfiguration struct {
-	Operation     *string `json:"operation,omitempty"`
-	JsonPath      *string `json:"json_path,omitempty"`
+	// Operation defines the evaluation logic applied to the JSON value.
+	//
+	// Supported values:
+	// - is_valid_json
+	// - is_invalid_json
+	// - equals
+	// - not_equals
+	// - jsonpath_exists
+	// - key_equals
+	// - key_not_equals
+	Operation *string `json:"operation,omitempty"`
+	// JsonPath is required for:
+	// - jsonpath_exists
+	// - key_equals
+	// - key_not_equals
+	//
+	// It is a JSONPath expression used to navigate the JSON structure.
+	// Example: $.user.role or $.events[0].code
+	JsonPath *string `json:"json_path,omitempty"`
+	// ExpectedValue is required for:
+	// - equals
+	// - not_equals
+	// - key_equals
+	// - key_not_equals
+	//
+	// The value to compare against during evaluation.
 	ExpectedValue *string `json:"expected_value,omitempty"`
 }
 

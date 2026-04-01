@@ -23,7 +23,12 @@ import (
 
 // ServiceNameSamplerStatusApplyConfiguration represents a declarative configuration of the ServiceNameSamplerStatus type for use
 // with apply.
+//
+// ServiceNameSamplerStatus represents the runtime status of a ServiceNameSampler,
+// including observed conditions such as validation errors or processing state.
 type ServiceNameSamplerStatusApplyConfiguration struct {
+	// Conditions is a list of status conditions for this sampler,
+	// following the standard Kubernetes conventions.
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

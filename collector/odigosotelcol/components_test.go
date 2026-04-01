@@ -24,17 +24,26 @@ func TestValidateConfigs(t *testing.T) {
 	}
 
 	for k, factory := range factories.Exporters {
-		assert.Equal(t, k, factory.Type())
+		assert.Equal(t, factory, factories.Exporters[factory.Type()])
+		if k != factory.Type() {
+			continue
+		}
 		assert.NoError(t, componenttest.CheckConfigStruct(factory.CreateDefaultConfig()))
 	}
 
 	for k, factory := range factories.Connectors {
-		assert.Equal(t, k, factory.Type())
+		assert.Equal(t, factory, factories.Connectors[factory.Type()])
+		if k != factory.Type() {
+			continue
+		}
 		assert.NoError(t, componenttest.CheckConfigStruct(factory.CreateDefaultConfig()))
 	}
 
 	for k, factory := range factories.Extensions {
-		assert.Equal(t, k, factory.Type())
+		assert.Equal(t, factory, factories.Extensions[factory.Type()])
+		if k != factory.Type() {
+			continue
+		}
 		assert.NoError(t, componenttest.CheckConfigStruct(factory.CreateDefaultConfig()))
 	}
 }

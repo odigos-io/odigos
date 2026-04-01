@@ -24,13 +24,44 @@ import (
 
 // NoisyOperationApplyConfiguration represents a declarative configuration of the NoisyOperation type for use
 // with apply.
+//
+// endpoints (or other operations) which are considered "noise", and provide no or very little observability value.
+// these traces should not be collected at all, or dropped aggresevly.
+// motivation is data sentization and performance improvment (even if cost is not a factor)
+//
+// examples:
+// - health-checks (readiness and liveness probes)
+// - metrics scrape endpoints (prometheus /metrics endpoint)
+// - other agents calling home (outgoing http requests to collector.my.vendor.com)
 type NoisyOperationApplyConfiguration struct {
-	Name             *string                                `json:"name,omitempty"`
-	Disabled         *bool                                  `json:"disabled,omitempty"`
-	SourceScopes     []k8sconsts.SourcesScope               `json:"sourceScopes,omitempty"`
-	Operation        *sampling.HeadSamplingOperationMatcher `json:"operation,omitempty"`
-	PercentageAtMost *float64                               `json:"percentageAtMost,omitempty"`
-	Notes            *string                                `json:"notes,omitempty"`
+	// user provided name, for easier identification and reference.
+	// use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+	// odigos does not use or assume any meaning from this field,
+	// but it is written as metric attribute, and stored as span attribute on participating spans.
+	Name *string `json:"name,omitempty"`
+	// if set to true, the rule will be disabled,
+	// e.g. will not be taken into account for any sampling decisions.
+	// disabled rules still participate in metrics calculations,
+	// allowing enhanced tools and data for troubleshooting and sampling maintenance.
+	Disabled *bool `json:"disabled,omitempty"`
+	// limit this rule to specific sources (by name, namespace, language, etc.)
+	// for example: if "other agent" rule for noisty operation is relevant only in java,
+	// limit this rule by setting source scope to java and prevent other languages from being affected
+	// if the list is empty - all sources are matched.
+	SourceScopes []k8sconsts.SourcesScope `json:"sourceScopes,omitempty"`
+	// limit this rule to specific operations.
+	// for example: specific http server endpoint (GET "/healthz" as an example).
+	// this field is optional, and if not set, the rule will be applied to all operations.
+	Operation *sampling.HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	// sampling percentage for noisy operations.
+	// if unset, 0% of such the traces will be collected.
+	// this percentage has "at most" semantics - the final sampling percentage for traces that match this rule
+	// will be the highest possible, but at most this value.
+	PercentageAtMost *float64 `json:"percentageAtMost,omitempty"`
+	// optional free-form text field that allows you to attach notes
+	// for future context and maintenance.
+	// users can write why this rule was added, observations, document considerations, etc.
+	Notes *string `json:"notes,omitempty"`
 }
 
 // NoisyOperationApplyConfiguration constructs a declarative configuration of the NoisyOperation type for use with

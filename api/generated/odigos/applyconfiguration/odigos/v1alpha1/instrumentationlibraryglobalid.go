@@ -23,9 +23,16 @@ import (
 
 // InstrumentationLibraryGlobalIdApplyConfiguration represents a declarative configuration of the InstrumentationLibraryGlobalId type for use
 // with apply.
+//
+// Includes the instrumentation library name, span kind (for golang) and language
+// which identifies a specific library globally.
 type InstrumentationLibraryGlobalIdApplyConfiguration struct {
-	Name     *string                     `json:"name,omitempty"`
-	SpanKind *common.SpanKind            `json:"spanKind,omitempty"`
+	// The name of the instrumentation library
+	Name *string `json:"name,omitempty"`
+	// SpanKind is only supported by Golang and will be ignored for any other SDK language.
+	// In Go, SpanKind is used because the same instrumentation library can be utilized for different span kinds (e.g., client/server).
+	SpanKind *common.SpanKind `json:"spanKind,omitempty"`
+	// The language in which this library will collect data
 	Language *common.ProgrammingLanguage `json:"language,omitempty"`
 }
 
