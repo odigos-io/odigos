@@ -3,6 +3,7 @@ package clustercollector
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -22,6 +23,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/k8sconfig"
+	"github.com/odigos-io/odigos/common"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -320,10 +322,17 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = adjusted
 	}
 
+	var featureGates []string
+	if common.ProfilingPipelineActive(odigosConfiguration.Profiling) {
+		featureGates = append(featureGates, "service.profilesSupport")
+	}
 	if odigosConfiguration.ClickhouseJsonTypeEnabledProperty != nil && *odigosConfiguration.ClickhouseJsonTypeEnabledProperty {
+		featureGates = append(featureGates, "clickhouse.json")
+	}
+	if len(featureGates) > 0 {
 		desiredDeployment.Spec.Template.Spec.Containers[0].Args = append(
 			desiredDeployment.Spec.Template.Spec.Containers[0].Args,
-			"--feature-gates=clickhouse.json",
+			fmt.Sprintf("--feature-gates=%s", strings.Join(featureGates, ",")),
 		)
 	}
 

@@ -1,0 +1,37 @@
+package clustercollector
+
+import (
+	"testing"
+
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
+	odigosconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestAddProfilingGatewayPipeline_Disabled(t *testing.T) {
+	var c config.Config
+	err := addProfilingGatewayPipeline(&c, "odigos-system", nil)
+	assert.NoError(t, err)
+	assert.Nil(t, c.Processors)
+
+	off := false
+	err = addProfilingGatewayPipeline(&c, "odigos-system", &common.ProfilingConfiguration{Enabled: &off})
+	assert.NoError(t, err)
+	assert.Nil(t, c.Processors)
+}
+
+func TestAddProfilingGatewayPipeline_Enabled(t *testing.T) {
+	on := true
+	var c config.Config
+	err := addProfilingGatewayPipeline(&c, "odigos-system", &common.ProfilingConfiguration{Enabled: &on})
+	require.NoError(t, err)
+
+	assert.Nil(t, c.Processors)
+
+	pl := c.Service.Pipelines["profiles"]
+	assert.Equal(t, []string{"otlp"}, pl.Receivers)
+	assert.Empty(t, pl.Processors)
+	assert.Equal(t, []string{odigosconsts.ProfilingGatewayToUIExporter}, pl.Exporters)
+}

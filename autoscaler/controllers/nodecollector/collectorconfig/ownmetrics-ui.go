@@ -64,7 +64,7 @@ func init() {
 		},
 	}
 
-	uiOtlpEndpoint = fmt.Sprintf("ui.%s:%d", odigosNamespace, consts.OTLPPort)
+	uiOtlpEndpoint = consts.UiOtlpGrpcEndpoint(odigosNamespace)
 }
 
 func receiversConfigForOwnMetricsUi(ownMetricsPort int32) config.GenericMap {
@@ -129,7 +129,7 @@ func serviceTelemetryConfigForOwnMetricsUi(ownMetricsPort int32) config.Telemetr
 	}
 }
 
-func ownMetricsExportersUi() config.GenericMap {
+func ownMetricsExportersUi(uiOtlpEndpoint string) config.GenericMap {
 	return config.GenericMap{
 		ownMetricsUiExporterName: config.GenericMap{
 			"endpoint": uiOtlpEndpoint,
@@ -157,7 +157,7 @@ func OwnMetricsConfigUi(ownMetricsPort int32) config.Config {
 
 	return config.Config{
 		Receivers:  receiversConfigForOwnMetricsUi(ownMetricsPort),
-		Exporters:  ownMetricsExportersUi(),
+		Exporters:  ownMetricsExportersUi(uiOtlpEndpoint),
 		Processors: staticOwnMetricsUiProcessors,
 		Service: config.Service{
 			Pipelines: ownMetricsPipelinesUi(),

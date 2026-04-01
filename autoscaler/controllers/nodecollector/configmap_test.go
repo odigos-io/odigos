@@ -173,6 +173,7 @@ func TestCalculateConfigMapData(t *testing.T) {
 		},
 		false, /* onGKE */
 		true,  /* loadBalancingNeeded */
+		nil,   /* profiling */
 	)
 
 	assert.Equal(t, err, nil)
@@ -228,6 +229,7 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 		},
 		false, /* onGKE */
 		false, /* loadBalancingNeeded */
+		nil,   /* profiling */
 	)
 
 	assert.Equal(t, err, nil)
