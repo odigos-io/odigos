@@ -81,6 +81,14 @@ type Instrumentation interface {
 	ApplyConfig(ctx context.Context, config Config) error
 }
 
+// StatusCallbackSetter is an optional interface for Instrumentation implementations
+// that support asynchronous status updates (e.g., lazy loading of libraries).
+// If an Instrumentation implements this interface, the manager will wire a callback
+// after a successful Load, allowing the instrumentation to report status changes.
+type StatusCallbackSetter interface {
+	SetStatusCallback(cb func(Status))
+}
+
 // Status is used to identify the status of an instrumentation and its libraries.
 type Status struct {
 	// Components is a map of component names (such as instrumentation library names) to their status.
