@@ -42,6 +42,9 @@ func getSpanMetricsConnectorConfig(spanMetricsConfig common.MetricsSourceSpanMet
 		"http.response.status_code",
 		"http.route",
 		SpanInstrumentationScopeNameAttributeName,
+		"messaging.system",
+		"messaging.destination.name",
+		"messaging.operation",
 	}
 	if spanMetricsConfig.AdditionalDimensions != nil {
 		dimensionsAttributeNames = append(dimensionsAttributeNames, spanMetricsConfig.AdditionalDimensions...)
