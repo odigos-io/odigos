@@ -144,3 +144,26 @@ imagePullSecrets:
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/*
+  Optional metadata.ownerReferences for namespaced chart resources.
+
+  Kubernetes does not allow a namespaced object to be the owner of cluster-scoped
+  resources (CRDs, ClusterRole, ClusterRoleBinding, MutatingWebhookConfiguration,
+  ValidatingWebhookConfiguration, CSIDriver, etc.), so those templates omit this helper.
+
+  Example values:
+    ownerReferences:
+      - apiVersion: operator.odigos.io/v1alpha1
+        kind: Odigos
+        name: odigos-sample
+        uid: <uid>
+        controller: true
+        blockOwnerDeletion: true
+*/}}
+{{- define "odigos.ownerReferences" -}}
+{{- if .Values.ownerReferences }}
+ownerReferences:
+{{- toYaml .Values.ownerReferences | nindent 2 }}
+{{- end }}
+{{- end }}
