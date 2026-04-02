@@ -3,7 +3,7 @@ status:
   class: receiver
 
   stability:
-    beta: [traces, metrics]
+    beta: [traces, metrics, logs]
   codeowners:
     active: [tamirdavid]
 
