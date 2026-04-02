@@ -20,6 +20,10 @@ IMG_SUFFIX?=
 TARGET?=
 RHEL?=false
 BUILD_DIR=.
+# Set DOCKER_BUILD_CMD to use buildx with --load for CI caching, or plain docker build for local
+DOCKER_BUILD_CMD ?= docker build
+# Extra args for docker build (e.g., --cache-from/--cache-to for buildx GHA caching)
+DOCKER_BUILD_EXTRA_ARGS ?=
 
 # RHEL-certified CLI (ko + Dockerfile.rhel-base); matches .github/workflows/publish-modules-rhel publish-cli-rhel
 CLI_RHEL_IMAGE_NAME ?= odigos-cli-rhel-certified
@@ -108,7 +112,7 @@ helm-schema-clean:
 	rm -f $(HELM_SCHEMA_BIN)
 
 build-image/%:
-	docker build $(TARGET_FLAG) \
+	$(DOCKER_BUILD_CMD) $(TARGET_FLAG) $(DOCKER_BUILD_EXTRA_ARGS) \
 	-t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg ODIGOS_VERSION=$(TAG) \

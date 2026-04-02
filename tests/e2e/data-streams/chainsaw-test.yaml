@@ -6,12 +6,10 @@ spec:
   description: This e2e test runs a data streams scenario
   skipDelete: true
   steps:
-    - name: '[1 - Setup] Prepare destination 1'
+    - name: '[1 - Setup] Prepare destinations'
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
-    - name: '[1 - Setup] Prepare destination 2'
-      try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment-2.yaml
 
@@ -31,24 +29,18 @@ spec:
         - assert:
             file: ../../common/assert/odigos-installed.yaml
 
-    - name: '[1 - Setup] Verify Node Odiglet label has been added'
+    - name: '[1 - Setup] Assert Node Odiglet label and Trace DBs up'
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
-
-    - name: '[1 - Setup] Assert Trace DB 1 is up'
-      try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
-
-    - name: '[1 - Setup] Assert Trace DB 2 is up'
-      try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running-2.yaml
 
-    - name: '[1 - Setup] Install - Simple Demo Apps'
+    - name: '[1 - Setup] Install Simple Demo Apps'
       try:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
@@ -111,37 +103,18 @@ spec:
 
     - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:
-        - apply:
-            file: ../../common/apply/generate-traffic-job.yaml
         - script:
-            timeout: 1m
-            content: |
-              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-        - delete:
-            file: ../../common/apply/generate-traffic-job.yaml
+            timeout: 2m
+            content: ../../common/generate_traffic_and_wait.sh
 
     - name: Wait For Trace Stream 1
       try:
         - script:
             timeout: 1m
-            content: |
-              while true; do
-                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-stream-1.yaml
-                if [ $? -eq 0 ]; then
-                  break
-                fi
-                sleep 1
-              done
+            content: ../../common/wait_for_trace_query.sh ../../common/queries/wait-for-trace-stream-1.yaml
 
     - name: Wait For Trace Stream 2
       try:
         - script:
             timeout: 1m
-            content: |
-              while true; do
-                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-stream-2.yaml false traces-2 simple-trace-db-2
-                if [ $? -eq 0 ]; then
-                  break
-                fi
-                sleep 1
-              done
+            content: ../../common/wait_for_trace_query.sh ../../common/queries/wait-for-trace-stream-2.yaml false traces-2 simple-trace-db-2

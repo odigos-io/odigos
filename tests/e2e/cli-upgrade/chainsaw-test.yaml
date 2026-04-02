@@ -6,13 +6,10 @@ spec:
   description: Check successful upgrade from latest version of CLI
   skipDelete: true
   steps:
-    - name: Prepare destination
+    - name: Prepare destination and Install Simple Demo Apps
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
-
-    - name: Install - Simple Demo Apps
-      try:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
 
@@ -79,33 +76,27 @@ spec:
             timeout: 5m
             file: ../../common/assert/latest-odigos-version-installed.yaml
 
-    - name: Assert Trace DB is up
+    - name: Assert Trace DB is up and Simple Demo Apps Installed
       try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
-
-    - name: Assert - Simple Demo Apps Installed
-      try:
         - assert:
             timeout: 3m
             file: ../../common/assert/simple-demo-installed.yaml
 
-    - name: Instrument Namespace
+    - name: Instrument Namespace and Add Destination
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
 
     - name: Assert Runtime Detected
       try:
         - assert:
             timeout: 3m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
-
-    - name: Add Destination
-      try:
-        - apply:
-            file: ../../common/apply/add-simple-trace-db-destination.yaml
 
     - name: Odigos pipeline pods ready
       # We make sure that the pipeline pods are ready before proceeding with the next steps
@@ -146,29 +137,14 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
 
-    - name: Generate Traffic
-      try:
-        - apply:
-            file: ../../common/apply/generate-traffic-job.yaml
-        - script:
-            timeout: 1m
-            content: |
-              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-        - delete:
-            file: ../../common/apply/generate-traffic-job.yaml
-
-    - name: Wait For Trace
+    - name: Generate Traffic and Wait For Trace
       try:
         - script:
+            timeout: 2m
+            content: ../../common/generate_traffic_and_wait.sh
+        - script:
             timeout: 1m
-            content: |
-              while true; do
-                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
-                if [ $? -eq 0 ]; then
-                  break
-                fi
-                sleep 1
-              done
+            content: ../../common/wait_for_trace_query.sh ../../common/queries/wait-for-trace.yaml
       catch:
         - script:
             content: |
