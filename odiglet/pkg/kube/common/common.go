@@ -35,6 +35,11 @@ func WorkloadPodsOnCurrentNode(c client.Client, ctx context.Context, ic *odigosv
 func MatchingPodsForWorkloadOnNode(ic *odigosv1.InstrumentationConfig, podList corev1.PodList) ([]corev1.Pod, error) {
 	var selectedPods []corev1.Pod
 	for _, pod := range podList.Items {
+		// ensure namespace isolation when matching IC to pods from a shared pod list
+		if pod.Namespace != ic.Namespace {
+			continue
+		}
+
 		// skip pods that are being deleted or not ready
 		if k8spod.IsPodDeleting(&pod) {
 			continue
