@@ -23,6 +23,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  {{- include "odigos.ownerReferences" . | nindent 2 }}
   labels:
     app.kubernetes.io/name: odiglet
     odigos.io/system-object: "true"

@@ -3,6 +3,7 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
+  {{- include "odigos.ownerReferences" . | nindent 2 }}
   name: central-proxy
   namespace: {{ .Release.Namespace }}
   labels:

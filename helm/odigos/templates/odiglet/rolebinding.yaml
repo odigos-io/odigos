@@ -2,6 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  {{- include "odigos.ownerReferences" . | nindent 2 }}
   name: system:openshift:scc:privileged
   namespace: {{ .Release.Namespace }}
   labels:
@@ -22,6 +23,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  {{- include "odigos.ownerReferences" . | nindent 2 }}
   name: odiglet
   namespace: {{ .Release.Namespace }}
   labels:

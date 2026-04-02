@@ -1,6 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  {{- include "odigos.ownerReferences" . | nindent 2 }}
   name: odigos-autoscaler-leader-election
   namespace: {{ .Release.Namespace }}
   labels:
