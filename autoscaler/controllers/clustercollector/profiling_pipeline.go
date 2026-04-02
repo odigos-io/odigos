@@ -1,10 +1,10 @@
 package clustercollector
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
-	odigosconsts "github.com/odigos-io/odigos/common/consts"
 )
 
 func addProfilingGatewayPipeline(c *config.Config, odigosNs string, profiling *common.ProfilingConfiguration) error {
@@ -20,7 +20,7 @@ func addProfilingGatewayPipeline(c *config.Config, odigosNs string, profiling *c
 		c.Service.Pipelines = map[string]config.Pipeline{}
 	}
 
-	endpoint := odigosconsts.UiOtlpGrpcEndpoint(odigosNs)
+	endpoint := k8sconsts.UiOtlpGrpcEndpoint(odigosNs)
 
 	exp := commonconf.MergeProfilingOtlpExporter(config.GenericMap{
 		"endpoint":    endpoint,
@@ -28,12 +28,12 @@ func addProfilingGatewayPipeline(c *config.Config, odigosNs string, profiling *c
 		"compression": "none",
 	}, profiling.Exporter)
 
-	c.Exporters[odigosconsts.ProfilingGatewayToUIExporter] = exp
+	c.Exporters[commonconf.ProfilingGatewayToUIExporter] = exp
 
 	c.Service.Pipelines["profiles"] = config.Pipeline{
 		Receivers:  []string{"otlp"},
 		Processors: nil,
-		Exporters:  []string{odigosconsts.ProfilingGatewayToUIExporter},
+		Exporters:  []string{commonconf.ProfilingGatewayToUIExporter},
 	}
 	return nil
 }

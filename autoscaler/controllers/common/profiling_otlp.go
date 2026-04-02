@@ -6,11 +6,15 @@ import (
 )
 
 // MergeProfilingOtlpExporter merges Profiling.Exporter into an OTLP exporter config map.
+//
+// The returned map is always a shallow copy of base (even when otlp is nil) so callers can
+// safely mutate the result without affecting the map they passed in.
+//
+// We map fields explicitly rather than json.Marshal/Unmarshal: OdigosConfiguration uses camelCase
+// JSON tags (e.g. retryOnFailure, initialInterval) while the OpenTelemetry Collector exporter
+// block expects snake_case keys (retry_on_failure, initial_interval, etc.).
 func MergeProfilingOtlpExporter(base config.GenericMap, otlp *odigoscommon.OtlpExporterConfiguration) config.GenericMap {
-	out := config.GenericMap{}
-	for k, v := range base {
-		out[k] = v
-	}
+	out := cloneGenericMap(base)
 	if otlp == nil {
 		return out
 	}
@@ -34,6 +38,17 @@ func MergeProfilingOtlpExporter(base config.GenericMap, otlp *odigoscommon.OtlpE
 			retry["max_elapsed_time"] = otlp.RetryOnFailure.MaxElapsedTime
 		}
 		out["retry_on_failure"] = retry
+	}
+	return out
+}
+
+func cloneGenericMap(m config.GenericMap) config.GenericMap {
+	if len(m) == 0 {
+		return config.GenericMap{}
+	}
+	out := make(config.GenericMap, len(m))
+	for k, v := range m {
+		out[k] = v
 	}
 	return out
 }

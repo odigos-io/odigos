@@ -13,6 +13,23 @@ func TestMergeProfilingOtlpExporter_NilOtlp(t *testing.T) {
 	base := config.GenericMap{"endpoint": "localhost:4317", "compression": "none"}
 	out := MergeProfilingOtlpExporter(base, nil)
 	assert.Equal(t, base, out)
+	out["endpoint"] = "mutated"
+	assert.Equal(t, "localhost:4317", base["endpoint"], "mutating result must not change caller base map")
+}
+
+func TestMergeProfilingOtlpExporter_WithOtlp_DoesNotMutateBase(t *testing.T) {
+	enabled := true
+	otlp := &odigoscommon.OtlpExporterConfiguration{
+		Timeout: "5s",
+		RetryOnFailure: &odigoscommon.RetryOnFailure{
+			Enabled: &enabled,
+		},
+	}
+	base := config.GenericMap{"endpoint": "x", "compression": "none"}
+	out := MergeProfilingOtlpExporter(base, otlp)
+	out["endpoint"] = "y"
+	assert.Equal(t, "x", base["endpoint"])
+	assert.Equal(t, "5s", out["timeout"])
 }
 
 func TestMergeProfilingOtlpExporter_TimeoutAndRetry(t *testing.T) {

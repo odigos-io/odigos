@@ -14,7 +14,7 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 		return config.Config{}
 	}
 
-	endpoint := odigosconsts.OtlpGrpcDNSEndpoint(k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace, odigosconsts.OTLPPort)
+	endpoint := k8sconsts.OtlpGrpcDNSEndpoint(k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace, odigosconsts.OTLPPort)
 	exp := commonconf.MergeProfilingOtlpExporter(config.GenericMap{
 		"endpoint":    endpoint,
 		"tls":         config.GenericMap{"insecure": true},
@@ -23,21 +23,21 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 
 	return config.Config{
 		Receivers: config.GenericMap{
-			odigosconsts.ProfilingReceiver: config.GenericMap{},
+			commonconf.ProfilingReceiver: config.GenericMap{},
 		},
 		Processors: config.GenericMap{
-			odigosconsts.ProfilingNodeFilterProcessor:        commonconf.ProfilingFilterProcessorConfig(),
-			odigosconsts.ProfilingNodeK8sAttributesProcessor: commonconf.K8sAttributesProfilesProcessorConfig(),
+			commonconf.ProfilingNodeFilterProcessor:        commonconf.ProfilingFilterProcessorConfig(),
+			commonconf.ProfilingNodeK8sAttributesProcessor: commonconf.K8sAttributesProfilesProcessorConfig(),
 		},
 		Exporters: config.GenericMap{
-			odigosconsts.ProfilingNodeToGatewayExporter: exp,
+			commonconf.ProfilingNodeToGatewayExporter: exp,
 		},
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				"profiles": {
-					Receivers:  []string{odigosconsts.ProfilingReceiver},
-					Processors: []string{odigosconsts.ProfilingNodeFilterProcessor, odigosconsts.ProfilingNodeK8sAttributesProcessor},
-					Exporters:  []string{odigosconsts.ProfilingNodeToGatewayExporter},
+					Receivers:  []string{commonconf.ProfilingReceiver},
+					Processors: []string{commonconf.ProfilingNodeFilterProcessor, commonconf.ProfilingNodeK8sAttributesProcessor},
+					Exporters:  []string{commonconf.ProfilingNodeToGatewayExporter},
 				},
 			},
 		},

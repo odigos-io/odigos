@@ -6,7 +6,6 @@ import (
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
-	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,18 +25,18 @@ func TestProfilingPipelineConfig_Disabled(t *testing.T) {
 func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 	on := true
 	got := ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on})
-	require.Contains(t, got.Receivers, odigosconsts.ProfilingReceiver)
-	require.Contains(t, got.Processors, odigosconsts.ProfilingNodeFilterProcessor)
-	require.Contains(t, got.Processors, odigosconsts.ProfilingNodeK8sAttributesProcessor)
-	require.Contains(t, got.Exporters, odigosconsts.ProfilingNodeToGatewayExporter)
+	require.Contains(t, got.Receivers, commonconf.ProfilingReceiver)
+	require.Contains(t, got.Processors, commonconf.ProfilingNodeFilterProcessor)
+	require.Contains(t, got.Processors, commonconf.ProfilingNodeK8sAttributesProcessor)
+	require.Contains(t, got.Exporters, commonconf.ProfilingNodeToGatewayExporter)
 
 	pl, ok := got.Service.Pipelines["profiles"]
 	require.True(t, ok)
-	assert.Equal(t, []string{odigosconsts.ProfilingReceiver}, pl.Receivers)
-	assert.Equal(t, []string{odigosconsts.ProfilingNodeFilterProcessor, odigosconsts.ProfilingNodeK8sAttributesProcessor}, pl.Processors)
-	assert.Equal(t, []string{odigosconsts.ProfilingNodeToGatewayExporter}, pl.Exporters)
+	assert.Equal(t, []string{commonconf.ProfilingReceiver}, pl.Receivers)
+	assert.Equal(t, []string{commonconf.ProfilingNodeFilterProcessor, commonconf.ProfilingNodeK8sAttributesProcessor}, pl.Processors)
+	assert.Equal(t, []string{commonconf.ProfilingNodeToGatewayExporter}, pl.Exporters)
 
-	filterCfg, ok := got.Processors[odigosconsts.ProfilingNodeFilterProcessor].(config.GenericMap)
+	filterCfg, ok := got.Processors[commonconf.ProfilingNodeFilterProcessor].(config.GenericMap)
 	require.True(t, ok)
 	wantFilter := commonconf.ProfilingFilterProcessorConfig()
 	assert.Equal(t, wantFilter, filterCfg)
