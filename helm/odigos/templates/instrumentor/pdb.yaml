@@ -2,6 +2,7 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
+  {{- include "odigos.ownerReferences" . | nindent 2 }}
   name: odigos-instrumentor
   namespace: {{ .Release.Namespace }}
   labels:

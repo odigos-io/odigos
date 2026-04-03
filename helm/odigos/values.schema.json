@@ -1644,6 +1644,14 @@
       "required": [],
       "title": "ownTelemetry"
     },
+    "ownerReferences": {
+      "description": "Optional list of metadata.ownerReferences merged into namespaced resources created by this chart\n(Deployments, Services, ConfigMaps, Secrets, Roles, RoleBindings in the release namespace, etc.).\nCluster-scoped objects (CRDs, ClusterRoles, ClusterRoleBindings, admission webhooks, CSIDriver) cannot\nreference a namespaced owner and do not include this field.\nThe Odigos operator sets this to the reconciled Odigos custom resource when installing via Helm.",
+      "items": {
+        "required": []
+      },
+      "required": [],
+      "title": "ownerReferences"
+    },
     "pdb": {
       "additionalProperties": false,
       "description": "Pod Disruption Budgets (PDBs) help ensure high availability during voluntary disruptions like node drains or upgrades.\nWhen enabled, Odigos will deploy PDBs for its components based on their importance:\n- Critical components (e.g., instrumentor) will be protected with stricter disruption limits.\n- Non-critical components will use more relaxed budgets to allow operational flexibility.\nThis reflects Odigos' recommended defaults for maintaining observability continuity without blocking routine maintenance.\nPDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.",
