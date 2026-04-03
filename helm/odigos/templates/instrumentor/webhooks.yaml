@@ -96,6 +96,7 @@ webhooks:
 apiVersion: v1
 kind: Secret
 metadata:
+  {{- include "odigos.ownerReferences" . | nindent 2 }}
   name: instrumentor-webhooks-cert
   namespace: {{ .Release.Namespace }}
   labels:

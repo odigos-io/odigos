@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- include "odigos.ownerReferences" . | nindent 2 }}
   labels:
     app.kubernetes.io/name: odigos-instrumentor
     odigos.io/system-object: "true"

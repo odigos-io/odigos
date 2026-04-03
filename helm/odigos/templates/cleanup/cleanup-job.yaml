@@ -2,6 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
+  {{- include "odigos.ownerReferences" . | nindent 2 }}
   name: cleanup-job
   namespace: {{ .Release.Namespace }}
   annotations:

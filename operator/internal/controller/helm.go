@@ -341,6 +341,28 @@ func odigosSpecToHelmValues(odigos *operatorv1alpha1.Odigos, openshiftEnabled bo
 	openshift["enabled"] = openshiftEnabled
 	vals["openshift"] = openshift
 
+	// Owner references: tie Helm-managed namespaced resources to the Odigos CR (garbage collection).
+	if odigos.UID != "" {
+		apiVersion := odigos.APIVersion
+		if apiVersion == "" {
+			apiVersion = operatorv1alpha1.GroupVersion.String()
+		}
+		kind := odigos.Kind
+		if kind == "" {
+			kind = "Odigos"
+		}
+		vals["ownerReferences"] = []interface{}{
+			map[string]interface{}{
+				"apiVersion":         apiVersion,
+				"kind":               kind,
+				"name":               odigos.Name,
+				"uid":                string(odigos.UID),
+				"controller":         true,
+				"blockOwnerDeletion": true,
+			},
+		}
+	}
+
 	// Per-component image overrides from RELATED_IMAGE_* env vars (used in OpenShift)
 	// These env vars are set by the operator deployment and contain full image URLs
 	// for certified container images from the Red Hat registry.
