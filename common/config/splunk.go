@@ -17,7 +17,9 @@ const (
 
 // Splunk configures the SAPM collector exporter.
 //
-// Deprecated: This exporter is deprecated upstream in favor of the OTLPHTTP exporter.
+// Deprecated: SAPM exporter was removed upstream. We now emit an OTLP/HTTP traces
+// exporter that targets Splunk ingest to preserve backward compatibility for the
+// legacy "splunk" destination type.
 type Splunk struct{}
 
 func (s *Splunk) DestType() common.DestinationType {
@@ -31,10 +33,12 @@ func (s *Splunk) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 	}
 	var pipelineNames []string
 	if isTracingEnabled(dest) {
-		exporterName := "sapm/" + dest.GetID()
+		exporterName := "otlphttp/" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
-			"access_token": "${SPLUNK_ACCESS_TOKEN}",
-			"endpoint":     fmt.Sprintf("https://ingest.%s.signalfx.com/v2/trace", realm),
+			"headers": GenericMap{
+				"X-SF-Token": "${SPLUNK_ACCESS_TOKEN}",
+			},
+			"traces_endpoint": fmt.Sprintf("https://ingest.%s.signalfx.com/v2/trace/otlp", realm),
 		}
 
 		tracesPipelineName := "traces/splunk-" + dest.GetID()
