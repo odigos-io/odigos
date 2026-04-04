@@ -20,9 +20,16 @@ package v1alpha1
 // AgentSpanMetricsConfigApplyConfiguration represents a declarative configuration of the AgentSpanMetricsConfig type for use
 // with apply.
 type AgentSpanMetricsConfigApplyConfiguration struct {
-	Dimensions         []string `json:"dimensions,omitempty"`
-	IntervalMs         *int     `json:"intervalMs,omitempty"`
-	HistogramBucketsMs []int    `json:"histogramBucketsMs,omitempty"`
+	// additional dimensions to add for the span metrics.
+	// for example, if you add `http.method` to the dimensions,
+	// then the span metrics data points will include the `http.method` in the attributes,
+	// and different values of `http.method` will be aggregated into different time series.
+	Dimensions []string `json:"dimensions,omitempty"`
+	// time interval in miliseconds for flushing the span metrics.
+	// defaults: 60000 (60 seconds, 1 minute)
+	IntervalMs *int `json:"intervalMs,omitempty"`
+	// explicit buckets list for the histogram metrics in ms
+	HistogramBucketsMs []int `json:"histogramBucketsMs,omitempty"`
 }
 
 // AgentSpanMetricsConfigApplyConfiguration constructs a declarative configuration of the AgentSpanMetricsConfig type for use with

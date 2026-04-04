@@ -25,6 +25,9 @@ import (
 
 // DeleteAttributeApplyConfiguration represents a declarative configuration of the DeleteAttribute type for use
 // with apply.
+//
+// DeleteAttribute is the Schema for the DeleteAttribute odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type DeleteAttributeApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +45,7 @@ func DeleteAttribute(name, namespace string) *DeleteAttributeApplyConfiguration 
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+
 func (b DeleteAttributeApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

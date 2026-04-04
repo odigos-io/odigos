@@ -25,12 +25,34 @@ import (
 // CostReductionRuleApplyConfiguration represents a declarative configuration of the CostReductionRule type for use
 // with apply.
 type CostReductionRuleApplyConfiguration struct {
-	Name             *string                                `json:"name,omitempty"`
-	Disabled         *bool                                  `json:"disabled,omitempty"`
-	SourceScopes     []k8sconsts.SourcesScope               `json:"sourceScopes,omitempty"`
-	Operation        *sampling.TailSamplingOperationMatcher `json:"operation,omitempty"`
-	PercentageAtMost *float64                               `json:"percentageAtMost,omitempty"`
-	Notes            *string                                `json:"notes,omitempty"`
+	// user provided name, for easier identification and reference.
+	// use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+	// odigos does not use or assume any meaning from this field,
+	// but it is written as metric attribute, and stored as span attribute on participating spans.
+	Name *string `json:"name,omitempty"`
+	// if set to true, the rule will be disabled,
+	// e.g. will not be taken into account for any sampling decisions.
+	// disabled rules still participate in metrics calculations,
+	// allowing enhanced tools and data for troubleshooting and sampling maintenance.
+	Disabled *bool `json:"disabled,omitempty"`
+	// limit this rule to specific sources (by name, namespace, language, etc.)
+	// an empty list will match any source.
+	// if multiple items are set, the operation match if any one matches
+	// this relates to the "ResourceAttributes" part of a span.
+	SourceScopes []k8sconsts.SourcesScope `json:"sourceScopes,omitempty"`
+	// limit this rule to specific operations.
+	// for example: specific endpoint or kafka topic.
+	// this field is optional, and if not set, the rule will be applied to all operations.
+	Operation *sampling.TailSamplingOperationMatcher `json:"operation,omitempty"`
+	// sampling percentage for cost reduction.
+	// this field is required.
+	// the final sampling percentage for traces that match this rule
+	// will be the highest possible, but at most this value.
+	PercentageAtMost *float64 `json:"percentageAtMost,omitempty"`
+	// optional free-form text field that allows you to attach notes
+	// for future context and maintenance.
+	// users can write why this rule was added, observations, document considerations, etc.
+	Notes *string `json:"notes,omitempty"`
 }
 
 // CostReductionRuleApplyConfiguration constructs a declarative configuration of the CostReductionRule type for use with

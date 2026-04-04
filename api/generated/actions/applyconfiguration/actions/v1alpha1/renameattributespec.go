@@ -23,6 +23,8 @@ import (
 
 // RenameAttributeSpecApplyConfiguration represents a declarative configuration of the RenameAttributeSpec type for use
 // with apply.
+//
+// RenameAttributeSpec defines the desired state of RenameAttribute action
 type RenameAttributeSpecApplyConfiguration struct {
 	ActionName *string                      `json:"actionName,omitempty"`
 	Notes      *string                      `json:"notes,omitempty"`

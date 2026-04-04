@@ -21,6 +21,10 @@ TARGET?=
 RHEL?=false
 BUILD_DIR=.
 
+# RHEL-certified CLI (ko + Dockerfile.rhel-base); matches .github/workflows/publish-modules-rhel publish-cli-rhel
+CLI_RHEL_IMAGE_NAME ?= odigos-cli-rhel-certified
+CLI_RHEL_KO_BASE_IMAGE ?= $(ORG)/odigos-cli-rhel-ko-base:$(TAG)
+
 ifeq ($(RHEL),true)
     IMG_SUFFIX=-rhel-certified
 
@@ -293,8 +297,8 @@ update-dep/%: DIR=$*
 update-dep/%:
 	cd $(DIR) && go get $(MODULE)@$(VERSION)
 
-UNSTABLE_COLLECTOR_VERSION=v0.141.0
-STABLE_COLLECTOR_VERSION=v1.47.0
+UNSTABLE_COLLECTOR_VERSION=v0.148.0
+STABLE_COLLECTOR_VERSION=v1.54.0
 STABLE_OTEL_GO_VERSION=v1.38.0
 UNSTABLE_OTEL_GO_VERSION=v0.63.0
 
@@ -524,6 +528,48 @@ build-cli-image:
 	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
 	DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S') \
 	ko build --bare --tags $(TAG) --local .
+
+.PHONY: build-cli-image-rhel
+build-cli-image-rhel:
+	cd cli && $(MAKE) licenses
+	cd cli && docker build -f Dockerfile.rhel-base -t $(CLI_RHEL_KO_BASE_IMAGE) .
+	cd cli && \
+	KO_DOCKER_REPO=$(ORG)/$(CLI_RHEL_IMAGE_NAME) \
+	KO_DEFAULTBASEIMAGE=$(CLI_RHEL_KO_BASE_IMAGE) \
+	KO_CONFIG_PATH=./.ko.yaml \
+	VERSION=$(TAG) \
+	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
+	DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
+	ko build --bare --tags $(TAG) --local .
+
+.PHONY: push-cli-image-rhel
+push-cli-image-rhel:
+	@if [ "$(PUSH_IMAGE)" != "true" ]; then \
+		echo "this command will push the image to the public registry; set PUSH_IMAGE=true" >&2; \
+		exit 1; \
+	fi
+	cd cli && $(MAKE) licenses
+	docker buildx build --platform linux/amd64,linux/arm64 \
+		-f cli/Dockerfile.rhel-base \
+		-t $(CLI_RHEL_KO_BASE_IMAGE) \
+		--push \
+		cli
+	cd cli && \
+	KO_DOCKER_REPO=$(ORG)/$(CLI_RHEL_IMAGE_NAME) \
+	KO_DEFAULTBASEIMAGE=$(CLI_RHEL_KO_BASE_IMAGE) \
+	KO_CONFIG_PATH=./.ko.yaml \
+	VERSION=$(TAG) \
+	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
+	DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
+	ko build --bare --tags $(TAG) \
+		--image-label name=odigos-cli \
+		--image-label vendor=Odigos \
+		--image-label maintainer=Odigos \
+		--image-label version=$(TAG) \
+		--image-label release=$(TAG) \
+		--image-label summary="Odigos CLI" \
+		--image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
+		--platform=all .
 
 # install gatekeeper to prevent:
 # 1. privileged containers

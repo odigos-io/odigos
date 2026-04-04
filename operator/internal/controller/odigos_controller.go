@@ -70,7 +70,7 @@ type OdigosReconciler struct {
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;delete
 // +kubebuilder:rbac:groups="",resources=pods/status,verbs=get
 // +kubebuilder:rbac:groups="",resources=pods/finalizers,verbs=update
-// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch;get;list;watch
 // +kubebuilder:rbac:groups=apps,resources=deployments;replicasets;daemonsets;statefulsets,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=apps,resources=deployments/finalizers;replicasets/finalizers;daemonsets/finalizers;statefulsets/finalizers,verbs=update
 // +kubebuilder:rbac:groups=apps,resources=deployments/status;daemonsets/status;statefulsets/status,verbs=get
@@ -83,12 +83,16 @@ type OdigosReconciler struct {
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations;validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=create;patch;update;delete;get
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=create;patch;update;delete;get;list;watch
 // +kubebuilder:rbac:groups=policy,resources=podsecuritypolicies,resourceNames=privileged,verbs=use
 // +kubebuilder:rbac:groups=apps.openshift.io,resources=deploymentconfigs;deploymentconfigs/finalizers,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=argoproj.io,resources=rollouts,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups="",resources=pods/log,verbs=get
+// +kubebuilder:rbac:groups="",resources=pods/proxy,verbs=get
+// Odigos Helm chart odigos-gateway ClusterRole (collectorGateway.clusterMetricsEnabled).
+// +kubebuilder:rbac:groups="",resources=namespaces/status;nodes/spec;replicationcontrollers;replicationcontrollers/status;resourcequotas,verbs=get;list;watch
+// +kubebuilder:rbac:groups=extensions,resources=daemonsets;deployments;replicasets,verbs=get;list;watch
 // +kubebuilder:rbac:groups="discovery.k8s.io",resources=endpointslices,verbs=get;list;watch
 // +kubebuilder:rbac:groups=odigos.io,resources=sampling,verbs=get;list;watch;create;update;patch;delete
 

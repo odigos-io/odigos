@@ -19,9 +19,17 @@ package v1alpha1
 
 // BooleanAttributeConditionApplyConfiguration represents a declarative configuration of the BooleanAttributeCondition type for use
 // with apply.
+//
+// BooleanAttributeCondition defines a check against a boolean attribute.
 type BooleanAttributeConditionApplyConfiguration struct {
-	Operation     *string `json:"operation,omitempty"`
-	ExpectedValue *bool   `json:"expected_value,omitempty"`
+	// Operation can be:
+	// - "exists": Checks that the boolean attribute is present.
+	// - "equals": Checks if the attribute exactly matches ExpectedValue.
+	//
+	// ExpectedValue is required only for the "equals" operation.
+	Operation *string `json:"operation,omitempty"`
+	// ExpectedValue is only used if Operation == "equals".
+	ExpectedValue *bool `json:"expected_value,omitempty"`
 }
 
 // BooleanAttributeConditionApplyConfiguration constructs a declarative configuration of the BooleanAttributeCondition type for use with

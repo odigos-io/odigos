@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/odigos-io/odigos/common"
 )
@@ -68,7 +69,14 @@ type Pipeline struct {
 func MergeConfigs(configDomains map[string]Config) (Config, error) {
 	mergedConfig := Config{}
 	var err error
+	// Sort domain names so merge order is stable. Go map iteration is nondeterministic; without a fixed
+	// order, merged YAML and tests can differ between runs (e.g. telemetry reader ordering).
+	domainNames := make([]string, 0, len(configDomains))
 	for name := range configDomains {
+		domainNames = append(domainNames, name)
+	}
+	sort.Strings(domainNames)
+	for _, name := range domainNames {
 		cfg := configDomains[name]
 		mergedConfig.Receivers, err = mergeGenericMaps(mergedConfig.Receivers, cfg.Receivers)
 		if err != nil {

@@ -64,7 +64,7 @@ func init() {
 		},
 	}
 
-	uiOtlpEndpoint = fmt.Sprintf("ui.%s:%d", odigosNamespace, consts.OTLPPort)
+	uiOtlpEndpoint = k8sconsts.UiOtlpGrpcEndpoint(odigosNamespace)
 }
 
 func receiversConfigForOwnMetricsUi(ownMetricsPort int32) config.GenericMap {

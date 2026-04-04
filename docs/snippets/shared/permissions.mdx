@@ -37,6 +37,8 @@ Below are the ClusterRoles used by Odigos components.
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
 | odigos.io | instrumentationconfigs | \* | get<br />list<br />watch |
+| \* | pods<br />namespaces | \* | get<br />list<br />watch |
+| apps | replicasets<br />deployments<br />statefulsets<br />daemonsets | \* | get<br />list<br />watch |
 
 ### odigos-instrumentor
 
@@ -226,12 +228,12 @@ This section lists the RBAC policies used by the Odigos Operator. Many of these 
 |---|---|---|---|
 | \* | configmaps<br />endpoints<br />secrets<br />services | \* | create<br />delete<br />deletecollection<br />get<br />list<br />patch<br />update<br />watch |
 | \* | configmaps/finalizers<br />pods/finalizers | \* | update |
-| \* | events | \* | create<br />patch |
+| \* | events | \* | create<br />get<br />list<br />patch<br />watch |
 | \* | namespaces | \* | get<br />list<br />patch<br />watch |
+| \* | namespaces/status<br />nodes/spec<br />nodes/stats<br />replicationcontrollers<br />replicationcontrollers/status<br />resourcequotas | \* | get<br />list<br />watch |
 | \* | nodes | \* | get<br />list<br />patch<br />update<br />watch |
-| \* | nodes/proxy<br />nodes/stats | \* | get<br />list |
 | \* | pods | \* | delete<br />get<br />list<br />watch |
-| \* | pods/log<br />pods/status | \* | get |
+| \* | pods/log<br />pods/proxy<br />pods/status | \* | get |
 | \* | serviceaccounts | \* | create<br />delete<br />get<br />list<br />patch<br />watch |
 | actions.odigos.io | \* | \* | create<br />delete<br />deletecollection<br />get<br />list<br />patch<br />update<br />watch |
 | actions.odigos.io | */status | \* | get<br />patch<br />update |
@@ -244,15 +246,17 @@ This section lists the RBAC policies used by the Odigos Operator. Many of these 
 | apps | deployments/scale | \* | get<br />patch<br />update |
 | apps.openshift.io | deploymentconfigs<br />deploymentconfigs/finalizers | \* | get<br />list<br />patch<br />update<br />watch |
 | argoproj.io | rollouts | \* | get<br />list<br />patch<br />update<br />watch |
-| autoscaling | horizontalpodautoscalers | \* | create<br />delete<br />get<br />patch<br />update |
+| autoscaling | horizontalpodautoscalers | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | batch | cronjobs | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | batch | jobs | \* | create<br />delete<br />get<br />list<br />watch |
 | coordination.k8s.io | leases | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | discovery.k8s.io | endpointslices | \* | get<br />list<br />watch |
+| extensions | daemonsets<br />deployments<br />replicasets | \* | get<br />list<br />watch |
 | odigos.io | \* | \* | \* |
 | odigos.io | collectorsgroups/finalizers<br />sources/finalizers | \* | update |
 | odigos.io | collectorsgroups/status<br />destinations/status<br />instrumentationconfigs/status<br />instrumentationinstances/status | \* | get<br />list<br />patch<br />update<br />watch |
 | odigos.io | instrumentationrules/status | \* | get<br />patch<br />update |
+| odigos.io | sampling | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | operator.odigos.io | odigos | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | operator.odigos.io | odigos/finalizers | \* | update |
 | operator.odigos.io | odigos/status | \* | get<br />patch<br />update |

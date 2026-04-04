@@ -18,17 +18,31 @@ limitations under the License.
 package v1alpha1
 
 import (
+	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	api "github.com/odigos-io/odigos/common/api"
 )
 
 // AgentTracesConfigApplyConfiguration represents a declarative configuration of the AgentTracesConfig type for use
 // with apply.
+//
+// all "traces" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
 type AgentTracesConfigApplyConfiguration struct {
-	IdGenerator       *IdGeneratorConfigApplyConfiguration       `json:"idGenerator,omitempty"`
-	UrlTemplatization *api.UrlTemplatizationConfig               `json:"urlTemplatization,omitempty"`
+	// id generator configuration for the traces.
+	// if not specified, the default random id generator will be used.
+	IdGenerator *IdGeneratorConfigApplyConfiguration `json:"idGenerator,omitempty"`
+	// A list of URL templatization configurations to be applied to the traces.
+	UrlTemplatization *api.UrlTemplatizationConfig `json:"urlTemplatization,omitempty"`
+	// Configuration for headers collection. If not specified, no headers will be collected.
 	HeadersCollection *HeadersCollectionConfigApplyConfiguration `json:"headersCollection,omitempty"`
-	HeadSampling      *HeadSamplingConfigApplyConfiguration      `json:"headSampling,omitempty"`
-	SpanRenamer       *SpanRenamerConfigApplyConfiguration       `json:"spanRenamer,omitempty"`
+	// HeadSamplingConfig is a set sampling rules.
+	// This config currently only applies to root spans.
+	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
+	HeadSampling *HeadSamplingConfigApplyConfiguration `json:"headSampling,omitempty"`
+	// Configuration for span renamer.
+	SpanRenamer *SpanRenamerConfigApplyConfiguration `json:"spanRenamer,omitempty"`
+	// configuration for payload collection for this container.
+	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 }
 
 // AgentTracesConfigApplyConfiguration constructs a declarative configuration of the AgentTracesConfig type for use with
@@ -74,5 +88,13 @@ func (b *AgentTracesConfigApplyConfiguration) WithHeadSampling(value *HeadSampli
 // If called multiple times, the SpanRenamer field is set to the value of the last call.
 func (b *AgentTracesConfigApplyConfiguration) WithSpanRenamer(value *SpanRenamerConfigApplyConfiguration) *AgentTracesConfigApplyConfiguration {
 	b.SpanRenamer = value
+	return b
+}
+
+// WithPayloadCollection sets the PayloadCollection field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PayloadCollection field is set to the value of the last call.
+func (b *AgentTracesConfigApplyConfiguration) WithPayloadCollection(value instrumentationrules.PayloadCollection) *AgentTracesConfigApplyConfiguration {
+	b.PayloadCollection = &value
 	return b
 }

@@ -25,15 +25,22 @@ import (
 // SdkConfigApplyConfiguration represents a declarative configuration of the SdkConfig type for use
 // with apply.
 type SdkConfigApplyConfiguration struct {
-	Language                      *common.ProgrammingLanguage                           `json:"language,omitempty"`
-	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration      `json:"instrumentationLibraryConfigs,omitempty"`
-	HeadSamplingConfig            *HeadSamplingConfigApplyConfiguration                 `json:"headSamplerConfig,omitempty"`
-	DefaultPayloadCollection      *instrumentationrules.PayloadCollection               `json:"payloadCollection,omitempty"`
-	DefaultCodeAttributes         *instrumentationrules.CodeAttributes                  `json:"codeAttributes,omitempty"`
-	DefaultHeadersCollection      *instrumentationrules.HttpHeadersCollection           `json:"headersCollection,omitempty"`
-	DefaultTraceConfig            *instrumentationrules.TraceConfig                     `json:"traceConfig,omitempty"`
-	CustomInstrumentations        *instrumentationrules.CustomInstrumentations          `json:"customInstrumentations,omitempty"`
-	RuntimeMetrics                *common.MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
+	// The language of the SDK being configured
+	Language *common.ProgrammingLanguage `json:"language,omitempty"`
+	// configurations for the instrumentation libraries the the SDK should use
+	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
+	DefaultPayloadCollection      *instrumentationrules.PayloadCollection          `json:"payloadCollection,omitempty"`
+	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
+	DefaultCodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+	// default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.
+	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
+	// default configuration for library tracing.
+	DefaultTraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
+	// list of the custom instrumentation probes the SDK should use.
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+	// configuration for runtime metrics that the SDK should generate.
+	// these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.
+	RuntimeMetrics *common.MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
 }
 
 // SdkConfigApplyConfiguration constructs a declarative configuration of the SdkConfig type for use with
@@ -60,14 +67,6 @@ func (b *SdkConfigApplyConfiguration) WithInstrumentationLibraryConfigs(values .
 		}
 		b.InstrumentationLibraryConfigs = append(b.InstrumentationLibraryConfigs, *values[i])
 	}
-	return b
-}
-
-// WithHeadSamplingConfig sets the HeadSamplingConfig field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the HeadSamplingConfig field is set to the value of the last call.
-func (b *SdkConfigApplyConfiguration) WithHeadSamplingConfig(value *HeadSamplingConfigApplyConfiguration) *SdkConfigApplyConfiguration {
-	b.HeadSamplingConfig = value
 	return b
 }
 

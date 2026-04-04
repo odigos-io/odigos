@@ -25,6 +25,11 @@ import (
 
 // SpanAttributeSamplerApplyConfiguration represents a declarative configuration of the SpanAttributeSampler type for use
 // with apply.
+//
+// SpanAttributeSampler is the Schema for the spanattributesamplers API.
+// It holds the specification for sampling spans based on attribute conditions,
+// as well as the sampler's current status.
+// DEPRECATED: Use odigosv1.Action instead
 type SpanAttributeSamplerApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +47,7 @@ func SpanAttributeSampler(name, namespace string) *SpanAttributeSamplerApplyConf
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+
 func (b SpanAttributeSamplerApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

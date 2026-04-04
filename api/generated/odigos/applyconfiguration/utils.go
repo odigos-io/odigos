@@ -45,10 +45,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.AgentTracesConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Attribute"):
 		return &odigosv1alpha1.AttributeApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AttributeCondition"):
-		return &odigosv1alpha1.AttributeConditionApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AttributesAndSamplerRule"):
-		return &odigosv1alpha1.AttributesAndSamplerRuleApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup"):
 		return &odigosv1alpha1.CollectorsGroupApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupMetricsCollectionSettings"):

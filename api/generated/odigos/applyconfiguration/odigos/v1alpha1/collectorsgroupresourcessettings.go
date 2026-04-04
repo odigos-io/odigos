@@ -19,16 +19,47 @@ package v1alpha1
 
 // CollectorsGroupResourcesSettingsApplyConfiguration represents a declarative configuration of the CollectorsGroupResourcesSettings type for use
 // with apply.
+//
+// The raw values to control the collectors group resources and behavior.
+// any defaulting, validations and calculations should be done in the controllers
+// that create this CR.
+// Values will be used as is without any further processing.
 type CollectorsGroupResourcesSettingsApplyConfiguration struct {
-	MinReplicas                *int `json:"minReplicas,omitempty"`
-	MaxReplicas                *int `json:"maxReplicas,omitempty"`
-	MemoryRequestMiB           *int `json:"memoryRequestMiB,omitempty"`
-	MemoryLimitMiB             *int `json:"memoryLimitMiB,omitempty"`
-	CpuRequestMillicores       *int `json:"cpuRequestMillicores,omitempty"`
-	CpuLimitMillicores         *int `json:"cpuLimitMillicores,omitempty"`
-	MemoryLimiterLimitMiB      *int `json:"memoryLimiterLimitMiB,omitempty"`
+	// Minumum + Maximum number of replicas for the collector - these relevant only for gateway.
+	MinReplicas *int `json:"minReplicas,omitempty"`
+	MaxReplicas *int `json:"maxReplicas,omitempty"`
+	// MemoryRequestMiB is the memory resource request to be used on the pod template.
+	// it will be embedded in the as a resource request of the form `memory: <value>Mi`
+	MemoryRequestMiB *int `json:"memoryRequestMiB,omitempty"`
+	// This option sets the limit on the memory usage of the collector.
+	// since the memory limiter mechanism is heuristic, and operates on fixed intervals,
+	// while it cannot fully prevent OOMs, it can help in reducing the chances of OOMs in edge cases.
+	// the settings should prevent the collector from exceeding the memory request,
+	// so one can set this to the same value as the memory request or higher to allow for some buffer for bursts.
+	MemoryLimitMiB *int `json:"memoryLimitMiB,omitempty"`
+	// CPU resource request to be used on the pod template.
+	// it will be embedded in the as a resource request of the form `cpu: <value>m`
+	CpuRequestMillicores *int `json:"cpuRequestMillicores,omitempty"`
+	// CPU resource limit to be used on the pod template.
+	// it will be embedded in the as a resource limit of the form `cpu: <value>m`
+	CpuLimitMillicores *int `json:"cpuLimitMillicores,omitempty"`
+	// this parameter sets the "limit_mib" parameter in the memory limiter configuration for the collector.
+	// it is the hard limit after which a force garbage collection will be performed.
+	// this value will end up comparing against the go runtime reported heap Alloc value.
+	// According to the memory limiter docs:
+	// > Note that typically the total memory usage of process will be about 50MiB higher than this value
+	// a test from nov 2024 showed that fresh odigos collector with no traffic takes 38MiB,
+	// thus the 50MiB is a good value to start with.
+	MemoryLimiterLimitMiB *int `json:"memoryLimiterLimitMiB,omitempty"`
+	// this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the collector memory limiter.
+	// note that this is not the processor soft limit itself, but the diff in Mib between the hard limit and the soft limit.
+	// according to the memory limiter docs, it is recommended to set this to 20% of the hard limit.
+	// changing this value allows trade-offs between memory usage and resiliency to bursts.
 	MemoryLimiterSpikeLimitMiB *int `json:"memoryLimiterSpikeLimitMiB,omitempty"`
-	GomemlimitMiB              *int `json:"gomemlimitMiB,omitempty"`
+	// the GOMEMLIMIT environment variable value for the collector pod.
+	// this is when go runtime will start garbage collection.
+	// it is recommended to be set to 80% of the hard limit of the memory limiter.
+	GomemlimitMiB *int `json:"gomemlimitMiB,omitempty"`
 }
 
 // CollectorsGroupResourcesSettingsApplyConfiguration constructs a declarative configuration of the CollectorsGroupResourcesSettings type for use with

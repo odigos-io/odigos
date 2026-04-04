@@ -25,6 +25,9 @@ import (
 
 // K8sAttributesResolverApplyConfiguration represents a declarative configuration of the K8sAttributesResolver type for use
 // with apply.
+//
+// K8sAttributesResolver allows adding an action to collect k8s attributes.
+// DEPRECATED: Use odigosv1.Action instead
 type K8sAttributesResolverApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +45,7 @@ func K8sAttributesResolver(name, namespace string) *K8sAttributesResolverApplyCo
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+
 func (b K8sAttributesResolverApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

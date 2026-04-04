@@ -482,6 +482,22 @@ type SamplingConfiguration struct {
 	K8sHealthProbesSampling *K8sHealthProbesSamplingConfiguration `json:"k8sHealthProbesSampling,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+// ProfilingUiConfiguration holds optional UI resource limits and OTLP listen overrides for profiling.
+type ProfilingUiConfiguration struct {
+	SlotTTLSeconds int `json:"slotTTLSeconds,omitempty" yaml:"slotTTLSeconds,omitempty"`
+	MaxSlots       int `json:"maxSlots,omitempty" yaml:"maxSlots,omitempty"`
+	SlotMaxBytes   int `json:"slotMaxBytes,omitempty" yaml:"slotMaxBytes,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ProfilingConfiguration is cluster-wide continuous profiling; disabled unless Enabled is set.
+type ProfilingConfiguration struct {
+	Enabled  *bool                      `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Exporter *OtlpExporterConfiguration `json:"exporter,omitempty" yaml:"exporter,omitempty"`
+	Ui       *ProfilingUiConfiguration  `json:"ui,omitempty" yaml:"ui,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
 	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
@@ -544,4 +560,17 @@ type OdigosConfiguration struct {
 
 	// ComponentLogLevels: default = global level (e.g. from Helm); per-component overrides (e.g. from UI).
 	ComponentLogLevels *ComponentLogLevels `json:"componentLogLevels,omitempty" yaml:"componentLogLevels,omitempty"`
+
+	Profiling *ProfilingConfiguration `json:"profiling,omitempty" yaml:"profiling,omitempty"`
+}
+
+// ProfilingPipelineActive reports whether profiling pipelines and related collector settings should be applied.
+// Profiling is opt-in: Enabled must be explicitly true; nil or false keeps profiling off.
+func ProfilingPipelineActive(p *ProfilingConfiguration) bool {
+	return p != nil && p.Enabled != nil && *p.Enabled
+}
+
+// ProfilingEnabled reports whether profiling is explicitly enabled on this configuration.
+func (o *OdigosConfiguration) ProfilingEnabled() bool {
+	return o != nil && ProfilingPipelineActive(o.Profiling)
 }

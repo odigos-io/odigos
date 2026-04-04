@@ -23,7 +23,10 @@ import (
 
 // DestinationStatusApplyConfiguration represents a declarative configuration of the DestinationStatus type for use
 // with apply.
+//
+// DestinationStatus defines the observed state of Destination
 type DestinationStatusApplyConfiguration struct {
+	// Represents the observations of a destination's current state.
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

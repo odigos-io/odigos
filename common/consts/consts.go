@@ -2,6 +2,7 @@ package consts
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -155,3 +156,15 @@ var (
 const (
 	ExchangeDir = "/var/exchange"
 )
+
+// UiOtlpGrpcEndpoint returns the OTLP gRPC host:port for the UI Service in the given namespace.
+// Used by the gateway profiles-to-UI exporter and the node collector own-metrics-to-UI exporter.
+func UiOtlpGrpcEndpoint(namespace string) string {
+	return fmt.Sprintf("ui.%s:%d", namespace, OTLPPort)
+}
+
+// OtlpGrpcDNSEndpoint returns a gRPC client endpoint in dns:/// form for a Kubernetes Service
+// (cluster DNS: <service>.<namespace> with port).
+func OtlpGrpcDNSEndpoint(serviceName, namespace string, port int) string {
+	return fmt.Sprintf("dns:///%s.%s:%d", serviceName, namespace, port)
+}

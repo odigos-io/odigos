@@ -23,7 +23,11 @@ import (
 
 // DeleteAttributeStatusApplyConfiguration represents a declarative configuration of the DeleteAttributeStatus type for use
 // with apply.
+//
+// DeleteAttributeStatus defines the observed state of DeleteAttribute action
 type DeleteAttributeStatusApplyConfiguration struct {
+	// Represents the observations of a DeleteAttribute's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 
