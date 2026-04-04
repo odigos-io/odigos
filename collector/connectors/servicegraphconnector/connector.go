@@ -273,7 +273,7 @@ func (p *serviceGraphConnector) aggregateMetrics(ctx context.Context, td ptrace.
 						e.ClientService = serviceName
 						e.ClientLatencySec = spanDuration(span)
 						e.Failed = e.Failed || span.Status().Code() == ptrace.StatusCodeError
-						p.upsertDimensions(clientKind, e.Dimensions, rAttributes, span.Attributes())
+						p.upsertDimensions(serverKind, e.Dimensions, rAttributes, span.Attributes())
 
 						if virtualNodeFeatureGate.IsEnabled() {
 							p.upsertPeerAttributes(p.config.VirtualNodePeerAttributes, e.Peer, span.Attributes())
@@ -300,7 +300,7 @@ func (p *serviceGraphConnector) aggregateMetrics(ctx context.Context, td ptrace.
 						e.ServerService = serviceName
 						e.ServerLatencySec = spanDuration(span)
 						e.Failed = e.Failed || span.Status().Code() == ptrace.StatusCodeError
-						p.upsertDimensions(serverKind, e.Dimensions, rAttributes, span.Attributes())
+						p.upsertDimensions(clientKind, e.Dimensions, rAttributes, span.Attributes())
 					})
 				default:
 					// this span is not part of an edge
