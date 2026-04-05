@@ -116,7 +116,9 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, mani
 	connectors := config.GenericMap{}
 	tracesMainPipelineExporterNames := []string{}
 	additionalPipeline := map[string]config.Pipeline{}
-	if len(postSpanMetricsProcessorNames) == 0 {
+	// if we do not have any traces destinations (traceExporterNames == []) we still want to add the span metrics connector as exporter,
+	// as we are interested in the span metrics even if we don't look at traces
+	if len(postSpanMetricsProcessorNames) == 0 || len(traceExporterNames) == 0 {
 		tracesMainPipelineExporterNames = append(traceExporterNames, additionalTraceExporters...)
 	} else {
 		connectors[odigosTracesExportingForwardConnectorName] = config.GenericMap{}
