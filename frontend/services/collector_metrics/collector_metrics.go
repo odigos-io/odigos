@@ -4,21 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/frontend/services/common"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/configgrpc"
 	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/consumer/xconsumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 	"go.opentelemetry.io/collector/receiver/receivertest"
+	"go.opentelemetry.io/collector/receiver/xreceiver"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -188,8 +190,16 @@ func NewOdigosMetrics() *OdigosMetricsConsumer {
 	}
 }
 
-// Run starts the OTLP receiver and the notifications loop for receiving and processing the metrics from different Odigos collectors
-func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
+// Run serves OTLP gRPC (metrics; profiles when profilingEnabled) on otlpGrpcPort, or consts.OTLPPort if unset.
+// The OTLP receiver factory default HTTP server remains enabled unless configured elsewhere.
+func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string, nextProfiles xconsumer.Profiles, profilingEnabled bool, otlpGrpcPort int) {
+	lg := commonlogger.LoggerCompat().With("subsystem", "collector-metrics", "component", "otlp-receiver")
+
+	// In-cluster collectors send OTLP to this process; the port must match gateway/collector config (default consts.OTLPPort).
+	listenPort := otlpGrpcPort
+	if listenPort <= 0 {
+		listenPort = consts.OTLPPort
+	}
 	var closeWg sync.WaitGroup
 	// launch the notifications loop
 	closeWg.Add(1)
@@ -207,7 +217,7 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 			deleteNotifications: c.deletedChan,
 		})
 		if err != nil {
-			log.Printf("Collector metrics: Error running delete watcher: %v\n", err)
+			lg.Error("Error running delete watcher", "err", err)
 		}
 	}()
 
@@ -222,23 +232,56 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 	// Modify the gRPC listener address
 	cfg.GRPC = configoptional.Some(configgrpc.ServerConfig{
 		NetAddr: confignet.AddrConfig{
-			Endpoint:  "0.0.0.0:4317",
+			Endpoint:  fmt.Sprintf("0.0.0.0:%d", listenPort),
 			Transport: confignet.TransportTypeTCP,
 		},
 	})
 
-	r, err := f.CreateMetrics(ctx, receivertest.NewNopSettings(f.Type()), cfg, c)
+	host := componenttest.NewNopHost()
+	set := receivertest.NewNopSettings(f.Type())
+
+	// Register profiles on the shared OTLP receiver before metrics so the same otlpReceiver
+	// instance has nextProfiles set before CreateMetrics; both must be registered before Start.
+	var profilesReceiver xreceiver.Profiles
+	if profilingEnabled && nextProfiles != nil {
+		xf, xok := f.(xreceiver.Factory)
+		if !xok {
+			lg.Info("OTLP receiver factory does not support profiles; continuing with metrics only")
+		} else {
+			var profilesCreateErr error
+			profilesReceiver, profilesCreateErr = xf.CreateProfiles(ctx, set, cfg, nextProfiles)
+			if profilesCreateErr != nil {
+				lg.Error("failed to create OTLP profiles receiver; continuing with metrics only", "err", profilesCreateErr)
+				profilesReceiver = nil
+			}
+		}
+	}
+
+	metricsReceiver, err := f.CreateMetrics(ctx, set, cfg, c)
 	if err != nil {
 		panic("failed to create receiver")
 	}
 
-	if err := r.Start(ctx, componenttest.NewNopHost()); err != nil {
-		log.Printf("failed to start OTLP receiver: %v", err)
+	if err := metricsReceiver.Start(ctx, host); err != nil {
+		lg.Error("failed to start OTLP metrics receiver", "err", err)
+	}
+	if profilesReceiver != nil {
+		if err := profilesReceiver.Start(ctx, host); err != nil {
+			lg.Error("failed to start OTLP profiles receiver", "err", err)
+		}
+	}
+	if profilingEnabled && nextProfiles != nil && profilesReceiver == nil {
+		lg.Info("OTLP profiles receiver was not created; profiling ingestion disabled until fixed (gateway may log Unimplemented on ProfilesService)")
 	}
 
-	defer r.Shutdown(ctx)
+	defer func() {
+		if profilesReceiver != nil {
+			_ = profilesReceiver.Shutdown(ctx)
+		}
+		_ = metricsReceiver.Shutdown(ctx)
+	}()
 
-	log.Println("OTLP receiver is running")
+	lg.Info("OTLP receiver listening", "grpc", fmt.Sprintf("0.0.0.0:%d", listenPort), "profilesEnabled", profilingEnabled && profilesReceiver != nil)
 	<-ctx.Done()
 	closeWg.Wait()
 }

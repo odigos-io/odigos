@@ -76,7 +76,8 @@ logLevel: "info"
 # description: |-
 #   Continuous profiling (off by default): node collector → gateway → UI over OTLP gRPC. UI buffers only workloads
 #   with an open Profiler tab / enableSourceProfiling; scrape ui:3000/metrics for odigos_ui_profiling_* when enabled.
-#   When enabled, profiling.exporter and profiling.ui are written to odigos-configuration; any field you omit in a
+#   When enabled, profiling.exporter and profiling.ui are written to odigos-configuration; defaults match
+#   frontend/services/collector_profiles/defaults.go (24 slots × 8 MiB, 120s TTL). Any field you omit in a
 #   partial override falls back to the chart defaults below.
 # @schema
 profiling:
@@ -121,15 +122,15 @@ profiling:
   # @schema
   ui:
     # @schema
-    # description: Slot TTL in seconds.
+    # description: Slot TTL in seconds (matches UI in-process default when unset).
     # @schema
-    slotTTLSeconds: 300
+    slotTTLSeconds: 120
     # @schema
-    # description: Max in-memory profile slots.
+    # description: Max in-memory profile slots (default 24; with 8 MiB/slot ≈192 MiB buffer budget toward a 200 MiB target).
     # @schema
-    maxSlots: 32
+    maxSlots: 24
     # @schema
-    # description: Max bytes per slot (default 8 MiB).
+    # description: Max bytes per rolling OTLP buffer per workload (default 8 MiB; matches UI binary default).
     # @schema
     slotMaxBytes: 8388608
 

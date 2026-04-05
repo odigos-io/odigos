@@ -61,8 +61,9 @@ data:
           maxElapsedTime: {{ $pretry.maxElapsedTime | default "300s" }}
       {{- $pui := .Values.profiling.ui | default dict }}
       ui:
-        slotTTLSeconds: {{ $pui.slotTTLSeconds | default 300 | int }}
-        maxSlots: {{ $pui.maxSlots | default 32 | int }}
+        {{- /* Defaults must match frontend/services/collector_profiles/defaults.go */}}
+        slotTTLSeconds: {{ $pui.slotTTLSeconds | default 120 | int }}
+        maxSlots: {{ $pui.maxSlots | default 24 | int }}
         slotMaxBytes: {{ $pui.slotMaxBytes | default 8388608 | int }}
     {{- end }}
     {{- if .Values.collectorGateway }}
