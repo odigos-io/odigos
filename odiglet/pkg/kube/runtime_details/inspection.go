@@ -53,6 +53,7 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 			uniqueLangsSlice = append(uniqueLangsSlice, lang)
 		}
 	}
+	slices.Sort(uniqueLangsSlice)
 
 	selectedLanguage, selectionError := SelectContainerMainLanguage(uniqueLangsSlice)
 	if selectionError != nil {
