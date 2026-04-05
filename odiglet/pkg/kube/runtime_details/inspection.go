@@ -20,7 +20,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
-	kubecommon "github.com/odigos-io/odigos/odiglet/pkg/kube/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -65,6 +64,12 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 		case uniqueLangsSlice[0] == common.CPlusPlusProgrammingLanguage:
 			selectedLangDetails.Language = uniqueLangsSlice[1]
 		case uniqueLangsSlice[1] == common.CPlusPlusProgrammingLanguage:
+			selectedLangDetails.Language = uniqueLangsSlice[0]
+		// nginx can be used as a separate process in the same container
+		// in this case, we give priority to the other language as it is more likely to be the main application.
+		case uniqueLangsSlice[0] == common.NginxProgrammingLanguage:
+			selectedLangDetails.Language = uniqueLangsSlice[1]
+		case uniqueLangsSlice[1] == common.NginxProgrammingLanguage:
 			selectedLangDetails.Language = uniqueLangsSlice[0]
 		default:
 			return nil, selectedLangDetails, fmt.Errorf("two different programming languages detected in the same container, cannot determine the main language: %v", uniqueLangsSlice)
@@ -144,8 +149,7 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 	knownLangsByPid := make(map[int]common.ProgramLanguageDetails)
 
 	for _, proc := range processes {
-		containerURL := kubecommon.GetPodExternalURL(pod.Status.PodIP, container.Ports)
-		langDetails, detectErr := inspectors.DetectLanguage(proc, containerURL)
+		langDetails, detectErr := inspectors.DetectLanguage(proc)
 		if detectErr == nil && langDetails.Language != common.UnknownProgrammingLanguage {
 			knownLangsByPid[proc.ProcessID] = langDetails
 		}
