@@ -1,0 +1,71 @@
+# On-demand continuous profiling via GraphQL.
+# Flow: enableSourceProfiling → poll sourceProfiling; call releaseSourceProfiling when the user closes the UI to free memory.
+# Use profilingSlots for buffer/slot diagnostics.
+
+extend type Query {
+  """
+  Active profiling slots and which sources have buffered OTLP data.
+  """
+  profilingSlots: ProfilingSlots!
+
+  """
+  Aggregated Pyroscope-shaped profile for a source (profileJson is JSON-encoded FlamebearerProfile).
+  """
+  sourceProfiling(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): SourceProfilingResult!
+}
+
+extend type Mutation {
+  """
+  Enable or refresh the profiling slot for a workload. Must be called before sourceProfiling returns data.
+  """
+  enableSourceProfiling(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): EnableProfilingResult!
+
+  """
+  Drop the profiling slot and buffered OTLP data for this workload (e.g. user closed the profiling panel).
+  """
+  releaseSourceProfiling(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): ReleaseProfilingResult!
+}
+
+type ProfilingSlots {
+  activeKeys: [String!]!
+  keysWithData: [String!]!
+  """Total bytes currently buffered across all active slots (rolling OTLP chunks)."""
+  totalBytesUsed: Int!
+  """Configured max bytes per workload slot (rolling buffer)."""
+  slotMaxBytes: Int!
+  """Configured max concurrent workloads (LRU eviction when exceeded)."""
+  maxSlots: Int!
+  """Upper bound for total buffered bytes (maxSlots × slotMaxBytes; default 24 × 8 MiB ≈ 192 MiB toward a ~200 MiB cap)."""
+  maxTotalBytesBudget: Int!
+  """Seconds after last view request before a slot is TTL-evicted."""
+  slotTtlSeconds: Int!
+}
+
+type EnableProfilingResult {
+  status: String!
+  sourceKey: String!
+  maxSlots: Int!
+  activeSlots: Int!
+}
+
+type ReleaseProfilingResult {
+  status: String!
+  sourceKey: String!
+  activeSlots: Int!
+}
+
+type SourceProfilingResult {
+  profileJson: String!
+}
