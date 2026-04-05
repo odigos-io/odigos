@@ -168,7 +168,13 @@ func (p *serviceGraphConnector) Start(context.Context, component.Host) error {
 
 	go p.storeExpirationLoop(p.config.StoreExpirationLoop)
 
-	p.logger.Info("Started servicegraphconnector")
+	p.logger.Info("servicegraphconnector started",
+		zap.Int("extra_dimensions_count", len(p.config.Dimensions)),
+		zap.Strings("extra_dimensions", p.config.Dimensions),
+		zap.Int("virtual_node_peer_attributes_count", len(p.config.VirtualNodePeerAttributes)),
+		zap.Strings("virtual_node_peer_attributes", p.config.VirtualNodePeerAttributes),
+		zap.Bool("virtual_node_feature_gate_enabled", virtualNodeFeatureGate.IsEnabled()),
+	)
 	return nil
 }
 
@@ -273,7 +279,7 @@ func (p *serviceGraphConnector) aggregateMetrics(ctx context.Context, td ptrace.
 						e.ClientService = serviceName
 						e.ClientLatencySec = spanDuration(span)
 						e.Failed = e.Failed || span.Status().Code() == ptrace.StatusCodeError
-						p.upsertDimensions(serverKind, e.Dimensions, rAttributes, span.Attributes())
+						p.upsertDimensions(clientKind, e.Dimensions, rAttributes, span.Attributes())
 
 						if virtualNodeFeatureGate.IsEnabled() {
 							p.upsertPeerAttributes(p.config.VirtualNodePeerAttributes, e.Peer, span.Attributes())
@@ -300,7 +306,7 @@ func (p *serviceGraphConnector) aggregateMetrics(ctx context.Context, td ptrace.
 						e.ServerService = serviceName
 						e.ServerLatencySec = spanDuration(span)
 						e.Failed = e.Failed || span.Status().Code() == ptrace.StatusCodeError
-						p.upsertDimensions(clientKind, e.Dimensions, rAttributes, span.Attributes())
+						p.upsertDimensions(serverKind, e.Dimensions, rAttributes, span.Attributes())
 					})
 				default:
 					// this span is not part of an edge

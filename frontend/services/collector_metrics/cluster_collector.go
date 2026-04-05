@@ -475,7 +475,7 @@ func (sg *ServiceGraph) UpdateFromDataPoint(dp pmetric.NumberDataPoint) {
 	edge, exists := sg.edges[clientID][serverID]
 	if !exists {
 		// a server node is not virtual if it has service.name attribute
-		_, isServerInstrumentedNode := attrs.Get("client_service_name")
+		_, isServerInstrumentedNode := attrs.Get("server_service_name")
 		sg.edges[clientID][serverID] = &ServiceGraphEdge{
 			ToNodeIsVirtual: !isServerInstrumentedNode,
 			RequestCount:    val,

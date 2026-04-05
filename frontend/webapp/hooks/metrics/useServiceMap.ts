@@ -10,8 +10,10 @@ export const useServiceMap = () => {
     skip: !sources.length,
   });
 
+  const serviceMap = data?.getServiceMap?.services || [];
+
   return {
-    serviceMap: data?.getServiceMap?.services || [],
+    serviceMap,
     refetch,
   };
 };
