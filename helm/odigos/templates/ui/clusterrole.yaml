@@ -108,6 +108,7 @@ rules:
       - instrumentationconfigs
       - instrumentationinstances
       - sources
+      - samplings
     verbs:
       - update
       - patch
