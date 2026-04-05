@@ -263,6 +263,7 @@ spec:
             - /odigosotelcol
           args:
             - --config=k8scm:{{ .Release.Namespace }}/odigos-data-collection/conf
+            - --feature-gates=service.profilesSupport
           securityContext:
             {{- if $privilegedRequired }}
             privileged: true
@@ -347,6 +348,9 @@ spec:
               mountPath: /hostfs
               readOnly: true
             {{- end }}
+            - name: sys-kernel
+              mountPath: /sys/kernel
+              readOnly: true
             - name: exchange-dir
               mountPath: /var/exchange
 # if hostMounts are not allowed we must use mountMethod of "k8s-init-container"
