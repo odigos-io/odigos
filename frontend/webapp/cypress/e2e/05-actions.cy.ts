@@ -77,11 +77,11 @@ describe('Actions CRUD', () => {
             cy.get('[data-id=attributeFilters]').find('input[data-id=fallbackSamplingRatio]').first().type('1');
 
             // Click the Condition dropdown and select "String condition"
-            cy.get('[data-id=attributeFilters]').find('input[data-id=condition]').scrollIntoView().click({ force: true });
+            cy.get('[data-id=attributeFilters]').find('input[placeholder="Condition"]').scrollIntoView().click({ force: true }); // cy.get('[data-id=attributeFilters]').find('input[data-id=condition]').scrollIntoView().click({ force: true });
             cy.get('[data-id=option-stringCondition]').click({ force: true });
 
             // Click the Operation dropdown and select "Equals"
-            cy.get('[data-id=attributeFilters]').find('input[data-id=operation]').scrollIntoView().click({ force: true });
+            cy.get('[data-id=attributeFilters]').find('input[placeholder="Operation"]').scrollIntoView().click({ force: true }); // cy.get('[data-id=attributeFilters]').find('input[data-id=operation]').scrollIntoView().click({ force: true });
             cy.get('[data-id=option-equals]').click({ force: true });
 
             cy.get('[data-id=attributeFilters]').find('input[data-id=expectedValue]').type('x');
