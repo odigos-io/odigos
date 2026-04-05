@@ -14,7 +14,7 @@ require (
 	github.com/odigos-io/odigos/opampserver v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/procdiscovery v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/runtime-detector v0.0.24
-	go.opentelemetry.io/auto v0.21.0
+	go.opentelemetry.io/auto v0.23.0
 	go.opentelemetry.io/otel v1.42.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.42.0
 	go.opentelemetry.io/otel/metric v1.42.0
@@ -32,13 +32,29 @@ require (
 )
 
 require (
+	cloud.google.com/go/compute/metadata v0.9.0 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.30.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/argoproj/argo-rollouts v1.8.3 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.39.0 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.31.8 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.18.12 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.7 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.7 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.7 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.7 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.29.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.34.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.38.4 // indirect
+	github.com/aws/smithy-go v1.23.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/brunoscheufler/aws-ecs-metadata-go v0.0.0-20221221133751-67e37ae746cd // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
+	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
@@ -83,8 +99,15 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/featuregate v1.54.0 // indirect
 	go.opentelemetry.io/collector/pdata v1.54.0 // indirect
-	go.opentelemetry.io/contrib/bridges/prometheus v0.60.0 // indirect
-	go.opentelemetry.io/contrib/exporters/autoexport v0.60.0 // indirect
+	go.opentelemetry.io/contrib/bridges/prometheus v0.63.0 // indirect
+	go.opentelemetry.io/contrib/detectors/autodetect v0.10.0 // indirect
+	go.opentelemetry.io/contrib/detectors/aws/ec2/v2 v2.0.0 // indirect
+	go.opentelemetry.io/contrib/detectors/aws/ecs v1.38.0 // indirect
+	go.opentelemetry.io/contrib/detectors/aws/eks v1.38.0 // indirect
+	go.opentelemetry.io/contrib/detectors/aws/lambda v0.63.0 // indirect
+	go.opentelemetry.io/contrib/detectors/azure/azurevm v0.10.0 // indirect
+	go.opentelemetry.io/contrib/detectors/gcp v1.39.0 // indirect
+	go.opentelemetry.io/contrib/exporters/autoexport v0.63.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.18.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.18.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.42.0 // indirect
