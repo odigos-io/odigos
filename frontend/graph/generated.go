@@ -1166,11 +1166,12 @@ type ComplexityRoot struct {
 	}
 
 	ServiceMapToSource struct {
-		DateTime    func(childComplexity int) int
-		IsVirtual   func(childComplexity int) int
-		NodeID      func(childComplexity int) int
-		Requests    func(childComplexity int) int
-		ServiceName func(childComplexity int) int
+		DateTime       func(childComplexity int) int
+		IsVirtual      func(childComplexity int) int
+		NodeAttributes func(childComplexity int) int
+		NodeID         func(childComplexity int) int
+		Requests       func(childComplexity int) int
+		ServiceName    func(childComplexity int) int
 	}
 
 	ServiceNameFilter struct {
@@ -6532,6 +6533,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ServiceMapToSource.IsVirtual(childComplexity), true
+
+	case "ServiceMapToSource.nodeAttributes":
+		if e.complexity.ServiceMapToSource.NodeAttributes == nil {
+			break
+		}
+
+		return e.complexity.ServiceMapToSource.NodeAttributes(childComplexity), true
 
 	case "ServiceMapToSource.nodeId":
 		if e.complexity.ServiceMapToSource.NodeID == nil {
@@ -37424,6 +37432,8 @@ func (ec *executionContext) fieldContext_PeerSources_inbound(_ context.Context, 
 				return ec.fieldContext_ServiceMapToSource_requests(ctx, field)
 			case "dateTime":
 				return ec.fieldContext_ServiceMapToSource_dateTime(ctx, field)
+			case "nodeAttributes":
+				return ec.fieldContext_ServiceMapToSource_nodeAttributes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ServiceMapToSource", field.Name)
 		},
@@ -37480,6 +37490,8 @@ func (ec *executionContext) fieldContext_PeerSources_outbound(_ context.Context,
 				return ec.fieldContext_ServiceMapToSource_requests(ctx, field)
 			case "dateTime":
 				return ec.fieldContext_ServiceMapToSource_dateTime(ctx, field)
+			case "nodeAttributes":
+				return ec.fieldContext_ServiceMapToSource_nodeAttributes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ServiceMapToSource", field.Name)
 		},
@@ -42315,6 +42327,8 @@ func (ec *executionContext) fieldContext_ServiceMapFromSource_services(_ context
 				return ec.fieldContext_ServiceMapToSource_requests(ctx, field)
 			case "dateTime":
 				return ec.fieldContext_ServiceMapToSource_dateTime(ctx, field)
+			case "nodeAttributes":
+				return ec.fieldContext_ServiceMapToSource_nodeAttributes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ServiceMapToSource", field.Name)
 		},
@@ -42537,6 +42551,56 @@ func (ec *executionContext) fieldContext_ServiceMapToSource_dateTime(_ context.C
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceMapToSource_nodeAttributes(ctx context.Context, field graphql.CollectedField, obj *model.ServiceMapToSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ServiceMapToSource_nodeAttributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodeAttributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.NonIdentifyingAttribute)
+	fc.Result = res
+	return ec.marshalNNonIdentifyingAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNonIdentifyingAttributeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ServiceMapToSource_nodeAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceMapToSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_NonIdentifyingAttribute_key(ctx, field)
+			case "value":
+				return ec.fieldContext_NonIdentifyingAttribute_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NonIdentifyingAttribute", field.Name)
 		},
 	}
 	return fc, nil
@@ -59131,6 +59195,11 @@ func (ec *executionContext) _ServiceMapToSource(ctx context.Context, sel ast.Sel
 			}
 		case "dateTime":
 			out.Values[i] = ec._ServiceMapToSource_dateTime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nodeAttributes":
+			out.Values[i] = ec._ServiceMapToSource_nodeAttributes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
