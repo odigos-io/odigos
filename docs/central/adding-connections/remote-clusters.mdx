@@ -11,43 +11,47 @@ Once Odigos Central is running, you need to configure your remote clusters to co
   central installation.
 </Info>
 
-## Using CLI
+## Connect a remote cluster
 
-```bash
-odigos install \
-  --onprem-token <token> \
-  --set centralProxy.centralBackendURL=<your-central-backend-url> \
-  --set clusterName=<your-cluster-name>
-```
+<Tabs>
+  <Tab title="CLI">
+    ```bash
+    odigos install \
+      --onprem-token <token> \
+      --set centralProxy.centralBackendURL=<your-central-backend-url> \
+      --set clusterName=<your-cluster-name>
+    ```
 
-**Example:**
+    **Example:**
 
-```bash
-odigos install \
-  --onprem-token <token> \
-  --set centralProxy.centralBackendURL=https://central-backend.example.com:8081 \
-  --set clusterName=production-east-1
-```
+    ```bash
+    odigos install \
+      --onprem-token <token> \
+      --set centralProxy.centralBackendURL=https://central-backend.example.com:8081 \
+      --set clusterName=production-east-1
+    ```
+  </Tab>
 
-## Using Helm
+  <Tab title="Helm">
+    Add the following to your remote cluster's `values.yaml`:
 
-Add the following to your remote cluster's `values.yaml`:
+    ```yaml
+    clusterName: 'production-east-1'
 
-```yaml
-clusterName: 'production-east-1'
+    centralProxy:
+      centralBackendURL: 'https://central-backend.example.com:8081'
+    ```
 
-centralProxy:
-  centralBackendURL: 'https://central-backend.example.com:8081'
-```
+    Then install:
 
-Then install:
-
-```bash
-helm upgrade --install odigos odigos/odigos \
-  --namespace odigos-system \
-  --create-namespace \
-  -f values.yaml
-```
+    ```bash
+    helm upgrade --install odigos odigos/odigos \
+      --namespace odigos-system \
+      --create-namespace \
+      -f values.yaml
+    ```
+  </Tab>
+</Tabs>
 
 ## TLS Configuration
 

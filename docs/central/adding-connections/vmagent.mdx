@@ -1,0 +1,192 @@
+---
+title: 'Connecting VM Agent'
+description: "Connect existing VM Agent hosts to Odigos Central for centralized visibility and management."
+sidebarTitle: 'VM Agent'
+---
+
+Powered by **eBPF**, the **Odigos VM Agent** automatically instruments systemd services, processes, and containers across your Linux hosts, seamlessly exporting telemetry to your observability backends. **Odigos Central** then brings it all together, providing a single, unified interface to view and manage all your VM Agent hosts from one place.
+
+<Note>If you are looking to connect Kubernetes clusters, see [Remote Clusters](/central/adding-connections/remote-clusters).</Note>
+
+## Prerequisites
+
+Before you connect a host, make sure you:
+- Install VM Agent on your Linux hosts. If VM Agent is not installed yet, start with [VM Agent installation](/vmagent/setup/installation).
+- Expose Odigos Central externally (for example, via an Ingress, LoadBalancer Service, or another supported exposure method).
+- Have a Central endpoint URL that is reachable from your VM hosts.
+
+To connect VM Agent to Odigos Central, use one of the following methods:
+
+<Tabs>
+  <Tab title="odictl">
+    Use `odictl` to connect the VM Agent to Odigos Central.
+    <Steps>
+      <Step title="Open odictl on the host">
+        ```shell
+        odictl
+        ```
+
+        <img 
+          src="../../../images/central/vmagent/odictl-home.png" 
+          alt="odictl home screen"
+          style={{    
+            width: "700px",
+            height: "auto",
+            display: "block",
+            margin: "0 auto"
+          }}
+        />
+      </Step>
+
+      <Step title="Go to the Configuration screen">
+        Press `c` to navigate to the configuration screen.
+
+        <img 
+          src="../../../images/central/vmagent/odictl-config.png" 
+          alt="odictl config screen"
+          style={{    
+            width: "700px",
+            height: "auto",
+            display: "block",
+            margin: "0 auto"
+          }}
+        />
+      </Step>
+
+      <Step title="Navigate to the Tower section">
+        Use the arrow keys or mouse to navigate to the Tower section on the left side of the screen.
+
+        <img 
+          src="../../../images/central/vmagent/odictl-tower.png" 
+          alt="odictl tower screen"
+          style={{    
+            width: "700px",
+            height: "auto",
+            display: "block",
+            margin: "0 auto"
+          }}
+        />
+      </Step>
+      <Step title="Configure Tower settings">
+        Use the `Tab` key or mouse to navigate and configure the following fields:
+
+        <ParamField path="tower.enabled" type="boolean" required>
+          Enable the Central controller. If false, the controller will not start.<br/>
+          Set this value to `true`.
+        </ParamField>
+        <ParamField path="tower.endpoint" type="string" required>
+          WebSocket endpoint of the Central server in host:port or URL format.<br/>
+          Set this to the Central endpoint URL from the [Prerequisites](#prerequisites) section above.
+        </ParamField>
+        <ParamField path="tower.agent_name" type="string">
+          Agent name identifier for this VM Agent instance. (Defaults to IP of the host where dots are replaced with dashes, with an ip- prefix)<br/>
+          Set this to the display name you want to see in Odigos Central.
+        </ParamField>
+
+        <img 
+          src="../../../images/central/vmagent/odictl-tower-configured.png" 
+          alt="odictl tower screen"
+          style={{    
+            width: "700px",
+            height: "auto",
+            display: "block",
+            margin: "0 auto"
+          }}
+        />
+      </Step>
+      <Step title="Save the configuration">
+        Press `Ctrl+S` to save the configuration.
+      </Step>
+      <Step title="Exit odictl">
+        Press `Ctrl+C` to exit `odictl`.
+      </Step>
+      <Step title="Restart the odigos-vmagent service">
+        Restart the VM Agent service:
+        ```shell
+        sudo systemctl restart odigos-vmagent.service
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="YAML">
+    Use `YAML` configuration files to connect VM Agent to Odigos Central.
+
+    <Steps>
+      <Step title="Navigate to the /etc/odigos-vmagent folder">
+    
+        ```shell
+        cd /etc/odigos-vmagent
+        ```
+
+      </Step>
+      <Step title="Edit the config.yaml file">
+
+        Edit the `config.yaml` file using an editor of your choice. The example below uses [vi](https://en.wikipedia.org/wiki/Vi).
+
+        ```shell
+        sudo vi config.yaml
+        ```
+
+      </Step>
+      <Step title="Add Odigos Central to the configuration">
+
+        Modify the following fields:
+
+        <ParamField path="enabled" type="boolean" required>
+          Enable the Central controller. If false, the controller will not start.<br/>
+          Set this value to `true`.
+        </ParamField>
+        <ParamField path="endpoint" type="string" required>
+          WebSocket endpoint of the Central server in host:port or URL format.<br/>
+          Set this to the Central endpoint URL from the [Prerequisites](#prerequisites) section above.
+        </ParamField>
+        <ParamField path="agent_name" type="string">
+          Agent name identifier for this VM Agent instance. (Defaults to IP of the host where dots are replaced with dashes, with an ip- prefix)<br/>
+          Set this to the display name you want to see in Odigos Central.
+        </ParamField>
+
+        ```yaml
+        log_level: info
+        log_format: console
+        cli:
+          port: 23678
+        tower:
+          enabled: true
+          endpoint: "odigoscentral.example.com"
+          agent_name: ip-10-0-1-51
+          platform_type: vm
+          version: v1.6.0
+        ...
+        ```
+
+        <Note>The `YAML` above is only a snippet of the full `config.yaml` file.</Note>
+
+      </Step>
+      <Step title="Save the file">
+        
+        ```shell
+        :wq!
+        ```
+      </Step>
+      <Step title="Restart the odigos-vmagent service">
+        Restart the VM Agent service:
+        ```shell
+        sudo systemctl restart odigos-vmagent.service
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+You should now see your VM Agent listed under Connections in the Central UI.
+
+## Next steps
+
+<Card
+  title="VM Agent overview"
+  icon="desktop"
+  href="/vmagent/overview"
+>
+  Learn more about VM Agent capabilities and core concepts.
+</Card>
