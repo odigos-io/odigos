@@ -477,6 +477,13 @@ type EffectiveConfig struct {
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
 }
 
+type EnableProfilingResult struct {
+	Status      string `json:"status"`
+	SourceKey   string `json:"sourceKey"`
+	MaxSlots    int    `json:"maxSlots"`
+	ActiveSlots int    `json:"activeSlots"`
+}
+
 type EntityProperty struct {
 	Name    string  `json:"name"`
 	Value   string  `json:"value"`
@@ -1271,7 +1278,28 @@ type PodWorkloadInput struct {
 	Name      string          `json:"name"`
 }
 
+type ProfilingSlots struct {
+	ActiveKeys   []string `json:"activeKeys"`
+	KeysWithData []string `json:"keysWithData"`
+	// Total bytes currently buffered across all active slots (rolling OTLP chunks).
+	TotalBytesUsed int `json:"totalBytesUsed"`
+	// Configured max bytes per workload slot (rolling buffer).
+	SlotMaxBytes int `json:"slotMaxBytes"`
+	// Configured max concurrent workloads (LRU eviction when exceeded).
+	MaxSlots int `json:"maxSlots"`
+	// Upper bound for total buffered bytes (maxSlots * slotMaxBytes).
+	MaxTotalBytesBudget int `json:"maxTotalBytesBudget"`
+	// Seconds after last view request before a slot is TTL-evicted.
+	SlotTTLSeconds int `json:"slotTtlSeconds"`
+}
+
 type Query struct {
+}
+
+type ReleaseProfilingResult struct {
+	Status      string `json:"status"`
+	SourceKey   string `json:"sourceKey"`
+	ActiveSlots int    `json:"activeSlots"`
 }
 
 type RemoteConfig struct {
@@ -1417,6 +1445,10 @@ type SourceContainer struct {
 	Instrumented           bool    `json:"instrumented"`
 	InstrumentationMessage string  `json:"instrumentationMessage"`
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
+}
+
+type SourceProfilingResult struct {
+	ProfileJSON string `json:"profileJson"`
 }
 
 type SourcesScope struct {
