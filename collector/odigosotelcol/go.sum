@@ -990,8 +990,6 @@ github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsco
 github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector v0.141.0/go.mod h1:sGgz+XuFjUmOpAv6dlEKHkGLPGR3kVNtOZBXjrJUyqI=
 github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.141.0 h1:GL97PAwgiQlEFD2Nsi23DxnAePOuHwuVmiChCWVsDBw=
 github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.141.0/go.mod h1:VZLHoQhcracqWqEsRzXZx6gGSifaNUZzZog5FzgDSOc=
-github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.141.0 h1:T3EDYkd39NOOT71YsyHKaxoDkAfUh07fR2VfuSqUHXo=
-github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.141.0/go.mod h1:uHy0nSq4gaPHcYaNGXD3V59S5e+H3J20r9cgpEPOSNM=
 github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.141.0 h1:BKPI1YFjofRAf0Kf09S5DoBJEeOhrPUG6QlZZQgbpq8=
 github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.141.0/go.mod h1:YKdlcQq7s06qRk3jeT89wzuZHSzq5b417F/0MtKee5k=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.141.0 h1:dKd+36+X2/4shb9W3hnhK70RgssukqpDRcN3SjHx9vE=
