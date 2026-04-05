@@ -111,7 +111,7 @@ describe('Actions CRUD', () => {
 
   it(`Should update ${totalEntities} actions via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
-      SELECTED_ENTITIES.ACTIONS.forEach((actionType, idx) => {
+      SELECTED_ENTITIES.ACTIONS.forEach((actionType) => {
         updateEntity(
           {
             // no indexed node, because actions are fetched in random order
