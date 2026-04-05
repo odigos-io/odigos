@@ -30,14 +30,13 @@ const (
 )
 
 func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.GenericMap {
-
-	allProcessors := config.GenericMap{}
+	processors := config.GenericMap{}
 	for k, v := range staticProcessors {
-		allProcessors[k] = v
+		processors[k] = v
 	}
 
 	memoryLimiterConfig := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
-	allProcessors[memoryLimiterProcessorName] = memoryLimiterConfig
+	processors[memoryLimiterProcessorName] = memoryLimiterConfig
 
 	var detectors []string
 	// This is a workaround to avoid adding the gcp detector if not running on a gke environment
@@ -47,12 +46,19 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 	} else {
 		detectors = []string{"ec2", "eks", "azure", "aks"}
 	}
-	allProcessors[resourceDetectionProcessorName] = config.GenericMap{
+	processors[resourceDetectionProcessorName] = config.GenericMap{
 		"detectors": detectors,
 		"timeout":   "2s",
 	}
 
-	return allProcessors
+	// Rebuild in sorted key order so code using SortedMapStringKeys (or similar) sees a fixed order.
+	// The node collector path merges via MergeConfigs → mergeGenericMaps, which already sorts when merging—
+	// so this pass is not strictly required for that merged ConfigMap today.
+	out := make(config.GenericMap, len(processors))
+	for _, k := range config.SortedMapStringKeys(processors) {
+		out[k] = processors[k]
+	}
+	return out
 }
 
 var staticProcessors config.GenericMap
