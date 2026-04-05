@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
@@ -16,16 +17,22 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var LowPriorityLanguages = []common.ProgrammingLanguage{
+	common.CPlusPlusProgrammingLanguage, // can be a wrapper around the real application
+	common.NginxProgrammingLanguage,     // can run as a sidecar process in the same container
+	common.PythonProgrammingLanguage,    // can be a ML/AI serving runtime alongside a server
+}
 
 var errNoKnownLanguageDetected = errors.New("no known programming language detected in the container")
 
@@ -46,37 +53,13 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 			uniqueLangsSlice = append(uniqueLangsSlice, lang)
 		}
 	}
+	slices.Sort(uniqueLangsSlice)
 
-	// resolve the language detected for the container
-	// depending on the number of unique languages detected and their types
-	selectedLangDetails := common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}
-	switch len(uniqueLangsSlice) {
-	case 0:
-		return nil, selectedLangDetails, errNoKnownLanguageDetected
-	case 1:
-		selectedLangDetails.Language = uniqueLangsSlice[0]
-	case 2:
-		switch {
-		// c++ can be a wrapper of script etc.
-		// we want to detect the "later" language to get the real application.
-		// but we also want to detect c++ if it is the only language detected.
-		// hence if c++ is detected with another language, we select the other language.
-		case uniqueLangsSlice[0] == common.CPlusPlusProgrammingLanguage:
-			selectedLangDetails.Language = uniqueLangsSlice[1]
-		case uniqueLangsSlice[1] == common.CPlusPlusProgrammingLanguage:
-			selectedLangDetails.Language = uniqueLangsSlice[0]
-		// nginx can be used as a separate process in the same container
-		// in this case, we give priority to the other language as it is more likely to be the main application.
-		case uniqueLangsSlice[0] == common.NginxProgrammingLanguage:
-			selectedLangDetails.Language = uniqueLangsSlice[1]
-		case uniqueLangsSlice[1] == common.NginxProgrammingLanguage:
-			selectedLangDetails.Language = uniqueLangsSlice[0]
-		default:
-			return nil, selectedLangDetails, fmt.Errorf("two different programming languages detected in the same container, cannot determine the main language: %v", uniqueLangsSlice)
-		}
-	default:
-		return nil, selectedLangDetails, fmt.Errorf("more than two programming languages detected in the same container, cannot determine the main language: %v", uniqueLangsSlice)
+	selectedLanguage, selectionError := SelectContainerMainLanguage(uniqueLangsSlice)
+	if selectionError != nil {
+		return nil, common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}, selectionError
 	}
+	selectedLangDetails := common.ProgramLanguageDetails{Language: selectedLanguage}
 
 	// construct the list of relevant processes and determine runtime version if possible
 	// relevant processes are those that match the selected programming language
@@ -115,6 +98,29 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 	}
 
 	return runtimeInspectionFromGroupedPIDs(ctx, pods, groups, criClient, runtimeDetectionEnvs)
+}
+
+// resolves which programming language is the "main" one for a container according to the unique known languages detected.
+func SelectContainerMainLanguage(uniqueKnownLanguages []common.ProgrammingLanguage) (common.ProgrammingLanguage, error) {
+	switch len(uniqueKnownLanguages) {
+	case 0:
+		return common.UnknownProgrammingLanguage, errNoKnownLanguageDetected
+	case 1:
+		return uniqueKnownLanguages[0], nil
+	case 2:
+		switch {
+		case uniqueKnownLanguages[0] == common.JavaProgrammingLanguage || uniqueKnownLanguages[1] == common.JavaProgrammingLanguage:
+			return common.JavaProgrammingLanguage, nil
+		case slices.Contains(LowPriorityLanguages, uniqueKnownLanguages[0]):
+			return uniqueKnownLanguages[1], nil
+		case slices.Contains(LowPriorityLanguages, uniqueKnownLanguages[1]):
+			return uniqueKnownLanguages[0], nil
+		default:
+			return common.UnknownProgrammingLanguage, fmt.Errorf("two different programming languages detected in the same container, cannot determine the main language: %v", uniqueKnownLanguages)
+		}
+	default:
+		return common.UnknownProgrammingLanguage, fmt.Errorf("more than two programming languages detected in the same container, cannot determine the main language: %v", uniqueKnownLanguages)
+	}
 }
 
 // runtimeInspectionFromGroupedPIDs is like runtimeInspection but uses pre-grouped PIDs.
