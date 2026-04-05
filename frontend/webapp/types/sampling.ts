@@ -118,3 +118,19 @@ export interface CostReductionRuleInput {
   percentageAtMost: number;
   notes?: string | null;
 }
+
+export interface K8sHealthProbesSamplingConfig {
+  enabled: boolean | null;
+  keepPercentage: number | null;
+}
+
+export interface SamplingQueryResponse {
+  sampling: {
+    configs: {
+      effective: {
+        k8sHealthProbesSampling: K8sHealthProbesSamplingConfig | null;
+      };
+    };
+    rules: SamplingRules[];
+  };
+}
