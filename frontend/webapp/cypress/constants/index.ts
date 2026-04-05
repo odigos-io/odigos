@@ -79,7 +79,8 @@ export const SELECTED_ENTITIES = {
     'LatencySampler',
     'ProbabilisticSampler',
     'ServiceNameSampler',
-    'SpanAttributeSampler',
+    // TODO: uncomment when we fix data-ids for dropdown in ui-kit
+    // 'SpanAttributeSampler',
   ],
   INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };

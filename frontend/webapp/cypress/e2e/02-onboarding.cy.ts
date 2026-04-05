@@ -1,5 +1,5 @@
 import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { getCrdIds, handleExceptions, visitPage } from '../functions';
+import { getCrdIds, handleExceptions, visitPage, waitForGraphqlOperation } from '../functions';
 
 describe('Onboarding', () => {
   beforeEach(() => {
@@ -45,7 +45,7 @@ describe('Onboarding', () => {
 
       // Step 2: Sources — select the "default" namespace
       cy.contains('Add Source').should('be.visible');
-      cy.wait('@gql').then(() => {
+      waitForGraphqlOperation('GetNamespacesWithWorkloads').then(() => {
         cy.get(DATA_IDS.SELECT_NAMESPACE).should('be.visible').click();
 
         // Click the namespace checkbox to select all its workloads
@@ -60,7 +60,7 @@ describe('Onboarding', () => {
 
         // Step 3: Destinations — add Jaeger
         cy.contains('Add Destinations').should('be.visible');
-        cy.wait('@gql').then(() => {
+        waitForGraphqlOperation('GetPotentialDestinations').then(() => {
           cy.get(DATA_IDS.SELECT_DESTINATION).first().click({ force: true });
 
           // The auto-fill field should be populated from detected destinations

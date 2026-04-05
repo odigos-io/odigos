@@ -1,5 +1,5 @@
 import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { aliasQuery, awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, hasOperationName, updateEntity, visitPage } from '../functions';
+import { aliasQuery, awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, hasOperationName, updateEntity, visitPage, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -40,7 +40,7 @@ describe('Instrumentation Rules CRUD', () => {
         cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
 
         // Wait for rule to create
-        cy.wait('@gql').then(() => {
+        waitForGraphqlOperation('CreateInstrumentationRule').then(() => {
           awaitToast({ message: TEXTS.NOTIF_INSTRUMENTATION_RULE_CREATED(ruleType) });
         });
       });
@@ -64,7 +64,7 @@ describe('Instrumentation Rules CRUD', () => {
           },
           () => {
             // Wait for the rule to update
-            cy.wait('@gql').then(() => {
+            waitForGraphqlOperation('UpdateInstrumentationRule').then(() => {
               awaitToast({ message: TEXTS.NOTIF_INSTRUMENTATION_RULE_UPDATED(ruleType) });
             });
           },
@@ -93,7 +93,7 @@ describe('Instrumentation Rules CRUD', () => {
           },
           () => {
             // Wait for the rule to delete
-            cy.wait('@gql').then(() => {
+            waitForGraphqlOperation('DeleteInstrumentationRule').then(() => {
               awaitToast({ message: TEXTS.NOTIF_INSTRUMENTATION_RULE_DELETED(ruleType) });
             });
           },

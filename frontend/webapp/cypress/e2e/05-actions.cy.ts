@@ -7,7 +7,7 @@ import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, upda
 
 const namespace = NAMESPACES.ODIGOS;
 const crdName = CRD_NAMES.ACTION;
-const totalEntities = SELECTED_ENTITIES.ACTIONS.length - 1;
+const totalEntities = SELECTED_ENTITIES.ACTIONS.length;
 
 describe('Actions CRUD', () => {
   beforeEach(() => {

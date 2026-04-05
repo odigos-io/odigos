@@ -1,5 +1,5 @@
 import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { awaitToast, findCrdId, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage } from '../functions';
+import { awaitToast, findCrdId, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -73,7 +73,7 @@ describe('Sources CRUD', () => {
           () => {
             awaitToast({ message: TEXTS.NOTIF_SOURCE_UPDATING });
             // Wait for the source to update
-            cy.wait('@gql').then(() => {
+            waitForGraphqlOperation('UpdateK8sActualSource').then(() => {
               awaitToast({ message: TEXTS.NOTIF_UPDATED });
             });
           },

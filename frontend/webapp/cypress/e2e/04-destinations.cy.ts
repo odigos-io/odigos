@@ -1,5 +1,5 @@
 import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage } from '../functions';
+import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -33,7 +33,7 @@ describe('Destinations CRUD', () => {
       cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
 
       // Wait for the GraphQL mutation and the drawer to close
-      cy.wait('@gql').then(() => {
+      waitForGraphqlOperation('CreateNewDestination').then(() => {
         cy.get(DATA_IDS.WIDE_DRAWER_SAVE).should('not.exist');
         cy.wait(2000);
       });
@@ -59,7 +59,7 @@ describe('Destinations CRUD', () => {
         },
         () => {
           // Wait for the destination to update
-          cy.wait('@gql').then(() => {
+          waitForGraphqlOperation('UpdateDestination').then(() => {
             awaitToast({ message: TEXTS.NOTIF_DESTINATION_UPDATED(SELECTED_ENTITIES.DESTINATION.TYPE) });
           });
         },
@@ -86,7 +86,7 @@ describe('Destinations CRUD', () => {
         },
         () => {
           // Wait for the destination to delete
-          cy.wait('@gql').then(() => {
+          waitForGraphqlOperation('DeleteDestination').then(() => {
             awaitToast({ message: TEXTS.NOTIF_DESTINATION_DELETED(totalEntities) }, () => {
               getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
             });
