@@ -8,6 +8,7 @@ export const ROUTES = {
   INSTRUMENTATION_RULES: '/instrumentation-rules',
   SERVICE_MAP: '/service-map',
   PIPELINE_COLLECTORS: '/pipeline-collectors',
+  SAMPLING: '/sampling',
 
   // legacy routes
   CHOOSE_STREAM: '/choose-stream',
