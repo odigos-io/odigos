@@ -120,6 +120,7 @@ func mergeExtensions(extensions1 []string, extensions2 []string) []string {
 func mergePipelines(pipelines1 map[string]Pipeline, pipelines2 map[string]Pipeline) (map[string]Pipeline, error) {
 	// Create a copy of pipelines1 to avoid modifying the input
 	// MergeConfigs merges each domain's pipelines; use SortedMapStringKeys
+	// to keep the order of the pipelines stable.
 	mergedPipelines := make(map[string]Pipeline, len(pipelines1)+len(pipelines2))
 	for _, k := range SortedMapStringKeys(pipelines1) {
 		mergedPipelines[k] = pipelines1[k]

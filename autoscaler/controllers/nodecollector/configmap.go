@@ -19,6 +19,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -73,6 +74,11 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 }
 
 func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context, configAsYamlText string) error {
+	desiredData := map[string]string{
+		k8sconsts.OdigosNodeCollectorConfigMapKey: configAsYamlText,
+	}
+
+	b.logConfigMapDataIfChanged(ctx, k8sconsts.OdigosNodeCollectorConfigMapName, desiredData)
 
 	nodeCollectorCg := v1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -83,9 +89,7 @@ func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context
 			Name:      k8sconsts.OdigosNodeCollectorConfigMapName,
 			Namespace: b.odigosNamespace,
 		},
-		Data: map[string]string{
-			k8sconsts.OdigosNodeCollectorConfigMapKey: configAsYamlText,
-		},
+		Data: desiredData,
 	}
 
 	// set the autoscaler deployment as the owner of the configmap
@@ -113,6 +117,9 @@ func (b *nodeCollectorBaseReconciler) persistCollectorConfigDomains(ctx context.
 		data[domain] = string(configYaml)
 	}
 
+	// log existing vs desired data at debug level to help diagnose unexpected configmap churn
+	b.logConfigMapDataIfChanged(ctx, k8sconsts.OdigosNodeCollectorConfigMapConfigDomainsName, data)
+
 	cmDomains := v1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -134,6 +141,42 @@ func (b *nodeCollectorBaseReconciler) persistCollectorConfigDomains(ctx context.
 		return errors.Join(err, errors.New("failed to apply node collector config map domains in kubernetes"))
 	}
 	return nil
+}
+
+func (b *nodeCollectorBaseReconciler) logConfigMapDataIfChanged(ctx context.Context, cmName string, desiredData map[string]string) {
+	logger := commonlogger.FromContext(ctx)
+
+	existing := &v1.ConfigMap{}
+	err := b.Client.Get(ctx, client.ObjectKey{Namespace: b.odigosNamespace, Name: cmName}, existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			logger.Debug("failed to get existing configmap for comparison, skipping", "configMap", cmName, "error", err)
+		}
+		return
+	}
+
+	if len(existing.Data) == 0 {
+		return
+	}
+
+	if mapsEqual(existing.Data, desiredData) {
+		logger.Debug("node collector configmap unchanged", "configMap", cmName)
+		return
+	}
+
+	logger.Debug("node collector configmap changed", "configMap", cmName, "existingData", existing.Data, "desiredData", desiredData)
+}
+
+func mapsEqual(a, b map[string]string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
 }
 
 func calculateCollectorConfigDomains(
