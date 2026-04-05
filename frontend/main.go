@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"go.opentelemetry.io/collector/consumer/xconsumer"
 	"k8s.io/klog/v2"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -36,6 +37,8 @@ import (
 	"github.com/odigos-io/odigos/frontend/middlewares"
 	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
+	collectorprofiles "github.com/odigos-io/odigos/frontend/services/collector_profiles"
+	fecommon "github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/frontend/services/db"
 	metrics "github.com/odigos-io/odigos/frontend/services/metrics"
 	"github.com/odigos-io/odigos/frontend/services/sse"
@@ -152,7 +155,13 @@ func serveClientFiles(ctx context.Context, r *gin.Engine, dist fs.FS) {
 	})
 }
 
-func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, k8sCacheClient client.Client, promAPI v1.API) (*gin.Engine, error) {
+func startHTTPServer(ctx context.Context,
+	flags *Flags,
+	logger logr.Logger,
+	odigosMetrics *collectormetrics.OdigosMetricsConsumer,
+	k8sCacheClient client.Client,
+	promAPI v1.API,
+	profileStore fecommon.ProfileStoreRef) (*gin.Engine, error) {
 	var r *gin.Engine
 	if flags.Debug {
 		r = gin.Default()
@@ -198,6 +207,7 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 			Logger:          logger,
 			PromAPI:         promAPI,
 			K8sCacheClient:  k8sCacheClient,
+			ProfileStore:    profileStore,
 		},
 	})
 	gqlExecutor := executor.New(gqlExecutableSchema)
@@ -323,12 +333,30 @@ func main() {
 		os.Exit(1)
 	}
 
+	recvOn, otlpGrpcPort, maxSlots, ttlSec, slotMaxBytes, cleanupInt, profCfgErr := services.ResolveProfilingFromEffectiveConfig(ctx, k8sCacheClient)
+	if profCfgErr != nil {
+		log.Info("profiling: could not load effective config; receiver will stay disabled", "err", profCfgErr)
+	}
+	profileStore := collectorprofiles.NewProfileStore(maxSlots, ttlSec, slotMaxBytes, cleanupInt)
+	profileStore.RunCleanup(ctx)
+	defer profileStore.StopCleanup()
+	var profConsumer xconsumer.Profiles
+	if recvOn {
+		var err error
+		profConsumer, err = collectorprofiles.NewProfilesConsumer(profileStore)
+		if err != nil {
+			log.Error("profiling: failed to create profiles consumer", "err", err)
+			recvOn = false
+		}
+	}
+	var profileStoreRef fecommon.ProfileStoreRef = profileStore
+
 	odigosMetrics := collectormetrics.NewOdigosMetrics()
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		odigosMetrics.Run(ctx, flags.Namespace)
+		odigosMetrics.Run(ctx, flags.Namespace, profConsumer, recvOn, otlpGrpcPort)
 	}()
 
 	// Start watchers
@@ -347,7 +375,7 @@ func main() {
 	}
 
 	// Start server
-	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient, promAPI)
+	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient, promAPI, profileStoreRef)
 	if err != nil {
 		log.Error("Error starting server", "err", err)
 		os.Exit(1)
