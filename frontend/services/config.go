@@ -2,188 +2,81 @@ package services
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
-	"log"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/config"
 	"github.com/odigos-io/odigos/frontend/graph/model"
-	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
-type InstallationStatus string
+func GetConfigYamls() ([]*model.ConfigYaml, error) {
+	var resp []*model.ConfigYaml
 
-const (
-	NewInstallation InstallationStatus = "NEW"
-	Finished        InstallationStatus = "FINISHED"
-)
+	for _, cfg := range config.Get() {
+		var fields []*model.ConfigYamlField
+		for _, f := range cfg.Spec.Fields {
+			field := &model.ConfigYamlField{
+				DisplayName:   f.DisplayName,
+				ComponentType: model.FieldType(f.ComponentType),
+				IsHelmOnly:    f.IsHelmOnly,
+				Description:   f.Description,
+				HelmValuePath: f.HelmValuePath,
+			}
 
-var (
-	ErrorIsReadonly = errors.New("cannot execute this mutation in readonly mode")
-)
+			if f.DocsLink != "" {
+				field.DocsLink = &f.DocsLink
+			}
 
-func GetConfig(ctx context.Context) model.Config {
-	odigosDeployment, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-	if err != nil {
-		// assign default values (should not happen in production, but we want to be safe)
-		odigosDeployment = &corev1.ConfigMap{}
-		odigosDeployment.Data = map[string]string{
-			k8sconsts.OdigosDeploymentConfigMapTierKey:               string(common.CommunityOdigosTier),
-			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
+			if len(f.ComponentProps) > 0 {
+				propsJSON, err := json.Marshal(f.ComponentProps)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal component props: %w", err)
+				}
+				s := string(propsJSON)
+				field.ComponentProps = &s
+			}
+
+			fields = append(fields, field)
 		}
+
+		resp = append(resp, &model.ConfigYaml{
+			Name:        cfg.Metadata.Name,
+			DisplayName: cfg.Metadata.DisplayName,
+			Fields:      fields,
+		})
 	}
 
-	response := buildConfigResponse(ctx, odigosDeployment.Data)
-
-	return response
+	return resp, nil
 }
 
-func buildConfigResponse(ctx context.Context, deploymentData map[string]string) model.Config {
-	var response model.Config
-	config, err := GetOdigosConfiguration(ctx)
-	if err != nil {
-		log.Printf("Failed to get Config map: %v\n", err)
-	}
-	response.Readonly = config.UiMode == common.UiModeReadonly
-	response.PlatformType = model.ComputePlatformTypeK8s
-	response.Tier = model.Tier(deploymentData[k8sconsts.OdigosDeploymentConfigMapTierKey])
-	response.OdigosVersion = deploymentData[k8sconsts.OdigosDeploymentConfigMapVersionKey]
-	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
-	response.ClusterName = &config.ClusterName
-	isConnected, err := isCentralProxyRunning(ctx)
-	if err != nil {
-		log.Printf("Error checking if central proxy connected: %v\n", err)
-	}
-	configured := isConfiguredForCentralBackend(common.OdigosTier(response.Tier), &config.ClusterName, config)
-	if configured && isConnected {
-		response.IsCentralProxyRunning = &isConnected
-	} else {
-		response.IsCentralProxyRunning = nil
-	}
-	response.InstallationStatus = getInstallationStatus(ctx, deploymentData)
-	return response
-}
-
-func GetOdigosConfiguration(ctx context.Context) (*common.OdigosConfiguration, error) {
+// GetEffectiveConfigWithRawYAML retrieves the effective config along with its raw YAML representation.
+func GetEffectiveConfigWithRawYAML(ctx context.Context, c client.Client) (*common.OdigosConfiguration, string, error) {
 	ns := env.GetCurrentNamespace()
 
-	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+	var cm v1.ConfigMap
+	err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosEffectiveConfigName}, &cm)
 	if err != nil {
-		log.Printf("Error getting config maps: %v\n", err)
-		return nil, err
+		return nil, "", client.IgnoreNotFound(err)
 	}
 
-	var odigosConfiguration common.OdigosConfiguration
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration); err != nil {
-		log.Printf("Error parsing YAML from ConfigMap %s: %v\n", configMap.Name, err)
-		return nil, err
+	if cm.Data == nil || cm.Data[consts.OdigosConfigurationFileName] == "" {
+		return nil, "", nil
 	}
 
-	return &odigosConfiguration, nil
-}
+	rawYAML := cm.Data[consts.OdigosConfigurationFileName]
 
-func IsReadonlyMode(ctx context.Context) bool {
-	config, err := GetOdigosConfiguration(ctx)
-	if err != nil {
-		return false
+	var odigosConfig common.OdigosConfiguration
+	if err := yaml.Unmarshal([]byte(rawYAML), &odigosConfig); err != nil {
+		return nil, "", fmt.Errorf("failed to parse odigos config: %w", err)
 	}
 
-	return config.UiMode == common.UiModeReadonly
-}
-
-func isConfiguredForCentralBackend(tier common.OdigosTier, clusterName *string, config *common.OdigosConfiguration) bool {
-	if tier != common.OnPremOdigosTier {
-		return false
-	}
-
-	if clusterName == nil || *clusterName == "" {
-		return false
-	}
-
-	if config.CentralBackendURL == "" {
-		return false
-	}
-	return true
-}
-
-func isCentralProxyRunning(ctx context.Context) (bool, error) {
-	ns := env.GetCurrentNamespace()
-	deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, k8sconsts.CentralProxyDeploymentName, metav1.GetOptions{})
-	if err != nil {
-		log.Printf("Central proxy deployment not found: %v\n", err)
-		return false, nil
-	}
-	if deployment.Status.AvailableReplicas == 0 {
-		return false, nil
-	}
-	return true, nil
-}
-
-// getInstallationStatus reads the installation status from the already-fetched
-// odigos-deployment ConfigMap data. If not yet persisted, it computes the status
-// from cluster state and persists the result for future calls.
-func getInstallationStatus(ctx context.Context, deploymentData map[string]string) model.InstallationStatus {
-	if status := deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationStatusKey]; status != "" {
-		return model.InstallationStatus(status)
-	}
-
-	// Compute from cluster state and persist the result
-	computed := string(NewInstallation)
-	if isSourceCreated(ctx) || isDestinationConnected(ctx) {
-		computed = string(Finished)
-	}
-
-	if err := persistInstallationStatus(ctx, computed); err != nil {
-		log.Printf("Error persisting installation status: %v\n", err)
-	}
-	return model.InstallationStatus(computed)
-}
-
-func MarkInstallationFinished(ctx context.Context) {
-	if err := persistInstallationStatus(ctx, string(Finished)); err != nil {
-		log.Printf("Error marking installation as finished: %v\n", err)
-	}
-}
-
-func persistInstallationStatus(ctx context.Context, status string) error {
-	ns := env.GetCurrentNamespace()
-	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to get odigos-deployment: %w", err)
-	}
-	if cm.Data == nil {
-		cm.Data = make(map[string]string)
-	}
-	cm.Data[k8sconsts.OdigosDeploymentConfigMapInstallationStatusKey] = status
-	_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
-	return err
-}
-
-func isSourceCreated(ctx context.Context) bool {
-	sourceList, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{Limit: 1})
-	if err != nil {
-		return false
-	}
-
-	return len(sourceList.Items) > 0
-}
-
-func isDestinationConnected(ctx context.Context) bool {
-	ns := env.GetCurrentNamespace()
-
-	dests, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		log.Printf("Error listing destinations: %v\n", err)
-		return false
-	}
-
-	return len(dests.Items) > 0
+	return &odigosConfig, rawYAML, nil
 }
