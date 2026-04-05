@@ -20,6 +20,10 @@ package v1alpha1
 // InstrumentationLibraryConfigTracesApplyConfiguration represents a declarative configuration of the InstrumentationLibraryConfigTraces type for use
 // with apply.
 type InstrumentationLibraryConfigTracesApplyConfiguration struct {
+	// Whether the instrumentation library is enabled to record traces.
+	// When false, it is expected that the instrumentation library does not produce any spans regardless of any other configuration.
+	// When true, the instrumentation library should produce spans according to the other configuration options.
+	// If not specified, the default value for this signal should be used (whether to enable libraries by default or not).
 	Enabled *bool `json:"enabled,omitempty"`
 }
 

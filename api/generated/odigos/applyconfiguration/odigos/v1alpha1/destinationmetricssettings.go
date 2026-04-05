@@ -20,6 +20,10 @@ package v1alpha1
 // DestinationMetricsSettingsApplyConfiguration represents a declarative configuration of the DestinationMetricsSettings type for use
 // with apply.
 type DestinationMetricsSettingsApplyConfiguration struct {
+	// following settings enables/disables specific metric sources
+	// true - collect and send this metric source
+	// false - do not collect and send this metric source
+	// nil - use the default setting (from destination manifest, or cluster global setting)
 	CollectSpanMetrics      *bool `json:"spanMetricsEnabled,omitempty"`
 	CollectHostMetrics      *bool `json:"hostMetricsEnabled,omitempty"`
 	CollectKubeletStats     *bool `json:"kubeletStatsEnabled,omitempty"`

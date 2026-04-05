@@ -25,23 +25,70 @@ import (
 
 // CollectorsGroupSpecApplyConfiguration represents a declarative configuration of the CollectorsGroupSpec type for use
 // with apply.
+//
+// CollectorsGroupSpec defines the desired state of Collector
 type CollectorsGroupSpecApplyConfiguration struct {
-	Role                                  *odigosv1alpha1.CollectorsGroupRole                         `json:"role,omitempty"`
-	CollectorOwnMetricsPort               *int32                                                      `json:"collectorOwnMetricsPort,omitempty"`
-	ResourcesSettings                     *CollectorsGroupResourcesSettingsApplyConfiguration         `json:"resourcesSettings,omitempty"`
-	ServiceGraphDisabled                  *bool                                                       `json:"serviceGraphDisabled,omitempty"`
-	ServiceGraphExtraDimensions           []string                                                    `json:"serviceGraphExtraDimensions,omitempty"`
-	ServiceGraphVirtualNodePeerAttributes []string                                                    `json:"serviceGraphVirtualNodePeerAttributes,omitempty"`
-	EnableDataCompression                 *bool                                                       `json:"enableDataCompression,omitempty"`
-	OtlpExporterConfiguration             *common.OtlpExporterConfiguration                           `json:"otlpExporterConfiguration,omitempty"`
-	ClusterMetricsEnabled                 *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
-	HttpsProxyAddress                     *string                                                     `json:"httpsProxyAddress,omitempty"`
-	Metrics                               *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
-	NodeSelector                          *map[string]string                                          `json:"nodeSelector,omitempty"`
-	DeploymentName                        *string                                                     `json:"deploymentName,omitempty"`
-	TailSampling                          *sampling.TailSamplingConfiguration                         `json:"tailSampling,omitempty"`
-	SamplingDryRun                        *bool                                                       `json:"samplingDryRun,omitempty"`
-	SpanSamplingAttributes                *sampling.SpanSamplingAttributesConfiguration               `json:"spanSamplingAttributes,omitempty"`
+	Role *odigosv1alpha1.CollectorsGroupRole `json:"role,omitempty"`
+	// The port to use for exposing the collector's own metrics as a prometheus endpoint.
+	// This can be used to resolve conflicting ports when a collector is using the host network.
+	CollectorOwnMetricsPort *int32 `json:"collectorOwnMetricsPort,omitempty"`
+	// Resources [memory/cpu] settings for the collectors group.
+	// these settings are used to protect the collectors instances from:
+	// - running out of memory and being killed by the k8s OOM killer
+	// - consuming all available memory on the node which can lead to node instability
+	// - pushing back pressure to the instrumented applications
+	ResourcesSettings *CollectorsGroupResourcesSettingsApplyConfiguration `json:"resourcesSettings,omitempty"`
+	// ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.
+	// It is enabled by default and can be disabled by setting the enabled flag to false.
+	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
+	// ServiceGraphExtraDimensions are additional span attribute names to include as dimensions
+	// in the service graph metrics, on top of the default service.name dimension.
+	ServiceGraphExtraDimensions []string `json:"serviceGraphExtraDimensions,omitempty"`
+	// ServiceGraphVirtualNodePeerAttributes is an ordered list of span attributes used to identify
+	// uninstrumented (virtual) nodes in the service graph.
+	// The connector picks the first attribute that has a value on the span.
+	// When nil/empty, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+	ServiceGraphVirtualNodePeerAttributes []string `json:"serviceGraphVirtualNodePeerAttributes,omitempty"`
+	// Deprecated - use OtlpExporterConfiguration instead.
+	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	EnableDataCompression *bool `json:"enableDataCompression,omitempty"`
+	// OtlpExporterConfiguration is the configuration for the OTLP exporter from node collector to cluster gateway collector.
+	OtlpExporterConfiguration *common.OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
+	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
+	// for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
+	// when unset or empty, no proxy will be used.
+	HttpsProxyAddress *string `json:"httpsProxyAddress,omitempty"`
+	// configuration for metrics handling in this collectors group
+	// if metric collection is disabled, this will be nil
+	// the content is populated only if relevant to this collectors group
+	// it's being calculated based on active destinations and their settings,
+	// and global settings provided in the odigos configuration or instrumentation rules.
+	// it allows for the collector group reconciler to be simplified,
+	// and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
+	Metrics *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
+	// Node selector for the collectors group deployment.
+	// Use this to force the gateway to run only on nodes with specific labels.
+	// This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
+	// If no matching nodes exist, the pod will remain Pending.
+	NodeSelector *map[string]string `json:"nodeSelector,omitempty"`
+	// Deployment name for the collectors group deployment.
+	// Only relevant for cluster gateway collector.
+	DeploymentName *string `json:"deploymentName,omitempty"`
+	// Sampling holds the sampling configuration derived from the OdigosConfiguration.
+	// Currently this is only relevant for the cluster gateway collector.
+	TailSampling *sampling.TailSamplingConfiguration `json:"tailSampling,omitempty"`
+	// Set to true to enable dry run mode for sampling.
+	// When enabled, odigos will invoke the sampling logic, but will not drop any traces.
+	// This is useful while evaluating sampling rules to check for effectiveness and correctness
+	// before committing to any changes that might lose data.
+	SamplingDryRun *bool `json:"samplingDryRun,omitempty"`
+	// Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
+	// Capturing these attributes gives visibility into sampling decision-making and effective
+	// sampling percentages when viewing traces or querying the database with tools.
+	SpanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration `json:"spanSamplingAttributes,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with

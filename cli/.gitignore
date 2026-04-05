@@ -1,3 +1,5 @@
 vendor/
 
 dist/
+bin/
+licenses/

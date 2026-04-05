@@ -23,7 +23,11 @@ import (
 
 // AddClusterInfoStatusApplyConfiguration represents a declarative configuration of the AddClusterInfoStatus type for use
 // with apply.
+//
+// AddClusterInfoStatus defines the observed state of AddClusterInfo action
 type AddClusterInfoStatusApplyConfiguration struct {
+	// Represents the observations of a addclusterinfo's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

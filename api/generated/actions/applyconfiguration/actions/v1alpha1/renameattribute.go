@@ -25,6 +25,9 @@ import (
 
 // RenameAttributeApplyConfiguration represents a declarative configuration of the RenameAttribute type for use
 // with apply.
+//
+// RenameAttribute is the Schema for the RenameAttribute odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type RenameAttributeApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +45,7 @@ func RenameAttribute(name, namespace string) *RenameAttributeApplyConfiguration 
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+
 func (b RenameAttributeApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

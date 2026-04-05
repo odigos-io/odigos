@@ -24,18 +24,36 @@ import (
 
 // ContainerAgentConfigApplyConfiguration represents a declarative configuration of the ContainerAgentConfig type for use
 // with apply.
+//
+// ContainerAgentConfig is a configuration for a specific container in a workload.
 type ContainerAgentConfigApplyConfiguration struct {
-	ContainerName                *string                               `json:"containerName,omitempty"`
-	AgentEnabled                 *bool                                 `json:"agentEnabled,omitempty"`
-	AgentEnabledReason           *odigosv1alpha1.AgentEnabledReason    `json:"agentEnabledReason,omitempty"`
-	AgentEnabledMessage          *string                               `json:"agentEnabledMessage,omitempty"`
-	PodManifestInjectionOptional *bool                                 `json:"podManifestInjectionOptional,omitempty"`
-	OtelDistroName               *string                               `json:"otelDistroName,omitempty"`
-	DistroParams                 map[string]string                     `json:"distroParams,omitempty"`
-	EnvInjectionMethod           *common.EnvInjectionDecision          `json:"envInjectionMethod,omitempty"`
-	Traces                       *AgentTracesConfigApplyConfiguration  `json:"traces,omitempty"`
-	Metrics                      *AgentMetricsConfigApplyConfiguration `json:"metrics,omitempty"`
-	Logs                         *odigosv1alpha1.AgentLogsConfig       `json:"logs,omitempty"`
+	// The name of the container to which this configuration applies.
+	ContainerName *string `json:"containerName,omitempty"`
+	// boolean flag to indicate if the agent should be enabled for this container.
+	AgentEnabled *bool `json:"agentEnabled,omitempty"`
+	// An enum reason for the agent injection decision.
+	AgentEnabledReason *odigosv1alpha1.AgentEnabledReason `json:"agentEnabledReason,omitempty"`
+	// free text message to provide more information about the instrumentation decision.
+	// can be left empty if reason is self-explanatory.
+	AgentEnabledMessage *string `json:"agentEnabledMessage,omitempty"`
+	// set to true if the agent used in this container can be injected without pod manifest changes.
+	PodManifestInjectionOptional *bool `json:"podManifestInjectionOptional,omitempty"`
+	// The name of the otel distribution to use for this container.
+	// if the name is empty, this container should not be instrumented.
+	OtelDistroName *string `json:"otelDistroName,omitempty"`
+	// Additional parameters to the distro that controls how it's being applied.
+	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
+	DistroParams map[string]string `json:"distroParams,omitempty"`
+	// What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+	// Can be either "loader" or "pod-manifest".
+	// The injection should still check the actual values in the container manifest before injecting.
+	// Nil means that this container should not have env injection (agent should not be injected, or distro does not specify "loader" injection envs).
+	EnvInjectionMethod *common.EnvInjectionDecision `json:"envInjectionMethod,omitempty"`
+	// Each enabled signal must be set with a non-nil value (even if the config content is empty).
+	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
+	Traces  *AgentTracesConfigApplyConfiguration  `json:"traces,omitempty"`
+	Metrics *AgentMetricsConfigApplyConfiguration `json:"metrics,omitempty"`
+	Logs    *odigosv1alpha1.AgentLogsConfig       `json:"logs,omitempty"`
 }
 
 // ContainerAgentConfigApplyConfiguration constructs a declarative configuration of the ContainerAgentConfig type for use with

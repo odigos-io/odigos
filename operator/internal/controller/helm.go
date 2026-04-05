@@ -366,7 +366,7 @@ func getRelatedImageOverrides() map[string]interface{} {
 	// TODO: Remove this hardcoded fallback once CLI image is properly configured
 	// Temporarily hardcode CLI image if not set via env var
 	if _, ok := images["cli"]; !ok {
-		images["cli"] = "registry.odigos.io/odigos-cli-ubi9:v1.14.0"
+		images["cli"] = "registry.connect.redhat.com/odigos/odigos-cli-ubi9:v1.22.2"
 	}
 
 	return images

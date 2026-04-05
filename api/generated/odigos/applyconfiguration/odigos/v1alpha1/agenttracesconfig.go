@@ -24,13 +24,25 @@ import (
 
 // AgentTracesConfigApplyConfiguration represents a declarative configuration of the AgentTracesConfig type for use
 // with apply.
+//
+// all "traces" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
 type AgentTracesConfigApplyConfiguration struct {
-	IdGenerator       *IdGeneratorConfigApplyConfiguration       `json:"idGenerator,omitempty"`
-	UrlTemplatization *api.UrlTemplatizationConfig               `json:"urlTemplatization,omitempty"`
+	// id generator configuration for the traces.
+	// if not specified, the default random id generator will be used.
+	IdGenerator *IdGeneratorConfigApplyConfiguration `json:"idGenerator,omitempty"`
+	// A list of URL templatization configurations to be applied to the traces.
+	UrlTemplatization *api.UrlTemplatizationConfig `json:"urlTemplatization,omitempty"`
+	// Configuration for headers collection. If not specified, no headers will be collected.
 	HeadersCollection *HeadersCollectionConfigApplyConfiguration `json:"headersCollection,omitempty"`
-	HeadSampling      *HeadSamplingConfigApplyConfiguration      `json:"headSampling,omitempty"`
-	SpanRenamer       *SpanRenamerConfigApplyConfiguration       `json:"spanRenamer,omitempty"`
-	PayloadCollection *instrumentationrules.PayloadCollection    `json:"payloadCollection,omitempty"`
+	// HeadSamplingConfig is a set sampling rules.
+	// This config currently only applies to root spans.
+	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
+	HeadSampling *HeadSamplingConfigApplyConfiguration `json:"headSampling,omitempty"`
+	// Configuration for span renamer.
+	SpanRenamer *SpanRenamerConfigApplyConfiguration `json:"spanRenamer,omitempty"`
+	// configuration for payload collection for this container.
+	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 }
 
 // AgentTracesConfigApplyConfiguration constructs a declarative configuration of the AgentTracesConfig type for use with

@@ -24,11 +24,26 @@ import (
 // SourceSpecApplyConfiguration represents a declarative configuration of the SourceSpec type for use
 // with apply.
 type SourceSpecApplyConfiguration struct {
-	Workload                 *k8sconsts.PodWorkload                `json:"workload,omitempty"`
-	DisableInstrumentation   *bool                                 `json:"disableInstrumentation,omitempty"`
-	OtelServiceName          *string                               `json:"otelServiceName,omitempty"`
-	ContainerOverrides       []ContainerOverrideApplyConfiguration `json:"containerOverrides,omitempty"`
-	MatchWorkloadNameAsRegex *bool                                 `json:"matchWorkloadNameAsRegex,omitempty"`
+	// Workload represents the workload or namespace to be instrumented.
+	// This field is required upon creation and cannot be modified.
+	Workload *k8sconsts.PodWorkload `json:"workload,omitempty"`
+	// DisableInstrumentation excludes this workload from auto-instrumentation.
+	DisableInstrumentation *bool `json:"disableInstrumentation,omitempty"`
+	// OtelServiceName determines the "service.name" resource attribute which will be reported by the instrumentations of this source.
+	// If not set, the workload name will be used.
+	// It is not valid for namespace sources.
+	OtelServiceName *string `json:"otelServiceName,omitempty"`
+	// Specify specific override values for containers in a workload source.
+	// Not valid for namespace sources.
+	// Can be used to set the runtime info in case the automatic detection fails or produce wrong results.
+	// Containers are identified by their names.
+	// All containers not listed will retain their default behavior.
+	ContainerOverrides []ContainerOverrideApplyConfiguration `json:"containerOverrides,omitempty"`
+	// MatchWorkloadNameAsRegex indicates that the workload name should be matched using regex.
+	// When true, spec.workload.name is treated as a regular expression pattern.
+	// This allows matching multiple workloads with a single Source CRD.
+	// Not valid for namespace sources.
+	MatchWorkloadNameAsRegex *bool `json:"matchWorkloadNameAsRegex,omitempty"`
 }
 
 // SourceSpecApplyConfiguration constructs a declarative configuration of the SourceSpec type for use with
