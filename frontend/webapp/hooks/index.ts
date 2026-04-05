@@ -9,6 +9,7 @@ export * from './instrumentation-rules';
 export * from './metrics';
 export * from './namespaces';
 export * from './notification';
+export * from './profiling';
 export * from './pipeline-collectors';
 export * from './metrics';
 export * from './sampling';
