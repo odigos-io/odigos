@@ -273,7 +273,7 @@ deploy-%:
 
 .PHONY: deploy
 deploy:
-	make -j 6 deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor deploy-scheduler deploy-ui
+	make deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor deploy-scheduler deploy-ui
 
 .PHONY: debug-odiglet
 debug-odiglet:
