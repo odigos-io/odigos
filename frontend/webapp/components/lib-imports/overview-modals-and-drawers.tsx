@@ -9,20 +9,22 @@ import {
   useNamespace,
   usePotentialDestinations,
   useSourceCRUD,
+  useProfiling,
   useTestConnection,
   useWorkloadUtils,
 } from '@/hooks';
 
 const OverviewModalsAndDrawers = () => {
-  const { fetchNamespacesWithWorkloads } = useNamespace();
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
   const { categories } = useDestinationCategories();
-  const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
+  const { fetchNamespacesWithWorkloads } = useNamespace();
   const { potentialDestinations } = usePotentialDestinations();
   const { createAction, updateAction, deleteAction } = useActionCRUD();
-  const { persistSources, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
+  const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
+  const { fetchProfilingSlots, enableProfiling, releaseProfiling, fetchSourceProfiling } = useProfiling();
+  const { persistSources, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
   const { createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   return (
@@ -52,6 +54,10 @@ const OverviewModalsAndDrawers = () => {
         fetchSourceDescribe={fetchDescribeSource}
         fetchSourceLibraries={fetchSourceLibraries}
         fetchPeerSources={fetchPeerSources}
+        fetchProfilingSlots={fetchProfilingSlots}
+        enableProfiling={enableProfiling}
+        releaseProfiling={releaseProfiling}
+        fetchSourceProfiling={fetchSourceProfiling}
       />
       <DestinationDrawer categories={categories} updateDestination={updateDestination} deleteDestination={deleteDestination} testConnection={testConnection} />
       <InstrumentationRuleDrawer updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />

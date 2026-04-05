@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
+import { useLazyQuery, useMutation } from '@apollo/client';
 import { GET_PROFILING_SLOTS, GET_SOURCE_PROFILING, ENABLE_SOURCE_PROFILING, RELEASE_SOURCE_PROFILING } from '@/graphql';
 
 interface SourceIdentifier {
@@ -35,22 +35,16 @@ interface SourceProfilingResult {
   profileJson: string;
 }
 
-interface UseProfiler {
-  slots: ProfilingSlots | undefined;
-  slotsLoading: boolean;
-  refetchSlots: () => void;
+interface UseProfiling {
+  fetchProfilingSlots: () => Promise<ProfilingSlots | undefined>;
   enableProfiling: (source: SourceIdentifier) => Promise<EnableProfilingResult | undefined>;
   releaseProfiling: (source: SourceIdentifier) => Promise<ReleaseProfilingResult | undefined>;
   fetchSourceProfiling: (source: SourceIdentifier) => Promise<SourceProfilingResult | undefined>;
 }
 
-export const useProfiling = (pollSlots?: number): UseProfiler => {
-  const {
-    data: slotsData,
-    loading: slotsLoading,
-    refetch: refetchSlots,
-  } = useQuery<{ profilingSlots: ProfilingSlots }>(GET_PROFILING_SLOTS, {
-    pollInterval: pollSlots,
+export const useProfiling = (): UseProfiling => {
+  const [querySlots] = useLazyQuery<{ profilingSlots: ProfilingSlots }>(GET_PROFILING_SLOTS, {
+    fetchPolicy: 'network-only',
   });
 
   const [querySourceProfiling] = useLazyQuery<{ sourceProfiling: SourceProfilingResult }, SourceIdentifier>(GET_SOURCE_PROFILING, {
@@ -60,7 +54,17 @@ export const useProfiling = (pollSlots?: number): UseProfiler => {
   const [mutateEnable] = useMutation<{ enableSourceProfiling: EnableProfilingResult }, SourceIdentifier>(ENABLE_SOURCE_PROFILING);
   const [mutateRelease] = useMutation<{ releaseSourceProfiling: ReleaseProfilingResult }, SourceIdentifier>(RELEASE_SOURCE_PROFILING);
 
-  const enableProfiling: UseProfiler['enableProfiling'] = useCallback(
+  // Returns buffer/slot diagnostics: which workloads have active slots, which have buffered data, and memory usage.
+  // Example response: { activeKeys: ["default/Deployment/inventory", ...], keysWithData: [...], totalBytesUsed: 4897024, ... }
+  const fetchProfilingSlots: UseProfiling['fetchProfilingSlots'] = useCallback(async () => {
+    const { data } = await querySlots();
+    return data?.profilingSlots;
+  }, [querySlots]);
+
+  // Activates (or refreshes) a profiling slot for a workload. Must be called before fetchSourceProfiling will return data.
+  // Example: await enableProfiling({ namespace: "default", kind: "Deployment", name: "inventory" })
+  //       => { status: "ok", sourceKey: "default/Deployment/inventory", maxSlots: 24, activeSlots: 6 }
+  const enableProfiling: UseProfiling['enableProfiling'] = useCallback(
     async (source) => {
       const { data } = await mutateEnable({ variables: source });
       return data?.enableSourceProfiling;
@@ -68,7 +72,10 @@ export const useProfiling = (pollSlots?: number): UseProfiler => {
     [mutateEnable],
   );
 
-  const releaseProfiling: UseProfiler['releaseProfiling'] = useCallback(
+  // Drops the profiling slot and frees buffered OTLP data for a workload (e.g. user closed the profiling panel).
+  // Example: await releaseProfiling({ namespace: "default", kind: "Deployment", name: "inventory" })
+  //       => { status: "ok", sourceKey: "default/Deployment/inventory", activeSlots: 5 }
+  const releaseProfiling: UseProfiling['releaseProfiling'] = useCallback(
     async (source) => {
       const { data } = await mutateRelease({ variables: source });
       return data?.releaseSourceProfiling;
@@ -76,7 +83,10 @@ export const useProfiling = (pollSlots?: number): UseProfiler => {
     [mutateRelease],
   );
 
-  const fetchSourceProfiling: UseProfiler['fetchSourceProfiling'] = useCallback(
+  // Fetches the aggregated Pyroscope-shaped flame graph for a workload. Returns a JSON-encoded FlamebearerProfile.
+  // Example: await fetchSourceProfiling({ namespace: "default", kind: "Deployment", name: "inventory" })
+  //       => { profileJson: '{"version":1,"flamebearer":{"names":[...],"levels":[...],...},...}' }
+  const fetchSourceProfiling: UseProfiling['fetchSourceProfiling'] = useCallback(
     async (source) => {
       const { data } = await querySourceProfiling({ variables: source });
       return data?.sourceProfiling;
@@ -85,9 +95,7 @@ export const useProfiling = (pollSlots?: number): UseProfiler => {
   );
 
   return {
-    slots: slotsData?.profilingSlots,
-    slotsLoading,
-    refetchSlots,
+    fetchProfilingSlots,
     enableProfiling,
     releaseProfiling,
     fetchSourceProfiling,
