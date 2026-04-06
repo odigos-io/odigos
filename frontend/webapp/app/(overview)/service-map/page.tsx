@@ -6,11 +6,11 @@ import { ServiceMap } from '@odigos/ui-kit/containers';
 import { HEADER_HEIGHT, MENU_BAR_HEIGHT } from '@/utils';
 
 export default function Page() {
-  const { serviceMap } = useServiceMap();
+  const { serviceMap, refetch } = useServiceMap();
 
   return (
     <>
-      <ServiceMap heightToRemove={HEADER_HEIGHT + MENU_BAR_HEIGHT} serviceMap={serviceMap} />
+      <ServiceMap heightToRemove={HEADER_HEIGHT + MENU_BAR_HEIGHT} serviceMap={serviceMap} onRefresh={() => refetch()} />
     </>
   );
 }
