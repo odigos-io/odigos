@@ -9,7 +9,7 @@ import { useDataStreamStore, useSetupStore } from '@odigos/ui-kit/store';
 import { ArrowLeftIcon, ArrowRightIcon, OdigosLogoText } from '@odigos/ui-kit/icons';
 import { useConfig, useDataStreamsCRUD, useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-kit/components';
-import { type DataStreamSelectionFormRef, ToggleDarkMode, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
+import { type DataStreamSelectionFormRef, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
 
 interface SetupHeaderProps {
   step: number;
@@ -169,7 +169,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
           START WITH ODIGOS
         </Text>,
       ]}
-      right={[<ToggleDarkMode key='toggle-theme' />, <NavigationButtons key='nav-buttons' buttons={buttons} />]}
+      right={[<NavigationButtons key='nav-buttons' buttons={buttons} />]}
     />
   );
 };
