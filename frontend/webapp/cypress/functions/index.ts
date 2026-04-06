@@ -1,5 +1,38 @@
 export * from './cy-alias';
-import { CRD_NAMES, DATA_IDS } from '../constants';
+import { DATA_IDS } from '../constants';
+
+// Apollo may send a single object or a batch array.
+const graphqlOperationName = (raw: unknown): string | undefined => {
+  if (raw == null) return undefined;
+  if (typeof raw === 'string') {
+    try {
+      return graphqlOperationName(JSON.parse(raw));
+    } catch {
+      return undefined;
+    }
+  }
+  if (typeof raw !== 'object') return undefined;
+  if (Array.isArray(raw)) {
+    const first = raw[0] as { operationName?: string } | undefined;
+    return first?.operationName;
+  }
+  return (raw as { operationName?: string }).operationName;
+};
+
+// Resolves only when the named operation completes.
+// Plain cy.wait('@gql') races with other /graphql traffic (e.g. GetActions after a prior create), which can yield no toast.
+export const waitForGraphqlOperation = (operationName: string, maxSkips = 40): Cypress.Chainable => {
+  return cy.wait('@gql', { timeout: 120000 }).then((interception) => {
+    const op = graphqlOperationName(interception.request.body);
+    if (op === operationName) {
+      return cy.wrap(interception);
+    }
+    if (maxSkips <= 0) {
+      throw new Error(`waitForGraphqlOperation: expected "${operationName}", got "${op ?? 'unknown'}" (no more skips)`);
+    }
+    return waitForGraphqlOperation(operationName, maxSkips - 1);
+  });
+};
 
 export const visitPage = (path: string, callback?: () => void) => {
   cy.visit(path);
