@@ -2,8 +2,8 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { GET_WORKLOADS } from '@/graphql';
 import { useQuery } from '@apollo/client';
+import { GET_WORKLOADS } from '@/graphql';
 import { useSamplingRuleCRUD } from '@/hooks';
 import { StatusType } from '@odigos/ui-kit/types';
 import { RichTitle } from '@odigos/ui-kit/snippets/v2';
