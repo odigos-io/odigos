@@ -53,7 +53,6 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 			uniqueLangsSlice = append(uniqueLangsSlice, lang)
 		}
 	}
-	slices.Sort(uniqueLangsSlice)
 
 	selectedLanguage, selectionError := SelectContainerMainLanguage(uniqueLangsSlice)
 	if selectionError != nil {
@@ -102,6 +101,9 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 
 // resolves which programming language is the "main" one for a container according to the unique known languages detected.
 func SelectContainerMainLanguage(uniqueKnownLanguages []common.ProgrammingLanguage) (common.ProgrammingLanguage, error) {
+	// sort uniqueKnownLanguages to make sure the list is iterated upon in a deterministic way
+	slices.Sort(uniqueKnownLanguages)
+
 	switch len(uniqueKnownLanguages) {
 	case 0:
 		return common.UnknownProgrammingLanguage, errNoKnownLanguageDetected
