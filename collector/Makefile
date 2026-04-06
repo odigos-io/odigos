@@ -31,7 +31,7 @@ download_builder:
 
 .PHONY: genodigoscol
 genodigoscol: download_builder
-	$(BUILDER) --ldflags="-checklinkname=0" --config builder-config.yaml
+	$(BUILDER) --ldflags="-checklinkname=0" --config builder-config.yaml --skip-compilation
 
 .PHONY: test-odigossamplingprocessor
 test-odigossamplingprocessor:

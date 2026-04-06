@@ -924,13 +924,7 @@ func (r *queryResolver) GetServiceMap(ctx context.Context) (*model.ServiceMap, e
 		to := make([]*model.ServiceMapToSource, 0)
 
 		for toCompositeKey, info := range toServices {
-			to = append(to, &model.ServiceMapToSource{
-				NodeID:      toCompositeKey,
-				ServiceName: services.BaseServiceName(toCompositeKey),
-				IsVirtual:   info.ToNodeIsVirtual,
-				Requests:    int(info.RequestCount),
-				DateTime:    info.LastUpdated.Format(time.RFC3339),
-			})
+			to = append(to, services.EdgeToModel(toCompositeKey, info, services.ServiceGraphNodeAttributesForServer(info.Attributes)))
 		}
 
 		mapServices = append(mapServices, &model.ServiceMapFromSource{

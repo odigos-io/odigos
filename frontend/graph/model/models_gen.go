@@ -1357,11 +1357,12 @@ type ServiceMapFromSource struct {
 }
 
 type ServiceMapToSource struct {
-	NodeID      string `json:"nodeId"`
-	IsVirtual   bool   `json:"isVirtual"`
-	ServiceName string `json:"serviceName"`
-	Requests    int    `json:"requests"`
-	DateTime    string `json:"dateTime"`
+	NodeID         string                     `json:"nodeId"`
+	IsVirtual      bool                       `json:"isVirtual"`
+	ServiceName    string                     `json:"serviceName"`
+	Requests       int                        `json:"requests"`
+	DateTime       string                     `json:"dateTime"`
+	NodeAttributes []*NonIdentifyingAttribute `json:"nodeAttributes"`
 }
 
 type ServiceNameFilter struct {
