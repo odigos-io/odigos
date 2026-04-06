@@ -1,7 +1,7 @@
 import { CONFIG_MAPS, DATA_IDS, NAMESPACES, ROUTES, TEXTS } from '../constants';
 import { awaitToast, handleExceptions, visitPage } from '../functions';
 
-const namespace = NAMESPACES.ODIGOS_SYSTEM;
+const namespace = NAMESPACES.ODIGOS;
 const testClusterName = 'cypress-e2e-test';
 let originalClusterName = '';
 
