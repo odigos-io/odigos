@@ -1,5 +1,5 @@
 import { CONFIG_MAPS, DATA_IDS, NAMESPACES, ROUTES, TEXTS } from '../constants';
-import { awaitToast, handleExceptions, visitPage } from '../functions';
+import { awaitToast, handleExceptions, visitPage, waitForGraphqlOperation } from '../functions';
 
 const namespace = NAMESPACES.ODIGOS;
 const testClusterName = 'cypress-e2e-test';
@@ -56,7 +56,7 @@ describe('Settings CRUD', () => {
 
   it('Should render config sections from the cluster', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      cy.wait('@gql').then(() => {
+      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
         cy.contains('General').should('exist');
         cy.contains('Instrumentation').should('exist');
         cy.contains('Rollout & Rollback').should('exist');
@@ -71,7 +71,7 @@ describe('Settings CRUD', () => {
 
   it('Should render the clusterName field with its current value', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      cy.wait('@gql').then(() => {
+      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
         cy.get(DATA_IDS.SETTINGS_FIELD('clusterName')).should('exist').and('have.value', originalClusterName);
       });
     });
@@ -79,7 +79,7 @@ describe('Settings CRUD', () => {
 
   it('Should not show the Save/Cancel island when no changes are made', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      cy.wait('@gql').then(() => {
+      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
         cy.get(DATA_IDS.SETTINGS_SAVE).should('not.exist');
         cy.get(DATA_IDS.SETTINGS_CANCEL).should('not.exist');
       });
@@ -90,7 +90,7 @@ describe('Settings CRUD', () => {
 
   it('Should show the Save/Cancel island when a field is modified, and revert on Cancel', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      cy.wait('@gql').then(() => {
+      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
         const cancelTestValue = (originalClusterName || 'cluster') + '-cancel-test';
 
         cy.get(DATA_IDS.SETTINGS_FIELD('clusterName')).click().focused().clear().type(cancelTestValue);
@@ -110,7 +110,7 @@ describe('Settings CRUD', () => {
 
   it('Should update all non-helm-only fields and save successfully', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      cy.wait('@gql').then(() => {
+      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
         // ─ General ─
         setInput('clusterName', testClusterName);
         clickToggle('telemetryEnabled');
@@ -163,8 +163,8 @@ describe('Settings CRUD', () => {
         cy.get(DATA_IDS.SETTINGS_SAVE).should('be.visible').click();
 
         // Wait for the mutation to complete and toast to appear.
-        // Don't use cy.wait('@gql') here — background SSE-triggered queries
-        // can consume the alias before the mutation response arrives.
+        // Don't use cy.wait('@gql') or waitForGraphqlOperation here — background
+        // SSE-triggered queries can consume the alias before the mutation response arrives.
         awaitToast({ message: TEXTS.NOTIF_CONFIG_UPDATED });
       });
     });
