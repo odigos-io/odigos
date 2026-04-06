@@ -132,7 +132,7 @@ jobs:
             summary: 'Instrumentor for Odigos'
             description: 'Instrumentor manages auto-instrumentation for workloads with Odigos.'
           - service: collector
-            runner: depot-ubuntu-24.04-4
+            runner: depot-ubuntu-24.04-16
             summary: 'Odigos Collector'
             description: 'The Odigos build of the OpenTelemetry Collector.'
           - service: odiglet
