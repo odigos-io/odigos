@@ -136,7 +136,7 @@ jobs:
           curl -fL -o preflight-linux-amd64 \
             "https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/${{ env.PREFLIGHT_VERSION }}/preflight-linux-amd64"
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: preflight-binary
           path: preflight-linux-amd64
