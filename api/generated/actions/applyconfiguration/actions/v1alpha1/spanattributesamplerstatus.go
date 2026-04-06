@@ -23,7 +23,10 @@ import (
 
 // SpanAttributeSamplerStatusApplyConfiguration represents a declarative configuration of the SpanAttributeSamplerStatus type for use
 // with apply.
+//
+// SpanAttributeSamplerStatus represents the current status of a SpanAttributeSampler.
 type SpanAttributeSamplerStatusApplyConfiguration struct {
+	// Conditions is a list of the latest available observations of this sampler's state.
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

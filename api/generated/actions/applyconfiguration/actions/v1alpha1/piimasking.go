@@ -25,6 +25,9 @@ import (
 
 // PiiMaskingApplyConfiguration represents a declarative configuration of the PiiMasking type for use
 // with apply.
+//
+// PiiMasking is the Schema for the PiiMasking odigos action API
+// DEPRECATED: Use odigosv1.Action instead
 type PiiMaskingApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +45,7 @@ func PiiMasking(name, namespace string) *PiiMaskingApplyConfiguration {
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+
 func (b PiiMaskingApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

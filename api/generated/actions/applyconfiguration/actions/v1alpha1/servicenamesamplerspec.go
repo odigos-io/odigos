@@ -23,11 +23,24 @@ import (
 
 // ServiceNameSamplerSpecApplyConfiguration represents a declarative configuration of the ServiceNameSamplerSpec type for use
 // with apply.
+//
+// ServiceNameSamplerSpec defines the desired configuration for a ServiceNameSampler.
+// This sampler enables sampling based on the presence of specific service names within a trace.
 type ServiceNameSamplerSpecApplyConfiguration struct {
-	ActionName          *string                               `json:"actionName,omitempty"`
-	Notes               *string                               `json:"notes,omitempty"`
-	Disabled            *bool                                 `json:"disabled,omitempty"`
-	Signals             []common.ObservabilitySignal          `json:"signals,omitempty"`
+	// ActionName is an optional label to identify this sampling policy.
+	// It can be used for display purposes or integration with other tools.
+	ActionName *string `json:"actionName,omitempty"`
+	// Notes allows attaching additional free-form documentation or context to this sampler.
+	Notes *string `json:"notes,omitempty"`
+	// Disabled indicates whether this sampler should be active.
+	// If true, the sampler will not be applied.
+	Disabled *bool `json:"disabled,omitempty"`
+	// Signals specifies which types of telemetry data this sampler applies to.
+	// Common values include "traces", "metrics", or "logs".
+	Signals []common.ObservabilitySignal `json:"signals,omitempty"`
+	// ServicesNameFilters defines rules for sampling traces based on the presence
+	// of specific service names. If a trace contains a span from one of the listed
+	// services, the associated sampling ratio is applied.
 	ServicesNameFilters []ServiceNameFilterApplyConfiguration `json:"services_name_filters,omitempty"`
 }
 

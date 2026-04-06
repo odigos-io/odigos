@@ -13,8 +13,7 @@ import (
 type PythonInspector struct{}
 
 const (
-	pythonProcessName = "python"
-	libPythonStr      = "libpython3"
+	libPythonStr = "libpython3"
 )
 
 // pythonExeRegex matches executable names that represent Python interpreters.
@@ -48,7 +47,7 @@ func (p *PythonInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 	return "", false
 }
 
-func (p *PythonInspector) GetRuntimeVersion(proc *process.ProcessContext, containerURL string) string {
+func (p *PythonInspector) GetRuntimeVersion(proc *process.ProcessContext) string {
 	// 1. PYTHON_VERSION env var (set by official Docker images)
 	if value, exists := proc.GetDetailedEnvsValue(process.PythonVersionConst); exists {
 		return value

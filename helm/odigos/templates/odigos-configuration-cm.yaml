@@ -15,6 +15,21 @@ data:
     configVersion: 1
     componentLogLevels:
       default: {{ .Values.logLevel | default "info" }}
+      {{- if .Values.autoscaler.logLevel }}
+      autoscaler: {{ .Values.autoscaler.logLevel }}
+      {{- end }}
+      {{- if .Values.scheduler.logLevel }}
+      scheduler: {{ .Values.scheduler.logLevel }}
+      {{- end }}
+      {{- if .Values.instrumentor.logLevel }}
+      instrumentor: {{ .Values.instrumentor.logLevel }}
+      {{- end }}
+      {{- if .Values.odiglet.logLevel }}
+      odiglet: {{ .Values.odiglet.logLevel }}
+      {{- end }}
+      {{- if .Values.ui.logLevel }}
+      ui: {{ .Values.ui.logLevel }}
+      {{- end }}
     {{- if .Values.clusterName }}
     clusterName: {{ .Values.clusterName }}
     {{- end }}
@@ -45,6 +60,25 @@ data:
       {{- if .Values.ui.oidcClientSecret }}
       clientSecret: secretRef:odigos-oidc
       {{- end }}
+    {{- end }}
+    {{- if .Values.profiling.enabled }}
+    {{- $pex := .Values.profiling.exporter | default dict }}
+    {{- $pretry := $pex.retryOnFailure | default dict }}
+    profiling:
+      enabled: true
+      exporter:
+        enableDataCompression: {{ $pex.enableDataCompression | default false }}
+        timeout: {{ $pex.timeout | default "5s" }}
+        retryOnFailure:
+          enabled: {{ $pretry.enabled | default true }}
+          initialInterval: {{ $pretry.initialInterval | default "5s" }}
+          maxInterval: {{ $pretry.maxInterval | default "30s" }}
+          maxElapsedTime: {{ $pretry.maxElapsedTime | default "300s" }}
+      {{- $pui := .Values.profiling.ui | default dict }}
+      ui:
+        slotTTLSeconds: {{ $pui.slotTTLSeconds | default 300 | int }}
+        maxSlots: {{ $pui.maxSlots | default 32 | int }}
+        slotMaxBytes: {{ $pui.slotMaxBytes | default 8388608 | int }}
     {{- end }}
     {{- if .Values.collectorGateway }}
     {{- $gwLimiter := include "collector.gateway.memoryLimiter" . | fromYaml }}

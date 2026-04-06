@@ -1189,11 +1189,12 @@ type ComplexityRoot struct {
 	}
 
 	ServiceMapToSource struct {
-		DateTime    func(childComplexity int) int
-		IsVirtual   func(childComplexity int) int
-		NodeID      func(childComplexity int) int
-		Requests    func(childComplexity int) int
-		ServiceName func(childComplexity int) int
+		DateTime       func(childComplexity int) int
+		IsVirtual      func(childComplexity int) int
+		NodeAttributes func(childComplexity int) int
+		NodeID         func(childComplexity int) int
+		Requests       func(childComplexity int) int
+		ServiceName    func(childComplexity int) int
 	}
 
 	ServiceNameFilter struct {
@@ -6621,6 +6622,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ServiceMapToSource.IsVirtual(childComplexity), true
+
+	case "ServiceMapToSource.nodeAttributes":
+		if e.complexity.ServiceMapToSource.NodeAttributes == nil {
+			break
+		}
+
+		return e.complexity.ServiceMapToSource.NodeAttributes(childComplexity), true
 
 	case "ServiceMapToSource.nodeId":
 		if e.complexity.ServiceMapToSource.NodeID == nil {
@@ -37845,6 +37853,8 @@ func (ec *executionContext) fieldContext_PeerSources_inbound(_ context.Context, 
 				return ec.fieldContext_ServiceMapToSource_requests(ctx, field)
 			case "dateTime":
 				return ec.fieldContext_ServiceMapToSource_dateTime(ctx, field)
+			case "nodeAttributes":
+				return ec.fieldContext_ServiceMapToSource_nodeAttributes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ServiceMapToSource", field.Name)
 		},
@@ -37901,6 +37911,8 @@ func (ec *executionContext) fieldContext_PeerSources_outbound(_ context.Context,
 				return ec.fieldContext_ServiceMapToSource_requests(ctx, field)
 			case "dateTime":
 				return ec.fieldContext_ServiceMapToSource_dateTime(ctx, field)
+			case "nodeAttributes":
+				return ec.fieldContext_ServiceMapToSource_nodeAttributes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ServiceMapToSource", field.Name)
 		},
@@ -42818,6 +42830,8 @@ func (ec *executionContext) fieldContext_ServiceMapFromSource_services(_ context
 				return ec.fieldContext_ServiceMapToSource_requests(ctx, field)
 			case "dateTime":
 				return ec.fieldContext_ServiceMapToSource_dateTime(ctx, field)
+			case "nodeAttributes":
+				return ec.fieldContext_ServiceMapToSource_nodeAttributes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ServiceMapToSource", field.Name)
 		},
@@ -43040,6 +43054,56 @@ func (ec *executionContext) fieldContext_ServiceMapToSource_dateTime(_ context.C
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceMapToSource_nodeAttributes(ctx context.Context, field graphql.CollectedField, obj *model.ServiceMapToSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ServiceMapToSource_nodeAttributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodeAttributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.NonIdentifyingAttribute)
+	fc.Result = res
+	return ec.marshalNNonIdentifyingAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNonIdentifyingAttributeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ServiceMapToSource_nodeAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceMapToSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_NonIdentifyingAttribute_key(ctx, field)
+			case "value":
+				return ec.fieldContext_NonIdentifyingAttribute_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NonIdentifyingAttribute", field.Name)
 		},
 	}
 	return fc, nil
@@ -44632,9 +44696,9 @@ func (ec *executionContext) _SourcesScope_workloadLanguage(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.ProgrammingLanguage)
+	res := resTmp.(*model.SamplingWorkloadLanguage)
 	fc.Result = res
-	return ec.marshalOProgrammingLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx, field.Selections, res)
+	return ec.marshalOSamplingWorkloadLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_SourcesScope_workloadLanguage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -44644,7 +44708,7 @@ func (ec *executionContext) fieldContext_SourcesScope_workloadLanguage(_ context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ProgrammingLanguage does not have child fields")
+			return nil, errors.New("field of type SamplingWorkloadLanguage does not have child fields")
 		},
 	}
 	return fc, nil
@@ -50829,7 +50893,7 @@ func (ec *executionContext) unmarshalInputSourcesScopeInput(ctx context.Context,
 			it.WorkloadNamespace = data
 		case "workloadLanguage":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadLanguage"))
-			data, err := ec.unmarshalOProgrammingLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx, v)
+			data, err := ec.unmarshalOSamplingWorkloadLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -60322,6 +60386,11 @@ func (ec *executionContext) _ServiceMapToSource(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "nodeAttributes":
+			out.Values[i] = ec._ServiceMapToSource_nodeAttributes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -67539,6 +67608,22 @@ func (ec *executionContext) unmarshalOSamplingConfigInput2ᚖgithubᚗcomᚋodig
 	}
 	res, err := ec.unmarshalInputSamplingConfigInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOSamplingWorkloadLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx context.Context, v any) (*model.SamplingWorkloadLanguage, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.SamplingWorkloadLanguage)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOSamplingWorkloadLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx context.Context, sel ast.SelectionSet, v *model.SamplingWorkloadLanguage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOServiceNameFilter2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐServiceNameFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceNameFilter) graphql.Marshaler {

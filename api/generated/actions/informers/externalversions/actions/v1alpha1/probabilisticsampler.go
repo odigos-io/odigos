@@ -56,7 +56,7 @@ func NewProbabilisticSamplerInformer(client versioned.Interface, namespace strin
 // one. This reduces memory footprint and number of connections to the server.
 func NewFilteredProbabilisticSamplerInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
+		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
@@ -81,7 +81,7 @@ func NewFilteredProbabilisticSamplerInformer(client versioned.Interface, namespa
 				}
 				return client.ActionsV1alpha1().ProbabilisticSamplers(namespace).Watch(ctx, options)
 			},
-		},
+		}, client),
 		&apiactionsv1alpha1.ProbabilisticSampler{},
 		resyncPeriod,
 		indexers,

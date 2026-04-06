@@ -338,6 +338,40 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			dst.Collector = src.Collector
 		}
 	}
+
+	// Merge Profiling from the overlay (e.g. UI remote config) into the effective base, same pattern as
+	// ComponentLogLevels: only fields present in the overlay are applied; zero numeric UI fields mean "leave base unchanged".
+	if addtionalConfig.Profiling != nil {
+		if baseConfig.Profiling == nil {
+			baseConfig.Profiling = &common.ProfilingConfiguration{}
+		}
+		overlay, dst := addtionalConfig.Profiling, baseConfig.Profiling
+		if overlay.Enabled != nil {
+			dst.Enabled = overlay.Enabled
+		}
+		if overlay.Exporter != nil {
+			dst.Exporter = overlay.Exporter
+		}
+		if overlay.Ui != nil {
+			if dst.Ui == nil {
+				dst.Ui = &common.ProfilingUiConfiguration{}
+			}
+			if overlay.Ui.MaxSlots > 0 {
+				dst.Ui.MaxSlots = overlay.Ui.MaxSlots
+			}
+			if overlay.Ui.SlotTTLSeconds > 0 {
+				dst.Ui.SlotTTLSeconds = overlay.Ui.SlotTTLSeconds
+			}
+			if overlay.Ui.SlotMaxBytes > 0 {
+				dst.Ui.SlotMaxBytes = overlay.Ui.SlotMaxBytes
+			}
+		}
+	}
+
+	// Future fields can be added here following the same pattern:
+	// - ignoredNamespaces, ignoredContainers
+	// - profiles
+	// - ...
 }
 
 func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Context, effectiveConfig *common.OdigosConfiguration, owner *corev1.ConfigMap) error {

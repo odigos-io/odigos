@@ -25,6 +25,11 @@ import (
 
 // ErrorSamplerApplyConfiguration represents a declarative configuration of the ErrorSampler type for use
 // with apply.
+//
+// ErrorSampler is the Schema for the ErrorSampler CRD.
+// It defines sampling logic that always retains traces with errors, and optionally samples
+// non-error traces based on the fallback ratio.
+// DEPRECATED: Use odigosv1.Action instead
 type ErrorSamplerApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +47,7 @@ func ErrorSampler(name, namespace string) *ErrorSamplerApplyConfiguration {
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+
 func (b ErrorSamplerApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

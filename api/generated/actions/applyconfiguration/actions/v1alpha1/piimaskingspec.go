@@ -24,6 +24,8 @@ import (
 
 // PiiMaskingSpecApplyConfiguration represents a declarative configuration of the PiiMaskingSpec type for use
 // with apply.
+//
+// PiiMaskingSpec defines the desired state of PiiMasking action
 type PiiMaskingSpecApplyConfiguration struct {
 	ActionName    *string                       `json:"actionName,omitempty"`
 	Notes         *string                       `json:"notes,omitempty"`

@@ -17,11 +17,20 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	sampling "github.com/odigos-io/odigos/common/api/sampling"
+)
+
 // HeadSamplingConfigApplyConfiguration represents a declarative configuration of the HeadSamplingConfig type for use
 // with apply.
 type HeadSamplingConfigApplyConfiguration struct {
-	AttributesAndSamplerRules []AttributesAndSamplerRuleApplyConfiguration `json:"attributesAndSamplerRules,omitempty"`
-	FallbackFraction          *float64                                     `json:"fallbackFraction,omitempty"`
+	// Noisy operations are categories of matchers that are used on the root span.
+	// If match, the fraction is used to determine the sampling decision for the entire trace.
+	// If multiple noisy operations match, the lowest fraction is used.
+	NoisyOperations []sampling.NoisyOperation `json:"noisyOperations,omitempty"`
+	// Deprecated: do not use. Will be removed once python and node migration is complete.
+	// Use NoisyOperations instead.
+	FallbackFraction *float64 `json:"fallbackFraction,omitempty"`
 }
 
 // HeadSamplingConfigApplyConfiguration constructs a declarative configuration of the HeadSamplingConfig type for use with
@@ -30,15 +39,12 @@ func HeadSamplingConfig() *HeadSamplingConfigApplyConfiguration {
 	return &HeadSamplingConfigApplyConfiguration{}
 }
 
-// WithAttributesAndSamplerRules adds the given value to the AttributesAndSamplerRules field in the declarative configuration
+// WithNoisyOperations adds the given value to the NoisyOperations field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the AttributesAndSamplerRules field.
-func (b *HeadSamplingConfigApplyConfiguration) WithAttributesAndSamplerRules(values ...*AttributesAndSamplerRuleApplyConfiguration) *HeadSamplingConfigApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the NoisyOperations field.
+func (b *HeadSamplingConfigApplyConfiguration) WithNoisyOperations(values ...sampling.NoisyOperation) *HeadSamplingConfigApplyConfiguration {
 	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithAttributesAndSamplerRules")
-		}
-		b.AttributesAndSamplerRules = append(b.AttributesAndSamplerRules, *values[i])
+		b.NoisyOperations = append(b.NoisyOperations, values[i])
 	}
 	return b
 }

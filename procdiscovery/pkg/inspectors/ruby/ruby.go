@@ -34,7 +34,7 @@ func (n *RubyInspector) DeepScan(pcx *process.ProcessContext) (common.Programmin
 	return "", false
 }
 
-func (n *RubyInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
+func (n *RubyInspector) GetRuntimeVersion(pcx *process.ProcessContext) string {
 	// first try to get the version from env var
 	if value, exists := pcx.GetDetailedEnvsValue(process.RubyVersionConst); exists {
 		return value

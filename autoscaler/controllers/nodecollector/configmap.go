@@ -16,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/common/config"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,7 +49,12 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		return errors.Join(err, errors.New("failed to check if tracing load balancing is needed"))
 	}
 
-	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded)
+	var profilingCfg *odigoscommon.ProfilingConfiguration
+	if cfg, err := utils.GetCurrentOdigosConfiguration(ctx, b.Client); err == nil {
+		profilingCfg = cfg.Profiling
+	}
+
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
@@ -138,7 +144,8 @@ func calculateCollectorConfigDomains(
 	clusterCollectorSignals []odigoscommon.ObservabilitySignal,
 	processors []*odigosv1.Processor,
 	onGKE bool,
-	loadBalancingNeeded bool) (map[string]config.Config, string, error) {
+	loadBalancingNeeded bool,
+	profiling *odigoscommon.ProfilingConfiguration) (map[string]config.Config, string, error) {
 
 	logger := commonlogger.FromContext(ctx)
 
@@ -225,6 +232,10 @@ func calculateCollectorConfigDomains(
 	if collectLogs {
 		logsConfig := collectorconfig.LogsConfig(logger.Logr(), nodeCG, odigosNamespace, processorsResults.LogsProcessors, sources)
 		configDomains["logs"] = logsConfig
+	}
+
+	if odigoscommon.ProfilingPipelineActive(profiling) {
+		configDomains["profiling"] = collectorconfig.ProfilingPipelineConfig(odigosNamespace, profiling)
 	}
 
 	mergedConfig, err := config.MergeConfigs(configDomains)

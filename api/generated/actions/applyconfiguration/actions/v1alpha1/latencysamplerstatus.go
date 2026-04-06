@@ -23,7 +23,12 @@ import (
 
 // LatencySamplerStatusApplyConfiguration represents a declarative configuration of the LatencySamplerStatus type for use
 // with apply.
+//
+// LatencySamplerStatus defines the observed state of a LatencySampler.
+// It captures runtime status such as readiness or deployment progress.
 type LatencySamplerStatusApplyConfiguration struct {
+	// Conditions contains the current status conditions for this sampler.
+	// Typical types include "Available" and "Progressing".
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

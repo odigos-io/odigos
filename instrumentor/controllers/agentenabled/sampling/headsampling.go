@@ -1,34 +1,32 @@
 package sampling
 
 import (
+	"slices"
+	"strings"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-
-	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	v1 "k8s.io/api/core/v1"
 )
 
-func percentageToFractionOrZero(percentage *float64) float64 {
-	if percentage == nil {
-		return 0
-	}
-	return percentageToFraction(*percentage)
+// used to return the result of computing the paths and rule names for kubelet health probes auto-rule.
+type kubeletProbePathAndName struct {
+	Path     string
+	RuleName string
 }
 
-func percentageToFraction(percentage float64) float64 {
-	if percentage < 0 {
-		return 0
-	} else if percentage > 100 {
-		return 1
+func getPercentageOrZero(percentage *float64) float64 {
+	if percentage != nil {
+		return *percentage
 	}
-	return percentage / 100.0
+	return 0.0
 }
 
-func calculateHeadSamplingFraction(effectiveConfig *common.OdigosConfiguration) float64 {
+func calculateHeadSamplingPercentage(effectiveConfig *common.OdigosConfiguration) float64 {
 	if effectiveConfig.Sampling == nil {
 		return 0.0 // default if unset.
 	} else if effectiveConfig.Sampling.K8sHealthProbesSampling == nil {
@@ -36,67 +34,65 @@ func calculateHeadSamplingFraction(effectiveConfig *common.OdigosConfiguration) 
 	} else if effectiveConfig.Sampling.K8sHealthProbesSampling.KeepPercentage == nil {
 		return 0.0 // default if unset.
 	}
-	return percentageToFraction(*effectiveConfig.Sampling.K8sHealthProbesSampling.KeepPercentage)
+	return *effectiveConfig.Sampling.K8sHealthProbesSampling.KeepPercentage
 }
 
-func calculateKubeletHttpGetProbePaths(workloadObj workload.Workload, containerName string) map[string]struct{} {
-	healthCheckPathsHttpGet := map[string]struct{}{}
-	for _, container := range workloadObj.PodSpec().Containers {
-		if container.Name == containerName {
-			if container.StartupProbe != nil && container.StartupProbe.HTTPGet != nil {
-				healthCheckPathsHttpGet[container.StartupProbe.HTTPGet.Path] = struct{}{}
-			}
-			if container.LivenessProbe != nil && container.LivenessProbe.HTTPGet != nil {
-				healthCheckPathsHttpGet[container.LivenessProbe.HTTPGet.Path] = struct{}{}
-			}
-			if container.ReadinessProbe != nil && container.ReadinessProbe.HTTPGet != nil {
-				healthCheckPathsHttpGet[container.ReadinessProbe.HTTPGet.Path] = struct{}{}
-			}
+// for kubelet health probes auto-rule, while iterating over the probes,
+// add the path and name to the list, and update the rule name if the path already exists.
+func addProbePathAndName(pathsAndNames []kubeletProbePathAndName, path string, name string) []kubeletProbePathAndName {
+
+	// update existing entry if found.
+	for i, pathAndName := range pathsAndNames {
+		if pathAndName.Path == path {
+			pathsAndNames[i].RuleName += "," + name
+			return pathsAndNames
 		}
 	}
-	return healthCheckPathsHttpGet
+
+	// add new entry if not found.
+	pathsAndNames = append(pathsAndNames, kubeletProbePathAndName{
+		Path:     path,
+		RuleName: name,
+	})
+
+	return pathsAndNames
 }
 
-func getDistroPathAndMethodAttributeKeys(distro *distro.OtelDistro) (attribute.Key, attribute.Key, attribute.Key) {
-	urlPathAttributeKey := semconv.URLPathKey
-	if distro.Traces.HeadSampling.UrlPathAttributeKey != "" {
-		urlPathAttributeKey = attribute.Key(distro.Traces.HeadSampling.UrlPathAttributeKey)
+// given a workload object, and a container name,
+// calculate the http get path for each health-probe configured.
+// returns: map where key is a path, and value is a list of probe names that use
+func calculateKubeletHttpGetProbePaths(workloadObj workload.Workload, containerName string) []kubeletProbePathAndName {
+
+	// this list can have at most 3 elements, so no problem iterating over it.
+	// avoid using a map since iterating it can range the keys in any order,
+	// and we want this config to be idempotent.
+	pathsAndNames := []kubeletProbePathAndName{}
+
+	var c *v1.Container
+	for _, container := range workloadObj.PodSpec().Containers {
+		if container.Name == containerName {
+			c = &container
+			break
+		}
 	}
-	httpRequestMethodAttributeKey := semconv.HTTPRequestMethodKey
-	if distro.Traces.HeadSampling.HttpRequestMethodAttributeKey != "" {
-		httpRequestMethodAttributeKey = attribute.Key(distro.Traces.HeadSampling.HttpRequestMethodAttributeKey)
+
+	if c == nil {
+		return nil
 	}
-	serverAddressAttributeKey := semconv.ServerAddressKey
-	if distro.Traces.HeadSampling.ServerAddressAttributeKey != "" {
-		serverAddressAttributeKey = attribute.Key(distro.Traces.HeadSampling.ServerAddressAttributeKey)
+
+	if c.StartupProbe != nil && c.StartupProbe.HTTPGet != nil {
+		pathsAndNames = addProbePathAndName(pathsAndNames, c.StartupProbe.HTTPGet.Path, "StartupProbe")
 	}
-	return urlPathAttributeKey, httpRequestMethodAttributeKey, serverAddressAttributeKey
+	if c.LivenessProbe != nil && c.LivenessProbe.HTTPGet != nil {
+		pathsAndNames = addProbePathAndName(pathsAndNames, c.LivenessProbe.HTTPGet.Path, "LivenessProbe")
+	}
+	if c.ReadinessProbe != nil && c.ReadinessProbe.HTTPGet != nil {
+		pathsAndNames = addProbePathAndName(pathsAndNames, c.ReadinessProbe.HTTPGet.Path, "ReadinessProbe")
+	}
+	return pathsAndNames
 }
 
-func calculateKubeletHttpGetProbeAttributeConditions(distro *distro.OtelDistro, healthCheckPathsHttpGet map[string]struct{}, fraction float64) []odigosv1.AttributesAndSamplerRule {
-	urlPathAttributeKey, httpRequestMethodAttributeKey, _ := getDistroPathAndMethodAttributeKeys(distro)
-	attributesAndSamplerRules := make([]odigosv1.AttributesAndSamplerRule, 0, len(healthCheckPathsHttpGet))
-	for path := range healthCheckPathsHttpGet {
-		attributesAndSamplerRules = append(attributesAndSamplerRules, odigosv1.AttributesAndSamplerRule{
-			AttributeConditions: []odigosv1.AttributeCondition{
-				{
-					Key:      string(urlPathAttributeKey),
-					Val:      path,
-					Operator: odigosv1.Equals,
-				},
-				{
-					Key:      string(httpRequestMethodAttributeKey),
-					Val:      "GET", // Since this is comming from the HTTPGet probe config, it will be invoked as GET.
-					Operator: odigosv1.Equals,
-				},
-			},
-			Fraction: fraction,
-		})
-	}
-	return attributesAndSamplerRules
-}
-
-func calculateKubeletHealthProbesSamplingRules(effectiveConfig *common.OdigosConfiguration, distro *distro.OtelDistro, workloadObj workload.Workload, containerName string) []odigosv1.AttributesAndSamplerRule {
+func calculateKubeletHealthProbesSamplingRules(effectiveConfig *common.OdigosConfiguration, workloadObj workload.Workload, containerName string) []commonapisampling.NoisyOperation {
 
 	// only add health probe sampling rules when explicitly enabled
 	if effectiveConfig.Sampling == nil || effectiveConfig.Sampling.K8sHealthProbesSampling == nil || effectiveConfig.Sampling.K8sHealthProbesSampling.Enabled == nil || !*effectiveConfig.Sampling.K8sHealthProbesSampling.Enabled {
@@ -107,15 +103,37 @@ func calculateKubeletHealthProbesSamplingRules(effectiveConfig *common.OdigosCon
 		return nil
 	}
 
-	healthCheckPathsHttpGet := calculateKubeletHttpGetProbePaths(workloadObj, containerName)
-	if len(healthCheckPathsHttpGet) == 0 {
+	kubeletPathAndNames := calculateKubeletHttpGetProbePaths(workloadObj, containerName)
+	if len(kubeletPathAndNames) == 0 {
 		return nil
 	}
 
-	fraction := calculateHeadSamplingFraction(effectiveConfig)
-	kubeletealthProbesConditions := calculateKubeletHttpGetProbeAttributeConditions(distro, healthCheckPathsHttpGet, fraction)
+	percentageAtMost := calculateHeadSamplingPercentage(effectiveConfig)
 
-	return kubeletealthProbesConditions
+	noisyOperations := make([]commonapisampling.NoisyOperation, 0, len(kubeletPathAndNames))
+	for _, pathAndName := range kubeletPathAndNames {
+
+		operation := &commonapisampling.HeadSamplingOperationMatcher{
+			HttpServer: &commonapisampling.HeadSamplingHttpServerOperationMatcher{
+				Route:  pathAndName.Path,
+				Method: "GET",
+			},
+		}
+
+		id := odigosv1.ComputeNoisyOperationHash(&odigosv1.NoisyOperation{
+			// avoid setting a scope here, so all of these paths in all containers will have the same rule id.
+			Operation: operation,
+		})
+
+		noisyOperations = append(noisyOperations, commonapisampling.NoisyOperation{
+			Id:               id,
+			Name:             "kubelet health probe: " + pathAndName.RuleName,
+			Operation:        operation,
+			PercentageAtMost: &percentageAtMost,
+		})
+	}
+
+	return noisyOperations
 }
 
 // givin a specific container in a workload, matched to a distro, calculate it's head sampling based on odigos config and sampling rules.
@@ -126,103 +144,36 @@ func CalculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 		return nil
 	}
 
-	kubeletHealthProbesRules := calculateKubeletHealthProbesSamplingRules(effectiveConfig, distro, workloadObj, containerName)
-	customSamplingRules, ambientFraction := convertSamplingRulesToHeadSamplingConfig(samplingRules, pw, containerName, distro)
+	kubeletHealthProbesRules := calculateKubeletHealthProbesSamplingRules(effectiveConfig, workloadObj, containerName)
+	customSamplingRules := getRelevantNoisyOperations(samplingRules, pw, containerName, distro)
 
 	// if no rules are found, disable the head sampling (unused)
 	if len(customSamplingRules) == 0 && len(kubeletHealthProbesRules) == 0 {
 		return nil
 	}
 
-	attributesAndSamplerRules := append(kubeletHealthProbesRules, customSamplingRules...)
+	noisyOperations := append(kubeletHealthProbesRules, customSamplingRules...)
+
+	// sort them so the output is deterministic, otherwise, different order of
+	// sampling rules (coming from list operations) will result in continuous changes in resource.
+	// lower percentage first, just so it's more organized when looking.
+	slices.SortFunc(noisyOperations, func(a, b commonapisampling.NoisyOperation) int {
+		aPercentage := getPercentageOrZero(a.PercentageAtMost)
+		bPercentage := getPercentageOrZero(b.PercentageAtMost)
+		if aPercentage != bPercentage {
+			return int(aPercentage - bPercentage)
+		}
+		return strings.Compare(a.Id, b.Id)
+	})
 
 	return &odigosv1.HeadSamplingConfig{
-		AttributesAndSamplerRules: attributesAndSamplerRules,
-		FallbackFraction:          ambientFraction,
+		NoisyOperations: noisyOperations,
 	}
 }
 
-func convertNoisyOperationToAttributeConditions(noisyOperation odigosv1.NoisyOperation, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
-	if noisyOperation.Operation != nil && noisyOperation.Operation.HttpServer != nil {
-		return convertNoisyOperationHttpServerToAttributeConditions(noisyOperation.Operation.HttpServer, distro)
-	}
-	if noisyOperation.Operation != nil && noisyOperation.Operation.HttpClient != nil {
-		return convertNoisyOperationHttpClientToAttributeConditions(noisyOperation.Operation.HttpClient, distro)
-	}
-	return nil
-}
+func getRelevantNoisyOperations(samplingRules *[]odigosv1.Sampling, pw k8sconsts.PodWorkload, containerName string, distro *distro.OtelDistro) []commonapisampling.NoisyOperation {
+	noisyOperations := []commonapisampling.NoisyOperation{}
 
-func convertNoisyOperationHttpServerToAttributeConditions(httpServer *commonapisampling.HeadSamplingHttpServerOperationMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
-	urlPathAttributeKey, httpRequestMethodAttributeKey, _ := getDistroPathAndMethodAttributeKeys(distro)
-	andConditions := []odigosv1.AttributeCondition{}
-	if httpServer.Route != "" {
-		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      string(urlPathAttributeKey),
-			Val:      httpServer.Route,
-			Operator: odigosv1.Equals,
-		})
-	}
-	if httpServer.RoutePrefix != "" {
-		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      string(urlPathAttributeKey),
-			Val:      httpServer.RoutePrefix,
-			Operator: odigosv1.StartWith,
-		})
-	}
-	if httpServer.Method != "" {
-		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      string(httpRequestMethodAttributeKey),
-			Val:      httpServer.Method,
-			Operator: odigosv1.Equals,
-		})
-	}
-	return andConditions
-}
-
-func convertNoisyOperationHttpClientToAttributeConditions(httpClient *commonapisampling.HeadSamplingHttpClientOperationMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
-
-	urlPathAttributeKey, httpRequestMethodAttributeKey, serverAddressAttributeKey := getDistroPathAndMethodAttributeKeys(distro)
-
-	andConditions := []odigosv1.AttributeCondition{}
-	if httpClient.ServerAddress != "" {
-		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      string(serverAddressAttributeKey),
-			Val:      httpClient.ServerAddress,
-			Operator: odigosv1.Equals,
-		})
-	}
-	if httpClient.TemplatedPath != "" {
-		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      string(urlPathAttributeKey),
-			Val:      httpClient.TemplatedPath,
-			Operator: odigosv1.Equals,
-		})
-	} else if httpClient.TemplatedPathPrefix != "" {
-		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      string(urlPathAttributeKey),
-			Val:      httpClient.TemplatedPathPrefix,
-			Operator: odigosv1.StartWith,
-		})
-	}
-	if httpClient.Method != "" {
-		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      string(httpRequestMethodAttributeKey),
-			Val:      httpClient.Method,
-			Operator: odigosv1.Equals,
-		})
-	}
-	return andConditions
-}
-
-func convertSamplingRulesToHeadSamplingConfig(samplingRules *[]odigosv1.Sampling, pw k8sconsts.PodWorkload, containerName string, distro *distro.OtelDistro) ([]odigosv1.AttributesAndSamplerRule, float64) {
-	headSamplingRules := []odigosv1.AttributesAndSamplerRule{}
-
-	// ambient fraction is the fraction of spans that are dropped by head sampling regardless of any span properties.
-	// users can set a rule for noisy operations and not specify any attribute for matching, in this case,
-	// the fraction is used as ambient and applied to all spans.
-	// while not encouraged, this behaviour is consistent with the matching semantics of the attributes and sampler rules
-	// and useful if a service goes wild and needs to be limited aggressively.
-	ambientFraction := 1.0
 	for _, samplingRule := range *samplingRules {
 
 		if samplingRule.Spec.Disabled {
@@ -232,23 +183,17 @@ func convertSamplingRulesToHeadSamplingConfig(samplingRules *[]odigosv1.Sampling
 		for _, noisyOperation := range samplingRule.Spec.NoisyOperations {
 
 			// only take into account operations that are relevant to the current source and container
-			if !IsServiceInRuleScope(noisyOperation.SourceScopes, pw, containerName, distro.Language) {
-				continue
-			}
-
-			fraction := percentageToFractionOrZero(noisyOperation.PercentageAtMost)
-			attributeConditions := convertNoisyOperationToAttributeConditions(noisyOperation, distro)
-			if len(attributeConditions) == 0 {
-				if fraction < ambientFraction {
-					ambientFraction = fraction
-				}
-			} else {
-				headSamplingRules = append(headSamplingRules, odigosv1.AttributesAndSamplerRule{
-					AttributeConditions: attributeConditions,
-					Fraction:            fraction,
+			if IsServiceInRuleScope(noisyOperation.SourceScopes, pw, containerName, distro.Language) {
+				id := odigosv1.ComputeNoisyOperationHash(&noisyOperation)
+				noisyOperations = append(noisyOperations, commonapisampling.NoisyOperation{
+					Id:               id,
+					Name:             noisyOperation.Name,
+					Disabled:         noisyOperation.Disabled,
+					Operation:        noisyOperation.Operation,
+					PercentageAtMost: noisyOperation.PercentageAtMost,
 				})
 			}
 		}
 	}
-	return headSamplingRules, ambientFraction
+	return noisyOperations
 }

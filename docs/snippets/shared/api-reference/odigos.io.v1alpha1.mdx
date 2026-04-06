@@ -824,6 +824,17 @@ In the Future we might add another level of configuration base on the parent spa
    <p>Configuration for span renamer.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>payloadCollection</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#PayloadCollection"><code>instrumentationrules.PayloadCollection</code></a>
+</td>
+<td>
+   <p>configuration for payload collection for this container.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -872,104 +883,6 @@ In the Future we might add another level of configuration base on the parent spa
 <td>
    <span class="text-muted">No description provided.</span>
    </td>
-</tr>
-</tbody>
-</table>
-
-## `AttributeCondition` <a id="odigos-io-v1alpha1-AttributeCondition"></a>
-
-
-**Appears in:**
-
-- [AttributesAndSamplerRule](#odigos-io-v1alpha1-AttributesAndSamplerRule)
-
-<p>'Operand' represents the attributes and values that an operator acts upon in an expression</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>key</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>attribute key (e.g. &quot;url.path&quot;)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>val</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>currently only string values are supported.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>operator</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-Operator"><code>Operator</code></a>
-</td>
-<td>
-   <p>The operator to use to compare the attribute value.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `AttributesAndSamplerRule` <a id="odigos-io-v1alpha1-AttributesAndSamplerRule"></a>
-
-
-**Appears in:**
-
-- [HeadSamplingConfig](#odigos-io-v1alpha1-HeadSamplingConfig)
-
-<p>AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
-If all attribute conditions evaluate to true, the AND sampler evaluates to true,
-and the fraction is used to determine the sampling decision.
-If any of the attribute compare samplers evaluate to false,
-the fraction is not used and the rule is skipped.
-An &quot;empty&quot; AttributesAndSamplerRule with no attribute conditions is considered to always evaluate to true.
-and the fraction is used to determine the sampling decision.
-This entity is refered to a rule in Odigos terminology for head-sampling.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>attributeConditions</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-AttributeCondition"><code>[]AttributeCondition</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>fraction</code> <B>[Required]</B>
-</td>
-<td>
-<code>float64</code>
-</td>
-<td>
-   <p>The fraction of spans to sample, in the range [0, 1].
-If the fraction is 0, no spans are sampled.
-If the fraction is 1, all spans are sampled.</p>
-</td>
 </tr>
 </tbody>
 </table>
@@ -2057,11 +1970,6 @@ If not specified, defaults to &quot;all&quot;.</p>
 **Appears in:**
 
 - [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
-- [SdkConfig](#odigos-io-v1alpha1-SdkConfig)
-
-<p>HeadSamplingConfig is a set of attribute rules.
-The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.</p>
-<p>If none of the rules evaluate to true, the fallback fraction is used to determine the sampling decision.</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -2070,14 +1978,16 @@ The first attribute rule that evaluates to true is used to determine the samplin
 
 <tr>
 <td>
-<code>attributesAndSamplerRules</code> <B>[Required]</B>
+<code>noisyOperations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-AttributesAndSamplerRule"><code>[]AttributesAndSamplerRule</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#NoisyOperation"><code>[]common/api/sampling.NoisyOperation</code></a>
 </td>
 <td>
-   <span class="text-muted">No description provided.</span>
-   </td>
+   <p>Noisy operations are categories of matchers that are used on the root span.
+If match, the fraction is used to determine the sampling decision for the entire trace.
+If multiple noisy operations match, the lowest fraction is used.</p>
+</td>
 </tr>
 <tr>
 <td>
@@ -2087,10 +1997,8 @@ The first attribute rule that evaluates to true is used to determine the samplin
 <code>float64</code>
 </td>
 <td>
-   <p>Used as a fallback if all rules evaluate to false,
-it may be empty - in this case the default value will be 1 - all spans are sampled.
-it should be a float value in the range [0, 1] - the fraction of spans to sample.
-a value of 0 means no spans are sampled if none of the rules evaluate to true.</p>
+   <p>Deprecated: do not use. Will be removed once python and node migration is complete.
+Use NoisyOperations instead.</p>
 </td>
 </tr>
 </tbody>
@@ -3287,16 +3195,6 @@ it can help in presenting a consistent view of odigos itself, without relying on
 </tbody>
 </table>
 
-## `Operator` <a id="odigos-io-v1alpha1-Operator"></a>
-
-(Alias of `string`)
-
-**Appears in:**
-
-- [AttributeCondition](#odigos-io-v1alpha1-AttributeCondition)
-
-
-
 ## `OtherAgent` <a id="odigos-io-v1alpha1-OtherAgent"></a>
 
 
@@ -3794,19 +3692,6 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </td>
 <td>
    <p>configurations for the instrumentation libraries the the SDK should use</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>headSamplerConfig</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-HeadSamplingConfig"><code>HeadSamplingConfig</code></a>
-</td>
-<td>
-   <p>HeadSamplingConfig is a set sampling rules.
-This config currently only applies to root spans.
-In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)</p>
 </td>
 </tr>
 <tr>
