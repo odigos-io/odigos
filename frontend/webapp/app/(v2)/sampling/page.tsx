@@ -1,14 +1,30 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery } from '@apollo/client';
-import { GET_WORKLOADS } from '@/graphql';
-import { useSamplingRuleCRUD } from '@/hooks';
 import styled from 'styled-components';
-import { FlexColumn, FlexRow, PageContent } from '@odigos/ui-kit/components';
+import { GET_WORKLOADS } from '@/graphql';
+import { useQuery } from '@apollo/client';
+import { useSamplingRuleCRUD } from '@/hooks';
+import { StatusType } from '@odigos/ui-kit/types';
+import { RichTitle } from '@odigos/ui-kit/snippets/v2';
 import { PlusIcon, RefreshIcon, SamplingIcon } from '@odigos/ui-kit/icons';
+import { FlexColumn, FlexRow, PageContent } from '@odigos/ui-kit/components';
+import { Button, ButtonSize, ButtonVariants, Note, Segment, SegmentVariant, WarningModal } from '@odigos/ui-kit/components/v2';
 import {
-  RichTitle,
+  PAGE_TITLE,
+  PAGE_DESCRIPTION,
+  BTN_REFRESH,
+  BTN_CREATE_RULE,
+  DELETE_MODAL_TITLE,
+  DELETE_MODAL_DESCRIPTION,
+  DELETE_MODAL_APPROVE,
+  DELETE_MODAL_CANCEL,
+  AUTO_RULE_TITLE,
+  HIGHLY_RELEVANT_AUTO_RULE_TITLE,
+  COST_REDUCTION_AUTO_RULE_TITLE,
+  DUPLICATE_RULE_WARNING,
+} from './constants';
+import {
   AutoRuleCard,
   buildAutoRuleSummary,
   findHighlyRelevantAutoRule,
@@ -39,9 +55,6 @@ import {
   type SamplingRuleItem,
   type SamplingRuleFormState,
 } from '@odigos/ui-kit/containers/v2';
-import { StatusType } from '@odigos/ui-kit/types';
-import { PAGE_TITLE, PAGE_DESCRIPTION, BTN_REFRESH, BTN_CREATE_RULE, DELETE_MODAL_TITLE, DELETE_MODAL_DESCRIPTION, DELETE_MODAL_APPROVE, DELETE_MODAL_CANCEL, AUTO_RULE_TITLE, HIGHLY_RELEVANT_AUTO_RULE_TITLE, COST_REDUCTION_AUTO_RULE_TITLE, DUPLICATE_RULE_WARNING } from './constants';
-import { Button, ButtonSize, ButtonVariants, Note, Segment, SegmentVariant, WarningModal } from '@odigos/ui-kit/components/v2';
 
 const Header = styled(FlexRow)`
   align-items: center;
@@ -335,7 +348,12 @@ export default function Page() {
         }
         case 'highlyRelevant': {
           const input = formStateToHighlyRelevantInput(formState);
-          dupId = findDuplicateRuleId(samplingRules, category, { sourceScopes: input.sourceScopes, operation: input.operation, error: input.error ?? false, durationAtLeastMs: input.durationAtLeastMs });
+          dupId = findDuplicateRuleId(samplingRules, category, {
+            sourceScopes: input.sourceScopes,
+            operation: input.operation,
+            error: input.error ?? false,
+            durationAtLeastMs: input.durationAtLeastMs,
+          });
           break;
         }
         case 'costReduction': {
@@ -364,7 +382,12 @@ export default function Page() {
         }
         case 'highlyRelevant': {
           const input = formStateToHighlyRelevantInput(formState);
-          dupId = findDuplicateRuleId(samplingRules, category, { sourceScopes: input.sourceScopes, operation: input.operation, error: input.error ?? false, durationAtLeastMs: input.durationAtLeastMs }, excludeId);
+          dupId = findDuplicateRuleId(
+            samplingRules,
+            category,
+            { sourceScopes: input.sourceScopes, operation: input.operation, error: input.error ?? false, durationAtLeastMs: input.durationAtLeastMs },
+            excludeId,
+          );
           break;
         }
         case 'costReduction': {
