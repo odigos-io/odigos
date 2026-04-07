@@ -600,31 +600,34 @@ func calculateContainerInstrumentationConfig(containerName string,
 
 	// check if the runtime version is in supported range if it is provided
 	if runtimeDetails.RuntimeVersion != "" && len(d.RuntimeEnvironments) == 1 {
-		constraint, err := version.NewConstraint(d.RuntimeEnvironments[0].SupportedVersions)
-		if err != nil {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-				AgentEnabledMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", d.RuntimeEnvironments[0].SupportedVersions),
-			}, nil
-		}
-		detectedVersion, err := version.NewVersion(runtimeDetails.RuntimeVersion)
-		if err != nil {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-				AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version: %s", runtimeDetails.RuntimeVersion),
-			}, nil
-		}
-		if !constraint.Check(detectedVersion) {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", d.RuntimeEnvironments[0].Name, constraint, detectedVersion),
-			}, nil
+		sv := d.RuntimeEnvironments[0].SupportedVersions
+		if !distro.IsSupportedVersionsWildcard(sv) {
+			constraint, err := version.NewConstraint(sv)
+			if err != nil {
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
+					AgentEnabledMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", sv),
+				}, nil
+			}
+			detectedVersion, err := version.NewVersion(runtimeDetails.RuntimeVersion)
+			if err != nil {
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
+					AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version: %s", runtimeDetails.RuntimeVersion),
+				}, nil
+			}
+			if !constraint.Check(detectedVersion) {
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
+					AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", d.RuntimeEnvironments[0].Name, constraint, detectedVersion),
+				}, nil
+			}
 		}
 	}
 
@@ -820,6 +823,11 @@ func resolveContainerDistro(
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
 				AgentEnabledMessage: message,
 			}
+		}
+
+		// OBI is language-agnostic (eBPF); skip language match when user explicitly selected it.
+		if overwriteDistroName == k8sconsts.OdigosDistroNameOBI {
+			return distro, nil
 		}
 
 		// verify the distro matches the language, since it might be overridden by the container override.
