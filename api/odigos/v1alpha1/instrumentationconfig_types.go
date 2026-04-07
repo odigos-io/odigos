@@ -75,12 +75,16 @@ const (
 	MarkedForInstrumentationReasonError MarkedForInstrumentationReason = "RetirableError"
 )
 
-// +kubebuilder:validation:Enum=NotMakredForInstrumentation;DetectedSuccessfully;WaitingForDetection;NoRunningPods;Error
+// +kubebuilder:validation:Enum=DetectedSuccessfully;DetectedFromMultipleLanguages;UnresolvedMultipleLanguages;WaitingForDetection;NoRunningPods;Error
 type RuntimeDetectionReason string
 
 const (
 	// when the runtime detection process is successful and runtime details are available for instrumentation.
 	RuntimeDetectionReasonDetectedSuccessfully RuntimeDetectionReason = "DetectedSuccessfully"
+	// when multiple languages were detected and one was successfully selected by heuristic rules.
+	RuntimeDetectionReasonLanguageDetectedFromMultipleLanguages RuntimeDetectionReason = "DetectedFromMultipleLanguages"
+	// when multiple languages were detected but none could be selected as the main language.
+	RuntimeDetectionReasonUnresolvedMultipleLanguages RuntimeDetectionReason = "UnresolvedMultipleLanguages"
 	// when the runtime detection process is still ongoing and the runtime details are not yet available.
 	// this status should be visible only for a short period of time until the detection process is completed by one odiglet.
 	RuntimeDetectionReasonWaitingForDetection RuntimeDetectionReason = "WaitingForDetection"
@@ -230,6 +234,8 @@ type RuntimeDetailsByContainer struct {
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.
 	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
+	// True when multiple programming languages were detected in the container
+	MultipleLanguagesDetected bool `json:"multipleLanguagesDetected,omitempty"`
 
 	// CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
 	// Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.

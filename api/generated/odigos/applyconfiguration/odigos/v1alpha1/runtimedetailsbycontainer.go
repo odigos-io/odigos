@@ -34,6 +34,8 @@ type RuntimeDetailsByContainerApplyConfiguration struct {
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.
 	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
+	// True when multiple programming languages were detected in the container
+	MultipleLanguagesDetected *bool `json:"multipleLanguagesDetected,omitempty"`
 	// CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
 	// Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
 	// Thus, this field is set only when there is:
@@ -110,6 +112,14 @@ func (b *RuntimeDetailsByContainerApplyConfiguration) WithLibCType(value common.
 // If called multiple times, the SecureExecutionMode field is set to the value of the last call.
 func (b *RuntimeDetailsByContainerApplyConfiguration) WithSecureExecutionMode(value bool) *RuntimeDetailsByContainerApplyConfiguration {
 	b.SecureExecutionMode = &value
+	return b
+}
+
+// WithMultipleLanguagesDetected sets the MultipleLanguagesDetected field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MultipleLanguagesDetected field is set to the value of the last call.
+func (b *RuntimeDetailsByContainerApplyConfiguration) WithMultipleLanguagesDetected(value bool) *RuntimeDetailsByContainerApplyConfiguration {
+	b.MultipleLanguagesDetected = &value
 	return b
 }
 

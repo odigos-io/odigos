@@ -16,10 +16,10 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/envOverwrite"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -56,6 +56,7 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 	case 1:
 		selectedLangDetails.Language = uniqueLangsSlice[0]
 	case 2:
+		selectedLangDetails.MultipleLanguagesDetected = true
 		switch {
 		// c++ can be a wrapper of script etc.
 		// we want to detect the "later" language to get the real application.
@@ -75,6 +76,7 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 			return nil, selectedLangDetails, fmt.Errorf("two different programming languages detected in the same container, cannot determine the main language: %v", uniqueLangsSlice)
 		}
 	default:
+		selectedLangDetails.MultipleLanguagesDetected = true
 		return nil, selectedLangDetails, fmt.Errorf("more than two programming languages detected in the same container, cannot determine the main language: %v", uniqueLangsSlice)
 	}
 
@@ -221,13 +223,14 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 	}
 
 	resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-		ContainerName:       container.Name,
-		Language:            langDetails.Language,
-		RuntimeVersion:      langDetails.RuntimeVersion,
-		EnvVars:             envs,
-		OtherAgent:          detectedAgent,
-		LibCType:            libcType,
-		SecureExecutionMode: secureExecutionMode,
+		ContainerName:             container.Name,
+		Language:                  langDetails.Language,
+		RuntimeVersion:            langDetails.RuntimeVersion,
+		MultipleLanguagesDetected: langDetails.MultipleLanguagesDetected,
+		EnvVars:                   envs,
+		OtherAgent:                detectedAgent,
+		LibCType:                  libcType,
+		SecureExecutionMode:       secureExecutionMode,
 	}
 
 	if inspectProc != nil {
@@ -373,11 +376,27 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		currentConfig.Status.RuntimeDetailsByContainer = newRuntimeDetials
 	}
 
+	reason := odigosv1.RuntimeDetectionReasonDetectedSuccessfully
+	message := "runtime detection completed successfully"
+	for _, container := range currentConfig.Status.RuntimeDetailsByContainer {
+		if !container.MultipleLanguagesDetected {
+			continue
+		}
+		if container.Language == common.UnknownProgrammingLanguage {
+			reason = odigosv1.RuntimeDetectionReasonUnresolvedMultipleLanguages
+			message = "multiple languages detected, could not determine main language"
+		} else {
+			reason = odigosv1.RuntimeDetectionReasonLanguageDetectedFromMultipleLanguages
+			message = "multiple languages detected, language was selected by heuristic"
+		}
+		break
+	}
+
 	meta.SetStatusCondition(&currentConfig.Status.Conditions, metav1.Condition{
 		Type:    odigosv1.RuntimeDetectionStatusConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  string(odigosv1.RuntimeDetectionReasonDetectedSuccessfully),
-		Message: "runtime detection completed successfully",
+		Reason:  string(reason),
+		Message: message,
 	})
 
 	err = kubeclient.Status().Update(ctx, currentConfig)
