@@ -30,17 +30,6 @@ enum OdigosComponent {
   collector
 }
 
-type ComponentLogLevelsConfig {
-  default: OdigosLogLevel
-  autoscaler: OdigosLogLevel
-  scheduler: OdigosLogLevel
-  instrumentor: OdigosLogLevel
-  odiglet: OdigosLogLevel
-  deviceplugin: OdigosLogLevel
-  ui: OdigosLogLevel
-  collector: OdigosLogLevel
-}
-
 enum UiMode {
   default
   readonly
@@ -56,6 +45,26 @@ enum EnvInjectionMethod {
   loader
   pod_manifest
   loader_fallback_to_pod_manifest
+}
+
+# Provenance: maps each helm value path to the ConfigMap it originated from
+
+type ProvenanceEntry {
+  helmPath: String!
+  reconciledFrom: String!
+}
+
+# Nested config types with direct scalar leaf fields
+
+type ComponentLogLevelsConfig {
+  default: OdigosLogLevel
+  autoscaler: OdigosLogLevel
+  scheduler: OdigosLogLevel
+  instrumentor: OdigosLogLevel
+  odiglet: OdigosLogLevel
+  deviceplugin: OdigosLogLevel
+  ui: OdigosLogLevel
+  collector: OdigosLogLevel
 }
 
 type RetryOnFailureConfig {
@@ -114,6 +123,30 @@ type RolloutConfig {
   automaticRolloutDisabled: Boolean
 }
 
+type AutoRollbackConfig {
+  disabled: Boolean
+  graceTime: String
+  stabilityWindowTime: String
+}
+
+type InstrumentorConfig {
+  mountMethod: MountMethod
+  agentEnvVarsInjectionMethod: EnvInjectionMethod
+  checkDeviceHealthBeforeInjection: Boolean
+}
+
+type AllowConcurrentAgentsConfig {
+  enabled: Boolean
+}
+
+type WaspConfig {
+  enabled: Boolean
+}
+
+type KarpenterConfig {
+  enabled: Boolean
+}
+
 type OidcConfig {
   tenantUrl: String
   clientId: String
@@ -147,11 +180,11 @@ type MetricsSourceOdigosOwnMetricsConfig {
 }
 
 type MetricsSourceAgentSpanMetricsConfig {
-  enabled: Boolean!
+  enabled: Boolean
 }
 
 type MetricsSourceAgentRuntimeMetricConfig {
-  name: String!
+  name: String
   disabled: Boolean
 }
 
@@ -201,30 +234,26 @@ type EffectiveConfig {
   collectorGateway: CollectorGatewayConfig
   collectorNode: CollectorNodeConfig
   profiles: [String!]
-  allowConcurrentAgents: Boolean
+  allowConcurrentAgents: AllowConcurrentAgentsConfig
   uiMode: UiMode
   uiPaginationLimit: Int
   uiRemoteUrl: String
   centralBackendURL: String
   clusterName: String
-  mountMethod: MountMethod
+  instrumentor: InstrumentorConfig
   customContainerRuntimeSocketPath: String
-  agentEnvVarsInjectionMethod: EnvInjectionMethod
   userInstrumentationEnvs: UserInstrumentationEnvsConfig
   nodeSelector: String # JSON string representation of map[string]string
-  karpenterEnabled: Boolean
+  karpenter: KarpenterConfig
   rollout: RolloutConfig
-  rollbackDisabled: Boolean
-  rollbackGraceTime: String
-  rollbackStabilityWindow: String
+  autoRollback: AutoRollbackConfig
   oidc: OidcConfig
   odigletHealthProbeBindPort: Int
   goAutoOffsetsCron: String
   goAutoOffsetsMode: String
   clickhouseJsonTypeEnabled: Boolean
-  checkDeviceHealthBeforeInjection: Boolean
   resourceSizePreset: String
-  waspEnabled: Boolean
+  wasp: WaspConfig
   metricsSources: MetricsSourceConfig
   agentsInitContainerResources: AgentsInitContainerResourcesConfig
   traceIdSuffix: String
@@ -232,6 +261,7 @@ type EffectiveConfig {
   odigosOwnTelemetryStore: OdigosOwnTelemetryConfig
   imagePullSecrets: [String!]
   componentLogLevels: ComponentLogLevelsConfig
+  provenance: [ProvenanceEntry!]
   manifestYAML: String
 }
 
@@ -250,6 +280,72 @@ input RemoteConfigRolloutInput {
 }
 input RemoteConfigInput {
   rollout: RemoteConfigRolloutInput
+}
+
+input LocalUiConfigRolloutInput {
+  automaticRolloutDisabled: Boolean
+  maxConcurrentRollouts: Int
+}
+
+input LocalUiConfigAutoRollbackInput {
+  disabled: Boolean
+  graceTime: String
+  stabilityWindowTime: String
+}
+
+input LocalUiConfigInstrumentorInput {
+  agentEnvVarsInjectionMethod: EnvInjectionMethod
+  checkDeviceHealthBeforeInjection: Boolean
+}
+
+input LocalUiConfigAllowConcurrentAgentsInput {
+  enabled: Boolean
+}
+
+input LocalUiConfigWaspInput {
+  enabled: Boolean
+}
+
+input LocalUiConfigSpanSamplingAttributesInput {
+  disabled: Boolean
+  samplingCategoryDisabled: Boolean
+  traceDecidingRuleDisabled: Boolean
+  spanDecisionAttributesDisabled: Boolean
+}
+
+input LocalUiConfigSamplingInput {
+  dryRun: Boolean
+  spanSamplingAttributes: LocalUiConfigSpanSamplingAttributesInput
+  tailSampling: TailSamplingConfigInput
+  k8sHealthProbesSampling: K8sHealthProbesSamplingConfigInput
+}
+
+input LocalUiConfigComponentLogLevelsInput {
+  default: OdigosLogLevel
+  autoscaler: OdigosLogLevel
+  scheduler: OdigosLogLevel
+  instrumentor: OdigosLogLevel
+  odiglet: OdigosLogLevel
+  deviceplugin: OdigosLogLevel
+  ui: OdigosLogLevel
+  collector: OdigosLogLevel
+}
+
+input LocalUiConfigInput {
+  telemetryEnabled: Boolean
+  ignoredNamespaces: [String!]
+  ignoredContainers: [String!]
+  ignoreOdigosNamespace: Boolean
+  clusterName: String
+  instrumentor: LocalUiConfigInstrumentorInput
+  allowConcurrentAgents: LocalUiConfigAllowConcurrentAgentsInput
+  wasp: LocalUiConfigWaspInput
+  rollout: LocalUiConfigRolloutInput
+  autoRollback: LocalUiConfigAutoRollbackInput
+  goAutoOffsetsCron: String
+  goAutoOffsetsMode: String
+  sampling: LocalUiConfigSamplingInput
+  componentLogLevels: LocalUiConfigComponentLogLevelsInput
 }
 
 type ConfigYamlField {
@@ -285,4 +381,5 @@ extend type Mutation {
     component: OdigosComponent
     level: OdigosLogLevel!
   ): Boolean!
+  updateLocalUiConfig(config: LocalUiConfigInput!): Boolean!
 }

@@ -5,13 +5,13 @@ import { ROUTES } from '@/utils';
 import { useSetupStore } from '@odigos/ui-kit/store';
 import { OnboardingContentWrapper, SetupHeader } from '@/components';
 import { DestinationSelectionForm } from '@odigos/ui-kit/containers';
-import { useDestinationCategories, usePotentialDestinations, useSetupHelpers, useTestConnection } from '@/hooks';
+import { useDestinationCategoriesLegacy, usePotentialDestinationsLegacy, useSetupHelpers, useTestConnection } from '@/hooks';
 
 export default function Page() {
   const { configuredSources, configuredFutureApps } = useSetupStore();
   const { testConnection } = useTestConnection();
-  const { categories } = useDestinationCategories();
-  const { potentialDestinations } = usePotentialDestinations();
+  const { categories } = useDestinationCategoriesLegacy();
+  const { potentialDestinations } = usePotentialDestinationsLegacy();
   const { onClickSummary, onClickRouteFromSummary } = useSetupHelpers();
 
   const isSourcesListEmpty = useMemo(
