@@ -1,5 +1,7 @@
 # Odiglet
 
+Building the odiglet binary runs `go generate` in dependency modules (OBI, auto-instrumentation, etc.) to produce bpf2go **`.go`** (and **`.o`**) under the module cache. The Makefile sets [`GODEBUG=goindex=0`](https://go.dev/doc/godebug) so the Go tool rescans those packages after generate. See [docs/obi-bpf2go-module-cache.md](docs/obi-bpf2go-module-cache.md) for background and links.
+
 ## Development
 One of Odiglet's jobs is to manage the different eBPF instrumentations. Loading an eBPF instrumentation requires having compiled eBPF programs (.o files). This compilation is taking place in Odiglet's Dockerfile and it requires the auto instrumentation code. This makes debugging locally on a non-linux system different compared to the other Odigos components.
 Assuming a setup with an active kind cluster with Odigos installed:

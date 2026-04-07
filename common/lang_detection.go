@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -12,10 +13,12 @@ type ProgramLanguageDetails struct {
 	RuntimeVersion string
 }
 
-// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;ruby;rust;cplusplus;mysql;nginx;redis;postgres;unknown;ignored
+// +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;ruby;rust;cplusplus;mysql;nginx;redis;postgres;unknown;ignored;*
 type ProgrammingLanguage string
 
 const (
+	// ProgrammingLanguageWildcard means the distribution accepts any container programming language (see distro YAML).
+	ProgrammingLanguageWildcard   ProgrammingLanguage = "*"
 	JavaProgrammingLanguage       ProgrammingLanguage = "java"
 	PythonProgrammingLanguage     ProgrammingLanguage = "python"
 	GoProgrammingLanguage         ProgrammingLanguage = "go"
@@ -37,6 +40,11 @@ const (
 	// Used when the language detection is not successful for all the available inspectors
 	UnknownProgrammingLanguage ProgrammingLanguage = "unknown"
 )
+
+// IsProgrammingLanguageWildcard reports whether lang is the distro wildcard meaning "any language".
+func IsProgrammingLanguageWildcard(lang ProgrammingLanguage) bool {
+	return strings.TrimSpace(string(lang)) == string(ProgrammingLanguageWildcard)
+}
 
 // MapOdigosToSemConv maps odigos programming language to OpenTelemetry semantic conventions
 // It is supported only for the languages that are supported by OpenTelemetry [not for mysql, nginx, etc.]

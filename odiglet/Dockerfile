@@ -104,11 +104,11 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     GOOS=linux GOARCH=$TARGETARCH go build -ldflags="${LD_FLAGS}" -o odigos-csi-driver ./cmd/csi-driver
 
-######### Odiglet builder #########
-FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
+######### Odiglet builder (go mod + make generate in deps + build binary) #########
+# odiglet-base includes clang/llvm/make/libbpf (odiglet/base.Dockerfile).
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS odiglet-build
 ENV GOTOOLCHAIN=auto
 WORKDIR /go/src/github.com/odigos-io/odigos
-# Copy local modules required by the build
 COPY api/ api/
 COPY common/ common/
 COPY k8sutils/ k8sutils/
@@ -118,10 +118,11 @@ COPY instrumentation/ instrumentation/
 COPY distros/ distros/
 WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
 COPY odiglet/ .
-
 ARG TARGETARCH
 ARG LD_FLAGS
 ARG RHEL=false
+# One RUN: `make build-odiglet` runs `generate` then `go build` (see odiglet/Makefile, odiglet/docs/obi-bpf2go-module-cache.md).
+# GOMODCACHE and GOCACHE: cache mounts on /go/pkg, /root/.cache/go-build.
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
@@ -193,10 +194,10 @@ LABEL "version"=$VERSION
 LABEL "release"=$RELEASE
 LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
-COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+COPY --from=odiglet-build /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=odiglet-build /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
+COPY --from=odiglet-build /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
+COPY --from=odiglet-build /tmp/grpc_health_probe /root/grpc_health_probe
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
 # Copy statically compiled rsync (no shared libraries needed)
@@ -207,10 +208,10 @@ CMD ["/root/odiglet"]
 
 ######### Default Odiglet #########
 FROM gcr.io/distroless/base:3443777deec6bd5c58be682f286aefffd1c871ae
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=odiglet-build /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
-COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+COPY --from=odiglet-build /tmp/grpc_health_probe /root/grpc_health_probe
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/

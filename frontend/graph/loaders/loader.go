@@ -517,7 +517,8 @@ func isDistroExpectingInstrumentationInstances(otelDistroName *string) bool {
 		"java-enterprise",
 		"mysql-enterprise",
 		"nodejs-enterprise",
-		"python-enterprise":
+		"python-enterprise",
+		"opentelemetry-ebpf-instrumentation": // OBI
 		return true
 	default:
 		return false

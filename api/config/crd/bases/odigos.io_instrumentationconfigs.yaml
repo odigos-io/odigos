@@ -601,6 +601,7 @@ spec:
                           - postgres
                           - unknown
                           - ignored
+                          - '*'
                           type: string
                         libCType:
                           enum:
@@ -945,6 +946,7 @@ spec:
                       - postgres
                       - unknown
                       - ignored
+                      - '*'
                       type: string
                     payloadCollection:
                       properties:
@@ -1481,6 +1483,7 @@ spec:
                       - postgres
                       - unknown
                       - ignored
+                      - '*'
                       type: string
                     libCType:
                       enum:

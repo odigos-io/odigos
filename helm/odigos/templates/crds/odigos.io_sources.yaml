@@ -130,6 +130,7 @@ spec:
                           - postgres
                           - unknown
                           - ignored
+                          - '*'
                           type: string
                         libCType:
                           enum:
