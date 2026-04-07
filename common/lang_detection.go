@@ -10,6 +10,8 @@ import (
 type ProgramLanguageDetails struct {
 	Language       ProgrammingLanguage
 	RuntimeVersion string
+	// Set when multiple languages were detected in the container
+	MultipleLanguagesDetected bool
 }
 
 // +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;ruby;rust;cplusplus;mysql;nginx;redis;postgres;unknown;ignored
