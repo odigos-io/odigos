@@ -55,9 +55,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          driver-opts: image=moby/buildkit:latest
+
       - name: Build Odigos Images
         run: |
-          TAG=e2e-test make build-images
+          TAG=e2e-test make build-images \
+            DOCKER_BUILD_CMD="docker buildx build --load" \
+            DOCKER_BUILD_EXTRA_ARGS="--cache-from type=gha --cache-to type=gha,mode=max"
           docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
 
       - uses: ko-build/setup-ko@v0.9
@@ -153,8 +161,34 @@ jobs:
 
       - name: Load Odigos Images to Kind Cluster
         run: |
-          kind load image-archive odigos-images.tar
-          kind load image-archive cli-image.tar
+          kind load image-archive odigos-images.tar &
+          kind load image-archive cli-image.tar &
+          wait
+
+      - name: Pre-pull common test images into Kind
+        run: |
+          # Pre-pull images used by test workloads to avoid network pulls during tests
+          IMAGES=(
+            "ghcr.io/odigos-io/simple-demo/odigos-demo-coupon:v0.1.35"
+            "ghcr.io/odigos-io/simple-demo/odigos-demo-currency:v0.1.35"
+            "ghcr.io/odigos-io/simple-demo/odigos-demo-frontend:v0.1.35"
+            "ghcr.io/odigos-io/simple-demo/odigos-demo-geolocation:v0.1.35"
+            "ghcr.io/odigos-io/simple-demo/odigos-demo-inventory:v0.1.35"
+            "ghcr.io/odigos-io/simple-demo/odigos-demo-membership:v0.1.35"
+            "ghcr.io/odigos-io/simple-demo/odigos-demo-pricing:v0.1.35"
+            "ghcr.io/odigos-io/simple-trace-db/simple-trace-db:0.0.8"
+            "nginx:1.27.5"
+            "curlimages/curl:8.4.0"
+          )
+          # Pull all images in parallel
+          for img in "${IMAGES[@]}"; do
+            docker pull "$img" &
+          done
+          wait
+          # Save and load into Kind in one batch
+          docker save -o test-images.tar "${IMAGES[@]}"
+          kind load image-archive test-images.tar
+          rm -f test-images.tar
 
       - name: Restore cached CLI binary
         id: restore-cli-cache
