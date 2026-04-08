@@ -13,42 +13,55 @@ import {
   CREATE_COST_REDUCTION_RULE,
   UPDATE_COST_REDUCTION_RULE,
   DELETE_COST_REDUCTION_RULE,
+  UPDATE_LOCAL_UI_SAMPLING_CONFIG,
 } from '@/graphql/mutations';
 import type {
   SamplingRules,
+  SamplingRuleType,
+  SamplingQueryResponse,
   NoisyOperationRule,
   NoisyOperationRuleInput,
   HighlyRelevantOperationRule,
   HighlyRelevantOperationRuleInput,
   CostReductionRule,
   CostReductionRuleInput,
+  K8sHealthProbesSamplingConfig,
 } from '@/types';
 
 interface UseSamplingRuleCrud {
   samplingRules: SamplingRules[];
+  k8sHealthProbesConfig: K8sHealthProbesSamplingConfig | null;
   loading: boolean;
   fetchSamplingRules: () => void;
 
   createNoisyOperationRule: (samplingId: string, rule: NoisyOperationRuleInput) => void;
   updateNoisyOperationRule: (samplingId: string, ruleId: string, rule: NoisyOperationRuleInput) => void;
-  deleteNoisyOperationRule: (samplingId: string, ruleId: string) => void;
 
   createHighlyRelevantOperationRule: (samplingId: string, rule: HighlyRelevantOperationRuleInput) => void;
   updateHighlyRelevantOperationRule: (samplingId: string, ruleId: string, rule: HighlyRelevantOperationRuleInput) => void;
-  deleteHighlyRelevantOperationRule: (samplingId: string, ruleId: string) => void;
 
   createCostReductionRule: (samplingId: string, rule: CostReductionRuleInput) => void;
   updateCostReductionRule: (samplingId: string, ruleId: string, rule: CostReductionRuleInput) => void;
-  deleteCostReductionRule: (samplingId: string, ruleId: string) => void;
+
+  deleteSamplingRule: (samplingId: string, ruleId: string, category: SamplingRuleType) => void;
+
+  updateK8sHealthProbesConfig: (enabled: boolean, keepPercentage: number) => void;
 }
 
 function updateGroup(groups: SamplingRules[], samplingId: string, updater: (group: SamplingRules) => SamplingRules): SamplingRules[] {
-  return groups.map((g) => (g.id === samplingId ? updater(g) : g));
+  const found = groups.some((g) => g.id === samplingId);
+  if (found) {
+    return groups.map((g) => (g.id === samplingId ? updater(g) : g));
+  }
+
+  const emptyGroup: SamplingRules = { id: samplingId, noisyOperations: [], highlyRelevantOperations: [], costReductionRules: [] };
+  return [...groups, updater(emptyGroup)];
 }
 
 export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
   const { addNotification } = useNotificationStore();
   const [samplingRules, setSamplingRules] = useState<SamplingRules[]>([]);
+  const [k8sHealthProbesConfig, setK8sHealthProbesConfig] = useState<K8sHealthProbesSamplingConfig | null>(null);
   const [loading, setLoading] = useState(false);
 
   const notifyUser = useCallback(
@@ -60,7 +73,7 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
 
   // ---- Fetch ----
 
-  const [fetchAll] = useLazyQuery<{ sampling: { rules: SamplingRules[] } }>(GET_SAMPLING_RULES, { fetchPolicy: 'network-only' });
+  const [fetchAll] = useLazyQuery<SamplingQueryResponse>(GET_SAMPLING_RULES, { fetchPolicy: 'network-only' });
 
   const fetchSamplingRules = useCallback(async () => {
     setLoading(true);
@@ -68,8 +81,9 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
 
     if (error) {
       notifyUser(StatusType.Error, Crud.Read, error.cause?.message || error.message);
-    } else if (data?.sampling?.rules) {
+    } else if (data?.sampling) {
       setSamplingRules(data.sampling.rules);
+      setK8sHealthProbesConfig(data.sampling.configs?.effective?.k8sHealthProbesSampling ?? null);
     }
     setLoading(false);
   }, [fetchAll, notifyUser]);
@@ -86,23 +100,21 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     },
   });
 
-  const [mutateUpdateNoisy] = useMutation<{ updateNoisyOperationRule: NoisyOperationRule }, { samplingId: string; ruleId: string; rule: NoisyOperationRuleInput }>(
-    UPDATE_NOISY_OPERATION_RULE,
-    {
-      onError: (error) => notifyUser(StatusType.Error, Crud.Update, error.cause?.message || error.message),
-      onCompleted: (res, opts) => {
-        const updated = res.updateNoisyOperationRule;
-        const sid = opts?.variables?.samplingId as string;
-        setSamplingRules((prev) =>
-          updateGroup(prev, sid, (g) => ({
-            ...g,
-            noisyOperations: g.noisyOperations.map((r) => (r.ruleId === updated.ruleId ? updated : r)),
-          })),
-        );
-        notifyUser(StatusType.Success, Crud.Update, `Successfully updated noisy operation rule "${updated.name || updated.ruleId}"`);
-      },
+  const [mutateUpdateNoisy] = useMutation<{ updateNoisyOperationRule: NoisyOperationRule }, { samplingId: string; ruleId: string; rule: NoisyOperationRuleInput }>(UPDATE_NOISY_OPERATION_RULE, {
+    onError: (error) => notifyUser(StatusType.Error, Crud.Update, error.cause?.message || error.message),
+    onCompleted: (res, opts) => {
+      const updated = res.updateNoisyOperationRule;
+      const sid = opts?.variables?.samplingId as string;
+      const oldRuleId = opts?.variables?.ruleId as string;
+      setSamplingRules((prev) =>
+        updateGroup(prev, sid, (g) => ({
+          ...g,
+          noisyOperations: g.noisyOperations.map((r) => (r.ruleId === oldRuleId ? updated : r)),
+        })),
+      );
+      notifyUser(StatusType.Success, Crud.Update, `Successfully updated noisy operation rule "${updated.name || updated.ruleId}"`);
     },
-  );
+  });
 
   const [mutateDeleteNoisy] = useMutation<{ deleteNoisyOperationRule: boolean }, { samplingId: string; ruleId: string }>(DELETE_NOISY_OPERATION_RULE, {
     onError: (error) => notifyUser(StatusType.Error, Crud.Delete, error.cause?.message || error.message),
@@ -134,23 +146,24 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     },
   );
 
-  const [mutateUpdateHighlyRelevant] = useMutation<
-    { updateHighlyRelevantOperationRule: HighlyRelevantOperationRule },
-    { samplingId: string; ruleId: string; rule: HighlyRelevantOperationRuleInput }
-  >(UPDATE_HIGHLY_RELEVANT_OPERATION_RULE, {
-    onError: (error) => notifyUser(StatusType.Error, Crud.Update, error.cause?.message || error.message),
-    onCompleted: (res, opts) => {
-      const updated = res.updateHighlyRelevantOperationRule;
-      const sid = opts?.variables?.samplingId as string;
-      setSamplingRules((prev) =>
-        updateGroup(prev, sid, (g) => ({
-          ...g,
-          highlyRelevantOperations: g.highlyRelevantOperations.map((r) => (r.ruleId === updated.ruleId ? updated : r)),
-        })),
-      );
-      notifyUser(StatusType.Success, Crud.Update, `Successfully updated highly relevant operation rule "${updated.name || updated.ruleId}"`);
+  const [mutateUpdateHighlyRelevant] = useMutation<{ updateHighlyRelevantOperationRule: HighlyRelevantOperationRule }, { samplingId: string; ruleId: string; rule: HighlyRelevantOperationRuleInput }>(
+    UPDATE_HIGHLY_RELEVANT_OPERATION_RULE,
+    {
+      onError: (error) => notifyUser(StatusType.Error, Crud.Update, error.cause?.message || error.message),
+      onCompleted: (res, opts) => {
+        const updated = res.updateHighlyRelevantOperationRule;
+        const sid = opts?.variables?.samplingId as string;
+        const oldRuleId = opts?.variables?.ruleId as string;
+        setSamplingRules((prev) =>
+          updateGroup(prev, sid, (g) => ({
+            ...g,
+            highlyRelevantOperations: g.highlyRelevantOperations.map((r) => (r.ruleId === oldRuleId ? updated : r)),
+          })),
+        );
+        notifyUser(StatusType.Success, Crud.Update, `Successfully updated highly relevant operation rule "${updated.name || updated.ruleId}"`);
+      },
     },
-  });
+  );
 
   const [mutateDeleteHighlyRelevant] = useMutation<{ deleteHighlyRelevantOperationRule: boolean }, { samplingId: string; ruleId: string }>(DELETE_HIGHLY_RELEVANT_OPERATION_RULE, {
     onError: (error) => notifyUser(StatusType.Error, Crud.Delete, error.cause?.message || error.message),
@@ -179,23 +192,21 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     },
   });
 
-  const [mutateUpdateCostReduction] = useMutation<{ updateCostReductionRule: CostReductionRule }, { samplingId: string; ruleId: string; rule: CostReductionRuleInput }>(
-    UPDATE_COST_REDUCTION_RULE,
-    {
-      onError: (error) => notifyUser(StatusType.Error, Crud.Update, error.cause?.message || error.message),
-      onCompleted: (res, opts) => {
-        const updated = res.updateCostReductionRule;
-        const sid = opts?.variables?.samplingId as string;
-        setSamplingRules((prev) =>
-          updateGroup(prev, sid, (g) => ({
-            ...g,
-            costReductionRules: g.costReductionRules.map((r) => (r.ruleId === updated.ruleId ? updated : r)),
-          })),
-        );
-        notifyUser(StatusType.Success, Crud.Update, `Successfully updated cost reduction rule "${updated.name || updated.ruleId}"`);
-      },
+  const [mutateUpdateCostReduction] = useMutation<{ updateCostReductionRule: CostReductionRule }, { samplingId: string; ruleId: string; rule: CostReductionRuleInput }>(UPDATE_COST_REDUCTION_RULE, {
+    onError: (error) => notifyUser(StatusType.Error, Crud.Update, error.cause?.message || error.message),
+    onCompleted: (res, opts) => {
+      const updated = res.updateCostReductionRule;
+      const sid = opts?.variables?.samplingId as string;
+      const oldRuleId = opts?.variables?.ruleId as string;
+      setSamplingRules((prev) =>
+        updateGroup(prev, sid, (g) => ({
+          ...g,
+          costReductionRules: g.costReductionRules.map((r) => (r.ruleId === oldRuleId ? updated : r)),
+        })),
+      );
+      notifyUser(StatusType.Success, Crud.Update, `Successfully updated cost reduction rule "${updated.name || updated.ruleId}"`);
     },
-  );
+  });
 
   const [mutateDeleteCostReduction] = useMutation<{ deleteCostReductionRule: boolean }, { samplingId: string; ruleId: string }>(DELETE_COST_REDUCTION_RULE, {
     onError: (error) => notifyUser(StatusType.Error, Crud.Delete, error.cause?.message || error.message),
@@ -212,6 +223,22 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     },
   });
 
+  // ---- Sampling Config ----
+
+  const [mutateUpdateConfig] = useMutation<{ updateLocalUiSamplingConfig: boolean }, { config: { k8sHealthProbesSampling: { enabled: boolean; keepPercentage: number } } }>(
+    UPDATE_LOCAL_UI_SAMPLING_CONFIG,
+    {
+      onError: (error) => notifyUser(StatusType.Error, Crud.Update, error.cause?.message || error.message),
+      onCompleted: (_res, opts) => {
+        const input = opts?.variables?.config.k8sHealthProbesSampling;
+        if (input) {
+          setK8sHealthProbesConfig({ enabled: input.enabled, keepPercentage: input.keepPercentage });
+        }
+        notifyUser(StatusType.Success, Crud.Update, 'Successfully updated auto rule configuration');
+      },
+    },
+  );
+
   // ---- Public API ----
 
   const createNoisyOperationRule: UseSamplingRuleCrud['createNoisyOperationRule'] = (samplingId, rule) => {
@@ -222,20 +249,12 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     mutateUpdateNoisy({ variables: { samplingId, ruleId, rule } });
   };
 
-  const deleteNoisyOperationRule: UseSamplingRuleCrud['deleteNoisyOperationRule'] = (samplingId, ruleId) => {
-    mutateDeleteNoisy({ variables: { samplingId, ruleId } });
-  };
-
   const createHighlyRelevantOperationRule: UseSamplingRuleCrud['createHighlyRelevantOperationRule'] = (samplingId, rule) => {
     mutateCreateHighlyRelevant({ variables: { samplingId, rule } });
   };
 
   const updateHighlyRelevantOperationRule: UseSamplingRuleCrud['updateHighlyRelevantOperationRule'] = (samplingId, ruleId, rule) => {
     mutateUpdateHighlyRelevant({ variables: { samplingId, ruleId, rule } });
-  };
-
-  const deleteHighlyRelevantOperationRule: UseSamplingRuleCrud['deleteHighlyRelevantOperationRule'] = (samplingId, ruleId) => {
-    mutateDeleteHighlyRelevant({ variables: { samplingId, ruleId } });
   };
 
   const createCostReductionRule: UseSamplingRuleCrud['createCostReductionRule'] = (samplingId, rule) => {
@@ -246,8 +265,22 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     mutateUpdateCostReduction({ variables: { samplingId, ruleId, rule } });
   };
 
-  const deleteCostReductionRule: UseSamplingRuleCrud['deleteCostReductionRule'] = (samplingId, ruleId) => {
-    mutateDeleteCostReduction({ variables: { samplingId, ruleId } });
+  const deleteSamplingRule: UseSamplingRuleCrud['deleteSamplingRule'] = (samplingId, ruleId, category) => {
+    switch (category) {
+      case 'noisy':
+        mutateDeleteNoisy({ variables: { samplingId, ruleId } });
+        break;
+      case 'highlyRelevant':
+        mutateDeleteHighlyRelevant({ variables: { samplingId, ruleId } });
+        break;
+      case 'costReduction':
+        mutateDeleteCostReduction({ variables: { samplingId, ruleId } });
+        break;
+    }
+  };
+
+  const updateK8sHealthProbesConfig: UseSamplingRuleCrud['updateK8sHealthProbesConfig'] = (enabled, keepPercentage) => {
+    mutateUpdateConfig({ variables: { config: { k8sHealthProbesSampling: { enabled, keepPercentage } } } });
   };
 
   useEffect(() => {
@@ -256,16 +289,16 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
 
   return {
     samplingRules,
+    k8sHealthProbesConfig,
     loading,
     fetchSamplingRules,
     createNoisyOperationRule,
     updateNoisyOperationRule,
-    deleteNoisyOperationRule,
     createHighlyRelevantOperationRule,
     updateHighlyRelevantOperationRule,
-    deleteHighlyRelevantOperationRule,
     createCostReductionRule,
     updateCostReductionRule,
-    deleteCostReductionRule,
+    deleteSamplingRule,
+    updateK8sHealthProbesConfig,
   };
 };

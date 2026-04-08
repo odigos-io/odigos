@@ -643,7 +643,13 @@
               "central/prerequisites",
               "central/installation",
               "central/ui",
-              "central/remote-clusters",
+              {
+                "group": "Adding Connections",
+                "pages": [
+                  "central/adding-connections/remote-clusters",
+                  "central/adding-connections/vmagent"
+                ]
+              },
               "central/authentication",
               "central/upgrade",
               "central/uninstall"
@@ -803,6 +809,10 @@
     {
       "source": "/debugging",
       "destination": "/oss/debugging"
+    },
+    {
+      "source": "/central/remote-clusters",
+      "destination": "/central/adding-connections/remote-clusters"
     }
   ]
 }
