@@ -10,6 +10,7 @@ import (
 
 	commonapi "github.com/odigos-io/odigos/common/api"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -50,6 +51,18 @@ func (o *OdigosWorkloadConfig) startInformer(ctx context.Context) error {
 
 	factory := dynamicinformer.NewDynamicSharedInformerFactory(client, resyncPeriod)
 	informer := factory.ForResource(instrumentationConfigGVR).Informer()
+
+	// Strip managedFields from cached objects to reduce memory usage. Mirrors
+	// sigs.k8s.io/controller-runtime/pkg/cache.TransformStripManagedFields. The
+	// nil-check guards against kubernetes/kubernetes#124337.
+	if err = informer.SetTransform(func(obj any) (any, error) {
+		if accessor, err := meta.Accessor(obj); err == nil && accessor.GetManagedFields() != nil {
+			accessor.SetManagedFields(nil)
+		}
+		return obj, nil
+	}); err != nil {
+		return err
+	}
 
 	_, err = informer.AddEventHandler(k8scache.ResourceEventHandlerFuncs{
 		AddFunc:    o.handleInstrumentationConfig,
