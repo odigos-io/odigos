@@ -57,7 +57,7 @@ func CalculateTracesConfig(
 	tracesConfig.HeadersCollection = calculateHeaderCollectionConfig(distro, irls)
 	tracesConfig.HeadSampling = sampling.CalculateHeadSamplingConfig(distro, workloadObj, containerName, effectiveConfig, samplingRules, pw)
 	tracesConfig.SpanRenamer = filterSpanRenamerForContainer(agentLevelActions, programmingLanguage)
-	tracesConfig.PayloadCollection = traces.CalculatePayloadCollectionConfig(distro, irls)
+	tracesConfig.PayloadCollection = traces.CalculatePayloadCollectionConfig(distro, irls, programmingLanguage)
 
 	return tracesConfig, nil
 }
