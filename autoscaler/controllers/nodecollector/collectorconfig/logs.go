@@ -67,7 +67,7 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 	}
 }
 
-func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, sources *odigosv1.InstrumentationConfigList) config.Config {
+func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, sources *odigosv1.InstrumentationConfigList, ebpfLogCaptureEnabled bool) config.Config {
 
 	pipelineProcessors := append([]string{
 		memoryLimiterProcessorName,
@@ -78,12 +78,25 @@ func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, odigosName
 	// append odigos traffic metrics processor last (after manifest processors)
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
 
+	var receivers config.GenericMap
+	var pipelineReceivers []string
+
+	if ebpfLogCaptureEnabled {
+		// eBPF-only mode: no filelog receiver config needed, eBPF receiver config is in the common domain
+		receivers = config.GenericMap{}
+		pipelineReceivers = []string{odigosEbpfReceiverName}
+	} else {
+		// Default: filelog-only mode
+		receivers = getReceivers(logger, sources, odigosNamespace)
+		pipelineReceivers = []string{filelogReceiverName}
+	}
+
 	return config.Config{
-		Receivers: getReceivers(logger, sources, odigosNamespace),
+		Receivers: receivers,
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				logsPipelineName: {
-					Receivers:  []string{filelogReceiverName, odigosEbpfReceiverName},
+					Receivers:  pipelineReceivers,
 					Processors: pipelineProcessors,
 					Exporters:  []string{clusterCollectorLogsExporterName},
 				},

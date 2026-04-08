@@ -1,0 +1,9 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: ebpf-log-capture
+spec:
+  ruleName: "eBPF log capture"
+  notes: "Auto generated rule from ebpf-log-capture profile. Do not edit."
+  ebpfLogCapture:
+    enabled: true

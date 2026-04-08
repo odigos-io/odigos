@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	logEventMaxLogSize  = 1024
+	logEventMaxLogSize  = 4096
 	logEventTraceIDSize = 16
 	logEventSpanIDSize  = 8
 )
@@ -185,9 +185,19 @@ func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map, attributes
 
 		r.telemetry.EbpfTotalBytesRead.Add(ctx, int64(len(record.RawSample)))
 
-		if len(record.RawSample) < int(unsafe.Sizeof(logEvent{})) {
-			r.logger.Error("short sample", zap.Int("size", len(record.RawSample)))
+		// The BPF ring buffer sends variable-size events: the fixed header
+		// (everything up to Data) plus only the actual log bytes.
+		// Minimum valid size is the header (offset of Data field).
+		headerSize := int(unsafe.Offsetof(logEvent{}.Data))
+		if len(record.RawSample) < headerSize {
+			r.logger.Error("short sample", zap.Int("size", len(record.RawSample)), zap.Int("headerSize", headerSize))
 			continue
+		}
+		// Pad the sample to full struct size so unsafe cast is safe.
+		if len(record.RawSample) < int(unsafe.Sizeof(logEvent{})) {
+			padded := make([]byte, unsafe.Sizeof(logEvent{}))
+			copy(padded, record.RawSample)
+			record.RawSample = padded
 		}
 		event := (*logEvent)(unsafe.Pointer(&record.RawSample[0]))
 

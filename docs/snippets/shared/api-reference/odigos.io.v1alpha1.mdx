@@ -3002,6 +3002,19 @@ note that traces will be dropped regardless of thier attributes/errors/importanc
 @deprecated: use odigos config to set this value instead.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>ebpfLogCapture</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#EbpfLogCapture"><code>instrumentationrules.EbpfLogCapture</code></a>
+</td>
+<td>
+   <p>Configure eBPF-based log capture. When enabled, the node collector logs pipeline
+will use only the eBPF receiver instead of the filelog receiver, and odiglet will
+register instrumented processes for eBPF log capture.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -3759,6 +3772,18 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <td>
    <p>configuration for runtime metrics that the SDK should generate.
 these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ebpfLogCapture</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#EbpfLogCapture"><code>instrumentationrules.EbpfLogCapture</code></a>
+</td>
+<td>
+   <p>Whether eBPF-based log capture is enabled for this SDK.
+Set by the instrumentor based on InstrumentationRule ebpfLogCapture config.</p>
 </td>
 </tr>
 </tbody>

@@ -79,8 +79,8 @@ func CreateMetricsMaps() (*cilumebpf.Map, *cilumebpf.Map, error) {
 // Returns (nil, nil, nil) when the kernel does not support RingBuf, since there
 // is no PerfEventArray fallback for logs.
 func CreateLogsMaps() (*cilumebpf.Map, *cilumebpf.Map, error) {
-	if features.HaveMapType(cilumebpf.RingBuf) != nil {
-		return nil, nil, nil
+	if err := features.HaveMapType(cilumebpf.RingBuf); err != nil {
+		return nil, nil, nil //nolint:nilerr // graceful: no RingBuf support, no fallback for logs
 	}
 
 	logsSpec := &cilumebpf.MapSpec{

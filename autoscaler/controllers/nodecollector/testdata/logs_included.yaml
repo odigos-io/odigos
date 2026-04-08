@@ -165,7 +165,6 @@ service:
       - odigostrafficmetrics
       receivers:
       - filelog
-      - odigosebpf
     metrics:
       exporters:
       - otlp/out-cluster-collector-metrics
