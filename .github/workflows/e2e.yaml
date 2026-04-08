@@ -43,7 +43,7 @@ jobs:
             -o odigos
 
       - name: Save CLI binary to cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: cli/odigos
           key: ${{ github.run_id }}-odigos-cli
@@ -68,7 +68,7 @@ jobs:
           docker save registry.odigos.io/odigos-cli:e2e-test -o cli-image.tar
 
       - name: Save Odigos images to cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: |
             odigos-images.tar
@@ -136,7 +136,7 @@ jobs:
 
       - name: Restore cached Odigos images
         id: restore-images-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             odigos-images.tar
@@ -158,7 +158,7 @@ jobs:
 
       - name: Restore cached CLI binary
         id: restore-cli-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: cli/odigos
           fail-on-cache-miss: true
