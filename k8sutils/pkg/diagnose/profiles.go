@@ -58,7 +58,7 @@ func (h HeapProfiler) GetFileName() string {
 }
 
 func (h HeapProfiler) GetUrlSuffix() string {
-	return "/heap"
+	return "/heap?gc=1"
 }
 
 // GoRoutineProfiler captures goroutine profiles
