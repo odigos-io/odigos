@@ -12,7 +12,7 @@ jobs:
         runs-on: ${{ matrix.runner }}
         permissions:
           contents: 'read'
-          id-token: 'write'
+          id-token: write
           packages: 'write'
         strategy:
           matrix:
@@ -127,7 +127,7 @@ jobs:
         runs-on: ubuntu-latest
         permissions:
           contents: 'read'
-          id-token: 'write'
+          id-token: write
         steps:
           - name: Checkout repository
             uses: actions/checkout@v5
@@ -205,11 +205,19 @@ jobs:
     trigger-enterprise-publish:
         needs: publish-cli-rhel
         runs-on: ubuntu-latest
+        permissions:
+          id-token: write
         steps:
+          - uses: odigos-io/ci-core/sts@main
+            id: sts
+            with:
+              scope: odigos-io/odigos-enterprise
+              identity: trigger-release
+
           - name: Trigger Enterprise Publish job
             run: |
               curl -X POST \
                 -H "Accept: application/vnd.github.v3+json" \
-                -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
+                -H "Authorization: token ${{ steps.sts.outputs.GH_TOKEN }}" \
                 https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
                 -d '{"event_type": "publish_images_rhel", "client_payload": {"tag": "${{ inputs.tag }}"}}'
