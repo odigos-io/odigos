@@ -30,6 +30,7 @@ const (
 )
 
 func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.GenericMap {
+
 	allProcessors := config.GenericMap{}
 	for k, v := range staticProcessors {
 		allProcessors[k] = v
@@ -51,14 +52,7 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 		"timeout":   "2s",
 	}
 
-	// Rebuild in sorted key order so code using SortedMapStringKeys (or similar) sees a fixed order.
-	// The node collector path merges via MergeConfigs → mergeGenericMaps, which already sorts when merging—
-	// so this pass is not strictly required for that merged ConfigMap today.
-	out := make(config.GenericMap, len(allProcessors))
-	for _, k := range config.SortedMapStringKeys(allProcessors) {
-		out[k] = allProcessors[k]
-	}
-	return out
+	return allProcessors
 }
 
 var staticProcessors config.GenericMap

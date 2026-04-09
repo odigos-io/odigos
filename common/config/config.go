@@ -119,17 +119,15 @@ func mergeExtensions(extensions1 []string, extensions2 []string) []string {
 
 func mergePipelines(pipelines1 map[string]Pipeline, pipelines2 map[string]Pipeline) (map[string]Pipeline, error) {
 	// Create a copy of pipelines1 to avoid modifying the input
-	// MergeConfigs merges each domain's pipelines; use SortedMapStringKeys
-	// to keep the order of the pipelines stable.
 	mergedPipelines := make(map[string]Pipeline, len(pipelines1)+len(pipelines2))
-	for _, k := range SortedMapStringKeys(pipelines1) {
-		mergedPipelines[k] = pipelines1[k]
+	for k, v := range pipelines1 {
+		mergedPipelines[k] = v
 	}
-	for _, k := range SortedMapStringKeys(pipelines2) {
+	for k, v := range pipelines2 {
 		if _, exists := mergedPipelines[k]; exists {
 			return nil, fmt.Errorf("duplicate pipeline %s in configs", k)
 		}
-		mergedPipelines[k] = pipelines2[k]
+		mergedPipelines[k] = v
 	}
 	return mergedPipelines, nil
 }
@@ -159,12 +157,7 @@ func mergeTelemetryResource(resource1 map[string]*string, resource2 map[string]*
 	for k, v := range resource2 {
 		mergedResource[k] = v
 	}
-	// Rebuild with globally sorted keys for predictable merge output.
-	out := make(map[string]*string, len(mergedResource))
-	for _, k := range SortedMapStringKeys(mergedResource) {
-		out[k] = mergedResource[k]
-	}
-	return out
+	return mergedResource
 }
 
 func mergeTelemetryReaders(readers1 []GenericMap, readers2 []GenericMap) []GenericMap {
@@ -205,14 +198,7 @@ func mergeTelemetry(telemetry1 Telemetry, telemetry2 Telemetry) (Telemetry, erro
 func mergeGenericMaps(maps ...GenericMap) (GenericMap, error) {
 	mergedMap := GenericMap{}
 	for _, m := range maps {
-		if len(m) == 0 {
-			continue
-		}
-		// MergeConfigs uses this for each domain's receivers, exporters, processors, extensions, and connectors.
-		// Go map iteration order is undefined; sorting keys keeps marshaled YAML stable and avoids needless ConfigMap reloads.
-		// GenericMap keys are strings (component names); SortedMapStringKeys applies lexicographic order via sort.Strings.
-		for _, k := range SortedMapStringKeys(m) {
-			v := m[k]
+		for k, v := range m {
 			if _, exists := mergedMap[k]; exists {
 				return GenericMap{}, fmt.Errorf("duplicate key %s in configs", k)
 			}
@@ -220,18 +206,4 @@ func mergeGenericMaps(maps ...GenericMap) (GenericMap, error) {
 		}
 	}
 	return mergedMap, nil
-}
-
-// SortedMapStringKeys returns the keys of m in lexicographic order. Go map iteration order is undefined;
-// use this when stable key order matters (e.g. config merge / YAML).
-func SortedMapStringKeys[V any](m map[string]V) []string {
-	if len(m) == 0 {
-		return nil
-	}
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }
