@@ -93,6 +93,7 @@ receivers:
     operators:
     - id: container-parser
       type: container
+    poll_interval: 5s
     retry_on_failure:
       enabled: true
     start_at: end
