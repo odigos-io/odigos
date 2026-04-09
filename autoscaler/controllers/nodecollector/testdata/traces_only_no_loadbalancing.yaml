@@ -1,5 +1,6 @@
 exporters:
   otlp/odigos-own-telemetry-ui:
+    compression: none
     endpoint: ui.odigos-system:4317
     retry_on_failure:
       enabled: false
@@ -82,7 +83,8 @@ receivers:
   prometheus/self-metrics-ui:
     config:
       scrape_configs:
-      - job_name: otelcol
+      - enable_compression: false
+        job_name: otelcol
         metric_relabel_configs:
         - action: keep
           regex: (.*odigos.*)
