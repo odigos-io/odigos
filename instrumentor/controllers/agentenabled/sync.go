@@ -741,7 +741,7 @@ func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.Instru
 		return false, odigosv1.AgentEnabledReasonNoCollectedSignals, message
 	}
 
-	// if there are any overrides, we use them (and exist early)
+	// if there are any overrides, we use them (and exit early)
 	for _, containerOverride := range ic.Spec.ContainersOverrides {
 		if containerOverride.RuntimeInfo != nil {
 			return true, odigosv1.AgentEnabledReasonEnabledSuccessfully, ""
@@ -854,6 +854,8 @@ func resolveContainerDistro(
 				}
 			}
 		}
+
+		fmt.Println("defaultDistroName", defaultDistroName, "runtimeVersion", runtimeVersion)
 
 		// Walk the fallbackDistro chain to resolve the best-matching distro name for the runtime version.
 		effectiveDistroName := distroGetter.ResolveDistroNameForVersion(defaultDistroName, runtimeVersion)
