@@ -191,6 +191,56 @@ func (s *ClientTestSuite) TestHandlePodDelete() {
 	s.Equal(WorkloadKindDeployment, pod.WorkloadKind)
 }
 
+// BenchmarkPodCacheMemoryWithManagedFields demonstrates the realistic memory cost
+// of the managedFields data that the informer cache used to retain. It builds
+// 500 PartialObjectMetadata objects with ~40KB of managedFields each (the rough
+// shape of production pods at the Walmart cluster that motivated this fix) and
+// reports the allocated bytes per iteration. Compared with the steady-state cost
+// after the SetTransform installed in NewMetadataClient strips managedFields,
+// this benchmark documents the ~20MB-per-node savings.
+func BenchmarkPodCacheMemoryWithManagedFields(b *testing.B) {
+	const numPods = 500
+	const managedFieldsSizeBytes = 40_000
+
+	makePods := func(withManagedFields bool) []*metav1.PartialObjectMetadata {
+		pods := make([]*metav1.PartialObjectMetadata, numPods)
+		for i := range numPods {
+			pom := &metav1.PartialObjectMetadata{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "pod-" + string(rune('a'+i%26)),
+					Namespace: "ns-" + string(rune('a'+i%10)),
+					UID:       types.UID("uid-" + string(rune('a'+i%26))),
+					Labels:    map[string]string{"app": "my-app"},
+					OwnerReferences: []metav1.OwnerReference{
+						{Kind: "ReplicaSet", Name: "my-app-rs-abc"},
+					},
+				},
+			}
+			if withManagedFields {
+				pom.ManagedFields = []metav1.ManagedFieldsEntry{
+					{Manager: "kubectl-client-side-apply", FieldsV1: &metav1.FieldsV1{Raw: make([]byte, managedFieldsSizeBytes/2)}},
+					{Manager: "kube-controller-manager", FieldsV1: &metav1.FieldsV1{Raw: make([]byte, managedFieldsSizeBytes/2)}},
+				}
+			}
+			pods[i] = pom
+		}
+		return pods
+	}
+
+	b.Run("WithManagedFields", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			_ = makePods(true)
+		}
+	})
+	b.Run("WithoutManagedFields", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			_ = makePods(false)
+		}
+	})
+}
+
 // ExtractPartialMetadataTestSuite tests the extractPartialMetadata function
 type ExtractPartialMetadataTestSuite struct {
 	suite.Suite
