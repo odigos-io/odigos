@@ -14,7 +14,12 @@ const (
 	odigosLogsResourceAttrsProcessorName = "odigoslogsresourceattrsprocessor"
 )
 
-func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string) config.GenericMap {
+func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string) (config.GenericMap, []string) {
+
+	if isEbpfLogCaptureEnabled(sources) {
+		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here
+		return config.GenericMap{}, []string{odigosEbpfReceiverName}
+	}
 
 	includes := make([]string, 0)
 	for _, element := range sources.Items {
@@ -64,10 +69,28 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 				"enabled": true,
 			},
 		},
-	}
+	}, []string{filelogReceiverName}
 }
 
-func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, sources *odigosv1.InstrumentationConfigList, ebpfLogCaptureEnabled bool) config.Config {
+// isEbpfLogCaptureEnabled checks whether any InstrumentationConfig has eBPF
+// log capture enabled in its SdkConfigs.
+func isEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
+	if sources == nil {
+		return false
+	}
+	for _, ic := range sources.Items {
+		for _, sdkConfig := range ic.Spec.SdkConfigs {
+			if sdkConfig.EbpfLogCapture != nil &&
+				sdkConfig.EbpfLogCapture.Enabled != nil &&
+				*sdkConfig.EbpfLogCapture.Enabled {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, sources *odigosv1.InstrumentationConfigList) config.Config {
 
 	pipelineProcessors := append([]string{
 		memoryLimiterProcessorName,
@@ -78,18 +101,7 @@ func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, odigosName
 	// append odigos traffic metrics processor last (after manifest processors)
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
 
-	var receivers config.GenericMap
-	var pipelineReceivers []string
-
-	if ebpfLogCaptureEnabled {
-		// eBPF-only mode: no filelog receiver config needed, eBPF receiver config is in the common domain
-		receivers = config.GenericMap{}
-		pipelineReceivers = []string{odigosEbpfReceiverName}
-	} else {
-		// Default: filelog-only mode
-		receivers = getReceivers(logger, sources, odigosNamespace)
-		pipelineReceivers = []string{filelogReceiverName}
-	}
+	receivers, pipelineReceivers := getReceivers(logger, sources, odigosNamespace)
 
 	return config.Config{
 		Receivers: receivers,

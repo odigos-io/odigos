@@ -136,22 +136,6 @@ func (b *nodeCollectorBaseReconciler) persistCollectorConfigDomains(ctx context.
 	return nil
 }
 
-func isEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
-	if sources == nil {
-		return false
-	}
-	for _, ic := range sources.Items {
-		for _, sdkConfig := range ic.Spec.SdkConfigs {
-			if sdkConfig.EbpfLogCapture != nil &&
-				sdkConfig.EbpfLogCapture.Enabled != nil &&
-				*sdkConfig.EbpfLogCapture.Enabled {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func calculateCollectorConfigDomains(
 	ctx context.Context,
 	odigosNamespace string,
@@ -246,8 +230,7 @@ func calculateCollectorConfigDomains(
 	// logs
 	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
-		ebpfLogCapture := isEbpfLogCaptureEnabled(sources)
-		logsConfig := collectorconfig.LogsConfig(logger.Logr(), nodeCG, odigosNamespace, processorsResults.LogsProcessors, sources, ebpfLogCapture)
+		logsConfig := collectorconfig.LogsConfig(logger.Logr(), nodeCG, odigosNamespace, processorsResults.LogsProcessors, sources)
 		configDomains["logs"] = logsConfig
 	}
 

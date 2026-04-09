@@ -10,6 +10,7 @@ import (
 	"github.com/cilium/ebpf"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
 
 	rtml "github.com/odigos-io/go-rtml"
@@ -61,20 +62,18 @@ func (e *logEvent) streamString() string {
 	case 2:
 		return "stderr"
 	default:
-		return "unknown"
+		// unreachable: the eBPF probe only emits events with FD 1 (stdout) or 2 (stderr)
+		return ""
 	}
 }
 
 // logsAttrCache is a thread-safe cache of TGID -> packed resource attributes.
 // It is built from the attributesMap at startup and refreshed on cache misses
-// by doing a direct map lookup.
+// by doing a direct map lookup. The cache size is bounded by the eBPF map's
+// MaxProcessesCount, since only registered TGIDs can appear.
 type logsAttrCache struct {
 	mu    sync.RWMutex
 	cache map[uint32]string
-}
-
-func newLogsAttrCache() *logsAttrCache {
-	return &logsAttrCache{cache: make(map[uint32]string)}
 }
 
 func (c *logsAttrCache) get(tgid uint32) (string, bool) {
@@ -90,9 +89,17 @@ func (c *logsAttrCache) set(tgid uint32, attrs string) {
 	c.cache[tgid] = attrs
 }
 
-// buildLogsAttrCache populates the cache by iterating over the entire attributesMap.
+func (c *logsAttrCache) size() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return len(c.cache)
+}
+
+// buildLogsAttrCache pre-populates the cache by iterating over the entire
+// attributesMap so that the hot path (per log event) can serve most lookups
+// from memory instead of issuing an eBPF map syscall for every event.
 func buildLogsAttrCache(attributesMap *ebpf.Map, logger *zap.Logger) *logsAttrCache {
-	ac := newLogsAttrCache()
+	ac := &logsAttrCache{cache: make(map[uint32]string)}
 
 	var tgidKey uint32
 	var attrValue [attrValueMaxSize]byte
@@ -177,12 +184,6 @@ func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map, attributes
 			continue
 		}
 
-		if record.LostSamples != 0 {
-			r.telemetry.EbpfLostSamples.Add(ctx, int64(record.LostSamples))
-			r.logger.Debug("lost samples", zap.Int("lost", int(record.LostSamples)))
-			continue
-		}
-
 		r.telemetry.EbpfTotalBytesRead.Add(ctx, int64(len(record.RawSample)))
 
 		// The BPF ring buffer sends variable-size events: the fixed header
@@ -190,6 +191,7 @@ func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map, attributes
 		// Minimum valid size is the header (offset of Data field).
 		headerSize := int(unsafe.Offsetof(logEvent{}.Data))
 		if len(record.RawSample) < headerSize {
+			r.telemetry.EbpfLostSamples.Add(ctx, 1)
 			r.logger.Error("short sample", zap.Int("size", len(record.RawSample)), zap.Int("headerSize", headerSize))
 			continue
 		}
@@ -203,6 +205,7 @@ func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map, attributes
 
 		// Look up resource attributes for this process
 		packedAttrs := lookupAttrs(attrCache, attributesMap, event.TGID)
+		r.telemetry.EbpfLogsAttrCacheSize.Record(ctx, int64(attrCache.size()))
 
 		ld := logEventToPdata(event)
 
@@ -240,10 +243,10 @@ func logEventToPdata(event *logEvent) plog.Logs {
 	lr.SetSeverityText("INFO")
 
 	attrs := lr.Attributes()
-	attrs.PutStr("log.iostream", event.streamString())
-	attrs.PutStr("process.command", event.commString())
-	attrs.PutInt("process.pid", int64(event.TGID))
-	attrs.PutInt("process.tid", int64(event.PID))
+	attrs.PutStr(string(semconv.LogIostreamKey), event.streamString())
+	attrs.PutStr(string(semconv.ProcessCommandKey), event.commString())
+	attrs.PutInt(string(semconv.ProcessPIDKey), int64(event.TGID))
+	attrs.PutInt(string(semconv.ThreadIDKey), int64(event.PID))
 
 	if event.HasContext == 1 {
 		lr.SetTraceID(pcommon.TraceID(event.TraceID))
