@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -159,24 +160,12 @@ func (b *nodeCollectorBaseReconciler) logConfigMapDataIfChanged(ctx context.Cont
 		return
 	}
 
-	if mapsEqual(existing.Data, desiredData) {
+	if maps.Equal(existing.Data, desiredData) {
 		logger.Debug("node collector configmap unchanged", "configMap", cmName)
 		return
 	}
 
 	logger.Debug("node collector configmap changed", "configMap", cmName, "existingData", existing.Data, "desiredData", desiredData)
-}
-
-func mapsEqual(a, b map[string]string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for k, v := range a {
-		if b[k] != v {
-			return false
-		}
-	}
-	return true
 }
 
 func calculateCollectorConfigDomains(
