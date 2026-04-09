@@ -41,17 +41,7 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 		filelogReceiverName: config.GenericMap{
 			"include": includes,
 			"exclude": []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
-			// poll_interval controls how often the stanza fileconsumer matcher re-scans the
-			// include globs. The upstream default is 200ms. With hundreds of per-workload
-			// include patterns the upstream matcher (finder.FindFiles in
-			// pkg/stanza/fileconsumer/matcher/internal/finder) calls doublestar.FilepathGlob
-			// independently for every include with no directory-listing cache shared across
-			// globs. On busy nodes a single matcher call can exceed 200ms, so the poll loop
-			// runs back-to-back with no idle time, pinning the goroutine in continuous GC
-			// mark phase and starving co-located receivers (notably the eBPF receiver) of
-			// CPU. Setting poll_interval to 5s gives the goroutine ~86% idle time per cycle,
-			// drops the matcher allocation rate roughly 7x, and lets GC complete cleanly
-			// between polls. Tradeoff: log tail latency may increase by up to 5s.
+			// 5s (vs upstream 200ms default) avoids a readdir storm from stanza's per-include glob loop on busy nodes.
 			"poll_interval":     "5s",
 			"start_at":          "end",
 			"include_file_path": true,
