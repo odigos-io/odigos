@@ -39,8 +39,10 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 
 	return config.GenericMap{
 		filelogReceiverName: config.GenericMap{
-			"include":           includes,
-			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
+			"include": includes,
+			"exclude": []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
+			// 5s (vs upstream 200ms default) avoids a readdir storm from stanza's per-include glob loop on busy nodes.
+			"poll_interval":     "5s",
 			"start_at":          "end",
 			"include_file_path": true,
 			"include_file_name": false,
