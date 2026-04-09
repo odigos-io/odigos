@@ -63,6 +63,8 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 		r.startTracesReceiver(ctx)
 	case ReceiverTypeMetrics:
 		r.startMetricsReceiver(ctx)
+	case ReceiverTypeLogs:
+		r.startLogsReceiver(ctx)
 	}
 
 	return nil
@@ -314,6 +316,144 @@ func (r *ebpfReceiver) startMetricsReceiver(ctx context.Context) {
 
 		if err != nil && ctx.Err() == nil {
 			r.logger.Error("metrics FD client failed", zap.Error(err))
+		}
+	}()
+}
+
+// logsMapPair holds both logs eBPF maps received atomically from a single FD exchange.
+type logsMapPair struct {
+	ringBuf       *ebpf.Map
+	attributesMap *ebpf.Map
+}
+
+// startLogsReceiver sets up a single FD client that receives both the ring buffer and
+// attributes map file descriptors in a single message, and a map manager that restarts
+// the logs read loop when new maps arrive.
+func (r *ebpfReceiver) startLogsReceiver(ctx context.Context) {
+	updates := make(chan logsMapPair, 1)
+
+	// Map manager: manages the lifecycle of both the ring buffer and attributes map,
+	// which arrive atomically via a single FD exchange.
+	r.wg.Add(1)
+	go func() {
+		defer r.wg.Done()
+
+		var (
+			currentRingBuf       *ebpf.Map
+			currentAttributesMap *ebpf.Map
+			readerCancel         context.CancelFunc
+			readerWg             sync.WaitGroup
+		)
+
+		defer func() {
+			if readerCancel != nil {
+				readerCancel()
+				readerWg.Wait()
+			}
+			if currentRingBuf != nil {
+				currentRingBuf.Close()
+			}
+			if currentAttributesMap != nil {
+				currentAttributesMap.Close()
+			}
+		}()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case pair, ok := <-updates:
+				if !ok {
+					return
+				}
+
+				if readerCancel != nil {
+					readerCancel()
+					readerWg.Wait()
+				}
+				if currentRingBuf != nil {
+					currentRingBuf.Close()
+				}
+				if currentAttributesMap != nil {
+					currentAttributesMap.Close()
+				}
+
+				currentRingBuf = pair.ringBuf
+				currentAttributesMap = pair.attributesMap
+
+				r.logger.Info("received new logs maps",
+					zap.Int("ringBuf_fd", currentRingBuf.FD()),
+					zap.Int("attributesMap_fd", currentAttributesMap.FD()))
+
+				readerCtx, cancel := context.WithCancel(ctx)
+				readerCancel = cancel
+
+				ringBuf := currentRingBuf
+				attributesMap := currentAttributesMap
+				readerWg.Add(1)
+				go func() {
+					defer func() {
+						r.logger.Info("logs reader stopped")
+						readerWg.Done()
+					}()
+
+					if err := r.logsReadLoop(readerCtx, ringBuf, attributesMap); err != nil {
+						r.logger.Error("logsReadLoop failed", zap.Error(err))
+					}
+				}()
+			}
+		}
+	}()
+
+	// FD client: connects to odiglet and receives both logs FDs via ConnectAndListenMulti.
+	r.wg.Add(1)
+	go func() {
+		defer r.wg.Done()
+		defer close(updates)
+
+		r.logger.Info("starting logs FD client")
+
+		err := unixfd.ConnectAndListenMulti(ctx, unixfd.DefaultSocketPath, unixfd.ReqGetLogsFD, r.logger, func(fds []int) {
+			if len(fds) != 2 {
+				r.logger.Error("expected 2 logs FDs, closing all",
+					zap.Int("received", len(fds)))
+				for _, fd := range fds {
+					unix.Close(fd)
+				}
+				return
+			}
+
+			r.logger.Info("received logs FDs from odiglet",
+				zap.Int("ringBuf_fd", fds[0]),
+				zap.Int("attributesMap_fd", fds[1]))
+
+			ringBuf, err := ebpf.NewMapFromFD(fds[0])
+			if err != nil {
+				r.logger.Error("failed to create ring buffer map from FD", zap.Error(err), zap.Int("fd", fds[0]))
+				unix.Close(fds[0])
+				unix.Close(fds[1])
+				return
+			}
+
+			attrMap, err := ebpf.NewMapFromFD(fds[1])
+			if err != nil {
+				r.logger.Error("failed to create attributes map from FD", zap.Error(err), zap.Int("fd", fds[1]))
+				ringBuf.Close()
+				unix.Close(fds[1])
+				return
+			}
+
+			select {
+			case updates <- logsMapPair{ringBuf: ringBuf, attributesMap: attrMap}:
+				r.logger.Info("queued new logs maps for processing")
+			case <-ctx.Done():
+				ringBuf.Close()
+				attrMap.Close()
+			}
+		})
+
+		if err != nil && ctx.Err() == nil {
+			r.logger.Error("logs FD client failed", zap.Error(err))
 		}
 	}()
 }

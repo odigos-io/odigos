@@ -26,6 +26,7 @@ type TelemetryBuilder struct {
 	meter                           metric.Meter
 	mu                              sync.Mutex
 	registrations                   []metric.Registration
+	EbpfLogsAttrCacheSize           metric.Int64Gauge
 	EbpfLostSamples                 metric.Int64Counter
 	EbpfMemoryPressureWaitTimeTotal metric.Int64Counter
 	EbpfTotalBytesRead              metric.Int64Counter
@@ -60,6 +61,12 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 	}
 	builder.meter = Meter(settings)
 	var err, errs error
+	builder.EbpfLogsAttrCacheSize, err = builder.meter.Int64Gauge(
+		"otelcol_ebpf_logs_attr_cache_size",
+		metric.WithDescription("Current number of entries in the logs resource-attributes cache. Bounded by the eBPF map MaxProcessesCount. [Development]"),
+		metric.WithUnit("{entries}"),
+	)
+	errs = errors.Join(errs, err)
 	builder.EbpfLostSamples, err = builder.meter.Int64Counter(
 		"otelcol_ebpf_lost_samples",
 		metric.WithDescription("The number of samples lost while reading from the eBPF perf buffer. For the ring buffer, this value is always 0. [Development]"),
