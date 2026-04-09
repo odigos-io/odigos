@@ -432,6 +432,8 @@ type ServiceGraphEdge struct {
 	ToNodeIsVirtual bool
 	RequestCount    int64
 	LastUpdated     time.Time
+	// Attributes holds service-graph datapoint metric labels: client* and server*
+	Attributes map[string]string
 }
 
 func newServiceGraph() *ServiceGraph {
@@ -478,12 +480,28 @@ func (sg *ServiceGraph) UpdateFromDataPoint(dp pmetric.NumberDataPoint) {
 			ToNodeIsVirtual: !isServerInstrumentedNode,
 			RequestCount:    val,
 			LastUpdated:     timestamp,
+			Attributes:      copyClientServerStringAttrs(attrs),
 		}
 	} else {
 		// always overwrite because it's a cumulative counter
 		edge.RequestCount = val
 		edge.LastUpdated = timestamp
 	}
+}
+
+// Returns a new map of all string attributes whose keys start with
+// "client" or "server", this is used to build the service graph edges attributes
+func copyClientServerStringAttrs(attrs pcommon.Map) map[string]string {
+	out := make(map[string]string)
+	attrs.Range(func(k string, v pcommon.Value) bool {
+		if strings.HasPrefix(k, "client") || strings.HasPrefix(k, "server") {
+			if v.Type() == pcommon.ValueTypeStr {
+				out[k] = v.Str()
+			}
+		}
+		return true
+	})
+	return out
 }
 
 // buildNodeID constructs a composite node identifier from a base service name and

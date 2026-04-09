@@ -13,6 +13,7 @@ const (
 	odigosTracesPipelineName                  = "traces"
 	odigosTracesExportingForwardConnectorName = "forward/traces-exporting"
 	odigosTracesExportingPipelineName         = "traces/exporting"
+	nopExporterName                           = "nop"
 )
 
 func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, tracesEnabledInClusterCollector bool, loadBalancingNeeded bool) (config.GenericMap, []string) {
@@ -119,6 +120,11 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, mani
 	if len(postSpanMetricsProcessorNames) == 0 {
 		tracesMainPipelineExporterNames = append(traceExporterNames, additionalTraceExporters...)
 	} else {
+		// if we do not have any traces destinations (traceExporterNames == []) but span metrics is enabled, we add a no-op exporter
+		if len(traceExporterNames) == 0 {
+			exporters[nopExporterName] = config.GenericMap{}
+			traceExporterNames = []string{nopExporterName}
+		}
 		connectors[odigosTracesExportingForwardConnectorName] = config.GenericMap{}
 		additionalPipeline[odigosTracesExportingPipelineName] = config.Pipeline{
 			Receivers:  []string{odigosTracesExportingForwardConnectorName},

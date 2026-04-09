@@ -1,11 +1,11 @@
-import { BUTTONS, CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage } from '../functions';
+import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
-const namespace = NAMESPACES.ODIGOS_TEST;
+const namespace = NAMESPACES.ODIGOS;
 const crdName = CRD_NAMES.DESTINATION;
 const totalEntities = 1;
 const destinationIds: string[] = [];
@@ -23,14 +23,19 @@ describe('Destinations CRUD', () => {
   it(`Should create ${totalEntities} destinations via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_DESTINATION).click();
-      cy.get(DATA_IDS.MODAL_ADD_DESTINATION).should('exist');
-      cy.get(DATA_IDS.SELECT_DESTINATION).contains(SELECTED_ENTITIES.DESTINATION.DISPLAY_NAME).should('exist').click();
-      cy.get(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).should('have.value', SELECTED_ENTITIES.DESTINATION.AUTOFILL_VALUE);
-      cy.get('button').contains(BUTTONS.DONE).click();
 
-      // Wait for destinations to create
-      cy.wait('@gql').then(() => {
-        awaitToast({ message: TEXTS.NOTIF_DESTINATION_CREATED(totalEntities) });
+      // Select destination from the drawer's list (force needed for virtualized lists)
+      cy.get(DATA_IDS.SELECT_DESTINATION).first().should('exist').click({ force: true });
+      cy.get(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).should('have.value', SELECTED_ENTITIES.DESTINATION.AUTOFILL_VALUE);
+
+      // Add destination to unsaved list, then save
+      cy.get(DATA_IDS.DEST_FORM_ADD).click();
+      cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
+
+      // Wait for the GraphQL mutation and the drawer to close
+      waitForGraphqlOperation('CreateNewDestination').then(() => {
+        cy.get(DATA_IDS.WIDE_DRAWER_SAVE).should('not.exist');
+        cy.wait(2000);
       });
     });
   });
@@ -54,7 +59,7 @@ describe('Destinations CRUD', () => {
         },
         () => {
           // Wait for the destination to update
-          cy.wait('@gql').then(() => {
+          waitForGraphqlOperation('UpdateDestination').then(() => {
             awaitToast({ message: TEXTS.NOTIF_DESTINATION_UPDATED(SELECTED_ENTITIES.DESTINATION.TYPE) });
           });
         },
@@ -81,7 +86,7 @@ describe('Destinations CRUD', () => {
         },
         () => {
           // Wait for the destination to delete
-          cy.wait('@gql').then(() => {
+          waitForGraphqlOperation('DeleteDestination').then(() => {
             awaitToast({ message: TEXTS.NOTIF_DESTINATION_DELETED(totalEntities) }, () => {
               getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
             });
