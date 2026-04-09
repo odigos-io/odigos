@@ -14,6 +14,7 @@ export const GET_SOURCE = gql`
           containerName
           language
           runtimeVersion
+          multipleLanguagesDetected
           overriden
           instrumented
           instrumentationMessage

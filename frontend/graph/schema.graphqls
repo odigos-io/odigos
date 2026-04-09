@@ -85,6 +85,7 @@ type SourceContainer {
   containerName: String!
   language: String!
   runtimeVersion: String!
+  multipleLanguagesDetected: Boolean!
   overriden: Boolean!
   instrumented: Boolean!
   instrumentationMessage: String!

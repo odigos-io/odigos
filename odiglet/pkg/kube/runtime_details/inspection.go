@@ -460,6 +460,12 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 		updated = true
 	}
 
+	// 7. Once multiple languages are detected, keep the flag set
+	if !existing.MultipleLanguagesDetected && new.MultipleLanguagesDetected {
+		existing.MultipleLanguagesDetected = true
+		updated = true
+	}
+
 	return updated
 }
 
