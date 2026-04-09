@@ -8,6 +8,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -79,6 +80,13 @@ func NewMetadataClient(config *rest.Config) (Client, error) {
 	factory := metadatainformer.NewFilteredSharedInformerFactory(metadataClient, 0, metav1.NamespaceAll, tweakListOptions)
 	c.podInformer = factory.ForResource(podGVR).Informer()
 
+	// Strip managedFields from cached PartialObjectMetadata to reduce memory usage.
+	// The informer cache retains full ObjectMeta including managedFields which are
+	// unused by this processor and consume ~20MB at scale (~40KB per pod).
+	if err := c.podInformer.SetTransform(stripManagedFields); err != nil {
+		return nil, fmt.Errorf("failed to set informer transform: %w", err)
+	}
+
 	_, err = c.podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj any) {
 			podMeta := extractPartialMetadata(obj)
@@ -100,6 +108,21 @@ func NewMetadataClient(config *rest.Config) (Client, error) {
 	}
 
 	return c, nil
+}
+
+// stripManagedFields is a cache.TransformFunc that nils out
+// ObjectMeta.ManagedFields on cached objects. ManagedFields hold
+// server-side-apply field ownership data which Odigos does not consume but
+// which costs ~40KB per pod at scale. Mirrors
+// sigs.k8s.io/controller-runtime/pkg/cache.TransformStripManagedFields (used
+// in odiglet, frontend, scheduler, instrumentor and autoscaler) — copied here
+// to keep the collector module free of the controller-runtime dependency. The
+// nil-check guards against kubernetes/kubernetes#124337.
+func stripManagedFields(obj any) (any, error) {
+	if accessor, err := meta.Accessor(obj); err == nil && accessor.GetManagedFields() != nil {
+		accessor.SetManagedFields(nil)
+	}
+	return obj, nil
 }
 
 func extractPartialMetadata(obj any) *PartialPodMetadata {
