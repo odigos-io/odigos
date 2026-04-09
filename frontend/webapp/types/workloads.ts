@@ -3,6 +3,7 @@ import { type DesiredConditionStatus, type DesiredStateProgress, type WorkloadId
 export interface K8sWorkloadRuntimeInfo {
   language: string;
   runtimeVersion: string | null;
+  multipleLanguagesDetected: boolean;
 }
 
 export interface K8sWorkloadAgentEnabled {

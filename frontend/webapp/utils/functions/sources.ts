@@ -36,11 +36,12 @@ function mapDesiredStatusToConditionStatus(status: DesiredStateProgress): Status
   }
 }
 
-function mapContainerToSourceContainer(c: K8sWorkloadContainerResponse): SourceContainer {
+function mapContainerToSourceContainer(c: K8sWorkloadContainerResponse): SourceContainer & { multipleLanguagesDetected: boolean } {
   return {
     containerName: c.containerName,
     language: (c.runtimeInfo?.language?.toLowerCase() ?? 'unknown') as ProgrammingLanguages,
     runtimeVersion: c.runtimeInfo?.runtimeVersion ?? '',
+    multipleLanguagesDetected: c.runtimeInfo?.multipleLanguagesDetected ?? false,
     overriden: c.overrides != null,
     instrumented: c.agentEnabled?.agentEnabled ?? false,
     instrumentationMessage: c.agentEnabled?.agentEnabledStatus?.message ?? '',

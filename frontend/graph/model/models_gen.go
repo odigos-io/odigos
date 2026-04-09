@@ -991,15 +991,16 @@ type K8sWorkloadRuntimeInfo struct {
 }
 
 type K8sWorkloadRuntimeInfoContainer struct {
-	ContainerName           string              `json:"containerName"`
-	Language                ProgrammingLanguage `json:"language"`
-	RuntimeVersion          *string             `json:"runtimeVersion,omitempty"`
-	ProcessEnvVars          []*EnvVar           `json:"processEnvVars"`
-	ContainerRuntimeEnvVars []*EnvVar           `json:"containerRuntimeEnvVars,omitempty"`
-	CriErrorMessage         *string             `json:"criErrorMessage,omitempty"`
-	LibcType                *string             `json:"libcType,omitempty"`
-	SecureExecutionMode     *bool               `json:"secureExecutionMode,omitempty"`
-	OtherAgentName          *string             `json:"otherAgentName,omitempty"`
+	ContainerName             string              `json:"containerName"`
+	Language                  ProgrammingLanguage `json:"language"`
+	RuntimeVersion            *string             `json:"runtimeVersion,omitempty"`
+	ProcessEnvVars            []*EnvVar           `json:"processEnvVars"`
+	ContainerRuntimeEnvVars   []*EnvVar           `json:"containerRuntimeEnvVars,omitempty"`
+	CriErrorMessage           *string             `json:"criErrorMessage,omitempty"`
+	LibcType                  *string             `json:"libcType,omitempty"`
+	SecureExecutionMode       *bool               `json:"secureExecutionMode,omitempty"`
+	OtherAgentName            *string             `json:"otherAgentName,omitempty"`
+	MultipleLanguagesDetected bool                `json:"multipleLanguagesDetected"`
 }
 
 type K8sWorkloadTelemetryMetrics struct {
@@ -1499,13 +1500,14 @@ type SourceConditions struct {
 }
 
 type SourceContainer struct {
-	ContainerName          string  `json:"containerName"`
-	Language               string  `json:"language"`
-	RuntimeVersion         string  `json:"runtimeVersion"`
-	Overriden              bool    `json:"overriden"`
-	Instrumented           bool    `json:"instrumented"`
-	InstrumentationMessage string  `json:"instrumentationMessage"`
-	OtelDistroName         *string `json:"otelDistroName,omitempty"`
+	ContainerName             string  `json:"containerName"`
+	Language                  string  `json:"language"`
+	RuntimeVersion            string  `json:"runtimeVersion"`
+	MultipleLanguagesDetected bool    `json:"multipleLanguagesDetected"`
+	Overriden                 bool    `json:"overriden"`
+	Instrumented              bool    `json:"instrumented"`
+	InstrumentationMessage    string  `json:"instrumentationMessage"`
+	OtelDistroName            *string `json:"otelDistroName,omitempty"`
 }
 
 type SourcesScope struct {

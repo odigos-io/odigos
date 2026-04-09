@@ -22,6 +22,7 @@ export const GET_WORKLOADS = gql`
         runtimeInfo {
           language
           runtimeVersion
+          multipleLanguagesDetected
         }
         agentEnabled {
           agentEnabled
@@ -111,6 +112,7 @@ export const GET_WORKLOADS_BY_IDS = gql`
         runtimeInfo {
           language
           runtimeVersion
+          multipleLanguagesDetected
         }
         agentEnabled {
           agentEnabled
