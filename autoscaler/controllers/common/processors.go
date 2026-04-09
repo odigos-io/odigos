@@ -27,9 +27,13 @@ func FilterAndSortProcessorsByOrderHint(processors *odigosv1.ProcessorList, coll
 		}
 	}
 
-	// Now sort the filteredProcessors by the OrderHint property
+	// For same OrderHint, the sort.Slice order is undefined; tie-break on Name.
 	sort.Slice(filteredProcessors, func(i, j int) bool {
-		return filteredProcessors[i].Spec.OrderHint < filteredProcessors[j].Spec.OrderHint
+		a, b := filteredProcessors[i], filteredProcessors[j]
+		if a.Spec.OrderHint != b.Spec.OrderHint {
+			return a.Spec.OrderHint < b.Spec.OrderHint
+		}
+		return a.Name < b.Name
 	})
 
 	return filteredProcessors
