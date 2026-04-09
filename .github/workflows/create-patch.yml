@@ -33,7 +33,7 @@ jobs:
         uses: odigos-io/ci-core/sts@main
         with:
           scope: odigos-io/odigos
-          identity: create-prerelease
+          identity: releaser
           output-git-config: "true"
 
       - uses: actions/checkout@v6

@@ -24,16 +24,23 @@ jobs:
     needs: decide
     if: ${{ needs.decide.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     strategy:
       matrix:
         repo: ['enterprise-go-instrumentation']
     steps:
+      - uses: odigos-io/ci-core/sts@main
+        id: sts
+        with:
+          identity: cherry-pick-decision
+
       - name: Verify no open offsets PRs
         id: verify
         run: |
           # Fetch open PRs and filter by "offsets" label
           result=$(curl -s -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            -H "Authorization: Bearer ${{ steps.sts.outputs.GH_TOKEN }}" \
             "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100&base=main")
 
           pr_links=$(echo "$result" \
@@ -57,16 +64,23 @@ jobs:
     if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: decide
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     strategy:
       matrix:
         repo: ['odigos-enterprise']
     steps:
+      - uses: odigos-io/ci-core/sts@main
+        id: sts
+        with:
+          identity: cherry-pick-decision
+
       - name: Verify no open dependencies-syncer-bot PRs
         id: verify
         run: |
           # Fetch open PRs and filter by "dependencies-syncer-bot" label
           result=$(curl -s -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            -H "Authorization: Bearer ${{ steps.sts.outputs.GH_TOKEN }}" \
             "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100&base=${{ github.base_ref }}")
 
           pr_links=$(echo "$result" \
@@ -90,16 +104,23 @@ jobs:
     if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: decide
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     strategy:
       matrix:
         repo: ['odigos', 'odigos-enterprise']
     steps:
+      - uses: odigos-io/ci-core/sts@main
+        id: sts
+        with:
+          identity: cherry-pick-decision
+
       - name: Verify no open release-blocker PRs
         id: verify
         run: |
           # Fetch open PRs and filter by "release-blocker" label
           result=$(curl -s -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            -H "Authorization: Bearer ${{ steps.sts.outputs.GH_TOKEN }}" \
             "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100&base=${{ github.base_ref }}")
 
           pr_links=$(echo "$result" \
