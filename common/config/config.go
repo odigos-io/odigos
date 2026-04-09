@@ -123,6 +123,7 @@ func mergePipelines(pipelines1 map[string]Pipeline, pipelines2 map[string]Pipeli
 	for k, v := range pipelines1 {
 		mergedPipelines[k] = v
 	}
+	// Merge pipelines2
 	for k, v := range pipelines2 {
 		if _, exists := mergedPipelines[k]; exists {
 			return nil, fmt.Errorf("duplicate pipeline %s in configs", k)
