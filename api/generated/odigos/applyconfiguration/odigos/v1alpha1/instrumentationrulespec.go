@@ -55,6 +55,10 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	// note that traces will be dropped regardless of thier attributes/errors/importance.
 	// @deprecated: use odigos config to set this value instead.
 	HeadSamplingFallbackFraction *instrumentationrules.HeadSamplingFallbackFraction `json:"headSamplingFallbackFraction,omitempty"`
+	// Configure eBPF-based log capture. When enabled, the node collector logs pipeline
+	// will use only the eBPF receiver instead of the filelog receiver, and odiglet will
+	// register instrumented processes for eBPF log capture.
+	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -168,5 +172,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithCustomInstrumentations(v
 // If called multiple times, the HeadSamplingFallbackFraction field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithHeadSamplingFallbackFraction(value instrumentationrules.HeadSamplingFallbackFraction) *InstrumentationRuleSpecApplyConfiguration {
 	b.HeadSamplingFallbackFraction = &value
+	return b
+}
+
+// WithEbpfLogCapture sets the EbpfLogCapture field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EbpfLogCapture field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithEbpfLogCapture(value instrumentationrules.EbpfLogCapture) *InstrumentationRuleSpecApplyConfiguration {
+	b.EbpfLogCapture = &value
 	return b
 }

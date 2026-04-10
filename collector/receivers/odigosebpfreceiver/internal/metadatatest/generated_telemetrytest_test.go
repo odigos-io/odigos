@@ -20,9 +20,13 @@ func TestSetupTelemetry(t *testing.T) {
 	tb, err := metadata.NewTelemetryBuilder(testTel.NewTelemetrySettings())
 	require.NoError(t, err)
 	defer tb.Shutdown()
+	tb.EbpfLogsAttrCacheSize.Record(context.Background(), 1)
 	tb.EbpfLostSamples.Add(context.Background(), 1)
 	tb.EbpfMemoryPressureWaitTimeTotal.Add(context.Background(), 1)
 	tb.EbpfTotalBytesRead.Add(context.Background(), 1)
+	AssertEqualEbpfLogsAttrCacheSize(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
 	AssertEqualEbpfLostSamples(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())

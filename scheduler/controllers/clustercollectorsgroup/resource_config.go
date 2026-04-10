@@ -20,8 +20,16 @@ const (
 	defaultMaxReplicas = 10
 
 	// this configures the processor limit_mib, which is the hard limit in MiB, afterwhich garbage collection will be forced.
-	// as recommended by the processor docs, if not set, this is set to 50MiB less than the memory limit of the collector
+	// as recommended by the processor docs, if not set, this is set to 50MiB less than the memory request of the collector.
+	// for small containers this fixed offset would leave too little headroom for the application,
+	// so we also enforce a minimum ratio via defaultMemoryLimiterLimitMinPercentage below.
 	defaultMemoryLimiterLimitDiffMib = 50
+
+	// minimum percentage of the memory request to use as the memory_limiter hard limit.
+	// the effective hard limit is max(request-50, request*85%), so small containers get a
+	// percentage-based floor while larger containers keep the fixed 50MiB headroom.
+	// crossover is at ~333MiB: below that the ratio wins, above that the fixed offset wins.
+	defaultMemoryLimiterLimitMinPercentage = 85.0
 
 	// the soft limit will be set to 80% of the hard limit.
 	// this value is used to derive the "spike_limit_mib" parameter in the processor configuration if a value is not set
@@ -37,6 +45,20 @@ const (
 	// instead of having the process killed, it can use extra memory available on the node without allocating it preemptively.
 	memoryLimitAboveRequestFactor = 1.25
 )
+
+// calculateMemoryLimiterHardLimitMiB returns the memory_limiter processor hard limit
+// in MiB given a base memory size (typically the container memory request for the
+// gateway). It uses max(base-50, base*85%) so that small containers get a
+// percentage-based floor, while larger containers keep the fixed 50MiB headroom that
+// the OTel memory_limiter docs recommend.
+func calculateMemoryLimiterHardLimitMiB(baseMemoryMiB int) int {
+	fixed := baseMemoryMiB - defaultMemoryLimiterLimitDiffMib
+	ratio := int(float64(baseMemoryMiB) * defaultMemoryLimiterLimitMinPercentage / 100.0)
+	if ratio > fixed {
+		return ratio
+	}
+	return fixed
+}
 
 // process the resources settings from odigos config and return the resources settings for the collectors group.
 // apply any defaulting and calculations here.
@@ -68,9 +90,8 @@ func getGatewayResourceSettings(odigosConfiguration *common.OdigosConfiguration)
 		cpuLimitm = gatewayConfig.LimitCPUm
 	}
 
-	// the memory limiter hard limit is set as 50 MiB less than the memory request
-
-	memoryLimiterLimitMiB := memoryRequestMiB - defaultMemoryLimiterLimitDiffMib
+	// the memory limiter hard limit is set as max(request-50, request*85%).
+	memoryLimiterLimitMiB := calculateMemoryLimiterHardLimitMiB(memoryRequestMiB)
 	if odigosConfiguration.CollectorGateway != nil && odigosConfiguration.CollectorGateway.MemoryLimiterLimitMiB > 0 {
 		memoryLimiterLimitMiB = odigosConfiguration.CollectorGateway.MemoryLimiterLimitMiB
 	}
