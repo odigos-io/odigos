@@ -15,35 +15,43 @@ const (
 )
 
 func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string) (config.GenericMap, []string) {
-
-	if isEbpfLogCaptureEnabled(sources) {
-		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here
-		return config.GenericMap{}, []string{odigosEbpfReceiverName}
-	}
-
 	includes := make([]string, 0)
-	for _, element := range sources.Items {
-		// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
-		// Pod specifiers
-		// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[~10]>-<pod suffix[~5]>_<pod ID>
-		// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[~5]            >_<pod ID>
-		// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
-		// The suffixes are not the same lenght always, so we cannot match the pattern reliably.
-		// We expect there to exactly one OwnerReference
-		if len(element.OwnerReferences) != 1 {
-			logger.Error(
-				fmt.Errorf("unexpected number of OwnerReferences for instrumentation config %s/%s during logs configmap compilation: %d", element.Namespace, element.Name, len(element.OwnerReferences)),
-				"failed to compile logs include list for configmap for instrumentation config",
-			)
+	useEbpfReceiver := false
+	if sources != nil {
+		for _, element := range sources.Items {
+			if isInstrumentationConfigEbpfLogCaptureEnabled(&element) {
+				useEbpfReceiver = true
+				continue
+			}
+
+			// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
+			// Pod specifiers
+			// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[~10]>-<pod suffix[~5]>_<pod ID>
+			// 	DeamonSet:   <namespace>_<daemonset   name>-<            pod suffix[~5]            >_<pod ID>
+			// 	StatefulSet: <namespace>_<statefulset name>-<        ordinal index integer        >_<pod ID>
+			// The suffixes are not the same lenght always, so we cannot match the pattern reliably.
+			// We expect there to exactly one OwnerReference
+			if len(element.OwnerReferences) != 1 {
+				logger.Error(
+					fmt.Errorf("unexpected number of OwnerReferences for instrumentation config %s/%s during logs configmap compilation: %d", element.Namespace, element.Name, len(element.OwnerReferences)),
+					"failed to compile logs include list for configmap for instrumentation config",
+				)
+				continue
+			}
+			owner := element.OwnerReferences[0]
+			name := owner.Name
+			includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
 			continue
 		}
-		owner := element.OwnerReferences[0]
-		name := owner.Name
-		includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
 	}
 
-	return config.GenericMap{
-		filelogReceiverName: config.GenericMap{
+	receivers := config.GenericMap{}
+	pipelineReceivers := make([]string, 0, 2)
+
+	// Keep filelog when not using eBPF at all (legacy behavior), or when mixing
+	// filelog (non-eBPF workloads) with eBPF-enabled workloads.
+	if len(includes) > 0 || !useEbpfReceiver {
+		receivers[filelogReceiverName] = config.GenericMap{
 			"include": includes,
 			"exclude": []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
 			// 5s (vs upstream 200ms default) avoids a readdir storm from stanza's per-include glob loop on busy nodes.
@@ -68,23 +76,29 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 				// downstream pressure.
 				"enabled": true,
 			},
-		},
-	}, []string{filelogReceiverName}
+		}
+		pipelineReceivers = append(pipelineReceivers, filelogReceiverName)
+	}
+
+	if useEbpfReceiver {
+		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here.
+		pipelineReceivers = append(pipelineReceivers, odigosEbpfReceiverName)
+	}
+
+	return receivers, pipelineReceivers
 }
 
-// isEbpfLogCaptureEnabled checks whether any InstrumentationConfig has eBPF
-// log capture enabled in its SdkConfigs.
-func isEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
-	if sources == nil {
+// isInstrumentationConfigEbpfLogCaptureEnabled checks whether a specific
+// InstrumentationConfig has eBPF log capture enabled in any of its SdkConfigs.
+func isInstrumentationConfigEbpfLogCaptureEnabled(ic *odigosv1.InstrumentationConfig) bool {
+	if ic == nil {
 		return false
 	}
-	for _, ic := range sources.Items {
-		for _, sdkConfig := range ic.Spec.SdkConfigs {
-			if sdkConfig.EbpfLogCapture != nil &&
-				sdkConfig.EbpfLogCapture.Enabled != nil &&
-				*sdkConfig.EbpfLogCapture.Enabled {
-				return true
-			}
+	for _, sdkConfig := range ic.Spec.SdkConfigs {
+		if sdkConfig.EbpfLogCapture != nil &&
+			sdkConfig.EbpfLogCapture.Enabled != nil &&
+			*sdkConfig.EbpfLogCapture.Enabled {
+			return true
 		}
 	}
 	return false
