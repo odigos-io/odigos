@@ -35,11 +35,11 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS agents-builder
 WORKDIR /instrumentations
 
-# Java
+# java-community
 ARG JAVA_OTEL_VERSION=v2.10.0
 ADD --chmod=644 https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 
-# Python
+# python-community/python-community3.8
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.70-py3.8 /python-instrumentation/workspace /instrumentations/python3.8
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.74 /python-instrumentation/workspace /instrumentations/python
 
@@ -50,18 +50,18 @@ COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.1.2 /instrumentatio
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.16 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.16 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
 
-# .NET
+# nodejs-community
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
-# PHP
+# php-community
 COPY --from=public.ecr.aws/odigos/agents/php-community:v0.3.0 /instrumentations/php /instrumentations/php
 
-# Ruby
+# ruby-community
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations/ruby /instrumentations/ruby
 
 # loader
 ARG TARGETARCH
-ARG ODIGOS_LOADER_VERSION=v0.0.7
+ARG ODIGOS_LOADER_VERSION=v0.0.8
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
 ######### Device Plugin builder #########
