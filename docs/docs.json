@@ -158,7 +158,8 @@
                     "pages": [
                       "oss/instrumentations/configuration/mount-method"
                     ]
-                  }
+                  },
+                  "oss/instrumentations/obi"
                 ]
               },
               {

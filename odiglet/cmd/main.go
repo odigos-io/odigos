@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -8,15 +9,16 @@ import (
 	"github.com/odigos-io/odigos/odiglet"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
+	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks/obi"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	_ "net/http/pprof"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -65,8 +67,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	ctx := signals.SetupSignalHandler()
 	instrumentationManagerOptions := ebpf.InstrumentationManagerOptions{
-		Factories:                  ebpfInstrumentationFactories(),
+		Factories:                  ebpfInstrumentationFactories(ctx),
 		DistributionGetter:         dg,
 		OdigletHealthProbeBindPort: healthProbeBindPort,
 	}
@@ -76,15 +79,14 @@ func main() {
 		logger.Error("Failed to initialize odiglet", "err", err)
 		os.Exit(1)
 	}
-
-	ctx := signals.SetupSignalHandler()
 	o.Run(ctx)
 
 	logger.Info("odiglet exiting")
 }
 
-func ebpfInstrumentationFactories() map[string]commonInstrumentation.Factory {
+func ebpfInstrumentationFactories(ctx context.Context) map[string]commonInstrumentation.Factory {
 	return map[string]commonInstrumentation.Factory{
-		"golang-community": sdks.NewGoInstrumentationFactory(),
+		"golang-community":            sdks.NewGoInstrumentationFactory(),
+		k8sconsts.OdigosDistroNameOBI: obi.NewOBIInstrumentationFactory(ctx),
 	}
 }

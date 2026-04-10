@@ -1,0 +1,49 @@
+Odigos can run **[OpenTelemetry eBPF Instrumentation (OBI)](https://opentelemetry.io/docs/zero-code/obi)** for workloads where the `opentelemetry-ebpf-instrumentation` distro is selected.
+
+<CardGroup cols={2}>
+  <Card
+    title="OpenTelemetry OBI"
+    icon="telescope"
+    href="https://opentelemetry.io/docs/zero-code/obi"
+  >
+    Upstream concepts, requirements, and capabilities.
+  </Card>
+  <Card
+    title="OBI on GitHub"
+    icon="code"
+    href="https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation"
+  >
+    Source, releases, and issues.
+  </Card>
+</CardGroup>
+
+## OBI Support
+
+OBI can be enabled by selecting it as a container override for specific workloads. If editing a [Source object](/oss/pipeline/sources/introduction),
+this is done through the `containerOverrides` field. For example:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: my-workload
+  namespace: default
+spec:
+  workload:
+    kind: DaemonSet
+    name: sample-app
+    namespace: default
+  containerOverrides:
+    - containerName: foo
+      otelDistroName: opentelemetry-ebpf-instrumentation
+```
+
+In this case, `containerName` is the name of the container to instrument in this workload, and the required
+`otelDistroName` is **`opentelemetry-ebpf-instrumentation`**.
+
+Or through the **Container Overrides** field in the UI.
+
+### Limitations
+
+OBI's instrumentation is based on HTTP header propagation. For encrypted traffic, context propagation will not work unless both
+workloads (client and server) are instrumented with OBI as explained in [the official OBI docs](https://opentelemetry.io/docs/zero-code/obi/distributed-traces/#context-propagation-at-network-level).
