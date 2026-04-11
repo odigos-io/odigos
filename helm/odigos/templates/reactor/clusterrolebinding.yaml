@@ -1,0 +1,16 @@
+{{- if .Values.reactor.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: odigos-reactor
+  labels:
+    odigos.io/system-object: "true"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: odigos-reactor
+subjects:
+  - kind: ServiceAccount
+    name: odigos-reactor
+    namespace: {{ .Release.Namespace }}
+{{- end }}
