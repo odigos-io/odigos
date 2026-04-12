@@ -116,7 +116,7 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 
 			// This may occurs when Odiglet restarts, and a previously connected pod sends a disconnect message right after reconnecting.
 			if connectionInfo != nil {
-				logger.Info("Agent disconnected", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
+				logger.Debug("Agent disconnected", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
 			}
 			// if agent disconnects, remove the connection from the cache
 			// as it is not expected to send additional messages
