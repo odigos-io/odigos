@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/odiglet
 go 1.26.1
 
 require (
-	github.com/cilium/ebpf v0.21.0
+	github.com/cilium/ebpf v0.20.0
 	github.com/container-storage-interface/spec v1.10.0
 	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/api v0.0.0
