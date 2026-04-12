@@ -4,21 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/frontend/services/common"
-	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/config/configgrpc"
-	"go.opentelemetry.io/collector/config/confignet"
-	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.opentelemetry.io/collector/receiver/otlpreceiver"
-	"go.opentelemetry.io/collector/receiver/receivertest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -188,8 +182,11 @@ func NewOdigosMetrics() *OdigosMetricsConsumer {
 	}
 }
 
-// Run starts the OTLP receiver and the notifications loop for receiving and processing the metrics from different Odigos collectors
-func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
+// RunDeleteWatcherAndNotifications runs the Kubernetes delete watcher and the in-process loop that applies
+// deletion notifications to in-memory metrics maps.
+func (c *OdigosMetricsConsumer) RunDeleteWatcherAndNotifications(ctx context.Context, odigosNS string) {
+	log := commonlogger.LoggerCompat().With("subsystem", "collector-metrics", "component", "notifications")
+
 	var closeWg sync.WaitGroup
 	// launch the notifications loop
 	closeWg.Add(1)
@@ -207,38 +204,10 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 			deleteNotifications: c.deletedChan,
 		})
 		if err != nil {
-			log.Printf("Collector metrics: Error running delete watcher: %v\n", err)
+			log.Error("Error running delete watcher", "err", err)
 		}
 	}()
 
-	// setup the OTLP receiver
-	f := otlpreceiver.NewFactory()
-
-	cfg, ok := f.CreateDefaultConfig().(*otlpreceiver.Config)
-	if !ok {
-		panic("failed to cast default config to otlpreceiver.Config")
-	}
-
-	// Modify the gRPC listener address
-	cfg.GRPC = configoptional.Some(configgrpc.ServerConfig{
-		NetAddr: confignet.AddrConfig{
-			Endpoint:  "0.0.0.0:4317",
-			Transport: confignet.TransportTypeTCP,
-		},
-	})
-
-	r, err := f.CreateMetrics(ctx, receivertest.NewNopSettings(f.Type()), cfg, c)
-	if err != nil {
-		panic("failed to create receiver")
-	}
-
-	if err := r.Start(ctx, componenttest.NewNopHost()); err != nil {
-		log.Printf("failed to start OTLP receiver: %v", err)
-	}
-
-	defer r.Shutdown(ctx)
-
-	log.Println("OTLP receiver is running")
 	<-ctx.Done()
 	closeWg.Wait()
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/services/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
@@ -198,19 +199,11 @@ func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
 		kind = k8sconsts.WorkloadKind(odigosKind.Str())
 
 		if !found {
-			switch kind {
-			case k8sconsts.WorkloadKindDeployment:
-				name, found = attrs.Get(K8SDeploymentNameKey)
-			case k8sconsts.WorkloadKindStatefulSet:
-				name, found = attrs.Get(K8SStatefulSetNameKey)
-			case k8sconsts.WorkloadKindDaemonSet:
-				name, found = attrs.Get(K8SDaemonSetNameKey)
-			case k8sconsts.WorkloadKindCronJob:
-				name, found = attrs.Get(K8SCronJobNameKey)
-			case k8sconsts.WorkloadKindJob:
-				name, found = attrs.Get(K8SJobNameKey)
-			case k8sconsts.WorkloadKindArgoRollout:
-				name, found = attrs.Get(K8SRolloutNameKey)
+			for _, pair := range workload.OTLPWorkloadNameAttrKindPairs {
+				if pair.Kind == kind {
+					name, found = attrs.Get(pair.Key)
+					break
+				}
 			}
 		}
 
@@ -218,26 +211,17 @@ func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
 			return common.SourceID{}, errors.New("workload name not found")
 		}
 	} else {
-		// Fallback to legacy behavior for backwards compatibility
-		if depName, ok := attrs.Get(K8SDeploymentNameKey); ok {
-			kind = k8sconsts.WorkloadKindDeployment
-			name = depName
-		} else if ssName, ok := attrs.Get(K8SStatefulSetNameKey); ok {
-			kind = k8sconsts.WorkloadKindStatefulSet
-			name = ssName
-		} else if dsName, ok := attrs.Get(K8SDaemonSetNameKey); ok {
-			kind = k8sconsts.WorkloadKindDaemonSet
-			name = dsName
-		} else if cjName, ok := attrs.Get(K8SCronJobNameKey); ok {
-			kind = k8sconsts.WorkloadKindCronJob
-			name = cjName
-		} else if jobName, ok := attrs.Get(K8SJobNameKey); ok {
-			kind = k8sconsts.WorkloadKindJob
-			name = jobName
-		} else if rolloutName, ok := attrs.Get(K8SRolloutNameKey); ok {
-			kind = k8sconsts.WorkloadKindArgoRollout
-			name = rolloutName
-		} else {
+		// Fallback: standard OTLP k8s workload name keys (see workload.OTLPWorkloadNameAttrKindPairs).
+		var matched bool
+		for _, pair := range workload.OTLPWorkloadNameAttrKindPairs {
+			if v, ok := attrs.Get(pair.Key); ok {
+				kind = pair.Kind
+				name = v
+				matched = true
+				break
+			}
+		}
+		if !matched {
 			return common.SourceID{}, errors.New("kind not found")
 		}
 	}

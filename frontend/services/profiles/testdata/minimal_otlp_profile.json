@@ -1,0 +1,63 @@
+{
+  "resourceProfiles": [{
+    "scopeProfiles": [{
+      "profiles": [{
+        "sampleType": {"typeStrindex": 0, "unitStrindex": 1},
+        "samples": [{"stackIndex": 0, "values": [100]}],
+        "timeUnixNano": "1234567890000000000"
+      }]
+    }]
+  }],
+  "dictionary": {
+    "stringTable": [
+      "samples",
+      "count",
+      "libc.so.6",
+      "runtime_main",
+      "net_http_serve",
+      "handler_process",
+      "runtime.go",
+      "server.go"
+    ],
+    "mappingTable": [{
+      "memoryStart": "4194304",
+      "memoryLimit": "8388608",
+      "filenameStrindex": 2
+    }],
+    "functionTable": [
+      {
+        "nameStrindex": 3,
+        "systemNameStrindex": 3,
+        "filenameStrindex": 6
+      },
+      {
+        "nameStrindex": 4,
+        "systemNameStrindex": 4,
+        "filenameStrindex": 7
+      },
+      {
+        "nameStrindex": 5,
+        "systemNameStrindex": 5,
+        "filenameStrindex": 7
+      }
+    ],
+    "locationTable": [
+      {
+        "mappingIndex": 0,
+        "address": "4390912",
+        "lines": [{"functionIndex": 0, "line": 91}]
+      },
+      {
+        "mappingIndex": 0,
+        "address": "4391040",
+        "lines": [{"functionIndex": 1, "line": 220}]
+      },
+      {
+        "mappingIndex": 0,
+        "address": "4391168",
+        "lines": [{"functionIndex": 2, "line": 54}]
+      }
+    ],
+    "stackTable": [{"locationIndices": [0, 1, 2]}]
+  }
+}

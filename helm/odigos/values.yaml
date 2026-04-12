@@ -76,8 +76,7 @@ logLevel: "info"
 # description: |-
 #   Continuous profiling (off by default): node collector → gateway → UI over OTLP gRPC. UI buffers only workloads
 #   with an open Profiler tab / enableSourceProfiling; scrape ui:3000/metrics for odigos_ui_profiling_* when enabled.
-#   When enabled, profiling.exporter and profiling.ui are written to odigos-configuration; any field you omit in a
-#   partial override falls back to the chart defaults below.
+#   When enabled, profiling.exporter is written to odigos-configuration.
 # @schema
 profiling:
   # @schema
@@ -116,22 +115,6 @@ profiling:
       # description: Maximum time spent retrying a batch; 0 means retry until success.
       # @schema
       maxElapsedTime: 300s
-  # @schema
-  # description: UI-side profiling resource limits (written when profiling.enabled is true). Override any field from Helm as needed.
-  # @schema
-  ui:
-    # @schema
-    # description: Slot TTL in seconds.
-    # @schema
-    slotTTLSeconds: 300
-    # @schema
-    # description: Max in-memory profile slots.
-    # @schema
-    maxSlots: 32
-    # @schema
-    # description: Max bytes per slot (default 8 MiB).
-    # @schema
-    slotMaxBytes: 8388608
 
 # @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
