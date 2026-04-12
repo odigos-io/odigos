@@ -1,12 +1,9 @@
 package collectormetrics
 
 import (
-	"errors"
 	"sync"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/services/common"
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
@@ -30,7 +27,7 @@ func newSourcesMetrics() sourcesMetrics {
 }
 
 func (sm *sourcesMetrics) updateSourceMetrics(dp pmetric.NumberDataPoint, metricName string, nodeCollectorID string) {
-	sID, err := metricAttributesToSourceID(dp.Attributes())
+	sID, err := common.ResourceAttributesToSourceID(dp.Attributes())
 	if err != nil {
 		return
 	}
@@ -176,75 +173,3 @@ func (sourcesMetrics *sourcesMetrics) sourcesMetrics() map[common.SourceID]traff
 	return result
 }
 
-func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
-	ns, ok := attrs.Get(K8SNamespaceNameKey)
-	if !ok {
-		return common.SourceID{}, errors.New("namespace not found")
-	}
-
-	var kind k8sconsts.WorkloadKind
-	var name pcommon.Value
-	var found bool
-
-	// Check for workload name by odigos custom resource attribute if present
-	if odigosWorkloadName, ok := attrs.Get(OdigosWorkloadNameAttribute); ok {
-		name, found = odigosWorkloadName, true
-	}
-
-	// Check for Odigos-specific workload kind attribute first
-	// This is needed to distinguish between workloads that share the same semconv key
-	// (e.g., DeploymentConfig uses k8s.deployment.name)
-	if odigosKind, ok := attrs.Get(OdigosWorkloadKindAttribute); ok {
-		kind = k8sconsts.WorkloadKind(odigosKind.Str())
-
-		if !found {
-			switch kind {
-			case k8sconsts.WorkloadKindDeployment:
-				name, found = attrs.Get(K8SDeploymentNameKey)
-			case k8sconsts.WorkloadKindStatefulSet:
-				name, found = attrs.Get(K8SStatefulSetNameKey)
-			case k8sconsts.WorkloadKindDaemonSet:
-				name, found = attrs.Get(K8SDaemonSetNameKey)
-			case k8sconsts.WorkloadKindCronJob:
-				name, found = attrs.Get(K8SCronJobNameKey)
-			case k8sconsts.WorkloadKindJob:
-				name, found = attrs.Get(K8SJobNameKey)
-			case k8sconsts.WorkloadKindArgoRollout:
-				name, found = attrs.Get(K8SRolloutNameKey)
-			}
-		}
-
-		if !found {
-			return common.SourceID{}, errors.New("workload name not found")
-		}
-	} else {
-		// Fallback to legacy behavior for backwards compatibility
-		if depName, ok := attrs.Get(K8SDeploymentNameKey); ok {
-			kind = k8sconsts.WorkloadKindDeployment
-			name = depName
-		} else if ssName, ok := attrs.Get(K8SStatefulSetNameKey); ok {
-			kind = k8sconsts.WorkloadKindStatefulSet
-			name = ssName
-		} else if dsName, ok := attrs.Get(K8SDaemonSetNameKey); ok {
-			kind = k8sconsts.WorkloadKindDaemonSet
-			name = dsName
-		} else if cjName, ok := attrs.Get(K8SCronJobNameKey); ok {
-			kind = k8sconsts.WorkloadKindCronJob
-			name = cjName
-		} else if jobName, ok := attrs.Get(K8SJobNameKey); ok {
-			kind = k8sconsts.WorkloadKindJob
-			name = jobName
-		} else if rolloutName, ok := attrs.Get(K8SRolloutNameKey); ok {
-			kind = k8sconsts.WorkloadKindArgoRollout
-			name = rolloutName
-		} else {
-			return common.SourceID{}, errors.New("kind not found")
-		}
-	}
-
-	return common.SourceID{
-		Name:      name.Str(),
-		Namespace: ns.Str(),
-		Kind:      kind,
-	}, nil
-}

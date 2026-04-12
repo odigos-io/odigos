@@ -1667,7 +1667,7 @@
     },
     "profiling": {
       "additionalProperties": false,
-      "description": "Continuous profiling (off by default): node collector → gateway → UI over OTLP gRPC. UI buffers only workloads\nwith an open Profiler tab / enableSourceProfiling; scrape ui:3000/metrics for odigos_ui_profiling_* when enabled.\nWhen enabled, profiling.exporter and profiling.ui are written to odigos-configuration; any field you omit in a\npartial override falls back to the chart defaults below.",
+      "description": "Continuous profiling (off by default): node collector → gateway → UI over OTLP gRPC. UI buffers only workloads\nwith an open Profiler tab / enableSourceProfiling; scrape ui:3000/metrics for odigos_ui_profiling_* when enabled.\nWhen enabled, profiling.exporter is written to odigos-configuration.",
       "properties": {
         "enabled": {
           "default": "false",
@@ -1726,32 +1726,6 @@
           },
           "required": [],
           "title": "exporter"
-        },
-        "ui": {
-          "additionalProperties": false,
-          "description": "UI-side profiling resource limits (written when profiling.enabled is true). Override any field from Helm as needed.",
-          "properties": {
-            "maxSlots": {
-              "default": "32",
-              "description": "Max in-memory profile slots.",
-              "required": [],
-              "title": "maxSlots"
-            },
-            "slotMaxBytes": {
-              "default": "8388608",
-              "description": "Max bytes per slot (default 8 MiB).",
-              "required": [],
-              "title": "slotMaxBytes"
-            },
-            "slotTTLSeconds": {
-              "default": "300",
-              "description": "Slot TTL in seconds.",
-              "required": [],
-              "title": "slotTTLSeconds"
-            }
-          },
-          "required": [],
-          "title": "ui"
         }
       },
       "required": [],
