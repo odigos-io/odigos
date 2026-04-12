@@ -352,20 +352,6 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		if overlay.Exporter != nil {
 			dst.Exporter = overlay.Exporter
 		}
-		if overlay.Ui != nil {
-			if dst.Ui == nil {
-				dst.Ui = &common.ProfilingUiConfiguration{}
-			}
-			if overlay.Ui.MaxSlots > 0 {
-				dst.Ui.MaxSlots = overlay.Ui.MaxSlots
-			}
-			if overlay.Ui.SlotTTLSeconds > 0 {
-				dst.Ui.SlotTTLSeconds = overlay.Ui.SlotTTLSeconds
-			}
-			if overlay.Ui.SlotMaxBytes > 0 {
-				dst.Ui.SlotMaxBytes = overlay.Ui.SlotMaxBytes
-			}
-		}
 	}
 
 	// Future fields can be added here following the same pattern:
