@@ -82,7 +82,7 @@ const (
 	// when the runtime detection process is successful and runtime details are available for instrumentation.
 	RuntimeDetectionReasonDetectedSuccessfully RuntimeDetectionReason = "DetectedSuccessfully"
 	// when multiple languages were detected and one was successfully selected by heuristic rules.
-	RuntimeDetectionReasonLanguageDetectedFromMultipleLanguages RuntimeDetectionReason = "DetectedFromMultipleLanguages"
+	RuntimeDetectionReasonResolvedFromMultipleLanguages RuntimeDetectionReason = "DetectedFromMultipleLanguages"
 	// when multiple languages were detected but none could be selected as the main language.
 	RuntimeDetectionReasonUnresolvedMultipleLanguages RuntimeDetectionReason = "UnresolvedMultipleLanguages"
 	// when the runtime detection process is still ongoing and the runtime details are not yet available.
