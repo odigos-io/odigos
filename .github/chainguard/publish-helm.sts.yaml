@@ -1,0 +1,5 @@
+issuer: https://token.actions.githubusercontent.com
+subject_pattern: repo:odigos-io/odigos:ref:refs/(tags/.*|heads/main)
+
+permissions:
+  contents: write

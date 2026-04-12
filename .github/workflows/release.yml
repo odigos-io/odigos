@@ -339,7 +339,7 @@ jobs:
       - uses: odigos-io/ci-core/sts@main
         id: sts
         with:
-          identity: push-tags
+          identity: publish-helm
 
       - name: Publish Helm charts
         env:
