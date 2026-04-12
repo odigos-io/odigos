@@ -34,3 +34,36 @@ func StoreLimitsFromEnv() (maxSlots, ttlSeconds, slotMaxBytes int, cleanupInterv
 	cleanupInterval = time.Duration(intFromEnvOrDefault(envCleanupIntervalSeconds, DefaultProfilingCleanupIntervalSeconds)) * time.Second
 	return
 }
+
+// allNamesArePlaceholders reports whether every frame name is synthetic (no resolved symbols).
+func allNamesArePlaceholders(names []string) bool {
+	for _, n := range names {
+		if n == "" || n == "total" || n == "other" {
+			continue
+		}
+		if isSyntheticFrameName(n) {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func isSyntheticFrameName(n string) bool {
+	if len(n) > 6 && n[:6] == "frame_" {
+		return true
+	}
+	if len(n) > 2 && n[:2] == "0x" {
+		return true
+	}
+	return false
+}
+
+// ChunksForSourceKey returns a shallow snapshot of buffered OTLP profile chunks for the given
+// source key. Each element is one protobuf-encoded ExportProfilesServiceRequest
+func ChunksForSourceKey(store common.ProfileStoreRef, sourceKey string) [][]byte {
+	if store == nil {
+		return nil
+	}
+	return store.GetProfileData(sourceKey)
+}
