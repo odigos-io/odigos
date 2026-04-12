@@ -12,7 +12,7 @@ func runtimeDetectionStatusCondition(reason *string) model.DesiredStateProgress 
 	switch v1alpha1.RuntimeDetectionReason(*reason) {
 	case v1alpha1.RuntimeDetectionReasonDetectedSuccessfully:
 		return model.DesiredStateProgressSuccess
-	case v1alpha1.RuntimeDetectionReasonLanguageDetectedFromMultipleLanguages:
+	case v1alpha1.RuntimeDetectionReasonResolvedFromMultipleLanguages:
 		return model.DesiredStateProgressSuccess
 	case v1alpha1.RuntimeDetectionReasonUnresolvedMultipleLanguages:
 		return model.DesiredStateProgressNotice

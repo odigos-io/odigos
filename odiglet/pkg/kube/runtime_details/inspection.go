@@ -384,10 +384,11 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		}
 		if container.Language == common.UnknownProgrammingLanguage {
 			reason = odigosv1.RuntimeDetectionReasonUnresolvedMultipleLanguages
-			message = "multiple languages detected, could not determine main language"
+			message = "multiple languages detected, could not determine main language, consider selecting the language manually"
 		} else {
-			reason = odigosv1.RuntimeDetectionReasonLanguageDetectedFromMultipleLanguages
-			message = "multiple languages detected, language was selected by heuristic"
+			reason = odigosv1.RuntimeDetectionReasonResolvedFromMultipleLanguages
+			message = "multiple languages detected in the same container, main language was selected automatically"
+
 		}
 		break
 	}
@@ -460,9 +461,9 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 		updated = true
 	}
 
-	// 7. Once multiple languages are detected, keep the flag set
-	if !existing.MultipleLanguagesDetected && new.MultipleLanguagesDetected {
-		existing.MultipleLanguagesDetected = true
+	// 7. Update MultipleLanguagesDetected if we have a state change (false -> true / true -> false)
+	if existing.MultipleLanguagesDetected != new.MultipleLanguagesDetected {
+		existing.MultipleLanguagesDetected = new.MultipleLanguagesDetected
 		updated = true
 	}
 
