@@ -39,17 +39,22 @@ jobs:
           echo "PR_URL=$(echo "$RESPONSE" | jq -r '.[0].html_url')" >> "$GITHUB_ENV"
 
       - uses: odigos-io/ci-core/sts@main
-        id: sts
+        id: sts-enterprise
         with:
-          pairs: |
-            odigos-io/odigos-enterprise:trigger-release
-            odigos-io/vm-agent:dep-sync-trigger
+          scope: odigos-io/odigos-enterprise
+          identity: trigger-release
+
+      - uses: odigos-io/ci-core/sts@main
+        id: sts-vm-agent
+        with:
+          scope: odigos-io/vm-agent
+          identity: dep-sync-trigger
 
       - name: Trigger process PR in Odigos Enterprise
         run: |
           curl -X POST \
           -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: token ${{ steps.sts.outputs.GH_TOKEN }}" \
+          -H "Authorization: token ${{ steps.sts-enterprise.outputs.GH_TOKEN }}" \
           https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
           -d '{"event_type": "process_update_dependencies_pr", "client_payload": {"pr_creator": "${{ github.event.pusher.name }}", "source_pr_url": "${{ env.PR_URL }}" }}'
 
@@ -57,6 +62,6 @@ jobs:
         run: |
           curl -X POST \
           -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: token ${{ steps.sts.outputs.GH_TOKEN }}" \
+          -H "Authorization: token ${{ steps.sts-vm-agent.outputs.GH_TOKEN }}" \
           https://api.github.com/repos/odigos-io/vm-agent/dispatches \
           -d '{"event_type": "process_update_dependencies_pr", "client_payload": {"pr_creator": "${{ github.event.pusher.name }}", "source_pr_url": "${{ env.PR_URL }}" }}'
