@@ -124,6 +124,19 @@ spec:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use
                 type: boolean
+              ebpfLogCapture:
+                description: |-
+                  Configure eBPF-based log capture. When enabled, the node collector logs pipeline
+                  will use only the eBPF receiver instead of the filelog receiver, and odiglet will
+                  register instrumented processes for eBPF log capture.
+                properties:
+                  enabled:
+                    description: |-
+                      Enabled switches the logs pipeline to use only the eBPF receiver,
+                      replacing the filelog receiver, and enables eBPF-based log capture
+                      in odiglet for instrumented processes.
+                    type: boolean
+                type: object
               headSamplingFallbackFraction:
                 description: |-
                   Configure general fraction of traces to record if none of the rules evaluate to true.

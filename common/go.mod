@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/common
 go 1.26.1
 
 require (
-	github.com/cilium/ebpf v0.21.0
+	github.com/cilium/ebpf v0.20.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/pdata v1.54.0
 	go.opentelemetry.io/otel/trace v1.42.0
@@ -22,7 +22,6 @@ require (
 	go.opentelemetry.io/collector/featuregate v1.54.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/tools v0.43.0 // indirect
 )
 
