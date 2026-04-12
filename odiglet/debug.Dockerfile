@@ -62,8 +62,8 @@ ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/release
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
 # python-community/python-community3.8
-COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.71-py3.8 /python-instrumentation/workspace /instrumentations/python3.8
-COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.70 /python-instrumentation/workspace /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.72-py3.8 /instrumentations/python3.8 /instrumentations/python3.8
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.75 /instrumentations/python /instrumentations/python
 
 # nodejs-community
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.1.2 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
