@@ -16,7 +16,7 @@ const (
 	SYNC_DAEMONSET_DELAY_IN_SECONDS = "SYNC_DAEMONSET_DELAY_IN_SECONDS"
 )
 
-func getEnvVarOrDefault(envKey, defaultVal string) string {
+func GetEnvVarOrDefault(envKey, defaultVal string) string {
 	val, exists := os.LookupEnv(envKey)
 	if exists {
 		return val
@@ -27,7 +27,7 @@ func getEnvVarOrDefault(envKey, defaultVal string) string {
 
 // GetCurrentNamespace returns the namespace odigos is running in
 func GetCurrentNamespace() string {
-	return getEnvVarOrDefault(consts.CurrentNamespaceEnvVar, consts.DefaultOdigosNamespace)
+	return GetEnvVarOrDefault(consts.CurrentNamespaceEnvVar, consts.DefaultOdigosNamespace)
 }
 
 func GetDefaultKubeConfigPath() string {
@@ -42,7 +42,7 @@ func GetDefaultKubeConfigPath() string {
 }
 
 func GetSyncDaemonSetDelay() int {
-	delay := getEnvVarOrDefault(SYNC_DAEMONSET_DELAY_IN_SECONDS, "5")
+	delay := GetEnvVarOrDefault(SYNC_DAEMONSET_DELAY_IN_SECONDS, "5")
 	delayValue, err := strconv.Atoi(delay)
 	if err != nil {
 		return 5
@@ -54,7 +54,7 @@ func GetSyncDaemonSetDelay() int {
 // GetComponentDeploymentNameOrDefault returns the deployment name for this component.
 // It reads ODIGOS_COMPONENT_DEPLOYMENT_NAME from the environment; if unset, returns defaultName.
 func GetComponentDeploymentNameOrDefault(defaultName string) string {
-	return getEnvVarOrDefault(consts.OdigosComponentDeploymentNameEnvVar, defaultName)
+	return GetEnvVarOrDefault(consts.OdigosComponentDeploymentNameEnvVar, defaultName)
 }
 
 func GetOdigosTierFromEnv() common.OdigosTier {
