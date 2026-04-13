@@ -3,6 +3,7 @@ export const ROUTES = {
   ONBOARDING: '/onboarding',
   OVERVIEW: '/overview',
   SETTINGS: '/settings',
+  SAMPLING: '/sampling',
 };
 
 export const CRD_NAMES = {
@@ -11,6 +12,7 @@ export const CRD_NAMES = {
   DESTINATION: 'destinations.odigos.io',
   ACTION: 'actions.odigos.io',
   INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
+  SAMPLING: 'samplings.odigos.io',
 };
 
 export const CONFIG_MAPS = {
@@ -140,6 +142,22 @@ export const DATA_IDS = {
   SETTINGS_SAVE: '[data-id=settings-save]',
   SETTINGS_CANCEL: '[data-id=settings-cancel]',
   SETTINGS_FIELD: (helmPath: string) => `[data-id="${helmPath}"]`,
+
+  // Sampling rules page
+  SAMPLING_BTN_CREATE_RULE: '[data-id=sampling-btn-create-rule]',
+  SAMPLING_BTN_REFRESH: '[data-id=sampling-btn-refresh]',
+  SAMPLING_CREATE_BTN_CANCEL: '[data-id=sampling-create-btn-cancel]',
+  SAMPLING_CREATE_BTN_SUBMIT: '[data-id=sampling-create-btn-submit]',
+  SAMPLING_RULE_ACTION_EDIT: '[data-id=sampling-rule-action-edit]',
+  SAMPLING_RULE_ACTION_DELETE: '[data-id=sampling-rule-action-delete]',
+  SAMPLING_VIEW_BTN_EDIT: '[data-id=sampling-view-btn-edit]',
+  SAMPLING_VIEW_BTN_DELETE: '[data-id=sampling-view-btn-delete]',
+  SAMPLING_VIEW_BTN_CANCEL: '[data-id=sampling-view-btn-cancel]',
+  SAMPLING_VIEW_EDIT_BTN_SAVE: '[data-id=sampling-view-edit-btn-save]',
+  SAMPLING_VIEW_EDIT_BTN_CANCEL: '[data-id=sampling-view-edit-btn-cancel]',
+  SAMPLING_BTN_EDIT_AUTO_RULE: '[data-id=sampling-btn-edit-auto-rule]',
+  SAMPLING_EDIT_AUTO_RULE_BTN_SAVE: '[data-id=sampling-edit-auto-rule-btn-save]',
+  SAMPLING_EDIT_AUTO_RULE_BTN_CANCEL: '[data-id=sampling-edit-auto-rule-btn-cancel]',
 };
 
 export const BUTTONS = {
@@ -188,4 +206,8 @@ export const TEXTS = {
   NOTIF_INSTRUMENTATION_RULE_DELETED: (ruleType: string) => `Successfully deleted "${ruleType}" rule`,
 
   NOTIF_CONFIG_UPDATED: 'Local UI configuration updated successfully',
+
+  NOTIF_SAMPLING_RULE_CREATED: (name: string) => `Successfully created ${name}`,
+  NOTIF_SAMPLING_RULE_UPDATED: (name: string) => `Successfully updated ${name}`,
+  NOTIF_SAMPLING_RULE_DELETED: 'Successfully deleted',
 };
