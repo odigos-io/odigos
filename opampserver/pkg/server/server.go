@@ -30,6 +30,7 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 	sdkConfig := sdkconfig.NewSdkConfigManager(mgr, connectionCache, odigosNs)
 
 	handlers := &ConnectionHandlers{
+		logger:        commonlogger.LoggerCompat().With("subsystem", "opamphandlers"),
 		sdkConfig:     sdkConfig,
 		kubeclient:    mgr.GetClient(),
 		kubeClientSet: kubeClientSet,
