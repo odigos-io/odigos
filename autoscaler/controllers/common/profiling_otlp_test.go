@@ -9,6 +9,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMergeProfilingOtlpExporter_Compression(t *testing.T) {
+	on := true
+	off := false
+	assert.Equal(t, "gzip", MergeProfilingOtlpExporter(config.GenericMap{"endpoint": "x", "compression": "none"}, &odigoscommon.OtlpExporterConfiguration{
+		EnableDataCompression: &on,
+	})["compression"])
+	assert.Equal(t, "none", MergeProfilingOtlpExporter(config.GenericMap{"endpoint": "x", "compression": "gzip"}, &odigoscommon.OtlpExporterConfiguration{
+		EnableDataCompression: &off,
+	})["compression"])
+}
+
 func TestMergeProfilingOtlpExporter_NilOtlp(t *testing.T) {
 	base := config.GenericMap{"endpoint": "localhost:4317", "compression": "none"}
 	out := MergeProfilingOtlpExporter(base, nil)
@@ -49,6 +60,21 @@ func TestMergeProfilingOtlpExporter_TimeoutAndRetry(t *testing.T) {
 	assert.Equal(t, true, retry["enabled"])
 	assert.Equal(t, "1s", retry["initial_interval"])
 	assert.Equal(t, "30s", retry["max_interval"])
+}
+
+func TestMergeProfilingOtlpExporter_SendingQueue(t *testing.T) {
+	enabled := true
+	otlp := &odigoscommon.OtlpExporterConfiguration{
+		SendingQueue: &odigoscommon.SendingQueue{
+			Enabled:   &enabled,
+			QueueSize: 50,
+		},
+	}
+	out := MergeProfilingOtlpExporter(config.GenericMap{"endpoint": "x"}, otlp)
+	q, ok := out["sending_queue"].(config.GenericMap)
+	require.True(t, ok)
+	assert.Equal(t, true, q["enabled"])
+	assert.Equal(t, 50, q["queue_size"])
 }
 
 func TestProfilingProfileDropConditions(t *testing.T) {

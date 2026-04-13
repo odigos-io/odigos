@@ -115,6 +115,18 @@ profiling:
       # description: Maximum time spent retrying a batch; 0 means retry until success.
       # @schema
       maxElapsedTime: 300s
+    # @schema
+    # description: Optional persistent queue for profiling OTLP exports (gateway → UI, node → gateway).
+    # @schema
+    sendingQueue:
+      # @schema
+      # description: When true, enables the exporter sending queue.
+      # @schema
+      enabled: false
+      # @schema
+      # description: Queue size in batches; 0 uses collector default when enabled.
+      # @schema
+      queueSize: 0
 
 # @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.

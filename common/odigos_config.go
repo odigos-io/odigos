@@ -125,6 +125,13 @@ type OtlpExporterConfiguration struct {
 	EnableDataCompression *bool           `json:"enableDataCompression,omitempty"`
 	Timeout               string          `json:"timeout,omitempty"`
 	RetryOnFailure        *RetryOnFailure `json:"retryOnFailure,omitempty"`
+	SendingQueue          *SendingQueue   `json:"sendingQueue,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type SendingQueue struct {
+	Enabled   *bool `json:"enabled,omitempty"`
+	QueueSize int   `json:"queueSize,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
