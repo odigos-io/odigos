@@ -106,8 +106,16 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 	logger.Info("new OpAMP client connected", "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", serviceName)
 
 	connectionInfo := &connection.ConnectionInfo{
-		Workload:                 podWorkload,
-		Pod:                      pod,
+		Workload: podWorkload,
+		// Store only the minimal pod metadata needed for owner references and identification.
+		// The full pod object (containers, volumes, etc.) is not cached to reduce memory and GC pressure.
+		Pod: &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      pod.Name,
+				Namespace: pod.Namespace,
+				UID:       pod.UID,
+			},
+		},
 		ContainerName:            k8sAttributes.ContainerName,
 		Pid:                      vpid,
 		ProgrammingLanguage:      attrs.ProgrammingLanguage,
@@ -158,7 +166,7 @@ func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Con
 		}
 		// [1] - agent disconnects with healthy status, delete the instrumentation instance CR
 		if message.Health.Healthy {
-			logger.Info("Agent disconnected with healthy status, deleting instrumentation instance", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
+			logger.Debug("Agent disconnected with healthy status, deleting instrumentation instance", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
 			return instrumentation_instance.DeleteInstrumentationInstance(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, int(connectionInfo.Pid))
 		}
 
