@@ -299,6 +299,9 @@ jobs:
   publish-helm:
     needs: [build-cli]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Determine Tag Value
         run: |
@@ -333,9 +336,14 @@ jobs:
           name: odigos-chart
           path: helm/
 
+      - uses: odigos-io/ci-core/sts@main
+        id: sts
+        with:
+          identity: publish-helm
+
       - name: Publish Helm charts
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
+          GH_TOKEN: ${{ steps.sts.outputs.GH_TOKEN }}
         run: bash ./scripts/publish-charts.sh
 
       - name: Notify Slack
