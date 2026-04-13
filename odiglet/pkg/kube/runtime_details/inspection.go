@@ -29,7 +29,8 @@ import (
 
 type InspectionResults struct {
 	containerNameToNewRuntimeDetails map[string]odigosv1.RuntimeDetailsByContainer
-	runtimesFound                    []common.ProgramLanguageDetails
+	multipleLanguagesDetected        bool
+	detectedLanguages                []common.ProgramLanguageDetails
 }
 
 // Extracts the RuntimeDetailsByContainer list from the map in InspectionResults
@@ -39,6 +40,20 @@ func (r *InspectionResults) runtimeDetailsList() []odigosv1.RuntimeDetailsByCont
 		details = append(details, detail)
 	}
 	return details
+}
+
+// collects languages from Pids, and also sets a boolean if this container has more than one unique language
+func collectDetectedLanguages(knownLangsByPid map[int]common.ProgramLanguageDetails, results *InspectionResults) {
+	uniqueLangsInContainer := make(map[common.ProgrammingLanguage]struct{})
+	for _, langDetails := range knownLangsByPid {
+		if _, exists := uniqueLangsInContainer[langDetails.Language]; !exists {
+			uniqueLangsInContainer[langDetails.Language] = struct{}{}
+			results.detectedLanguages = append(results.detectedLanguages, langDetails)
+		}
+	}
+	if len(uniqueLangsInContainer) > 1 {
+		results.multipleLanguagesDetected = true
+	}
 }
 
 var errNoKnownLanguageDetected = errors.New("no known programming language detected in the container")
@@ -167,14 +182,7 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 		}
 	}
 
-	// collect unique detected languages for condition reporting
-	detectedLanguages := make(map[common.ProgrammingLanguage]struct{})
-	for _, details := range knownLangsByPid {
-		if _, exists := detectedLanguages[details.Language]; !exists {
-			detectedLanguages[details.Language] = struct{}{}
-			results.runtimesFound = append(results.runtimesFound, details)
-		}
-	}
+	collectDetectedLanguages(knownLangsByPid, results)
 
 	// resolve relevant processes and main language for the container
 	relevantProcesses, langDetails, err := relevantProcessesDetailsInContainer(knownLangsByPid, processes)
@@ -396,10 +404,15 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 
 	reason := odigosv1.RuntimeDetectionReasonDetectedSuccessfully
 	message := "runtime detection completed successfully"
-	if len(inspectionResults.runtimesFound) > 1 {
-		langs := make([]string, 0, len(inspectionResults.runtimesFound))
-		for _, runtime := range inspectionResults.runtimesFound {
-			langs = append(langs, string(runtime.Language))
+	if inspectionResults.multipleLanguagesDetected {
+		// dedup language names since multiple containers may report the same language
+		seen := make(map[common.ProgrammingLanguage]bool)
+		var langs []string
+		for _, lang := range inspectionResults.detectedLanguages {
+			if !seen[lang.Language] {
+				seen[lang.Language] = true
+				langs = append(langs, string(lang.Language))
+			}
 		}
 		for _, container := range inspectionResults.containerNameToNewRuntimeDetails {
 			if container.Language == common.UnknownProgrammingLanguage {
