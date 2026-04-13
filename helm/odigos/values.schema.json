@@ -1717,6 +1717,29 @@
               "required": [],
               "title": "retryOnFailure"
             },
+            "sendingQueue": {
+              "additionalProperties": false,
+              "description": "Optional persistent queue for profiling OTLP exports (gateway → UI, node → gateway).",
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "description": "When true, enables the exporter sending queue.",
+                  "required": [],
+                  "title": "enabled",
+                  "type": "boolean"
+                },
+                "queueSize": {
+                  "default": 0,
+                  "description": "Queue size in batches; 0 uses collector default when enabled.",
+                  "minimum": 0,
+                  "required": [],
+                  "title": "queueSize",
+                  "type": "integer"
+                }
+              },
+              "required": [],
+              "title": "sendingQueue"
+            },
             "timeout": {
               "default": "5s",
               "description": "Per-attempt send timeout for profiling OTLP exporters.",

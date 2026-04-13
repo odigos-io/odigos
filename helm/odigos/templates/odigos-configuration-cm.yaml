@@ -64,6 +64,7 @@ data:
     {{- if .Values.profiling.enabled }}
     {{- $pex := .Values.profiling.exporter | default dict }}
     {{- $pretry := $pex.retryOnFailure | default dict }}
+    {{- $psq := $pex.sendingQueue | default dict }}
     profiling:
       enabled: {{ .Values.profiling.enabled }}
       exporter:
@@ -74,6 +75,9 @@ data:
           initialInterval: {{ $pretry.initialInterval | default "5s" }}
           maxInterval: {{ $pretry.maxInterval | default "30s" }}
           maxElapsedTime: {{ $pretry.maxElapsedTime | default "300s" }}
+        sendingQueue:
+          enabled: {{ $psq.enabled | default false }}
+          queueSize: {{ $psq.queueSize | default 0 }}
     {{- end }}
     {{- if .Values.collectorGateway }}
     {{- $gwLimiter := include "collector.gateway.memoryLimiter" . | fromYaml }}
