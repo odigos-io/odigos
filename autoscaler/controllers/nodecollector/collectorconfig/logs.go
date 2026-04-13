@@ -15,14 +15,16 @@ const (
 )
 
 func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string) (config.GenericMap, []string) {
-
-	if isEbpfLogCaptureEnabled(sources) {
-		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here
-		return config.GenericMap{}, []string{odigosEbpfReceiverName}
-	}
-
 	includes := make([]string, 0)
+	hasEbpfLogCapture := false
+	hasNonEbpfSources := false
 	for _, element := range sources.Items {
+		if isEbpfLogCaptureEnabledForIC(&element) {
+			hasEbpfLogCapture = true
+			continue
+		}
+		hasNonEbpfSources = true
+
 		// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
 		// Pod specifiers
 		// 	Deployment:  <namespace>_<deployment  name>-<replicaset suffix[~10]>-<pod suffix[~5]>_<pod ID>
@@ -42,8 +44,13 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 		includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
 	}
 
-	return config.GenericMap{
-		filelogReceiverName: config.GenericMap{
+	receivers := config.GenericMap{}
+	pipelineReceivers := make([]string, 0, 2)
+
+	// Keep existing behavior (filelog only) when eBPF capture is not enabled for any source.
+	// In mixed mode, keep filelog only for non-eBPF workloads to avoid dropping their logs.
+	if !hasEbpfLogCapture || hasNonEbpfSources {
+		receivers[filelogReceiverName] = config.GenericMap{
 			"include": includes,
 			"exclude": []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
 			// 5s (vs upstream 200ms default) avoids a readdir storm from stanza's per-include glob loop on busy nodes.
@@ -68,8 +75,16 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 				// downstream pressure.
 				"enabled": true,
 			},
-		},
-	}, []string{filelogReceiverName}
+		}
+		pipelineReceivers = append(pipelineReceivers, filelogReceiverName)
+	}
+
+	if hasEbpfLogCapture {
+		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here.
+		pipelineReceivers = append(pipelineReceivers, odigosEbpfReceiverName)
+	}
+
+	return receivers, pipelineReceivers
 }
 
 // isEbpfLogCaptureEnabled checks whether any InstrumentationConfig has eBPF
@@ -79,12 +94,22 @@ func isEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
 		return false
 	}
 	for _, ic := range sources.Items {
-		for _, sdkConfig := range ic.Spec.SdkConfigs {
-			if sdkConfig.EbpfLogCapture != nil &&
-				sdkConfig.EbpfLogCapture.Enabled != nil &&
-				*sdkConfig.EbpfLogCapture.Enabled {
-				return true
-			}
+		if isEbpfLogCaptureEnabledForIC(&ic) {
+			return true
+		}
+	}
+	return false
+}
+
+func isEbpfLogCaptureEnabledForIC(ic *odigosv1.InstrumentationConfig) bool {
+	if ic == nil {
+		return false
+	}
+	for _, sdkConfig := range ic.Spec.SdkConfigs {
+		if sdkConfig.EbpfLogCapture != nil &&
+			sdkConfig.EbpfLogCapture.Enabled != nil &&
+			*sdkConfig.EbpfLogCapture.Enabled {
+			return true
 		}
 	}
 	return false
