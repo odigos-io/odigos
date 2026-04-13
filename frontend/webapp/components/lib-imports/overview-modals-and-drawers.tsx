@@ -22,6 +22,7 @@ import {
   useNamespace,
   usePotentialDestinations,
   useSourceCRUD,
+  useProfiling,
   useTestConnection,
   useWorkloadUtils,
 } from '@/hooks';
@@ -38,6 +39,7 @@ const OverviewModalsAndDrawers = () => {
   const { createActionV2, updateAction, deleteAction } = useActionCRUD();
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
+  const { fetchProfilingSlots, enableProfiling, releaseProfiling, fetchSourceProfiling } = useProfiling();
   const { createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
   const { persistSources, persistSourcesV2, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
 
@@ -86,6 +88,10 @@ const OverviewModalsAndDrawers = () => {
         fetchSourceDescribe={fetchDescribeSource}
         fetchSourceLibraries={fetchSourceLibraries}
         fetchPeerSources={fetchPeerSources}
+        fetchProfilingSlots={fetchProfilingSlots}
+        enableProfiling={enableProfiling}
+        releaseProfiling={releaseProfiling}
+        fetchSourceProfiling={fetchSourceProfiling}
       />
       <DestinationDrawer categories={categories} updateDestination={updateDestination} deleteDestination={deleteDestination} testConnection={testConnection} />
       <InstrumentationRuleDrawer updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />

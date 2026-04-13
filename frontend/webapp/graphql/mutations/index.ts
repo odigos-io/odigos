@@ -6,4 +6,5 @@ export * from './instrumentation-rule';
 export * from './namespace';
 export * from './source';
 export * from './sampling';
+export * from './profiling';
 export * from './token';
