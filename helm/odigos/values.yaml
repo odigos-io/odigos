@@ -1487,7 +1487,7 @@ ownTelemetry:
     # @schema
     # description: set to true to disable the odigos victoriametrics own metrics store
     # @schema
-    disabled: true
+    # disabled: true
 
 # @schema
 # description: global configurations for sampling.

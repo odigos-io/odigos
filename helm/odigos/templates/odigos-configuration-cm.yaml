@@ -267,7 +267,13 @@ data:
     traceIdSuffix: {{ .Values.odiglet.traceIdSuffix }}
     {{- end }}
     odigosOwnTelemetryStore:
+      {{- if .Values.ownTelemetry }}
+      {{- if .Values.ownTelemetry.metricsStore }}
+      {{- if hasKey .Values.ownTelemetry.metricsStore "disabled" }}
       metricsStoreDisabled: {{ .Values.ownTelemetry.metricsStore.disabled }}
+      {{- end }}
+      {{- end }}
+      {{- end }}
     {{- if .Values.imagePullSecrets }}
     imagePullSecrets:
       {{- toYaml .Values.imagePullSecrets | nindent 6 }}
