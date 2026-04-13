@@ -235,10 +235,6 @@ type RuntimeDetailsByContainer struct {
 	// nil means we were unable to determine the secure-execution mode.
 	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
 
-	// In-memory only (not persisted to CRD). Set during runtime detection when
-	// multiple programming languages are found in the same container.
-	MultipleLanguagesDetected bool `json:"-"`
-
 	// CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
 	// Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
 	// Thus, this field is set only when there is:
