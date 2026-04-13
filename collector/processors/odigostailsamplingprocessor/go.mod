@@ -15,6 +15,7 @@ require (
 	go.opentelemetry.io/collector/processor v1.54.0
 	go.opentelemetry.io/collector/processor/processorhelper v0.148.0
 	go.opentelemetry.io/collector/processor/processortest v0.148.0
+	go.opentelemetry.io/otel v1.42.0
 	go.opentelemetry.io/otel/metric v1.42.0
 	go.opentelemetry.io/otel/sdk/metric v1.42.0
 	go.opentelemetry.io/otel/trace v1.42.0
@@ -49,7 +50,6 @@ require (
 	go.opentelemetry.io/collector/pdata/testdata v0.148.0 // indirect
 	go.opentelemetry.io/collector/pipeline v1.54.0 // indirect
 	go.opentelemetry.io/collector/processor/xprocessor v0.148.0 // indirect
-	go.opentelemetry.io/otel v1.42.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.42.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
