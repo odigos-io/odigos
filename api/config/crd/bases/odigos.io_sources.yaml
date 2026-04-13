@@ -136,10 +136,6 @@ spec:
                           - glibc
                           - musl
                           type: string
-                        multipleLanguagesDetected:
-                          description: True when multiple programming languages were
-                            detected in the container
-                          type: boolean
                         otherAgent:
                           properties:
                             name:

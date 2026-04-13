@@ -808,16 +808,15 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadRuntimeInfoContainer struct {
-		ContainerName             func(childComplexity int) int
-		ContainerRuntimeEnvVars   func(childComplexity int) int
-		CriErrorMessage           func(childComplexity int) int
-		Language                  func(childComplexity int) int
-		LibcType                  func(childComplexity int) int
-		MultipleLanguagesDetected func(childComplexity int) int
-		OtherAgentName            func(childComplexity int) int
-		ProcessEnvVars            func(childComplexity int) int
-		RuntimeVersion            func(childComplexity int) int
-		SecureExecutionMode       func(childComplexity int) int
+		ContainerName           func(childComplexity int) int
+		ContainerRuntimeEnvVars func(childComplexity int) int
+		CriErrorMessage         func(childComplexity int) int
+		Language                func(childComplexity int) int
+		LibcType                func(childComplexity int) int
+		OtherAgentName          func(childComplexity int) int
+		ProcessEnvVars          func(childComplexity int) int
+		RuntimeVersion          func(childComplexity int) int
+		SecureExecutionMode     func(childComplexity int) int
 	}
 
 	K8sWorkloadTelemetryMetrics struct {
@@ -1238,14 +1237,13 @@ type ComplexityRoot struct {
 	}
 
 	SourceContainer struct {
-		ContainerName             func(childComplexity int) int
-		InstrumentationMessage    func(childComplexity int) int
-		Instrumented              func(childComplexity int) int
-		Language                  func(childComplexity int) int
-		MultipleLanguagesDetected func(childComplexity int) int
-		OtelDistroName            func(childComplexity int) int
-		Overriden                 func(childComplexity int) int
-		RuntimeVersion            func(childComplexity int) int
+		ContainerName          func(childComplexity int) int
+		InstrumentationMessage func(childComplexity int) int
+		Instrumented           func(childComplexity int) int
+		Language               func(childComplexity int) int
+		OtelDistroName         func(childComplexity int) int
+		Overriden              func(childComplexity int) int
+		RuntimeVersion         func(childComplexity int) int
 	}
 
 	SourcesScope struct {
@@ -4866,13 +4864,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadRuntimeInfoContainer.LibcType(childComplexity), true
 
-	case "K8sWorkloadRuntimeInfoContainer.multipleLanguagesDetected":
-		if e.complexity.K8sWorkloadRuntimeInfoContainer.MultipleLanguagesDetected == nil {
-			break
-		}
-
-		return e.complexity.K8sWorkloadRuntimeInfoContainer.MultipleLanguagesDetected(childComplexity), true
-
 	case "K8sWorkloadRuntimeInfoContainer.otherAgentName":
 		if e.complexity.K8sWorkloadRuntimeInfoContainer.OtherAgentName == nil {
 			break
@@ -6855,13 +6846,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SourceContainer.Language(childComplexity), true
-
-	case "SourceContainer.multipleLanguagesDetected":
-		if e.complexity.SourceContainer.MultipleLanguagesDetected == nil {
-			break
-		}
-
-		return e.complexity.SourceContainer.MultipleLanguagesDetected(childComplexity), true
 
 	case "SourceContainer.otelDistroName":
 		if e.complexity.SourceContainer.OtelDistroName == nil {
@@ -25906,8 +25890,6 @@ func (ec *executionContext) fieldContext_K8sActualSource_containers(_ context.Co
 				return ec.fieldContext_SourceContainer_language(ctx, field)
 			case "runtimeVersion":
 				return ec.fieldContext_SourceContainer_runtimeVersion(ctx, field)
-			case "multipleLanguagesDetected":
-				return ec.fieldContext_SourceContainer_multipleLanguagesDetected(ctx, field)
 			case "overriden":
 				return ec.fieldContext_SourceContainer_overriden(ctx, field)
 			case "instrumented":
@@ -28705,8 +28687,6 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainer_runtimeInfo(_ cont
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_secureExecutionMode(ctx, field)
 			case "otherAgentName":
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field)
-			case "multipleLanguagesDetected":
-				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_multipleLanguagesDetected(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRuntimeInfoContainer", field.Name)
 		},
@@ -29420,8 +29400,6 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_runtimeIn
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_secureExecutionMode(ctx, field)
 			case "otherAgentName":
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field)
-			case "multipleLanguagesDetected":
-				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_multipleLanguagesDetected(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRuntimeInfoContainer", field.Name)
 		},
@@ -31259,8 +31237,6 @@ func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfo_containers(_ con
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_secureExecutionMode(ctx, field)
 			case "otherAgentName":
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field)
-			case "multipleLanguagesDetected":
-				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_multipleLanguagesDetected(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRuntimeInfoContainer", field.Name)
 		},
@@ -31653,50 +31629,6 @@ func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfoContainer_otherAg
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _K8sWorkloadRuntimeInfoContainer_multipleLanguagesDetected(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRuntimeInfoContainer) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadRuntimeInfoContainer_multipleLanguagesDetected(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MultipleLanguagesDetected, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfoContainer_multipleLanguagesDetected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "K8sWorkloadRuntimeInfoContainer",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -44445,50 +44377,6 @@ func (ec *executionContext) fieldContext_SourceContainer_runtimeVersion(_ contex
 	return fc, nil
 }
 
-func (ec *executionContext) _SourceContainer_multipleLanguagesDetected(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SourceContainer_multipleLanguagesDetected(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MultipleLanguagesDetected, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_SourceContainer_multipleLanguagesDetected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "SourceContainer",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _SourceContainer_overriden(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainer) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SourceContainer_overriden(ctx, field)
 	if err != nil {
@@ -57089,11 +56977,6 @@ func (ec *executionContext) _K8sWorkloadRuntimeInfoContainer(ctx context.Context
 			out.Values[i] = ec._K8sWorkloadRuntimeInfoContainer_secureExecutionMode(ctx, field, obj)
 		case "otherAgentName":
 			out.Values[i] = ec._K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field, obj)
-		case "multipleLanguagesDetected":
-			out.Values[i] = ec._K8sWorkloadRuntimeInfoContainer_multipleLanguagesDetected(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -60844,11 +60727,6 @@ func (ec *executionContext) _SourceContainer(ctx context.Context, sel ast.Select
 			}
 		case "runtimeVersion":
 			out.Values[i] = ec._SourceContainer_runtimeVersion(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "multipleLanguagesDetected":
-			out.Values[i] = ec._SourceContainer_multipleLanguagesDetected(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
