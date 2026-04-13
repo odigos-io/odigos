@@ -16,9 +16,10 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 
 	endpoint := k8sconsts.OtlpGrpcDNSEndpoint(k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace, odigosconsts.OTLPPort)
 	exp := commonconf.MergeProfilingOtlpExporter(config.GenericMap{
-		"endpoint":    endpoint,
-		"tls":         config.GenericMap{"insecure": true},
-		"compression": "none",
+		"endpoint":      endpoint,
+		"tls":           config.GenericMap{"insecure": true},
+		"compression":   "none",
+		"balancer_name": "round_robin",
 	}, profiling.Exporter)
 
 	return config.Config{
