@@ -27,6 +27,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type InspectionResults struct {
+	containerNameToNewRuntimeDetails map[string]odigosv1.RuntimeDetailsByContainer
+	runtimesFound                    []common.ProgramLanguageDetails
+}
+
+// Extracts the RuntimeDetailsByContainer list from the map in InspectionResults
+func (r *InspectionResults) runtimeDetailsList() []odigosv1.RuntimeDetailsByContainer {
+	details := make([]odigosv1.RuntimeDetailsByContainer, 0, len(r.containerNameToNewRuntimeDetails))
+	for _, detail := range r.containerNameToNewRuntimeDetails {
+		details = append(details, detail)
+	}
+	return details
+}
+
 var errNoKnownLanguageDetected = errors.New("no known programming language detected in the container")
 
 // relevantProcessesDetailsInContainer filters the processes in a container to find those relevant:
@@ -56,7 +70,6 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 	case 1:
 		selectedLangDetails.Language = uniqueLangsSlice[0]
 	case 2:
-		selectedLangDetails.MultipleLanguagesDetected = true
 		switch {
 		// c++ can be a wrapper of script etc.
 		// we want to detect the "later" language to get the real application.
@@ -76,7 +89,6 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 			return nil, selectedLangDetails, fmt.Errorf("two different programming languages detected in the same container, cannot determine the main language: %v", uniqueLangsSlice)
 		}
 	default:
-		selectedLangDetails.MultipleLanguagesDetected = true
 		return nil, selectedLangDetails, fmt.Errorf("more than two programming languages detected in the same container, cannot determine the main language: %v", uniqueLangsSlice)
 	}
 
@@ -102,7 +114,7 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 	return relevantProcesses, selectedLangDetails, nil
 }
 
-func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) ([]odigosv1.RuntimeDetailsByContainer, error) {
+func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) (InspectionResults, error) {
 	var pcs []process.PodContainerUID
 	for _, pod := range pods {
 		uid := workload.PodUID(&pod)
@@ -113,16 +125,18 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 
 	groups, err := process.GroupByPodContainer(pcs)
 	if err != nil {
-		return nil, err
+		return InspectionResults{}, err
 	}
 
 	return runtimeInspectionFromGroupedPIDs(ctx, pods, groups, criClient, runtimeDetectionEnvs)
 }
 
 // runtimeInspectionFromGroupedPIDs is like runtimeInspection but uses pre-grouped PIDs.
-func runtimeInspectionFromGroupedPIDs(ctx context.Context, pods []corev1.Pod, groupedPIDs map[process.PodContainerUID]map[int]struct{}, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) ([]odigosv1.RuntimeDetailsByContainer, error) {
+func runtimeInspectionFromGroupedPIDs(ctx context.Context, pods []corev1.Pod, groupedPIDs map[process.PodContainerUID]map[int]struct{}, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) (InspectionResults, error) {
 	logger := commonlogger.LoggerCompat().With("subsystem", "runtimeinspection")
-	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
+	results := InspectionResults{
+		containerNameToNewRuntimeDetails: make(map[string]odigosv1.RuntimeDetailsByContainer),
+	}
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
 			pc := process.PodContainerUID{PodUID: workload.PodUID(&pod), ContainerName: container.Name}
@@ -133,27 +147,32 @@ func runtimeInspectionFromGroupedPIDs(ctx context.Context, pods []corev1.Pod, gr
 				processes = append(processes, procDetails)
 			}
 
-			inspectContainerProcesses(ctx, logger, pod, container, processes, criClient, resultsMap)
+			inspectContainerProcesses(ctx, logger, pod, container, processes, criClient, &results)
 		}
 	}
 
-	results := make([]odigosv1.RuntimeDetailsByContainer, 0, len(resultsMap))
-	for _, value := range resultsMap {
-		results = append(results, value)
-	}
 	return results, nil
 }
 
 // inspectContainerProcesses performs language detection, agent detection, libc
 // inspection, and CRI env-var collection for a single container's processes,
-// writing the result into resultsMap.
-func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosLogger, pod corev1.Pod, container corev1.Container, processes []procdiscovery.Details, criClient *criwrapper.CriClient, resultsMap map[string]odigosv1.RuntimeDetailsByContainer) {
+// writing the result into results.
+func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosLogger, pod corev1.Pod, container corev1.Container, processes []procdiscovery.Details, criClient *criwrapper.CriClient, results *InspectionResults) {
 	knownLangsByPid := make(map[int]common.ProgramLanguageDetails)
 
 	for _, proc := range processes {
 		langDetails, detectErr := inspectors.DetectLanguage(proc)
 		if detectErr == nil && langDetails.Language != common.UnknownProgrammingLanguage {
 			knownLangsByPid[proc.ProcessID] = langDetails
+		}
+	}
+
+	// collect unique detected languages for condition reporting
+	detectedLanguages := make(map[common.ProgrammingLanguage]struct{})
+	for _, details := range knownLangsByPid {
+		if _, exists := detectedLanguages[details.Language]; !exists {
+			detectedLanguages[details.Language] = struct{}{}
+			results.runtimesFound = append(results.runtimesFound, details)
 		}
 	}
 
@@ -222,27 +241,26 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 		secureExecutionMode = inspectProc.SecureExecutionMode
 	}
 
-	resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
-		ContainerName:             container.Name,
-		Language:                  langDetails.Language,
-		RuntimeVersion:            langDetails.RuntimeVersion,
-		MultipleLanguagesDetected: langDetails.MultipleLanguagesDetected,
-		EnvVars:                   envs,
-		OtherAgent:                detectedAgent,
-		LibCType:                  libcType,
-		SecureExecutionMode:       secureExecutionMode,
+	results.containerNameToNewRuntimeDetails[container.Name] = odigosv1.RuntimeDetailsByContainer{
+		ContainerName:       container.Name,
+		Language:            langDetails.Language,
+		RuntimeVersion:      langDetails.RuntimeVersion,
+		EnvVars:             envs,
+		OtherAgent:          detectedAgent,
+		LibCType:            libcType,
+		SecureExecutionMode: secureExecutionMode,
 	}
 
 	if inspectProc != nil {
 		procEnvVars := inspectProc.Environments.OverwriteEnvs
-		updateRuntimeDetailsWithContainerRuntimeEnvs(ctx, *criClient, pod, container, langDetails, &resultsMap, procEnvVars)
+		updateRuntimeDetailsWithContainerRuntimeEnvs(ctx, *criClient, pod, container, langDetails, results, procEnvVars)
 	}
 }
 
 // updateRuntimeDetailsWithContainerRuntimeEnvs checks if relevant environment variables are set in the Runtime
 // and updates the RuntimeDetailsByContainer accordingly.
 func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
-	programLanguageDetails common.ProgramLanguageDetails, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer, procEnvVars map[string]string) {
+	programLanguageDetails common.ProgramLanguageDetails, results *InspectionResults, procEnvVars map[string]string) {
 	// Retrieve environment variable names for the specified language
 	envVarNames, exists := envOverwrite.EnvVarsForLanguage[programLanguageDetails.Language]
 	if !exists {
@@ -254,19 +272,19 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 	// Verify if environment variables already exist in the container manifest.
 	// If they exist, set the RuntimeUpdateState as ProcessingStateSkipped.
 	if envsExistsInManifest := checkEnvVarsInContainerManifest(container, envVarNames); envsExistsInManifest {
-		runtimeDetailsByContainer := (*resultsMap)[container.Name]
+		runtimeDetailsByContainer := results.containerNameToNewRuntimeDetails[container.Name]
 		state := odigosv1.ProcessingStateSkipped
 		runtimeDetailsByContainer.RuntimeUpdateState = &state
-		(*resultsMap)[container.Name] = runtimeDetailsByContainer
+		results.containerNameToNewRuntimeDetails[container.Name] = runtimeDetailsByContainer
 	}
 
 	// Environment variables do not exist in the manifest; fetch them from the container's Image
-	fetchAndSetEnvFromContainerRuntime(ctx, criClient, pod, container, envVarNames, resultsMap, procEnvVars)
+	fetchAndSetEnvFromContainerRuntime(ctx, criClient, pod, container, envVarNames, results, procEnvVars)
 }
 
 // fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's Image and updates the runtime details.
 func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
-	envVarKeys []string, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer, procEnvVars map[string]string) {
+	envVarKeys []string, results *InspectionResults, procEnvVars map[string]string) {
 	logger := commonlogger.LoggerCompat().With("subsystem", "runtimeinspection")
 	containerID := getContainerID(pod.Status.ContainerStatuses, container.Name)
 	if containerID == "" {
@@ -274,7 +292,7 @@ func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrappe
 		return
 	}
 	envVars, err := criClient.GetContainerEnvVarsList(ctx, envVarKeys, containerID)
-	runtimeDetailsByContainer := (*resultsMap)[container.Name]
+	runtimeDetailsByContainer := results.containerNameToNewRuntimeDetails[container.Name]
 
 	var state odigosv1.ProcessingState
 
@@ -308,7 +326,7 @@ func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrappe
 	runtimeDetailsByContainer.RuntimeUpdateState = &state
 
 	// Update the results map with the modified runtime details
-	(*resultsMap)[container.Name] = runtimeDetailsByContainer
+	results.containerNameToNewRuntimeDetails[container.Name] = runtimeDetailsByContainer
 }
 
 // getContainerID retrieves the container ID for a given container name from the list of container statuses.
@@ -337,7 +355,7 @@ func checkEnvVarsInContainerManifest(container corev1.Container, envVarNames []s
 	return false
 }
 
-func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, newRuntimeDetials []odigosv1.RuntimeDetailsByContainer) error {
+func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, inspectionResults InspectionResults) error {
 
 	// fetch a fresh copy of instrumentation config.
 	// TODO: is this necessary? can we do it with the existing object?
@@ -356,7 +374,7 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 	// 4. RuntimeVersion changes
 	if len(currentConfig.Status.RuntimeDetailsByContainer) > 0 {
 		updated := false
-		for _, newDetail := range newRuntimeDetials {
+		for _, newDetail := range inspectionResults.containerNameToNewRuntimeDetails {
 			for j := range currentConfig.Status.RuntimeDetailsByContainer {
 				existingDetail := &currentConfig.Status.RuntimeDetailsByContainer[j]
 				if newDetail.ContainerName == existingDetail.ContainerName {
@@ -373,23 +391,26 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		}
 	} else {
 		// First time setting the values
-		currentConfig.Status.RuntimeDetailsByContainer = newRuntimeDetials
+		currentConfig.Status.RuntimeDetailsByContainer = inspectionResults.runtimeDetailsList()
 	}
 
 	reason := odigosv1.RuntimeDetectionReasonDetectedSuccessfully
 	message := "runtime detection completed successfully"
-	for _, container := range newRuntimeDetials {
-		if !container.MultipleLanguagesDetected {
-			continue
+	if len(inspectionResults.runtimesFound) > 1 {
+		langs := make([]string, 0, len(inspectionResults.runtimesFound))
+		for _, runtime := range inspectionResults.runtimesFound {
+			langs = append(langs, string(runtime.Language))
 		}
-		if container.Language == common.UnknownProgrammingLanguage {
-			reason = odigosv1.RuntimeDetectionReasonUnresolvedMultipleLanguages
-			message = "multiple languages detected, could not determine main language, consider selecting the language manually"
-		} else {
-			reason = odigosv1.RuntimeDetectionReasonResolvedFromMultipleLanguages
-			message = "multiple languages detected in the same container, main language was selected automatically"
+		for _, container := range inspectionResults.containerNameToNewRuntimeDetails {
+			if container.Language == common.UnknownProgrammingLanguage {
+				reason = odigosv1.RuntimeDetectionReasonUnresolvedMultipleLanguages
+				message = fmt.Sprintf("multiple languages detected (%s), could not determine main language, consider selecting the language manually", strings.Join(langs, ", "))
+			} else {
+				reason = odigosv1.RuntimeDetectionReasonResolvedFromMultipleLanguages
+				message = fmt.Sprintf("multiple languages detected (%s) in the same container, %s was selected automatically", strings.Join(langs, ", "), container.Language)
+			}
+			break
 		}
-		break
 	}
 
 	meta.SetStatusCondition(&currentConfig.Status.Conditions, metav1.Condition{
