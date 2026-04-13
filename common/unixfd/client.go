@@ -1,6 +1,7 @@
 package unixfd
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"net"
@@ -102,6 +103,60 @@ func ConnectAndListenMulti(ctx context.Context, socketPath string, requestType s
 			continue
 		}
 	}
+}
+
+// ConnectAndListenLogs receives the logs ring buffer FD and streams attribute
+// events over a persistent connection. Reconnects automatically on disconnect.
+func ConnectAndListenLogs(ctx context.Context, socketPath string, logger *zap.Logger, onFD func(fd int), onAttr func(line string)) error {
+	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		err := connectLogsSession(ctx, socketPath, onFD, onAttr)
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		// Session ended (server disconnected or error) — retry after backoff.
+		sleepTime := 2 * time.Second
+		logger.Info("Logs connection lost, reconnecting", zap.Error(err), zap.Duration("backoff", sleepTime))
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(sleepTime):
+		}
+	}
+}
+
+func connectLogsSession(ctx context.Context, socketPath string, onFD func(fd int), onAttr func(line string)) error {
+	var d net.Dialer
+	conn, err := d.DialContext(ctx, "unix", socketPath)
+	if err != nil {
+		return fmt.Errorf("dial: %w", err)
+	}
+	uc := conn.(*net.UnixConn)
+	defer func() { _ = uc.Close() }()
+
+	if _, err := uc.Write([]byte(ReqGetLogsFD)); err != nil {
+		return fmt.Errorf("write request: %w", err)
+	}
+
+	fds, err := recvFDs(uc)
+	if err != nil {
+		return fmt.Errorf("recv fds: %w", err)
+	}
+	if len(fds) == 0 {
+		return fmt.Errorf("no fds received")
+	}
+
+	onFD(fds[0])
+
+	scanner := bufio.NewScanner(uc)
+	for scanner.Scan() {
+		onAttr(scanner.Text())
+	}
+	return scanner.Err()
 }
 
 // connectAndGetFDs makes a single connection, gets multiple FDs, and closes connection
