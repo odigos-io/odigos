@@ -1,5 +1,8 @@
-import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, TEXTS } from '../constants';
-import { aliasQuery, awaitToast, getCrdIds, handleExceptions, hasOperationName, visitPage, waitForGraphqlOperation } from '../functions';
+import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES } from '../constants';
+import { aliasQuery, awaitToast, handleExceptions, hasOperationName, visitPage, waitForGraphqlOperation } from '../functions';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CrdSpec = Record<string, any>;
 
 const namespace = NAMESPACES.ODIGOS;
 const crdName = CRD_NAMES.SAMPLING;
@@ -43,15 +46,15 @@ describe('Sampling Rules CRUD', () => {
         cy.get('input[name=sampling-input-rule-name]').type(NOISY_RULE_NAME);
         cy.get('input[name=sampling-input-note]').type('Created by Cypress');
 
-        // Select HTTP server operation type
-        cy.contains('button', 'HTTP server').click();
+        // Select HTTP server operation type (force click to avoid overlap from preview section)
+        cy.contains('button', 'HTTP server').scrollIntoView().click({ force: true });
 
         // Fill route (radio "route" should be selected by default)
         cy.get('input[name=sampling-input-route]').type('api/health');
 
         // Set percentage mode to "sample" and pick 1%
-        cy.contains('button', 'sample').click();
-        cy.contains('button', '1%').click();
+        cy.contains('button', 'sample').scrollIntoView().click({ force: true });
+        cy.contains('button', '1%').scrollIntoView().click({ force: true });
 
         // Submit the form
         cy.get(DATA_IDS.SAMPLING_CREATE_BTN_SUBMIT).click();
@@ -78,8 +81,8 @@ describe('Sampling Rules CRUD', () => {
         cy.get('input[name=sampling-input-rule-name]').type(HIGHLY_RELEVANT_RULE_NAME);
         cy.get('input[name=sampling-input-note]').type('Created by Cypress');
 
-        // Select rule type: Error
-        cy.contains('button', 'Error').click();
+        // Select rule type: Error (scrollIntoView needed because the preview section above can overlap)
+        cy.contains('button', 'Error').scrollIntoView().click({ force: true });
 
         // Keep percentage mode as "keep all" (default for highly relevant)
 
@@ -108,9 +111,8 @@ describe('Sampling Rules CRUD', () => {
         cy.get('input[name=sampling-input-rule-name]').type(COST_REDUCTION_RULE_NAME);
         cy.get('input[name=sampling-input-note]').type('Created by Cypress');
 
-        // Keep default operation (all operations)
-        // Cost Reduction defaults to "sample" mode with 50% preset
-        cy.contains('button', '25%').click();
+        // Cost Reduction defaults to "sample" mode with 50% preset — switch to 25%
+        cy.contains('button', '25%').scrollIntoView().click({ force: true });
 
         // Submit the form
         cy.get(DATA_IDS.SAMPLING_CREATE_BTN_SUBMIT).click();
@@ -130,23 +132,19 @@ describe('Sampling Rules CRUD', () => {
       const items = parsed.items || [];
       expect(items.length).to.be.greaterThan(0);
 
-      const sampling = items[0];
-      const spec = sampling.spec;
+      const spec: CrdSpec = items[0].spec;
 
-      // Verify noisy operation rule exists
-      const noisyRules = spec.noisyOperationRules || [];
-      const noisyRule = noisyRules.find((r: { name: string }) => r.name === NOISY_RULE_NAME);
+      const noisyRules = spec.noisyOperations || [];
+      const noisyRule = noisyRules.find((r: CrdSpec) => r.name === NOISY_RULE_NAME);
       expect(noisyRule, `Expected noisy rule "${NOISY_RULE_NAME}" to exist`).to.not.be.undefined;
-      expect(noisyRule.httpServerRoute).to.eq('api/health');
+      expect(noisyRule.operation?.httpServer?.route).to.eq('api/health');
 
-      // Verify highly relevant operation rule exists
-      const hrRules = spec.highlyRelevantOperationRules || [];
-      const hrRule = hrRules.find((r: { name: string }) => r.name === HIGHLY_RELEVANT_RULE_NAME);
+      const hrRules = spec.highlyRelevantOperations || [];
+      const hrRule = hrRules.find((r: CrdSpec) => r.name === HIGHLY_RELEVANT_RULE_NAME);
       expect(hrRule, `Expected highly relevant rule "${HIGHLY_RELEVANT_RULE_NAME}" to exist`).to.not.be.undefined;
 
-      // Verify cost reduction rule exists
       const crRules = spec.costReductionRules || [];
-      const crRule = crRules.find((r: { name: string }) => r.name === COST_REDUCTION_RULE_NAME);
+      const crRule = crRules.find((r: CrdSpec) => r.name === COST_REDUCTION_RULE_NAME);
       expect(crRule, `Expected cost reduction rule "${COST_REDUCTION_RULE_NAME}" to exist`).to.not.be.undefined;
     });
   });
@@ -194,7 +192,11 @@ describe('Sampling Rules CRUD', () => {
         cy.get(DATA_IDS.SAMPLING_VIEW_BTN_EDIT).click();
 
         // Update the rule name
-        cy.get('input[name=sampling-input-rule-name]').click().focused().clear().type(NOISY_RULE_NAME + UPDATED_SUFFIX);
+        cy.get('input[name=sampling-input-rule-name]')
+          .click()
+          .focused()
+          .clear()
+          .type(NOISY_RULE_NAME + UPDATED_SUFFIX);
 
         // Save the edit
         cy.get(DATA_IDS.SAMPLING_VIEW_EDIT_BTN_SAVE).click();
@@ -221,7 +223,11 @@ describe('Sampling Rules CRUD', () => {
         cy.get(DATA_IDS.SAMPLING_VIEW_BTN_EDIT).click();
 
         // Update the rule name
-        cy.get('input[name=sampling-input-rule-name]').click().focused().clear().type(HIGHLY_RELEVANT_RULE_NAME + UPDATED_SUFFIX);
+        cy.get('input[name=sampling-input-rule-name]')
+          .click()
+          .focused()
+          .clear()
+          .type(HIGHLY_RELEVANT_RULE_NAME + UPDATED_SUFFIX);
 
         // Save the edit
         cy.get(DATA_IDS.SAMPLING_VIEW_EDIT_BTN_SAVE).click();
@@ -248,7 +254,11 @@ describe('Sampling Rules CRUD', () => {
         cy.get(DATA_IDS.SAMPLING_VIEW_BTN_EDIT).click();
 
         // Update the rule name
-        cy.get('input[name=sampling-input-rule-name]').click().focused().clear().type(COST_REDUCTION_RULE_NAME + UPDATED_SUFFIX);
+        cy.get('input[name=sampling-input-rule-name]')
+          .click()
+          .focused()
+          .clear()
+          .type(COST_REDUCTION_RULE_NAME + UPDATED_SUFFIX);
 
         // Save the edit
         cy.get(DATA_IDS.SAMPLING_VIEW_EDIT_BTN_SAVE).click();
@@ -268,15 +278,15 @@ describe('Sampling Rules CRUD', () => {
       const items = parsed.items || [];
       expect(items.length).to.be.greaterThan(0);
 
-      const spec = items[0].spec;
+      const spec: CrdSpec = items[0].spec;
 
-      const noisyRule = (spec.noisyOperationRules || []).find((r: { name: string }) => r.name === NOISY_RULE_NAME + UPDATED_SUFFIX);
+      const noisyRule = (spec.noisyOperations || []).find((r: CrdSpec) => r.name === NOISY_RULE_NAME + UPDATED_SUFFIX);
       expect(noisyRule, `Expected updated noisy rule name`).to.not.be.undefined;
 
-      const hrRule = (spec.highlyRelevantOperationRules || []).find((r: { name: string }) => r.name === HIGHLY_RELEVANT_RULE_NAME + UPDATED_SUFFIX);
+      const hrRule = (spec.highlyRelevantOperations || []).find((r: CrdSpec) => r.name === HIGHLY_RELEVANT_RULE_NAME + UPDATED_SUFFIX);
       expect(hrRule, `Expected updated highly relevant rule name`).to.not.be.undefined;
 
-      const crRule = (spec.costReductionRules || []).find((r: { name: string }) => r.name === COST_REDUCTION_RULE_NAME + UPDATED_SUFFIX);
+      const crRule = (spec.costReductionRules || []).find((r: CrdSpec) => r.name === COST_REDUCTION_RULE_NAME + UPDATED_SUFFIX);
       expect(crRule, `Expected updated cost reduction rule name`).to.not.be.undefined;
     });
   });
@@ -374,15 +384,14 @@ describe('Sampling Rules CRUD', () => {
 
       if (items.length === 0) return;
 
-      const spec = items[0].spec;
-      const noisyRules = spec.noisyOperationRules || [];
-      const hrRules = spec.highlyRelevantOperationRules || [];
+      const spec: CrdSpec = items[0].spec;
+      const noisyRules = spec.noisyOperations || [];
+      const hrRules = spec.highlyRelevantOperations || [];
       const crRules = spec.costReductionRules || [];
 
-      // All test rules should be gone
-      expect(noisyRules.find((r: { name: string }) => r.name?.includes('Cypress'))).to.be.undefined;
-      expect(hrRules.find((r: { name: string }) => r.name?.includes('Cypress'))).to.be.undefined;
-      expect(crRules.find((r: { name: string }) => r.name?.includes('Cypress'))).to.be.undefined;
+      expect(noisyRules.find((r: CrdSpec) => r.name?.includes('Cypress'))).to.be.undefined;
+      expect(hrRules.find((r: CrdSpec) => r.name?.includes('Cypress'))).to.be.undefined;
+      expect(crRules.find((r: CrdSpec) => r.name?.includes('Cypress'))).to.be.undefined;
     });
   });
 
