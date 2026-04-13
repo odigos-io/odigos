@@ -72,14 +72,13 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 		}
 
 		containers = append(containers, &model.SourceContainer{
-			ContainerName:             containerName,
-			Language:                  string(resolvedRuntimeInfo.Language),
-			RuntimeVersion:            resolvedRuntimeInfo.RuntimeVersion,
-			MultipleLanguagesDetected: statusContainer.MultipleLanguagesDetected,
-			Overriden:                 overriden,
-			Instrumented:              instrumented,
-			InstrumentationMessage:    instrumentationMessage,
-			OtelDistroName:            &otelDistroName,
+			ContainerName:          containerName,
+			Language:               string(resolvedRuntimeInfo.Language),
+			RuntimeVersion:         resolvedRuntimeInfo.RuntimeVersion,
+			Overriden:              overriden,
+			Instrumented:           instrumented,
+			InstrumentationMessage: instrumentationMessage,
+			OtelDistroName:         &otelDistroName,
 		})
 	}
 
@@ -97,14 +96,13 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 			instrumented, instrumentationMessage, otelDistroName := getContainerAgentInfo(&instruConfig, override.ContainerName)
 
 			containers = append(containers, &model.SourceContainer{
-				ContainerName:             override.ContainerName,
-				Language:                  language,
-				RuntimeVersion:            runtimeVersion,
-				MultipleLanguagesDetected: false,
-				Overriden:                 true,
-				Instrumented:              instrumented,
-				InstrumentationMessage:    instrumentationMessage,
-				OtelDistroName:            &otelDistroName,
+				ContainerName:          override.ContainerName,
+				Language:               language,
+				RuntimeVersion:         runtimeVersion,
+				Overriden:              true,
+				Instrumented:           instrumented,
+				InstrumentationMessage: instrumentationMessage,
+				OtelDistroName:         &otelDistroName,
 			})
 		}
 	}

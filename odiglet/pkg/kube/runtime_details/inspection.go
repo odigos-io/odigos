@@ -378,7 +378,7 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 
 	reason := odigosv1.RuntimeDetectionReasonDetectedSuccessfully
 	message := "runtime detection completed successfully"
-	for _, container := range currentConfig.Status.RuntimeDetailsByContainer {
+	for _, container := range newRuntimeDetials {
 		if !container.MultipleLanguagesDetected {
 			continue
 		}
@@ -388,7 +388,6 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		} else {
 			reason = odigosv1.RuntimeDetectionReasonResolvedFromMultipleLanguages
 			message = "multiple languages detected in the same container, main language was selected automatically"
-
 		}
 		break
 	}
@@ -458,12 +457,6 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 		(existing.OtherAgent != nil && new.OtherAgent == nil) ||
 		(existing.OtherAgent != nil && new.OtherAgent != nil && existing.OtherAgent.Name != new.OtherAgent.Name) {
 		existing.OtherAgent = new.OtherAgent
-		updated = true
-	}
-
-	// 7. Update MultipleLanguagesDetected if we have a state change (false -> true / true -> false)
-	if existing.MultipleLanguagesDetected != new.MultipleLanguagesDetected {
-		existing.MultipleLanguagesDetected = new.MultipleLanguagesDetected
 		updated = true
 	}
 

@@ -56,16 +56,15 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 		libcType = &libcTypeStr
 	}
 	return &model.K8sWorkloadRuntimeInfoContainer{
-		ContainerName:             containerName,
-		Language:                  model.ProgrammingLanguage(runtimeDetails.Language),
-		RuntimeVersion:            runtimeVersion,
-		ProcessEnvVars:            envVarsToModel(runtimeDetails.EnvVars),
-		ContainerRuntimeEnvVars:   envVarsToModel(runtimeDetails.EnvFromContainerRuntime),
-		CriErrorMessage:           runtimeDetails.CriErrorMessage,
-		LibcType:                  libcType,
-		SecureExecutionMode:       runtimeDetails.SecureExecutionMode,
-		OtherAgentName:            otherAgentName,
-		MultipleLanguagesDetected: runtimeDetails.MultipleLanguagesDetected,
+		ContainerName:           containerName,
+		Language:                model.ProgrammingLanguage(runtimeDetails.Language),
+		RuntimeVersion:          runtimeVersion,
+		ProcessEnvVars:          envVarsToModel(runtimeDetails.EnvVars),
+		ContainerRuntimeEnvVars: envVarsToModel(runtimeDetails.EnvFromContainerRuntime),
+		CriErrorMessage:         runtimeDetails.CriErrorMessage,
+		LibcType:                libcType,
+		SecureExecutionMode:     runtimeDetails.SecureExecutionMode,
+		OtherAgentName:          otherAgentName,
 	}
 }
 
