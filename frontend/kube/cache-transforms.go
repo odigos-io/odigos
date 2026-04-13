@@ -21,6 +21,10 @@ func podsTransformFunc(obj interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("expected a Pod, got %T", obj)
 	}
 
+	if cacheutils.IsObjectTransformed(pod) {
+		return pod, nil
+	}
+
 	// Strip unnecessary fields to reduce memory usage.
 	// Keep only fields needed for computing CachedPod in loader.go and status calculations.
 	minimalContainers := make([]corev1.Container, len(pod.Spec.Containers))
@@ -41,6 +45,9 @@ func podsTransformFunc(obj interface{}) (interface{}, error) {
 
 	annotations := map[string]string{}
 	labels := pod.Labels
+	if labels == nil {
+		labels = make(map[string]string)
+	}
 	if workload.IsStaticPod(pod) {
 		annotations = pod.Annotations
 		labels = maps.Clone(labels)
@@ -67,6 +74,7 @@ func podsTransformFunc(obj interface{}) (interface{}, error) {
 	}
 
 	cacheutils.StripPod(minimalPod)
+	cacheutils.MarkObjectAsTransformed(minimalPod)
 
 	return minimalPod, nil
 }
@@ -75,6 +83,10 @@ func deploymentsTransformFunc(obj interface{}) (interface{}, error) {
 	deployment, ok := obj.(*appsv1.Deployment)
 	if !ok {
 		return nil, fmt.Errorf("expected a Deployment, got %T", obj)
+	}
+
+	if cacheutils.IsObjectTransformed(deployment) {
+		return deployment, nil
 	}
 
 	// copy just what we need from the deployment
@@ -90,6 +102,7 @@ func deploymentsTransformFunc(obj interface{}) (interface{}, error) {
 	}
 
 	cacheutils.StripWorkloadSpecTemplate(minimalDeployment)
+	cacheutils.MarkObjectAsTransformed(minimalDeployment)
 	return minimalDeployment, nil
 }
 
@@ -97,6 +110,10 @@ func daemonsetsTransformFunc(obj interface{}) (interface{}, error) {
 	daemonset, ok := obj.(*appsv1.DaemonSet)
 	if !ok {
 		return nil, fmt.Errorf("expected a DaemonSet, got %T", obj)
+	}
+
+	if cacheutils.IsObjectTransformed(daemonset) {
+		return daemonset, nil
 	}
 
 	// copy just what we need from the daemonset
@@ -111,6 +128,7 @@ func daemonsetsTransformFunc(obj interface{}) (interface{}, error) {
 		Status: daemonset.Status,
 	}
 	cacheutils.StripWorkloadSpecTemplate(minimalDaemonSet)
+	cacheutils.MarkObjectAsTransformed(minimalDaemonSet)
 	return minimalDaemonSet, nil
 }
 
@@ -118,6 +136,10 @@ func statefulsetsTransformFunc(obj interface{}) (interface{}, error) {
 	statefulset, ok := obj.(*appsv1.StatefulSet)
 	if !ok {
 		return nil, fmt.Errorf("expected a StatefulSet, got %T", obj)
+	}
+
+	if cacheutils.IsObjectTransformed(statefulset) {
+		return statefulset, nil
 	}
 
 	// copy just what we need from the statefulset
@@ -132,6 +154,7 @@ func statefulsetsTransformFunc(obj interface{}) (interface{}, error) {
 		Status: statefulset.Status,
 	}
 	cacheutils.StripWorkloadSpecTemplate(minimalStatefulSet)
+	cacheutils.MarkObjectAsTransformed(minimalStatefulSet)
 	return minimalStatefulSet, nil
 }
 
@@ -141,8 +164,12 @@ func cronjobsTransformFunc(obj interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("expected a CronJob, got %T", obj)
 	}
 
+	if cacheutils.IsObjectTransformed(cronjob) {
+		return cronjob, nil
+	}
+
 	// copy just what we need from the cronjob
-	return &batchv1.CronJob{
+	minimalCronJob := &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cronjob.Namespace,
 			Name:      cronjob.Name,
@@ -155,7 +182,11 @@ func cronjobsTransformFunc(obj interface{}) (interface{}, error) {
 			},
 		},
 		Status: cronjob.Status,
-	}, nil
+	}
+
+	cacheutils.MarkObjectAsTransformed(minimalCronJob)
+
+	return minimalCronJob, nil
 }
 
 func argoRolloutsTransformFunc(obj interface{}) (interface{}, error) {
@@ -164,8 +195,12 @@ func argoRolloutsTransformFunc(obj interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("expected a Rollout, got %T", obj)
 	}
 
+	if cacheutils.IsObjectTransformed(rollout) {
+		return rollout, nil
+	}
+
 	// copy just what we need from the rollout
-	return &argorolloutsv1alpha1.Rollout{
+	argoRollout := &argorolloutsv1alpha1.Rollout{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: rollout.Namespace,
 			Name:      rollout.Name,
@@ -174,7 +209,10 @@ func argoRolloutsTransformFunc(obj interface{}) (interface{}, error) {
 			Selector: rollout.Spec.Selector,
 		},
 		Status: rollout.Status,
-	}, nil
+	}
+
+	cacheutils.MarkObjectAsTransformed(argoRollout)
+	return argoRollout, nil
 }
 
 func deploymentConfigsTransformFunc(obj interface{}) (interface{}, error) {
@@ -183,8 +221,12 @@ func deploymentConfigsTransformFunc(obj interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("expected a DeploymentConfig, got %T", obj)
 	}
 
+	if cacheutils.IsObjectTransformed(deploymentConfig) {
+		return deploymentConfig, nil
+	}
+
 	// copy just what we need from the deployment config
-	return &openshiftappsv1.DeploymentConfig{
+	dc := &openshiftappsv1.DeploymentConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: deploymentConfig.Namespace,
 			Name:      deploymentConfig.Name,
@@ -193,5 +235,8 @@ func deploymentConfigsTransformFunc(obj interface{}) (interface{}, error) {
 			Selector: deploymentConfig.Spec.Selector,
 		},
 		Status: deploymentConfig.Status,
-	}, nil
+	}
+
+	cacheutils.MarkObjectAsTransformed(dc)
+	return dc, nil
 }

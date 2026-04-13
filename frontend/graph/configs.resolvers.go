@@ -40,6 +40,12 @@ func (r *mutationResolver) SetComponentLogLevel(ctx context.Context, component *
 	return err == nil, err
 }
 
+// UpdateLocalUIConfig is the resolver for the updateLocalUiConfig field.
+func (r *mutationResolver) UpdateLocalUIConfig(ctx context.Context, config model.LocalUIConfigInput) (bool, error) {
+	err := services.UpdateLocalUIConfig(ctx, r.K8sCacheClient, config)
+	return err == nil, err
+}
+
 // Config is the resolver for the config field.
 func (r *queryResolver) Config(ctx context.Context) (*model.Config, error) {
 	config := services.GetConfig(ctx)
@@ -58,9 +64,28 @@ func (r *queryResolver) RemoteConfig(ctx context.Context) (*model.RemoteConfig, 
 
 // EffectiveConfig is the resolver for the effectiveConfig field.
 func (r *queryResolver) EffectiveConfig(ctx context.Context) (*model.EffectiveConfig, error) {
-	config, err := services.GetEffectiveConfig(ctx, r.K8sCacheClient)
+	odigosConfig, rawYAML, err := services.GetEffectiveConfigWithRawYAML(ctx, r.K8sCacheClient)
 	if err != nil {
 		return nil, err
 	}
-	return EffectiveConfigToModel(config)
+
+	provenance, err := services.ComputeProvenance(ctx, r.K8sCacheClient, odigosConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := EffectiveConfigToModel(odigosConfig, provenance)
+	if err != nil {
+		return nil, err
+	}
+	if result != nil {
+		result.ManifestYaml = &rawYAML
+	}
+
+	return result, nil
+}
+
+// ConfigYamls is the resolver for the configYamls field.
+func (r *queryResolver) ConfigYamls(ctx context.Context) ([]*model.ConfigYaml, error) {
+	return services.GetConfigYamls()
 }

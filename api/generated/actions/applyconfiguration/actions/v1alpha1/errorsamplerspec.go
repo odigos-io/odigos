@@ -23,12 +23,25 @@ import (
 
 // ErrorSamplerSpecApplyConfiguration represents a declarative configuration of the ErrorSamplerSpec type for use
 // with apply.
+//
+// ErrorSamplerSpec defines the configuration for an ErrorSampler action.
+// This sampler prioritizes traces that contain errors, and allows specifying a fallback sampling ratio
+// for traces that do not include any errors.
 type ErrorSamplerSpecApplyConfiguration struct {
-	ActionName            *string                      `json:"actionName,omitempty"`
-	Notes                 *string                      `json:"notes,omitempty"`
-	Disabled              *bool                        `json:"disabled,omitempty"`
-	Signals               []common.ObservabilitySignal `json:"signals,omitempty"`
-	FallbackSamplingRatio *float64                     `json:"fallback_sampling_ratio,omitempty"`
+	// ActionName is an optional identifier for this sampler rule.
+	// It can be used for referencing, labeling, or displaying the rule in UIs.
+	ActionName *string `json:"actionName,omitempty"`
+	// Notes provides free-form documentation or context for the user.
+	Notes *string `json:"notes,omitempty"`
+	// Disabled indicates whether the sampler is currently active.
+	// When true, the sampler will not be evaluated or applied.
+	Disabled *bool `json:"disabled,omitempty"`
+	// Signals specifies the types of telemetry data this sampler should apply to.
+	// Typically, this includes "traces", but may also include "logs" or "metrics".
+	Signals []common.ObservabilitySignal `json:"signals,omitempty"`
+	// FallbackSamplingRatio determines the percentage (0–100) of non-error traces
+	// that should be sampled. Error traces are always sampled.
+	FallbackSamplingRatio *float64 `json:"fallback_sampling_ratio,omitempty"`
 }
 
 // ErrorSamplerSpecApplyConfiguration constructs a declarative configuration of the ErrorSamplerSpec type for use with

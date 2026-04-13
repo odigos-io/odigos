@@ -1,5 +1,5 @@
 import { ROUTES } from '../constants';
-import { aliasQuery, awaitToast, handleExceptions, hasOperationName, visitPage } from '../functions';
+import { aliasQuery, awaitToast, handleExceptions, hasOperationName, visitPage, waitForGraphqlOperation } from '../functions';
 
 const mockTokenQuery = (expiresAt: number) => {
   cy.intercept('/graphql', (req) => {
@@ -43,7 +43,7 @@ describe('Token Tracker', () => {
     mockTokenQuery(new Date().getTime() + 1000 * 60 * 60 * 24);
 
     visitPage(ROUTES.OVERVIEW, () => {
-      cy.wait('@gql').then(() => {
+      waitForGraphqlOperation('GetTokens').then(() => {
         awaitToast({ message: 'The token is about to expire in 1 day.' });
         cy.get('[data-id=token-status]').should('contain.text', 'The token is about to expire in 1 day.');
         cy.get('[data-id=system-drawer]').children().first().click(); // testing that the UI does not crash
@@ -56,7 +56,7 @@ describe('Token Tracker', () => {
     mockTokenQuery(new Date().getTime() - 1000 * 60 * 60 * 24);
 
     visitPage(ROUTES.OVERVIEW, () => {
-      cy.wait('@gql').then(() => {
+      waitForGraphqlOperation('GetTokens').then(() => {
         awaitToast({ message: 'The token has expired 1 day ago.' });
         cy.get('[data-id=token-status]').should('contain.text', 'The token has expired 1 day ago.');
         cy.get('[data-id=system-drawer]').children().first().click(); // testing that the UI does not crash

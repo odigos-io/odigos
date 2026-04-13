@@ -53,6 +53,14 @@ const COST_REDUCTION_RULE_FIELDS = `
 export const GET_SAMPLING_RULES = gql`
   query GetSamplingRules {
     sampling {
+      configs {
+        effective {
+          k8sHealthProbesSampling {
+            enabled
+            keepPercentage
+          }
+        }
+      }
       rules {
         id
         name

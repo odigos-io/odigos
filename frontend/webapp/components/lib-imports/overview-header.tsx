@@ -6,7 +6,7 @@ import { Header, Tooltip } from '@odigos/ui-kit/components';
 import { SystemDrawer } from '@odigos/ui-kit/containers/v2';
 import { OdigosLogoText, TerminalIcon } from '@odigos/ui-kit/icons';
 import { useConfig, useDescribe, useDiagnose, useTokenCRUD } from '@/hooks';
-import { NotificationManager, SlackInvite, ToggleDarkMode } from '@odigos/ui-kit/containers';
+import { NotificationManager, SlackInvite } from '@odigos/ui-kit/containers';
 import { IconButton, Badge as V2Badge, Header as V2Header } from '@odigos/ui-kit/components/v2';
 
 const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
@@ -73,12 +73,6 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
       );
     }
 
-    if (!v2)
-      arr.push(
-        <div key='toggle-theme' data-id='toggle-theme'>
-          <ToggleDarkMode />
-        </div>,
-      );
     arr.push(
       <div key='notifications' data-id='notifications'>
         <NotificationManager />

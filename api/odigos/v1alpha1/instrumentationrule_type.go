@@ -66,9 +66,6 @@ type InstrumentationRuleSpec struct {
 	// Allows to configure payload collection aspects for different types of payloads.
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 
-	// Deprecated: use OtelDistros instead.
-	OtelSdks *instrumentationrules.OtelSdks `json:"otelSdks,omitempty"`
-
 	// Set the otel distros to use instead of the defaults.
 	OtelDistros *instrumentationrules.OtelDistros `json:"otelDistros,omitempty"`
 
@@ -89,6 +86,11 @@ type InstrumentationRuleSpec struct {
 	// note that traces will be dropped regardless of thier attributes/errors/importance.
 	// @deprecated: use odigos config to set this value instead.
 	HeadSamplingFallbackFraction *instrumentationrules.HeadSamplingFallbackFraction `json:"headSamplingFallbackFraction,omitempty"`
+
+	// Configure eBPF-based log capture. When enabled, the node collector logs pipeline
+	// will use only the eBPF receiver instead of the filelog receiver, and odiglet will
+	// register instrumented processes for eBPF log capture.
+	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
 }
 
 // Verify validates the InstrumentationRuleSpec.

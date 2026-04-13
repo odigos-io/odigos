@@ -7,7 +7,8 @@ spec:
   language: javascript
   runtimeEnvironments:
     - name: nodejs
-      supportedVersions: '>= 14'
+      supportedVersions: '>= 18'
+  fallbackDistro: nodejs-community-14
   displayName: 'Node.js Community Native Instrumentation'
   description: |
     This distribution is for Node.js applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
@@ -16,7 +17,7 @@ spec:
     otlpHttpLocalNode: true
     appendOdigosVariables:
       - envName: NODE_OPTIONS
-        replacePattern: '{{ORIGINAL_ENV_VALUE}} --require {{ODIGOS_AGENTS_DIR}}/nodejs/autoinstrumentation.js'
+        replacePattern: '{{ORIGINAL_ENV_VALUE}} --require {{ODIGOS_AGENTS_DIR}}/nodejs-community/autoinstrumentation.js'
   runtimeAgent:
     directoryNames:
       - "{{ODIGOS_AGENTS_DIR}}/nodejs-community"
@@ -27,8 +28,5 @@ spec:
   traces:
     headSampling:
       supported: true
-      urlPathAttributeKey: "http.target"
-      httpRequestMethodAttributeKey: "http.method"
-      serverAddressAttributeKey: "net.peer.name"
     headersCollection:
       supported: true

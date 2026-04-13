@@ -1,14 +1,7 @@
-ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.11
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.15
 
 
 ######### python Native Community Agent #########
-
-FROM python:3.11.9 AS python-builder
-ARG ODIGOS_VERSION
-WORKDIR /python-instrumentation
-COPY agents/python ./agents/configurator
-RUN pip install ./agents/configurator/  --target workspace
-RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/initializer/version.py
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
@@ -63,29 +56,33 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
 WORKDIR /instrumentations
 
-# Java
+# java-community
 ARG JAVA_OTEL_VERSION=v2.10.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
-# Python
-COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
+# python-community/python-community3.8
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.72-py3.8 /instrumentations/python3.8 /instrumentations/python3.8
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.75 /instrumentations/python /instrumentations/python
 
-# NodeJS
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.8 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.8 /instrumentations/nodejs-community /instrumentations/nodejs-community
+# nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.3.0 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.3.0 /instrumentations/nodejs-community /instrumentations/nodejs-community
+# nodejs-community-14
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.16 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.16 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
 
-# .NET
+# dotnet-community
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
-# PHP
-COPY --from=public.ecr.aws/odigos/agents/php-community:v0.2.6 /instrumentations/php /instrumentations/php
+# php-community
+COPY --from=public.ecr.aws/odigos/agents/php-community:v0.3.0 /instrumentations/php /instrumentations/php
 
-# Ruby
+# ruby-community
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations/ruby /instrumentations/ruby
 
 # loader
-ARG ODIGOS_LOADER_VERSION=v0.0.6
+ARG ODIGOS_LOADER_VERSION=v0.0.8
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
 FROM ${ODIGLET_BASE_IMAGE} AS rsync-base

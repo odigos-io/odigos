@@ -135,9 +135,9 @@ func DiagnoseGraphQL(
 	stagesRequested := diagnose.RequestedStages(opts)
 	if stagesJSON, err := json.Marshal(stagesRequested); err == nil {
 		sse.SendMessageToClient(sse.SSEMessage{
-			Type:    sse.MessageTypeInfo,
-			Event:   sse.MessageEventDiagnoseStagesRequested,
-			Data:    string(stagesJSON),
+			Type:  sse.MessageTypeInfo,
+			Event: sse.MessageEventDiagnoseStagesRequested,
+			Data:  string(stagesJSON),
 		})
 	}
 
@@ -155,9 +155,9 @@ func DiagnoseGraphQL(
 			}
 			data, _ := json.Marshal(payload)
 			sse.SendMessageToClient(sse.SSEMessage{
-				Type:    sse.MessageTypeInfo,
-				Event:   sse.MessageEventDiagnoseStageCompleted,
-				Data:    string(data),
+				Type:  sse.MessageTypeInfo,
+				Event: sse.MessageEventDiagnoseStageCompleted,
+				Data:  string(data),
 			})
 		}
 		close(done)

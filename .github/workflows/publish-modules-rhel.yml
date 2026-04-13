@@ -56,11 +56,11 @@ jobs:
             with:
               ref: ${{ inputs.tag }}
 
-          - name: Set up Docker Buildx
-            uses: docker/setup-buildx-action@v3
-      
           - name: Set up QEMU
-            uses: docker/setup-qemu-action@v3
+            uses: docker/setup-qemu-action@v4
+      
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v4
       
           - id: gcp-auth
             name: Authenticate with Google Cloud
@@ -134,6 +134,14 @@ jobs:
             with:
               ref: ${{ inputs.tag }}
 
+          - uses: actions/setup-go@v6
+            with:
+              go-version-file: cli/go.mod
+
+          - name: Generate CLI licenses for RHEL base image
+            working-directory: ./cli
+            run: make licenses
+
           - id: gcp-auth
             name: Authenticate with Google Cloud
             uses: google-github-actions/auth@v3
@@ -150,7 +158,29 @@ jobs:
               username: oauth2accesstoken
               password: ${{ steps.gcp-auth.outputs.access_token }}
 
+          - name: Set up QEMU
+            uses: docker/setup-qemu-action@v4
+
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v4
+
+          - name: Build and push RHEL ko base image (/licenses for preflight)
+            uses: docker/build-push-action@v6
+            with:
+              context: ./cli
+              file: ./cli/Dockerfile.rhel-base
+              platforms: linux/amd64,linux/arm64
+              push: true
+              provenance: false
+              tags: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-ko-base:${{ inputs.tag }}
+
           - uses: ko-build/setup-ko@v0.9
+
+          - name: Set ko ldflags env (matches cli/.ko.yaml)
+            id: vars
+            run: |
+              echo "short_commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+              echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
 
           - name: Publish CLI certified image to GCR registry
             working-directory: ./cli
@@ -158,7 +188,9 @@ jobs:
               KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-certified
               KO_CONFIG_PATH: ./.ko.yaml
               VERSION: ${{ inputs.tag }}
-              KO_DEFAULTBASEIMAGE: registry.access.redhat.com/ubi9/ubi-micro:latest
+              SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
+              DATE: ${{ steps.vars.outputs.date }}
+              KO_DEFAULTBASEIMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-ko-base:${{ inputs.tag }}
             run: |
               ko build --bare --tags latest --tags ${{ inputs.tag }} \
               --image-label name=odigos-cli \

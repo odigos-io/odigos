@@ -160,7 +160,11 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 
 	odigosConfigExtensionName := k8sconsts.OdigosConfigK8sExtensionType
 	gatewayOptions := pipelinegen.GatewayConfigOptions{
-		ServiceGraphDisabled:      gateway.Spec.ServiceGraphDisabled,
+		ServiceGraph: odigoscommon.ServiceGraphOptions{
+			Disabled:                  gateway.Spec.ServiceGraphDisabled,
+			ExtraDimensions:           gateway.Spec.ServiceGraphExtraDimensions,
+			VirtualNodePeerAttributes: gateway.Spec.ServiceGraphVirtualNodePeerAttributes,
+		},
 		ClusterMetricsEnabled:     gateway.Spec.ClusterMetricsEnabled,
 		OdigosNamespace:           env.GetCurrentNamespace(),
 		OdigosConfigExtensionName: &odigosConfigExtensionName,
@@ -182,8 +186,12 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	}
 
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
-	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil && odigosCfg.ComponentLogLevels != nil {
-		collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
+	var profilingCfg *odigoscommon.ProfilingConfiguration
+	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
+		profilingCfg = odigosCfg.Profiling
+		if odigosCfg.ComponentLogLevels != nil {
+			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
+		}
 	}
 
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
@@ -192,6 +200,9 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
 			// Creating a metric pipeline (throughput metrics) for the gateway to be sent to the UI
 			if err := addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines); err != nil {
+				return err
+			}
+			if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
 				return err
 			}
 			c.Service.Telemetry.Logs = config.LogsConfig{Level: collectorLogLevel}
@@ -206,7 +217,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 			}
 			return nil
 		},
-		dataStreams, gatewayOptions,
+		dataStreams, &gatewayOptions,
 	)
 
 	if err != nil {

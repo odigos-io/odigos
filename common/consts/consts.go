@@ -2,6 +2,7 @@ package consts
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -88,7 +89,6 @@ const (
 	IgnoredContainersProperty          = "ignored-containers"
 	MountMethodProperty                = "mount-method"
 	CustomContainerRuntimeSocketPath   = "custom-container-runtime-socket-path"
-	K8sNodeLogsDirectory               = "k8s-node-logs-directory"
 	UserInstrumentationEnvsProperty    = "user-instrumentation-envs"
 	AgentEnvVarsInjectionMethod        = "agent-env-vars-injection-method"
 	NodeSelectorProperty               = "node-selector"
@@ -143,6 +143,7 @@ const (
 	GroupByTraceProcessorV2         = "groupbytrace/samplingv2"
 	OdigosTailSamplingProcessorName = "odigostailsampling"
 	URLTemplatizationProcessorName  = "odigos-url-templatization"
+	OdigosURLTemplateProcessorType  = "odigosurltemplate"
 )
 
 // Auto rollback related consts
@@ -155,3 +156,15 @@ var (
 const (
 	ExchangeDir = "/var/exchange"
 )
+
+// UiOtlpGrpcEndpoint returns the OTLP gRPC host:port for the UI Service in the given namespace.
+// Used by the gateway profiles-to-UI exporter and the node collector own-metrics-to-UI exporter.
+func UiOtlpGrpcEndpoint(namespace string) string {
+	return fmt.Sprintf("ui.%s:%d", namespace, OTLPPort)
+}
+
+// OtlpGrpcDNSEndpoint returns a gRPC client endpoint in dns:/// form for a Kubernetes Service
+// (cluster DNS: <service>.<namespace> with port).
+func OtlpGrpcDNSEndpoint(serviceName, namespace string, port int) string {
+	return fmt.Sprintf("dns:///%s.%s:%d", serviceName, namespace, port)
+}

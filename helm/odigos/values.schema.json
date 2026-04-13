@@ -379,6 +379,24 @@
           "description": "Service Graph settings\nService Graph is a feature that allows you to visualize the service graph of your application.\nIt is enabled by default and can be disabled by setting the disabled flag to true.",
           "required": [],
           "title": "serviceGraphDisabled"
+        },
+        "serviceGraphExtraDimensions": {
+          "default": "",
+          "description": "Extra attribute names to include as additional dimensions in service graph metrics,\non top of the default service.name dimension.\nUse this when multiple services share the same service.name but should appear as distinct\nnodes in the graph. For example, if the same service is deployed in multiple namespaces\n(e.g. staging and production in the same cluster), adding \"k8s.namespace.name\" will\nproduce a separate node per namespace instead of merging them into one.\nNOTE: both span-level and resource-level attributes (e.g. k8s.namespace.name) are\nsupported here.",
+          "items": {
+            "type": "string"
+          },
+          "title": "serviceGraphExtraDimensions",
+          "type": "array"
+        },
+        "serviceGraphVirtualNodePeerAttributes": {
+          "default": "",
+          "description": "Ordered list of span-level attributes used to identify uninstrumented (virtual) nodes in the service graph.\nThe connector picks the first attribute that has a value on the CLIENT span and uses it as the node name.\nWhen not set, the connector uses its built-in defaults: [peer.service, db.name, db.system].\nAdd \"server.address\" before \"db.system\" to distinguish individual Redis/DB instances by hostname.\nIMPORTANT: only span-level attributes work here (e.g. server.address, db.system, peer.service).",
+          "items": {
+            "type": "string"
+          },
+          "title": "serviceGraphVirtualNodePeerAttributes",
+          "type": "array"
         }
       },
       "required": [],
@@ -1646,6 +1664,98 @@
       },
       "required": [],
       "title": "profiles"
+    },
+    "profiling": {
+      "additionalProperties": false,
+      "description": "Continuous profiling (off by default): node collector → gateway → UI over OTLP gRPC. UI buffers only workloads\nwith an open Profiler tab / enableSourceProfiling; scrape ui:3000/metrics for odigos_ui_profiling_* when enabled.\nWhen enabled, profiling.exporter and profiling.ui are written to odigos-configuration; any field you omit in a\npartial override falls back to the chart defaults below.",
+      "properties": {
+        "enabled": {
+          "default": "false",
+          "description": "When true, enables profiling pipelines on the node collector and cluster gateway.",
+          "required": [],
+          "title": "enabled"
+        },
+        "exporter": {
+          "additionalProperties": false,
+          "description": "OTLP settings for profiling exporters (node → gateway, gateway → UI). Omitted from config when profiling.enabled is false.",
+          "properties": {
+            "enableDataCompression": {
+              "default": "false",
+              "description": "Enable gzip compression on profiling OTLP exports.",
+              "required": [],
+              "title": "enableDataCompression"
+            },
+            "retryOnFailure": {
+              "additionalProperties": false,
+              "description": "Retry policy for profiling OTLP exports.",
+              "properties": {
+                "enabled": {
+                  "default": "true",
+                  "description": "Whether to retry failed OTLP sends for profiling.",
+                  "required": [],
+                  "title": "enabled"
+                },
+                "initialInterval": {
+                  "default": "5s",
+                  "description": "Backoff after the first failure.",
+                  "required": [],
+                  "title": "initialInterval"
+                },
+                "maxElapsedTime": {
+                  "default": "300s",
+                  "description": "Maximum time spent retrying a batch; 0 means retry until success.",
+                  "required": [],
+                  "title": "maxElapsedTime"
+                },
+                "maxInterval": {
+                  "default": "30s",
+                  "description": "Upper bound on backoff between retries.",
+                  "required": [],
+                  "title": "maxInterval"
+                }
+              },
+              "required": [],
+              "title": "retryOnFailure"
+            },
+            "timeout": {
+              "default": "5s",
+              "description": "Per-attempt send timeout for profiling OTLP exporters.",
+              "required": [],
+              "title": "timeout"
+            }
+          },
+          "required": [],
+          "title": "exporter"
+        },
+        "ui": {
+          "additionalProperties": false,
+          "description": "UI-side profiling resource limits (written when profiling.enabled is true). Override any field from Helm as needed.",
+          "properties": {
+            "maxSlots": {
+              "default": "32",
+              "description": "Max in-memory profile slots.",
+              "required": [],
+              "title": "maxSlots"
+            },
+            "slotMaxBytes": {
+              "default": "8388608",
+              "description": "Max bytes per slot (default 8 MiB).",
+              "required": [],
+              "title": "slotMaxBytes"
+            },
+            "slotTTLSeconds": {
+              "default": "300",
+              "description": "Slot TTL in seconds.",
+              "required": [],
+              "title": "slotTTLSeconds"
+            }
+          },
+          "required": [],
+          "title": "ui"
+        }
+      },
+      "required": [],
+      "title": "profiling"
     },
     "psp": {
       "additionalProperties": false,

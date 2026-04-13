@@ -65,7 +65,8 @@ func getAllSamplingRules(ctx context.Context, c client.Client) (*[]odigosv1.Samp
 	if err != nil {
 		return nil, err
 	}
-	return &samplingList.Items, nil
+	samplingObjects := samplingList.Items
+	return &samplingObjects, nil
 }
 
 func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigosv1.Action, error) {
@@ -120,8 +121,9 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 		}
 
 		// filter only rules that are relevant to the agent enabled logic
-		if (ir.Spec.OtelSdks != nil || ir.Spec.OtelDistros != nil) ||
+		if (ir.Spec.OtelDistros != nil) ||
 			(ir.Spec.TraceConfig != nil && ir.Spec.TraceConfig.Disabled != nil) ||
+			(ir.Spec.PayloadCollection != nil) ||
 			(ir.Spec.HeadersCollection != nil ||
 				ir.Spec.HeadSamplingFallbackFraction != nil) {
 

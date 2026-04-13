@@ -69,9 +69,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("nodecollector-instrumentationconfig").
 		For(&odigosv1.InstrumentationConfig{}).
-		// this controller only cares about the instrumented application existence.
-		// when it is created or removed, the node collector config map needs to be updated to scrape logs for it's pods.
-		WithEventFilter(&odigospredicate.ExistencePredicate{}).
+		// this controller cares about the instrumented application existence and spec changes
+		// (e.g. when ebpfLogCapture is merged into SdkConfigs by the instrumentor).
+		WithEventFilter(predicate.Or(&odigospredicate.ExistencePredicate{}, &predicate.GenerationChangedPredicate{})).
 		Complete(&InstrumentationConfigReconciler{
 			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
 				Client:          mgr.GetClient(),

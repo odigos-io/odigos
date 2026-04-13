@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,8 +19,21 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
-// Stage constant for the profiles (pprof) diagnose phase.
-const StageProfiles Stage = "profiles"
+// StageProfileService returns the stage name for profiling a specific service,
+// e.g. "profiles/odiglet". Each service is reported as its own stage so that
+// the progress UI can show incremental updates instead of one long "profiles" wait.
+func StageProfileService(serviceName string) Stage {
+	return Stage("profiles/" + serviceName)
+}
+
+// ProfileServiceNames returns the ordered list of services that will be profiled.
+func ProfileServiceNames() []string {
+	names := make([]string, 0, len(servicesProfilingMetadata))
+	for name := range servicesProfilingMetadata {
+		names = append(names, name)
+	}
+	return names
+}
 
 // ProfileInterface defines the interface for different profile types
 type ProfileInterface interface {
@@ -34,7 +49,7 @@ func (c CPUProfiler) GetFileName() string {
 }
 
 func (c CPUProfiler) GetUrlSuffix() string {
-	return "/profile"
+	return "/profile?seconds=10"
 }
 
 // HeapProfiler captures heap profiles
@@ -101,80 +116,77 @@ var servicesProfilingMetadata = map[string]ProfilingPodConfig{
 	},
 }
 
-// FetchOdigosProfiles collects pprof profiles from Odigos components
-func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, builder Builder, profileDir, odigosNamespace string) error {
-	klog.V(2).InfoS("Fetching Odigos Profiles", "namespace", odigosNamespace)
+// FetchServiceProfiles collects pprof profiles for a single Odigos service (e.g. "odiglet").
+func FetchServiceProfiles(ctx context.Context, client kubernetes.Interface, builder Builder, profileDir, odigosNamespace, serviceName string) error {
+	service, ok := servicesProfilingMetadata[serviceName]
+	if !ok {
+		return fmt.Errorf("unknown profiling service %q", serviceName)
+	}
+
+	klog.V(2).InfoS("Fetching profiles for service", "service", serviceName, "namespace", odigosNamespace)
+
+	podsToProfile, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
+		LabelSelector: service.Selector.String(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list pods for service %s: %w", serviceName, err)
+	}
+
+	if len(podsToProfile.Items) == 0 {
+		return nil
+	}
 
 	var podsWaitGroup sync.WaitGroup
-	var totalPods int
+	for i := range podsToProfile.Items {
+		pod := &podsToProfile.Items[i]
+		podsWaitGroup.Add(1)
 
-	for serviceName, service := range servicesProfilingMetadata {
-		podsToProfile, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
-			LabelSelector: service.Selector.String(),
-		})
-		if err != nil {
-			klog.V(1).InfoS("Failed to list pods for profiling", "service", serviceName, "err", err)
-			continue
-		}
+		go func(pod corev1.Pod, pprofPort int32) {
+			defer podsWaitGroup.Done()
 
-		if len(podsToProfile.Items) == 0 {
-			continue
-		}
+			directoryName := fmt.Sprintf("%s-%s-%s", pod.Name, pod.Spec.NodeName, serviceName)
+			nodeProfileDir := fmt.Sprintf("%s/%s", profileDir, directoryName)
 
-		totalPods += len(podsToProfile.Items)
+			var profileWaitGroup sync.WaitGroup
+			for _, profileMetricFunction := range ProfilingMetricsFunctions {
+				profileFunc := profileMetricFunction
+				profileWaitGroup.Add(1)
 
-		for i := 0; i < len(podsToProfile.Items); i++ {
-			pod := &podsToProfile.Items[i]
-			podsWaitGroup.Add(1)
+				go func(profileFunc ProfileInterface) {
+					defer profileWaitGroup.Done()
 
-			go func(pod corev1.Pod, pprofPort int32, svcName string) {
-				defer podsWaitGroup.Done()
-
-				directoryName := fmt.Sprintf("%s-%s-%s", pod.Name, pod.Spec.NodeName, svcName)
-				nodeProfileDir := fmt.Sprintf("%s/%s", profileDir, directoryName)
-
-				var profileWaitGroup sync.WaitGroup
-				for _, profileMetricFunction := range ProfilingMetricsFunctions {
-					profileFunc := profileMetricFunction // capture range variable
-					profileWaitGroup.Add(1)
-
-					go func(profileFunc ProfileInterface) {
-						defer profileWaitGroup.Done()
-
-						const maxRetries = 3
-						for attempt := 1; attempt <= maxRetries; attempt++ {
-							data, err := captureProfile(ctx, client, pod.Name, pprofPort, odigosNamespace, profileFunc)
-							if err == nil {
-								if err := builder.AddFile(nodeProfileDir, profileFunc.GetFileName(), data); err != nil {
-									klog.V(1).ErrorS(err, "Failed to save profile", "podName", pod.Name, "profileType", profileFunc.GetFileName())
-								}
-								break
+					const maxRetries = 3
+					for attempt := 1; attempt <= maxRetries; attempt++ {
+						data, err := captureProfile(ctx, client, pod.Name, pprofPort, odigosNamespace, profileFunc)
+						if err == nil {
+							if err := builder.AddFile(nodeProfileDir, profileFunc.GetFileName(), data); err != nil {
+								klog.V(1).ErrorS(err, "Failed to save profile", "podName", pod.Name, "profileType", profileFunc.GetFileName())
 							}
-
-							klog.V(1).ErrorS(err, "Failed to capture profile data",
-								"podName", pod.Name,
-								"node", pod.Spec.NodeName,
-								"profileType", profileFunc.GetFileName(),
-								"attempt", attempt)
-
-							if attempt < maxRetries {
-								time.Sleep(5 * time.Second)
-							} else {
-								klog.V(1).ErrorS(err, "Max retries reached, giving up",
-									"podName", pod.Name,
-									"profileType", profileFunc.GetFileName())
-							}
+							break
 						}
-					}(profileFunc)
-				}
 
-				profileWaitGroup.Wait()
-			}(*pod, service.Port, serviceName)
-		}
+						klog.V(1).ErrorS(err, "Failed to capture profile data",
+							"podName", pod.Name,
+							"node", pod.Spec.NodeName,
+							"profileType", profileFunc.GetFileName(),
+							"attempt", attempt)
+
+						if attempt < maxRetries {
+							time.Sleep(5 * time.Second)
+						} else {
+							klog.V(1).ErrorS(err, "Max retries reached, giving up",
+								"podName", pod.Name,
+								"profileType", profileFunc.GetFileName())
+						}
+					}
+				}(profileFunc)
+			}
+
+			profileWaitGroup.Wait()
+		}(*pod, service.Port)
 	}
 
 	podsWaitGroup.Wait()
-
 	return nil
 }
 
@@ -186,14 +198,25 @@ func captureProfile(
 	namespace string,
 	profileInterface ProfileInterface,
 ) ([]byte, error) {
-	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:%d/proxy/debug/pprof%s", namespace, podName, pprofPort, profileInterface.GetUrlSuffix())
+	// Query params must use Request.Param; embedding "?" in AbsPath is escaped into Path and never reaches the apiserver.
+	suffix := strings.TrimPrefix(profileInterface.GetUrlSuffix(), "/")
+	pprofPath, rawQuery, hasQuery := strings.Cut(suffix, "?")
+	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:%d/proxy/debug/pprof/%s", namespace, podName, pprofPort, pprofPath)
 
-	request := client.CoreV1().RESTClient().
-		Get().
-		AbsPath(proxyURL).
-		Do(ctx)
+	req := client.CoreV1().RESTClient().Get().AbsPath(proxyURL)
+	if hasQuery {
+		q, err := url.ParseQuery(rawQuery)
+		if err != nil {
+			return nil, fmt.Errorf("parse pprof query %q: %w", rawQuery, err)
+		}
+		for key, vals := range q {
+			for _, v := range vals {
+				req.Param(key, v)
+			}
+		}
+	}
 
-	response, err := request.Raw()
+	response, err := req.Do(ctx).Raw()
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", err, string(response))
 	}

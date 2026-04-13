@@ -2,12 +2,12 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { useNamespace } from '../namespaces';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import { getIdFromSseTarget, getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import type { SourceInstrumentInput, WorkloadResponse } from '@/types';
-import { mapWorkloadToSource, sortSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
+import { getIdFromSseTarget, getSseTargetFromId } from '@odigos/ui-kit/functions';
+import type { NamespaceInstrumentInput, SourceInstrumentInput, WorkloadResponse } from '@/types';
+import { mapWorkloadToSource, sortSources, prepareNamespacePayloads, prepareSourcePayloads, mapConditionsToConditionArray } from '@/utils';
 import { GET_PEER_SOURCES, GET_SOURCE, GET_SOURCE_LIBRARIES, GET_WORKLOADS, GET_WORKLOADS_BY_IDS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type WorkloadId, type Source, type SourceFormData, type PeerSources, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent } from '@odigos/ui-kit/types';
+import { type WorkloadId, type Source, type SourceFormData, type PeerSources, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent, PersistSourceInput } from '@odigos/ui-kit/types';
 import {
   type NamespaceSelectionFormData,
   type SourceSelectionFormData,
@@ -30,6 +30,7 @@ interface UseSourceCrud {
   fetchSourceLibraries: (id: WorkloadId) => Promise<{ data?: { instrumentationInstanceComponents: InstrumentationInstanceComponent[] } }>;
   fetchPeerSources: (serviceName: string) => Promise<{ data?: { peerSources: PeerSources } }>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
+  persistSourcesV2: (payload: PersistSourceInput) => Promise<{ error?: string } | undefined>;
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
 
@@ -101,9 +102,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   };
 
   const fetchSourcesByTargets: UseSourceCrud['fetchSourcesByTargets'] = async (targets) => {
-    const ids = targets
-      .map((t) => getIdFromSseTarget(t, EntityTypes.Source) as WorkloadId)
-      .filter((id) => id.namespace && id.name && id.kind);
+    const ids = targets.map((t) => getIdFromSseTarget(t, EntityTypes.Source) as WorkloadId).filter((id) => id.namespace && id.name && id.kind);
 
     if (ids.length === 0) return;
 
@@ -141,6 +140,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (workload) {
       const enrichedSource: Source = {
         ...source,
+        conditions: mapConditionsToConditionArray(workload.conditions),
         workloadOdigosHealthStatus: workload.workloadOdigosHealthStatus,
         podsAgentInjectionStatus: workload.podsAgentInjectionStatus,
         rollbackOccurred: workload.rollbackOccurred,
@@ -181,6 +181,43 @@ export const useSourceCRUD = (): UseSourceCrud => {
     }
   };
 
+  const persistSourcesV2 = async (input: PersistSourceInput) => {
+    const entries = Object.entries(input);
+    const errors: string[] = [];
+
+    for await (const [_, inputs] of entries) {
+      const workloadSources: SourceInstrumentInput = { sources: [] };
+      const namespaceSources: NamespaceInstrumentInput = { namespaces: [] };
+
+      for (const source of inputs) {
+        if (source.name && source.kind) {
+          // workload source
+          workloadSources.sources.push({
+            namespace: source.namespace,
+            name: source.name,
+            kind: source.kind,
+            selected: source.selected,
+            currentStreamName: source.currentStreamName,
+          });
+        } else {
+          // namespace source
+          namespaceSources.namespaces.push({
+            namespace: source.namespace,
+            selected: source.selected,
+            currentStreamName: source.currentStreamName,
+          });
+        }
+      }
+
+      if (namespaceSources.namespaces.length > 0) await persistNamespaces(namespaceSources);
+      if (workloadSources.sources.length > 0) await mutatePersistSources({ variables: workloadSources });
+    }
+
+    return {
+      error: errors.length > 0 ? `Failed to persist sources in ${errors.length} clusters: ${errors.join(', ')}` : undefined,
+    };
+  };
+
   const updateSource: UseSourceCrud['updateSource'] = async (sourceId, payload) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
@@ -208,6 +245,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     fetchSourceLibraries: (payload: WorkloadId) => querySourceLibraries({ variables: payload }),
     fetchPeerSources: (serviceName: string) => queryPeerSources({ variables: { serviceName } }),
     persistSources,
+    persistSourcesV2,
     updateSource,
   };
 };

@@ -126,7 +126,7 @@ type RuntimeAgent struct {
 
 type Option struct {
 	// The name of the option, which is used to identify it and reference it in the configuration.
-	Name  string `yaml:"name"`
+	Name string `yaml:"name"`
 	// The value of the option, which is used to configure the agent in a specific way.
 	Value string `yaml:"value"`
 }
@@ -157,18 +157,6 @@ type AgentMetrics struct {
 type HeadSampling struct {
 	// if true, the distro supports head sampling for health checks.
 	Supported bool `yaml:"supported,omitempty"`
-
-	// the attribute to check for head sampling url.path
-	// support for old semantic convention ("http.target" -> "url.path")
-	UrlPathAttributeKey string `yaml:"urlPathAttributeKey,omitempty"`
-
-	// the attribute to check for head sampling http.method
-	// support for old semantic convention ("http.method" -> "http.request.method")
-	HttpRequestMethodAttributeKey string `yaml:"httpRequestMethodAttributeKey,omitempty"`
-
-	// the attribute to check for head sampling server.address
-	// support for old semantic convention ("net.peer.name" -> "server.address")
-	ServerAddressAttributeKey string `yaml:"serverAddressAttributeKey,omitempty"`
 }
 
 type HeadersCollection struct {
@@ -187,6 +175,11 @@ type SpanRenamer struct {
 	Supported bool `yaml:"supported,omitempty"`
 }
 
+type PayloadCollection struct {
+	// if true, the distro supports payload collection for traces in the agent.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
 type Traces struct {
 	// if set, the distro supports head sampling based on root spans of traces.
 	HeadSampling *HeadSampling `yaml:"headSampling,omitempty"`
@@ -200,6 +193,10 @@ type Traces struct {
 
 	// if set, the distro supports applying span renamer rules to traces in the agent.
 	SpanRenamer *SpanRenamer `yaml:"spanRenamer,omitempty"`
+
+	// if set, the distro supports payload collection.
+	// which payload and under which conditions to collect is instrumentation library specific.
+	PayloadCollection *PayloadCollection `yaml:"payloadCollection,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
@@ -229,6 +226,11 @@ type OtelDistro struct {
 	// while java-script can run in both nodejs and browser, the distribution should specify where it is intended to run.
 	RuntimeEnvironments []RuntimeEnvironment `yaml:"runtimeEnvironments"`
 
+	// If the detected runtime version does not satisfy this distro's SupportedVersions,
+	// fall back to this distro name and repeat the version check.
+	// This forms an explicit ordered chain from newest to oldest supported version range.
+	FallbackDistro *string `yaml:"fallbackDistro,omitempty"`
+
 	// A list of frameworks this distribution targets (can be left empty)
 	Frameworks []Framework `yaml:"frameworks"`
 
@@ -248,6 +250,9 @@ type OtelDistro struct {
 	// these pods will require a restart to apply the new configuration.
 	// used for java as temporary solution until we have a better way to configure the agent.
 	ConfigAsEnvVars bool `yaml:"configAsEnvVars,omitempty"`
+
+	// if true, this distro is eBPF-based.
+	IsEbpf bool `yaml:"isEbpf,omitempty"`
 
 	// document support for metrics produced directly from the runtime
 	AgentMetrics *AgentMetrics `yaml:"agentMetrics,omitempty"`

@@ -1,44 +1,140 @@
 name: OpenShift certification for container images
 
+# Manual runs only: Actions → Run workflow.
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag"
+        description: "Image tag (e.g. v1.22.1)"
         required: true
-
-  repository_dispatch:
-    types: [openshift_preflight]
+        type: string
+      dry_run:
+        description: "Run preflight checks only; do not submit results to Red Hat"
+        required: false
+        type: boolean
+        default: false
+      run_all:
+        description: "Run all components (when false, use the per-component checkboxes below)"
+        required: false
+        type: boolean
+        default: true
+      autoscaler:
+        description: "Include autoscaler"
+        type: boolean
+        default: false
+      scheduler:
+        description: "Include scheduler"
+        type: boolean
+        default: false
+      instrumentor:
+        description: "Include instrumentor"
+        type: boolean
+        default: false
+      enterprise-instrumentor:
+        description: "Include enterprise-instrumentor"
+        type: boolean
+        default: false
+      collector:
+        description: "Include collector"
+        type: boolean
+        default: false
+      odiglet:
+        description: "Include odiglet"
+        type: boolean
+        default: false
+      enterprise-odiglet:
+        description: "Include enterprise-odiglet"
+        type: boolean
+        default: false
+      ui:
+        description: "Include ui"
+        type: boolean
+        default: false
+      operator:
+        description: "Include operator"
+        type: boolean
+        default: false
+      cli:
+        description: "Include cli"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
   packages: write
 
+env:
+  PREFLIGHT_VERSION: "1.17.0"
+
 jobs:
+  prepare:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      dry_run: ${{ steps.meta.outputs.dry_run }}
+      is_prerelease: ${{ steps.meta.outputs.is_prerelease }}
+      matrix_include: ${{ steps.meta.outputs.matrix_include }}
+    steps:
+      - id: meta
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const all = [
+              { service: 'autoscaler', project_id: '6942cb5d59d620da99000690' },
+              { service: 'scheduler', project_id: '6942ce31bd3ede90dfeb314d' },
+              { service: 'instrumentor', project_id: '6942cd7986fc1a9e746a28c4' },
+              { service: 'enterprise-instrumentor', project_id: '6942cd1c59d620da99000e09' },
+              { service: 'collector', project_id: '6942c4c059d620da99ffe8ff' },
+              { service: 'odiglet', project_id: '6942c36030a11ca75b3b8c9c' },
+              { service: 'enterprise-odiglet', project_id: '6942c2073faca318740b4c96' },
+              { service: 'ui', project_id: '6942c57930a11ca75b3b945b' },
+              { service: 'operator', project_id: '6942c52316deaa7bf744a0db' },
+              { service: 'cli', project_id: '6942c2f81da89bd45870abaa' },
+            ];
+
+            const inputs = context.payload.inputs || {};
+            const tag = (inputs.tag || '').trim();
+            const dryRun = inputs.dry_run === 'true';
+            const runAll = inputs.run_all !== 'false';
+            let matrix;
+            if (runAll) {
+              matrix = all;
+            } else {
+              matrix = all.filter((row) => inputs[row.service] === 'true');
+            }
+
+            if (!tag) {
+              core.setFailed('tag is required');
+              return;
+            }
+            core.setOutput('tag', tag);
+            core.setOutput('dry_run', dryRun ? 'true' : 'false');
+            const isPrerelease = /^v[0-9]+\.[0-9]+\.[0-9]+-/.test(tag);
+            core.setOutput('is_prerelease', isPrerelease ? 'true' : 'false');
+
+            if (!matrix || matrix.length === 0) {
+              core.setFailed('No components selected: enable "Run all components" or check at least one component.');
+              return;
+            }
+            core.setOutput('matrix_include', JSON.stringify(matrix));
+
   download-preflight:
+    needs: prepare
     runs-on: ubuntu-latest
     steps:
-      - name: Determine Tag Value
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
-          else
-            echo "Unknown event type"
-            exit 1
-          fi
       - name: Notify Slack Start
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Starting Odigos OpenShift Preflight submission"
           failure-description: "ERROR: Starting Odigos OpenShift Preflight submission"
-          tag: ${{ env.TAG }}
+          tag: ${{ needs.prepare.outputs.tag }}
       - name: Download OpenShift Preflight binary
         run: |
-          curl -OL https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.14.1/preflight-linux-amd64
+          curl -fL -o preflight-linux-amd64 \
+            "https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/${{ env.PREFLIGHT_VERSION }}/preflight-linux-amd64"
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -46,30 +142,11 @@ jobs:
           path: preflight-linux-amd64
 
   run-and-submit-openshift-certification:
-    needs: download-preflight
+    needs: [prepare, download-preflight]
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - service: autoscaler
-            project_id: '6942cb5d59d620da99000690'
-          - service: scheduler
-            project_id: '6942ce31bd3ede90dfeb314d'
-          - service: instrumentor
-            project_id: '6942cd7986fc1a9e746a28c4'
-          - service: enterprise-instrumentor
-            project_id: '6942cd1c59d620da99000e09'
-          - service: collector
-            project_id: '6942c4c059d620da99ffe8ff'
-          - service: odiglet
-            project_id: '6942c36030a11ca75b3b8c9c'
-          - service: enterprise-odiglet
-            project_id: '6942c2073faca318740b4c96'
-          - service: ui
-            project_id: '6942c57930a11ca75b3b945b'
-          - service: operator
-            project_id: '6942c52316deaa7bf744a0db'
-          - service: cli
-            project_id: '6942c2f81da89bd45870abaa'
+        include: ${{ fromJSON(needs.prepare.outputs.matrix_include) }}
     runs-on: ubuntu-latest
     steps:
       - name: Download Preflight Binary
@@ -77,50 +154,39 @@ jobs:
         with:
           name: preflight-binary
           path: .
-      
+
       - name: Make binary executable
         run: chmod +x preflight-linux-amd64
 
-      - name: Determine Tag Value
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
-          else
-            echo "Unknown event type"
-            exit 1
-          fi
-
-      - name: Check Release Type
-        run: |
-          TAG="${{ env.TAG }}"
-          
-          # Check if it's a pre-release (has additional suffix after vX.Y.Z)
-          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+- ]]; then
-            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
-            echo "This is a pre-release: $TAG"
-          else
-            echo "IS_PRERELEASE=false" >> $GITHUB_ENV
-            echo "This is a stable release: $TAG"
-          fi
-
       - name: Run Preflight
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+          DRY_RUN: ${{ needs.prepare.outputs.dry_run }}
+          IS_PRERELEASE: ${{ needs.prepare.outputs.is_prerelease }}
+          MATRIX_SERVICE: ${{ matrix.service }}
+          MATRIX_PROJECT_ID: ${{ matrix.project_id }}
         run: |
-          if [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
-            echo "Running preflight with --submit flag for stable release"
-            ./preflight-linux-amd64 check container registry-rh.odigos.io/odigos-${{ matrix.service }}-rhel-certified:${{ env.TAG }} --pyxis-api-token=${{ secrets.OPENSHIFT_PYXIS_TOKEN }} --certification-component-id ${{ matrix.project_id }} --submit
+          set -euo pipefail
+          SUBMIT_FLAG=""
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run: not passing --submit"
+          elif [ "$IS_PRERELEASE" = "true" ]; then
+            echo "Pre-release: not passing --submit"
           else
-            echo "Running preflight without --submit flag for pre-release"
-            ./preflight-linux-amd64 check container registry-rh.odigos.io/odigos-${{ matrix.service }}-rhel-certified:${{ env.TAG }} --pyxis-api-token=${{ secrets.OPENSHIFT_PYXIS_TOKEN }} --certification-component-id ${{ matrix.project_id }}
+            echo "Stable release: passing --submit"
+            SUBMIT_FLAG="--submit"
           fi
-
+          ./preflight-linux-amd64 check container \
+            "registry-rh.odigos.io/odigos-${MATRIX_SERVICE}-rhel-certified:${TAG}" \
+            --pyxis-api-token="${{ secrets.OPENSHIFT_PYXIS_TOKEN }}" \
+            --certification-component-id "${MATRIX_PROJECT_ID}" \
+            ${SUBMIT_FLAG}
 
       - name: Notify Slack
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Component ${{ matrix.service }} submitted to OpenShift Certification successfully"
           failure-description: "ERROR: failed to submit component ${{ matrix.service }} to OpenShift Certification"
-          tag: ${{ env.TAG }}
+          tag: ${{ needs.prepare.outputs.tag }}

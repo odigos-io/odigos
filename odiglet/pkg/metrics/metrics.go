@@ -322,12 +322,13 @@ func (mc *EBPFMetricsCollector) RegisterMetrics() error {
 			var totalMapsMemory int64
 			mapCount := len(mc.eBPFMapsMetricsMap)
 
-			for _, eBPFMapMetrics := range mc.eBPFMapsMetricsMap {
+			for mapId, eBPFMapMetrics := range mc.eBPFMapsMetricsMap {
 				totalMapsMemory += eBPFMapMetrics.memoryUsage
 
 				observer.ObserveInt64(eBPFMapMemoryGauge, eBPFMapMetrics.memoryUsage,
 					metric.WithAttributes(
 						attribute.String("name", eBPFMapMetrics.name),
+						attribute.Int("map_id", int(mapId)),
 						attribute.String("map_type", eBPFMapMetrics.mapType),
 						semconv.K8SNodeName(mc.nodeName),
 					),

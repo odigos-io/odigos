@@ -195,6 +195,40 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		return
 	}
 
+	if addtionalConfig.TelemetryEnabled {
+		baseConfig.TelemetryEnabled = addtionalConfig.TelemetryEnabled
+	}
+
+	if addtionalConfig.IgnoredNamespaces != nil {
+		baseConfig.IgnoredNamespaces = addtionalConfig.IgnoredNamespaces
+	}
+	if addtionalConfig.IgnoredContainers != nil {
+		baseConfig.IgnoredContainers = addtionalConfig.IgnoredContainers
+	}
+	if addtionalConfig.IgnoreOdigosNamespace != nil {
+		baseConfig.IgnoreOdigosNamespace = addtionalConfig.IgnoreOdigosNamespace
+	}
+
+	if addtionalConfig.ClusterName != "" {
+		baseConfig.ClusterName = addtionalConfig.ClusterName
+	}
+
+	if addtionalConfig.AgentEnvVarsInjectionMethod != nil {
+		baseConfig.AgentEnvVarsInjectionMethod = addtionalConfig.AgentEnvVarsInjectionMethod
+	}
+
+	if addtionalConfig.CheckDeviceHealthBeforeInjection != nil {
+		baseConfig.CheckDeviceHealthBeforeInjection = addtionalConfig.CheckDeviceHealthBeforeInjection
+	}
+
+	if addtionalConfig.AllowConcurrentAgents != nil {
+		baseConfig.AllowConcurrentAgents = addtionalConfig.AllowConcurrentAgents
+	}
+
+	if addtionalConfig.WaspEnabled != nil {
+		baseConfig.WaspEnabled = addtionalConfig.WaspEnabled
+	}
+
 	if addtionalConfig.Rollout != nil {
 		if baseConfig.Rollout == nil {
 			baseConfig.Rollout = &common.RolloutConfiguration{}
@@ -202,6 +236,26 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		if addtionalConfig.Rollout.AutomaticRolloutDisabled != nil {
 			baseConfig.Rollout.AutomaticRolloutDisabled = addtionalConfig.Rollout.AutomaticRolloutDisabled
 		}
+		if addtionalConfig.Rollout.MaxConcurrentRollouts != 0 {
+			baseConfig.Rollout.MaxConcurrentRollouts = addtionalConfig.Rollout.MaxConcurrentRollouts
+		}
+	}
+
+	if addtionalConfig.RollbackDisabled != nil {
+		baseConfig.RollbackDisabled = addtionalConfig.RollbackDisabled
+	}
+	if addtionalConfig.RollbackGraceTime != "" {
+		baseConfig.RollbackGraceTime = addtionalConfig.RollbackGraceTime
+	}
+	if addtionalConfig.RollbackStabilityWindow != "" {
+		baseConfig.RollbackStabilityWindow = addtionalConfig.RollbackStabilityWindow
+	}
+
+	if addtionalConfig.GoAutoOffsetsCron != "" {
+		baseConfig.GoAutoOffsetsCron = addtionalConfig.GoAutoOffsetsCron
+	}
+	if addtionalConfig.GoAutoOffsetsMode != "" {
+		baseConfig.GoAutoOffsetsMode = addtionalConfig.GoAutoOffsetsMode
 	}
 
 	// merge the entire remote sampling configuration (if exists) into the base configuration.
@@ -285,6 +339,35 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 	}
 
+	// Merge Profiling from the overlay (e.g. UI remote config) into the effective base, same pattern as
+	// ComponentLogLevels: only fields present in the overlay are applied; zero numeric UI fields mean "leave base unchanged".
+	if addtionalConfig.Profiling != nil {
+		if baseConfig.Profiling == nil {
+			baseConfig.Profiling = &common.ProfilingConfiguration{}
+		}
+		overlay, dst := addtionalConfig.Profiling, baseConfig.Profiling
+		if overlay.Enabled != nil {
+			dst.Enabled = overlay.Enabled
+		}
+		if overlay.Exporter != nil {
+			dst.Exporter = overlay.Exporter
+		}
+		if overlay.Ui != nil {
+			if dst.Ui == nil {
+				dst.Ui = &common.ProfilingUiConfiguration{}
+			}
+			if overlay.Ui.MaxSlots > 0 {
+				dst.Ui.MaxSlots = overlay.Ui.MaxSlots
+			}
+			if overlay.Ui.SlotTTLSeconds > 0 {
+				dst.Ui.SlotTTLSeconds = overlay.Ui.SlotTTLSeconds
+			}
+			if overlay.Ui.SlotMaxBytes > 0 {
+				dst.Ui.SlotMaxBytes = overlay.Ui.SlotMaxBytes
+			}
+		}
+	}
+
 	// Future fields can be added here following the same pattern:
 	// - ignoredNamespaces, ignoredContainers
 	// - profiles
@@ -293,9 +376,6 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 
 func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Context, effectiveConfig *common.OdigosConfiguration, owner *corev1.ConfigMap) error {
 	odigosNs := env.GetCurrentNamespace()
-
-	// apply patch the OdigosEffectiveConfigName configmap with the effective configuration
-	// this is the configuration after applying defaults and profiles.
 
 	effectiveConfigYamlText, err := yaml.Marshal(effectiveConfig)
 	if err != nil {

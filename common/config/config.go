@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/odigos-io/odigos/common"
 )
@@ -68,7 +69,14 @@ type Pipeline struct {
 func MergeConfigs(configDomains map[string]Config) (Config, error) {
 	mergedConfig := Config{}
 	var err error
+	// Sort domain names so merge order is stable. Go map iteration is nondeterministic; without a fixed
+	// order, merged YAML and tests can differ between runs (e.g. telemetry reader ordering).
+	domainNames := make([]string, 0, len(configDomains))
 	for name := range configDomains {
+		domainNames = append(domainNames, name)
+	}
+	sort.Strings(domainNames)
+	for _, name := range domainNames {
 		cfg := configDomains[name]
 		mergedConfig.Receivers, err = mergeGenericMaps(mergedConfig.Receivers, cfg.Receivers)
 		if err != nil {
@@ -111,11 +119,10 @@ func mergeExtensions(extensions1 []string, extensions2 []string) []string {
 
 func mergePipelines(pipelines1 map[string]Pipeline, pipelines2 map[string]Pipeline) (map[string]Pipeline, error) {
 	// Create a copy of pipelines1 to avoid modifying the input
-	mergedPipelines := make(map[string]Pipeline, len(pipelines1))
+	mergedPipelines := make(map[string]Pipeline, len(pipelines1)+len(pipelines2))
 	for k, v := range pipelines1 {
 		mergedPipelines[k] = v
 	}
-
 	// Merge pipelines2
 	for k, v := range pipelines2 {
 		if _, exists := mergedPipelines[k]; exists {
@@ -144,7 +151,7 @@ func mergeTelemetryResource(resource1 map[string]*string, resource2 map[string]*
 		return resource1
 	}
 
-	mergedResource := map[string]*string{}
+	mergedResource := make(map[string]*string, len(resource1)+len(resource2))
 	for k, v := range resource1 {
 		mergedResource[k] = v
 	}

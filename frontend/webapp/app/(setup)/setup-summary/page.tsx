@@ -3,12 +3,12 @@
 import React from 'react';
 import { ROUTES } from '@/utils';
 import { SetupSummary } from '@odigos/ui-kit/containers';
-import { useDestinationCategories, useSetupHelpers } from '@/hooks';
+import { useDestinationCategoriesLegacy, useSetupHelpers } from '@/hooks';
 import { OnboardingContentWrapper, SetupHeader } from '@/components';
 
 export default function Page() {
   const { onClickRouteFromSummary } = useSetupHelpers();
-  const { categories } = useDestinationCategories();
+  const { categories } = useDestinationCategoriesLegacy();
 
   return (
     <>

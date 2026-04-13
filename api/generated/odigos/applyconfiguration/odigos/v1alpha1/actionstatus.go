@@ -24,6 +24,8 @@ import (
 // ActionStatusApplyConfiguration represents a declarative configuration of the ActionStatus type for use
 // with apply.
 type ActionStatusApplyConfiguration struct {
+	// Represents the observations of a action's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

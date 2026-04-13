@@ -5,6 +5,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	commonapi "github.com/odigos-io/odigos/common/api"
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -373,6 +374,9 @@ type AgentTracesConfig struct {
 
 	// Configuration for span renamer.
 	SpanRenamer *SpanRenamerConfig `json:"spanRenamer,omitempty"`
+
+	// configuration for payload collection for this container.
+	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
@@ -495,11 +499,6 @@ type SdkConfig struct {
 	// configurations for the instrumentation libraries the the SDK should use
 	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs,omitempty"`
 
-	// HeadSamplingConfig is a set sampling rules.
-	// This config currently only applies to root spans.
-	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
-	HeadSamplingConfig *HeadSamplingConfig `json:"headSamplerConfig,omitempty"`
-
 	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 
 	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
@@ -517,58 +516,23 @@ type SdkConfig struct {
 	// configuration for runtime metrics that the SDK should generate.
 	// these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.
 	RuntimeMetrics *common.MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
+
+	// Whether eBPF-based log capture is enabled for this SDK.
+	// Set by the instrumentor based on InstrumentationRule ebpfLogCapture config.
+	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
 }
 
-// 'Operand' represents the attributes and values that an operator acts upon in an expression
-type AttributeCondition struct {
-	// attribute key (e.g. "url.path")
-	Key string `json:"key"`
-	// currently only string values are supported.
-	Val string `json:"val"`
-	// The operator to use to compare the attribute value.
-	Operator Operator `json:"operator,omitempty"`
-}
-
-// +kubebuilder:validation:Enum=equals;notEquals;endWith;startWith
-// +kubebuilder:default:=equals
-type Operator string
-
-const (
-	Equals    Operator = "equals"
-	NotEquals Operator = "notEquals"
-	EndWith   Operator = "endWith"
-	StartWith Operator = "startWith"
-)
-
-// AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
-// If all attribute conditions evaluate to true, the AND sampler evaluates to true,
-// and the fraction is used to determine the sampling decision.
-// If any of the attribute compare samplers evaluate to false,
-// the fraction is not used and the rule is skipped.
-// An "empty" AttributesAndSamplerRule with no attribute conditions is considered to always evaluate to true.
-// and the fraction is used to determine the sampling decision.
-// This entity is refered to a rule in Odigos terminology for head-sampling.
-type AttributesAndSamplerRule struct {
-	AttributeConditions []AttributeCondition `json:"attributeConditions"`
-	// The fraction of spans to sample, in the range [0, 1].
-	// If the fraction is 0, no spans are sampled.
-	// If the fraction is 1, all spans are sampled.
-	// +kubebuilder:default:=1
-	Fraction float64 `json:"fraction"`
-}
-
-// HeadSamplingConfig is a set of attribute rules.
-// The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.
-//
-// If none of the rules evaluate to true, the fallback fraction is used to determine the sampling decision.
 type HeadSamplingConfig struct {
-	AttributesAndSamplerRules []AttributesAndSamplerRule `json:"attributesAndSamplerRules,omitempty"`
-	// Used as a fallback if all rules evaluate to false,
-	// it may be empty - in this case the default value will be 1 - all spans are sampled.
-	// it should be a float value in the range [0, 1] - the fraction of spans to sample.
-	// a value of 0 means no spans are sampled if none of the rules evaluate to true.
+
+	// Noisy operations are categories of matchers that are used on the root span.
+	// If match, the fraction is used to determine the sampling decision for the entire trace.
+	// If multiple noisy operations match, the lowest fraction is used.
+	NoisyOperations []commonapisampling.NoisyOperation `json:"noisyOperations,omitempty"`
+
 	// +kubebuilder:default:=1
-	FallbackFraction float64 `json:"fallbackFraction"`
+	// Deprecated: do not use. Will be removed once python and node migration is complete.
+	// Use NoisyOperations instead.
+	FallbackFraction float64 `json:"fallbackFraction,omitempty"`
 }
 
 type InstrumentationLibraryConfig struct {

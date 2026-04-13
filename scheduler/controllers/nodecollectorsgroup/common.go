@@ -22,8 +22,17 @@ const (
 	defaultRequestMemoryMiB = 256
 
 	// this configures the processor limit_mib, which is the hard limit in MiB, afterwhich garbage collection will be forced.
-	// as recommended by the processor docs, if not set, this is set to 50MiB less than the memory limit of the collector
+	// as recommended by the processor docs, if not set, this is set to 50MiB less than the memory limit of the collector.
+	// for small containers this fixed offset would leave too little headroom for the application,
+	// so we also enforce a minimum ratio via defaultMemoryLimiterLimitMinPercentage below.
 	defaultMemoryLimiterLimitDiffMib = 50
+
+	// minimum percentage of the container memory limit to use as the memory_limiter hard limit.
+	// the effective hard limit is max(limit-50, limit*85%), so small containers (where the fixed
+	// 50MiB offset would eat most of the budget) get a percentage-based floor, while larger
+	// containers keep the 50MiB fixed headroom that the OTel docs recommend.
+	// crossover is at ~333MiB: below that the ratio wins, above that the fixed offset wins.
+	defaultMemoryLimiterLimitMinPercentage = 85.0
 
 	// the soft limit will be set to 80% of the hard limit.
 	// this value is used to derive the "spike_limit_mib" parameter in the processor configuration if a value is not set
@@ -46,6 +55,20 @@ const (
 
 	DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL = "10s"
 )
+
+// calculateMemoryLimiterHardLimitMiB returns the memory_limiter processor hard limit
+// in MiB given the container memory limit. It uses max(limit-50, limit*85%) so that
+// small containers (where a fixed 50MiB offset would eat most of the budget) get a
+// percentage-based floor, while larger containers keep the fixed 50MiB headroom that
+// the OTel memory_limiter docs recommend.
+func calculateMemoryLimiterHardLimitMiB(memoryLimitMiB int) int {
+	fixed := memoryLimitMiB - defaultMemoryLimiterLimitDiffMib
+	ratio := int(float64(memoryLimitMiB) * defaultMemoryLimiterLimitMinPercentage / 100.0)
+	if ratio > fixed {
+		return ratio
+	}
+	return fixed
+}
 
 func getResourceSettings(odigosConfiguration common.OdigosConfiguration) odigosv1.CollectorsGroupResourcesSettings {
 	// memory request is expensive on daemonsets since it will consume this memory
@@ -75,7 +98,7 @@ func getResourceSettings(odigosConfiguration common.OdigosConfiguration) odigosv
 		memoryLimitMiB = nodeCollectorConfig.LimitMemoryMiB
 	}
 
-	memoryLimiterLimitMiB := memoryLimitMiB - defaultMemoryLimiterLimitDiffMib
+	memoryLimiterLimitMiB := calculateMemoryLimiterHardLimitMiB(memoryLimitMiB)
 	if nodeCollectorConfig != nil && nodeCollectorConfig.MemoryLimiterLimitMiB > 0 {
 		memoryLimiterLimitMiB = nodeCollectorConfig.MemoryLimiterLimitMiB
 	}
@@ -281,11 +304,6 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 		ownMetricsPort = odigosConfiguration.CollectorNode.CollectorOwnMetricsPort
 	}
 
-	k8sNodeLogsDirectory := ""
-	if odigosConfiguration.CollectorNode != nil && odigosConfiguration.CollectorNode.K8sNodeLogsDirectory != "" {
-		k8sNodeLogsDirectory = odigosConfiguration.CollectorNode.K8sNodeLogsDirectory
-	}
-
 	otlpExporterConfiguration := odigosConfiguration.CollectorNode.OtlpExporterConfiguration
 	// TODO: remove after sometime it is a temporary workaround to support the deprecated field CollectorNode.EnableDataCompression
 	// which replaced with OtlpExporterConfiguration.EnableDataCompression.
@@ -307,7 +325,6 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 		Spec: odigosv1.CollectorsGroupSpec{
 			Role:                      odigosv1.CollectorsGroupRoleNodeCollector,
 			CollectorOwnMetricsPort:   ownMetricsPort,
-			K8sNodeLogsDirectory:      k8sNodeLogsDirectory,
 			ResourcesSettings:         getResourceSettings(odigosConfiguration),
 			OtlpExporterConfiguration: otlpExporterConfiguration,
 			Metrics:                   metricsConfig,
@@ -360,4 +377,3 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 
 	return nil
 }
-

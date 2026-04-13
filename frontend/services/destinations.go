@@ -221,11 +221,10 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 		}
 
 		conditions = append(conditions, &model.Condition{
-			Status:             status,
-			Type:               condition.Type,
-			Reason:             &condition.Reason,
-			Message:            &condition.Message,
-			LastTransitionTime: func(s string) *string { return &s }(condition.LastTransitionTime.String()),
+			Status:  status,
+			Type:    condition.Type,
+			Reason:  &condition.Reason,
+			Message: &condition.Message,
 		})
 	}
 

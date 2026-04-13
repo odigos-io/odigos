@@ -6,12 +6,14 @@ import type { ServiceMapSources } from '@odigos/ui-kit/types';
 export const useServiceMap = () => {
   const { sources } = useSourceCRUD();
 
-  const { data } = useQuery<{ getServiceMap: { services: ServiceMapSources } }>(GET_SERVICE_MAP, {
+  const { data, refetch } = useQuery<{ getServiceMap: { services: ServiceMapSources } }>(GET_SERVICE_MAP, {
     skip: !sources.length,
-    pollInterval: 3000,
   });
 
+  const serviceMap = data?.getServiceMap?.services || [];
+
   return {
-    serviceMap: data?.getServiceMap?.services || [],
+    serviceMap,
+    refetch,
   };
 };

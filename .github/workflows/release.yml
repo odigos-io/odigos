@@ -13,7 +13,7 @@ on:
 permissions:
   contents: write
   packages: write
-  id-token: 'write'
+  id-token: write
 
 env:
   DOCKERHUB_ORG: "keyval"
@@ -54,6 +54,7 @@ jobs:
           path: helm/odigos-*.tgz
 
       - name: Notify Slack
+        if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
@@ -114,6 +115,7 @@ jobs:
           echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
 
       - name: Notify Slack Start
+        if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
@@ -164,7 +166,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version: "1.26.1"
 
       - uses: actions/setup-node@v5
         with:
@@ -206,15 +208,30 @@ jobs:
             echo "Release version $RELEASE_VERSION is NOT newer than tap version $CURRENT_TAP_VERSION — skipping Homebrew tap update"
             echo "SKIP_HOMEBREW_UPDATE=true" >> $GITHUB_ENV
           fi
+      - name: Decide which homebrew repository to authenticate against
+        run: |
+          HOMEBREW_REPO="homebrew-odigos-cli-rc"
+          if [ "${{ env.IS_PRERELEASE }}" != "true" ]; then
+            HOMEBREW_REPO="homebrew-odigos-cli"
+          fi
+          echo "Using Homebrew repository: $HOMEBREW_REPO"
+          echo "HOMEBREW_REPO=$HOMEBREW_REPO" >> $GITHUB_ENV
+          
+      - uses: odigos-io/ci-core/sts@main
+        id: sts-goreleaser
+        with:
+          scope: ${{ env.HOMEBREW_REPO }}
+          identity: releaser
+          output-git-config: "false"
 
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 #v7.0.0
         with:
           distribution: goreleaser
-          version: latest
+          version: '~> v2'
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
+          HOMEBREW_GITHUB_API_TOKEN: ${{ steps.sts-goreleaser.outputs.GH_TOKEN }}
           IS_PRERELEASE: ${{ env.IS_PRERELEASE }}
           SKIP_HOMEBREW_UPDATE: ${{ env.SKIP_HOMEBREW_UPDATE }}
           GORELEASER_CURRENT_TAG: ${{ env.TAG }}
@@ -228,6 +245,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Notify Slack (release notes)
+        if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
@@ -270,6 +288,7 @@ jobs:
           fi
 
       - name: Notify Slack
+        if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
@@ -320,6 +339,7 @@ jobs:
         run: bash ./scripts/publish-charts.sh
 
       - name: Notify Slack
+        if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}

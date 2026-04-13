@@ -24,7 +24,10 @@ import (
 // SpanRenamerScopeRulesApplyConfiguration represents a declarative configuration of the SpanRenamerScopeRules type for use
 // with apply.
 type SpanRenamerScopeRulesApplyConfiguration struct {
-	ScopeName         *string                               `json:"scopeName,omitempty"`
+	// the name of the opentelemetry intrumentation scope which the renamed spans are written in.
+	ScopeName *string `json:"scopeName,omitempty"`
+	// list of regex replacements to be applied to the span name.
+	// all options are always tried, regardless of whether the previous options have matched or not.
 	RegexReplacements []actions.SpanRenamerRegexReplacement `json:"regexReplacements,omitempty"`
 }
 

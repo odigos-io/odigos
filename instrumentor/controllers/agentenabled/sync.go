@@ -493,7 +493,7 @@ func calculateContainerCollectorConfig(containerName string,
 		return nil
 	}
 
-	containerDistro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
+	containerDistro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, runtimeDetails.RuntimeVersion, distroPerLanguage, distroGetter)
 	// This is not a real error but a containerAgentConfig pointer with the appropriate reason and message for the failure.
 	// In this case, we are not updating the ContainerAgentConfig so we can continue with the next container.
 	if err != nil {
@@ -556,7 +556,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}, nil
 	}
 
-	d, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
+	d, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, runtimeDetails.RuntimeVersion, distroPerLanguage, distroGetter)
 	if err != nil {
 		return *err, nil
 	}
@@ -566,7 +566,6 @@ func calculateContainerInstrumentationConfig(containerName string,
 
 	tracesEnabled, metricsEnabled, logsEnabled := signalconfig.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
 
-	// at this time, we don't populate the signals specific configs, but we will do it soon
 	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, runtimeDetails.Language, filteredTemplateRules, irls, agentLevelActions, samplingRules, workloadObj, pw, d)
 	if err != nil {
 		return *err, nil
@@ -802,6 +801,7 @@ func resolveContainerDistro(
 	containerName string,
 	containerOverride *odigosv1.ContainerOverride,
 	containerLanguage common.ProgrammingLanguage,
+	runtimeVersion string,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
 	distroGetter *distros.Getter,
 ) (*distro.OtelDistro, *odigosv1.ContainerAgentConfig) {
@@ -836,7 +836,7 @@ func resolveContainerDistro(
 
 	} else { // use the default distro for the language
 
-		distroName, ok := distroPerLanguage[containerLanguage]
+		defaultDistroName, ok := distroPerLanguage[containerLanguage]
 		if !ok {
 			if containerLanguage == common.UnknownProgrammingLanguage {
 				return nil, &odigosv1.ContainerAgentConfig{
@@ -855,9 +855,12 @@ func resolveContainerDistro(
 			}
 		}
 
-		distro := distroGetter.GetDistroByName(distroName)
+		// Walk the fallbackDistro chain to resolve the best-matching distro name for the runtime version.
+		effectiveDistroName := distroGetter.ResolveDistroNameForVersion(defaultDistroName, runtimeVersion)
+
+		distro := distroGetter.GetDistroByName(effectiveDistroName)
 		if distro == nil { // not expected to happen, here for safety net
-			message := fmt.Sprintf("otel distro %s is not available in this odigos tier", distroName)
+			message := fmt.Sprintf("otel distro %s is not available in this odigos tier", effectiveDistroName)
 			return nil, &odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
 				AgentEnabled:        false,
