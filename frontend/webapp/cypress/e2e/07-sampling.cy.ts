@@ -111,6 +111,11 @@ describe('Sampling Rules CRUD', () => {
         cy.get('input[name=sampling-input-rule-name]').type(COST_REDUCTION_RULE_NAME);
         cy.get('input[name=sampling-input-note]').type('Created by Cypress');
 
+        // Must select a specific operation; "All operations" with no scopes matches
+        // the auto-rule pattern and would be filtered into the AutoRuleCard instead of the table
+        cy.contains('button', 'HTTP server').scrollIntoView().click({ force: true });
+        cy.get('input[name=sampling-input-route]').type('api/checkout');
+
         // Cost Reduction defaults to "sample" mode with 50% preset — switch to 25%
         cy.contains('button', '25%').scrollIntoView().click({ force: true });
 
