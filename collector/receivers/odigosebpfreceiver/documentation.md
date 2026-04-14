@@ -6,6 +6,14 @@
 
 The following telemetry is emitted by this component.
 
+### otelcol_ebpf_logs_attr_cache_size
+
+Current number of entries in the logs resource-attributes cache. Bounded by the eBPF map MaxProcessesCount.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| {entries} | Gauge | Int | Development |
+
 ### otelcol_ebpf_lost_samples
 
 The number of samples lost while reading from the eBPF perf buffer. For the ring buffer, this value is always 0.

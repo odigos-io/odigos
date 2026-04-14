@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver
 go 1.26.1
 
 require (
-	github.com/cilium/ebpf v0.21.0
+	github.com/cilium/ebpf v0.20.0
 	github.com/odigos-io/go-rtml v0.0.1
 	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.11.1
@@ -27,6 +27,7 @@ require (
 	go.opentelemetry.io/collector/internal/componentalias v0.148.0 // indirect
 	golang.org/x/mod v0.34.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	sigs.k8s.io/controller-runtime v0.23.3 // indirect
 )
 

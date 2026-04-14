@@ -677,6 +677,18 @@ spec:
                             type: object
                           type: array
                       type: object
+                    ebpfLogCapture:
+                      description: |-
+                        Whether eBPF-based log capture is enabled for this SDK.
+                        Set by the instrumentor based on InstrumentationRule ebpfLogCapture config.
+                      properties:
+                        enabled:
+                          description: |-
+                            Enabled switches the logs pipeline to use only the eBPF receiver,
+                            replacing the filelog receiver, and enables eBPF-based log capture
+                            in odiglet for instrumented processes.
+                          type: boolean
+                      type: object
                     headersCollection:
                       description: default configuration for collecting http headers,
                         in case the instrumentation library does not provide a configuration.

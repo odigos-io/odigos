@@ -11,6 +11,10 @@ const (
 	MaxProcessesCount   = 512  // Max number of processes that can have metrics
 	AttributesValueSize = 1024 // Size of packed resource attributes value buffer
 
+	// Logs eBPF map sizing constants.
+	LogsMaxEntries = 256 * 1024 // 256KB - must match BPF log_events map size
+	LogsExtKeySize = 4          // uint32 TGID
+
 	// Inner Map configuration
 	MetricKeySize    = 4   // uint32 metric_key
 	MetricValueSize  = 40  // struct metric_value (40 bytes - size of largest union member: histogram_value)

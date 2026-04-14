@@ -46,7 +46,7 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map,
 	attrCache := make(map[[64]byte]string)
 
 	var uuidKey [64]byte
-	var attrValue [1024]byte
+	var attrValue [attrValueMaxSize]byte
 
 	attrIter := attributesMap.Iterate()
 	for attrIter.Next(&uuidKey, &attrValue) {

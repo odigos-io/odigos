@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/instrumentation
 go 1.26.1
 
 require (
-	github.com/cilium/ebpf v0.21.0
+	github.com/cilium/ebpf v0.20.0
 	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/distros v0.0.0
@@ -26,6 +26,7 @@ require (
 	golang.org/x/mod v0.34.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	sigs.k8s.io/controller-runtime v0.23.3 // indirect
 )
 

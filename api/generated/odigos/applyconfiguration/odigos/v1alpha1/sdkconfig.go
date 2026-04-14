@@ -41,6 +41,9 @@ type SdkConfigApplyConfiguration struct {
 	// configuration for runtime metrics that the SDK should generate.
 	// these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.
 	RuntimeMetrics *common.MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
+	// Whether eBPF-based log capture is enabled for this SDK.
+	// Set by the instrumentor based on InstrumentationRule ebpfLogCapture config.
+	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
 }
 
 // SdkConfigApplyConfiguration constructs a declarative configuration of the SdkConfig type for use with
@@ -115,5 +118,13 @@ func (b *SdkConfigApplyConfiguration) WithCustomInstrumentations(value instrumen
 // If called multiple times, the RuntimeMetrics field is set to the value of the last call.
 func (b *SdkConfigApplyConfiguration) WithRuntimeMetrics(value common.MetricsSourceAgentRuntimeMetricsConfiguration) *SdkConfigApplyConfiguration {
 	b.RuntimeMetrics = &value
+	return b
+}
+
+// WithEbpfLogCapture sets the EbpfLogCapture field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EbpfLogCapture field is set to the value of the last call.
+func (b *SdkConfigApplyConfiguration) WithEbpfLogCapture(value instrumentationrules.EbpfLogCapture) *SdkConfigApplyConfiguration {
+	b.EbpfLogCapture = &value
 	return b
 }

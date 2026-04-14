@@ -73,3 +73,40 @@ func CreateMetricsMaps() (*cilumebpf.Map, *cilumebpf.Map, error) {
 
 	return metricsMap, metricsAttributesMap, nil
 }
+
+// CreateLogsMaps creates the logs RingBuf eBPF map and the logs ext (attributes)
+// Hash map used to pass per-process resource attributes alongside log events.
+// Returns (nil, nil, nil) when the kernel does not support RingBuf, since there
+// is no PerfEventArray fallback for logs.
+func CreateLogsMaps() (*cilumebpf.Map, *cilumebpf.Map, error) {
+	if err := features.HaveMapType(cilumebpf.RingBuf); err != nil {
+		return nil, nil, nil //nolint:nilerr // graceful: no RingBuf support, no fallback for logs
+	}
+
+	logsSpec := &cilumebpf.MapSpec{
+		Type:       cilumebpf.RingBuf,
+		Name:       "logs",
+		MaxEntries: LogsMaxEntries,
+	}
+
+	logsMap, err := cilumebpf.NewMap(logsSpec)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create logs eBPF map: %w", err)
+	}
+
+	logsExtSpec := &cilumebpf.MapSpec{
+		Type:       cilumebpf.Hash,
+		Name:       "logs_ext",
+		KeySize:    LogsExtKeySize,
+		ValueSize:  AttributesValueSize,
+		MaxEntries: MaxProcessesCount,
+	}
+
+	logsExtMap, err := cilumebpf.NewMap(logsExtSpec)
+	if err != nil {
+		_ = logsMap.Close()
+		return nil, nil, fmt.Errorf("failed to create logs ext eBPF map: %w", err)
+	}
+
+	return logsMap, logsExtMap, nil
+}

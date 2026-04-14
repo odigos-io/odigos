@@ -516,6 +516,10 @@ type SdkConfig struct {
 	// configuration for runtime metrics that the SDK should generate.
 	// these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.
 	RuntimeMetrics *common.MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
+
+	// Whether eBPF-based log capture is enabled for this SDK.
+	// Set by the instrumentor based on InstrumentationRule ebpfLogCapture config.
+	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
 }
 
 type HeadSamplingConfig struct {
