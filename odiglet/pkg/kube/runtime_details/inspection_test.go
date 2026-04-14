@@ -9,11 +9,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMultipleLanguagesDetected_SeparateContainers_NoConflict(t *testing.T) {
+func newInspectionResults() InspectionResults {
+	return InspectionResults{
+		containerDetectedLanguages: make(map[string][]common.ProgramLanguageDetails),
+	}
+}
+
+func TestCollectDetectedLanguages_SeparateContainers_NoConflict(t *testing.T) {
 	t.Parallel()
 
 	// Arrange: two containers, each with a single (different) language — no conflict
-	results := InspectionResults{}
+	results := newInspectionResults()
 
 	containerALangs := map[int]common.ProgramLanguageDetails{
 		100: {Language: common.JavaProgrammingLanguage, RuntimeVersion: "17.0.1"},
@@ -23,17 +29,22 @@ func TestMultipleLanguagesDetected_SeparateContainers_NoConflict(t *testing.T) {
 	}
 
 	// Act
-	collectDetectedLanguages(containerALangs, &results)
-	collectDetectedLanguages(containerBLangs, &results)
+	collectDetectedLanguages("container-a", containerALangs, &results)
+	collectDetectedLanguages("container-b", containerBLangs, &results)
 
 	// Assert: no multi-language conflict — each container has exactly one language
-	assert.False(t, results.multipleLanguagesDetected)
-	assert.Len(t, results.detectedLanguages, 2)
+	assert.Len(t, results.containerDetectedLanguages, 2)
+	assert.Len(t, results.containerDetectedLanguages["container-a"], 1)
+	assert.Equal(t, common.JavaProgrammingLanguage, results.containerDetectedLanguages["container-a"][0].Language)
+	assert.Len(t, results.containerDetectedLanguages["container-b"], 1)
+	assert.Equal(t, common.PythonProgrammingLanguage, results.containerDetectedLanguages["container-b"][0].Language)
 }
 
-func TestMultipleLanguagesDetected_TwoContainersWithConflicts(t *testing.T) {
+func TestCollectDetectedLanguages_TwoContainersWithConflicts(t *testing.T) {
+	t.Parallel()
+
 	// Arrange: two containers, each with a multi-language conflict
-	results := InspectionResults{}
+	results := newInspectionResults()
 
 	containerALangs := map[int]common.ProgramLanguageDetails{
 		100: {Language: common.JavaProgrammingLanguage, RuntimeVersion: "17.0.1"},
@@ -45,10 +56,11 @@ func TestMultipleLanguagesDetected_TwoContainersWithConflicts(t *testing.T) {
 	}
 
 	// Act
-	collectDetectedLanguages(containerALangs, &results)
-	collectDetectedLanguages(containerBLangs, &results)
+	collectDetectedLanguages("container-a", containerALangs, &results)
+	collectDetectedLanguages("container-b", containerBLangs, &results)
 
 	// Assert: both containers have multi-language conflicts
-	assert.True(t, results.multipleLanguagesDetected)
-	assert.Len(t, results.detectedLanguages, 4)
+	assert.Len(t, results.containerDetectedLanguages, 2)
+	assert.Len(t, results.containerDetectedLanguages["container-a"], 2)
+	assert.Len(t, results.containerDetectedLanguages["container-b"], 2)
 }

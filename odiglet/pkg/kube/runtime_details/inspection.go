@@ -29,8 +29,7 @@ import (
 
 type InspectionResults struct {
 	containerNameToNewRuntimeDetails map[string]odigosv1.RuntimeDetailsByContainer
-	multipleLanguagesDetected        bool
-	detectedLanguages                []common.ProgramLanguageDetails
+	containerDetectedLanguages       map[string][]common.ProgramLanguageDetails
 }
 
 // Extracts the RuntimeDetailsByContainer list from the map in InspectionResults
@@ -42,17 +41,14 @@ func (r *InspectionResults) runtimeDetailsList() []odigosv1.RuntimeDetailsByCont
 	return details
 }
 
-// collects languages from Pids, and also sets a boolean if this container has more than one unique language
-func collectDetectedLanguages(knownLangsByPid map[int]common.ProgramLanguageDetails, results *InspectionResults) {
-	uniqueLangsInContainer := make(map[common.ProgrammingLanguage]struct{})
+// collectDetectedLanguages records the unique languages found per container.
+func collectDetectedLanguages(containerName string, knownLangsByPid map[int]common.ProgramLanguageDetails, results *InspectionResults) {
+	alreadyCollected := make(map[common.ProgrammingLanguage]bool)
 	for _, langDetails := range knownLangsByPid {
-		if _, exists := uniqueLangsInContainer[langDetails.Language]; !exists {
-			uniqueLangsInContainer[langDetails.Language] = struct{}{}
-			results.detectedLanguages = append(results.detectedLanguages, langDetails)
+		if !alreadyCollected[langDetails.Language] {
+			alreadyCollected[langDetails.Language] = true
+			results.containerDetectedLanguages[containerName] = append(results.containerDetectedLanguages[containerName], langDetails)
 		}
-	}
-	if len(uniqueLangsInContainer) > 1 {
-		results.multipleLanguagesDetected = true
 	}
 }
 
@@ -151,6 +147,7 @@ func runtimeInspectionFromGroupedPIDs(ctx context.Context, pods []corev1.Pod, gr
 	logger := commonlogger.LoggerCompat().With("subsystem", "runtimeinspection")
 	results := InspectionResults{
 		containerNameToNewRuntimeDetails: make(map[string]odigosv1.RuntimeDetailsByContainer),
+		containerDetectedLanguages:       make(map[string][]common.ProgramLanguageDetails),
 	}
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
@@ -182,7 +179,7 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 		}
 	}
 
-	collectDetectedLanguages(knownLangsByPid, results)
+	collectDetectedLanguages(container.Name, knownLangsByPid, results)
 
 	// resolve relevant processes and main language for the container
 	relevantProcesses, langDetails, err := relevantProcessesDetailsInContainer(knownLangsByPid, processes)
@@ -404,26 +401,36 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 
 	reason := odigosv1.RuntimeDetectionReasonDetectedSuccessfully
 	message := "runtime detection completed successfully"
-	if inspectionResults.multipleLanguagesDetected {
-		// dedup language names since multiple containers may report the same language
-		seen := make(map[common.ProgrammingLanguage]bool)
-		var langs []string
-		for _, lang := range inspectionResults.detectedLanguages {
-			if !seen[lang.Language] {
-				seen[lang.Language] = true
-				langs = append(langs, string(lang.Language))
-			}
+
+	// Construct a condition for conflicts in runtime detection per container
+	var unresolvedContainerStrings []string
+	var resolvedContainerStrings []string
+	for containerName, detectedLangs := range inspectionResults.containerDetectedLanguages {
+		if len(detectedLangs) <= 1 {
+			continue
 		}
-		for _, container := range inspectionResults.containerNameToNewRuntimeDetails {
-			if container.Language == common.UnknownProgrammingLanguage {
-				reason = odigosv1.RuntimeDetectionReasonUnresolvedMultipleLanguages
-				message = fmt.Sprintf("multiple languages detected (%s), could not determine main language, consider selecting the language manually", strings.Join(langs, ", "))
-			} else {
-				reason = odigosv1.RuntimeDetectionReasonResolvedFromMultipleLanguages
-				message = fmt.Sprintf("multiple languages detected (%s) in the same container, %s was selected automatically", strings.Join(langs, ", "), container.Language)
-			}
-			break
+		var detectedLangNames []string
+		for _, lang := range detectedLangs {
+			detectedLangNames = append(detectedLangNames, string(lang.Language))
 		}
+
+		runtimeDetails, exists := inspectionResults.containerNameToNewRuntimeDetails[containerName]
+		if !exists {
+			continue
+		}
+		if runtimeDetails.Language == common.UnknownProgrammingLanguage {
+			unresolvedContainerStrings = append(unresolvedContainerStrings, fmt.Sprintf("container %q detected [%s] but could not determine main language", containerName, strings.Join(detectedLangNames, ", ")))
+		} else {
+			resolvedContainerStrings = append(resolvedContainerStrings, fmt.Sprintf("container %q detected [%s], selected %s", containerName, strings.Join(detectedLangNames, ", "), runtimeDetails.Language))
+		}
+	}
+
+	if len(unresolvedContainerStrings) > 0 {
+		reason = odigosv1.RuntimeDetectionReasonUnresolvedMultipleLanguages
+		message = strings.Join(append(unresolvedContainerStrings, resolvedContainerStrings...), "; ") + "; consider selecting the language manually"
+	} else if len(resolvedContainerStrings) > 0 {
+		reason = odigosv1.RuntimeDetectionReasonResolvedFromMultipleLanguages
+		message = strings.Join(resolvedContainerStrings, "; ")
 	}
 
 	meta.SetStatusCondition(&currentConfig.Status.Conditions, metav1.Condition{
