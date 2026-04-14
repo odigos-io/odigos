@@ -75,14 +75,14 @@ const (
 	MarkedForInstrumentationReasonError MarkedForInstrumentationReason = "RetirableError"
 )
 
-// +kubebuilder:validation:Enum=DetectedSuccessfully;DetectedFromMultipleLanguages;UnresolvedMultipleLanguages;WaitingForDetection;NoRunningPods;Error
+// +kubebuilder:validation:Enum=DetectedSuccessfully;ResolvedFromMultipleLanguages;UnresolvedMultipleLanguages;WaitingForDetection;NoRunningPods;Error
 type RuntimeDetectionReason string
 
 const (
 	// when the runtime detection process is successful and runtime details are available for instrumentation.
 	RuntimeDetectionReasonDetectedSuccessfully RuntimeDetectionReason = "DetectedSuccessfully"
 	// when multiple languages were detected and one was successfully selected by heuristic rules.
-	RuntimeDetectionReasonResolvedFromMultipleLanguages RuntimeDetectionReason = "DetectedFromMultipleLanguages"
+	RuntimeDetectionReasonResolvedFromMultipleLanguages RuntimeDetectionReason = "ResolvedFromMultipleLanguages"
 	// when multiple languages were detected but none could be selected as the main language.
 	RuntimeDetectionReasonUnresolvedMultipleLanguages RuntimeDetectionReason = "UnresolvedMultipleLanguages"
 	// when the runtime detection process is still ongoing and the runtime details are not yet available.

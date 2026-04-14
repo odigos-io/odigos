@@ -399,6 +399,17 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		currentConfig.Status.RuntimeDetailsByContainer = inspectionResults.runtimeDetailsList()
 	}
 
+	addConditions(inspectionResults, currentConfig)
+
+	err = kubeclient.Status().Update(ctx, currentConfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addConditions(inspectionResults InspectionResults, currentConfig *odigosv1.InstrumentationConfig) {
 	reason := odigosv1.RuntimeDetectionReasonDetectedSuccessfully
 	message := "runtime detection completed successfully"
 
@@ -439,13 +450,6 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 		Reason:  string(reason),
 		Message: message,
 	})
-
-	err = kubeclient.Status().Update(ctx, currentConfig)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer, podIdentintifier string) bool {
