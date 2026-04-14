@@ -382,4 +382,5 @@ extend type Mutation {
     level: OdigosLogLevel!
   ): Boolean!
   updateLocalUiConfig(config: LocalUiConfigInput!): Boolean!
+  resetLocalUiConfigToFactoryDefaults: Boolean!
 }

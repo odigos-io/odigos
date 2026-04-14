@@ -902,41 +902,42 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateAction                      func(childComplexity int, action model.ActionInput) int
-		CreateCostReductionRule           func(childComplexity int, samplingID string, rule model.CostReductionRuleInput) int
-		CreateHighlyRelevantOperationRule func(childComplexity int, samplingID string, rule model.HighlyRelevantOperationRuleInput) int
-		CreateInstrumentationRule         func(childComplexity int, instrumentationRule model.InstrumentationRuleInput) int
-		CreateNewDestination              func(childComplexity int, destination model.DestinationInput) int
-		CreateNoisyOperationRule          func(childComplexity int, samplingID string, rule model.NoisyOperationRuleInput) int
-		DeleteAction                      func(childComplexity int, id string, actionType string) int
-		DeleteCentralProxy                func(childComplexity int) int
-		DeleteCostReductionRule           func(childComplexity int, samplingID string, ruleID string) int
-		DeleteDataStream                  func(childComplexity int, id string) int
-		DeleteDestination                 func(childComplexity int, id string, currentStreamName string) int
-		DeleteHighlyRelevantOperationRule func(childComplexity int, samplingID string, ruleID string) int
-		DeleteInstrumentationRule         func(childComplexity int, ruleID string) int
-		DeleteNoisyOperationRule          func(childComplexity int, samplingID string, ruleID string) int
-		PauseOdigos                       func(childComplexity int) int
-		PersistK8sNamespaces              func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
-		PersistK8sSources                 func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
-		RecoverFromRollbackForWorkload    func(childComplexity int, sourceID model.K8sSourceID) int
-		RestartPod                        func(childComplexity int, namespace string, name string) int
-		RestartWorkloads                  func(childComplexity int, sourceIds []*model.K8sSourceID) int
-		SetComponentLogLevel              func(childComplexity int, component *model.OdigosComponent, level model.OdigosLogLevel) int
-		TestConnectionForDestination      func(childComplexity int, destination model.DestinationInput) int
-		UninstrumentCluster               func(childComplexity int) int
-		UpdateAPIToken                    func(childComplexity int, token string) int
-		UpdateAction                      func(childComplexity int, id string, action model.ActionInput) int
-		UpdateCostReductionRule           func(childComplexity int, samplingID string, ruleID string, rule model.CostReductionRuleInput) int
-		UpdateDataStream                  func(childComplexity int, id string, dataStream model.DataStreamInput) int
-		UpdateDestination                 func(childComplexity int, id string, destination model.DestinationInput) int
-		UpdateHighlyRelevantOperationRule func(childComplexity int, samplingID string, ruleID string, rule model.HighlyRelevantOperationRuleInput) int
-		UpdateInstrumentationRule         func(childComplexity int, ruleID string, instrumentationRule model.InstrumentationRuleInput) int
-		UpdateK8sActualSource             func(childComplexity int, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) int
-		UpdateLocalUIConfig               func(childComplexity int, config model.LocalUIConfigInput) int
-		UpdateLocalUISamplingConfig       func(childComplexity int, config *model.SamplingConfigInput) int
-		UpdateNoisyOperationRule          func(childComplexity int, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) int
-		UpdateRemoteConfig                func(childComplexity int, config model.RemoteConfigInput) int
+		CreateAction                        func(childComplexity int, action model.ActionInput) int
+		CreateCostReductionRule             func(childComplexity int, samplingID string, rule model.CostReductionRuleInput) int
+		CreateHighlyRelevantOperationRule   func(childComplexity int, samplingID string, rule model.HighlyRelevantOperationRuleInput) int
+		CreateInstrumentationRule           func(childComplexity int, instrumentationRule model.InstrumentationRuleInput) int
+		CreateNewDestination                func(childComplexity int, destination model.DestinationInput) int
+		CreateNoisyOperationRule            func(childComplexity int, samplingID string, rule model.NoisyOperationRuleInput) int
+		DeleteAction                        func(childComplexity int, id string, actionType string) int
+		DeleteCentralProxy                  func(childComplexity int) int
+		DeleteCostReductionRule             func(childComplexity int, samplingID string, ruleID string) int
+		DeleteDataStream                    func(childComplexity int, id string) int
+		DeleteDestination                   func(childComplexity int, id string, currentStreamName string) int
+		DeleteHighlyRelevantOperationRule   func(childComplexity int, samplingID string, ruleID string) int
+		DeleteInstrumentationRule           func(childComplexity int, ruleID string) int
+		DeleteNoisyOperationRule            func(childComplexity int, samplingID string, ruleID string) int
+		PauseOdigos                         func(childComplexity int) int
+		PersistK8sNamespaces                func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
+		PersistK8sSources                   func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
+		RecoverFromRollbackForWorkload      func(childComplexity int, sourceID model.K8sSourceID) int
+		ResetLocalUIConfigToFactoryDefaults func(childComplexity int) int
+		RestartPod                          func(childComplexity int, namespace string, name string) int
+		RestartWorkloads                    func(childComplexity int, sourceIds []*model.K8sSourceID) int
+		SetComponentLogLevel                func(childComplexity int, component *model.OdigosComponent, level model.OdigosLogLevel) int
+		TestConnectionForDestination        func(childComplexity int, destination model.DestinationInput) int
+		UninstrumentCluster                 func(childComplexity int) int
+		UpdateAPIToken                      func(childComplexity int, token string) int
+		UpdateAction                        func(childComplexity int, id string, action model.ActionInput) int
+		UpdateCostReductionRule             func(childComplexity int, samplingID string, ruleID string, rule model.CostReductionRuleInput) int
+		UpdateDataStream                    func(childComplexity int, id string, dataStream model.DataStreamInput) int
+		UpdateDestination                   func(childComplexity int, id string, destination model.DestinationInput) int
+		UpdateHighlyRelevantOperationRule   func(childComplexity int, samplingID string, ruleID string, rule model.HighlyRelevantOperationRuleInput) int
+		UpdateInstrumentationRule           func(childComplexity int, ruleID string, instrumentationRule model.InstrumentationRuleInput) int
+		UpdateK8sActualSource               func(childComplexity int, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) int
+		UpdateLocalUIConfig                 func(childComplexity int, config model.LocalUIConfigInput) int
+		UpdateLocalUISamplingConfig         func(childComplexity int, config *model.SamplingConfigInput) int
+		UpdateNoisyOperationRule            func(childComplexity int, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) int
+		UpdateRemoteConfig                  func(childComplexity int, config model.RemoteConfigInput) int
 	}
 
 	NodeCollectorAnalyze struct {
@@ -1399,6 +1400,7 @@ type MutationResolver interface {
 	UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (bool, error)
 	SetComponentLogLevel(ctx context.Context, component *model.OdigosComponent, level model.OdigosLogLevel) (bool, error)
 	UpdateLocalUIConfig(ctx context.Context, config model.LocalUIConfigInput) (bool, error)
+	ResetLocalUIConfigToFactoryDefaults(ctx context.Context) (bool, error)
 	RestartPod(ctx context.Context, namespace string, name string) (bool, error)
 	UpdateLocalUISamplingConfig(ctx context.Context, config *model.SamplingConfigInput) (bool, error)
 	CreateNoisyOperationRule(ctx context.Context, samplingID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
@@ -5356,6 +5358,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.RecoverFromRollbackForWorkload(childComplexity, args["sourceId"].(model.K8sSourceID)), true
+
+	case "Mutation.resetLocalUiConfigToFactoryDefaults":
+		if e.complexity.Mutation.ResetLocalUIConfigToFactoryDefaults == nil {
+			break
+		}
+
+		return e.complexity.Mutation.ResetLocalUIConfigToFactoryDefaults(childComplexity), true
 
 	case "Mutation.restartPod":
 		if e.complexity.Mutation.RestartPod == nil {
@@ -34677,6 +34686,50 @@ func (ec *executionContext) fieldContext_Mutation_updateLocalUiConfig(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_resetLocalUiConfigToFactoryDefaults(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_resetLocalUiConfigToFactoryDefaults(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ResetLocalUIConfigToFactoryDefaults(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_resetLocalUiConfigToFactoryDefaults(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_restartPod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_restartPod(ctx, field)
 	if err != nil {
@@ -57807,6 +57860,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateLocalUiConfig":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateLocalUiConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "resetLocalUiConfigToFactoryDefaults":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_resetLocalUiConfigToFactoryDefaults(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
