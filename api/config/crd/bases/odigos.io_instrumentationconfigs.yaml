@@ -340,6 +340,11 @@ spec:
                               description: rule for collecting db payloads for the
                                 mentioned workload and instrumentation libraries
                               properties:
+                                collectionPolicy:
+                                  description: |-
+                                    The policy to use for collecting the DB query payloads.
+                                    If not specified, the default policy will be used (collect sanitized payloads if possible, and fall back to full if sanitization isn't supported).
+                                  type: string
                                 dropPartialPayloads:
                                   description: |-
                                     If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
@@ -778,6 +783,11 @@ spec:
                                 description: rule for collecting db payloads for the
                                   mentioned workload and instrumentation libraries
                                 properties:
+                                  collectionPolicy:
+                                    description: |-
+                                      The policy to use for collecting the DB query payloads.
+                                      If not specified, the default policy will be used (collect sanitized payloads if possible, and fall back to full if sanitization isn't supported).
+                                    type: string
                                   dropPartialPayloads:
                                     description: |-
                                       If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
@@ -896,6 +906,11 @@ spec:
                           description: rule for collecting db payloads for the mentioned
                             workload and instrumentation libraries
                           properties:
+                            collectionPolicy:
+                              description: |-
+                                The policy to use for collecting the DB query payloads.
+                                If not specified, the default policy will be used (collect sanitized payloads if possible, and fall back to full if sanitization isn't supported).
+                              type: string
                             dropPartialPayloads:
                               description: |-
                                 If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.

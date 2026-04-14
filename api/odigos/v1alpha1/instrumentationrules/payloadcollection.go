@@ -1,5 +1,7 @@
 package instrumentationrules
 
+import "github.com/odigos-io/odigos/common/consts"
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type HttpPayloadCollection struct {
@@ -30,6 +32,10 @@ type DbQueryPayloadCollection struct {
 	// If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
 	// This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
+
+	// The policy to use for collecting the DB query payloads.
+	// If not specified, the default policy will be used (collect sanitized payloads if possible, and fall back to full if sanitization isn't supported).
+	CollectionPolicy *consts.DbQueryCollectionPolicy `json:"collectionPolicy,omitempty"`
 }
 
 // Rule for collecting messaging related payloads

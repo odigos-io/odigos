@@ -3,6 +3,7 @@ package traces
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/mergeconfig"
 	"github.com/odigos-io/odigos/distros/distro"
 )
@@ -72,6 +73,7 @@ func mergeDbPayloadCollectionRules(p1 *instrumentationrules.DbQueryPayloadCollec
 	return &instrumentationrules.DbQueryPayloadCollection{
 		MaxPayloadLength:    mergeconfig.MergeOptionalIntChooseLower(p1.MaxPayloadLength, p2.MaxPayloadLength),
 		DropPartialPayloads: mergeconfig.MergeOptionalBools(p1.DropPartialPayloads, p2.DropPartialPayloads),
+		CollectionPolicy:    mergeDbQueryCollectionPolicy(p1.CollectionPolicy, p2.CollectionPolicy),
 	}
 }
 
@@ -85,5 +87,22 @@ func mergeMessagingPayloadCollectionRules(p1 *instrumentationrules.MessagingPayl
 	return &instrumentationrules.MessagingPayloadCollection{
 		MaxPayloadLength:    mergeconfig.MergeOptionalIntChooseLower(p1.MaxPayloadLength, p2.MaxPayloadLength),
 		DropPartialPayloads: mergeconfig.MergeOptionalBools(p1.DropPartialPayloads, p2.DropPartialPayloads),
+	}
+}
+
+func mergeDbQueryCollectionPolicy(p1 *consts.DbQueryCollectionPolicy, p2 *consts.DbQueryCollectionPolicy) *consts.DbQueryCollectionPolicy {
+	switch {
+	case p1 == nil && p2 == nil:
+		return nil
+	case p1 == nil:
+		return p2
+	case p2 == nil:
+		return p1
+	default:
+		if consts.DbQueryCollectionPolicyPriority[*p1] >= consts.DbQueryCollectionPolicyPriority[*p2] {
+			return p1
+		} else {
+			return p2
+		}
 	}
 }
