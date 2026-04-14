@@ -5,48 +5,68 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
-
-func isInPodContainersBatchPredicate(podContainers []PodContainerUID) func(int) (PodContainerUID, bool) {
-	expectedMountByPodContainer := make(map[PodContainerUID][]byte)
-	for _, pc := range podContainers {
-		expectedMount := fmt.Sprintf("%s/containers/%s/", pc.PodUID, pc.ContainerName)
-		expectedMountByPodContainer[pc] = []byte(expectedMount)
-	}
-
-	return func(pid int) (PodContainerUID, bool) {
-		mountInfoFile := process.ProcFilePath(pid, "mountinfo")
-		f, err := os.Open(mountInfoFile)
-		if err != nil {
-			return PodContainerUID{}, false
-		}
-		defer f.Close()
-
-		scanner := bufio.NewScanner(f)
-		for scanner.Scan() {
-			for pc, mountPath := range expectedMountByPodContainer {
-				if bytes.Contains(scanner.Bytes(), mountPath) {
-					return pc, true
-				}
-			}
-		}
-		return PodContainerUID{}, false
-	}
-}
 
 type PodContainerUID struct {
 	PodUID, ContainerName string
 }
 
-// GroupByPodContainer groups all the current active processes by (podUID, containerName) using the provided list of PodContainerUIDs to filter relevant processes.
+// GroupByPodContainer groups all current active processes by (podUID, containerName)
+// using the provided list of PodContainerUIDs to filter relevant processes.
 // Processes that do not belong to any of the provided PodContainerUIDs are ignored.
+//
+// Uses a single pass over /proc: for each PID, reads mountinfo once and matches
+// against all expected containers. This avoids the allocation churn of reading
+// mountinfo inside a per-PID predicate closure.
 func GroupByPodContainer(pcs []PodContainerUID) (map[PodContainerUID]map[int]struct{}, error) {
-	groups, err := process.Group(isInPodContainersBatchPredicate(pcs))
-	if err != nil {
-		return nil, fmt.Errorf("failed to group processes by (pod, container) :%w", err)
+	expectedMounts := make(map[PodContainerUID][]byte, len(pcs))
+	for _, pc := range pcs {
+		expectedMounts[pc] = []byte(fmt.Sprintf("%s/containers/%s/", pc.PodUID, pc.ContainerName))
 	}
 
-	return groups, nil
+	dirs, err := os.ReadDir(process.HostProcDir())
+	if err != nil {
+		return nil, fmt.Errorf("failed to read proc dir: %w", err)
+	}
+
+	result := make(map[PodContainerUID]map[int]struct{})
+	for _, di := range dirs {
+		if !di.IsDir() {
+			continue
+		}
+		pid, err := strconv.Atoi(di.Name())
+		if err != nil {
+			continue
+		}
+
+		f, err := os.Open(process.ProcFilePath(pid, "mountinfo"))
+		if err != nil {
+			continue
+		}
+
+		scanner := bufio.NewScanner(f)
+		found := false
+		for scanner.Scan() {
+			line := scanner.Bytes()
+			for pc, mount := range expectedMounts {
+				if bytes.Contains(line, mount) {
+					if result[pc] == nil {
+						result[pc] = make(map[int]struct{})
+					}
+					result[pc][pid] = struct{}{}
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		f.Close()
+	}
+
+	return result, nil
 }
