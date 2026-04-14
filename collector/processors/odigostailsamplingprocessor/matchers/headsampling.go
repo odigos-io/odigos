@@ -28,19 +28,16 @@ func headSamplingOperationHttpServerMatcher(operation *commonapisampling.HeadSam
 	}
 
 	httpMethod, found := getHttpMethod(span)
-	if !found {
+	switch {
+	case !found:
 		return false
-	}
-
-	if operation.Method != "" && !compareHttpMethod(httpMethod, operation.Method) {
+	case operation.Method != "" && !compareHttpMethod(httpMethod, operation.Method):
 		return false
-	}
-
-	if (operation.Route != "" || operation.RoutePrefix != "") && !matchHttpRoute(span, operation.Route, operation.RoutePrefix) {
+	case (operation.Route != "" || operation.RoutePrefix != "") && !matchHttpRoute(span, operation.Route, operation.RoutePrefix):
 		return false
+	default:
+		return true
 	}
-
-	return true
 }
 
 func headSamplingOperationHttpClientMatcher(operation *commonapisampling.HeadSamplingHttpClientOperationMatcher, span ptrace.Span) bool {
@@ -51,20 +48,16 @@ func headSamplingOperationHttpClientMatcher(operation *commonapisampling.HeadSam
 	}
 
 	httpMethod, found := getHttpMethod(span)
-	if !found {
+	switch {
+	case !found:
 		return false
-	}
-	if operation.Method != "" && !compareHttpMethod(httpMethod, operation.Method) {
+	case operation.Method != "" && !compareHttpMethod(httpMethod, operation.Method):
 		return false
-	}
-
-	if operation.ServerAddress != "" && !matchServerAddress(span, operation.ServerAddress) {
+	case operation.ServerAddress != "" && !matchServerAddress(span, operation.ServerAddress):
 		return false
-	}
-
-	if (operation.TemplatedPath != "" || operation.TemplatedPathPrefix != "") && !matchTemplatedPath(span, operation.TemplatedPath, operation.TemplatedPathPrefix) {
+	case (operation.TemplatedPath != "" || operation.TemplatedPathPrefix != "") && !matchTemplatedPath(span, operation.TemplatedPath, operation.TemplatedPathPrefix):
 		return false
+	default:
+		return true
 	}
-
-	return true
 }
