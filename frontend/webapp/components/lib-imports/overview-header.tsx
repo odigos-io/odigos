@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
+import { TerminalIcon } from '@odigos/ui-kit/icons';
 import { FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { OtherStatusType } from '@odigos/ui-kit/types';
 import { StatusKeys, useStatusStore } from '../../store';
 import { Header, Tooltip } from '@odigos/ui-kit/components';
 import { SystemDrawer } from '@odigos/ui-kit/containers/v2';
-import { OdigosLogoText, TerminalIcon } from '@odigos/ui-kit/icons';
+import { OdigosLogoTextByTier } from '@odigos/ui-kit/snippets/v2';
 import { useConfig, useDescribe, useDiagnose, useTokenCRUD } from '@/hooks';
 import { NotificationManager, SlackInvite } from '@odigos/ui-kit/containers';
 import { IconButton, Badge as V2Badge, Header as V2Header } from '@odigos/ui-kit/components/v2';
@@ -25,7 +26,7 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
   const left = useMemo(() => {
     const arr = [
       <div key='logo' data-id='logo'>
-        <OdigosLogoText size={150} />
+        <OdigosLogoTextByTier size={150} />
       </div>,
     ];
 
