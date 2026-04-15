@@ -334,50 +334,69 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Metrics and optional profiling OTLP consumers
+	// --- OTLP Receiver and consumer path
+	// (single gRPC listener on consts.OTLPPort)
+	// 1) Metrics consumer (always): collector self-metrics / traffic into OdigosMetricsConsumer.
 	odigosMetricsConsumer := collectormetrics.NewOdigosMetrics()
 
+	// 2) Profiles consumer (optional): in-memory store when profiling receiver is enabled in config.
 	profCfg, profCfgErr := services.ResolveProfilingFromEffectiveConfig(ctx, k8sCacheClient)
 	if profCfgErr != nil {
 		log.Error("profiling: could not load effective config; receiver will stay disabled", "err", profCfgErr)
 	}
 
-	var profileStoreRef fecommon.ProfileStoreRef
 	var odigosProfilesConsumer *profiles.OdigosProfilesConsumer
+	var profileStoreRef fecommon.ProfileStoreRef
 
 	if profCfg.ReceiverOn {
-		ps := profiles.NewProfileStore(
+		profileStore := profiles.NewProfileStore(
 			profCfg.StoreLimits.MaxSlots,
 			profCfg.StoreLimits.SlotTTLSeconds,
 			profCfg.StoreLimits.SlotMaxBytes,
 			profCfg.CleanupInterval,
 		)
-		ps.RunCleanup(ctx)
-		defer ps.StopCleanup()
+		profileStore.RunCleanup(ctx)
+		defer profileStore.StopCleanup()
 
 		var err error
-		odigosProfilesConsumer, err = profiles.NewOdigosProfilesConsumer(ps)
+		odigosProfilesConsumer, err = profiles.NewOdigosProfilesConsumer(profileStore)
 		if err != nil {
 			log.Error("profiling: failed to create profiles consumer", "err", err)
 			odigosProfilesConsumer = nil
 		} else {
-			// Same *ProfileStore is exposed to GraphQL via ProfileStoreRef (not a copy).
-			profileStoreRef = ps
+			profileStoreRef = profileStore
 		}
 	}
-	// One OTLP gRPC listener on consts.OTLPPort: metrics always; profiles when odigosProfilesConsumer != nil.
-	otlpConsumers := otlp.NewConsumers(odigosMetricsConsumer, odigosProfilesConsumer)
+	// 3) OTLP: register sinks (Create*), Start (listen on :4317), then WaitAndShutdown until process exit.
+	receiver, err := otlp.NewReceiver(consts.OTLPPort)
+	if err != nil {
+		log.Error("OTLP receiver config failed", "err", err)
+		os.Exit(1)
+	}
 
+	consumers := []otlp.Consumer{otlp.NewMetrics(odigosMetricsConsumer)}
+	if odigosProfilesConsumer != nil {
+		consumers = append(consumers, otlp.NewProfilesConsumer(odigosProfilesConsumer.OTLPProfiles()))
+	}
+
+	if err := receiver.Setup(ctx, consumers...); err != nil {
+		log.Error("OTLP setup failed", "err", err)
+		os.Exit(1)
+	}
 	var wg sync.WaitGroup
 	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		otlpConsumers.Run(ctx, consts.OTLPPort)
-	}()
+
 	// K8s delete watcher + in-process notification loop for metrics maps (independent of OTLP receiver).
 	go func() {
 		defer wg.Done()
 		odigosMetricsConsumer.RunDeleteWatcherAndNotifications(ctx, flags.Namespace)
+	}()
+
+	go func() {
+		defer wg.Done()
+		if err := receiver.WaitAndShutdown(ctx, consumers...); err != nil {
+			log.Error("OTLP receiver shutdown failed", "err", err)
+		}
 	}()
 
 	// Start watchers

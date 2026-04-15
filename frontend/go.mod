@@ -128,7 +128,7 @@ require (
 	go.opentelemetry.io/collector/consumer v1.54.0
 	go.opentelemetry.io/collector/extension v1.54.0 // indirect
 	go.opentelemetry.io/collector/featuregate v1.54.0 // indirect
-	go.opentelemetry.io/collector/receiver v1.54.0 // indirect
+	go.opentelemetry.io/collector/receiver v1.54.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.67.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.67.0 // indirect
 	go.opentelemetry.io/otel/metric v1.42.0 // indirect
