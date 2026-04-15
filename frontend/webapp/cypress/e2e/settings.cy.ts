@@ -33,6 +33,25 @@ const addMultiInputValue = (fieldPath: string, value: string) => {
   cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).find('input').last().clear().type(value);
 };
 
+const verifyInput = (fieldPath: string, expectedValue: string) => {
+  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).should('have.value', expectedValue);
+};
+
+const verifyDropdown = (fieldPath: string, expectedLabel: string) => {
+  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).should('have.value', `Selected: ${expectedLabel}`);
+};
+
+const verifyMultiInputContains = (fieldPath: string, expectedValue: string) => {
+  // InputList renders values inside <input> elements, not as text content,
+  // so we check that at least one input within the container has the expected value.
+  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath))
+    .find('input')
+    .should(($inputs) => {
+      const values = [...$inputs].map((el) => (el as HTMLInputElement).value);
+      expect(values).to.include(expectedValue);
+    });
+};
+
 describe('Settings CRUD', () => {
   beforeEach(() => {
     cy.intercept('/graphql').as('gql');
@@ -42,7 +61,6 @@ describe('Settings CRUD', () => {
   // ── Setup ─────────────────────────────────────────────────────────────────
 
   it('Should capture initial state from the cluster', () => {
-    // Reset any leftover test state from previous runs before capturing the baseline
     cy.exec(`kubectl delete configmap ${CONFIG_MAPS.LOCAL_UI_CONFIG} -n ${namespace}`, { failOnNonZeroExit: false });
     cy.wait(10000);
 
@@ -106,9 +124,9 @@ describe('Settings CRUD', () => {
     });
   });
 
-  // ── Update ALL non-helm-only fields + Save ────────────────────────────────
+  // ── Update ALL non-helm-only, non-enterprise-only fields + Save ─────────
 
-  it('Should update all non-helm-only fields and save successfully', () => {
+  it('Should update all non-helm-only, non-enterprise-only fields and save successfully', () => {
     visitPage(ROUTES.SETTINGS, () => {
       waitForGraphqlOperation('GetEffectiveConfig').then(() => {
         // ─ General ─
@@ -116,8 +134,7 @@ describe('Settings CRUD', () => {
         clickToggle('telemetryEnabled');
 
         // ─ Instrumentation ─
-        // Note: instrumentor.agentEnvVarsInjectionMethod dropdown is skipped because
-        // the config YAML options use hyphens while the GraphQL enum uses underscores.
+        selectDropdownOption('instrumentor.agentEnvVarsInjectionMethod', 'pod-manifest');
         clickToggle('allowConcurrentAgents.enabled');
         clickToggle('instrumentor.checkDeviceHealthBeforeInjection');
         clickToggle('wasp.enabled');
@@ -135,14 +152,14 @@ describe('Settings CRUD', () => {
         clickToggle('ignoreOdigosNamespace');
 
         // ─ Component Log Levels ─
-        selectDropdownOption('componentLogLevels.default', 'info');
-        selectDropdownOption('componentLogLevels.autoscaler', 'info');
-        selectDropdownOption('componentLogLevels.scheduler', 'info');
-        selectDropdownOption('componentLogLevels.instrumentor', 'info');
-        selectDropdownOption('componentLogLevels.odiglet', 'info');
-        selectDropdownOption('componentLogLevels.deviceplugin', 'info');
-        selectDropdownOption('componentLogLevels.ui', 'info');
-        selectDropdownOption('componentLogLevels.collector', 'info');
+        selectDropdownOption('componentLogLevels.default', 'debug');
+        selectDropdownOption('componentLogLevels.autoscaler', 'debug');
+        selectDropdownOption('componentLogLevels.scheduler', 'debug');
+        selectDropdownOption('componentLogLevels.instrumentor', 'debug');
+        selectDropdownOption('componentLogLevels.odiglet', 'debug');
+        selectDropdownOption('componentLogLevels.deviceplugin', 'debug');
+        selectDropdownOption('componentLogLevels.ui', 'debug');
+        selectDropdownOption('componentLogLevels.collector', 'debug');
 
         // ─ Sampling ─
         clickToggle('sampling.dryRun');
@@ -155,14 +172,12 @@ describe('Settings CRUD', () => {
         clickToggle('sampling.k8sHealthProbesSampling.enabled');
         setInput('sampling.k8sHealthProbesSampling.keepPercentage', '50');
 
-        // ─ Advanced ─
-        setInput('goAutoOffsetsCron', '0 0 * * *');
-        setInput('goAutoOffsetsMode', 'cypress-test');
-
         // ─ Save ─
         cy.get(DATA_IDS.SETTINGS_SAVE).should('be.visible').click();
 
-        // Wait for the mutation to complete and toast to appear.
+        // Confirm the save warning modal
+        cy.contains('Save changes').click();
+
         // Don't use cy.wait('@gql') or waitForGraphqlOperation here — background
         // SSE-triggered queries can consume the alias before the mutation response arrives.
         awaitToast({ message: TEXTS.NOTIF_CONFIG_UPDATED });
@@ -170,14 +185,17 @@ describe('Settings CRUD', () => {
     });
   });
 
-  // ── Verify kubectl ────────────────────────────────────────────────────────
+  // ── Verify kubectl: local-ui-config ────────────────────────────────────
 
-  it(`Should have written the changes to the ${CONFIG_MAPS.LOCAL_UI_CONFIG} ConfigMap`, () => {
+  it(`Should have written all changes to the ${CONFIG_MAPS.LOCAL_UI_CONFIG} ConfigMap`, () => {
     getConfigMapYaml(CONFIG_MAPS.LOCAL_UI_CONFIG, (yaml) => {
       // ─ General (input) ─
       expect(yaml).to.contain(`clusterName: ${testClusterName}`);
+      // Note: telemetryEnabled toggled to false is omitted from YAML because
+      // the Go struct uses a plain bool with json omitempty (false = zero value).
 
-      // ─ Instrumentation (toggles — key presence confirms the toggle fired) ─
+      // ─ Instrumentation (dropdown + toggles) ─
+      expect(yaml).to.contain('agentEnvVarsInjectionMethod: pod-manifest');
       expect(yaml).to.contain('allowConcurrentAgents:');
       expect(yaml).to.contain('checkDeviceHealthBeforeInjection:');
       expect(yaml).to.contain('waspEnabled:');
@@ -194,53 +212,131 @@ describe('Settings CRUD', () => {
       expect(yaml).to.contain('cypress-test-container');
       expect(yaml).to.contain('ignoreOdigosNamespace:');
 
-      // ─ Advanced (inputs) ─
-      expect(yaml).to.contain('goAutoOffsetsCron: 0 0 * * *');
-      expect(yaml).to.contain('goAutoOffsetsMode: cypress-test');
+      // ─ Component Log Levels (dropdowns) ─
+      expect(yaml).to.contain('componentLogLevels:');
+
+      // ─ Sampling (toggles + inputs) ─
+      expect(yaml).to.contain('sampling:');
+      expect(yaml).to.contain('dryRun:');
+      expect(yaml).to.contain('spanSamplingAttributes:');
+      expect(yaml).to.contain('tailSampling:');
+      expect(yaml).to.satisfy((s: string) => s.includes('traceAggregationWaitDuration: 45s') || s.includes('traceAggregationWaitDuration: "45s"'));
+      expect(yaml).to.contain('k8sHealthProbesSampling:');
+      expect(yaml).to.contain('keepPercentage: 50');
     });
   });
 
   it(`Should have reconciled changes into the ${CONFIG_MAPS.EFFECTIVE_CONFIG} ConfigMap`, () => {
     cy.wait(5000).then(() => {
       getConfigMapYaml(CONFIG_MAPS.EFFECTIVE_CONFIG, (yaml) => {
-        // ─ General (input) ─
+        // ─ General ─
         expect(yaml).to.contain(`clusterName: ${testClusterName}`);
 
-        // ─ Instrumentation (toggles) ─
+        // ─ Instrumentation ─
+        expect(yaml).to.contain('agentEnvVarsInjectionMethod: pod-manifest');
         expect(yaml).to.contain('allowConcurrentAgents:');
         expect(yaml).to.contain('checkDeviceHealthBeforeInjection:');
         expect(yaml).to.contain('waspEnabled:');
 
-        // ─ Rollout & Rollback (inputs + toggles) ─
+        // ─ Rollout & Rollback ─
         expect(yaml).to.contain('automaticRolloutDisabled:');
         expect(yaml).to.contain('maxConcurrentRollouts: 5');
         expect(yaml).to.contain('rollbackDisabled:');
         expect(yaml).to.satisfy((s: string) => s.includes('rollbackGraceTime: 60s') || s.includes('rollbackGraceTime: "60s"'));
         expect(yaml).to.satisfy((s: string) => s.includes('rollbackStabilityWindow: 120s') || s.includes('rollbackStabilityWindow: "120s"'));
 
-        // ─ Namespaces & Filtering (multiInputs) ─
+        // ─ Namespaces & Filtering ─
         expect(yaml).to.contain('cypress-test-ns');
         expect(yaml).to.contain('cypress-test-container');
 
-        // ─ Advanced (inputs) ─
-        expect(yaml).to.contain('goAutoOffsetsCron: 0 0 * * *');
-        expect(yaml).to.contain('goAutoOffsetsMode: cypress-test');
+        // ─ Sampling ─
+        expect(yaml).to.satisfy((s: string) => s.includes('traceAggregationWaitDuration: 45s') || s.includes('traceAggregationWaitDuration: "45s"'));
+        expect(yaml).to.contain('keepPercentage: 50');
       });
     });
   });
 
-  // ── Cleanup ───────────────────────────────────────────────────────────────
+  // ── Verify UI values after page refresh ────────────────────────────────
 
-  it('Should restore the original ConfigMap and reconcile', () => {
-    cy.exec(`kubectl delete configmap ${CONFIG_MAPS.LOCAL_UI_CONFIG} -n ${namespace}`, { failOnNonZeroExit: false });
+  it('Should display saved values in UI fields after page refresh', () => {
+    visitPage(ROUTES.SETTINGS, () => {
+      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
+        // No dirty state after fresh load
+        cy.get(DATA_IDS.SETTINGS_SAVE).should('not.exist');
+        cy.get(DATA_IDS.SETTINGS_CANCEL).should('not.exist');
 
-    cy.wait(10000).then(() => {
-      getConfigMapYaml(CONFIG_MAPS.EFFECTIVE_CONFIG, (yaml) => {
+        // Only fields present in the GraphQL EffectiveConfig type can be verified
+        // after refresh. Fields like rollout.maxConcurrentRollouts, and all
+        // sampling.* fields exist only on LocalUiConfigInput (mutation) and are
+        // not returned by the GetEffectiveConfig query.
+
+        // ─ General (input) ─
+        verifyInput('clusterName', testClusterName);
+
+        // ─ Instrumentation (dropdown) ─
+        verifyDropdown('instrumentor.agentEnvVarsInjectionMethod', 'pod-manifest');
+
+        // ─ Rollout & Rollback (inputs — only fields on EffectiveConfig) ─
+        verifyInput('autoRollback.graceTime', '60s');
+        verifyInput('autoRollback.stabilityWindowTime', '120s');
+
+        // ─ Namespaces & Filtering (multiInputs) ─
+        verifyMultiInputContains('ignoredNamespaces', 'cypress-test-ns');
+        verifyMultiInputContains('ignoredContainers', 'cypress-test-container');
+
+        // ─ Component Log Levels (dropdowns) ─
+        verifyDropdown('componentLogLevels.default', 'debug');
+        verifyDropdown('componentLogLevels.autoscaler', 'debug');
+        verifyDropdown('componentLogLevels.scheduler', 'debug');
+        verifyDropdown('componentLogLevels.instrumentor', 'debug');
+        verifyDropdown('componentLogLevels.odiglet', 'debug');
+        verifyDropdown('componentLogLevels.deviceplugin', 'debug');
+        verifyDropdown('componentLogLevels.ui', 'debug');
+        verifyDropdown('componentLogLevels.collector', 'debug');
+      });
+    });
+  });
+
+  // ── Reset via UI ───────────────────────────────────────────────────────
+
+  it('Should reset settings via the Reset button and confirm modal', () => {
+    visitPage(ROUTES.SETTINGS, () => {
+      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
+        // Click "Reset" in the toolbar
+        cy.contains('button', 'Reset').click();
+
+        // Confirm the reset warning modal
+        cy.contains('button', 'Approve').click();
+
+        awaitToast({ message: TEXTS.NOTIF_CONFIG_RESET });
+      });
+    });
+  });
+
+  it(`Should have cleared the ${CONFIG_MAPS.LOCAL_UI_CONFIG} ConfigMap after reset`, () => {
+    cy.wait(5000).then(() => {
+      getConfigMapYaml(CONFIG_MAPS.LOCAL_UI_CONFIG, (yaml) => {
         expect(yaml).to.not.contain(`clusterName: ${testClusterName}`);
-        expect(yaml).to.not.contain('goAutoOffsetsMode: cypress-test');
+        expect(yaml).to.not.contain('agentEnvVarsInjectionMethod: pod-manifest');
         expect(yaml).to.not.contain('cypress-test-ns');
         expect(yaml).to.not.contain('cypress-test-container');
         expect(yaml).to.not.contain('maxConcurrentRollouts: 5');
+        expect(yaml).to.not.contain('keepPercentage: 50');
+        expect(yaml).to.not.contain('waspEnabled:');
+        expect(yaml).to.not.contain('allowConcurrentAgents:');
+      });
+    });
+  });
+
+  it(`Should have reconciled the reset into the ${CONFIG_MAPS.EFFECTIVE_CONFIG} ConfigMap`, () => {
+    cy.wait(5000).then(() => {
+      getConfigMapYaml(CONFIG_MAPS.EFFECTIVE_CONFIG, (yaml) => {
+        expect(yaml).to.not.contain(`clusterName: ${testClusterName}`);
+        expect(yaml).to.not.contain('agentEnvVarsInjectionMethod: pod-manifest');
+        expect(yaml).to.not.contain('cypress-test-ns');
+        expect(yaml).to.not.contain('cypress-test-container');
+        expect(yaml).to.not.contain('maxConcurrentRollouts: 5');
+        expect(yaml).to.not.contain('keepPercentage: 50');
       });
     });
   });

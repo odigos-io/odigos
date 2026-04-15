@@ -39,6 +39,7 @@ enum MountMethod {
   k8s_virtual_device
   k8s_host_path
   k8s_init_container
+  k8s_csi_driver
 }
 
 enum EnvInjectionMethod {
@@ -130,8 +131,8 @@ type AutoRollbackConfig {
 }
 
 type InstrumentorConfig {
-  mountMethod: MountMethod
-  agentEnvVarsInjectionMethod: EnvInjectionMethod
+  mountMethod: String
+  agentEnvVarsInjectionMethod: String
   checkDeviceHealthBeforeInjection: Boolean
 }
 

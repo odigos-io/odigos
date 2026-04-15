@@ -413,6 +413,13 @@ func calculateDataStreams(
 		return strings.Compare(a.Name, b.Name)
 	})
 
+	// Sort destinations within each data stream for stable pipeline output
+	for i := range dataStreamDetailsList {
+		slices.SortFunc(dataStreamDetailsList[i].Destinations, func(a, b pipelinegen.Destination) int {
+			return strings.Compare(a.DestinationName, b.DestinationName)
+		})
+	}
+
 	return dataStreamDetailsList, nil
 }
 

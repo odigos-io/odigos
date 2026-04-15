@@ -206,6 +206,7 @@ export const TEXTS = {
   NOTIF_INSTRUMENTATION_RULE_DELETED: (ruleType: string) => `Successfully deleted "${ruleType}" rule`,
 
   NOTIF_CONFIG_UPDATED: 'Local UI configuration updated successfully',
+  NOTIF_CONFIG_RESET: 'Local UI configuration reset to factory defaults',
 
   NOTIF_SAMPLING_RULE_CREATED: (name: string) => `Successfully created ${name}`,
   NOTIF_SAMPLING_RULE_UPDATED: (name: string) => `Successfully updated ${name}`,

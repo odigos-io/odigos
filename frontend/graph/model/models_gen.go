@@ -708,9 +708,9 @@ type InstrumentationSourcesAnalyze struct {
 }
 
 type InstrumentorConfig struct {
-	MountMethod                      *MountMethod        `json:"mountMethod,omitempty"`
-	AgentEnvVarsInjectionMethod      *EnvInjectionMethod `json:"agentEnvVarsInjectionMethod,omitempty"`
-	CheckDeviceHealthBeforeInjection *bool               `json:"checkDeviceHealthBeforeInjection,omitempty"`
+	MountMethod                      *string `json:"mountMethod,omitempty"`
+	AgentEnvVarsInjectionMethod      *string `json:"agentEnvVarsInjectionMethod,omitempty"`
+	CheckDeviceHealthBeforeInjection *bool   `json:"checkDeviceHealthBeforeInjection,omitempty"`
 }
 
 type JavaCustomProbe struct {
@@ -2421,17 +2421,19 @@ const (
 	MountMethodK8sVirtualDevice MountMethod = "k8s_virtual_device"
 	MountMethodK8sHostPath      MountMethod = "k8s_host_path"
 	MountMethodK8sInitContainer MountMethod = "k8s_init_container"
+	MountMethodK8sCsiDriver     MountMethod = "k8s_csi_driver"
 )
 
 var AllMountMethod = []MountMethod{
 	MountMethodK8sVirtualDevice,
 	MountMethodK8sHostPath,
 	MountMethodK8sInitContainer,
+	MountMethodK8sCsiDriver,
 }
 
 func (e MountMethod) IsValid() bool {
 	switch e {
-	case MountMethodK8sVirtualDevice, MountMethodK8sHostPath, MountMethodK8sInitContainer:
+	case MountMethodK8sVirtualDevice, MountMethodK8sHostPath, MountMethodK8sInitContainer, MountMethodK8sCsiDriver:
 		return true
 	}
 	return false
