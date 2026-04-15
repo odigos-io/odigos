@@ -47,8 +47,8 @@ COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.77 /instrumentati
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.3.0 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.3.0 /instrumentations/nodejs-community /instrumentations/nodejs-community
 # nodejs-community-14
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.16 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.16 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.17 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.17 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
 
 # nodejs-community
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
@@ -131,7 +131,7 @@ RUN if [ "$RHEL" = "true" ] ; then \
 
 
 # Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.47
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.48
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         GRPC_ARCH="arm64"; \
     else \
