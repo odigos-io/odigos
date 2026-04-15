@@ -498,10 +498,10 @@ func buildDimensions(e *store.Edge) pcommon.Map {
 		dims.PutStr(k, v)
 	}
 
-	// Virtual-node edges: peer attributes describe the downstream from the client span. Emit as
-	// server_* for consistency with other server-side dimensions. Skip keys already in e.Dimensions
-	// to avoid duplicate label names. Sorted peer keys align with buildMetricKeyFromEdge.
-	if e.ConnectionType == store.VirtualNode && len(e.Peer) > 0 {
+	// Virtual-node and database edges: peer attributes describe the downstream from the client span.
+	// Emit as server_* for consistency with other server-side dimensions. Skip keys already in
+	// e.Dimensions to avoid duplicate label names. Sorted peer keys align with buildMetricKeyFromEdge.
+	if (e.ConnectionType == store.VirtualNode || e.ConnectionType == store.Database) && len(e.Peer) > 0 {
 		for _, key := range sortedMapKeys(e.Peer) {
 			dim := serverKind + "_" + key
 			if _, exists := e.Dimensions[dim]; exists {
@@ -735,13 +735,14 @@ func (p *serviceGraphConnector) buildMetricKey(clientName, serverName, connectio
 	return metricKey.String()
 }
 
-// For virtual-node edges the metric "server" label is only one chosen peer field; other peer
-// fields still live in e.Peer. buildMetricKey ignores those, so we append them here—otherwise two
-// edges with the same server name but different peer details would share one counter. Skip a peer
-// key if it is already part of base via e.Dimensions (client_/server_ + key) so we do not double-count.
+// For virtual-node and database edges the metric "server" label is only one chosen peer field;
+// other peer fields still live in e.Peer. buildMetricKey ignores those, so we append them
+// here—otherwise two edges with the same server name but different peer details would share one
+// counter. Skip a peer key if it is already part of base via e.Dimensions (client_/server_ + key)
+// so we do not double-count.
 func (p *serviceGraphConnector) buildMetricKeyFromEdge(e *store.Edge) string {
 	base := p.buildMetricKey(e.ClientService, e.ServerService, string(e.ConnectionType), strconv.FormatBool(e.Failed), e.Dimensions)
-	if e.ConnectionType != store.VirtualNode || len(e.Peer) == 0 {
+	if (e.ConnectionType != store.VirtualNode && e.ConnectionType != store.Database) || len(e.Peer) == 0 {
 		return base
 	}
 	var b strings.Builder
