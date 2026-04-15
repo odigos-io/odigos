@@ -10,11 +10,13 @@ permissions:
 
 jobs:
   require-linear:
+    if: ${{ !startsWith(github.head_ref, 'pre-releases') }}
     runs-on: ubuntu-latest
     steps: 
       - uses: odigos-io/ci-core/require-linear@main
 
   release-note:
+    if: ${{ !startsWith(github.head_ref, 'pre-releases') }}
     runs-on: ubuntu-latest
     steps: 
       - uses: odigos-io/ci-core/require-release-note@main
