@@ -17,4 +17,4 @@ require (
 
 replace github.com/odigos-io/odigos/common => ../common
 
-go 1.26.1
+go 1.26.2

@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor
 
-go 1.26.1
+go 1.26.2
 
 require (
 	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
