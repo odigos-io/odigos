@@ -5,6 +5,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	"github.com/odigos-io/odigos/common/api/sampling"
+	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
 // getRootSpan finds and returns the root span of the trace.
@@ -31,7 +33,7 @@ func getRootSpan(trace ptrace.Traces) (ptrace.Span, pcommon.Resource, bool) {
 }
 
 // add few span attributes to all spans in the trace to indicate the sampling info.
-func enrichSpansWithSamplingAttributes(td ptrace.Traces, category string, ruleId string, ruleName string, keepPercentage float64, dryRun bool, kept bool, spanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration) {
+func enrichSpansWithSamplingAttributes(td ptrace.Traces, category consts.SamplingCategory, ruleId string, ruleName string, keepPercentage float64, dryRun bool, kept bool, spanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration) {
 
 	recordCategoryEnabled := spanSamplingAttributes == nil || spanSamplingAttributes.SamplingCategoryDisabled == nil || !*spanSamplingAttributes.SamplingCategoryDisabled
 	recordTraceDecidingRuleEnabled := spanSamplingAttributes == nil || spanSamplingAttributes.TraceDecidingRuleDisabled == nil || !*spanSamplingAttributes.TraceDecidingRuleDisabled
@@ -46,21 +48,21 @@ func enrichSpansWithSamplingAttributes(td ptrace.Traces, category string, ruleId
 				span := spans.At(k)
 
 				if recordCategoryEnabled {
-					span.Attributes().PutStr("odigos.sampling.category", category)
+					span.Attributes().PutStr(odigosattributes.SamplingCategory, string(category))
 				}
 
 				if recordTraceDecidingRuleEnabled {
-					span.Attributes().PutStr("odigos.sampling.trace.deciding_rule.id", ruleId)
-					span.Attributes().PutDouble("odigos.sampling.trace.deciding_rule.keep_percentage", keepPercentage)
+					span.Attributes().PutStr(odigosattributes.SamplingTraceDecidingRuleId, ruleId)
+					span.Attributes().PutDouble(odigosattributes.SamplingTraceDecidingRuleKeepPercentage, keepPercentage)
 
 					if ruleName != "" {
-						span.Attributes().PutStr("odigos.sampling.trace.deciding_rule.name", ruleName)
+						span.Attributes().PutStr(odigosattributes.SamplingTraceDecidingRuleName, ruleName)
 					}
 				}
 
 				if dryRun {
-					span.Attributes().PutBool("odigos.sampling.dry_run", dryRun)
-					span.Attributes().PutBool("odigos.sampling.trace.kept", kept) // can be false to indicate this trace would have been dropped.
+					span.Attributes().PutBool(odigosattributes.SamplingDryRun, dryRun)
+					span.Attributes().PutBool(odigosattributes.SamplingTraceKept, kept) // can be false to indicate this trace would have been dropped.
 				}
 			}
 		}

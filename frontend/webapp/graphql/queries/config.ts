@@ -185,6 +185,7 @@ export const GET_CONFIG_YAMLS = gql`
         displayName
         componentType
         isHelmOnly
+        isEnterpriseOnly
         description
         helmValuePath
         docsLink

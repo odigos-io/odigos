@@ -7,7 +7,7 @@ import { useConfigYamls, useEffectiveConfig, useUpdateLocalUiConfig } from '@/ho
 
 export default function Page() {
   const { configYamls, configYamlsLoading } = useConfigYamls();
-  const { updateLocalUiConfig, loading: saveLoading } = useUpdateLocalUiConfig();
+  const { updateLocalUiConfig, loading: saveLoading, resetLocalUiConfigToFactoryDefaults } = useUpdateLocalUiConfig();
   const { effectiveConfig, effectiveConfigLoading, refetchEffectiveConfig } = useEffectiveConfig();
 
   const onSave = useCallback(
@@ -26,6 +26,8 @@ export default function Page() {
       configYamlsLoading={configYamlsLoading}
       effectiveConfig={effectiveConfig}
       effectiveConfigLoading={effectiveConfigLoading}
+      refetch={refetchEffectiveConfig}
+      factoryReset={resetLocalUiConfigToFactoryDefaults}
       onSave={onSave}
       saveLoading={saveLoading}
     />

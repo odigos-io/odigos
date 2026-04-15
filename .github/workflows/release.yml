@@ -220,7 +220,7 @@ jobs:
       - uses: odigos-io/ci-core/sts@main
         id: sts-goreleaser
         with:
-          scope: ${{ env.HOMEBREW_REPO }}
+          scope: odigos-io/${{ env.HOMEBREW_REPO }}
           identity: releaser
           output-git-config: "false"
 

@@ -7,6 +7,9 @@ import (
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
+// givin a root span for a trace, and a list of noisy operation sampling rules,
+// evaluate if the trace belongs to the noisy operations category,
+// and return the "matching rule" - e.g. the rule with the least percentage.
 func EvaluateNoisyOperations(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperation) (bool, *commonapisampling.NoisyOperation) {
 
 	// aggregate the matching rules in a list.
@@ -16,7 +19,7 @@ func EvaluateNoisyOperations(span ptrace.Span, noisyOperations []commonapisampli
 
 	for _, noisyOperation := range noisyOperations {
 
-		currentPercentage := GetPercentageOrDefault(noisyOperation.PercentageAtMost, 0.0)
+		currentPercentage := GetPercentageOrDefault0(noisyOperation.PercentageAtMost)
 
 		// shortcut - we are only interested in the least percentage rule,
 		// so avoid checking when unnecessary.

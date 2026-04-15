@@ -17,6 +17,7 @@ import (
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 
 	"github.com/odigos-io/odigos/common/collector"
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 type tailSamplingProcessor struct {
@@ -59,7 +60,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		keepTrace := tracePercentage <= percentageAtMost
 
 		if keepTrace || p.config.DryRun {
-			enrichSpansWithSamplingAttributes(td, "noisy", noisyOperationRule.Id, noisyOperationRule.Name, percentageAtMost, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
+			enrichSpansWithSamplingAttributes(td, consts.SamplingCategoryNoise, noisyOperationRule.Id, noisyOperationRule.Name, percentageAtMost, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
 			return td, nil
 		} else {
 			// drop the trace by not returning anything in the result.

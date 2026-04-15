@@ -21,17 +21,17 @@ This package is copied from [opentelemetry-collector-contrib](https://github.com
 |------|--------|
 | **Where** | `connector.go` — `aggregateMetricsForEdge` calls `buildMetricKeyFromEdge(e)` instead of `buildMetricKey(..., e.Dimensions)`. |
 | **Why** | The `server` label uses the **first** matching `virtual_node_peer_attributes` value (`getPeerHost`). Other peer fields can differ while `server` stays the same; the key must include them or series merge incorrectly. |
-| **What it does** | Starts from `buildMetricKey`. For `virtual_node` + non-empty `e.Peer`, appends sorted `peer\|<key>\|<value>`. Skips keys already in `e.Dimensions` as `client_*` / `server_*`. |
+| **What it does** | Starts from `buildMetricKey`. For `virtual_node` **or `database`** edges with non-empty `e.Peer`, appends sorted `peer\|<key>\|<value>`. Skips keys already in `e.Dimensions` as `client_*` / `server_*`. |
 
 ---
 
-## 3. `buildDimensions` virtual-node peer labels + `sortedMapKeys`
+## 3. `buildDimensions` peer labels + `sortedMapKeys`
 
 | Item | Detail |
 |------|--------|
-| **Where** | `connector.go` — `buildDimensions` (virtual-node branch) and `sortedMapKeys` |
-| **Why** | Odigos UI expects `server_*` labels for virtual-node peers (e.g. `server_db.system`). Upstream only copies `e.Dimensions` onto the datapoint. |
-| **What it does** | For `virtual_node` + non-empty `e.Peer`, adds `server_<peerKey>` unless already in `e.Dimensions`. Uses **sorted** peer keys (same order as §2). |
+| **Where** | `connector.go` — `buildDimensions` (virtual-node / database branch) and `sortedMapKeys` |
+| **Why** | Odigos UI expects `server_*` labels for virtual-node and database peers (e.g. `server_db.system`). Upstream only copies `e.Dimensions` onto the datapoint. Database edges are completed immediately during span processing (before `onExpire`), so they must be handled alongside virtual-node edges. |
+| **What it does** | For `virtual_node` **or `database`** edges with non-empty `e.Peer`, adds `server_<peerKey>` unless already in `e.Dimensions`. Uses **sorted** peer keys (same order as §2). |
 
 ---
 

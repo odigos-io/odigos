@@ -6,7 +6,9 @@ WORKDIR /go/src/collector
 
 ARG TARGETARCH
 ARG RHEL=false
-RUN GOOS=linux GOARCH=$TARGETARCH make build-odigoscol
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    GOOS=linux GOARCH=$TARGETARCH make build-odigoscol
 RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi
