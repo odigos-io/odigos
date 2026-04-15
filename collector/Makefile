@@ -111,7 +111,11 @@ go-licenses:
 
 .PHONY: licenses
 licenses: go-licenses
+	# `github.com/segmentio/asm` is licensed under MIT-0 (MIT No Attribution),
+	# which is a permissive open-source license. However, `go-licenses` does not automatically
+	# detect its license file in subpackages, so we explicitly ignore it to prevent errors.
+	# we're using the same pattern as in the frontend/Makefile
 	@if [ -d "$(PWD)/odigosotelcol/licenses" ]; then \
 		rm -rf $(PWD)/odigosotelcol/licenses; \
 	fi
-	cp LICENSE odigosotelcol/. && cd odigosotelcol && $(TOOLS_BIN_DIR)/go-licenses save . --save_path=licenses
+	cp LICENSE odigosotelcol/. && cd odigosotelcol && $(TOOLS_BIN_DIR)/go-licenses save . --save_path=licenses --ignore=github.com/segmentio/asm
