@@ -86,6 +86,15 @@ module "eks" {
       max_size     = var.node_count
       desired_size = var.node_count
 
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            encrypted = true
+          }
+        }
+      }
+
       tags = {
         AlwaysOn = "true"
       }

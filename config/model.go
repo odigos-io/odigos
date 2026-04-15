@@ -17,11 +17,12 @@ type ConfigurationSpec struct {
 }
 
 type ConfigurationField struct {
-	DisplayName    string                 `yaml:"displayName"`
-	ComponentType  string                 `yaml:"componentType"`
-	IsHelmOnly     bool                   `yaml:"isHelmOnly"`
-	Description    string                 `yaml:"description"`
-	HelmValuePath  string                 `yaml:"helmValuePath"`
-	DocsLink       string                 `yaml:"docsLink,omitempty"`
-	ComponentProps map[string]interface{} `yaml:"componentProps,omitempty"`
+	DisplayName      string                 `yaml:"displayName"`
+	ComponentType    string                 `yaml:"componentType"`
+	IsHelmOnly       bool                   `yaml:"isHelmOnly"`
+	IsEnterpriseOnly bool                   `yaml:"isEnterpriseOnly"`
+	Description      string                 `yaml:"description"`
+	HelmValuePath    string                 `yaml:"helmValuePath"`
+	DocsLink         string                 `yaml:"docsLink,omitempty"`
+	ComponentProps   map[string]interface{} `yaml:"componentProps,omitempty"`
 }

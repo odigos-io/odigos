@@ -181,6 +181,11 @@ func ptrBool(v bool) *bool    { return &v }
 func ptrStr(v string) *string { return &v }
 func ptrInt(v int) *int       { return &v }
 
+func toStringPtr[T ~string](v T) *string {
+	s := string(v)
+	return &s
+}
+
 func EffectiveConfigToModel(config *common.OdigosConfiguration, prov map[string]string) (*model.EffectiveConfig, error) {
 	if config == nil {
 		return nil, nil
@@ -310,14 +315,12 @@ func EffectiveConfigToModel(config *common.OdigosConfiguration, prov map[string]
 		result.UIMode = &uiMode
 		pc.record("uiMode")
 	}
-	if config.MountMethod != nil {
-		mountMethod := convertMountMethodToModel(*config.MountMethod)
-		result.Instrumentor.MountMethod = &mountMethod
+	if config.MountMethod != nil && *config.MountMethod != "" {
+		result.Instrumentor.MountMethod = toStringPtr(*config.MountMethod)
 		pc.recordAs("mountMethod", "instrumentor.mountMethod")
 	}
-	if config.AgentEnvVarsInjectionMethod != nil {
-		injMethod := convertEnvInjectionMethodToModel(*config.AgentEnvVarsInjectionMethod)
-		result.Instrumentor.AgentEnvVarsInjectionMethod = &injMethod
+	if config.AgentEnvVarsInjectionMethod != nil && *config.AgentEnvVarsInjectionMethod != "" {
+		result.Instrumentor.AgentEnvVarsInjectionMethod = toStringPtr(*config.AgentEnvVarsInjectionMethod)
 		pc.recordAs("agentEnvVarsInjectionMethod", "instrumentor.agentEnvVarsInjectionMethod")
 	}
 
@@ -476,28 +479,6 @@ func convertUiModeToModel(uiMode common.UiMode) model.UIMode {
 		return model.UIModeReadonly
 	default:
 		return model.UIModeDefault
-	}
-}
-
-func convertMountMethodToModel(method common.MountMethod) model.MountMethod {
-	switch method {
-	case common.K8sHostPathMountMethod:
-		return model.MountMethodK8sHostPath
-	case common.K8sInitContainerMountMethod:
-		return model.MountMethodK8sInitContainer
-	default:
-		return model.MountMethodK8sVirtualDevice
-	}
-}
-
-func convertEnvInjectionMethodToModel(method common.EnvInjectionMethod) model.EnvInjectionMethod {
-	switch method {
-	case common.PodManifestEnvInjectionMethod:
-		return model.EnvInjectionMethodPodManifest
-	case common.LoaderFallbackToPodManifestInjectionMethod:
-		return model.EnvInjectionMethodLoaderFallbackToPodManifest
-	default:
-		return model.EnvInjectionMethodLoader
 	}
 }
 
