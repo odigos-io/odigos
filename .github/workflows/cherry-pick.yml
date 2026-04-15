@@ -28,7 +28,7 @@ jobs:
         with:
           scope: odigos-io/odigos
           identity: cherry-pick-decision
-          output-git-config: "false"
+          output-git-config: "true"
 
       - name: Find merged PR for commit
         id: find_pr
