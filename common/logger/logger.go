@@ -20,26 +20,47 @@ var (
 // levelStr: "error"|"warn"|"info"|"debug". component is the process name (e.g. "scheduler", "autoscaler")
 // and is added to every log line as the "component" field.
 //
+// Options (all optional, backward-compatible):
+//   - WithRotation(cfg): write to a rotated file instead of stdout (off by default).
+//   - WithStdout(true): keep stdout when rotation is enabled (for tee-style logging).
+//
 // For non-Kubernetes binaries (e.g. vm-agent): use Init then LoggerCompat() or ToLogr()/WrapLogr for logging.
 // Do not use FromContext (it requires controller-runtime context); SetLevel still applies to the shared atom.
-func Init(levelStr string, component string) *zap.Logger {
+func Init(levelStr string, component string, opts ...Option) *zap.Logger {
 	atom.SetLevel(ParseLevel(levelStr))
+
+	cfg := initConfig{}
+	for _, o := range opts {
+		o(&cfg)
+	}
 
 	encoderCfg := zap.NewProductionEncoderConfig()
 	encoderCfg.TimeKey = "ts"
 	encoderCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoder := zapcore.NewJSONEncoder(encoderCfg)
 
-	core := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderCfg),
-		zapcore.AddSync(os.Stdout),
-		atom,
-	)
+	ws := buildWriteSyncer(cfg)
+
+	core := zapcore.NewCore(encoder, ws, atom)
 	instance = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	if component != "" {
 		instance = instance.With(zap.String("component", component))
 	}
 	zap.ReplaceGlobals(instance)
 	return instance
+}
+
+// buildWriteSyncer returns the appropriate write syncer(s) based on initConfig.
+func buildWriteSyncer(cfg initConfig) zapcore.WriteSyncer {
+	if cfg.rotation == nil {
+		return zapcore.AddSync(os.Stdout)
+	}
+
+	fileSyncer := zapcore.AddSync(cfg.rotation.toLumberjack())
+	if cfg.stdout {
+		return zapcore.NewMultiWriteSyncer(fileSyncer, zapcore.AddSync(os.Stdout))
+	}
+	return fileSyncer
 }
 
 // UpdateInstance must be called after bridge.AttachToZapLogger wraps the logger.

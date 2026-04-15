@@ -16,6 +16,7 @@ require (
 	go.uber.org/zap v1.27.1 // indirect
 	golang.org/x/mod v0.34.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	sigs.k8s.io/controller-runtime v0.23.3 // indirect
 )
 

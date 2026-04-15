@@ -46,6 +46,12 @@ func (r *mutationResolver) UpdateLocalUIConfig(ctx context.Context, config model
 	return err == nil, err
 }
 
+// ResetLocalUIConfigToFactoryDefaults is the resolver for the resetLocalUiConfigToFactoryDefaults field.
+func (r *mutationResolver) ResetLocalUIConfigToFactoryDefaults(ctx context.Context) (bool, error) {
+	err := services.ResetLocalUiConfigToFactoryDefaults(ctx, r.K8sCacheClient)
+	return err == nil, err
+}
+
 // Config is the resolver for the config field.
 func (r *queryResolver) Config(ctx context.Context) (*model.Config, error) {
 	config := services.GetConfig(ctx)

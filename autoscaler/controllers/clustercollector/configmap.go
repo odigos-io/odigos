@@ -55,8 +55,9 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 		"config": config.GenericMap{
 			"scrape_configs": []config.GenericMap{
 				{
-					"job_name":        "otelcol",
-					"scrape_interval": "10s",
+					"job_name":           "otelcol",
+					"scrape_interval":    "10s",
+					"enable_compression": false,
 					"static_configs": []config.GenericMap{
 						{
 							"targets": []string{fmt.Sprintf("127.0.0.1:%d", ownTelemetryPort)},
@@ -99,7 +100,8 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 	// In case of performance impact caused by this processor, we should modify this config to reduce the sampling ratio.
 	c.Processors["odigostrafficmetrics"] = struct{}{}
 	c.Exporters["otlp/odigos-own-telemetry-ui"] = config.GenericMap{
-		"endpoint": fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), odigosconsts.OTLPPort),
+		"endpoint":    fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), odigosconsts.OTLPPort),
+		"compression": "none",
 		"tls": config.GenericMap{
 			"insecure": true,
 		},
