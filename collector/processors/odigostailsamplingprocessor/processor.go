@@ -70,11 +70,11 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 
 	matched, highlyRelevantOperationRule, highlyRelevantOperationRulesMetrics := category.EvaluateHighlyRelevantOperations(ctx, td, p.odigosConfigExtension, tracePercentage)
 	if matched {
-		percentageAtLeast := category.GetPercentageOrDefault(highlyRelevantOperationRule.PercentageAtLeast, 100.0)
+		percentageAtLeast := category.GetPercentageOrDefault100(highlyRelevantOperationRule.PercentageAtLeast)
 		keepTrace := tracePercentage <= percentageAtLeast
 
 		if keepTrace || p.config.DryRun {
-			enrichSpansWithSamplingAttributes(td, "highly_relevant", highlyRelevantOperationRule.Id, highlyRelevantOperationRule.Name, percentageAtLeast, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
+			enrichSpansWithSamplingAttributes(td, consts.SamplingCategoryHighlyRelevant, highlyRelevantOperationRule.Id, highlyRelevantOperationRule.Name, percentageAtLeast, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
 			return td, nil
 		} else {
 			return ptrace.NewTraces(), nil
@@ -101,7 +101,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		keepTrace := tracePercentage <= percentageAtMost
 
 		if keepTrace || p.config.DryRun {
-			enrichSpansWithSamplingAttributes(td, "cost_reduction", costReductionRule.Id, costReductionRule.Name, percentageAtMost, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
+			enrichSpansWithSamplingAttributes(td, consts.SamplingCategoryCostReduction, costReductionRule.Id, costReductionRule.Name, percentageAtMost, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
 			return td, nil
 		} else {
 			return ptrace.NewTraces(), nil

@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/collector"
+	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
 // CostReductionRuleMetrics holds per-rule metrics for cost reduction (percentage-at-most semantics).
@@ -190,7 +191,7 @@ func recordCostReductionMetricsMatchingAndDropped(rulesMetrics map[string]*CostR
 }
 
 func setCostReductionRuleAttributesOnSpan(span ptrace.Span, rule *commonapisampling.CostReductionRule) {
-	span.Attributes().PutStr("odigos.sampling.span.matching_rule.id", rule.Id)
-	span.Attributes().PutStr("odigos.sampling.span.matching_rule.name", rule.Name)
-	span.Attributes().PutDouble("odigos.sampling.span.matching_rule.percentage_at_most", rule.PercentageAtMost)
+	span.Attributes().PutStr(odigosattributes.SamplingSpanMatchingRuleId, rule.Id)
+	span.Attributes().PutStr(odigosattributes.SamplingSpanMatchingRuleName, rule.Name)
+	span.Attributes().PutDouble(odigosattributes.SamplingSpanMatchingRuleKeepPercentage, rule.PercentageAtMost)
 }
