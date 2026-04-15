@@ -352,6 +352,7 @@ type ConfigYamlField {
   displayName: String!
   componentType: FieldType!
   isHelmOnly: Boolean!
+  isEnterpriseOnly: Boolean!
   description: String!
   helmValuePath: String!
   docsLink: String
@@ -382,4 +383,5 @@ extend type Mutation {
     level: OdigosLogLevel!
   ): Boolean!
   updateLocalUiConfig(config: LocalUiConfigInput!): Boolean!
+  resetLocalUiConfigToFactoryDefaults: Boolean!
 }

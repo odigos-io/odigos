@@ -264,13 +264,14 @@ type ConfigYaml struct {
 }
 
 type ConfigYamlField struct {
-	DisplayName    string    `json:"displayName"`
-	ComponentType  FieldType `json:"componentType"`
-	IsHelmOnly     bool      `json:"isHelmOnly"`
-	Description    string    `json:"description"`
-	HelmValuePath  string    `json:"helmValuePath"`
-	DocsLink       *string   `json:"docsLink,omitempty"`
-	ComponentProps *string   `json:"componentProps,omitempty"`
+	DisplayName      string    `json:"displayName"`
+	ComponentType    FieldType `json:"componentType"`
+	IsHelmOnly       bool      `json:"isHelmOnly"`
+	IsEnterpriseOnly bool      `json:"isEnterpriseOnly"`
+	Description      string    `json:"description"`
+	HelmValuePath    string    `json:"helmValuePath"`
+	DocsLink         *string   `json:"docsLink,omitempty"`
+	ComponentProps   *string   `json:"componentProps,omitempty"`
 }
 
 type ContainerAgentConfigAnalyze struct {

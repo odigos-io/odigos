@@ -82,6 +82,32 @@ func createLocalUiConfigMap(ctx context.Context, c client.Client, ns string, inp
 	return c.Create(ctx, &newCm)
 }
 
+func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client) error {
+	ns := env.GetCurrentNamespace()
+
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		var cm v1.ConfigMap
+		err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosLocalUiConfigName}, &cm)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+
+		emptyCfg := common.OdigosConfiguration{}
+		data, err := yaml.Marshal(emptyCfg)
+		if err != nil {
+			return err
+		}
+		if cm.Data == nil {
+			cm.Data = make(map[string]string)
+		}
+		cm.Data[consts.OdigosConfigurationFileName] = string(data)
+		return c.Update(ctx, &cm)
+	})
+}
+
 func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalUIConfigInput) {
 	if input.TelemetryEnabled != nil {
 		cfg.TelemetryEnabled = *input.TelemetryEnabled
