@@ -201,6 +201,9 @@ func CalculateGatewayConfig(
 		currentConfig.Extensions[*gatewayOptions.OdigosConfigExtensionName] = config.GenericMap{}
 	}
 
+	// Sort extensions for deterministic YAML output
+	slices.Sort(currentConfig.Service.Extensions)
+
 	// Final marshal to YAML
 	data, err := yaml.Marshal(currentConfig)
 	if err != nil {
