@@ -1,6 +1,6 @@
 module odigosk8scmprovider
 
-go 1.26.1
+go 1.26.2
 
 require (
 	go.opentelemetry.io/collector/confmap v1.54.0
