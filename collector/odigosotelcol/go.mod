@@ -2,7 +2,7 @@
 
 module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
-go 1.26.1
+go 1.26.2
 
 require (
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.148.0
