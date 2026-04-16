@@ -40,7 +40,7 @@ func (t *Tempo) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 			endpoint = fmt.Sprintf("%s:4317", url)
 		}
 
-		tempoExporterName := "otlp/tempo-" + dest.GetID()
+		tempoExporterName := "otlp_grpc/tempo-" + dest.GetID()
 		currentConfig.Exporters[tempoExporterName] = GenericMap{
 			"endpoint": endpoint,
 			"tls": GenericMap{

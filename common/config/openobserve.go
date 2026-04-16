@@ -31,7 +31,7 @@ func (j *OpenObserve) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		return nil, errorMissingKey(OPEN_OBSERVE_STREAM_NAME)
 	}
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{

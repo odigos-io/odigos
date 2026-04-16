@@ -288,7 +288,7 @@ jobs:
         run: |
           make test
 
-  build-frontend:
+  build-and-test-frontend:
     name: build-frontend
     runs-on: ubuntu-latest
     steps:
@@ -362,6 +362,10 @@ jobs:
           name: vuln-scan-result-frontend-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-ui.json
           retention-days: 30
+      - name: run tests
+        working-directory: ./frontend
+        run: |
+          make test
 
   build-operator:
     name: build-operator
@@ -417,7 +421,7 @@ jobs:
       - build-and-test-instrumentor
       - build-and-test-odigos-collector
       - build-and-test-odiglet
-      - build-frontend
+      - build-and-test-frontend
       - build-operator
     runs-on: ubuntu-latest
     if: always()
