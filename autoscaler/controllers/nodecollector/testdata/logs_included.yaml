@@ -169,7 +169,7 @@ service:
       - filelog
     metrics:
       exporters:
-        - otlp_grpc/out-cluster-collector-metrics
+      - otlp_grpc/out-cluster-collector-metrics
       processors:
       - batch
       - memory_limiter
@@ -184,7 +184,7 @@ service:
       - hostmetrics
     metrics/own-metrics-ui:
       exporters:
-        - otlp_grpc/odigos-own-telemetry-ui
+      - otlp_grpc/odigos-own-telemetry-ui
       processors:
       - resource/pod-name
       - resource/odigos-collector-role

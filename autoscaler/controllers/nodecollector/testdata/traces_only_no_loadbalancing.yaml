@@ -101,7 +101,7 @@ service:
   pipelines:
     metrics/own-metrics-ui:
       exporters:
-        - otlp_grpc/odigos-own-telemetry-ui
+      - otlp_grpc/odigos-own-telemetry-ui
       processors:
       - resource/pod-name
       - resource/odigos-collector-role
@@ -109,7 +109,7 @@ service:
       - prometheus/self-metrics-ui
     traces:
       exporters:
-        - otlp_grpc/out-cluster-collector-traces
+      - otlp_grpc/out-cluster-collector-traces
       processors:
       - batch
       - memory_limiter
