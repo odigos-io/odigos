@@ -18,7 +18,7 @@ const (
 
 	podNameProcessorName       = "resource/pod-name"
 	collectorRoleProcessorName = "resource/odigos-collector-role"
-	ownMetricsUiExporterName   = "otlp/odigos-own-telemetry-ui"
+	ownMetricsUiExporterName   = "otlp_grpc/odigos-own-telemetry-ui"
 	ownMetricsUiReceiverName   = "prometheus/self-metrics-ui"
 	ownMetricsUiPipelineName   = "metrics/own-metrics-ui"
 )

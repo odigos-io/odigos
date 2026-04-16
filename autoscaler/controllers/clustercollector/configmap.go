@@ -99,7 +99,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 	// as it helps to calculate the size of the data being exported.
 	// In case of performance impact caused by this processor, we should modify this config to reduce the sampling ratio.
 	c.Processors["odigostrafficmetrics"] = struct{}{}
-	c.Exporters["otlp/odigos-own-telemetry-ui"] = config.GenericMap{
+	c.Exporters["otlp_grpc/odigos-own-telemetry-ui"] = config.GenericMap{
 		"endpoint":    fmt.Sprintf("ui.%s:%d", env.GetCurrentNamespace(), odigosconsts.OTLPPort),
 		"compression": "none",
 		"tls": config.GenericMap{
@@ -112,7 +112,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 	c.Service.Pipelines["metrics/otelcol"] = config.Pipeline{
 		Receivers:  []string{"prometheus/self-metrics"},
 		Processors: []string{"resource/pod-name", "resource/odigos-collector-role"},
-		Exporters:  []string{"otlp/odigos-own-telemetry-ui"},
+		Exporters:  []string{"otlp_grpc/odigos-own-telemetry-ui"},
 	}
 
 	podNameFromEnv := "${POD_NAME}"

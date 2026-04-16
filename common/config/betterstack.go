@@ -40,7 +40,7 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]stri
 	}
 
 	if isLoggingEnabled(dest) {
-		exporterName := "otlp/" + uniqueUri
+		exporterName := "otlp_grpc/" + uniqueUri
 		cfg.Exporters[exporterName] = GenericMap{
 			"endpoint": "https://in-otel.logs.betterstack.com:443",
 		}

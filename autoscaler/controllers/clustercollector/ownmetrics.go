@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	odigosOwnTelemetryOtlpReceiverName = "otlp/odigos-own-metrics-in"
+	odigosOwnTelemetryOtlpReceiverName = "otlp_grpc/odigos-own-metrics-in"
 	gatewayPrometheusReceiverName      = "prometheus/gateway-own-metrics"
 	ownMetricsStorePipelineName        = "metrics/own-metrics"
-	odigosVictoriametricsExporterName  = "otlphttp/odigos-victoriametrics"
+	odigosVictoriametricsExporterName  = "otlp_http/odigos-victoriametrics"
 	defaultOwnMetricsScrapeInterval    = "10s"
 )
 

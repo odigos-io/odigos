@@ -31,7 +31,7 @@ func (m *Instana) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 	}
 
 	// Modify the exporter here
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "otlp_grpc/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
