@@ -133,7 +133,7 @@ func (l *Loaders) loadInstrumentationConfigs(ctx context.Context) error {
 	if l.instrumentationConfigsFetched {
 		return nil
 	}
-	instrumentationConfigs, err := fetchInstrumentationConfigs(ctx, l.logger, l.workloadFilter, l.k8sCacheClient)
+	instrumentationConfigs, err := fetchInstrumentationConfigs(ctx, l.workloadFilter, l.k8sCacheClient)
 	if err != nil {
 		return err
 	}
@@ -160,10 +160,23 @@ func (l *Loaders) loadWorkloadManifests(ctx context.Context) error {
 	if l.workloadManifestsFetched {
 		return nil
 	}
-	workloadManifests, err := fetchWorkloadManifests(ctx, l.logger, l.workloadFilter, l.k8sCacheClient)
+
+	var workloadManifests map[model.K8sWorkloadID]*computed.CachedWorkloadManifest
+	var err error
+
+	// When workload IDs are already known (e.g. markedForInstrumentation path
+	// or workloadsByIds), use targeted per-workload Get operations instead of
+	// 6+ cluster-wide List operations. This dramatically reduces memory from
+	// deep-copying thousands of unrelated K8s objects from the informer cache.
+	if l.workloadIds != nil {
+		workloadManifests, err = fetchWorkloadManifestsByIds(ctx, l.logger, l.workloadIds, l.k8sCacheClient)
+	} else {
+		workloadManifests, err = fetchWorkloadManifests(ctx, l.logger, l.workloadFilter, l.k8sCacheClient)
+	}
 	if err != nil {
 		return err
 	}
+
 	l.workloadManifests = workloadManifests
 	l.workloadManifestsFetched = true
 	return nil
@@ -295,9 +308,14 @@ func (l *Loaders) loadInstrumentationInstances(ctx context.Context) error {
 	return nil
 }
 
-func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) error {
+// LoadConfig loads the odigos configuration and sets up ignored namespaces.
+// Cached after first call — safe to call multiple times per request.
+// Use directly for queries that only need namespace metadata (no workloads).
+func (l *Loaders) LoadConfig(ctx context.Context) error {
+	if l.odigosConfiguration != nil {
+		return nil
+	}
 
-	// fetch odigos configuration for each request.
 	odigosns := env.GetCurrentNamespace()
 	var odigosConfigurationConfigMap corev1.ConfigMap
 	err := l.k8sCacheClient.Get(ctx, client.ObjectKey{
@@ -315,6 +333,21 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 	for _, namespace := range l.odigosConfiguration.IgnoredNamespaces {
 		ignoredNamespacesMap[namespace] = struct{}{}
 	}
+
+	l.workloadFilter = &WorkloadFilter{
+		ClusterWide:       &WorkloadFilterClusterWide{},
+		NamespaceString:   "",
+		IgnoredNamespaces: ignoredNamespacesMap,
+	}
+	return nil
+}
+
+func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) error {
+
+	if err := l.LoadConfig(ctx); err != nil {
+		return err
+	}
+	ignoredNamespacesMap := l.workloadFilter.IgnoredNamespaces
 
 	// check if it's a namespace query for ignored namespaces.
 	if filter != nil && filter.Namespace != nil {
@@ -410,28 +443,8 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 }
 
 func (l *Loaders) SetWorkloadIdsDirect(ctx context.Context, ids []model.K8sWorkloadID) error {
-	odigosns := env.GetCurrentNamespace()
-	var odigosConfigurationConfigMap corev1.ConfigMap
-	err := l.k8sCacheClient.Get(ctx, client.ObjectKey{
-		Namespace: odigosns,
-		Name:      consts.OdigosEffectiveConfigName,
-	}, &odigosConfigurationConfigMap)
-	if err != nil {
+	if err := l.LoadConfig(ctx); err != nil {
 		return err
-	}
-
-	if err := yaml.Unmarshal([]byte(odigosConfigurationConfigMap.Data[consts.OdigosConfigurationFileName]), &l.odigosConfiguration); err != nil {
-		return err
-	}
-	ignoredNamespacesMap := make(map[string]struct{})
-	for _, namespace := range l.odigosConfiguration.IgnoredNamespaces {
-		ignoredNamespacesMap[namespace] = struct{}{}
-	}
-
-	l.workloadFilter = &WorkloadFilter{
-		ClusterWide:       &WorkloadFilterClusterWide{},
-		NamespaceString:   "",
-		IgnoredNamespaces: ignoredNamespacesMap,
 	}
 
 	l.workloadIds = ids
