@@ -1,3 +1,3 @@
 module github.com/odigos-io/odigos/odigosauth
 
-go 1.26.1
+go 1.26.2
