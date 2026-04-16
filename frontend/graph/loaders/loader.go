@@ -308,10 +308,8 @@ func (l *Loaders) loadInstrumentationInstances(ctx context.Context) error {
 	return nil
 }
 
-// LoadConfig loads the odigos configuration and sets up ignored namespaces.
-// Cached after first call — safe to call multiple times per request.
-// Use directly for queries that only need namespace metadata (no workloads).
-func (l *Loaders) LoadConfig(ctx context.Context) error {
+// loadConfig assumes l.mu is already held by the caller.
+func (l *Loaders) loadConfig(ctx context.Context) error {
 	if l.odigosConfiguration != nil {
 		return nil
 	}
@@ -342,9 +340,20 @@ func (l *Loaders) LoadConfig(ctx context.Context) error {
 	return nil
 }
 
-func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) error {
+// LoadConfig loads the odigos configuration and sets up ignored namespaces.
+// Cached after first call — safe to call multiple times per request.
+// Use directly for queries that only need namespace metadata (no workloads).
+func (l *Loaders) LoadConfig(ctx context.Context) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.loadConfig(ctx)
+}
 
-	if err := l.LoadConfig(ctx); err != nil {
+func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if err := l.loadConfig(ctx); err != nil {
 		return err
 	}
 	ignoredNamespacesMap := l.workloadFilter.IgnoredNamespaces
@@ -443,7 +452,10 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 }
 
 func (l *Loaders) SetWorkloadIdsDirect(ctx context.Context, ids []model.K8sWorkloadID) error {
-	if err := l.LoadConfig(ctx); err != nil {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if err := l.loadConfig(ctx); err != nil {
 		return err
 	}
 
