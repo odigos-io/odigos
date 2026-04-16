@@ -78,7 +78,7 @@ func (s *SplunkOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	var pipelineNames []string
 	if isTracingEnabled(dest) {
-		exporterName := "otlphttp/" + dest.GetID()
+		exporterName := "otlp_http/" + dest.GetID()
 		exporterConf := GenericMap{
 			"headers": GenericMap{
 				"X-SF-Token": "${SPLUNK_ACCESS_TOKEN}",

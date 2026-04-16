@@ -3,11 +3,14 @@ gqlgen:
 
 TOOLS := $(PWD)/.tools
 
-.PHONY: tools
+.PHONY: tools test
 tools:
 	@if [ ! -d "$(TOOLS)" ]; then \
 		mkdir $(TOOLS); \
 	fi
+
+test:
+	go test -v ./...
 
 .PHONY: go-licenses
 go-licenses: tools

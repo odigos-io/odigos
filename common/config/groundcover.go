@@ -38,7 +38,7 @@ func (j *Groundcover) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		return nil, err
 	}
 
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "otlp_grpc/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{

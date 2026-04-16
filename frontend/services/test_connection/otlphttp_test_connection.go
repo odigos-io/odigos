@@ -31,8 +31,7 @@ func (t *otlphttpExporterConnectionTester) ModifyConfigForConnectionTest(cfg com
 	}
 
 	// currently using the default timeout config of the collector - 5 seconds
-	// Avoid batching and retries (QueueBatchConfig zero value has enabled: false)
-	otlpConf.QueueConfig = configoptional.Some(exporterhelper.QueueBatchConfig{})
+	otlpConf.QueueConfig = configoptional.None[exporterhelper.QueueBatchConfig]()
 	otlpConf.RetryConfig.Enabled = false
 	return otlpConf
 }

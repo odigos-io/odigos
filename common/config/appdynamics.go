@@ -60,7 +60,7 @@ func (m *AppDynamics) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 	host := strings.Join(endpointParts, ".")
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{
