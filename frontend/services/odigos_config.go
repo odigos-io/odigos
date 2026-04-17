@@ -93,6 +93,9 @@ func upsertLocalUiConfig(ctx context.Context, c client.Client, mutate func(cfg *
 			}
 			return err
 		}
+		// Cache reads may return shared objects when deep-copy is disabled.
+		// Clone before any in-memory mutation to avoid mutating cache state.
+		cm = *cm.DeepCopy()
 
 		var cfg common.OdigosConfiguration
 		if cm.Data != nil && cm.Data[consts.OdigosConfigurationFileName] != "" {
