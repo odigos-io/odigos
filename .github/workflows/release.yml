@@ -166,7 +166,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.26.1"
+          go-version: "1.26.2"
 
       - uses: actions/setup-node@v5
         with:
@@ -220,7 +220,7 @@ jobs:
       - uses: odigos-io/ci-core/sts@main
         id: sts-goreleaser
         with:
-          scope: ${{ env.HOMEBREW_REPO }}
+          scope: odigos-io/${{ env.HOMEBREW_REPO }}
           identity: releaser
           output-git-config: "false"
 

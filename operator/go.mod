@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/operator
 
-go 1.26.1
+go 1.26.2
 
 require (
 	github.com/odigos-io/odigos/api v0.0.0

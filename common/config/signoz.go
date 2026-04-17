@@ -30,7 +30,7 @@ func (s *Signoz) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 
 	url = strings.TrimPrefix(url, "http://")
 	url = strings.TrimSuffix(url, ":4317")
-	signozExporterName := "otlp/signoz-" + dest.GetID()
+	signozExporterName := "otlp_grpc/signoz-" + dest.GetID()
 	currentConfig.Exporters[signozExporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s:4317", url),
 		"tls": GenericMap{

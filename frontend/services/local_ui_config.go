@@ -82,6 +82,32 @@ func createLocalUiConfigMap(ctx context.Context, c client.Client, ns string, inp
 	return c.Create(ctx, &newCm)
 }
 
+func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client) error {
+	ns := env.GetCurrentNamespace()
+
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		var cm v1.ConfigMap
+		err := c.Get(ctx, types.NamespacedName{Namespace: ns, Name: consts.OdigosLocalUiConfigName}, &cm)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+
+		emptyCfg := common.OdigosConfiguration{}
+		data, err := yaml.Marshal(emptyCfg)
+		if err != nil {
+			return err
+		}
+		if cm.Data == nil {
+			cm.Data = make(map[string]string)
+		}
+		cm.Data[consts.OdigosConfigurationFileName] = string(data)
+		return c.Update(ctx, &cm)
+	})
+}
+
 func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalUIConfigInput) {
 	if input.TelemetryEnabled != nil {
 		cfg.TelemetryEnabled = *input.TelemetryEnabled
@@ -99,9 +125,8 @@ func applyLocalUiConfigInput(cfg *common.OdigosConfiguration, input model.LocalU
 		cfg.ClusterName = *input.ClusterName
 	}
 	if input.Instrumentor != nil {
-		if input.Instrumentor.AgentEnvVarsInjectionMethod != nil {
-			m := common.EnvInjectionMethod(*input.Instrumentor.AgentEnvVarsInjectionMethod)
-			cfg.AgentEnvVarsInjectionMethod = &m
+		if m := convertEnvInjectionMethodToCommon(input.Instrumentor.AgentEnvVarsInjectionMethod); m != nil {
+			cfg.AgentEnvVarsInjectionMethod = m
 		}
 		if input.Instrumentor.CheckDeviceHealthBeforeInjection != nil {
 			cfg.CheckDeviceHealthBeforeInjection = input.Instrumentor.CheckDeviceHealthBeforeInjection
@@ -229,4 +254,23 @@ func applyComponentLogLevelsInput(cfg *common.ComponentLogLevels, input *model.L
 	if input.Collector != nil {
 		cfg.Collector = common.OdigosLogLevel(*input.Collector)
 	}
+}
+
+// convertEnvInjectionMethodToCommon maps the GraphQL EnvInjectionMethod enum
+// (underscores, e.g. "pod_manifest") to the common.EnvInjectionMethod value
+// (hyphens, e.g. "pod-manifest") expected by the ConfigMap / Helm.
+func convertEnvInjectionMethodToCommon(m *model.EnvInjectionMethod) *common.EnvInjectionMethod {
+	if m == nil {
+		return nil
+	}
+	var result common.EnvInjectionMethod
+	switch *m {
+	case model.EnvInjectionMethodPodManifest:
+		result = common.PodManifestEnvInjectionMethod
+	case model.EnvInjectionMethodLoaderFallbackToPodManifest:
+		result = common.LoaderFallbackToPodManifestInjectionMethod
+	default:
+		result = common.LoaderEnvInjectionMethod
+	}
+	return &result
 }

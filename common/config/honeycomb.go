@@ -29,7 +29,7 @@ func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		endpoint = "api.honeycomb.io"
 	}
 
-	exporterName := "otlp/honeycomb-" + dest.GetID()
+	exporterName := "otlp_grpc/honeycomb-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s:443", endpoint),
 		"headers": GenericMap{

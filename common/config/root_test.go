@@ -442,7 +442,7 @@ func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 					"metrics/otelcol": {
 						Receivers:  []string{"prometheus/self-metrics"},
 						Processors: []string{"resource/pod-name"},
-						Exporters:  []string{"otlp/odigos-own-telemetry-ui"},
+						Exporters:  []string{"otlp_grpc/odigos-own-telemetry-ui"},
 					},
 				},
 				Extensions: []string{},

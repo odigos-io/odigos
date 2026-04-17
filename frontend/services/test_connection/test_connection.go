@@ -23,8 +23,8 @@ import (
 var (
 	configres         map[common.DestinationType]config.Configer
 	connectionTesters = []ExporterConnectionTester{
-		NewOTLPTester(),     // "otlp/" prefix
-		NewOTLPHTTPTester(), // "otlphttp/" prefix
+		NewOTLPTester(),     // "otlp_grpc/" prefix
+		NewOTLPHTTPTester(), // "otlp_http/" prefix
 	}
 )
 

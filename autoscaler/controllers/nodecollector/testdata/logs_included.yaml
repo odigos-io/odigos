@@ -8,25 +8,26 @@ exporters:
     resolver:
       k8s:
         service: odigos-gateway.odigos-system
-  otlp/odigos-own-telemetry-ui:
+  otlp_grpc/odigos-own-telemetry-ui:
+    compression: none
     endpoint: ui.odigos-system:4317
     retry_on_failure:
       enabled: false
     tls:
       insecure: true
-  otlp/out-cluster-collector-logs:
+  otlp_grpc/out-cluster-collector-logs:
     balancer_name: round_robin
     compression: none
     endpoint: dns:///odigos-gateway.odigos-system:4317
     tls:
       insecure: true
-  otlp/out-cluster-collector-metrics:
+  otlp_grpc/out-cluster-collector-metrics:
     balancer_name: round_robin
     compression: none
     endpoint: dns:///odigos-gateway.odigos-system:4317
     tls:
       insecure: true
-  otlp/out-cluster-collector-traces:
+  otlp_grpc/out-cluster-collector-traces:
     balancer_name: round_robin
     compression: none
     endpoint: dns:///odigos-gateway.odigos-system:4317
@@ -138,7 +139,8 @@ receivers:
   prometheus/self-metrics-ui:
     config:
       scrape_configs:
-      - job_name: otelcol
+      - enable_compression: false
+        job_name: otelcol
         metric_relabel_configs:
         - action: keep
           regex: (.*odigos.*)
@@ -155,7 +157,7 @@ service:
   pipelines:
     logs:
       exporters:
-      - otlp/out-cluster-collector-logs
+      - otlp_grpc/out-cluster-collector-logs
       processors:
       - memory_limiter
       - resource/node-name
@@ -167,7 +169,7 @@ service:
       - filelog
     metrics:
       exporters:
-      - otlp/out-cluster-collector-metrics
+      - otlp_grpc/out-cluster-collector-metrics
       processors:
       - batch
       - memory_limiter
@@ -182,7 +184,7 @@ service:
       - hostmetrics
     metrics/own-metrics-ui:
       exporters:
-      - otlp/odigos-own-telemetry-ui
+      - otlp_grpc/odigos-own-telemetry-ui
       processors:
       - resource/pod-name
       - resource/odigos-collector-role

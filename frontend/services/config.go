@@ -24,11 +24,12 @@ func GetConfigYamls() ([]*model.ConfigYaml, error) {
 		var fields []*model.ConfigYamlField
 		for _, f := range cfg.Spec.Fields {
 			field := &model.ConfigYamlField{
-				DisplayName:   f.DisplayName,
-				ComponentType: model.FieldType(f.ComponentType),
-				IsHelmOnly:    f.IsHelmOnly,
-				Description:   f.Description,
-				HelmValuePath: f.HelmValuePath,
+				DisplayName:      f.DisplayName,
+				ComponentType:    model.FieldType(f.ComponentType),
+				IsHelmOnly:       f.IsHelmOnly,
+				IsEnterpriseOnly: f.IsEnterpriseOnly,
+				Description:      f.Description,
+				HelmValuePath:    f.HelmValuePath,
 			}
 
 			if f.DocsLink != "" {

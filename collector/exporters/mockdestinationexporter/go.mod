@@ -1,6 +1,6 @@
 module github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter
 
-go 1.26.1
+go 1.26.2
 
 require (
 	github.com/stretchr/testify v1.11.1

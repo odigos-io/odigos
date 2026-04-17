@@ -148,3 +148,5 @@ models:
         resolver: true
       dataStreamNames:
         resolver: true
+      workloads:
+        resolver: true

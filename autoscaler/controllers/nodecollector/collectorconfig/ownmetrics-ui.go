@@ -18,7 +18,7 @@ const (
 
 	podNameProcessorName       = "resource/pod-name"
 	collectorRoleProcessorName = "resource/odigos-collector-role"
-	ownMetricsUiExporterName   = "otlp/odigos-own-telemetry-ui"
+	ownMetricsUiExporterName   = "otlp_grpc/odigos-own-telemetry-ui"
 	ownMetricsUiReceiverName   = "prometheus/self-metrics-ui"
 	ownMetricsUiPipelineName   = "metrics/own-metrics-ui"
 )
@@ -74,8 +74,9 @@ func receiversConfigForOwnMetricsUi(ownMetricsPort int32) config.GenericMap {
 		"config": config.GenericMap{
 			"scrape_configs": []config.GenericMap{
 				{
-					"job_name":        "otelcol",
-					"scrape_interval": "10s",
+					"job_name":           "otelcol",
+					"scrape_interval":    "10s",
+					"enable_compression": false,
 					"static_configs": []config.GenericMap{
 						{
 							"targets": []string{fmt.Sprintf("127.0.0.1:%d", ownMetricsPort)},
@@ -132,7 +133,8 @@ func serviceTelemetryConfigForOwnMetricsUi(ownMetricsPort int32) config.Telemetr
 func ownMetricsExportersUi() config.GenericMap {
 	return config.GenericMap{
 		ownMetricsUiExporterName: config.GenericMap{
-			"endpoint": uiOtlpEndpoint,
+			"endpoint":    uiOtlpEndpoint,
+			"compression": "none",
 			"retry_on_failure": config.GenericMap{
 				"enabled": false,
 			},
