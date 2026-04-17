@@ -87,7 +87,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	}
 
-	otlpHttpExporterName := "otlphttp/generic-" + dest.GetID()
+	otlpHttpExporterName := "otlp_http/generic-" + dest.GetID()
 	exporterConf := GenericMap{}
 	if parsedBase != "" {
 		exporterConf["endpoint"] = parsedBase
