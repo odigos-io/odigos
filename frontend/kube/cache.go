@@ -26,6 +26,68 @@ import (
 var CacheClient client.Client
 var K8sCache cache.Cache
 
+func buildCacheByObjectConfig(odigosNs string) map[client.Object]cache.ByObject {
+	nsSelector := client.InNamespace(odigosNs).AsSelector()
+	// These types are read-then-mutated in frontend write paths; they must stay deep-copied.
+	safeDeepCopy := false
+
+	cacheByObjectConfig := map[client.Object]cache.ByObject{
+		&corev1.ConfigMap{}: {
+			Field:                 nsSelector, // odigos effective config, collector configs, odigos deployment etc
+			UnsafeDisableDeepCopy: &safeDeepCopy,
+		},
+		&corev1.Pod{}: {
+			Transform: podsTransformFunc,
+		},
+		&corev1.Namespace{}: {},
+		&appsv1.Deployment{}: {
+			Transform: deploymentsTransformFunc,
+		},
+		&appsv1.DaemonSet{}: {
+			Transform: daemonsetsTransformFunc,
+		},
+		&appsv1.StatefulSet{}: {
+			Transform: statefulsetsTransformFunc,
+		},
+		&batchv1.CronJob{}: {
+			Transform: cronjobsTransformFunc,
+		},
+		&odigosv1.Source{}: {
+			UnsafeDisableDeepCopy: &safeDeepCopy,
+		},
+		&odigosv1.InstrumentationConfig{}: {
+			UnsafeDisableDeepCopy: &safeDeepCopy,
+		},
+		&odigosv1.InstrumentationInstance{}: {
+			UnsafeDisableDeepCopy: &safeDeepCopy,
+		},
+		&odigosv1.Destination{}: {
+			Field:                 nsSelector,
+			UnsafeDisableDeepCopy: &safeDeepCopy,
+		},
+		&odigosv1.Sampling{}: {
+			Field:                 nsSelector,
+			UnsafeDisableDeepCopy: &safeDeepCopy,
+		},
+	}
+
+	// if argo rollout is available, add it to the cache as well
+	if IsArgoRolloutAvailable {
+		cacheByObjectConfig[&argorolloutsv1alpha1.Rollout{}] = cache.ByObject{
+			Transform: argoRolloutsTransformFunc,
+		}
+	}
+
+	// if open shift deployment config is available, add it to the cache as well
+	if IsOpenShiftDeploymentConfigAvailable {
+		cacheByObjectConfig[&openshiftappsv1.DeploymentConfig{}] = cache.ByObject{
+			Transform: deploymentConfigsTransformFunc,
+		}
+	}
+
+	return cacheByObjectConfig
+}
+
 // SetupK8sCache initializes and starts the controller runtime cache for Source resources.
 // Returns the cache client for direct usage and the underlying cache for registering event handlers.
 func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, odigosNs string) (client.Client, cache.Cache, error) {
@@ -51,52 +113,7 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 	utilruntime.Must(argorolloutsv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(openshiftappsv1.AddToScheme(scheme))
 
-	nsSelector := client.InNamespace(odigosNs).AsSelector()
-
-	cacheByObjectConfig := map[client.Object]cache.ByObject{
-		&corev1.ConfigMap{}: {
-			Field: nsSelector, // odigos effective config, collector configs, odigos deployment etc
-		},
-		&corev1.Pod{}: {
-			Transform: podsTransformFunc,
-		},
-		&corev1.Namespace{}: {},
-		&appsv1.Deployment{}: {
-			Transform: deploymentsTransformFunc,
-		},
-		&appsv1.DaemonSet{}: {
-			Transform: daemonsetsTransformFunc,
-		},
-		&appsv1.StatefulSet{}: {
-			Transform: statefulsetsTransformFunc,
-		},
-		&batchv1.CronJob{}: {
-			Transform: cronjobsTransformFunc,
-		},
-		&odigosv1.Source{}:                  {},
-		&odigosv1.InstrumentationConfig{}:   {},
-		&odigosv1.InstrumentationInstance{}: {},
-		&odigosv1.Destination{}: {
-			Field: nsSelector,
-		},
-		&odigosv1.Sampling{}: {
-			Field: nsSelector,
-		},
-	}
-
-	// if argo rollout is available, add it to the cache as well
-	if IsArgoRolloutAvailable {
-		cacheByObjectConfig[&argorolloutsv1alpha1.Rollout{}] = cache.ByObject{
-			Transform: argoRolloutsTransformFunc,
-		}
-	}
-
-	// if open shift deployment config is available, add it to the cache as well
-	if IsOpenShiftDeploymentConfigAvailable {
-		cacheByObjectConfig[&openshiftappsv1.DeploymentConfig{}] = cache.ByObject{
-			Transform: deploymentConfigsTransformFunc,
-		}
-	}
+	cacheByObjectConfig := buildCacheByObjectConfig(odigosNs)
 
 	newInformerWithTransformFunc := cacheutils.CreateNewInformerWithTransformFunc(scheme, cacheByObjectConfig)
 	unsafeDisableDeepCopy := true
