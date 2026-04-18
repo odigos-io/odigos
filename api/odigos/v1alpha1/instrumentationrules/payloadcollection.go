@@ -33,9 +33,10 @@ type DbQueryPayloadCollection struct {
 	// This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 
-	// The policy to use for collecting the DB query payloads.
-	// If not specified, the default policy will be used (collect sanitized payloads if possible, and fall back to full if sanitization isn't supported).
-	CollectionPolicy *consts.DbQueryCollectionPolicy `json:"collectionPolicy,omitempty"`
+	// The sanitization policy to use for collecting the DB query payloads.
+	// If not specified, the default sanitization policy will be used:
+	// (collect sanitized payloads if possible, and fall back to full if sanitization isn't supported).
+	SanitizationPolicy *consts.DbQuerySanitizationPolicy `json:"sanitizationPolicy,omitempty"`
 }
 
 // Rule for collecting messaging related payloads

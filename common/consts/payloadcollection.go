@@ -1,25 +1,30 @@
 package consts
 
-type DbQueryCollectionPolicy string
+type DbQuerySanitizationPolicy string
 
 const (
-	// DbQueryCollectionPolicySanitized: Only collect sanitized (redacted) DB query payloads, which avoids collecting PII.
+	// DbQuerySanitizationPolicySanitized: Only collect sanitized (redacted) DB query payloads, which avoids collecting PII.
 	// If the sanitization is not supported, the payload will not be collected.
-	DbQueryCollectionPolicySanitized DbQueryCollectionPolicy = "sanitized"
+	DbQuerySanitizationPolicySanitized DbQuerySanitizationPolicy = "sanitized"
 
-	// DbQueryCollectionPolicyFull: Collect the full (unsanitized) DB query payloads, regardless of redaction.
+	// DbQuerySanitizationPolicyFull: Collect the full (unsanitized) DB query payloads, regardless of redaction.
 	// Maximum visibility, with a risk of collecting PII.
-	DbQueryCollectionPolicyFull DbQueryCollectionPolicy = "full"
+	DbQuerySanitizationPolicyFull DbQuerySanitizationPolicy = "full"
 
-	// DbQueryCollectionPolicySanitizedOrFull: Collect sanitized payloads if possible, and fall back to full if sanitization isn't supported.
+	// DbQuerySanitizationPolicySanitizedOrFull: Collect sanitized payloads if possible, and fall back to full if sanitization isn't supported.
 	// Good balance between visibility and privacy. prefer collecting sanitized payloads if available,
 	// and fall-back to full collection otherwise, so we won't miss any payloads.
-	DbQueryCollectionPolicySanitizedOrFull DbQueryCollectionPolicy = "sanitized-or-full"
+	DbQuerySanitizationPolicySanitizedOrFull DbQuerySanitizationPolicy = "sanitized-or-full"
 )
 
-// Higher value = higher priority (more restrictive).
-var DbQueryCollectionPolicyPriority = map[DbQueryCollectionPolicy]int{
-	DbQueryCollectionPolicySanitized:       3,
-	DbQueryCollectionPolicySanitizedOrFull: 2,
-	DbQueryCollectionPolicyFull:            1,
+func DbQuerySanitizationPolicyPriority(policy DbQuerySanitizationPolicy) uint8 {
+	switch policy {
+	case DbQuerySanitizationPolicySanitized:
+		return 3
+	case DbQuerySanitizationPolicySanitizedOrFull:
+		return 2
+	case DbQuerySanitizationPolicyFull:
+		return 1
+	}
+	return 0
 }

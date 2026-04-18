@@ -107,9 +107,9 @@ func (in *DbQueryPayloadCollection) DeepCopyInto(out *DbQueryPayloadCollection) 
 		*out = new(bool)
 		**out = **in
 	}
-	if in.CollectionPolicy != nil {
-		in, out := &in.CollectionPolicy, &out.CollectionPolicy
-		*out = new(consts.DbQueryCollectionPolicy)
+	if in.SanitizationPolicy != nil {
+		in, out := &in.SanitizationPolicy, &out.SanitizationPolicy
+		*out = new(consts.DbQuerySanitizationPolicy)
 		**out = **in
 	}
 }

@@ -73,7 +73,7 @@ func mergeDbPayloadCollectionRules(p1 *instrumentationrules.DbQueryPayloadCollec
 	return &instrumentationrules.DbQueryPayloadCollection{
 		MaxPayloadLength:    mergeconfig.MergeOptionalIntChooseLower(p1.MaxPayloadLength, p2.MaxPayloadLength),
 		DropPartialPayloads: mergeconfig.MergeOptionalBools(p1.DropPartialPayloads, p2.DropPartialPayloads),
-		CollectionPolicy:    mergeDbQueryCollectionPolicy(p1.CollectionPolicy, p2.CollectionPolicy),
+		SanitizationPolicy:  mergeDbQuerySanitizationPolicy(p1.SanitizationPolicy, p2.SanitizationPolicy),
 	}
 }
 
@@ -90,7 +90,7 @@ func mergeMessagingPayloadCollectionRules(p1 *instrumentationrules.MessagingPayl
 	}
 }
 
-func mergeDbQueryCollectionPolicy(p1 *consts.DbQueryCollectionPolicy, p2 *consts.DbQueryCollectionPolicy) *consts.DbQueryCollectionPolicy {
+func mergeDbQuerySanitizationPolicy(p1 *consts.DbQuerySanitizationPolicy, p2 *consts.DbQuerySanitizationPolicy) *consts.DbQuerySanitizationPolicy {
 	switch {
 	case p1 == nil && p2 == nil:
 		return nil
@@ -99,7 +99,7 @@ func mergeDbQueryCollectionPolicy(p1 *consts.DbQueryCollectionPolicy, p2 *consts
 	case p2 == nil:
 		return p1
 	default:
-		if consts.DbQueryCollectionPolicyPriority[*p1] >= consts.DbQueryCollectionPolicyPriority[*p2] {
+		if consts.DbQuerySanitizationPolicyPriority(*p1) >= consts.DbQuerySanitizationPolicyPriority(*p2) {
 			return p1
 		} else {
 			return p2
