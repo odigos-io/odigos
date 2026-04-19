@@ -109,6 +109,8 @@ func (sourceMetrics *sourcesMetrics) handleNodeCollectorMetrics(senderPod string
 }
 
 func (sourceMetrics *sourcesMetrics) removeNodeCollector(nodeCollectorID string) {
+	sourceMetrics.sourcesMu.Lock()
+	defer sourceMetrics.sourcesMu.Unlock()
 	for _, sm := range sourceMetrics.sourcesMap {
 		sm.mu.Lock()
 		delete(sm.nodeCollectorsTraffic, nodeCollectorID)
@@ -132,7 +134,9 @@ func (sourcesMetrics *sourcesMetrics) addSource(sID common.SourceID) {
 }
 
 func (sourceMetrics *sourcesMetrics) metricsByID(sID common.SourceID) (trafficMetrics, bool) {
+	sourceMetrics.sourcesMu.Lock()
 	sm, ok := sourceMetrics.sourcesMap[sID]
+	sourceMetrics.sourcesMu.Unlock()
 	if !ok {
 		return trafficMetrics{}, false
 	}
