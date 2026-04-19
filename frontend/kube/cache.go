@@ -53,29 +53,39 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 
+	unsafeDisableDeepCopy := true
+
 	cacheByObjectConfig := map[client.Object]cache.ByObject{
 		&corev1.ConfigMap{}: {
 			Field: nsSelector, // odigos effective config, collector configs, odigos deployment etc
 		},
 		&corev1.Pod{}: {
-			Transform: podsTransformFunc,
+			Transform:             podsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
 		},
 		&corev1.Namespace{}: {},
 		&appsv1.Deployment{}: {
-			Transform: deploymentsTransformFunc,
+			Transform:             deploymentsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
 		},
 		&appsv1.DaemonSet{}: {
-			Transform: daemonsetsTransformFunc,
+			Transform:             daemonsetsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
 		},
 		&appsv1.StatefulSet{}: {
-			Transform: statefulsetsTransformFunc,
+			Transform:             statefulsetsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
 		},
 		&batchv1.CronJob{}: {
 			Transform: cronjobsTransformFunc,
 		},
-		&odigosv1.Source{}:                  {},
-		&odigosv1.InstrumentationConfig{}:   {},
-		&odigosv1.InstrumentationInstance{}: {},
+		&odigosv1.Source{}: {},
+		&odigosv1.InstrumentationConfig{}: {
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
+		},
+		&odigosv1.InstrumentationInstance{}: {
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
+		},
 		&odigosv1.Destination{}: {
 			Field: nsSelector,
 		},
@@ -99,16 +109,14 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 	}
 
 	newInformerWithTransformFunc := cacheutils.CreateNewInformerWithTransformFunc(scheme, cacheByObjectConfig)
-	unsafeDisableDeepCopy := true
 
 	// Create cache options
 	cacheOptions := cache.Options{
-		Scheme:                       scheme,
-		ReaderFailOnMissingInformer:  true,
-		DefaultTransform:             cache.TransformStripManagedFields(),
-		ByObject:                     cacheByObjectConfig,
-		NewInformer:                  newInformerWithTransformFunc,
-		DefaultUnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
+		Scheme:                      scheme,
+		ReaderFailOnMissingInformer: true,
+		DefaultTransform:            cache.TransformStripManagedFields(),
+		ByObject:                    cacheByObjectConfig,
+		NewInformer:                 newInformerWithTransformFunc,
 	}
 
 	// Create the cache
