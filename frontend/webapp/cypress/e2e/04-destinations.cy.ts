@@ -24,18 +24,21 @@ describe('Destinations CRUD', () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_DESTINATION).click();
 
-      // Select destination from the drawer's list (force needed for virtualized lists)
-      cy.get(DATA_IDS.SELECT_DESTINATION).first().should('exist').click({ force: true });
-      cy.get(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).should('have.value', SELECTED_ENTITIES.DESTINATION.AUTOFILL_VALUE);
+      // Wait for detected destinations to load before selecting
+      waitForGraphqlOperation('GetPotentialDestinations').then(() => {
+        cy.contains('Detected by system').should('be.visible');
+        cy.get(DATA_IDS.SELECT_DESTINATION).first().should('exist').click({ force: true });
+        cy.get(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).should('have.value', SELECTED_ENTITIES.DESTINATION.AUTOFILL_VALUE);
 
-      // Add destination to unsaved list, then save
-      cy.get(DATA_IDS.DEST_FORM_ADD).click();
-      cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
+        // Add destination to unsaved list, then save
+        cy.get(DATA_IDS.DEST_FORM_ADD).click();
+        cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
 
-      // Wait for the GraphQL mutation and the drawer to close
-      waitForGraphqlOperation('CreateNewDestination').then(() => {
-        cy.get(DATA_IDS.WIDE_DRAWER_SAVE).should('not.exist');
-        cy.wait(2000);
+        // Wait for the GraphQL mutation and the drawer to close
+        waitForGraphqlOperation('CreateNewDestination').then(() => {
+          cy.get(DATA_IDS.WIDE_DRAWER_SAVE).should('not.exist');
+          cy.wait(2000);
+        });
       });
     });
   });

@@ -10,67 +10,8 @@ export const GET_WORKLOADS = gql`
       }
       serviceName
       dataStreamNames
-      numberOfInstances
-      markedForInstrumentation {
-        markedForInstrumentation
-      }
       runtimeInfo {
         detectedLanguages
-      }
-      containers {
-        containerName
-        runtimeInfo {
-          language
-          runtimeVersion
-        }
-        agentEnabled {
-          agentEnabled
-          agentEnabledStatus {
-            message
-          }
-          otelDistroName
-        }
-        overrides {
-          containerName
-        }
-      }
-      conditions {
-        runtimeDetection {
-          name
-          status
-          reasonEnum
-          message
-        }
-        agentInjectionEnabled {
-          name
-          status
-          reasonEnum
-          message
-        }
-        rollout {
-          name
-          status
-          reasonEnum
-          message
-        }
-        agentInjected {
-          name
-          status
-          reasonEnum
-          message
-        }
-        processesAgentHealth {
-          name
-          status
-          reasonEnum
-          message
-        }
-        expectingTelemetry {
-          name
-          status
-          reasonEnum
-          message
-        }
       }
       workloadOdigosHealthStatus {
         name
@@ -84,7 +25,6 @@ export const GET_WORKLOADS = gql`
         reasonEnum
         message
       }
-      rollbackOccurred
     }
   }
 `;
