@@ -10,6 +10,7 @@ require (
 	github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.148.0
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.148.0
 	github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.148.0
+	github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.148.0
 	github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.148.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.148.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.148.0
@@ -90,7 +91,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.54.0
 	go.opentelemetry.io/collector/component/componenttest v0.148.0
-	go.opentelemetry.io/collector/confmap v1.54.0
+	go.opentelemetry.io/collector/confmap v1.56.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.54.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.54.0
 	go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.148.0
@@ -428,7 +429,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
-	github.com/hashicorp/go-version v1.8.0 // indirect
+	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/nomad/api v0.0.0-20260205205048-8315996478d1 // indirect
@@ -457,7 +458,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
-	github.com/knadh/koanf/v2 v2.3.3 // indirect
+	github.com/knadh/koanf/v2 v2.3.4 // indirect
 	github.com/kolo/xmlrpc v0.0.0-20220921171641-a4b6fa1dd06b // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/leodido/go-syslog/v4 v4.3.0 // indirect
@@ -657,7 +658,7 @@ require (
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.148.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.148.0 // indirect
 	go.opentelemetry.io/collector/extension/xextension v0.148.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.54.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.56.0 // indirect
 	go.opentelemetry.io/collector/filter v0.148.0 // indirect
 	go.opentelemetry.io/collector/internal/componentalias v0.148.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.148.0 // indirect
@@ -761,6 +762,8 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/process
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes => ../processors/odigosconditionalattributes
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor => ../processors/odigossqldboperationprocessor
+
+replace github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor => ../processors/odigostracestateprocessor
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter => ../exporters/azureblobstorageexporter
 
