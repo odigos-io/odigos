@@ -47,7 +47,11 @@ test-odigostailsamplingprocessor:
 
 .PHONY: build-odigoscol
 build-odigoscol: download_builder test-odigossamplingprocessor test-odigostailsamplingprocessor
-	$(BUILDER) --ldflags="-checklinkname=0" --config builder-config.yaml --skip-generate --skip-get-modules
+	$(BUILDER) \
+	--ldflags="-s -w -checklinkname=0" \
+	--config builder-config.yaml \
+	--skip-generate \
+	--skip-get-modules
 
 .PHONY: install-tools
 install-tools:
