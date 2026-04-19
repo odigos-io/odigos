@@ -97,14 +97,16 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 	// if argo rollout is available, add it to the cache as well
 	if IsArgoRolloutAvailable {
 		cacheByObjectConfig[&argorolloutsv1alpha1.Rollout{}] = cache.ByObject{
-			Transform: argoRolloutsTransformFunc,
+			Transform:             argoRolloutsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
 		}
 	}
 
 	// if open shift deployment config is available, add it to the cache as well
 	if IsOpenShiftDeploymentConfigAvailable {
 		cacheByObjectConfig[&openshiftappsv1.DeploymentConfig{}] = cache.ByObject{
-			Transform: deploymentConfigsTransformFunc,
+			Transform:             deploymentConfigsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
 		}
 	}
 
