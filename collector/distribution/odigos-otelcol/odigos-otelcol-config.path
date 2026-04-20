@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch Odigos OTel Collector config for changes
+
+[Path]
+PathChanged=/etc/odigos-otelcol/config.yaml
+Unit=odigos-otelcol-config-reload.service
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+[Unit]
+Description=Reload Odigos OTel Collector on config change
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl reload odigos-otelcol.service

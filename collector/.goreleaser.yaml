@@ -18,7 +18,7 @@ builds:
       - -s -w -checklinkname=0
 
 nfpms:
-  - id: packages # this id is used in the publisher section to specify which artifacts to publish
+  - id: packages
     package_name: odigos-otelcol
     vendor: Odigos Inc.
     maintainer: Odigos Inc.
@@ -30,18 +30,26 @@ nfpms:
     file_name_template: "{{ .ConventionalFileName }}"
     contents:
       - src: distribution/odigos-otelcol/odigos-otelcol.service
-        dst: /lib/systemd/system/odigos-otelcol.service
+        dst: /usr/lib/systemd/system/odigos-otelcol.service
+
+      - src: distribution/odigos-otelcol/odigos-otelcol-config-reload.service
+        dst: /usr/lib/systemd/system/odigos-otelcol-config-reload.service
+
+      - src: distribution/odigos-otelcol/odigos-otelcol-config.path
+        dst: /usr/lib/systemd/system/odigos-otelcol-config.path
+
       - src: distribution/odigos-otelcol/odigos-otelcol.conf
         dst: /etc/odigos-otelcol/odigos-otelcol.conf
         type: config|noreplace
+
       - src: distribution/odigos-otelcol/config.yaml
         dst: /etc/odigos-otelcol/config.yaml
         type: config|noreplace
+
     scripts:
       preinstall: distribution/odigos-otelcol/preinstall.sh
       postinstall: distribution/odigos-otelcol/postinstall.sh
       preremove: distribution/odigos-otelcol/preremove.sh
-# we don't need the otelcol to have releases in github.
-# this goreleaser is only about publishing the collector as deb/rpm package to the google repository
+
 release:
   disable: true
