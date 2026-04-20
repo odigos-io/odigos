@@ -32,9 +32,6 @@ func UpdateLocalUIConfig(ctx context.Context, c client.Client, input model.Local
 			}
 			return err
 		}
-		// Cache reads may return shared objects when deep-copy is disabled.
-		// Clone before any in-memory mutation to avoid mutating cache state.
-		cm = *cm.DeepCopy()
 
 		cfg := common.OdigosConfiguration{}
 		if cm.Data != nil && cm.Data[consts.OdigosConfigurationFileName] != "" {
@@ -97,9 +94,6 @@ func ResetLocalUiConfigToFactoryDefaults(ctx context.Context, c client.Client) e
 			}
 			return err
 		}
-		// Cache reads may return shared objects when deep-copy is disabled.
-		// Clone before any in-memory mutation to avoid mutating cache state.
-		cm = *cm.DeepCopy()
 
 		emptyCfg := common.OdigosConfiguration{}
 		data, err := yaml.Marshal(emptyCfg)
