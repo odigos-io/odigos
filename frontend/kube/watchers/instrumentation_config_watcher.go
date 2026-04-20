@@ -3,29 +3,31 @@ package watchers
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/frontend/kube"
+	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
+	"github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/frontend/services/sse"
 	commonutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
+	toolscache "k8s.io/client-go/tools/cache"
+	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 )
 
 var instrumentationConfigAddedEventBatcher *EventBatcher
 var instrumentationConfigModifiedEventBatcher *EventBatcher
 var instrumentationConfigDeletedEventBatcher *EventBatcher
 
-func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) error {
+func StartInstrumentationConfigWatcher(ctx context.Context, k8sCache ctrlcache.Cache, metricsConsumer *collectormetrics.OdigosMetricsConsumer) error {
 	instrumentationConfigAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     3 * time.Second, // 2s less than frontend EVENT_DEBOUNCE_MS
+			Duration:     3 * time.Second,
 			Event:        sse.MessageEventAdded,
 			CRDType:      consts.InstrumentationConfig,
+			MaxBatchSize: 100,
+			MaxDelay:     10 * time.Second,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("Successfully created %d sources", count)
 			},
@@ -38,10 +40,11 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	instrumentationConfigModifiedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     3 * time.Second, // 2s less than frontend EVENT_DEBOUNCE_MS
+			Duration:     3 * time.Second,
 			Event:        sse.MessageEventModified,
 			CRDType:      consts.InstrumentationConfig,
-			Debounce:     true, // Reset timer on each event, send only after `Duration` seconds of silence
+			MaxBatchSize: 100,
+			MaxDelay:     10 * time.Second,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("Successfully updated %d sources", count)
 			},
@@ -54,9 +57,11 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	instrumentationConfigDeletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     3 * time.Second, // 2s less than frontend EVENT_DEBOUNCE_MS
+			Duration:     3 * time.Second,
 			Event:        sse.MessageEventDeleted,
 			CRDType:      consts.InstrumentationConfig,
+			MaxBatchSize: 100,
+			MaxDelay:     10 * time.Second,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("Successfully deleted %d sources", count)
 			},
@@ -66,51 +71,69 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 		},
 	)
 
-	watcher, err := StartRetryWatcher(ctx, WatcherConfig[*v1alpha1.InstrumentationConfigList]{
-		ListFunc: func(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.InstrumentationConfigList, error) {
-			return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).List(ctx, opts)
-		},
-		WatchFunc: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-			return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Watch(ctx, opts)
-		},
-		GetResourceVersion: func(list *v1alpha1.InstrumentationConfigList) string {
-			return list.ResourceVersion
-		},
-		ResourceName: "instrumentation configs",
-	})
+	informer, err := k8sCache.GetInformer(ctx, &v1alpha1.InstrumentationConfig{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get InstrumentationConfig informer: %w", err)
 	}
 
-	go handleInstrumentationConfigWatchEvents(ctx, watcher)
-	return nil
-}
-
-func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.Interface) {
-	ch := watcher.ResultChan()
-	defer instrumentationConfigAddedEventBatcher.Cancel()
-	defer instrumentationConfigModifiedEventBatcher.Cancel()
-	defer instrumentationConfigDeletedEventBatcher.Cancel()
-	for {
-		select {
-		case <-ctx.Done():
-			watcher.Stop()
-			return
-		case event, ok := <-ch:
+	_, err = informer.AddEventHandler(toolscache.ResourceEventHandlerDetailedFuncs{
+		AddFunc: func(obj interface{}, isInInitialList bool) {
+			ic, ok := obj.(*v1alpha1.InstrumentationConfig)
 			if !ok {
-				log.Println("InstrumentationConfig watcher closed")
 				return
 			}
-			switch event.Type {
-			case watch.Added:
-				handleAddedInstrumentationConfig(event.Object.(*v1alpha1.InstrumentationConfig))
-			case watch.Modified:
-				handleModifiedInstrumentationConfig(event.Object.(*v1alpha1.InstrumentationConfig))
-			case watch.Deleted:
-				handleDeletedInstrumentationConfig(event.Object.(*v1alpha1.InstrumentationConfig))
+
+			pw, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name, ic.Namespace)
+			if err != nil {
+				if !isInInitialList {
+					genericErrorMessage(sse.MessageEventAdded, consts.InstrumentationConfig, err.Error())
+				}
+				return
 			}
-		}
-	}
+
+			metricsConsumer.NotifySourceAdded(common.SourceID{
+				Namespace: pw.Namespace, Name: pw.Name, Kind: pw.Kind,
+			})
+
+			if !isInInitialList {
+				handleAddedInstrumentationConfig(ic)
+			}
+		},
+		UpdateFunc: func(_, newObj interface{}) {
+			ic, ok := newObj.(*v1alpha1.InstrumentationConfig)
+			if !ok {
+				return
+			}
+			handleModifiedInstrumentationConfig(ic)
+		},
+		DeleteFunc: func(obj interface{}) {
+			ic, ok := obj.(*v1alpha1.InstrumentationConfig)
+			if !ok {
+				tombstone, ok := obj.(toolscache.DeletedFinalStateUnknown)
+				if !ok {
+					return
+				}
+				ic, ok = tombstone.Obj.(*v1alpha1.InstrumentationConfig)
+				if !ok {
+					return
+				}
+			}
+
+			pw, err := commonutils.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name, ic.Namespace)
+			if err != nil {
+				genericErrorMessage(sse.MessageEventDeleted, consts.InstrumentationConfig, err.Error())
+				return
+			}
+
+			metricsConsumer.NotifySourceDeleted(common.SourceID{
+				Namespace: pw.Namespace, Name: pw.Name, Kind: pw.Kind,
+			})
+
+			handleDeletedInstrumentationConfig(ic)
+		},
+	})
+
+	return err
 }
 
 func handleAddedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {

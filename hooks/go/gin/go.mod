@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/hooks/go/gin
 
-go 1.26.1
+go 1.26.2
 
 require github.com/gin-gonic/gin v1.11.0
 

@@ -13,7 +13,7 @@ func (g *GoogleCloudOTLP) DestType() common.DestinationType {
 func (g *GoogleCloudOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	var pipelineNames []string
 	if isTracingEnabled(dest) {
-		exporterName := "otlphttp/gcp-" + dest.GetID()
+		exporterName := "otlp_http/gcp-" + dest.GetID()
 		extensionName := "googleclientauth/" + dest.GetID()
 		config := dest.GetConfig()
 		exporterConfig := GenericMap{

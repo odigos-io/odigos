@@ -29,7 +29,7 @@ func (j *Tingyun) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 		return nil, err
 	}
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 	}

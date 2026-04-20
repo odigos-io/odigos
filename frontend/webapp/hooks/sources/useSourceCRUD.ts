@@ -19,6 +19,7 @@ import {
   ProgressKeys,
 } from '@odigos/ui-kit/store';
 
+// When SSE targets exceed this count, fall back to a full fetchSources() instead of fetching by individual IDs.
 const MAX_INDIVIDUAL_FETCH = 50;
 
 interface UseSourceCrud {

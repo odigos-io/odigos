@@ -13,7 +13,7 @@ func (l *Lightstep) DestType() common.DestinationType {
 func (l *Lightstep) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	var pipelineNames []string
 	if isTracingEnabled(dest) {
-		exporterName := "otlp/lightstep-" + dest.GetID()
+		exporterName := "otlp_grpc/lightstep-" + dest.GetID()
 		currentConfig.Exporters[exporterName] = GenericMap{
 			"endpoint": "ingest.lightstep.com:443",
 			"headers": GenericMap{

@@ -13,7 +13,7 @@ func (j *HyperDX) DestType() common.DestinationType {
 func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, error) {
 	uniqueUri := "hdx-" + dest.GetID()
 
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "otlp_grpc/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": "in-otel.hyperdx.io:4317",
 		"headers": GenericMap{

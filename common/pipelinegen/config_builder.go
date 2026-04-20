@@ -162,6 +162,11 @@ func CalculateGatewayConfig(
 		enabledSignals = append(enabledSignals, common.LogsObservabilitySignal)
 	}
 
+	if tracesEnabled {
+		currentConfig.Processors[consts.OdigosTraceStateProcessorName] = config.GenericMap{}
+		allTracesProcessors = append(allTracesProcessors, consts.OdigosTraceStateProcessorName)
+	}
+
 	//  Add pipelines that receive from routing connectors and forward to destinations
 	dataStreamPipelines := buildDataStreamPipelines(dataStreamsDetails, destForwardConnectors)
 	for name, pipe := range dataStreamPipelines {
@@ -200,6 +205,9 @@ func CalculateGatewayConfig(
 		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, *gatewayOptions.OdigosConfigExtensionName)
 		currentConfig.Extensions[*gatewayOptions.OdigosConfigExtensionName] = config.GenericMap{}
 	}
+
+	// Sort extensions for deterministic YAML output
+	slices.Sort(currentConfig.Service.Extensions)
 
 	// Final marshal to YAML
 	data, err := yaml.Marshal(currentConfig)

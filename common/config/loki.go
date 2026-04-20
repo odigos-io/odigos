@@ -76,7 +76,7 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 		addHeader(exporterConf, "X-Scope-OrgID", scopeOrgIdHeader)
 	}
 
-	lokiExporterName := "otlphttp/" + uniqueUri
+	lokiExporterName := "otlp_http/" + uniqueUri
 	currentConfig.Exporters[lokiExporterName] = exporterConf
 
 	processorNames := []string{}

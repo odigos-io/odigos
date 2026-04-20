@@ -1,4 +1,4 @@
-ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.15
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.16
 
 
 ######### python Native Community Agent #########
@@ -63,14 +63,14 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 
 # python-community/python-community3.8
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.72-py3.8 /instrumentations/python3.8 /instrumentations/python3.8
-COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.75 /instrumentations/python /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.78 /instrumentations/python /instrumentations/python
 
 # nodejs-community
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.3.0 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.3.0 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.4.0 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.4.0 /instrumentations/nodejs-community /instrumentations/nodejs-community
 # nodejs-community-14
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.16 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.16 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.17 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.17 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
 
 # dotnet-community
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet

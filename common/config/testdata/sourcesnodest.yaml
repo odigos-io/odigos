@@ -18,7 +18,7 @@ service:
       processors:
       - resource/pod-name
       exporters:
-      - otlp/odigos-own-telemetry-ui
+      - otlp_grpc/odigos-own-telemetry-ui
   telemetry:
     metrics:
       level: ""

@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/scripts/cli-docgen
 
-go 1.26.1
+go 1.26.2
 
 require (
 	github.com/odigos-io/odigos/cli v0.0.0

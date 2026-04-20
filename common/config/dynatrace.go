@@ -34,7 +34,7 @@ func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		return nil, errors.New("Dynatrace url is not a valid")
 	}
 
-	exporterName := "otlphttp/dynatrace-" + dest.GetID()
+	exporterName := "otlp_http/dynatrace-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": baseURL + "/api/v2/otlp",
 		"headers": GenericMap{

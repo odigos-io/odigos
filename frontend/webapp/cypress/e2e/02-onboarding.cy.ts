@@ -61,6 +61,7 @@ describe('Onboarding', () => {
         // Step 3: Destinations — add Jaeger
         cy.contains('Add Destinations').should('be.visible');
         waitForGraphqlOperation('GetPotentialDestinations').then(() => {
+          cy.contains('Detected by system').should('be.visible');
           cy.get(DATA_IDS.SELECT_DESTINATION).first().click({ force: true });
 
           // The auto-fill field should be populated from detected destinations

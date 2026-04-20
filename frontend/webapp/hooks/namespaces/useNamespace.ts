@@ -3,9 +3,9 @@ import { useConfig } from '../config';
 import type { NamespaceInstrumentInput } from '@/types';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import { GET_NAMESPACES_WITH_WORKLOADS, PERSIST_NAMESPACES } from '@/graphql';
-import { Crud, EntityTypes, type Namespace, type NamespaceWorkload, type Source, StatusType } from '@odigos/ui-kit/types';
+import { GET_NAMESPACES, GET_NAMESPACES_WITH_WORKLOADS, PERSIST_NAMESPACES } from '@/graphql';
 import { useDataStreamStore, useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
+import { Crud, EntityTypes, type Namespace, type NamespaceWorkload, type Source, StatusType } from '@odigos/ui-kit/types';
 
 interface GqlNamespaceWithWorkloads {
   name: string;
@@ -43,6 +43,13 @@ export const useNamespace = () => {
     addNotification({ type, title, message, hideFromHistory });
   };
 
+  // Lightweight query for auto-fetching namespace metadata on page load.
+  // Does NOT request workloads, so the backend skips the heavy manifest/source listing.
+  const [queryNamespaces] = useLazyQuery<{ namespaces: { name: string; markedForInstrumentation: boolean; dataStreamNames: string[] }[] }>(GET_NAMESPACES, {
+    onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
+  });
+
+  // Heavy query that includes per-namespace workloads. Only called explicitly by source selection forms.
   const [queryNsWithWorkloads] = useLazyQuery<{ namespaces: GqlNamespaceWithWorkloads[] }>(GET_NAMESPACES_WITH_WORKLOADS, {
     onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
   });
@@ -56,6 +63,16 @@ export const useNamespace = () => {
       addNotification({ type: StatusType.Error, title: error.name || Crud.Update, message: error.cause?.message || error.message });
     },
   });
+
+  const fetchNamespaces = async () => {
+    const { error, data } = await queryNamespaces();
+
+    if (error) {
+      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
+    } else if (data?.namespaces) {
+      setEntities(EntityTypes.Namespace, data.namespaces.map((ns) => ({ name: ns.name, selected: ns.markedForInstrumentation, dataStreamNames: ns.dataStreamNames })) as Namespace[]);
+    }
+  };
 
   const fetchNamespacesWithWorkloads = async () => {
     const { error, data } = await queryNsWithWorkloads();
@@ -86,7 +103,7 @@ export const useNamespace = () => {
   };
 
   useEffect(() => {
-    if (selectedStreamName && !namespaces.length && !namespacesLoading) fetchNamespacesWithWorkloads();
+    if (selectedStreamName && !namespaces.length && !namespacesLoading) fetchNamespaces();
   }, [selectedStreamName]);
 
   return {

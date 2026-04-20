@@ -81,7 +81,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, oauth2ExtensionName)
 	}
 
-	genericOtlpExporterName := "otlp/generic-" + dest.GetID()
+	genericOtlpExporterName := "otlp_grpc/generic-" + dest.GetID()
 
 	// Add OAuth2 auth configuration if available
 	if oauth2ExtensionName != "" {

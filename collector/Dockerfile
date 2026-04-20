@@ -1,14 +1,20 @@
-FROM --platform=$BUILDPLATFORM golang:1.26.1-trixie AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.2-trixie AS builder
 COPY ./collector/ /go/src/collector
 # Need to copy the common folder to the collector for custom connector that uses it
 COPY ./common/ /go/src/common
 WORKDIR /go/src/collector
+
+# download dependencies before branching out to cross-compile for better caching
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    cd odigosotelcol && go mod download
 
 ARG TARGETARCH
 ARG RHEL=false
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     GOOS=linux GOARCH=$TARGETARCH make build-odigoscol
+
 RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi

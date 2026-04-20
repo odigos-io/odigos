@@ -65,8 +65,7 @@ func fetchNamespaces(ctx context.Context, k8sCacheClient client.Client) (*corev1
 // function to get just the instrumentation configs that match the filter.
 // e.g. load only sources which are marked for instrumentation after the instrumentor reconciles it.
 // this is cheaper and faster query than to load all the sources and resolve each one.
-func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, k8sCacheClient client.Client) (map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, error) {
-
+func fetchInstrumentationConfigs(ctx context.Context, filters *WorkloadFilter, k8sCacheClient client.Client) (map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, error) {
 	// diffrentiate between a single source query and a namespace / cluster wide query.
 	if filters.SingleWorkload != nil {
 		instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(filters.SingleWorkload.WorkloadName, filters.SingleWorkload.WorkloadKind)
@@ -303,12 +302,13 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			return workloadManifests, nil
 
 		case k8sconsts.WorkloadKindDeploymentConfig:
-			// Only try to get DeploymentConfig if it's available in the cluster
+			// OpenShift DeploymentConfig is not in the standard K8s API, so it's not
+			// in the informer cache. We use the dynamic client to fetch it directly
+			// from the API server (only on OpenShift clusters where this CRD exists).
 			if !kube.IsOpenShiftDeploymentConfigAvailable {
 				return nil, nil
 			}
 
-			// Use dynamic client for DeploymentConfig
 			gvr := schema.GroupVersionResource{
 				Group:    "apps.openshift.io",
 				Version:  "v1",
@@ -642,56 +642,84 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 }
 
 func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, singleWorkloadManifest *computed.CachedWorkloadManifest, workloadIdsMap map[k8sconsts.PodWorkload]struct{}, k8sCacheClient client.Client) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
-
-	var labelSelector *metav1.LabelSelector
 	if filters.SingleWorkload != nil {
 		if singleWorkloadManifest == nil || singleWorkloadManifest.Selector == nil {
-			// if workload is not found for this pod, skip the queries - no pods to fetch.
 			return map[model.K8sWorkloadID][]*corev1.Pod{}, nil
 		}
-		labelSelector = singleWorkloadManifest.Selector
+		return fetchWorkloadPodsWithSelector(ctx, filters, singleWorkloadManifest.Selector, workloadIdsMap, k8sCacheClient)
+	}
+
+	// For cluster-wide queries with known workload IDs, list pods per-namespace
+	// instead of cluster-wide. This avoids deep-copying pods from namespaces that
+	// have no instrumented workloads, significantly reducing memory usage at scale.
+	if filters.ClusterWide != nil && len(workloadIdsMap) > 0 {
+		relevantNamespaces := make(map[string]struct{}, len(workloadIdsMap))
+		for pw := range workloadIdsMap {
+			relevantNamespaces[pw.Namespace] = struct{}{}
+		}
+
+		workloadPods = make(map[model.K8sWorkloadID][]*corev1.Pod)
+		for ns := range relevantNamespaces {
+			if _, ok := filters.IgnoredNamespaces[ns]; ok {
+				continue
+			}
+			podList := &corev1.PodList{}
+			if err := k8sCacheClient.List(ctx, podList, client.InNamespace(ns)); err != nil {
+				return nil, err
+			}
+			collectWorkloadPods(podList, workloadIdsMap, filters.IgnoredNamespaces, workloadPods)
+		}
+		return workloadPods, nil
 	}
 
 	podList := &corev1.PodList{}
-	opts := []client.ListOption{client.InNamespace(filters.NamespaceString)}
-	if labelSelector != nil {
-		selector, err := metav1.LabelSelectorAsSelector(labelSelector)
-		if err != nil {
-			return nil, fmt.Errorf("invalid label selector: %w", err)
-		}
-		opts = append(opts, client.MatchingLabelsSelector{Selector: selector})
-	}
-	err = k8sCacheClient.List(ctx, podList, opts...)
+	err = k8sCacheClient.List(ctx, podList, client.InNamespace(filters.NamespaceString))
 	if err != nil {
 		return nil, err
 	}
 
 	workloadPods = make(map[model.K8sWorkloadID][]*corev1.Pod)
-	for _, pod := range podList.Items {
-		if _, ok := filters.IgnoredNamespaces[pod.Namespace]; ok {
+	collectWorkloadPods(podList, workloadIdsMap, filters.IgnoredNamespaces, workloadPods)
+	return workloadPods, nil
+}
+
+func fetchWorkloadPodsWithSelector(ctx context.Context, filters *WorkloadFilter, labelSelector *metav1.LabelSelector, workloadIdsMap map[k8sconsts.PodWorkload]struct{}, k8sCacheClient client.Client) (map[model.K8sWorkloadID][]*corev1.Pod, error) {
+	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
+	if err != nil {
+		return nil, fmt.Errorf("invalid label selector: %w", err)
+	}
+
+	podList := &corev1.PodList{}
+	err = k8sCacheClient.List(ctx, podList, client.InNamespace(filters.NamespaceString), client.MatchingLabelsSelector{Selector: selector})
+	if err != nil {
+		return nil, err
+	}
+
+	workloadPods := make(map[model.K8sWorkloadID][]*corev1.Pod)
+	collectWorkloadPods(podList, workloadIdsMap, filters.IgnoredNamespaces, workloadPods)
+	return workloadPods, nil
+}
+
+func collectWorkloadPods(podList *corev1.PodList, workloadIdsMap map[k8sconsts.PodWorkload]struct{}, ignoredNamespaces map[string]struct{}, out map[model.K8sWorkloadID][]*corev1.Pod) {
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		if _, ok := ignoredNamespaces[pod.Namespace]; ok {
 			continue
 		}
-		pw, err := workload.PodWorkloadObject(&pod)
+		pw, err := workload.PodWorkloadObject(pod)
 		if err != nil || pw == nil {
-			// skip pods not relevant for odigos
 			continue
 		}
 		if _, ok := workloadIdsMap[*pw]; !ok {
-			// fmt.Printf("skipping pod %s/%s because it is not relevant for odigos\n", pod.Namespace, pod.Name)
-			// skip pods not relevant for odigos.
-			// for example, when we are fetching only instrumentated workloads,
-			// we can drop all the pods which does not participate.
 			continue
 		}
-
 		workloadId := model.K8sWorkloadID{
 			Namespace: pod.Namespace,
 			Kind:      model.K8sResourceKind(pw.Kind),
 			Name:      pw.Name,
 		}
-		workloadPods[workloadId] = append(workloadPods[workloadId], &pod)
+		out[workloadId] = append(out[workloadId], pod)
 	}
-	return workloadPods, nil
 }
 
 func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, k8sCacheClient client.Client) (
@@ -756,4 +784,145 @@ func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filt
 		byWorkloadContainer[workloadContainerId] = append(byWorkloadContainer[workloadContainerId], &ii)
 	}
 	return byPodContainer, byWorkloadContainer, nil
+}
+
+// fetchWorkloadManifestsByIds fetches workload manifests for specific workload IDs
+// using individual Get operations from the cache. This is significantly more
+// memory-efficient than listing all workloads of each kind cluster-wide when
+// only a subset is needed (e.g., the markedForInstrumentation path where IDs
+// are known from InstrumentationConfigs).
+func fetchWorkloadManifestsByIds(ctx context.Context, logger logr.Logger, workloadIds []model.K8sWorkloadID, k8sCacheClient client.Client) (map[model.K8sWorkloadID]*computed.CachedWorkloadManifest, error) {
+	workloadManifests := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest, len(workloadIds))
+
+	for _, id := range workloadIds {
+		manifest, err := getWorkloadManifest(ctx, logger, id, k8sCacheClient)
+		if err != nil {
+			return nil, err
+		}
+		if manifest != nil {
+			workloadManifests[id] = manifest
+		}
+	}
+
+	return workloadManifests, nil
+}
+
+func getWorkloadManifest(ctx context.Context, logger logr.Logger, id model.K8sWorkloadID, k8sCacheClient client.Client) (*computed.CachedWorkloadManifest, error) {
+	switch k8sconsts.WorkloadKind(id.Kind) {
+	case k8sconsts.WorkloadKindDeployment:
+		obj := &appsv1.Deployment{}
+		if err := k8sCacheClient.Get(ctx, client.ObjectKey{Namespace: id.Namespace, Name: id.Name}, obj); err != nil {
+			return nil, client.IgnoreNotFound(err)
+		}
+		return &computed.CachedWorkloadManifest{
+			AvailableReplicas:    obj.Status.AvailableReplicas,
+			Selector:             obj.Spec.Selector,
+			WorkloadHealthStatus: status.CalculateDeploymentHealthStatus(obj.Status),
+		}, nil
+
+	case k8sconsts.WorkloadKindDaemonSet:
+		obj := &appsv1.DaemonSet{}
+		if err := k8sCacheClient.Get(ctx, client.ObjectKey{Namespace: id.Namespace, Name: id.Name}, obj); err != nil {
+			return nil, client.IgnoreNotFound(err)
+		}
+		return &computed.CachedWorkloadManifest{
+			AvailableReplicas:    obj.Status.NumberReady,
+			Selector:             obj.Spec.Selector,
+			WorkloadHealthStatus: status.CalculateDaemonSetHealthStatus(obj.Status),
+		}, nil
+
+	case k8sconsts.WorkloadKindStatefulSet:
+		obj := &appsv1.StatefulSet{}
+		if err := k8sCacheClient.Get(ctx, client.ObjectKey{Namespace: id.Namespace, Name: id.Name}, obj); err != nil {
+			return nil, client.IgnoreNotFound(err)
+		}
+		return &computed.CachedWorkloadManifest{
+			AvailableReplicas:    obj.Status.ReadyReplicas,
+			Selector:             obj.Spec.Selector,
+			WorkloadHealthStatus: status.CalculateStatefulSetHealthStatus(obj.Status),
+		}, nil
+
+	case k8sconsts.WorkloadKindCronJob:
+		obj := &batchv1.CronJob{}
+		if err := k8sCacheClient.Get(ctx, client.ObjectKey{Namespace: id.Namespace, Name: id.Name}, obj); err != nil {
+			return nil, client.IgnoreNotFound(err)
+		}
+		return &computed.CachedWorkloadManifest{
+			AvailableReplicas:    int32(len(obj.Status.Active)),
+			Selector:             obj.Spec.JobTemplate.Spec.Selector,
+			WorkloadHealthStatus: status.CalculateCronJobHealthStatus(obj.Status),
+		}, nil
+
+	case k8sconsts.WorkloadKindDeploymentConfig:
+		// OpenShift DeploymentConfig is not in the standard K8s API, so it's not
+		// in the informer cache. We use the dynamic client to fetch it directly
+		// from the API server (only on OpenShift clusters where this CRD exists).
+		if !kube.IsDeploymentConfigAvailable() {
+			return nil, nil
+		}
+		gvr := schema.GroupVersionResource{
+			Group:    "apps.openshift.io",
+			Version:  "v1",
+			Resource: "deploymentconfigs",
+		}
+		dc, err := timedAPICall(
+			logger,
+			fmt.Sprintf("Get DeploymentConfig %s/%s", id.Namespace, id.Name),
+			func() (*openshiftappsv1.DeploymentConfig, error) {
+				uDC, err := kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(id.Namespace).Get(ctx, id.Name, metav1.GetOptions{})
+				if err != nil {
+					return nil, err
+				}
+				var dc openshiftappsv1.DeploymentConfig
+				err = runtime.DefaultUnstructuredConverter.FromUnstructured(uDC.Object, &dc)
+				return &dc, err
+			},
+		)
+		if err != nil {
+			return nil, client.IgnoreNotFound(err)
+		}
+		return &computed.CachedWorkloadManifest{
+			AvailableReplicas: dc.Status.AvailableReplicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: dc.Spec.Selector,
+			},
+			WorkloadHealthStatus: status.CalculateDeploymentConfigHealthStatus(dc.Status),
+		}, nil
+
+	case k8sconsts.WorkloadKindArgoRollout:
+		if !kube.IsArgoRolloutAvailable {
+			return nil, nil
+		}
+		obj := &argorolloutsv1alpha1.Rollout{}
+		if err := k8sCacheClient.Get(ctx, client.ObjectKey{Namespace: id.Namespace, Name: id.Name}, obj); err != nil {
+			return nil, client.IgnoreNotFound(err)
+		}
+		return &computed.CachedWorkloadManifest{
+			AvailableReplicas:    obj.Status.AvailableReplicas,
+			Selector:             obj.Spec.Selector,
+			WorkloadHealthStatus: status.CalculateRolloutHealthStatus(obj.Status),
+		}, nil
+
+	case k8sconsts.WorkloadKindStaticPod:
+		obj := &corev1.Pod{}
+		if err := k8sCacheClient.Get(ctx, client.ObjectKey{Namespace: id.Namespace, Name: id.Name}, obj); err != nil {
+			return nil, client.IgnoreNotFound(err)
+		}
+		if !workload.IsStaticPod(obj) {
+			return nil, nil
+		}
+		return &computed.CachedWorkloadManifest{
+			AvailableReplicas: 1,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					k8sconsts.OdigosVirtualStaticPodNameLabel: obj.Name,
+				},
+			},
+			WorkloadHealthStatus: status.CalculateStaticPodHealthStatus(obj.Status),
+		}, nil
+
+	default:
+		logger.V(1).Info("skipping unknown workload kind in manifest fetch", "kind", string(id.Kind))
+		return nil, nil
+	}
 }

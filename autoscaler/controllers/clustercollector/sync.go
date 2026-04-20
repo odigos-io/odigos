@@ -2,6 +2,8 @@ package clustercollector
 
 import (
 	"context"
+	"slices"
+	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -71,6 +73,11 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		}
 		enabledDests.Items = append(enabledDests.Items, dest)
 	}
+
+	// Kubernetes list order is unspecified; sort once so downstream config is stable.
+	slices.SortFunc(enabledDests.Items, func(a, b odigosv1.Destination) int {
+		return strings.Compare(a.Name, b.Name)
+	})
 
 	signals, err := syncConfigMap(enabledDests, processors, gateway, ctx, c, scheme)
 	if err != nil {

@@ -35,7 +35,7 @@ func (j *VictoriaMetricsCloud) ModifyConfig(dest ExporterConfigurer, cfg *Config
 	}
 	cfg.Service.Extensions = append(cfg.Service.Extensions, authExtensionName)
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"auth": GenericMap{
