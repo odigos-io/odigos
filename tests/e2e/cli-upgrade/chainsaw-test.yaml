@@ -151,9 +151,9 @@ spec:
         - apply:
             file: ../../common/apply/generate-traffic-job.yaml
         - script:
-            timeout: 1m
+            timeout: 3m
             content: |
-              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+              kubectl wait --for=condition=complete --timeout=3m job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
         - delete:
             file: ../../common/apply/generate-traffic-job.yaml
 
