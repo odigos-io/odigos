@@ -1146,6 +1146,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthchecke
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.148.0/go.mod h1:BUUydxEtx4hKtp1UHbtR+7GvKZ+aBVZwPTP3Z7fSGbc=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/internal/credentialsfile v0.148.0 h1:KK2lm7BepCDmANBOaQVCHAm6m2De93ZD+neUYPBapAw=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/internal/credentialsfile v0.148.0/go.mod h1:neAzGFqd93Rg4m1DDJm9rAWg0+0Jk76fHXHgzAfczgM=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.148.0 h1:5tULCdnixgXu/wzOiKPcm/9ytqNPApVk7BzHVfAGoIg=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.148.0/go.mod h1:erjLM58BgOkerh9nMvK3u9fjtm2NXG0uqMtsAm1sjoU=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.148.0 h1:Mk2R2GEuGmXrxObwjLVBd/DVYYuDn4rI0xT6N8UUktU=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.148.0/go.mod h1:9HQ41ZfYPC5S+6QNLaNtfKeNWozcF39O2hBxGHmsnXQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.148.0 h1:xcFP75iWZM1OzxP1Rb8AL4VbDzjInaYoZzQWvtlo3m0=
@@ -1180,6 +1182,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/internal/healthcheck v
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/healthcheck v0.148.0/go.mod h1:z0ZgEQH/ew98hMdUcByeSRyZLndCsOQN/MCH2/7+DtI=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.148.0 h1:9EC5yqFzdts/Yfqj6Y4r6lkxc4/ZwjKUujB/CyhOZjY=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.148.0/go.mod h1:X5qGBmq54p1TC/mgp5WHXhPYjA5xXG4emfRNfwbSMGY=
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sleaderelectortest v0.148.0 h1:0EHVjyH5SiOoYZjhy98eswtDBmjsFqC7Lj6YlqvoqQo=
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sleaderelectortest v0.148.0/go.mod h1:lxg6NQz88ZUWGj4o1IhMKhBo4mchXjganUOygtaOXN4=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/kafka v0.148.0 h1:fGFO5Nzs6tzW1lb8XgaDP3AvlTfQErDOXVlw6xIQ4nw=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/kafka v0.148.0/go.mod h1:HCr0zIKK6uORtQ9tUHMcSahNMIUqGMx1PhqsGDj09so=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/kubelet v0.148.0 h1:pNmmIYQxv3b4ri8nkBPG83xMl5gl5NVhH/ffH2YI/j8=
@@ -1280,6 +1284,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiv
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.148.0/go.mod h1:swrd8aXbWH+oToLfhR58RR72oAMUpPIf4yGd7RXLiEA=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.148.0 h1:3B3ViGXW394qi1HM3KxyVKc3jBMG+9KoZGCbEfnGGdU=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.148.0/go.mod h1:k7xBk5UyH7TEX4Rl/kAbZ6aaWvlu5hvcyXeCLq55n68=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.148.0 h1:bEwLtv5eCm+hSZPv4XNkwgQUG8WEjdN3yzPOboIe8x8=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.148.0/go.mod h1:SCUvudQdlfYNPJFoqcN4/HldgLJrN8AZ5lqxkZDYx2k=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.148.0 h1:KtiSxz2B7woF4XXYBCvZJUPwS8+ucO11NjPAvZgXhoE=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.148.0/go.mod h1:DXe9ngLWPwCz4TOa9ET3AAeslk2YrULOY8keWcpV+kQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.148.0 h1:K+aZS3IdojTI0xtfZtt2qhp5zj4y3scPurje1TacgEw=
