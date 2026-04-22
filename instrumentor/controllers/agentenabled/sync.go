@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
@@ -222,20 +221,36 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	podManifestInjectionOptional := true // pod manifest is optional, unless some container agent requires it
 
 	for containerName, containerRuntimeDetails := range runtimeDetailsByContainer {
+
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
 		containerOverride := ic.GetOverridesForContainer(containerName)
+		containerDistro, err := calculateDistroForContainer(effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, containerOverride, containerName)
+		if err != nil {
+			// if we cannot match a distro for the container, we cannot instrument it.
+			// mark this in the container agent config and avoid any further processing.
+			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  err.AgentEnabledReason,
+				AgentEnabledMessage: err.AgentEnabledMessage,
+			})
+			continue
+		}
+
 		// URL templatization config is computed inside calculateContainerInstrumentationConfig (using distro getter)
 		// and returned for use by calculateContainerCollectorConfig.
-		currentContainerConfig, urlTemplatizationConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, agentLevelActions, samplingRules, workloadObj, pw)
+		currentContainerConfig, urlTemplatizationConfig := calculateContainerInstrumentationConfig(containerName, containerDistro, effectiveConfig, containerRuntimeDetails, rollbackOccurred, existingBackoffReason, cg, irls, agentLevelActions, samplingRules, workloadObj, pw)
 		containersConfig = append(containersConfig, currentContainerConfig)
+
 		// if at least one container has agent enabled, and pod manifest injection is required,
 		// then the overall pod manifest injection is required.
 		if currentContainerConfig.AgentEnabled && !currentContainerConfig.PodManifestInjectionOptional {
 			podManifestInjectionOptional = false
 		}
+
 		// calculate the relevant collector configurations for the container.
-		currentContainerCollectorConfig := calculateContainerCollectorConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, containerOverride, urlTemplatizationConfig, samplingRules, pw, workloadObj)
+		currentContainerCollectorConfig := calculateContainerCollectorConfig(containerName, containerDistro, effectiveConfig, containerRuntimeDetails, urlTemplatizationConfig, samplingRules, pw, workloadObj)
 		if currentContainerCollectorConfig != nil {
 			collectorConfig = append(collectorConfig, *currentContainerCollectorConfig)
 		}
@@ -468,40 +483,18 @@ func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, co
 	}
 }
 
-func calculateContainerCollectorConfig(containerName string,
+func calculateContainerCollectorConfig(
+	containerName string,
+	d *distro.OtelDistro,
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
-	distroPerLanguage map[common.ProgrammingLanguage]string,
-	distroGetter *distros.Getter,
-	containerOverride *odigosv1.ContainerOverride,
 	urlTemplatizationConfig *commonapi.UrlTemplatizationConfig,
 	samplingRules *[]odigosv1.Sampling,
 	pw k8sconsts.PodWorkload,
 	workloadObj workload.Workload,
 ) *commonapi.ContainerCollectorConfig {
 
-	// If this container is ignored, runtime details are unavailable, or language is not supported,
-	// we don't need to add any sampling rules for it.
-	if slices.Contains(effectiveConfig.IgnoredContainers, containerName) {
-		return nil
-	}
-
-	if runtimeDetails == nil {
-		return nil
-	}
-
-	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
-		return nil
-	}
-
-	containerDistro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, runtimeDetails.RuntimeVersion, distroPerLanguage, distroGetter)
-	// This is not a real error but a containerAgentConfig pointer with the appropriate reason and message for the failure.
-	// In this case, we are not updating the ContainerAgentConfig so we can continue with the next container.
-	if err != nil {
-		return nil
-	}
-
-	noisyOps, relevantOps, costRules := sampling.FilterTailSamplingRulesForContainer(samplingRules, runtimeDetails.Language, pw, containerName, containerDistro, workloadObj, effectiveConfig)
+	noisyOps, relevantOps, costRules := sampling.FilterTailSamplingRulesForContainer(samplingRules, runtimeDetails.Language, pw, containerName, d, workloadObj, effectiveConfig)
 
 	return &commonapi.ContainerCollectorConfig{
 		ContainerName: containerName,
@@ -513,54 +506,68 @@ func calculateContainerCollectorConfig(containerName string,
 	}
 }
 
-func calculateContainerInstrumentationConfig(containerName string,
+type AgentEnableError struct {
+	AgentEnabledReason  odigosv1.AgentEnabledReason
+	AgentEnabledMessage string
+}
+
+func calculateDistroForContainer(
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
 	distroGetter *distros.Getter,
+	containerOverride *odigosv1.ContainerOverride,
+	containerName string,
+) (*distro.OtelDistro, *AgentEnableError) {
+	// check if container is ignored by name, assuming IgnoredContainers is a short list.
+	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
+	for _, ignoredContainer := range effectiveConfig.IgnoredContainers {
+		if ignoredContainer == containerName {
+			return nil, &AgentEnableError{
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonIgnoredContainer,
+				AgentEnabledMessage: "container is ignored",
+			}
+		}
+	}
+
+	if runtimeDetails == nil {
+		return nil, &AgentEnableError{
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonRuntimeDetailsUnavailable,
+			AgentEnabledMessage: "runtime details are unavailable",
+		}
+	}
+
+	// check unknown language first. if language is not supported, we can skip the rest of the checks.
+	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
+		return nil, &AgentEnableError{
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
+			AgentEnabledMessage: "unknown programming language",
+		}
+	}
+
+	// if the user specifically overwritten the distro to use for this container, use it.
+	if containerOverride != nil && containerOverride.OtelDistroName != nil {
+		return resolveDistroByOverride(*containerOverride.OtelDistroName, distroGetter, runtimeDetails.Language)
+	}
+
+	// use the default distro and detected language to resolve the distro to use.
+	return resolveDistroByLanguage(runtimeDetails.Language, distroPerLanguage, distroGetter, runtimeDetails.RuntimeVersion)
+}
+
+func calculateContainerInstrumentationConfig(containerName string,
+	d *distro.OtelDistro,
+	effectiveConfig *common.OdigosConfiguration,
+	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	rollbackOccurred bool,
 	existingBackoffReason odigosv1.AgentEnabledReason,
 	nodeCollectorsGroup *odigosv1.CollectorsGroup,
 	irls *[]odigosv1.InstrumentationRule,
-	containerOverride *odigosv1.ContainerOverride,
 	agentLevelActions *[]odigosv1.Action,
 	samplingRules *[]odigosv1.Sampling,
 	workloadObj workload.Workload,
 	pw k8sconsts.PodWorkload,
 ) (odigosv1.ContainerAgentConfig, *commonapi.UrlTemplatizationConfig) {
-	// check if container is ignored by name, assuming IgnoredContainers is a short list.
-	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
-	for _, ignoredContainer := range effectiveConfig.IgnoredContainers {
-		if ignoredContainer == containerName {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:      containerName,
-				AgentEnabled:       false,
-				AgentEnabledReason: odigosv1.AgentEnabledReasonIgnoredContainer,
-			}, nil
-		}
-	}
 
-	if runtimeDetails == nil {
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonRuntimeDetailsUnavailable,
-		}, nil
-	}
-
-	// check unknown language first. if language is not supported, we can skip the rest of the checks.
-	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
-		}, nil
-	}
-
-	d, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, runtimeDetails.RuntimeVersion, distroPerLanguage, distroGetter)
-	if err != nil {
-		return *err, nil
-	}
 	// Use distro-resolved language for URL templatization scope matching (e.g. WorkloadLanguage).
 	filteredTemplateRules := filterUrlTemplateRulesForContainer(agentLevelActions, containerName, d.Language, pw)
 	distroName := d.Name
@@ -792,84 +799,54 @@ func gotReadySignals(cg *odigosv1.CollectorsGroup) (bool, string) {
 	return true, ""
 }
 
-// givin the container relevant resources, resolve the otel distro to use for the container.
-// the function will:
-//  1. check for distro in container override, validate and return it if found.
-//  2. check the default distros for the language and return the distro to use if found.
-//  3. if the distro cannot be resolved for any reason, the function will return an error as
-//     ContainerAgentConfig with the appropriate reason and message for the failure.
-func resolveContainerDistro(
-	containerName string,
-	containerOverride *odigosv1.ContainerOverride,
-	containerLanguage common.ProgrammingLanguage,
-	runtimeVersion string,
-	distroPerLanguage map[common.ProgrammingLanguage]string,
-	distroGetter *distros.Getter,
-) (*distro.OtelDistro, *odigosv1.ContainerAgentConfig) {
-	// check if the distro name is specifically overridden.
-	// this can happen for languages that support multiple distros,
-	// and the user want to specify a specific distro for this specific workload, and not the default one.
-	if containerOverride != nil && containerOverride.OtelDistroName != nil {
-
-		overwriteDistroName := *containerOverride.OtelDistroName
-		distro := distroGetter.GetDistroByName(overwriteDistroName)
-		if distro == nil { // not expected to happen, here for safety net
-			message := fmt.Sprintf("requested otel distro %s is not available in this odigos tier", overwriteDistroName)
-			return nil, &odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
-				AgentEnabledMessage: message,
-			}
+func resolveDistroByOverride(overwriteDistroName string, distroGetter *distros.Getter, containerLanguage common.ProgrammingLanguage) (*distro.OtelDistro, *AgentEnableError) {
+	distro := distroGetter.GetDistroByName(overwriteDistroName)
+	if distro == nil { // not expected to happen, here for safety net
+		message := fmt.Sprintf("requested otel distro %s is not available in this odigos tier", overwriteDistroName)
+		return nil, &AgentEnableError{
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+			AgentEnabledMessage: message,
 		}
-
-		// verify the distro matches the language, since it might be overridden by the container override.
-		if distro.Language != containerLanguage {
-			return nil, &odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
-				AgentEnabledMessage: fmt.Sprintf("requested otel distro %s does not support language %s", overwriteDistroName, containerLanguage),
-			}
-		}
-
-		return distro, nil
-
-	} else { // use the default distro for the language
-
-		defaultDistroName, ok := distroPerLanguage[containerLanguage]
-		if !ok {
-			if containerLanguage == common.UnknownProgrammingLanguage {
-				return nil, &odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
-					AgentEnabledMessage: "runtime language/platform cannot be detected, no instrumentation agent is available. use the container override to manually specify the programming language.",
-				}
-			} else {
-				return nil, &odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
-					AgentEnabledMessage: fmt.Sprintf("support for %s is coming soon. no instrumentation agent available at the moment", containerLanguage),
-				}
-			}
-		}
-
-		// Walk the fallbackDistro chain to resolve the best-matching distro name for the runtime version.
-		effectiveDistroName := distroGetter.ResolveDistroNameForVersion(defaultDistroName, runtimeVersion)
-
-		distro := distroGetter.GetDistroByName(effectiveDistroName)
-		if distro == nil { // not expected to happen, here for safety net
-			message := fmt.Sprintf("otel distro %s is not available in this odigos tier", effectiveDistroName)
-			return nil, &odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
-				AgentEnabledMessage: message,
-			}
-		}
-
-		return distro, nil
 	}
+
+	// verify the distro matches the language, since it might be overridden by the container override.
+	if distro.Language != containerLanguage {
+		return nil, &AgentEnableError{
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
+			AgentEnabledMessage: fmt.Sprintf("requested otel distro %s does not support language %s", overwriteDistroName, containerLanguage),
+		}
+	}
+
+	return distro, nil
+}
+
+func resolveDistroByLanguage(containerLanguage common.ProgrammingLanguage, distroPerLanguage map[common.ProgrammingLanguage]string, distroGetter *distros.Getter, runtimeVersion string) (*distro.OtelDistro, *AgentEnableError) {
+	defaultDistroName, ok := distroPerLanguage[containerLanguage]
+	if !ok {
+		if containerLanguage == common.UnknownProgrammingLanguage {
+			return nil, &AgentEnableError{
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+				AgentEnabledMessage: "runtime language/platform cannot be detected, no instrumentation agent is available. use the container override to manually specify the programming language.",
+			}
+		} else {
+			return nil, &AgentEnableError{
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+				AgentEnabledMessage: fmt.Sprintf("support for %s is coming soon. no instrumentation agent available at the moment", containerLanguage),
+			}
+		}
+	}
+
+	// Walk the fallbackDistro chain to resolve the best-matching distro name for the runtime version.
+	effectiveDistroName := distroGetter.ResolveDistroNameForVersion(defaultDistroName, runtimeVersion)
+
+	distro := distroGetter.GetDistroByName(effectiveDistroName)
+	if distro == nil { // not expected to happen, here for safety net
+		message := fmt.Sprintf("otel distro %s is not available in this odigos tier", effectiveDistroName)
+		return nil, &AgentEnableError{
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+			AgentEnabledMessage: message,
+		}
+	}
+
+	return distro, nil
 }
