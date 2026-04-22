@@ -235,7 +235,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 			podManifestInjectionOptional = false
 		}
 		// calculate the relevant collector configurations for the container.
-		currentContainerCollectorConfig := calculateContainerCollectorConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, containerOverride, urlTemplatizationConfig, samplingRules, pw)
+		currentContainerCollectorConfig := calculateContainerCollectorConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, containerOverride, urlTemplatizationConfig, samplingRules, pw, workloadObj)
 		if currentContainerCollectorConfig != nil {
 			collectorConfig = append(collectorConfig, *currentContainerCollectorConfig)
 		}
@@ -477,6 +477,7 @@ func calculateContainerCollectorConfig(containerName string,
 	urlTemplatizationConfig *commonapi.UrlTemplatizationConfig,
 	samplingRules *[]odigosv1.Sampling,
 	pw k8sconsts.PodWorkload,
+	workloadObj workload.Workload,
 ) *commonapi.ContainerCollectorConfig {
 
 	// If this container is ignored, runtime details are unavailable, or language is not supported,
@@ -500,7 +501,7 @@ func calculateContainerCollectorConfig(containerName string,
 		return nil
 	}
 
-	noisyOps, relevantOps, costRules := sampling.FilterTailSamplingRulesForContainer(samplingRules, runtimeDetails.Language, pw, containerName, containerDistro)
+	noisyOps, relevantOps, costRules := sampling.FilterTailSamplingRulesForContainer(samplingRules, runtimeDetails.Language, pw, containerName, containerDistro, workloadObj, effectiveConfig)
 
 	return &commonapi.ContainerCollectorConfig{
 		ContainerName: containerName,

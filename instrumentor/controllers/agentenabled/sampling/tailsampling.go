@@ -6,10 +6,11 @@ import (
 	"github.com/odigos-io/odigos/common"
 	apisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/distros/distro"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 func FilterTailSamplingRulesForContainer(samplingRules *[]odigosv1.Sampling, language common.ProgrammingLanguage,
-	pw k8sconsts.PodWorkload, containerName string, distro *distro.OtelDistro) ([]apisampling.NoisyOperation, []apisampling.HighlyRelevantOperation, []apisampling.CostReductionRule) {
+	pw k8sconsts.PodWorkload, containerName string, distro *distro.OtelDistro, workloadObj workload.Workload, effectiveConfig *common.OdigosConfiguration) ([]apisampling.NoisyOperation, []apisampling.HighlyRelevantOperation, []apisampling.CostReductionRule) {
 
 	var filteredNoisyOps []apisampling.NoisyOperation
 	var filteredRelevantOps []apisampling.HighlyRelevantOperation
@@ -21,17 +22,7 @@ func FilterTailSamplingRulesForContainer(samplingRules *[]odigosv1.Sampling, lan
 
 		// If the distro not supports head sampling, we need the NoisyOperations to be applied at the collector level (tailsampling).
 		if distro.Traces == nil || distro.Traces.HeadSampling == nil || !distro.Traces.HeadSampling.Supported {
-			for _, noisyOp := range samplingRule.Spec.NoisyOperations {
-				if IsServiceInRuleScope(noisyOp.SourceScopes, pw, containerName, language) {
-					filteredNoisyOps = append(filteredNoisyOps, apisampling.NoisyOperation{
-						Id:               odigosv1.ComputeNoisyOperationHash(&noisyOp),
-						Name:             noisyOp.Name,
-						Disabled:         noisyOp.Disabled,
-						Operation:        noisyOp.Operation,
-						PercentageAtMost: noisyOp.PercentageAtMost,
-					})
-				}
-			}
+			filteredNoisyOps = CalculateNoisyOperationsForContainer(distro, workloadObj, containerName, effectiveConfig, samplingRules, pw)
 		}
 
 		// Filter and convert HighlyRelevantOperations - exclude SourceScopes and Notes

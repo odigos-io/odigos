@@ -136,14 +136,8 @@ func calculateKubeletHealthProbesSamplingRules(effectiveConfig *common.OdigosCon
 	return noisyOperations
 }
 
-// givin a specific container in a workload, matched to a distro, calculate it's head sampling based on odigos config and sampling rules.
-func CalculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload.Workload, containerName string, effectiveConfig *common.OdigosConfiguration, samplingRules *[]odigosv1.Sampling, pw k8sconsts.PodWorkload) *odigosv1.HeadSamplingConfig {
-
-	// only calculate head sampling config if the distro supports it
-	if distro.Traces == nil || distro.Traces.HeadSampling == nil || !distro.Traces.HeadSampling.Supported {
-		return nil
-	}
-
+// given a specific container in a workload, matched to a distro, calculate it's head sampling based on odigos config and sampling rules.
+func CalculateNoisyOperationsForContainer(distro *distro.OtelDistro, workloadObj workload.Workload, containerName string, effectiveConfig *common.OdigosConfiguration, samplingRules *[]odigosv1.Sampling, pw k8sconsts.PodWorkload) []commonapisampling.NoisyOperation {
 	kubeletHealthProbesRules := calculateKubeletHealthProbesSamplingRules(effectiveConfig, workloadObj, containerName)
 	customSamplingRules := getRelevantNoisyOperations(samplingRules, pw, containerName, distro)
 
@@ -165,6 +159,23 @@ func CalculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 		}
 		return strings.Compare(a.Id, b.Id)
 	})
+
+	return noisyOperations
+}
+
+// givin a specific container in a workload, matched to a distro, calculate it's head sampling based on odigos config and sampling rules.
+func CalculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload.Workload, containerName string, effectiveConfig *common.OdigosConfiguration, samplingRules *[]odigosv1.Sampling, pw k8sconsts.PodWorkload) *odigosv1.HeadSamplingConfig {
+
+	// only calculate head sampling config if the distro supports it
+	if distro.Traces == nil || distro.Traces.HeadSampling == nil || !distro.Traces.HeadSampling.Supported {
+		return nil
+	}
+
+	noisyOperations := CalculateNoisyOperationsForContainer(distro, workloadObj, containerName, effectiveConfig, samplingRules, pw)
+
+	if len(noisyOperations) == 0 {
+		return nil
+	}
 
 	return &odigosv1.HeadSamplingConfig{
 		NoisyOperations: noisyOperations,
