@@ -181,17 +181,17 @@ func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) e
 
 		for _, pipeline := range pipelines {
 			pipelineID := collectorpipeline.NewIDWithName(collectorpipeline.SignalTraces, pipeline)
-			cons, err := cfg.consumers.Consumer(pipelineID)
+			consumer, err := cfg.consumers.Consumer(pipelineID)
 			if err != nil {
 				continue
 			}
 
-			batch, ok := tracesByConsumer[cons]
+			batch, ok := tracesByConsumer[consumer]
 			if !ok {
 				batch = ptrace.NewTraces()
 			}
 			rs.CopyTo(batch.ResourceSpans().AppendEmpty())
-			tracesByConsumer[cons] = batch
+			tracesByConsumer[consumer] = batch
 		}
 	}
 
@@ -204,9 +204,12 @@ func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) e
 		}
 	}
 
-	if defaultTraces.ResourceSpans().Len() > 0 && cfg.defaultCons != nil {
-		if err := cfg.defaultCons.ConsumeTraces(ctx, defaultTraces); err != nil {
-			cfg.logger.Debug("failed to send traces to the default pipeline", zap.Error(err))
+	// Fallback, if any spans unmatched
+	if defaultTraces.ResourceSpans().Len() > 0 {
+		if cfg.defaultCons != nil {
+			if err := cfg.defaultCons.ConsumeTraces(ctx, defaultTraces); err != nil {
+				cfg.logger.Debug("failed to send traces to the default pipeline", zap.Error(err))
+			}
 		}
 	}
 
