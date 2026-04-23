@@ -3,6 +3,7 @@ module github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension
 go 1.26.2
 
 require (
+	github.com/odigos-io/odigos/api v1.23.7
 	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.54.0
