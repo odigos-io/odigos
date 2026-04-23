@@ -1,4 +1,6 @@
 import { getWorkloadId } from '@odigos/ui-kit/functions';
+import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
+import type { NamespaceInstrumentInput, SourceInstrumentInput, WorkloadResponse, K8sWorkloadContainerResponse, K8sWorkloadConditions } from '@/types';
 import {
   EntityTypes,
   DesiredStateProgress,
@@ -12,12 +14,11 @@ import {
   type ProgrammingLanguages,
   type OtelDistroName,
 } from '@odigos/ui-kit/types';
-import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
-import type { NamespaceInstrumentInput, SourceInstrumentInput, WorkloadResponse, K8sWorkloadContainerResponse, K8sWorkloadConditions } from '@/types';
 
 function mapDesiredStatusToConditionStatus(status: DesiredStateProgress): StatusType | OtherStatus {
   switch (status) {
     case DesiredStateProgress.Failure:
+    case DesiredStateProgress.Error:
       return StatusType.Error;
     case DesiredStateProgress.Notice:
       return StatusType.Warning;
@@ -27,12 +28,12 @@ function mapDesiredStatusToConditionStatus(status: DesiredStateProgress): Status
     case DesiredStateProgress.Unsupported:
     case DesiredStateProgress.Disabled:
       return OtherStatus.Disabled;
-    case DesiredStateProgress.Error:
     case DesiredStateProgress.Success:
+      return StatusType.Success;
     case DesiredStateProgress.Irrelevant:
     case DesiredStateProgress.Unknown:
     default:
-      return StatusType.Default;
+      return StatusType.Info;
   }
 }
 
