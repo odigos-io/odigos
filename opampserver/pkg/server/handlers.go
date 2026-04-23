@@ -46,7 +46,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 		// first message must be agent description.
 		// it is, however, possible that the OpAMP server restarted, and the agent is trying to reconnect.
 		// in which case we send back flag and request full status update.
-		c.logger.Info("Agent description is missing in the first OpAMP message, requesting full state update")
+		c.logger.Debug("Agent description is missing in the first OpAMP message, requesting full state update")
 		serverToAgent := &protobufs.ServerToAgent{
 			Flags: uint64(protobufs.ServerToAgentFlags_ServerToAgentFlags_ReportFullState),
 		}

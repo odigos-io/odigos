@@ -13,6 +13,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
 const (
@@ -90,7 +91,9 @@ func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Objec
 
 		// check if we can create a new instance
 		if instrumentationInstancesCountReachedLimit(ctx, owner, kubeClient) {
-			return fmt.Errorf("instrumentation instances count per pod is over the limit of %d", maxInstrumentationInstancesPerPod)
+			commonlogger.LoggerCompat().Debug("instrumentation instances count per pod reached limit, skipping creation",
+				"owner", owner.GetName(), "namespace", owner.GetNamespace(), "limit", maxInstrumentationInstancesPerPod)
+			return nil
 		}
 
 		// create new instance
