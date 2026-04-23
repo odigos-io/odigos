@@ -16,7 +16,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -416,119 +415,103 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 		}
 	}
 
-	// Cluster-wide manifest listing is the dominant latency cost for large
-	// clusters (6+ cluster-wide LIST operations). Run them in parallel via
-	// errgroup — the cache client is backed by informers and safe for
-	// concurrent reads. At large scale (10K+ workloads, PLAT-958) this turns
-	// a ~multi-second serial load into a max(single-kind) one.
-	g, gctx := errgroup.WithContext(ctx)
-
-	deploymentsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-	g.Go(func() error {
-		deploymentsList := &appsv1.DeploymentList{}
-		if err := k8sCacheClient.List(gctx, deploymentsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{})); err != nil {
-			return err
-		}
-		for _, deployment := range deploymentsList.Items {
-			deploymentsMap[model.K8sWorkloadID{
-				Namespace: deployment.Namespace,
-				Kind:      model.K8sResourceKindDeployment,
-				Name:      deployment.Name,
-			}] = &computed.CachedWorkloadManifest{
-				AvailableReplicas:    deployment.Status.AvailableReplicas,
-				Selector:             deployment.Spec.Selector,
-				WorkloadHealthStatus: status.CalculateDeploymentHealthStatus(deployment.Status),
-			}
-		}
-		return nil
-	})
-
-	daemonsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-	g.Go(func() error {
-		daemonsetsList := &appsv1.DaemonSetList{}
-		if err := k8sCacheClient.List(gctx, daemonsetsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{})); err != nil {
-			return err
-		}
-		for _, daemonset := range daemonsetsList.Items {
-			daemonsMap[model.K8sWorkloadID{
-				Namespace: daemonset.Namespace,
-				Kind:      model.K8sResourceKindDaemonSet,
-				Name:      daemonset.Name,
-			}] = &computed.CachedWorkloadManifest{
-				AvailableReplicas:    daemonset.Status.NumberReady,
-				Selector:             daemonset.Spec.Selector,
-				WorkloadHealthStatus: status.CalculateDaemonSetHealthStatus(daemonset.Status),
-			}
-		}
-		return nil
-	})
-
-	statefulsetsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-	g.Go(func() error {
-		statefulsetsList := &appsv1.StatefulSetList{}
-		if err := k8sCacheClient.List(gctx, statefulsetsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{})); err != nil {
-			return err
-		}
-		for _, statefulset := range statefulsetsList.Items {
-			statefulsetsMap[model.K8sWorkloadID{
-				Namespace: statefulset.Namespace,
-				Kind:      model.K8sResourceKindStatefulSet,
-				Name:      statefulset.Name,
-			}] = &computed.CachedWorkloadManifest{
-				AvailableReplicas:    statefulset.Status.ReadyReplicas,
-				Selector:             statefulset.Spec.Selector,
-				WorkloadHealthStatus: status.CalculateStatefulSetHealthStatus(statefulset.Status),
-			}
-		}
-		return nil
-	})
-
-	staticPodsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-	g.Go(func() error {
-		staticPodsList := &corev1.PodList{}
-		if err := k8sCacheClient.List(gctx, staticPodsList, client.InNamespace(filters.NamespaceString), client.HasLabels{k8sconsts.OdigosVirtualStaticPodNameLabel}); err != nil {
-			return err
-		}
-		for _, staticPod := range staticPodsList.Items {
-			staticPodsMap[model.K8sWorkloadID{
-				Namespace: staticPod.Namespace,
-				Kind:      model.K8sResourceKindStaticPod,
-				Name:      staticPod.Name,
-			}] = &computed.CachedWorkloadManifest{
-				AvailableReplicas: 1, // static pod always have 1 instance
-				Selector: &metav1.LabelSelector{ // use selector so it works the same way as other workloads
-					MatchLabels: map[string]string{
-						k8sconsts.OdigosVirtualStaticPodNameLabel: staticPod.Name,
-					},
-				},
-				WorkloadHealthStatus: status.CalculateStaticPodHealthStatus(staticPod.Status),
-			}
-		}
-		return nil
-	})
-
-	cronjobsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-	g.Go(func() error {
-		cronjobsList := &batchv1.CronJobList{}
-		if err := k8sCacheClient.List(gctx, cronjobsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{})); err != nil {
-			return err
-		}
-		for _, cronjob := range cronjobsList.Items {
-			cronjobsMap[model.K8sWorkloadID{
-				Namespace: cronjob.Namespace,
-				Kind:      model.K8sResourceKindCronJob,
-				Name:      cronjob.Name,
-			}] = &computed.CachedWorkloadManifest{
-				AvailableReplicas:    int32(len(cronjob.Status.Active)),
-				Selector:             cronjob.Spec.JobTemplate.Spec.Selector,
-				WorkloadHealthStatus: status.CalculateCronJobHealthStatus(cronjob.Status),
-			}
-		}
-		return nil
-	})
-
-	if err := g.Wait(); err != nil {
+	deploymentsList := &appsv1.DeploymentList{}
+	err = k8sCacheClient.List(ctx, deploymentsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{}))
+	if err != nil {
 		return nil, err
+	}
+	deploymentsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	for _, deployment := range deploymentsList.Items {
+		workloadHealthStatus := status.CalculateDeploymentHealthStatus(deployment.Status)
+		deploymentsMap[model.K8sWorkloadID{
+			Namespace: deployment.Namespace,
+			Kind:      model.K8sResourceKindDeployment,
+			Name:      deployment.Name,
+		}] = &computed.CachedWorkloadManifest{
+			AvailableReplicas:    deployment.Status.AvailableReplicas,
+			Selector:             deployment.Spec.Selector,
+			WorkloadHealthStatus: workloadHealthStatus,
+		}
+	}
+
+	daemonsetsList := &appsv1.DaemonSetList{}
+	err = k8sCacheClient.List(ctx, daemonsetsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{}))
+	if err != nil {
+		return nil, err
+	}
+	daemonsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	for _, daemonset := range daemonsetsList.Items {
+		workloadHealthStatus := status.CalculateDaemonSetHealthStatus(daemonset.Status)
+		daemonsMap[model.K8sWorkloadID{
+			Namespace: daemonset.Namespace,
+			Kind:      model.K8sResourceKindDaemonSet,
+			Name:      daemonset.Name,
+		}] = &computed.CachedWorkloadManifest{
+			AvailableReplicas:    daemonset.Status.NumberReady,
+			Selector:             daemonset.Spec.Selector,
+			WorkloadHealthStatus: workloadHealthStatus,
+		}
+	}
+
+	statefulsetsList := &appsv1.StatefulSetList{}
+	err = k8sCacheClient.List(ctx, statefulsetsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{}))
+	if err != nil {
+		return nil, err
+	}
+	statefulsetsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	for _, statefulset := range statefulsetsList.Items {
+		workloadHealthStatus := status.CalculateStatefulSetHealthStatus(statefulset.Status)
+		statefulsetsMap[model.K8sWorkloadID{
+			Namespace: statefulset.Namespace,
+			Kind:      model.K8sResourceKindStatefulSet,
+			Name:      statefulset.Name,
+		}] = &computed.CachedWorkloadManifest{
+			AvailableReplicas:    statefulset.Status.ReadyReplicas,
+			Selector:             statefulset.Spec.Selector,
+			WorkloadHealthStatus: workloadHealthStatus,
+		}
+	}
+
+	staticPodsList := &corev1.PodList{}
+	err = k8sCacheClient.List(ctx, staticPodsList, client.InNamespace(filters.NamespaceString), client.HasLabels{k8sconsts.OdigosVirtualStaticPodNameLabel})
+	if err != nil {
+		return nil, err
+	}
+	staticPodsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	for _, staticPod := range staticPodsList.Items {
+		workloadHealthStatus := status.CalculateStaticPodHealthStatus(staticPod.Status)
+		staticPodsMap[model.K8sWorkloadID{
+			Namespace: staticPod.Namespace,
+			Kind:      model.K8sResourceKindStaticPod,
+			Name:      staticPod.Name,
+		}] = &computed.CachedWorkloadManifest{
+			AvailableReplicas: 1, // static pod always have 1 instance
+			Selector: &metav1.LabelSelector{ // use selector so it works the same way as other workloads
+				MatchLabels: map[string]string{
+					k8sconsts.OdigosVirtualStaticPodNameLabel: staticPod.Name,
+				},
+			},
+			WorkloadHealthStatus: workloadHealthStatus,
+		}
+	}
+
+	cronjobsList := &batchv1.CronJobList{}
+	err = k8sCacheClient.List(ctx, cronjobsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{}))
+	if err != nil {
+		return nil, err
+	}
+	cronjobsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	for _, cronjob := range cronjobsList.Items {
+		workloadHealthStatus := status.CalculateCronJobHealthStatus(cronjob.Status)
+		cronjobsMap[model.K8sWorkloadID{
+			Namespace: cronjob.Namespace,
+			Kind:      model.K8sResourceKindCronJob,
+			Name:      cronjob.Name,
+		}] = &computed.CachedWorkloadManifest{
+			AvailableReplicas:    int32(len(cronjob.Status.Active)),
+			Selector:             cronjob.Spec.JobTemplate.Spec.Selector,
+			WorkloadHealthStatus: workloadHealthStatus,
+		}
 	}
 
 	// Only try to list DeploymentConfigs if they're available in the cluster
