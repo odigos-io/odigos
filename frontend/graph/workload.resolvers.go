@@ -58,13 +58,19 @@ func (r *k8sNamespaceResolver) DataStreamNames(ctx context.Context, obj *model.K
 }
 
 // Workloads is the resolver for the workloads field.
-// Triggers the full SetFilters load (sources + manifests) only when workloads
-// are actually requested. The Namespaces query resolver uses LoadConfig which
-// skips this, so lightweight namespace-only queries stay fast.
+// Normally pre-populated by queryResolver.Namespaces when the caller asked for
+// `workloads` (see that resolver's comment on why eager population is needed
+// at scale). We short-circuit on the pre-populated slice to avoid concurrent
+// SetFilters fan-out across namespace resolvers.
 func (r *k8sNamespaceResolver) Workloads(ctx context.Context, obj *model.K8sNamespace) ([]*model.K8sWorkload, error) {
-	l := loaders.For(ctx)
+	if obj.Workloads != nil {
+		return obj.Workloads, nil
+	}
 
-	// Ensure workload IDs are loaded (SetFilters is idempotent via Fetched flags).
+	// Fallback path — should not be hit from the standard Namespaces query
+	// path, but kept for safety in case this resolver is invoked directly
+	// (e.g. via a fragment spread we don't detect as `workloads`).
+	l := loaders.For(ctx)
 	if len(l.GetWorkloadIds()) == 0 {
 		if err := l.SetFilters(ctx, nil); err != nil {
 			return nil, err
@@ -74,6 +80,7 @@ func (r *k8sNamespaceResolver) Workloads(ctx context.Context, obj *model.K8sName
 	workloadIds := l.GetWorkloadIdsInNamespace(obj.Name)
 	workloads := make([]*model.K8sWorkload, 0, len(workloadIds))
 	for _, id := range workloadIds {
+		id := id
 		workloads = append(workloads, &model.K8sWorkload{ID: &id})
 	}
 	return workloads, nil
@@ -819,9 +826,14 @@ func (r *queryResolver) WorkloadsByIds(ctx context.Context, ids []*model.K8sWork
 }
 
 // Namespaces is the resolver for the namespaces field.
-// Only loads config + namespace list. Workload data is deferred to the
-// K8sNamespace.Workloads field resolver, so queries that don't request
-// workloads avoid the heavy manifest/source loading entirely.
+// Only loads config + namespace list when workloads are not requested.
+// When the caller asks for `workloads`, we acquire heavyWorkloadQueryMu and
+// eagerly pre-populate every K8sWorkload object here (sequentially) so gqlgen's
+// per-field goroutine fan-out across N namespaces × M workloads × K fields
+// short-circuits on the pre-computed values. On large clusters (100s of
+// namespaces, 10K+ workloads) the old per-field resolver path could spawn
+// hundreds of thousands of goroutines — each acquiring loader mutexes —
+// causing the UI pod to stall (request timeout) or OOM (PLAT-958).
 func (r *queryResolver) Namespaces(ctx context.Context) ([]*model.K8sNamespace, error) {
 	l := loaders.For(ctx)
 	if err := l.LoadConfig(ctx); err != nil {
@@ -834,11 +846,48 @@ func (r *queryResolver) Namespaces(ctx context.Context) ([]*model.K8sNamespace, 
 	}
 
 	gqlNss := make([]*model.K8sNamespace, 0, len(nss))
+	nsByName := make(map[string]*model.K8sNamespace, len(nss))
 	for _, nsName := range nss {
-		gqlNss = append(gqlNss, &model.K8sNamespace{
-			Name: nsName,
-		})
+		ns := &model.K8sNamespace{Name: nsName}
+		gqlNss = append(gqlNss, ns)
+		nsByName[nsName] = ns
 	}
+
+	// Fast path: the caller didn't ask for workloads (e.g. the GET_NAMESPACES
+	// query). Skip the heavy cluster-wide source+manifest load entirely.
+	if !isNamespacesWorkloadsSelected(ctx) {
+		return gqlNss, nil
+	}
+
+	// Heavy path: serialize concurrent GetNamespacesWithWorkloads requests so
+	// the UI pod can't be hit by N simultaneous 10K-workload loads.
+	heavyWorkloadQueryMu.Lock()
+	defer heavyWorkloadQueryMu.Unlock()
+
+	if err := l.SetFilters(ctx, nil); err != nil {
+		return nil, err
+	}
+
+	for _, id := range l.GetWorkloadIds() {
+		id := id
+		ns, ok := nsByName[id.Namespace]
+		if !ok {
+			// workload belongs to an ignored/unknown namespace, skip.
+			continue
+		}
+		w := &model.K8sWorkload{ID: &id}
+		populateNamespaceQueryWorkloadFields(ctx, l, w)
+		ns.Workloads = append(ns.Workloads, w)
+	}
+
+	// Ensure a non-nil slice so k8sNamespaceResolver.Workloads short-circuits
+	// uniformly even for namespaces that have no workloads.
+	for _, ns := range gqlNss {
+		if ns.Workloads == nil {
+			ns.Workloads = []*model.K8sWorkload{}
+		}
+	}
+
 	return gqlNss, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
@@ -16,6 +17,63 @@ import (
 
 // Serializes heavy workload queries so concurrent requests don't double memory usage.
 var heavyWorkloadQueryMu sync.Mutex
+
+// isNamespacesWorkloadsSelected inspects the current query selection and returns
+// true if the caller requested the `workloads` sub-field under `namespaces`.
+// Used to gate the expensive cluster-wide workload load for the lightweight
+// `GET_NAMESPACES` query which only needs namespace metadata.
+func isNamespacesWorkloadsSelected(ctx context.Context) bool {
+	for _, field := range graphql.CollectFieldsCtx(ctx, nil) {
+		if field.Name == "workloads" {
+			return true
+		}
+	}
+	return false
+}
+
+// populateNamespaceQueryWorkloadFields pre-computes the subset of K8sWorkload
+// fields needed by the `namespaces { workloads { ... } }` query path:
+// markedForInstrumentation, dataStreamNames, and numberOfInstances.
+//
+// This is called sequentially from queryResolver.Namespaces (under
+// heavyWorkloadQueryMu) so gqlgen's per-field goroutine fan-out across
+// 10K+ workloads short-circuits on pre-populated values instead of each
+// spawning mutex-acquiring resolver goroutines.
+//
+// Intentionally slim: does NOT trigger loadInstrumentationConfigs or
+// loadWorkloadPods, keeping this path much cheaper than populateWorkloadFields.
+func populateNamespaceQueryWorkloadFields(ctx context.Context, l *loaders.Loaders, w *model.K8sWorkload) {
+	id := *w.ID
+
+	if sources, err := l.GetSources(ctx, id); err == nil && sources != nil {
+		enabled, reason, rerr := sourceutils.IsObjectInstrumentedBySource(ctx, sources, nil)
+		if rerr == nil {
+			var marked *bool
+			if enabled {
+				marked = &enabled
+			} else if reason.Reason == string("WorkloadSourceDisabled") {
+				marked = &enabled
+			}
+			w.MarkedForInstrumentation = &model.K8sWorkloadMarkedForInstrumentation{
+				MarkedForInstrumentation: marked,
+				DecisionEnum:             string(reason.Reason),
+				Message:                  reason.Message,
+			}
+		}
+
+		ptrNames := services.ExtractDataStreamsFromSource(sources.Workload, sources.Namespace)
+		names := make([]string, len(ptrNames))
+		for i, p := range ptrNames {
+			names[i] = *p
+		}
+		w.DataStreamNames = names
+	}
+
+	if manifest, err := l.GetWorkloadManifest(ctx, id); err == nil && manifest != nil {
+		count := int(manifest.AvailableReplicas)
+		w.NumberOfInstances = &count
+	}
+}
 
 // populateWorkloadFields pre-computes all resolver fields for a workload
 // sequentially. This is called from the Workloads batch resolver to avoid
