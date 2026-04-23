@@ -16,7 +16,7 @@
   "dependencies": {
     "@apollo/client": "^3.13.9",
     "@apollo/experimental-nextjs-app-support": "^0.12.3",
-    "@odigos/ui-kit": "0.0.221",
+    "@odigos/ui-kit": "0.0.223",
     "graphql": "^16.13.2",
     "next": "15.5.14",
     "react": "19.2.5",
@@ -33,7 +33,7 @@
     "autoprefixer": "^10.5.0",
     "check-peer-dependencies": "^4.3.4",
     "cross-env": "^10.1.0",
-    "cypress": "^15.14.0",
+    "cypress": "^15.14.1",
     "eslint": "9.39.2",
     "eslint-config-next": "16.2.4",
     "postcss": "^8.5.10",
