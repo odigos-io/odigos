@@ -80,7 +80,6 @@ func (r *k8sNamespaceResolver) Workloads(ctx context.Context, obj *model.K8sName
 	workloadIds := l.GetWorkloadIdsInNamespace(obj.Name)
 	workloads := make([]*model.K8sWorkload, 0, len(workloadIds))
 	for _, id := range workloadIds {
-		id := id
 		workloads = append(workloads, &model.K8sWorkload{ID: &id})
 	}
 	return workloads, nil
