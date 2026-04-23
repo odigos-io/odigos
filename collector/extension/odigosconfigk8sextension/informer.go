@@ -8,6 +8,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonapi "github.com/odigos-io/odigos/common/api"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -224,15 +225,13 @@ func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKe
 	)
 }
 
-const dataStreamLabelPrefix = "odigos.io/data-stream-"
-
 // extractDataStreamLabels reads IC labels and returns the data stream names.
 // If no data-stream labels are present, returns ["default"].
 func extractDataStreamLabels(labels map[string]string) []string {
 	var streams []string
 	for k, v := range labels {
-		if strings.HasPrefix(k, dataStreamLabelPrefix) && v == "true" {
-			streams = append(streams, strings.TrimPrefix(k, dataStreamLabelPrefix))
+		if strings.HasPrefix(k, k8sconsts.SourceDataStreamLabelPrefix) && v == "true" {
+			streams = append(streams, strings.TrimPrefix(k, k8sconsts.SourceDataStreamLabelPrefix))
 		}
 	}
 	if len(streams) == 0 {
