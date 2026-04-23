@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -38,12 +39,27 @@ type WorkloadContainerId struct {
 	ContainerName string
 }
 
+// workloadIdSnapshot is an immutable snapshot of workload identity data.
+// Published atomically so readers never need a lock.
+type workloadIdSnapshot struct {
+	workloadIds     []model.K8sWorkloadID
+	workloadIdsMap  map[k8sconsts.PodWorkload]struct{}
+	nsToWorkloadIds map[string][]model.K8sWorkloadID
+}
+
 type Loaders struct {
 	logger logr.Logger
 
 	k8sCacheClient client.Client
 
-	mu sync.Mutex
+	configOnce sync.Once
+	configErr  error
+
+	// defaultFilterOnce guards the SetFilters(nil) path which is the only
+	// concurrent pattern (namespace field fan-out). Non-nil filter paths are
+	// already externally serialized by heavyWorkloadQueryMu.
+	defaultFilterOnce sync.Once
+	defaultFilterErr  error
 
 	workloadFilter      *WorkloadFilter
 	odigosConfiguration *common.OdigosConfiguration
@@ -53,9 +69,8 @@ type Loaders struct {
 	namespacesFetched bool
 	namespaces        []string
 
-	workloadIds     []model.K8sWorkloadID
-	workloadIdsMap  map[k8sconsts.PodWorkload]struct{}
-	nsToWorkloadIds map[string][]model.K8sWorkloadID
+	// Atomically published snapshot; readers are lock-free.
+	workloadSnap atomic.Pointer[workloadIdSnapshot]
 
 	instrumentationConfigMutex    sync.Mutex
 	instrumentationConfigsFetched bool
@@ -96,15 +111,17 @@ func NewLoaders(logger logr.Logger, k8sCacheClient client.Client) *Loaders {
 }
 
 func (l *Loaders) GetWorkloadIds() []model.K8sWorkloadID {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	return l.workloadIds
+	if snap := l.workloadSnap.Load(); snap != nil {
+		return snap.workloadIds
+	}
+	return nil
 }
 
 func (l *Loaders) GetWorkloadIdsInNamespace(ns string) []model.K8sWorkloadID {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	return l.nsToWorkloadIds[ns]
+	if snap := l.workloadSnap.Load(); snap != nil {
+		return snap.nsToWorkloadIds[ns]
+	}
+	return nil
 }
 
 func (l *Loaders) loadNamespaces(ctx context.Context) error {
@@ -168,8 +185,8 @@ func (l *Loaders) loadWorkloadManifests(ctx context.Context) error {
 	// or workloadsByIds), use targeted per-workload Get operations instead of
 	// 6+ cluster-wide List operations. This dramatically reduces memory from
 	// deep-copying thousands of unrelated K8s objects from the informer cache.
-	if l.workloadIds != nil {
-		workloadManifests, err = fetchWorkloadManifestsByIds(ctx, l.logger, l.workloadIds, l.k8sCacheClient)
+	if snap := l.workloadSnap.Load(); snap != nil {
+		workloadManifests, err = fetchWorkloadManifestsByIds(ctx, l.logger, snap.workloadIds, l.k8sCacheClient)
 	} else {
 		workloadManifests, err = fetchWorkloadManifests(ctx, l.logger, l.workloadFilter, l.k8sCacheClient)
 	}
@@ -204,7 +221,11 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		}
 	}
 
-	workloadPods, err := fetchWorkloadPods(ctx, l.logger, l.workloadFilter, singleWorkloadManifest, l.workloadIdsMap, l.k8sCacheClient)
+	var workloadIdsMap map[k8sconsts.PodWorkload]struct{}
+	if snap := l.workloadSnap.Load(); snap != nil {
+		workloadIdsMap = snap.workloadIdsMap
+	}
+	workloadPods, err := fetchWorkloadPods(ctx, l.logger, l.workloadFilter, singleWorkloadManifest, workloadIdsMap, l.k8sCacheClient)
 	if err != nil {
 		return err
 	}
@@ -309,47 +330,83 @@ func (l *Loaders) loadInstrumentationInstances(ctx context.Context) error {
 }
 
 // LoadConfig loads the odigos configuration and sets up ignored namespaces.
-// Cached after first call — safe to call multiple times per request.
-// Use directly for queries that only need namespace metadata (no workloads).
+// Cached after first call via sync.Once — safe to call concurrently.
 func (l *Loaders) LoadConfig(ctx context.Context) error {
-	if l.odigosConfiguration != nil {
-		return nil
-	}
+	l.configOnce.Do(func() {
+		odigosns := env.GetCurrentNamespace()
+		var odigosConfigurationConfigMap corev1.ConfigMap
+		err := l.k8sCacheClient.Get(ctx, client.ObjectKey{
+			Namespace: odigosns,
+			Name:      consts.OdigosEffectiveConfigName,
+		}, &odigosConfigurationConfigMap)
+		if err != nil {
+			l.configErr = err
+			return
+		}
 
-	odigosns := env.GetCurrentNamespace()
-	var odigosConfigurationConfigMap corev1.ConfigMap
-	err := l.k8sCacheClient.Get(ctx, client.ObjectKey{
-		Namespace: odigosns,
-		Name:      consts.OdigosEffectiveConfigName,
-	}, &odigosConfigurationConfigMap)
-	if err != nil {
-		return err
-	}
+		if err := yaml.Unmarshal([]byte(odigosConfigurationConfigMap.Data[consts.OdigosConfigurationFileName]), &l.odigosConfiguration); err != nil {
+			l.configErr = err
+			return
+		}
+		ignoredNamespacesMap := make(map[string]struct{})
+		for _, namespace := range l.odigosConfiguration.IgnoredNamespaces {
+			ignoredNamespacesMap[namespace] = struct{}{}
+		}
 
-	if err := yaml.Unmarshal([]byte(odigosConfigurationConfigMap.Data[consts.OdigosConfigurationFileName]), &l.odigosConfiguration); err != nil {
-		return err
-	}
-	ignoredNamespacesMap := make(map[string]struct{})
-	for _, namespace := range l.odigosConfiguration.IgnoredNamespaces {
-		ignoredNamespacesMap[namespace] = struct{}{}
-	}
+		l.workloadFilter = &WorkloadFilter{
+			ClusterWide:       &WorkloadFilterClusterWide{},
+			NamespaceString:   "",
+			IgnoredNamespaces: ignoredNamespacesMap,
+		}
+	})
+	return l.configErr
+}
 
-	l.workloadFilter = &WorkloadFilter{
-		ClusterWide:       &WorkloadFilterClusterWide{},
-		NamespaceString:   "",
-		IgnoredNamespaces: ignoredNamespacesMap,
+// publishSnapshot builds an immutable workloadIdSnapshot from ids and
+// atomically stores it so readers never need a lock.
+func (l *Loaders) publishSnapshot(ids []model.K8sWorkloadID) {
+	idsMap := make(map[k8sconsts.PodWorkload]struct{}, len(ids))
+	nsMap := make(map[string][]model.K8sWorkloadID)
+	for _, id := range ids {
+		nsMap[id.Namespace] = append(nsMap[id.Namespace], id)
+		idsMap[k8sconsts.PodWorkload{
+			Namespace: id.Namespace,
+			Kind:      k8sconsts.WorkloadKind(id.Kind),
+			Name:      id.Name,
+		}] = struct{}{}
 	}
-	return nil
+	l.workloadSnap.Store(&workloadIdSnapshot{
+		workloadIds:     ids,
+		workloadIdsMap:  idsMap,
+		nsToWorkloadIds: nsMap,
+	})
 }
 
 func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) error {
-
 	if err := l.LoadConfig(ctx); err != nil {
 		return err
 	}
+
+	isDefaultFilter := filter == nil || (filter.Namespace == nil && filter.Kind == nil &&
+		filter.Name == nil && filter.MarkedForInstrumentation == nil)
+
+	if isDefaultFilter {
+		l.defaultFilterOnce.Do(func() {
+			l.defaultFilterErr = l.doSetFilters(ctx, filter)
+		})
+		return l.defaultFilterErr
+	}
+
+	return l.doSetFilters(ctx, filter)
+}
+
+// doSetFilters performs the actual filter setup and workload ID loading.
+// For nil/default filters this is called via sync.Once (concurrent safe).
+// For non-nil filters this is called directly (externally serialized by
+// heavyWorkloadQueryMu in the resolver layer).
+func (l *Loaders) doSetFilters(ctx context.Context, filter *model.WorkloadFilter) error {
 	ignoredNamespacesMap := l.workloadFilter.IgnoredNamespaces
 
-	// check if it's a namespace query for ignored namespaces.
 	if filter != nil && filter.Namespace != nil {
 		if _, ok := ignoredNamespacesMap[*filter.Namespace]; ok {
 			return fmt.Errorf("namespace %s is configured to be ignored by odigos", *filter.Namespace)
@@ -379,22 +436,23 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 	} else {
 		l.workloadFilter = &WorkloadFilter{
 			ClusterWide:       &WorkloadFilterClusterWide{},
-			NamespaceString:   "", // k8s interprets empty string as cluster wide.
+			NamespaceString:   "",
 			IgnoredNamespaces: ignoredNamespacesMap,
 		}
 	}
 
 	filterMarkedForInstrumentation := filter != nil && filter.MarkedForInstrumentation != nil && *filter.MarkedForInstrumentation
 
+	var ids []model.K8sWorkloadID
 	if filterMarkedForInstrumentation {
 		l.instrumentationConfigMutex.Lock()
 		defer l.instrumentationConfigMutex.Unlock()
 		if err := l.loadInstrumentationConfigs(ctx); err != nil {
 			return err
 		}
-		l.workloadIds = make([]model.K8sWorkloadID, 0, len(l.instrumentationConfigs))
+		ids = make([]model.K8sWorkloadID, 0, len(l.instrumentationConfigs))
 		for sourceId := range l.instrumentationConfigs {
-			l.workloadIds = append(l.workloadIds, sourceId)
+			ids = append(ids, sourceId)
 		}
 	} else {
 		l.sourcesMutex.Lock()
@@ -409,12 +467,8 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 			return err
 		}
 
-		// calculate the source ids from the workload sources and manifests.
-		// we can have workloads without sources, and sources without workloads.
 		allWorkloads := make(map[model.K8sWorkloadID]struct{})
 		for workloadId, source := range l.workloadSources {
-			// only take into account sources that represent a workload,
-			// and not a group of workloads.
 			if source.Spec.MatchWorkloadNameAsRegex {
 				allWorkloads[workloadId] = struct{}{}
 			}
@@ -422,23 +476,13 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 		for workloadId := range l.workloadManifests {
 			allWorkloads[workloadId] = struct{}{}
 		}
-		l.workloadIds = make([]model.K8sWorkloadID, 0, len(allWorkloads))
+		ids = make([]model.K8sWorkloadID, 0, len(allWorkloads))
 		for sourceId := range allWorkloads {
-			l.workloadIds = append(l.workloadIds, sourceId)
+			ids = append(ids, sourceId)
 		}
 	}
 
-	l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(l.workloadIds))
-	l.nsToWorkloadIds = make(map[string][]model.K8sWorkloadID)
-	for _, workloadId := range l.workloadIds {
-		l.nsToWorkloadIds[workloadId.Namespace] = append(l.nsToWorkloadIds[workloadId.Namespace], workloadId)
-		l.workloadIdsMap[k8sconsts.PodWorkload{
-			Namespace: workloadId.Namespace,
-			Kind:      k8sconsts.WorkloadKind(workloadId.Kind),
-			Name:      workloadId.Name,
-		}] = struct{}{}
-	}
-
+	l.publishSnapshot(ids)
 	return nil
 }
 
@@ -446,19 +490,7 @@ func (l *Loaders) SetWorkloadIdsDirect(ctx context.Context, ids []model.K8sWorkl
 	if err := l.LoadConfig(ctx); err != nil {
 		return err
 	}
-
-	l.workloadIds = ids
-	l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(ids))
-	l.nsToWorkloadIds = make(map[string][]model.K8sWorkloadID)
-	for _, workloadId := range ids {
-		l.nsToWorkloadIds[workloadId.Namespace] = append(l.nsToWorkloadIds[workloadId.Namespace], workloadId)
-		l.workloadIdsMap[k8sconsts.PodWorkload{
-			Namespace: workloadId.Namespace,
-			Kind:      k8sconsts.WorkloadKind(workloadId.Kind),
-			Name:      workloadId.Name,
-		}] = struct{}{}
-	}
-
+	l.publishSnapshot(ids)
 	return nil
 }
 
