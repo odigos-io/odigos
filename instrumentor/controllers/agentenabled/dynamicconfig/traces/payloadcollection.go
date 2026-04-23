@@ -8,6 +8,10 @@ import (
 	"github.com/odigos-io/odigos/distros/distro"
 )
 
+func DistroSupportsTracesPayloadCollection(distro *distro.OtelDistro) bool {
+	return distro.Traces != nil && distro.Traces.PayloadCollection != nil && distro.Traces.PayloadCollection.Supported
+}
+
 // givin instrumentation rules for a specific container in a source,
 // return the payload collection config that should be used for the container
 func CalculatePayloadCollectionConfig(distro *distro.OtelDistro, irls *[]odigosv1.InstrumentationRule) *instrumentationrules.PayloadCollection {
