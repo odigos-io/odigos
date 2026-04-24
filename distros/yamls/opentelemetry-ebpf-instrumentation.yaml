@@ -14,5 +14,4 @@ spec:
     Language-agnostic eBPF-based instrumentation using the OpenTelemetry eBPF Instrumentation (OBI) SDK.
     Supports any language without code changes. Not enabled by default.
   runtimeAgent:
-    device: 'instrumentation.odigos.io/generic'
     noRestartRequired: true
