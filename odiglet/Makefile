@@ -7,14 +7,9 @@ BPF2GO_CILIUM_EBPF_VERSION ?= v0.21.0
 
 # go.opentelemetry.io/obi (module path for OBI eBPF go generate; must match go.mod)
 OBI_MODULE := go.opentelemetry.io/obi
-# GODEBUG=goindex=0: see odiglet/docs/obi-bpf2go-module-cache.md
-# go build -a: refresh compile after new sources under GOMODCACHE (persistent GOCACHE in Docker).
-GOBUILD := CGO_ENABLED=0 go build -a
-
-# Mutating a module under GOMODCACHE after go mod download (bpf2go .go) can desync the
-# module file index; disable it so the loader uses go/build.ImportDir (merge with $GODEBUG if set).
-COMMA := ,
-export GODEBUG := goindex=0$(if $(GODEBUG),$(COMMA)$(GODEBUG),)
+# Docker: OBI bpf2go runs in ghcr.io/open-telemetry/obi-generator; overlay copies into $GOMODCACHE (see Dockerfile).
+SKIP_OBI_GENERATE ?=
+GOBUILD := CGO_ENABLED=0 go build
 
 # OBI Makefile: CLANG, CFLAGS, and go generate for bpf2go
 # https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/main/Makefile
@@ -33,6 +28,12 @@ debug-build-odiglet: generate
 
 generate: generate-libs
 
+# Populate $GOMODCACHE with generated bpf2go / eBPF artifacts needed to compile odiglet:
+#  1) bpf2go-install — put bpf2go in .tools/ (clears GOOS/GOARCH when cross-building).
+#  2) go mod download — materialize dependency modules under $GOMODCACHE.
+#  3) For each $(LIBRARIES), chmod +w that module dir and run its upstream Makefile generate.
+#  4) Unless SKIP_OBI_GENERATE: resolve $(OBI_MODULE) in the cache and run go generate ./... (bpf2go).
+#     With SKIP_OBI_GENERATE=1 (Dockerfile): OBI outputs are copied in from obi-generator; skip step 4.
 generate-libs: bpf2go-install
 	go mod download
 	@for lib in $(LIBRARIES); do \
@@ -40,6 +41,7 @@ generate-libs: bpf2go-install
 		chmod -R +w $$LIB_PATH && \
 		make -C "$$LIB_PATH" generate; \
 	done
+ifeq ($(strip $(SKIP_OBI_GENERATE)),)
 	@OBI_DIR=$$(go list -m -f '{{.Dir}}' $(OBI_MODULE)) && \
 	chmod -R u+w "$$OBI_DIR" && \
 	cd "$$OBI_DIR" && \
@@ -48,13 +50,14 @@ generate-libs: bpf2go-install
 	      BPF_CLANG="$(OBI_CLANG)" \
 	      BPF_CFLAGS="$(OBI_CFLAGS)" \
 	      go generate ./...
+endif
 
 bpf2go-install: $(BPF2GO)
 
 $(BPF2GO):
 	@go mod download
 	@mkdir -p $(TOOLS)
-	@GOBIN=$(abspath $(TOOLS)) go install github.com/cilium/ebpf/cmd/bpf2go@$(BPF2GO_CILIUM_EBPF_VERSION)
+	@env -u GOOS -u GOARCH GOBIN=$(abspath $(TOOLS)) go install github.com/cilium/ebpf/cmd/bpf2go@$(BPF2GO_CILIUM_EBPF_VERSION)
 
 test: generate
 	CGO_ENABLED=0 go test -a -v ./...

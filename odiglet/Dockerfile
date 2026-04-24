@@ -104,8 +104,36 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     GOOS=linux GOARCH=$TARGETARCH go build -ldflags="${LD_FLAGS}" -o odigos-csi-driver ./cmd/csi-driver
 
-######### Odiglet builder (go mod + make generate in deps + build binary) #########
-# odiglet-base includes clang/llvm/make/libbpf (odiglet/base.Dockerfile).
+######### Odiglet: copy OBI module for obi-generator (go list needs full odiglet + replace deps) #########
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
+ENV GOTOOLCHAIN=auto
+WORKDIR /go/src/github.com/odigos-io/odigos
+COPY api/ api/
+COPY common/ common/
+COPY k8sutils/ k8sutils/
+COPY procdiscovery/ procdiscovery/
+COPY opampserver/ opampserver/
+COPY instrumentation/ instrumentation/
+COPY distros/ distros/
+WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
+COPY odiglet/ .
+RUN --mount=type=cache,target=/go/pkg \
+    go mod download && \
+    cp -a "`go list -m -f '{{.Dir}}' go.opentelemetry.io/obi`" /tmp/obi-module
+
+######### OBI eBPF generation (official obi-generator image) #########
+# https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/pkgs/container/obi-generator
+# Bump when upgrading OBI; ARG+FROM scoping requires tag here (use sed or buildx bake to vary).
+FROM --platform=$BUILDPLATFORM ghcr.io/open-telemetry/obi-generator:0.2.10 AS obi-generate
+# llvm for bpf2go; Go must be on PATH (do not rely on $$PATH in RUN — Docker can mangle it).
+ENV PATH=/usr/lib/llvm20/bin:/usr/local/go/bin:/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+COPY --from=builder /tmp/obi-module /src
+# obi-generator image may ship an older Go than OBI's go.mod; allow toolchain download (needs network).
+RUN cd /src && GOTOOLCHAIN=auto BPF2GO=/go/bin/bpf2go BPF_CLANG=clang \
+    BPF_CFLAGS="-std=gnu17 -O2 -g -Wunaligned-access -Wpacked -Wpadded -Wall -Werror" \
+    go generate ./...
+
+######### Odiglet build #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS odiglet-build
 ENV GOTOOLCHAIN=auto
 WORKDIR /go/src/github.com/odigos-io/odigos
@@ -118,14 +146,20 @@ COPY instrumentation/ instrumentation/
 COPY distros/ distros/
 WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
 COPY odiglet/ .
+COPY --from=obi-generate /src /tmp/obi-generated
 ARG TARGETARCH
 ARG LD_FLAGS
 ARG RHEL=false
-# One RUN: `make build-odiglet` runs `generate` then `go build` (see odiglet/Makefile, odiglet/docs/obi-bpf2go-module-cache.md).
-# GOMODCACHE and GOCACHE: cache mounts on /go/pkg, /root/.cache/go-build.
+# Overlay into $GOMODCACHE copy of OBI: use inline `go list` backticks only.
+# Do not chmod/cp "$$OBI_DIR" after OBI_DIR=... — in sh, "$$..." is PID + suffix (e.g. 1OBI_DIR).
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
+    GOOS=linux GOARCH=$TARGETARCH go mod download && \
+    chmod -R +w "`go list -m -f '{{.Dir}}' go.opentelemetry.io/obi`" && \
+    cp -a /tmp/obi-generated/. "`go list -m -f '{{.Dir}}' go.opentelemetry.io/obi`/"
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" SKIP_OBI_GENERATE=1 make build-odiglet
 RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi
