@@ -89,6 +89,14 @@ rules:
       - update
       - delete
       {{- end }}
+  - apiGroups:
+      - operator.odigos.io
+    resources:
+      - odigos
+    verbs:
+      - get
+      - list
+      - watch
   # Permissions for pauseOdigos mutation
   - apiGroups:
       - apps
