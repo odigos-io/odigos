@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/instrumentation v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/instrumentation v0.0.0
 	go.opentelemetry.io/obi v0.8.0
 )
 
@@ -34,7 +34,7 @@ require (
 	github.com/caarlos0/env/v9 v9.0.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/cilium/ebpf v0.21.0 // indirect
+	github.com/cilium/ebpf v0.20.0 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containers/common v0.64.2 // indirect
