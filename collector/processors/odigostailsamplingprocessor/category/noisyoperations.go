@@ -18,6 +18,9 @@ func EvaluateNoisyOperations(span ptrace.Span, noisyOperations []commonapisampli
 	var leastPercentageRule *commonapisampling.NoisyOperation
 
 	for _, noisyOperation := range noisyOperations {
+		if noisyOperation.Disabled {
+			continue
+		}
 
 		currentPercentage := GetPercentageOrDefault0(noisyOperation.PercentageAtMost)
 
