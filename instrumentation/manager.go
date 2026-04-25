@@ -434,23 +434,16 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrumentFromPr
 		return errors.Join(err, errFailedToGetDetails)
 	}
 
-	// For distros that declare FileOpenTriggers, the agent is only usable once
-	// the target opens the trigger file (e.g. java-ebpf-instrumentations only
-	// works after tracing_probes.so is mapped into the JVM via System.load).
-	// Defer Exec/Fork events for these distros until the trigger file shows
-	// up — either because the FileOpen event fires later (the typical case
-	// for fresh exec) or because /proc/<pid>/maps already shows it (running
-	// processes seen during initial scan, fork-without-exec workers like
-	// gunicorn preload mode that inherit the parent's mapping, etc.).
+	// Defer Exec/Fork when the distro declares FileOpenTriggers and the
+	// trigger file isn't yet mapped — the FileOpen event will retry later.
 	if e.EventType == detector.ProcessExecEvent || e.EventType == detector.ProcessForkEvent {
 		if otelDistro, derr := pd.Distribution(ctx); derr == nil &&
 			otelDistro != nil && otelDistro.RuntimeAgent != nil &&
-			len(otelDistro.RuntimeAgent.FileOpenTriggers) > 0 {
-			if !anyTriggerFileAlreadyMapped(e.PID, otelDistro.RuntimeAgent.FileOpenTriggers) {
-				m.logger.Debug("waiting for FileOpen trigger before instrumenting",
-					"pid", e.PID, "triggers", otelDistro.RuntimeAgent.FileOpenTriggers)
-				return nil
-			}
+			len(otelDistro.RuntimeAgent.FileOpenTriggers) > 0 &&
+			!anyTriggerFileAlreadyMapped(e.PID, otelDistro.RuntimeAgent.FileOpenTriggers) {
+			m.logger.Debug("waiting for FileOpen trigger before instrumenting",
+				"pid", e.PID, "triggers", otelDistro.RuntimeAgent.FileOpenTriggers)
+			return nil
 		}
 	}
 
