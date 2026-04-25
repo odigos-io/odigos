@@ -434,21 +434,23 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrumentFromPr
 		return errors.Join(err, errFailedToGetDetails)
 	}
 
-	// Skip Exec/Fork events for distros that declare FileOpenTriggers — wait
-	// for the FileOpen event instead. The trigger declaration means the agent
-	// is only usable after that file is opened (e.g. java-ebpf-instrumentations
-	// only works once tracing_probes.so is mapped into the JVM via
-	// System.load). Running tryInstrument on the bare exec event would race
-	// with the agent's own startup — most visibly when a third-party javaagent
-	// is chained ahead of Odigos' agent in JAVA_TOOL_OPTIONS, which delays the
-	// open by however long the earlier agent's premain takes.
+	// For distros that declare FileOpenTriggers, the agent is only usable once
+	// the target opens the trigger file (e.g. java-ebpf-instrumentations only
+	// works after tracing_probes.so is mapped into the JVM via System.load).
+	// Defer Exec/Fork events for these distros until the trigger file shows
+	// up — either because the FileOpen event fires later (the typical case
+	// for fresh exec) or because /proc/<pid>/maps already shows it (running
+	// processes seen during initial scan, fork-without-exec workers like
+	// gunicorn preload mode that inherit the parent's mapping, etc.).
 	if e.EventType == detector.ProcessExecEvent || e.EventType == detector.ProcessForkEvent {
 		if otelDistro, derr := pd.Distribution(ctx); derr == nil &&
 			otelDistro != nil && otelDistro.RuntimeAgent != nil &&
 			len(otelDistro.RuntimeAgent.FileOpenTriggers) > 0 {
-			m.logger.Debug("waiting for FileOpen trigger before instrumenting",
-				"pid", e.PID, "triggers", otelDistro.RuntimeAgent.FileOpenTriggers)
-			return nil
+			if !anyTriggerFileAlreadyMapped(e.PID, otelDistro.RuntimeAgent.FileOpenTriggers) {
+				m.logger.Debug("waiting for FileOpen trigger before instrumenting",
+					"pid", e.PID, "triggers", otelDistro.RuntimeAgent.FileOpenTriggers)
+				return nil
+			}
 		}
 	}
 
