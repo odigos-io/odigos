@@ -153,9 +153,7 @@ func createLogsConnector(
 	}, nil
 }
 
-func (r *routerConnector) resolveDataStreams(attrs pcommon.Map) []string {
-	resource := pcommon.NewResource()
-	attrs.CopyTo(resource.Attributes())
+func (r *routerConnector) resolveDataStreams(resource pcommon.Resource) []string {
 	streams, found := r.odigosConfigExtension.GetDataStreamsForWorkload(resource)
 	if !found {
 		return nil
@@ -172,7 +170,7 @@ func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) e
 	rSpans := td.ResourceSpans()
 	for i := 0; i < rSpans.Len(); i++ {
 		rs := rSpans.At(i)
-		pipelines := r.resolveDataStreams(rs.Resource().Attributes())
+		pipelines := r.resolveDataStreams(rs.Resource())
 
 		if len(pipelines) == 0 {
 			rs.CopyTo(defaultTraces.ResourceSpans().AppendEmpty())
@@ -225,7 +223,7 @@ func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics
 	rMetrics := md.ResourceMetrics()
 	for i := 0; i < rMetrics.Len(); i++ {
 		rm := rMetrics.At(i)
-		pipelines := r.resolveDataStreams(rm.Resource().Attributes())
+		pipelines := r.resolveDataStreams(rm.Resource())
 		// If no pipeline matched, copy the resource metrics to the default consumer
 		if len(pipelines) == 0 {
 			cfg.logger.Debug("no pipelines matched for resource metrics", zap.Any("resource", rm.Resource().Attributes()))
@@ -281,7 +279,7 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 	for i := 0; i < rLogs.Len(); i++ {
 		rl := rLogs.At(i)
 		// Determine destination pipelines based on resource metadata
-		pipelines := r.resolveDataStreams(rl.Resource().Attributes())
+		pipelines := r.resolveDataStreams(rl.Resource())
 
 		if len(pipelines) == 0 {
 			rl.CopyTo(defaultLogs.ResourceLogs().AppendEmpty())
