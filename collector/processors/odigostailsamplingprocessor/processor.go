@@ -65,6 +65,30 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		}
 	}
 
+	matched, highlyRelevantOperationRule := category.EvaluateHighlyRelevantOperations(td, p.odigosConfigExtension)
+	if matched {
+		percentageAtLeast := category.GetPercentageOrDefault100(highlyRelevantOperationRule.PercentageAtLeast)
+		keepTrace := tracePercentage <= percentageAtLeast
+
+		if keepTrace || p.config.DryRun {
+			enrichSpansWithSamplingAttributes(td, consts.SamplingCategoryHighlyRelevant, highlyRelevantOperationRule.Id, highlyRelevantOperationRule.Name, percentageAtLeast, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
+			return td, nil
+		}
+		return ptrace.NewTraces(), nil
+	}
+
+	matched, costReductionRule := category.EvaluateCostReductionOperations(td, p.odigosConfigExtension)
+	if matched {
+		percentageAtMost := costReductionRule.PercentageAtMost
+		keepTrace := tracePercentage <= percentageAtMost
+
+		if keepTrace || p.config.DryRun {
+			enrichSpansWithSamplingAttributes(td, consts.SamplingCategoryCostReduction, costReductionRule.Id, costReductionRule.Name, percentageAtMost, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
+			return td, nil
+		}
+		return ptrace.NewTraces(), nil
+	}
+
 	return td, nil
 }
 
