@@ -32,8 +32,8 @@ nfpms:
       - src: distribution/odigos-otelcol/odigos-otelcol.service
         dst: /usr/lib/systemd/system/odigos-otelcol.service
 
-      - src: distribution/odigos-otelcol/odigos-otelcol-config-reload.service
-        dst: /usr/lib/systemd/system/odigos-otelcol-config-reload.service
+      - src: distribution/odigos-otelcol/odigos-otelcol-config.service
+        dst: /usr/lib/systemd/system/odigos-otelcol-config.service
 
       - src: distribution/odigos-otelcol/odigos-otelcol-config.path
         dst: /usr/lib/systemd/system/odigos-otelcol-config.path

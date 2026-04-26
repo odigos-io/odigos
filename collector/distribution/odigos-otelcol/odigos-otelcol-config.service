@@ -1,5 +1,5 @@
 [Unit]
-Description=Reload Odigos OTel Collector on config change
+Description=Reload odigos-otelcol after config change (activated by odigos-otelcol-config.path)
 After=network.target
 
 [Service]
