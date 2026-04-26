@@ -1978,6 +1978,24 @@ If not specified, defaults to &quot;all&quot;.</p>
 
 <tr>
 <td>
+<code>dryRun</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>If true, the sampling decision will be made in dry-run mode.
+When dry-run is enabled, the sampling decision will be made but the trace will not be dropped.
+This is useful to evaluate the sampling decision before actually committing to it.
+2 additional attributes will be set on the spans:</p>
+<ul>
+<li>odigos.sampling.dry_run: true</li>
+<li>odigos.sampling.dry_run.kept: true if the trace would have been kept, false if it would have been dropped.</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>
 <code>noisyOperations</code> <B>[Required]</B>
 </td>
 <td>

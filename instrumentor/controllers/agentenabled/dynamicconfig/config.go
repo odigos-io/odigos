@@ -65,7 +65,12 @@ func calculateTracesConfig(
 	// use head/tail sampling based on the distro support.
 	if len(noisyOps) > 0 {
 		if traces.DistroSupportsHeadSampling(d) {
+			dryRun := false
+			if effectiveConfig.Sampling != nil && effectiveConfig.Sampling.DryRun != nil {
+				dryRun = *effectiveConfig.Sampling.DryRun
+			}
 			agentConfig.HeadSampling = &odigosv1.HeadSamplingConfig{
+				DryRun:          dryRun,
 				NoisyOperations: noisyOps,
 			}
 		} else {

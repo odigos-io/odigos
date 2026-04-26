@@ -212,6 +212,15 @@ spec:
                             This config currently only applies to root spans.
                             In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
                           properties:
+                            dryRun:
+                              description: |-
+                                If true, the sampling decision will be made in dry-run mode.
+                                When dry-run is enabled, the sampling decision will be made but the trace will not be dropped.
+                                This is useful to evaluate the sampling decision before actually committing to it.
+                                2 additional attributes will be set on the spans:
+                                - odigos.sampling.dry_run: true
+                                - odigos.sampling.dry_run.kept: true if the trace would have been kept, false if it would have been dropped.
+                              type: boolean
                             fallbackFraction:
                               default: 1
                               description: |-
