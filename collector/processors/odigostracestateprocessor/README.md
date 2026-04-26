@@ -35,13 +35,14 @@ Each field is `key:value`. The gateway processor understands these keys (see `pr
 | `c` | Sampling **category** shorthand | `n` → noisy operation category | `odigos.sampling.category` = `"noise"` |
 | `dr.p` | **Trace deciding rule** — configured keep percentage | floating-point string | `odigos.sampling.trace.deciding_rule.keep_percentage` |
 | `dr.id` | **Trace deciding rule** — stable rule id | opaque id string | `odigos.sampling.trace.deciding_rule.id` |
+| `dry` | **Dry-run sampling decision** — set when tracing dry-run is enabled | `t` → trace kept, `f` → trace dropped | `odigos.sampling.dry_run` = `true`, `odigos.sampling.trace.kept` = `true`/`false` |
 
-Attribute names match `github.com/odigos-io/odigos/common/odigosattributes` (`SamplingCategory`, `SamplingTraceDecidingRuleKeepPercentage`, `SamplingTraceDecidingRuleId`, etc.).
+Attribute names match `github.com/odigos-io/odigos/common/odigosattributes` (`SamplingCategory`, `SamplingTraceDecidingRuleKeepPercentage`, `SamplingTraceDecidingRuleId`, `SamplingDryRun`, `SamplingTraceKept`, etc.).
 
 **Example** (illustrative):
 
 ```text
-tracestate: odigos=c:n;dr.p:12.5;dr.id=abc123,othervendor=1
+tracestate: odigos=c:n;dr.p:12.5;dr.id:abc123;dry:t,othervendor=1
 ```
 
 Only the `odigos=...` segment is parsed here; other vendors’ entries are ignored by this processor.
