@@ -45,7 +45,7 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 		return nil, err
 	}
 
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "otlp_grpc/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": endpoint,
 	}

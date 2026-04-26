@@ -3,9 +3,14 @@ package traces
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/mergeconfig"
 	"github.com/odigos-io/odigos/distros/distro"
 )
+
+func DistroSupportsTracesPayloadCollection(distro *distro.OtelDistro) bool {
+	return distro.Traces != nil && distro.Traces.PayloadCollection != nil && distro.Traces.PayloadCollection.Supported
+}
 
 // givin instrumentation rules for a specific container in a source,
 // return the payload collection config that should be used for the container
@@ -72,6 +77,7 @@ func mergeDbPayloadCollectionRules(p1 *instrumentationrules.DbQueryPayloadCollec
 	return &instrumentationrules.DbQueryPayloadCollection{
 		MaxPayloadLength:    mergeconfig.MergeOptionalIntChooseLower(p1.MaxPayloadLength, p2.MaxPayloadLength),
 		DropPartialPayloads: mergeconfig.MergeOptionalBools(p1.DropPartialPayloads, p2.DropPartialPayloads),
+		SanitizationPolicy:  mergeDbQuerySanitizationPolicy(p1.SanitizationPolicy, p2.SanitizationPolicy),
 	}
 }
 
@@ -85,5 +91,22 @@ func mergeMessagingPayloadCollectionRules(p1 *instrumentationrules.MessagingPayl
 	return &instrumentationrules.MessagingPayloadCollection{
 		MaxPayloadLength:    mergeconfig.MergeOptionalIntChooseLower(p1.MaxPayloadLength, p2.MaxPayloadLength),
 		DropPartialPayloads: mergeconfig.MergeOptionalBools(p1.DropPartialPayloads, p2.DropPartialPayloads),
+	}
+}
+
+func mergeDbQuerySanitizationPolicy(p1 *consts.DbQuerySanitizationPolicy, p2 *consts.DbQuerySanitizationPolicy) *consts.DbQuerySanitizationPolicy {
+	switch {
+	case p1 == nil && p2 == nil:
+		return nil
+	case p1 == nil:
+		return p2
+	case p2 == nil:
+		return p1
+	default:
+		if consts.DbQuerySanitizationPolicyPriority(*p1) >= consts.DbQuerySanitizationPolicyPriority(*p2) {
+			return p1
+		} else {
+			return p2
+		}
 	}
 }

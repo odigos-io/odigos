@@ -24,7 +24,7 @@ func (j *Observe) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 		return nil, errorMissingKey(OBSERVE_CUSTOMER_ID)
 	}
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": "https://" + customerId + ".collect.observeinc.com/v2/otel",
 		"headers": GenericMap{

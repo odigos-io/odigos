@@ -14,6 +14,7 @@ extensions:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.148.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.148.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.148.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.148.0
 
 exporters:
@@ -62,6 +63,7 @@ exporters:
 processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.148.0
+  - gomod: github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.148.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.148.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.148.0
   - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.148.0
@@ -93,6 +95,7 @@ receivers:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.148.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.148.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.148.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.148.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.148.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.148.0
@@ -122,6 +125,7 @@ replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor => ../processors/odigossamplingprocessor
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes => ../processors/odigosconditionalattributes
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor => ../processors/odigossqldboperationprocessor
+  - github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor => ../processors/odigostracestateprocessor
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter => ../exporters/azureblobstorageexporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter => ../exporters/googlecloudstorageexporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter => ../exporters/mockdestinationexporter

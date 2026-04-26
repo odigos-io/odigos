@@ -105,7 +105,7 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 			assert.NotEmpty(t, pipelineNames)
 
 			// Check exporter configuration
-			exporterName := "otlp/generic-test-id"
+			exporterName := "otlp_grpc/generic-test-id"
 			assert.Contains(t, config.Exporters, exporterName)
 			exporterConfig := config.Exporters[exporterName].(GenericMap)
 			

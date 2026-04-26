@@ -47,6 +47,7 @@ import (
 	bearertokenauthextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension"
 	googleclientauthextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension"
 	healthcheckextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
+	k8sleaderelector "github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector"
 	oauth2clientauthextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension"
 	pprofextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension"
 	azureblobstorageexporter "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter"
@@ -76,6 +77,7 @@ import (
 	transformprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	filelogreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
 	hostmetricsreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
+	k8sclusterreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 	kubeletstatsreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
 	prometheusreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	zipkinreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver"
@@ -104,6 +106,7 @@ import (
 	odigoslogsresourceattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor"
 	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
 	odigostailsamplingprocessor "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor"
+	odigostracestateprocessor "github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor"
 	odigosebpfreceiver "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
 )
 
@@ -136,6 +139,7 @@ func components() (otelcol.Factories, error) {
 		bearertokenauthextension.NewFactory(),
 		oauth2clientauthextension.NewFactory(),
 		googleclientauthextension.NewFactory(),
+		k8sleaderelector.NewFactory(),
 		odigosconfigk8sextension.NewFactory(),
 	)
 	if err != nil {
@@ -150,6 +154,7 @@ func components() (otelcol.Factories, error) {
 		bearertokenauthextension.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.148.0",
 		oauth2clientauthextension.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.148.0",
 		googleclientauthextension.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.148.0",
+		k8sleaderelector.NewFactory().Type():          "github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.148.0",
 		odigosconfigk8sextension.NewFactory().Type():  "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.148.0",
 	})
 
@@ -158,6 +163,7 @@ func components() (otelcol.Factories, error) {
 		zipkinreceiver.NewFactory(),
 		filelogreceiver.NewFactory(),
 		kubeletstatsreceiver.NewFactory(),
+		k8sclusterreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
 		prometheusreceiver.NewFactory(),
 		odigosebpfreceiver.NewFactory(),
@@ -171,6 +177,7 @@ func components() (otelcol.Factories, error) {
 		zipkinreceiver.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.148.0",
 		filelogreceiver.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.148.0",
 		kubeletstatsreceiver.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.148.0",
+		k8sclusterreceiver.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.148.0",
 		hostmetricsreceiver.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.148.0",
 		prometheusreceiver.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.148.0",
 		odigosebpfreceiver.NewFactory().Type():   "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.148.0",
@@ -270,6 +277,7 @@ func components() (otelcol.Factories, error) {
 	factories.Processors, err = otelcol.MakeFactoryMap[processor.Factory](
 		odigossamplingprocessor.NewFactory(),
 		odigostailsamplingprocessor.NewFactory(),
+		odigostracestateprocessor.NewFactory(),
 		odigosconditionalattributes.NewFactory(),
 		odigossqldboperationprocessor.NewFactory(),
 		batchprocessor.NewFactory(),
@@ -302,6 +310,7 @@ func components() (otelcol.Factories, error) {
 	factories.ProcessorModules = makeModulesMap(factories.Processors, map[component.Type]string{
 		odigossamplingprocessor.NewFactory().Type():          "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.148.0",
 		odigostailsamplingprocessor.NewFactory().Type():      "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.148.0",
+		odigostracestateprocessor.NewFactory().Type():        "github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.148.0",
 		odigosconditionalattributes.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.148.0",
 		odigossqldboperationprocessor.NewFactory().Type():    "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.148.0",
 		batchprocessor.NewFactory().Type():                   "go.opentelemetry.io/collector/processor/batchprocessor v0.148.0",

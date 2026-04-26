@@ -1,16 +1,19 @@
 package odigosrouterconnector
 
 import (
-	"go.opentelemetry.io/collector/component"
+	"errors"
 
-	"github.com/odigos-io/odigos/common/pipelinegen"
+	"go.opentelemetry.io/collector/component"
 )
 
 type Config struct {
 	component.Config
-	DataStreams []pipelinegen.DataStreams `mapstructure:"datastreams"`
+	OdigosConfigExtension *component.ID `mapstructure:"odigos_config_extension"`
 }
 
 func (c *Config) Validate() error {
+	if c.OdigosConfigExtension == nil {
+		return errors.New("odigos_config_extension is required")
+	}
 	return nil
 }

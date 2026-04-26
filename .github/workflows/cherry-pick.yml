@@ -219,6 +219,9 @@ jobs:
 
           git fetch origin main
 
+          git config user.name "$(git log -1 --format='%an' "$MERGE_COMMIT")"
+          git config user.email "$(git log -1 --format='%ae' "$MERGE_COMMIT")"
+
           PARENT_COUNT=$(git rev-list --parents -n 1 "$MERGE_COMMIT" 2>/dev/null | awk '{print NF-1}' || echo 0)
           if [[ "$PARENT_COUNT" -gt 1 ]]; then
             echo "Merge commit detected; using cherry-pick -m 1"

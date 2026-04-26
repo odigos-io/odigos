@@ -121,6 +121,13 @@ const (
 	AgentEnabledReasonImagePullBackOff AgentEnabledReason = "ImagePullBackOff"
 )
 
+// Used to return that an agent should be disabled for a container.
+// the reason and message contains the details to be written to the condition status.
+type AgentDisabledInfo struct {
+	AgentEnabledReason  AgentEnabledReason
+	AgentEnabledMessage string
+}
+
 // +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart;WorkloadNotSupporting;NotRequired;WaitingInQueue;RolloutFinished
 type WorkloadRolloutReason string
 

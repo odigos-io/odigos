@@ -19,6 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
@@ -95,15 +96,13 @@ func initKubernetesClient(flags *Flags) error {
 	return nil
 }
 
-func startWatchers(ctx context.Context) error {
-	odigosNs := env.GetCurrentNamespace()
-
-	err := watchers.StartInstrumentationConfigWatcher(ctx, "")
+func startWatchers(ctx context.Context, k8sCache cache.Cache, odigosMetrics *collectormetrics.OdigosMetricsConsumer) error {
+	err := watchers.StartInstrumentationConfigWatcher(ctx, k8sCache, odigosMetrics)
 	if err != nil {
 		return fmt.Errorf("error starting InstrumentationConfig watcher: %v", err)
 	}
 
-	err = watchers.StartDestinationWatcher(ctx, odigosNs)
+	err = watchers.StartDestinationWatcher(ctx, k8sCache, odigosMetrics)
 	if err != nil {
 		return fmt.Errorf("error starting Destination watcher: %v", err)
 	}
@@ -317,7 +316,7 @@ func main() {
 
 	// Setup Source cache - this initializes a controller-runtime cache for Source resources
 	// from all namespaces, providing fast read access without hitting the Kubernetes API
-	k8sCacheClient, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext, flags.Namespace)
+	k8sCacheClient, k8sCache, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext, flags.Namespace)
 	if err != nil {
 		log.Error("Error setting up kubernetes objects cache", "err", err)
 		os.Exit(1)
@@ -332,7 +331,7 @@ func main() {
 	}()
 
 	// Start watchers
-	err = startWatchers(ctx)
+	err = startWatchers(ctx, k8sCache, odigosMetrics)
 	if err != nil {
 		log.Error("Error starting watchers", "err", err)
 		os.Exit(1)

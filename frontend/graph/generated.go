@@ -1350,6 +1350,7 @@ type K8sActualNamespaceResolver interface {
 type K8sNamespaceResolver interface {
 	MarkedForInstrumentation(ctx context.Context, obj *model.K8sNamespace) (bool, error)
 	DataStreamNames(ctx context.Context, obj *model.K8sNamespace) ([]string, error)
+	Workloads(ctx context.Context, obj *model.K8sNamespace) ([]*model.K8sWorkload, error)
 }
 type K8sWorkloadResolver interface {
 	ServiceName(ctx context.Context, obj *model.K8sWorkload) (*string, error)
@@ -26669,7 +26670,7 @@ func (ec *executionContext) _K8sNamespace_workloads(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Workloads, nil
+		return ec.resolvers.K8sNamespace().Workloads(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26690,8 +26691,8 @@ func (ec *executionContext) fieldContext_K8sNamespace_workloads(_ context.Contex
 	fc = &graphql.FieldContext{
 		Object:     "K8sNamespace",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -55348,10 +55349,41 @@ func (ec *executionContext) _K8sNamespace(ctx context.Context, sel ast.Selection
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "workloads":
-			out.Values[i] = ec._K8sNamespace_workloads(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sNamespace_workloads(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

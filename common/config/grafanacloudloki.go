@@ -58,7 +58,7 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *
 		},
 	}
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": lokiExporterEndpoint,
 		"auth": GenericMap{

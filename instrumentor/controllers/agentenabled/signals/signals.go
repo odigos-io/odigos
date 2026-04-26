@@ -1,4 +1,4 @@
-package signalconfig
+package signals
 
 import (
 	"slices"
@@ -7,26 +7,38 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-func GetEnabledSignalsForContainer(nodeCollectorsGroup *odigosv1.CollectorsGroup, irls *[]odigosv1.InstrumentationRule) (tracesEnabled bool, metricsEnabled bool, logsEnabled bool) {
-	tracesEnabled = false
-	metricsEnabled = false
-	logsEnabled = false
+type EnabledSignals struct {
+	TracesEnabled  bool
+	MetricsEnabled bool
+	LogsEnabled    bool
+}
+
+func GetEnabledSignalsForContainer(nodeCollectorsGroup *odigosv1.CollectorsGroup, irls *[]odigosv1.InstrumentationRule) (EnabledSignals, *odigosv1.AgentDisabledInfo) {
+
+	enabledSignals := EnabledSignals{
+		TracesEnabled:  false,
+		MetricsEnabled: false,
+		LogsEnabled:    false,
+	}
 
 	if nodeCollectorsGroup == nil {
 		// if the node collectors group is not created yet,
 		// it means the collectors are not running thus all signals are disabled.
-		return false, false, false
+		return enabledSignals, &odigosv1.AgentDisabledInfo{
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonWaitingForNodeCollector,
+			AgentEnabledMessage: "waiting for OpenTelemetry Collector to be created",
+		}
 	}
 
 	// first set each signal to enabled/disabled based on the node collectors group global signals for collection.
 	if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.TracesObservabilitySignal) {
-		tracesEnabled = true
+		enabledSignals.TracesEnabled = true
 	}
 	if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal) {
-		metricsEnabled = true
+		enabledSignals.MetricsEnabled = true
 	}
 	if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.LogsObservabilitySignal) {
-		logsEnabled = true
+		enabledSignals.LogsEnabled = true
 	}
 
 	// disable specific signals if they are disabled in any of the workload level instrumentation rules.
@@ -41,9 +53,16 @@ func GetEnabledSignalsForContainer(nodeCollectorsGroup *odigosv1.CollectorsGroup
 		// if any instrumentation rule has trace config disabled, we should disable traces for this container.
 		// the list is already filtered to only include rules that are relevant to the current workload.
 		if irl.Spec.TraceConfig != nil && irl.Spec.TraceConfig.Disabled != nil && *irl.Spec.TraceConfig.Disabled {
-			tracesEnabled = false
+			enabledSignals.TracesEnabled = false
 		}
 	}
 
-	return tracesEnabled, metricsEnabled, logsEnabled
+	if !enabledSignals.TracesEnabled && !enabledSignals.MetricsEnabled && !enabledSignals.LogsEnabled {
+		return enabledSignals, &odigosv1.AgentDisabledInfo{
+			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoCollectedSignals,
+			AgentEnabledMessage: "all signals are disabled, no agent will be injected",
+		}
+	}
+
+	return enabledSignals, nil
 }

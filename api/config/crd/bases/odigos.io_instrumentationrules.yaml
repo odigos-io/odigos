@@ -253,6 +253,12 @@ spec:
                           If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
                         format: int64
                         type: integer
+                      sanitizationPolicy:
+                        description: |-
+                          The sanitization policy to use for collecting the DB query payloads.
+                          If not specified, the default sanitization policy will be used:
+                          (collect sanitized payloads if possible, and fall back to full if sanitization isn't supported).
+                        type: string
                     type: object
                   httpRequest:
                     description: |-

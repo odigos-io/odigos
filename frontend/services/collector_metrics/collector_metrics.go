@@ -184,7 +184,7 @@ func NewOdigosMetrics() *OdigosMetricsConsumer {
 	return &OdigosMetricsConsumer{
 		sources:                 newSourcesMetrics(),
 		clusterCollectorMetrics: newClusterCollectorMetrics(),
-		deletedChan:             make(chan notification),
+		deletedChan:             make(chan notification, 256),
 	}
 }
 
@@ -261,4 +261,25 @@ func (c *OdigosMetricsConsumer) GetDestinationsMetrics() map[string]trafficMetri
 
 func (c *OdigosMetricsConsumer) GetServiceGraphEdges() map[string]map[string]ServiceGraphEdge {
 	return c.clusterCollectorMetrics.serviceGraphEdges()
+}
+
+func (c *OdigosMetricsConsumer) NotifySourceAdded(sID common.SourceID) {
+	select {
+	case c.deletedChan <- notification{notificationType: source, eventType: watch.Added, sourceID: sID}:
+	default:
+	}
+}
+
+func (c *OdigosMetricsConsumer) NotifySourceDeleted(sID common.SourceID) {
+	select {
+	case c.deletedChan <- notification{notificationType: source, eventType: watch.Deleted, sourceID: sID}:
+	default:
+	}
+}
+
+func (c *OdigosMetricsConsumer) NotifyDestinationDeleted(name string) {
+	select {
+	case c.deletedChan <- notification{notificationType: destination, eventType: watch.Deleted, object: name}:
+	default:
+	}
 }

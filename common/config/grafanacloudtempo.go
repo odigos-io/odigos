@@ -44,7 +44,7 @@ func (g *GrafanaCloudTempo) ModifyConfig(dest ExporterConfigurer, currentConfig 
 		},
 	}
 
-	exporterName := "otlp/grafana-" + dest.GetID()
+	exporterName := "otlp_grpc/grafana-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": grpcEndpointUrl,
 		"auth": GenericMap{
