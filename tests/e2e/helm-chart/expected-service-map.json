@@ -1,0 +1,67 @@
+[
+  {
+    "serviceName": "coupon",
+    "services": [
+      {
+        "isVirtual": false,
+        "nodeAttributes": [],
+        "serviceName": "membership"
+      }
+    ]
+  },
+  {
+    "serviceName": "frontend",
+    "services": [
+      {
+        "isVirtual": false,
+        "nodeAttributes": [],
+        "serviceName": "coupon"
+      },
+      {
+        "isVirtual": false,
+        "nodeAttributes": [],
+        "serviceName": "currency"
+      },
+      {
+        "isVirtual": false,
+        "nodeAttributes": [],
+        "serviceName": "geolocation"
+      },
+      {
+        "isVirtual": false,
+        "nodeAttributes": [],
+        "serviceName": "inventory"
+      },
+      {
+        "isVirtual": false,
+        "nodeAttributes": [],
+        "serviceName": "pricing"
+      }
+    ]
+  },
+  {
+    "serviceName": "membership",
+    "services": [
+      {
+        "isVirtual": false,
+        "nodeAttributes": [],
+        "serviceName": "pricing"
+      }
+    ]
+  },
+  {
+    "serviceName": "user",
+    "services": [
+      {
+        "isVirtual": false,
+        "nodeAttributes": [],
+        "serviceName": "frontend"
+      },
+      {
+        "isVirtual": false,
+        "nodeAttributes": [],
+        "serviceName": "geolocation"
+      }
+    ]
+  }
+]

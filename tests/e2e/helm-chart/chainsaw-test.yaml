@@ -219,6 +219,13 @@ spec:
             content: |
               ../../common/assert_collector_metrics_survive_ui_restart.sh odigos-test
 
+    - name: Assert Service Map
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              ../../common/assert_service_map.sh expected-service-map.json
+
     - name: Uninstall Odigos
       try:
         - script:
