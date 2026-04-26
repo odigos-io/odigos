@@ -17,29 +17,20 @@ endif
 DOCKERFILE=Dockerfile
 IMG_PREFIX?=
 IMG_SUFFIX?=
-TARGET?=
-RHEL?=false
+RHEL_IMAGE_SUFFIX ?= -rhel-certified
 BUILD_DIR=.
+HOST_PLATFORM ?= $(shell ARCH=$$(uname -m); \
+	if [ "$$ARCH" = "x86_64" ]; then echo "linux/amd64"; \
+	elif [ "$$ARCH" = "arm64" ] || [ "$$ARCH" = "aarch64" ]; then echo "linux/arm64"; \
+	else echo "linux/amd64"; fi)
+HOST_GOOS ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
+HOST_GOARCH ?= $(shell ARCH=$$(uname -m); \
+	if [ "$$ARCH" = "x86_64" ]; then echo "amd64"; \
+	elif [ "$$ARCH" = "arm64" ] || [ "$$ARCH" = "aarch64" ]; then echo "arm64"; \
+	else echo "$$ARCH"; fi)
 
-# RHEL-certified CLI (ko + Dockerfile.rhel-base); matches .github/workflows/publish-modules-rhel publish-cli-rhel
+# RHEL-certified CLI image naming
 CLI_RHEL_IMAGE_NAME ?= odigos-cli-rhel-certified
-CLI_RHEL_KO_BASE_IMAGE ?= $(ORG)/odigos-cli-rhel-ko-base:$(TAG)
-
-ifeq ($(RHEL),true)
-    IMG_SUFFIX=-rhel-certified
-
-    # If TARGET is empty, set it to rhel
-    ifeq ($(strip $(TARGET)),)
-        TARGET := rhel
-    else
-        # If TARGET is not empty, append -rhel
-        TARGET := $(TARGET)-rhel
-    endif
-endif
-
-ifneq ($(strip $(TARGET)),)
-  TARGET_FLAG := --target $(TARGET)
-endif
 
 .PHONY: install-golangci-lint
 install-golangci-lint:
@@ -107,58 +98,35 @@ $(HELM_SCHEMA_BIN):
 helm-schema-clean:
 	rm -f $(HELM_SCHEMA_BIN)
 
-build-image/%:
-	docker build $(TARGET_FLAG) \
-	-t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
-	--build-arg SERVICE_NAME="$*" \
-	--build-arg ODIGOS_VERSION=$(TAG) \
-	--build-arg VERSION=$(TAG) \
-	--build-arg RELEASE=$(TAG) \
-	--build-arg SUMMARY="$(SUMMARY)" \
-	--build-arg DESCRIPTION="$(DESCRIPTION)" \
-	--build-arg LD_FLAGS="$(LD_FLAGS)" \
-	--build-arg RHEL="$(RHEL)"
+build-rhel-%:
+	@echo "Building for architecture: $(HOST_PLATFORM)"
+	@SERVICE="$*"; \
+	BAKE_TARGET="odigos-$$SERVICE-rhel"; \
+	IMAGE_SUFFIX="$(if $(IMG_SUFFIX),$(IMG_SUFFIX),$(RHEL_IMAGE_SUFFIX))" ODIGOS_TAG="$(TAG)" \
+	docker buildx bake --file docker-bake.hcl "$$BAKE_TARGET" \
+		--set "$$BAKE_TARGET.args.ODIGOS_VERSION=$(TAG)" \
+		--set "$$BAKE_TARGET.args.VERSION=$(TAG)" \
+		--set "$$BAKE_TARGET.args.RELEASE=$(TAG)" \
+		--set "$$BAKE_TARGET.args.LD_FLAGS=$(LD_FLAGS)" \
+		--set "*.platform=$(HOST_PLATFORM)" \
+		--set "*.output=type=docker"
+
+build-%:
+	@echo "Building for architecture: $(HOST_PLATFORM)"
+	@SERVICE="$*"; \
+	BAKE_TARGET="odigos-$$SERVICE"; \
+	IMAGE_SUFFIX="$(IMG_SUFFIX)" ODIGOS_TAG="$(TAG)" \
+	docker buildx bake --file docker-bake.hcl "$$BAKE_TARGET" \
+		--set "$$BAKE_TARGET.args.ODIGOS_VERSION=$(TAG)" \
+		--set "$$BAKE_TARGET.args.VERSION=$(TAG)" \
+		--set "$$BAKE_TARGET.args.RELEASE=$(TAG)" \
+		--set "$$BAKE_TARGET.args.LD_FLAGS=$(LD_FLAGS)" \
+		--set "*.platform=$(HOST_PLATFORM)" \
+		--set "*.output=type=docker"
 
 .PHONY: build-operator-index
 build-operator-index:
 	opm index add --bundles $(ORG)/odigos-bundle:$(TAG) --tag $(ORG)/odigos-index:$(TAG) --container-tool=docker
-
-.PHONY: build-operator
-build-operator:
-	$(MAKE) build-image/operator DOCKERFILE=operator/$(DOCKERFILE) SUMMARY="Odigos Operator" DESCRIPTION="Kubernetes Operator for Odigos installs Odigos" TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-odiglet
-build-odiglet:
-	$(MAKE) build-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-agents
-build-agents:
-	$(MAKE) build-image/agents \
-		DOCKERFILE=odiglet/$(DOCKERFILE) TARGET=$(if $(filter true,$(RHEL)),agents-rhel,agents) \
-		SUMMARY="Init container for Odigos" \
-		DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." \
-		TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-
-.PHONY: build-autoscaler
-build-autoscaler:
-	$(MAKE) build-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-instrumentor
-build-instrumentor:
-	$(MAKE) build-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-scheduler
-build-scheduler:
-	$(MAKE) build-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-collector
-build-collector:
-	$(MAKE) build-image/collector DOCKERFILE=collector/$(DOCKERFILE) SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: build-ui
-build-ui:
-	$(MAKE) build-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: verify-nodejs-agent
 verify-nodejs-agent:
@@ -169,66 +137,31 @@ verify-nodejs-agent:
 
 .PHONY: build-images
 build-images:
-	# prefer to build timeconsuimg images first to make better use of parallelism
-	make -j $(nproc) build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor build-agents TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	@echo "Building for architecture: $(HOST_PLATFORM)"
+	IMAGE_SUFFIX="$(IMG_SUFFIX)" ODIGOS_TAG="$(TAG)" \
+	docker buildx bake --file docker-bake.hcl stack \
+		--set "*.args.ODIGOS_VERSION=$(TAG)" \
+		--set "*.args.VERSION=$(TAG)" \
+		--set "*.args.RELEASE=$(TAG)" \
+		--set "*.args.LD_FLAGS=$(LD_FLAGS)" \
+		--set "*.platform=$(HOST_PLATFORM)" \
+		--set "*.output=type=docker"
+
+.PHONY: build-rhel-images
+build-rhel-images:
+	@echo "Building for architecture: $(HOST_PLATFORM)"
+	IMAGE_SUFFIX="$(if $(IMG_SUFFIX),$(IMG_SUFFIX),$(RHEL_IMAGE_SUFFIX))" ODIGOS_TAG="$(TAG)" \
+	docker buildx bake --file docker-bake.hcl stack-rhel \
+		--set "*.args.ODIGOS_VERSION=$(TAG)" \
+		--set "*.args.VERSION=$(TAG)" \
+		--set "*.args.RELEASE=$(TAG)" \
+		--set "*.args.LD_FLAGS=$(LD_FLAGS)" \
+		--set "*.platform=$(HOST_PLATFORM)" \
+		--set "*.output=type=docker"
 
 .PHONY: build-images-rhel
 build-images-rhel:
-	$(MAKE) build-images RHEL=true TAG=$(TAG) ORG=$(ORG)
-
-push-image/%:
-	docker buildx build $(TARGET_FLAG) \
-	--platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
-	$(if $(filter true,$(PUSH_IMAGE)),--push,) \
-	$(if $(filter true,$(GCP_MARKETPLACE)),--annotation="index:com.googleapis.cloudmarketplace.product.service.name=services/odigos.endpoints.odigos-public.cloud.goog",) \
-	--build-arg SERVICE_NAME="$*" \
-	--build-arg ODIGOS_VERSION=$(TAG) \
-	--build-arg VERSION=$(TAG) \
-	--build-arg RELEASE=$(TAG) \
-	--build-arg SUMMARY="$(SUMMARY)" \
-	--build-arg DESCRIPTION="$(DESCRIPTION)" \
-	--build-arg LD_FLAGS="$(LD_FLAGS)" \
-	--build-arg RHEL="$(RHEL)"
-
-.PHONY: push-operator
-push-operator:
-	$(MAKE) push-image/operator DOCKERFILE=operator/$(DOCKERFILE) SUMMARY="Odigos Operator" DESCRIPTION="Kubernetes Operator for Odigos installs Odigos" TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-odiglet
-push-odiglet:
-	$(MAKE) push-image/odiglet DOCKERFILE=odiglet/$(DOCKERFILE) SUMMARY="Odiglet for Odigos" DESCRIPTION="Odiglet is the core component of Odigos managing auto-instrumentation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-autoscaler
-push-autoscaler:
-	$(MAKE) push-image/autoscaler SUMMARY="Autoscaler for Odigos" DESCRIPTION="Autoscaler manages the installation of Odigos components." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-instrumentor
-push-instrumentor:
-	$(MAKE) push-image/instrumentor SUMMARY="Instrumentor for Odigos" DESCRIPTION="Instrumentor manages auto-instrumentation for workloads with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-scheduler
-push-scheduler:
-	$(MAKE) push-image/scheduler SUMMARY="Scheduler for Odigos" DESCRIPTION="Scheduler manages the installation of OpenTelemetry Collectors with Odigos." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-collector
-push-collector:
-	$(MAKE) push-image/collector DOCKERFILE=collector/$(DOCKERFILE) BUILD_DIR=. SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-ui
-push-ui:
-	$(MAKE) push-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-agents
-push-agents:
-	$(MAKE) push-image/agents DOCKERFILE=odiglet/$(DOCKERFILE) TARGET=agents SUMMARY="Init container for Odigos" DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
-
-.PHONY: push-images
-push-images:
-	make push-autoscaler push-scheduler push-odiglet push-instrumentor push-collector push-ui TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
-
-.PHONY: push-images-rhel
-push-images-rhel:
-	$(MAKE) push-images RHEL=true TAG=$(TAG) ORG=$(ORG)
+	$(MAKE) build-rhel-images TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX="$(IMG_SUFFIX)"
 
 load-to-kind-%:
 	kind load docker-image $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)
@@ -375,20 +308,22 @@ cli-upgrade:
 
 .PHONY: cli-build
 cli-build:
-	@echo "Building the cli executable for tests"
-	TAG=0.0.0-e2e-test; \
-	TMPDIR=$$(mktemp -d); \
-	cp -r ./helm/odigos $$TMPDIR/odigos; \
-	sed -i.bak -E 's/^version:.*/version: '"$${TAG#v}"'/' $$TMPDIR/odigos/Chart.yaml; \
-	helm package $$TMPDIR/odigos -d cli/pkg/helm/embedded; \
-	cp -r ./helm/odigos-central $$TMPDIR/odigos-central; \
-	sed -i.bak -E 's/^version:.*/version: '"$${TAG#v}"'/' $$TMPDIR/odigos-central/Chart.yaml; \
-	helm package $$TMPDIR/odigos-central -d cli/pkg/helm/embedded; \
-	cd cli && go build -tags=embed_manifests \
-	  -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=$${TAG#v}" \
-	  -o odigos .; \
-	rm -rf $$TMPDIR
-
+	@echo "Building host binary for $(HOST_GOOS)/$(HOST_GOARCH)"
+	@IMAGE=$(ORG)/odigos-cli-builder:$(TAG)-$(HOST_GOOS)-$(HOST_GOARCH); \
+	docker buildx bake --file docker-bake.hcl odigos-cli \
+		--set "odigos-cli.target=builder" \
+		--set "*.platform=$(HOST_PLATFORM)" \
+		--set "odigos-cli.args.ODIGOS_TAG=$(TAG)" \
+		--set "odigos-cli.args.TARGETOS=$(HOST_GOOS)" \
+		--set "odigos-cli.args.TARGETARCH=$(HOST_GOARCH)" \
+		--set "odigos-cli.tags=$$IMAGE" \
+		--set "*.output=type=docker"; \
+	CID=$$(docker create $$IMAGE); \
+	trap 'docker rm -f "$$CID" >/dev/null 2>&1 || true' EXIT; \
+	docker cp "$$CID:/workspace/build/odigos" ./cli/odigos; \
+	chmod +x ./cli/odigos; \
+	docker rm -f "$$CID" >/dev/null 2>&1; \
+	trap - EXIT
 
 .PHONY: cli-diagnose
 cli-diagnose:
@@ -459,35 +394,6 @@ dev-dynamic-destination:
 dev-backpressue-destination:
 	kubectl apply -f ./tests/backpressure-exporter.yaml
 
-.PHONY: push-workload-lifecycle-images
-push-workload-lifecycle-images:
-	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-unsupported-version:v0.0.1 -f tests/common/services/nodejs-http-server/unsupported-version.Dockerfile tests/common/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-very-old-version:v0.0.1 -f tests/common/services/nodejs-http-server/very-old-version.Dockerfile tests/common/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-minimum-version:v0.0.1 -f tests/common/services/nodejs-http-server/minimum-version.Dockerfile tests/common/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-latest-version:v0.0.1 -f tests/common/services/nodejs-http-server/latest-version.Dockerfile tests/common/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-dockerfile-env:v0.0.1 -f tests/common/services/nodejs-http-server/dockerfile-env.Dockerfile tests/common/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-manifest-env:v0.0.1 -f tests/common/services/nodejs-http-server/manifest-env.Dockerfile tests/common/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/cpp-http-server:v0.0.1 -f tests/common/services/cpp-http-server/Dockerfile tests/common/services/cpp-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-supported-version:v0.0.1 -f tests/common/services/java-http-server/java-supported-version.Dockerfile tests/common/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-azul:v0.0.1 -f tests/common/services/java-http-server/java-azul.Dockerfile tests/common/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-supported-docker-env:v0.0.1 -f tests/common/services/java-http-server/java-supported-docker-env.Dockerfile tests/common/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1 -f tests/common/services/java-http-server/java-supported-manifest-env.Dockerfile tests/common/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-latest-version:v0.0.1 -f tests/common/services/java-http-server/java-latest-version.Dockerfile tests/common/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-old-version:v0.0.1 -f tests/common/services/java-http-server/java-old-version.Dockerfile tests/common/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-unique-exec:v0.0.1 -f tests/common/services/java-http-server/java-unique-exec.Dockerfile tests/common/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-latest-version:v0.0.1 -f tests/common/services/python-http-server/Dockerfile.python-latest tests/common/services/python-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-other-agent:v0.0.1 -f tests/common/services/python-http-server/Dockerfile.python-other-agent tests/common/services/python-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-alpine:v0.0.1 -f tests/common/services/python-http-server/Dockerfile.python-alpine tests/common/services/python-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-not-supported:v0.0.1 -f tests/common/services/python-http-server/Dockerfile.python-not-supported-version tests/common/services/python-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-min-version:v0.0.1 -f tests/common/services/python-http-server/Dockerfile.python-min-version tests/common/services/python-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-gunicorn-server:v0.0.1 -f tests/common/services/python-gunicorn-server/Dockerfile.python-gunicorn-server tests/common/services/python-gunicorn-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet8-musl:v0.0.1 -f tests/common/services/dotnet-http-server/net8-musl.Dockerfile tests/common/services/dotnet-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet6-musl:v0.0.1 -f tests/common/services/dotnet-http-server/net6-musl.Dockerfile tests/common/services/dotnet-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet8-glibc:v0.0.1 -f tests/common/services/dotnet-http-server/net8-glibc.Dockerfile tests/common/services/dotnet-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet6-glibc:v0.0.1 -f tests/common/services/dotnet-http-server/net6-glibc.Dockerfile tests/common/services/dotnet-http-server
-
-
 # Use these to deploy Odigos into an EKS cluster
 
 .PHONY: ecr-login
@@ -522,54 +428,23 @@ publish-to-ecr:
 
 .PHONY: build-cli-image
 build-cli-image:
-	cd cli && \
-	KO_DOCKER_REPO=$(ORG)/odigos-cli$(IMG_SUFFIX) \
-	VERSION=$(TAG) \
-	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
-	DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S') \
-	ko build --bare --tags $(TAG) --local .
+	@echo "Building for architecture: $(HOST_PLATFORM)"
+	docker build -f cli/Dockerfile \
+		--platform=$(HOST_PLATFORM) \
+		--build-arg ODIGOS_TAG=$(TAG) \
+		-t $(ORG)/odigos-cli$(IMG_SUFFIX):$(TAG) .
 
 .PHONY: build-cli-image-rhel
 build-cli-image-rhel:
-	cd cli && $(MAKE) licenses
-	cd cli && docker build -f Dockerfile.rhel-base -t $(CLI_RHEL_KO_BASE_IMAGE) .
-	cd cli && \
-	KO_DOCKER_REPO=$(ORG)/$(CLI_RHEL_IMAGE_NAME) \
-	KO_DEFAULTBASEIMAGE=$(CLI_RHEL_KO_BASE_IMAGE) \
-	KO_CONFIG_PATH=./.ko.yaml \
-	VERSION=$(TAG) \
-	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
-	DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
-	ko build --bare --tags $(TAG) --local .
-
-.PHONY: push-cli-image-rhel
-push-cli-image-rhel:
-	@if [ "$(PUSH_IMAGE)" != "true" ]; then \
-		echo "this command will push the image to the public registry; set PUSH_IMAGE=true" >&2; \
-		exit 1; \
-	fi
-	cd cli && $(MAKE) licenses
-	docker buildx build --platform linux/amd64,linux/arm64 \
-		-f cli/Dockerfile.rhel-base \
-		-t $(CLI_RHEL_KO_BASE_IMAGE) \
-		--push \
-		cli
-	cd cli && \
-	KO_DOCKER_REPO=$(ORG)/$(CLI_RHEL_IMAGE_NAME) \
-	KO_DEFAULTBASEIMAGE=$(CLI_RHEL_KO_BASE_IMAGE) \
-	KO_CONFIG_PATH=./.ko.yaml \
-	VERSION=$(TAG) \
-	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
-	DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
-	ko build --bare --tags $(TAG) \
-		--image-label name=odigos-cli \
-		--image-label vendor=Odigos \
-		--image-label maintainer=Odigos \
-		--image-label version=$(TAG) \
-		--image-label release=$(TAG) \
-		--image-label summary="Odigos CLI" \
-		--image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
-		--platform=all .
+	docker build -f cli/Dockerfile \
+		--platform=$(HOST_PLATFORM) \
+		--target rhel \
+		--build-arg ODIGOS_TAG=$(TAG) \
+		--build-arg VERSION=$(TAG) \
+		--build-arg RELEASE=$(TAG) \
+		--build-arg SUMMARY="Odigos CLI" \
+		--build-arg DESCRIPTION="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
+		-t $(ORG)/$(CLI_RHEL_IMAGE_NAME):$(TAG) .
 
 # install gatekeeper to prevent:
 # 1. privileged containers

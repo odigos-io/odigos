@@ -16,36 +16,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: "~1.26.2"
-          check-latest: true
-          cache: true
-          cache-dependency-path: |
-            **/go.sum
-
-      - name: Set up Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: v3.15.2
-
       - name: Build CLI
-        run: |
-          cd cli
-          TAG=0.0.0-e2e-test
-          sed -i -E 's/0.0.0/'"${TAG#v}"'/' ../helm/odigos/Chart.yaml
-          sed -i -E 's/0.0.0/'"${TAG#v}"'/' ../helm/odigos-central/Chart.yaml
-          helm package ../helm/odigos -d pkg/helm/embedded
-          helm package ../helm/odigos-central -d pkg/helm/embedded
-          go build -tags=embed_manifests \
-            -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=${TAG#v}" \
-            -o odigos
+        id: build_cli
+        uses: ./.github/actions/build/cli
+        with:
+          tag: 0.0.0-e2e-test
 
       - name: Save CLI binary to cache
         uses: actions/cache/save@v4
         with:
-          path: cli/odigos
+          path: ${{ steps.build_cli.outputs.binary_path }}
           key: ${{ github.run_id }}-odigos-cli
 
 
@@ -55,25 +35,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Set up Depot CLI
+        uses: depot/setup-action@v1
+
       - name: Build Odigos Images
         run: |
-          TAG=e2e-test make build-images
-          docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
+          PR_NUMBER=${{ github.event.pull_request.number || github.event.number || github.run_number }}
+          TAG="v0.0.0-${PR_NUMBER}"
+          DEPOT_REPO="p0xd21zf5r.registry.depot.dev"
+          PROJECT_ARGS=()
+          if [[ -n "${{ vars.DEPOT_PROJECT_ID }}" ]]; then
+            PROJECT_ARGS=(--project "${{ vars.DEPOT_PROJECT_ID }}")
+          fi
 
-      - uses: ko-build/setup-ko@v0.9
-
-      - name: Build CLI Image
-        run: |
-          TAG=e2e-test make build-cli-image
-          docker save registry.odigos.io/odigos-cli:e2e-test -o cli-image.tar
-
-      - name: Save Odigos images to cache
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            odigos-images.tar
-            cli-image.tar
-          key: ${{ github.run_id }}-odigos-images
+          depot bake "${PROJECT_ARGS[@]}" --file docker-bake.hcl modules \
+            --set "*.platform=linux/amd64" \
+            --set "ODIGOS_TAG=${TAG}" \
+            --set "DEPOT_REPO=${DEPOT_REPO}" \
+            --set "GCP_REPO=${DEPOT_REPO}" \
+            --set "DOCKERHUB_REPO=${DEPOT_REPO}" \
+            --set "GHCR_REPO=${DEPOT_REPO}" \
+            --push \
+            --set "*.provenance=false"
 
   kubernetes-test:
     needs: [ build-odigos-images, build-cli ]
@@ -134,27 +117,22 @@ jobs:
           kubectl wait -n kube-system --for=condition=Ready pod --all --timeout=300s
           kubectl rollout status -n kube-system deployment/coredns --timeout=300s
 
-      - name: Restore cached Odigos images
-        id: restore-images-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            odigos-images.tar
-            cli-image.tar
-          fail-on-cache-miss: true
-          key: ${{ github.run_id }}-odigos-images
-
-      - name: Check if images cache was restored
-        if: steps.restore-images-cache.outputs.cache-hit != 'true'
+      - name: Pull Odigos images from Depot, retag and load to Kind
         run: |
-          echo "❌ Cache miss for Odigos images - this should not happen!"
-          echo "Expected cache key: ${{ github.run_id }}-odigos-images"
-          exit 1
+          PR_NUMBER=${{ github.event.pull_request.number || github.event.number || github.run_number }}
+          TAG="v0.0.0-${PR_NUMBER}"
+          DEPOT_REPO="p0xd21zf5r.registry.depot.dev"
 
-      - name: Load Odigos Images to Kind Cluster
-        run: |
-          kind load image-archive odigos-images.tar
-          kind load image-archive cli-image.tar
+          IMAGES=("autoscaler" "scheduler" "instrumentor" "collector" "odiglet" "ui" "operator" "agents")
+          for IMAGE in "${IMAGES[@]}"; do
+            docker pull "${DEPOT_REPO}/odigos-${IMAGE}:${TAG}"
+            docker tag "${DEPOT_REPO}/odigos-${IMAGE}:${TAG}" "registry.odigos.io/odigos-${IMAGE}:e2e-test"
+            kind load docker-image "registry.odigos.io/odigos-${IMAGE}:e2e-test"
+          done
+
+          docker pull "${DEPOT_REPO}/odigos-cli:${TAG}"
+          docker tag "${DEPOT_REPO}/odigos-cli:${TAG}" "registry.odigos.io/odigos-cli:e2e-test"
+          kind load docker-image "registry.odigos.io/odigos-cli:e2e-test"
 
       - name: Restore cached CLI binary
         id: restore-cli-cache
