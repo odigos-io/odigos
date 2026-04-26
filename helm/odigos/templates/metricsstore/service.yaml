@@ -1,4 +1,12 @@
-{{- if not .Values.ownTelemetry.metricsStore.disabled }}
+{{- $metricsStoreDisabled := false }}
+{{- if .Values.ownTelemetry }}
+  {{- if .Values.ownTelemetry.metricsStore }}
+    {{- if hasKey .Values.ownTelemetry.metricsStore "disabled" }}
+      {{- $metricsStoreDisabled = .Values.ownTelemetry.metricsStore.disabled }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if not $metricsStoreDisabled }}
 apiVersion: v1
 kind: Service
 metadata:
