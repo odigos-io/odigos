@@ -58,23 +58,23 @@ func (r *k8sNamespaceResolver) DataStreamNames(ctx context.Context, obj *model.K
 }
 
 // Workloads is the resolver for the workloads field.
-// Triggers the full SetFilters load (sources + manifests) only when workloads
-// are actually requested. The Namespaces query resolver uses LoadConfig which
-// skips this, so lightweight namespace-only queries stay fast.
+// Triggers the full LoadWorkloadsWithFilter load (sources + manifests) only when workloads are actually requested. The Namespaces query resolver uses LoadConfig which skips this, so lightweight namespace-only queries stay fast.
+//
+// The initial LoadWorkloadsWithFilter call is guarded by the global heavyWorkloadQueryMu (via Loaders.EnsureHeavyWorkloadsLoaded) so concurrent GetNamespacesWithWorkloads / GetWorkloads requests don't double memory.
+// Each workload's lightweight fields (markedForInstrumentation, dataStreamNames, numberOfInstances) are pre-populated inline so gqlgen's per-field goroutines short-circuit instead of doing real work — without this, 20K workloads × 3 fields = ~60K work-doing goroutines push the UI pod past GOMEMLIMIT.
 func (r *k8sNamespaceResolver) Workloads(ctx context.Context, obj *model.K8sNamespace) ([]*model.K8sWorkload, error) {
 	l := loaders.For(ctx)
 
-	// Ensure workload IDs are loaded (SetFilters is idempotent via Fetched flags).
-	if len(l.GetWorkloadIds()) == 0 {
-		if err := l.SetFilters(ctx, nil); err != nil {
-			return nil, err
-		}
+	if err := l.EnsureHeavyWorkloadsLoaded(ctx, &heavyWorkloadQueryMu); err != nil {
+		return nil, err
 	}
 
 	workloadIds := l.GetWorkloadIdsInNamespace(obj.Name)
 	workloads := make([]*model.K8sWorkload, 0, len(workloadIds))
 	for _, id := range workloadIds {
-		workloads = append(workloads, &model.K8sWorkload{ID: &id})
+		w := &model.K8sWorkload{ID: &id}
+		populateNamespaceWorkloadLightFields(ctx, l, w)
+		workloads = append(workloads, w)
 	}
 	return workloads, nil
 }
@@ -777,7 +777,7 @@ func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFil
 	defer heavyWorkloadQueryMu.Unlock()
 
 	l := loaders.For(ctx)
-	if err := l.SetFilters(ctx, filter); err != nil {
+	if err := l.LoadWorkloadsWithFilter(ctx, filter); err != nil {
 		return nil, err
 	}
 
