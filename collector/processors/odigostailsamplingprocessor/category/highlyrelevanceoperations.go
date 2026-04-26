@@ -10,8 +10,10 @@ import (
 	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
-// EvaluateHighlyRelevantOperations runs highly-relevant tail-sampling rules across all spans in the trace,
-// sets per-span matching attributes, and returns whether a non-disabled deciding rule applies.
+// EvaluateHighlyRelevantOperations evaluates:
+// - checks all highly-relevant tail-sampling rules across all spans in the trace for matches,
+// - compute a deciding rule based on the rules that matched,
+// - returns wether this category matched, and the deciding rule if it did.
 func EvaluateHighlyRelevantOperations(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) (bool, *commonapisampling.HighlyRelevantOperation) {
 	matchingRules := map[string]*commonapisampling.HighlyRelevantOperation{}
 
@@ -31,7 +33,8 @@ func EvaluateHighlyRelevantOperations(trace ptrace.Traces, configProvider collec
 			for k := 0; k < spans.Len(); k++ {
 				span := spans.At(k)
 
-				spanMostPercentageRule, matchedRules := processHighlyRelevantRulesForSingleSpan(span, highlyRelevantOperations)
+				matchedRules := matchHighlyRelevantRulesForSingleSpan(span, highlyRelevantOperations)
+				spanMostPercentageRule := selectHighlyRelevantRuleFromMatches(matchedRules)
 
 				if spanMostPercentageRule != nil {
 					setHighlyRelevantRuleAttributesOnSpan(span, spanMostPercentageRule)
@@ -49,9 +52,8 @@ func EvaluateHighlyRelevantOperations(trace ptrace.Traces, configProvider collec
 	return decidingRule != nil, decidingRule
 }
 
-// for a single span, evaluate all of the service highly relevant rules against the span.
-// it will return the rule with the highest percentage that matched, and a list of all the rules that matched.
-func processHighlyRelevantRulesForSingleSpan(span ptrace.Span, highlyRelevantOperations []commonapisampling.HighlyRelevantOperation) (*commonapisampling.HighlyRelevantOperation, []*commonapisampling.HighlyRelevantOperation) {
+// matchHighlyRelevantRulesForSingleSpan returns every highly-relevant rule whose matchers all pass for this span.
+func matchHighlyRelevantRulesForSingleSpan(span ptrace.Span, highlyRelevantOperations []commonapisampling.HighlyRelevantOperation) []*commonapisampling.HighlyRelevantOperation {
 	matchedRules := []*commonapisampling.HighlyRelevantOperation{}
 
 	for _, highlyRelevantOperation := range highlyRelevantOperations {
@@ -65,30 +67,17 @@ func processHighlyRelevantRulesForSingleSpan(span ptrace.Span, highlyRelevantOpe
 		}
 	}
 
-	if len(matchedRules) == 0 {
-		return nil, nil
-	}
+	return matchedRules
+}
 
-	if len(matchedRules) == 1 {
-		if matchedRules[0].Disabled {
-			return nil, matchedRules
-		}
-		return matchedRules[0], matchedRules
+// selectHighlyRelevantRuleFromMatches picks the span-level rule using the same logic as the trace deciding rule
+// (see calculateDecidingRule): highest PercentageAtLeast among enabled matches.
+func selectHighlyRelevantRuleFromMatches(matchedRules []*commonapisampling.HighlyRelevantOperation) *commonapisampling.HighlyRelevantOperation {
+	byID := make(map[string]*commonapisampling.HighlyRelevantOperation, len(matchedRules))
+	for _, r := range matchedRules {
+		byID[r.Id] = r
 	}
-
-	var selectedRule *commonapisampling.HighlyRelevantOperation
-	var selectedPercentage float64 = 101.0
-	for _, rule := range matchedRules {
-		if rule.Disabled {
-			continue
-		}
-		percentage := GetPercentageOrDefault100(rule.PercentageAtLeast)
-		if percentage < selectedPercentage {
-			selectedRule = rule
-			selectedPercentage = percentage
-		}
-	}
-	return selectedRule, matchedRules
+	return calculateDecidingRule(byID)
 }
 
 func getHighlyRelevantOperationsConfig(configProvider collector.OdigosConfigExtension, resource pcommon.Resource) []commonapisampling.HighlyRelevantOperation {
@@ -113,31 +102,26 @@ func calculateDecidingRule(matchingRules map[string]*commonapisampling.HighlyRel
 		return nil
 	}
 
-	if len(matchingRules) == 1 {
-		for _, matchingRule := range matchingRules {
-			if matchingRule.Disabled {
-				return nil
-			}
-			return matchingRule
-		}
-	}
-
 	var selectedRule *commonapisampling.HighlyRelevantOperation
-	var selectedRulePercentage float64 = 0.0
+	var selectedPercentage float64 = 0.0
 	for _, matchingRule := range matchingRules {
 		if matchingRule.Disabled {
 			continue
 		}
 		percentage := GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
+
+		// once we hit maximum, no point in keeping iterating.
 		if percentage == 100.0 {
 			return matchingRule
 		}
-		if selectedRule == nil || percentage > selectedRulePercentage {
+
+		// update if it's the first one, or if it's greater than the current largest one.
+		if selectedRule == nil || percentage > selectedPercentage {
 			selectedRule = matchingRule
-			selectedRulePercentage = percentage
+			selectedPercentage = percentage
 		}
 	}
-	return selectedRule
+	return selectedRule // can be nil if all rules are disabled.
 }
 
 func setHighlyRelevantRuleAttributesOnSpan(span ptrace.Span, rule *commonapisampling.HighlyRelevantOperation) {
