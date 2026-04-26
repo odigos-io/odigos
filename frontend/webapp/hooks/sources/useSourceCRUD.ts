@@ -2,12 +2,12 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { useNamespace } from '../namespaces';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import { getIdFromSseTarget, getSseTargetFromId } from '@odigos/ui-kit/functions';
-import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import type { SourceInstrumentInput, WorkloadResponse } from '@/types';
-import { mapWorkloadToSource, mapConditionsToConditionArray, sortSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
-import { GET_PEER_SOURCES, GET_SOURCE, GET_SOURCE_LIBRARIES, GET_WORKLOADS, GET_WORKLOADS_BY_IDS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type WorkloadId, type Source, type SourceFormData, type PeerSources, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent } from '@odigos/ui-kit/types';
+import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import { getIdFromSseTarget, getSseTargetFromId } from '@odigos/ui-kit/functions';
+import { mapWorkloadToSource, sortSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
+import { GET_PEER_SOURCES, GET_SOURCE_LIBRARIES, GET_WORKLOADS, GET_WORKLOADS_BY_IDS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { type WorkloadId, type Source, type SourceFormData, type PeerSources, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent, PersistSourceInput } from '@odigos/ui-kit/types';
 import {
   type NamespaceSelectionFormData,
   type SourceSelectionFormData,
@@ -19,6 +19,7 @@ import {
   ProgressKeys,
 } from '@odigos/ui-kit/store';
 
+// When SSE targets exceed this count, fall back to a full fetchSources() instead of fetching by individual IDs.
 const MAX_INDIVIDUAL_FETCH = 50;
 
 interface UseSourceCrud {
@@ -46,7 +47,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.Source, target: id ? getSseTargetFromId(id, EntityTypes.Source) : undefined, hideFromHistory });
   };
 
-  const [queryById] = useLazyQuery<{ computePlatform: { source: Source } }, { sourceId: WorkloadId }>(GET_SOURCE);
   const [querySourceLibraries] = useLazyQuery<{ instrumentationInstanceComponents: InstrumentationInstanceComponent[] }, WorkloadId>(GET_SOURCE_LIBRARIES, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message),
   });
@@ -101,9 +101,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   };
 
   const fetchSourcesByTargets: UseSourceCrud['fetchSourcesByTargets'] = async (targets) => {
-    const ids = targets
-      .map((t) => getIdFromSseTarget(t, EntityTypes.Source) as WorkloadId)
-      .filter((id) => id.namespace && id.name && id.kind);
+    const ids = targets.map((t) => getIdFromSseTarget(t, EntityTypes.Source) as WorkloadId).filter((id) => id.namespace && id.name && id.kind);
 
     if (ids.length === 0) return;
 
@@ -124,34 +122,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
   };
 
   const fetchSourceById: UseSourceCrud['fetchSourceById'] = async (id): Promise<Source | undefined> => {
-    const { error: sourceError, data: sourceData } = await queryById({ variables: { sourceId: id } });
-
-    if (sourceError) {
-      notifyUser(StatusType.Error, sourceError.name || Crud.Read, sourceError.cause?.message || sourceError.message);
-      return undefined;
-    }
-
-    if (!sourceData?.computePlatform?.source) return undefined;
-
-    const { source } = sourceData.computePlatform;
-
-    const { data: workloadData } = await queryWorkloads({ variables: { filter: { namespace: id.namespace, kind: id.kind, name: id.name } } });
-    const workload = workloadData?.workloads?.[0];
-
-    if (workload) {
-      const enrichedSource: Source = {
-        ...source,
-        conditions: mapConditionsToConditionArray(workload.conditions),
-        workloadOdigosHealthStatus: workload.workloadOdigosHealthStatus,
-        podsAgentInjectionStatus: workload.podsAgentInjectionStatus,
-        rollbackOccurred: workload.rollbackOccurred,
-      };
-      addEntities(EntityTypes.Source, [enrichedSource]);
-      return enrichedSource;
-    }
-
-    addEntities(EntityTypes.Source, [source]);
-    return source;
+    await fetchSourcesByTargets([getSseTargetFromId(id, EntityTypes.Source)]);
+    return useEntityStore.getState().sources.find((s) => s.namespace === id.namespace && s.kind === id.kind && s.name === id.name);
   };
 
   const persistSources: UseSourceCrud['persistSources'] = async (selectAppsList, futureSelectAppsList) => {

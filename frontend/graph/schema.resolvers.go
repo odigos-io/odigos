@@ -195,40 +195,36 @@ func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj 
 
 // DataStreams is the resolver for the dataStreams field.
 func (r *computePlatformResolver) DataStreams(ctx context.Context, obj *model.ComputePlatform) ([]*model.DataStream, error) {
-	ns := env.GetCurrentNamespace()
-
 	dataStreams := make([]*model.DataStream, 0)
-	seen := make(map[string]bool) // prevent duplicates
+	seen := make(map[string]bool)
 
 	dataStreams = append(dataStreams, &model.DataStream{Name: "default"})
 	seen["default"] = true
 
-	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
-	if err != nil {
+	// Use cache client with zero-copy instead of direct API call to avoid
+	// fetching and deep-copying all ICs from the API server at scale.
+	var instrumentationConfigs v1alpha1.InstrumentationConfigList
+	if err := r.K8sCacheClient.List(ctx, &instrumentationConfigs); err != nil {
 		return nil, err
 	}
 	for _, ic := range instrumentationConfigs.Items {
 		for _, name := range services.ExtractDataStreamsFromInstrumentationConfig(&ic) {
 			if !seen[*name] {
 				seen[*name] = true
-				dataStreams = append(dataStreams, &model.DataStream{
-					Name: *name,
-				})
+				dataStreams = append(dataStreams, &model.DataStream{Name: *name})
 			}
 		}
 	}
 
-	destinations, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
+	var destinations v1alpha1.DestinationList
+	if err := r.K8sCacheClient.List(ctx, &destinations); err != nil {
 		return nil, err
 	}
 	for _, dest := range destinations.Items {
 		for _, name := range services.ExtractDataStreamsFromDestination(dest) {
 			if !seen[*name] {
 				seen[*name] = true
-				dataStreams = append(dataStreams, &model.DataStream{
-					Name: *name,
-				})
+				dataStreams = append(dataStreams, &model.DataStream{Name: *name})
 			}
 		}
 	}

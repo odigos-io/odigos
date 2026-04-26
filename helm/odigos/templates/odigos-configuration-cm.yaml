@@ -15,6 +15,21 @@ data:
     configVersion: 1
     componentLogLevels:
       default: {{ .Values.logLevel | default "info" }}
+      {{- if .Values.autoscaler.logLevel }}
+      autoscaler: {{ .Values.autoscaler.logLevel }}
+      {{- end }}
+      {{- if .Values.scheduler.logLevel }}
+      scheduler: {{ .Values.scheduler.logLevel }}
+      {{- end }}
+      {{- if .Values.instrumentor.logLevel }}
+      instrumentor: {{ .Values.instrumentor.logLevel }}
+      {{- end }}
+      {{- if .Values.odiglet.logLevel }}
+      odiglet: {{ .Values.odiglet.logLevel }}
+      {{- end }}
+      {{- if .Values.ui.logLevel }}
+      ui: {{ .Values.ui.logLevel }}
+      {{- end }}
     {{- if .Values.clusterName }}
     clusterName: {{ .Values.clusterName }}
     {{- end }}

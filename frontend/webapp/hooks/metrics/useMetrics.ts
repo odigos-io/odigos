@@ -8,7 +8,7 @@ export const useMetrics = () => {
   const destinations = useEntityStore((state) => state.destinations);
 
   const { data } = useQuery<{ getOverviewMetrics: Metrics }>(GET_METRICS, {
-    skip: !sources.length && !destinations.length,
+    skip: !sources.length || !destinations.length,
     pollInterval: 10000,
   });
 
