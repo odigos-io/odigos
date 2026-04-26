@@ -17,6 +17,53 @@ import (
 // Serializes heavy workload queries so concurrent requests don't double memory usage.
 var heavyWorkloadQueryMu sync.Mutex
 
+// populateNamespaceWorkloadLightFields pre-computes the three resolver fields
+// requested by GetNamespacesWithWorkloads (markedForInstrumentation,
+// dataStreamNames, numberOfInstances) directly from the already-loaded source
+// and manifest caches. This lets each field resolver short-circuit via its
+// `if obj.X != nil` guard and keeps gqlgen's per-field goroutines in the 2 KB
+// stack range — critical at 20K workloads where spawning 60K work-doing
+// goroutines otherwise pushes the UI pod past its GOMEMLIMIT.
+//
+// Unlike populateWorkloadFields, this helper intentionally does NOT touch
+// InstrumentationConfigs or Pods — both are expensive to load cluster-wide
+// and are not needed by the source-selection UI that drives this query.
+func populateNamespaceWorkloadLightFields(ctx context.Context, l *loaders.Loaders, w *model.K8sWorkload) {
+	id := *w.ID
+
+	// Share a single GetSources lookup across the two source-derived fields
+	// instead of locking l.sourcesMutex twice per workload.
+	sources, sourcesErr := l.GetSources(ctx, id)
+	if sourcesErr == nil && sources != nil {
+		enabled, reason, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, nil)
+		if err == nil {
+			var marked *bool
+			if enabled {
+				marked = &enabled
+			} else if reason.Reason == string("WorkloadSourceDisabled") {
+				marked = &enabled
+			}
+			w.MarkedForInstrumentation = &model.K8sWorkloadMarkedForInstrumentation{
+				MarkedForInstrumentation: marked,
+				DecisionEnum:             string(reason.Reason),
+				Message:                  reason.Message,
+			}
+		}
+
+		ptrNames := services.ExtractDataStreamsFromSource(sources.Workload, sources.Namespace)
+		names := make([]string, len(ptrNames))
+		for i, p := range ptrNames {
+			names[i] = *p
+		}
+		w.DataStreamNames = names
+	}
+
+	if manifest, err := l.GetWorkloadManifest(ctx, id); err == nil && manifest != nil {
+		count := int(manifest.AvailableReplicas)
+		w.NumberOfInstances = &count
+	}
+}
+
 // populateWorkloadFields pre-computes all resolver fields for a workload
 // sequentially. This is called from the Workloads batch resolver to avoid
 // gqlgen spawning a goroutine per field per workload.
