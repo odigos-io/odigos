@@ -147,8 +147,8 @@ func (c *cache) Delete(key string) {
 	}
 }
 
-// getKeysForWorkload returns a copy of the full cache keys for the given workload key. Caller must not modify the result.
-func (c *cache) getKeysForWorkload(workloadKey string) []string {
+// getContainerKeysForWorkload returns a copy of the full cache keys for the given workload key. Caller must not modify the result.
+func (c *cache) getContainerKeysForWorkload(workloadKey string) []string {
 	c.mu.RLock()
 	entry := c.workloadKeysIndex[workloadKey]
 	if entry == nil || len(entry.containerKeys) == 0 {
@@ -184,17 +184,4 @@ func (c *cache) GetDataStreams(workloadKey string) ([]string, bool) {
 		return nil, false
 	}
 	return entry.dataStreams, true
-}
-
-// DeleteDataStreams removes data stream names for the given workload key prefix.
-// If the entry has no container keys left either, the entire entry is removed.
-func (c *cache) DeleteDataStreams(workloadKey string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if entry := c.workloadKeysIndex[workloadKey]; entry != nil {
-		entry.dataStreams = nil
-		if len(entry.containerKeys) == 0 {
-			delete(c.workloadKeysIndex, workloadKey)
-		}
-	}
 }

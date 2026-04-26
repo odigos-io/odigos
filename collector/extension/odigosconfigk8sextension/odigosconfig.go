@@ -89,7 +89,7 @@ func (o *OdigosWorkloadConfig) UnregisterWorkloadConfigCacheCallback(cb collecto
 }
 
 func (o *OdigosWorkloadConfig) GetDataStreamsForWorkload(res pcommon.Resource) ([]string, bool) {
-	key, err := workloadKeyPrefixFromResourceAttributes(res.Attributes())
+	key, err := workloadContainerKeyFromResourceAttributes(res.Attributes())
 	if err != nil {
 		return nil, false
 	}
@@ -98,6 +98,5 @@ func (o *OdigosWorkloadConfig) GetDataStreamsForWorkload(res pcommon.Resource) (
 		o.logger.Debug("data streams not found for workload", zap.String("key", key))
 		return nil, false
 	}
-	o.logger.Debug("resolved data streams for workload", zap.String("key", key), zap.Strings("dataStreams", streams))
 	return streams, true
 }

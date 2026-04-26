@@ -155,7 +155,7 @@ func createLogsConnector(
 
 func (r *routerConnector) resolveDataStreams(resource pcommon.Resource) []string {
 	streams, found := r.odigosConfigExtension.GetDataStreamsForWorkload(resource)
-	if !found {
+	if !found || len(streams) == 0 {
 		return nil
 	}
 	return streams

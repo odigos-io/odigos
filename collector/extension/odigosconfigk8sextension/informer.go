@@ -8,7 +8,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonapi "github.com/odigos-io/odigos/common/api"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -192,30 +191,26 @@ func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKe
 	workloadKeyStr := WorkloadKeyString(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name)
 	workloadIndexKey := workloadKeyStr + "/"
 
-	oldKeys := o.cache.getKeysForWorkload(workloadIndexKey)
-	newKeys := make(map[string]struct{}, len(desired))
+	oldContainerKeys := o.cache.getContainerKeysForWorkload(workloadIndexKey)
+	newContainerKeys := make(map[string]struct{}, len(desired))
 
 	// 1) Apply new/updated entries first (cache.Set updates index and triggers OnSet inside cache).
 	for _, e := range desired {
 		o.cache.Set(e.key, e.cfg)
-		newKeys[e.key] = struct{}{}
+		newContainerKeys[e.key] = struct{}{}
 	}
 
 	// 2) Remove stale entries (cache.Delete updates index and triggers OnDeleteKey inside cache).
 	var numRemoved int
-	for _, k := range oldKeys {
-		if _, inNew := newKeys[k]; !inNew {
+	for _, k := range oldContainerKeys {
+		if _, inNew := newContainerKeys[k]; !inNew {
 			o.cache.Delete(k)
 			numRemoved++
 		}
 	}
 
 	// 3) Update data stream membership for this workload.
-	if dataStreams != nil {
-		o.cache.SetDataStreams(workloadIndexKey, dataStreams)
-	} else {
-		o.cache.DeleteDataStreams(workloadIndexKey)
-	}
+	o.cache.SetDataStreams(workloadIndexKey, dataStreams)
 
 	o.logger.Debug("synced workload to desired state",
 		zap.String("workload", workloadKeyStr),
@@ -225,17 +220,18 @@ func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKe
 	)
 }
 
+// duplicate of k8sconsts.SourceDataStreamLabelPrefix to avoid a dependency on the odigos api package.
+const sourceDataStreamLabelPrefix = "odigos.io/data-stream-"
+
 // extractDataStreamLabels reads IC labels and returns the data stream names.
-// If no data-stream labels are present, returns ["default"].
+// If no data-stream labels are present, returns nil; the router connector
+// handles the fallback to the default pipeline.
 func extractDataStreamLabels(labels map[string]string) []string {
 	var streams []string
 	for k, v := range labels {
-		if strings.HasPrefix(k, k8sconsts.SourceDataStreamLabelPrefix) && v == "true" {
-			streams = append(streams, strings.TrimPrefix(k, k8sconsts.SourceDataStreamLabelPrefix))
+		if strings.HasPrefix(k, sourceDataStreamLabelPrefix) && v == "true" {
+			streams = append(streams, strings.TrimPrefix(k, sourceDataStreamLabelPrefix))
 		}
-	}
-	if len(streams) == 0 {
-		return []string{"default"}
 	}
 	return streams
 }
