@@ -17,11 +17,10 @@ type workloadKey struct {
 	Name      string
 }
 
-// workloadEntry holds per-workload state: the set of container cache keys and the
+// workloadEntry holds per-workload state: the set of container cache keys and the data stream names extracted from IC labels.
 type workloadEntry struct {
 	containerKeys map[string]struct{}
-	// data stream names extracted from IC labels.
-	dataStreams []string
+	dataStreams   []string
 }
 
 // keyPrefixFromKey returns the workload prefix for a full cache key (e.g. "ns/kind/name/container" -> "ns/kind/name/").
