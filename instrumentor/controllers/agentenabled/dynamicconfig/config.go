@@ -131,6 +131,9 @@ func calculateMetricsConfig(
 		metricsConfig.SpanMetrics = agentSpanMetricsConfig
 	}
 
+	// Runtime Metrics for supported distros
+	metricsConfig.RuntimeMetrics = metrics.CalculateAgentRuntimeMetricsConfig(d, effectiveConfig)
+
 	return metricsConfig, nil
 }
 
