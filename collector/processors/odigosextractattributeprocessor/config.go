@@ -6,27 +6,75 @@ import (
 	"go.opentelemetry.io/collector/component"
 )
 
-// Config defines the configuration for the odigosextractattribute processor.
-//
-// The processor scans free-form string-valued span attributes for an embedded
-// SourceAttribute and lifts the matched value onto a new attribute named
-// TargetAttribute.
-type Config struct {
-	// SourceAttribute is the string name to search for in free-form string attributes, to get its value.
-	SourceAttribute string `mapstructure:"source_attribute"`
+type DataFormat string
 
-	// TargetAttribute is the  new span attribute name that will get the value from SourceAttribute.
-	TargetAttribute string `mapstructure:"target_attribute"`
+const (
+	FormatUnset DataFormat = ""
+	FormatURL   DataFormat = "url"
+	FormatJSON  DataFormat = "json"
+)
+
+// Extraction is one self-contained extraction rule.
+// It uses either a preset pattern (Source+DataFormat) or a custom Regex, and writes the captured value to Target.
+type Extraction struct {
+	Target     string     `mapstructure:"target"`
+	Source     string     `mapstructure:"source"`
+	DataFormat DataFormat `mapstructure:"data_format"`
+	Regex      string     `mapstructure:"regex"`
+}
+
+type Config struct {
+	Extractions []Extraction `mapstructure:"extractions"`
 }
 
 var _ component.Config = (*Config)(nil)
 
 func (cfg *Config) Validate() error {
-	if cfg.SourceAttribute == "" {
-		return fmt.Errorf("source_attribute is required")
+	if len(cfg.Extractions) == 0 {
+		return fmt.Errorf("extractions must not be empty")
 	}
-	if cfg.TargetAttribute == "" {
-		return fmt.Errorf("target_attribute is required")
+
+	seenTargets := make(map[string]int, len(cfg.Extractions))
+	for i, extraction := range cfg.Extractions {
+		if extraction.Target == "" {
+			return fmt.Errorf("extractions[%d]: target is required", i)
+		}
+		// Make sure we don't have extractions with the same targets
+		if prev, dup := seenTargets[extraction.Target]; dup {
+			return fmt.Errorf("extractions[%d]: duplicate target %q (also used by extractions[%d])", i, extraction.Target, prev)
+		}
+		seenTargets[extraction.Target] = i
+
+		hasSource := extraction.Source != ""
+		hasRegex := extraction.Regex != ""
+
+		if hasSource && hasRegex {
+			return fmt.Errorf("extractions[%d]: cannot set both source and regex - choose one", i)
+		}
+		if !hasSource && !hasRegex {
+			return fmt.Errorf("extractions[%d]: must set either source or regex", i)
+		}
+
+		if hasSource {
+			switch extraction.DataFormat {
+			case FormatURL, FormatJSON:
+			case FormatUnset:
+				return fmt.Errorf("extractions[%d]: data_format is required when source is set", i)
+			default:
+				return fmt.Errorf("extractions[%d]: invalid data_format %q (must be %q or %q)",
+					i, extraction.DataFormat, FormatURL, FormatJSON)
+			}
+		}
+
+		if hasRegex {
+			if extraction.DataFormat != FormatUnset {
+				return fmt.Errorf("extractions[%d]: data_format must not be set when using regex", i)
+			}
+			if extraction.Source != "" {
+				return fmt.Errorf("extractions[%d]: source must not be set when using regex", i)
+			}
+		}
 	}
+
 	return nil
 }

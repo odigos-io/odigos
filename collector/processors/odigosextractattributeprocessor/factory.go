@@ -35,7 +35,10 @@ func createTracesProcessor(
 	nextConsumer consumer.Traces,
 ) (processor.Traces, error) {
 	oCfg := cfg.(*Config)
-	proc := newExtractAttributeProcessor(set, oCfg)
+	proc, err := newExtractAttributeProcessor(set, oCfg)
+	if err != nil {
+		return nil, err
+	}
 
 	return processorhelper.NewTraces(
 		ctx,

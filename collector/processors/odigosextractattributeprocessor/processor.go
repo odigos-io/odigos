@@ -11,105 +11,120 @@ import (
 	"go.uber.org/zap"
 )
 
+type extractor struct {
+	regex  *regexp.Regexp
+	target string
+}
+
 type extractAttributeProcessor struct {
-	logger *zap.Logger
-	config *Config
+	logger     *zap.Logger
+	extractors []extractor
 }
 
-func newExtractAttributeProcessor(set processor.Settings, cfg *Config) *extractAttributeProcessor {
-	return &extractAttributeProcessor{
-		logger: set.Logger,
-		config: cfg,
+func newExtractAttributeProcessor(set processor.Settings, cfg *Config) (*extractAttributeProcessor, error) {
+	// Compile the regex extractors at init so we don't calculate them when processing each span
+	extractors, err := compileRegexExtractors(cfg)
+	if err != nil {
+		return nil, err
 	}
+	return &extractAttributeProcessor{
+		logger:     set.Logger,
+		extractors: extractors,
+	}, nil
 }
 
-func (p *extractAttributeProcessor) processTraces(ctx context.Context, traces ptrace.Traces) (ptrace.Traces, error) {
+// compileRegexExtractors precompiles one regex per Extraction entry at startup so the per-span path stays allocation-free.
+func compileRegexExtractors(cfg *Config) ([]extractor, error) {
+	out := make([]extractor, 0, len(cfg.Extractions))
+	for i, extraction := range cfg.Extractions {
+		var regex *regexp.Regexp
+		var err error
+
+		if extraction.Regex != "" {
+			regex, err = regexp.Compile(extraction.Regex)
+			if err != nil {
+				return nil, fmt.Errorf("extractions[%d]: invalid regex: %w", i, err)
+			}
+		} else {
+			regex, err = buildExtractionRegex(extraction.Source, extraction.DataFormat)
+			if err != nil {
+				return nil, fmt.Errorf("extractions[%d]: %w", i, err)
+			}
+		}
+		out = append(out, extractor{regex: regex, target: extraction.Target})
+	}
+	return out, nil
+}
+
+func (p *extractAttributeProcessor) processTraces(_ context.Context, traces ptrace.Traces) (ptrace.Traces, error) {
 	allResourceSpans := traces.ResourceSpans()
 	for i := 0; i < allResourceSpans.Len(); i++ {
-		resourceSpans := allResourceSpans.At(i)
-		allScopeSpans := resourceSpans.ScopeSpans()
+		allScopeSpans := allResourceSpans.At(i).ScopeSpans()
 		for j := 0; j < allScopeSpans.Len(); j++ {
-			scopeSpans := allScopeSpans.At(j)
-			spans := scopeSpans.Spans()
+			spans := allScopeSpans.At(j).Spans()
 			for k := 0; k < spans.Len(); k++ {
-				span := spans.At(k)
-				p.processSpan(span)
+				p.processSpan(spans.At(k))
 			}
 		}
 	}
 	return traces, nil
 }
 
-// Tries to match and get the attirbute from these two patterns via regex:
-//  1. JSON-like fields: "key": "value", key:value, key = "value", etc.
-//  2. URL path segments: /key/<value>.
-//
-// The first match gets returned
-func extractAttributeFromJSONViaRegex(span ptrace.Span, key string) (string, error) {
-	if key == "" {
-		return "", fmt.Errorf("empty extraction key")
+func (p *extractAttributeProcessor) processSpan(span ptrace.Span) {
+	for _, e := range p.extractors {
+		if value, ok := extractFromAttributes(span, e.regex); ok {
+			p.logger.Debug("extraction matched",
+				zap.String("target", e.target),
+				zap.String("value", value),
+				zap.String("regex", e.regex.String()),
+				zap.Stringer("spanId", span.SpanID()),
+			)
+			span.Attributes().PutStr(e.target, value)
+		} else {
+			p.logger.Debug("extraction did not match any attribute",
+				zap.String("target", e.target),
+				zap.String("regex", e.regex.String()),
+				zap.Stringer("spanId", span.SpanID()),
+			)
+		}
 	}
+}
 
-	jsonRe, urlRe := buildExtractionRegexes(key)
-
+// extractFromAttributes scans the span's string-valued attributes and returns the first capture group re produces.
+func extractFromAttributes(span ptrace.Span, re *regexp.Regexp) (string, bool) {
 	var (
 		result string
 		found  bool
 	)
-	span.Attributes().Range(func(_ string, v pcommon.Value) bool {
-		if v.Type() != pcommon.ValueTypeStr {
+	span.Attributes().Range(func(_ string, value pcommon.Value) bool {
+		if value.Type() != pcommon.ValueTypeStr {
 			return true
 		}
-		content := v.Str()
+		content := value.Str()
 		if content == "" {
 			return true
 		}
-		if m := jsonRe.FindStringSubmatch(content); len(m) > 1 {
-			result = m[1]
-			found = true
-			return false
-		}
-		if m := urlRe.FindStringSubmatch(content); len(m) > 1 {
-			result = m[1]
+		// Take the first regex match
+		if matches := re.FindStringSubmatch(content); len(matches) > 1 {
+			result = matches[1]
 			found = true
 			return false
 		}
 		return true
 	})
+	return result, found
+}
 
-	if !found {
-		return "", fmt.Errorf("key %q not found in any span attribute", key)
+// buildExtractionRegex returns the pattern that captures the value of key for the given format. The key is anchored
+// on a JSON/SQL/URL boundary so substrings like "myfoo_bar" don't cross-match "foo_bar".
+func buildExtractionRegex(key string, format DataFormat) (*regexp.Regexp, error) {
+	escapedKey := regexp.QuoteMeta(key)
+	switch format {
+	case FormatJSON: // Also works for SQL
+		return regexp.MustCompile(`(?:^|[\s,{("'])["']?` + escapedKey + `["']?\s*[:=]\s*["']?([^"'\s,;)}]+)`), nil
+	case FormatURL:
+		return regexp.MustCompile(`(?:^|/)` + escapedKey + `/([^/\s"?&#]+)`), nil
+	default:
+		return nil, fmt.Errorf("unsupported data_format %q", format)
 	}
-	return result, nil
-}
-
-func buildExtractionRegexes(key string) (*regexp.Regexp, *regexp.Regexp) {
-	// Makes sure the key is escaped properly
-	escaped_key := regexp.QuoteMeta(key)
-
-	// Anchor the key on a boundary (start-of-string or a common JSON/SQL separator)
-	// so substrings like "myfoo_bar" don't accidentally match "foo_bar".
-	jsonRe := regexp.MustCompile(`(?:^|[\s,{("'])["']?` + escaped_key + `["']?\s*[:=]\s*["']?([^"'\s,;)}]+)`)
-	urlRe := regexp.MustCompile(`/` + escaped_key + `/([^/\s"?&#]+)`)
-
-	return jsonRe, urlRe
-}
-
-func addNewAttribute(span ptrace.Span, key string, value string) {
-	span.Attributes().PutStr(key, value)
-}
-
-func (p *extractAttributeProcessor) processSpan(span ptrace.Span) {
-	attributeValue, err := extractAttributeFromJSONViaRegex(span, p.config.SourceAttribute)
-	if err != nil {
-		p.logger.Debug("failed to extract attribute",
-			zap.String("source_attribute", p.config.SourceAttribute),
-			zap.String("target_attribute", p.config.TargetAttribute),
-			zap.Stringer("spanId", span.SpanID()),
-			zap.Error(err),
-		)
-		return
-	}
-
-	addNewAttribute(span, p.config.TargetAttribute, attributeValue)
 }
