@@ -3,10 +3,11 @@ package odigostracestateprocessor
 import (
 	"testing"
 
-	"github.com/odigos-io/odigos/common/odigosattributes"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/zap"
+
+	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
 func TestProcessSpanTraceStateDryRun(t *testing.T) {
