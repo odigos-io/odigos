@@ -13,10 +13,9 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	collectorpipeline "go.opentelemetry.io/collector/pipeline"
-	semconv1_26 "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
 
-	"github.com/odigos-io/odigos/common"
+	odigoscollector "github.com/odigos-io/odigos/common/collector"
 	"github.com/odigos-io/odigos/common/consts"
 )
 
@@ -38,16 +37,34 @@ type logsConfig struct {
 	logger      *zap.Logger
 }
 
-// routerConnector is the main struct for all signal types.
 type routerConnector struct {
 	tracesConfig  tracesConfig
 	metricsConfig metricsConfig
 	logsConfig    logsConfig
-	routingTable  *SignalRoutingMap
+
+	configExtensionID     *component.ID
+	odigosConfigExtension odigoscollector.OdigosConfigExtension
 }
 
-func (r *routerConnector) Start(_ context.Context, _ component.Host) error { return nil }
-func (r *routerConnector) Shutdown(_ context.Context) error                { return nil }
+func (r *routerConnector) Start(ctx context.Context, host component.Host) error {
+	// validated as not nil in Config.Validate(), can be nil in generated tests
+	if r.configExtensionID == nil {
+		return nil
+	}
+	ext, found := host.GetExtensions()[*r.configExtensionID]
+	if !found || ext == nil {
+		return fmt.Errorf("odigos config extension %s not found", *r.configExtensionID)
+	}
+	odigosExt, ok := ext.(odigoscollector.OdigosConfigExtension)
+	if !ok {
+		return fmt.Errorf("extension %s is not a valid odigos config extension", *r.configExtensionID)
+	}
+	r.odigosConfigExtension = odigosExt
+	odigosExt.WaitForCacheSync(ctx)
+	return nil
+}
+
+func (r *routerConnector) Shutdown(_ context.Context) error { return nil }
 func (r *routerConnector) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: false}
 }
@@ -71,15 +88,12 @@ func createTracesConnector(
 	)
 	if err != nil {
 		set.Logger.Warn("failed to get default traces consumer")
-		// Do not return the error — just continue with nil fallback
 		defaultTracesConsumer = nil
 	}
 
-	routeMap := BuildSignalRoutingMap(config.DataStreams)
-
 	return &routerConnector{
-		routingTable: &routeMap,
-		tracesConfig: tracesConfig{consumers: tr, defaultCons: defaultTracesConsumer, logger: set.Logger},
+		tracesConfig:      tracesConfig{consumers: tr, defaultCons: defaultTracesConsumer, logger: set.Logger},
+		configExtensionID: config.OdigosConfigExtension,
 	}, nil
 }
 
@@ -102,15 +116,12 @@ func createMetricsConnector(
 	)
 	if err != nil {
 		set.Logger.Warn("failed to get default metrics consumer")
-		// Do not return the error — just continue with nil fallback
 		defaultMetricsConsumer = nil
 	}
 
-	routeMap := BuildSignalRoutingMap(config.DataStreams)
-
 	return &routerConnector{
-		routingTable:  &routeMap,
-		metricsConfig: metricsConfig{consumers: tr, defaultCons: defaultMetricsConsumer, logger: set.Logger},
+		configExtensionID: config.OdigosConfigExtension,
+		metricsConfig:     metricsConfig{consumers: tr, defaultCons: defaultMetricsConsumer, logger: set.Logger},
 	}, nil
 }
 
@@ -133,75 +144,43 @@ func createLogsConnector(
 	)
 	if err != nil {
 		set.Logger.Warn("failed to get default logs consumer")
-		// Do not return the error — just continue with nil fallback
-		// This can happen if the default pipeline is not configured (Sources and Destinations)
 		defaultLogsConsumer = nil
 	}
-	routeMap := BuildSignalRoutingMap(config.DataStreams)
 
 	return &routerConnector{
-		routingTable: &routeMap,
-		logsConfig:   logsConfig{consumers: tr, defaultCons: defaultLogsConsumer, logger: set.Logger},
+		logsConfig:        logsConfig{consumers: tr, defaultCons: defaultLogsConsumer, logger: set.Logger},
+		configExtensionID: config.OdigosConfigExtension,
 	}, nil
 }
 
-func determineRoutingPipelines(attrs pcommon.Map, m SignalRoutingMap, signal common.ObservabilitySignal) ([]string, string) {
-	nsAttr, ok := attrs.Get(string(semconv1_26.K8SNamespaceNameKey))
-	if !ok {
-		return nil, ""
+func (r *routerConnector) resolveDataStreams(resource pcommon.Resource) []string {
+	streams, found := r.odigosConfigExtension.GetDataStreamsForWorkload(resource)
+	if !found || len(streams) == 0 {
+		return nil
 	}
-	ns := nsAttr.Str()
-
-	name, kind := getDynamicNameAndKind(attrs)
-	if name == "" || kind == "" {
-		return nil, ""
-	}
-
-	key := fmt.Sprintf("%s/%s/%s", ns, NormalizeKind(kind), name)
-
-	routingIndex, ok := m[key]
-	if !ok {
-		return nil, ""
-	}
-
-	pipelines, ok := routingIndex[signal]
-	if !ok {
-		return nil, ""
-	}
-
-	return pipelines, key
+	return streams
 }
 
 func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) error {
 	cfg := r.tracesConfig
 	tracesByConsumer := make(map[consumer.Traces]ptrace.Traces)
-
-	// fallback to default traces consumer if no pipelines are matched
 	defaultTraces := ptrace.NewTraces()
-
 	var errs error
 
 	rSpans := td.ResourceSpans()
-
 	for i := 0; i < rSpans.Len(); i++ {
 		rs := rSpans.At(i)
+		pipelines := r.resolveDataStreams(rs.Resource())
 
-		// Determine pipelines for this resource
-		pipelines, key := determineRoutingPipelines(rs.Resource().Attributes(), *r.routingTable, common.TracesObservabilitySignal)
-
-		// if no pipelines matched, copy the resource span to the default consumer
 		if len(pipelines) == 0 {
-			cfg.logger.Debug("no pipelines matched for", zap.Any("key", key))
 			rs.CopyTo(defaultTraces.ResourceSpans().AppendEmpty())
 			continue
 		}
 
 		for _, pipeline := range pipelines {
-
 			pipelineID := collectorpipeline.NewIDWithName(collectorpipeline.SignalTraces, pipeline)
 			consumer, err := cfg.consumers.Consumer(pipelineID)
 			if err != nil {
-				errs = errors.Join(errs, fmt.Errorf("failed to get consumer for pipeline %s: %w", pipelineID, err))
 				continue
 			}
 
@@ -214,7 +193,6 @@ func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) e
 		}
 	}
 
-	// Forward all grouped batches to their respective consumers
 	for cons, batch := range tracesByConsumer {
 		if batch.ResourceSpans().Len() == 0 {
 			continue
@@ -239,18 +217,16 @@ func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) e
 func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics) error {
 	cfg := r.metricsConfig
 	metricsByConsumer := make(map[consumer.Metrics]pmetric.Metrics)
-
 	defaultMetrics := pmetric.NewMetrics()
 	var errs error
 
 	rMetrics := md.ResourceMetrics()
 	for i := 0; i < rMetrics.Len(); i++ {
 		rm := rMetrics.At(i)
-		pipelines, key := determineRoutingPipelines(rm.Resource().Attributes(), *r.routingTable, common.MetricsObservabilitySignal)
-
+		pipelines := r.resolveDataStreams(rm.Resource())
 		// If no pipeline matched, copy the resource metrics to the default consumer
 		if len(pipelines) == 0 {
-			cfg.logger.Debug("no pipelines matched for", zap.Any("key", key))
+			cfg.logger.Debug("no pipelines matched for resource metrics", zap.Any("resource", rm.Resource().Attributes()))
 			rm.CopyTo(defaultMetrics.ResourceMetrics().AppendEmpty())
 			continue
 		}
@@ -303,11 +279,9 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 	for i := 0; i < rLogs.Len(); i++ {
 		rl := rLogs.At(i)
 		// Determine destination pipelines based on resource metadata
-		pipelines, key := determineRoutingPipelines(rl.Resource().Attributes(), *r.routingTable, common.LogsObservabilitySignal)
+		pipelines := r.resolveDataStreams(rl.Resource())
 
-		// If no pipeline matched, copy the resource logs to the default consumer
 		if len(pipelines) == 0 {
-			cfg.logger.Debug("no pipelines matched for", zap.Any("key", key))
 			rl.CopyTo(defaultLogs.ResourceLogs().AppendEmpty())
 			continue
 		}
@@ -317,7 +291,6 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 				collectorpipeline.NewIDWithName(collectorpipeline.SignalLogs, pipeline),
 			)
 			if err != nil {
-				errs = errors.Join(errs, fmt.Errorf("failed to get logs consumer for pipeline %s: %w", pipeline, err))
 				continue
 			}
 
@@ -350,24 +323,4 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 	}
 
 	return errs
-}
-
-// getDynamicNameAndKind extracts the workload name and kind from a resource's attributes.
-// It searches for known Kubernetes keys such as deployment, statefulset, and daemonset,
-// and returns the first matched workload name and its corresponding kind.
-// If none are found, it returns empty strings for both.
-
-var kindKeyMap = map[string]string{
-	string(semconv1_26.K8SDeploymentNameKey):  "Deployment",
-	string(semconv1_26.K8SStatefulSetNameKey): "StatefulSet",
-	string(semconv1_26.K8SDaemonSetNameKey):   "DaemonSet",
-}
-
-func getDynamicNameAndKind(attrs pcommon.Map) (name string, kind string) {
-	for key, kindType := range kindKeyMap {
-		if val, ok := attrs.Get(key); ok {
-			return val.Str(), kindType
-		}
-	}
-	return "", ""
 }

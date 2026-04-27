@@ -115,20 +115,22 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {
 		return
 	}
 
+	dataStreams := extractDataStreamLabels(u.GetLabels())
+
 	specMap, ok, _ := unstructured.NestedMap(u.Object, "spec")
 	if !ok || len(specMap) == 0 {
 		o.logger.Info("failed to get instrumentation config spec; clearing workload state", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
-		o.syncWorkloadToDesiredState(workloadKey, nil)
+		o.syncWorkloadToDesiredState(workloadKey, nil, dataStreams)
 		return
 	}
 
 	workloadCollectorConfigSlice, ok, _ := unstructured.NestedSlice(specMap, "workloadCollectorConfig")
 	if !ok || len(workloadCollectorConfigSlice) == 0 {
-		o.syncWorkloadToDesiredState(workloadKey, nil)
+		o.syncWorkloadToDesiredState(workloadKey, nil, dataStreams)
 		return
 	}
 	desired := o.parseWorkloadCollectorConfig(workloadKey, workloadCollectorConfigSlice)
-	o.syncWorkloadToDesiredState(workloadKey, desired)
+	o.syncWorkloadToDesiredState(workloadKey, desired, dataStreams)
 }
 
 // handleInstrumentationConfigDelete is called when an IC is removed. Desired state for this workload is empty.
@@ -144,7 +146,7 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}
 	if !ok {
 		return
 	}
-	o.syncWorkloadToDesiredState(workloadKey, nil)
+	o.syncWorkloadToDesiredState(workloadKey, nil, nil)
 }
 
 // containerEntry is a single container's cache key and config for the desired state.
@@ -181,32 +183,57 @@ func (o *OdigosWorkloadConfig) parseWorkloadCollectorConfig(workloadKey workload
 // syncWorkloadToDesiredState makes the extension cache match the desired state. The cache
 // notifies the callback internally on each Set/Delete. desired == nil or empty means
 // "no containers for this workload" (e.g. IC deleted or spec has no workloadCollectorConfig).
+// dataStreams == nil means the workload's data stream info should be cleared (e.g. IC deleted).
 //
 // Order: (1) apply new/updated entries — cache.Set (cache invokes OnSet); (2) remove stale
 // entries — cache.Delete (cache invokes OnDeleteKey). No span sees a gap.
-func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKey, desired []containerEntry) {
+func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKey, desired []containerEntry, dataStreams []string) {
 	workloadKeyStr := WorkloadKeyString(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name)
 	workloadIndexKey := workloadKeyStr + "/"
 
-	oldKeys := o.cache.getKeysForWorkload(workloadIndexKey)
-	newKeys := make(map[string]struct{}, len(desired))
+	oldContainerKeys := o.cache.getContainerKeysForWorkload(workloadIndexKey)
+	newContainerKeys := make(map[string]struct{}, len(desired))
 
 	// 1) Apply new/updated entries first (cache.Set updates index and triggers OnSet inside cache).
 	for _, e := range desired {
 		o.cache.Set(e.key, e.cfg)
-		newKeys[e.key] = struct{}{}
+		newContainerKeys[e.key] = struct{}{}
 	}
 
 	// 2) Remove stale entries (cache.Delete updates index and triggers OnDeleteKey inside cache).
 	var numRemoved int
-	for _, k := range oldKeys {
-		if _, inNew := newKeys[k]; !inNew {
+	for _, k := range oldContainerKeys {
+		if _, inNew := newContainerKeys[k]; !inNew {
 			o.cache.Delete(k)
 			numRemoved++
 		}
 	}
 
-	o.logger.Debug("synced workload to desired state", zap.String("workload", workloadKeyStr), zap.Int("desired", len(desired)), zap.Int("removed", numRemoved))
+	// 3) Update data stream membership for this workload.
+	o.cache.SetDataStreams(workloadIndexKey, dataStreams)
+
+	o.logger.Debug("synced workload to desired state",
+		zap.String("workload", workloadKeyStr),
+		zap.Int("desired", len(desired)),
+		zap.Int("removed", numRemoved),
+		zap.Strings("dataStreams", dataStreams),
+	)
+}
+
+// duplicate of k8sconsts.SourceDataStreamLabelPrefix to avoid a dependency on the odigos api package.
+const sourceDataStreamLabelPrefix = "odigos.io/data-stream-"
+
+// extractDataStreamLabels reads IC labels and returns the data stream names.
+// If no data-stream labels are present, returns nil; the router connector
+// handles the fallback to the default pipeline.
+func extractDataStreamLabels(labels map[string]string) []string {
+	var streams []string
+	for k, v := range labels {
+		if strings.HasPrefix(k, sourceDataStreamLabelPrefix) && v == "true" {
+			streams = append(streams, strings.TrimPrefix(k, sourceDataStreamLabelPrefix))
+		}
+	}
+	return streams
 }
 
 // workloadKeyFromObject returns a WorkloadKey from the InstrumentationConfig's metadata.
