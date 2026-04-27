@@ -96,20 +96,17 @@ func calculateTracesConfig(
 	}
 
 	// Headers Collection - Agent only (not applicable to collector)
-	if traces.DistroSupportsTracesHeadersCollection(d) {
-		agentConfig.HeadersCollection = traces.CalculateHeaderCollectionConfig(d, irls)
-	}
+	agentConfig.HeadersCollection = traces.CalculateHeaderCollectionConfig(d, irls)
 
 	// Span Renamer
 	// TODO: add support to do it in the collector
-	if traces.DistroSupportsTracesSpanRenamer(d) {
-		agentConfig.SpanRenamer = traces.CalculateSpanRenamerConfig(agentLevelActions, runtimeDetails.Language)
-	}
+	agentConfig.SpanRenamer = traces.CalculateSpanRenamerConfig(d, agentLevelActions, runtimeDetails.Language)
 
 	// Payload Collection - Agent only (not applicable to collector)
-	if traces.DistroSupportsTracesPayloadCollection(d) {
-		agentConfig.PayloadCollection = traces.CalculatePayloadCollectionConfig(d, irls)
-	}
+	agentConfig.PayloadCollection = traces.CalculatePayloadCollectionConfig(d, irls)
+
+	// Code Attributes - Agent only (not applicable to collector)
+	agentConfig.CodeAttributes = traces.CalculateCodeAttributesConfig(d, irls)
 
 	return agentConfig, collectorConfig, nil
 }

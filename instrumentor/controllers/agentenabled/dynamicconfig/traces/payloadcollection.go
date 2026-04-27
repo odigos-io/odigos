@@ -16,8 +16,7 @@ func DistroSupportsTracesPayloadCollection(distro *distro.OtelDistro) bool {
 // return the payload collection config that should be used for the container
 func CalculatePayloadCollectionConfig(distro *distro.OtelDistro, irls *[]odigosv1.InstrumentationRule) *instrumentationrules.PayloadCollection {
 
-	// only calculate payload collection config if the distro supports it
-	if distro.Traces == nil || distro.Traces.PayloadCollection == nil || !distro.Traces.PayloadCollection.Supported {
+	if !DistroSupportsTracesPayloadCollection(distro) {
 		return nil
 	}
 

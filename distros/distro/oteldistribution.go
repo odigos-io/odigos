@@ -180,6 +180,11 @@ type PayloadCollection struct {
 	Supported bool `yaml:"supported,omitempty"`
 }
 
+type CodeAttributes struct {
+	// if true, the distro supports code attributes collection for traces in the agent.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
 type Traces struct {
 	// if set, the distro supports head sampling based on root spans of traces.
 	HeadSampling *HeadSampling `yaml:"headSampling,omitempty"`
@@ -197,6 +202,9 @@ type Traces struct {
 	// if set, the distro supports payload collection.
 	// which payload and under which conditions to collect is instrumentation library specific.
 	PayloadCollection *PayloadCollection `yaml:"payloadCollection,omitempty"`
+
+	// if set, the distro supports code attributes collection.
+	CodeAttributes *CodeAttributes `yaml:"codeAttributes,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
