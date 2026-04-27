@@ -11,13 +11,12 @@ func TailSamplingOperationMatcher(operation *commonapisampling.TailSamplingOpera
 		// if operation is not specified, it will match any operation.
 		return true
 	}
-	if operation.HttpServer != nil {
+	switch {
+	case operation.HttpServer != nil:
 		return operationHttpServerMatcher(operation.HttpServer, span)
-	}
-	if operation.KafkaConsumer != nil {
+	case operation.KafkaConsumer != nil:
 		return operationKafkaConsumerMatcher(operation.KafkaConsumer, span)
-	}
-	if operation.KafkaProducer != nil {
+	case operation.KafkaProducer != nil:
 		return operationKafkaProducerMatcher(operation.KafkaProducer, span)
 	}
 	// no operation type specified, match any.
