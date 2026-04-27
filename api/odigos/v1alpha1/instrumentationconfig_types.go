@@ -388,6 +388,9 @@ type AgentTracesConfig struct {
 
 	// configuration for payload collection for this container.
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
+
+	// configuration for code attributes collection for this container.
+	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.

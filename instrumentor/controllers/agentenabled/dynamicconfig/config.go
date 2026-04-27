@@ -106,6 +106,11 @@ func calculateTracesConfig(
 		agentConfig.PayloadCollection = traces.CalculatePayloadCollectionConfig(d, irls)
 	}
 
+	// Code Attributes - Agent only (not applicable to collector)
+	if traces.DistroSupportsTracesCodeAttributes(d) {
+		agentConfig.CodeAttributes = traces.CalculateCodeAttributesConfig(d, irls)
+	}
+
 	return agentConfig, collectorConfig, nil
 }
 
