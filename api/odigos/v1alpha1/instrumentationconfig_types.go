@@ -388,6 +388,9 @@ type AgentTracesConfig struct {
 
 	// configuration for payload collection for this container.
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
+
+	// configuration for code attributes collection for this container.
+	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
@@ -534,6 +537,14 @@ type SdkConfig struct {
 }
 
 type HeadSamplingConfig struct {
+
+	// If true, the sampling decision will be made in dry-run mode.
+	// When dry-run is enabled, the sampling decision will be made but the trace will not be dropped.
+	// This is useful to evaluate the sampling decision before actually committing to it.
+	// 2 additional attributes will be set on the spans:
+	// - odigos.sampling.dry_run: true
+	// - odigos.sampling.dry_run.kept: true if the trace would have been kept, false if it would have been dropped.
+	DryRun bool `json:"dryRun,omitempty"`
 
 	// Noisy operations are categories of matchers that are used on the root span.
 	// If match, the fraction is used to determine the sampling decision for the entire trace.

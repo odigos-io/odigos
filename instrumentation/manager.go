@@ -106,9 +106,8 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 	// LogsMap is the optional common eBPF map that will be used to send log events from eBPF probes.
 	LogsMap *cilumebpf.Map
 
-	// LogsExtMap is the optional eBPF Hash map for TGID -> packed resource attributes.
-	// Used alongside LogsMap to store per-process resource attributes that enrich log events.
-	LogsExtMap *cilumebpf.Map
+	// LogsAttrSubscribe streams per-process resource attributes over the logs unix socket.
+	LogsAttrSubscribe func() (updates <-chan string, snapshot []string)
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -150,7 +149,7 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 	metricsMap           *cilumebpf.Map
 	metricsAttributesMap *cilumebpf.Map
 	logsMap              *cilumebpf.Map
-	logsExtMap           *cilumebpf.Map
+	logsAttrSubscribe    func() (updates <-chan string, snapshot []string)
 }
 
 func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]](options ManagerOptions[processGroup, configGroup, processDetails]) (Manager, error) {
@@ -206,7 +205,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		metricsMap:            options.MetricsMap,
 		metricsAttributesMap:  options.MetricsAttributesMap,
 		logsMap:               options.LogsMap,
-		logsExtMap:            options.LogsExtMap,
+		logsAttrSubscribe:     options.LogsAttrSubscribe,
 	}, nil
 }
 
@@ -361,15 +360,12 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 				return fds
 			},
 			LogsFDsProvider: func() []int {
-				var fds []int
 				if m.logsMap != nil {
-					fds = append(fds, m.logsMap.FD())
+					return []int{m.logsMap.FD()}
 				}
-				if m.logsExtMap != nil {
-					fds = append(fds, m.logsExtMap.FD())
-				}
-				return fds
+				return nil
 			},
+			LogsAttrSubscribe: m.logsAttrSubscribe,
 		}
 
 		// Run server in background to serve the map FD to relevant data collection client.

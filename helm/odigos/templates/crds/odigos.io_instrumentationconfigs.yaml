@@ -206,12 +206,56 @@ spec:
                         Each enabled signal must be set with a non-nil value (even if the config content is empty).
                         nil means that the signal is disabled and should not be instrumented/collected by the agent.
                       properties:
+                        codeAttributes:
+                          description: configuration for code attributes collection
+                            for this container.
+                          properties:
+                            column:
+                              description: |-
+                                Should record the `code.column` attribute.
+                                if unset, the value will resolve from other relevant rules, or fallback to false
+                              type: boolean
+                            filePath:
+                              description: |-
+                                Should record the `code.filepath` attribute.
+                                if unset, the value will resolve from other relevant rules, or fallback to false
+                              type: boolean
+                            function:
+                              description: |-
+                                Should record the `code.function` attribute.
+                                if unset, the value will resolve from other relevant rules, or fallback to false
+                              type: boolean
+                            lineNumber:
+                              description: |-
+                                Should record the `code.lineno` attribute.
+                                if unset, the value will resolve from other relevant rules, or fallback to false
+                              type: boolean
+                            namespace:
+                              description: |-
+                                Should record the `code.namespace` attribute.
+                                if unset, the value will resolve from other relevant rules, or fallback to false
+                              type: boolean
+                            stackTrace:
+                              description: |-
+                                Should record the `code.stacktrace` attribute.
+                                if unset, the value will resolve from other relevant rules, or fallback to false
+                              type: boolean
+                          type: object
                         headSampling:
                           description: |-
                             HeadSamplingConfig is a set sampling rules.
                             This config currently only applies to root spans.
                             In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
                           properties:
+                            dryRun:
+                              description: |-
+                                If true, the sampling decision will be made in dry-run mode.
+                                When dry-run is enabled, the sampling decision will be made but the trace will not be dropped.
+                                This is useful to evaluate the sampling decision before actually committing to it.
+                                2 additional attributes will be set on the spans:
+                                - odigos.sampling.dry_run: true
+                                - odigos.sampling.dry_run.kept: true if the trace would have been kept, false if it would have been dropped.
+                              type: boolean
                             fallbackFraction:
                               default: 1
                               description: |-

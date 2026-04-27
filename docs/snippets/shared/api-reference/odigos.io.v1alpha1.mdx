@@ -835,6 +835,17 @@ In the Future we might add another level of configuration base on the parent spa
    <p>configuration for payload collection for this container.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>codeAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CodeAttributes"><code>instrumentationrules.CodeAttributes</code></a>
+</td>
+<td>
+   <p>configuration for code attributes collection for this container.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -1976,6 +1987,24 @@ If not specified, defaults to &quot;all&quot;.</p>
 <tbody>
 
 
+<tr>
+<td>
+<code>dryRun</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>If true, the sampling decision will be made in dry-run mode.
+When dry-run is enabled, the sampling decision will be made but the trace will not be dropped.
+This is useful to evaluate the sampling decision before actually committing to it.
+2 additional attributes will be set on the spans:</p>
+<ul>
+<li>odigos.sampling.dry_run: true</li>
+<li>odigos.sampling.dry_run.kept: true if the trace would have been kept, false if it would have been dropped.</li>
+</ul>
+</td>
+</tr>
 <tr>
 <td>
 <code>noisyOperations</code> <B>[Required]</B>

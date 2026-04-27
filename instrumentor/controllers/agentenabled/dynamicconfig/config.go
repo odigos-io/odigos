@@ -65,7 +65,12 @@ func calculateTracesConfig(
 	// use head/tail sampling based on the distro support.
 	if len(noisyOps) > 0 {
 		if traces.DistroSupportsHeadSampling(d) {
+			dryRun := false
+			if effectiveConfig.Sampling != nil && effectiveConfig.Sampling.DryRun != nil {
+				dryRun = *effectiveConfig.Sampling.DryRun
+			}
 			agentConfig.HeadSampling = &odigosv1.HeadSamplingConfig{
+				DryRun:          dryRun,
 				NoisyOperations: noisyOps,
 			}
 		} else {
@@ -91,20 +96,17 @@ func calculateTracesConfig(
 	}
 
 	// Headers Collection - Agent only (not applicable to collector)
-	if traces.DistroSupportsTracesHeadersCollection(d) {
-		agentConfig.HeadersCollection = traces.CalculateHeaderCollectionConfig(d, irls)
-	}
+	agentConfig.HeadersCollection = traces.CalculateHeaderCollectionConfig(d, irls)
 
 	// Span Renamer
 	// TODO: add support to do it in the collector
-	if traces.DistroSupportsTracesSpanRenamer(d) {
-		agentConfig.SpanRenamer = traces.CalculateSpanRenamerConfig(agentLevelActions, runtimeDetails.Language)
-	}
+	agentConfig.SpanRenamer = traces.CalculateSpanRenamerConfig(d, agentLevelActions, runtimeDetails.Language)
 
 	// Payload Collection - Agent only (not applicable to collector)
-	if traces.DistroSupportsTracesPayloadCollection(d) {
-		agentConfig.PayloadCollection = traces.CalculatePayloadCollectionConfig(d, irls)
-	}
+	agentConfig.PayloadCollection = traces.CalculatePayloadCollectionConfig(d, irls)
+
+	// Code Attributes - Agent only (not applicable to collector)
+	agentConfig.CodeAttributes = traces.CalculateCodeAttributesConfig(d, irls)
 
 	return agentConfig, collectorConfig, nil
 }
@@ -125,6 +127,9 @@ func calculateMetricsConfig(
 		}
 		metricsConfig.SpanMetrics = agentSpanMetricsConfig
 	}
+
+	// Runtime Metrics for supported distros
+	metricsConfig.RuntimeMetrics = metrics.CalculateAgentRuntimeMetricsConfig(d, effectiveConfig)
 
 	return metricsConfig, nil
 }

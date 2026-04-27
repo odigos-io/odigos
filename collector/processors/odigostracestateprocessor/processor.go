@@ -68,6 +68,15 @@ func (p *traceStateProcessor) processSpanTraceState(span ptrace.Span) {
 			if p.traceDecidingRuleEnabled {
 				span.Attributes().PutStr(odigosattributes.SamplingTraceDecidingRuleId, value)
 			}
+		case "dry":
+			span.Attributes().PutBool(odigosattributes.SamplingDryRun, true)
+
+			switch value {
+			case "t":
+				span.Attributes().PutBool(odigosattributes.SamplingTraceKept, true)
+			case "f":
+				span.Attributes().PutBool(odigosattributes.SamplingTraceKept, false)
+			}
 		}
 	}
 }

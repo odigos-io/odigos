@@ -124,6 +124,7 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 		if (ir.Spec.OtelDistros != nil) ||
 			(ir.Spec.TraceConfig != nil && ir.Spec.TraceConfig.Disabled != nil) ||
 			(ir.Spec.PayloadCollection != nil) ||
+			(ir.Spec.CodeAttributes != nil) ||
 			(ir.Spec.HeadersCollection != nil ||
 				ir.Spec.HeadSamplingFallbackFraction != nil) {
 

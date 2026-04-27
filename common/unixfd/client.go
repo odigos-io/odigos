@@ -1,6 +1,7 @@
 package unixfd
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"net"
@@ -11,6 +12,8 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 )
+
+const reconnectBackoff = 2 * time.Second
 
 // ConnectAndListen establishes a connection to the odiglet's Unix socket and retrieves a file descriptor (FD)
 // for the specified eBPF map type. The provided onFD callback is invoked only when a new FD is received,
@@ -30,9 +33,8 @@ func ConnectAndListen(ctx context.Context, socketPath string, requestType string
 		if err != nil {
 			// Connection attempt failed—odiglet may be down or in the process of restarting.
 			// Retry the connection after a short delay.
-			sleepTime := 2 * time.Second
-			logger.Info("Waiting for odiglet unix socket to be ready to receive FD", zap.Error(err), zap.Duration("sleepTime", sleepTime))
-			time.Sleep(sleepTime)
+			logger.Info("Waiting for odiglet unix socket to be ready to receive FD", zap.Error(err), zap.Duration("sleepTime", reconnectBackoff))
+			time.Sleep(reconnectBackoff)
 			continue
 		}
 
@@ -83,9 +85,8 @@ func ConnectAndListenMulti(ctx context.Context, socketPath string, requestType s
 
 		fds, err := connectAndGetFDs(ctx, socketPath, requestType)
 		if err != nil {
-			sleepTime := 2 * time.Second
-			logger.Info("Waiting for odiglet unix socket to be ready to receive FDs", zap.Error(err), zap.Duration("sleepTime", sleepTime))
-			time.Sleep(sleepTime)
+			logger.Info("Waiting for odiglet unix socket to be ready to receive FDs", zap.Error(err), zap.Duration("sleepTime", reconnectBackoff))
+			time.Sleep(reconnectBackoff)
 			continue
 		}
 
@@ -102,6 +103,65 @@ func ConnectAndListenMulti(ctx context.Context, socketPath string, requestType s
 			continue
 		}
 	}
+}
+
+// ConnectAndListenLogs receives the logs ring buffer FD and streams attribute
+// events over a persistent connection. Reconnects automatically on disconnect.
+func ConnectAndListenLogs(ctx context.Context, socketPath string, logger *zap.Logger, onFD func(fd int), onAttr func(line string)) error {
+	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		err := connectLogsSession(ctx, socketPath, onFD, onAttr)
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		// Session ended (server disconnected or error) — retry after backoff.
+		logger.Info("Logs connection lost, reconnecting", zap.Error(err), zap.Duration("backoff", reconnectBackoff))
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(reconnectBackoff):
+		}
+	}
+}
+
+func connectLogsSession(ctx context.Context, socketPath string, onFD func(fd int), onAttr func(line string)) error {
+	var d net.Dialer
+	conn, err := d.DialContext(ctx, "unix", socketPath)
+	if err != nil {
+		return fmt.Errorf("dial: %w", err)
+	}
+	uc := conn.(*net.UnixConn)
+	defer func() { _ = uc.Close() }()
+
+	// Close the connection when the context is canceled to unblock scanner.Scan().
+	go func() {
+		<-ctx.Done()
+		_ = uc.Close()
+	}()
+
+	if _, err := uc.Write([]byte(ReqGetLogsFD)); err != nil {
+		return fmt.Errorf("write request: %w", err)
+	}
+
+	fds, err := recvFDs(uc)
+	if err != nil {
+		return fmt.Errorf("recv fds: %w", err)
+	}
+	if len(fds) == 0 {
+		return fmt.Errorf("no fds received")
+	}
+
+	onFD(fds[0])
+
+	scanner := bufio.NewScanner(uc)
+	for scanner.Scan() {
+		onAttr(scanner.Text())
+	}
+	return scanner.Err()
 }
 
 // connectAndGetFDs makes a single connection, gets multiple FDs, and closes connection
