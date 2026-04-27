@@ -1,4 +1,4 @@
-package category
+package costreduction
 
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -12,7 +12,7 @@ import (
 
 // EvaluateCostReductionOperations matches cost-reduction rules on each span, sets per-span attributes,
 // aggregates trace-level matches, and returns whether a non-disabled deciding rule applies.
-func EvaluateCostReductionOperations(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) (bool, *commonapisampling.CostReductionRule) {
+func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) (bool, *commonapisampling.CostReductionRule) {
 	matchingRules := map[string]*commonapisampling.CostReductionRule{}
 
 	rss := trace.ResourceSpans()

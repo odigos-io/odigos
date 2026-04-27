@@ -1,8 +1,9 @@
-package category
+package noisy
 
 import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 )
@@ -10,7 +11,7 @@ import (
 // givin a root span for a trace, and a list of noisy operation sampling rules,
 // evaluate if the trace belongs to the noisy operations category,
 // and return the "matching rule" - e.g. the rule with the least percentage.
-func EvaluateNoisyOperations(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperation) (bool, *commonapisampling.NoisyOperation) {
+func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperation) (bool, *commonapisampling.NoisyOperation) {
 
 	// aggregate the matching rules in a list.
 	// there should be very few, so the length is expected to be 0 almost always,
@@ -19,7 +20,7 @@ func EvaluateNoisyOperations(span ptrace.Span, noisyOperations []commonapisampli
 
 	for _, noisyOperation := range noisyOperations {
 
-		currentPercentage := GetPercentageOrDefault0(noisyOperation.PercentageAtMost)
+		currentPercentage := category.GetPercentageOrDefault0(noisyOperation.PercentageAtMost)
 
 		// shortcut - we are only interested in the least percentage rule,
 		// so avoid checking when unnecessary.

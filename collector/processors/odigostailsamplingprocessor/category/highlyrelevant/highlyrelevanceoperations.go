@@ -1,20 +1,21 @@
-package category
+package highlyrelevant
 
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/collector"
 	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
-// EvaluateHighlyRelevantOperations evaluates:
+// Evaluate:
 // - checks all highly-relevant tail-sampling rules across all spans in the trace for matches,
 // - compute a deciding rule based on the rules that matched,
 // - returns wether this category matched, and the deciding rule if it did.
-func EvaluateHighlyRelevantOperations(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) (bool, *commonapisampling.HighlyRelevantOperation) {
+func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) (bool, *commonapisampling.HighlyRelevantOperation) {
 	matchingRules := map[string]*commonapisampling.HighlyRelevantOperation{}
 
 	rss := trace.ResourceSpans()
@@ -108,7 +109,7 @@ func calculateDecidingRule(matchingRules map[string]*commonapisampling.HighlyRel
 		if matchingRule.Disabled {
 			continue
 		}
-		percentage := GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
+		percentage := category.GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
 
 		// once we hit maximum, no point in keeping iterating.
 		if percentage == 100.0 {
@@ -127,5 +128,5 @@ func calculateDecidingRule(matchingRules map[string]*commonapisampling.HighlyRel
 func setHighlyRelevantRuleAttributesOnSpan(span ptrace.Span, rule *commonapisampling.HighlyRelevantOperation) {
 	span.Attributes().PutStr(odigosattributes.SamplingSpanMatchingRuleId, rule.Id)
 	span.Attributes().PutStr(odigosattributes.SamplingSpanMatchingRuleName, rule.Name)
-	span.Attributes().PutDouble(odigosattributes.SamplingSpanMatchingRuleKeepPercentage, GetPercentageOrDefault100(rule.PercentageAtLeast))
+	span.Attributes().PutDouble(odigosattributes.SamplingSpanMatchingRuleKeepPercentage, category.GetPercentageOrDefault100(rule.PercentageAtLeast))
 }
