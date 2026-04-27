@@ -11,6 +11,10 @@ func DistroSupportsTracesHeadersCollection(distro *distro.OtelDistro) bool {
 
 func CalculateHeaderCollectionConfig(distro *distro.OtelDistro, irls *[]odigosv1.InstrumentationRule) *odigosv1.HeadersCollectionConfig {
 
+	if !DistroSupportsTracesHeadersCollection(distro) {
+		return nil
+	}
+
 	// http headers collection configuration
 	headerKeysToCollectHttp := []string{}
 	for _, irl := range *irls {

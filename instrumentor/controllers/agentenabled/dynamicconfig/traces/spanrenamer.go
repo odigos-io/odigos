@@ -11,7 +11,11 @@ func DistroSupportsTracesSpanRenamer(distro *distro.OtelDistro) bool {
 	return distro.Traces != nil && distro.Traces.SpanRenamer != nil && distro.Traces.SpanRenamer.Supported
 }
 
-func CalculateSpanRenamerConfig(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage) *odigosv1.SpanRenamerConfig {
+func CalculateSpanRenamerConfig(distro *distro.OtelDistro, agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage) *odigosv1.SpanRenamerConfig {
+
+	if !DistroSupportsTracesSpanRenamer(distro) {
+		return nil
+	}
 
 	gotRenamingConfig := false
 	scopeRulesMap := map[string]odigosv1.SpanRenamerScopeRules{}
