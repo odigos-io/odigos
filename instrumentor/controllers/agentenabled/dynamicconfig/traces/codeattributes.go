@@ -4,7 +4,6 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/distros/distro"
-	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 )
 
 func CalculateCodeAttributesConfig(distro *distro.OtelDistro, irls *[]odigosv1.InstrumentationRule) *instrumentationrules.CodeAttributes {
@@ -34,12 +33,25 @@ func mergeCodeAttributesRules(rule1 *instrumentationrules.CodeAttributes, rule2 
 	}
 
 	mergedRules := instrumentationrules.CodeAttributes{}
-	mergedRules.Column = instrumentationconfig.Merge2RuleBooleans(rule1.Column, rule2.Column)
-	mergedRules.FilePath = instrumentationconfig.Merge2RuleBooleans(rule1.FilePath, rule2.FilePath)
-	mergedRules.Function = instrumentationconfig.Merge2RuleBooleans(rule1.Function, rule2.Function)
-	mergedRules.LineNumber = instrumentationconfig.Merge2RuleBooleans(rule1.LineNumber, rule2.LineNumber)
-	mergedRules.Namespace = instrumentationconfig.Merge2RuleBooleans(rule1.Namespace, rule2.Namespace)
-	mergedRules.Stacktrace = instrumentationconfig.Merge2RuleBooleans(rule1.Stacktrace, rule2.Stacktrace)
+	mergedRules.Column = merge2RuleBooleans(rule1.Column, rule2.Column)
+	mergedRules.FilePath = merge2RuleBooleans(rule1.FilePath, rule2.FilePath)
+	mergedRules.Function = merge2RuleBooleans(rule1.Function, rule2.Function)
+	mergedRules.LineNumber = merge2RuleBooleans(rule1.LineNumber, rule2.LineNumber)
+	mergedRules.Namespace = merge2RuleBooleans(rule1.Namespace, rule2.Namespace)
+	mergedRules.Stacktrace = merge2RuleBooleans(rule1.Stacktrace, rule2.Stacktrace)
 
 	return &mergedRules
+}
+
+func merge2RuleBooleans(value1 *bool, value2 *bool) *bool {
+	if value1 == nil {
+		return value2
+	} else if value2 == nil {
+		return value1
+	}
+	return boolPtr(*value1 || *value2)
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
