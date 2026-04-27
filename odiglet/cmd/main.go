@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"os"
 
@@ -69,7 +68,7 @@ func main() {
 
 	ctx := signals.SetupSignalHandler()
 	instrumentationManagerOptions := ebpf.InstrumentationManagerOptions{
-		Factories:                  ebpfInstrumentationFactories(ctx),
+		Factories:                  ebpfInstrumentationFactories(),
 		DistributionGetter:         dg,
 		OdigletHealthProbeBindPort: healthProbeBindPort,
 	}
@@ -84,9 +83,9 @@ func main() {
 	logger.Info("odiglet exiting")
 }
 
-func ebpfInstrumentationFactories(ctx context.Context) map[string]commonInstrumentation.Factory {
+func ebpfInstrumentationFactories() map[string]commonInstrumentation.Factory {
 	return map[string]commonInstrumentation.Factory{
 		"golang-community":                   sdks.NewGoInstrumentationFactory(),
-		"opentelemetry-ebpf-instrumentation": obi.NewOBIInstrumentationFactory(ctx),
+		"opentelemetry-ebpf-instrumentation": obi.NewOBIInstrumentationFactory(),
 	}
 }

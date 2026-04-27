@@ -2,43 +2,23 @@
 
 ## What you need
 
-When building **odiglet**, **bpf2go** (via **`go generate`**) adds generated **`.go`** files (and **`.o`** objects) next to `go.opentelemetry.io/obi` package sources. Those files must be on disk **before** `go build` treats the package as complete.
+For **OBI**, Odigos uses the upstream **source-generated** release (see **`setup-obi`**) instead of running **`go generate`** for that module. For other eBPF deps, **bpf2go** (via upstream **`make generate`**) can still add **`.go`** / **`.o`** files; those must be on disk before **`go build`**.
 
 The Go command can use a **module file index** to avoid re-reading every source file on each invocation. **New `.go` files** added *after* the module was first indexed are not always reflected in that index, so `go build` can compile a package **without** the generated Go sources and fail with `undefined: Bpf…` (or similar) even though the files exist on disk.
 
 **`go build -a`** does *not* fix that by itself: it only invalidates the **build** (compile) cache, not the module file index; see *Why this affects…* below.
 
-## Copy method (current Docker / CI build)
+## Docker / CI build (same **`Makefile`** as local)
 
-The **`odiglet/Dockerfile`** does **not** run **`go generate`** for OBI directly inside the read-only-ish module cache first. It uses a **copy → generate → overlay** flow:
+Odigos follows [open-telemetry/opentelemetry-ebpf-instrumentation#1378](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/pull/1378): each OBI release publishes **`obi-<tag>-source-generated.tar.gz`**. There is **no** separate OBI stage in **`odiglet/Dockerfile`**: the **`builder`** stage runs **`make build-odiglet`** (**`setup-obi`**, then **`generate`** for non-OBI libs, then **`go build`**). The **CSI** image builds **`./cmd/csi-driver`** only and does not run **`setup-obi`**. The image build uses the Makefile default **`OBI_VERSION`**; bump that (and **`go.mod`** **`require go.opentelemetry.io/obi`**) when upgrading OBI.
 
-1. **`builder`**: **`go mod download`**, then **`cp -a`** the resolved OBI tree to **`/tmp/obi-module`** (full module layout so **`go list`** / **`go generate`** work).
-2. **`obi-generate`**: image [**`obi-generator`**](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/pkgs/container/obi-generator) runs **`go generate ./...`** on that copy under **`/src`** (clang/llvm + bpf2go provided by the image).
-3. **`odiglet-build`**: **`COPY --from=obi-generate /src /tmp/obi-generated`**, then **`go mod download`**, then **`chmod`** + **`cp`** the generated tree **into** the real OBI path under [`$GOMODCACHE`](https://go.dev/ref/mod#module-cache) (paths from **`go list -m -f '{{.Dir}}'`** — use **inline backticks** in **`RUN`**, not **`$$VAR`**, [see `odiglet/Dockerfile`](https://github.com/odigos-io/odigos/blob/main/odiglet/Dockerfile)).
-4. **`SKIP_OBI_GENERATE=1 make build-odiglet`**: the Makefile skips OBI’s **`go generate`** because the cache already contains bpf2go outputs.
-
-That ordering keeps “mutate the tree in **`$GOMODCACHE`**” to a **single overlay** right before compile, instead of generating in place. **Why order matters for the module index:** the [module index](https://github.com/golang/go/blob/master/src/cmd/go/internal/modindex/scan.go) reflects whatever **`.go`** files exist when **`indexModule`** first walks that module root; the mmap lives under [**`$GOCACHE`**](https://go.dev/doc/gocache). If the first walk happens **after** the overlay has written all bpf2go **`.go`** outputs, the indexed package lists can include them. The fragile pattern is a **single `RUN`** that runs **`go`** (e.g. **`go list`**, **`go mod download`**) **before** **`go generate`** against the **same** module directory, then adds generated files in that same layer—**`go build`** can still use a **pre-generate** snapshot of the index. Splitting **generate** onto **`/tmp`** and overlaying in a dedicated step avoids that. You do **not** need **`replace`** or **`vendor`** for OBI if you keep this separation (they are other ways to leave the plain **`path@version`** mod-cache layout).
-
-Persistent [BuildKit cache](https://docs.docker.com/build/cache/optimize/) mounts on **`/go/pkg`** and **`$GOCACHE`** can still surface **stale** index data across layers in theory; the odiglet **Makefile does not set `GODEBUG`** so CI/Docker can validate the copy flow on its own. If you hit **`undefined: Bpf…`** or similar after mutating the module cache, try the optional **`goindex=0`** workaround in the next section.
+Locally: **`make build-odiglet`** / **`make setup-obi`**, optional **`OBI_VERSION=v…`**.
 
 **Related ideas**
 
 - [Module cache layout and immutability](https://go.dev/ref/mod#module-cache)
 - [Organizing a Go module](https://go.dev/doc/modules/layout) (where generated `.go` must live to be part of a package)
 - [bpf2go](https://github.com/cilium/ebpf/tree/master/cmd/bpf2go) (command that emits the `*_bpfel.go` sources and the embedded `.o`)
-
-## Optional: `GODEBUG=goindex=0` (manual workaround)
-
-You can **turn off** the module file index for a shell session: export [`GODEBUG=goindex=0`](https://go.dev/doc/godebug) (and merge with any other flags you need, comma-separated) so **`go build`** / **`go list`** rescans module source trees instead of trusting a possibly stale mmap’d index (see [`load/pkg.go`](https://github.com/golang/go/blob/master/src/cmd/go/internal/load/pkg.go), [`modindex/read.go`](https://github.com/golang/go/blob/master/src/cmd/go/internal/modindex/read.go)).
-
-That is a **correctness-first** switch, not a structural fix. The **copy method** above is meant to avoid needing it for normal Docker/CI builds.
-
-**Downsides of `goindex=0`**
-
-- **Slower `go` work**: every load that would use the index walks the module tree from disk again instead of using the cached index under **`$GOCACHE`**.
-- **More I/O**: large modules or many dependencies multiply directory reads and stat traffic.
-- **Cold / CI cost**: repeated rescans hurt worst on clean caches and big graphs; you pay the “full scan” price on paths that the index was meant to make cheap.
-- **Hides ordering bugs**: builds can succeed even when generate-vs-index ordering is wrong, which makes it harder to notice Dockerfile or cache issues until someone runs **without** that flag.
 
 ## Why this affects generated **`.go`** and not the **`.o`**
 

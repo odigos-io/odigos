@@ -18,7 +18,6 @@ import (
 // DynamicPIDSelector while a single OBI instrumenter runs in the background.
 // Requires OBI with DynamicPIDSelector support (e.g. go.opentelemetry.io/obi from main after PR 1388).
 type OBIInstrumentationFactory struct {
-	ctx          context.Context
 	logger       *commonlogger.OdigosLogger
 	obiCtx       context.Context
 	obiCtxCancel context.CancelFunc
@@ -29,9 +28,8 @@ type OBIInstrumentationFactory struct {
 
 // NewOBIInstrumentationFactory returns a factory that uses the OBI SDK with a dynamic PID selector.
 // The OBI instrumenter starts on first CreateInstrumentation; PIDs are added/removed via the selector.
-func NewOBIInstrumentationFactory(ctx context.Context) *OBIInstrumentationFactory {
+func NewOBIInstrumentationFactory() *OBIInstrumentationFactory {
 	return &OBIInstrumentationFactory{
-		ctx:      ctx,
 		selector: discover.NewDynamicPIDSelector(),
 		obiCfg:   obiConfigForOdigos(),
 		logger:   commonlogger.LoggerCompat().With("subsystem", "opentelemetry-ebpf-instrumentation"),
@@ -53,7 +51,7 @@ func obiConfigForOdigos() *obi.Config {
 // and returns an obiInstrumentation that allows adding/removing this PID using the dynamic selector.
 func (f *OBIInstrumentationFactory) CreateInstrumentation(ctx context.Context, pid int, settings instrumentation.Settings) (instrumentation.Instrumentation, error) {
 	if f.obiCtx == nil {
-		obiCtx, obiCtxCancel := context.WithCancel(f.ctx)
+		obiCtx, obiCtxCancel := context.WithCancel(ctx)
 		f.obiCtx = obiCtx
 		f.obiCtxCancel = obiCtxCancel
 
