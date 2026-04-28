@@ -20,6 +20,11 @@ func resolveDistroByOverride(overwriteDistroName string, distroGetter *distros.G
 		}
 	}
 
+	// Wildcard-language distros skip container language match when explicitly selected.
+	if common.IsProgrammingLanguageWildcard(distro.Language) {
+		return distro, nil
+	}
+
 	// verify the distro matches the language, since it might be overridden by the container override.
 	if distro.Language != containerLanguage {
 		return nil, &odigosv1.AgentDisabledInfo{
@@ -79,6 +84,9 @@ func CalculateDefaultDistroPerLanguage(defaultDistros map[common.ProgrammingLang
 			if distro == nil {
 				continue
 			}
+			if common.IsProgrammingLanguageWildcard(distro.Language) {
+				continue
+			}
 
 			lang := distro.Language
 			distrosPerLanguage[lang] = distroName
@@ -133,8 +141,9 @@ func ResolveDistroForContainer(
 		return nil, disabledInfo
 	}
 
-	// check if the runtime version is in supported range if it is provided
-	if runtimeDetails.RuntimeVersion != "" && len(d.RuntimeEnvironments) == 1 {
+	// check if the runtime version is in supported range if it is provided.
+	// Wildcard-language distros (e.g. OBI) skip semver checks; supportedVersions may be '*'.
+	if runtimeDetails.RuntimeVersion != "" && len(d.RuntimeEnvironments) == 1 && !common.IsProgrammingLanguageWildcard(d.Language) {
 		constraint, err := version.NewConstraint(d.RuntimeEnvironments[0].SupportedVersions)
 		if err != nil {
 			return nil, &odigosv1.AgentDisabledInfo{

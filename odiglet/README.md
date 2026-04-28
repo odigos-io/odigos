@@ -1,5 +1,7 @@
 # Odiglet
 
+Building the odiglet binary: **`make build-odiglet`** runs **`setup-obi`** first (downloads/verifies **`obi-$(OBI_VERSION)-source-generated`**, **`go mod replace`**; default **`OBI_VERSION`** matches **`go.opentelemetry.io/obi`** in **`go.mod`**), then **`go generate`** for other eBPF deps and **`go build`**. The **`odiglet/Dockerfile`** uses the same **`make build-odiglet`** / **`make setup-obi`** (no separate OBI image stage). See [docs/obi-bpf2go-module-cache.md](docs/obi-bpf2go-module-cache.md) and [PR #1378](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/pull/1378).
+
 ## Development
 One of Odiglet's jobs is to manage the different eBPF instrumentations. Loading an eBPF instrumentation requires having compiled eBPF programs (.o files). This compilation is taking place in Odiglet's Dockerfile and it requires the auto instrumentation code. This makes debugging locally on a non-linux system different compared to the other Odigos components.
 Assuming a setup with an active kind cluster with Odigos installed:
