@@ -11,6 +11,11 @@ import (
 	"go.uber.org/zap"
 )
 
+var RELEVANT_SPAN_ATTRIBUTES = map[string]struct{}{
+	"db.statement":              {},
+	"messaging.message.payload": {},
+}
+
 type extractor struct {
 	regex  *regexp.Regexp
 	target string
@@ -72,6 +77,10 @@ func (p *extractAttributeProcessor) processTraces(_ context.Context, traces ptra
 
 func (p *extractAttributeProcessor) processSpan(span ptrace.Span) {
 	for _, e := range p.extractors {
+		// Don't override an attribute that already exists on the span
+		if _, exists := span.Attributes().Get(e.target); exists {
+			continue
+		}
 		if value, ok := extractFromAttributes(span, e.regex); ok {
 			p.logger.Debug("extraction matched",
 				zap.String("target", e.target),
@@ -80,23 +89,22 @@ func (p *extractAttributeProcessor) processSpan(span ptrace.Span) {
 				zap.Stringer("spanId", span.SpanID()),
 			)
 			span.Attributes().PutStr(e.target, value)
-		} else {
-			p.logger.Debug("extraction did not match any attribute",
-				zap.String("target", e.target),
-				zap.String("regex", e.regex.String()),
-				zap.Stringer("spanId", span.SpanID()),
-			)
 		}
 	}
 }
 
 // extractFromAttributes scans the span's string-valued attributes and returns the first capture group re produces.
 func extractFromAttributes(span ptrace.Span, re *regexp.Regexp) (string, bool) {
+
 	var (
 		result string
 		found  bool
 	)
-	span.Attributes().Range(func(_ string, value pcommon.Value) bool {
+	span.Attributes().Range(func(key string, value pcommon.Value) bool {
+		// Check if the key is in our relevant attributes array
+		if _, found := RELEVANT_SPAN_ATTRIBUTES[key]; !found {
+			return true
+		}
 		if value.Type() != pcommon.ValueTypeStr {
 			return true
 		}
@@ -121,8 +129,19 @@ func buildExtractionRegex(key string, format DataFormat) (*regexp.Regexp, error)
 	escapedKey := regexp.QuoteMeta(key)
 	switch format {
 	case FormatJSON: // Also works for SQL
+		// Examples (key = "user_id"):
+		//   JSON quoted:    {"user_id": "abc123", "name": "foo"}      -> captures "abc123"
+		//   JSON unquoted:  {user_id: 42, name: "foo"}                -> captures "42"
+		//   SQL equals:     WHERE user_id = '42' AND status = 'ok'    -> captures "42"
+		//   SQL no spaces:  WHERE user_id=42                          -> captures "42"
+		// Anchored on a boundary so "my_user_id" does NOT match when key is "user_id".
 		return regexp.MustCompile(`(?:^|[\s,{("'])["']?` + escapedKey + `["']?\s*[:=]\s*["']?([^"'\s,;)}]+)`), nil
 	case FormatURL:
+		// Examples (key = "orders"):
+		//   Path:           /api/v1/orders/abc-123                     -> captures "abc-123"
+		//   Full URL:       https://example.com/orders/42?foo=bar      -> captures "42"
+		//   Relative:       orders/42/items                            -> captures "42"
+		// Stops at the next "/", whitespace, "?", "&", "#", or quote so query strings and fragments are excluded.
 		return regexp.MustCompile(`(?:^|/)` + escapedKey + `/([^/\s"?&#]+)`), nil
 	default:
 		return nil, fmt.Errorf("unsupported data_format %q", format)
