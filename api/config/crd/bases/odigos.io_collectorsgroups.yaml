@@ -231,6 +231,11 @@ spec:
                         items:
                           type: string
                         type: array
+                      spanMetricsMode:
+                        description: |-
+                          Controls how span metrics interact with head-sampling decisions.
+                          See sampling.SpanMetricsMode for possible values.
+                        type: string
                     type: object
                 type: object
               nodeSelector:
