@@ -1397,6 +1397,18 @@ metricsSources:
     # @schema
     # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
 
+    # @schema
+    # description: |-
+    #   Controls how span metrics interact with head-sampling decisions.
+    #   Possible values:
+    #     - "sampled-spans-only" (default): metrics are computed only from sampled spans;
+    #       dropped spans are discarded at the agent level.
+    #     - "record": all spans are forwarded to the collector for metric computation,
+    #       then dropped spans are deleted in the pipeline (higher resource usage).
+    # enum: [sampled-spans-only, record]
+    # @schema
+    # spanMetricsMode: sampled-spans-only
+
   # @schema
   # description: Configuration for Odigos own metrics collection.
   # @schema
@@ -1503,21 +1515,6 @@ sampling:
   #   With spanSamplingAttributes enabled, dry-run decisions are also visible as span attributes on each span.
   # @schema
   # dryRun: true
-
-  # @schema
-  # description: |-
-  #   Configuration for head sampling.
-  # @schema
-  headSampling:
-
-    # @schema
-    # description: |-
-    #   If true, the sampling decision is recorded on spans but the spans are dropped
-    #   in the data collection pipeline rather than at the agent level.
-    #   This is useful when span metrics are needed, since spans remain available for metric computation.
-    #   The tradeoff is higher resource usage in the collector, as spans are not discarded early at the agent.
-    # @schema
-    # recordSpans: false
 
   # @schema
   # description: |-

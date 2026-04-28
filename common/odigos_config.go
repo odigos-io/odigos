@@ -318,6 +318,10 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// This list controls which resource attributes are included in the metric stream identity.
 	// These attributes are used to determines how span metrics are grouped.
 	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
+
+	// Controls how span metrics interact with head-sampling decisions.
+	// See sampling.SpanMetricsMode for possible values.
+	SpanMetricsMode *sampling.SpanMetricsMode `json:"spanMetricsMode,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -477,9 +481,6 @@ type SamplingConfiguration struct {
 
 	// Configuration for tail sampling.
 	TailSampling *sampling.TailSamplingConfiguration `json:"tailSampling,omitempty"`
-
-	// Configuration for head sampling.
-	HeadSampling *sampling.HeadSamplingConfiguration `json:"headSampling,omitempty"`
 
 	// Configuration for Odigos auto-kubelet-probes detection and sampling.
 	K8sHealthProbesSampling *K8sHealthProbesSamplingConfiguration `json:"k8sHealthProbesSampling,omitempty"`

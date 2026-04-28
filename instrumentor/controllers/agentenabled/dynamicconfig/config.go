@@ -69,23 +69,22 @@ func calculateTracesConfig(
 	if len(noisyOps) > 0 {
 		if traces.DistroSupportsHeadSampling(d) {
 			dryRun := false
-			recordSpans := false
-			if effectiveConfig.Sampling != nil {
-				if effectiveConfig.Sampling.DryRun != nil {
-					dryRun = *effectiveConfig.Sampling.DryRun
-				}
+			spanMetricsMode := commonapisampling.SpanMetricsModeSampledSpansOnly
+			if effectiveConfig.Sampling != nil && effectiveConfig.Sampling.DryRun != nil {
+				dryRun = *effectiveConfig.Sampling.DryRun
+			}
 
-				spanMetricsEnabled := nodeCollectorsGroup.Spec.Metrics.SpanMetrics == nil || nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled == nil || !*nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled
-				metricsSignalEnabled := slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal)
-				headSamplingRecordSpans := effectiveConfig.Sampling.HeadSampling != nil && effectiveConfig.Sampling.HeadSampling.RecordSpans != nil && *effectiveConfig.Sampling.HeadSampling.RecordSpans
-
-				if spanMetricsEnabled && metricsSignalEnabled && headSamplingRecordSpans {
-					recordSpans = true
-				}
+			spanMetricsEnabled := nodeCollectorsGroup.Spec.Metrics.SpanMetrics == nil || nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled == nil || !*nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled
+			metricsSignalEnabled := slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal)
+			configuredMode := effectiveConfig.MetricsSources != nil &&
+				effectiveConfig.MetricsSources.SpanMetrics != nil &&
+				effectiveConfig.MetricsSources.SpanMetrics.SpanMetricsMode != nil
+			if spanMetricsEnabled && metricsSignalEnabled && configuredMode {
+				spanMetricsMode = *effectiveConfig.MetricsSources.SpanMetrics.SpanMetricsMode
 			}
 			agentConfig.HeadSampling = &odigosv1.HeadSamplingConfig{
 				DryRun:          dryRun,
-				RecordSpans:     recordSpans,
+				SpanMetricsMode: spanMetricsMode,
 				NoisyOperations: noisyOps,
 			}
 		} else {

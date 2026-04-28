@@ -272,16 +272,10 @@ data:
     imagePullSecrets:
       {{- toYaml .Values.imagePullSecrets | nindent 6 }}
     {{- end }}
-    {{- if or .Values.sampling.dryRun .Values.sampling.headSampling .Values.sampling.spanSamplingAttributes .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
+    {{- if or .Values.sampling.dryRun .Values.sampling.spanSamplingAttributes .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
     sampling:
       {{- if ne .Values.sampling.dryRun nil }}
       dryRun: {{ .Values.sampling.dryRun }}
-      {{- end }}
-      {{- if .Values.sampling.headSampling }}
-      headSampling:
-        {{- if ne .Values.sampling.headSampling.recordSpans nil }}
-        recordSpans: {{ .Values.sampling.headSampling.recordSpans }}
-        {{- end }}
       {{- end }}
       {{- if .Values.sampling.spanSamplingAttributes }}
       spanSamplingAttributes:

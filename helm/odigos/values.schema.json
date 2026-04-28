@@ -1044,6 +1044,16 @@
               },
               "required": [],
               "title": "resourceMetricsKeyAttributes"
+            },
+            "spanMetricsMode": {
+              "default": "sampled-spans-only",
+              "description": "Controls how span metrics interact with head-sampling decisions.\nPossible values:\n  - \"sampled-spans-only\" (default): metrics are computed only from sampled spans;\n    dropped spans are discarded at the agent level.\n  - \"record\": all spans are forwarded to the collector for metric computation,\n    then dropped spans are deleted in the pipeline (higher resource usage).",
+              "enum": [
+                "sampled-spans-only",
+                "record"
+              ],
+              "required": [],
+              "title": "spanMetricsMode"
             }
           },
           "required": [],
@@ -1798,20 +1808,6 @@
           "description": "Set to true to enable dry run mode for sampling.\nWhen enabled, Odigos runs the sampling logic but does not drop any traces; metrics are still\ncalculated so you can evaluate rule effectiveness before committing to changes that might lose data.\nEach span gets an attribute 'odigos.sampling.dry_run.kept' indicating whether it would be kept or dropped once dry run is off.\nWith spanSamplingAttributes enabled, dry-run decisions are also visible as span attributes on each span.",
           "required": [],
           "title": "dryRun"
-        },
-        "headSampling": {
-          "additionalProperties": false,
-          "description": "Configuration for head sampling.",
-          "properties": {
-            "recordSpans": {
-              "default": "false",
-              "description": "If true, the sampling decision is recorded on spans but the spans are dropped\nin the data collection pipeline rather than at the agent level.\nThis is useful when span metrics are needed, since spans remain available for metric computation.\nThe tradeoff is higher resource usage in the collector, as spans are not discarded early at the agent.",
-              "required": [],
-              "title": "recordSpans"
-            }
-          },
-          "required": [],
-          "title": "headSampling"
         },
         "k8sHealthProbesSampling": {
           "additionalProperties": false,

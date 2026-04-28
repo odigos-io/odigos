@@ -59,10 +59,24 @@ type TailSamplingConfiguration struct {
 	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty" mapstructure:"traceAggregationWaitDuration"`
 }
 
-type HeadSamplingConfiguration struct {
-	// If true, the sampling decision is recorded on spans but the spans are dropped
-	// in the data collection pipeline rather than at the agent level.
-	// This is useful when span metrics are needed, since spans remain available for metric computation.
-	// The tradeoff is higher resource usage in the collector, as spans are not discarded early at the agent.
-	RecordSpans *bool `json:"recordSpans,omitempty" mapstructure:"recordSpans"`
-}
+// SpanMetricsMode determines how span metrics are computed relative to head-sampling decisions.
+type SpanMetricsMode string
+
+const (
+	// SpanMetricsModeSampledSpansOnly computes metrics only from spans that survive sampling.
+	// Dropped spans are discarded at the agent level and never reach the collector.
+	// This is the default and most resource-efficient mode.
+	SpanMetricsModeSampledSpansOnly SpanMetricsMode = "sampled-spans-only"
+
+	// SpanMetricsModeRecord keeps all spans until they reach the data-collection pipeline
+	// so that span metrics are computed from the full, unsampled dataset.
+	// Spans that should be dropped by sampling are still deleted, but in the collector
+	// rather than the agent, which uses more resources.
+	SpanMetricsModeRecord SpanMetricsMode = "record"
+
+	// SpanMetricsModeStatistical is reserved for future use.
+	// In this mode, metrics would be statistically corrected to account for dropped spans,
+	// giving accurate results over large volumes without requiring all spans to be forwarded.
+	// SpanMetricsModeStatistical SpanMetricsMode = "statistical"
+)
+
