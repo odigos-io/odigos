@@ -391,6 +391,9 @@ type AgentTracesConfig struct {
 
 	// configuration for code attributes collection for this container.
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	// custom instrumentation probes for this container.
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.

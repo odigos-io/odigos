@@ -45,6 +45,8 @@ type AgentTracesConfigApplyConfiguration struct {
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 	// configuration for code attributes collection for this container.
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+	// custom instrumentation probes for this container.
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 // AgentTracesConfigApplyConfiguration constructs a declarative configuration of the AgentTracesConfig type for use with
@@ -106,5 +108,13 @@ func (b *AgentTracesConfigApplyConfiguration) WithPayloadCollection(value instru
 // If called multiple times, the CodeAttributes field is set to the value of the last call.
 func (b *AgentTracesConfigApplyConfiguration) WithCodeAttributes(value instrumentationrules.CodeAttributes) *AgentTracesConfigApplyConfiguration {
 	b.CodeAttributes = &value
+	return b
+}
+
+// WithCustomInstrumentations sets the CustomInstrumentations field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the CustomInstrumentations field is set to the value of the last call.
+func (b *AgentTracesConfigApplyConfiguration) WithCustomInstrumentations(value instrumentationrules.CustomInstrumentations) *AgentTracesConfigApplyConfiguration {
+	b.CustomInstrumentations = &value
 	return b
 }
