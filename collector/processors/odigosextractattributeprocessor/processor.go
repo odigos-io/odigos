@@ -13,7 +13,10 @@ import (
 
 var RELEVANT_SPAN_ATTRIBUTES = map[string]struct{}{
 	"db.statement":              {},
+	"db.query.text":             {},
 	"messaging.message.payload": {},
+	"http.request.payload":      {},
+	"http.response.payload":     {},
 }
 
 type extractor struct {
