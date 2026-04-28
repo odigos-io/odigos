@@ -1799,6 +1799,20 @@
           "required": [],
           "title": "dryRun"
         },
+        "headSampling": {
+          "additionalProperties": false,
+          "description": "Configuration for head sampling.",
+          "properties": {
+            "recordSpans": {
+              "default": "false",
+              "description": "If true, the sampling decision is recorded on spans but the spans are dropped in the data collection pipeline rather than at the agent level.\nThis is useful when span metrics are needed, since spans remain available for metric computation.\nThe tradeoff is higher resource usage in the collector, as spans are not discarded early at the agent.",
+              "required": [],
+              "title": "recordSpans"
+            }
+          },
+          "required": [],
+          "title": "headSampling"
+        },
         "k8sHealthProbesSampling": {
           "additionalProperties": false,
           "description": "configuration for odigos auto-kubelet-probes detection and sampling.\nodigos can automatically pick up health probes from the k8s manifest,\nand treat them as \"noisy endpoints\" to be sampled out.\nmost users get little or no value from tracing health probes,\nand it is recommended to enable and use it.\nit will be used with head sampling where the agent support it.\nwhen tail sampling is enabled, the kubelet-health-probes will be sampled out by tail sampler.",

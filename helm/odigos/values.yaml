@@ -1506,6 +1506,21 @@ sampling:
 
   # @schema
   # description: |-
+  #   Configuration for head sampling.
+  # @schema
+  headSampling:
+
+    # @schema
+    # description: |-
+    #   If true, the sampling decision is recorded on spans but the spans are dropped
+    #   in the data collection pipeline rather than at the agent level.
+    #   This is useful when span metrics are needed, since spans remain available for metric computation.
+    #   The tradeoff is higher resource usage in the collector, as spans are not discarded early at the agent.
+    # @schema
+    # recordSpans: true
+
+  # @schema
+  # description: |-
   #   Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
   #   These attributes add context when viewing traces and inspecting costs, so you can understand
   #   how sampling decisions were made for an individual span and apply changes to fine-tune rules.

@@ -478,6 +478,9 @@ type SamplingConfiguration struct {
 	// Configuration for tail sampling.
 	TailSampling *sampling.TailSamplingConfiguration `json:"tailSampling,omitempty"`
 
+	// Configuration for head sampling.
+	HeadSampling *sampling.HeadSamplingConfiguration `json:"headSampling,omitempty"`
+
 	// Configuration for Odigos auto-kubelet-probes detection and sampling.
 	K8sHealthProbesSampling *K8sHealthProbesSamplingConfiguration `json:"k8sHealthProbesSampling,omitempty"`
 }

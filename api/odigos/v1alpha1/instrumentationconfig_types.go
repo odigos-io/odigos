@@ -546,6 +546,12 @@ type HeadSamplingConfig struct {
 	// - odigos.sampling.dry_run.kept: true if the trace would have been kept, false if it would have been dropped.
 	DryRun bool `json:"dryRun,omitempty"`
 
+	// If true, the sampling decision is recorded on spans but the spans are dropped
+	// in the data collection pipeline rather than at the agent level.
+	// This is useful when span metrics are needed, since spans remain available for metric computation.
+	// The tradeoff is higher resource usage in the collector, as spans are not discarded early at the agent.
+	RecordSpans bool `json:"recordSpans,omitempty"`
+
 	// Noisy operations are categories of matchers that are used on the root span.
 	// If match, the fraction is used to determine the sampling decision for the entire trace.
 	// If multiple noisy operations match, the lowest fraction is used.

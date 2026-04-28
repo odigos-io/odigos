@@ -31,6 +31,11 @@ type HeadSamplingConfigApplyConfiguration struct {
 	// - odigos.sampling.dry_run: true
 	// - odigos.sampling.dry_run.kept: true if the trace would have been kept, false if it would have been dropped.
 	DryRun *bool `json:"dryRun,omitempty"`
+	// If true, the sampling decision is recorded on spans but the spans are dropped
+	// in the data collection pipeline rather than at the agent level.
+	// This is useful when span metrics are needed, since spans remain available for metric computation.
+	// The tradeoff is higher resource usage in the collector, as spans are not discarded early at the agent.
+	RecordSpans *bool `json:"recordSpans,omitempty"`
 	// Noisy operations are categories of matchers that are used on the root span.
 	// If match, the fraction is used to determine the sampling decision for the entire trace.
 	// If multiple noisy operations match, the lowest fraction is used.
@@ -51,6 +56,14 @@ func HeadSamplingConfig() *HeadSamplingConfigApplyConfiguration {
 // If called multiple times, the DryRun field is set to the value of the last call.
 func (b *HeadSamplingConfigApplyConfiguration) WithDryRun(value bool) *HeadSamplingConfigApplyConfiguration {
 	b.DryRun = &value
+	return b
+}
+
+// WithRecordSpans sets the RecordSpans field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the RecordSpans field is set to the value of the last call.
+func (b *HeadSamplingConfigApplyConfiguration) WithRecordSpans(value bool) *HeadSamplingConfigApplyConfiguration {
+	b.RecordSpans = &value
 	return b
 }
 

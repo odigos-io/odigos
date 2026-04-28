@@ -58,3 +58,11 @@ type TailSamplingConfiguration struct {
 	// and broken traces due to sampling each trace in few pieces.
 	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty" mapstructure:"traceAggregationWaitDuration"`
 }
+
+type HeadSamplingConfiguration struct {
+	// If true, the sampling decision is recorded on spans but the spans are dropped
+	// in the data collection pipeline rather than at the agent level.
+	// This is useful when span metrics are needed, since spans remain available for metric computation.
+	// The tradeoff is higher resource usage in the collector, as spans are not discarded early at the agent.
+	RecordSpans *bool `json:"recordSpans,omitempty" mapstructure:"recordSpans"`
+}
