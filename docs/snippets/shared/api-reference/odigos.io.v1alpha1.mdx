@@ -2007,16 +2007,20 @@ This is useful to evaluate the sampling decision before actually committing to i
 </tr>
 <tr>
 <td>
-<code>recordSpans</code> <B>[Required]</B>
+<code>spanMetricsMode</code> <B>[Required]</B>
 </td>
 <td>
-<code>bool</code>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#SpanMetricsMode"><code>common/api/sampling.SpanMetricsMode</code></a>
 </td>
 <td>
-   <p>If true, the sampling decision is recorded on spans but the spans are dropped
-in the data collection pipeline rather than at the agent level.
-This is useful when span metrics are needed, since spans remain available for metric computation.
-The tradeoff is higher resource usage in the collector, as spans are not discarded early at the agent.</p>
+   <p>Controls how span metrics interact with head-sampling decisions.
+Possible values:</p>
+<ul>
+<li>&quot;sampled-spans-only&quot; (default): metrics are computed only from sampled spans;
+dropped spans are discarded at the agent level.</li>
+<li>&quot;record&quot;: all spans are forwarded to the collector for metric computation,
+then dropped spans are deleted in the pipeline (higher resource usage).</li>
+</ul>
 </td>
 </tr>
 <tr>
