@@ -46,6 +46,9 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 
 	initialConfig, err := convertToGoInstrumentationConfig(settings.InitialConfig)
 	if err != nil {
+		if shutdownErr := defaultExporter.Shutdown(ctx); shutdownErr != nil {
+			log.Error("failed to shutdown exporter after config error", "error", shutdownErr)
+		}
 		return nil, fmt.Errorf("invalid initial config type, expected *odigosv1.SdkConfig, got %T", settings.InitialConfig)
 	}
 
@@ -63,6 +66,9 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 	)
 	if err != nil {
 		log.Error("instrumentation setup failed", "err", err)
+		if shutdownErr := defaultExporter.Shutdown(ctx); shutdownErr != nil {
+			log.Error("failed to shutdown exporter after instrumentation setup failure", "error", shutdownErr)
+		}
 		return nil, err
 	}
 
