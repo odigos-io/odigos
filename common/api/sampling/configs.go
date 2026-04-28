@@ -79,4 +79,3 @@ const (
 	// giving accurate results over large volumes without requiring all spans to be forwarded.
 	// SpanMetricsModeStatistical SpanMetricsMode = "statistical"
 )
-
