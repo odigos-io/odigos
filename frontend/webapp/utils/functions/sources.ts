@@ -1,6 +1,6 @@
 import { getWorkloadId } from '@odigos/ui-kit/functions';
 import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
-import type { NamespaceInstrumentInput, SourceInstrumentInput, WorkloadResponse, K8sWorkloadContainerResponse, K8sWorkloadConditions } from '@/types';
+import type { NamespaceInstrumentInput, SourceInstrumentInput, WorkloadResponse, K8sWorkloadConditions } from '@/types';
 import {
   EntityTypes,
   DesiredStateProgress,
@@ -8,11 +8,9 @@ import {
   OtherStatus,
   type WorkloadId,
   type Source,
-  type SourceContainer,
   type Condition,
   type DesiredConditionStatus,
   type ProgrammingLanguages,
-  type OtelDistroName,
 } from '@odigos/ui-kit/types';
 
 function mapDesiredStatusToConditionStatus(status: DesiredStateProgress): StatusType | OtherStatus {
@@ -37,18 +35,10 @@ function mapDesiredStatusToConditionStatus(status: DesiredStateProgress): Status
   }
 }
 
-function mapContainerToSourceContainer(c: K8sWorkloadContainerResponse): SourceContainer {
-  return {
-    containerName: c.containerName,
-    language: (c.runtimeInfo?.language?.toLowerCase() ?? 'unknown') as ProgrammingLanguages,
-    runtimeVersion: c.runtimeInfo?.runtimeVersion ?? '',
-    overriden: c.overrides != null,
-    instrumented: c.agentEnabled?.agentEnabled ?? false,
-    instrumentationMessage: c.agentEnabled?.agentEnabledStatus?.message ?? '',
-    otelDistroName: (c.agentEnabled?.otelDistroName as OtelDistroName) ?? null,
-  };
-}
-
+// Flattens the GraphQL `K8sWorkloadConditions` object into the ui-kit's
+// `Condition[]`. We keep this as the only nontrivial transform on the
+// workload→source path because the ui-kit consumes conditions as an array
+// across many components.
 export function mapConditionsToConditionArray(conditions: K8sWorkloadConditions | null): Condition[] | null {
   if (!conditions) return null;
 
@@ -70,6 +60,9 @@ export function mapConditionsToConditionArray(conditions: K8sWorkloadConditions 
   return result.length > 0 ? result : null;
 }
 
+// Thin adapter from the GraphQL `K8sWorkload` shape to the ui-kit's `Source`.
+// All container-level fields pass through unchanged because the GraphQL
+// container shape is now structurally identical to `SourceContainer`.
 export function mapWorkloadToSource(w: WorkloadResponse): Source {
   return {
     namespace: w.id.namespace,
@@ -79,9 +72,9 @@ export function mapWorkloadToSource(w: WorkloadResponse): Source {
     otelServiceName: w.serviceName ?? '',
     numberOfInstances: w.numberOfInstances ?? undefined,
     dataStreamNames: w.dataStreamNames,
-    containers: w.containers ? w.containers.map(mapContainerToSourceContainer) : null,
+    containers: w.containers,
     conditions: mapConditionsToConditionArray(w.conditions),
-    detectedLanguages: w.runtimeInfo?.detectedLanguages?.map((lang) => lang.toLowerCase() as ProgrammingLanguages) ?? null,
+    detectedLanguages: (w.runtimeInfo?.detectedLanguages as ProgrammingLanguages[] | null) ?? null,
     workloadOdigosHealthStatus: w.workloadOdigosHealthStatus ?? null,
     podsAgentInjectionStatus: w.podsAgentInjectionStatus,
     rollbackOccurred: w.rollbackOccurred,
