@@ -319,7 +319,7 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// These attributes are used to determines how span metrics are grouped.
 	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
 
-	// Controls how span metrics interact with head-sampling decisions.
+	// Controls the tradeoff between metric accuracy and resource usage.
 	// See sampling.SpanMetricsMode for possible values.
 	SpanMetricsMode *sampling.SpanMetricsMode `json:"spanMetricsMode,omitempty"`
 }

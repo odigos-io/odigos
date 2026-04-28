@@ -68,11 +68,10 @@ const (
 	// This is the default and most resource-efficient mode.
 	SpanMetricsModeSampledSpansOnly SpanMetricsMode = "sampled-spans-only"
 
-	// SpanMetricsModeRecord keeps all spans until they reach the data-collection pipeline
-	// so that span metrics are computed from the full, unsampled dataset.
-	// Spans that should be dropped by sampling are still deleted, but in the collector
-	// rather than the agent, which uses more resources.
-	SpanMetricsModeRecord SpanMetricsMode = "record"
+	// SpanMetricsModeAllSpans computes metrics from all spans, regardless of sampling.
+	// Unsampled spans are forwarded for metric computation and dropped later in the pipeline,
+	// resulting in higher accuracy at the cost of increased resource usage.
+	SpanMetricsModeAllSpans SpanMetricsMode = "all-spans"
 
 	// SpanMetricsModeStatistical is reserved for future use.
 	// In this mode, metrics would be statistically corrected to account for dropped spans,
