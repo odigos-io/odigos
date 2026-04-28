@@ -1517,7 +1517,7 @@ sampling:
     #   This is useful when span metrics are needed, since spans remain available for metric computation.
     #   The tradeoff is higher resource usage in the collector, as spans are not discarded early at the agent.
     # @schema
-    # recordSpans: true
+    # recordSpans: false
 
   # @schema
   # description: |-
