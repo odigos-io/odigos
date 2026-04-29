@@ -3,6 +3,7 @@ package traces
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
 )
 
@@ -18,31 +19,27 @@ func CalculateCustomInstrumentationsConfig(d *distro.OtelDistro, irls *[]odigosv
 
 	var result *instrumentationrules.CustomInstrumentations
 	for _, irl := range *irls {
-		result = mergeCustomInstrumentations(result, irl.Spec.CustomInstrumentations)
+		result = mergeCustomInstrumentations(result, irl.Spec.CustomInstrumentations, d.Language)
 	}
 
 	return result
 }
 
-func mergeCustomInstrumentations(rule1 *instrumentationrules.CustomInstrumentations, rule2 *instrumentationrules.CustomInstrumentations) *instrumentationrules.CustomInstrumentations {
-	if rule1 == nil {
-		return rule2
-	}
-	if rule2 == nil {
-		return rule1
+func mergeCustomInstrumentations(existing *instrumentationrules.CustomInstrumentations, incoming *instrumentationrules.CustomInstrumentations, lang common.ProgrammingLanguage) *instrumentationrules.CustomInstrumentations {
+	if incoming == nil {
+		return existing
 	}
 
-	merged := &instrumentationrules.CustomInstrumentations{}
+	if existing == nil {
+		existing = &instrumentationrules.CustomInstrumentations{}
+	}
 
-	golangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(rule1.Golang)+len(rule2.Golang))
-	golangProbes = append(golangProbes, rule1.Golang...)
-	golangProbes = append(golangProbes, rule2.Golang...)
-	merged.Golang = golangProbes
+	switch lang {
+	case common.GoProgrammingLanguage:
+		existing.Golang = append(existing.Golang, incoming.Golang...)
+	case common.JavaProgrammingLanguage:
+		existing.Java = append(existing.Java, incoming.Java...)
+	}
 
-	javaProbes := make([]instrumentationrules.JavaCustomProbe, 0, len(rule1.Java)+len(rule2.Java))
-	javaProbes = append(javaProbes, rule1.Java...)
-	javaProbes = append(javaProbes, rule2.Java...)
-	merged.Java = javaProbes
-
-	return merged
+	return existing
 }
