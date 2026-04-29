@@ -76,8 +76,8 @@ func calculateTracesConfig(
 			}
 
 			spanMetricsEnabled := nodeCollectorsGroup != nil &&
-				(nodeCollectorsGroup.Spec.Metrics == nil ||
-					nodeCollectorsGroup.Spec.Metrics.SpanMetrics == nil ||
+				nodeCollectorsGroup.Spec.Metrics != nil &&
+				(nodeCollectorsGroup.Spec.Metrics.SpanMetrics == nil ||
 					nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled == nil ||
 					!*nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled)
 			metricsSignalEnabled := nodeCollectorsGroup != nil &&
