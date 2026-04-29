@@ -89,6 +89,7 @@ processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.148.0
+  - gomod: github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor v0.148.0
 
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.148.0
@@ -133,6 +134,7 @@ replaces:
   - github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor => ../processors/odigostailsamplingprocessor
   - github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
   - github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor => ../processors/odigoslogsresourceattrsprocessor
+  - github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor => ../processors/odigosextractattributeprocessor
   - go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
   - github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
   - github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector => ../connectors/servicegraphconnector

@@ -47,6 +47,8 @@ type AgentTracesConfigApplyConfiguration struct {
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
 	// configuration for how verbose the trace should be - e.g. which spans should be included / excluded.
 	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
+	// custom instrumentation probes for this container.
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 // AgentTracesConfigApplyConfiguration constructs a declarative configuration of the AgentTracesConfig type for use with
@@ -116,5 +118,13 @@ func (b *AgentTracesConfigApplyConfiguration) WithCodeAttributes(value instrumen
 // If called multiple times, the TraceVerbosity field is set to the value of the last call.
 func (b *AgentTracesConfigApplyConfiguration) WithTraceVerbosity(value instrumentationrules.TraceVerbosity) *AgentTracesConfigApplyConfiguration {
 	b.TraceVerbosity = &value
+	return b
+}
+
+// WithCustomInstrumentations sets the CustomInstrumentations field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the CustomInstrumentations field is set to the value of the last call.
+func (b *AgentTracesConfigApplyConfiguration) WithCustomInstrumentations(value instrumentationrules.CustomInstrumentations) *AgentTracesConfigApplyConfiguration {
+	b.CustomInstrumentations = &value
 	return b
 }

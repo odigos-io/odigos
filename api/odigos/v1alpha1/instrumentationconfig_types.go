@@ -394,6 +394,9 @@ type AgentTracesConfig struct {
 
 	// configuration for how verbose the trace should be - e.g. which spans should be included / excluded.
 	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
+
+	// custom instrumentation probes for this container.
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
@@ -414,7 +417,10 @@ type AgentMetricsConfig struct {
 
 // all "logs" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
-type AgentLogsConfig struct{}
+type AgentLogsConfig struct {
+	// if set, switches the logs pipeline to use the eBPF receiver instead of filelog.
+	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
+}
 
 // ContainerAgentConfig is a configuration for a specific container in a workload.
 type ContainerAgentConfig struct {
