@@ -610,7 +610,7 @@ func (in *ContainerAgentConfig) DeepCopyInto(out *ContainerAgentConfig) {
 	if in.Logs != nil {
 		in, out := &in.Logs, &out.Logs
 		*out = new(AgentLogsConfig)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 }
 
