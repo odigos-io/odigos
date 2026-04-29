@@ -74,7 +74,7 @@ func calculateTracesConfig(
 				dryRun = *effectiveConfig.Sampling.DryRun
 			}
 
-			spanMetricsEnabled := nodeCollectorsGroup.Spec.Metrics.SpanMetrics == nil || nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled == nil || !*nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled
+			spanMetricsEnabled := nodeCollectorsGroup.Spec.Metrics == nil || nodeCollectorsGroup.Spec.Metrics.SpanMetrics == nil || nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled == nil || !*nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled
 			metricsSignalEnabled := slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal)
 			configuredMode := effectiveConfig.MetricsSources != nil &&
 				effectiveConfig.MetricsSources.SpanMetrics != nil &&
@@ -121,6 +121,9 @@ func calculateTracesConfig(
 
 	// Code Attributes - Agent only (not applicable to collector)
 	agentConfig.CodeAttributes = traces.CalculateCodeAttributesConfig(d, irls)
+
+	// Trace Verbosity - Agent only (not applicable to collector)
+	agentConfig.TraceVerbosity = traces.CalculateTraceVerbosityConfig(d, irls)
 
 	return agentConfig, collectorConfig, nil
 }

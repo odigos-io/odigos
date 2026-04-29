@@ -91,6 +91,9 @@ type InstrumentationRuleSpec struct {
 	// will use only the eBPF receiver instead of the filelog receiver, and odiglet will
 	// register instrumented processes for eBPF log capture.
 	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
+
+	// Configure the verbosity of the traces for the library.
+	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
 }
 
 // Verify validates the InstrumentationRuleSpec.

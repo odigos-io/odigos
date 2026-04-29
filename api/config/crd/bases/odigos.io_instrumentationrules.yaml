@@ -340,6 +340,44 @@ spec:
                     description: Disabled will disable tracing for the rule.
                     type: boolean
                 type: object
+              traceVerbosity:
+                description: Configure the verbosity of the traces for the library.
+                properties:
+                  disabledInstrumentationLibraries:
+                    description: instrumentation libraries to configure
+                    items:
+                      properties:
+                        libraryName:
+                          description: |-
+                            the name of the library to configure. required.
+                            exact syntax and format depends on the programming language.
+                          type: string
+                        programmingLanguage:
+                          description: the programming language of the relevant library
+                          enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                          - php
+                          - ruby
+                          - rust
+                          - cplusplus
+                          - mysql
+                          - nginx
+                          - redis
+                          - postgres
+                          - unknown
+                          - ignored
+                          - '*'
+                          type: string
+                      required:
+                      - libraryName
+                      - programmingLanguage
+                      type: object
+                    type: array
+                type: object
               workloads:
                 description: An array of workload objects (name, namespace, kind)
                   to which the rule should be applied. If not specified, the rule

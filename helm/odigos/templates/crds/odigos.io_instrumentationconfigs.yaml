@@ -521,6 +521,46 @@ spec:
                                 type: object
                               type: array
                           type: object
+                        traceVerbosity:
+                          description: configuration for how verbose the trace should
+                            be - e.g. which spans should be included / excluded.
+                          properties:
+                            disabledInstrumentationLibraries:
+                              description: instrumentation libraries to configure
+                              items:
+                                properties:
+                                  libraryName:
+                                    description: |-
+                                      the name of the library to configure. required.
+                                      exact syntax and format depends on the programming language.
+                                    type: string
+                                  programmingLanguage:
+                                    description: the programming language of the relevant
+                                      library
+                                    enum:
+                                    - java
+                                    - python
+                                    - go
+                                    - dotnet
+                                    - javascript
+                                    - php
+                                    - ruby
+                                    - rust
+                                    - cplusplus
+                                    - mysql
+                                    - nginx
+                                    - redis
+                                    - postgres
+                                    - unknown
+                                    - ignored
+                                    - '*'
+                                    type: string
+                                required:
+                                - libraryName
+                                - programmingLanguage
+                                type: object
+                              type: array
+                          type: object
                         urlTemplatization:
                           description: A list of URL templatization configurations
                             to be applied to the traces.
