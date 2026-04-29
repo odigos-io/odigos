@@ -1,5 +1,5 @@
 import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { awaitToast, findCrdId, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage, waitForGraphqlOperation } from '../functions';
+import { awaitToast, findCrdId, getCrdById, getCrdIds, handleExceptions, updateV2Entity, visitPage, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -61,12 +61,13 @@ describe('Sources CRUD', () => {
   });
 
   // Note: we update only 1 source, because Cypress keeps flaking when updating all of them.
-  it(`Should update the name of ${1} sources via API, and notify locally`, () => {
+  it(`Should update the name of ${1} sources via the v2 edit-source-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.NAMESPACE_SOURCES.slice(indexForUpdatedSource, indexForUpdatedSource + 1).forEach(({ name, kind }) => {
-        updateEntity(
+        updateV2Entity(
           {
             nodeId: DATA_IDS.SOURCE_NODE({ namespace, name, kind }),
+            prefix: DATA_IDS.SOURCE_DRAWER_PREFIX,
             fieldKey: DATA_IDS.SOURCE_TITLE,
             fieldValue: TEXTS.UPDATED_NAME,
           },

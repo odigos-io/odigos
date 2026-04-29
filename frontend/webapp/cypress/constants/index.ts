@@ -132,6 +132,9 @@ export const DATA_IDS = {
   DESTINATION_DRAWER_PREFIX: 'edit-destination',
   DESTINATION_NAME_INPUT: '[data-id=destinationName]',
 
+  // v2 edit-source-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
+  SOURCE_DRAWER_PREFIX: 'edit-source',
+
   TOAST: '[data-id=toast]',
   TOAST_CLOSE: '[data-id=toast-close]',
   TOAST_ACTION: '[data-id=toast-action]',
