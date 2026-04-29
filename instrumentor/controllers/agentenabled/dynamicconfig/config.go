@@ -197,8 +197,11 @@ func CalculateDynamicContainerConfig(
 	var logsConfig *odigosv1.AgentLogsConfig
 	// Currently if ebpf log capture is enabled, we write it for all containers.
 	// In the future, we will support scopes it need to be changed.
-	logsConfig = &odigosv1.AgentLogsConfig{
-		EbpfLogCapture: logs.CalculateEbpfLogCaptureConfig(d, irls),
+	ebpfLogCaptureConfig := logs.CalculateEbpfLogCaptureConfig(d, irls)
+	if ebpfLogCaptureConfig != nil {
+		logsConfig = &odigosv1.AgentLogsConfig{
+			EbpfLogCapture: ebpfLogCaptureConfig,
+		}
 	}
 
 	return &DynamicContainerConfigs{
