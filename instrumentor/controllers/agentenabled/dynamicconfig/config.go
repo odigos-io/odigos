@@ -74,8 +74,13 @@ func calculateTracesConfig(
 				dryRun = *effectiveConfig.Sampling.DryRun
 			}
 
-			spanMetricsEnabled := nodeCollectorsGroup.Spec.Metrics.SpanMetrics == nil || nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled == nil || !*nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled
-			metricsSignalEnabled := slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal)
+			spanMetricsEnabled := nodeCollectorsGroup != nil &&
+				nodeCollectorsGroup.Spec.Metrics != nil &&
+				(nodeCollectorsGroup.Spec.Metrics.SpanMetrics == nil ||
+					nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled == nil ||
+					!*nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled)
+			metricsSignalEnabled := nodeCollectorsGroup != nil &&
+				slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal)
 			configuredMode := effectiveConfig.MetricsSources != nil &&
 				effectiveConfig.MetricsSources.SpanMetrics != nil &&
 				effectiveConfig.MetricsSources.SpanMetrics.SpanMetricsMode != nil
