@@ -414,7 +414,10 @@ type AgentMetricsConfig struct {
 
 // all "logs" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
-type AgentLogsConfig struct{}
+type AgentLogsConfig struct {
+	// if set, switches the logs pipeline to use the eBPF receiver instead of filelog.
+	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
+}
 
 // ContainerAgentConfig is a configuration for a specific container in a workload.
 type ContainerAgentConfig struct {

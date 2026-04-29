@@ -9,6 +9,7 @@ import (
 	commonapi "github.com/odigos-io/odigos/common/api"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/distros/distro"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig/logs"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig/metrics"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig/traces"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signals"
@@ -194,8 +195,10 @@ func CalculateDynamicContainerConfig(
 	}
 
 	var logsConfig *odigosv1.AgentLogsConfig
-	if enabledSignals.LogsEnabled {
-		logsConfig = &odigosv1.AgentLogsConfig{}
+	// Currently if ebpf log capture is enabled, we write it for all containers.
+	// In the future, we will support scopes it need to be changed.
+	logsConfig = &odigosv1.AgentLogsConfig{
+		EbpfLogCapture: logs.CalculateEbpfLogCaptureConfig(d, irls),
 	}
 
 	return &DynamicContainerConfigs{

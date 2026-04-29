@@ -191,6 +191,16 @@ type CustomInstrumentations struct {
 	Supported bool `yaml:"supported,omitempty"`
 }
 
+type EbpfLogCapture struct {
+	// if true, the distro supports eBPF-based log capture.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type Logs struct {
+	// if set, the distro supports eBPF-based log capture instead of filelog.
+	EbpfLogCapture *EbpfLogCapture `yaml:"ebpfLogCapture,omitempty"`
+}
+
 type Traces struct {
 	// if set, the distro supports head sampling based on root spans of traces.
 	HeadSampling *HeadSampling `yaml:"headSampling,omitempty"`
@@ -276,4 +286,7 @@ type OtelDistro struct {
 
 	// document support by this distro for trace features
 	Traces *Traces `yaml:"traces,omitempty"`
+
+	// document support by this distro for logs features
+	Logs *Logs `yaml:"logs,omitempty"`
 }
