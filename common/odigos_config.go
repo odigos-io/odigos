@@ -318,6 +318,10 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// This list controls which resource attributes are included in the metric stream identity.
 	// These attributes are used to determines how span metrics are grouped.
 	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
+
+	// Controls the tradeoff between metric accuracy and resource usage.
+	// See sampling.SpanMetricsMode for possible values.
+	SpanMetricsMode *sampling.SpanMetricsMode `json:"spanMetricsMode,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

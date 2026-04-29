@@ -36,7 +36,7 @@ spec:
       description: Disable tail-based sampling globally regardless of any other configurations or rules.
       helmValuePath: sampling.tailSampling.disabled
     - displayName: Trace Aggregation Wait Duration
-      componentType: input
+      componentType: time
       isHelmOnly: false
       description: How long to wait for spans to arrive before making a tail sampling decision (e.g. 30s).
       helmValuePath: sampling.tailSampling.traceAggregationWaitDuration

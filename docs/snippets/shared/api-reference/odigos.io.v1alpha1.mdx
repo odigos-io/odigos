@@ -2007,6 +2007,26 @@ This is useful to evaluate the sampling decision before actually committing to i
 </tr>
 <tr>
 <td>
+<code>spanMetricsMode</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#SpanMetricsMode"><code>common/api/sampling.SpanMetricsMode</code></a>
+</td>
+<td>
+   <p>Controls the tradeoff between metric accuracy and resource usage.
+Determines how sampling affects which spans are used to compute metrics.
+Possible values:</p>
+<ul>
+<li>&quot;sampled-spans-only&quot; (default): metrics are computed only from sampled spans.
+Unsampled spans are dropped early, resulting in lower resource usage but reduced accuracy.</li>
+<li>&quot;all-spans&quot;: metrics are computed from all spans, regardless of sampling.
+Unsampled spans are forwarded for metric computation and dropped later in the pipeline,
+resulting in higher accuracy at the cost of increased resource usage.</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>
 <code>noisyOperations</code> <B>[Required]</B>
 </td>
 <td>

@@ -146,7 +146,7 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider, effectiveConfig *common.OdigosConfiguration) (*agentInjectedStatusCondition, error) {
 	logger := commonlogger.FromContext(ctx)
-	cg, irls, agentLevelActions, samplingRules, workloadObj, err := getRelevantResources(ctx, c, pw)
+	nodeCollectorsGroup, irls, agentLevelActions, samplingRules, workloadObj, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
 		return nil, err
@@ -169,7 +169,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	}
 
 	// check if we are waiting for some transient prerequisites to be completed before injecting the agent
-	prerequisiteCompleted, reason, message := isReadyForInstrumentation(cg, ic)
+	prerequisiteCompleted, reason, message := isReadyForInstrumentation(nodeCollectorsGroup, ic)
 	if !prerequisiteCompleted {
 		ic.Spec.AgentInjectionEnabled = false
 		updateInstrumentationConfigAgentsMetaHash(ic, "")
@@ -236,7 +236,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		}
 
 		// calculate and verify there are enabled signals for this container.
-		enabledSignals, disabledInfo := signals.GetEnabledSignalsForContainer(cg, irls)
+		enabledSignals, disabledInfo := signals.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
 		if disabledInfo != nil {
 			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
@@ -248,7 +248,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		}
 
 		// calculate the dynamic configs for this container.
-		dynamicContainerConfigs, disabledInfo := dynamicconfig.CalculateDynamicContainerConfig(containerName, irls, effectiveConfig, containerRuntimeDetails, agentLevelActions, samplingRules, workloadObj, pw, containerDistro, enabledSignals)
+		dynamicContainerConfigs, disabledInfo := dynamicconfig.CalculateDynamicContainerConfig(containerName, irls, effectiveConfig, containerRuntimeDetails, agentLevelActions, samplingRules, workloadObj, pw, containerDistro, enabledSignals, nodeCollectorsGroup)
 		if disabledInfo != nil {
 			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
