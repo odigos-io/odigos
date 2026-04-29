@@ -34,14 +34,14 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		p.logger.Error("odigos config extension is not set, skipping tail sampling")
 		return td, nil // for auto generated tests, and not to crash in case it somehow happens
 	}
-	if td.ResourceSpans().Len() == 0 || td.ResourceSpans().At(0).ScopeSpans().Len() == 0 || td.ResourceSpans().At(0).ScopeSpans().At(0).Spans().Len() == 0 {
-		return td, nil // no spans to process
-	}
 
-	traceID, ok := assertAllSpansBelongToTheSameTrace(td)
-	if !ok {
-		p.logger.Error("not all spans belong to the same trace", zap.String("trace_id", traceID.String()))
-		return td, nil // not all spans belong to the same trace
+	traceID, shouldProcess, err := checkPrerequists(td)
+	if err != nil {
+		p.logger.Error("failed to check prerequists", zap.Error(err))
+		return td, nil
+	}
+	if !shouldProcess {
+		return td, nil
 	}
 
 	rnd := sampling.TraceIDToRandomness(traceID)
