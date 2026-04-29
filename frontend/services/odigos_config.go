@@ -27,15 +27,22 @@ func getOdigosConfigFromConfigMap(ctx context.Context, c client.Client, configMa
 		return nil, client.IgnoreNotFound(err)
 	}
 
-	if cm.Data == nil || cm.Data[consts.OdigosConfigurationFileName] == "" {
+	return OdigosConfigurationFromConfigMap(&cm)
+}
+
+// OdigosConfigurationFromConfigMap parses config.yaml from ConfigMap data.
+func OdigosConfigurationFromConfigMap(cm *v1.ConfigMap) (*common.OdigosConfiguration, error) {
+	if cm == nil || cm.Data == nil {
 		return nil, nil
 	}
-
+	raw := cm.Data[consts.OdigosConfigurationFileName]
+	if raw == "" {
+		return nil, nil
+	}
 	var odigosConfig common.OdigosConfiguration
-	if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
+	if err := yaml.Unmarshal([]byte(raw), &odigosConfig); err != nil {
 		return nil, fmt.Errorf("failed to parse odigos config: %w", err)
 	}
-
 	return &odigosConfig, nil
 }
 
