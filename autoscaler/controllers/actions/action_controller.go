@@ -69,6 +69,14 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 		return convertToDefaultProcessor(action, action.Spec.RenameAttribute, config)
 	}
 
+	if action.Spec.ExtractAttribute != nil {
+		config, err := extractAttributeConfig(action.Spec.ExtractAttribute)
+		if err != nil {
+			return nil, err
+		}
+		return convertToDefaultProcessor(action, action.Spec.ExtractAttribute, config)
+	}
+
 	if action.Spec.K8sAttributes != nil {
 		config, signals, ownerReferences, err := k8sAttributeConfig(ctx, k8sclient, action.Namespace)
 		if err != nil {

@@ -1,0 +1,171 @@
+import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
+
+## Considerations
+
+<Warning>
+  Before enabling **extract attribute**, please note the following:
+  - This action only operates on **trace** signals.
+  - Extraction reads from a fixed set of high-cardinality string attributes and writes the captured value to a **new** span attribute. The source attributes are scanned in order until a match is found, and only the **first** match is used per extraction rule.
+  - The action will scan the following span attributes for matches:
+    - `db.statement`
+    - `db.query.text`
+    - `messaging.message.payload`
+    - `http.request.payload`
+    - `http.response.payload`
+  - If the `target` attribute already exists on the span, it will **not** be overridden.
+  - Each extraction must specify either `source` + `dataFormat`, **or** a custom `regex` — not both. When using `regex`, the pattern must contain exactly one capture group; the value of the first capture group is written to `target`.
+  - Each `target` must be unique within a single action.
+</Warning>
+
+## Use Cases
+
+**Accessing deeply nested attributes within strings**
+
+- Easily extract and access values of deeply nested attributes within payloads of JSONs, SQL statements or URLs.
+
+**Indexing high-cardinality identifiers**
+
+- Extract domain-specific identifiers (e.g. `order_id`, `user_id`, `study_id`) embedded inside payloads, SQL statements, or URL paths into top-level span attributes so they can be indexed, filtered, and aggregated by your backend.
+
+**Correlating spans across services**
+
+- Lift correlation IDs that are buried inside structured payloads (JSON envelopes, request/response bodies) onto the span itself so traces can be searched and joined by business identifiers.
+
+**Cost-aware enrichment**
+
+- Avoid sending the full payload to your backend by extracting only the meaningful fields, then dropping or masking the original payload attribute with another action.
+
+## Configuration Options
+
+The ExtractAttribute action is configured using the `odigos.io/v1alpha1.Action` CRD with the `extractAttribute` configuration section.
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the action will operate on.
+    - This field is *required*
+    - Supported values: `TRACES`
+  </Accordion>
+  <Accordion title="extractAttribute *">
+    **extractAttribute** `object` : Configuration for the ExtractAttribute action.
+    - This field is *required* for this action type
+    <AccordionGroup>
+      <Accordion title="extractions *">
+        **extractions** `object[]` : An ordered array of extraction rules to apply to each span. Must contain at least one entry.
+        - This field is *required*
+        <AccordionGroup>
+          <Accordion title="target *">
+            **target** `string` : The attribute key the extracted value will be written to on the span.
+            - This field is *required*
+            - Must be unique across all extractions in the same action.
+          </Accordion>
+          <Accordion title="source">
+            **source** `string` : The key to look up inside the scanned attributes (resolved via `dataFormat` into a regex).
+            - This field is *required* when `dataFormat` is set, and must be omitted when `regex` is set.
+          </Accordion>
+          <Accordion title="dataFormat">
+            **dataFormat** `string` : A pre-set format that defines how `source` is matched inside the scanned attributes.
+            - This field is *required* when `source` is set, and must be omitted when `regex` is set.
+            - Supported values:
+              - `json` — matches `key: value` / `key = value` pairs in JSON envelopes **and** in SQL statements (e.g. `WHERE order_id = '42'`).
+              - `url` — matches `key/value` segments inside URL paths (e.g. `/projects/test-project`), stopping at the next `/`, whitespace, `?`, `&`, `#`, or quote.
+          </Accordion>
+          <Accordion title="regex">
+            **regex** `string` : A custom regular expression with a single capture group whose value is written to `target`.
+            - This field is *required* when `source` and `dataFormat` are not set.
+            - The first capture group of the first match is used.
+          </Accordion>
+        </AccordionGroup>
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  Each extraction rule must use **exactly one** of:
+  - `source` + `dataFormat` — for the built-in JSON/SQL/URL matchers, or
+  - `regex` — for a custom pattern with a single capture group.
+</Tip>
+
+## Basic Example
+
+The following example demonstrates the four extraction variations against a single span that has the following attributes:
+
+- `messaging.message.payload`: `{"task_id": "task-7f3a9b2c", "status": "Completed"}`
+- `http.request.payload`: `tenants/acme-corp/regions/us-east/workspaces/main/services/analytics/jobs/task-7f3a9b2c/runs/run-001`
+- `db.statement`: `SELECT * FROM invoices WHERE invoice_id = '42' -- request_id req-xyz9`
+
+After the action runs, the span will be enriched with the following extracted attributes:
+
+| Target attribute               | Extracted value  |
+| ------------------------------ | ---------------- |
+| `extracted.json.task_id`       | `task-7f3a9b2c`  |
+| `extracted.sql.invoice_id`     | `42`             |
+| `extracted.url.tenant`         | `acme-corp`      |
+| `extracted.url.region`         | `us-east`        |
+| `extracted.url.job`            | `task-7f3a9b2c`  |
+| `extracted.regex.request_id`   | `xyz9`           |
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml extract-attribute.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
+    metadata:
+      name: extract-attribute
+      namespace: odigos-system
+    spec:
+      actionName: extract attribute
+      signals:
+        - TRACES
+      extractAttribute:
+        extractions:
+          # JSON variation - matches a JSON envelope inside messaging.message.payload
+          - source: task_id
+            dataFormat: json
+            target: extracted.json.task_id
+
+          # SQL variation - the json dataFormat also handles SQL `key = 'value'` syntax
+          - source: invoice_id
+            dataFormat: json
+            target: extracted.sql.invoice_id
+
+          # URL variation - matches `key/value` segments inside http.request.payload
+          - source: tenants
+            dataFormat: url
+            target: extracted.url.tenant
+          - source: regions
+            dataFormat: url
+            target: extracted.url.region
+          - source: jobs
+            dataFormat: url
+            target: extracted.url.job
+
+          # Custom regex variation - one capture group, value goes to target
+          - regex: "req-([a-z0-9]+)"
+            target: extracted.regex.request_id
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```bash
+    kubectl apply -f extract-attribute.yaml
+    ```
+  </Step>
+</Steps>
