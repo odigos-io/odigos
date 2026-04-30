@@ -1,0 +1,15 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: nodejs-verbosity-full
+spec:
+  ruleName: "nodejs verbosity full"
+  notes: "Auto generated rule from nodejs-verbosity-full profile. Do not edit."
+  traceVerbosity:
+    enabledInstrumentationLibraries:
+      - libraryName: "@opentelemetry/instrumentation-dns"
+        programmingLanguage: javascript
+      - libraryName: "@opentelemetry/instrumentation-fs"
+        programmingLanguage: javascript
+      - libraryName: "@opentelemetry/instrumentation-net"
+        programmingLanguage: javascript

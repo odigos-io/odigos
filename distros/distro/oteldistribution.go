@@ -193,11 +193,11 @@ type CustomInstrumentations struct {
 
 type TraceVerbosity struct {
 	// if true, the distro supports disabling instrumentation libraries that are being setup by odigos agent.
-	SupportDisablingOdigosAgentLibraries bool `yaml:"supportDisablingOdigosAgentLibraries,omitempty"`
+	DisablingOdigosAgentLibrariesSupported bool `yaml:"disablingOdigosAgentLibrariesSupported,omitempty"`
 	// if true, the distro supports disabling instrumentation libraries that are being setup by user
 	// or dependencies, which are not under odigos control.
 	// anyone can create a tracer and use it to start spans with any arbitrary scope.
-	SupportDisablingAnyScope bool `yaml:"supportDisablingAnyScope,omitempty"`
+	DisablingAnyScopeSupported bool `yaml:"disablingAnyScopeSupported,omitempty"`
 }
 
 type EbpfLogCapture struct {

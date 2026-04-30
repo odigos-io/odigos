@@ -8,7 +8,8 @@ import (
 )
 
 func DistroSupportsTracesVerbosity(d *distro.OtelDistro) bool {
-	return d.Traces != nil && d.Traces.TraceVerbosity != nil && (d.Traces.TraceVerbosity.SupportDisablingOdigosAgentLibraries || d.Traces.TraceVerbosity.SupportDisablingAnyScope)
+	// if the distro states trace verbosity entry, we proceed with processing it
+	return d.Traces != nil && d.Traces.TraceVerbosity != nil
 }
 
 func CalculateTraceVerbosityConfig(d *distro.OtelDistro, irls *[]odigosv1.InstrumentationRule) *instrumentationrules.TraceVerbosity {
