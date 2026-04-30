@@ -125,8 +125,10 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 			(ir.Spec.TraceConfig != nil && ir.Spec.TraceConfig.Disabled != nil) ||
 			(ir.Spec.PayloadCollection != nil) ||
 			(ir.Spec.CodeAttributes != nil) ||
-			(ir.Spec.HeadersCollection != nil ||
-				ir.Spec.HeadSamplingFallbackFraction != nil) {
+			(ir.Spec.HeadersCollection != nil) ||
+			(ir.Spec.HeadSamplingFallbackFraction != nil) ||
+			(ir.Spec.CustomInstrumentations != nil) ||
+			(ir.Spec.EbpfLogCapture != nil) {
 
 			relevantIr = append(relevantIr, *ir)
 		}

@@ -391,6 +391,9 @@ type AgentTracesConfig struct {
 
 	// configuration for code attributes collection for this container.
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
+
+	// custom instrumentation probes for this container.
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
@@ -411,7 +414,10 @@ type AgentMetricsConfig struct {
 
 // all "logs" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
-type AgentLogsConfig struct{}
+type AgentLogsConfig struct {
+	// if set, switches the logs pipeline to use the eBPF receiver instead of filelog.
+	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
+}
 
 // ContainerAgentConfig is a configuration for a specific container in a workload.
 type ContainerAgentConfig struct {
@@ -545,6 +551,16 @@ type HeadSamplingConfig struct {
 	// - odigos.sampling.dry_run: true
 	// - odigos.sampling.dry_run.kept: true if the trace would have been kept, false if it would have been dropped.
 	DryRun bool `json:"dryRun,omitempty"`
+
+	// Controls the tradeoff between metric accuracy and resource usage.
+	// Determines how sampling affects which spans are used to compute metrics.
+	// Possible values:
+	//   - "sampled-spans-only" (default): metrics are computed only from sampled spans.
+	//     Unsampled spans are dropped early, resulting in lower resource usage but reduced accuracy.
+	//   - "all-spans": metrics are computed from all spans, regardless of sampling.
+	//     Unsampled spans are forwarded for metric computation and dropped later in the pipeline,
+	//     resulting in higher accuracy at the cost of increased resource usage.
+	SpanMetricsMode commonapisampling.SpanMetricsMode `json:"spanMetricsMode,omitempty"`
 
 	// Noisy operations are categories of matchers that are used on the root span.
 	// If match, the fraction is used to determine the sampling decision for the entire trace.

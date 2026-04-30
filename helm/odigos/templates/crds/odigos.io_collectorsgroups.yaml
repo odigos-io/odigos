@@ -231,6 +231,11 @@ spec:
                         items:
                           type: string
                         type: array
+                      spanMetricsMode:
+                        description: |-
+                          Controls the tradeoff between metric accuracy and resource usage.
+                          See sampling.SpanMetricsMode for possible values.
+                        type: string
                     type: object
                 type: object
               nodeSelector:

@@ -318,6 +318,10 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// This list controls which resource attributes are included in the metric stream identity.
 	// These attributes are used to determines how span metrics are grouped.
 	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
+
+	// Controls the tradeoff between metric accuracy and resource usage.
+	// See sampling.SpanMetricsMode for possible values.
+	SpanMetricsMode *sampling.SpanMetricsMode `json:"spanMetricsMode,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -495,7 +499,6 @@ type ProfilingUiConfiguration struct {
 type ProfilingConfiguration struct {
 	Enabled  *bool                      `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 	Exporter *OtlpExporterConfiguration `json:"exporter,omitempty" yaml:"exporter,omitempty"`
-	Ui       *ProfilingUiConfiguration  `json:"ui,omitempty" yaml:"ui,omitempty"`
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration

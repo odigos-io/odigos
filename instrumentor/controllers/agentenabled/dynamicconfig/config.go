@@ -1,12 +1,15 @@
 package dynamicconfig
 
 import (
+	"slices"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	commonapi "github.com/odigos-io/odigos/common/api"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/distros/distro"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig/logs"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig/metrics"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig/traces"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signals"
@@ -35,6 +38,7 @@ func calculateTracesConfig(
 	effectiveConfig *common.OdigosConfiguration,
 	samplingRules *[]odigosv1.Sampling,
 	irls *[]odigosv1.InstrumentationRule,
+	nodeCollectorsGroup *odigosv1.CollectorsGroup,
 ) (*odigosv1.AgentTracesConfig, *commonapi.ContainerCollectorConfig, *odigosv1.AgentDisabledInfo) {
 	agentConfig := &odigosv1.AgentTracesConfig{}
 	var collectorConfig *commonapi.ContainerCollectorConfig
@@ -66,11 +70,27 @@ func calculateTracesConfig(
 	if len(noisyOps) > 0 {
 		if traces.DistroSupportsHeadSampling(d) {
 			dryRun := false
+			spanMetricsMode := commonapisampling.SpanMetricsModeSampledSpansOnly
 			if effectiveConfig.Sampling != nil && effectiveConfig.Sampling.DryRun != nil {
 				dryRun = *effectiveConfig.Sampling.DryRun
 			}
+
+			spanMetricsEnabled := nodeCollectorsGroup != nil &&
+				nodeCollectorsGroup.Spec.Metrics != nil &&
+				(nodeCollectorsGroup.Spec.Metrics.SpanMetrics == nil ||
+					nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled == nil ||
+					!*nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled)
+			metricsSignalEnabled := nodeCollectorsGroup != nil &&
+				slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal)
+			configuredMode := effectiveConfig.MetricsSources != nil &&
+				effectiveConfig.MetricsSources.SpanMetrics != nil &&
+				effectiveConfig.MetricsSources.SpanMetrics.SpanMetricsMode != nil
+			if spanMetricsEnabled && metricsSignalEnabled && configuredMode {
+				spanMetricsMode = *effectiveConfig.MetricsSources.SpanMetrics.SpanMetricsMode
+			}
 			agentConfig.HeadSampling = &odigosv1.HeadSamplingConfig{
 				DryRun:          dryRun,
+				SpanMetricsMode: spanMetricsMode,
 				NoisyOperations: noisyOps,
 			}
 		} else {
@@ -107,6 +127,9 @@ func calculateTracesConfig(
 
 	// Code Attributes - Agent only (not applicable to collector)
 	agentConfig.CodeAttributes = traces.CalculateCodeAttributesConfig(d, irls)
+
+	// Custom Instrumentations - Agent only (not applicable to collector)
+	agentConfig.CustomInstrumentations = traces.CalculateCustomInstrumentationsConfig(d, irls)
 
 	return agentConfig, collectorConfig, nil
 }
@@ -152,13 +175,14 @@ func CalculateDynamicContainerConfig(
 	pw k8sconsts.PodWorkload,
 	d *distro.OtelDistro,
 	enabledSignals signals.EnabledSignals,
+	nodeCollectorsGroup *odigosv1.CollectorsGroup,
 ) (*DynamicContainerConfigs, *odigosv1.AgentDisabledInfo) {
 
 	var collectorConfig *commonapi.ContainerCollectorConfig
 
 	var tracesConfig *odigosv1.AgentTracesConfig
 	if enabledSignals.TracesEnabled {
-		agentTracesConfig, collectorTracesConfig, err := calculateTracesConfig(agentLevelActions, containerName, runtimeDetails, pw, d, workloadObj, effectiveConfig, samplingRules, irls)
+		agentTracesConfig, collectorTracesConfig, err := calculateTracesConfig(agentLevelActions, containerName, runtimeDetails, pw, d, workloadObj, effectiveConfig, samplingRules, irls, nodeCollectorsGroup)
 		if err != nil {
 			return nil, err
 		}
@@ -176,8 +200,13 @@ func CalculateDynamicContainerConfig(
 	}
 
 	var logsConfig *odigosv1.AgentLogsConfig
-	if enabledSignals.LogsEnabled {
-		logsConfig = &odigosv1.AgentLogsConfig{}
+	// Currently if ebpf log capture is enabled, we write it for all containers.
+	// In the future, we will support scopes it need to be changed.
+	ebpfLogCaptureConfig := logs.CalculateEbpfLogCaptureConfig(d, irls)
+	if ebpfLogCaptureConfig != nil {
+		logsConfig = &odigosv1.AgentLogsConfig{
+			EbpfLogCapture: ebpfLogCaptureConfig,
+		}
 	}
 
 	return &DynamicContainerConfigs{

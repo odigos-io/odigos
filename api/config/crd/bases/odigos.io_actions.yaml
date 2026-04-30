@@ -83,6 +83,53 @@ spec:
                 description: A boolean field allowing to temporarily disable the action,
                   but keep it around for future use
                 type: boolean
+              extractAttribute:
+                description: ExtractAttribute is the config for the ExtractAttribute
+                  Action.
+                properties:
+                  extractions:
+                    description: Extractions is the list of extraction rules to apply,
+                      in order.
+                    items:
+                      description: |-
+                        Extraction describes a single extraction rule applied by the
+                        odigosextractattribute processor. Either (Source + DataFormat) or
+                        Regex must be provided; the captured value is written to Target.
+                      properties:
+                        dataFormat:
+                          description: |-
+                            A pre-set definition which resolves into a regex (e.g. JSON DataFormat would give a regex that searches
+                            inside a JSON string), which also applies Source for searching inside it.
+                            Required when using Source.
+                            You can input either Source+DataFormat, or supply your own Regex.
+                          enum:
+                          - url
+                          - json
+                          type: string
+                        regex:
+                          description: |-
+                            Regex is a custom regular expression with a single capture group whose value is
+                            written to Target.
+                            You can input either Regex, or Source+DataFormat.
+                          type: string
+                        source:
+                          description: |-
+                            The string key that is searched within the pre-set regex patterns resolved by DataFormat.
+                            Required when using DataFormat.
+                            You can input either Source+DataFormat, or supply your own Regex.
+                          type: string
+                        target:
+                          description: Target is the attribute key the extracted value
+                            will be written to on the span.
+                          type: string
+                      required:
+                      - target
+                      type: object
+                    minItems: 1
+                    type: array
+                required:
+                - extractions
+                type: object
               k8sAttributes:
                 description: K8sAttributes is the config for the K8sAttributes Action.
                 properties:
