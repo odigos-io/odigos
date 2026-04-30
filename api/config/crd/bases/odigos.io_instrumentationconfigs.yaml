@@ -585,7 +585,9 @@ spec:
                             be - e.g. which spans should be included / excluded.
                           properties:
                             disabledInstrumentationLibraries:
-                              description: instrumentation libraries to configure
+                              description: |-
+                                instrumentation libraries to configure
+                                the library name shouold be the same as the "instrumentation scope name" that can be found on the generate span attributes.
                               items:
                                 properties:
                                   libraryName:

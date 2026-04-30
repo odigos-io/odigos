@@ -344,7 +344,9 @@ spec:
                 description: Configure the verbosity of the traces for the library.
                 properties:
                   disabledInstrumentationLibraries:
-                    description: instrumentation libraries to configure
+                    description: |-
+                      instrumentation libraries to configure
+                      the library name shouold be the same as the "instrumentation scope name" that can be found on the generate span attributes.
                     items:
                       properties:
                         libraryName:
