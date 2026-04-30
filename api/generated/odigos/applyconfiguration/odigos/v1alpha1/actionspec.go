@@ -49,7 +49,8 @@ type ActionSpecApplyConfiguration struct {
 	// URLTemplatization is the config for the URLTemplatization Action.
 	URLTemplatization *actions.URLTemplatizationConfig `json:"urlTemplatization,omitempty"`
 	// SpanRenamer is the config for the SpanRenamer Action.
-	SpanRenamer      *actions.SpanRenamerConfig      `json:"spanRenamer,omitempty"`
+	SpanRenamer *actions.SpanRenamerConfig `json:"spanRenamer,omitempty"`
+	// ExtractAttribute is the config for the ExtractAttribute Action.
 	ExtractAttribute *actions.ExtractAttributeConfig `json:"extractAttribute,omitempty"`
 }
 

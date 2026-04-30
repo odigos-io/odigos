@@ -84,8 +84,8 @@ spec:
                   but keep it around for future use
                 type: boolean
               extractAttribute:
-                description: ExtractAttributeConfig is the action config for the odigosextractattribute
-                  processor.
+                description: ExtractAttribute is the config for the ExtractAttribute
+                  Action.
                 properties:
                   extractions:
                     description: Extractions is the list of extraction rules to apply,
