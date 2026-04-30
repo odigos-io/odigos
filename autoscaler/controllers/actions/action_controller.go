@@ -173,14 +173,6 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 		}
 	}
 
-	if action.Spec.ExtractAttribute != nil {
-		config, err := renameAttributeConfig(action.Spec.RenameAttribute.Renames, action.Spec.Signals)
-		if err != nil {
-			return nil, err
-		}
-		return convertToDefaultProcessor(action, action.Spec.RenameAttribute, config)
-	}
-
 	return nil, errors.New("no supported action found in resource")
 }
 

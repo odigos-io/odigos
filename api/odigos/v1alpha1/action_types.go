@@ -85,6 +85,7 @@ type ActionSpec struct {
 	// SpanRenamer is the config for the SpanRenamer Action.
 	SpanRenamer *actions.SpanRenamerConfig `json:"spanRenamer,omitempty"`
 
+	// ExtractAttribute is the config for the ExtractAttribute Action.
 	ExtractAttribute *actions.ExtractAttributeConfig `json:"extractAttribute,omitempty"`
 }
 
