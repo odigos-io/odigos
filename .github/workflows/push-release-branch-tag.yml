@@ -56,8 +56,6 @@ jobs:
 
       - name: Push tag to upstream
         if: env.TAG != ''
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
 
           TAG="${{ env.TAG }}"
@@ -72,16 +70,11 @@ jobs:
           git tag "$TAG"
           git push origin "$TAG"
 
-          # Notify Slack on success
-          curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"✅ Odigos tagging of release PR pushed successfully with the tag: $TAG"}' \
-          $SLACK_WEBHOOK_URL
-
-      - name: Notify Slack on Failure
-        if: ${{ failure() }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-            --data '{"text":"❌ Odigos tagging of release PR failed for tag: ${{ env.TAG }}"}' \
-            $SLACK_WEBHOOK_URL
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Odigos tagging of release PR pushed successfully with tag ${{ env.TAG }}"
+          failure-description: "ERROR: Odigos tagging of release PR failed for tag ${{ env.TAG }}"
+          tag: ${{ env.TAG }}

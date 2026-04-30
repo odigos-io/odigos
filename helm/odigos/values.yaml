@@ -1200,7 +1200,7 @@ gke:
 # @schema
 # description: "List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] | (CLI): --set profiles={PROFILE_NAME}"
 # @schema
-profiles: ["disable-nodejs-express", "nodejs-verbosity-full"]
+profiles: []
 
 # @schema
 # description: |-
@@ -1597,7 +1597,7 @@ sampling:
     #   setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
     #   and broken traces due to sampling each trace in few pieces.
     # @schema
-    # traceAggregationWaitDuration: '5s'
+    # traceAggregationWaitDuration: '30s'
 
   # @schema
   # description: |-
