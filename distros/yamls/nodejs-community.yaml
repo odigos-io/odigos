@@ -30,3 +30,6 @@ spec:
       supported: true
     headersCollection:
       supported: true
+    disableIntrumentationLibraryTraces:
+      supportOdigosAgentLibraries: true
+      supportAnyScope: false

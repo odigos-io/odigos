@@ -619,6 +619,44 @@ spec:
                                 - programmingLanguage
                                 type: object
                               type: array
+                            enabledInstrumentationLibraries:
+                              description: |-
+                                for instrumentation libraries that are disabled by default, this field can be used to enable them.
+                                the list of such libraries is small and depends on the language and agent type.
+                                common example: nodejs fs, dns, net instrumentations are disabled by default and can be opt-in for trace collection.
+                              items:
+                                properties:
+                                  libraryName:
+                                    description: |-
+                                      the name of the library to configure. required.
+                                      exact syntax and format depends on the programming language.
+                                    type: string
+                                  programmingLanguage:
+                                    description: the programming language of the relevant
+                                      library
+                                    enum:
+                                    - java
+                                    - python
+                                    - go
+                                    - dotnet
+                                    - javascript
+                                    - php
+                                    - ruby
+                                    - rust
+                                    - cplusplus
+                                    - mysql
+                                    - nginx
+                                    - redis
+                                    - postgres
+                                    - unknown
+                                    - ignored
+                                    - '*'
+                                    type: string
+                                required:
+                                - libraryName
+                                - programmingLanguage
+                                type: object
+                              type: array
                           type: object
                         urlTemplatization:
                           description: A list of URL templatization configurations

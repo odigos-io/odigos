@@ -7,14 +7,24 @@ import (
 	"github.com/odigos-io/odigos/distros/distro"
 )
 
+func DistroSupportsTracesVerbosity(d *distro.OtelDistro) bool {
+	return d.Traces != nil && d.Traces.TraceVerbosity != nil && (d.Traces.TraceVerbosity.SupportDisablingOdigosAgentLibraries || d.Traces.TraceVerbosity.SupportDisablingAnyScope)
+}
+
 func CalculateTraceVerbosityConfig(d *distro.OtelDistro, irls *[]odigosv1.InstrumentationRule) *instrumentationrules.TraceVerbosity {
+
+	if !DistroSupportsTracesVerbosity(d) {
+		return nil
+	}
+
 	traceVerbosity := &instrumentationrules.TraceVerbosity{}
 
 	if irls == nil {
 		return traceVerbosity
 	}
 	for _, irl := range *irls {
-		traceVerbosity = mergeTraceVerbosityConfigs(d, traceVerbosity, irl.Spec.TraceVerbosity)
+		filteredPerLanguage := traceVerbosityForLanguage(irl.Spec.TraceVerbosity, d.Language)
+		traceVerbosity = mergeTraceVerbosityConfigs(traceVerbosity, filteredPerLanguage)
 	}
 
 	return traceVerbosity
@@ -22,19 +32,21 @@ func CalculateTraceVerbosityConfig(d *distro.OtelDistro, irls *[]odigosv1.Instru
 
 // merge 2 trace verbosity configs, filtering for the language of the distro.
 // v1 is assumed to be already filtered for the language of the distro.
-func mergeTraceVerbosityConfigs(d *distro.OtelDistro, v1 *instrumentationrules.TraceVerbosity, v2 *instrumentationrules.TraceVerbosity) *instrumentationrules.TraceVerbosity {
+func mergeTraceVerbosityConfigs(v1 *instrumentationrules.TraceVerbosity, v2 *instrumentationrules.TraceVerbosity) *instrumentationrules.TraceVerbosity {
 	if v1 == nil {
-		return traceVerbosityForLanguage(v2, d.Language)
+		return v2
 	}
 	if v2 == nil {
 		return v1 // v1 is already filtered for the language
 	}
 
-	v2LanguageFiltered := traceVerbosityForLanguage(v2, d.Language)
-
 	merged := &instrumentationrules.TraceVerbosity{}
+
 	merged.DisabledInstrumentationLibraries = append(merged.DisabledInstrumentationLibraries, v1.DisabledInstrumentationLibraries...)
-	merged.DisabledInstrumentationLibraries = append(merged.DisabledInstrumentationLibraries, v2LanguageFiltered.DisabledInstrumentationLibraries...)
+	merged.DisabledInstrumentationLibraries = append(merged.DisabledInstrumentationLibraries, v2.DisabledInstrumentationLibraries...)
+
+	merged.EnabledInstrumentationLibraries = append(merged.EnabledInstrumentationLibraries, v1.EnabledInstrumentationLibraries...)
+	merged.EnabledInstrumentationLibraries = append(merged.EnabledInstrumentationLibraries, v2.EnabledInstrumentationLibraries...)
 
 	return merged
 }
@@ -44,13 +56,15 @@ func traceVerbosityForLanguage(tv *instrumentationrules.TraceVerbosity, language
 		return nil
 	}
 
-	filtered := filterLibrariesForLanguage(tv.DisabledInstrumentationLibraries, language)
-	if len(filtered) == 0 {
+	filteredDisabled := filterLibrariesForLanguage(tv.DisabledInstrumentationLibraries, language)
+	filteredEnabled := filterLibrariesForLanguage(tv.EnabledInstrumentationLibraries, language)
+	if len(filteredDisabled) == 0 && len(filteredEnabled) == 0 {
 		return nil
 	}
 
 	return &instrumentationrules.TraceVerbosity{
-		DisabledInstrumentationLibraries: filtered,
+		DisabledInstrumentationLibraries: filteredDisabled,
+		EnabledInstrumentationLibraries:  filteredEnabled,
 	}
 }
 
