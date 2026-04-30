@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
 import { EntityTypes, type WorkloadId } from '@odigos/ui-kit/types';
 import { useDrawerStore, useModalStore } from '@odigos/ui-kit/store';
-import { ActionFormContextProvider, DestinationFormContextProvider, RuleFormContextProvider, SourceInstrumentFormContextProvider } from '@odigos/ui-kit/contexts';
-import { AddActionDrawer, AddDestinationDrawer, AddRuleDrawer, AddSourceDrawer, EditActionDrawer, EditDestinationDrawer, EditRuleDrawer } from '@odigos/ui-kit/containers/v2';
+import { ActionFormContextProvider, DestinationFormContextProvider, RuleFormContextProvider, SourceEditFormContextProvider, SourceInstrumentFormContextProvider } from '@odigos/ui-kit/contexts';
+import { AddActionDrawer, AddDestinationDrawer, AddRuleDrawer, AddSourceDrawer, EditActionDrawer, EditDestinationDrawer, EditRuleDrawer, EditSourceDrawer } from '@odigos/ui-kit/containers/v2';
 import {
   useActionCRUD,
   useDescribe,
@@ -15,7 +15,6 @@ import {
   useTestConnection,
   useWorkloadUtils,
 } from '@/hooks';
-import { SourceDrawer } from '@odigos/ui-kit/containers';
 
 const OverviewModalsAndDrawers = () => {
   const { currentModal, setCurrentModal } = useModalStore();
@@ -74,32 +73,21 @@ const OverviewModalsAndDrawers = () => {
 
       {/* edit drawers */}
       {drawerType === EntityTypes.Source && drawerEntityId && (
-        // <SourceEditFormContextProvider>
-        //   <EditSourceDrawer
-        //     onClose={handleCloseDrawer}
-        //     sourceId={drawerEntityId as WorkloadId}
-        //     persistSources={persistSources}
-        //     restartWorkloads={restartWorkloads}
-        //     restartPod={restartPod}
-        //     recoverFromRollback={recoverFromRollback}
-        //     updateSource={updateSource}
-        //     fetchSourceById={fetchSourceById}
-        //     fetchSourceDescribe={fetchDescribeSource}
-        //     fetchSourceLibraries={fetchSourceLibraries}
-        //     fetchPeerSources={fetchPeerSources}
-        //   />
-        // </SourceEditFormContextProvider>
-        <SourceDrawer
-          persistSources={persistSources}
-          restartWorkloads={restartWorkloads}
-          restartPod={restartPod}
-          recoverFromRollback={recoverFromRollback}
-          updateSource={updateSource}
-          fetchSourceById={fetchSourceById}
-          fetchSourceDescribe={fetchDescribeSource}
-          fetchSourceLibraries={fetchSourceLibraries}
-          fetchPeerSources={fetchPeerSources}
-        />
+        <SourceEditFormContextProvider>
+          <EditSourceDrawer
+            onClose={handleCloseDrawer}
+            sourceId={drawerEntityId as WorkloadId}
+            persistSources={persistSources}
+            restartWorkloads={restartWorkloads}
+            restartPod={restartPod}
+            recoverFromRollback={recoverFromRollback}
+            updateSource={updateSource}
+            fetchSourceById={fetchSourceById}
+            fetchSourceDescribe={fetchDescribeSource}
+            fetchSourceLibraries={fetchSourceLibraries}
+            fetchPeerSources={fetchPeerSources}
+          />
+        </SourceEditFormContextProvider>
       )}
       {drawerType === EntityTypes.Destination && drawerEntityId && (
         <DestinationFormContextProvider>
