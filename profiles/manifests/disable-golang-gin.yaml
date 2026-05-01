@@ -1,10 +1,10 @@
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationRule
 metadata:
-  name: disable-nodejs-express
+  name: disable-golang-gin
 spec:
-  ruleName: "disable nodejs express"
-  notes: "Auto generated rule from disable-nodejs-express profile. Do not edit."
+  ruleName: "disable golang gin"
+  notes: "Auto generated rule from disable-golang-gin profile. Do not edit."
   traceVerbosity:
     disabledLibraries:
       - libraryName: github.com/gin-gonic/gin
