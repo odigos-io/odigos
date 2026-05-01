@@ -50,6 +50,15 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 	allProcessors[resourceDetectionProcessorName] = config.GenericMap{
 		"detectors": detectors,
 		"timeout":   "2s",
+		// EKS 1.35+ revokes pod IMDS access by default and collector contrib v0.148+
+		// hard-fails the pipeline when a detector cannot fetch metadata.
+		// Treat missing metadata as a warning so the collector keeps running.
+		"ec2": config.GenericMap{
+			"fail_on_missing_metadata": false,
+		},
+		"eks": config.GenericMap{
+			"fail_on_missing_metadata": false,
+		},
 	}
 
 	return allProcessors
