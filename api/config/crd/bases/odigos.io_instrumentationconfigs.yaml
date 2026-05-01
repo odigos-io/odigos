@@ -584,18 +584,13 @@ spec:
                           description: configuration for how verbose the trace should
                             be - e.g. which spans should be included / excluded.
                           properties:
-                            disabledInstrumentationLibraries:
+                            disabledLibraries:
                               description: |-
                                 instrumentation libraries to configure
                                 the library name shouold be the same as the "instrumentation scope name" that can be found on the generate span attributes.
                               items:
                                 properties:
-                                  libraryName:
-                                    description: |-
-                                      the name of the library to configure. required.
-                                      exact syntax and format depends on the programming language.
-                                    type: string
-                                  programmingLanguage:
+                                  Language:
                                     description: the programming language of the relevant
                                       library
                                     enum:
@@ -616,24 +611,24 @@ spec:
                                     - ignored
                                     - '*'
                                     type: string
+                                  libraryName:
+                                    description: |-
+                                      the name of the library to configure. required.
+                                      exact syntax and format depends on the programming language.
+                                    type: string
                                 required:
+                                - Language
                                 - libraryName
-                                - programmingLanguage
                                 type: object
                               type: array
-                            enabledInstrumentationLibraries:
+                            enabledLibraries:
                               description: |-
                                 for instrumentation libraries that are disabled by default, this field can be used to enable them.
                                 the list of such libraries is small and depends on the language and agent type.
                                 common example: nodejs fs, dns, net instrumentations are disabled by default and can be opt-in for trace collection.
                               items:
                                 properties:
-                                  libraryName:
-                                    description: |-
-                                      the name of the library to configure. required.
-                                      exact syntax and format depends on the programming language.
-                                    type: string
-                                  programmingLanguage:
+                                  Language:
                                     description: the programming language of the relevant
                                       library
                                     enum:
@@ -654,9 +649,14 @@ spec:
                                     - ignored
                                     - '*'
                                     type: string
+                                  libraryName:
+                                    description: |-
+                                      the name of the library to configure. required.
+                                      exact syntax and format depends on the programming language.
+                                    type: string
                                 required:
+                                - Language
                                 - libraryName
-                                - programmingLanguage
                                 type: object
                               type: array
                           type: object

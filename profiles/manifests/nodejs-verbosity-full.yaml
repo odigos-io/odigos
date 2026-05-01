@@ -6,10 +6,10 @@ spec:
   ruleName: "nodejs verbosity full"
   notes: "Auto generated rule from nodejs-verbosity-full profile. Do not edit."
   traceVerbosity:
-    enabledInstrumentationLibraries:
+    enabledLibraries:
       - libraryName: "@opentelemetry/instrumentation-dns"
-        programmingLanguage: javascript
+        Language: javascript
       - libraryName: "@opentelemetry/instrumentation-fs"
-        programmingLanguage: javascript
+        Language: javascript
       - libraryName: "@opentelemetry/instrumentation-net"
-        programmingLanguage: javascript
+        Language: javascript

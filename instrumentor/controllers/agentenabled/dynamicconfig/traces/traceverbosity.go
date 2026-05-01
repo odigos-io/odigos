@@ -43,11 +43,11 @@ func mergeTraceVerbosityConfigs(v1 *instrumentationrules.TraceVerbosity, v2 *ins
 
 	merged := &instrumentationrules.TraceVerbosity{}
 
-	merged.DisabledInstrumentationLibraries = append(merged.DisabledInstrumentationLibraries, v1.DisabledInstrumentationLibraries...)
-	merged.DisabledInstrumentationLibraries = append(merged.DisabledInstrumentationLibraries, v2.DisabledInstrumentationLibraries...)
+	merged.DisabledLibraries = append(merged.DisabledLibraries, v1.DisabledLibraries...)
+	merged.DisabledLibraries = append(merged.DisabledLibraries, v2.DisabledLibraries...)
 
-	merged.EnabledInstrumentationLibraries = append(merged.EnabledInstrumentationLibraries, v1.EnabledInstrumentationLibraries...)
-	merged.EnabledInstrumentationLibraries = append(merged.EnabledInstrumentationLibraries, v2.EnabledInstrumentationLibraries...)
+	merged.EnabledLibraries = append(merged.EnabledLibraries, v1.EnabledLibraries...)
+	merged.EnabledLibraries = append(merged.EnabledLibraries, v2.EnabledLibraries...)
 
 	return merged
 }
@@ -57,22 +57,22 @@ func traceVerbosityForLanguage(tv *instrumentationrules.TraceVerbosity, language
 		return nil
 	}
 
-	filteredDisabled := filterLibrariesForLanguage(tv.DisabledInstrumentationLibraries, language)
-	filteredEnabled := filterLibrariesForLanguage(tv.EnabledInstrumentationLibraries, language)
+	filteredDisabled := filterLibrariesForLanguage(tv.DisabledLibraries, language)
+	filteredEnabled := filterLibrariesForLanguage(tv.EnabledLibraries, language)
 	if len(filteredDisabled) == 0 && len(filteredEnabled) == 0 {
 		return nil
 	}
 
 	return &instrumentationrules.TraceVerbosity{
-		DisabledInstrumentationLibraries: filteredDisabled,
-		EnabledInstrumentationLibraries:  filteredEnabled,
+		DisabledLibraries: filteredDisabled,
+		EnabledLibraries:  filteredEnabled,
 	}
 }
 
 func filterLibrariesForLanguage(libraries []instrumentationrules.InstrumentationLibrary, language common.ProgrammingLanguage) []instrumentationrules.InstrumentationLibrary {
 	filtered := []instrumentationrules.InstrumentationLibrary{}
 	for _, library := range libraries {
-		if library.ProgrammingLanguage == language {
+		if library.Language == language {
 			filtered = append(filtered, library)
 		}
 	}

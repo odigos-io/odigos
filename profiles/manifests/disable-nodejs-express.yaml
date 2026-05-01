@@ -6,6 +6,6 @@ spec:
   ruleName: "disable nodejs express"
   notes: "Auto generated rule from disable-nodejs-express profile. Do not edit."
   traceVerbosity:
-    disabledInstrumentationLibraries:
+    disabledLibraries:
       - libraryName: "@opentelemetry/instrumentation-express"
-        programmingLanguage: javascript
+        Language: javascript
