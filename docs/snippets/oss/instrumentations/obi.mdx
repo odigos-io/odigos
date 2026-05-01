@@ -19,8 +19,58 @@ Odigos can run **[OpenTelemetry eBPF Instrumentation (OBI)](https://opentelemetr
 
 ## OBI Support
 
-OBI can be enabled by selecting it as a container override for specific workloads. If editing a [Source object](/oss/pipeline/sources/introduction),
-this is done through the `containerOverrides` field. For example:
+OBI can be enabled by selecting it as a container override for specific workloads. This can be configured either
+from the Odigos UI or directly on a [Source object](/oss/pipeline/sources/introduction).
+
+### Enabling OBI from the UI
+
+<Steps>
+  <Step title="Open the source drawer and edit the detected container">
+    Select the source you want to instrument. In the source drawer, click the edit (pencil) icon next to the
+    detected container.
+
+    <Frame>
+      <img src="/images/oss/instrumentations/obi/obi1.png" alt="Edit detected container in the source drawer" />
+    </Frame>
+  </Step>
+  <Step title="Choose the opentelemetry-ebpf-instrumentation distro">
+    In the **Otel Distro Name** drop-down, choose **`opentelemetry-ebpf-instrumentation`** and click the check
+    mark to save.
+
+    <Frame>
+      <img src="/images/oss/instrumentations/obi/obi2.png" alt="Select opentelemetry-ebpf-instrumentation as the Otel distro" />
+    </Frame>
+  </Step>
+  <Step title="Verify the source is instrumented with OBI">
+    After refreshing, the detected container should report that it is instrumented with
+    `opentelemetry-ebpf-instrumentation`.
+
+    <Frame>
+      <img src="/images/oss/instrumentations/obi/obi3.png" alt="Source instrumented with OBI" />
+    </Frame>
+  </Step>
+  <Step title="Remove OBI instrumentation">
+    To remove OBI instrumentation, open the runtime override config again and click the delete (trash) icon
+    next to the **Otel Distro Name** field.
+
+    <Frame>
+      <img src="/images/oss/instrumentations/obi/obi4.png" alt="Remove OBI override from runtime config" />
+    </Frame>
+  </Step>
+</Steps>
+
+<Note>
+  By default, OBI does not need to restart your containers to begin instrumenting them. Because of this,
+  choosing OBI as your container override will not trigger a pod restart. In some cases, however, your
+  specific application may still require a pod restart (for example, when switching from a pre-existing
+  instrumentation to OBI or vice-versa). You can trigger a pod restart using the **Restart** button in the
+  source drawer.
+</Note>
+
+### Enabling OBI from a Source object
+
+If editing a [Source object](/oss/pipeline/sources/introduction) directly, OBI is enabled through the
+`containerOverrides` field. For example:
 
 ```yaml
 apiVersion: odigos.io/v1alpha1
@@ -40,8 +90,6 @@ spec:
 
 In this case, `containerName` is the name of the container to instrument in this workload, and the required
 `otelDistroName` is **`opentelemetry-ebpf-instrumentation`**.
-
-Or through the **Container Overrides** field in the UI.
 
 ### Limitations
 
