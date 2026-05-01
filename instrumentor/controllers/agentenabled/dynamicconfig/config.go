@@ -128,6 +128,9 @@ func calculateTracesConfig(
 	// Code Attributes - Agent only (not applicable to collector)
 	agentConfig.CodeAttributes = traces.CalculateCodeAttributesConfig(d, irls)
 
+	// Trace Verbosity - Agent only (not applicable to collector)
+	agentConfig.TraceVerbosity = traces.CalculateTraceVerbosityConfig(d, irls)
+
 	// Custom Instrumentations - Agent only (not applicable to collector)
 	agentConfig.CustomInstrumentations = traces.CalculateCustomInstrumentationsConfig(d, irls)
 
