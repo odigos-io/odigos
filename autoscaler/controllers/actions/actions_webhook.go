@@ -44,6 +44,7 @@ var validActionConfigNames = []string{
 	actionsv1alpha1.ActionNameSamplers,
 	actions.ActionNameURLTemplatization,
 	actions.ActionSpanRenamer,
+	actions.ActionNameExtractAttribute,
 }
 
 type ActionsValidator struct {
@@ -181,6 +182,10 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 	if action.Spec.SpanRenamer != nil {
 		path := field.NewPath("spec").Child("spanRenamer")
 		fields[path] = action.Spec.SpanRenamer
+	}
+	if action.Spec.ExtractAttribute != nil {
+		path := field.NewPath("spec").Child("extractAttribute")
+		fields[path] = action.Spec.ExtractAttribute
 	}
 
 	if len(fields) == 0 {

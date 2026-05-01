@@ -203,7 +203,8 @@
                           "oss/pipeline/actions/attributes/deleteattribute",
                           "oss/pipeline/actions/attributes/renameattribute",
                           "oss/pipeline/actions/attributes/piimasking",
-                          "oss/pipeline/actions/attributes/k8sattributes"
+                          "oss/pipeline/actions/attributes/k8sattributes",
+                          "oss/pipeline/actions/attributes/extractattribute"
                         ]
                       },
                       {
@@ -501,7 +502,8 @@
                           "enterprise/pipeline/actions/attributes/deleteattribute",
                           "enterprise/pipeline/actions/attributes/renameattribute",
                           "enterprise/pipeline/actions/attributes/piimasking",
-                          "enterprise/pipeline/actions/attributes/k8sattributes"
+                          "enterprise/pipeline/actions/attributes/k8sattributes",
+                          "enterprise/pipeline/actions/attributes/extractattribute"
                         ]
                       },
                       {
