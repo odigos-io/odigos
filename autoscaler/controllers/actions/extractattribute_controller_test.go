@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -220,19 +221,19 @@ var _ = Describe("ExtractAttribute Controller", func() {
 			Expect(rendered.Extractions[2].DataFormat).Should(BeEmpty())
 		})
 
-		It("Should propagate Disabled and multiple Signals to the Processor", func() {
-			By("Creating a disabled Action with multiple signals")
+		It("Should reject logs and metrics signals", func() {
+			By("Creating an Action with unsupported signals")
 			action := &odigosv1.Action{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      ActionName + "-disabled",
+					Name:      ActionName + "-unsupported-signals",
 					Namespace: ActionNamespace,
 				},
 				Spec: odigosv1.ActionSpec{
-					ActionName: "extract disabled",
-					Disabled:   true,
+					ActionName: "extract unsupported",
 					Signals: []common.ObservabilitySignal{
 						common.TracesObservabilitySignal,
 						common.LogsObservabilitySignal,
+						common.MetricsObservabilitySignal,
 					},
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
 						Extractions: []odigosactions.Extraction{
@@ -248,20 +249,32 @@ var _ = Describe("ExtractAttribute Controller", func() {
 
 			Expect(k8sClient.Create(testCtx, action)).Should(Succeed())
 
+			By("Checking that no Processor is created")
 			processor := &odigosv1.Processor{}
-			Eventually(func() bool {
+			Consistently(func() bool {
 				err := k8sClient.Get(testCtx, types.NamespacedName{
-					Name:      ActionName + "-disabled",
+					Name:      ActionName + "-unsupported-signals",
 					Namespace: ActionNamespace,
 				}, processor)
-				return err == nil
+				return err != nil
 			}, timeout, interval).Should(BeTrue())
 
-			Expect(processor.Spec.Disabled).Should(BeTrue())
-			Expect(processor.Spec.Signals).Should(ContainElements(
-				common.TracesObservabilitySignal,
-				common.LogsObservabilitySignal,
-			))
+			By("Checking that the Action status reports the unsupported signal")
+			Eventually(func() string {
+				updatedAction := &odigosv1.Action{}
+				err := k8sClient.Get(testCtx, types.NamespacedName{
+					Name:      ActionName + "-unsupported-signals",
+					Namespace: ActionNamespace,
+				}, updatedAction)
+				if err != nil {
+					return ""
+				}
+				condition := meta.FindStatusCondition(updatedAction.Status.Conditions, odigosv1.ActionTransformedToProcessorType)
+				if condition == nil {
+					return ""
+				}
+				return condition.Message
+			}, timeout, interval).Should(ContainSubstring("unsupported signal in ExtractAttribute action: LOGS"))
 		})
 	})
 

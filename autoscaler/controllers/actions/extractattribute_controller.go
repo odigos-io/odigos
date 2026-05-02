@@ -20,7 +20,12 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
+	"github.com/odigos-io/odigos/common"
 )
+
+var supportedExtractAttributeSignals = map[common.ObservabilitySignal]struct{}{
+	common.TracesObservabilitySignal: {},
+}
 
 type extractAttributeProcessorConfig struct {
 	Extractions []extractAttributeRule `json:"extractions"`
