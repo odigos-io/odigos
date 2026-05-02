@@ -226,7 +226,7 @@ jobs:
             uses: odigos-io/ci-core/sts@main
             with:
               scope: odigos-io/odigos-enterprise
-              identity: trigger-publish-rhel
+              identity: trigger-release-pr
               output-git-config: "false"
 
           - name: Trigger Enterprise Publish job
