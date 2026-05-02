@@ -407,6 +407,20 @@ helm-install:
 		--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL) \
 		--set onPremToken=$(ONPREM_TOKEN)
 
+.PHONY: helm-install-community
+helm-install-community:
+	@echo "Installing odigos community using helm"
+	make helm-install ONPREM_TOKEN=
+
+.PHONY: helm-install-enterprise
+helm-install-enterprise:
+	@echo "Installing odigos enterprise using helm"
+	if [ -z "$(ONPREM_TOKEN)" ]; then \
+		echo "❌ ONPREM_TOKEN is not set"; \
+		exit 1; \
+	fi
+	make helm-install ONPREM_TOKEN=$(ONPREM_TOKEN)
+
 .PHONY: helm-install-central
 helm-install-central:
 	@echo "Installing Odigos Central using Helm..."
