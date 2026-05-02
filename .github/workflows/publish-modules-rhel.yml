@@ -19,35 +19,35 @@ jobs:
             service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
             include:
               - service: autoscaler
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'Autoscaler for Odigos'
                 description: 'Autoscaler manages the installation of Odigos components.'
               - service: scheduler
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'Scheduler for Odigos'
                 description: 'Scheduler manages the installation of OpenTelemetry Collectors with Odigos.'
               - service: instrumentor
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'Instrumentor for Odigos'
                 description: 'Instrumentor manages auto-instrumentation for workloads with Odigos.'
               - service: collector
-                runner: large-runner
+                runner: depot-ubuntu-24.04-16
                 summary: 'Odigos Collector'
                 description: 'The Odigos build of the OpenTelemetry Collector.'
               - service: odiglet
-                runner: ubuntu-latest
+                runner: depot-ubuntu-24.04-4
                 summary: 'Odiglet for Odigos'
                 description: 'Odiglet is the core component of Odigos managing auto-instrumentation. This image requires a root user to load and manage eBPF programs.'
               - service: ui
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'UI for Odigos'
                 description: 'UI provides the frontend webapp for managing an Odigos installation.'
               - service: operator
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'Odigos Operator'
                 description: 'The Odigos Operator installs and manages Odigos in a cluster'
               - service: agents
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'Odigos Agents'
                 description: 'The Odigos Agents used to copy Odigos agent relevant files into the user workloads.'
         steps:
@@ -77,7 +77,20 @@ jobs:
               registry: us-central1-docker.pkg.dev
               username: oauth2accesstoken
               password: ${{ steps.gcp-auth.outputs.access_token }}
-      
+
+          # Authenticate to AWS Public ECR so the Dockerfile's `COPY --from=public.ecr.aws/...`
+          # references for community agents (python, nodejs, php, ruby) are pulled with the
+          # higher per-account rate limit instead of the anonymous one (which causes 429s).
+          - name: Configure AWS credentials for ECR Public
+            uses: aws-actions/configure-aws-credentials@v5
+            with:
+              role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
+              aws-region: us-east-1
+
+          - name: Login to Amazon ECR Public
+            run: |
+              aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
           - name: Login to Docker Hub
             uses: docker/login-action@v3
             with:
@@ -124,7 +137,7 @@ jobs:
 
     publish-cli-rhel:
         needs: publish-images-rhel
-        runs-on: ubuntu-latest
+        runs-on: depot-ubuntu-latest
         permissions:
           contents: 'read'
           id-token: 'write'
@@ -205,11 +218,21 @@ jobs:
     trigger-enterprise-publish:
         needs: publish-cli-rhel
         runs-on: ubuntu-latest
+        permissions:
+          id-token: write
         steps:
+          - name: Get sts tokens
+            id: sts-enterprise
+            uses: odigos-io/ci-core/sts@main
+            with:
+              scope: odigos-io/odigos-enterprise
+              identity: trigger-publish-rhel
+              output-git-config: "false"
+
           - name: Trigger Enterprise Publish job
-            run: |
-              curl -X POST \
-                -H "Accept: application/vnd.github.v3+json" \
-                -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
-                https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
-                -d '{"event_type": "publish_images_rhel", "client_payload": {"tag": "${{ inputs.tag }}"}}'
+            uses: peter-evans/repository-dispatch@v4
+            with:
+              token: ${{ steps.sts-enterprise.outputs.GH_TOKEN }}
+              repository: odigos-io/odigos-enterprise
+              event-type: publish_images_rhel
+              client-payload: '{"tag": "${{ inputs.tag }}"}'
