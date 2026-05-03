@@ -6,7 +6,6 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentation"
@@ -27,19 +26,18 @@ type GoOtelEbpfSdk struct {
 // compile-time check that configProvider[auto.InstrumentationConfig] implements auto.Provider
 var _ auto.ConfigProvider = (*ebpf.ConfigProvider[auto.InstrumentationConfig])(nil)
 
-type GoInstrumentationFactory struct {
-}
+type GoInstrumentationFactory struct{}
 
 func NewGoInstrumentationFactory() instrumentation.Factory {
 	return &GoInstrumentationFactory{}
 }
 
 func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pid int, settings instrumentation.Settings) (instrumentation.Instrumentation, error) {
-	defaultExporter, err := otlptracegrpc.New(
-		ctx,
-		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint(fmt.Sprintf("localhost:%d", consts.OTLPPort)),
-	)
+	conn, err := sharedTracesGRPCConn()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get shared OTLP traces conn: %w", err)
+	}
+	defaultExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create exporter: %w", err)
 	}
