@@ -11,6 +11,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/costreduction"
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/highlyrelevant"
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/noisy"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/internal/metadata"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/collector"
@@ -31,14 +34,14 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		p.logger.Error("odigos config extension is not set, skipping tail sampling")
 		return td, nil // for auto generated tests, and not to crash in case it somehow happens
 	}
-	if td.ResourceSpans().Len() == 0 || td.ResourceSpans().At(0).ScopeSpans().Len() == 0 || td.ResourceSpans().At(0).ScopeSpans().At(0).Spans().Len() == 0 {
-		return td, nil // no spans to process
-	}
 
-	traceID, ok := assertAllSpansBelongToTheSameTrace(td)
-	if !ok {
-		p.logger.Error("not all spans belong to the same trace", zap.String("trace_id", traceID.String()))
-		return td, nil // not all spans belong to the same trace
+	traceID, shouldProcess, err := checkPrerequists(td)
+	if err != nil {
+		p.logger.Error("failed to check prerequists", zap.Error(err))
+		return td, nil
+	}
+	if !shouldProcess {
+		return td, nil
 	}
 
 	rnd := sampling.TraceIDToRandomness(traceID)
@@ -65,6 +68,30 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		}
 	}
 
+	matched, highlyRelevantOperationRule := highlyrelevant.Evaluate(td, p.odigosConfigExtension)
+	if matched {
+		percentageAtLeast := category.GetPercentageOrDefault100(highlyRelevantOperationRule.PercentageAtLeast)
+		keepTrace := tracePercentage <= percentageAtLeast
+
+		if keepTrace || p.config.DryRun {
+			enrichSpansWithSamplingAttributes(td, consts.SamplingCategoryHighlyRelevant, highlyRelevantOperationRule.Id, highlyRelevantOperationRule.Name, percentageAtLeast, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
+			return td, nil
+		}
+		return ptrace.NewTraces(), nil
+	}
+
+	matched, costReductionRule := costreduction.Evaluate(td, p.odigosConfigExtension)
+	if matched {
+		percentageAtMost := costReductionRule.PercentageAtMost
+		keepTrace := tracePercentage <= percentageAtMost
+
+		if keepTrace || p.config.DryRun {
+			enrichSpansWithSamplingAttributes(td, consts.SamplingCategoryCostReduction, costReductionRule.Id, costReductionRule.Name, percentageAtMost, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
+			return td, nil
+		}
+		return ptrace.NewTraces(), nil
+	}
+
 	return td, nil
 }
 
@@ -86,7 +113,7 @@ func (p *tailSamplingProcessor) evaluateNoisyOperations(td ptrace.Traces) (bool,
 		return false, nil
 	}
 
-	return category.EvaluateNoisyOperations(rootSpan, tailSamplingConfig.NoisyOperations)
+	return noisy.Evaluate(rootSpan, tailSamplingConfig.NoisyOperations)
 }
 
 func (p *tailSamplingProcessor) Start(ctx context.Context, host component.Host) error {

@@ -47,13 +47,13 @@ describe('Sampling Rules CRUD', () => {
         cy.get('input[name=sampling-input-note]').type('Created by Cypress');
 
         // Select HTTP server operation type (force click to avoid overlap from preview section)
-        cy.contains('button', 'HTTP server').scrollIntoView().click({ force: true });
+        cy.contains('button', 'HTTP Server').scrollIntoView().click({ force: true });
 
         // Fill route (radio "route" should be selected by default)
         cy.get('input[name=sampling-input-route]').type('api/health');
 
-        // Set percentage mode to "sample" and pick 1%
-        cy.contains('button', 'sample').scrollIntoView().click({ force: true });
+        // Set percentage mode to "Sample" and pick 1%
+        cy.contains('button', 'Sample').scrollIntoView().click({ force: true });
         cy.contains('button', '1%').scrollIntoView().click({ force: true });
 
         // Submit the form
@@ -113,7 +113,7 @@ describe('Sampling Rules CRUD', () => {
 
         // Must select a specific operation; "All operations" with no scopes matches
         // the auto-rule pattern and would be filtered into the AutoRuleCard instead of the table
-        cy.contains('button', 'HTTP server').scrollIntoView().click({ force: true });
+        cy.contains('button', 'HTTP Server').scrollIntoView().click({ force: true });
         cy.get('input[name=sampling-input-route]').type('api/checkout');
 
         // Cost Reduction defaults to "sample" mode with 50% preset — switch to 25%

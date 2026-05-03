@@ -9,11 +9,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/go-logr/logr"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
@@ -63,7 +63,7 @@ func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd *
 		return nil, "", err
 	}
 	for _, config := range instrumentationConfig.Spec.SdkConfigs {
-		if config.Language == lang {
+		if config.Language == lang || (common.IsProgrammingLanguageWildcard(lang) && config.Language != "" && config.Language != common.UnknownProgrammingLanguage) {
 			return &config, instrumentationConfig.Spec.ServiceName, nil
 		}
 	}
@@ -150,7 +150,7 @@ func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, pod *corev1.Pod, 
 		attrs = append(attrs, semconv.K8SCronJobName(podWorkload.Name))
 	case k8sconsts.WorkloadKindJob:
 		attrs = append(attrs, semconv.K8SJobName(podWorkload.Name))
-	// pods and static pods workload already have the k8s.pod.name attribute
+		// pods and static pods workload already have the k8s.pod.name attribute
 	}
 
 	if pe.ExecDetails != nil {

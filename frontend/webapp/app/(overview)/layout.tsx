@@ -33,21 +33,6 @@ const ContentUnderActions = styled.div`
   width: calc(100% - 24px);
 `;
 
-const getEntityType = (pathname: string) => {
-  switch (pathname) {
-    case ROUTES.SOURCES:
-      return EntityTypes.Source;
-    case ROUTES.DESTINATIONS:
-      return EntityTypes.Destination;
-    case ROUTES.ACTIONS:
-      return EntityTypes.Action;
-    case ROUTES.INSTRUMENTATION_RULES:
-      return EntityTypes.InstrumentationRule;
-    default:
-      return undefined;
-  }
-};
-
 function OverviewLayout({ children }: PropsWithChildren) {
   // call important hooks that should run on page-mount
   useSSE();
@@ -67,8 +52,6 @@ function OverviewLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const { config } = useConfig();
 
-  const entityType = useMemo(() => getEntityType(pathname), [pathname]);
-
   return (
     <ErrorBoundary>
       <OdigosProvider platformType={config?.platformType} tier={config?.tier} version={config?.odigosVersion || ''}>
@@ -79,12 +62,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
             {pathname === ROUTES.SERVICE_MAP ? (
               <div style={{ height: `${MENU_BAR_HEIGHT}px` }} />
             ) : (
-              <DataFlowActionsMenu
-                addEntity={entityType}
-                onClickNewDataStream={() => setCurrentModal(OtherEntityTypes.DataStream)}
-                updateDataStream={updateDataStream}
-                deleteDataStream={deleteDataStream}
-              />
+              <DataFlowActionsMenu onClickNewDataStream={() => setCurrentModal(OtherEntityTypes.DataStream)} updateDataStream={updateDataStream} deleteDataStream={deleteDataStream} />
             )}
 
             <ContentUnderActions>

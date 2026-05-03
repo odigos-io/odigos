@@ -14,8 +14,8 @@ func TestGetEnvVarOrDefault_Exists(t *testing.T) {
 	os.Setenv(envKey, expectedVal)
 	defer os.Unsetenv(envKey)
 
-	if got := getEnvVarOrDefault(envKey, "default"); got != expectedVal {
-		t.Errorf("getEnvVarOrDefault(%q, %q) = %q, want %q", envKey, "default", got, expectedVal)
+	if got := GetEnvVarOrDefault(envKey, "default"); got != expectedVal {
+		t.Errorf("GetEnvVarOrDefault(%q, %q) = %q, want %q", envKey, "default", got, expectedVal)
 	}
 }
 
@@ -23,8 +23,8 @@ func TestGetEnvVarOrDefault_NotExists(t *testing.T) {
 	const envKey = "TEST_ENV_NOT_EXISTS"
 	const defaultVal = "default"
 
-	if got := getEnvVarOrDefault(envKey, defaultVal); got != defaultVal {
-		t.Errorf("getEnvVarOrDefault(%q, %q) = %q, want %q", envKey, defaultVal, got, defaultVal)
+	if got := GetEnvVarOrDefault(envKey, defaultVal); got != defaultVal {
+		t.Errorf("GetEnvVarOrDefault(%q, %q) = %q, want %q", envKey, defaultVal, got, defaultVal)
 	}
 }
 

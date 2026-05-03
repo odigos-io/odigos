@@ -61,6 +61,10 @@ export const GET_WORKLOADS_BY_IDS = gql`
         }
         overrides {
           containerName
+          runtimeInfo {
+            language
+            runtimeVersion
+          }
         }
       }
       conditions {

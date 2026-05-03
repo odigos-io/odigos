@@ -13,7 +13,6 @@ const (
 
 	// Logs eBPF map sizing constants.
 	LogsMaxEntries = 256 * 1024 // 256KB - must match BPF log_events map size
-	LogsExtKeySize = 4          // uint32 TGID
 
 	// Inner Map configuration
 	MetricKeySize    = 4   // uint32 metric_key

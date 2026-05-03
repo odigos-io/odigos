@@ -2002,6 +2002,7 @@ const (
 	FieldTypeDropdown      FieldType = "dropdown"
 	FieldTypeCheckbox      FieldType = "checkbox"
 	FieldTypeToggle        FieldType = "toggle"
+	FieldTypeTime          FieldType = "time"
 )
 
 var AllFieldType = []FieldType{
@@ -2012,11 +2013,12 @@ var AllFieldType = []FieldType{
 	FieldTypeDropdown,
 	FieldTypeCheckbox,
 	FieldTypeToggle,
+	FieldTypeTime,
 }
 
 func (e FieldType) IsValid() bool {
 	switch e {
-	case FieldTypeInput, FieldTypeMultiInput, FieldTypeKeyValuePairs, FieldTypeTextarea, FieldTypeDropdown, FieldTypeCheckbox, FieldTypeToggle:
+	case FieldTypeInput, FieldTypeMultiInput, FieldTypeKeyValuePairs, FieldTypeTextarea, FieldTypeDropdown, FieldTypeCheckbox, FieldTypeToggle, FieldTypeTime:
 		return true
 	}
 	return false

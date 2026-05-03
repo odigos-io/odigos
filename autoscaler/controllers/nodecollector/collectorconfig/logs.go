@@ -72,13 +72,22 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 	}, []string{filelogReceiverName}
 }
 
-// isEbpfLogCaptureEnabled checks whether any InstrumentationConfig has eBPF
-// log capture enabled in its SdkConfigs.
 func isEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
 	if sources == nil {
 		return false
 	}
 	for _, ic := range sources.Items {
+		// check container config (new path)
+		for _, container := range ic.Spec.Containers {
+			if container.Logs != nil &&
+				container.Logs.EbpfLogCapture != nil &&
+				container.Logs.EbpfLogCapture.Enabled != nil &&
+				*container.Logs.EbpfLogCapture.Enabled {
+				return true
+			}
+		}
+
+		// TODO: remove once fully migrated to container config
 		for _, sdkConfig := range ic.Spec.SdkConfigs {
 			if sdkConfig.EbpfLogCapture != nil &&
 				sdkConfig.EbpfLogCapture.Enabled != nil &&

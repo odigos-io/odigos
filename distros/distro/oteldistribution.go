@@ -16,7 +16,8 @@ type RuntimeEnvironment struct {
 	// while java-script can run in both nodejs and browser, the distribution should specify where it is intended to run.
 	Name string `yaml:"name"`
 
-	// semconv range of the runtime versions supported by this distribution.
+	// semconv range of the runtime versions supported by this distribution (hashicorp/go-version constraint).
+	// May be '*' in YAML for distros that skip runtime version checks in the instrumentor (e.g. wildcard language).
 	SupportedVersions string `yaml:"supportedVersions,omitempty"`
 }
 
@@ -180,6 +181,35 @@ type PayloadCollection struct {
 	Supported bool `yaml:"supported,omitempty"`
 }
 
+type CodeAttributes struct {
+	// if true, the distro supports code attributes collection for traces in the agent.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type CustomInstrumentations struct {
+	// if true, the distro supports custom instrumentation probes in the agent.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type TraceVerbosity struct {
+	// if true, the distro supports disabling instrumentation libraries that are being setup by odigos agent.
+	DisablingOdigosAgentLibrariesSupported bool `yaml:"disablingOdigosAgentLibrariesSupported,omitempty"`
+	// if true, the distro supports disabling instrumentation libraries that are being setup by user
+	// or dependencies, which are not under odigos control.
+	// anyone can create a tracer and use it to start spans with any arbitrary scope.
+	DisablingAnyScopeSupported bool `yaml:"disablingAnyScopeSupported,omitempty"`
+}
+
+type EbpfLogCapture struct {
+	// if true, the distro supports eBPF-based log capture.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type Logs struct {
+	// if set, the distro supports eBPF-based log capture instead of filelog.
+	EbpfLogCapture *EbpfLogCapture `yaml:"ebpfLogCapture,omitempty"`
+}
+
 type Traces struct {
 	// if set, the distro supports head sampling based on root spans of traces.
 	HeadSampling *HeadSampling `yaml:"headSampling,omitempty"`
@@ -197,6 +227,16 @@ type Traces struct {
 	// if set, the distro supports payload collection.
 	// which payload and under which conditions to collect is instrumentation library specific.
 	PayloadCollection *PayloadCollection `yaml:"payloadCollection,omitempty"`
+
+	// if set, the distro supports code attributes collection.
+	CodeAttributes *CodeAttributes `yaml:"codeAttributes,omitempty"`
+
+	// if set, the distro supports custom instrumentation probes.
+	CustomInstrumentations *CustomInstrumentations `yaml:"customInstrumentations,omitempty"`
+
+	// if set, the distro supports configuring verbosity of traces - which spans should be included / excluded.
+	// the exact features and level of support is specified in the TraceVerbosity struct.
+	TraceVerbosity *TraceVerbosity `yaml:"traceVerbosity,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
@@ -214,7 +254,7 @@ type OtelDistro struct {
 	Name string `yaml:"name"`
 
 	// the programming language this distribution targets.
-	// each distribution must target a single language.
+	// Use common.ProgrammingLanguageWildcard ("*") for distributions that accept any language (see supportedVersions wildcard pattern).
 	Language common.ProgrammingLanguage `yaml:"language"`
 
 	// List of distribution parameters that are required to be set by the user.
@@ -259,4 +299,7 @@ type OtelDistro struct {
 
 	// document support by this distro for trace features
 	Traces *Traces `yaml:"traces,omitempty"`
+
+	// document support by this distro for logs features
+	Logs *Logs `yaml:"logs,omitempty"`
 }

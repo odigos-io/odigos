@@ -1397,6 +1397,20 @@ metricsSources:
     # @schema
     # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
 
+    # @schema
+    # description: |-
+    #   Controls the tradeoff between metric accuracy and resource usage.
+    #   Determines how sampling affects which spans are used to compute metrics.
+    #   Possible values:
+    #     - "sampled-spans-only" (default): metrics are computed only from sampled spans.
+    #       Unsampled spans are dropped early, resulting in lower resource usage but reduced accuracy.
+    #     - "all-spans": metrics are computed from all spans, regardless of sampling.
+    #       Unsampled spans are forwarded for metric computation and dropped later in the pipeline,
+    #       resulting in higher accuracy at the cost of increased resource usage.
+    # enum: [sampled-spans-only, all-spans]
+    # @schema
+    # spanMetricsMode: sampled-spans-only
+
   # @schema
   # description: Configuration for Odigos own metrics collection.
   # @schema

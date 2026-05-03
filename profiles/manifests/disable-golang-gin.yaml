@@ -1,0 +1,11 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: disable-golang-gin
+spec:
+  ruleName: "disable golang gin"
+  notes: "Auto generated rule from disable-golang-gin profile. Do not edit."
+  traceVerbosity:
+    disabledLibraries:
+      - libraryName: github.com/gin-gonic/gin
+        Language: go

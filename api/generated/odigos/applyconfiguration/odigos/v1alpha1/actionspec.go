@@ -50,6 +50,8 @@ type ActionSpecApplyConfiguration struct {
 	URLTemplatization *actions.URLTemplatizationConfig `json:"urlTemplatization,omitempty"`
 	// SpanRenamer is the config for the SpanRenamer Action.
 	SpanRenamer *actions.SpanRenamerConfig `json:"spanRenamer,omitempty"`
+	// ExtractAttribute is the config for the ExtractAttribute Action.
+	ExtractAttribute *actions.ExtractAttributeConfig `json:"extractAttribute,omitempty"`
 }
 
 // ActionSpecApplyConfiguration constructs a declarative configuration of the ActionSpec type for use with
@@ -153,5 +155,13 @@ func (b *ActionSpecApplyConfiguration) WithURLTemplatization(value actions.URLTe
 // If called multiple times, the SpanRenamer field is set to the value of the last call.
 func (b *ActionSpecApplyConfiguration) WithSpanRenamer(value actions.SpanRenamerConfig) *ActionSpecApplyConfiguration {
 	b.SpanRenamer = &value
+	return b
+}
+
+// WithExtractAttribute sets the ExtractAttribute field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ExtractAttribute field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithExtractAttribute(value actions.ExtractAttributeConfig) *ActionSpecApplyConfiguration {
+	b.ExtractAttribute = &value
 	return b
 }

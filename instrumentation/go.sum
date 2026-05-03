@@ -35,8 +35,8 @@ github.com/mdlayher/netlink v1.7.2 h1:/UtM3ofJap7Vl4QWCPDGXY8d3GIY2UGSDbK+QWmY8/
 github.com/mdlayher/netlink v1.7.2/go.mod h1:xraEF7uJbxLhc5fpHL4cPe221LI2bdttWlU+ZGLfQSw=
 github.com/mdlayher/socket v0.4.1 h1:eM9y2/jlbs1M615oshPQOHZzj6R6wMT7bX5NPiQvn2U=
 github.com/mdlayher/socket v0.4.1/go.mod h1:cAqeGjoufqdxWkD7DkpyS+wcefOtmu5OQ8KuoJGIReA=
-github.com/odigos-io/runtime-detector v0.0.24 h1:5CZqP8JDajoubW0HumGllJdoYK99Jwuq3M28ATmrvrM=
-github.com/odigos-io/runtime-detector v0.0.24/go.mod h1:Iww/+1F0b1mk8/BDsV9kmAOPVotiqgGhDr2vBP6wwgU=
+github.com/odigos-io/runtime-detector v0.0.25 h1:/pYFIK/oEIYiLECHUmD9Z8r3+hYNzHDZkwfwLEcwWhE=
+github.com/odigos-io/runtime-detector v0.0.25/go.mod h1:Iww/+1F0b1mk8/BDsV9kmAOPVotiqgGhDr2vBP6wwgU=
 github.com/onsi/ginkgo/v2 v2.27.2 h1:LzwLj0b89qtIy6SSASkzlNvX6WktqurSHwkk2ipF/Ns=
 github.com/onsi/ginkgo/v2 v2.27.2/go.mod h1:ArE1D/XhNXBXCBkKOLkbsb2c81dQHCRcF5zwn/ykDRo=
 github.com/onsi/gomega v1.38.2 h1:eZCjf2xjZAqe+LeWvKb5weQ+NcPwX84kqJ0cZNxok2A=

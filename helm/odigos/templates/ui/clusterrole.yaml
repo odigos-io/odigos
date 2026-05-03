@@ -116,6 +116,14 @@ rules:
       - delete
   {{- end }}
   - apiGroups:
+      - operator.odigos.io
+    resources:
+      - odigos
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - actions.odigos.io
     resources:
       - '*'

@@ -1,7 +1,6 @@
 package odigosebpfreceiver
 
 import (
-	"bytes"
 	"context"
 	"sync"
 	"time"
@@ -67,10 +66,7 @@ func (e *logEvent) streamString() string {
 	}
 }
 
-// logsAttrCache is a thread-safe cache of TGID -> packed resource attributes.
-// It is built from the attributesMap at startup and refreshed on cache misses
-// by doing a direct map lookup. The cache size is bounded by the eBPF map's
-// MaxProcessesCount, since only registered TGIDs can appear.
+// logsAttrCache is a thread-safe TGID → packed resource attributes cache.
 type logsAttrCache struct {
 	mu    sync.RWMutex
 	cache map[uint32]string
@@ -89,68 +85,27 @@ func (c *logsAttrCache) set(tgid uint32, attrs string) {
 	c.cache[tgid] = attrs
 }
 
+func (c *logsAttrCache) delete(tgid uint32) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.cache, tgid)
+}
+
 func (c *logsAttrCache) size() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return len(c.cache)
 }
 
-// buildLogsAttrCache pre-populates the cache by iterating over the entire
-// attributesMap so that the hot path (per log event) can serve most lookups
-// from memory instead of issuing an eBPF map syscall for every event.
-func buildLogsAttrCache(attributesMap *ebpf.Map, logger *zap.Logger) *logsAttrCache {
-	ac := &logsAttrCache{cache: make(map[uint32]string)}
-
-	var tgidKey uint32
-	var attrValue [attrValueMaxSize]byte
-
-	iter := attributesMap.Iterate()
-	for iter.Next(&tgidKey, &attrValue) {
-		attrStr := string(bytes.TrimRight(attrValue[:], "\x00"))
-		if attrStr != "" {
-			ac.set(tgidKey, attrStr)
-		}
-	}
-	if err := iter.Err(); err != nil {
-		logger.Error("logs attributes map iterator error", zap.Error(err))
-	}
-
-	logger.Debug("logs attributes cache built", zap.Int("entries", len(ac.cache)))
-	return ac
-}
-
-// lookupAttrs looks up attributes for a TGID, first from cache, then from the eBPF map on miss.
-func lookupAttrs(ac *logsAttrCache, attributesMap *ebpf.Map, tgid uint32) string {
-	if attrs, ok := ac.get(tgid); ok {
-		return attrs
-	}
-
-	// Cache miss — try direct map lookup (new process registered since cache was built)
-	var attrValue [attrValueMaxSize]byte
-	if err := attributesMap.Lookup(tgid, &attrValue); err == nil {
-		attrStr := string(bytes.TrimRight(attrValue[:], "\x00"))
-		if attrStr != "" {
-			ac.set(tgid, attrStr)
-			return attrStr
-		}
-	}
-
-	return ""
-}
-
-func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map, attributesMap *ebpf.Map) error {
+func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map, attrCache *logsAttrCache) error {
 	reader, err := NewBufferReader(m, r.logger)
 	if err != nil {
 		return err
 	}
 	defer reader.Close()
 
-	// Build initial TGID -> packed attributes cache from the attributes map
-	attrCache := buildLogsAttrCache(attributesMap, r.logger)
-
 	r.logger.Debug("logs read loop started, waiting for eBPF log events",
-		zap.Int("ringBuf_fd", m.FD()),
-		zap.Int("attributesMap_fd", attributesMap.FD()))
+		zap.Int("ringBuf_fd", m.FD()))
 
 	var record BufferRecord
 
@@ -204,7 +159,7 @@ func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map, attributes
 		event := (*logEvent)(unsafe.Pointer(&record.RawSample[0]))
 
 		// Look up resource attributes for this process
-		packedAttrs := lookupAttrs(attrCache, attributesMap, event.TGID)
+		packedAttrs, _ := attrCache.get(event.TGID)
 		r.telemetry.EbpfLogsAttrCacheSize.Record(ctx, int64(attrCache.size()))
 
 		ld := logEventToPdata(event)

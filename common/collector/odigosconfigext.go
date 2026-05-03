@@ -42,4 +42,9 @@ type OdigosConfigExtension interface {
 	// Returns true if synced successfully, false if context canceled or sync failed. Callers that depend on the cache
 	// should call this before processing (e.g. in Start) to avoid missing data on startup.
 	WaitForCacheSync(ctx context.Context) bool
+
+	// GetDataStreamsForWorkload returns the data stream names the workload belongs to.
+	// Derives workload identity from resource attributes (namespace, kind, name).
+	// Returns (nil, false) if the workload is not found in the cache.
+	GetDataStreamsForWorkload(res pcommon.Resource) ([]string, bool)
 }

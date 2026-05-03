@@ -157,6 +157,7 @@ spec:
                             - postgres
                             - unknown
                             - ignored
+                            - '*'
                             type: string
                           workloadName:
                             type: string
@@ -295,6 +296,7 @@ spec:
                             - postgres
                             - unknown
                             - ignored
+                            - '*'
                             type: string
                           workloadName:
                             type: string
@@ -431,6 +433,7 @@ spec:
                             - postgres
                             - unknown
                             - ignored
+                            - '*'
                             type: string
                           workloadName:
                             type: string

@@ -21,6 +21,31 @@ const setInput = (fieldPath: string, value: string) => {
   cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).click().focused().clear().type(value);
 };
 
+// Time fields render an input on the left and a unit dropdown on the right.
+// The DOM exposes the number input under the field path, the unit dropdown
+// input under `${fieldPath}-unit`, and each dropdown option as
+// `[data-id="option-${unitId}"]`. The combined value (e.g. "60s") is saved.
+// The closed unit dropdown displays `Selected: ${unitLabel}` (e.g. "Selected: seconds"),
+// so we use exact data-id matching for both selection and verification to avoid
+// substring collisions like 'seconds' matching 'milliseconds' or 'Selected: seconds'.
+const TIME_UNIT_LABELS: Record<string, string> = {
+  ms: 'milliseconds',
+  s: 'seconds',
+  m: 'minutes',
+  h: 'hours',
+};
+
+const setTimeInput = (fieldPath: string, value: string) => {
+  const match = value.match(/^(\d+)\s*(ms|s|m|h)$/i);
+  if (!match) throw new Error(`setTimeInput: invalid time value "${value}"`);
+  const [, num, unit] = match;
+  const unitId = unit.toLowerCase();
+
+  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).click().focused().clear().type(num);
+  cy.get(DATA_IDS.SETTINGS_FIELD(`${fieldPath}-unit`)).click();
+  cy.get(`[data-id="option-${unitId}"]`).click();
+};
+
 const selectDropdownOption = (fieldPath: string, optionLabel: string) => {
   cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).click();
   // Navigate from <input> → InputWrapper → FlexColumn → Relative (DropData root)
@@ -35,6 +60,16 @@ const addMultiInputValue = (fieldPath: string, value: string) => {
 
 const verifyInput = (fieldPath: string, expectedValue: string) => {
   cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).should('have.value', expectedValue);
+};
+
+const verifyTimeInput = (fieldPath: string, expectedValue: string) => {
+  const match = expectedValue.match(/^(\d+)\s*(ms|s|m|h)$/i);
+  if (!match) throw new Error(`verifyTimeInput: invalid time value "${expectedValue}"`);
+  const [, num, unit] = match;
+  const unitLabel = TIME_UNIT_LABELS[unit.toLowerCase()];
+
+  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).should('have.value', num);
+  cy.get(DATA_IDS.SETTINGS_FIELD(`${fieldPath}-unit`)).should('have.value', `Selected: ${unitLabel}`);
 };
 
 const verifyDropdown = (fieldPath: string, expectedLabel: string) => {
@@ -143,8 +178,8 @@ describe('Settings CRUD', () => {
         clickToggle('rollout.automaticRolloutDisabled');
         setInput('rollout.maxConcurrentRollouts', '5');
         clickToggle('autoRollback.disabled');
-        setInput('autoRollback.graceTime', '60s');
-        setInput('autoRollback.stabilityWindowTime', '120s');
+        setTimeInput('autoRollback.graceTime', '60s');
+        setTimeInput('autoRollback.stabilityWindowTime', '120s');
 
         // ─ Namespaces & Filtering ─
         addMultiInputValue('ignoredNamespaces', 'cypress-test-ns');
@@ -168,7 +203,7 @@ describe('Settings CRUD', () => {
         clickToggle('sampling.spanSamplingAttributes.traceDecidingRuleDisabled');
         clickToggle('sampling.spanSamplingAttributes.spanDecisionAttributesDisabled');
         clickToggle('sampling.tailSampling.disabled');
-        setInput('sampling.tailSampling.traceAggregationWaitDuration', '45s');
+        setTimeInput('sampling.tailSampling.traceAggregationWaitDuration', '45s');
         clickToggle('sampling.k8sHealthProbesSampling.enabled');
         setInput('sampling.k8sHealthProbesSampling.keepPercentage', '50');
 
@@ -277,8 +312,8 @@ describe('Settings CRUD', () => {
         verifyDropdown('instrumentor.agentEnvVarsInjectionMethod', 'pod-manifest');
 
         // ─ Rollout & Rollback (inputs — only fields on EffectiveConfig) ─
-        verifyInput('autoRollback.graceTime', '60s');
-        verifyInput('autoRollback.stabilityWindowTime', '120s');
+        verifyTimeInput('autoRollback.graceTime', '60s');
+        verifyTimeInput('autoRollback.stabilityWindowTime', '120s');
 
         // ─ Namespaces & Filtering (multiInputs) ─
         verifyMultiInputContains('ignoredNamespaces', 'cypress-test-ns');

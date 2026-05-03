@@ -107,8 +107,9 @@ $(HELM_SCHEMA_BIN):
 helm-schema-clean:
 	rm -f $(HELM_SCHEMA_BIN)
 
+# Pass DOCKER_BUILD_OPTS=--no-cache to force a clean build (e.g. when go.mod replace changes and cache is stale).
 build-image/%:
-	docker build $(TARGET_FLAG) \
+	docker build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) \
 	-t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg ODIGOS_VERSION=$(TAG) \
@@ -177,7 +178,7 @@ build-images-rhel:
 	$(MAKE) build-images RHEL=true TAG=$(TAG) ORG=$(ORG)
 
 push-image/%:
-	docker buildx build $(TARGET_FLAG) \
+	docker buildx build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) \
 	--platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	$(if $(filter true,$(PUSH_IMAGE)),--push,) \
 	$(if $(filter true,$(GCP_MARKETPLACE)),--annotation="index:com.googleapis.cloudmarketplace.product.service.name=services/odigos.endpoints.odigos-public.cloud.goog",) \

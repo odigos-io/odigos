@@ -53,7 +53,7 @@ type ContainerAgentConfigApplyConfiguration struct {
 	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
 	Traces  *AgentTracesConfigApplyConfiguration  `json:"traces,omitempty"`
 	Metrics *AgentMetricsConfigApplyConfiguration `json:"metrics,omitempty"`
-	Logs    *odigosv1alpha1.AgentLogsConfig       `json:"logs,omitempty"`
+	Logs    *AgentLogsConfigApplyConfiguration    `json:"logs,omitempty"`
 }
 
 // ContainerAgentConfigApplyConfiguration constructs a declarative configuration of the ContainerAgentConfig type for use with
@@ -151,7 +151,7 @@ func (b *ContainerAgentConfigApplyConfiguration) WithMetrics(value *AgentMetrics
 // WithLogs sets the Logs field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Logs field is set to the value of the last call.
-func (b *ContainerAgentConfigApplyConfiguration) WithLogs(value odigosv1alpha1.AgentLogsConfig) *ContainerAgentConfigApplyConfiguration {
-	b.Logs = &value
+func (b *ContainerAgentConfigApplyConfiguration) WithLogs(value *AgentLogsConfigApplyConfiguration) *ContainerAgentConfigApplyConfiguration {
+	b.Logs = value
 	return b
 }
