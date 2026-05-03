@@ -5,7 +5,7 @@ export const GET_PROFILING_SLOTS = gql`
     profilingSlots {
       activeKeys
       keysWithData
-      totalBytesUsed
+      totalBytesInUse
       slotMaxBytes
       maxSlots
       maxTotalBytesBudget
@@ -15,9 +15,13 @@ export const GET_PROFILING_SLOTS = gql`
 `;
 
 export const GET_SOURCE_PROFILING = gql`
-  query GetSourceProfiling($namespace: String!, $kind: String!, $name: String!) {
-    sourceProfiling(namespace: $namespace, kind: $kind, name: $name) {
-      profileJson
+  query GetSourceProfiling($namespace: String!, $kind: K8sResourceKind!, $name: String!) {
+    computePlatform {
+      source(sourceId: { namespace: $namespace, kind: $kind, name: $name }) {
+        profiling {
+          profileJson
+        }
+      }
     }
   }
 `;
