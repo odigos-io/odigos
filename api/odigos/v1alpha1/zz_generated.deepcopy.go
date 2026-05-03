@@ -497,6 +497,11 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 		*out = new(common.OtlpExporterConfiguration)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ResourceDetectors != nil {
+		in, out := &in.ResourceDetectors, &out.ResourceDetectors
+		*out = new(common.ResourceDetectorsConfiguration)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ClusterMetricsEnabled != nil {
 		in, out := &in.ClusterMetricsEnabled, &out.ClusterMetricsEnabled
 		*out = new(bool)
