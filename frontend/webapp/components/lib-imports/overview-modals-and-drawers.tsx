@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { EntityTypes, type WorkloadId } from '@odigos/ui-kit/types';
+import { EntityTypes } from '@odigos/ui-kit/types';
 import { useDrawerStore, useModalStore } from '@odigos/ui-kit/store';
 import { ActionFormContextProvider, DestinationFormContextProvider, RuleFormContextProvider, SourceInstrumentFormContextProvider } from '@odigos/ui-kit/contexts';
 import { AddActionDrawer, AddDestinationDrawer, AddRuleDrawer, AddSourceDrawer, EditActionDrawer, EditDestinationDrawer, EditRuleDrawer } from '@odigos/ui-kit/containers/v2';
@@ -12,6 +12,7 @@ import {
   useNamespace,
   usePotentialDestinations,
   useSourceCRUD,
+  useProfiling,
   useTestConnection,
   useWorkloadUtils,
 } from '@/hooks';
@@ -29,6 +30,7 @@ const OverviewModalsAndDrawers = () => {
   const { createActionV2, updateAction, deleteAction } = useActionCRUD();
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
+  const { fetchProfilingSlots, enableProfiling, releaseProfiling, fetchSourceProfiling } = useProfiling();
   const { createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
   const { persistSources, persistSourcesV2, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
 
@@ -87,6 +89,10 @@ const OverviewModalsAndDrawers = () => {
         //     fetchSourceDescribe={fetchDescribeSource}
         //     fetchSourceLibraries={fetchSourceLibraries}
         //     fetchPeerSources={fetchPeerSources}
+        //     enableProfiling={enableProfiling}
+        //     releaseProfiling={releaseProfiling}
+        //     fetchSourceProfiling={fetchSourceProfiling}
+        //     fetchProfilingSlots={fetchProfilingSlots}
         //   />
         // </SourceEditFormContextProvider>
         <SourceDrawer
@@ -99,6 +105,10 @@ const OverviewModalsAndDrawers = () => {
           fetchSourceDescribe={fetchDescribeSource}
           fetchSourceLibraries={fetchSourceLibraries}
           fetchPeerSources={fetchPeerSources}
+          enableProfiling={enableProfiling}
+          releaseProfiling={releaseProfiling}
+          fetchSourceProfiling={fetchSourceProfiling}
+          fetchProfilingSlots={fetchProfilingSlots}
         />
       )}
       {drawerType === EntityTypes.Destination && drawerEntityId && (
