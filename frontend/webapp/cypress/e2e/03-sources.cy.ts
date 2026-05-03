@@ -61,12 +61,13 @@ describe('Sources CRUD', () => {
   });
 
   // Note: we update only 1 source, because Cypress keeps flaking when updating all of them.
-  it(`Should update the name of ${1} sources via API, and notify locally`, () => {
+  it(`Should update the name of ${1} sources via the v2 edit-source-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.NAMESPACE_SOURCES.slice(indexForUpdatedSource, indexForUpdatedSource + 1).forEach(({ name, kind }) => {
         updateEntity(
           {
             nodeId: DATA_IDS.SOURCE_NODE({ namespace, name, kind }),
+            // prefix: DATA_IDS.SOURCE_DRAWER_PREFIX,
             fieldKey: DATA_IDS.SOURCE_TITLE,
             fieldValue: TEXTS.UPDATED_NAME,
           },

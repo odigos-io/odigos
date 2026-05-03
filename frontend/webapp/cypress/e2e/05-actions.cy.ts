@@ -1,5 +1,5 @@
 import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage, waitForGraphqlOperation } from '../functions';
+import { awaitToast, deleteV2Entity, getCrdById, getCrdIds, handleExceptions, updateV2Entity, visitPage, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -109,15 +109,16 @@ describe('Actions CRUD', () => {
     getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities });
   });
 
-  it(`Should update ${totalEntities} actions via API, and notify locally`, () => {
+  it(`Should update ${totalEntities} actions via the v2 edit-action-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.ACTIONS.forEach((actionType) => {
-        updateEntity(
+        updateV2Entity(
           {
-            // no indexed node, because actions are fetched in random order
+            // actions are fetched in random order, so we locate the row by the type text it shows
             nodeId: 'div',
             nodeContains: actionType,
-            fieldKey: DATA_IDS.TITLE,
+            prefix: DATA_IDS.ACTION_DRAWER_PREFIX,
+            fieldKey: DATA_IDS.ACTION_NAME_INPUT,
             fieldValue: TEXTS.UPDATED_NAME,
           },
           () => {
@@ -139,14 +140,14 @@ describe('Actions CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} actions via API, and notify locally`, () => {
+  it(`Should delete ${totalEntities} actions via the v2 edit-action-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.ACTIONS.forEach((actionType) => {
-        deleteEntity(
+        deleteV2Entity(
           {
-            // no indexed node, because actions are fetched in random order
             nodeId: 'div',
             nodeContains: actionType,
+            prefix: DATA_IDS.ACTION_DRAWER_PREFIX,
             warnModalTitle: TEXTS.ACTION_WARN_MODAL_TITLE,
           },
           () => {
