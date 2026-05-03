@@ -173,6 +173,78 @@ export const deleteEntity = ({ nodeId, nodeContains, warnModalTitle, warnModalNo
   if (!!callback) callback();
 };
 
+interface UpdateV2EntityOptions {
+  // Where to click to open the drawer — either a selector or, when paired with `nodeContains`,
+  // an HTML tag passed to `cy.contains()` (e.g. `'div'`).
+  nodeId: string;
+  nodeContains?: string;
+
+  // Drawer convention prefix. Together with the `{prefix}-btn-{edit,delete,save,cancel}` naming,
+  // this identifies the dropdown options and footer buttons rendered by a v2 edit drawer.
+  // E.g. `'edit-rule'`, `'edit-action'`, `'edit-source'`, `'edit-destination'`.
+  prefix: string;
+
+  // Selector + value of the form field to update inside the drawer.
+  fieldKey: string;
+  fieldValue: string;
+}
+
+// v2 edit-drawer flow:
+// 1. open the entity's drawer by clicking its data-flow row
+// 2. open the drawer header's actions dropdown and click "Edit"
+// 3. update the named field and click "Save"
+// 4. close the drawer (it does not auto-close after save)
+export const updateV2Entity = ({ nodeId, nodeContains, prefix, fieldKey, fieldValue }: UpdateV2EntityOptions, callback?: () => void) => {
+  if (!!nodeContains) {
+    cy.contains(nodeId, nodeContains).should('exist').click();
+  } else {
+    cy.get(nodeId).should('exist').click();
+  }
+
+  cy.get(DATA_IDS.DRAWER).should('exist');
+
+  cy.get(DATA_IDS.DRAWER_ACTIONS).click();
+  cy.get(DATA_IDS.DROPDOWN_OPTION(`${prefix}-btn-edit`)).click();
+
+  cy.get(fieldKey).click().focused().clear().type(fieldValue);
+  cy.get(fieldKey).should('have.value', fieldValue);
+
+  cy.get(`[data-id=${prefix}-btn-save]`).click();
+
+  if (!!callback) callback();
+
+  cy.get(DATA_IDS.DRAWER_CLOSE).click();
+};
+
+interface DeleteV2EntityOptions {
+  nodeId: string;
+  nodeContains?: string;
+  prefix: string;
+  warnModalTitle?: string;
+  warnModalNote?: string;
+}
+
+// v2 edit-drawer flow: open drawer → actions dropdown → "Delete" → confirm modal.
+export const deleteV2Entity = ({ nodeId, nodeContains, prefix, warnModalTitle, warnModalNote }: DeleteV2EntityOptions, callback?: () => void) => {
+  if (!!nodeContains) {
+    cy.contains(nodeId, nodeContains).should('exist').click();
+  } else {
+    cy.get(nodeId).should('exist').click();
+  }
+
+  cy.get(DATA_IDS.DRAWER).should('exist');
+
+  cy.get(DATA_IDS.DRAWER_ACTIONS).click();
+  cy.get(DATA_IDS.DROPDOWN_OPTION(`${prefix}-btn-delete`)).click();
+
+  if (!!warnModalTitle) cy.get(DATA_IDS.MODAL).contains(warnModalTitle).should('exist');
+  if (!!warnModalNote) cy.get(DATA_IDS.MODAL).contains(warnModalNote).should('exist');
+
+  cy.get(DATA_IDS.APPROVE).click();
+
+  if (!!callback) callback();
+};
+
 interface AwaitToastOptions {
   message: string;
 }
