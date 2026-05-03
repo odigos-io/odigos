@@ -17,7 +17,6 @@ jobs:
     strategy:
       matrix:
         service: [autoscaler, scheduler, instrumentor, odigos-collector, odiglet, agents, frontend, operator]
-        rhel: ['true', 'false']
         include:
           - service: autoscaler
             dockerfile_path: .
@@ -53,13 +52,8 @@ jobs:
           context: .
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
-            RHEL=${{ matrix.rhel }}
             ODIGOS_VERSION=v0.0.0-pr${{ github.event.number }}
-          target: >-
-            ${{ matrix.service == 'agents' && matrix.rhel == 'true' && 'agents-rhel' ||
-                matrix.service == 'agents' && 'agents' ||
-                matrix.rhel == 'true' && 'rhel' ||
-                '' }}
+          target: ${{ matrix.service == 'agents' && 'agents' || '' }}
 
   build-cli:
     runs-on: depot-ubuntu-24.04-8
