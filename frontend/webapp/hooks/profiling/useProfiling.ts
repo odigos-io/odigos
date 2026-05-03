@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import { GET_PROFILING_SLOTS, GET_SOURCE_PROFILING, ENABLE_SOURCE_PROFILING, RELEASE_SOURCE_PROFILING } from '@/graphql';
+import { GET_PROFILING_SLOTS, GET_SOURCE_PROFILING, ENABLE_SOURCE_PROFILING, DISABLE_SOURCE_PROFILING } from '@/graphql';
 
 interface SourceIdentifier {
   namespace: string;
@@ -11,7 +11,7 @@ interface SourceIdentifier {
 interface ProfilingSlots {
   activeKeys: string[];
   keysWithData: string[];
-  totalBytesUsed: number;
+  totalBytesInUse: number;
   slotMaxBytes: number;
   maxSlots: number;
   maxTotalBytesBudget: number;
@@ -35,6 +35,14 @@ interface SourceProfilingResult {
   profileJson: string;
 }
 
+interface SourceProfilingQueryResult {
+  computePlatform?: {
+    source?: {
+      profiling?: SourceProfilingResult | null;
+    } | null;
+  } | null;
+}
+
 interface UseProfiling {
   fetchProfilingSlots: () => Promise<ProfilingSlots | undefined>;
   enableProfiling: (source: SourceIdentifier) => Promise<EnableProfilingResult | undefined>;
@@ -47,15 +55,15 @@ export const useProfiling = (): UseProfiling => {
     fetchPolicy: 'network-only',
   });
 
-  const [querySourceProfiling] = useLazyQuery<{ sourceProfiling: SourceProfilingResult }, SourceIdentifier>(GET_SOURCE_PROFILING, {
+  const [querySourceProfiling] = useLazyQuery<SourceProfilingQueryResult, SourceIdentifier>(GET_SOURCE_PROFILING, {
     fetchPolicy: 'network-only',
   });
 
   const [mutateEnable] = useMutation<{ enableSourceProfiling: EnableProfilingResult }, SourceIdentifier>(ENABLE_SOURCE_PROFILING);
-  const [mutateRelease] = useMutation<{ releaseSourceProfiling: ReleaseProfilingResult }, SourceIdentifier>(RELEASE_SOURCE_PROFILING);
+  const [mutateRelease] = useMutation<{ disableSourceProfiling: ReleaseProfilingResult }, SourceIdentifier>(DISABLE_SOURCE_PROFILING);
 
   // Returns buffer/slot diagnostics: which workloads have active slots, which have buffered data, and memory usage.
-  // Example response: { activeKeys: ["default/Deployment/inventory", ...], keysWithData: [...], totalBytesUsed: 4897024, ... }
+  // Example response: { activeKeys: ["default/Deployment/inventory", ...], keysWithData: [...], totalBytesInUse: 4897024, ... }
   const fetchProfilingSlots: UseProfiling['fetchProfilingSlots'] = useCallback(async () => {
     const { data } = await querySlots();
     return data?.profilingSlots;
@@ -78,7 +86,7 @@ export const useProfiling = (): UseProfiling => {
   const releaseProfiling: UseProfiling['releaseProfiling'] = useCallback(
     async (source) => {
       const { data } = await mutateRelease({ variables: source });
-      return data?.releaseSourceProfiling;
+      return data?.disableSourceProfiling;
     },
     [mutateRelease],
   );
@@ -89,7 +97,7 @@ export const useProfiling = (): UseProfiling => {
   const fetchSourceProfiling: UseProfiling['fetchSourceProfiling'] = useCallback(
     async (source) => {
       const { data } = await querySourceProfiling({ variables: source });
-      return data?.sourceProfiling;
+      return data?.computePlatform?.source?.profiling ?? undefined;
     },
     [querySourceProfiling],
   );
