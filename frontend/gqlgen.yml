@@ -116,6 +116,8 @@ models:
 
   K8sActualSource:
     fields:
+      profiling:
+        resolver: true
 
   Sampling:
     fields:

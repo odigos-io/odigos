@@ -7,9 +7,8 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/xconsumer"
 	"go.opentelemetry.io/collector/pdata/pprofile"
+	"go.opentelemetry.io/collector/pdata/pprofile/pprofileotlp"
 )
-
-var protoMarshaler pprofile.ProtoMarshaler
 
 type OdigosProfilesConsumer struct {
 	store    *ProfileStore
@@ -66,7 +65,8 @@ func (c *OdigosProfilesConsumer) consume(ctx context.Context, incomingBatch ppro
 func appendResourceProfileChunk(store *ProfileStore, sourceKey string, incomingBatch pprofile.Profiles, resourceProfiles pprofile.ResourceProfilesSlice, resourceIndex int) {
 	log := commonlogger.LoggerCompat().With("subsystem", "backend-profiling")
 	singleResourceChunk := buildSingleResourceProfilesFromBatch(incomingBatch, resourceProfiles, resourceIndex)
-	chunkBytes, marshalErr := protoMarshaler.MarshalProfiles(singleResourceChunk)
+	exportReq := pprofileotlp.NewExportRequestFromProfiles(singleResourceChunk)
+	chunkBytes, marshalErr := exportReq.MarshalProto()
 	if marshalErr != nil {
 		log.Warn("store_chunk", "sourceKey", sourceKey, "err", marshalErr)
 		return
