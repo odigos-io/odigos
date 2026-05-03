@@ -88,6 +88,7 @@ export const GET_EFFECTIVE_CONFIG = gql`
       }
       rollout {
         automaticRolloutDisabled
+        maxConcurrentRollouts
       }
       autoRollback {
         disabled
@@ -166,6 +167,23 @@ export const GET_EFFECTIVE_CONFIG = gql`
         deviceplugin
         ui
         collector
+      }
+      sampling {
+        dryRun
+        spanSamplingAttributes {
+          disabled
+          samplingCategoryDisabled
+          traceDecidingRuleDisabled
+          spanDecisionAttributesDisabled
+        }
+        tailSampling {
+          disabled
+          traceAggregationWaitDuration
+        }
+        k8sHealthProbesSampling {
+          enabled
+          keepPercentage
+        }
       }
       provenance {
         helmPath

@@ -122,6 +122,7 @@ type UserInstrumentationEnvsConfig {
 
 type RolloutConfig {
   automaticRolloutDisabled: Boolean
+  maxConcurrentRollouts: Int
 }
 
 type AutoRollbackConfig {
@@ -262,6 +263,7 @@ type EffectiveConfig {
   odigosOwnTelemetryStore: OdigosOwnTelemetryConfig
   imagePullSecrets: [String!]
   componentLogLevels: ComponentLogLevelsConfig
+  sampling: SamplingConfig
   provenance: [ProvenanceEntry!]
   manifestYAML: String
 }

@@ -442,6 +442,7 @@ type ComplexityRoot struct {
 		Psp                              func(childComplexity int) int
 		ResourceSizePreset               func(childComplexity int) int
 		Rollout                          func(childComplexity int) int
+		Sampling                         func(childComplexity int) int
 		SkipWebhookIssuerCreation        func(childComplexity int) int
 		TelemetryEnabled                 func(childComplexity int) int
 		TraceIDSuffix                    func(childComplexity int) int
@@ -1183,6 +1184,7 @@ type ComplexityRoot struct {
 
 	RolloutConfig struct {
 		AutomaticRolloutDisabled func(childComplexity int) int
+		MaxConcurrentRollouts    func(childComplexity int) int
 	}
 
 	RuntimeInfoAnalyze struct {
@@ -1196,7 +1198,9 @@ type ComplexityRoot struct {
 	}
 
 	SamplingConfig struct {
+		DryRun                  func(childComplexity int) int
 		K8sHealthProbesSampling func(childComplexity int) int
+		SpanSamplingAttributes  func(childComplexity int) int
 		TailSampling            func(childComplexity int) int
 	}
 
@@ -1300,6 +1304,13 @@ type ComplexityRoot struct {
 		FallbackSamplingRatio func(childComplexity int) int
 		SamplingRatio         func(childComplexity int) int
 		ServiceName           func(childComplexity int) int
+	}
+
+	SpanSamplingAttributesConfig struct {
+		Disabled                       func(childComplexity int) int
+		SamplingCategoryDisabled       func(childComplexity int) int
+		SpanDecisionAttributesDisabled func(childComplexity int) int
+		TraceDecidingRuleDisabled      func(childComplexity int) int
 	}
 
 	StringCondition struct {
@@ -3359,6 +3370,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EffectiveConfig.Rollout(childComplexity), true
+
+	case "EffectiveConfig.sampling":
+		if e.complexity.EffectiveConfig.Sampling == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.Sampling(childComplexity), true
 
 	case "EffectiveConfig.skipWebhookIssuerCreation":
 		if e.complexity.EffectiveConfig.SkipWebhookIssuerCreation == nil {
@@ -6709,6 +6727,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RolloutConfig.AutomaticRolloutDisabled(childComplexity), true
 
+	case "RolloutConfig.maxConcurrentRollouts":
+		if e.complexity.RolloutConfig.MaxConcurrentRollouts == nil {
+			break
+		}
+
+		return e.complexity.RolloutConfig.MaxConcurrentRollouts(childComplexity), true
+
 	case "RuntimeInfoAnalyze.containers":
 		if e.complexity.RuntimeInfoAnalyze.Containers == nil {
 			break
@@ -6737,12 +6762,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Sampling.Rules(childComplexity), true
 
+	case "SamplingConfig.dryRun":
+		if e.complexity.SamplingConfig.DryRun == nil {
+			break
+		}
+
+		return e.complexity.SamplingConfig.DryRun(childComplexity), true
+
 	case "SamplingConfig.k8sHealthProbesSampling":
 		if e.complexity.SamplingConfig.K8sHealthProbesSampling == nil {
 			break
 		}
 
 		return e.complexity.SamplingConfig.K8sHealthProbesSampling(childComplexity), true
+
+	case "SamplingConfig.spanSamplingAttributes":
+		if e.complexity.SamplingConfig.SpanSamplingAttributes == nil {
+			break
+		}
+
+		return e.complexity.SamplingConfig.SpanSamplingAttributes(childComplexity), true
 
 	case "SamplingConfig.tailSampling":
 		if e.complexity.SamplingConfig.TailSampling == nil {
@@ -7170,6 +7209,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SpanAttributeFilter.ServiceName(childComplexity), true
+
+	case "SpanSamplingAttributesConfig.disabled":
+		if e.complexity.SpanSamplingAttributesConfig.Disabled == nil {
+			break
+		}
+
+		return e.complexity.SpanSamplingAttributesConfig.Disabled(childComplexity), true
+
+	case "SpanSamplingAttributesConfig.samplingCategoryDisabled":
+		if e.complexity.SpanSamplingAttributesConfig.SamplingCategoryDisabled == nil {
+			break
+		}
+
+		return e.complexity.SpanSamplingAttributesConfig.SamplingCategoryDisabled(childComplexity), true
+
+	case "SpanSamplingAttributesConfig.spanDecisionAttributesDisabled":
+		if e.complexity.SpanSamplingAttributesConfig.SpanDecisionAttributesDisabled == nil {
+			break
+		}
+
+		return e.complexity.SpanSamplingAttributesConfig.SpanDecisionAttributesDisabled(childComplexity), true
+
+	case "SpanSamplingAttributesConfig.traceDecidingRuleDisabled":
+		if e.complexity.SpanSamplingAttributesConfig.TraceDecidingRuleDisabled == nil {
+			break
+		}
+
+		return e.complexity.SpanSamplingAttributesConfig.TraceDecidingRuleDisabled(childComplexity), true
 
 	case "StringCondition.expectedValue":
 		if e.complexity.StringCondition.ExpectedValue == nil {
@@ -21323,6 +21390,8 @@ func (ec *executionContext) fieldContext_EffectiveConfig_rollout(_ context.Conte
 			switch field.Name {
 			case "automaticRolloutDisabled":
 				return ec.fieldContext_RolloutConfig_automaticRolloutDisabled(ctx, field)
+			case "maxConcurrentRollouts":
+				return ec.fieldContext_RolloutConfig_maxConcurrentRollouts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RolloutConfig", field.Name)
 		},
@@ -22004,6 +22073,57 @@ func (ec *executionContext) fieldContext_EffectiveConfig_componentLogLevels(_ co
 				return ec.fieldContext_ComponentLogLevelsConfig_collector(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ComponentLogLevelsConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_sampling(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_sampling(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sampling, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.SamplingConfig)
+	fc.Result = res
+	return ec.marshalOSamplingConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_sampling(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "dryRun":
+				return ec.fieldContext_SamplingConfig_dryRun(ctx, field)
+			case "spanSamplingAttributes":
+				return ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
+			case "tailSampling":
+				return ec.fieldContext_SamplingConfig_tailSampling(ctx, field)
+			case "k8sHealthProbesSampling":
+				return ec.fieldContext_SamplingConfig_k8sHealthProbesSampling(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SamplingConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -42395,6 +42515,8 @@ func (ec *executionContext) fieldContext_Query_effectiveConfig(_ context.Context
 				return ec.fieldContext_EffectiveConfig_imagePullSecrets(ctx, field)
 			case "componentLogLevels":
 				return ec.fieldContext_EffectiveConfig_componentLogLevels(ctx, field)
+			case "sampling":
+				return ec.fieldContext_EffectiveConfig_sampling(ctx, field)
 			case "provenance":
 				return ec.fieldContext_EffectiveConfig_provenance(ctx, field)
 			case "manifestYAML":
@@ -43472,6 +43594,47 @@ func (ec *executionContext) fieldContext_RolloutConfig_automaticRolloutDisabled(
 	return fc, nil
 }
 
+func (ec *executionContext) _RolloutConfig_maxConcurrentRollouts(ctx context.Context, field graphql.CollectedField, obj *model.RolloutConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RolloutConfig_maxConcurrentRollouts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxConcurrentRollouts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RolloutConfig_maxConcurrentRollouts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RolloutConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _RuntimeInfoAnalyze_generation(ctx context.Context, field graphql.CollectedField, obj *model.RuntimeInfoAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RuntimeInfoAnalyze_generation(ctx, field)
 	if err != nil {
@@ -43690,6 +43853,98 @@ func (ec *executionContext) fieldContext_Sampling_rules(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _SamplingConfig_dryRun(ctx context.Context, field graphql.CollectedField, obj *model.SamplingConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SamplingConfig_dryRun(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DryRun, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SamplingConfig_dryRun(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SamplingConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SamplingConfig_spanSamplingAttributes(ctx context.Context, field graphql.CollectedField, obj *model.SamplingConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SpanSamplingAttributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.SpanSamplingAttributesConfig)
+	fc.Result = res
+	return ec.marshalOSpanSamplingAttributesConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSpanSamplingAttributesConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SamplingConfig_spanSamplingAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SamplingConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "disabled":
+				return ec.fieldContext_SpanSamplingAttributesConfig_disabled(ctx, field)
+			case "samplingCategoryDisabled":
+				return ec.fieldContext_SpanSamplingAttributesConfig_samplingCategoryDisabled(ctx, field)
+			case "traceDecidingRuleDisabled":
+				return ec.fieldContext_SpanSamplingAttributesConfig_traceDecidingRuleDisabled(ctx, field)
+			case "spanDecisionAttributesDisabled":
+				return ec.fieldContext_SpanSamplingAttributesConfig_spanDecisionAttributesDisabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SpanSamplingAttributesConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _SamplingConfig_tailSampling(ctx context.Context, field graphql.CollectedField, obj *model.SamplingConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SamplingConfig_tailSampling(ctx, field)
 	if err != nil {
@@ -43820,6 +44075,10 @@ func (ec *executionContext) fieldContext_SamplingConfigs_effective(_ context.Con
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "dryRun":
+				return ec.fieldContext_SamplingConfig_dryRun(ctx, field)
+			case "spanSamplingAttributes":
+				return ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
 			case "tailSampling":
 				return ec.fieldContext_SamplingConfig_tailSampling(ctx, field)
 			case "k8sHealthProbesSampling":
@@ -43867,6 +44126,10 @@ func (ec *executionContext) fieldContext_SamplingConfigs_helmDeployment(_ contex
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "dryRun":
+				return ec.fieldContext_SamplingConfig_dryRun(ctx, field)
+			case "spanSamplingAttributes":
+				return ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
 			case "tailSampling":
 				return ec.fieldContext_SamplingConfig_tailSampling(ctx, field)
 			case "k8sHealthProbesSampling":
@@ -43914,6 +44177,10 @@ func (ec *executionContext) fieldContext_SamplingConfigs_remoteConfigFromCentral
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "dryRun":
+				return ec.fieldContext_SamplingConfig_dryRun(ctx, field)
+			case "spanSamplingAttributes":
+				return ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
 			case "tailSampling":
 				return ec.fieldContext_SamplingConfig_tailSampling(ctx, field)
 			case "k8sHealthProbesSampling":
@@ -43961,6 +44228,10 @@ func (ec *executionContext) fieldContext_SamplingConfigs_localUiConfig(_ context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "dryRun":
+				return ec.fieldContext_SamplingConfig_dryRun(ctx, field)
+			case "spanSamplingAttributes":
+				return ec.fieldContext_SamplingConfig_spanSamplingAttributes(ctx, field)
 			case "tailSampling":
 				return ec.fieldContext_SamplingConfig_tailSampling(ctx, field)
 			case "k8sHealthProbesSampling":
@@ -46583,6 +46854,170 @@ func (ec *executionContext) fieldContext_SpanAttributeFilter_fallbackSamplingRat
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SpanSamplingAttributesConfig_disabled(ctx context.Context, field graphql.CollectedField, obj *model.SpanSamplingAttributesConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SpanSamplingAttributesConfig_disabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SpanSamplingAttributesConfig_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SpanSamplingAttributesConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SpanSamplingAttributesConfig_samplingCategoryDisabled(ctx context.Context, field graphql.CollectedField, obj *model.SpanSamplingAttributesConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SpanSamplingAttributesConfig_samplingCategoryDisabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SamplingCategoryDisabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SpanSamplingAttributesConfig_samplingCategoryDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SpanSamplingAttributesConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SpanSamplingAttributesConfig_traceDecidingRuleDisabled(ctx context.Context, field graphql.CollectedField, obj *model.SpanSamplingAttributesConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SpanSamplingAttributesConfig_traceDecidingRuleDisabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TraceDecidingRuleDisabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SpanSamplingAttributesConfig_traceDecidingRuleDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SpanSamplingAttributesConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SpanSamplingAttributesConfig_spanDecisionAttributesDisabled(ctx context.Context, field graphql.CollectedField, obj *model.SpanSamplingAttributesConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SpanSamplingAttributesConfig_spanDecisionAttributesDisabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SpanDecisionAttributesDisabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SpanSamplingAttributesConfig_spanDecisionAttributesDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SpanSamplingAttributesConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -55560,6 +55995,8 @@ func (ec *executionContext) _EffectiveConfig(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EffectiveConfig_imagePullSecrets(ctx, field, obj)
 		case "componentLogLevels":
 			out.Values[i] = ec._EffectiveConfig_componentLogLevels(ctx, field, obj)
+		case "sampling":
+			out.Values[i] = ec._EffectiveConfig_sampling(ctx, field, obj)
 		case "provenance":
 			out.Values[i] = ec._EffectiveConfig_provenance(ctx, field, obj)
 		case "manifestYAML":
@@ -61748,6 +62185,8 @@ func (ec *executionContext) _RolloutConfig(ctx context.Context, sel ast.Selectio
 			out.Values[i] = graphql.MarshalString("RolloutConfig")
 		case "automaticRolloutDisabled":
 			out.Values[i] = ec._RolloutConfig_automaticRolloutDisabled(ctx, field, obj)
+		case "maxConcurrentRollouts":
+			out.Values[i] = ec._RolloutConfig_maxConcurrentRollouts(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -61901,6 +62340,10 @@ func (ec *executionContext) _SamplingConfig(ctx context.Context, sel ast.Selecti
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("SamplingConfig")
+		case "dryRun":
+			out.Values[i] = ec._SamplingConfig_dryRun(ctx, field, obj)
+		case "spanSamplingAttributes":
+			out.Values[i] = ec._SamplingConfig_spanSamplingAttributes(ctx, field, obj)
 		case "tailSampling":
 			out.Values[i] = ec._SamplingConfig_tailSampling(ctx, field, obj)
 		case "k8sHealthProbesSampling":
@@ -62868,6 +63311,48 @@ func (ec *executionContext) _SpanAttributeFilter(ctx context.Context, sel ast.Se
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var spanSamplingAttributesConfigImplementors = []string{"SpanSamplingAttributesConfig"}
+
+func (ec *executionContext) _SpanSamplingAttributesConfig(ctx context.Context, sel ast.SelectionSet, obj *model.SpanSamplingAttributesConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, spanSamplingAttributesConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SpanSamplingAttributesConfig")
+		case "disabled":
+			out.Values[i] = ec._SpanSamplingAttributesConfig_disabled(ctx, field, obj)
+		case "samplingCategoryDisabled":
+			out.Values[i] = ec._SpanSamplingAttributesConfig_samplingCategoryDisabled(ctx, field, obj)
+		case "traceDecidingRuleDisabled":
+			out.Values[i] = ec._SpanSamplingAttributesConfig_traceDecidingRuleDisabled(ctx, field, obj)
+		case "spanDecisionAttributesDisabled":
+			out.Values[i] = ec._SpanSamplingAttributesConfig_spanDecisionAttributesDisabled(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -69942,6 +70427,13 @@ func (ec *executionContext) marshalOSpanKind2ᚖgithubᚗcomᚋodigosᚑioᚋodi
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOSpanSamplingAttributesConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSpanSamplingAttributesConfig(ctx context.Context, sel ast.SelectionSet, v *model.SpanSamplingAttributesConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SpanSamplingAttributesConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
