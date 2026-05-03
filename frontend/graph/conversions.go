@@ -389,6 +389,10 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 			AutomaticRolloutDisabled: config.Rollout.AutomaticRolloutDisabled,
 		}
 		pc.record("rollout.automaticRolloutDisabled")
+		if config.Rollout.MaxConcurrentRollouts != 0 {
+			result.Rollout.MaxConcurrentRollouts = ptrInt(config.Rollout.MaxConcurrentRollouts)
+			pc.record("rollout.maxConcurrentRollouts")
+		}
 	}
 
 	result.AutoRollback = &model.AutoRollbackConfig{}
@@ -432,7 +436,55 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 		pc.record("odigosOwnTelemetryStore.metricsStoreDisabled")
 	}
 
+	if config.Sampling != nil {
+		result.Sampling = convertOdigosConfigToSamplingConfig(config)
+		recordSamplingProvenance(config.Sampling, pc)
+	}
+
 	return nil
+}
+
+// recordSamplingProvenance records provenance entries for every sampling field that
+// is present in the effective config, so the UI knows the field has an applied value.
+// Overlay sources (remote/local) are recorded by services.recordOverlayProvenance and
+// will overwrite these entries; the keys remain identical so there is no double-bookkeeping.
+func recordSamplingProvenance(s *common.SamplingConfiguration, pc *provenanceCollector) {
+	if s == nil {
+		return
+	}
+	if s.DryRun != nil {
+		pc.record("sampling.dryRun")
+	}
+	if s.SpanSamplingAttributes != nil {
+		if s.SpanSamplingAttributes.Disabled != nil {
+			pc.record("sampling.spanSamplingAttributes.disabled")
+		}
+		if s.SpanSamplingAttributes.SamplingCategoryDisabled != nil {
+			pc.record("sampling.spanSamplingAttributes.samplingCategoryDisabled")
+		}
+		if s.SpanSamplingAttributes.TraceDecidingRuleDisabled != nil {
+			pc.record("sampling.spanSamplingAttributes.traceDecidingRuleDisabled")
+		}
+		if s.SpanSamplingAttributes.SpanDecisionAttributesDisabled != nil {
+			pc.record("sampling.spanSamplingAttributes.spanDecisionAttributesDisabled")
+		}
+	}
+	if s.TailSampling != nil {
+		if s.TailSampling.Disabled != nil {
+			pc.record("sampling.tailSampling.disabled")
+		}
+		if s.TailSampling.TraceAggregationWaitDuration != nil {
+			pc.record("sampling.tailSampling.traceAggregationWaitDuration")
+		}
+	}
+	if s.K8sHealthProbesSampling != nil {
+		if s.K8sHealthProbesSampling.Enabled != nil {
+			pc.record("sampling.k8sHealthProbesSampling.enabled")
+		}
+		if s.K8sHealthProbesSampling.KeepPercentage != nil {
+			pc.record("sampling.k8sHealthProbesSampling.keepPercentage")
+		}
+	}
 }
 
 func convertOidcToModel(oidc *common.OidcConfiguration, pc *provenanceCollector) *model.OidcConfig {
@@ -641,7 +693,17 @@ func convertOdigosConfigToSamplingConfig(config *common.OdigosConfiguration) *mo
 		return nil
 	}
 	s := config.Sampling
-	out := &model.SamplingConfig{}
+	out := &model.SamplingConfig{
+		DryRun: s.DryRun,
+	}
+	if s.SpanSamplingAttributes != nil {
+		out.SpanSamplingAttributes = &model.SpanSamplingAttributesConfig{
+			Disabled:                       s.SpanSamplingAttributes.Disabled,
+			SamplingCategoryDisabled:       s.SpanSamplingAttributes.SamplingCategoryDisabled,
+			TraceDecidingRuleDisabled:      s.SpanSamplingAttributes.TraceDecidingRuleDisabled,
+			SpanDecisionAttributesDisabled: s.SpanSamplingAttributes.SpanDecisionAttributesDisabled,
+		}
+	}
 	if s.TailSampling != nil {
 		out.TailSampling = &model.TailSamplingConfig{
 			Disabled:                     s.TailSampling.Disabled,

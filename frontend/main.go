@@ -173,7 +173,8 @@ func startHTTPServer(ctx context.Context,
 	logger logr.Logger,
 	odigosMetrics *collectormetrics.OdigosMetricsConsumer,
 	k8sCacheClient client.Client,
-	promAPI v1.API) (*gin.Engine, error) {
+	promAPI v1.API,
+	profileStore *profiles.ProfileStore) (*gin.Engine, error) {
 	var r *gin.Engine
 	if flags.Debug {
 		r = gin.Default()
@@ -219,6 +220,7 @@ func startHTTPServer(ctx context.Context,
 			Logger:          logger,
 			PromAPI:         promAPI,
 			K8sCacheClient:  k8sCacheClient,
+			ProfileStore:    profileStore,
 		},
 	})
 	gqlExecutor := executor.New(gqlExecutableSchema)
@@ -434,7 +436,7 @@ func main() {
 	}
 
 	// Start server
-	r, err := startHTTPServer(ctx, &flags, logger, odigosMetricsConsumer, k8sCacheClient, promAPI)
+	r, err := startHTTPServer(ctx, &flags, logger, odigosMetricsConsumer, k8sCacheClient, promAPI, profileStore)
 	if err != nil {
 		log.Error("Error starting server", "err", err)
 		os.Exit(1)

@@ -1,5 +1,5 @@
 import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, updateEntity, visitPage, waitForGraphqlOperation } from '../functions';
+import { awaitToast, deleteV2Entity, getCrdById, getCrdIds, handleExceptions, updateV2Entity, visitPage, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -51,13 +51,14 @@ describe('Destinations CRUD', () => {
     });
   });
 
-  it(`Should update ${totalEntities} destinations via API, and notify locally`, () => {
+  it(`Should update ${totalEntities} destinations via the v2 edit-destination-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
-      updateEntity(
+      updateV2Entity(
         {
           nodeId: DATA_IDS.DESTINATION_NODE(destinationIds[0]),
           nodeContains: SELECTED_ENTITIES.DESTINATION.DISPLAY_NAME,
-          fieldKey: DATA_IDS.TITLE,
+          prefix: DATA_IDS.DESTINATION_DRAWER_PREFIX,
+          fieldKey: DATA_IDS.DESTINATION_NAME_INPUT,
           fieldValue: TEXTS.UPDATED_NAME,
         },
         () => {
@@ -78,12 +79,13 @@ describe('Destinations CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} destinations via API, and notify locally`, () => {
+  it(`Should delete ${totalEntities} destinations via the v2 edit-destination-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
-      deleteEntity(
+      deleteV2Entity(
         {
           nodeId: DATA_IDS.DESTINATION_NODE(destinationIds[0]),
           nodeContains: SELECTED_ENTITIES.DESTINATION.DISPLAY_NAME,
+          prefix: DATA_IDS.DESTINATION_DRAWER_PREFIX,
           warnModalTitle: TEXTS.DESTINATION_WARN_MODAL_TITLE,
           warnModalNote: TEXTS.DESTINATION_WARN_MODAL_NOTE,
         },
