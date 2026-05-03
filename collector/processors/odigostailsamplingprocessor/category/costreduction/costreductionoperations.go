@@ -4,6 +4,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/collector"
@@ -12,8 +13,9 @@ import (
 
 // EvaluateCostReductionOperations matches cost-reduction rules on each span, sets per-span attributes,
 // aggregates trace-level matches, and returns whether a non-disabled deciding rule applies.
-func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) (bool, *commonapisampling.CostReductionRule) {
+func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) (bool, *commonapisampling.CostReductionRule, category.CategoryEvaluationResult) {
 	matchingRules := map[string]*commonapisampling.CostReductionRule{}
+	rulesEvalResults := category.CategoryEvaluationResult{}
 
 	rss := trace.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
@@ -34,12 +36,20 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 				matchedRules := matchCostReductionRulesForSingleSpan(span, costReductionRules)
 				spanLeastPercentageRule := selectCostReductionRuleFromMatches(matchedRules)
 
+				recordEvalResultForSingleSpan(rulesEvalResults, matchedRules)
+
 				if spanLeastPercentageRule != nil {
 					setCostReductionRuleAttributesOnSpan(span, spanLeastPercentageRule)
 				}
 				if len(matchedRules) > 0 {
 					for _, matchedRule := range matchedRules {
 						matchingRules[matchedRule.Id] = matchedRule
+
+						evalResult, found := rulesEvalResults[matchedRule.Id]
+						if found {
+							evalResult.Matched = true
+							evalResult.SpanMatchedCount++
+						}
 					}
 				}
 			}
@@ -47,7 +57,7 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 	}
 
 	decidingRule := calculateCostReductionDecidingRule(matchingRules)
-	return decidingRule != nil, decidingRule
+	return decidingRule != nil, decidingRule, rulesEvalResults
 }
 
 // matchCostReductionRulesForSingleSpan returns every cost-reduction rule whose operation matcher passes for this span.

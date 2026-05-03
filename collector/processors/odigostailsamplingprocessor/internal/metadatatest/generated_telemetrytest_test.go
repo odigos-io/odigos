@@ -20,8 +20,16 @@ func TestSetupTelemetry(t *testing.T) {
 	tb, err := metadata.NewTelemetryBuilder(testTel.NewTelemetrySettings())
 	require.NoError(t, err)
 	defer tb.Shutdown()
+	tb.OdigosSamplingSpanCheckCount.Add(context.Background(), 1)
+	tb.OdigosSamplingSpanMatchedCount.Add(context.Background(), 1)
 	tb.OdigosSamplingTraceCheckCount.Add(context.Background(), 1)
 	tb.OdigosSamplingTraceMatchCount.Add(context.Background(), 1)
+	AssertEqualOdigosSamplingSpanCheckCount(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosSamplingSpanMatchedCount(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
 	AssertEqualOdigosSamplingTraceCheckCount(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())

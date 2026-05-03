@@ -8,6 +8,8 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
@@ -49,7 +51,8 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 	tracePercentage := float64(rnd.Unsigned()) / float64(sampling.MaxAdjustedCount) * 100.0
 
 	// Noisy operations category.
-	matched, noisyOperationRule := p.evaluateNoisyOperations(td)
+	matched, noisyOperationRule, noisyOperationRes := p.evaluateNoisyOperations(td)
+	p.recordMetrics(ctx, consts.SamplingCategoryNoise, noisyOperationRes)
 	if matched {
 		percentageAtMost := 0.0
 		if noisyOperationRule.PercentageAtMost != nil {
@@ -68,7 +71,8 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		}
 	}
 
-	matched, highlyRelevantOperationRule := highlyrelevant.Evaluate(td, p.odigosConfigExtension)
+	matched, highlyRelevantOperationRule, highlyRelevantRes := highlyrelevant.Evaluate(td, p.odigosConfigExtension)
+	p.recordMetrics(ctx, consts.SamplingCategoryHighlyRelevant, highlyRelevantRes)
 	if matched {
 		percentageAtLeast := category.GetPercentageOrDefault100(highlyRelevantOperationRule.PercentageAtLeast)
 		keepTrace := tracePercentage <= percentageAtLeast
@@ -80,7 +84,8 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		return ptrace.NewTraces(), nil
 	}
 
-	matched, costReductionRule := costreduction.Evaluate(td, p.odigosConfigExtension)
+	matched, costReductionRule, costReductionRes := costreduction.Evaluate(td, p.odigosConfigExtension)
+	p.recordMetrics(ctx, consts.SamplingCategoryCostReduction, costReductionRes)
 	if matched {
 		percentageAtMost := costReductionRule.PercentageAtMost
 		keepTrace := tracePercentage <= percentageAtMost
@@ -97,20 +102,20 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 
 // evaluateNoisyOperations evaluates the noisy operations category for the trace.
 // it return the result of the evaluation.
-func (p *tailSamplingProcessor) evaluateNoisyOperations(td ptrace.Traces) (bool, *commonapisampling.NoisyOperation) {
+func (p *tailSamplingProcessor) evaluateNoisyOperations(td ptrace.Traces) (bool, *commonapisampling.NoisyOperation, category.CategoryEvaluationResult) {
 
 	rootSpan, resource, found := getRootSpan(td)
 	if !found {
 		// the root span is missing, so we cannot apply noisy operations category
 		// as the rules are evaluated only on the root span.
-		return false, nil
+		return false, nil, nil
 	}
 
 	tailSamplingConfig, ok := p.getTailSamplingConfig(resource)
 	if !ok {
 		// the tail sampling config is set only if there are actually any rules.
 		// this source is not relevant for noisy operations category.
-		return false, nil
+		return false, nil, nil
 	}
 
 	return noisy.Evaluate(rootSpan, tailSamplingConfig.NoisyOperations)
@@ -142,6 +147,27 @@ func (p *tailSamplingProcessor) getTailSamplingConfig(resource pcommon.Resource)
 		return nil, false
 	}
 	return collectorConfig.TailSampling, true
+}
+
+func (p *tailSamplingProcessor) recordMetrics(ctx context.Context, category consts.SamplingCategory, evalResult category.CategoryEvaluationResult) {
+	for _, result := range evalResult {
+		attrs := []attribute.KeyValue{
+			attribute.String("category", string(category)),
+			attribute.String("rule_id", result.RuleId),
+			attribute.String("rule_name", result.RuleName),
+		}
+
+		if p.config.DryRun {
+			attrs = append(attrs, attribute.Bool("dry_run", true))
+		}
+
+		p.telemetryBuilder.OdigosSamplingSpanCheckCount.Add(ctx, int64(result.SpanCheckedCount), metric.WithAttributes(attrs...))
+		p.telemetryBuilder.OdigosSamplingSpanMatchedCount.Add(ctx, int64(result.SpanMatchedCount), metric.WithAttributes(attrs...))
+		p.telemetryBuilder.OdigosSamplingTraceCheckCount.Add(ctx, 1, metric.WithAttributes(attrs...))
+		if result.Matched {
+			p.telemetryBuilder.OdigosSamplingTraceMatchCount.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+	}
 }
 
 func newTailSamplingProcessor(logger *zap.Logger, cfg *Config, set component.TelemetrySettings) *tailSamplingProcessor {

@@ -15,8 +15,10 @@ import (
 // - checks all highly-relevant tail-sampling rules across all spans in the trace for matches,
 // - compute a deciding rule based on the rules that matched,
 // - returns wether this category matched, and the deciding rule if it did.
-func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) (bool, *commonapisampling.HighlyRelevantOperation) {
+func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) (bool, *commonapisampling.HighlyRelevantOperation, category.CategoryEvaluationResult) {
 	matchingRules := map[string]*commonapisampling.HighlyRelevantOperation{}
+
+	rulesEvalResults := map[string]*category.RuleEvaluationResult{}
 
 	rss := trace.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
@@ -37,12 +39,20 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 				matchedRules := matchHighlyRelevantRulesForSingleSpan(span, highlyRelevantOperations)
 				spanMostPercentageRule := selectHighlyRelevantRuleFromMatches(matchedRules)
 
+				recordEvalResultForSingleSpan(rulesEvalResults, matchedRules)
+
 				if spanMostPercentageRule != nil {
 					setHighlyRelevantRuleAttributesOnSpan(span, spanMostPercentageRule)
 				}
 				if len(matchedRules) > 0 {
 					for _, matchedRule := range matchedRules {
 						matchingRules[matchedRule.Id] = matchedRule
+
+						evalResult, found := rulesEvalResults[matchedRule.Id]
+						if found {
+							evalResult.Matched = true
+							evalResult.SpanMatchedCount++
+						}
 					}
 				}
 			}
@@ -50,7 +60,7 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 	}
 
 	decidingRule := calculateDecidingRule(matchingRules)
-	return decidingRule != nil, decidingRule
+	return decidingRule != nil, decidingRule, rulesEvalResults
 }
 
 // matchHighlyRelevantRulesForSingleSpan returns every highly-relevant rule whose matchers all pass for this span.
