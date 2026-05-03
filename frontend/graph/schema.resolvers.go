@@ -1031,6 +1031,9 @@ func (r *Resolver) K8sActualNamespace() K8sActualNamespaceResolver {
 	return &k8sActualNamespaceResolver{r}
 }
 
+// K8sActualSource returns K8sActualSourceResolver implementation.
+func (r *Resolver) K8sActualSource() K8sActualSourceResolver { return &k8sActualSourceResolver{r} }
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
@@ -1039,5 +1042,6 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type computePlatformResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
+type k8sActualSourceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

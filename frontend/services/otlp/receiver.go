@@ -85,6 +85,11 @@ func (r *Receiver) Start(ctx context.Context, pipelines ...OTLPPipeline) error {
 		if err := p.Register(ctx); err != nil {
 			return fmt.Errorf("otlp: register: %w", err)
 		}
+	}
+	for _, p := range pipelines {
+		if p == nil {
+			continue
+		}
 		if err := p.Start(ctx); err != nil {
 			return fmt.Errorf("otlp: start: %w", err)
 		}

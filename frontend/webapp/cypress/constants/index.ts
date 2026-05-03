@@ -115,8 +115,25 @@ export const DATA_IDS = {
   DRAWER_SAVE: '[data-id=drawer-save]',
   DRAWER_CLOSE: '[data-id=drawer-close]',
   DRAWER_DELETE: '[data-id=drawer-delete]',
+  DRAWER_ACTIONS: '[data-id=drawer-actions]',
+  DROPDOWN_OPTION: (id: string) => `[data-id="option-${id}"]`,
   APPROVE: '[data-id=approve]',
   DENY: '[data-id=deny]',
+
+  // v2 edit-rule-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
+  RULE_DRAWER_PREFIX: 'edit-rule',
+  RULE_NAME_INPUT: '[data-id=ruleName]',
+
+  // v2 edit-action-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
+  ACTION_DRAWER_PREFIX: 'edit-action',
+  ACTION_NAME_INPUT: '[data-id=actionName]',
+
+  // v2 edit-destination-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
+  DESTINATION_DRAWER_PREFIX: 'edit-destination',
+  DESTINATION_NAME_INPUT: '[data-id=destinationName]',
+
+  // v2 edit-source-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
+  SOURCE_DRAWER_PREFIX: 'edit-source',
 
   TOAST: '[data-id=toast]',
   TOAST_CLOSE: '[data-id=toast-close]',
@@ -178,10 +195,10 @@ export const TEXTS = {
 
   SOURCE_WARN_MODAL_TITLE: (count: number) => `Uninstrument ${count} sources`,
   SOURCE_WARN_MODAL_NOTE: "You're about to uninstrument the last Source",
-  DESTINATION_WARN_MODAL_TITLE: `Delete Destination (${CYPRESS_TEST})`,
-  DESTINATION_WARN_MODAL_NOTE: "You're about to delete the last Destination",
-  ACTION_WARN_MODAL_TITLE: `Delete Action (${CYPRESS_TEST})`,
-  INSTRUMENTATION_RULE_WARN_MODAL_TITLE: `Delete InstrumentationRule (${CYPRESS_TEST})`,
+  DESTINATION_WARN_MODAL_TITLE: 'Delete destination?',
+  DESTINATION_WARN_MODAL_NOTE: 'Are you sure you want to delete this destination?',
+  ACTION_WARN_MODAL_TITLE: 'Delete action?',
+  INSTRUMENTATION_RULE_WARN_MODAL_TITLE: 'Delete instrumentation rule?',
 
   NOTIF_CREATED: 'Successfully created',
   NOTIF_UPDATED: 'Successfully updated',

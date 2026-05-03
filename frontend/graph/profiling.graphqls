@@ -1,0 +1,73 @@
+# Continuous profiling: OTLP profiles buffered per workload slot (UI backend).
+# Schema and resolvers live here (follow-schema → profiling.resolvers.go), not in schema.graphqls.
+
+"""In-memory profiling buffer stats"""
+type ProfilingSlots {
+  activeKeys: [String!]!
+  keysWithData: [String!]!
+  totalBytesInUse: Int!
+  slotMaxBytes: Int!
+  maxSlots: Int!
+  maxTotalBytesBudget: Int!
+  slotTtlSeconds: Int!
+}
+
+"""Enabling profiling slot for a workload"""
+type EnableProfilingResult {
+  status: String!
+  sourceKey: String!
+  maxSlots: Int!
+  activeSlots: Int!
+}
+
+"""Disable profiling slot for a workload."""
+type DisableProfilingResult {
+  status: String!
+  sourceKey: String!
+  activeSlots: Int!
+}
+
+"""Clearing buffered OTLP data for a workload slot"""
+type ClearProfilingBufferResult {
+  status: String!
+  sourceKey: String!
+  activeSlots: Int!
+}
+
+"""Pyroscope-style flame profile for one source (JSON string)."""
+type SourceProfilingResult {
+  profileJson: String!
+}
+
+extend type K8sActualSource {
+  """Buffered CPU profile for this source"""
+  profiling: SourceProfilingResult
+}
+
+extend type Query {
+  """Diagnostics: active keys, keys with data, and memory limits for the profiling buffer"""
+  profilingSlots: ProfilingSlots
+}
+
+extend type Mutation {
+  """Open or refresh the in-memory profiling slot for this workload"""
+  enableSourceProfiling(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): EnableProfilingResult!
+
+  """Close the profiling slot and free buffered chunks for this workload"""
+  disableSourceProfiling(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): DisableProfilingResult!
+
+  """Drop buffered OTLP chunks for this slot while leaving the slot open if policy allows"""
+  clearSourceProfilingBuffer(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): ClearProfilingBufferResult!
+}

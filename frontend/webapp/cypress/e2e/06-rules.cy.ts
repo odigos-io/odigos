@@ -1,5 +1,5 @@
 import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { aliasQuery, awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, hasOperationName, updateEntity, visitPage, waitForGraphqlOperation } from '../functions';
+import { aliasQuery, awaitToast, deleteV2Entity, getCrdById, getCrdIds, handleExceptions, hasOperationName, updateV2Entity, visitPage, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -51,15 +51,16 @@ describe('Instrumentation Rules CRUD', () => {
     getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities });
   });
 
-  it(`Should update ${totalEntities} rules via API, and notify locally`, () => {
+  it(`Should update ${totalEntities} rules via the v2 edit-rule-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType) => {
-        updateEntity(
+        updateV2Entity(
           {
-            // no indexed node, because rules are fetched in random order
+            // rules are fetched in random order, so we locate the row by the type text it shows
             nodeId: 'div',
             nodeContains: ruleType,
-            fieldKey: DATA_IDS.TITLE,
+            prefix: DATA_IDS.RULE_DRAWER_PREFIX,
+            fieldKey: DATA_IDS.RULE_NAME_INPUT,
             fieldValue: TEXTS.UPDATED_NAME,
           },
           () => {
@@ -81,14 +82,14 @@ describe('Instrumentation Rules CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} actions via API, and notify locally`, () => {
+  it(`Should delete ${totalEntities} rules via the v2 edit-rule-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType) => {
-        deleteEntity(
+        deleteV2Entity(
           {
-            // no indexed node, because rules are fetched in random order
             nodeId: 'div',
             nodeContains: ruleType,
+            prefix: DATA_IDS.RULE_DRAWER_PREFIX,
             warnModalTitle: TEXTS.INSTRUMENTATION_RULE_WARN_MODAL_TITLE,
           },
           () => {
