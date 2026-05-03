@@ -302,6 +302,11 @@ func (in *AgentTracesConfig) DeepCopyInto(out *AgentTracesConfig) {
 		*out = new(instrumentationrules.CodeAttributes)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.TraceVerbosity != nil {
+		in, out := &in.TraceVerbosity, &out.TraceVerbosity
+		*out = new(instrumentationrules.TraceVerbosity)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.CustomInstrumentations != nil {
 		in, out := &in.CustomInstrumentations, &out.CustomInstrumentations
 		*out = new(instrumentationrules.CustomInstrumentations)
@@ -1490,6 +1495,11 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 	if in.EbpfLogCapture != nil {
 		in, out := &in.EbpfLogCapture, &out.EbpfLogCapture
 		*out = new(instrumentationrules.EbpfLogCapture)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.TraceVerbosity != nil {
+		in, out := &in.TraceVerbosity, &out.TraceVerbosity
+		*out = new(instrumentationrules.TraceVerbosity)
 		(*in).DeepCopyInto(*out)
 	}
 }

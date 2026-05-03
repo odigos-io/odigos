@@ -340,6 +340,83 @@ spec:
                     description: Disabled will disable tracing for the rule.
                     type: boolean
                 type: object
+              traceVerbosity:
+                description: Configure the verbosity of the traces for the library.
+                properties:
+                  disabledLibraries:
+                    description: |-
+                      instrumentation libraries to configure
+                      the library name shouold be the same as the "instrumentation scope name" that can be found on the generate span attributes.
+                    items:
+                      properties:
+                        Language:
+                          description: the programming language of the relevant library
+                          enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                          - php
+                          - ruby
+                          - rust
+                          - cplusplus
+                          - mysql
+                          - nginx
+                          - redis
+                          - postgres
+                          - unknown
+                          - ignored
+                          - '*'
+                          type: string
+                        libraryName:
+                          description: |-
+                            the name of the library to configure. required.
+                            exact syntax and format depends on the programming language.
+                          type: string
+                      required:
+                      - Language
+                      - libraryName
+                      type: object
+                    type: array
+                  enabledLibraries:
+                    description: |-
+                      for instrumentation libraries that are disabled by default, this field can be used to enable them.
+                      the list of such libraries is small and depends on the language and agent type.
+                      common example: nodejs fs, dns, net instrumentations are disabled by default and can be opt-in for trace collection.
+                    items:
+                      properties:
+                        Language:
+                          description: the programming language of the relevant library
+                          enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                          - php
+                          - ruby
+                          - rust
+                          - cplusplus
+                          - mysql
+                          - nginx
+                          - redis
+                          - postgres
+                          - unknown
+                          - ignored
+                          - '*'
+                          type: string
+                        libraryName:
+                          description: |-
+                            the name of the library to configure. required.
+                            exact syntax and format depends on the programming language.
+                          type: string
+                      required:
+                      - Language
+                      - libraryName
+                      type: object
+                    type: array
+                type: object
               workloads:
                 description: An array of workload objects (name, namespace, kind)
                   to which the rule should be applied. If not specified, the rule

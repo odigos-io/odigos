@@ -30,3 +30,6 @@ spec:
       supported: true
     headersCollection:
       supported: true
+    traceVerbosity:
+      supportDisablingOdigosAgentLibraries: true
+      supportDisablingAnyScope: true

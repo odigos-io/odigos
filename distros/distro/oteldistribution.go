@@ -191,6 +191,15 @@ type CustomInstrumentations struct {
 	Supported bool `yaml:"supported,omitempty"`
 }
 
+type TraceVerbosity struct {
+	// if true, the distro supports disabling instrumentation libraries that are being setup by odigos agent.
+	DisablingOdigosAgentLibrariesSupported bool `yaml:"disablingOdigosAgentLibrariesSupported,omitempty"`
+	// if true, the distro supports disabling instrumentation libraries that are being setup by user
+	// or dependencies, which are not under odigos control.
+	// anyone can create a tracer and use it to start spans with any arbitrary scope.
+	DisablingAnyScopeSupported bool `yaml:"disablingAnyScopeSupported,omitempty"`
+}
+
 type EbpfLogCapture struct {
 	// if true, the distro supports eBPF-based log capture.
 	Supported bool `yaml:"supported,omitempty"`
@@ -224,6 +233,10 @@ type Traces struct {
 
 	// if set, the distro supports custom instrumentation probes.
 	CustomInstrumentations *CustomInstrumentations `yaml:"customInstrumentations,omitempty"`
+
+	// if set, the distro supports configuring verbosity of traces - which spans should be included / excluded.
+	// the exact features and level of support is specified in the TraceVerbosity struct.
+	TraceVerbosity *TraceVerbosity `yaml:"traceVerbosity,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,

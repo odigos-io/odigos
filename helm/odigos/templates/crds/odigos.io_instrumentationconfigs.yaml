@@ -580,6 +580,86 @@ spec:
                                 type: object
                               type: array
                           type: object
+                        traceVerbosity:
+                          description: configuration for how verbose the trace should
+                            be - e.g. which spans should be included / excluded.
+                          properties:
+                            disabledLibraries:
+                              description: |-
+                                instrumentation libraries to configure
+                                the library name shouold be the same as the "instrumentation scope name" that can be found on the generate span attributes.
+                              items:
+                                properties:
+                                  Language:
+                                    description: the programming language of the relevant
+                                      library
+                                    enum:
+                                    - java
+                                    - python
+                                    - go
+                                    - dotnet
+                                    - javascript
+                                    - php
+                                    - ruby
+                                    - rust
+                                    - cplusplus
+                                    - mysql
+                                    - nginx
+                                    - redis
+                                    - postgres
+                                    - unknown
+                                    - ignored
+                                    - '*'
+                                    type: string
+                                  libraryName:
+                                    description: |-
+                                      the name of the library to configure. required.
+                                      exact syntax and format depends on the programming language.
+                                    type: string
+                                required:
+                                - Language
+                                - libraryName
+                                type: object
+                              type: array
+                            enabledLibraries:
+                              description: |-
+                                for instrumentation libraries that are disabled by default, this field can be used to enable them.
+                                the list of such libraries is small and depends on the language and agent type.
+                                common example: nodejs fs, dns, net instrumentations are disabled by default and can be opt-in for trace collection.
+                              items:
+                                properties:
+                                  Language:
+                                    description: the programming language of the relevant
+                                      library
+                                    enum:
+                                    - java
+                                    - python
+                                    - go
+                                    - dotnet
+                                    - javascript
+                                    - php
+                                    - ruby
+                                    - rust
+                                    - cplusplus
+                                    - mysql
+                                    - nginx
+                                    - redis
+                                    - postgres
+                                    - unknown
+                                    - ignored
+                                    - '*'
+                                    type: string
+                                  libraryName:
+                                    description: |-
+                                      the name of the library to configure. required.
+                                      exact syntax and format depends on the programming language.
+                                    type: string
+                                required:
+                                - Language
+                                - libraryName
+                                type: object
+                              type: array
+                          type: object
                         urlTemplatization:
                           description: A list of URL templatization configurations
                             to be applied to the traces.

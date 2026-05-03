@@ -876,6 +876,17 @@ In the Future we might add another level of configuration base on the parent spa
 </tr>
 <tr>
 <td>
+<code>traceVerbosity</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceVerbosity"><code>instrumentationrules.TraceVerbosity</code></a>
+</td>
+<td>
+   <p>configuration for how verbose the trace should be - e.g. which spans should be included / excluded.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>customInstrumentations</code> <B>[Required]</B>
 </td>
 <td>
@@ -3101,6 +3112,17 @@ note that traces will be dropped regardless of thier attributes/errors/importanc
    <p>Configure eBPF-based log capture. When enabled, the node collector logs pipeline
 will use only the eBPF receiver instead of the filelog receiver, and odiglet will
 register instrumented processes for eBPF log capture.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>traceVerbosity</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceVerbosity"><code>instrumentationrules.TraceVerbosity</code></a>
+</td>
+<td>
+   <p>Configure the verbosity of the traces for the library.</p>
 </td>
 </tr>
 </tbody>

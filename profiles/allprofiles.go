@@ -34,7 +34,14 @@ var AllProfiles = []profile.Profile{
 	instrumentation.MountMethodK8sHostPathProfile,
 	instrumentation.MountMethodK8sVirtualDevice,
 	instrumentation.PodManifestEnvVarInjection,
+
+	// golang
 	instrumentation.DisableGinProfile,
+	instrumentation.DisableGinNewProfile,
+
+	// nodejs
+	instrumentation.DisableNodejsExpressProfile,
+	instrumentation.NodejsVerbosityFullProfile,
 
 	pipeline.SmallBatchesProfile,
 }

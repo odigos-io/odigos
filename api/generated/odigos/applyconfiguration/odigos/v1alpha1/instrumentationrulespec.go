@@ -59,6 +59,8 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	// will use only the eBPF receiver instead of the filelog receiver, and odiglet will
 	// register instrumented processes for eBPF log capture.
 	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
+	// Configure the verbosity of the traces for the library.
+	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -180,5 +182,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithHeadSamplingFallbackFrac
 // If called multiple times, the EbpfLogCapture field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithEbpfLogCapture(value instrumentationrules.EbpfLogCapture) *InstrumentationRuleSpecApplyConfiguration {
 	b.EbpfLogCapture = &value
+	return b
+}
+
+// WithTraceVerbosity sets the TraceVerbosity field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TraceVerbosity field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithTraceVerbosity(value instrumentationrules.TraceVerbosity) *InstrumentationRuleSpecApplyConfiguration {
+	b.TraceVerbosity = &value
 	return b
 }

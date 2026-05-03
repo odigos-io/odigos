@@ -392,6 +392,9 @@ type AgentTracesConfig struct {
 	// configuration for code attributes collection for this container.
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
 
+	// configuration for how verbose the trace should be - e.g. which spans should be included / excluded.
+	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
+
 	// custom instrumentation probes for this container.
 	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
