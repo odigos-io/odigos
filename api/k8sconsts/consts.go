@@ -25,13 +25,16 @@ const (
 var MinK8SVersionForInstallation = version.MustParse("v1.20.15-0")
 
 var (
+	// Default ignored namespaces
 	DefaultIgnoredNamespaces = []string{
 		"local-path-storage",
 		"istio-system",
 		"linkerd",
 		"kube-node-lease",
+	}
 
-		// Openshift namespaces
+	// Openshift namespaces
+	OpenshiftIgnoredNamespaces = []string{
 		"openshift",
 		"openshift-apiserver",
 		"openshift-apiserver-operator",
@@ -93,6 +96,8 @@ var (
 		"openshift-user-workload-monitoring",
 		"openshift-vsphere-infra",
 	}
+
+	// Default ignored container names
 	DefaultIgnoredContainers = []string{"istio-proxy", "vault-agent", "filebeat", "linkerd-proxy", "fluentd", "akeyless-init"}
 )
 
