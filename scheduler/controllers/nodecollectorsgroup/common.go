@@ -313,6 +313,11 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 		}
 	}
 
+	var resourceDetectors *common.ResourceDetectorsConfiguration
+	if odigosConfiguration.CollectorNode != nil {
+		resourceDetectors = odigosConfiguration.CollectorNode.ResourceDetectors
+	}
+
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -327,6 +332,7 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 			CollectorOwnMetricsPort:   ownMetricsPort,
 			ResourcesSettings:         getResourceSettings(odigosConfiguration),
 			OtlpExporterConfiguration: otlpExporterConfiguration,
+			ResourceDetectors:         resourceDetectors,
 			Metrics:                   metricsConfig,
 		},
 	}

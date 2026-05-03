@@ -267,6 +267,47 @@ spec:
                   timeout:
                     type: string
                 type: object
+              resourceDetectors:
+                description: |-
+                  ResourceDetectors controls which OpenTelemetry resource detectors are enabled
+                  on the node collector's resourcedetection processor.
+                properties:
+                  aks:
+                    description: ResourceDetectorConfig holds the configuration for
+                      a single resource detector.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                  azure:
+                    description: ResourceDetectorConfig holds the configuration for
+                      a single resource detector.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                  ec2:
+                    description: ResourceDetectorConfig holds the configuration for
+                      a single resource detector.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                  eks:
+                    description: ResourceDetectorConfig holds the configuration for
+                      a single resource detector.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                  gcp:
+                    description: ResourceDetectorConfig holds the configuration for
+                      a single resource detector.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                type: object
               resourcesSettings:
                 description: |-
                   Resources [memory/cpu] settings for the collectors group.

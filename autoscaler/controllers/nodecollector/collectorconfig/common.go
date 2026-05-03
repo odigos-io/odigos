@@ -29,6 +29,43 @@ const (
 	resourceDetectionProcessorName      = "resourcedetection"
 )
 
+func isDetectorEnabled(cfg *common.ResourceDetectorConfig) bool {
+	return cfg != nil && cfg.Enabled != nil && *cfg.Enabled
+}
+
+func buildResourceDetectors(cfg *common.ResourceDetectorsConfiguration, runningOnGKE bool) []string {
+	if cfg == nil {
+		return nil
+	}
+
+	var detectors []string
+
+	// GCP detector is gated behind the GKE flag due to
+	// https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/issues/1026
+	// When running on GKE the only safe detector is "gcp" unless the user explicitly
+	// enabled others. When NOT on GKE, the non-GCP detectors are considered.
+	if runningOnGKE {
+		if isDetectorEnabled(cfg.GCP) {
+			detectors = append(detectors, "gcp")
+		}
+	} else {
+		if isDetectorEnabled(cfg.EC2) {
+			detectors = append(detectors, "ec2")
+		}
+		if isDetectorEnabled(cfg.EKS) {
+			detectors = append(detectors, "eks")
+		}
+		if isDetectorEnabled(cfg.Azure) {
+			detectors = append(detectors, "azure")
+		}
+		if isDetectorEnabled(cfg.AKS) {
+			detectors = append(detectors, "aks")
+		}
+	}
+
+	return detectors
+}
+
 func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.GenericMap {
 
 	allProcessors := config.GenericMap{}
@@ -39,17 +76,12 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 	memoryLimiterConfig := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
 	allProcessors[memoryLimiterProcessorName] = memoryLimiterConfig
 
-	var detectors []string
-	// This is a workaround to avoid adding the gcp detector if not running on a gke environment
-	// once https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/issues/1026 is resolved, we can always put the gcp detector
-	if runningOnGKE {
-		detectors = []string{"gcp"}
-	} else {
-		detectors = []string{"ec2", "eks", "azure", "aks"}
-	}
-	allProcessors[resourceDetectionProcessorName] = config.GenericMap{
-		"detectors": detectors,
-		"timeout":   "2s",
+	detectors := buildResourceDetectors(nodeCG.Spec.ResourceDetectors, runningOnGKE)
+	if len(detectors) > 0 {
+		allProcessors[resourceDetectionProcessorName] = config.GenericMap{
+			"detectors": detectors,
+			"timeout":   "2s",
+		}
 	}
 
 	return allProcessors

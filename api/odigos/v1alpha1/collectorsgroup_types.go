@@ -183,6 +183,10 @@ type CollectorsGroupSpec struct {
 	// OtlpExporterConfiguration is the configuration for the OTLP exporter from node collector to cluster gateway collector.
 	OtlpExporterConfiguration *common.OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
 
+	// ResourceDetectors controls which OpenTelemetry resource detectors are enabled
+	// on the node collector's resourcedetection processor.
+	ResourceDetectors *common.ResourceDetectorsConfiguration `json:"resourceDetectors,omitempty"`
+
 	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
 	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
