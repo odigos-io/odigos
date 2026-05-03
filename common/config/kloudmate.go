@@ -13,7 +13,7 @@ func (j *KloudMate) DestType() common.DestinationType {
 func (j *KloudMate) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	uniqueUri := "kloudmate-" + dest.GetID()
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	exporterConfig := GenericMap{
 		"endpoint": "https://otel.kloudmate.com:4318",
 		"headers": GenericMap{

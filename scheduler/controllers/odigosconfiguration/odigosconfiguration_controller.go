@@ -103,7 +103,12 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	}
 
 	// make sure the default ignored namespaces are always present
-	odigosConfiguration.IgnoredNamespaces = mergeIgnoredItemLists(odigosConfiguration.IgnoredNamespaces, k8sconsts.DefaultIgnoredNamespaces)
+	defaultIgnoredNamespaces := k8sconsts.DefaultIgnoredNamespaces
+	if odigosConfiguration.OpenshiftEnabled {
+		defaultIgnoredNamespaces = append(defaultIgnoredNamespaces, k8sconsts.OpenshiftIgnoredNamespaces...)
+	}
+	odigosConfiguration.IgnoredNamespaces = mergeIgnoredItemLists(odigosConfiguration.IgnoredNamespaces, defaultIgnoredNamespaces)
+
 	currentNamespace := env.GetCurrentNamespace()
 	// Only add the current namespace to ignored namespaces if ignoreOdigosNamespace is not explicitly set to false
 	if odigosConfiguration.IgnoreOdigosNamespace == nil || *odigosConfiguration.IgnoreOdigosNamespace {
@@ -351,20 +356,6 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 		if overlay.Exporter != nil {
 			dst.Exporter = overlay.Exporter
-		}
-		if overlay.Ui != nil {
-			if dst.Ui == nil {
-				dst.Ui = &common.ProfilingUiConfiguration{}
-			}
-			if overlay.Ui.MaxSlots > 0 {
-				dst.Ui.MaxSlots = overlay.Ui.MaxSlots
-			}
-			if overlay.Ui.SlotTTLSeconds > 0 {
-				dst.Ui.SlotTTLSeconds = overlay.Ui.SlotTTLSeconds
-			}
-			if overlay.Ui.SlotMaxBytes > 0 {
-				dst.Ui.SlotMaxBytes = overlay.Ui.SlotMaxBytes
-			}
 		}
 	}
 

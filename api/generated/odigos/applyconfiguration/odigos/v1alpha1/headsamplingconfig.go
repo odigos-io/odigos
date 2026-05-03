@@ -24,6 +24,22 @@ import (
 // HeadSamplingConfigApplyConfiguration represents a declarative configuration of the HeadSamplingConfig type for use
 // with apply.
 type HeadSamplingConfigApplyConfiguration struct {
+	// If true, the sampling decision will be made in dry-run mode.
+	// When dry-run is enabled, the sampling decision will be made but the trace will not be dropped.
+	// This is useful to evaluate the sampling decision before actually committing to it.
+	// 2 additional attributes will be set on the spans:
+	// - odigos.sampling.dry_run: true
+	// - odigos.sampling.dry_run.kept: true if the trace would have been kept, false if it would have been dropped.
+	DryRun *bool `json:"dryRun,omitempty"`
+	// Controls the tradeoff between metric accuracy and resource usage.
+	// Determines how sampling affects which spans are used to compute metrics.
+	// Possible values:
+	// - "sampled-spans-only" (default): metrics are computed only from sampled spans.
+	// Unsampled spans are dropped early, resulting in lower resource usage but reduced accuracy.
+	// - "all-spans": metrics are computed from all spans, regardless of sampling.
+	// Unsampled spans are forwarded for metric computation and dropped later in the pipeline,
+	// resulting in higher accuracy at the cost of increased resource usage.
+	SpanMetricsMode *sampling.SpanMetricsMode `json:"spanMetricsMode,omitempty"`
 	// Noisy operations are categories of matchers that are used on the root span.
 	// If match, the fraction is used to determine the sampling decision for the entire trace.
 	// If multiple noisy operations match, the lowest fraction is used.
@@ -37,6 +53,22 @@ type HeadSamplingConfigApplyConfiguration struct {
 // apply.
 func HeadSamplingConfig() *HeadSamplingConfigApplyConfiguration {
 	return &HeadSamplingConfigApplyConfiguration{}
+}
+
+// WithDryRun sets the DryRun field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DryRun field is set to the value of the last call.
+func (b *HeadSamplingConfigApplyConfiguration) WithDryRun(value bool) *HeadSamplingConfigApplyConfiguration {
+	b.DryRun = &value
+	return b
+}
+
+// WithSpanMetricsMode sets the SpanMetricsMode field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SpanMetricsMode field is set to the value of the last call.
+func (b *HeadSamplingConfigApplyConfiguration) WithSpanMetricsMode(value sampling.SpanMetricsMode) *HeadSamplingConfigApplyConfiguration {
+	b.SpanMetricsMode = &value
+	return b
 }
 
 // WithNoisyOperations adds the given value to the NoisyOperations field in the declarative configuration

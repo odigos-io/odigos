@@ -1044,6 +1044,16 @@
               },
               "required": [],
               "title": "resourceMetricsKeyAttributes"
+            },
+            "spanMetricsMode": {
+              "default": "sampled-spans-only",
+              "description": "Controls the tradeoff between metric accuracy and resource usage.\nDetermines how sampling affects which spans are used to compute metrics.\nPossible values:\n  - \"sampled-spans-only\" (default): metrics are computed only from sampled spans.\n    Unsampled spans are dropped early, resulting in lower resource usage but reduced accuracy.\n  - \"all-spans\": metrics are computed from all spans, regardless of sampling.\n    Unsampled spans are forwarded for metric computation and dropped later in the pipeline,\n    resulting in higher accuracy at the cost of increased resource usage.",
+              "enum": [
+                "sampled-spans-only",
+                "all-spans"
+              ],
+              "required": [],
+              "title": "spanMetricsMode"
             }
           },
           "required": [],

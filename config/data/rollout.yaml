@@ -23,12 +23,12 @@ spec:
       description: Disable automatic rollback when instrumentation causes issues.
       helmValuePath: autoRollback.disabled
     - displayName: Rollback Grace Time
-      componentType: input
+      componentType: time
       isHelmOnly: false
       description: Duration to wait before triggering a rollback (e.g. 30s, 5m).
       helmValuePath: autoRollback.graceTime
     - displayName: Rollback Stability Window
-      componentType: input
+      componentType: time
       isHelmOnly: false
       description: Duration the workload must be stable before considering rollback complete (e.g. 2m, 10m).
       helmValuePath: autoRollback.stabilityWindowTime

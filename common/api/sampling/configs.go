@@ -58,3 +58,23 @@ type TailSamplingConfiguration struct {
 	// and broken traces due to sampling each trace in few pieces.
 	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty" mapstructure:"traceAggregationWaitDuration"`
 }
+
+// SpanMetricsMode determines how span metrics are computed relative to head-sampling decisions.
+type SpanMetricsMode string
+
+const (
+	// SpanMetricsModeSampledSpansOnly computes metrics only from spans that survive sampling.
+	// Dropped spans are discarded at the agent level and never reach the collector.
+	// This is the default and most resource-efficient mode.
+	SpanMetricsModeSampledSpansOnly SpanMetricsMode = "sampled-spans-only"
+
+	// SpanMetricsModeAllSpans computes metrics from all spans, regardless of sampling.
+	// Unsampled spans are forwarded for metric computation and dropped later in the pipeline,
+	// resulting in higher accuracy at the cost of increased resource usage.
+	SpanMetricsModeAllSpans SpanMetricsMode = "all-spans"
+
+	// SpanMetricsModeStatistical is reserved for future use.
+	// In this mode, metrics would be statistically corrected to account for dropped spans,
+	// giving accurate results over large volumes without requiring all spans to be forwarded.
+	// SpanMetricsModeStatistical SpanMetricsMode = "statistical"
+)

@@ -1,6 +1,9 @@
 package odigostailsamplingprocessor
 
 import (
+	"errors"
+	"strings"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
@@ -8,6 +11,8 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/odigosattributes"
 )
+
+const odigosTraceStateKey = "odigos"
 
 // getRootSpan finds and returns the root span of the trace.
 // the trace should be all spans belonging to a single trace id,
@@ -69,18 +74,68 @@ func enrichSpansWithSamplingAttributes(td ptrace.Traces, category consts.Samplin
 	}
 }
 
-// assertAllSpansBelongToTheSameTrace asserts that all spans in the batch belong to the same trace.
-// The processor should be placed in the pipeline after the "groupbytraceid" processor.
-func assertAllSpansBelongToTheSameTrace(td ptrace.Traces) (pcommon.TraceID, bool) {
-	traceID := td.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).TraceID()
+// checkPrerequists decides whether tail sampling should run on td.
+// It assumes this processor runs after groupbytraceid, so all spans should share one trace ID.
+//
+// Validation:
+//   - If spans disagree on trace ID, returns a non-nil error (misconfiguration or upstream bug).
+//   - If any span’s W3C tracestate contains the odigos vendor entry (see odigosTraceStateKey),
+//     head sampling already ran; returns (_, false, nil) so tail sampling is skipped.
+//   - If there are no spans, returns (_, false, nil) so the batch is skipped.
+//
+// Returns:
+//   - traceID: the common trace ID when shouldProcess is true, or the zero value when skipping or on error.
+//   - shouldProcess: true only when there is at least one span, all share traceID, and none carry odigos tracestate.
+//   - err: non-nil only when multiple trace IDs appear in the same batch.
+func checkPrerequists(td ptrace.Traces) (pcommon.TraceID, bool, error) {
+
+	var traceId pcommon.TraceID
+	found := false
+
 	for i := 0; i < td.ResourceSpans().Len(); i++ {
-		for j := 0; j < td.ResourceSpans().At(i).ScopeSpans().Len(); j++ {
-			for k := 0; k < td.ResourceSpans().At(i).ScopeSpans().At(j).Spans().Len(); k++ {
-				if td.ResourceSpans().At(i).ScopeSpans().At(j).Spans().At(k).TraceID() != traceID {
-					return pcommon.TraceID{}, false
+		resourceSpan := td.ResourceSpans().At(i)
+		for j := 0; j < resourceSpan.ScopeSpans().Len(); j++ {
+			scopeSpan := resourceSpan.ScopeSpans().At(j)
+			for k := 0; k < scopeSpan.Spans().Len(); k++ {
+				span := scopeSpan.Spans().At(k)
+
+				currTraceId := span.TraceID()
+				if !found {
+					traceId = currTraceId
+					found = true
+				} else if currTraceId != traceId {
+					return pcommon.TraceID{}, false, errors.New("not all spans belong to the same trace")
+				}
+
+				// check if we have odigos entry in the trace state, which indicates head sampling was applied.
+				odigosTraceState := extractOdigosTraceStateValue(span.TraceState().AsRaw())
+				if odigosTraceState != "" {
+					// trace has already been sampled by head sampling, no need to process it again.
+					return pcommon.TraceID{}, false, nil
 				}
 			}
 		}
 	}
-	return traceID, true
+
+	// if no spans found, we will return false to indicate it should be skipped.
+	return traceId, found, nil
+}
+
+// extractOdigosTraceStateValue extracts the value of the "odigos" key from a W3C tracestate string.
+// Tracestate format: "key1=value1,key2=value2,..."
+func extractOdigosTraceStateValue(traceState string) string {
+	for _, entry := range strings.Split(traceState, ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		k, v, found := strings.Cut(entry, "=")
+		if !found {
+			continue
+		}
+		if strings.TrimSpace(k) == odigosTraceStateKey {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
 }

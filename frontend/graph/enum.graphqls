@@ -74,4 +74,5 @@ enum FieldType {
   dropdown
   checkbox
   toggle
+  time
 }

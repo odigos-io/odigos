@@ -21,6 +21,10 @@ type Server struct {
 	TracesFDProvider   func() int   // Function that returns the traces eBPF map file descriptor
 	MetricsFDsProvider func() []int // Function that returns all metrics-related eBPF map file descriptors
 	LogsFDsProvider    func() []int // Function that returns all logs-related eBPF map file descriptors
+
+	// LogsAttrSubscribe returns attribute event lines and a snapshot of current attrs.
+	// When non-nil, the logs connection stays open after FD exchange to stream events.
+	LogsAttrSubscribe func() (updates <-chan string, snapshot []string)
 }
 
 // Run starts the Unix domain socket server, which serves eBPF map file descriptors to connecting clients.
@@ -62,21 +66,19 @@ func (s *Server) Run(ctx context.Context) error {
 			continue
 		}
 
-		go s.handleRequest(conn.(*net.UnixConn))
+		go s.handleRequest(ctx, conn.(*net.UnixConn))
 	}
 }
 
 // handleRequest processes a single client request
-func (s *Server) handleRequest(conn *net.UnixConn) {
+func (s *Server) handleRequest(ctx context.Context, conn *net.UnixConn) {
 	logger := commonlogger.WrapLogr(s.Logger).WithName("unixfd")
-	defer func() {
-		_ = conn.Close()
-	}()
 
 	// Read the request
 	buf := make([]byte, 16)
 	n, err := conn.Read(buf)
 	if err != nil {
+		_ = conn.Close()
 		logger.Error(err, "failed to read request")
 		return
 	}
@@ -85,6 +87,7 @@ func (s *Server) handleRequest(conn *net.UnixConn) {
 
 	switch request {
 	case ReqGetFD, ReqGetTracesFD:
+		defer func() { _ = conn.Close() }()
 		// Legacy "GET_FD" defaults to traces for backward compatibility
 		if s.TracesFDProvider == nil {
 			logger.Error(fmt.Errorf("traces FD provider not configured"), "no traces FD provider")
@@ -102,6 +105,7 @@ func (s *Server) handleRequest(conn *net.UnixConn) {
 		logger.Info("sent FD to client", "fd", fd, "request", request)
 
 	case ReqGetMetricsFD:
+		defer func() { _ = conn.Close() }()
 		if s.MetricsFDsProvider == nil {
 			logger.Error(fmt.Errorf("metrics FDs provider not configured"), "no metrics FDs provider")
 			return
@@ -124,30 +128,67 @@ func (s *Server) handleRequest(conn *net.UnixConn) {
 		logger.Info("sent metrics FDs to client", "fds", fds, "request", request)
 
 	case ReqGetLogsFD:
-		if s.LogsFDsProvider == nil {
-			s.Logger.Error(fmt.Errorf("logs FDs provider not configured"), "no logs FDs provider")
+		s.handleLogsRequest(ctx, conn)
+
+	default:
+		_ = conn.Close()
+		logger.Info("unknown request", "request", request)
+		return
+	}
+}
+
+// handleLogsRequest sends the logs FD and optionally streams attribute events.
+func (s *Server) handleLogsRequest(ctx context.Context, conn *net.UnixConn) {
+	defer func() { _ = conn.Close() }()
+	logger := commonlogger.WrapLogr(s.Logger).WithName("unixfd")
+
+	if s.LogsFDsProvider == nil {
+		logger.Error(fmt.Errorf("logs FDs provider not configured"), "no logs FDs provider")
+		return
+	}
+	fds := s.LogsFDsProvider()
+	if len(fds) == 0 {
+		logger.Error(fmt.Errorf("no logs FDs available"), "logs FDs provider returned empty slice")
+		return
+	}
+	for _, fd := range fds {
+		if fd <= 0 {
+			logger.Error(fmt.Errorf("invalid fd %d", fd), "FD provider returned invalid fd")
 			return
 		}
-		fds := s.LogsFDsProvider()
-		if len(fds) == 0 {
-			s.Logger.Error(fmt.Errorf("no logs FDs available"), "logs FDs provider returned empty slice")
+	}
+	if err := sendFDs(conn, fds...); err != nil {
+		logger.Error(err, "failed to send logs FDs")
+		return
+	}
+	logger.Info("sent logs FDs to client", "fds", fds, "request", ReqGetLogsFD)
+
+	if s.LogsAttrSubscribe == nil {
+		return
+	}
+
+	updates, snapshot := s.LogsAttrSubscribe()
+
+	for _, line := range snapshot {
+		if _, err := conn.Write([]byte(line + "\n")); err != nil {
+			logger.Info("logs attr client disconnected during snapshot", "error", err)
 			return
 		}
-		for _, fd := range fds {
-			if fd <= 0 {
-				s.Logger.Error(fmt.Errorf("invalid fd %d", fd), "FD provider returned invalid fd", "request", request)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case line, ok := <-updates:
+			if !ok {
+				return
+			}
+			if _, err := conn.Write([]byte(line + "\n")); err != nil {
+				logger.Info("logs attr client disconnected", "error", err)
 				return
 			}
 		}
-		if err := sendFDs(conn, fds...); err != nil {
-			s.Logger.Error(err, "failed to send logs FDs")
-			return
-		}
-		s.Logger.Info("sent logs FDs to client", "fds", fds, "request", request)
-
-	default:
-		logger.Info("unknown request", "request", request)
-		return
 	}
 }
 

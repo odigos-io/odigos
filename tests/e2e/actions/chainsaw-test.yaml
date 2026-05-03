@@ -1,0 +1,113 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: extract-attribute
+spec:
+  description: |
+    This e2e test verifies the ExtractAttribute action end-to-end.
+    A minimal Flask app sets db.statement, http.request.payload, and
+    messaging.message.payload on every span. The ExtractAttribute action
+    extracts values from those attributes using all four processor
+    variations: JSON, SQL (via json DataFormat), URL (multi-key), and
+    free regex. The test asserts that every extracted target attribute
+    appears on spans collected by the simple-trace-db.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Python Flask app
+      try:
+        - apply:
+            file: 01-install-python-app.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            timeout: 4m
+            content: |
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Wait for Flask app to be ready
+      try:
+        - assert:
+            timeout: 3m
+            resource:
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: extract-attr-app
+                namespace: default
+              status:
+                availableReplicas: 1
+
+    - name: Instrument namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Add destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Odigos pipeline ready
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Apply ExtractAttribute action
+      try:
+        - apply:
+            file: 03-extract-attribute-action.yaml
+
+    - name: Generate traffic
+      try:
+        - apply:
+            file: 02-generate-traffic.yaml
+
+    - name: Wait for traces to arrive
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh 04-extracted-attributes.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 2
+              done
+      catch:
+        - script:
+            content: |
+              echo "=== Gateway Collector Logs ==="
+              kubectl logs -n odigos-test -l odigos.io/collector-role=CLUSTER_GATEWAY --tail=50
+              echo ""
+              echo "=== Flask App Pods ==="
+              kubectl get pods -n default -l app=extract-attr-app -o wide
+              echo ""
+              echo "=== Traffic Generator Job ==="
+              kubectl get jobs -n default -l app=traffic-generator -o wide
+              echo ""
+              echo "=== Trace DB Raw Dump ==="
+              ../../common/simple_trace_db_query_runner.sh 04-extracted-attributes.yaml --verbose || true

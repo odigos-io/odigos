@@ -10,6 +10,35 @@ export const GET_WORKLOADS = gql`
       }
       serviceName
       dataStreamNames
+      runtimeInfo {
+        detectedLanguages
+      }
+      workloadOdigosHealthStatus {
+        name
+        status
+        reasonEnum
+        message
+      }
+      podsAgentInjectionStatus {
+        name
+        status
+        reasonEnum
+        message
+      }
+    }
+  }
+`;
+
+export const GET_WORKLOADS_BY_IDS = gql`
+  query GetWorkloadsByIds($ids: [K8sWorkloadIdInput!]!) {
+    workloadsByIds(ids: $ids) {
+      id {
+        namespace
+        kind
+        name
+      }
+      serviceName
+      dataStreamNames
       numberOfInstances
       markedForInstrumentation {
         markedForInstrumentation
@@ -32,6 +61,10 @@ export const GET_WORKLOADS = gql`
         }
         overrides {
           containerName
+          runtimeInfo {
+            language
+            runtimeVersion
+          }
         }
       }
       conditions {
@@ -89,91 +122,12 @@ export const GET_WORKLOADS = gql`
   }
 `;
 
-export const GET_WORKLOADS_BY_IDS = gql`
-  query GetWorkloadsByIds($ids: [K8sWorkloadIdInput!]!) {
-    workloadsByIds(ids: $ids) {
-      id {
-        namespace
-        kind
-        name
-      }
-      serviceName
+export const GET_NAMESPACES = gql`
+  query GetNamespaces {
+    namespaces {
+      name
+      markedForInstrumentation
       dataStreamNames
-      numberOfInstances
-      markedForInstrumentation {
-        markedForInstrumentation
-      }
-      runtimeInfo {
-        detectedLanguages
-      }
-      containers {
-        containerName
-        runtimeInfo {
-          language
-          runtimeVersion
-        }
-        agentEnabled {
-          agentEnabled
-          agentEnabledStatus {
-            message
-          }
-          otelDistroName
-        }
-        overrides {
-          containerName
-        }
-      }
-      conditions {
-        runtimeDetection {
-          name
-          status
-          reasonEnum
-          message
-        }
-        agentInjectionEnabled {
-          name
-          status
-          reasonEnum
-          message
-        }
-        rollout {
-          name
-          status
-          reasonEnum
-          message
-        }
-        agentInjected {
-          name
-          status
-          reasonEnum
-          message
-        }
-        processesAgentHealth {
-          name
-          status
-          reasonEnum
-          message
-        }
-        expectingTelemetry {
-          name
-          status
-          reasonEnum
-          message
-        }
-      }
-      workloadOdigosHealthStatus {
-        name
-        status
-        reasonEnum
-        message
-      }
-      podsAgentInjectionStatus {
-        name
-        status
-        reasonEnum
-        message
-      }
-      rollbackOccurred
     }
   }
 `;

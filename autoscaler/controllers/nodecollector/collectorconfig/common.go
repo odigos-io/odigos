@@ -23,9 +23,9 @@ const (
 	memoryLimiterProcessorName          = "memory_limiter"
 	balancerName                        = "round_robin"
 	nodeNameProcessorName               = "resource/node-name"
-	clusterCollectorTracesExporterName  = "otlp/out-cluster-collector-traces"
-	clusterCollectorMetricsExporterName = "otlp/out-cluster-collector-metrics"
-	clusterCollectorLogsExporterName    = "otlp/out-cluster-collector-logs"
+	clusterCollectorTracesExporterName  = "otlp_grpc/out-cluster-collector-traces"
+	clusterCollectorMetricsExporterName = "otlp_grpc/out-cluster-collector-metrics"
+	clusterCollectorLogsExporterName    = "otlp_grpc/out-cluster-collector-logs"
 	resourceDetectionProcessorName      = "resourcedetection"
 )
 

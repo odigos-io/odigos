@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
-import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
 import { getIdFromSseTarget, safeJsonParse } from '@odigos/ui-kit/functions';
+import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
 import { useEntityStore, useNotificationStore, useProgressStore, ProgressKeys } from '@odigos/ui-kit/store';
 
 enum EventTypes {

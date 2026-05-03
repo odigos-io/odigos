@@ -5,6 +5,7 @@ After=network.target
 [Service]
 EnvironmentFile=/etc/odigos-otelcol/odigos-otelcol.conf
 ExecStart=/usr/bin/odigos-otelcol $OTELCOL_OPTIONS
+ExecReload=/bin/kill -HUP $MAINPID
 KillMode=mixed
 Restart=on-failure
 Type=simple

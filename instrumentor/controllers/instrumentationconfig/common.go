@@ -80,6 +80,8 @@ func updateInstrumentationConfigForWorkload(ctx context.Context, ic *odigosv1alp
 						libraryConfig.PayloadCollection.DbQuery = mergeDbPayloadCollectionRules(libraryConfig.PayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
 						libraryConfig.PayloadCollection.Messaging = mergeMessagingPayloadCollectionRules(libraryConfig.PayloadCollection.Messaging, rule.Spec.PayloadCollection.Messaging)
 					}
+
+					// DELETE ONCE FULLY MIGRATED TO THE CONTAINER CONFIG
 					if rule.Spec.CodeAttributes != nil {
 						libraryConfig.CodeAttributes = mergeCodeAttributesRules(libraryConfig.CodeAttributes, rule.Spec.CodeAttributes)
 					}

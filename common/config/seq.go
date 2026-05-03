@@ -29,7 +29,7 @@ func (j *Seq) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]st
 		return nil, err
 	}
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{

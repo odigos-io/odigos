@@ -19,6 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/config"
 	"github.com/odigos-io/odigos/destinations"
@@ -37,7 +39,9 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 	"github.com/odigos-io/odigos/frontend/services/db"
-	metrics "github.com/odigos-io/odigos/frontend/services/metrics"
+	"github.com/odigos-io/odigos/frontend/services/metrics"
+	"github.com/odigos-io/odigos/frontend/services/otlp"
+	"github.com/odigos-io/odigos/frontend/services/profiles"
 	"github.com/odigos-io/odigos/frontend/services/sse"
 	"github.com/odigos-io/odigos/frontend/version"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -95,17 +99,29 @@ func initKubernetesClient(flags *Flags) error {
 	return nil
 }
 
-func startWatchers(ctx context.Context) error {
-	odigosNs := env.GetCurrentNamespace()
-
-	err := watchers.StartInstrumentationConfigWatcher(ctx, "")
+func startWatchers(
+	ctx context.Context,
+	k8sCache cache.Cache,
+	odigosMetrics *collectormetrics.OdigosMetricsConsumer,
+	profilingGate *profiles.IngestGate,
+	profileStore *profiles.ProfileStore,
+) error {
+	err := watchers.StartInstrumentationConfigWatcher(ctx, k8sCache, odigosMetrics)
 	if err != nil {
 		return fmt.Errorf("error starting InstrumentationConfig watcher: %v", err)
 	}
 
-	err = watchers.StartDestinationWatcher(ctx, odigosNs)
+	err = watchers.StartDestinationWatcher(ctx, k8sCache, odigosMetrics)
 	if err != nil {
 		return fmt.Errorf("error starting Destination watcher: %v", err)
+	}
+
+	// Optional: in-process toggle of OTLP profiles ingest based on effective-config changes.
+	if profilingGate != nil && profileStore != nil {
+		err = watchers.StartProfilingConfigWatcher(ctx, k8sCache, env.GetCurrentNamespace(), profilingGate, profileStore)
+		if err != nil {
+			return fmt.Errorf("error starting profiling effective-config watcher: %v", err)
+		}
 	}
 
 	return nil
@@ -152,7 +168,12 @@ func serveClientFiles(ctx context.Context, r *gin.Engine, dist fs.FS) {
 	})
 }
 
-func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, k8sCacheClient client.Client, promAPI v1.API) (*gin.Engine, error) {
+func startHTTPServer(ctx context.Context,
+	flags *Flags,
+	logger logr.Logger,
+	odigosMetrics *collectormetrics.OdigosMetricsConsumer,
+	k8sCacheClient client.Client,
+	promAPI v1.API) (*gin.Engine, error) {
 	var r *gin.Engine
 	if flags.Debug {
 		r = gin.Default()
@@ -317,22 +338,88 @@ func main() {
 
 	// Setup Source cache - this initializes a controller-runtime cache for Source resources
 	// from all namespaces, providing fast read access without hitting the Kubernetes API
-	k8sCacheClient, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext, flags.Namespace)
+	k8sCacheClient, k8sCache, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext, flags.Namespace)
 	if err != nil {
 		log.Error("Error setting up kubernetes objects cache", "err", err)
 		os.Exit(1)
 	}
 
-	odigosMetrics := collectormetrics.NewOdigosMetrics()
+	// OTLP gRPC: one listener (default consts.OTLPPort). Metrics always; profiles pipeline is always
+	// registered when the consumer builds, while profiles.IngestGate turns ingest on/off from effective-config.
+	odigosMetricsConsumer := collectormetrics.NewOdigosMetrics()
+
+	profCfg, profCfgErr := services.ResolveProfilingFromEffectiveConfig(ctx, k8sCacheClient)
+
+	var profilingIngest bool
+	if profCfgErr == nil {
+		profilingIngest = profCfg.ReceiverOn
+	} else {
+		log.Error("profiling: could not load initial effective config; ingest off until effective-config is readable", "err", profCfgErr)
+		profilingIngest = false
+	}
+
+	profilingGate := profiles.NewProfilesIngestGate(profilingIngest)
+
+	profileStore := profiles.NewProfileStore(
+		profCfg.StoreLimits.MaxSlots,
+		profCfg.StoreLimits.SlotTTLSeconds,
+		profCfg.StoreLimits.SlotMaxBytes,
+		profCfg.CleanupInterval,
+	)
+	profileStore.RunCleanup(ctx)
+	defer profileStore.StopCleanup()
+
+	var odigosProfilesConsumer *profiles.OdigosProfilesConsumer
+	odigosProfilesConsumer, err = profiles.NewOdigosProfilesConsumer(profileStore, profilingGate)
+	if err != nil {
+		log.Warn("profiles consumer init failed", "err", err)
+		odigosProfilesConsumer = nil
+	}
+
+	// Register metric/profile sinks on one otlpReceiver, start gRPC, then block until shutdown.
+	otlpPort := consts.OTLPPort
+	otlpReceiver, err := otlp.NewReceiver(otlpPort)
+	if err != nil {
+		log.Warn("otlpReceiver config failed", "err", err)
+	}
+
 	var wg sync.WaitGroup
+
+	// K8s delete watcher + in-process notification loop for metrics maps (independent of OTLP otlpReceiver).
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		odigosMetrics.Run(ctx, flags.Namespace)
+		odigosMetricsConsumer.RunDeleteWatcherAndNotifications(ctx, flags.Namespace)
 	}()
 
+	// OTLP receiver lifecycle: warn and continue if it cannot start.
+	if otlpReceiver != nil {
+		registeredPipelines := []otlp.OTLPPipeline{otlp.NewMetricsPipeline(otlpReceiver, odigosMetricsConsumer)}
+		if odigosProfilesConsumer != nil {
+			registeredPipelines = append(registeredPipelines, otlp.NewProfilesPipeline(otlpReceiver, odigosProfilesConsumer.GetConsumer()))
+		}
+		if err := otlpReceiver.Start(ctx, registeredPipelines...); err != nil {
+			log.Warn("OTLP setup failed", "err", err)
+		} else {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := otlpReceiver.WaitAndShutdown(ctx, registeredPipelines...); err != nil {
+					log.Error("OTLP receiver shutdown failed", "err", err)
+				}
+			}()
+		}
+	}
+
 	// Start watchers
-	err = startWatchers(ctx)
+	var profilesIngestGate *profiles.IngestGate
+	var profilesStore *profiles.ProfileStore
+	if odigosProfilesConsumer != nil {
+		profilesIngestGate = profilingGate
+		profilesStore = profileStore
+	}
+
+	err = startWatchers(ctx, k8sCache, odigosMetricsConsumer, profilesIngestGate, profilesStore)
 	if err != nil {
 		log.Error("Error starting watchers", "err", err)
 		os.Exit(1)
@@ -347,7 +434,7 @@ func main() {
 	}
 
 	// Start server
-	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient, promAPI)
+	r, err := startHTTPServer(ctx, &flags, logger, odigosMetricsConsumer, k8sCacheClient, promAPI)
 	if err != nil {
 		log.Error("Error starting server", "err", err)
 		os.Exit(1)

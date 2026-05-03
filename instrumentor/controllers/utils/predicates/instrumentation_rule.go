@@ -17,7 +17,8 @@ func (o AgentInjectionRelevantRulesPredicate) Create(e event.CreateEvent) bool {
 	return instrumentationRule.Spec.OtelDistros != nil ||
 		instrumentationRule.Spec.HeadersCollection != nil ||
 		instrumentationRule.Spec.TraceConfig != nil ||
-		instrumentationRule.Spec.PayloadCollection != nil
+		instrumentationRule.Spec.PayloadCollection != nil ||
+		instrumentationRule.Spec.TraceVerbosity != nil
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Update(e event.UpdateEvent) bool {
@@ -32,7 +33,8 @@ func (i AgentInjectionRelevantRulesPredicate) Update(e event.UpdateEvent) bool {
 	return old.Spec.OtelDistros != nil || new.Spec.OtelDistros != nil ||
 		old.Spec.TraceConfig != nil || new.Spec.TraceConfig != nil ||
 		old.Spec.HeadersCollection != nil || new.Spec.HeadersCollection != nil ||
-		old.Spec.PayloadCollection != nil || new.Spec.PayloadCollection != nil
+		old.Spec.PayloadCollection != nil || new.Spec.PayloadCollection != nil ||
+		old.Spec.TraceVerbosity != nil || new.Spec.TraceVerbosity != nil
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Delete(e event.DeleteEvent) bool {
@@ -45,7 +47,8 @@ func (i AgentInjectionRelevantRulesPredicate) Delete(e event.DeleteEvent) bool {
 	return instrumentationRule.Spec.OtelDistros != nil ||
 		instrumentationRule.Spec.TraceConfig != nil ||
 		instrumentationRule.Spec.HeadersCollection != nil ||
-		instrumentationRule.Spec.PayloadCollection != nil
+		instrumentationRule.Spec.PayloadCollection != nil ||
+		instrumentationRule.Spec.TraceVerbosity != nil
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Generic(e event.GenericEvent) bool {
