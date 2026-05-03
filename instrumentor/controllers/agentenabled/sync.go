@@ -146,7 +146,7 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider, effectiveConfig *common.OdigosConfiguration) (*agentInjectedStatusCondition, error) {
 	logger := commonlogger.FromContext(ctx)
-	nodeCollectorsGroup, irls, agentLevelActions, samplingRules, workloadObj, err := getRelevantResources(ctx, c, pw)
+	nodeCollectorsGroup, clusterCollectorsGroup, irls, agentLevelActions, samplingRules, workloadObj, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
 		return nil, err
@@ -248,7 +248,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		}
 
 		// calculate the dynamic configs for this container.
-		dynamicContainerConfigs, disabledInfo := dynamicconfig.CalculateDynamicContainerConfig(containerName, irls, effectiveConfig, containerRuntimeDetails, agentLevelActions, samplingRules, workloadObj, pw, containerDistro, enabledSignals, nodeCollectorsGroup)
+		dynamicContainerConfigs, disabledInfo := dynamicconfig.CalculateDynamicContainerConfig(containerName, irls, effectiveConfig, containerRuntimeDetails, agentLevelActions, samplingRules, workloadObj, pw, containerDistro, enabledSignals, nodeCollectorsGroup, clusterCollectorsGroup)
 		if disabledInfo != nil {
 			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,

@@ -12,6 +12,10 @@ func DistroSupportsEbpfLogCapture(d *distro.OtelDistro) bool {
 
 func CalculateEbpfLogCaptureConfig(d *distro.OtelDistro, irls *[]odigosv1.InstrumentationRule) *instrumentationrules.EbpfLogCapture {
 
+	if !DistroSupportsEbpfLogCapture(d) {
+		return nil
+	}
+
 	var result *instrumentationrules.EbpfLogCapture
 	for _, irl := range *irls {
 		result = mergeEbpfLogCapture(result, irl.Spec.EbpfLogCapture)

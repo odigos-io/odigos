@@ -18,6 +18,7 @@ import (
 // this indicates that they were not found, but it is valid.
 func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (
 	*odigosv1.CollectorsGroup,
+	*odigosv1.CollectorsGroup,
 	*[]odigosv1.InstrumentationRule,
 	*[]odigosv1.Action,
 	*[]odigosv1.Sampling,
@@ -28,35 +29,40 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 	obj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, obj)
 	if err != nil && !apierrors.IsNotFound(err) {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	workloadObj, err := workload.ObjectToWorkload(obj)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
-	cg, err := getCollectorsGroup(ctx, c)
+	nodeCollectorsGroup, err := getCollectorsGroup(ctx, c, k8sconsts.OdigosNodeCollectorCollectorGroupName)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
+	gatewayCollectorsGroup, err := getCollectorsGroup(ctx, c, k8sconsts.OdigosClusterCollectorCollectorGroupName)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	irls, err := getRelevantInstrumentationRules(ctx, c, pw)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	actions, err := getAgentLevelRelatedActions(ctx, c)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	samplings, err := getAllSamplingRules(ctx, c)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
-	return cg, irls, actions, samplings, workloadObj, nil
+	return nodeCollectorsGroup, gatewayCollectorsGroup, irls, actions, samplings, workloadObj, nil
 }
 
 func getAllSamplingRules(ctx context.Context, c client.Client) (*[]odigosv1.Sampling, error) {
@@ -91,9 +97,9 @@ func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigo
 
 	return &agentLevelActions, nil
 }
-func getCollectorsGroup(ctx context.Context, c client.Client) (*odigosv1.CollectorsGroup, error) {
+func getCollectorsGroup(ctx context.Context, c client.Client, name string) (*odigosv1.CollectorsGroup, error) {
 	cg := odigosv1.CollectorsGroup{}
-	err := c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, &cg)
+	err := c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: name}, &cg)
 	if err != nil {
 		return nil, client.IgnoreNotFound(err)
 	}
