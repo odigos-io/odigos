@@ -41,6 +41,7 @@ type Config struct {
 type ResolverRoot interface {
 	ComputePlatform() ComputePlatformResolver
 	K8sActualNamespace() K8sActualNamespaceResolver
+	K8sActualSource() K8sActualSourceResolver
 	K8sNamespace() K8sNamespaceResolver
 	K8sWorkload() K8sWorkloadResolver
 	K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver
@@ -129,6 +130,12 @@ type ComplexityRoot struct {
 	BooleanCondition struct {
 		ExpectedValue func(childComplexity int) int
 		Operation     func(childComplexity int) int
+	}
+
+	ClearProfilingBufferResult struct {
+		ActiveSlots func(childComplexity int) int
+		SourceKey   func(childComplexity int) int
+		Status      func(childComplexity int) int
 	}
 
 	ClusterAttribute struct {
@@ -390,6 +397,12 @@ type ComplexityRoot struct {
 		TotalSizeHuman func(childComplexity int) int
 	}
 
+	DisableProfilingResult struct {
+		ActiveSlots func(childComplexity int) int
+		SourceKey   func(childComplexity int) int
+		Status      func(childComplexity int) int
+	}
+
 	DistroParam struct {
 		Name  func(childComplexity int) int
 		Value func(childComplexity int) int
@@ -437,6 +450,13 @@ type ComplexityRoot struct {
 		UIRemoteURL                      func(childComplexity int) int
 		UserInstrumentationEnvs          func(childComplexity int) int
 		Wasp                             func(childComplexity int) int
+	}
+
+	EnableProfilingResult struct {
+		ActiveSlots func(childComplexity int) int
+		MaxSlots    func(childComplexity int) int
+		SourceKey   func(childComplexity int) int
+		Status      func(childComplexity int) int
 	}
 
 	EntityProperty struct {
@@ -614,6 +634,7 @@ type ComplexityRoot struct {
 		Namespace                 func(childComplexity int) int
 		NumberOfInstances         func(childComplexity int) int
 		OtelServiceName           func(childComplexity int) int
+		Profiling                 func(childComplexity int) int
 		Selected                  func(childComplexity int) int
 	}
 
@@ -903,6 +924,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		ClearSourceProfilingBuffer          func(childComplexity int, namespace string, kind string, name string) int
 		CreateAction                        func(childComplexity int, action model.ActionInput) int
 		CreateCostReductionRule             func(childComplexity int, samplingID string, rule model.CostReductionRuleInput) int
 		CreateHighlyRelevantOperationRule   func(childComplexity int, samplingID string, rule model.HighlyRelevantOperationRuleInput) int
@@ -917,6 +939,8 @@ type ComplexityRoot struct {
 		DeleteHighlyRelevantOperationRule   func(childComplexity int, samplingID string, ruleID string) int
 		DeleteInstrumentationRule           func(childComplexity int, ruleID string) int
 		DeleteNoisyOperationRule            func(childComplexity int, samplingID string, ruleID string) int
+		DisableSourceProfiling              func(childComplexity int, namespace string, kind string, name string) int
+		EnableSourceProfiling               func(childComplexity int, namespace string, kind string, name string) int
 		PauseOdigos                         func(childComplexity int) int
 		PersistK8sNamespaces                func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
 		PersistK8sSources                   func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
@@ -1087,6 +1111,16 @@ type ComplexityRoot struct {
 		Namespace func(childComplexity int) int
 	}
 
+	ProfilingSlots struct {
+		ActiveKeys          func(childComplexity int) int
+		KeysWithData        func(childComplexity int) int
+		MaxSlots            func(childComplexity int) int
+		MaxTotalBytesBudget func(childComplexity int) int
+		SlotMaxBytes        func(childComplexity int) int
+		SlotTTLSeconds      func(childComplexity int) int
+		TotalBytesInUse     func(childComplexity int) int
+	}
+
 	ProvenanceEntry struct {
 		HelmPath       func(childComplexity int) int
 		ReconciledFrom func(childComplexity int) int
@@ -1114,6 +1148,7 @@ type ComplexityRoot struct {
 		PeerSources                       func(childComplexity int, serviceName string) int
 		Pod                               func(childComplexity int, namespace string, name string) int
 		PotentialDestinations             func(childComplexity int) int
+		ProfilingSlots                    func(childComplexity int) int
 		RemoteConfig                      func(childComplexity int) int
 		Sampling                          func(childComplexity int) int
 		SourceConditions                  func(childComplexity int) int
@@ -1248,6 +1283,10 @@ type ComplexityRoot struct {
 		RuntimeVersion         func(childComplexity int) int
 	}
 
+	SourceProfilingResult struct {
+		ProfileJSON func(childComplexity int) int
+	}
+
 	SourcesScope struct {
 		WorkloadKind      func(childComplexity int) int
 		WorkloadLanguage  func(childComplexity int) int
@@ -1347,6 +1386,9 @@ type ComputePlatformResolver interface {
 type K8sActualNamespaceResolver interface {
 	Sources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error)
 }
+type K8sActualSourceResolver interface {
+	Profiling(ctx context.Context, obj *model.K8sActualSource) (*model.SourceProfilingResult, error)
+}
 type K8sNamespaceResolver interface {
 	MarkedForInstrumentation(ctx context.Context, obj *model.K8sNamespace) (bool, error)
 	DataStreamNames(ctx context.Context, obj *model.K8sNamespace) ([]string, error)
@@ -1404,6 +1446,9 @@ type MutationResolver interface {
 	UpdateLocalUIConfig(ctx context.Context, config model.LocalUIConfigInput) (bool, error)
 	ResetLocalUIConfigToFactoryDefaults(ctx context.Context) (bool, error)
 	RestartPod(ctx context.Context, namespace string, name string) (bool, error)
+	EnableSourceProfiling(ctx context.Context, namespace string, kind string, name string) (*model.EnableProfilingResult, error)
+	DisableSourceProfiling(ctx context.Context, namespace string, kind string, name string) (*model.DisableProfilingResult, error)
+	ClearSourceProfilingBuffer(ctx context.Context, namespace string, kind string, name string) (*model.ClearProfilingBufferResult, error)
 	UpdateLocalUISamplingConfig(ctx context.Context, config *model.SamplingConfigInput) (bool, error)
 	CreateNoisyOperationRule(ctx context.Context, samplingID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
 	UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
@@ -1438,6 +1483,7 @@ type QueryResolver interface {
 	EffectiveConfig(ctx context.Context) (*model.EffectiveConfig, error)
 	ConfigYamls(ctx context.Context) ([]*model.ConfigYaml, error)
 	Pod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
+	ProfilingSlots(ctx context.Context) (*model.ProfilingSlots, error)
 	Sampling(ctx context.Context) (*model.Sampling, error)
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
 	WorkloadsByIds(ctx context.Context, ids []*model.K8sWorkloadIDInput) ([]*model.K8sWorkload, error)
@@ -1812,6 +1858,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BooleanCondition.Operation(childComplexity), true
+
+	case "ClearProfilingBufferResult.activeSlots":
+		if e.complexity.ClearProfilingBufferResult.ActiveSlots == nil {
+			break
+		}
+
+		return e.complexity.ClearProfilingBufferResult.ActiveSlots(childComplexity), true
+
+	case "ClearProfilingBufferResult.sourceKey":
+		if e.complexity.ClearProfilingBufferResult.SourceKey == nil {
+			break
+		}
+
+		return e.complexity.ClearProfilingBufferResult.SourceKey(childComplexity), true
+
+	case "ClearProfilingBufferResult.status":
+		if e.complexity.ClearProfilingBufferResult.Status == nil {
+			break
+		}
+
+		return e.complexity.ClearProfilingBufferResult.Status(childComplexity), true
 
 	case "ClusterAttribute.attributeName":
 		if e.complexity.ClusterAttribute.AttributeName == nil {
@@ -3027,6 +3094,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DiagnoseStats.TotalSizeHuman(childComplexity), true
 
+	case "DisableProfilingResult.activeSlots":
+		if e.complexity.DisableProfilingResult.ActiveSlots == nil {
+			break
+		}
+
+		return e.complexity.DisableProfilingResult.ActiveSlots(childComplexity), true
+
+	case "DisableProfilingResult.sourceKey":
+		if e.complexity.DisableProfilingResult.SourceKey == nil {
+			break
+		}
+
+		return e.complexity.DisableProfilingResult.SourceKey(childComplexity), true
+
+	case "DisableProfilingResult.status":
+		if e.complexity.DisableProfilingResult.Status == nil {
+			break
+		}
+
+		return e.complexity.DisableProfilingResult.Status(childComplexity), true
+
 	case "DistroParam.name":
 		if e.complexity.DistroParam.Name == nil {
 			break
@@ -3327,6 +3415,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EffectiveConfig.Wasp(childComplexity), true
+
+	case "EnableProfilingResult.activeSlots":
+		if e.complexity.EnableProfilingResult.ActiveSlots == nil {
+			break
+		}
+
+		return e.complexity.EnableProfilingResult.ActiveSlots(childComplexity), true
+
+	case "EnableProfilingResult.maxSlots":
+		if e.complexity.EnableProfilingResult.MaxSlots == nil {
+			break
+		}
+
+		return e.complexity.EnableProfilingResult.MaxSlots(childComplexity), true
+
+	case "EnableProfilingResult.sourceKey":
+		if e.complexity.EnableProfilingResult.SourceKey == nil {
+			break
+		}
+
+		return e.complexity.EnableProfilingResult.SourceKey(childComplexity), true
+
+	case "EnableProfilingResult.status":
+		if e.complexity.EnableProfilingResult.Status == nil {
+			break
+		}
+
+		return e.complexity.EnableProfilingResult.Status(childComplexity), true
 
 	case "EntityProperty.explain":
 		if e.complexity.EntityProperty.Explain == nil {
@@ -4062,6 +4178,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sActualSource.OtelServiceName(childComplexity), true
+
+	case "K8sActualSource.profiling":
+		if e.complexity.K8sActualSource.Profiling == nil {
+			break
+		}
+
+		return e.complexity.K8sActualSource.Profiling(childComplexity), true
 
 	case "K8sActualSource.selected":
 		if e.complexity.K8sActualSource.Selected == nil {
@@ -5162,6 +5285,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MetricsSourceSpanMetricsConfig.ResourceMetricsKeyAttributes(childComplexity), true
 
+	case "Mutation.clearSourceProfilingBuffer":
+		if e.complexity.Mutation.ClearSourceProfilingBuffer == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_clearSourceProfilingBuffer_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ClearSourceProfilingBuffer(childComplexity, args["namespace"].(string), args["kind"].(string), args["name"].(string)), true
+
 	case "Mutation.createAction":
 		if e.complexity.Mutation.CreateAction == nil {
 			break
@@ -5324,6 +5459,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteNoisyOperationRule(childComplexity, args["samplingId"].(string), args["ruleId"].(string)), true
+
+	case "Mutation.disableSourceProfiling":
+		if e.complexity.Mutation.DisableSourceProfiling == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_disableSourceProfiling_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DisableSourceProfiling(childComplexity, args["namespace"].(string), args["kind"].(string), args["name"].(string)), true
+
+	case "Mutation.enableSourceProfiling":
+		if e.complexity.Mutation.EnableSourceProfiling == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_enableSourceProfiling_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EnableSourceProfiling(childComplexity, args["namespace"].(string), args["kind"].(string), args["name"].(string)), true
 
 	case "Mutation.pauseOdigos":
 		if e.complexity.Mutation.PauseOdigos == nil {
@@ -6176,6 +6335,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PodWorkload.Namespace(childComplexity), true
 
+	case "ProfilingSlots.activeKeys":
+		if e.complexity.ProfilingSlots.ActiveKeys == nil {
+			break
+		}
+
+		return e.complexity.ProfilingSlots.ActiveKeys(childComplexity), true
+
+	case "ProfilingSlots.keysWithData":
+		if e.complexity.ProfilingSlots.KeysWithData == nil {
+			break
+		}
+
+		return e.complexity.ProfilingSlots.KeysWithData(childComplexity), true
+
+	case "ProfilingSlots.maxSlots":
+		if e.complexity.ProfilingSlots.MaxSlots == nil {
+			break
+		}
+
+		return e.complexity.ProfilingSlots.MaxSlots(childComplexity), true
+
+	case "ProfilingSlots.maxTotalBytesBudget":
+		if e.complexity.ProfilingSlots.MaxTotalBytesBudget == nil {
+			break
+		}
+
+		return e.complexity.ProfilingSlots.MaxTotalBytesBudget(childComplexity), true
+
+	case "ProfilingSlots.slotMaxBytes":
+		if e.complexity.ProfilingSlots.SlotMaxBytes == nil {
+			break
+		}
+
+		return e.complexity.ProfilingSlots.SlotMaxBytes(childComplexity), true
+
+	case "ProfilingSlots.slotTtlSeconds":
+		if e.complexity.ProfilingSlots.SlotTTLSeconds == nil {
+			break
+		}
+
+		return e.complexity.ProfilingSlots.SlotTTLSeconds(childComplexity), true
+
+	case "ProfilingSlots.totalBytesInUse":
+		if e.complexity.ProfilingSlots.TotalBytesInUse == nil {
+			break
+		}
+
+		return e.complexity.ProfilingSlots.TotalBytesInUse(childComplexity), true
+
 	case "ProvenanceEntry.helmPath":
 		if e.complexity.ProvenanceEntry.HelmPath == nil {
 			break
@@ -6371,6 +6579,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.PotentialDestinations(childComplexity), true
+
+	case "Query.profilingSlots":
+		if e.complexity.Query.ProfilingSlots == nil {
+			break
+		}
+
+		return e.complexity.Query.ProfilingSlots(childComplexity), true
 
 	case "Query.remoteConfig":
 		if e.complexity.Query.RemoteConfig == nil {
@@ -6886,6 +7101,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SourceContainer.RuntimeVersion(childComplexity), true
 
+	case "SourceProfilingResult.profileJson":
+		if e.complexity.SourceProfilingResult.ProfileJSON == nil {
+			break
+		}
+
+		return e.complexity.SourceProfilingResult.ProfileJSON(childComplexity), true
+
 	case "SourcesScope.workloadKind":
 		if e.complexity.SourcesScope.WorkloadKind == nil {
 			break
@@ -7350,7 +7572,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "collectors.graphqls" "configs.graphqls" "enum.graphqls" "pod.graphqls" "sampling.graphqls" "schema.graphqls" "workload.graphqls"
+//go:embed "collectors.graphqls" "configs.graphqls" "enum.graphqls" "pod.graphqls" "profiling.graphqls" "sampling.graphqls" "schema.graphqls" "workload.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -7366,6 +7588,7 @@ var sources = []*ast.Source{
 	{Name: "configs.graphqls", Input: sourceData("configs.graphqls"), BuiltIn: false},
 	{Name: "enum.graphqls", Input: sourceData("enum.graphqls"), BuiltIn: false},
 	{Name: "pod.graphqls", Input: sourceData("pod.graphqls"), BuiltIn: false},
+	{Name: "profiling.graphqls", Input: sourceData("profiling.graphqls"), BuiltIn: false},
 	{Name: "sampling.graphqls", Input: sourceData("sampling.graphqls"), BuiltIn: false},
 	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
 	{Name: "workload.graphqls", Input: sourceData("workload.graphqls"), BuiltIn: false},
@@ -7429,6 +7652,80 @@ func (ec *executionContext) field_ComputePlatform_source_argsSourceID(
 	}
 
 	var zeroVal model.K8sSourceID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_clearSourceProfilingBuffer_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_clearSourceProfilingBuffer_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg0
+	arg1, err := ec.field_Mutation_clearSourceProfilingBuffer_argsKind(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["kind"] = arg1
+	arg2, err := ec.field_Mutation_clearSourceProfilingBuffer_argsName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_clearSourceProfilingBuffer_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_clearSourceProfilingBuffer_argsKind(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["kind"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+	if tmp, ok := rawArgs["kind"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_clearSourceProfilingBuffer_argsName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["name"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+	if tmp, ok := rawArgs["name"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -7974,6 +8271,154 @@ func (ec *executionContext) field_Mutation_deleteNoisyOperationRule_argsRuleID(
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("ruleId"))
 	if tmp, ok := rawArgs["ruleId"]; ok {
 		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_disableSourceProfiling_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_disableSourceProfiling_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg0
+	arg1, err := ec.field_Mutation_disableSourceProfiling_argsKind(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["kind"] = arg1
+	arg2, err := ec.field_Mutation_disableSourceProfiling_argsName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_disableSourceProfiling_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_disableSourceProfiling_argsKind(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["kind"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+	if tmp, ok := rawArgs["kind"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_disableSourceProfiling_argsName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["name"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+	if tmp, ok := rawArgs["name"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_enableSourceProfiling_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_enableSourceProfiling_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg0
+	arg1, err := ec.field_Mutation_enableSourceProfiling_argsKind(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["kind"] = arg1
+	arg2, err := ec.field_Mutation_enableSourceProfiling_argsName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_enableSourceProfiling_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_enableSourceProfiling_argsKind(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["kind"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+	if tmp, ok := rawArgs["kind"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_enableSourceProfiling_argsName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["name"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+	if tmp, ok := rawArgs["name"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
 	var zeroVal string
@@ -11585,6 +12030,138 @@ func (ec *executionContext) fieldContext_BooleanCondition_expectedValue(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _ClearProfilingBufferResult_status(ctx context.Context, field graphql.CollectedField, obj *model.ClearProfilingBufferResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClearProfilingBufferResult_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClearProfilingBufferResult_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClearProfilingBufferResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClearProfilingBufferResult_sourceKey(ctx context.Context, field graphql.CollectedField, obj *model.ClearProfilingBufferResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClearProfilingBufferResult_sourceKey(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SourceKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClearProfilingBufferResult_sourceKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClearProfilingBufferResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClearProfilingBufferResult_activeSlots(ctx context.Context, field graphql.CollectedField, obj *model.ClearProfilingBufferResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClearProfilingBufferResult_activeSlots(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActiveSlots, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClearProfilingBufferResult_activeSlots(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClearProfilingBufferResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ClusterAttribute_attributeName(ctx context.Context, field graphql.CollectedField, obj *model.ClusterAttribute) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ClusterAttribute_attributeName(ctx, field)
 	if err != nil {
@@ -14651,6 +15228,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_sources(_ context.Conte
 				return ec.fieldContext_K8sActualSource_manifestYAML(ctx, field)
 			case "instrumentationConfigYAML":
 				return ec.fieldContext_K8sActualSource_instrumentationConfigYAML(ctx, field)
+			case "profiling":
+				return ec.fieldContext_K8sActualSource_profiling(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -14719,6 +15298,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_source(ctx context.Cont
 				return ec.fieldContext_K8sActualSource_manifestYAML(ctx, field)
 			case "instrumentationConfigYAML":
 				return ec.fieldContext_K8sActualSource_instrumentationConfigYAML(ctx, field)
+			case "profiling":
+				return ec.fieldContext_K8sActualSource_profiling(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -19466,6 +20047,138 @@ func (ec *executionContext) fieldContext_DiagnoseStats_totalSizeHuman(_ context.
 	return fc, nil
 }
 
+func (ec *executionContext) _DisableProfilingResult_status(ctx context.Context, field graphql.CollectedField, obj *model.DisableProfilingResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DisableProfilingResult_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DisableProfilingResult_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DisableProfilingResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DisableProfilingResult_sourceKey(ctx context.Context, field graphql.CollectedField, obj *model.DisableProfilingResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DisableProfilingResult_sourceKey(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SourceKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DisableProfilingResult_sourceKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DisableProfilingResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DisableProfilingResult_activeSlots(ctx context.Context, field graphql.CollectedField, obj *model.DisableProfilingResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DisableProfilingResult_activeSlots(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActiveSlots, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DisableProfilingResult_activeSlots(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DisableProfilingResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DistroParam_name(ctx context.Context, field graphql.CollectedField, obj *model.DistroParam) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DistroParam_name(ctx, field)
 	if err != nil {
@@ -21379,6 +22092,182 @@ func (ec *executionContext) fieldContext_EffectiveConfig_manifestYAML(_ context.
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnableProfilingResult_status(ctx context.Context, field graphql.CollectedField, obj *model.EnableProfilingResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnableProfilingResult_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnableProfilingResult_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnableProfilingResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnableProfilingResult_sourceKey(ctx context.Context, field graphql.CollectedField, obj *model.EnableProfilingResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnableProfilingResult_sourceKey(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SourceKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnableProfilingResult_sourceKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnableProfilingResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnableProfilingResult_maxSlots(ctx context.Context, field graphql.CollectedField, obj *model.EnableProfilingResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnableProfilingResult_maxSlots(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxSlots, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnableProfilingResult_maxSlots(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnableProfilingResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnableProfilingResult_activeSlots(ctx context.Context, field graphql.CollectedField, obj *model.EnableProfilingResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnableProfilingResult_activeSlots(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActiveSlots, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnableProfilingResult_activeSlots(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnableProfilingResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -25606,6 +26495,8 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_sources(_ context.Co
 				return ec.fieldContext_K8sActualSource_manifestYAML(ctx, field)
 			case "instrumentationConfigYAML":
 				return ec.fieldContext_K8sActualSource_instrumentationConfigYAML(ctx, field)
+			case "profiling":
+				return ec.fieldContext_K8sActualSource_profiling(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -26097,6 +26988,51 @@ func (ec *executionContext) fieldContext_K8sActualSource_instrumentationConfigYA
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sActualSource_profiling(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualSource_profiling(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sActualSource().Profiling(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.SourceProfilingResult)
+	fc.Result = res
+	return ec.marshalOSourceProfilingResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceProfilingResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sActualSource_profiling(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sActualSource",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "profileJson":
+				return ec.fieldContext_SourceProfilingResult_profileJson(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SourceProfilingResult", field.Name)
 		},
 	}
 	return fc, nil
@@ -34840,6 +35776,197 @@ func (ec *executionContext) fieldContext_Mutation_restartPod(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_enableSourceProfiling(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_enableSourceProfiling(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EnableSourceProfiling(rctx, fc.Args["namespace"].(string), fc.Args["kind"].(string), fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.EnableProfilingResult)
+	fc.Result = res
+	return ec.marshalNEnableProfilingResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEnableProfilingResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_enableSourceProfiling(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "status":
+				return ec.fieldContext_EnableProfilingResult_status(ctx, field)
+			case "sourceKey":
+				return ec.fieldContext_EnableProfilingResult_sourceKey(ctx, field)
+			case "maxSlots":
+				return ec.fieldContext_EnableProfilingResult_maxSlots(ctx, field)
+			case "activeSlots":
+				return ec.fieldContext_EnableProfilingResult_activeSlots(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EnableProfilingResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_enableSourceProfiling_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_disableSourceProfiling(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_disableSourceProfiling(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DisableSourceProfiling(rctx, fc.Args["namespace"].(string), fc.Args["kind"].(string), fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.DisableProfilingResult)
+	fc.Result = res
+	return ec.marshalNDisableProfilingResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDisableProfilingResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_disableSourceProfiling(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "status":
+				return ec.fieldContext_DisableProfilingResult_status(ctx, field)
+			case "sourceKey":
+				return ec.fieldContext_DisableProfilingResult_sourceKey(ctx, field)
+			case "activeSlots":
+				return ec.fieldContext_DisableProfilingResult_activeSlots(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DisableProfilingResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_disableSourceProfiling_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_clearSourceProfilingBuffer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_clearSourceProfilingBuffer(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ClearSourceProfilingBuffer(rctx, fc.Args["namespace"].(string), fc.Args["kind"].(string), fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ClearProfilingBufferResult)
+	fc.Result = res
+	return ec.marshalNClearProfilingBufferResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐClearProfilingBufferResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_clearSourceProfilingBuffer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "status":
+				return ec.fieldContext_ClearProfilingBufferResult_status(ctx, field)
+			case "sourceKey":
+				return ec.fieldContext_ClearProfilingBufferResult_sourceKey(ctx, field)
+			case "activeSlots":
+				return ec.fieldContext_ClearProfilingBufferResult_activeSlots(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ClearProfilingBufferResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_clearSourceProfilingBuffer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_updateLocalUiSamplingConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_updateLocalUiSamplingConfig(ctx, field)
 	if err != nil {
@@ -39632,6 +40759,314 @@ func (ec *executionContext) fieldContext_PodWorkload_kind(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _ProfilingSlots_activeKeys(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfilingSlots_activeKeys(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActiveKeys, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfilingSlots_activeKeys(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfilingSlots",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProfilingSlots_keysWithData(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfilingSlots_keysWithData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KeysWithData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfilingSlots_keysWithData(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfilingSlots",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProfilingSlots_totalBytesInUse(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfilingSlots_totalBytesInUse(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalBytesInUse, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfilingSlots_totalBytesInUse(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfilingSlots",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProfilingSlots_slotMaxBytes(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfilingSlots_slotMaxBytes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SlotMaxBytes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfilingSlots_slotMaxBytes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfilingSlots",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProfilingSlots_maxSlots(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfilingSlots_maxSlots(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxSlots, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfilingSlots_maxSlots(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfilingSlots",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProfilingSlots_maxTotalBytesBudget(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfilingSlots_maxTotalBytesBudget(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxTotalBytesBudget, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfilingSlots_maxTotalBytesBudget(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfilingSlots",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProfilingSlots_slotTtlSeconds(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfilingSlots_slotTtlSeconds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SlotTTLSeconds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfilingSlots_slotTtlSeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfilingSlots",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ProvenanceEntry_helmPath(ctx context.Context, field graphql.CollectedField, obj *model.ProvenanceEntry) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ProvenanceEntry_helmPath(ctx, field)
 	if err != nil {
@@ -41088,6 +42523,63 @@ func (ec *executionContext) fieldContext_Query_pod(ctx context.Context, field gr
 	if fc.Args, err = ec.field_Query_pod_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_profilingSlots(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_profilingSlots(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ProfilingSlots(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ProfilingSlots)
+	fc.Result = res
+	return ec.marshalOProfilingSlots2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProfilingSlots(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_profilingSlots(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "activeKeys":
+				return ec.fieldContext_ProfilingSlots_activeKeys(ctx, field)
+			case "keysWithData":
+				return ec.fieldContext_ProfilingSlots_keysWithData(ctx, field)
+			case "totalBytesInUse":
+				return ec.fieldContext_ProfilingSlots_totalBytesInUse(ctx, field)
+			case "slotMaxBytes":
+				return ec.fieldContext_ProfilingSlots_slotMaxBytes(ctx, field)
+			case "maxSlots":
+				return ec.fieldContext_ProfilingSlots_maxSlots(ctx, field)
+			case "maxTotalBytesBudget":
+				return ec.fieldContext_ProfilingSlots_maxTotalBytesBudget(ctx, field)
+			case "slotTtlSeconds":
+				return ec.fieldContext_ProfilingSlots_slotTtlSeconds(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProfilingSlots", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -44648,6 +46140,50 @@ func (ec *executionContext) _SourceContainer_otelDistroName(ctx context.Context,
 func (ec *executionContext) fieldContext_SourceContainer_otelDistroName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "SourceContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourceProfilingResult_profileJson(ctx context.Context, field graphql.CollectedField, obj *model.SourceProfilingResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceProfilingResult_profileJson(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProfileJSON, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceProfilingResult_profileJson(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceProfilingResult",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -51884,6 +53420,55 @@ func (ec *executionContext) _BooleanCondition(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var clearProfilingBufferResultImplementors = []string{"ClearProfilingBufferResult"}
+
+func (ec *executionContext) _ClearProfilingBufferResult(ctx context.Context, sel ast.SelectionSet, obj *model.ClearProfilingBufferResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, clearProfilingBufferResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ClearProfilingBufferResult")
+		case "status":
+			out.Values[i] = ec._ClearProfilingBufferResult_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sourceKey":
+			out.Values[i] = ec._ClearProfilingBufferResult_sourceKey(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "activeSlots":
+			out.Values[i] = ec._ClearProfilingBufferResult_activeSlots(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var clusterAttributeImplementors = []string{"ClusterAttribute"}
 
 func (ec *executionContext) _ClusterAttribute(ctx context.Context, sel ast.SelectionSet, obj *model.ClusterAttribute) graphql.Marshaler {
@@ -53790,6 +55375,55 @@ func (ec *executionContext) _DiagnoseStats(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var disableProfilingResultImplementors = []string{"DisableProfilingResult"}
+
+func (ec *executionContext) _DisableProfilingResult(ctx context.Context, sel ast.SelectionSet, obj *model.DisableProfilingResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, disableProfilingResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DisableProfilingResult")
+		case "status":
+			out.Values[i] = ec._DisableProfilingResult_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sourceKey":
+			out.Values[i] = ec._DisableProfilingResult_sourceKey(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "activeSlots":
+			out.Values[i] = ec._DisableProfilingResult_activeSlots(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var distroParamImplementors = []string{"DistroParam"}
 
 func (ec *executionContext) _DistroParam(ctx context.Context, sel ast.SelectionSet, obj *model.DistroParam) graphql.Marshaler {
@@ -53930,6 +55564,60 @@ func (ec *executionContext) _EffectiveConfig(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EffectiveConfig_provenance(ctx, field, obj)
 		case "manifestYAML":
 			out.Values[i] = ec._EffectiveConfig_manifestYAML(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var enableProfilingResultImplementors = []string{"EnableProfilingResult"}
+
+func (ec *executionContext) _EnableProfilingResult(ctx context.Context, sel ast.SelectionSet, obj *model.EnableProfilingResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, enableProfilingResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EnableProfilingResult")
+		case "status":
+			out.Values[i] = ec._EnableProfilingResult_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sourceKey":
+			out.Values[i] = ec._EnableProfilingResult_sourceKey(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxSlots":
+			out.Values[i] = ec._EnableProfilingResult_maxSlots(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "activeSlots":
+			out.Values[i] = ec._EnableProfilingResult_activeSlots(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -55072,22 +56760,22 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 		case "namespace":
 			out.Values[i] = ec._K8sActualSource_namespace(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._K8sActualSource_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "kind":
 			out.Values[i] = ec._K8sActualSource_kind(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "dataStreamNames":
 			out.Values[i] = ec._K8sActualSource_dataStreamNames(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "numberOfInstances":
 			out.Values[i] = ec._K8sActualSource_numberOfInstances(ctx, field, obj)
@@ -55103,6 +56791,39 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._K8sActualSource_manifestYAML(ctx, field, obj)
 		case "instrumentationConfigYAML":
 			out.Values[i] = ec._K8sActualSource_instrumentationConfigYAML(ctx, field, obj)
+		case "profiling":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sActualSource_profiling(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -57969,6 +59690,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "enableSourceProfiling":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_enableSourceProfiling(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "disableSourceProfiling":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_disableSourceProfiling(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "clearSourceProfilingBuffer":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_clearSourceProfilingBuffer(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "updateLocalUiSamplingConfig":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateLocalUiSamplingConfig(ctx, field)
@@ -59064,6 +60806,75 @@ func (ec *executionContext) _PodWorkload(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var profilingSlotsImplementors = []string{"ProfilingSlots"}
+
+func (ec *executionContext) _ProfilingSlots(ctx context.Context, sel ast.SelectionSet, obj *model.ProfilingSlots) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, profilingSlotsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProfilingSlots")
+		case "activeKeys":
+			out.Values[i] = ec._ProfilingSlots_activeKeys(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "keysWithData":
+			out.Values[i] = ec._ProfilingSlots_keysWithData(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalBytesInUse":
+			out.Values[i] = ec._ProfilingSlots_totalBytesInUse(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "slotMaxBytes":
+			out.Values[i] = ec._ProfilingSlots_slotMaxBytes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxSlots":
+			out.Values[i] = ec._ProfilingSlots_maxSlots(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxTotalBytesBudget":
+			out.Values[i] = ec._ProfilingSlots_maxTotalBytesBudget(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "slotTtlSeconds":
+			out.Values[i] = ec._ProfilingSlots_slotTtlSeconds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var provenanceEntryImplementors = []string{"ProvenanceEntry"}
 
 func (ec *executionContext) _ProvenanceEntry(ctx context.Context, sel ast.SelectionSet, obj *model.ProvenanceEntry) graphql.Marshaler {
@@ -59587,6 +61398,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "profilingSlots":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_profilingSlots(ctx, field)
 				return res
 			}
 
@@ -60921,6 +62751,45 @@ func (ec *executionContext) _SourceContainer(ctx context.Context, sel ast.Select
 	return out
 }
 
+var sourceProfilingResultImplementors = []string{"SourceProfilingResult"}
+
+func (ec *executionContext) _SourceProfilingResult(ctx context.Context, sel ast.SelectionSet, obj *model.SourceProfilingResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sourceProfilingResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SourceProfilingResult")
+		case "profileJson":
+			out.Values[i] = ec._SourceProfilingResult_profileJson(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var sourcesScopeImplementors = []string{"SourcesScope"}
 
 func (ec *executionContext) _SourcesScope(ctx context.Context, sel ast.SelectionSet, obj *model.SourcesScope) graphql.Marshaler {
@@ -62021,6 +63890,20 @@ func (ec *executionContext) marshalNBooleanOperation2githubᚗcomᚋodigosᚑio�
 	return v
 }
 
+func (ec *executionContext) marshalNClearProfilingBufferResult2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐClearProfilingBufferResult(ctx context.Context, sel ast.SelectionSet, v model.ClearProfilingBufferResult) graphql.Marshaler {
+	return ec._ClearProfilingBufferResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNClearProfilingBufferResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐClearProfilingBufferResult(ctx context.Context, sel ast.SelectionSet, v *model.ClearProfilingBufferResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ClearProfilingBufferResult(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNClusterAttribute2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐClusterAttribute(ctx context.Context, sel ast.SelectionSet, v *model.ClusterAttribute) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -62921,6 +64804,20 @@ func (ec *executionContext) marshalNDiagnoseStats2ᚖgithubᚗcomᚋodigosᚑio�
 	return ec._DiagnoseStats(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNDisableProfilingResult2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDisableProfilingResult(ctx context.Context, sel ast.SelectionSet, v model.DisableProfilingResult) graphql.Marshaler {
+	return ec._DisableProfilingResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDisableProfilingResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDisableProfilingResult(ctx context.Context, sel ast.SelectionSet, v *model.DisableProfilingResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DisableProfilingResult(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNDistroParam2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDistroParam(ctx context.Context, sel ast.SelectionSet, v *model.DistroParam) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -62929,6 +64826,20 @@ func (ec *executionContext) marshalNDistroParam2ᚖgithubᚗcomᚋodigosᚑioᚋ
 		return graphql.Null
 	}
 	return ec._DistroParam(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEnableProfilingResult2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEnableProfilingResult(ctx context.Context, sel ast.SelectionSet, v model.EnableProfilingResult) graphql.Marshaler {
+	return ec._EnableProfilingResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEnableProfilingResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEnableProfilingResult(ctx context.Context, sel ast.SelectionSet, v *model.EnableProfilingResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EnableProfilingResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNEntityProperty2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEntityPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EntityProperty) graphql.Marshaler {
@@ -67552,6 +69463,13 @@ func (ec *executionContext) unmarshalOPodWorkloadInput2ᚕᚖgithubᚗcomᚋodig
 	return res, nil
 }
 
+func (ec *executionContext) marshalOProfilingSlots2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProfilingSlots(ctx context.Context, sel ast.SelectionSet, v *model.ProfilingSlots) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProfilingSlots(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOProgrammingLanguage2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguageᚄ(ctx context.Context, v any) ([]model.ProgrammingLanguage, error) {
 	if v == nil {
 		return nil, nil
@@ -67871,6 +69789,13 @@ func (ec *executionContext) marshalOSourceContainer2ᚕᚖgithubᚗcomᚋodigos�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOSourceProfilingResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceProfilingResult(ctx context.Context, sel ast.SelectionSet, v *model.SourceProfilingResult) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SourceProfilingResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOSourcesScope2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SourcesScope) graphql.Marshaler {
