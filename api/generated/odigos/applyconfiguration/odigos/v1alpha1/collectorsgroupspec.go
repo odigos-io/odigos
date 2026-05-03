@@ -55,6 +55,9 @@ type CollectorsGroupSpecApplyConfiguration struct {
 	EnableDataCompression *bool `json:"enableDataCompression,omitempty"`
 	// OtlpExporterConfiguration is the configuration for the OTLP exporter from node collector to cluster gateway collector.
 	OtlpExporterConfiguration *common.OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
+	// ResourceDetectors controls which OpenTelemetry resource detectors are enabled
+	// on the node collector's resourcedetection processor.
+	ResourceDetectors *common.ResourceDetectorsConfiguration `json:"resourceDetectors,omitempty"`
 	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
 	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
@@ -162,6 +165,14 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithEnableDataCompression(value 
 // If called multiple times, the OtlpExporterConfiguration field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithOtlpExporterConfiguration(value common.OtlpExporterConfiguration) *CollectorsGroupSpecApplyConfiguration {
 	b.OtlpExporterConfiguration = &value
+	return b
+}
+
+// WithResourceDetectors sets the ResourceDetectors field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ResourceDetectors field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithResourceDetectors(value common.ResourceDetectorsConfiguration) *CollectorsGroupSpecApplyConfiguration {
+	b.ResourceDetectors = &value
 	return b
 }
 

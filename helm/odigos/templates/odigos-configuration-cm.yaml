@@ -135,6 +135,39 @@ data:
       {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
       k8sNodeLogsDirectory: {{ . }}
       {{- end }}
+      {{- with .Values.resourceDetectors }}
+      resourceDetectors:
+        {{- with .ec2 }}
+        ec2:
+          {{- if kindIs "bool" .enabled }}
+          enabled: {{ .enabled }}
+          {{- end }}
+        {{- end }}
+        {{- with .eks }}
+        eks:
+          {{- if kindIs "bool" .enabled }}
+          enabled: {{ .enabled }}
+          {{- end }}
+        {{- end }}
+        {{- with .azure }}
+        azure:
+          {{- if kindIs "bool" .enabled }}
+          enabled: {{ .enabled }}
+          {{- end }}
+        {{- end }}
+        {{- with .aks }}
+        aks:
+          {{- if kindIs "bool" .enabled }}
+          enabled: {{ .enabled }}
+          {{- end }}
+        {{- end }}
+        {{- with .gcp }}
+        gcp:
+          {{- if kindIs "bool" .enabled }}
+          enabled: {{ .enabled }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
       {{- with .Values.collectorNode.otlpExporterConfiguration}}
       otlpExporterConfiguration:
         enableDataCompression: {{ .enableDataCompression }}
