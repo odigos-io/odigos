@@ -71,6 +71,23 @@ const (
 	UiModeReadonly UiMode = "readonly"
 )
 
+// +kubebuilder:object:generate=true
+// ResourceDetectorConfig holds the configuration for a single resource detector.
+type ResourceDetectorConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ResourceDetectorsConfiguration controls which resource detectors are enabled
+// on the node collector's resourcedetection processor.
+type ResourceDetectorsConfiguration struct {
+	EC2   *ResourceDetectorConfig `json:"ec2,omitempty"`
+	EKS   *ResourceDetectorConfig `json:"eks,omitempty"`
+	Azure *ResourceDetectorConfig `json:"azure,omitempty"`
+	AKS   *ResourceDetectorConfig `json:"aks,omitempty"`
+	GCP   *ResourceDetectorConfig `json:"gcp,omitempty"`
+}
+
 type CollectorNodeConfiguration struct {
 	// The port to use for exposing the collector's own metrics as a prometheus endpoint.
 	// This can be used to resolve conflicting ports when a collector is using the host network.
@@ -118,6 +135,10 @@ type CollectorNodeConfiguration struct {
 
 	// OtlpExporterConfiguration is the configuration for the OTLP exporter.
 	OtlpExporterConfiguration *OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
+
+	// ResourceDetectors controls which OpenTelemetry resource detectors are enabled.
+	// Defaults: ec2=true, eks=false, azure=true, aks=true, gcp=true.
+	ResourceDetectors *ResourceDetectorsConfiguration `json:"resourceDetectors,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

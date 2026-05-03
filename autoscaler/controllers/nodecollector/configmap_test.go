@@ -126,6 +126,9 @@ func TestCalculateConfigMapData(t *testing.T) {
 		*NewMockInstrumentationConfigWoOwner(NewMockTestDeployment(ns2)),
 	}
 
+	trueVal := true
+	falseVal := false
+
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
 		"odigos-system",
@@ -133,6 +136,12 @@ func TestCalculateConfigMapData(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
 			Spec: odigosv1.CollectorsGroupSpec{
 				CollectorOwnMetricsPort: 4317,
+				ResourceDetectors: &common.ResourceDetectorsConfiguration{
+					EC2:   &common.ResourceDetectorConfig{Enabled: &trueVal},
+					EKS:   &common.ResourceDetectorConfig{Enabled: &falseVal},
+					Azure: &common.ResourceDetectorConfig{Enabled: &trueVal},
+					AKS:   &common.ResourceDetectorConfig{Enabled: &trueVal},
+				},
 				Metrics: &odigosv1.CollectorsGroupMetricsCollectionSettings{
 					HostMetrics: &common.MetricsSourceHostMetricsConfiguration{
 						Interval: "33s",
@@ -193,6 +202,9 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 		*NewMockInstrumentationConfigWoOwner(NewMockTestDeployment(ns2)),
 	}
 
+	trueVal2 := true
+	falseVal2 := false
+
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
 		"odigos-system",
@@ -200,6 +212,12 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
 			Spec: odigosv1.CollectorsGroupSpec{
 				CollectorOwnMetricsPort: 4317,
+				ResourceDetectors: &common.ResourceDetectorsConfiguration{
+					EC2:   &common.ResourceDetectorConfig{Enabled: &trueVal2},
+					EKS:   &common.ResourceDetectorConfig{Enabled: &falseVal2},
+					Azure: &common.ResourceDetectorConfig{Enabled: &trueVal2},
+					AKS:   &common.ResourceDetectorConfig{Enabled: &trueVal2},
+				},
 				// No metrics configuration - only traces
 			},
 		},

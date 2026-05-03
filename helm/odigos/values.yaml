@@ -1198,6 +1198,54 @@ gke:
   enabled: false
 
 # @schema
+# description: |-
+#   Controls which OpenTelemetry resource detectors are enabled on the node collector's
+#   resourcedetection processor. Each detector can be individually enabled or disabled.
+#   By default all detectors are enabled except EKS which is disabled by default.
+# @schema
+resourceDetectors:
+  # @schema
+  # description: EC2 resource detector configuration.
+  # @schema
+  ec2:
+    # @schema
+    # description: Enable the EC2 resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: EKS resource detector configuration (disabled by default).
+  # @schema
+  eks:
+    # @schema
+    # description: Enable the EKS resource detector.
+    # @schema
+    enabled: false
+  # @schema
+  # description: Azure resource detector configuration.
+  # @schema
+  azure:
+    # @schema
+    # description: Enable the Azure resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: AKS resource detector configuration.
+  # @schema
+  aks:
+    # @schema
+    # description: Enable the AKS resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: GCP resource detector configuration.
+  # @schema
+  gcp:
+    # @schema
+    # description: Enable the GCP resource detector.
+    # @schema
+    enabled: true
+
+# @schema
 # description: "List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] | (CLI): --set profiles={PROFILE_NAME}"
 # @schema
 profiles: []
