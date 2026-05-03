@@ -48,9 +48,11 @@ const setTimeInput = (fieldPath: string, value: string) => {
 
 const selectDropdownOption = (fieldPath: string, optionLabel: string) => {
   cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).click();
-  // Navigate from <input> → InputWrapper → FlexColumn → Relative (DropData root)
-  // to scope the search to only this dropdown's popup options.
-  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).parent().parent().parent().contains(optionLabel).click();
+  // The dropdown popup is rendered via React portal at document.body, so it lives
+  // outside the trigger's DOM subtree. Each option exposes `data-id="option-${id}"`
+  // and the settings dropdown uses the option string itself as the id, so we can
+  // target the option globally without scoping by ancestor.
+  cy.get(`[data-id="option-${optionLabel}"]`).click();
 };
 
 const addMultiInputValue = (fieldPath: string, value: string) => {
