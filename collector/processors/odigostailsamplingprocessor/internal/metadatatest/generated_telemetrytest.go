@@ -21,6 +21,38 @@ func NewSettings(tt *componenttest.Telemetry) processor.Settings {
 	return set
 }
 
+func AssertEqualOdigosSamplingSpanCheckCount(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos.sampling.span.check_count",
+		Description: "Number of spans checked for sampling decisions per rule. [Development]",
+		Unit:        "{spans}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos.sampling.span.check_count")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
+func AssertEqualOdigosSamplingSpanMatchedCount(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos.sampling.span.matched_count",
+		Description: "Number of spans that matched this rule. [Development]",
+		Unit:        "{spans}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos.sampling.span.matched_count")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
 func AssertEqualOdigosSamplingTraceCheckCount(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_odigos.sampling.trace.check_count",
