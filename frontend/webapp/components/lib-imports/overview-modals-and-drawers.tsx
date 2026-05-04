@@ -15,6 +15,7 @@ import {
   useProfiling,
   useTestConnection,
   useWorkloadUtils,
+  useEffectiveConfig,
 } from '@/hooks';
 import { SourceDrawer } from '@odigos/ui-kit/containers';
 
@@ -24,13 +25,14 @@ const OverviewModalsAndDrawers = () => {
 
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
+  const { effectiveConfig } = useEffectiveConfig();
   const { fetchNamespacesWithWorkloads } = useNamespace();
   const { getDestinationCategories } = useDestinationCategories();
   const { getPotentialDestinations } = usePotentialDestinations();
   const { createActionV2, updateAction, deleteAction } = useActionCRUD();
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
+  const { fetchProfilingSlots, enableProfiling, fetchSourceProfiling } = useProfiling();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
-  const { fetchProfilingSlots, enableProfiling, releaseProfiling, fetchSourceProfiling } = useProfiling();
   const { createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
   const { persistSources, persistSourcesV2, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
 
@@ -89,8 +91,8 @@ const OverviewModalsAndDrawers = () => {
         //     fetchSourceDescribe={fetchDescribeSource}
         //     fetchSourceLibraries={fetchSourceLibraries}
         //     fetchPeerSources={fetchPeerSources}
+        //     profilingEnabled={effectiveConfig?.profiling?.enabled || false}
         //     enableProfiling={enableProfiling}
-        //     releaseProfiling={releaseProfiling}
         //     fetchSourceProfiling={fetchSourceProfiling}
         //     fetchProfilingSlots={fetchProfilingSlots}
         //   />
@@ -105,8 +107,8 @@ const OverviewModalsAndDrawers = () => {
           fetchSourceDescribe={fetchDescribeSource}
           fetchSourceLibraries={fetchSourceLibraries}
           fetchPeerSources={fetchPeerSources}
+          profilingEnabled={effectiveConfig?.profiling?.enabled || false}
           enableProfiling={enableProfiling}
-          releaseProfiling={releaseProfiling}
           fetchSourceProfiling={fetchSourceProfiling}
           fetchProfilingSlots={fetchProfilingSlots}
         />

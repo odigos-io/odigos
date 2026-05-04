@@ -438,6 +438,7 @@ type ComplexityRoot struct {
 		Oidc                             func(childComplexity int) int
 		OpenshiftEnabled                 func(childComplexity int) int
 		Profiles                         func(childComplexity int) int
+		Profiling                        func(childComplexity int) int
 		Provenance                       func(childComplexity int) int
 		Psp                              func(childComplexity int) int
 		ResourceSizePreset               func(childComplexity int) int
@@ -1112,6 +1113,10 @@ type ComplexityRoot struct {
 		Namespace func(childComplexity int) int
 	}
 
+	ProfilingConfig struct {
+		Enabled func(childComplexity int) int
+	}
+
 	ProfilingSlots struct {
 		ActiveKeys          func(childComplexity int) int
 		KeysWithData        func(childComplexity int) int
@@ -1119,7 +1124,7 @@ type ComplexityRoot struct {
 		MaxTotalBytesBudget func(childComplexity int) int
 		SlotMaxBytes        func(childComplexity int) int
 		SlotTTLSeconds      func(childComplexity int) int
-		TotalBytesInUse     func(childComplexity int) int
+		TotalBytesUsed      func(childComplexity int) int
 	}
 
 	ProvenanceEntry struct {
@@ -3342,6 +3347,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EffectiveConfig.Profiles(childComplexity), true
+
+	case "EffectiveConfig.profiling":
+		if e.complexity.EffectiveConfig.Profiling == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.Profiling(childComplexity), true
 
 	case "EffectiveConfig.provenance":
 		if e.complexity.EffectiveConfig.Provenance == nil {
@@ -6353,6 +6365,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PodWorkload.Namespace(childComplexity), true
 
+	case "ProfilingConfig.enabled":
+		if e.complexity.ProfilingConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.ProfilingConfig.Enabled(childComplexity), true
+
 	case "ProfilingSlots.activeKeys":
 		if e.complexity.ProfilingSlots.ActiveKeys == nil {
 			break
@@ -6395,12 +6414,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProfilingSlots.SlotTTLSeconds(childComplexity), true
 
-	case "ProfilingSlots.totalBytesInUse":
-		if e.complexity.ProfilingSlots.TotalBytesInUse == nil {
+	case "ProfilingSlots.totalBytesUsed":
+		if e.complexity.ProfilingSlots.TotalBytesUsed == nil {
 			break
 		}
 
-		return e.complexity.ProfilingSlots.TotalBytesInUse(childComplexity), true
+		return e.complexity.ProfilingSlots.TotalBytesUsed(childComplexity), true
 
 	case "ProvenanceEntry.helmPath":
 		if e.complexity.ProvenanceEntry.HelmPath == nil {
@@ -22124,6 +22143,51 @@ func (ec *executionContext) fieldContext_EffectiveConfig_sampling(_ context.Cont
 				return ec.fieldContext_SamplingConfig_k8sHealthProbesSampling(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SamplingConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_profiling(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_profiling(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Profiling, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ProfilingConfig)
+	fc.Result = res
+	return ec.marshalOProfilingConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProfilingConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_profiling(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_ProfilingConfig_enabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProfilingConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -40879,6 +40943,47 @@ func (ec *executionContext) fieldContext_PodWorkload_kind(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _ProfilingConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfilingConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProfilingConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProfilingConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ProfilingSlots_activeKeys(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ProfilingSlots_activeKeys(ctx, field)
 	if err != nil {
@@ -40967,8 +41072,8 @@ func (ec *executionContext) fieldContext_ProfilingSlots_keysWithData(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _ProfilingSlots_totalBytesInUse(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ProfilingSlots_totalBytesInUse(ctx, field)
+func (ec *executionContext) _ProfilingSlots_totalBytesUsed(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfilingSlots_totalBytesUsed(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -40981,7 +41086,7 @@ func (ec *executionContext) _ProfilingSlots_totalBytesInUse(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TotalBytesInUse, nil
+		return obj.TotalBytesUsed, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40998,7 +41103,7 @@ func (ec *executionContext) _ProfilingSlots_totalBytesInUse(ctx context.Context,
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ProfilingSlots_totalBytesInUse(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ProfilingSlots_totalBytesUsed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ProfilingSlots",
 		Field:      field,
@@ -42517,6 +42622,8 @@ func (ec *executionContext) fieldContext_Query_effectiveConfig(_ context.Context
 				return ec.fieldContext_EffectiveConfig_componentLogLevels(ctx, field)
 			case "sampling":
 				return ec.fieldContext_EffectiveConfig_sampling(ctx, field)
+			case "profiling":
+				return ec.fieldContext_EffectiveConfig_profiling(ctx, field)
 			case "provenance":
 				return ec.fieldContext_EffectiveConfig_provenance(ctx, field)
 			case "manifestYAML":
@@ -42689,8 +42796,8 @@ func (ec *executionContext) fieldContext_Query_profilingSlots(_ context.Context,
 				return ec.fieldContext_ProfilingSlots_activeKeys(ctx, field)
 			case "keysWithData":
 				return ec.fieldContext_ProfilingSlots_keysWithData(ctx, field)
-			case "totalBytesInUse":
-				return ec.fieldContext_ProfilingSlots_totalBytesInUse(ctx, field)
+			case "totalBytesUsed":
+				return ec.fieldContext_ProfilingSlots_totalBytesUsed(ctx, field)
 			case "slotMaxBytes":
 				return ec.fieldContext_ProfilingSlots_slotMaxBytes(ctx, field)
 			case "maxSlots":
@@ -55997,6 +56104,8 @@ func (ec *executionContext) _EffectiveConfig(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EffectiveConfig_componentLogLevels(ctx, field, obj)
 		case "sampling":
 			out.Values[i] = ec._EffectiveConfig_sampling(ctx, field, obj)
+		case "profiling":
+			out.Values[i] = ec._EffectiveConfig_profiling(ctx, field, obj)
 		case "provenance":
 			out.Values[i] = ec._EffectiveConfig_provenance(ctx, field, obj)
 		case "manifestYAML":
@@ -61243,6 +61352,42 @@ func (ec *executionContext) _PodWorkload(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var profilingConfigImplementors = []string{"ProfilingConfig"}
+
+func (ec *executionContext) _ProfilingConfig(ctx context.Context, sel ast.SelectionSet, obj *model.ProfilingConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, profilingConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProfilingConfig")
+		case "enabled":
+			out.Values[i] = ec._ProfilingConfig_enabled(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var profilingSlotsImplementors = []string{"ProfilingSlots"}
 
 func (ec *executionContext) _ProfilingSlots(ctx context.Context, sel ast.SelectionSet, obj *model.ProfilingSlots) graphql.Marshaler {
@@ -61264,8 +61409,8 @@ func (ec *executionContext) _ProfilingSlots(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "totalBytesInUse":
-			out.Values[i] = ec._ProfilingSlots_totalBytesInUse(ctx, field, obj)
+		case "totalBytesUsed":
+			out.Values[i] = ec._ProfilingSlots_totalBytesUsed(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -69946,6 +70091,13 @@ func (ec *executionContext) unmarshalOPodWorkloadInput2ᚕᚖgithubᚗcomᚋodig
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOProfilingConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProfilingConfig(ctx context.Context, sel ast.SelectionSet, v *model.ProfilingConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProfilingConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProfilingSlots2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProfilingSlots(ctx context.Context, sel ast.SelectionSet, v *model.ProfilingSlots) graphql.Marshaler {
