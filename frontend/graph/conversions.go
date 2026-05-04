@@ -441,6 +441,15 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 		recordSamplingProvenance(config.Sampling, pc)
 	}
 
+	if config.Profiling != nil {
+		result.Profiling = &model.ProfilingConfig{
+			Enabled: config.Profiling.Enabled,
+		}
+		if config.Profiling.Enabled != nil {
+			pc.record("profiling.enabled")
+		}
+	}
+
 	return nil
 }
 
