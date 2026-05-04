@@ -11,11 +11,17 @@ import (
 	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
+type CostReductionEvaluationResult struct {
+	Matched          bool
+	DecidingRule     *commonapisampling.CostReductionRule
+	RulesEvalResults category.CategoryRulesEvaluationResults
+}
+
 // EvaluateCostReductionOperations matches cost-reduction rules on each span, sets per-span attributes,
 // aggregates trace-level matches, and returns whether a non-disabled deciding rule applies.
-func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) (bool, *commonapisampling.CostReductionRule, category.CategoryEvaluationResult) {
+func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) CostReductionEvaluationResult {
 	matchingRules := map[string]*commonapisampling.CostReductionRule{}
-	rulesEvalResults := category.CategoryEvaluationResult{}
+	rulesEvalResults := category.CategoryRulesEvaluationResults{}
 
 	rss := trace.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
@@ -57,7 +63,11 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 	}
 
 	decidingRule := calculateCostReductionDecidingRule(matchingRules)
-	return decidingRule != nil, decidingRule, rulesEvalResults
+	return CostReductionEvaluationResult{
+		Matched:          decidingRule != nil,
+		DecidingRule:     decidingRule,
+		RulesEvalResults: rulesEvalResults,
+	}
 }
 
 // matchCostReductionRulesForSingleSpan returns every cost-reduction rule whose operation matcher passes for this span.

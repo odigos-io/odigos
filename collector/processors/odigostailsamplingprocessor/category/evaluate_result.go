@@ -16,4 +16,4 @@ type RuleEvaluationResult struct {
 	TraceMatchedCount int
 }
 
-type CategoryEvaluationResult map[string]*RuleEvaluationResult
+type CategoryRulesEvaluationResults map[string]*RuleEvaluationResult

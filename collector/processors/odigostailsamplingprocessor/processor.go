@@ -52,29 +52,24 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 	tracePercentage := float64(rnd.Unsigned()) / float64(sampling.MaxAdjustedCount) * 100.0
 
 	// Noisy operations category.
-	matched, noisyOperationRule, noisyOperationRes := p.evaluateNoisyOperations(td)
-	p.recordMetrics(ctx, consts.SamplingCategoryNoise, noisyOperationRes)
-	if matched {
-		percentageAtMost := 0.0
-		if noisyOperationRule.PercentageAtMost != nil {
-			percentageAtMost = *noisyOperationRule.PercentageAtMost
-		}
-
-		// either drop it, or keep it and add relevant sampling attributes to all spans.
+	noisyOperationRes := p.evaluateNoisyOperations(td)
+	p.recordMetrics(ctx, consts.SamplingCategoryNoise, noisyOperationRes.RulesEvalResults)
+	if noisyOperationRes.Matched {
+		noisyOperationRule := noisyOperationRes.DecidingRule
+		percentageAtMost := category.GetPercentageOrDefault0(noisyOperationRule.PercentageAtMost)
 		keepTrace := tracePercentage <= percentageAtMost
 
 		if keepTrace || p.config.DryRun {
 			enrichSpansWithSamplingAttributes(td, consts.SamplingCategoryNoise, noisyOperationRule.Id, noisyOperationRule.Name, percentageAtMost, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
 			return td, nil
-		} else {
-			// drop the trace by not returning anything in the result.
-			return ptrace.NewTraces(), nil
 		}
+		return ptrace.NewTraces(), nil
 	}
 
-	matched, highlyRelevantOperationRule, highlyRelevantRes := highlyrelevant.Evaluate(td, p.odigosConfigExtension)
-	p.recordMetrics(ctx, consts.SamplingCategoryHighlyRelevant, highlyRelevantRes)
-	if matched {
+	highlyRelevantRes := highlyrelevant.Evaluate(td, p.odigosConfigExtension)
+	p.recordMetrics(ctx, consts.SamplingCategoryHighlyRelevant, highlyRelevantRes.RulesEvalResults)
+	if highlyRelevantRes.Matched {
+		highlyRelevantOperationRule := highlyRelevantRes.DecidingRule
 		percentageAtLeast := category.GetPercentageOrDefault100(highlyRelevantOperationRule.PercentageAtLeast)
 		keepTrace := tracePercentage <= percentageAtLeast
 
@@ -85,9 +80,10 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		return ptrace.NewTraces(), nil
 	}
 
-	matched, costReductionRule, costReductionRes := costreduction.Evaluate(td, p.odigosConfigExtension)
-	p.recordMetrics(ctx, consts.SamplingCategoryCostReduction, costReductionRes)
-	if matched {
+	costReductionRes := costreduction.Evaluate(td, p.odigosConfigExtension)
+	p.recordMetrics(ctx, consts.SamplingCategoryCostReduction, costReductionRes.RulesEvalResults)
+	if costReductionRes.Matched {
+		costReductionRule := costReductionRes.DecidingRule
 		percentageAtMost := costReductionRule.PercentageAtMost
 		keepTrace := tracePercentage <= percentageAtMost
 
@@ -103,20 +99,28 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 
 // evaluateNoisyOperations evaluates the noisy operations category for the trace.
 // it return the result of the evaluation.
-func (p *tailSamplingProcessor) evaluateNoisyOperations(td ptrace.Traces) (bool, *commonapisampling.NoisyOperation, category.CategoryEvaluationResult) {
+func (p *tailSamplingProcessor) evaluateNoisyOperations(td ptrace.Traces) noisy.NoisyOperationsEvaluationResult {
 
 	rootSpan, resource, found := getRootSpan(td)
 	if !found {
 		// the root span is missing, so we cannot apply noisy operations category
 		// as the rules are evaluated only on the root span.
-		return false, nil, nil
+		return noisy.NoisyOperationsEvaluationResult{
+			Matched:          false,
+			DecidingRule:     nil,
+			RulesEvalResults: nil,
+		}
 	}
 
 	tailSamplingConfig, ok := p.getTailSamplingConfig(resource)
 	if !ok {
 		// the tail sampling config is set only if there are actually any rules.
 		// this source is not relevant for noisy operations category.
-		return false, nil, nil
+		return noisy.NoisyOperationsEvaluationResult{
+			Matched:          false,
+			DecidingRule:     nil,
+			RulesEvalResults: nil,
+		}
 	}
 
 	return noisy.Evaluate(rootSpan, tailSamplingConfig.NoisyOperations)
@@ -150,7 +154,7 @@ func (p *tailSamplingProcessor) getTailSamplingConfig(resource pcommon.Resource)
 	return collectorConfig.TailSampling, true
 }
 
-func (p *tailSamplingProcessor) recordMetrics(ctx context.Context, category consts.SamplingCategory, evalResult category.CategoryEvaluationResult) {
+func (p *tailSamplingProcessor) recordMetrics(ctx context.Context, category consts.SamplingCategory, evalResult category.CategoryRulesEvaluationResults) {
 	for _, result := range evalResult {
 		attrs := []attribute.KeyValue{
 			attribute.String(odigosattributes.SamplingCategory, string(category)),

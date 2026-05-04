@@ -8,12 +8,18 @@ import (
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
+type NoisyOperationsEvaluationResult struct {
+	Matched          bool
+	DecidingRule     *commonapisampling.NoisyOperation
+	RulesEvalResults category.CategoryRulesEvaluationResults
+}
+
 // givin a root span for a trace, and a list of noisy operation sampling rules,
 // evaluate if the trace belongs to the noisy operations category,
 // and return the "matching rule" - e.g. the rule with the least percentage.
-func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperation) (bool, *commonapisampling.NoisyOperation, category.CategoryEvaluationResult) {
+func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperation) NoisyOperationsEvaluationResult {
 
-	rulesEvalResults := category.CategoryEvaluationResult{}
+	rulesEvalResults := category.CategoryRulesEvaluationResults{}
 
 	// aggregate the matching rules in a list.
 	// there should be very few, so the length is expected to be 0 almost always,
@@ -53,9 +59,9 @@ func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperati
 		}
 	}
 
-	if leastPercentageRule != nil {
-		return true, leastPercentageRule, rulesEvalResults
-	} else {
-		return false, nil, rulesEvalResults
+	return NoisyOperationsEvaluationResult{
+		Matched:          leastPercentageRule != nil,
+		DecidingRule:     leastPercentageRule,
+		RulesEvalResults: rulesEvalResults,
 	}
 }

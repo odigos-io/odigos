@@ -11,11 +11,17 @@ import (
 	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
+type HighlyRelevantEvaluationResult struct {
+	Matched          bool
+	DecidingRule     *commonapisampling.HighlyRelevantOperation
+	RulesEvalResults category.CategoryRulesEvaluationResults
+}
+
 // Evaluate:
 // - checks all highly-relevant tail-sampling rules across all spans in the trace for matches,
 // - compute a deciding rule based on the rules that matched,
 // - returns wether this category matched, and the deciding rule if it did.
-func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) (bool, *commonapisampling.HighlyRelevantOperation, category.CategoryEvaluationResult) {
+func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) HighlyRelevantEvaluationResult {
 	matchingRules := map[string]*commonapisampling.HighlyRelevantOperation{}
 
 	rulesEvalResults := map[string]*category.RuleEvaluationResult{}
@@ -60,7 +66,11 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 	}
 
 	decidingRule := calculateDecidingRule(matchingRules)
-	return decidingRule != nil, decidingRule, rulesEvalResults
+	return HighlyRelevantEvaluationResult{
+		Matched:          decidingRule != nil,
+		DecidingRule:     decidingRule,
+		RulesEvalResults: rulesEvalResults,
+	}
 }
 
 // matchHighlyRelevantRulesForSingleSpan returns every highly-relevant rule whose matchers all pass for this span.
