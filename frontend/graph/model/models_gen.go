@@ -1384,7 +1384,7 @@ type PodWorkloadInput struct {
 type ProfilingSlots struct {
 	ActiveKeys          []string `json:"activeKeys"`
 	KeysWithData        []string `json:"keysWithData"`
-	TotalBytesInUse     int      `json:"totalBytesInUse"`
+	TotalBytesUsed      int      `json:"totalBytesUsed"`
 	SlotMaxBytes        int      `json:"slotMaxBytes"`
 	MaxSlots            int      `json:"maxSlots"`
 	MaxTotalBytesBudget int      `json:"maxTotalBytesBudget"`

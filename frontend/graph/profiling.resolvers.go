@@ -88,7 +88,7 @@ func (r *queryResolver) ProfilingSlots(ctx context.Context) (*model.ProfilingSlo
 	return &model.ProfilingSlots{
 		ActiveKeys:          activeKeys,
 		KeysWithData:        keysWithData,
-		TotalBytesInUse:     stats.TotalBytes,
+		TotalBytesUsed:      stats.TotalBytes,
 		SlotMaxBytes:        stats.SlotMaxBytes,
 		MaxSlots:            stats.MaxSlots,
 		MaxTotalBytesBudget: stats.MaxTotalBytesBudget,

@@ -1119,7 +1119,7 @@ type ComplexityRoot struct {
 		MaxTotalBytesBudget func(childComplexity int) int
 		SlotMaxBytes        func(childComplexity int) int
 		SlotTTLSeconds      func(childComplexity int) int
-		TotalBytesInUse     func(childComplexity int) int
+		TotalBytesUsed      func(childComplexity int) int
 	}
 
 	ProvenanceEntry struct {
@@ -6395,12 +6395,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProfilingSlots.SlotTTLSeconds(childComplexity), true
 
-	case "ProfilingSlots.totalBytesInUse":
-		if e.complexity.ProfilingSlots.TotalBytesInUse == nil {
+	case "ProfilingSlots.totalBytesUsed":
+		if e.complexity.ProfilingSlots.TotalBytesUsed == nil {
 			break
 		}
 
-		return e.complexity.ProfilingSlots.TotalBytesInUse(childComplexity), true
+		return e.complexity.ProfilingSlots.TotalBytesUsed(childComplexity), true
 
 	case "ProvenanceEntry.helmPath":
 		if e.complexity.ProvenanceEntry.HelmPath == nil {
@@ -40967,8 +40967,8 @@ func (ec *executionContext) fieldContext_ProfilingSlots_keysWithData(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _ProfilingSlots_totalBytesInUse(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ProfilingSlots_totalBytesInUse(ctx, field)
+func (ec *executionContext) _ProfilingSlots_totalBytesUsed(ctx context.Context, field graphql.CollectedField, obj *model.ProfilingSlots) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProfilingSlots_totalBytesUsed(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -40981,7 +40981,7 @@ func (ec *executionContext) _ProfilingSlots_totalBytesInUse(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TotalBytesInUse, nil
+		return obj.TotalBytesUsed, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40998,7 +40998,7 @@ func (ec *executionContext) _ProfilingSlots_totalBytesInUse(ctx context.Context,
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ProfilingSlots_totalBytesInUse(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ProfilingSlots_totalBytesUsed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ProfilingSlots",
 		Field:      field,
@@ -42689,8 +42689,8 @@ func (ec *executionContext) fieldContext_Query_profilingSlots(_ context.Context,
 				return ec.fieldContext_ProfilingSlots_activeKeys(ctx, field)
 			case "keysWithData":
 				return ec.fieldContext_ProfilingSlots_keysWithData(ctx, field)
-			case "totalBytesInUse":
-				return ec.fieldContext_ProfilingSlots_totalBytesInUse(ctx, field)
+			case "totalBytesUsed":
+				return ec.fieldContext_ProfilingSlots_totalBytesUsed(ctx, field)
 			case "slotMaxBytes":
 				return ec.fieldContext_ProfilingSlots_slotMaxBytes(ctx, field)
 			case "maxSlots":
@@ -61264,8 +61264,8 @@ func (ec *executionContext) _ProfilingSlots(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "totalBytesInUse":
-			out.Values[i] = ec._ProfilingSlots_totalBytesInUse(ctx, field, obj)
+		case "totalBytesUsed":
+			out.Values[i] = ec._ProfilingSlots_totalBytesUsed(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
