@@ -122,6 +122,21 @@ func upsertLocalUiConfig(ctx context.Context, c client.Client, mutate func(cfg *
 
 func PersistUiLocalSamplingConfig(ctx context.Context, c client.Client, samplingConfig *common.SamplingConfiguration) error {
 	return upsertLocalUiConfig(ctx, c, func(cfg *common.OdigosConfiguration) {
-		cfg.Sampling = samplingConfig
+		if cfg.Sampling == nil {
+			cfg.Sampling = samplingConfig
+			return
+		}
+		if samplingConfig.DryRun != nil {
+			cfg.Sampling.DryRun = samplingConfig.DryRun
+		}
+		if samplingConfig.SpanSamplingAttributes != nil {
+			cfg.Sampling.SpanSamplingAttributes = samplingConfig.SpanSamplingAttributes
+		}
+		if samplingConfig.TailSampling != nil {
+			cfg.Sampling.TailSampling = samplingConfig.TailSampling
+		}
+		if samplingConfig.K8sHealthProbesSampling != nil {
+			cfg.Sampling.K8sHealthProbesSampling = samplingConfig.K8sHealthProbesSampling
+		}
 	})
 }
