@@ -185,6 +185,9 @@ export const GET_EFFECTIVE_CONFIG = gql`
           keepPercentage
         }
       }
+      profiling {
+        enabled
+      }
       provenance {
         helmPath
         reconciledFrom

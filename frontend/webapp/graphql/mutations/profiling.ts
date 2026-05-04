@@ -10,13 +10,3 @@ export const ENABLE_SOURCE_PROFILING = gql`
     }
   }
 `;
-
-export const RELEASE_SOURCE_PROFILING = gql`
-  mutation ReleaseSourceProfiling($namespace: String!, $kind: String!, $name: String!) {
-    releaseSourceProfiling(namespace: $namespace, kind: $kind, name: $name) {
-      status
-      sourceKey
-      activeSlots
-    }
-  }
-`;
