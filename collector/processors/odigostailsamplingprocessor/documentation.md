@@ -6,6 +6,22 @@
 
 The following telemetry is emitted by this component.
 
+### otelcol_odigos.sampling.span.check_count
+
+Number of spans checked for sampling decisions per rule.
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {spans} | Sum | Int | true | Development |
+
+### otelcol_odigos.sampling.span.matched_count
+
+Number of spans that matched this rule.
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {spans} | Sum | Int | true | Development |
+
 ### otelcol_odigos.sampling.trace.check_count
 
 Number of traces checked for sampling decisions per rule.
