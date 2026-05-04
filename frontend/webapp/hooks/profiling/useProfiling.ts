@@ -47,7 +47,7 @@ export const useProfiling = (): UseProfiling => {
     fetchPolicy: 'network-only',
   });
 
-  const [querySourceProfiling] = useLazyQuery<{ sourceProfiling: SourceProfilingResult }, SourceIdentifier>(GET_SOURCE_PROFILING, {
+  const [querySourceProfiling] = useLazyQuery<{ source: { profiling: SourceProfilingResult } }, SourceIdentifier>(GET_SOURCE_PROFILING, {
     fetchPolicy: 'network-only',
   });
 
@@ -89,7 +89,7 @@ export const useProfiling = (): UseProfiling => {
   const fetchSourceProfiling: UseProfiling['fetchSourceProfiling'] = useCallback(
     async (source) => {
       const { data } = await querySourceProfiling({ variables: source });
-      return data?.sourceProfiling;
+      return data?.source.profiling;
     },
     [querySourceProfiling],
   );
