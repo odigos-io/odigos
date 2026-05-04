@@ -20,6 +20,7 @@ import (
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/collector"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
 type tailSamplingProcessor struct {
@@ -152,13 +153,13 @@ func (p *tailSamplingProcessor) getTailSamplingConfig(resource pcommon.Resource)
 func (p *tailSamplingProcessor) recordMetrics(ctx context.Context, category consts.SamplingCategory, evalResult category.CategoryEvaluationResult) {
 	for _, result := range evalResult {
 		attrs := []attribute.KeyValue{
-			attribute.String("category", string(category)),
-			attribute.String("rule_id", result.RuleId),
-			attribute.String("rule_name", result.RuleName),
+			attribute.String(odigosattributes.SamplingCategory, string(category)),
+			attribute.String(odigosattributes.SamplingRuleId, result.RuleId),
+			attribute.String(odigosattributes.SamplingRuleName, result.RuleName),
 		}
 
 		if p.config.DryRun {
-			attrs = append(attrs, attribute.Bool("dry_run", true))
+			attrs = append(attrs, attribute.Bool(odigosattributes.SamplingDryRun, true))
 		}
 
 		p.telemetryBuilder.OdigosSamplingSpanCheckCount.Add(ctx, int64(result.SpanCheckedCount), metric.WithAttributes(attrs...))
