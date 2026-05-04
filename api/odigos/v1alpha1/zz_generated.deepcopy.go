@@ -302,6 +302,11 @@ func (in *AgentTracesConfig) DeepCopyInto(out *AgentTracesConfig) {
 		*out = new(instrumentationrules.CodeAttributes)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.TraceVerbosity != nil {
+		in, out := &in.TraceVerbosity, &out.TraceVerbosity
+		*out = new(instrumentationrules.TraceVerbosity)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.CustomInstrumentations != nil {
 		in, out := &in.CustomInstrumentations, &out.CustomInstrumentations
 		*out = new(instrumentationrules.CustomInstrumentations)
@@ -505,6 +510,11 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 	if in.OtlpExporterConfiguration != nil {
 		in, out := &in.OtlpExporterConfiguration, &out.OtlpExporterConfiguration
 		*out = new(common.OtlpExporterConfiguration)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ResourceDetectors != nil {
+		in, out := &in.ResourceDetectors, &out.ResourceDetectors
+		*out = new(common.ResourceDetectorsConfiguration)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.ClusterMetricsEnabled != nil {
@@ -1490,6 +1500,11 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 	if in.EbpfLogCapture != nil {
 		in, out := &in.EbpfLogCapture, &out.EbpfLogCapture
 		*out = new(instrumentationrules.EbpfLogCapture)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.TraceVerbosity != nil {
+		in, out := &in.TraceVerbosity, &out.TraceVerbosity
+		*out = new(instrumentationrules.TraceVerbosity)
 		(*in).DeepCopyInto(*out)
 	}
 }

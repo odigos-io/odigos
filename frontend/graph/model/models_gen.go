@@ -124,6 +124,13 @@ type BooleanConditionInput struct {
 	ExpectedValue bool             `json:"expectedValue"`
 }
 
+// Clearing buffered OTLP data for a workload slot
+type ClearProfilingBufferResult struct {
+	Status      string `json:"status"`
+	SourceKey   string `json:"sourceKey"`
+	ActiveSlots int    `json:"activeSlots"`
+}
+
 type ClusterAttribute struct {
 	AttributeName        string `json:"attributeName"`
 	AttributeStringValue string `json:"attributeStringValue"`
@@ -436,6 +443,13 @@ type DiagnoseStats struct {
 	TotalSizeHuman string `json:"totalSizeHuman"`
 }
 
+// Disable profiling slot for a workload.
+type DisableProfilingResult struct {
+	Status      string `json:"status"`
+	SourceKey   string `json:"sourceKey"`
+	ActiveSlots int    `json:"activeSlots"`
+}
+
 type DistroParam struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
@@ -481,8 +495,18 @@ type EffectiveConfig struct {
 	OdigosOwnTelemetryStore          *OdigosOwnTelemetryConfig           `json:"odigosOwnTelemetryStore,omitempty"`
 	ImagePullSecrets                 []string                            `json:"imagePullSecrets,omitempty"`
 	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
+	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
+	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
 	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
+}
+
+// Enabling profiling slot for a workload
+type EnableProfilingResult struct {
+	Status      string `json:"status"`
+	SourceKey   string `json:"sourceKey"`
+	MaxSlots    int    `json:"maxSlots"`
+	ActiveSlots int    `json:"activeSlots"`
 }
 
 type EntityProperty struct {
@@ -754,6 +778,8 @@ type K8sActualSource struct {
 	Conditions                []*Condition       `json:"conditions,omitempty"`
 	ManifestYaml              *string            `json:"manifestYAML,omitempty"`
 	InstrumentationConfigYaml *string            `json:"instrumentationConfigYAML,omitempty"`
+	// Buffered CPU profile for this source
+	Profiling *SourceProfilingResult `json:"profiling,omitempty"`
 }
 
 type K8sAnnotationAttribute struct {
@@ -1355,6 +1381,21 @@ type PodWorkloadInput struct {
 	Name      string          `json:"name"`
 }
 
+type ProfilingConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// In-memory profiling buffer stats
+type ProfilingSlots struct {
+	ActiveKeys          []string `json:"activeKeys"`
+	KeysWithData        []string `json:"keysWithData"`
+	TotalBytesUsed      int      `json:"totalBytesUsed"`
+	SlotMaxBytes        int      `json:"slotMaxBytes"`
+	MaxSlots            int      `json:"maxSlots"`
+	MaxTotalBytesBudget int      `json:"maxTotalBytesBudget"`
+	SlotTTLSeconds      int      `json:"slotTtlSeconds"`
+}
+
 type ProvenanceEntry struct {
 	HelmPath       string `json:"helmPath"`
 	ReconciledFrom string `json:"reconciledFrom"`
@@ -1398,6 +1439,7 @@ type RetryOnFailureConfig struct {
 
 type RolloutConfig struct {
 	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+	MaxConcurrentRollouts    *int  `json:"maxConcurrentRollouts,omitempty"`
 }
 
 type RuntimeInfoAnalyze struct {
@@ -1411,6 +1453,8 @@ type Sampling struct {
 }
 
 type SamplingConfig struct {
+	DryRun                  *bool                          `json:"dryRun,omitempty"`
+	SpanSamplingAttributes  *SpanSamplingAttributesConfig  `json:"spanSamplingAttributes,omitempty"`
 	TailSampling            *TailSamplingConfig            `json:"tailSampling,omitempty"`
 	K8sHealthProbesSampling *K8sHealthProbesSamplingConfig `json:"k8sHealthProbesSampling,omitempty"`
 }
@@ -1509,6 +1553,11 @@ type SourceContainer struct {
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
 }
 
+// Pyroscope-style flame profile for one source (JSON string).
+type SourceProfilingResult struct {
+	ProfileJSON string `json:"profileJson"`
+}
+
 type SourcesScope struct {
 	WorkloadName      *string                   `json:"workloadName,omitempty"`
 	WorkloadKind      *K8sResourceKind          `json:"workloadKind,omitempty"`
@@ -1536,6 +1585,13 @@ type SpanAttributeFilterInput struct {
 	AttributeKey          string                          `json:"attributeKey"`
 	FallbackSamplingRatio float64                         `json:"fallbackSamplingRatio"`
 	Condition             *AttributeFiltersConditionInput `json:"condition"`
+}
+
+type SpanSamplingAttributesConfig struct {
+	Disabled                       *bool `json:"disabled,omitempty"`
+	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
+	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
+	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
 }
 
 type StringCondition struct {

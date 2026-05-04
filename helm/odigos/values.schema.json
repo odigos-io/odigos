@@ -1780,6 +1780,84 @@
       "required": [],
       "title": "psp"
     },
+    "resourceDetectors": {
+      "additionalProperties": false,
+      "description": "Controls which OpenTelemetry resource detectors are enabled on the node collector's\nresourcedetection processor. Each detector can be individually enabled or disabled.\nBy default all detectors are enabled except EKS which is disabled by default.",
+      "properties": {
+        "aks": {
+          "additionalProperties": false,
+          "description": "AKS resource detector configuration.",
+          "properties": {
+            "enabled": {
+              "default": "true",
+              "description": "Enable the AKS resource detector.",
+              "required": [],
+              "title": "enabled"
+            }
+          },
+          "required": [],
+          "title": "aks"
+        },
+        "azure": {
+          "additionalProperties": false,
+          "description": "Azure resource detector configuration.",
+          "properties": {
+            "enabled": {
+              "default": "true",
+              "description": "Enable the Azure resource detector.",
+              "required": [],
+              "title": "enabled"
+            }
+          },
+          "required": [],
+          "title": "azure"
+        },
+        "ec2": {
+          "additionalProperties": false,
+          "description": "EC2 resource detector configuration.",
+          "properties": {
+            "enabled": {
+              "default": "true",
+              "description": "Enable the EC2 resource detector.",
+              "required": [],
+              "title": "enabled"
+            }
+          },
+          "required": [],
+          "title": "ec2"
+        },
+        "eks": {
+          "additionalProperties": false,
+          "description": "EKS resource detector configuration (disabled by default).",
+          "properties": {
+            "enabled": {
+              "default": "false",
+              "description": "Enable the EKS resource detector.",
+              "required": [],
+              "title": "enabled"
+            }
+          },
+          "required": [],
+          "title": "eks"
+        },
+        "gcp": {
+          "additionalProperties": false,
+          "description": "GCP resource detector configuration.",
+          "properties": {
+            "enabled": {
+              "default": "true",
+              "description": "Enable the GCP resource detector.",
+              "required": [],
+              "title": "enabled"
+            }
+          },
+          "required": [],
+          "title": "gcp"
+        }
+      },
+      "required": [],
+      "title": "resourceDetectors"
+    },
     "rollout": {
       "additionalProperties": false,
       "description": "Odigos automatically triggers a one-time rollout for workloads when instrumenting or uninstrumenting, to apply changes.\nIf workload restarts are sensitive, this setting can be used to disable the automatic rollout.\nWhen disabled, users are responsible for manually triggering rollouts after adding or removing sources.\nAny new pods created after enabling or disabling the agent (via manual rollout, autoscaling, etc.)\nwill still have the agent injected, regardless of this setting.\nWhen set to true, all additional configurations related to automated rollouts or rollbacks are ignored.",

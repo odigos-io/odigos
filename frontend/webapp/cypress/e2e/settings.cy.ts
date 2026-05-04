@@ -48,9 +48,11 @@ const setTimeInput = (fieldPath: string, value: string) => {
 
 const selectDropdownOption = (fieldPath: string, optionLabel: string) => {
   cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).click();
-  // Navigate from <input> → InputWrapper → FlexColumn → Relative (DropData root)
-  // to scope the search to only this dropdown's popup options.
-  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).parent().parent().parent().contains(optionLabel).click();
+  // The dropdown popup is rendered via React portal at document.body, so it lives
+  // outside the trigger's DOM subtree. Each option exposes `data-id="option-${id}"`
+  // and the settings dropdown uses the option string itself as the id, so we can
+  // target the option globally without scoping by ancestor.
+  cy.get(`[data-id="option-${optionLabel}"]`).click();
 };
 
 const addMultiInputValue = (fieldPath: string, value: string) => {
@@ -74,6 +76,14 @@ const verifyTimeInput = (fieldPath: string, expectedValue: string) => {
 
 const verifyDropdown = (fieldPath: string, expectedLabel: string) => {
   cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).should('have.value', `Selected: ${expectedLabel}`);
+};
+
+// Toggle exposes its boolean state via the `data-toggle-value` attribute on the
+// element with `data-id={fieldPath}`. The visual switch is a styled div, so we
+// can't use form-input matchers; checking the attribute is robust and avoids
+// tying the test to colors/positions.
+const verifyToggle = (fieldPath: string, expectedValue: boolean) => {
+  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).should('have.attr', 'data-toggle-value', expectedValue ? 'true' : 'false');
 };
 
 const verifyMultiInputContains = (fieldPath: string, expectedValue: string) => {
@@ -300,26 +310,35 @@ describe('Settings CRUD', () => {
         cy.get(DATA_IDS.SETTINGS_SAVE).should('not.exist');
         cy.get(DATA_IDS.SETTINGS_CANCEL).should('not.exist');
 
-        // Only fields present in the GraphQL EffectiveConfig type can be verified
-        // after refresh. Fields like rollout.maxConcurrentRollouts, and all
-        // sampling.* fields exist only on LocalUiConfigInput (mutation) and are
-        // not returned by the GetEffectiveConfig query.
-
-        // ─ General (input) ─
+        // ─ General ─
         verifyInput('clusterName', testClusterName);
+        // Note: telemetryEnabled is intentionally skipped here. The Go struct uses a
+        // plain bool with json omitempty, so toggling it to false is not serialized
+        // to the local-ui-config YAML, and mergeConfigs only applies the overlay when
+        // the overlay value is true. As a result, flipping the UI toggle to false does
+        // not propagate into the effective config, and after refresh the UI still
+        // renders the helm-default value (true). This is a known limitation tracked
+        // separately; verifying it here would always fail.
 
-        // ─ Instrumentation (dropdown) ─
+        // ─ Instrumentation ─
         verifyDropdown('instrumentor.agentEnvVarsInjectionMethod', 'pod-manifest');
+        verifyToggle('allowConcurrentAgents.enabled', true);
+        verifyToggle('instrumentor.checkDeviceHealthBeforeInjection', true);
+        verifyToggle('wasp.enabled', true);
 
-        // ─ Rollout & Rollback (inputs — only fields on EffectiveConfig) ─
+        // ─ Rollout & Rollback ─
+        verifyToggle('rollout.automaticRolloutDisabled', true);
+        verifyInput('rollout.maxConcurrentRollouts', '5');
+        verifyToggle('autoRollback.disabled', true);
         verifyTimeInput('autoRollback.graceTime', '60s');
         verifyTimeInput('autoRollback.stabilityWindowTime', '120s');
 
-        // ─ Namespaces & Filtering (multiInputs) ─
+        // ─ Namespaces & Filtering ─
         verifyMultiInputContains('ignoredNamespaces', 'cypress-test-ns');
         verifyMultiInputContains('ignoredContainers', 'cypress-test-container');
+        verifyToggle('ignoreOdigosNamespace', false);
 
-        // ─ Component Log Levels (dropdowns) ─
+        // ─ Component Log Levels ─
         verifyDropdown('componentLogLevels.default', 'debug');
         verifyDropdown('componentLogLevels.autoscaler', 'debug');
         verifyDropdown('componentLogLevels.scheduler', 'debug');
@@ -328,6 +347,17 @@ describe('Settings CRUD', () => {
         verifyDropdown('componentLogLevels.deviceplugin', 'debug');
         verifyDropdown('componentLogLevels.ui', 'debug');
         verifyDropdown('componentLogLevels.collector', 'debug');
+
+        // ─ Sampling ─
+        verifyToggle('sampling.dryRun', true);
+        verifyToggle('sampling.spanSamplingAttributes.disabled', true);
+        verifyToggle('sampling.spanSamplingAttributes.samplingCategoryDisabled', true);
+        verifyToggle('sampling.spanSamplingAttributes.traceDecidingRuleDisabled', true);
+        verifyToggle('sampling.spanSamplingAttributes.spanDecisionAttributesDisabled', true);
+        verifyToggle('sampling.tailSampling.disabled', true);
+        verifyTimeInput('sampling.tailSampling.traceAggregationWaitDuration', '45s');
+        verifyToggle('sampling.k8sHealthProbesSampling.enabled', true);
+        verifyInput('sampling.k8sHealthProbesSampling.keepPercentage', '50');
       });
     });
   });

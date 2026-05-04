@@ -128,6 +128,9 @@ func calculateTracesConfig(
 	// Code Attributes - Agent only (not applicable to collector)
 	agentConfig.CodeAttributes = traces.CalculateCodeAttributesConfig(d, irls)
 
+	// Trace Verbosity - Agent only (not applicable to collector)
+	agentConfig.TraceVerbosity = traces.CalculateTraceVerbosityConfig(d, irls)
+
 	// Custom Instrumentations - Agent only (not applicable to collector)
 	agentConfig.CustomInstrumentations = traces.CalculateCustomInstrumentationsConfig(d, irls)
 
@@ -176,6 +179,7 @@ func CalculateDynamicContainerConfig(
 	d *distro.OtelDistro,
 	enabledSignals signals.EnabledSignals,
 	nodeCollectorsGroup *odigosv1.CollectorsGroup,
+	clusterCollectorsGroup *odigosv1.CollectorsGroup,
 ) (*DynamicContainerConfigs, *odigosv1.AgentDisabledInfo) {
 
 	var collectorConfig *commonapi.ContainerCollectorConfig
@@ -199,14 +203,15 @@ func CalculateDynamicContainerConfig(
 		metricsConfig = agentMetricsConfig
 	}
 
+	// To determine if logs are enabled, we check the gateway collector group receiver signals
+	// because logs won't be present in the data collection (node) collector group.
+	logsEnabled := clusterCollectorsGroup != nil && slices.Contains(clusterCollectorsGroup.Status.ReceiverSignals, common.LogsObservabilitySignal)
 	var logsConfig *odigosv1.AgentLogsConfig
-	// Currently if ebpf log capture is enabled, we write it for all containers.
-	// In the future, we will support scopes it need to be changed.
 	ebpfLogCaptureConfig := logs.CalculateEbpfLogCaptureConfig(d, irls)
-	if ebpfLogCaptureConfig != nil {
-		logsConfig = &odigosv1.AgentLogsConfig{
-			EbpfLogCapture: ebpfLogCaptureConfig,
-		}
+
+	if logsEnabled && ebpfLogCaptureConfig != nil {
+		logsConfig = &odigosv1.AgentLogsConfig{}
+		logsConfig.EbpfLogCapture = ebpfLogCaptureConfig
 	}
 
 	return &DynamicContainerConfigs{

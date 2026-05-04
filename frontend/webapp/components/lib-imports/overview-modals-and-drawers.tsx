@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
 import { EntityTypes, type WorkloadId } from '@odigos/ui-kit/types';
 import { useDrawerStore, useModalStore } from '@odigos/ui-kit/store';
-import { ActionFormContextProvider, DestinationFormContextProvider, RuleFormContextProvider, SourceEditFormContextProvider, SourceInstrumentFormContextProvider } from '@odigos/ui-kit/contexts';
 import { AddActionDrawer, AddDestinationDrawer, AddRuleDrawer, AddSourceDrawer, EditActionDrawer, EditDestinationDrawer, EditRuleDrawer, EditSourceDrawer } from '@odigos/ui-kit/containers/v2';
+import { ActionFormContextProvider, DestinationFormContextProvider, RuleFormContextProvider, SourceEditFormContextProvider, SourceInstrumentFormContextProvider } from '@odigos/ui-kit/contexts';
 import {
   useActionCRUD,
   useDescribe,
@@ -12,8 +12,10 @@ import {
   useNamespace,
   usePotentialDestinations,
   useSourceCRUD,
+  useProfiling,
   useTestConnection,
   useWorkloadUtils,
+  useEffectiveConfig,
 } from '@/hooks';
 
 const OverviewModalsAndDrawers = () => {
@@ -22,11 +24,13 @@ const OverviewModalsAndDrawers = () => {
 
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
+  const { effectiveConfig } = useEffectiveConfig();
   const { fetchNamespacesWithWorkloads } = useNamespace();
   const { getDestinationCategories } = useDestinationCategories();
   const { getPotentialDestinations } = usePotentialDestinations();
   const { createActionV2, updateAction, deleteAction } = useActionCRUD();
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
+  const { fetchProfilingSlots, enableProfiling, fetchSourceProfiling } = useProfiling();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
   const { persistSources, persistSourcesV2, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
@@ -86,6 +90,10 @@ const OverviewModalsAndDrawers = () => {
             fetchSourceDescribe={fetchDescribeSource}
             fetchSourceLibraries={fetchSourceLibraries}
             fetchPeerSources={fetchPeerSources}
+            profilingEnabled={effectiveConfig?.profiling?.enabled || false}
+            enableProfiling={enableProfiling}
+            fetchSourceProfiling={fetchSourceProfiling}
+            fetchProfilingSlots={fetchProfilingSlots}
           />
         </SourceEditFormContextProvider>
       )}

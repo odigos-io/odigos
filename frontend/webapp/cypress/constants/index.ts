@@ -195,9 +195,9 @@ export const TEXTS = {
 
   SOURCE_WARN_MODAL_TITLE: (count: number) => `Uninstrument ${count} sources`,
   SOURCE_WARN_MODAL_NOTE: "You're about to uninstrument the last Source",
-  DESTINATION_WARN_MODAL_TITLE: `Delete Destination (${CYPRESS_TEST})`,
-  DESTINATION_WARN_MODAL_NOTE: "You're about to delete the last Destination",
-  ACTION_WARN_MODAL_TITLE: `Delete Action (${CYPRESS_TEST})`,
+  DESTINATION_WARN_MODAL_TITLE: 'Delete destination?',
+  DESTINATION_WARN_MODAL_NOTE: 'Are you sure you want to delete this destination?',
+  ACTION_WARN_MODAL_TITLE: 'Delete action?',
   INSTRUMENTATION_RULE_WARN_MODAL_TITLE: 'Delete instrumentation rule?',
 
   NOTIF_CREATED: 'Successfully created',

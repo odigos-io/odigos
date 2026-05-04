@@ -10,3 +10,9 @@ var DisableGinProfile = profile.Profile{
 	MinimumTier:      common.OnPremOdigosTier,
 	ShortDescription: "Disable gin-gonic/gin instrumentation",
 }
+
+var DisableGinNewProfile = profile.Profile{
+	ProfileName:      common.ProfileName("disable-golang-gin"),
+	MinimumTier:      common.OnPremOdigosTier,
+	ShortDescription: "Disable gin-gonic/gin instrumentation in Go",
+}

@@ -21,7 +21,8 @@ var KratosProfile = profile.Profile{
 		// "small-batches", - issue is fixed in receiver. can now handle 85MB
 		"allow_concurrent_agents",
 		"reduce-span-name-cardinality",
-		"disable-gin",
+		"disable-gin", // deprecated, remove after golang migrate to new config format
+		"disable-golang-gin",
 		"semconvdynamo",
 		"semconvredis",
 		"java-enterprise",

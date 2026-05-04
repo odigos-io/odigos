@@ -93,6 +93,29 @@ To authenticate with your DockerHub account on OpenShift, follow [this OpenShift
 
 ## Preparing a new release
 
+### Releasing RHEL images
+
+For an existing Odigos release, run the [Publish Modules for RHEL action](https://github.com/odigos-io/odigos/actions/workflows/publish-modules-rhel.yml)
+with the image tag you want to release on RHEL (eg, `v1.24.2`). It can be run from `main`, since it uses the provided tag for build.
+
+If this completes successfully, it should trigger the [Release Enterprise Components to Artifact Registry (RHEL) action](https://github.com/odigos-io/odigos-enterprise/actions/workflows/release-images-rhel.yml)
+in odigos-enterprise.
+
+When the RHEL release finishes, there should be images for all components with a `-rhel-certified` suffix in [Artifact Registry](https://console.cloud.google.com/artifacts/docker/odigos-cloud/us-central1/components?project=odigos-cloud).
+
+### OpenShift Certification
+
+Verify that all components pass OpenShift certification by running the [OpenShift certification for container images action](https://github.com/odigos-io/odigos/actions/workflows/openshift-preflight.yml)
+with the dry-run flag checked (`Run preflight checks only; do not submit results to Red Hat`). If that succeeds, run the job again without dry run
+to actually submit to Red Hat.
+
+If it fails for any images, fix the failures and manually re-push the affected images to Artifact Registry using the provided
+Makefile `push-image` targets with `RHEL` and `PUSH_IMAGE` flags.
+
+You can then re-run certification for a specific component using the check boxes in the OpenShift certification action.
+
+### Updating manifests and bundle
+
 Once a new version of Odigos has been released, and the components have all passed OpenShift certification, do the following:
 
 1. Update the `VERSION` variable at the top of the `operator/Makefile`
