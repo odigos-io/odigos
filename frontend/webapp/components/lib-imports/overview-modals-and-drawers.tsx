@@ -15,6 +15,7 @@ import {
   useProfiling,
   useTestConnection,
   useWorkloadUtils,
+  useEffectiveConfig,
 } from '@/hooks';
 import { SourceDrawer } from '@odigos/ui-kit/containers';
 
@@ -24,6 +25,7 @@ const OverviewModalsAndDrawers = () => {
 
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
+  const { effectiveConfig } = useEffectiveConfig();
   const { fetchNamespacesWithWorkloads } = useNamespace();
   const { getDestinationCategories } = useDestinationCategories();
   const { getPotentialDestinations } = usePotentialDestinations();
@@ -89,6 +91,7 @@ const OverviewModalsAndDrawers = () => {
         //     fetchSourceDescribe={fetchDescribeSource}
         //     fetchSourceLibraries={fetchSourceLibraries}
         //     fetchPeerSources={fetchPeerSources}
+        //     profilingEnabled={effectiveConfig?.profiling?.enabled}
         //     enableProfiling={enableProfiling}
         //     releaseProfiling={releaseProfiling}
         //     fetchSourceProfiling={fetchSourceProfiling}
@@ -105,6 +108,7 @@ const OverviewModalsAndDrawers = () => {
           fetchSourceDescribe={fetchDescribeSource}
           fetchSourceLibraries={fetchSourceLibraries}
           fetchPeerSources={fetchPeerSources}
+          profilingEnabled={effectiveConfig?.profiling?.enabled}
           enableProfiling={enableProfiling}
           releaseProfiling={releaseProfiling}
           fetchSourceProfiling={fetchSourceProfiling}

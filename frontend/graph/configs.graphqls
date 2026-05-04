@@ -145,6 +145,10 @@ type WaspConfig {
   enabled: Boolean
 }
 
+type ProfilingConfig {
+  enabled: Boolean
+}
+
 type KarpenterConfig {
   enabled: Boolean
 }
@@ -264,6 +268,7 @@ type EffectiveConfig {
   imagePullSecrets: [String!]
   componentLogLevels: ComponentLogLevelsConfig
   sampling: SamplingConfig
+  profiling: ProfilingConfig
   provenance: [ProvenanceEntry!]
   manifestYAML: String
 }

@@ -496,6 +496,7 @@ type EffectiveConfig struct {
 	ImagePullSecrets                 []string                            `json:"imagePullSecrets,omitempty"`
 	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
 	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
+	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
 	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
 }
@@ -1378,6 +1379,10 @@ type PodWorkloadInput struct {
 	Namespace string          `json:"namespace"`
 	Kind      K8sResourceKind `json:"kind"`
 	Name      string          `json:"name"`
+}
+
+type ProfilingConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // In-memory profiling buffer stats
