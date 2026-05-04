@@ -1,3 +1,10 @@
 <Note>
   Odigos eBPF-based data collection requires, at minimum, platforms that have underlying Linux kernel versions of 5.4.0.
+
+  The required Linux capabilities depend on your kernel version:
+
+  - **Kernel 5.4 – 5.7**: requires `CAP_SYS_ADMIN`.
+  - **Kernel 5.8 and later**: requires `CAP_BPF` and `CAP_SYS_PTRACE`.
+
+  We recommend running on kernel 5.8 or later when possible, as the more granular capabilities (`CAP_BPF` and `CAP_SYS_PTRACE`) follow the principle of least privilege compared to `CAP_SYS_ADMIN`.
 </Note>
