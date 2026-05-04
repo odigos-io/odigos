@@ -10,13 +10,3 @@ export const ENABLE_SOURCE_PROFILING = gql`
     }
   }
 `;
-
-export const DISABLE_SOURCE_PROFILING = gql`
-  mutation DisableSourceProfiling($namespace: String!, $kind: String!, $name: String!) {
-    disableSourceProfiling(namespace: $namespace, kind: $kind, name: $name) {
-      status
-      sourceKey
-      activeSlots
-    }
-  }
-`;
