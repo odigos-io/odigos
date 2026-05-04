@@ -9,7 +9,6 @@ import (
 )
 
 type NoisyOperationsEvaluationResult struct {
-	Matched          bool
 	DecidingRule     *commonapisampling.NoisyOperation
 	RulesEvalResults category.CategoryRulesEvaluationResults
 }
@@ -60,7 +59,6 @@ func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperati
 	}
 
 	return NoisyOperationsEvaluationResult{
-		Matched:          leastPercentageRule != nil,
 		DecidingRule:     leastPercentageRule,
 		RulesEvalResults: rulesEvalResults,
 	}

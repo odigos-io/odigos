@@ -54,7 +54,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 	// Noisy operations category.
 	noisyOperationRes := p.evaluateNoisyOperations(td)
 	p.recordMetrics(ctx, consts.SamplingCategoryNoise, noisyOperationRes.RulesEvalResults)
-	if noisyOperationRes.Matched {
+	if noisyOperationRes.DecidingRule != nil {
 		noisyOperationRule := noisyOperationRes.DecidingRule
 		percentageAtMost := category.GetPercentageOrDefault0(noisyOperationRule.PercentageAtMost)
 		keepTrace := tracePercentage <= percentageAtMost
@@ -68,7 +68,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 
 	highlyRelevantRes := highlyrelevant.Evaluate(td, p.odigosConfigExtension)
 	p.recordMetrics(ctx, consts.SamplingCategoryHighlyRelevant, highlyRelevantRes.RulesEvalResults)
-	if highlyRelevantRes.Matched {
+	if highlyRelevantRes.DecidingRule != nil {
 		highlyRelevantOperationRule := highlyRelevantRes.DecidingRule
 		percentageAtLeast := category.GetPercentageOrDefault100(highlyRelevantOperationRule.PercentageAtLeast)
 		keepTrace := tracePercentage <= percentageAtLeast
@@ -82,7 +82,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 
 	costReductionRes := costreduction.Evaluate(td, p.odigosConfigExtension)
 	p.recordMetrics(ctx, consts.SamplingCategoryCostReduction, costReductionRes.RulesEvalResults)
-	if costReductionRes.Matched {
+	if costReductionRes.DecidingRule != nil {
 		costReductionRule := costReductionRes.DecidingRule
 		percentageAtMost := costReductionRule.PercentageAtMost
 		keepTrace := tracePercentage <= percentageAtMost
@@ -106,7 +106,6 @@ func (p *tailSamplingProcessor) evaluateNoisyOperations(td ptrace.Traces) noisy.
 		// the root span is missing, so we cannot apply noisy operations category
 		// as the rules are evaluated only on the root span.
 		return noisy.NoisyOperationsEvaluationResult{
-			Matched:          false,
 			DecidingRule:     nil,
 			RulesEvalResults: nil,
 		}
@@ -117,7 +116,6 @@ func (p *tailSamplingProcessor) evaluateNoisyOperations(td ptrace.Traces) noisy.
 		// the tail sampling config is set only if there are actually any rules.
 		// this source is not relevant for noisy operations category.
 		return noisy.NoisyOperationsEvaluationResult{
-			Matched:          false,
 			DecidingRule:     nil,
 			RulesEvalResults: nil,
 		}

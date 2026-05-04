@@ -12,7 +12,6 @@ import (
 )
 
 type CostReductionEvaluationResult struct {
-	Matched          bool
 	DecidingRule     *commonapisampling.CostReductionRule
 	RulesEvalResults category.CategoryRulesEvaluationResults
 }
@@ -64,7 +63,6 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 
 	decidingRule := calculateCostReductionDecidingRule(matchingRules)
 	return CostReductionEvaluationResult{
-		Matched:          decidingRule != nil,
 		DecidingRule:     decidingRule,
 		RulesEvalResults: rulesEvalResults,
 	}

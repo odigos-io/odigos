@@ -12,7 +12,6 @@ import (
 )
 
 type HighlyRelevantEvaluationResult struct {
-	Matched          bool
 	DecidingRule     *commonapisampling.HighlyRelevantOperation
 	RulesEvalResults category.CategoryRulesEvaluationResults
 }
@@ -67,7 +66,6 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 
 	decidingRule := calculateDecidingRule(matchingRules)
 	return HighlyRelevantEvaluationResult{
-		Matched:          decidingRule != nil,
 		DecidingRule:     decidingRule,
 		RulesEvalResults: rulesEvalResults,
 	}
