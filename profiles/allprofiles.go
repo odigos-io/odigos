@@ -27,6 +27,7 @@ var AllProfiles = []profile.Profile{
 	attributes.ReduceSpanNameCardinalityProfile,
 
 	instrumentation.AllowConcurrentAgents,
+	instrumentation.EbpfLogCaptureProfile,
 	instrumentation.JavaEbpfInstrumentationsProfile,
 	instrumentation.JavaEnterpriseProfile,
 	instrumentation.JavaNativeInstrumentationsProfile,
