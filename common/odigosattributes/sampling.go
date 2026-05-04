@@ -4,6 +4,9 @@ const (
 	// The sampling category that matched the trace (e.g. "noise", "highly relevant", "cost reduction"). Type: string.
 	SamplingCategory = "odigos.sampling.category"
 
+	SamplingRuleId   = "odigos.sampling.rule.id"
+	SamplingRuleName = "odigos.sampling.rule.name"
+
 	// The unique identifier of the deciding sampling rule for the trace. Type: string.
 	// Multiple spans can match different rules, and this one is the most restrictive one.
 	SamplingTraceDecidingRuleId = "odigos.sampling.trace.deciding_rule.id"
