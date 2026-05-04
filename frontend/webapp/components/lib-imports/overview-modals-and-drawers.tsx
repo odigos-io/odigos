@@ -108,7 +108,7 @@ const OverviewModalsAndDrawers = () => {
           fetchSourceDescribe={fetchDescribeSource}
           fetchSourceLibraries={fetchSourceLibraries}
           fetchPeerSources={fetchPeerSources}
-          profilingEnabled={effectiveConfig?.profiling?.enabled}
+          profilingEnabled={effectiveConfig?.profiling?.enabled || false}
           enableProfiling={enableProfiling}
           releaseProfiling={releaseProfiling}
           fetchSourceProfiling={fetchSourceProfiling}
