@@ -495,6 +495,8 @@ type EffectiveConfig struct {
 	OdigosOwnTelemetryStore          *OdigosOwnTelemetryConfig           `json:"odigosOwnTelemetryStore,omitempty"`
 	ImagePullSecrets                 []string                            `json:"imagePullSecrets,omitempty"`
 	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
+	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
+	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
 	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
 }
@@ -1379,11 +1381,15 @@ type PodWorkloadInput struct {
 	Name      string          `json:"name"`
 }
 
+type ProfilingConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
 // In-memory profiling buffer stats
 type ProfilingSlots struct {
 	ActiveKeys          []string `json:"activeKeys"`
 	KeysWithData        []string `json:"keysWithData"`
-	TotalBytesInUse     int      `json:"totalBytesInUse"`
+	TotalBytesUsed      int      `json:"totalBytesUsed"`
 	SlotMaxBytes        int      `json:"slotMaxBytes"`
 	MaxSlots            int      `json:"maxSlots"`
 	MaxTotalBytesBudget int      `json:"maxTotalBytesBudget"`
@@ -1433,6 +1439,7 @@ type RetryOnFailureConfig struct {
 
 type RolloutConfig struct {
 	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+	MaxConcurrentRollouts    *int  `json:"maxConcurrentRollouts,omitempty"`
 }
 
 type RuntimeInfoAnalyze struct {
@@ -1446,6 +1453,8 @@ type Sampling struct {
 }
 
 type SamplingConfig struct {
+	DryRun                  *bool                          `json:"dryRun,omitempty"`
+	SpanSamplingAttributes  *SpanSamplingAttributesConfig  `json:"spanSamplingAttributes,omitempty"`
 	TailSampling            *TailSamplingConfig            `json:"tailSampling,omitempty"`
 	K8sHealthProbesSampling *K8sHealthProbesSamplingConfig `json:"k8sHealthProbesSampling,omitempty"`
 }
@@ -1576,6 +1585,13 @@ type SpanAttributeFilterInput struct {
 	AttributeKey          string                          `json:"attributeKey"`
 	FallbackSamplingRatio float64                         `json:"fallbackSamplingRatio"`
 	Condition             *AttributeFiltersConditionInput `json:"condition"`
+}
+
+type SpanSamplingAttributesConfig struct {
+	Disabled                       *bool `json:"disabled,omitempty"`
+	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
+	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
+	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
 }
 
 type StringCondition struct {

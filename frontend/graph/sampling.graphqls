@@ -26,7 +26,20 @@ type K8sHealthProbesSamplingConfig {
   keepPercentage: Float
 }
 
+type SpanSamplingAttributesConfig {
+  disabled: Boolean
+  samplingCategoryDisabled: Boolean
+  traceDecidingRuleDisabled: Boolean
+  spanDecisionAttributesDisabled: Boolean
+}
+
 type SamplingConfig {
+  # if true, odigos runs sampling logic but does not drop any traces.
+  dryRun: Boolean
+
+  # configuration for span sampling attributes (category, deciding rules, etc.).
+  spanSamplingAttributes: SpanSamplingAttributesConfig
+
   # configuration for tail sampling.
   tailSampling: TailSamplingConfig
 
