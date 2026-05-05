@@ -1453,6 +1453,15 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 			copy(*out, *in)
 		}
 	}
+	if in.SourcesScopes != nil {
+		in, out := &in.SourcesScopes, &out.SourcesScopes
+		*out = new([]k8sconsts.SourcesScope)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make([]k8sconsts.SourcesScope, len(*in))
+			copy(*out, *in)
+		}
+	}
 	if in.InstrumentationLibraries != nil {
 		in, out := &in.InstrumentationLibraries, &out.InstrumentationLibraries
 		*out = new([]InstrumentationLibraryGlobalId)

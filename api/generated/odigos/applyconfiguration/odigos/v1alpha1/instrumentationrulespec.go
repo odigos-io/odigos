@@ -31,8 +31,11 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	Notes *string `json:"notes,omitempty"`
 	// A boolean field allowing to temporarily disable the rule, but keep it around for future use
 	Disabled *bool `json:"disabled,omitempty"`
+	// DEPRECATED - USE SourcesScopes INSTEAD:
 	// An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.
 	Workloads *[]k8sconsts.PodWorkload `json:"workloads,omitempty"`
+	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.
+	SourcesScopes *[]k8sconsts.SourcesScope `json:"sourcesScopes,omitempty"`
 	// For fine grained control, the user can specify the instrumentation library to use.
 	// One can specify same rule for multiple languages and libraries at the same time.
 	// If nil, all instrumentation libraries will be used.
@@ -98,6 +101,14 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithDisabled(value bool) *In
 // If called multiple times, the Workloads field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithWorkloads(value []k8sconsts.PodWorkload) *InstrumentationRuleSpecApplyConfiguration {
 	b.Workloads = &value
+	return b
+}
+
+// WithSourcesScopes sets the SourcesScopes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SourcesScopes field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithSourcesScopes(value []k8sconsts.SourcesScope) *InstrumentationRuleSpecApplyConfiguration {
+	b.SourcesScopes = &value
 	return b
 }
 
