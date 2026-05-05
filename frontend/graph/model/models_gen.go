@@ -699,32 +699,50 @@ type InstrumentationLibraryGlobalIDInput struct {
 }
 
 type InstrumentationRule struct {
-	Type                     InstrumentationRuleType           `json:"type"`
-	RuleID                   string                            `json:"ruleId"`
-	RuleName                 *string                           `json:"ruleName,omitempty"`
-	Notes                    *string                           `json:"notes,omitempty"`
-	Disabled                 *bool                             `json:"disabled,omitempty"`
-	Mutable                  bool                              `json:"mutable"`
-	ProfileName              string                            `json:"profileName"`
-	Workloads                []*PodWorkload                    `json:"workloads,omitempty"`
-	InstrumentationLibraries []*InstrumentationLibraryGlobalID `json:"instrumentationLibraries,omitempty"`
-	Conditions               []*Condition                      `json:"conditions,omitempty"`
-	CodeAttributes           *CodeAttributes                   `json:"codeAttributes,omitempty"`
-	HeadersCollection        *HeadersCollection                `json:"headersCollection,omitempty"`
-	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
-	CustomInstrumentations   *CustomInstrumentations           `json:"customInstrumentations,omitempty"`
+	Type                     InstrumentationRuleType            `json:"type"`
+	RuleID                   string                             `json:"ruleId"`
+	RuleName                 *string                            `json:"ruleName,omitempty"`
+	Notes                    *string                            `json:"notes,omitempty"`
+	Disabled                 *bool                              `json:"disabled,omitempty"`
+	Mutable                  bool                               `json:"mutable"`
+	ProfileName              string                             `json:"profileName"`
+	Workloads                []*PodWorkload                     `json:"workloads,omitempty"`
+	SourcesScopes            []*InstrumentationRuleSourcesScope `json:"sourcesScopes,omitempty"`
+	InstrumentationLibraries []*InstrumentationLibraryGlobalID  `json:"instrumentationLibraries,omitempty"`
+	Conditions               []*Condition                       `json:"conditions,omitempty"`
+	CodeAttributes           *CodeAttributes                    `json:"codeAttributes,omitempty"`
+	HeadersCollection        *HeadersCollection                 `json:"headersCollection,omitempty"`
+	PayloadCollection        *PayloadCollection                 `json:"payloadCollection,omitempty"`
+	CustomInstrumentations   *CustomInstrumentations            `json:"customInstrumentations,omitempty"`
 }
 
 type InstrumentationRuleInput struct {
-	RuleName                 *string                                `json:"ruleName,omitempty"`
-	Notes                    *string                                `json:"notes,omitempty"`
-	Disabled                 *bool                                  `json:"disabled,omitempty"`
-	Workloads                []*PodWorkloadInput                    `json:"workloads,omitempty"`
-	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput `json:"instrumentationLibraries,omitempty"`
-	CodeAttributes           *CodeAttributesInput                   `json:"codeAttributes,omitempty"`
-	HeadersCollection        *HeadersCollectionInput                `json:"headersCollection,omitempty"`
-	PayloadCollection        *PayloadCollectionInput                `json:"payloadCollection,omitempty"`
-	CustomInstrumentations   *CustomInstrumentationsInput           `json:"customInstrumentations,omitempty"`
+	RuleName                 *string                                 `json:"ruleName,omitempty"`
+	Notes                    *string                                 `json:"notes,omitempty"`
+	Disabled                 *bool                                   `json:"disabled,omitempty"`
+	Workloads                []*PodWorkloadInput                     `json:"workloads,omitempty"`
+	SourcesScopes            []*InstrumentationRuleSourcesScopeInput `json:"sourcesScopes,omitempty"`
+	InstrumentationLibraries []*InstrumentationLibraryGlobalIDInput  `json:"instrumentationLibraries,omitempty"`
+	CodeAttributes           *CodeAttributesInput                    `json:"codeAttributes,omitempty"`
+	HeadersCollection        *HeadersCollectionInput                 `json:"headersCollection,omitempty"`
+	PayloadCollection        *PayloadCollectionInput                 `json:"payloadCollection,omitempty"`
+	CustomInstrumentations   *CustomInstrumentationsInput            `json:"customInstrumentations,omitempty"`
+}
+
+type InstrumentationRuleSourcesScope struct {
+	WorkloadName      *string                   `json:"workloadName,omitempty"`
+	WorkloadKind      *K8sResourceKind          `json:"workloadKind,omitempty"`
+	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
+	ContainerName     *string                   `json:"containerName,omitempty"`
+	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
+}
+
+type InstrumentationRuleSourcesScopeInput struct {
+	WorkloadName      *string                   `json:"workloadName,omitempty"`
+	WorkloadKind      *K8sResourceKind          `json:"workloadKind,omitempty"`
+	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
+	ContainerName     *string                   `json:"containerName,omitempty"`
+	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
 }
 
 type InstrumentationSourcesAnalyze struct {

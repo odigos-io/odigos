@@ -64,6 +64,7 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 			Mutable:                  mutable,
 			ProfileName:              profileName,
 			Workloads:                convertWorkloads(r.Spec.Workloads),
+			SourcesScopes:            convertSourcesScope(r.Spec.SourcesScopes),
 			InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 			Conditions:               ConvertConditions(r.Status.Conditions),
 			CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
@@ -98,6 +99,7 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		Mutable:                  mutable,
 		ProfileName:              profileName,
 		Workloads:                convertWorkloads(r.Spec.Workloads),
+		SourcesScopes:            convertSourcesScope(r.Spec.SourcesScopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
@@ -280,6 +282,13 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		existingRule.Spec.Workloads = nil
 	}
 
+	if input.SourcesScopes != nil {
+		converted := convertSourcesScopeInput(input.SourcesScopes)
+		existingRule.Spec.SourcesScopes = &converted
+	} else {
+		existingRule.Spec.SourcesScopes = nil
+	}
+
 	if input.InstrumentationLibraries != nil {
 		convertedLibraries := make([]v1alpha1.InstrumentationLibraryGlobalId, len(input.InstrumentationLibraries))
 		for i, lib := range input.InstrumentationLibraries {
@@ -334,6 +343,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		Mutable:                  profileName == "",
 		ProfileName:              profileName,
 		Workloads:                convertWorkloads(updatedRule.Spec.Workloads),
+		SourcesScopes:            convertSourcesScope(updatedRule.Spec.SourcesScopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(updatedRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(updatedRule.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(updatedRule.Spec.HeadersCollection),
@@ -374,6 +384,13 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		}
 		workloads = &convertedWorkloads
 	}
+
+	var sourcesScopes *[]k8sconsts.SourcesScope
+	if input.SourcesScopes != nil {
+		convertedScopes := convertSourcesScopeInput(input.SourcesScopes)
+		sourcesScopes = &convertedScopes
+	}
+
 	var instrumentationLibraries *[]v1alpha1.InstrumentationLibraryGlobalId
 	if input.InstrumentationLibraries != nil {
 		convertedLibraries := make([]v1alpha1.InstrumentationLibraryGlobalId, len(input.InstrumentationLibraries))
@@ -397,6 +414,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			Notes:                    notes,
 			Disabled:                 disabled,
 			Workloads:                workloads,
+			SourcesScopes:            sourcesScopes,
 			InstrumentationLibraries: instrumentationLibraries,
 			CodeAttributes:           getCodeAttributesInput(input),
 			HeadersCollection:        getHeadersCollectionInput(input),
@@ -421,6 +439,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		Mutable:                  true, // New rules are always mutable
 		ProfileName:              "",   // New rules are not associated with a profile
 		Workloads:                convertWorkloads(createdRule.Spec.Workloads),
+		SourcesScopes:            convertSourcesScope(createdRule.Spec.SourcesScopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(createdRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(createdRule.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(createdRule.Spec.HeadersCollection),
@@ -452,6 +471,44 @@ func convertWorkloads(workloads *[]k8sconsts.PodWorkload) []*model.PodWorkload {
 		}
 	}
 	return gqlWorkloads
+}
+
+// Converts GraphQL InstrumentationRuleSourcesScopeInput list to the CRD []k8sconsts.SourcesScope for spec.sourcesScopes
+func convertSourcesScopeInput(scopes []*model.InstrumentationRuleSourcesScopeInput) []k8sconsts.SourcesScope {
+	var result []k8sconsts.SourcesScope
+	for _, scope := range scopes {
+		if scope == nil {
+			continue
+		}
+		result = append(result, k8sconsts.SourcesScope{
+			WorkloadName:      DerefString(scope.WorkloadName),
+			WorkloadKind:      DerefK8sResourceKind(scope.WorkloadKind),
+			WorkloadNamespace: DerefString(scope.WorkloadNamespace),
+			ContainerName:     DerefString(scope.ContainerName),
+			WorkloadLanguage:  DerefSamplingWorkloadLanguage(scope.WorkloadLanguage),
+		})
+	}
+	return result
+}
+
+// Converts spec.sourcesScopes ([]k8sconsts.SourcesScope) to GraphQL InstrumentationRuleSourcesScope list
+func convertSourcesScope(sourcesScope *[]k8sconsts.SourcesScope) []*model.InstrumentationRuleSourcesScope {
+	var gqlSourcesScope []*model.InstrumentationRuleSourcesScope
+	if sourcesScope != nil {
+		for _, s := range *sourcesScope {
+			scope := s
+			kind := model.K8sResourceKind(scope.WorkloadKind)
+			lang := model.SamplingWorkloadLanguage(scope.WorkloadLanguage)
+			gqlSourcesScope = append(gqlSourcesScope, &model.InstrumentationRuleSourcesScope{
+				WorkloadName:      &scope.WorkloadName,
+				WorkloadKind:      &kind,
+				WorkloadNamespace: &scope.WorkloadNamespace,
+				ContainerName:     &scope.ContainerName,
+				WorkloadLanguage:  &lang,
+			})
+		}
+	}
+	return gqlSourcesScope
 }
 
 // Converts InstrumentationLibraries to GraphQL-compatible format

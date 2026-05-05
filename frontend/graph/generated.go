@@ -592,8 +592,17 @@ type ComplexityRoot struct {
 		ProfileName              func(childComplexity int) int
 		RuleID                   func(childComplexity int) int
 		RuleName                 func(childComplexity int) int
+		SourcesScopes            func(childComplexity int) int
 		Type                     func(childComplexity int) int
 		Workloads                func(childComplexity int) int
+	}
+
+	InstrumentationRuleSourcesScope struct {
+		ContainerName     func(childComplexity int) int
+		WorkloadKind      func(childComplexity int) int
+		WorkloadLanguage  func(childComplexity int) int
+		WorkloadName      func(childComplexity int) int
+		WorkloadNamespace func(childComplexity int) int
 	}
 
 	InstrumentationSourcesAnalyze struct {
@@ -4030,6 +4039,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationRule.RuleName(childComplexity), true
 
+	case "InstrumentationRule.sourcesScopes":
+		if e.complexity.InstrumentationRule.SourcesScopes == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.SourcesScopes(childComplexity), true
+
 	case "InstrumentationRule.type":
 		if e.complexity.InstrumentationRule.Type == nil {
 			break
@@ -4043,6 +4059,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationRule.Workloads(childComplexity), true
+
+	case "InstrumentationRuleSourcesScope.containerName":
+		if e.complexity.InstrumentationRuleSourcesScope.ContainerName == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRuleSourcesScope.ContainerName(childComplexity), true
+
+	case "InstrumentationRuleSourcesScope.workloadKind":
+		if e.complexity.InstrumentationRuleSourcesScope.WorkloadKind == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRuleSourcesScope.WorkloadKind(childComplexity), true
+
+	case "InstrumentationRuleSourcesScope.workloadLanguage":
+		if e.complexity.InstrumentationRuleSourcesScope.WorkloadLanguage == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRuleSourcesScope.WorkloadLanguage(childComplexity), true
+
+	case "InstrumentationRuleSourcesScope.workloadName":
+		if e.complexity.InstrumentationRuleSourcesScope.WorkloadName == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRuleSourcesScope.WorkloadName(childComplexity), true
+
+	case "InstrumentationRuleSourcesScope.workloadNamespace":
+		if e.complexity.InstrumentationRuleSourcesScope.WorkloadNamespace == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRuleSourcesScope.WorkloadNamespace(childComplexity), true
 
 	case "InstrumentationSourcesAnalyze.instrumented":
 		if e.complexity.InstrumentationSourcesAnalyze.Instrumented == nil {
@@ -7544,6 +7595,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputHttpRouteFilterInput,
 		ec.unmarshalInputInstrumentationLibraryGlobalIdInput,
 		ec.unmarshalInputInstrumentationRuleInput,
+		ec.unmarshalInputInstrumentationRuleSourcesScopeInput,
 		ec.unmarshalInputJavaCustomProbeInput,
 		ec.unmarshalInputJsonConditionInput,
 		ec.unmarshalInputK8sAnnotationAttributeInput,
@@ -15609,6 +15661,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "workloads":
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
+			case "sourcesScopes":
+				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
 			case "conditions":
@@ -25765,6 +25819,59 @@ func (ec *executionContext) fieldContext_InstrumentationRule_workloads(_ context
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationRule_sourcesScopes(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SourcesScopes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InstrumentationRuleSourcesScope)
+	fc.Result = res
+	return ec.marshalOInstrumentationRuleSourcesScope2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleSourcesScopeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_sourcesScopes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "workloadName":
+				return ec.fieldContext_InstrumentationRuleSourcesScope_workloadName(ctx, field)
+			case "workloadKind":
+				return ec.fieldContext_InstrumentationRuleSourcesScope_workloadKind(ctx, field)
+			case "workloadNamespace":
+				return ec.fieldContext_InstrumentationRuleSourcesScope_workloadNamespace(ctx, field)
+			case "containerName":
+				return ec.fieldContext_InstrumentationRuleSourcesScope_containerName(ctx, field)
+			case "workloadLanguage":
+				return ec.fieldContext_InstrumentationRuleSourcesScope_workloadLanguage(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRuleSourcesScope", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationRule_instrumentationLibraries(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
 	if err != nil {
@@ -26058,6 +26165,211 @@ func (ec *executionContext) fieldContext_InstrumentationRule_customInstrumentati
 				return ec.fieldContext_CustomInstrumentations_java(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CustomInstrumentations", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRuleSourcesScope_workloadName(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRuleSourcesScope) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRuleSourcesScope_workloadName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkloadName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRuleSourcesScope_workloadName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRuleSourcesScope",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRuleSourcesScope_workloadKind(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRuleSourcesScope) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRuleSourcesScope_workloadKind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkloadKind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sResourceKind)
+	fc.Result = res
+	return ec.marshalOK8sResourceKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRuleSourcesScope_workloadKind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRuleSourcesScope",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type K8sResourceKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRuleSourcesScope_workloadNamespace(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRuleSourcesScope) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRuleSourcesScope_workloadNamespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkloadNamespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRuleSourcesScope_workloadNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRuleSourcesScope",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRuleSourcesScope_containerName(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRuleSourcesScope) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRuleSourcesScope_containerName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContainerName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRuleSourcesScope_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRuleSourcesScope",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRuleSourcesScope_workloadLanguage(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRuleSourcesScope) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRuleSourcesScope_workloadLanguage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkloadLanguage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.SamplingWorkloadLanguage)
+	fc.Result = res
+	return ec.marshalOSamplingWorkloadLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRuleSourcesScope_workloadLanguage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRuleSourcesScope",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type SamplingWorkloadLanguage does not have child fields")
 		},
 	}
 	return fc, nil
@@ -35373,6 +35685,8 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "workloads":
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
+			case "sourcesScopes":
+				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
 			case "conditions":
@@ -35458,6 +35772,8 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
 			case "workloads":
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
+			case "sourcesScopes":
+				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
 			case "conditions":
@@ -51806,7 +52122,7 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "instrumentationLibraries", "codeAttributes", "headersCollection", "payloadCollection", "customInstrumentations"}
+	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "sourcesScopes", "instrumentationLibraries", "codeAttributes", "headersCollection", "payloadCollection", "customInstrumentations"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -51841,6 +52157,13 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 				return it, err
 			}
 			it.Workloads = data
+		case "sourcesScopes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourcesScopes"))
+			data, err := ec.unmarshalOInstrumentationRuleSourcesScopeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleSourcesScopeInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourcesScopes = data
 		case "instrumentationLibraries":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("instrumentationLibraries"))
 			data, err := ec.unmarshalOInstrumentationLibraryGlobalIdInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationLibraryGlobalIDInputᚄ(ctx, v)
@@ -51876,6 +52199,61 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 				return it, err
 			}
 			it.CustomInstrumentations = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputInstrumentationRuleSourcesScopeInput(ctx context.Context, obj any) (model.InstrumentationRuleSourcesScopeInput, error) {
+	var it model.InstrumentationRuleSourcesScopeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"workloadName", "workloadKind", "workloadNamespace", "containerName", "workloadLanguage"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "workloadName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WorkloadName = data
+		case "workloadKind":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadKind"))
+			data, err := ec.unmarshalOK8sResourceKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WorkloadKind = data
+		case "workloadNamespace":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadNamespace"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WorkloadNamespace = data
+		case "containerName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("containerName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ContainerName = data
+		case "workloadLanguage":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadLanguage"))
+			data, err := ec.unmarshalOSamplingWorkloadLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WorkloadLanguage = data
 		}
 	}
 
@@ -57187,6 +57565,8 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			}
 		case "workloads":
 			out.Values[i] = ec._InstrumentationRule_workloads(ctx, field, obj)
+		case "sourcesScopes":
+			out.Values[i] = ec._InstrumentationRule_sourcesScopes(ctx, field, obj)
 		case "instrumentationLibraries":
 			out.Values[i] = ec._InstrumentationRule_instrumentationLibraries(ctx, field, obj)
 		case "conditions":
@@ -57199,6 +57579,50 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._InstrumentationRule_payloadCollection(ctx, field, obj)
 		case "customInstrumentations":
 			out.Values[i] = ec._InstrumentationRule_customInstrumentations(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var instrumentationRuleSourcesScopeImplementors = []string{"InstrumentationRuleSourcesScope"}
+
+func (ec *executionContext) _InstrumentationRuleSourcesScope(ctx context.Context, sel ast.SelectionSet, obj *model.InstrumentationRuleSourcesScope) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, instrumentationRuleSourcesScopeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InstrumentationRuleSourcesScope")
+		case "workloadName":
+			out.Values[i] = ec._InstrumentationRuleSourcesScope_workloadName(ctx, field, obj)
+		case "workloadKind":
+			out.Values[i] = ec._InstrumentationRuleSourcesScope_workloadKind(ctx, field, obj)
+		case "workloadNamespace":
+			out.Values[i] = ec._InstrumentationRuleSourcesScope_workloadNamespace(ctx, field, obj)
+		case "containerName":
+			out.Values[i] = ec._InstrumentationRuleSourcesScope_containerName(ctx, field, obj)
+		case "workloadLanguage":
+			out.Values[i] = ec._InstrumentationRuleSourcesScope_workloadLanguage(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -66129,6 +66553,21 @@ func (ec *executionContext) unmarshalNInstrumentationRuleInput2githubᚗcomᚋod
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNInstrumentationRuleSourcesScope2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleSourcesScope(ctx context.Context, sel ast.SelectionSet, v *model.InstrumentationRuleSourcesScope) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InstrumentationRuleSourcesScope(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInstrumentationRuleSourcesScopeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleSourcesScopeInput(ctx context.Context, v any) (*model.InstrumentationRuleSourcesScopeInput, error) {
+	res, err := ec.unmarshalInputInstrumentationRuleSourcesScopeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNInstrumentationRuleType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleType(ctx context.Context, v any) (model.InstrumentationRuleType, error) {
 	var res model.InstrumentationRuleType
 	err := res.UnmarshalGQL(v)
@@ -69099,6 +69538,71 @@ func (ec *executionContext) unmarshalOInstrumentationLibraryGlobalIdInput2ᚕᚖ
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNInstrumentationLibraryGlobalIdInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationLibraryGlobalIDInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOInstrumentationRuleSourcesScope2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleSourcesScopeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InstrumentationRuleSourcesScope) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInstrumentationRuleSourcesScope2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleSourcesScope(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOInstrumentationRuleSourcesScopeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleSourcesScopeInputᚄ(ctx context.Context, v any) ([]*model.InstrumentationRuleSourcesScopeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.InstrumentationRuleSourcesScopeInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInstrumentationRuleSourcesScopeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleSourcesScopeInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}

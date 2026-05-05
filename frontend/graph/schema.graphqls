@@ -151,6 +151,23 @@ input K8sSourceId {
   name: String!
 }
 
+# Mirrors k8sconsts.SourcesScope for InstrumentationRule only (sampling uses SourcesScope in sampling.graphqls).
+type InstrumentationRuleSourcesScope {
+  workloadName: String
+  workloadKind: K8sResourceKind
+  workloadNamespace: String
+  containerName: String
+  workloadLanguage: SamplingWorkloadLanguage
+}
+
+input InstrumentationRuleSourcesScopeInput {
+  workloadName: String
+  workloadKind: K8sResourceKind
+  workloadNamespace: String
+  containerName: String
+  workloadLanguage: SamplingWorkloadLanguage
+}
+
 type InstrumentationRule {
   type: InstrumentationRuleType!
   ruleId: ID!
@@ -160,6 +177,7 @@ type InstrumentationRule {
   mutable: Boolean!
   profileName: String!
   workloads: [PodWorkload!]
+  sourcesScopes: [InstrumentationRuleSourcesScope!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
   conditions: [Condition!]
   codeAttributes: CodeAttributes
@@ -173,6 +191,7 @@ input InstrumentationRuleInput {
   notes: String
   disabled: Boolean
   workloads: [PodWorkloadInput!]
+  sourcesScopes: [InstrumentationRuleSourcesScopeInput!]
   instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
   codeAttributes: CodeAttributesInput
   headersCollection: HeadersCollectionInput
