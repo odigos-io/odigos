@@ -99,18 +99,28 @@ func isEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
 	return false
 }
 
-func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, sources *odigosv1.InstrumentationConfigList) config.Config {
+type LogsConfigOptions struct {
+	CommonSignalConfig
+	Sources *odigosv1.InstrumentationConfigList
+}
 
-	pipelineProcessors := append([]string{
+func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, opts LogsConfigOptions) config.Config {
+
+	pipelineProcessors := []string{
 		memoryLimiterProcessorName,
 		nodeNameProcessorName,
-		resourceDetectionProcessorName,
+	}
+	if opts.ResourceDetectionEnabled {
+		pipelineProcessors = append(pipelineProcessors, resourceDetectionProcessorName)
+	}
+	pipelineProcessors = append(pipelineProcessors,
 		odigosLogsResourceAttrsProcessorName,
-	}, manifestProcessorNames...)
+	)
+	pipelineProcessors = append(pipelineProcessors, opts.ManifestProcessorNames...)
 	// append odigos traffic metrics processor last (after manifest processors)
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
 
-	receivers, pipelineReceivers := getReceivers(logger, sources, odigosNamespace)
+	receivers, pipelineReceivers := getReceivers(logger, opts.Sources, opts.OdigosNamespace)
 
 	return config.Config{
 		Receivers: receivers,

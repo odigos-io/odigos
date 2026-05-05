@@ -15,6 +15,19 @@ const (
 	OTLPInReceiverName = "otlp/in"
 )
 
+// CommonSignalConfig holds configuration fields shared across all signal pipelines (traces, metrics, logs).
+type CommonSignalConfig struct {
+	OdigosNamespace          string
+	ManifestProcessorNames   []string
+	ResourceDetectionEnabled bool
+}
+
+// WithProcessors returns a copy of the config with the given manifest processor names set.
+func (c CommonSignalConfig) WithProcessors(names []string) CommonSignalConfig {
+	c.ManifestProcessorNames = names
+	return c
+}
+
 const (
 	healthCheckExtensionName            = "health_check"
 	odigosEbpfReceiverName              = "odigosebpf"
@@ -31,6 +44,10 @@ const (
 
 func isDetectorEnabled(cfg *common.ResourceDetectorConfig) bool {
 	return cfg != nil && cfg.Enabled != nil && *cfg.Enabled
+}
+
+func ResourceDetectionEnabled(cfg *common.ResourceDetectorsConfiguration, runningOnGKE bool) bool {
+	return len(buildResourceDetectors(cfg, runningOnGKE)) > 0
 }
 
 func buildResourceDetectors(cfg *common.ResourceDetectorsConfiguration, runningOnGKE bool) []string {

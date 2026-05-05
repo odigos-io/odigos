@@ -218,6 +218,11 @@ func calculateCollectorConfigDomains(
 
 	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace)
 
+	commonSignalConfig := collectorconfig.CommonSignalConfig{
+		OdigosNamespace:          odigosNamespace,
+		ResourceDetectionEnabled: collectorconfig.ResourceDetectionEnabled(nodeCG.Spec.ResourceDetectors, onGKE),
+	}
+
 	// metrics
 	metricsEnabled := slices.Contains(clusterCollectorSignals, odigoscommon.MetricsObservabilitySignal)
 	metricsConfigSettings := nodeCG.Spec.Metrics
@@ -236,7 +241,10 @@ func calculateCollectorConfigDomains(
 			configDomains["span_metrics"] = spanMetricsConfig
 		}
 
-		metricsConfig := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, processorsResults.MetricsProcessors, metricsConfigSettings)
+		metricsConfig := collectorconfig.MetricsConfig(nodeCG, collectorconfig.MetricsConfigOptions{
+			CommonSignalConfig:    commonSignalConfig.WithProcessors(processorsResults.MetricsProcessors),
+			MetricsConfigSettings: metricsConfigSettings,
+		})
 		configDomains["metrics"] = metricsConfig
 	}
 
@@ -255,14 +263,23 @@ func calculateCollectorConfigDomains(
 	// - cluster collector has traces enabled (trace destination is enabled)
 	// - there are additional trace exporters (e.g. spanmetrics connector)
 	if tracesEnabledInClusterCollector || len(additionalTraceExporters) > 0 {
-		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, processorsResults.TracesProcessors, processorsResults.TracesProcessorsPostSpanMetrics, additionalTraceExporters, tracesEnabledInClusterCollector, loadBalancingNeeded)
+		tracesConfig := collectorconfig.TracesConfig(nodeCG, collectorconfig.TracesConfigOptions{
+			CommonSignalConfig:              commonSignalConfig.WithProcessors(processorsResults.TracesProcessors),
+			PostSpanMetricsProcessorNames:   processorsResults.TracesProcessorsPostSpanMetrics,
+			AdditionalTraceExporters:        additionalTraceExporters,
+			TracesEnabledInClusterCollector: tracesEnabledInClusterCollector,
+			LoadBalancingNeeded:             loadBalancingNeeded,
+		})
 		configDomains["traces"] = tracesConfig
 	}
 
 	// logs
 	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
-		logsConfig := collectorconfig.LogsConfig(logger.Logr(), nodeCG, odigosNamespace, processorsResults.LogsProcessors, sources)
+		logsConfig := collectorconfig.LogsConfig(logger.Logr(), nodeCG, collectorconfig.LogsConfigOptions{
+			CommonSignalConfig: commonSignalConfig.WithProcessors(processorsResults.LogsProcessors),
+			Sources:            sources,
+		})
 		configDomains["logs"] = logsConfig
 	}
 
