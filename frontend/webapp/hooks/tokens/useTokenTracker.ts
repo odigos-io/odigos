@@ -21,7 +21,7 @@ export const useTokenTracker = () => {
       if (isOverTime(expiresAt)) {
         const notif = {
           type: StatusType.Error,
-          message: message || `The token has expired ${formatTimeAgo(expiresAt)}.`,
+          message: message || 'The token has expired',
         };
 
         addNotification(notif);
