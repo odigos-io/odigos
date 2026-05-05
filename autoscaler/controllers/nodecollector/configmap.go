@@ -216,12 +216,14 @@ func calculateCollectorConfigDomains(
 		configDomains["odigos_config_extension"] = collectorconfig.NodeOdigosExtDomain()
 	}
 
-	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace)
+	// resource detectors [ec2, eks, azure, aks, gcp] built once.
+	detectors := collectorconfig.BuildResourceDetectors(nodeCG.Spec.ResourceDetectors, onGKE)
+	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace, detectors)
 
 	commonSignalConfig := collectorconfig.CommonSignalConfig{
 		Logger:                   logger.Logr(),
 		OdigosNamespace:          odigosNamespace,
-		ResourceDetectionEnabled: collectorconfig.ResourceDetectionEnabled(nodeCG.Spec.ResourceDetectors, onGKE),
+		ResourceDetectionEnabled: collectorconfig.ResourceDetectionEnabled(detectors),
 	}
 
 	// metrics

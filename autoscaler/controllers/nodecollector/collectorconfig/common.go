@@ -48,11 +48,11 @@ func isDetectorEnabled(cfg *common.ResourceDetectorConfig) bool {
 	return cfg != nil && cfg.Enabled != nil && *cfg.Enabled
 }
 
-func ResourceDetectionEnabled(cfg *common.ResourceDetectorsConfiguration, runningOnGKE bool) bool {
-	return len(buildResourceDetectors(cfg, runningOnGKE)) > 0
+func ResourceDetectionEnabled(detectors []string) bool {
+	return len(detectors) > 0
 }
 
-func buildResourceDetectors(cfg *common.ResourceDetectorsConfiguration, runningOnGKE bool) []string {
+func BuildResourceDetectors(cfg *common.ResourceDetectorsConfiguration, runningOnGKE bool) []string {
 	if cfg == nil {
 		return nil
 	}
@@ -85,7 +85,7 @@ func buildResourceDetectors(cfg *common.ResourceDetectorsConfiguration, runningO
 	return detectors
 }
 
-func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.GenericMap {
+func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool, detectors []string) config.GenericMap {
 
 	allProcessors := config.GenericMap{}
 	for k, v := range staticProcessors {
@@ -95,8 +95,7 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 	memoryLimiterConfig := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
 	allProcessors[memoryLimiterProcessorName] = memoryLimiterConfig
 
-	detectors := buildResourceDetectors(nodeCG.Spec.ResourceDetectors, runningOnGKE)
-	if len(detectors) > 0 {
+	if ResourceDetectionEnabled(detectors) {
 		allProcessors[resourceDetectionProcessorName] = config.GenericMap{
 			"detectors": detectors,
 			"timeout":   "2s",
@@ -206,11 +205,11 @@ func init() {
 	}
 }
 
-func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string) config.Config {
+func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string, detectors []string) config.Config {
 	return config.Config{
 		Receivers:  commonReceivers,
 		Exporters:  getCommonExporters(nodeCG.Spec.OtlpExporterConfiguration, odigosNamespace),
-		Processors: commonProcessors(nodeCG, onGKE),
+		Processors: commonProcessors(nodeCG, onGKE, detectors),
 	}
 }
 
