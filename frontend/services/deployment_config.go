@@ -125,7 +125,11 @@ func isCentralProxyRunning(ctx context.Context) (bool, error) {
 }
 
 func getInstallationStatus(ctx context.Context, deploymentData map[string]string) model.InstallationStatus {
-	if status := deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationStatusKey]; status != "" {
+	// Finished is a terminal state - once reached, it stays finished even if
+	// sources/destinations are later removed. Only short-circuit on Finished
+	// so that a "NEW" cluster is re-evaluated against live cluster state on
+	// every call (otherwise we'd cache "NEW" forever after the first request).
+	if status := deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationStatusKey]; status == string(Finished) {
 		return model.InstallationStatus(status)
 	}
 
@@ -134,8 +138,10 @@ func getInstallationStatus(ctx context.Context, deploymentData map[string]string
 		computed = string(Finished)
 	}
 
-	if err := persistInstallationStatus(ctx, computed); err != nil {
-		log.Printf("Error persisting installation status: %v\n", err)
+	if computed == string(Finished) {
+		if err := persistInstallationStatus(ctx, computed); err != nil {
+			log.Printf("Error persisting installation status: %v\n", err)
+		}
 	}
 	return model.InstallationStatus(computed)
 }

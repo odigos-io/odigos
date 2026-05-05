@@ -24,4 +24,4 @@ licenses: go-licenses
 	@if [ -d "$(PWD)/licenses" ]; then \
 		rm -rf $(PWD)/licenses; \
 	fi
-	$(TOOLS)/go-licenses save . --save_path=licenses --ignore=modernc.org/mathutil
+	$(TOOLS)/go-licenses save . --save_path=licenses --ignore=modernc.org/mathutil,github.com/grafana/pyroscope/pkg

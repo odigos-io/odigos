@@ -109,6 +109,10 @@ jobs:
             env:
               ODIGOS_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || steps.extract_tag.outputs.tag}}
             with:
+              # Use the checked-out files (at inputs.tag) instead of build-push-action's
+              # default Git context, which would otherwise build from the workflow's
+              # triggering ref (e.g. main) and ignore the actions/checkout above.
+              context: .
               push: true
               provenance: false
               tags: |
