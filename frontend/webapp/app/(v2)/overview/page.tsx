@@ -5,6 +5,7 @@ import { HEADER_HEIGHT, MENU_BAR_HEIGHT } from '@/utils';
 import { Overview } from '@odigos/ui-kit/containers/v2';
 import {
   useActionCRUD,
+  useDataStreamsCRUD,
   useDescribe,
   useDestinationCRUD,
   useDestinationCategories,
@@ -30,6 +31,7 @@ export default function Page() {
   const { fetchNamespacesWithWorkloads } = useNamespace();
   const { getDestinationCategories } = useDestinationCategories();
   const { getPotentialDestinations } = usePotentialDestinations();
+  const { updateDataStream, deleteDataStream } = useDataStreamsCRUD();
   const { createActionV2, updateAction, deleteAction } = useActionCRUD();
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
   const { fetchProfilingSlots, enableProfiling, fetchSourceProfiling } = useProfiling();
@@ -46,6 +48,8 @@ export default function Page() {
       refetchDestinations={fetchDestinations}
       refetchActions={fetchActions}
       refetchInstrumentationRules={fetchInstrumentationRules}
+      updateDataStream={updateDataStream}
+      deleteDataStream={deleteDataStream}
       fetchNamespacesWithWorkloads={fetchNamespacesWithWorkloads}
       persistSources={persistSourcesV2}
       restartWorkloads={restartWorkloads}
