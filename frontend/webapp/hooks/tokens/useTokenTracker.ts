@@ -17,11 +17,11 @@ export const useTokenTracker = () => {
   const { setStatusStore, resetStatusStore } = useStatusStore();
 
   useEffect(() => {
-    tokens.forEach(({ expiresAt }) => {
+    tokens.forEach(({ expiresAt, message }) => {
       if (isOverTime(expiresAt)) {
         const notif = {
           type: StatusType.Error,
-          message: `The token has expired ${formatTimeAgo(expiresAt)}.`,
+          message: message || `The token has expired ${formatTimeAgo(expiresAt)}.`,
         };
 
         addNotification(notif);
