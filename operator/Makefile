@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 1.22.2
+VERSION ?= 1.24.2
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -62,6 +62,7 @@ ENTERPRISE_INSTRUMENTOR_IMG ?= $(ORG)/odigos-enterprise-instrumentor-certified:v
 ODIGLET_IMG ?= $(ORG)/odigos-odiglet-certified:v$(VERSION)
 ENTERPRISE_ODIGLET_IMG ?= $(ORG)/odigos-enterprise-odiglet-certified:v$(VERSION)
 SCHEDULER_IMG ?= $(ORG)/odigos-scheduler-certified:v$(VERSION)
+CLI_IMG ?= $(ORG)/odigos-cli-certified:v$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.31.0
 
@@ -291,6 +292,7 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 	cd config/manager && $(KUSTOMIZE) edit set image odiglet=$(ODIGLET_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set image enterprise-odiglet=$(ENTERPRISE_ODIGLET_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set image scheduler=$(SCHEDULER_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image cli=$(CLI_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set configmap odigos-version --from-literal=ODIGOS_VERSION=$(VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 	$(OPERATOR_SDK) bundle validate ./bundle
