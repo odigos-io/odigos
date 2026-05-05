@@ -1,7 +1,7 @@
 import { ROUTES } from '../constants';
 import { aliasQuery, awaitToast, handleExceptions, hasOperationName, visitPage, waitForGraphqlOperation } from '../functions';
 
-const mockTokenQuery = (expiresAt: number) => {
+const mockTokenQuery = (expiresAt: number, message?: string) => {
   cy.intercept('/graphql', (req) => {
     if (hasOperationName(req, 'GetTokens')) {
       aliasQuery(req, 'GetTokens');
@@ -16,6 +16,7 @@ const mockTokenQuery = (expiresAt: number) => {
                 token: 'j.w.t',
                 issuedAt: 0,
                 expiresAt,
+                message: message ?? null,
               },
             ],
           },
@@ -52,13 +53,14 @@ describe('Token Tracker', () => {
   });
 
   it('Should track an "expired" token, and show an error notification', () => {
+    const expiredMessage = 'Token has expired 24h0m0s ago, contact Odigos support to issue a new one';
     // 24 hours ago
-    mockTokenQuery(new Date().getTime() - 1000 * 60 * 60 * 24);
+    mockTokenQuery(new Date().getTime() - 1000 * 60 * 60 * 24, expiredMessage);
 
     visitPage(ROUTES.OVERVIEW, () => {
       waitForGraphqlOperation('GetTokens').then(() => {
-        awaitToast({ message: 'The token has expired 1 day ago.' });
-        cy.get('[data-id=token-status]').should('contain.text', 'The token has expired 1 day ago.');
+        awaitToast({ message: expiredMessage });
+        cy.get('[data-id=token-status]').should('contain.text', expiredMessage);
         cy.get('[data-id=system-drawer]').children().first().click(); // testing that the UI does not crash
       });
     });
