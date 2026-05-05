@@ -65,34 +65,38 @@ func calculateTracesConfig(
 
 	// Sampling
 	noisyOps, relevantOps, costRules := traces.CalculateSamplingCategoryRulesForContainer(samplingRules, runtimeDetails.Language, pw, containerName, d, workloadObj, effectiveConfig)
-	// if we have any noisy operations, we need to add them to the traces config.
-	// use head/tail sampling based on the distro support.
-	if len(noisyOps) > 0 {
-		if traces.DistroSupportsHeadSampling(d) {
-			dryRun := false
-			spanMetricsMode := commonapisampling.SpanMetricsModeSampledSpansOnly
-			if effectiveConfig.Sampling != nil && effectiveConfig.Sampling.DryRun != nil {
-				dryRun = *effectiveConfig.Sampling.DryRun
-			}
 
-			spanMetricsEnabled := nodeCollectorsGroup != nil &&
-				nodeCollectorsGroup.Spec.Metrics != nil &&
-				(nodeCollectorsGroup.Spec.Metrics.SpanMetrics == nil ||
-					nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled == nil ||
-					!*nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled)
-			metricsSignalEnabled := nodeCollectorsGroup != nil &&
-				slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal)
-			configuredMode := effectiveConfig.MetricsSources != nil &&
-				effectiveConfig.MetricsSources.SpanMetrics != nil &&
-				effectiveConfig.MetricsSources.SpanMetrics.SpanMetricsMode != nil
-			if spanMetricsEnabled && metricsSignalEnabled && configuredMode {
-				spanMetricsMode = *effectiveConfig.MetricsSources.SpanMetrics.SpanMetricsMode
-			}
+	// use head/tail sampling based on the distro support.
+	// we need to set the span metrics mode even if no noisy operations are present,
+	// since the decision can be made at other service and propagate to this one.
+	distroSupportsHeadSampling := traces.DistroSupportsHeadSampling(d)
+	if distroSupportsHeadSampling {
+
+		spanMetricsMode := metrics.CalculateSpanMetricsMode(effectiveConfig, nodeCollectorsGroup)
+
+		// write the head sampling only if needed, e.g. if there are any noisy operations or non-default configuration.
+		if len(noisyOps) > 0 || spanMetricsMode != commonapisampling.SpanMetricsModeSampledSpansOnly {
+
+			dryRun := metrics.CalculateDryRun(effectiveConfig)
+
 			agentConfig.HeadSampling = &odigosv1.HeadSamplingConfig{
 				DryRun:          dryRun,
 				SpanMetricsMode: spanMetricsMode,
 				NoisyOperations: noisyOps,
 			}
+		}
+	} else if len(noisyOps) > 0 {
+		if collectorConfig == nil {
+			collectorConfig = &commonapi.ContainerCollectorConfig{}
+		}
+		collectorConfig.TailSampling = &commonapisampling.TailSamplingSourceConfig{
+			NoisyOperations: noisyOps,
+		}
+	}
+
+	if len(noisyOps) > 0 {
+		if traces.DistroSupportsHeadSampling(d) {
+
 		} else {
 			if collectorConfig == nil {
 				collectorConfig = &commonapi.ContainerCollectorConfig{}
