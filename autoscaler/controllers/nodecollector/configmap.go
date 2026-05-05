@@ -219,6 +219,7 @@ func calculateCollectorConfigDomains(
 	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace)
 
 	commonSignalConfig := collectorconfig.CommonSignalConfig{
+		Logger:                   logger.Logr(),
 		OdigosNamespace:          odigosNamespace,
 		ResourceDetectionEnabled: collectorconfig.ResourceDetectionEnabled(nodeCG.Spec.ResourceDetectors, onGKE),
 	}
@@ -276,7 +277,7 @@ func calculateCollectorConfigDomains(
 	// logs
 	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
-		logsConfig := collectorconfig.LogsConfig(logger.Logr(), nodeCG, collectorconfig.LogsConfigOptions{
+		logsConfig := collectorconfig.LogsConfig(nodeCG, collectorconfig.LogsConfigOptions{
 			CommonSignalConfig: commonSignalConfig.WithProcessors(processorsResults.LogsProcessors),
 			Sources:            sources,
 		})

@@ -3,6 +3,7 @@ package collectorconfig
 import (
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
@@ -17,6 +18,7 @@ const (
 
 // CommonSignalConfig holds configuration fields shared across all signal pipelines (traces, metrics, logs).
 type CommonSignalConfig struct {
+	Logger                   logr.Logger
 	OdigosNamespace          string
 	ManifestProcessorNames   []string
 	ResourceDetectionEnabled bool

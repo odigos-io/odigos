@@ -104,7 +104,7 @@ type LogsConfigOptions struct {
 	Sources *odigosv1.InstrumentationConfigList
 }
 
-func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, opts LogsConfigOptions) config.Config {
+func LogsConfig(nodeCG *odigosv1.CollectorsGroup, opts LogsConfigOptions) config.Config {
 
 	pipelineProcessors := []string{
 		memoryLimiterProcessorName,
@@ -120,7 +120,7 @@ func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, opts LogsC
 	// append odigos traffic metrics processor last (after manifest processors)
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
 
-	receivers, pipelineReceivers := getReceivers(logger, opts.Sources, opts.OdigosNamespace)
+	receivers, pipelineReceivers := getReceivers(opts.Logger, opts.Sources, opts.OdigosNamespace)
 
 	return config.Config{
 		Receivers: receivers,
