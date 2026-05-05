@@ -47,14 +47,12 @@ func (w *WaitForLangDetection) checkLanguageDetected(ctx context.Context, obj me
 		// Check status conditions
 		if status := meta.FindStatusCondition(ic.Status.Conditions, odigosv1.RuntimeDetectionStatusConditionType); status != nil {
 			if status.Reason == string(odigosv1.RuntimeDetectionReasonDetectedSuccessfully) && status.Status == metav1.ConditionTrue {
-				// Condition indicates success, now verify SdkConfigs
-				if ic.Spec.SdkConfigs == nil || len(ic.Spec.SdkConfigs) == 0 {
+				if len(ic.Spec.Containers) == 0 {
 					return false, nil
 				}
 
-				// Check if at least one valid language was detected
-				for _, sdkConfig := range ic.Spec.SdkConfigs {
-					if sdkConfig.Language != common.UnknownProgrammingLanguage {
+				for _, container := range ic.Spec.Containers {
+					if container.AgentEnabled {
 						return true, nil
 					}
 				}
