@@ -16,7 +16,7 @@ import (
 // if err is returned, the reconciliation should be retried.
 // the function can return without error, but some of the resources might be nil.
 // this indicates that they were not found, but it is valid.
-func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (
+func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig) (
 	*odigosv1.CollectorsGroup,
 	*odigosv1.CollectorsGroup,
 	*[]odigosv1.InstrumentationRule,
@@ -47,7 +47,7 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 		return nil, nil, nil, nil, nil, nil, err
 	}
 
-	irls, err := getRelevantInstrumentationRules(ctx, c, pw)
+	irls, err := getRelevantInstrumentationRules(ctx, c, pw, ic)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
@@ -106,7 +106,7 @@ func getCollectorsGroup(ctx context.Context, c client.Client, name string) (*odi
 	return &cg, nil
 }
 
-func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (*[]odigosv1.InstrumentationRule, error) {
+func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig) (*[]odigosv1.InstrumentationRule, error) {
 	relevantIr := []odigosv1.InstrumentationRule{}
 	irList := odigosv1.InstrumentationRuleList{}
 	err := c.List(ctx, &irList)
@@ -117,12 +117,7 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 	for i := range irList.Items {
 		ir := &irList.Items[i]
 
-		// ignore disabled rules
-		if ir.Spec.Disabled {
-			continue
-		}
-
-		if !utils.IsWorkloadParticipatingInRule(pw, ir) {
+		if !utils.IsInstrumentationConfigParticipatingInRule(pw, ic, ir) {
 			continue
 		}
 
