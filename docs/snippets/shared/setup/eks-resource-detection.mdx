@@ -1,0 +1,234 @@
+## Overview
+
+Odigos deploys a **node collector** DaemonSet on every node.
+This collector includes a `resourcedetection` processor that automatically enriches all telemetry (traces, metrics, logs) with cloud infrastructure attributes — such as `cloud.region`, `cloud.account.id`, `k8s.cluster.name`, and `host.id`.
+
+On AWS, this processor runs the **EC2** and **EKS** detectors. To populate these attributes, the detectors call either the [AWS Instance Metadata Service (IMDS)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html) or the EC2 API as a fallback.
+
+---
+
+## Breaking Change in Odigos v1.24
+
+<Warning>
+If you run Odigos on EKS and your node groups have **IMDS hop limit = 1** (the default for clusters created via the AWS console or managed node groups without a custom launch template), [srs][review][1]{upgrading to **Odigos v1.24** may cause your node collector pods to fail on startup.} {since we set helm EKS false by default, this should work right? just EKS detectors are disabled by defaiult}
+
+This can stall an in-progress EKS cluster version upgrade, because EKS waits for DaemonSet pods to become healthy before marking a managed node group update as complete.
+</Warning>
+
+### What changed
+
+Odigos v1.24 ships with **OpenTelemetry Collector v0.148.0**, which includes an upstream fix to the EKS detector ([`4ba6df2002`](https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/45885). The old detector identified EKS by checking whether `gitVersion` contained the `-eks-` suffix. Starting with EKS platform version **eks.3 on Kubernetes 1.35**, AWS removed this suffix, so the old detector silently skipped all enrichment on those clusters.
+
+The new detector adds reliable fallbacks (IRSA env vars, OIDC issuer check), meaning it now **correctly identifies all EKS clusters** — including 1.35+.
+
+The unintended consequence: the detector now actively attempts API calls on every EKS cluster, where before it silently skipped on EKS 1.35+.
+
+### Version impact summary
+
+| Odigos version | Collector version | EKS detector behavior | Impact on hop-limit=1 clusters |
+|---|---|---|---|
+| **≤ v1.22** | ≤ 0.130.0 | Always enabled; old `isEKS()` (checks `-eks-` suffix) | Silent failure on EKS 1.35+ (no attributes enriched, no crash) |
+| **v1.23** | 0.141.0 | Always enabled; old `isEKS()` | Silent failure on EKS 1.35+ (no attributes enriched, no crash) |
+| **v1.24** | 0.148.0 | Always enabled; **new `isEKS()`** works on all EKS versions | **⚠ Collector startup can fail** — detector correctly identifies EKS, tries IMDS (unreachable), falls back to `ec2:DescribeInstances` (unauthorized). Can stall EKS node group upgrades. |
+| **≥ v1.25** | 0.148.0+ | EKS detector **disabled by default** | No impact unless you explicitly re-enable it |
+
+---
+
+## How the detector works (two paths)
+
+When the EKS detector confirms it is running on EKS, it chooses one of two paths:
+
+**Path A — IMDS accessible** (requires hop limit ≥ 2)
+
+The detector calls `169.254.169.254` directly to retrieve instance metadata. No IAM permissions are needed. Attributes populated: `cloud.region`, `cloud.availability_zone`, `host.id`, `host.image.id`, `host.type`, `host.name`.
+
+**Path B — IMDS not accessible** (hop limit = 1, EKS Auto Mode, Fargate)
+
+The detector falls back to the Kubernetes and EC2 APIs:
+1. Calls `CoreV1().Nodes().Get(nodeName)` — reads `spec.providerID` to extract region and instance ID.
+2. Calls `ec2:DescribeInstances` — retrieves account ID, image ID, instance type, and cluster name from EC2 tags.
+
+Without the required permissions, Path B fails with authorization errors. The collector logs these errors and the `resourcedetection` processor may prevent the collector from passing its health check, depending on error-handling behavior.
+
+### How to check your IMDS hop limit
+
+```bash
+# Find the launch template for your node group
+aws eks describe-nodegroup \
+  --cluster-name <CLUSTER_NAME> \
+  --nodegroup-name <NODEGROUP_NAME> \
+  --query 'nodegroup.launchTemplate'
+
+# Check the hop limit
+aws ec2 describe-launch-template-versions \
+  --launch-template-id <LAUNCH_TEMPLATE_ID> \
+  --query 'LaunchTemplateVersions[].LaunchTemplateData.MetadataOptions'
+```
+
+If `HttpPutResponseHopLimit` is `1`, containers on that node group cannot reach IMDS.
+
+If your node group does **not** use a custom launch template, the hop limit is `1` by default.
+
+---
+
+## Resolution options
+
+### Option 1 — Upgrade to v1.25 (recommended)
+
+Odigos v1.25 disables the EKS detector by default (CORE-966). No configuration changes are needed. This eliminates the issue entirely for clusters where you do not need cloud-level resource attributes from EKS.
+
+If you are stuck on v1.24 and need to unblock a node group upgrade immediately, you can disable the EKS detector by patching the Helm values:
+
+<Tabs>
+<Tab title="Helm">
+```bash
+helm upgrade odigos odigos/odigos \
+  --namespace odigos-system \
+  --set resourceDetectors.eks.enabled=false
+```
+</Tab>
+<Tab title="Odigos CLI">
+```bash
+odigos set config resourceDetectors.eks.enabled=false
+```
+</Tab>
+</Tabs>
+
+---
+
+### Option 2 — Enable IMDS hop limit 2 (keep the detector working via IMDS)
+
+Increase the hop limit to `2` on your node groups. This allows pods to reach IMDS directly (Path A), and no IAM permissions are needed.
+
+```bash
+# Update an existing managed node group's launch template
+aws ec2 modify-instance-metadata-options \
+  --instance-id <INSTANCE_ID> \
+  --http-put-response-hop-limit 2 \
+  --http-endpoint enabled
+```
+
+For **new** node groups, configure the launch template:
+
+```json
+{
+  "MetadataOptions": {
+    "HttpEndpoint": "enabled",
+    "HttpPutResponseHopLimit": 2,
+    "HttpTokens": "required"
+  }
+}
+```
+
+<Warning>
+Setting hop limit to `2` allows any pod on the node to call IMDS and assume the node's instance IAM role. This is a security trade-off. AWS recommends using IRSA or EKS Pod Identity (Option 3) instead.
+</Warning>
+
+---
+
+### Option 3 — Grant `ec2:DescribeInstances` via IRSA (enable the detector properly with IAM)
+
+This is the recommended production approach if you want cloud-level resource attributes enriched and your cluster uses hop limit = 1.
+
+**Step 1** — Create an IAM policy:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["ec2:DescribeInstances"],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+**Step 2** — Associate OIDC with your cluster (if not already done):
+
+```bash
+eksctl utils associate-iam-oidc-provider \
+  --region $EKS_CLUSTER_REGION \
+  --cluster $EKS_CLUSTER_NAME \
+  --approve
+```
+
+**Step 3** — Create an IAM role and attach the policy, then annotate the Odigos node-collector ServiceAccount with the role ARN. The exact method depends on whether you use eksctl, the AWS CLI, or Terraform — refer to the [IRSA documentation](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html).
+
+**Step 4** — Re-enable the EKS detector and inject the node name:
+
+<Tabs>
+<Tab title="Helm">
+```yaml
+# values.yaml
+resourceDetectors:
+  eks:
+    enabled: true
+```
+
+```bash
+helm upgrade odigos odigos/odigos \
+  --namespace odigos-system \
+  -f values.yaml
+```
+</Tab>
+</Tabs>
+
+<Info>
+When IMDS is not accessible (hop limit = 1), the EKS detector's Path B also requires reading the node's `spec.providerID` via the Kubernetes API. The node-collector ServiceAccount already has the necessary ClusterRole to `get` nodes as part of the standard Odigos RBAC setup.
+</Info>
+
+---
+
+## How to re-enable the EKS detector in v1.25+
+
+Starting with v1.25, the EKS detector is disabled by default. To re-enable it once you have the required permissions or IMDS hop limit in place:
+
+<Tabs>
+<Tab title="Helm">
+```yaml
+# values.yaml
+resourceDetectors:
+  eks:
+    enabled: true
+```
+</Tab>
+<Tab title="Odigos CLI">
+```bash
+odigos set config resourceDetectors.eks.enabled=true
+```
+</Tab>
+</Tabs>
+
+### What attributes are enriched when the EKS detector is enabled
+
+| Attribute | Source |
+|---|---|
+| `cloud.provider` | Always available (no IMDS/IAM needed) |
+| `cloud.platform` | Always available (no IMDS/IAM needed) |
+| `cloud.region` | IMDS (Path A) or `ec2:DescribeInstances` (Path B) |
+| `cloud.availability_zone` | IMDS (Path A) |
+| `cloud.account.id` | `ec2:DescribeInstances` (both paths) |
+| `host.id` | IMDS (Path A) or `ec2:DescribeInstances` (Path B) |
+| `host.image.id` | IMDS (Path A) or `ec2:DescribeInstances` (Path B) |
+| `host.type` | IMDS (Path A) or `ec2:DescribeInstances` (Path B) |
+| `host.name` | IMDS (Path A) or `ec2:DescribeInstances` (Path B) |
+| `k8s.cluster.name` | `ec2:DescribeInstances` (both paths, from EC2 tags) |
+
+
+---
+  EC2 detector (still enabled by default) already provides:
+  - cloud.provider = aws
+  - cloud.region
+  - cloud.availability_zone
+  - cloud.account.id
+  - host.id (instance ID)
+  - host.image.id (AMI ID)
+  - host.type (instance type)
+  - host.name
+---
+  What only the EKS detector adds on top:
+  - cloud.platform = aws_eks
+  - k8s.cluster.name — reads the cluster name from EC2 instance tags
+---
