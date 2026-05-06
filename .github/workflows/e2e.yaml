@@ -82,7 +82,7 @@ jobs:
       fail-fast: false
       matrix:
         # Default: run all scenarios only on the latest Kubernetes version
-        kube-version: [ "1.32" ]
+        kube-version: [ "1.35" ]
         test-scenario:
           - "ui"
           - "helm-chart"
@@ -106,9 +106,13 @@ jobs:
             test-scenario: "helm-chart"
           - kube-version: "1.21.12"
             test-scenario: "helm-chart"
+          - kube-version: "1.32"
+            test-scenario: "helm-chart"
           - kube-version: "1.23"
             test-scenario: "helm-upgrade"
           - kube-version: "1.21.12"
+            test-scenario: "helm-upgrade"
+          - kube-version: "1.32"
             test-scenario: "helm-upgrade"
 
           - kube-version: "1.21.12"
@@ -118,6 +122,8 @@ jobs:
             kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
           - kube-version: "1.32"
             kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
+          - kube-version: "1.35"
+            kind-image: "kindest/node:v1.35.1
 
     steps:
       - name: Checkout
