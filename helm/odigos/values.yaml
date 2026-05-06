@@ -1180,7 +1180,7 @@ openshift:
 
   # @schema
   # description: |-
-  #   Controls whether to use Red Hat certified image tags (-certified suffix).
+  #   Controls whether to use Red Hat certified image tags (-rhel-certified suffix).
   #   By default, this is unset and will inherit the value of openshift.enabled.
   #   Set to false to explicitly disable certified images even when openshift.enabled is true.
   #   Set to true to explicitly enable certified images (requires openshift.enabled to also be true).

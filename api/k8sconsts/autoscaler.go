@@ -2,7 +2,7 @@ package k8sconsts
 
 const (
 	AutoScalerDeploymentName              = "odigos-autoscaler"
-	AutoScalerImageCertified              = "odigos-autoscaler-certified"
+	AutoScalerImageCertified              = "odigos-autoscaler-rhel-certified"
 	AutoScalerImageName                   = "odigos-autoscaler"
 	AutoScalerServiceAccountName          = AutoScalerDeploymentName
 	AutoScalerAppLabelValue               = AutoScalerDeploymentName
