@@ -20,6 +20,8 @@ package v1alpha1
 // SpanRenamerConfigApplyConfiguration represents a declarative configuration of the SpanRenamerConfig type for use
 // with apply.
 type SpanRenamerConfigApplyConfiguration struct {
+	// list of scope rules to be applied to the span name.
+	// all options are always tried, regardless of whether the previous options have matched or not.
 	ScopeRules []SpanRenamerScopeRulesApplyConfiguration `json:"scopeRules,omitempty"`
 }
 

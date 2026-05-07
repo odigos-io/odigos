@@ -2,11 +2,12 @@ package sdks
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
+	"google.golang.org/grpc"
 
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentation"
@@ -28,17 +29,20 @@ type GoOtelEbpfSdk struct {
 var _ auto.ConfigProvider = (*ebpf.ConfigProvider[auto.InstrumentationConfig])(nil)
 
 type GoInstrumentationFactory struct {
+	otlpConn *grpc.ClientConn
 }
 
-func NewGoInstrumentationFactory() instrumentation.Factory {
-	return &GoInstrumentationFactory{}
+func NewGoInstrumentationFactory(otlpConn *grpc.ClientConn) (instrumentation.Factory, error) {
+	if otlpConn == nil {
+		return nil, errors.New("otlp common connection can't be nil")
+	}
+	return &GoInstrumentationFactory{otlpConn: otlpConn}, nil
 }
 
 func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pid int, settings instrumentation.Settings) (instrumentation.Instrumentation, error) {
 	defaultExporter, err := otlptracegrpc.New(
 		ctx,
-		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint(fmt.Sprintf("localhost:%d", consts.OTLPPort)),
+		otlptracegrpc.WithGRPCConn(g.otlpConn),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create exporter: %w", err)

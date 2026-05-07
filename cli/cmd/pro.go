@@ -51,7 +51,6 @@ var proCmd = &cobra.Command{
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		onPremToken := cmd.Flag("onprem-token").Value.String()
-
 		ns, err := resources.GetOdigosNamespace(client, ctx)
 		if resources.IsErrNoOdigosNamespaceFound(err) {
 			fmt.Println("\033[31mERROR\033[0m no odigos installation found in the current cluster")
@@ -391,6 +390,8 @@ func init() {
 	rootCmd.AddCommand(proCmd)
 
 	proCmd.AddCommand(offsetsCmd)
+	proCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
+	proCmd.MarkFlagRequired("onprem-token")
 	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
 	offsetsCmd.Flags().StringVar(&downloadFile, "download-file", "", "download the offsets file to the specified location without updating the cluster")
 	offsetsCmd.Flags().StringVar(&fromFile, "from-file", "", "use the offsets file from the specified location instead of downloading it")

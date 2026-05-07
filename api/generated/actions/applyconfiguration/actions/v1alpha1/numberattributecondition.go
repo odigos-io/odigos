@@ -19,8 +19,24 @@ package v1alpha1
 
 // NumberAttributeConditionApplyConfiguration represents a declarative configuration of the NumberAttributeCondition type for use
 // with apply.
+//
+// NumberAttributeCondition applies to attributes that are numeric (int, float, etc.).
 type NumberAttributeConditionApplyConfiguration struct {
-	Operation     *string  `json:"operation,omitempty"`
+	// Operation determines the numeric comparison to perform.
+	//
+	// Valid operations:
+	//
+	// - "exists": Checks that the numeric attribute is present (non-null).
+	// - "equals": Checks if the attribute equals ExpectedValue.
+	// - "not_equals": Checks if the attribute does not equal ExpectedValue.
+	// - "greater_than": Checks if attribute > ExpectedValue.
+	// - "less_than": Checks if attribute < ExpectedValue.
+	// - "greater_than_or_equal": Checks if attribute >= ExpectedValue.
+	// - "less_than_or_equal": Checks if attribute <= ExpectedValue.
+	//
+	// For operations other than "exists", ExpectedValue must be specified.
+	Operation *string `json:"operation,omitempty"`
+	// ExpectedValue is required for all operations except "exists".
 	ExpectedValue *float64 `json:"expected_value,omitempty"`
 }
 

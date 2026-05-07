@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	cilumebpf "github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/rlimit"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -23,6 +24,12 @@ type InstrumentationManagerOptions struct {
 	Factories                  map[string]instrumentation.Factory
 	DistributionGetter         *distros.Getter
 	OdigletHealthProbeBindPort int
+	// OnLogsMapCreated is an optional callback invoked after the logs eBPF map is created.
+	// It allows callers (e.g. enterprise odiglet) to receive the map for use with
+	// external reader mode in the log capture BPF programs.
+	OnLogsMapCreated func(*cilumebpf.Map)
+	// LogsAttrSubscribe streams per-process resource attributes to the collector.
+	LogsAttrSubscribe func() (updates <-chan string, snapshot []string)
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
@@ -67,6 +74,18 @@ func NewManager(
 		return nil, fmt.Errorf("failed to create metrics attributes eBPF maps: %w", err)
 	}
 
+	logsMap, err := ebpfcommon.CreateLogsMap()
+	if err != nil {
+		tracesMap.Close()
+		metricsMap.Close()
+		metricsAttributesMap.Close()
+		return nil, fmt.Errorf("failed to create logs eBPF map: %w", err)
+	}
+
+	if logsMap != nil && opts.OnLogsMapCreated != nil {
+		opts.OnLogsMapCreated(logsMap)
+	}
+
 	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
 
 		Logger:                  logger,
@@ -78,6 +97,8 @@ func NewManager(
 		TracesMap:               tracesMap,
 		MetricsMap:              metricsMap,
 		MetricsAttributesMap:    metricsAttributesMap,
+		LogsMap:                 logsMap,
+		LogsAttrSubscribe:      opts.LogsAttrSubscribe,
 	}
 
 	// Add file open triggers from all distributions.

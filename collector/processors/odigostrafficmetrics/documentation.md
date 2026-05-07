@@ -8,7 +8,7 @@ The following telemetry is emitted by this component.
 
 ### otelcol_odigos_accepted_log_records
 
-Number of log records passed through the processor. [Development]
+Number of log records passed through the processor.
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |
@@ -16,7 +16,7 @@ Number of log records passed through the processor. [Development]
 
 ### otelcol_odigos_accepted_metric_points
 
-Number of data points passed through the processor. [Development]
+Number of data points passed through the processor.
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |
@@ -24,7 +24,7 @@ Number of data points passed through the processor. [Development]
 
 ### otelcol_odigos_accepted_spans
 
-Number of spans passed through the processor. [Development]
+Number of spans passed through the processor.
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |
@@ -32,7 +32,7 @@ Number of spans passed through the processor. [Development]
 
 ### otelcol_odigos_log_data_size
 
-Total size of log data passed to the processor [Development]
+Total size of log data passed to the processor
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |
@@ -40,7 +40,7 @@ Total size of log data passed to the processor [Development]
 
 ### otelcol_odigos_metric_data_size
 
-Total size of metric data passed to the processor [Development]
+Total size of metric data passed to the processor
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |
@@ -48,7 +48,7 @@ Total size of metric data passed to the processor [Development]
 
 ### otelcol_odigos_trace_data_size
 
-Total size of trace data passed to the processor [Development]
+Total size of trace data passed to the processor
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |

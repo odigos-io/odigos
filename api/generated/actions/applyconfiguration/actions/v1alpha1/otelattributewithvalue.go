@@ -20,7 +20,10 @@ package v1alpha1
 // OtelAttributeWithValueApplyConfiguration represents a declarative configuration of the OtelAttributeWithValue type for use
 // with apply.
 type OtelAttributeWithValueApplyConfiguration struct {
-	AttributeName        *string `json:"attributeName,omitempty"`
+	// the name of the attribute to insert
+	AttributeName *string `json:"attributeName,omitempty"`
+	// if the value is a string, this field should be used.
+	// empty string is a valid value
 	AttributeStringValue *string `json:"attributeStringValue,omitempty"`
 }
 

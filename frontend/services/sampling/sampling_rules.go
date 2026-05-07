@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,6 +23,34 @@ func getSamplingCRByID(ctx context.Context, samplingID string) (*v1alpha1.Sampli
 		return nil, fmt.Errorf("sampling CR %q not found: %w", samplingID, err)
 	}
 	return &cr, nil
+}
+
+func getOrCreateSamplingCR(ctx context.Context, samplingID string) (*v1alpha1.Sampling, error) {
+	cr, err := getSamplingCRByID(ctx, samplingID)
+	if err == nil {
+		return cr, nil
+	}
+
+	odigosNs := env.GetCurrentNamespace()
+
+	if !apierrors.IsNotFound(err) {
+		return nil, err
+	}
+
+	newCR := &v1alpha1.Sampling{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      samplingID,
+			Namespace: odigosNs,
+		},
+		Spec: v1alpha1.SamplingSpec{
+			Name: samplingID,
+		},
+	}
+	created, createErr := kube.DefaultClient.OdigosClient.Samplings(odigosNs).Create(ctx, newCR, metav1.CreateOptions{})
+	if createErr != nil {
+		return nil, fmt.Errorf("failed to create sampling CR %q: %w", samplingID, createErr)
+	}
+	return created, nil
 }
 
 func updateSamplingCR(ctx context.Context, cr *v1alpha1.Sampling) (*v1alpha1.Sampling, error) {
@@ -83,7 +112,7 @@ func CreateNoisyOperationRule(ctx context.Context, samplingID string, input mode
 	var result *model.NoisyOperationRule
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		cr, err := getSamplingCRByID(ctx, samplingID)
+		cr, err := getOrCreateSamplingCR(ctx, samplingID)
 		if err != nil {
 			return err
 		}
@@ -156,7 +185,7 @@ func CreateHighlyRelevantOperationRule(ctx context.Context, samplingID string, i
 	var result *model.HighlyRelevantOperationRule
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		cr, err := getSamplingCRByID(ctx, samplingID)
+		cr, err := getOrCreateSamplingCR(ctx, samplingID)
 		if err != nil {
 			return err
 		}
@@ -229,7 +258,7 @@ func CreateCostReductionRule(ctx context.Context, samplingID string, input model
 	var result *model.CostReductionRule
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		cr, err := getSamplingCRByID(ctx, samplingID)
+		cr, err := getOrCreateSamplingCR(ctx, samplingID)
 		if err != nil {
 			return err
 		}

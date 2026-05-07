@@ -19,11 +19,20 @@ package v1alpha1
 
 // HttpRouteFilterApplyConfiguration represents a declarative configuration of the HttpRouteFilter type for use
 // with apply.
+//
+// HttpRouteFilter defines a single latency-based sampling rule for an HTTP route.
 type HttpRouteFilterApplyConfiguration struct {
-	HttpRoute               *string  `json:"http_route,omitempty"`
-	ServiceName             *string  `json:"service_name,omitempty"`
-	MinimumLatencyThreshold *int     `json:"minimum_latency_threshold,omitempty"`
-	FallbackSamplingRatio   *float64 `json:"fallback_sampling_ratio,omitempty"`
+	// HttpRoute is the route name (from span attribute "http.route") that this rule applies to.
+	HttpRoute *string `json:"http_route,omitempty"`
+	// ServiceName specifies the service that must emit the span for this rule to apply.
+	// Matches the value of the "service.name" attribute in the span.
+	ServiceName *string `json:"service_name,omitempty"`
+	// MinimumLatencyThreshold is the latency in milliseconds that spans must exceed
+	// to be considered for sampling. Spans with latency >= this value are eligible.
+	MinimumLatencyThreshold *int `json:"minimum_latency_threshold,omitempty"`
+	// FallbackSamplingRatio is the percentage (0–100) of traces to sample if the route
+	// and service match but the span latency is below the threshold.
+	FallbackSamplingRatio *float64 `json:"fallback_sampling_ratio,omitempty"`
 }
 
 // HttpRouteFilterApplyConfiguration constructs a declarative configuration of the HttpRouteFilter type for use with

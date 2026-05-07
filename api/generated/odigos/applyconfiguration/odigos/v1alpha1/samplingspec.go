@@ -19,9 +19,21 @@ package v1alpha1
 
 // SamplingSpecApplyConfiguration represents a declarative configuration of the SamplingSpec type for use
 // with apply.
+//
+// define sampling rules.
+// the rules can be defined as one or multiple objects in kubernetes,
+// and are all joined together to form the global sampling rules.
+// odigos users can group rules based on whatever criteria that makes sense for them,
+// for example - by team, by client, by usecase, admin-policy, etc.
 type SamplingSpecApplyConfiguration struct {
-	Name                     *string                                     `json:"name,omitempty"`
-	Notes                    *string                                     `json:"notes,omitempty"`
+	// give these sampling rules a name for display, easier identification and reference.
+	Name *string `json:"name,omitempty"`
+	// a free-form text field that allows you to attach notes regardinag the rule for convenience.
+	// Odigos does not use or assume any meaning from this field.
+	Notes *string `json:"notes,omitempty"`
+	// if set to true, the sampling rules will be disabled,
+	// they will not be taken into account for any sampling decisions.
+	// useful if you want to temporarily disable the rules but re-enable them later,
 	Disabled                 *bool                                       `json:"disabled,omitempty"`
 	NoisyOperations          []NoisyOperationApplyConfiguration          `json:"noisyOperations,omitempty"`
 	HighlyRelevantOperations []HighlyRelevantOperationApplyConfiguration `json:"highlyRelevantOperations,omitempty"`

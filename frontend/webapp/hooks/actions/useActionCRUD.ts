@@ -14,6 +14,7 @@ interface UseActionCrud {
   actionsLoading: boolean;
   fetchActions: () => void;
   createAction: (action: ActionFormData) => void;
+  createActionV2: (...args: Parameters<UseActionCrud['createAction']>) => Promise<{ error?: string } | undefined>;
   updateAction: (id: string, action: ActionFormData) => void;
   deleteAction: (id: string, actionType: ActionType) => void;
 }
@@ -150,6 +151,15 @@ export const useActionCRUD = (): UseActionCrud => {
     }
   };
 
+  const createActionV2: UseActionCrud['createActionV2'] = async (...args) => {
+    try {
+      await createAction(...args);
+      return undefined;
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to create action' };
+    }
+  };
+
   const updateAction: UseActionCrud['updateAction'] = (id, action) => {
     if (isReadonly) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
@@ -175,6 +185,7 @@ export const useActionCRUD = (): UseActionCrud => {
     actionsLoading,
     fetchActions,
     createAction,
+    createActionV2,
     updateAction,
     deleteAction,
   };

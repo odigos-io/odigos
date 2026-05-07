@@ -72,7 +72,7 @@ func (e *Causely) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 		return nil, errors.Join(err, errors.New("failed to parse Causely endpoint, gateway will not be configured for Causely"))
 	}
 
-	exporterName := "otlp/causely-" + dest.GetID()
+	exporterName := "otlp_grpc/causely-" + dest.GetID()
 
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": validatedUrl,

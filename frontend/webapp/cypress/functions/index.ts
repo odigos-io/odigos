@@ -1,5 +1,38 @@
 export * from './cy-alias';
-import { CRD_NAMES, DATA_IDS } from '../constants';
+import { DATA_IDS } from '../constants';
+
+// Apollo may send a single object or a batch array.
+const graphqlOperationName = (raw: unknown): string | undefined => {
+  if (raw == null) return undefined;
+  if (typeof raw === 'string') {
+    try {
+      return graphqlOperationName(JSON.parse(raw));
+    } catch {
+      return undefined;
+    }
+  }
+  if (typeof raw !== 'object') return undefined;
+  if (Array.isArray(raw)) {
+    const first = raw[0] as { operationName?: string } | undefined;
+    return first?.operationName;
+  }
+  return (raw as { operationName?: string }).operationName;
+};
+
+// Resolves only when the named operation completes.
+// Plain cy.wait('@gql') races with other /graphql traffic (e.g. GetActions after a prior create), which can yield no toast.
+export const waitForGraphqlOperation = (operationName: string, maxSkips = 40): Cypress.Chainable => {
+  return cy.wait('@gql', { timeout: 120000 }).then((interception) => {
+    const op = graphqlOperationName(interception.request.body);
+    if (op === operationName) {
+      return cy.wrap(interception);
+    }
+    if (maxSkips <= 0) {
+      throw new Error(`waitForGraphqlOperation: expected "${operationName}", got "${op ?? 'unknown'}" (no more skips)`);
+    }
+    return waitForGraphqlOperation(operationName, maxSkips - 1);
+  });
+};
 
 export const visitPage = (path: string, callback?: () => void) => {
   cy.visit(path);
@@ -131,6 +164,78 @@ export const deleteEntity = ({ nodeId, nodeContains, warnModalTitle, warnModalNo
   cy.contains(nodeId, nodeContains).should('exist').click();
   cy.get(DATA_IDS.DRAWER).should('exist');
   cy.get(DATA_IDS.DRAWER_DELETE).click();
+
+  if (!!warnModalTitle) cy.get(DATA_IDS.MODAL).contains(warnModalTitle).should('exist');
+  if (!!warnModalNote) cy.get(DATA_IDS.MODAL).contains(warnModalNote).should('exist');
+
+  cy.get(DATA_IDS.APPROVE).click();
+
+  if (!!callback) callback();
+};
+
+interface UpdateV2EntityOptions {
+  // Where to click to open the drawer — either a selector or, when paired with `nodeContains`,
+  // an HTML tag passed to `cy.contains()` (e.g. `'div'`).
+  nodeId: string;
+  nodeContains?: string;
+
+  // Drawer convention prefix. Together with the `{prefix}-btn-{edit,delete,save,cancel}` naming,
+  // this identifies the dropdown options and footer buttons rendered by a v2 edit drawer.
+  // E.g. `'edit-rule'`, `'edit-action'`, `'edit-source'`, `'edit-destination'`.
+  prefix: string;
+
+  // Selector + value of the form field to update inside the drawer.
+  fieldKey: string;
+  fieldValue: string;
+}
+
+// v2 edit-drawer flow:
+// 1. open the entity's drawer by clicking its data-flow row
+// 2. open the drawer header's actions dropdown and click "Edit"
+// 3. update the named field and click "Save"
+// 4. close the drawer (it does not auto-close after save)
+export const updateV2Entity = ({ nodeId, nodeContains, prefix, fieldKey, fieldValue }: UpdateV2EntityOptions, callback?: () => void) => {
+  if (!!nodeContains) {
+    cy.contains(nodeId, nodeContains).should('exist').click();
+  } else {
+    cy.get(nodeId).should('exist').click();
+  }
+
+  cy.get(DATA_IDS.DRAWER).should('exist');
+
+  cy.get(DATA_IDS.DRAWER_ACTIONS).click();
+  cy.get(DATA_IDS.DROPDOWN_OPTION(`${prefix}-btn-edit`)).click();
+
+  cy.get(fieldKey).click().focused().clear().type(fieldValue);
+  cy.get(fieldKey).should('have.value', fieldValue);
+
+  cy.get(`[data-id=${prefix}-btn-save]`).click();
+
+  if (!!callback) callback();
+
+  cy.get(DATA_IDS.DRAWER_CLOSE).click();
+};
+
+interface DeleteV2EntityOptions {
+  nodeId: string;
+  nodeContains?: string;
+  prefix: string;
+  warnModalTitle?: string;
+  warnModalNote?: string;
+}
+
+// v2 edit-drawer flow: open drawer → actions dropdown → "Delete" → confirm modal.
+export const deleteV2Entity = ({ nodeId, nodeContains, prefix, warnModalTitle, warnModalNote }: DeleteV2EntityOptions, callback?: () => void) => {
+  if (!!nodeContains) {
+    cy.contains(nodeId, nodeContains).should('exist').click();
+  } else {
+    cy.get(nodeId).should('exist').click();
+  }
+
+  cy.get(DATA_IDS.DRAWER).should('exist');
+
+  cy.get(DATA_IDS.DRAWER_ACTIONS).click();
+  cy.get(DATA_IDS.DROPDOWN_OPTION(`${prefix}-btn-delete`)).click();
 
   if (!!warnModalTitle) cy.get(DATA_IDS.MODAL).contains(warnModalTitle).should('exist');
   if (!!warnModalNote) cy.get(DATA_IDS.MODAL).contains(warnModalNote).should('exist');

@@ -19,6 +19,7 @@ func NewFactory() receiver.Factory {
 		createDefaultConfig,
 		receiver.WithTraces(createTracesReceiver, component.StabilityLevelBeta),
 		receiver.WithMetrics(createMetricsReceiver, component.StabilityLevelBeta),
+		receiver.WithLogs(createLogsReceiver, component.StabilityLevelBeta),
 	)
 }
 
@@ -55,6 +56,21 @@ func createMetricsReceiver(
 		config:       cfg.(*Config),
 		receiverType: ReceiverTypeMetrics,
 		nextMetrics:  next,
+		logger:       set.Logger,
+		settings:     set,
+	}, nil
+}
+
+func createLogsReceiver(
+	_ context.Context,
+	set receiver.Settings,
+	cfg component.Config,
+	next consumer.Logs,
+) (receiver.Logs, error) {
+	return &ebpfReceiver{
+		config:       cfg.(*Config),
+		receiverType: ReceiverTypeLogs,
+		nextLogs:     next,
 		logger:       set.Logger,
 		settings:     set,
 	}, nil

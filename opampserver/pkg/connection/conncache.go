@@ -8,10 +8,8 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/opampserver/pkg/agent"
-	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
 )
@@ -116,31 +114,12 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 }
 
 // allow to completely overwrite the remote config for a set of keys for a given workload
-func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWorkload, sdkConfig []v1alpha1.SdkConfig, containers []v1alpha1.ContainerAgentConfig) error {
+func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWorkload, containers []v1alpha1.ContainerAgentConfig) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	for _, conn := range c.liveConnections {
 		if conn.Workload != workload {
 			continue
-		}
-
-		var instrumentationConfigContent *protobufs.AgentConfigFile
-		for _, sdkConfig := range sdkConfig {
-			if conn.ProgrammingLanguage != common.MapOdigosToSemConv(sdkConfig.Language) {
-				continue
-			}
-
-			remoteConfigInstrumentationConfigBytes, err := json.Marshal(sdkConfig)
-			if err != nil {
-				return err
-			}
-
-			instrumentationConfigContent = &protobufs.AgentConfigFile{
-				Body:        remoteConfigInstrumentationConfigBytes,
-				ContentType: "application/json",
-			}
-
-			break // after we find the first matching sdk config, no need to continue
 		}
 
 		containerConfig := container.GetContainerConfigByName(containers, conn.ContainerName)
@@ -157,21 +136,11 @@ func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWork
 			ContentType: "application/json",
 		}
 
-		remoteConfigSdk := configsections.CalcSdkRemoteConfig(conn.RemoteResourceAttributes, containerConfig)
-		opampRemoteConfigSdk, sdkSectionName, err := configsections.SdkRemoteConfigToOpamp(remoteConfigSdk)
-		if err != nil {
-			return err
-		}
-
 		// copy the old remote config to avoid it being accessed concurrently
 		newRemoteConfigMap := proto.Clone(conn.AgentRemoteConfig.Config).(*protobufs.AgentConfigMap)
-		if instrumentationConfigContent != nil {
-			newRemoteConfigMap.ConfigMap[""] = instrumentationConfigContent
-		}
 		if containerConfigContent != nil {
 			newRemoteConfigMap.ConfigMap["container_config"] = containerConfigContent
 		}
-		newRemoteConfigMap.ConfigMap[sdkSectionName] = opampRemoteConfigSdk
 
 		conn.AgentRemoteConfig = &protobufs.AgentRemoteConfig{
 			Config:     newRemoteConfigMap,

@@ -23,7 +23,11 @@ import (
 
 // K8sAttributesStatusApplyConfiguration represents a declarative configuration of the K8sAttributesStatus type for use
 // with apply.
+//
+// K8sAttributesStatus defines the observed state of K8sAttributes action
 type K8sAttributesStatusApplyConfiguration struct {
+	// Represents the observations of a k8sattributes' current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

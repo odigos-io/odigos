@@ -24,8 +24,12 @@ import (
 // InstrumentationLibraryIdApplyConfiguration represents a declarative configuration of the InstrumentationLibraryId type for use
 // with apply.
 type InstrumentationLibraryIdApplyConfiguration struct {
-	InstrumentationLibraryName *string          `json:"libraryName,omitempty"`
-	SpanKind                   *common.SpanKind `json:"spanKind,omitempty"`
+	// The name of the instrumentation library
+	// - Node.js: The name of the npm package: `@opentelemetry/instrumentation-<name>`
+	InstrumentationLibraryName *string `json:"libraryName,omitempty"`
+	// SpanKind is only supported by Golang and will be ignored for any other SDK language.
+	// In Go, SpanKind is used because the same instrumentation library can be utilized for different span kinds (e.g., client/server).
+	SpanKind *common.SpanKind `json:"spanKind,omitempty"`
 }
 
 // InstrumentationLibraryIdApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryId type for use with

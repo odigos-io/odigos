@@ -49,28 +49,23 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 	iat, _ := tokenPayload["iat"].(float64)
 	exp, _ := tokenPayload["exp"].(float64)
 
-	if err != nil {
-		msg := err.Error()
-		return []*model.APIToken{
-			{
-				Token:     token,
-				Name:      aud,
-				IssuedAt:  0,
-				ExpiresAt: 0,
-				Message:   &msg,
-			},
-		}, nil
-	}
-
-	// We need to return an array (even if it's just 1 token), because in the future we will have to support multiple platforms.
-	return []*model.APIToken{
+	returnPayload := []*model.APIToken{
 		{
 			Token:     token,
 			Name:      aud,
 			IssuedAt:  int(iat) * 1000, // Convert to milliseconds
 			ExpiresAt: int(exp) * 1000, // Convert to milliseconds
 		},
-	}, nil
+	}
+
+	if err != nil {
+		msg := err.Error()
+		returnPayload[0].Message = &msg
+		return returnPayload, nil
+	}
+
+	// We need to return an array (even if it's just 1 token), because in the future we will have to support multiple platforms.
+	return returnPayload, nil
 }
 
 // K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
@@ -195,40 +190,36 @@ func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj 
 
 // DataStreams is the resolver for the dataStreams field.
 func (r *computePlatformResolver) DataStreams(ctx context.Context, obj *model.ComputePlatform) ([]*model.DataStream, error) {
-	ns := env.GetCurrentNamespace()
-
 	dataStreams := make([]*model.DataStream, 0)
-	seen := make(map[string]bool) // prevent duplicates
+	seen := make(map[string]bool)
 
 	dataStreams = append(dataStreams, &model.DataStream{Name: "default"})
 	seen["default"] = true
 
-	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
-	if err != nil {
+	// Use cache client with zero-copy instead of direct API call to avoid
+	// fetching and deep-copying all ICs from the API server at scale.
+	var instrumentationConfigs v1alpha1.InstrumentationConfigList
+	if err := r.K8sCacheClient.List(ctx, &instrumentationConfigs); err != nil {
 		return nil, err
 	}
 	for _, ic := range instrumentationConfigs.Items {
 		for _, name := range services.ExtractDataStreamsFromInstrumentationConfig(&ic) {
 			if !seen[*name] {
 				seen[*name] = true
-				dataStreams = append(dataStreams, &model.DataStream{
-					Name: *name,
-				})
+				dataStreams = append(dataStreams, &model.DataStream{Name: *name})
 			}
 		}
 	}
 
-	destinations, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
+	var destinations v1alpha1.DestinationList
+	if err := r.K8sCacheClient.List(ctx, &destinations); err != nil {
 		return nil, err
 	}
 	for _, dest := range destinations.Items {
 		for _, name := range services.ExtractDataStreamsFromDestination(dest) {
 			if !seen[*name] {
 				seen[*name] = true
-				dataStreams = append(dataStreams, &model.DataStream{
-					Name: *name,
-				})
+				dataStreams = append(dataStreams, &model.DataStream{Name: *name})
 			}
 		}
 	}
@@ -924,13 +915,7 @@ func (r *queryResolver) GetServiceMap(ctx context.Context) (*model.ServiceMap, e
 		to := make([]*model.ServiceMapToSource, 0)
 
 		for toCompositeKey, info := range toServices {
-			to = append(to, &model.ServiceMapToSource{
-				NodeID:      toCompositeKey,
-				ServiceName: services.BaseServiceName(toCompositeKey),
-				IsVirtual:   info.ToNodeIsVirtual,
-				Requests:    int(info.RequestCount),
-				DateTime:    info.LastUpdated.Format(time.RFC3339),
-			})
+			to = append(to, services.EdgeToModel(toCompositeKey, info, services.ServiceGraphNodeAttributesForServer(info.Attributes)))
 		}
 
 		mapServices = append(mapServices, &model.ServiceMapFromSource{
@@ -1041,6 +1026,9 @@ func (r *Resolver) K8sActualNamespace() K8sActualNamespaceResolver {
 	return &k8sActualNamespaceResolver{r}
 }
 
+// K8sActualSource returns K8sActualSourceResolver implementation.
+func (r *Resolver) K8sActualSource() K8sActualSourceResolver { return &k8sActualSourceResolver{r} }
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
@@ -1049,5 +1037,6 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type computePlatformResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
+type k8sActualSourceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

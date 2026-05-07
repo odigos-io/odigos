@@ -26,6 +26,8 @@ import (
 
 // ProcessorApplyConfiguration represents a declarative configuration of the Processor type for use
 // with apply.
+//
+// Processor is the Schema for an Opentelemetry Collector Processor that is added to Odigos pipeline
 type ProcessorApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -43,6 +45,7 @@ func Processor(name, namespace string) *ProcessorApplyConfiguration {
 	b.WithAPIVersion("odigos.io/v1alpha1")
 	return b
 }
+
 func (b ProcessorApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

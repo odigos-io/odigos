@@ -1,5 +1,5 @@
 import { ROUTES } from '../constants';
-import { visitPage } from '../functions';
+import { visitPage, waitForGraphqlOperation } from '../functions';
 
 describe('Root Connection', () => {
   beforeEach(() => cy.intercept('/graphql').as('gql'));
@@ -7,7 +7,7 @@ describe('Root Connection', () => {
   it('Should fetch a config with GraphQL, confirming Frontend + Backend connections.', () => {
     visitPage(ROUTES.ROOT, () => {
       // Wait for the config to load
-      cy.wait('@gql').then(() => {
+      waitForGraphqlOperation('GetConfig').then(() => {
         // If GraphQL failed to fetch the config, the app will remain on "/", thereby failing the test.
         cy.location('pathname').should('not.equal', [ROUTES.ROOT]);
       });

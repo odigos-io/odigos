@@ -80,7 +80,7 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 					},
 				},
 				Exporters: config.GenericMap{
-					"otlp/local": config.GenericMap{
+					"otlp_grpc/local": config.GenericMap{
 						"endpoint": "http://localhost:4317",
 						"tls": config.GenericMap{
 							"insecure": true,
@@ -92,7 +92,7 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 						"traces/user-pipeline": {
 							Receivers:  []string{"otlp"},
 							Processors: []string{"memory_limiter", "resource/odigos-version"},
-							Exporters:  []string{"otlp/local"},
+							Exporters:  []string{"otlp_grpc/local"},
 						},
 					},
 				},
@@ -116,7 +116,7 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 			assert.NotEmpty(t, c.Service.Pipelines["metrics/otelcol"])
 			assert.Equal(t, []string{"prometheus/self-metrics"}, c.Service.Pipelines["metrics/otelcol"].Receivers)
 			assert.Equal(t, []string{"resource/pod-name", "resource/odigos-collector-role"}, c.Service.Pipelines["metrics/otelcol"].Processors)
-			assert.Equal(t, []string{"otlp/odigos-own-telemetry-ui"}, c.Service.Pipelines["metrics/otelcol"].Exporters)
+			assert.Equal(t, []string{"otlp_grpc/odigos-own-telemetry-ui"}, c.Service.Pipelines["metrics/otelcol"].Exporters)
 			pullExporter := c.Service.Telemetry.Metrics.Readers[0]["pull"].(config.GenericMap)["exporter"].(config.GenericMap)
 			port := pullExporter["prometheus"].(config.GenericMap)["port"]
 			address := pullExporter["prometheus"].(config.GenericMap)["host"]
@@ -128,7 +128,6 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 				} else {
 					assert.Equal(t, pipeline.Processors[len(pipeline.Processors)-1], "odigostrafficmetrics")
 				}
-
 			}
 		})
 	}

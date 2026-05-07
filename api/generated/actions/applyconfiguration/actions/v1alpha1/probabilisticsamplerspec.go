@@ -23,6 +23,8 @@ import (
 
 // ProbabilisticSamplerSpecApplyConfiguration represents a declarative configuration of the ProbabilisticSamplerSpec type for use
 // with apply.
+//
+// ProbabilisticSamplerSpec defines the desired state of ProbabilisticSampler action
 type ProbabilisticSamplerSpecApplyConfiguration struct {
 	ActionName         *string                      `json:"actionName,omitempty"`
 	Notes              *string                      `json:"notes,omitempty"`

@@ -124,6 +124,19 @@ spec:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use
                 type: boolean
+              ebpfLogCapture:
+                description: |-
+                  Configure eBPF-based log capture. When enabled, the node collector logs pipeline
+                  will use only the eBPF receiver instead of the filelog receiver, and odiglet will
+                  register instrumented processes for eBPF log capture.
+                properties:
+                  enabled:
+                    description: |-
+                      Enabled switches the logs pipeline to use only the eBPF receiver,
+                      replacing the filelog receiver, and enables eBPF-based log capture
+                      in odiglet for instrumented processes.
+                    type: boolean
+                type: object
               headSamplingFallbackFraction:
                 description: |-
                   Configure general fraction of traces to record if none of the rules evaluate to true.
@@ -182,6 +195,7 @@ spec:
                       - postgres
                       - unknown
                       - ignored
+                      - '*'
                       type: string
                     name:
                       description: The name of the instrumentation library
@@ -240,6 +254,12 @@ spec:
                           If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
                         format: int64
                         type: integer
+                      sanitizationPolicy:
+                        description: |-
+                          The sanitization policy to use for collecting the DB query payloads.
+                          If not specified, the default sanitization policy will be used:
+                          (collect sanitized payloads if possible, and fall back to full if sanitization isn't supported).
+                        type: string
                     type: object
                   httpRequest:
                     description: |-
@@ -319,6 +339,83 @@ spec:
                   disabled:
                     description: Disabled will disable tracing for the rule.
                     type: boolean
+                type: object
+              traceVerbosity:
+                description: Configure the verbosity of the traces for the library.
+                properties:
+                  disabledLibraries:
+                    description: |-
+                      instrumentation libraries to configure
+                      the library name shouold be the same as the "instrumentation scope name" that can be found on the generate span attributes.
+                    items:
+                      properties:
+                        Language:
+                          description: the programming language of the relevant library
+                          enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                          - php
+                          - ruby
+                          - rust
+                          - cplusplus
+                          - mysql
+                          - nginx
+                          - redis
+                          - postgres
+                          - unknown
+                          - ignored
+                          - '*'
+                          type: string
+                        libraryName:
+                          description: |-
+                            the name of the library to configure. required.
+                            exact syntax and format depends on the programming language.
+                          type: string
+                      required:
+                      - Language
+                      - libraryName
+                      type: object
+                    type: array
+                  enabledLibraries:
+                    description: |-
+                      for instrumentation libraries that are disabled by default, this field can be used to enable them.
+                      the list of such libraries is small and depends on the language and agent type.
+                      common example: nodejs fs, dns, net instrumentations are disabled by default and can be opt-in for trace collection.
+                    items:
+                      properties:
+                        Language:
+                          description: the programming language of the relevant library
+                          enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                          - php
+                          - ruby
+                          - rust
+                          - cplusplus
+                          - mysql
+                          - nginx
+                          - redis
+                          - postgres
+                          - unknown
+                          - ignored
+                          - '*'
+                          type: string
+                        libraryName:
+                          description: |-
+                            the name of the library to configure. required.
+                            exact syntax and format depends on the programming language.
+                          type: string
+                      required:
+                      - Language
+                      - libraryName
+                      type: object
+                    type: array
                 type: object
               workloads:
                 description: An array of workload objects (name, namespace, kind)

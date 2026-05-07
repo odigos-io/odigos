@@ -19,8 +19,26 @@ package v1alpha1
 
 // StringAttributeConditionApplyConfiguration represents a declarative configuration of the StringAttributeCondition type for use
 // with apply.
+//
+// StringAttributeCondition defines how to evaluate a string attribute.
 type StringAttributeConditionApplyConfiguration struct {
-	Operation     *string `json:"operation,omitempty"`
+	// Operation determines what comparison or check should be performed.
+	//
+	// The valid operations are:
+	//
+	// - "exists": Checks that the attribute is present (and not an empty string).
+	// - "equals": String equality comparison with ExpectedValue.
+	// - "not_equals": String inequality comparison with ExpectedValue.
+	// - "contains": Checks if the attribute contains ExpectedValue as a substring.
+	// - "not_contains": Checks if the attribute does not contain ExpectedValue.
+	// - "regex": Interprets ExpectedValue as a regular expression (RE2 syntax)
+	// and checks for a match within the attribute.
+	//
+	// For operations other than "exists", ExpectedValue must be provided.
+	Operation *string `json:"operation,omitempty"`
+	// ExpectedValue is required for all operations except "exists". Its usage
+	// depends on the chosen Operation, e.g. it may represent an exact string
+	// to match, a substring, or a regular expression.
 	ExpectedValue *string `json:"expected_value,omitempty"`
 }
 

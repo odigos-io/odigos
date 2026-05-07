@@ -23,7 +23,11 @@ import (
 
 // ErrorSamplerStatusApplyConfiguration represents a declarative configuration of the ErrorSamplerStatus type for use
 // with apply.
+//
+// ErrorSamplerStatus defines the runtime state and observed conditions of an ErrorSampler.
+// It may include conditions such as "Available" or "Progressing".
 type ErrorSamplerStatusApplyConfiguration struct {
+	// Conditions captures the current operational state of the sampler.
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

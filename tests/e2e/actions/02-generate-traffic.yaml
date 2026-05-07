@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: traffic-generator
+  namespace: default
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: traffic-generator
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: curl
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: ["sh"]
+          args:
+            - "-c"
+            - |
+              for i in $(seq 1 60); do
+                curl -s http://extract-attr-app:8000/ > /dev/null
+                sleep 1
+              done

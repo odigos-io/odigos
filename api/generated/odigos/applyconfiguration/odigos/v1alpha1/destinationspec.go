@@ -24,15 +24,21 @@ import (
 
 // DestinationSpecApplyConfiguration represents a declarative configuration of the DestinationSpec type for use
 // with apply.
+//
+// DestinationSpec defines the desired state of Destination
 type DestinationSpecApplyConfiguration struct {
-	Type            *common.DestinationType                       `json:"type,omitempty"`
-	DestinationName *string                                       `json:"destinationName,omitempty"`
-	Data            map[string]string                             `json:"data,omitempty"`
-	SecretRef       *v1.LocalObjectReference                      `json:"secretRef,omitempty"`
-	Signals         []common.ObservabilitySignal                  `json:"signals,omitempty"`
-	Disabled        *bool                                         `json:"disabled,omitempty"`
+	Type            *common.DestinationType      `json:"type,omitempty"`
+	DestinationName *string                      `json:"destinationName,omitempty"`
+	Data            map[string]string            `json:"data,omitempty"`
+	SecretRef       *v1.LocalObjectReference     `json:"secretRef,omitempty"`
+	Signals         []common.ObservabilitySignal `json:"signals,omitempty"`
+	Disabled        *bool                        `json:"disabled,omitempty"`
+	// MetricsSettings defines the metrics settings for this destination.
+	// ignored if destination does not support metrics or metrics are not enabled in signals
 	MetricsSettings *DestinationMetricsSettingsApplyConfiguration `json:"metricsSettings,omitempty"`
-	SourceSelector  *SourceSelectorApplyConfiguration             `json:"sourceSelector,omitempty"`
+	// SourceSelector defines which sources can send data to this destination.
+	// If not specified, defaults to "all".
+	SourceSelector *SourceSelectorApplyConfiguration `json:"sourceSelector,omitempty"`
 }
 
 // DestinationSpecApplyConfiguration constructs a declarative configuration of the DestinationSpec type for use with

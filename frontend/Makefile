@@ -3,11 +3,14 @@ gqlgen:
 
 TOOLS := $(PWD)/.tools
 
-.PHONY: tools
+.PHONY: tools test
 tools:
 	@if [ ! -d "$(TOOLS)" ]; then \
 		mkdir $(TOOLS); \
 	fi
+
+test:
+	go test -v ./...
 
 .PHONY: go-licenses
 go-licenses: tools
@@ -21,4 +24,4 @@ licenses: go-licenses
 	@if [ -d "$(PWD)/licenses" ]; then \
 		rm -rf $(PWD)/licenses; \
 	fi
-	$(TOOLS)/go-licenses save . --save_path=licenses --ignore=modernc.org/mathutil
+	$(TOOLS)/go-licenses save . --save_path=licenses --ignore=modernc.org/mathutil,github.com/grafana/pyroscope/pkg

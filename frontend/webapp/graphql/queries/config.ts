@@ -65,26 +65,36 @@ export const GET_EFFECTIVE_CONFIG = gql`
         }
       }
       profiles
-      allowConcurrentAgents
+      allowConcurrentAgents {
+        enabled
+      }
       uiMode
       uiPaginationLimit
       uiRemoteUrl
       centralBackendURL
       clusterName
-      mountMethod
+      instrumentor {
+        mountMethod
+        agentEnvVarsInjectionMethod
+        checkDeviceHealthBeforeInjection
+      }
       customContainerRuntimeSocketPath
-      agentEnvVarsInjectionMethod
       userInstrumentationEnvs {
         languages
       }
       nodeSelector
-      karpenterEnabled
+      karpenter {
+        enabled
+      }
       rollout {
         automaticRolloutDisabled
+        maxConcurrentRollouts
       }
-      rollbackDisabled
-      rollbackGraceTime
-      rollbackStabilityWindow
+      autoRollback {
+        disabled
+        graceTime
+        stabilityWindowTime
+      }
       oidc {
         tenantUrl
         clientId
@@ -94,9 +104,10 @@ export const GET_EFFECTIVE_CONFIG = gql`
       goAutoOffsetsCron
       goAutoOffsetsMode
       clickhouseJsonTypeEnabled
-      checkDeviceHealthBeforeInjection
       resourceSizePreset
-      waspEnabled
+      wasp {
+        enabled
+      }
       metricsSources {
         spanMetrics {
           disabled
@@ -157,6 +168,30 @@ export const GET_EFFECTIVE_CONFIG = gql`
         ui
         collector
       }
+      sampling {
+        dryRun
+        spanSamplingAttributes {
+          disabled
+          samplingCategoryDisabled
+          traceDecidingRuleDisabled
+          spanDecisionAttributesDisabled
+        }
+        tailSampling {
+          disabled
+          traceAggregationWaitDuration
+        }
+        k8sHealthProbesSampling {
+          enabled
+          keepPercentage
+        }
+      }
+      profiling {
+        enabled
+      }
+      provenance {
+        helmPath
+        reconciledFrom
+      }
       manifestYAML
     }
   }
@@ -171,6 +206,7 @@ export const GET_CONFIG_YAMLS = gql`
         displayName
         componentType
         isHelmOnly
+        isEnterpriseOnly
         description
         helmValuePath
         docsLink

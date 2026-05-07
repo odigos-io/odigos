@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -14,7 +16,19 @@ func ApplyCollectorGroup(ctx context.Context, c client.Client, collectorGroup *o
 	logger := commonlogger.LoggerCompat().With("subsystem", "collectorgroup")
 	logger.Info("Applying collector group", "collectorGroupName", collectorGroup.Name)
 
-	err := c.Patch(ctx, collectorGroup, client.Apply, client.ForceOwnership, client.FieldOwner("scheduler"))
+	cg := collectorGroup.DeepCopy()
+	if cg.APIVersion == "" || cg.Kind == "" {
+		gvk := odigosv1.SchemeGroupVersion.WithKind("CollectorsGroup")
+		cg.SetGroupVersionKind(gvk)
+	}
+	raw, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cg)
+	if err != nil {
+		logger.Error("Failed to convert collector group to unstructured", "err", err)
+		return err
+	}
+	u := &unstructured.Unstructured{Object: raw}
+
+	err = c.Apply(ctx, client.ApplyConfigurationFromUnstructured(u), client.ForceOwnership, client.FieldOwner("scheduler"))
 	if err != nil {
 		logger.Error("Failed to apply collector group", "err", err)
 		return err

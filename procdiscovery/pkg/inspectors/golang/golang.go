@@ -48,7 +48,7 @@ func (g *GolangInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 	return "", false
 }
 
-func (g *GolangInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
+func (g *GolangInspector) GetRuntimeVersion(pcx *process.ProcessContext) string {
 	exeFile, err := pcx.GetExeFile()
 	if err != nil {
 		return ""

@@ -29,7 +29,7 @@ func (j *Checkly) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 		return nil, err
 	}
 
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "otlp_grpc/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"headers": GenericMap{

@@ -141,6 +141,7 @@ const (
 	SmallBatchesProcessor           = "batch/small-batches"
 	GroupByTraceProcessorV2         = "groupbytrace/samplingv2"
 	OdigosTailSamplingProcessorName = "odigostailsampling"
+	OdigosTraceStateProcessorName   = "odigostracestate"
 	URLTemplatizationProcessorName  = "odigos-url-templatization"
 	OdigosURLTemplateProcessorType  = "odigosurltemplate"
 )

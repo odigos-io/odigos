@@ -1,0 +1,95 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: extract-attr-app-src
+  namespace: default
+data:
+  app.py: |
+    from flask import Flask
+    from opentelemetry import trace
+
+    app = Flask(__name__)
+
+    # Synthetic DICOM-style UIDs - NOT real data, fixed for deterministic tests.
+    STUDY_UID = "1.2.3.4.5.111"
+    SERIES_UID = "1.2.3.4.5.222"
+    INSTANCE_UID = "1.2.3.4.5.333"
+
+    # JSON-shaped (messaging payload). Exercises dataFormat=json on a JSON envelope.
+    MESSAGING_PAYLOAD = (
+        '{"study_id": "' + STUDY_UID + '", "cooking_status": "Completed"}'
+    )
+
+    # URL-shaped (http payload). Exercises dataFormat=url with multiple keys.
+    HTTP_REQUEST_PAYLOAD = (
+        "projects/test-project"
+        "/locations/test-region"
+        "/datasets/test-dataset"
+        "/dicomStores/test-store"
+        "/dicomWeb/studies/" + STUDY_UID +
+        "/series/" + SERIES_UID +
+        "/instances/" + INSTANCE_UID
+    )
+
+    # SQL-shaped (db.statement). Exercises dataFormat=json on SQL syntax + the free regex variation.
+    DB_STATEMENT = (
+        "SELECT * FROM orders "
+        "WHERE order_id = '42' "
+        "-- request_id req-xyz9"
+    )
+
+    @app.route("/")
+    def root():
+        span = trace.get_current_span()
+        span.set_attribute("messaging.message.payload", MESSAGING_PAYLOAD)
+        span.set_attribute("http.request.payload", HTTP_REQUEST_PAYLOAD)
+        span.set_attribute("db.statement", DB_STATEMENT)
+        return "ok"
+
+    if __name__ == "__main__":
+        app.run(host="0.0.0.0", port=8000)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: extract-attr-app
+  namespace: default
+  labels:
+    app: extract-attr-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: extract-attr-app
+  template:
+    metadata:
+      labels:
+        app: extract-attr-app
+    spec:
+      containers:
+        - name: app
+          image: python:3.12-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - "pip install --no-cache-dir flask==3.* && python /app/app.py"
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: src
+              mountPath: /app
+      volumes:
+        - name: src
+          configMap:
+            name: extract-attr-app-src
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: extract-attr-app
+  namespace: default
+spec:
+  selector:
+    app: extract-attr-app
+  ports:
+    - port: 8000
+      targetPort: 8000

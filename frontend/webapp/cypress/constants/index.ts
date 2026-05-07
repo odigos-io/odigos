@@ -1,10 +1,9 @@
 export const ROUTES = {
   ROOT: '/',
-  CHOOSE_STREAM: '/choose-stream',
-  CHOOSE_SOURCES: '/choose-sources',
-  CHOOSE_DESTINATION: '/choose-destination',
-  SETUP_SUMMARY: '/setup-summary',
+  ONBOARDING: '/onboarding',
   OVERVIEW: '/overview',
+  SETTINGS: '/settings',
+  SAMPLING: '/sampling',
 };
 
 export const CRD_NAMES = {
@@ -13,49 +12,55 @@ export const CRD_NAMES = {
   DESTINATION: 'destinations.odigos.io',
   ACTION: 'actions.odigos.io',
   INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
+  SAMPLING: 'samplings.odigos.io',
+};
+
+export const CONFIG_MAPS = {
+  LOCAL_UI_CONFIG: 'odigos-local-ui-config',
+  EFFECTIVE_CONFIG: 'effective-config',
 };
 
 export const NAMESPACES = {
-  DEFAULT: 'default',
-  ODIGOS_SYSTEM: 'odigos-system',
-  ODIGOS_TEST: 'odigos-test',
+  ODIGOS: 'odigos-test',
+  APPS: 'default',
+  DESTINATIONS: 'tracing',
 };
 
 export const SELECTED_ENTITIES = {
-  NAMESPACE: NAMESPACES.DEFAULT,
+  NAMESPACE: NAMESPACES.APPS,
   NAMESPACE_SOURCES: [
     {
-      namespace: NAMESPACES.DEFAULT,
+      namespace: NAMESPACES.APPS,
       name: 'coupon',
       kind: 'Deployment',
     },
     {
-      namespace: NAMESPACES.DEFAULT,
+      namespace: NAMESPACES.APPS,
       name: 'currency',
       kind: 'Deployment',
     },
     {
-      namespace: NAMESPACES.DEFAULT,
+      namespace: NAMESPACES.APPS,
       name: 'frontend',
       kind: 'Deployment',
     },
     {
-      namespace: NAMESPACES.DEFAULT,
+      namespace: NAMESPACES.APPS,
       name: 'geolocation',
       kind: 'Deployment',
     },
     {
-      namespace: NAMESPACES.DEFAULT,
+      namespace: NAMESPACES.APPS,
       name: 'inventory',
       kind: 'Deployment',
     },
     {
-      namespace: NAMESPACES.DEFAULT,
+      namespace: NAMESPACES.APPS,
       name: 'membership',
       kind: 'Deployment',
     },
     {
-      namespace: NAMESPACES.DEFAULT,
+      namespace: NAMESPACES.APPS,
       name: 'pricing',
       kind: 'Deployment',
     },
@@ -64,7 +69,7 @@ export const SELECTED_ENTITIES = {
     TYPE: 'jaeger',
     DISPLAY_NAME: 'Jaeger',
     AUTOFILL_FIELD: 'JAEGER_URL',
-    AUTOFILL_VALUE: 'jaeger.tracing:4317',
+    AUTOFILL_VALUE: `jaeger.${NAMESPACES.DESTINATIONS}:4317`,
   },
   ACTIONS: [
     'K8sAttributesResolver',
@@ -82,31 +87,53 @@ export const SELECTED_ENTITIES = {
 };
 
 export const DATA_IDS = {
+  ONBOARDING_GET_STARTED: '[data-id=onboarding-get-started]',
+
+  // v2 add-drawer selectors (sources)
   SELECT_NAMESPACE: `[data-id=namespace-${SELECTED_ENTITIES.NAMESPACE}]`,
   SELECT_SOURCE: (sourceName: string) => `[data-id=source-${sourceName}]`,
-  SELECT_DESTINATION: `[data-id^=select-detected-destination-${SELECTED_ENTITIES.DESTINATION.TYPE}]`,
-  SELECT_DESTINATION_AUTOFILL_FIELD: `[data-id=${SELECTED_ENTITIES.DESTINATION.AUTOFILL_FIELD}]`,
 
+  // v2 add-drawer selectors (destinations)
+  SELECT_DESTINATION: `[data-id="list-item-${SELECTED_ENTITIES.DESTINATION.DISPLAY_NAME}"]`,
+  SELECT_DESTINATION_AUTOFILL_FIELD: `[name=${SELECTED_ENTITIES.DESTINATION.AUTOFILL_FIELD}]`,
+  DEST_FORM_ADD: '[data-id=dest-form-add]',
+
+  // v2 add-drawer selectors (actions & rules)
+  ACTION_OPTION: (type: string) => `[data-id=option-${type}]`,
+  RULE_OPTION: (type: string) => `[data-id=option-${type}]`,
+
+  // data-flow "add" buttons (trigger drawer open)
   ADD_SOURCE: '[data-id=add-Source]',
   ADD_DESTINATION: '[data-id=add-Destination]',
   ADD_ACTION: '[data-id=add-Action]',
   ADD_INSTRUMENTATION_RULE: '[data-id=add-InstrumentationRule]',
 
+  // legacy modals & edit-drawers
   MODAL: '[data-id=modal]',
-  MODAL_ADD_SOURCE: '[data-id=modal-Add-Source]',
-  MODAL_ADD_DESTINATION: '[data-id=modal-Add-Destination]',
-  MODAL_ADD_ACTION: '[data-id=modal-Add-Action]',
-  MODAL_ADD_INSTRUMENTATION_RULE: '[data-id=modal-Add-Instrumentation-Rule]',
-  ACTION_OPTION: (type: string) => `[data-id=option-${type}]`,
-  RULE_OPTION: (type: string) => `[data-id=option-${type}]`,
-
   DRAWER: '[data-id=drawer]',
   DRAWER_EDIT: '[data-id=drawer-edit]',
   DRAWER_SAVE: '[data-id=drawer-save]',
   DRAWER_CLOSE: '[data-id=drawer-close]',
   DRAWER_DELETE: '[data-id=drawer-delete]',
+  DRAWER_ACTIONS: '[data-id=drawer-actions]',
+  DROPDOWN_OPTION: (id: string) => `[data-id="option-${id}"]`,
   APPROVE: '[data-id=approve]',
   DENY: '[data-id=deny]',
+
+  // v2 edit-rule-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
+  RULE_DRAWER_PREFIX: 'edit-rule',
+  RULE_NAME_INPUT: '[data-id=ruleName]',
+
+  // v2 edit-action-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
+  ACTION_DRAWER_PREFIX: 'edit-action',
+  ACTION_NAME_INPUT: '[data-id=actionName]',
+
+  // v2 edit-destination-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
+  DESTINATION_DRAWER_PREFIX: 'edit-destination',
+  DESTINATION_NAME_INPUT: '[data-id=destinationName]',
+
+  // v2 edit-source-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
+  SOURCE_DRAWER_PREFIX: 'edit-source',
 
   TOAST: '[data-id=toast]',
   TOAST_CLOSE: '[data-id=toast-close]',
@@ -120,6 +147,34 @@ export const DATA_IDS = {
   TITLE: '[data-id=title]',
   SOURCE_TITLE: '[data-id=sourceName]',
   CHECKBOX: '[data-id=checkbox]',
+
+  // v2 wide-drawer buttons
+  WIDE_DRAWER_BACK: '[data-id=wide-drawer-back]',
+  WIDE_DRAWER_NEXT: '[data-id=wide-drawer-next]',
+  WIDE_DRAWER_SKIP: '[data-id=wide-drawer-skip]',
+  WIDE_DRAWER_SAVE: '[data-id=wide-drawer-save]',
+  WIDE_DRAWER_CANCEL: '[data-id=wide-drawer-cancel]',
+  LIST_ITEM: (title: string) => `[data-id="list-item-${title}"]`,
+
+  SETTINGS_SAVE: '[data-id=settings-save]',
+  SETTINGS_CANCEL: '[data-id=settings-cancel]',
+  SETTINGS_FIELD: (helmPath: string) => `[data-id="${helmPath}"]`,
+
+  // Sampling rules page
+  SAMPLING_BTN_CREATE_RULE: '[data-id=sampling-btn-create-rule]',
+  SAMPLING_BTN_REFRESH: '[data-id=sampling-btn-refresh]',
+  SAMPLING_CREATE_BTN_CANCEL: '[data-id=sampling-create-btn-cancel]',
+  SAMPLING_CREATE_BTN_SUBMIT: '[data-id=sampling-create-btn-submit]',
+  SAMPLING_RULE_ACTION_EDIT: '[data-id=sampling-rule-action-edit]',
+  SAMPLING_RULE_ACTION_DELETE: '[data-id=sampling-rule-action-delete]',
+  SAMPLING_VIEW_BTN_EDIT: '[data-id=sampling-view-btn-edit]',
+  SAMPLING_VIEW_BTN_DELETE: '[data-id=sampling-view-btn-delete]',
+  SAMPLING_VIEW_BTN_CANCEL: '[data-id=sampling-view-btn-cancel]',
+  SAMPLING_VIEW_EDIT_BTN_SAVE: '[data-id=sampling-view-edit-btn-save]',
+  SAMPLING_VIEW_EDIT_BTN_CANCEL: '[data-id=sampling-view-edit-btn-cancel]',
+  SAMPLING_BTN_EDIT_AUTO_RULE: '[data-id=sampling-btn-edit-auto-rule]',
+  SAMPLING_EDIT_AUTO_RULE_BTN_SAVE: '[data-id=sampling-edit-auto-rule-btn-save]',
+  SAMPLING_EDIT_AUTO_RULE_BTN_CANCEL: '[data-id=sampling-edit-auto-rule-btn-cancel]',
 };
 
 export const BUTTONS = {
@@ -128,11 +183,6 @@ export const BUTTONS = {
   DONE: 'DONE',
   ADD_DESTINATION: 'Add Destination',
   UNINSTRUMENT: 'Uninstrument',
-};
-
-export const INPUTS = {
-  ACTION_DROPDOWN: 'Type to search...',
-  RULE_DROPDOWN: 'Type to search...',
 };
 
 const CYPRESS_TEST = 'Cypress Test';
@@ -145,10 +195,10 @@ export const TEXTS = {
 
   SOURCE_WARN_MODAL_TITLE: (count: number) => `Uninstrument ${count} sources`,
   SOURCE_WARN_MODAL_NOTE: "You're about to uninstrument the last Source",
-  DESTINATION_WARN_MODAL_TITLE: `Delete Destination (${CYPRESS_TEST})`,
-  DESTINATION_WARN_MODAL_NOTE: "You're about to delete the last Destination",
-  ACTION_WARN_MODAL_TITLE: `Delete Action (${CYPRESS_TEST})`,
-  INSTRUMENTATION_RULE_WARN_MODAL_TITLE: `Delete InstrumentationRule (${CYPRESS_TEST})`,
+  DESTINATION_WARN_MODAL_TITLE: 'Delete destination?',
+  DESTINATION_WARN_MODAL_NOTE: 'Are you sure you want to delete this destination?',
+  ACTION_WARN_MODAL_TITLE: 'Delete action?',
+  INSTRUMENTATION_RULE_WARN_MODAL_TITLE: 'Delete instrumentation rule?',
 
   NOTIF_CREATED: 'Successfully created',
   NOTIF_UPDATED: 'Successfully updated',
@@ -171,4 +221,11 @@ export const TEXTS = {
   NOTIF_INSTRUMENTATION_RULE_CREATED: (ruleType: string) => `Successfully created "${ruleType}" rule`,
   NOTIF_INSTRUMENTATION_RULE_UPDATED: (ruleType: string) => `Successfully updated "${ruleType}" rule`,
   NOTIF_INSTRUMENTATION_RULE_DELETED: (ruleType: string) => `Successfully deleted "${ruleType}" rule`,
+
+  NOTIF_CONFIG_UPDATED: 'Local UI configuration updated successfully',
+  NOTIF_CONFIG_RESET: 'Local UI configuration reset to factory defaults',
+
+  NOTIF_SAMPLING_RULE_CREATED: (name: string) => `Successfully created ${name}`,
+  NOTIF_SAMPLING_RULE_UPDATED: (name: string) => `Successfully updated ${name}`,
+  NOTIF_SAMPLING_RULE_DELETED: 'Successfully deleted',
 };

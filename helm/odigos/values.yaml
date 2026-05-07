@@ -73,6 +73,67 @@ clusterName: ''
 logLevel: "info"
 
 # @schema
+# description: |-
+#   Continuous profiling (off by default): node collector → gateway → UI over OTLP gRPC. UI buffers only workloads
+#   with an open Profiler tab / enableSourceProfiling; scrape ui:3000/metrics for odigos_ui_profiling_* when enabled.
+#   When enabled, profiling.exporter and profiling.ui are written to odigos-configuration; any field you omit in a
+#   partial override falls back to the chart defaults below.
+# @schema
+profiling:
+  # @schema
+  # description: When true, enables profiling pipelines on the node collector and cluster gateway.
+  # @schema
+  enabled: false
+  # @schema
+  # description: OTLP settings for profiling exporters (node → gateway, gateway → UI). Omitted from config when profiling.enabled is false.
+  # @schema
+  exporter:
+    # @schema
+    # description: Enable gzip compression on profiling OTLP exports.
+    # @schema
+    enableDataCompression: false
+    # @schema
+    # description: Per-attempt send timeout for profiling OTLP exporters.
+    # @schema
+    timeout: 5s
+    # @schema
+    # description: Retry policy for profiling OTLP exports.
+    # @schema
+    retryOnFailure:
+      # @schema
+      # description: Whether to retry failed OTLP sends for profiling.
+      # @schema
+      enabled: true
+      # @schema
+      # description: Backoff after the first failure.
+      # @schema
+      initialInterval: 5s
+      # @schema
+      # description: Upper bound on backoff between retries.
+      # @schema
+      maxInterval: 30s
+      # @schema
+      # description: Maximum time spent retrying a batch; 0 means retry until success.
+      # @schema
+      maxElapsedTime: 300s
+  # @schema
+  # description: UI-side profiling resource limits (written when profiling.enabled is true). Override any field from Helm as needed.
+  # @schema
+  ui:
+    # @schema
+    # description: Slot TTL in seconds.
+    # @schema
+    slotTTLSeconds: 300
+    # @schema
+    # description: Max in-memory profile slots.
+    # @schema
+    maxSlots: 32
+    # @schema
+    # description: Max bytes per slot (default 8 MiB).
+    # @schema
+    slotMaxBytes: 8388608
+
+# @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
 # @schema
 userInstrumentationEnvs:
@@ -1137,6 +1198,54 @@ gke:
   enabled: false
 
 # @schema
+# description: |-
+#   Controls which OpenTelemetry resource detectors are enabled on the node collector's
+#   resourcedetection processor. Each detector can be individually enabled or disabled.
+#   By default all detectors are enabled except EKS which is disabled by default.
+# @schema
+resourceDetectors:
+  # @schema
+  # description: EC2 resource detector configuration.
+  # @schema
+  ec2:
+    # @schema
+    # description: Enable the EC2 resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: EKS resource detector configuration (disabled by default).
+  # @schema
+  eks:
+    # @schema
+    # description: Enable the EKS resource detector.
+    # @schema
+    enabled: false
+  # @schema
+  # description: Azure resource detector configuration.
+  # @schema
+  azure:
+    # @schema
+    # description: Enable the Azure resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: AKS resource detector configuration.
+  # @schema
+  aks:
+    # @schema
+    # description: Enable the AKS resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: GCP resource detector configuration.
+  # @schema
+  gcp:
+    # @schema
+    # description: Enable the GCP resource detector.
+    # @schema
+    enabled: true
+
+# @schema
 # description: "List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] | (CLI): --set profiles={PROFILE_NAME}"
 # @schema
 profiles: []
@@ -1335,6 +1444,20 @@ metricsSources:
     #   These attributes are used to determines how span metrics are grouped.
     # @schema
     # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
+
+    # @schema
+    # description: |-
+    #   Controls the tradeoff between metric accuracy and resource usage.
+    #   Determines how sampling affects which spans are used to compute metrics.
+    #   Possible values:
+    #     - "sampled-spans-only" (default): metrics are computed only from sampled spans.
+    #       Unsampled spans are dropped early, resulting in lower resource usage but reduced accuracy.
+    #     - "all-spans": metrics are computed from all spans, regardless of sampling.
+    #       Unsampled spans are forwarded for metric computation and dropped later in the pipeline,
+    #       resulting in higher accuracy at the cost of increased resource usage.
+    # enum: [sampled-spans-only, all-spans]
+    # @schema
+    # spanMetricsMode: sampled-spans-only
 
   # @schema
   # description: Configuration for Odigos own metrics collection.

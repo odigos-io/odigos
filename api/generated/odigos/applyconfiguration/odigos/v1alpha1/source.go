@@ -25,6 +25,8 @@ import (
 
 // SourceApplyConfiguration represents a declarative configuration of the Source type for use
 // with apply.
+//
+// Source configures an application for auto-instrumentation.
 type SourceApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +44,7 @@ func Source(name, namespace string) *SourceApplyConfiguration {
 	b.WithAPIVersion("odigos.io/v1alpha1")
 	return b
 }
+
 func (b SourceApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

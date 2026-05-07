@@ -24,15 +24,41 @@ import (
 
 // HighlyRelevantOperationApplyConfiguration represents a declarative configuration of the HighlyRelevantOperation type for use
 // with apply.
+//
+// define operations (spans) with high observability value.
+// if found anywhere in the trace, the entire trace will be kept
+// regaradless of any cost reduction rules.
 type HighlyRelevantOperationApplyConfiguration struct {
-	Name              *string                                `json:"name,omitempty"`
-	Disabled          *bool                                  `json:"disabled,omitempty"`
-	SourceScopes      []k8sconsts.SourcesScope               `json:"sourceScopes,omitempty"`
-	Error             *bool                                  `json:"error,omitempty"`
-	DurationAtLeastMs *int                                   `json:"durationAtLeastMs,omitempty"`
-	Operation         *sampling.TailSamplingOperationMatcher `json:"operation,omitempty"`
-	PercentageAtLeast *float64                               `json:"percentageAtLeast,omitempty"`
-	Notes             *string                                `json:"notes,omitempty"`
+	// user provided name, for easier identification and reference.
+	// use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+	// odigos does not use or assume any meaning from this field,
+	// but it is written as metric attribute, and stored as span attribute on participating spans.
+	Name *string `json:"name,omitempty"`
+	// if set to true, the rule will be disabled,
+	// e.g. will not be taken into account for any sampling decisions.
+	// disabled rules still participate in metrics calculations,
+	// allowing enhanced tools and data for troubleshooting and sampling maintenance.
+	Disabled *bool `json:"disabled,omitempty"`
+	// limit the operation to specific sources.
+	// an empty list will match any source.
+	// if multiple items are set, the operation match if any one matches
+	// this relates to the "ResourceAttributes" part of a span.
+	SourceScopes []k8sconsts.SourcesScope `json:"sourceScopes,omitempty"`
+	// if "Error" is set to true, only spans with SpanStatus set to "Error" are considered
+	Error *bool `json:"error,omitempty"`
+	// if Duration is set, only operations with duration in milli seconds larger then this value are considered
+	DurationAtLeastMs *int `json:"durationAtLeastMs,omitempty"`
+	// optionally, limit this rule to specific operations.
+	// for example: specific endpoint or kafka topic.
+	// this field is optional, and if not set, the rule will be applied to all operations.
+	Operation *sampling.TailSamplingOperationMatcher `json:"operation,omitempty"`
+	// traces that contains this operation will be sampled by at least this percentage.
+	// if unset, 100% of such the traces will be sampled.
+	PercentageAtLeast *float64 `json:"percentageAtLeast,omitempty"`
+	// optional free-form text field that allows you to attach notes
+	// for future context and maintenance.
+	// users can write why this rule was added, observations, document considerations, etc.
+	Notes *string `json:"notes,omitempty"`
 }
 
 // HighlyRelevantOperationApplyConfiguration constructs a declarative configuration of the HighlyRelevantOperation type for use with

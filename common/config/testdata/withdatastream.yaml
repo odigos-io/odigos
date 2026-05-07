@@ -13,17 +13,7 @@ processors:
 extensions: {}
 connectors:
   forward/logs/debug-dummy: {}
-  odigosrouterconnector/logs:
-    datastreams:
-    - name: dummy-group
-      sources:
-      - namespace: dummy-namespace
-        kind: dummy-kind
-        name: dummy-name
-      destinations:
-      - destinationname: dummy
-        configuredsignals:
-        - LOGS
+  odigosrouterconnector/logs: {}
 service:
   extensions: []
   pipelines:

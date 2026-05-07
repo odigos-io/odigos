@@ -81,6 +81,9 @@ redis:
   # Eviction policy when maxmemory is reached
   # allkeys-lru: evict least recently used keys (good default for mixed use)
   maxmemoryPolicy: allkeys-lru
+  # TCP keepalive interval in seconds. Sends probe packets on idle connections to prevent
+  # network infrastructure (NAT/firewall) from closing them due to idle timeouts.
+  tcpKeepalive: 30
   resources:
     requests:
       cpu: 100m

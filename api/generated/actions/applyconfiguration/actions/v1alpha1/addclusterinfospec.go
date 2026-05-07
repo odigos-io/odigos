@@ -23,6 +23,8 @@ import (
 
 // AddClusterInfoSpecApplyConfiguration represents a declarative configuration of the AddClusterInfoSpec type for use
 // with apply.
+//
+// AddClusterInfoSpec defines the desired state of AddClusterInfo action
 type AddClusterInfoSpecApplyConfiguration struct {
 	ActionName              *string                                    `json:"actionName,omitempty"`
 	Notes                   *string                                    `json:"notes,omitempty"`

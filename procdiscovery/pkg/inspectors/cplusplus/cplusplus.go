@@ -32,6 +32,6 @@ func (n *CPlusPlusInspector) DeepScan(pcx *process.ProcessContext) (common.Progr
 	return "", false
 }
 
-func (n *CPlusPlusInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
+func (n *CPlusPlusInspector) GetRuntimeVersion(pcx *process.ProcessContext) string {
 	return ""
 }

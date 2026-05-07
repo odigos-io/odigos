@@ -25,6 +25,8 @@ import (
 
 // CollectorsGroupApplyConfiguration represents a declarative configuration of the CollectorsGroup type for use
 // with apply.
+//
+// CollectorsGroup is the Schema for the collectors API
 type CollectorsGroupApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +44,7 @@ func CollectorsGroup(name, namespace string) *CollectorsGroupApplyConfiguration 
 	b.WithAPIVersion("odigos.io/v1alpha1")
 	return b
 }
+
 func (b CollectorsGroupApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
