@@ -19,7 +19,12 @@ package v1alpha1
 
 // HeadersCollectionConfigApplyConfiguration represents a declarative configuration of the HeadersCollectionConfig type for use
 // with apply.
+//
+// HeadersCollectionConfig represents configuration for HTTP headers collection.
 type HeadersCollectionConfigApplyConfiguration struct {
+	// Limit HTTP headers collection to specific header keys.
+	// if unset, no HTTP headers will be collected.
+	// HTTP headers cannot be collected as wildcard, to avoid leaking sensitive information.
 	HttpHeaderKeys []string `json:"httpHeaderKeys,omitempty"`
 }
 

@@ -20,6 +20,8 @@ package v1alpha1
 // InstrumentationInstanceSpecApplyConfiguration represents a declarative configuration of the InstrumentationInstanceSpec type for use
 // with apply.
 type InstrumentationInstanceSpecApplyConfiguration struct {
+	// stores the name of the container in the pod where the SDK is running.
+	// The pod details can be found as the owner reference on the CR.
 	ContainerName *string `json:"containerName,omitempty"`
 }
 

@@ -34,7 +34,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.Destination, target: id ? getSseTargetFromId(id, EntityTypes.Destination) : undefined, hideFromHistory });
   };
 
-  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }, {}>(GET_DESTINATIONS);
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { destinations?: Destination[] } }, object>(GET_DESTINATIONS);
 
   const [mutateCreate] = useMutation<{ createNewDestination: Destination }, { destination: DestinationFormData }>(CREATE_DESTINATION, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Create, error.cause?.message || error.message),
@@ -64,8 +64,9 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       await mutateCreate({ variables: { destination: mapNoUndefinedFields(destination, selectedStreamName) } });
-      // !! no "fetch", and no "notifyUser"
-      // !! we should wait for SSE to handle that
+      // Refetch immediately instead of waiting for SSE (backend throttle + client-side debounce
+      // can delay the overview update by several seconds and make it appear empty).
+      await fetchDestinations();
     }
   };
 
@@ -77,8 +78,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
 
       if (data?.updateDestination) {
         notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${destination.type}" destination`, id);
-        // !! no "fetch"
-        // !! we should wait for SSE to handle that
+        await fetchDestinations();
       }
     }
   };
@@ -88,8 +88,7 @@ export const useDestinationCRUD = (): UseDestinationCrud => {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       await mutateDelete({ variables: { id, currentStreamName: selectedStreamName } });
-      // !! no "fetch", and no "notifyUser"
-      // !! we should wait for SSE to handle that
+      await fetchDestinations();
     }
   };
 

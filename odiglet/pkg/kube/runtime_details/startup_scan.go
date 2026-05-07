@@ -54,7 +54,7 @@ func (s *startupRuntimeDetection) scan(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("failed to list pods: %w", err)
 	}
 
-	icPods := make([]struct  {
+	icPods := make([]struct {
 		ic   *odigosv1.InstrumentationConfig
 		pods []corev1.Pod
 	}, 0, len(icList.Items))
@@ -65,8 +65,11 @@ func (s *startupRuntimeDetection) scan(ctx context.Context) (int, error) {
 		if err != nil {
 			return 0, fmt.Errorf("failed to get matching pods for ic: %w", err)
 		}
-		icPods = append(icPods, struct{ic *odigosv1.InstrumentationConfig; pods []corev1.Pod}{
-			ic: &icList.Items[i],
+		icPods = append(icPods, struct {
+			ic   *odigosv1.InstrumentationConfig
+			pods []corev1.Pod
+		}{
+			ic:   &icList.Items[i],
 			pods: pods,
 		})
 	}

@@ -19,7 +19,12 @@ package v1alpha1
 
 // IdGeneratorTimedWallConfigApplyConfiguration represents a declarative configuration of the IdGeneratorTimedWallConfig type for use
 // with apply.
+//
+// trace id includes timestamp, source id byte, and random number bytes.
+// this id generator can be leveraged by databases to do efficient indexing.
 type IdGeneratorTimedWallConfigApplyConfiguration struct {
+	// sourceId is a number between 0-255 (8 bits) written into the 8th byte of the trace id.
+	// if timedWall is specified, the sourceId is required.
 	SourceId *byte `json:"sourceId,omitempty"`
 }
 

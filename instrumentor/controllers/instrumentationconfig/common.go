@@ -64,6 +64,9 @@ func updateInstrumentationConfigForWorkload(ctx context.Context, ic *odigosv1alp
 				if rule.Spec.CustomInstrumentations != nil {
 					sdkConfigs[i].CustomInstrumentations = mergeCustomInstrumentations(sdkConfigs[i].CustomInstrumentations, rule.Spec.CustomInstrumentations)
 				}
+				if rule.Spec.EbpfLogCapture != nil {
+					sdkConfigs[i].EbpfLogCapture = mergeEbpfLogCapture(sdkConfigs[i].EbpfLogCapture, rule.Spec.EbpfLogCapture)
+				}
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
 					libraryConfig := findOrCreateSdkLibraryConfig(&sdkConfigs[i], library)
@@ -77,6 +80,8 @@ func updateInstrumentationConfigForWorkload(ctx context.Context, ic *odigosv1alp
 						libraryConfig.PayloadCollection.DbQuery = mergeDbPayloadCollectionRules(libraryConfig.PayloadCollection.DbQuery, rule.Spec.PayloadCollection.DbQuery)
 						libraryConfig.PayloadCollection.Messaging = mergeMessagingPayloadCollectionRules(libraryConfig.PayloadCollection.Messaging, rule.Spec.PayloadCollection.Messaging)
 					}
+
+					// DELETE ONCE FULLY MIGRATED TO THE CONTAINER CONFIG
 					if rule.Spec.CodeAttributes != nil {
 						libraryConfig.CodeAttributes = mergeCodeAttributesRules(libraryConfig.CodeAttributes, rule.Spec.CodeAttributes)
 					}
@@ -274,6 +279,18 @@ func mergeCustomInstrumentations(rule1 *instrumentationrules.CustomInstrumentati
 	mergedRules.Java = mergedJavaProbes
 
 	return mergedRules
+}
+
+func mergeEbpfLogCapture(existing *instrumentationrules.EbpfLogCapture, rule *instrumentationrules.EbpfLogCapture) *instrumentationrules.EbpfLogCapture {
+	if existing == nil {
+		return rule
+	}
+	// If any rule enables it, it's enabled (OR logic)
+	if rule.Enabled != nil && *rule.Enabled {
+		enabled := true
+		existing.Enabled = &enabled
+	}
+	return existing
 }
 
 func mergeHttpHeadersCollectionrules(rule1 *instrumentationrules.HttpHeadersCollection, rule2 *instrumentationrules.HttpHeadersCollection) *instrumentationrules.HttpHeadersCollection {

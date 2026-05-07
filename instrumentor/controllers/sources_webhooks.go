@@ -29,12 +29,10 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -42,15 +40,10 @@ type SourcesDefaulter struct {
 	client.Client
 }
 
-var _ webhook.CustomDefaulter = &SourcesDefaulter{}
+var _ admission.Defaulter[*v1alpha1.Source] = &SourcesDefaulter{}
 var defaultDataStreamLabel = k8sconsts.SourceDataStreamLabelPrefix + consts.DefaultDataStream
 
-func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) error {
-	source, ok := obj.(*v1alpha1.Source)
-	if !ok {
-		return fmt.Errorf("expected a Source but got a %T", obj)
-	}
-
+func (s *SourcesDefaulter) Default(ctx context.Context, source *v1alpha1.Source) error {
 	if source.Labels == nil {
 		source.Labels = make(map[string]string)
 	}
@@ -94,14 +87,10 @@ type SourcesValidator struct {
 	client.Client
 }
 
-var _ webhook.CustomValidator = &SourcesValidator{}
+var _ admission.Validator[*v1alpha1.Source] = &SourcesValidator{}
 
-func (s *SourcesValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (s *SourcesValidator) ValidateCreate(ctx context.Context, source *v1alpha1.Source) (admission.Warnings, error) {
 	var allErrs field.ErrorList
-	source, ok := obj.(*v1alpha1.Source)
-	if !ok {
-		return nil, fmt.Errorf("expected a Source but got a %T", obj)
-	}
 
 	errs := s.validateSourceFields(ctx, source)
 	if len(errs) > 0 {
@@ -117,16 +106,8 @@ func (s *SourcesValidator) ValidateCreate(ctx context.Context, obj runtime.Objec
 		source.Name, allErrs)
 }
 
-func (s *SourcesValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (s *SourcesValidator) ValidateUpdate(ctx context.Context, old, new *v1alpha1.Source) (admission.Warnings, error) {
 	var allErrs field.ErrorList
-	old, ok := oldObj.(*v1alpha1.Source)
-	if !ok {
-		return nil, fmt.Errorf("expected old Source but got a %T", old)
-	}
-	new, ok := newObj.(*v1alpha1.Source)
-	if !ok {
-		return nil, fmt.Errorf("expected new Source but got a %T", new)
-	}
 
 	if new.GetName() != old.GetName() {
 		allErrs = append(allErrs, field.Invalid(
@@ -194,7 +175,7 @@ func (s *SourcesValidator) ValidateUpdate(ctx context.Context, oldObj, newObj ru
 		new.Name, allErrs)
 }
 
-func (s *SourcesValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (s *SourcesValidator) ValidateDelete(ctx context.Context, source *v1alpha1.Source) (admission.Warnings, error) {
 	return nil, nil
 }
 

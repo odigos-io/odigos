@@ -14,6 +14,27 @@ rules:
       - get
       - list
       - watch
+  # Required for k8sattributes processor in profiles pipeline.
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - replicasets
+      - deployments
+      - statefulsets
+      - daemonsets
+    verbs:
+      - get
+      - list
+      - watch
 {{- if .Values.collectorGateway.clusterMetricsEnabled }}
   # Cluster metrics (k8s_cluster receiver, leader elector)
   - apiGroups:

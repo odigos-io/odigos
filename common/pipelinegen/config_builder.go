@@ -162,6 +162,11 @@ func CalculateGatewayConfig(
 		enabledSignals = append(enabledSignals, common.LogsObservabilitySignal)
 	}
 
+	if tracesEnabled {
+		currentConfig.Processors[consts.OdigosTraceStateProcessorName] = config.GenericMap{}
+		allTracesProcessors = append(allTracesProcessors, consts.OdigosTraceStateProcessorName)
+	}
+
 	//  Add pipelines that receive from routing connectors and forward to destinations
 	dataStreamPipelines := buildDataStreamPipelines(dataStreamsDetails, destForwardConnectors)
 	for name, pipe := range dataStreamPipelines {
@@ -170,11 +175,11 @@ func CalculateGatewayConfig(
 
 	// Create root pipelines for each signal and connectors
 	insertRootPipelinesToConfig(currentConfig,
-		dataStreamsDetails,
 		allTracesProcessors,
 		processorsResults.MetricsProcessors,
 		processorsResults.LogsProcessors,
-		enabledSignals)
+		enabledSignals,
+		gatewayOptions.OdigosConfigExtensionName)
 
 	// Optional: Add collector self-observability
 	if applySelfTelemetry != nil {
@@ -201,6 +206,9 @@ func CalculateGatewayConfig(
 		currentConfig.Extensions[*gatewayOptions.OdigosConfigExtensionName] = config.GenericMap{}
 	}
 
+	// Sort extensions for deterministic YAML output
+	slices.Sort(currentConfig.Service.Extensions)
+
 	// Final marshal to YAML
 	data, err := yaml.Marshal(currentConfig)
 	if err != nil {
@@ -210,45 +218,34 @@ func CalculateGatewayConfig(
 	return string(data), nil, status, enabledSignals
 }
 
-func insertRootPipelinesToConfig(currentConfig *config.Config, dataStreamsDetails []DataStreams,
-	tracesProcessors, metricsProcessors, logsProcessors []string, signals []common.ObservabilitySignal) {
+func insertRootPipelinesToConfig(currentConfig *config.Config,
+	tracesProcessors, metricsProcessors, logsProcessors []string,
+	signals []common.ObservabilitySignal, odigosConfigExtensionName *string) {
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
-		applyRootPipelineForSignal(
-			currentConfig,
-			common.TracesObservabilitySignal,
-			tracesProcessors,
-			dataStreamsDetails,
-		)
+		applyRootPipelineForSignal(currentConfig, common.TracesObservabilitySignal, tracesProcessors, odigosConfigExtensionName)
 	}
 
 	if slices.Contains(signals, common.MetricsObservabilitySignal) {
-		applyRootPipelineForSignal(
-			currentConfig,
-			common.MetricsObservabilitySignal,
-			metricsProcessors,
-			dataStreamsDetails,
-		)
+		applyRootPipelineForSignal(currentConfig, common.MetricsObservabilitySignal, metricsProcessors, odigosConfigExtensionName)
 	}
 
 	if slices.Contains(signals, common.LogsObservabilitySignal) {
-		applyRootPipelineForSignal(
-			currentConfig,
-			common.LogsObservabilitySignal,
-			logsProcessors,
-			dataStreamsDetails,
-		)
+		applyRootPipelineForSignal(currentConfig, common.LogsObservabilitySignal, logsProcessors, odigosConfigExtensionName)
 	}
 }
 
 func applyRootPipelineForSignal(currentConfig *config.Config, signal common.ObservabilitySignal,
-	processors []string, dataStreamsDetails []DataStreams) {
+	processors []string, odigosConfigExtensionName *string) {
 	rootPipelineName := GetTelemetryRootPipelineName(signal)
 	fullProcessors := append([]string{"resource/odigos-version"}, processors...)
 
 	connectorName := fmt.Sprintf("odigosrouterconnector/%s", strings.ToLower(string(signal)))
-	currentConfig.Connectors[connectorName] = config.GenericMap{
-		"datastreams": dataStreamsDetails,
+
+	connectorCfg := config.GenericMap{}
+	if odigosConfigExtensionName != nil {
+		connectorCfg["odigos_config_extension"] = *odigosConfigExtensionName
 	}
+	currentConfig.Connectors[connectorName] = connectorCfg
 
 	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
 		Receivers:  []string{"otlp"},

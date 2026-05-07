@@ -1,0 +1,29 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: nodejs-community-14
+spec:
+  name: nodejs-community-14
+  language: javascript
+  runtimeEnvironments:
+    - name: nodejs
+      supportedVersions: '>= 14'
+  displayName: 'Legacy Node.js Community Native Instrumentation for Node.js >= 14'
+  description: |
+    Legacy distribution for Applications using Old Node.js runtime versions (14 and above)
+  environmentVariables:
+    opAmpClientEnvironments: true
+    otlpHttpLocalNode: true
+    appendOdigosVariables:
+      - envName: NODE_OPTIONS
+        replacePattern: '{{ORIGINAL_ENV_VALUE}} --require {{ODIGOS_AGENTS_DIR}}/nodejs-community-14/autoinstrumentation.js'
+  runtimeAgent:
+    directoryNames:
+      - "{{ODIGOS_AGENTS_DIR}}/nodejs-community-14"
+      - "{{ODIGOS_AGENTS_DIR}}/opentelemetry-node-14"
+    device: 'instrumentation.odigos.io/generic'
+    k8sAttrsViaEnvVars: true
+    ldPreloadInjectionSupported: true
+  traces:
+    headersCollection:
+      supported: true

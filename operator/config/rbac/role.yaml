@@ -33,7 +33,10 @@ rules:
   - events
   verbs:
   - create
+  - get
+  - list
   - patch
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -42,6 +45,19 @@ rules:
   - get
   - list
   - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces/status
+  - nodes/spec
+  - nodes/stats
+  - replicationcontrollers
+  - replicationcontrollers/status
+  - resourcequotas
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - ""
@@ -56,14 +72,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - nodes/stats
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - pods
   verbs:
   - delete
@@ -74,6 +82,7 @@ rules:
   - ""
   resources:
   - pods/log
+  - pods/proxy
   - pods/status
   verbs:
   - get
@@ -216,8 +225,10 @@ rules:
   - create
   - delete
   - get
+  - list
   - patch
   - update
+  - watch
 - apiGroups:
   - batch
   resources:
@@ -256,6 +267,16 @@ rules:
   - discovery.k8s.io
   resources:
   - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
   verbs:
   - get
   - list

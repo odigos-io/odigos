@@ -3,12 +3,20 @@ status:
   class: receiver
 
   stability:
-    beta: [traces, metrics]
+    beta: [traces, metrics, logs]
   codeowners:
     active: [tamirdavid]
 
 telemetry:
   metrics:
+    ebpf_logs_attr_cache_size:
+      enabled: true
+      description: "Current number of entries in the logs resource-attributes cache. Bounded by the eBPF map MaxProcessesCount."
+      unit: "{entries}"
+      gauge:
+        value_type: int
+      stability: development
+
     ebpf_lost_samples:
       enabled: true
       description: "The number of samples lost while reading from the eBPF perf buffer. For the ring buffer, this value is always 0."
@@ -16,8 +24,7 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development
 
     ebpf_memory_pressure_wait_time_total:
       enabled: true
@@ -26,8 +33,7 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development
 
     ebpf_total_bytes_read:
       enabled: true
@@ -36,5 +42,4 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development

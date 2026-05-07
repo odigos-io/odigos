@@ -17,51 +17,51 @@ func checkTokenAttributes(tokenPayload map[string]interface{}) (string, error) {
 	// exp
 	exp, ok := tokenPayload["exp"]
 	if !ok {
-		return "", fmt.Errorf("missing exp claim")
+		return "", fmt.Errorf("Missing exp claim")
 	}
 	expFloat, ok := exp.(float64)
 	if !ok {
 		// json.Unmarshal uses float64 for numbers; if tokenPayload was built differently, be explicit.
-		return "", fmt.Errorf("invalid exp claim type")
+		return "", fmt.Errorf("Invalid exp claim type")
 	}
 
 	expTime := time.Unix(int64(expFloat), 0)
 	if time.Now().After(expTime) {
 		expirationDuration := time.Since(expTime)
 		roundedDuration := expirationDuration.Round(time.Minute)
-		return "", fmt.Errorf("token is expired for %v, contact Odigos support to issue a new one", roundedDuration)
+		return "", fmt.Errorf("Token has expired %v ago, contact Odigos support to issue a new one", roundedDuration)
 	}
 
 	// iss
 	iss, ok := tokenPayload["iss"].(string)
 	if !ok || iss != expectedIssuer {
-		return "", fmt.Errorf("invalid iss")
+		return "", fmt.Errorf("Invalid iss")
 	}
 
 	// sub
 	sub, ok := tokenPayload["sub"].(string)
 	if !ok || sub != expectedSubject {
-		return "", fmt.Errorf("invalid sub")
+		return "", fmt.Errorf("Invalid sub")
 	}
 
 	// aud (support both string and string array)
 	switch aud := tokenPayload["aud"].(type) {
 	case string:
 		if aud == "" {
-			return "", fmt.Errorf("missing aud claim")
+			return "", fmt.Errorf("Missing aud claim")
 		}
 		return aud, nil
 	case []interface{}:
 		if len(aud) == 0 {
-			return "", fmt.Errorf("missing aud claim")
+			return "", fmt.Errorf("Missing aud claim")
 		}
 		aud0, ok := aud[0].(string)
 		if !ok || aud0 == "" {
-			return "", fmt.Errorf("invalid aud claim")
+			return "", fmt.Errorf("Invalid aud claim")
 		}
 		return aud0, nil
 	default:
-		return "", fmt.Errorf("missing aud claim")
+		return "", fmt.Errorf("Missing aud claim")
 	}
 }
 

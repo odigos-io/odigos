@@ -3,6 +3,7 @@ package nodecollector
 import (
 	"context"
 	"slices"
+	"sort"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -37,6 +38,8 @@ func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context
 	if err := b.Client.List(ctx, &ics); err != nil {
 		return ctrl.Result{}, err
 	}
+	// Kubernetes list order is unspecified; sort once so downstream config is stable.
+	sortInstrumentationConfigsByNameNamespace(ics.Items)
 
 	dataCollectionCollectorGroup := &odigosv1.CollectorsGroup{}
 	err := b.Client.Get(ctx, client.ObjectKey{Namespace: b.odigosNamespace, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, dataCollectionCollectorGroup)
@@ -99,4 +102,14 @@ func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, so
 	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, enabledSignals, dataCollection, ctx, b.Client)
 
 	return nil
+}
+
+func sortInstrumentationConfigsByNameNamespace(items []odigosv1.InstrumentationConfig) {
+	sort.Slice(items, func(i, j int) bool {
+		a, b := items[i], items[j]
+		if a.Name != b.Name {
+			return a.Name < b.Name
+		}
+		return a.Namespace < b.Namespace
+	})
 }

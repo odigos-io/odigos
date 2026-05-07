@@ -1,11 +1,11 @@
-import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { aliasQuery, awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, hasOperationName, updateEntity, visitPage } from '../functions';
+import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
+import { aliasQuery, awaitToast, deleteV2Entity, getCrdById, getCrdIds, handleExceptions, hasOperationName, updateV2Entity, visitPage, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
 // If you have to run tests locally, make sure to clean up the cluster before running the tests.
 
-const namespace = NAMESPACES.ODIGOS_TEST;
+const namespace = NAMESPACES.ODIGOS;
 const crdName = CRD_NAMES.INSTRUMENTATION_RULE;
 const totalEntities = SELECTED_ENTITIES.INSTRUMENTATION_RULES.length;
 
@@ -33,14 +33,14 @@ describe('Instrumentation Rules CRUD', () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType) => {
         cy.get(DATA_IDS.ADD_INSTRUMENTATION_RULE).click();
-        cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).should('exist');
-        cy.get(DATA_IDS.MODAL_ADD_INSTRUMENTATION_RULE).find('input').should('have.attr', 'placeholder', INPUTS.RULE_DROPDOWN).click();
-        cy.get(DATA_IDS.RULE_OPTION(ruleType)).click();
+
+        // Select rule type from the drawer's left column list
+        cy.get(DATA_IDS.RULE_OPTION(ruleType)).should('exist').click();
         // No need to fill form (as we did in actions), because default values are enough 👍 for all rules
-        cy.get('button').contains(BUTTONS.DONE).click();
+        cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
 
         // Wait for rule to create
-        cy.wait('@gql').then(() => {
+        waitForGraphqlOperation('CreateInstrumentationRule').then(() => {
           awaitToast({ message: TEXTS.NOTIF_INSTRUMENTATION_RULE_CREATED(ruleType) });
         });
       });
@@ -51,20 +51,21 @@ describe('Instrumentation Rules CRUD', () => {
     getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities });
   });
 
-  it(`Should update ${totalEntities} rules via API, and notify locally`, () => {
+  it(`Should update ${totalEntities} rules via the v2 edit-rule-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType) => {
-        updateEntity(
+        updateV2Entity(
           {
-            // no indexed node, because rules are fetched in random order
+            // rules are fetched in random order, so we locate the row by the type text it shows
             nodeId: 'div',
             nodeContains: ruleType,
-            fieldKey: DATA_IDS.TITLE,
+            prefix: DATA_IDS.RULE_DRAWER_PREFIX,
+            fieldKey: DATA_IDS.RULE_NAME_INPUT,
             fieldValue: TEXTS.UPDATED_NAME,
           },
           () => {
             // Wait for the rule to update
-            cy.wait('@gql').then(() => {
+            waitForGraphqlOperation('UpdateInstrumentationRule').then(() => {
               awaitToast({ message: TEXTS.NOTIF_INSTRUMENTATION_RULE_UPDATED(ruleType) });
             });
           },
@@ -81,19 +82,19 @@ describe('Instrumentation Rules CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} actions via API, and notify locally`, () => {
+  it(`Should delete ${totalEntities} rules via the v2 edit-rule-drawer, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       SELECTED_ENTITIES.INSTRUMENTATION_RULES.forEach((ruleType) => {
-        deleteEntity(
+        deleteV2Entity(
           {
-            // no indexed node, because rules are fetched in random order
             nodeId: 'div',
             nodeContains: ruleType,
+            prefix: DATA_IDS.RULE_DRAWER_PREFIX,
             warnModalTitle: TEXTS.INSTRUMENTATION_RULE_WARN_MODAL_TITLE,
           },
           () => {
             // Wait for the rule to delete
-            cy.wait('@gql').then(() => {
+            waitForGraphqlOperation('DeleteInstrumentationRule').then(() => {
               awaitToast({ message: TEXTS.NOTIF_INSTRUMENTATION_RULE_DELETED(ruleType) });
             });
           },

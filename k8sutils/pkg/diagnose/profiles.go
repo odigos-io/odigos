@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -196,14 +198,25 @@ func captureProfile(
 	namespace string,
 	profileInterface ProfileInterface,
 ) ([]byte, error) {
-	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:%d/proxy/debug/pprof%s", namespace, podName, pprofPort, profileInterface.GetUrlSuffix())
+	// Query params must use Request.Param; embedding "?" in AbsPath is escaped into Path and never reaches the apiserver.
+	suffix := strings.TrimPrefix(profileInterface.GetUrlSuffix(), "/")
+	pprofPath, rawQuery, hasQuery := strings.Cut(suffix, "?")
+	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:%d/proxy/debug/pprof/%s", namespace, podName, pprofPort, pprofPath)
 
-	request := client.CoreV1().RESTClient().
-		Get().
-		AbsPath(proxyURL).
-		Do(ctx)
+	req := client.CoreV1().RESTClient().Get().AbsPath(proxyURL)
+	if hasQuery {
+		q, err := url.ParseQuery(rawQuery)
+		if err != nil {
+			return nil, fmt.Errorf("parse pprof query %q: %w", rawQuery, err)
+		}
+		for key, vals := range q {
+			for _, v := range vals {
+				req.Param(key, v)
+			}
+		}
+	}
 
-	response, err := request.Raw()
+	response, err := req.Do(ctx).Raw()
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", err, string(response))
 	}

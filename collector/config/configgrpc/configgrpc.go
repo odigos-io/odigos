@@ -9,6 +9,9 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -244,6 +247,24 @@ func NewDefaultServerConfig() ServerConfig {
 }
 
 func (cc *ClientConfig) Validate() error {
+	if after, ok := strings.CutPrefix(cc.Endpoint, "unix://"); ok {
+		if after == "" {
+			return errors.New("unix socket path cannot be empty")
+		}
+		return nil
+	}
+
+	if endpoint := cc.sanitizedEndpoint(); endpoint != "" {
+		// Validate that the port is in the address
+		_, port, err := net.SplitHostPort(endpoint)
+		if err != nil {
+			return err
+		}
+		if _, err := strconv.Atoi(port); err != nil {
+			return fmt.Errorf(`invalid port "%v"`, port)
+		}
+	}
+
 	if cc.BalancerName != "" {
 		if balancer.Get(cc.BalancerName) == nil {
 			return fmt.Errorf("invalid balancer_name: %s", cc.BalancerName)
@@ -260,6 +281,9 @@ func (cc *ClientConfig) sanitizedEndpoint() string {
 		return strings.TrimPrefix(cc.Endpoint, "http://")
 	case cc.isSchemeHTTPS():
 		return strings.TrimPrefix(cc.Endpoint, "https://")
+	case strings.HasPrefix(cc.Endpoint, "dns://"):
+		r := regexp.MustCompile(`^dns:///?`)
+		return r.ReplaceAllString(cc.Endpoint, "")
 	default:
 		return cc.Endpoint
 	}
@@ -306,8 +330,16 @@ func (cc *ClientConfig) ToClientConn(
 	if err != nil {
 		return nil, err
 	}
-	//nolint:staticcheck // SA1019 see https://github.com/open-telemetry/opentelemetry-collector/pull/11575
-	return grpc.DialContext(ctx, cc.sanitizedEndpoint(), grpcOpts...)
+	conn, err := grpc.NewClient(cc.sanitizedEndpoint(), grpcOpts...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initiate connection to match the previous behavior of DialContext
+	// This ensures the connection is established eagerly rather than lazily
+	conn.Connect()
+
+	return conn, nil
 }
 
 func (cc *ClientConfig) addHeadersIfAbsent(ctx context.Context) context.Context {
@@ -545,6 +577,10 @@ func (sc *ServerConfig) getGrpcServerOptions(
 	var uInterceptors []grpc.UnaryServerInterceptor
 	var sInterceptors []grpc.StreamServerInterceptor
 
+	// Add client info first, before auth.
+	uInterceptors = append(uInterceptors, enhanceWithClientInformation(sc.IncludeMetadata))
+	sInterceptors = append(sInterceptors, enhanceStreamWithClientInformation(sc.IncludeMetadata)) //nolint:contextcheck // context already handled
+
 	if sc.Auth.HasValue() {
 		authenticator, err := sc.Auth.Get().GetServerAuthenticator(ctx, extensions)
 		if err != nil {
@@ -562,10 +598,6 @@ func (sc *ServerConfig) getGrpcServerOptions(
 	}
 
 	// Enable OpenTelemetry observability plugin.
-
-	uInterceptors = append(uInterceptors, enhanceWithClientInformation(sc.IncludeMetadata))
-	sInterceptors = append(sInterceptors, enhanceStreamWithClientInformation(sc.IncludeMetadata)) //nolint:contextcheck // context already handled
-
 	opts = append(opts, grpc.StatsHandler(otelgrpc.NewServerHandler(otelOpts...)), grpc.ChainUnaryInterceptor(uInterceptors...), grpc.ChainStreamInterceptor(sInterceptors...))
 
 	// Add a counter to track the number of times the memory limiter is reached.

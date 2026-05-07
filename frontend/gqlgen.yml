@@ -116,6 +116,8 @@ models:
 
   K8sActualSource:
     fields:
+      profiling:
+        resolver: true
 
   Sampling:
     fields:
@@ -147,4 +149,6 @@ models:
       markedForInstrumentation:
         resolver: true
       dataStreamNames:
+        resolver: true
+      workloads:
         resolver: true

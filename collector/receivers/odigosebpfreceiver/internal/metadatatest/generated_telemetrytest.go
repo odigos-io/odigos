@@ -21,6 +21,20 @@ func NewSettings(tt *componenttest.Telemetry) receiver.Settings {
 	return set
 }
 
+func AssertEqualEbpfLogsAttrCacheSize(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_ebpf_logs_attr_cache_size",
+		Description: "Current number of entries in the logs resource-attributes cache. Bounded by the eBPF map MaxProcessesCount. [Development]",
+		Unit:        "{entries}",
+		Data: metricdata.Gauge[int64]{
+			DataPoints: dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_ebpf_logs_attr_cache_size")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
 func AssertEqualEbpfLostSamples(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_ebpf_lost_samples",

@@ -23,6 +23,8 @@ import (
 
 // IdGeneratorConfigApplyConfiguration represents a declarative configuration of the IdGeneratorConfig type for use
 // with apply.
+//
+// id generator configuration for the traces
 type IdGeneratorConfigApplyConfiguration struct {
 	Random    *odigosv1alpha1.IdGeneratorRandomConfig       `json:"random,omitempty"`
 	TimedWall *IdGeneratorTimedWallConfigApplyConfiguration `json:"timedWall,omitempty"`

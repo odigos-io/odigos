@@ -45,6 +45,9 @@ func podsTransformFunc(obj interface{}) (interface{}, error) {
 
 	annotations := map[string]string{}
 	labels := pod.Labels
+	if labels == nil {
+		labels = make(map[string]string)
+	}
 	if workload.IsStaticPod(pod) {
 		annotations = pod.Annotations
 		labels = maps.Clone(labels)

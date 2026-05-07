@@ -42,6 +42,7 @@ func InstrumentationRule(name, namespace string) *InstrumentationRuleApplyConfig
 	b.WithAPIVersion("odigos.io/v1alpha1")
 	return b
 }
+
 func (b InstrumentationRuleApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

@@ -25,11 +25,20 @@ import (
 // InstrumentationConfigStatusApplyConfiguration represents a declarative configuration of the InstrumentationConfigStatus type for use
 // with apply.
 type InstrumentationConfigStatusApplyConfiguration struct {
-	RuntimeDetailsByContainer   []RuntimeDetailsByContainerApplyConfiguration  `json:"runtimeDetailsByContainer,omitempty"`
-	Conditions                  []v1.ConditionApplyConfiguration               `json:"conditions,omitempty"`
-	WorkloadRolloutHash         *string                                        `json:"workloadRolloutHash,omitempty"`
-	RollbackOccurred            *bool                                          `json:"rollbackOccurred,omitempty"`
-	InstrumentationTime         *metav1.Time                                   `json:"instrumentationTime,omitempty"`
+	// Capture Runtime Details for the workloads that this CR applies to.
+	RuntimeDetailsByContainer []RuntimeDetailsByContainerApplyConfiguration `json:"runtimeDetailsByContainer,omitempty"`
+	// Represents the observations of a InstrumentationConfig's current state.
+	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
+	// This hash is recorded only after the rollout took place.
+	// it allows us to determine if the workload needs to be rollout based on previous rollout and the current config.
+	// if this field is different than the spec.AgentsDeploymentHash it means rollout is needed or not yet updated.
+	WorkloadRolloutHash *string `json:"workloadRolloutHash,omitempty"`
+	// Check if rollback happened to an application
+	RollbackOccurred *bool `json:"rollbackOccurred,omitempty"`
+	// This time recorded only after the rollout took place.
+	// This allows us to determine whether a crashing application should be rolled back or not
+	InstrumentationTime *metav1.Time `json:"instrumentationTime,omitempty"`
+	// Represents the status of odigos MANIFEST injection to existing pods template.
 	PodsManifestInjectionStatus *PodsManifestInjectionStatusApplyConfiguration `json:"podsManifestInjectionStatus,omitempty"`
 }
 

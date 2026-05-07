@@ -14,7 +14,7 @@ func (j *TelemetryHub) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]str
 	uniqueUri := "telemetryhub-" + dest.GetID()
 	var pipelineNames []string
 
-	exporterName := "otlp/" + uniqueUri
+	exporterName := "otlp_grpc/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": "https://otlp.telemetryhub.com:4317",
 		"headers": GenericMap{

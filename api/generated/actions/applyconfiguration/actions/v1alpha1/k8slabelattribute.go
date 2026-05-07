@@ -24,10 +24,22 @@ import (
 // K8sLabelAttributeApplyConfiguration represents a declarative configuration of the K8sLabelAttribute type for use
 // with apply.
 type K8sLabelAttributeApplyConfiguration struct {
-	LabelKey     *string                              `json:"labelKey,omitempty"`
-	AttributeKey *string                              `json:"attributeKey,omitempty"`
-	From         *actionsv1alpha1.K8sAttributeSource  `json:"from,omitempty"`
-	FromSources  []actionsv1alpha1.K8sAttributeSource `json:"fromSources,omitempty"`
+	// The label name to be extracted.
+	// e.g. "app.kubernetes.io/name"
+	LabelKey *string `json:"labelKey,omitempty"`
+	// The attribute key to be used for the resource attribute created from the label.
+	// e.g. "app.kubernetes.name"
+	AttributeKey *string `json:"attributeKey,omitempty"`
+	// The source of the label.
+	// e.g. "pod" or "namespace"
+	// Deprecated: Use FromSources instead for specifying multiple sources with precedence.
+	From *actionsv1alpha1.K8sAttributeSource `json:"from,omitempty"`
+	// The sources from which to extract the label, in order of precedence (most specific first).
+	// When multiple sources are specified, the most specific source (e.g., pod) takes precedence
+	// over less specific sources (e.g., namespace).
+	// If a label exists in multiple sources, the value from the most specific source will be used.
+	// Supported sources: "pod", "namespace", "node"
+	FromSources []actionsv1alpha1.K8sAttributeSource `json:"fromSources,omitempty"`
 }
 
 // K8sLabelAttributeApplyConfiguration constructs a declarative configuration of the K8sLabelAttribute type for use with

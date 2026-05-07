@@ -27,8 +27,11 @@ type InstrumentationLibraryConfigApplyConfiguration struct {
 	InstrumentationLibraryId *InstrumentationLibraryIdApplyConfiguration           `json:"libraryId,omitempty"`
 	TraceConfig              *InstrumentationLibraryConfigTracesApplyConfiguration `json:"traceConfig,omitempty"`
 	PayloadCollection        *instrumentationrules.PayloadCollection               `json:"payloadCollection,omitempty"`
-	CodeAttributes           *instrumentationrules.CodeAttributes                  `json:"codeAttributes,omitempty"`
-	HeadersCollection        *instrumentationrules.HttpHeadersCollection           `json:"headersCollection,omitempty"`
+	// code attributes configuration for a specific library.
+	// if not set, the default code attributes configuration for the workload will be used.
+	// if set, but internal fields are empty, those fields will be used from the default configuration.
+	CodeAttributes    *instrumentationrules.CodeAttributes        `json:"codeAttributes,omitempty"`
+	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 }
 
 // InstrumentationLibraryConfigApplyConfiguration constructs a declarative configuration of the InstrumentationLibraryConfig type for use with

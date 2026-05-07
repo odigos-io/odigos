@@ -43,6 +43,10 @@ spec:
             - "--maxmemory-policy"
             - "{{ .Values.redis.maxmemoryPolicy }}"
             {{- end }}
+            {{- if .Values.redis.tcpKeepalive }}
+            - "--tcp-keepalive"
+            - "{{ .Values.redis.tcpKeepalive }}"
+            {{- end }}
           ports:
             - containerPort: {{ .Values.redis.port }}
               name: {{ .Values.redis.portName }}

@@ -17,6 +17,12 @@ type workloadKey struct {
 	Name      string
 }
 
+// workloadEntry holds per-workload state: the set of container cache keys and the data stream names extracted from IC labels.
+type workloadEntry struct {
+	containerKeys map[string]struct{}
+	dataStreams   []string
+}
+
 // keyPrefixFromKey returns the workload prefix for a full cache key (e.g. "ns/kind/name/container" -> "ns/kind/name/").
 func keyPrefixFromKey(key string) string {
 	i := strings.LastIndex(key, "/")
@@ -29,19 +35,19 @@ func keyPrefixFromKey(key string) string {
 // cache stores workload sampling config by WorkloadKey.
 // When Set or Delete is called, the cache invokes all registered callbacks
 // so consumers stay in sync without the informer knowing about callbacks.
-// workloadKeysIndex maps workload key (e.g. "ns/kind/name/") to set of full cache keys for that workload.
+// workloadKeysIndex maps workload key prefix (e.g. "ns/kind/name/") to the workload entry.
 type cache struct {
 	mu                sync.RWMutex
 	data              map[string]*commonapi.ContainerCollectorConfig
 	callbacks         []collector.WorkloadConfigCacheCallback
-	workloadKeysIndex map[string]map[string]struct{}
+	workloadKeysIndex map[string]*workloadEntry
 }
 
 // newCache creates a new empty cache.
 func newCache() *cache {
 	return &cache{
 		data:              make(map[string]*commonapi.ContainerCollectorConfig),
-		workloadKeysIndex: make(map[string]map[string]struct{}),
+		workloadKeysIndex: make(map[string]*workloadEntry),
 	}
 }
 
@@ -71,7 +77,7 @@ func (c *cache) clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.data = make(map[string]*commonapi.ContainerCollectorConfig)
-	c.workloadKeysIndex = make(map[string]map[string]struct{})
+	c.workloadKeysIndex = make(map[string]*workloadEntry)
 	c.callbacks = nil
 }
 
@@ -91,10 +97,12 @@ func (c *cache) Set(key string, cfg *commonapi.ContainerCollectorConfig) {
 	c.data[key] = cfg
 	workloadKey := keyPrefixFromKey(key)
 	if workloadKey != "" {
-		if c.workloadKeysIndex[workloadKey] == nil {
-			c.workloadKeysIndex[workloadKey] = make(map[string]struct{})
+		entry := c.workloadKeysIndex[workloadKey]
+		if entry == nil {
+			entry = &workloadEntry{containerKeys: make(map[string]struct{})}
+			c.workloadKeysIndex[workloadKey] = entry
 		}
-		c.workloadKeysIndex[workloadKey][key] = struct{}{}
+		entry.containerKeys[key] = struct{}{}
 	}
 	n := len(c.callbacks)
 	currentCallBacks := make([]collector.WorkloadConfigCacheCallback, n)
@@ -122,9 +130,11 @@ func (c *cache) Delete(key string) {
 	delete(c.data, key)
 	workloadKey := keyPrefixFromKey(key)
 	if workloadKey != "" {
-		delete(c.workloadKeysIndex[workloadKey], key)
-		if len(c.workloadKeysIndex[workloadKey]) == 0 {
-			delete(c.workloadKeysIndex, workloadKey)
+		if entry := c.workloadKeysIndex[workloadKey]; entry != nil {
+			delete(entry.containerKeys, key)
+			if len(entry.containerKeys) == 0 && len(entry.dataStreams) == 0 {
+				delete(c.workloadKeysIndex, workloadKey)
+			}
 		}
 	}
 	n := len(c.callbacks)
@@ -136,18 +146,41 @@ func (c *cache) Delete(key string) {
 	}
 }
 
-// getKeysForWorkload returns a copy of the full cache keys for the given workload key. Caller must not modify the result.
-func (c *cache) getKeysForWorkload(workloadKey string) []string {
+// getContainerKeysForWorkload returns a copy of the full cache keys for the given workload key. Caller must not modify the result.
+func (c *cache) getContainerKeysForWorkload(workloadKey string) []string {
 	c.mu.RLock()
-	set := c.workloadKeysIndex[workloadKey]
-	if len(set) == 0 {
+	entry := c.workloadKeysIndex[workloadKey]
+	if entry == nil || len(entry.containerKeys) == 0 {
 		c.mu.RUnlock()
 		return nil
 	}
-	out := make([]string, 0, len(set))
-	for k := range set {
+	out := make([]string, 0, len(entry.containerKeys))
+	for k := range entry.containerKeys {
 		out = append(out, k)
 	}
 	c.mu.RUnlock()
 	return out
+}
+
+// SetDataStreams stores the data stream names for the given workload key prefix.
+func (c *cache) SetDataStreams(workloadKey string, streams []string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	entry := c.workloadKeysIndex[workloadKey]
+	if entry == nil {
+		entry = &workloadEntry{containerKeys: make(map[string]struct{})}
+		c.workloadKeysIndex[workloadKey] = entry
+	}
+	entry.dataStreams = streams
+}
+
+// GetDataStreams returns the data stream names for the given workload key prefix.
+func (c *cache) GetDataStreams(workloadKey string) ([]string, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	entry := c.workloadKeysIndex[workloadKey]
+	if entry == nil {
+		return nil, false
+	}
+	return entry.dataStreams, true
 }

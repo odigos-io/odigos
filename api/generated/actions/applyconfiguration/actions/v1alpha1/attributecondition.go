@@ -19,11 +19,19 @@ package v1alpha1
 
 // AttributeConditionApplyConfiguration represents a declarative configuration of the AttributeCondition type for use
 // with apply.
+//
+// AttributeCondition wraps different condition types so that only one type
+// of condition needs to be specified. This makes it explicit which data type
+// the attribute is expected to have.
 type AttributeConditionApplyConfiguration struct {
-	StringCondition  *StringAttributeConditionApplyConfiguration  `json:"string_condition,omitempty"`
-	NumberCondition  *NumberAttributeConditionApplyConfiguration  `json:"number_condition,omitempty"`
+	// StringCondition applies to string-type attributes.
+	StringCondition *StringAttributeConditionApplyConfiguration `json:"string_condition,omitempty"`
+	// NumberCondition applies to numeric attributes (int, long, float, double).
+	NumberCondition *NumberAttributeConditionApplyConfiguration `json:"number_condition,omitempty"`
+	// BooleanCondition applies to boolean attributes.
 	BooleanCondition *BooleanAttributeConditionApplyConfiguration `json:"boolean_condition,omitempty"`
-	JsonCondition    *JsonAttributeConditionApplyConfiguration    `json:"json_condition,omitempty"`
+	// JsonCondition applies to attributes that are JSON-encoded strings.
+	JsonCondition *JsonAttributeConditionApplyConfiguration `json:"json_condition,omitempty"`
 }
 
 // AttributeConditionApplyConfiguration constructs a declarative configuration of the AttributeCondition type for use with

@@ -205,9 +205,6 @@ func TestCalculateDataStreamAndDestinations(t *testing.T) {
 	dataStreamDetails := []pipelinegen.DataStreams{
 		{
 			Name: "dummy-group",
-			Sources: []pipelinegen.SourceFilter{
-				{Namespace: "dummy-namespace", Kind: "dummy-kind", Name: "dummy-name"},
-			},
 			Destinations: []pipelinegen.Destination{
 				{DestinationName: dummyDest.GetID(), ConfiguredSignals: dummyDest.GetSignals()},
 			},
@@ -264,8 +261,7 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 
 	dataStreamDetails := []pipelinegen.DataStreams{
 		{
-			Name:    "dummy-group",
-			Sources: []pipelinegen.SourceFilter{},
+			Name: "dummy-group",
 			Destinations: []pipelinegen.Destination{
 				{DestinationName: dummyDest.GetID(), ConfiguredSignals: dummyDest.GetSignals()},
 			},
@@ -416,9 +412,6 @@ func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 	dataStreamDetails := []pipelinegen.DataStreams{
 		{
 			Name: "dummy-group",
-			Sources: []pipelinegen.SourceFilter{
-				{Namespace: "default", Kind: "dummy-kind", Name: "dummy-name"},
-			},
 		},
 	}
 
@@ -442,7 +435,7 @@ func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 					"metrics/otelcol": {
 						Receivers:  []string{"prometheus/self-metrics"},
 						Processors: []string{"resource/pod-name"},
-						Exporters:  []string{"otlp/odigos-own-telemetry-ui"},
+						Exporters:  []string{"otlp_grpc/odigos-own-telemetry-ui"},
 					},
 				},
 				Extensions: []string{},

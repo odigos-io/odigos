@@ -23,7 +23,11 @@ import (
 
 // ProbabilisticSamplerStatusApplyConfiguration represents a declarative configuration of the ProbabilisticSamplerStatus type for use
 // with apply.
+//
+// ProbabilisticSamplerStatus defines the observed state of ProbabilisticSampler action
 type ProbabilisticSamplerStatusApplyConfiguration struct {
+	// Represents the observations of a ProbabilisticSampler's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

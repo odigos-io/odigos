@@ -25,6 +25,11 @@ import (
 
 // LatencySamplerApplyConfiguration represents a declarative configuration of the LatencySampler type for use
 // with apply.
+//
+// LatencySampler is the Schema for defining latency-based trace sampling rules.
+// It supports targeting specific services and HTTP routes and applying latency thresholds
+// to determine sampling eligibility.
+// DEPRECATED: Use odigosv1.Action instead
 type LatencySamplerApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +47,7 @@ func LatencySampler(name, namespace string) *LatencySamplerApplyConfiguration {
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+
 func (b LatencySamplerApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

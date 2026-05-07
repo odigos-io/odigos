@@ -8,11 +8,13 @@ spec:
     - displayName: Go Auto Offsets Cron
       componentType: input
       isHelmOnly: false
+      isEnterpriseOnly: true
       description: Cron expression for Go auto-offsets calculation schedule.
       helmValuePath: goAutoOffsetsCron
     - displayName: Go Auto Offsets Mode
       componentType: input
       isHelmOnly: false
+      isEnterpriseOnly: true
       description: Mode for Go auto-offsets (e.g. production, development).
       helmValuePath: goAutoOffsetsMode
     - displayName: Karpenter Enabled

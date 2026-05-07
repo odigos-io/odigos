@@ -24,6 +24,8 @@ import (
 // InstrumentationRuleStatusApplyConfiguration represents a declarative configuration of the InstrumentationRuleStatus type for use
 // with apply.
 type InstrumentationRuleStatusApplyConfiguration struct {
+	// Represents the observations of a instrumentationrule's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

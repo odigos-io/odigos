@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 1.8.7
+VERSION ?= 1.22.2
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -53,7 +53,7 @@ endif
 # This is useful for CI or a project to utilize a specific version of the operator-sdk toolkit.
 OPERATOR_SDK_VERSION ?= v1.39.1
 # Image URL to use all building/pushing image targets
-IMG ?= registry.connect.redhat.com/odigos/odigos-operator-certified:v$(VERSION)
+IMG ?= registry.connect.redhat.com/odigos/odigos-certified-operator-certified:v$(VERSION)
 AUTOSCALER_IMG ?= $(ORG)/odigos-autoscaler-certified:v$(VERSION)
 COLLECTOR_IMG ?= $(ORG)/odigos-collector-certified:v$(VERSION)
 FRONTEND_IMG ?= $(ORG)/odigos-ui-certified:v$(VERSION)

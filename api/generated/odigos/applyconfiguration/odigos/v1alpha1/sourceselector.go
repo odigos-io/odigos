@@ -20,7 +20,15 @@ package v1alpha1
 // SourceSelectorApplyConfiguration represents a declarative configuration of the SourceSelector type for use
 // with apply.
 type SourceSelectorApplyConfiguration struct {
-	Namespaces  []string `json:"namespaces,omitempty"`
+	// If a namespace is specified, all workloads (sources) within that namespace are allowed to send data.
+	// Example:
+	// namespaces: ["default", "production"]
+	// This means the destination will receive data from all sources in "default" and "production" namespaces.
+	Namespaces []string `json:"namespaces,omitempty"`
+	// Workloads (sources) are assigned to Datastreams via labels (odigos.io/data-stream: true), allowing a more flexible selection mechanism.
+	// Example:
+	// dataStreams: ["backend", "monitoring"]
+	// This means the destination will receive data only from sources labeled with "backend" or "monitoring".
 	DataStreams []string `json:"dataStreams,omitempty"`
 }
 

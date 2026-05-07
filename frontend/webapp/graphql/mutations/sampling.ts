@@ -133,3 +133,11 @@ export const DELETE_COST_REDUCTION_RULE = gql`
     deleteCostReductionRule(samplingId: $samplingId, ruleId: $ruleId)
   }
 `;
+
+// ---- Sampling Config ----
+
+export const UPDATE_LOCAL_UI_SAMPLING_CONFIG = gql`
+  mutation UpdateLocalUiSamplingConfig($config: SamplingConfigInput) {
+    updateLocalUiSamplingConfig(config: $config)
+  }
+`;

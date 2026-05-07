@@ -71,6 +71,23 @@ const (
 	UiModeReadonly UiMode = "readonly"
 )
 
+// +kubebuilder:object:generate=true
+// ResourceDetectorConfig holds the configuration for a single resource detector.
+type ResourceDetectorConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ResourceDetectorsConfiguration controls which resource detectors are enabled
+// on the node collector's resourcedetection processor.
+type ResourceDetectorsConfiguration struct {
+	EC2   *ResourceDetectorConfig `json:"ec2,omitempty"`
+	EKS   *ResourceDetectorConfig `json:"eks,omitempty"`
+	Azure *ResourceDetectorConfig `json:"azure,omitempty"`
+	AKS   *ResourceDetectorConfig `json:"aks,omitempty"`
+	GCP   *ResourceDetectorConfig `json:"gcp,omitempty"`
+}
+
 type CollectorNodeConfiguration struct {
 	// The port to use for exposing the collector's own metrics as a prometheus endpoint.
 	// This can be used to resolve conflicting ports when a collector is using the host network.
@@ -118,6 +135,10 @@ type CollectorNodeConfiguration struct {
 
 	// OtlpExporterConfiguration is the configuration for the OTLP exporter.
 	OtlpExporterConfiguration *OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
+
+	// ResourceDetectors controls which OpenTelemetry resource detectors are enabled.
+	// Defaults: ec2=true, eks=false, azure=true, aks=true, gcp=true.
+	ResourceDetectors *ResourceDetectorsConfiguration `json:"resourceDetectors,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -318,6 +339,10 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// This list controls which resource attributes are included in the metric stream identity.
 	// These attributes are used to determines how span metrics are grouped.
 	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
+
+	// Controls the tradeoff between metric accuracy and resource usage.
+	// See sampling.SpanMetricsMode for possible values.
+	SpanMetricsMode *sampling.SpanMetricsMode `json:"spanMetricsMode,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -482,6 +507,21 @@ type SamplingConfiguration struct {
 	K8sHealthProbesSampling *K8sHealthProbesSamplingConfiguration `json:"k8sHealthProbesSampling,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+// ProfilingUiConfiguration holds optional UI resource limits and OTLP listen overrides for profiling.
+type ProfilingUiConfiguration struct {
+	SlotTTLSeconds int `json:"slotTTLSeconds,omitempty" yaml:"slotTTLSeconds,omitempty"`
+	MaxSlots       int `json:"maxSlots,omitempty" yaml:"maxSlots,omitempty"`
+	SlotMaxBytes   int `json:"slotMaxBytes,omitempty" yaml:"slotMaxBytes,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ProfilingConfiguration is cluster-wide continuous profiling; disabled unless Enabled is set.
+type ProfilingConfiguration struct {
+	Enabled  *bool                      `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Exporter *OtlpExporterConfiguration `json:"exporter,omitempty" yaml:"exporter,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
 	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
@@ -544,4 +584,17 @@ type OdigosConfiguration struct {
 
 	// ComponentLogLevels: default = global level (e.g. from Helm); per-component overrides (e.g. from UI).
 	ComponentLogLevels *ComponentLogLevels `json:"componentLogLevels,omitempty" yaml:"componentLogLevels,omitempty"`
+
+	Profiling *ProfilingConfiguration `json:"profiling,omitempty" yaml:"profiling,omitempty"`
+}
+
+// ProfilingPipelineActive reports whether profiling pipelines and related collector settings should be applied.
+// Profiling is opt-in: Enabled must be explicitly true; nil or false keeps profiling off.
+func ProfilingPipelineActive(p *ProfilingConfiguration) bool {
+	return p != nil && p.Enabled != nil && *p.Enabled
+}
+
+// ProfilingEnabled reports whether profiling is explicitly enabled on this configuration.
+func (o *OdigosConfiguration) ProfilingEnabled() bool {
+	return o != nil && ProfilingPipelineActive(o.Profiling)
 }

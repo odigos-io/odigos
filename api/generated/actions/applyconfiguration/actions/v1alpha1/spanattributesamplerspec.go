@@ -23,11 +23,24 @@ import (
 
 // SpanAttributeSamplerSpecApplyConfiguration represents a declarative configuration of the SpanAttributeSamplerSpec type for use
 // with apply.
+//
+// SpanAttributeSamplerSpec defines the desired state of SpanAttributeSampler
 type SpanAttributeSamplerSpecApplyConfiguration struct {
-	ActionName       *string                                 `json:"actionName,omitempty"`
-	Notes            *string                                 `json:"notes,omitempty"`
-	Disabled         *bool                                   `json:"disabled,omitempty"`
-	Signals          []common.ObservabilitySignal            `json:"signals,omitempty"`
+	// ActionName is the name of the sampling action. This may be used to
+	// describe the purpose or intent of this sampler, for documentation
+	// or reference within other tools or systems.
+	ActionName *string `json:"actionName,omitempty"`
+	// Notes provides additional, free-form information about this sampler,
+	// such as a reference to a ticket, a link, or usage guidelines.
+	Notes *string `json:"notes,omitempty"`
+	// Disabled, if set to true, indicates that this sampler should not be
+	// applied at runtime.
+	Disabled *bool `json:"disabled,omitempty"`
+	// Signals indicates which ObservabilitySignal types this sampler applies to.
+	// For instance, this could include traces, metrics, logs, etc.
+	Signals []common.ObservabilitySignal `json:"signals,omitempty"`
+	// AttributeFilters defines a list of criteria to decide how spans should be
+	// sampled based on their attributes. At least one filter is required.
 	AttributeFilters []SpanAttributeFilterApplyConfiguration `json:"attribute_filters,omitempty"`
 }
 

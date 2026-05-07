@@ -6,6 +6,7 @@ const (
 	ReqGetFD        = "GET_FD" // Legacy: defaults to traces for backward compatibility
 	ReqGetTracesFD  = "GET_TRACES_FD"
 	ReqGetMetricsFD = "GET_METRICS_FD"
+	ReqGetLogsFD    = "GET_LOGS_FD"
 
 	// Server → Client
 	RespOK = "OK"

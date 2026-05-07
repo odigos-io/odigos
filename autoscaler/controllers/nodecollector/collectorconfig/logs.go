@@ -14,7 +14,12 @@ const (
 	odigosLogsResourceAttrsProcessorName = "odigoslogsresourceattrsprocessor"
 )
 
-func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string) config.GenericMap {
+func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string) (config.GenericMap, []string) {
+
+	if isEbpfLogCaptureEnabled(sources) {
+		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here
+		return config.GenericMap{}, []string{odigosEbpfReceiverName}
+	}
 
 	includes := make([]string, 0)
 	for _, element := range sources.Items {
@@ -39,8 +44,10 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 
 	return config.GenericMap{
 		filelogReceiverName: config.GenericMap{
-			"include":           includes,
-			"exclude":           []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
+			"include": includes,
+			"exclude": []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
+			// 5s (vs upstream 200ms default) avoids a readdir storm from stanza's per-include glob loop on busy nodes.
+			"poll_interval":     "5s",
 			"start_at":          "end",
 			"include_file_path": true,
 			"include_file_name": false,
@@ -62,26 +69,65 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 				"enabled": true,
 			},
 		},
-	}
+	}, []string{filelogReceiverName}
 }
 
-func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, sources *odigosv1.InstrumentationConfigList) config.Config {
+func isEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
+	if sources == nil {
+		return false
+	}
+	for _, ic := range sources.Items {
+		// check container config (new path)
+		for _, container := range ic.Spec.Containers {
+			if container.Logs != nil &&
+				container.Logs.EbpfLogCapture != nil &&
+				container.Logs.EbpfLogCapture.Enabled != nil &&
+				*container.Logs.EbpfLogCapture.Enabled {
+				return true
+			}
+		}
 
-	pipelineProcessors := append([]string{
+		// TODO: remove once fully migrated to container config
+		for _, sdkConfig := range ic.Spec.SdkConfigs {
+			if sdkConfig.EbpfLogCapture != nil &&
+				sdkConfig.EbpfLogCapture.Enabled != nil &&
+				*sdkConfig.EbpfLogCapture.Enabled {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+type LogsConfigOptions struct {
+	CommonSignalConfig
+	Sources *odigosv1.InstrumentationConfigList
+}
+
+func LogsConfig(nodeCG *odigosv1.CollectorsGroup, opts LogsConfigOptions) config.Config {
+
+	pipelineProcessors := []string{
 		memoryLimiterProcessorName,
 		nodeNameProcessorName,
-		resourceDetectionProcessorName,
+	}
+	if opts.ResourceDetectionEnabled {
+		pipelineProcessors = append(pipelineProcessors, resourceDetectionProcessorName)
+	}
+	pipelineProcessors = append(pipelineProcessors,
 		odigosLogsResourceAttrsProcessorName,
-	}, manifestProcessorNames...)
+	)
+	pipelineProcessors = append(pipelineProcessors, opts.ManifestProcessorNames...)
 	// append odigos traffic metrics processor last (after manifest processors)
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
 
+	receivers, pipelineReceivers := getReceivers(opts.Logger, opts.Sources, opts.OdigosNamespace)
+
 	return config.Config{
-		Receivers: getReceivers(logger, sources, odigosNamespace),
+		Receivers: receivers,
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				logsPipelineName: {
-					Receivers:  []string{filelogReceiverName},
+					Receivers:  pipelineReceivers,
 					Processors: pipelineProcessors,
 					Exporters:  []string{clusterCollectorLogsExporterName},
 				},

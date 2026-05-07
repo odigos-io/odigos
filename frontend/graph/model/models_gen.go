@@ -75,6 +75,10 @@ type AgentsInitContainerResourcesConfig struct {
 	LimitMemoryMiB   *int `json:"limitMemoryMiB,omitempty"`
 }
 
+type AllowConcurrentAgentsConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
 type APIToken struct {
 	Token     string  `json:"token"`
 	Name      string  `json:"name"`
@@ -104,6 +108,12 @@ type AttributeFiltersConditionInput struct {
 	JSONCondition    *JSONConditionInput    `json:"jsonCondition,omitempty"`
 }
 
+type AutoRollbackConfig struct {
+	Disabled            *bool   `json:"disabled,omitempty"`
+	GraceTime           *string `json:"graceTime,omitempty"`
+	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
+}
+
 type BooleanCondition struct {
 	Operation     BooleanOperation `json:"operation"`
 	ExpectedValue bool             `json:"expectedValue"`
@@ -112,6 +122,13 @@ type BooleanCondition struct {
 type BooleanConditionInput struct {
 	Operation     BooleanOperation `json:"operation"`
 	ExpectedValue bool             `json:"expectedValue"`
+}
+
+// Clearing buffered OTLP data for a workload slot
+type ClearProfilingBufferResult struct {
+	Status      string `json:"status"`
+	SourceKey   string `json:"sourceKey"`
+	ActiveSlots int    `json:"activeSlots"`
 }
 
 type ClusterAttribute struct {
@@ -254,13 +271,14 @@ type ConfigYaml struct {
 }
 
 type ConfigYamlField struct {
-	DisplayName    string    `json:"displayName"`
-	ComponentType  FieldType `json:"componentType"`
-	IsHelmOnly     bool      `json:"isHelmOnly"`
-	Description    string    `json:"description"`
-	HelmValuePath  string    `json:"helmValuePath"`
-	DocsLink       *string   `json:"docsLink,omitempty"`
-	ComponentProps *string   `json:"componentProps,omitempty"`
+	DisplayName      string    `json:"displayName"`
+	ComponentType    FieldType `json:"componentType"`
+	IsHelmOnly       bool      `json:"isHelmOnly"`
+	IsEnterpriseOnly bool      `json:"isEnterpriseOnly"`
+	Description      string    `json:"description"`
+	HelmValuePath    string    `json:"helmValuePath"`
+	DocsLink         *string   `json:"docsLink,omitempty"`
+	ComponentProps   *string   `json:"componentProps,omitempty"`
 }
 
 type ContainerAgentConfigAnalyze struct {
@@ -425,6 +443,13 @@ type DiagnoseStats struct {
 	TotalSizeHuman string `json:"totalSizeHuman"`
 }
 
+// Disable profiling slot for a workload.
+type DisableProfilingResult struct {
+	Status      string `json:"status"`
+	SourceKey   string `json:"sourceKey"`
+	ActiveSlots int    `json:"activeSlots"`
+}
+
 type DistroParam struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
@@ -443,30 +468,26 @@ type EffectiveConfig struct {
 	CollectorGateway                 *CollectorGatewayConfig             `json:"collectorGateway,omitempty"`
 	CollectorNode                    *CollectorNodeConfig                `json:"collectorNode,omitempty"`
 	Profiles                         []string                            `json:"profiles,omitempty"`
-	AllowConcurrentAgents            *bool                               `json:"allowConcurrentAgents,omitempty"`
+	AllowConcurrentAgents            *AllowConcurrentAgentsConfig        `json:"allowConcurrentAgents,omitempty"`
 	UIMode                           *UIMode                             `json:"uiMode,omitempty"`
 	UIPaginationLimit                *int                                `json:"uiPaginationLimit,omitempty"`
 	UIRemoteURL                      *string                             `json:"uiRemoteUrl,omitempty"`
 	CentralBackendURL                *string                             `json:"centralBackendURL,omitempty"`
 	ClusterName                      *string                             `json:"clusterName,omitempty"`
-	MountMethod                      *MountMethod                        `json:"mountMethod,omitempty"`
+	Instrumentor                     *InstrumentorConfig                 `json:"instrumentor,omitempty"`
 	CustomContainerRuntimeSocketPath *string                             `json:"customContainerRuntimeSocketPath,omitempty"`
-	AgentEnvVarsInjectionMethod      *EnvInjectionMethod                 `json:"agentEnvVarsInjectionMethod,omitempty"`
 	UserInstrumentationEnvs          *UserInstrumentationEnvsConfig      `json:"userInstrumentationEnvs,omitempty"`
 	NodeSelector                     *string                             `json:"nodeSelector,omitempty"`
-	KarpenterEnabled                 *bool                               `json:"karpenterEnabled,omitempty"`
+	Karpenter                        *KarpenterConfig                    `json:"karpenter,omitempty"`
 	Rollout                          *RolloutConfig                      `json:"rollout,omitempty"`
-	RollbackDisabled                 *bool                               `json:"rollbackDisabled,omitempty"`
-	RollbackGraceTime                *string                             `json:"rollbackGraceTime,omitempty"`
-	RollbackStabilityWindow          *string                             `json:"rollbackStabilityWindow,omitempty"`
+	AutoRollback                     *AutoRollbackConfig                 `json:"autoRollback,omitempty"`
 	Oidc                             *OidcConfig                         `json:"oidc,omitempty"`
 	OdigletHealthProbeBindPort       *int                                `json:"odigletHealthProbeBindPort,omitempty"`
 	GoAutoOffsetsCron                *string                             `json:"goAutoOffsetsCron,omitempty"`
 	GoAutoOffsetsMode                *string                             `json:"goAutoOffsetsMode,omitempty"`
 	ClickhouseJSONTypeEnabled        *bool                               `json:"clickhouseJsonTypeEnabled,omitempty"`
-	CheckDeviceHealthBeforeInjection *bool                               `json:"checkDeviceHealthBeforeInjection,omitempty"`
 	ResourceSizePreset               *string                             `json:"resourceSizePreset,omitempty"`
-	WaspEnabled                      *bool                               `json:"waspEnabled,omitempty"`
+	Wasp                             *WaspConfig                         `json:"wasp,omitempty"`
 	MetricsSources                   *MetricsSourceConfig                `json:"metricsSources,omitempty"`
 	AgentsInitContainerResources     *AgentsInitContainerResourcesConfig `json:"agentsInitContainerResources,omitempty"`
 	TraceIDSuffix                    *string                             `json:"traceIdSuffix,omitempty"`
@@ -474,7 +495,18 @@ type EffectiveConfig struct {
 	OdigosOwnTelemetryStore          *OdigosOwnTelemetryConfig           `json:"odigosOwnTelemetryStore,omitempty"`
 	ImagePullSecrets                 []string                            `json:"imagePullSecrets,omitempty"`
 	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
+	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
+	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
+	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
+}
+
+// Enabling profiling slot for a workload
+type EnableProfilingResult struct {
+	Status      string `json:"status"`
+	SourceKey   string `json:"sourceKey"`
+	MaxSlots    int    `json:"maxSlots"`
+	ActiveSlots int    `json:"activeSlots"`
 }
 
 type EntityProperty struct {
@@ -699,6 +731,12 @@ type InstrumentationSourcesAnalyze struct {
 	InstrumentedText *EntityProperty `json:"instrumentedText,omitempty"`
 }
 
+type InstrumentorConfig struct {
+	MountMethod                      *string `json:"mountMethod,omitempty"`
+	AgentEnvVarsInjectionMethod      *string `json:"agentEnvVarsInjectionMethod,omitempty"`
+	CheckDeviceHealthBeforeInjection *bool   `json:"checkDeviceHealthBeforeInjection,omitempty"`
+}
+
 type JavaCustomProbe struct {
 	ClassName  *string `json:"className,omitempty"`
 	MethodName *string `json:"methodName,omitempty"`
@@ -740,6 +778,8 @@ type K8sActualSource struct {
 	Conditions                []*Condition       `json:"conditions,omitempty"`
 	ManifestYaml              *string            `json:"manifestYAML,omitempty"`
 	InstrumentationConfigYaml *string            `json:"instrumentationConfigYAML,omitempty"`
+	// Buffered CPU profile for this source
+	Profiling *SourceProfilingResult `json:"profiling,omitempty"`
 }
 
 type K8sAnnotationAttribute struct {
@@ -1000,9 +1040,79 @@ type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
 	TelemetryObservedStatus *DesiredConditionStatus `json:"telemetryObservedStatus"`
 }
 
+type KarpenterConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
 type LanguageConfig struct {
 	Enabled bool    `json:"enabled"`
 	EnvVars *string `json:"envVars,omitempty"`
+}
+
+type LocalUIConfigAllowConcurrentAgentsInput struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type LocalUIConfigAutoRollbackInput struct {
+	Disabled            *bool   `json:"disabled,omitempty"`
+	GraceTime           *string `json:"graceTime,omitempty"`
+	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
+}
+
+type LocalUIConfigComponentLogLevelsInput struct {
+	Default      *OdigosLogLevel `json:"default,omitempty"`
+	Autoscaler   *OdigosLogLevel `json:"autoscaler,omitempty"`
+	Scheduler    *OdigosLogLevel `json:"scheduler,omitempty"`
+	Instrumentor *OdigosLogLevel `json:"instrumentor,omitempty"`
+	Odiglet      *OdigosLogLevel `json:"odiglet,omitempty"`
+	Deviceplugin *OdigosLogLevel `json:"deviceplugin,omitempty"`
+	UI           *OdigosLogLevel `json:"ui,omitempty"`
+	Collector    *OdigosLogLevel `json:"collector,omitempty"`
+}
+
+type LocalUIConfigInput struct {
+	TelemetryEnabled      *bool                                    `json:"telemetryEnabled,omitempty"`
+	IgnoredNamespaces     []string                                 `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers     []string                                 `json:"ignoredContainers,omitempty"`
+	IgnoreOdigosNamespace *bool                                    `json:"ignoreOdigosNamespace,omitempty"`
+	ClusterName           *string                                  `json:"clusterName,omitempty"`
+	Instrumentor          *LocalUIConfigInstrumentorInput          `json:"instrumentor,omitempty"`
+	AllowConcurrentAgents *LocalUIConfigAllowConcurrentAgentsInput `json:"allowConcurrentAgents,omitempty"`
+	Wasp                  *LocalUIConfigWaspInput                  `json:"wasp,omitempty"`
+	Rollout               *LocalUIConfigRolloutInput               `json:"rollout,omitempty"`
+	AutoRollback          *LocalUIConfigAutoRollbackInput          `json:"autoRollback,omitempty"`
+	GoAutoOffsetsCron     *string                                  `json:"goAutoOffsetsCron,omitempty"`
+	GoAutoOffsetsMode     *string                                  `json:"goAutoOffsetsMode,omitempty"`
+	Sampling              *LocalUIConfigSamplingInput              `json:"sampling,omitempty"`
+	ComponentLogLevels    *LocalUIConfigComponentLogLevelsInput    `json:"componentLogLevels,omitempty"`
+}
+
+type LocalUIConfigInstrumentorInput struct {
+	AgentEnvVarsInjectionMethod      *EnvInjectionMethod `json:"agentEnvVarsInjectionMethod,omitempty"`
+	CheckDeviceHealthBeforeInjection *bool               `json:"checkDeviceHealthBeforeInjection,omitempty"`
+}
+
+type LocalUIConfigRolloutInput struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+	MaxConcurrentRollouts    *int  `json:"maxConcurrentRollouts,omitempty"`
+}
+
+type LocalUIConfigSamplingInput struct {
+	DryRun                  *bool                                     `json:"dryRun,omitempty"`
+	SpanSamplingAttributes  *LocalUIConfigSpanSamplingAttributesInput `json:"spanSamplingAttributes,omitempty"`
+	TailSampling            *TailSamplingConfigInput                  `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfigInput       `json:"k8sHealthProbesSampling,omitempty"`
+}
+
+type LocalUIConfigSpanSamplingAttributesInput struct {
+	Disabled                       *bool `json:"disabled,omitempty"`
+	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
+	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
+	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
+}
+
+type LocalUIConfigWaspInput struct {
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type MessagingPayloadCollection struct {
@@ -1026,8 +1136,8 @@ type MetricsSourceAgentMetricsConfig struct {
 }
 
 type MetricsSourceAgentRuntimeMetricConfig struct {
-	Name     string `json:"name"`
-	Disabled *bool  `json:"disabled,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	Disabled *bool   `json:"disabled,omitempty"`
 }
 
 type MetricsSourceAgentRuntimeMetricsConfig struct {
@@ -1035,7 +1145,7 @@ type MetricsSourceAgentRuntimeMetricsConfig struct {
 }
 
 type MetricsSourceAgentSpanMetricsConfig struct {
-	Enabled bool `json:"enabled"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type MetricsSourceConfig struct {
@@ -1271,6 +1381,26 @@ type PodWorkloadInput struct {
 	Name      string          `json:"name"`
 }
 
+type ProfilingConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// In-memory profiling buffer stats
+type ProfilingSlots struct {
+	ActiveKeys          []string `json:"activeKeys"`
+	KeysWithData        []string `json:"keysWithData"`
+	TotalBytesUsed      int      `json:"totalBytesUsed"`
+	SlotMaxBytes        int      `json:"slotMaxBytes"`
+	MaxSlots            int      `json:"maxSlots"`
+	MaxTotalBytesBudget int      `json:"maxTotalBytesBudget"`
+	SlotTTLSeconds      int      `json:"slotTtlSeconds"`
+}
+
+type ProvenanceEntry struct {
+	HelmPath       string `json:"helmPath"`
+	ReconciledFrom string `json:"reconciledFrom"`
+}
+
 type Query struct {
 }
 
@@ -1309,6 +1439,7 @@ type RetryOnFailureConfig struct {
 
 type RolloutConfig struct {
 	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+	MaxConcurrentRollouts    *int  `json:"maxConcurrentRollouts,omitempty"`
 }
 
 type RuntimeInfoAnalyze struct {
@@ -1322,6 +1453,8 @@ type Sampling struct {
 }
 
 type SamplingConfig struct {
+	DryRun                  *bool                          `json:"dryRun,omitempty"`
+	SpanSamplingAttributes  *SpanSamplingAttributesConfig  `json:"spanSamplingAttributes,omitempty"`
 	TailSampling            *TailSamplingConfig            `json:"tailSampling,omitempty"`
 	K8sHealthProbesSampling *K8sHealthProbesSamplingConfig `json:"k8sHealthProbesSampling,omitempty"`
 }
@@ -1357,11 +1490,12 @@ type ServiceMapFromSource struct {
 }
 
 type ServiceMapToSource struct {
-	NodeID      string `json:"nodeId"`
-	IsVirtual   bool   `json:"isVirtual"`
-	ServiceName string `json:"serviceName"`
-	Requests    int    `json:"requests"`
-	DateTime    string `json:"dateTime"`
+	NodeID         string                     `json:"nodeId"`
+	IsVirtual      bool                       `json:"isVirtual"`
+	ServiceName    string                     `json:"serviceName"`
+	Requests       int                        `json:"requests"`
+	DateTime       string                     `json:"dateTime"`
+	NodeAttributes []*NonIdentifyingAttribute `json:"nodeAttributes"`
 }
 
 type ServiceNameFilter struct {
@@ -1419,18 +1553,23 @@ type SourceContainer struct {
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
 }
 
+// Pyroscope-style flame profile for one source (JSON string).
+type SourceProfilingResult struct {
+	ProfileJSON string `json:"profileJson"`
+}
+
 type SourcesScope struct {
-	WorkloadName      *string              `json:"workloadName,omitempty"`
-	WorkloadKind      *K8sResourceKind     `json:"workloadKind,omitempty"`
-	WorkloadNamespace *string              `json:"workloadNamespace,omitempty"`
-	WorkloadLanguage  *ProgrammingLanguage `json:"workloadLanguage,omitempty"`
+	WorkloadName      *string                   `json:"workloadName,omitempty"`
+	WorkloadKind      *K8sResourceKind          `json:"workloadKind,omitempty"`
+	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
+	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
 }
 
 type SourcesScopeInput struct {
-	WorkloadName      *string              `json:"workloadName,omitempty"`
-	WorkloadKind      *K8sResourceKind     `json:"workloadKind,omitempty"`
-	WorkloadNamespace *string              `json:"workloadNamespace,omitempty"`
-	WorkloadLanguage  *ProgrammingLanguage `json:"workloadLanguage,omitempty"`
+	WorkloadName      *string                   `json:"workloadName,omitempty"`
+	WorkloadKind      *K8sResourceKind          `json:"workloadKind,omitempty"`
+	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
+	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
 }
 
 type SpanAttributeFilter struct {
@@ -1446,6 +1585,13 @@ type SpanAttributeFilterInput struct {
 	AttributeKey          string                          `json:"attributeKey"`
 	FallbackSamplingRatio float64                         `json:"fallbackSamplingRatio"`
 	Condition             *AttributeFiltersConditionInput `json:"condition"`
+}
+
+type SpanSamplingAttributesConfig struct {
+	Disabled                       *bool `json:"disabled,omitempty"`
+	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
+	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
+	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
 }
 
 type StringCondition struct {
@@ -1558,6 +1704,10 @@ type URLTemplatizationRulesGroupInput struct {
 
 type UserInstrumentationEnvsConfig struct {
 	Languages *string `json:"languages,omitempty"`
+}
+
+type WaspConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type WorkloadFilter struct {
@@ -1908,6 +2058,7 @@ const (
 	FieldTypeDropdown      FieldType = "dropdown"
 	FieldTypeCheckbox      FieldType = "checkbox"
 	FieldTypeToggle        FieldType = "toggle"
+	FieldTypeTime          FieldType = "time"
 )
 
 var AllFieldType = []FieldType{
@@ -1918,11 +2069,12 @@ var AllFieldType = []FieldType{
 	FieldTypeDropdown,
 	FieldTypeCheckbox,
 	FieldTypeToggle,
+	FieldTypeTime,
 }
 
 func (e FieldType) IsValid() bool {
 	switch e {
-	case FieldTypeInput, FieldTypeMultiInput, FieldTypeKeyValuePairs, FieldTypeTextarea, FieldTypeDropdown, FieldTypeCheckbox, FieldTypeToggle:
+	case FieldTypeInput, FieldTypeMultiInput, FieldTypeKeyValuePairs, FieldTypeTextarea, FieldTypeDropdown, FieldTypeCheckbox, FieldTypeToggle, FieldTypeTime:
 		return true
 	}
 	return false
@@ -2327,17 +2479,19 @@ const (
 	MountMethodK8sVirtualDevice MountMethod = "k8s_virtual_device"
 	MountMethodK8sHostPath      MountMethod = "k8s_host_path"
 	MountMethodK8sInitContainer MountMethod = "k8s_init_container"
+	MountMethodK8sCsiDriver     MountMethod = "k8s_csi_driver"
 )
 
 var AllMountMethod = []MountMethod{
 	MountMethodK8sVirtualDevice,
 	MountMethodK8sHostPath,
 	MountMethodK8sInitContainer,
+	MountMethodK8sCsiDriver,
 }
 
 func (e MountMethod) IsValid() bool {
 	switch e {
-	case MountMethodK8sVirtualDevice, MountMethodK8sHostPath, MountMethodK8sInitContainer:
+	case MountMethodK8sVirtualDevice, MountMethodK8sHostPath, MountMethodK8sInitContainer, MountMethodK8sCsiDriver:
 		return true
 	}
 	return false
@@ -2651,6 +2805,57 @@ func (e *ProgrammingLanguage) UnmarshalGQL(v any) error {
 }
 
 func (e ProgrammingLanguage) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type SamplingWorkloadLanguage string
+
+const (
+	SamplingWorkloadLanguageJava       SamplingWorkloadLanguage = "java"
+	SamplingWorkloadLanguagePython     SamplingWorkloadLanguage = "python"
+	SamplingWorkloadLanguageGo         SamplingWorkloadLanguage = "go"
+	SamplingWorkloadLanguageDotnet     SamplingWorkloadLanguage = "dotnet"
+	SamplingWorkloadLanguageJavascript SamplingWorkloadLanguage = "javascript"
+	SamplingWorkloadLanguagePhp        SamplingWorkloadLanguage = "php"
+	SamplingWorkloadLanguageRuby       SamplingWorkloadLanguage = "ruby"
+)
+
+var AllSamplingWorkloadLanguage = []SamplingWorkloadLanguage{
+	SamplingWorkloadLanguageJava,
+	SamplingWorkloadLanguagePython,
+	SamplingWorkloadLanguageGo,
+	SamplingWorkloadLanguageDotnet,
+	SamplingWorkloadLanguageJavascript,
+	SamplingWorkloadLanguagePhp,
+	SamplingWorkloadLanguageRuby,
+}
+
+func (e SamplingWorkloadLanguage) IsValid() bool {
+	switch e {
+	case SamplingWorkloadLanguageJava, SamplingWorkloadLanguagePython, SamplingWorkloadLanguageGo, SamplingWorkloadLanguageDotnet, SamplingWorkloadLanguageJavascript, SamplingWorkloadLanguagePhp, SamplingWorkloadLanguageRuby:
+		return true
+	}
+	return false
+}
+
+func (e SamplingWorkloadLanguage) String() string {
+	return string(e)
+}
+
+func (e *SamplingWorkloadLanguage) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SamplingWorkloadLanguage(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SamplingWorkloadLanguage", str)
+	}
+	return nil
+}
+
+func (e SamplingWorkloadLanguage) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

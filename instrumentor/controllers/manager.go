@@ -201,8 +201,7 @@ type WebhookConfig struct {
 
 func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 	err := builder.
-		WebhookManagedBy(mgr).
-		For(&odigosv1.Source{}).
+		WebhookManagedBy(mgr, &odigosv1.Source{}).
 		WithDefaulter(&SourcesDefaulter{
 			Client: mgr.GetClient(),
 		}).

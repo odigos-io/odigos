@@ -23,7 +23,11 @@ import (
 
 // SamplingStatusApplyConfiguration represents a declarative configuration of the SamplingStatus type for use
 // with apply.
+//
+// SamplingStatus defines the observed state of Sampling.
 type SamplingStatusApplyConfiguration struct {
+	// Represents the observations of a Sampling's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

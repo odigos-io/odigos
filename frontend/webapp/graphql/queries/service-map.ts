@@ -12,6 +12,10 @@ export const GET_SERVICE_MAP = gql`
           serviceName
           requests
           dateTime
+          nodeAttributes {
+            key
+            value
+          }
         }
       }
     }

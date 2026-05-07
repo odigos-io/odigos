@@ -152,9 +152,8 @@ func SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func RegisterWebhooks(mgr ctrl.Manager) error {
-	err := builder.WebhookManagedBy(mgr).
-		For(&odigosv1.Action{}).
-		WithValidator(&ActionsValidator{}).
+	err := builder.WebhookManagedBy(mgr, &odigosv1.Action{}).
+		WithCustomValidator(&ActionsValidator{}).
 		Complete()
 	if err != nil {
 		return err
