@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,31 +21,7 @@ func GetWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Cli
 	return instrumentationConfig, nil
 }
 
-func FilterRelevantSdk(instrumentationConfig *v1alpha1.InstrumentationConfig, programmingLanguage string) (*protobufs.AgentConfigFile, error) {
-	relevantSdkConfig := v1alpha1.SdkConfig{}
-
-	for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
-		if common.MapOdigosToSemConv(sdkConfig.Language) == programmingLanguage {
-			relevantSdkConfig = sdkConfig
-			break
-		}
-	}
-
-	remoteConfigInstrumentationConfigBytes, err := json.Marshal(relevantSdkConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	instrumentationConfigContent := protobufs.AgentConfigFile{
-		Body:        remoteConfigInstrumentationConfigBytes,
-		ContentType: "application/json",
-	}
-
-	return &instrumentationConfigContent, nil
-
-}
-
-func FilterRelevantContainerConfig(instrumentationConfig *v1alpha1.InstrumentationConfig, containerName string) (*protobufs.AgentConfigFile, error) {
+func FilterRelevantContainerConfig(instrumentationConfig *v1alpha1.InstrumentationConfig, containerName string) (*protobufs.AgentConfigFile, string, error) {
 	containerConfig := v1alpha1.ContainerAgentConfig{}
 
 	for _, container := range instrumentationConfig.Spec.Containers {
@@ -58,7 +33,7 @@ func FilterRelevantContainerConfig(instrumentationConfig *v1alpha1.Instrumentati
 
 	remoteConfigContainerConfigBytes, err := json.Marshal(containerConfig)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	containerConfigContent := protobufs.AgentConfigFile{
@@ -66,6 +41,6 @@ func FilterRelevantContainerConfig(instrumentationConfig *v1alpha1.Instrumentati
 		ContentType: "application/json",
 	}
 
-	return &containerConfigContent, nil
+	return &containerConfigContent, string(RemoteConfigContainerConfigSectionName), nil
 
 }
