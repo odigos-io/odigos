@@ -49,28 +49,23 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 	iat, _ := tokenPayload["iat"].(float64)
 	exp, _ := tokenPayload["exp"].(float64)
 
-	if err != nil {
-		msg := err.Error()
-		return []*model.APIToken{
-			{
-				Token:     token,
-				Name:      aud,
-				IssuedAt:  0,
-				ExpiresAt: 0,
-				Message:   &msg,
-			},
-		}, nil
-	}
-
-	// We need to return an array (even if it's just 1 token), because in the future we will have to support multiple platforms.
-	return []*model.APIToken{
+	returnPayload := []*model.APIToken{
 		{
 			Token:     token,
 			Name:      aud,
 			IssuedAt:  int(iat) * 1000, // Convert to milliseconds
 			ExpiresAt: int(exp) * 1000, // Convert to milliseconds
 		},
-	}, nil
+	}
+
+	if err != nil {
+		msg := err.Error()
+		returnPayload[0].Message = &msg
+		return returnPayload, nil
+	}
+
+	// We need to return an array (even if it's just 1 token), because in the future we will have to support multiple platforms.
+	return returnPayload, nil
 }
 
 // K8sActualNamespaces is the resolver for the k8sActualNamespaces field.

@@ -2,10 +2,12 @@ package metrics
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/distros/distro"
 )
 
@@ -91,4 +93,38 @@ func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosC
 	}
 
 	return metricsConfig, nil
+}
+
+func CalculateSpanMetricsMode(effectiveConfig *common.OdigosConfiguration, nodeCollectorsGroup *odigosv1.CollectorsGroup) commonapisampling.SpanMetricsMode {
+
+	spanMetricsEnabled := nodeCollectorsGroup != nil &&
+		nodeCollectorsGroup.Spec.Metrics != nil &&
+		(nodeCollectorsGroup.Spec.Metrics.SpanMetrics == nil ||
+			nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled == nil ||
+			!*nodeCollectorsGroup.Spec.Metrics.SpanMetrics.Disabled)
+
+	if !spanMetricsEnabled {
+		return commonapisampling.SpanMetricsModeSampledSpansOnly
+	}
+
+	metricsSignalEnabled := nodeCollectorsGroup != nil &&
+		slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal)
+	if !metricsSignalEnabled {
+		return commonapisampling.SpanMetricsModeSampledSpansOnly
+	}
+
+	configuredMode := effectiveConfig.MetricsSources != nil &&
+		effectiveConfig.MetricsSources.SpanMetrics != nil &&
+		effectiveConfig.MetricsSources.SpanMetrics.SpanMetricsMode != nil
+	if !configuredMode { // not set in config, use the default
+		return commonapisampling.SpanMetricsModeSampledSpansOnly
+	}
+
+	return *effectiveConfig.MetricsSources.SpanMetrics.SpanMetricsMode
+}
+
+func CalculateDryRun(effectiveConfig *common.OdigosConfiguration) bool {
+	return effectiveConfig.Sampling != nil &&
+		effectiveConfig.Sampling.DryRun != nil &&
+		*effectiveConfig.Sampling.DryRun
 }
