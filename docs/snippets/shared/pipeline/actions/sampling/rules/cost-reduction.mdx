@@ -1,0 +1,27 @@
+**Cost Reduction** rules cap how much traffic is retained for export, after Noisy and Highly Relevant rules have run. They are the **third and final** stage in the [rule evaluation pipeline](./overview#order-of-operations-between-categories) and are how you control **volume and ingest cost** for traffic that is neither obviously noisy nor specifically marked as important.
+
+## How they're evaluated
+
+- **Applied to traces that fall through earlier categories.** Traces that matched a Noisy drop never reach this stage; traces that matched a Highly Relevant rule are governed by that rule instead (see [Interaction with Highly Relevant](#interaction-with-highly-relevant)).
+- **Percentage‑based.** Each rule has a **Keep Percentage** that defines the fraction of matching traffic to retain.
+- **Scoped.** A Cost Reduction rule can apply to the whole cluster, one or more namespaces, services, or programming languages, and can target all operations or a specific HTTP route or Kafka topic. See [Configuration](../configuration) for the full authoring options.
+
+## Built-in rule: Drop Traces Cluster-Wide
+
+Odigos ships a single built‑in Cost Reduction rule, **Drop Traces Cluster-Wide**, which applies one **Keep Percentage** uniformly across every trace in the cluster. You configure the percentage; the engine then makes an independent, probabilistic keep/drop decision per trace.
+
+At high trace volume, the **law of large numbers** applies and sample proportions—error rates, latency percentiles, per‑service and per‑route traffic shares—converge on the underlying population. The retained traces preserve the **shape** of your traffic, so common scenarios remain visible at their original relative frequencies.
+
+<Warning>
+  Uniform sampling preserves **statistics**, not individual events. At low keep percentages, or for rare scenarios such as low‑frequency error paths or occasional regressions, specific occurrences can be missed entirely. To **guarantee** retention for traces you care about, use a [Highly Relevant](./highly-relevant) rule—which always wins over Cost Reduction—rather than relying on this rule alone.
+</Warning>
+
+## Interaction with Highly Relevant
+
+Highly Relevant **always wins** over Cost Reduction on traces that match both, regardless of which keep percentage is higher. That means a Cost Reduction cap of 10% on `/api/orders` does **not** suppress a Highly Relevant rule that keeps 100% of error traces on the same route. See [Evaluation between Highly Relevant and Cost Reduction](./overview#evaluation-between-highly-relevant-and-cost-reduction-categories) for worked examples.
+
+## Typical use cases
+
+- Keep 5% of all cluster traffic as a baseline statistical sample
+- Keep 50% of `/api/products` traffic to control a high‑volume endpoint
+- Keep 1% of traces from a chatty internal service

@@ -215,13 +215,14 @@
                             "group": "Rules",
                             "icon": "list-check",
                             "pages": [
-                              "oss/pipeline/actions/sampling/rules",
-                              "oss/pipeline/actions/sampling/noisy-operation",
-                              "oss/pipeline/actions/sampling/highly-relevant",
-                              "oss/pipeline/actions/sampling/cost-reduction"
+                              "oss/pipeline/actions/sampling/rules/overview",
+                              "oss/pipeline/actions/sampling/rules/noisy-operation",
+                              "oss/pipeline/actions/sampling/rules/highly-relevant",
+                              "oss/pipeline/actions/sampling/rules/cost-reduction"
                             ]
                           },
                           "oss/pipeline/actions/sampling/configuration",
+                          "oss/pipeline/actions/sampling/examples",
                           "oss/pipeline/actions/sampling/considerations",
                           "oss/pipeline/actions/sampling/faqs"
                         ]
@@ -523,13 +524,14 @@
                             "group": "Rules",
                             "icon": "list-check",
                             "pages": [
-                              "enterprise/pipeline/actions/sampling/rules",
-                              "enterprise/pipeline/actions/sampling/noisy-operation",
-                              "enterprise/pipeline/actions/sampling/highly-relevant",
-                              "enterprise/pipeline/actions/sampling/cost-reduction"
+                              "enterprise/pipeline/actions/sampling/rules/overview",
+                              "enterprise/pipeline/actions/sampling/rules/noisy-operation",
+                              "enterprise/pipeline/actions/sampling/rules/highly-relevant",
+                              "enterprise/pipeline/actions/sampling/rules/cost-reduction"
                             ]
                           },
                           "enterprise/pipeline/actions/sampling/configuration",
+                          "enterprise/pipeline/actions/sampling/examples",
                           "enterprise/pipeline/actions/sampling/considerations",
                           "enterprise/pipeline/actions/sampling/faqs"
                         ]
@@ -759,6 +761,38 @@
     {
       "source": "/overview",
       "destination": "/oss/overview"
+    },
+    {
+      "source": "/oss/pipeline/actions/sampling/rules",
+      "destination": "/oss/pipeline/actions/sampling/rules/overview"
+    },
+    {
+      "source": "/oss/pipeline/actions/sampling/noisy-operation",
+      "destination": "/oss/pipeline/actions/sampling/rules/noisy-operation"
+    },
+    {
+      "source": "/oss/pipeline/actions/sampling/highly-relevant",
+      "destination": "/oss/pipeline/actions/sampling/rules/highly-relevant"
+    },
+    {
+      "source": "/oss/pipeline/actions/sampling/cost-reduction",
+      "destination": "/oss/pipeline/actions/sampling/rules/cost-reduction"
+    },
+    {
+      "source": "/enterprise/pipeline/actions/sampling/rules",
+      "destination": "/enterprise/pipeline/actions/sampling/rules/overview"
+    },
+    {
+      "source": "/enterprise/pipeline/actions/sampling/noisy-operation",
+      "destination": "/enterprise/pipeline/actions/sampling/rules/noisy-operation"
+    },
+    {
+      "source": "/enterprise/pipeline/actions/sampling/highly-relevant",
+      "destination": "/enterprise/pipeline/actions/sampling/rules/highly-relevant"
+    },
+    {
+      "source": "/enterprise/pipeline/actions/sampling/cost-reduction",
+      "destination": "/enterprise/pipeline/actions/sampling/rules/cost-reduction"
     },
     {
       "source": "/quickstart/:slug*",

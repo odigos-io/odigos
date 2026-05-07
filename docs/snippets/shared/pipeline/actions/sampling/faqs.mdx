@@ -1,3 +1,101 @@
-## FAQs
+Frequently asked questions about sampling in Odigos.
 
-This page will answer frequently asked questions about sampling in Odigos.
+## Concepts and terminology
+
+<AccordionGroup>
+  <Accordion title="Does 'sampling' mean dropping traces or keeping them?">
+    Both, depending on who you ask. Some teams describe sampling as **what gets dropped** (e.g. "drop 90%"), others as **what gets kept** (e.g. "keep 10%"). Odigos uses the **keep** framing throughout the UI and docs because it aligns with how rules are written (each rule has a **Keep Percentage**). The two phrasings describe the same outcome; we standardize on "keep" to avoid confusion. See [Introduction to sampling](./introduction#ambiguity-of-terminology).
+  </Accordion>
+
+  <Accordion title="Why is dropping health checks called 'sampling' if I'm dropping 100% of them?">
+    "Sampling" is the name of the **pipeline mechanism** that makes a per-trace keep/drop decision—not a description of "always keep some, always drop some." Dropping all health probes is just sampling at 0%. The same engine that drops 100% of probe traffic also retains 25% of `/api/products` traffic; both are sampling decisions, just at different keep percentages.
+  </Accordion>
+
+  <Accordion title="Why does Odigos always keep or drop the entire trace?">
+    Odigos uses **parent-based sampling**: the keep/drop decision is made at the root span and propagated to every child span. Splitting a trace—keeping some spans and dropping others—would break parent-child links, end-to-end timing, and any analysis that depends on the full request path. Trace-level decisions guarantee that a kept trace is **complete** from root through children. See [Sampling level](./introduction#sampling-level).
+  </Accordion>
+</AccordionGroup>
+
+## How rules are evaluated
+
+<AccordionGroup>
+  <Accordion title="If a trace matches rules in more than one category, which category wins?">
+    Categories are evaluated in a fixed sequence: **Noisy → Highly Relevant → Cost Reduction**. A **Noisy** match short-circuits the rest—the trace is dropped (or sampled down) and the other categories are skipped. A **Highly Relevant** match does **not** short-circuit—Cost Reduction rules are still evaluated, but the Highly Relevant Keep Percentage wins. Cost Reduction caps only take effect on traces with no Highly Relevant match. See [Order of operations between categories](./rules/overview#order-of-operations-between-categories).
+  </Accordion>
+
+  <Accordion title="Within a category, do rules have a priority order?">
+    No. Within a single category, rules have **no hierarchy**—they're all equal. When a trace matches multiple rules in the same category, the engine takes the **most conservative** outcome for retention (the highest Keep Percentage among the matches). This is a deliberate design choice: ordered rule lists (like firewall rules) become unmaintainable when you have dozens of rules and have to mentally simulate the order to predict behavior.
+  </Accordion>
+
+  <Accordion title="Why does 'Keep at most 25%' not always mean exactly 25%?">
+    Cost Reduction percentages are **caps**, not exact rates, because the engine considers **all** matching rules together. If two Cost Reduction rules match the same trace—one capped at 25% and another at 1%—the lower cap (1%) wins. This makes it safe to add new rules without worrying that they'll silently override existing ones. The same logic runs in reverse for Highly Relevant: percentages there are **floors** ("keep at least"), and the highest floor wins.
+  </Accordion>
+
+  <Accordion title="If I only create Highly Relevant rules and no Cost Reduction rules, what gets dropped?">
+    Almost nothing—and that's usually not what you want. Highly Relevant rules mark important traces, but they don't reduce volume on their own; non-matching traces still flow through the pipeline. Worse, the gateway still buffers traces for tail evaluation, which **adds load without cutting volume**. To control volume, pair Highly Relevant rules with at least one Cost Reduction rule (commonly the built-in Drop Traces Cluster-Wide rule). See [Highly Relevant](./rules/highly-relevant#interaction-with-cost-reduction).
+  </Accordion>
+
+  <Accordion title="Can I combine multiple scope types (e.g. namespace + language) in a single rule?">
+    Yes. Within a single scope type, multiple selections are combined with **OR** (e.g. namespaces `prod` OR `staging`). Across different scope types, selections are combined with **AND** (e.g. namespace `prod` AND language Java matches **only** Java workloads in `prod`—not every workload in `prod` and not every Java workload across the cluster). See [Source scope](./configuration#source-scope).
+  </Accordion>
+</AccordionGroup>
+
+## Operational impact
+
+<AccordionGroup>
+  <Accordion title="Does adding any sampling rule increase load on the gateway?">
+    It depends on the rule. **Noisy** rules use head sampling and run in the data collector—they reduce gateway load. **Highly Relevant** and **Cost Reduction** rules require tail evaluation, which means the gateway buffers each affected trace for the [aggregation window](./head-and-tail-sampling#aggregation-window). Even a single tail-mode rule activates buffering for matching traffic, raising memory and CPU on the gateway.
+  </Accordion>
+
+  <Accordion title="Why do gateways sometimes crash instead of just dropping data?">
+    Once the gateway accepts a trace for tail evaluation, it allocates memory to hold spans until the aggregation window closes. During traffic bursts, many traces can be accepted concurrently before backpressure kicks in—each one keeps allocating memory until the pod hits its limit and OOMs. This is why bursty workloads can produce dropped spans or collector restarts even when your sampling rules look correct. Sizing the gateway for peak burst capacity (not steady-state) is the most reliable fix. See [Gateway load, OOM, and scaling](./considerations#gateway-load-oom-and-scaling).
+  </Accordion>
+
+  <Accordion title="Should I scale up (bigger pods) or scale out (more replicas) for tail sampling?">
+    Both arithmetically yield similar capacity, but **scaling up is usually preferable for tail sampling**. All spans of a single trace must land on the same gateway pod for aggregation, so each scale event re-shuffles the trace-ID hash routing. Fewer, larger pods scale less often and produce less routing churn. There's no one-size-fits-all answer—validate against your own load.
+  </Accordion>
+
+  <Accordion title="What happens to in-flight traces if a gateway crashes?">
+    They are lost. Odigos does not currently use persistent queues or full backpressure between the data collector and the gateway, so a crash drops everything the gateway was buffering. **Graceful** shutdowns (rolling updates, scale-downs) flush their buffers before exit; only ungraceful crashes lose data.
+  </Accordion>
+
+  <Accordion title="My sampler looks empty or inactive—why is it still affecting my pipeline?">
+    The presence of **any** sampling rule that requires tail evaluation activates tail mode for matching traffic—even rules that look minimal, such as a placeholder service name or a broad `/` route. Once tail mode is on, the gateway buffers traces for the aggregation window, which raises memory and latency to export. If you don't need tail behavior, remove unused or test sampling rules from the cluster. See [When any sampler enables tail mode](./considerations#when-any-sampler-enables-tail-mode).
+  </Accordion>
+</AccordionGroup>
+
+## Tail sampling specifics
+
+<AccordionGroup>
+  <Accordion title="Why is the aggregation window 30 seconds, and can I change it?">
+    There is no reliable signal for "this trace is finished," so the engine uses a fixed timeout instead. **30 seconds** is the Odigos default, matching the OpenTelemetry community default. You can change it through the Helm value `sampling.tailSampling.traceAggregationWaitDuration` (for example `'45s'` or `'15s'`); the same value applies to every trace in the cluster. Larger windows hold more memory and delay traces appearing in your backend; smaller windows risk evaluating partial traces and fragmenting a single trace across multiple sampling decisions. See [Aggregation window](./head-and-tail-sampling#aggregation-window).
+  </Accordion>
+
+  <Accordion title="Does the 30-second timer start at the first span or the last span of a trace?">
+    The **first** span the gateway sees for a trace ID, following the OpenTelemetry tail-sampling standard. Practical consequence: requests longer than 30 seconds may be evaluated on a partial trace.
+  </Accordion>
+
+  <Accordion title="What is trace-based load balancing, and why does tail sampling need it?">
+    Tail evaluation requires every span of a single trace to land on the same gateway pod—otherwise the gateway can't aggregate the trace before deciding. Odigos's data collectors use a **trace-based load balancing exporter** that hashes the trace ID and routes all spans for that trace to the same gateway. Plain round-robin (the default without tail sampling) would scatter spans across pods and break aggregation.
+  </Accordion>
+</AccordionGroup>
+
+## Built-in rules
+
+<AccordionGroup>
+  <Accordion title="What exactly does the built-in Kubernetes Health Probes rule cover?">
+    It drops traces for the **liveness**, **readiness**, and **startup** probe paths discovered on each workload's Kubernetes manifest. The rule's Keep Percentage defaults to **0%** (drop everything) and is configurable. It only matches **HTTPGet** probes—`exec` and `tcpSocket` probes, or probes routed through ingress rewrites or service-mesh wrappers, are not auto-handled and need an explicit Noisy rule. See [Built-in rule: Kubernetes Health Probes](./rules/noisy-operation#built-in-rule-kubernetes-health-probes).
+  </Accordion>
+
+  <Accordion title="Can I disable or change the built-in 'Keep All Error Traces' rule?">
+    The built-in rule itself is fixed at 100% retention and is not configurable. If you need a different keep percentage for error traces—for example because your error volume is too high to retain all of it—author your own Highly Relevant rule on errors with the Keep Percentage you want. Custom rules are how you express any intent other than the built-in 100%. See [Built-in rule: Keep All Error Traces](./rules/highly-relevant#built-in-rule-keep-all-error-traces).
+  </Accordion>
+
+  <Accordion title="Why isn't there a built-in rule for high-latency traces?">
+    Latency thresholds depend on the application: 200 ms is fast for one service and unacceptable for another, so there's no sensible default the product can ship. Errors are different—an error span is universally a signal worth keeping—which is why the error rule is built in but a duration rule is not. Define your own Highly Relevant duration rule with the threshold and Keep Percentage that fit your service.
+  </Accordion>
+
+  <Accordion title="Are there built-in operations beyond HTTP and Kafka (e.g. SQS, gRPC, database calls)?">
+    Today's Operation options are **HTTP Server**, **HTTP Client** (Noisy only), and **Kafka Consumer / Kafka Producer** (Highly Relevant and Cost Reduction). Odigos will add support for additional protocols as customer needs demand it.
+  </Accordion>
+</AccordionGroup>

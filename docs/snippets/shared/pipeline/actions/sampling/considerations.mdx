@@ -1,3 +1,13 @@
-## Considerations
+Operational and design considerations to keep in mind when running sampling in production.
 
-This page will cover operational and design considerations when using sampling in Odigos, including performance and observability tradeoffs.
+## Gateway load, OOM, and scaling
+
+When the gateway accepts a trace for tail evaluation, it allocates memory to hold spans until the [aggregation window](./head-and-tail-sampling#aggregation-window) closes. If the gateway isn't sized correctly, bursts of traffic can cause **OOM** restarts. Symptoms include **dropped spans** or collector crashes that aren't caused by your sampling rules.
+
+For tail sampling, prefer **scaling up** (bigger collector pods) over **scaling out** (more replicas). All spans of a single trace must land on the same pod for aggregation, so fewer, larger pods simplify routing and load balancing. Validate sizing against your own load—there's no one‑size‑fits‑all.
+
+## When any sampler enables tail mode
+
+<Warning>
+  Any sampling rule that requires tail evaluation activates **tail mode** for the matching traffic, even rules that look inactive or minimal—for example a placeholder service name or a broad `/` route. Once tail mode is on, the gateway buffers each trace for the [aggregation window](./head-and-tail-sampling#aggregation-window), which increases memory use, export latency, and the risk of dropped spans. If you don't need tail behavior, remove any unused or test sampling rules from the cluster rather than leaving them in place.
+</Warning>

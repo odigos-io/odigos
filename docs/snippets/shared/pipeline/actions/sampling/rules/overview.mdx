@@ -1,15 +1,21 @@
-This page describes how **sampling rules** are evaluated in Odigos: **rule categories** (Noisy Operation, Highly Relevant, Cost Reduction), **order between categories**, **conflicts inside a category**, and how that ties to **head vs. tail sampling** and the **gateway**.
+This page describes how **sampling rules** are evaluated in Odigos: the three **rule categories** (Noisy Operation, Highly Relevant, Cost Reduction), the **order between categories**, and how **conflicts inside a category** resolve. Each category has its own page; this overview focuses on how the categories interact.
 
 ## Rule categories
 
-Odigos sampling rules come in three types:
-
-1. **Noisy Operation** — Traffic you treat as having little or no value (for example Kubernetes health probes or checks). **Noisy Operation** is enforced with **head sampling** at the **root span**, **without waiting for the full trace**. **Head sampling** is the **most efficient** type of sampling, with the **least CPU and memory** impact on the system. Outcomes are **drop** or **sample down**; **dropped** traces never reach the other categories.
-2. **Highly Relevant** — Traces you want to treat as **important**, aligned with **RED**‑style signals (request, **error**, **duration**). One **error** span will mark the **entire** trace as important when those rules apply. **Important** matches **can still be sampled**; each rule’s **Keep Percentage** controls how much of that matching traffic is retained (for example you can prioritize errors while keeping a fractional sample).
-3. **Cost Reduction** — After **Noisy** and **highly relevant** handling, remaining traffic can be sampled down to **control** cost and volume (for example a percentage across the cluster or a specific route).
+<CardGroup cols={3}>
+  <Card title="Noisy Operation" icon="filter" href="./noisy-operation">
+    Traffic with little or no value (for example Kubernetes health probes). Decided early at the **root span** with **head sampling**.
+  </Card>
+  <Card title="Highly Relevant" icon="star" href="./highly-relevant">
+    **Important** traffic aligned with **RED**-style signals (errors, duration). Each rule's **Keep Percentage** controls how much is retained.
+  </Card>
+  <Card title="Cost Reduction" icon="chart-line" href="./cost-reduction">
+    Caps applied to remaining traffic to control volume and cost (for example a percentage across the cluster or a specific route).
+  </Card>
+</CardGroup>
 
 <Note>
-  See [Head vs. tail sampling](./head-and-tail-sampling) for how head and tail sampling differ in Odigos (root‑span decisions versus aggregation at the gateway).
+  See [Head vs. tail sampling](../head-and-tail-sampling) for how head and tail sampling differ in Odigos (root‑span decisions versus aggregation at the gateway).
 </Note>
 
 If you only define **highly relevant** rules and **no** cost‑reduction rules, **unimportant** traffic is not aggressively reduced by those rules alone—policy may still require **full trace** context to evaluate importance, which increases gateway work without cutting volume. Use **highly relevant** and **cost reduction** together when you need both signal and volume control.
@@ -55,7 +61,7 @@ Categories are **not** all evaluated for every trace in parallel. Odigos applies
     <div className="w-full md:w-[46%]">
       <Card title="Highly Relevant" icon="star">
         <div className="text-sm leading-snug text-zinc-700 dark:text-zinc-300">
-          Only traces that did <strong>not</strong> match any Noisy rule reach this stage. Rules here classify <strong>important</strong> traffic (for example errors and duration); <strong>important</strong> matches <strong>can still be sampled</strong> per each rule’s <strong>Keep Percentage</strong>. Traces <strong>continue</strong> to <strong>Cost Reduction</strong> after this stage.
+          Only traces that did <strong>not</strong> match any Noisy rule reach this stage. Rules here classify <strong>important</strong> traffic (for example errors and duration); <strong>important</strong> matches <strong>can still be sampled</strong> per each rule's <strong>Keep Percentage</strong>. Traces <strong>continue</strong> to <strong>Cost Reduction</strong> after this stage.
         </div>
       </Card>
     </div>
@@ -125,45 +131,6 @@ When a trace matches rules in **both** the **Highly Relevant** and **Cost Reduct
     **Outcome:** the trace is **kept at 25%**. Highly Relevant still wins, even though its keep rate is lower than the Cost Reduction cap.
   </Card>
 </CardGroup>
-
-
-## UI terminology and behavior
-
-- **Endpoint vs. method** — When you pick an HTTP method (for example **GET** or **POST**), **endpoint** in Odigos means the **combination of route and method**, not “route only.”
-- **Prefixes and wildcards** — Path rules may use prefixes (for example `/health`) and wildcards; normalized display (for example trimming redundant `*`) helps show **exactly** what a rule covers. Prefer explicit patterns in GitOps/YAML until the UI reflects formatting clearly.
-- **Automatic (“auto”) rules** — Health‑style **Noisy** rules can be informed by what Odigos discovers from the workload (for example **liveness** and **readiness** probe paths on the deployment). When they match, traces are **dropped or sampled down** the same as for any other **Noisy** rule. Treat auto suggestions as **starting points** and verify them against your real traffic.
-- **Static controls** — Some toggles or rows (for example indicators tied to **error** handling in certain layouts) may be **informational** rather than clickable. If a control does not respond, check whether it is a **status** display rather than an action.
-
-You can configure sampling in the **UI** or **YAML** (Kubernetes **CRDs**). The **schema** matches the same concepts as the UI, so GitOps workflows can express the same behavior as in the product.
-
-## What you can match on
-
-Rules can be scoped and filtered in several dimensions:
-
-- **Scope** — Whole cluster, a **namespace**, a **specific service** (source), or a **programming language** (for example all Java or Python spans).
-- **Operation** — All operations for a service, or a **specific** HTTP route, Kafka topic, database operation, or similar (see **endpoint** = route **+** method above).
-- **Conditions** — **Errors**, **duration** thresholds, and how much to **keep** for that rule (per category and per‑category conflict rules above).
-
-Each rule can have an **optional name** (free text for your own reference; it may also appear on metrics and span attributes) and **notes** explaining why the rule exists.
-
-## Head vs. tail sampling (implementation)
-
-- **Head sampling** — The keep/drop decision is made at the **root span** (or equivalent entry) with only attributes known **at the start**. It is **more efficient** (less buffering) but cannot depend on errors or duration that appear only later in the trace.
-- **Tail sampling** — The decision is made **after** spans for a trace are aggregated at the **gateway**, over a **bounded window** (on the order of **~30 seconds** from first seen span—see [aggregation window](./head-and-tail-sampling#aggregation-window)). You can sample on **errors**, **duration**, and nested routes, at the cost of **higher CPU and memory** on collectors/gateways.
-
-Odigos **prefers head sampling** when the language/runtime supports it. For runtimes where head‑based propagation is not sufficient (for example some **PHP** deployments), Odigos may **fall back to tail sampling in the gateway** so policies can still be enforced.
-
-## Gateway load, OOM, and scaling
-
-When the gateway **accepts** a trace for tail evaluation, it **allocates memory** to hold spans until the aggregation window closes. **Bursts** of traffic can cause **OOM** restarts **before** protective backpressure fully limits intake—symptoms can include **dropped spans** or collector crashes unrelated to “wrong” sampling math on the rule itself.
-
-**Scaling up** (more memory/CPU per collector pod) vs **scaling out** (more replicas): for **tail sampling**, **fewer, larger** collector/gateway pods are often easier to reason about than many small ones, because **trace‑aware** aggregation and load balancing are simpler when each trace’s spans land on fewer moving parts. Still validate with your own load; there is no single size that fits all clusters.
-
-## When any sampler enables tail mode
-
-<Warning>
-  Even a sampler that looks **inactive** or **minimal** (for example a placeholder **service** name or a broad **`/`** route) can still cause the pipeline to run **tail sampling** behavior **globally** for affected traffic: the gateway **buffers** traces for the aggregation window, which **raises** resource use and latency to export. That extra pressure can contribute to **drops** that look like “the sampler was off.” If you do not need tail semantics, avoid leaving stray or test sampling objects configured in the cluster.
-</Warning>
 
 ## Why full traces still matter
 

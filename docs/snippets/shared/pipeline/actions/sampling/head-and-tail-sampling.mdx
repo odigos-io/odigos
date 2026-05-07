@@ -24,10 +24,14 @@ Tail sampling defers the keep/drop decision until spans for a trace are buffered
 
 #### Aggregation window
 
-The pipeline does not wait for a definitive “end of trace” event, because that would require an indefinite wait. Instead, spans are held up to a bounded window to bound memory and latency. The implementation uses a 30-second interval from the first observed span for a trace ID, consistent with OpenTelemetry-style tail processing, then forwards the trace to the sampler with the spans received by then. Evaluation can therefore run on partial traces for very long requests.
+The pipeline does not wait for a definitive “end of trace” event, because that would require an indefinite wait. Instead, spans are held up to a bounded window to bound memory and latency. The implementation uses a **default 30-second** interval from the first observed span for a trace ID, consistent with OpenTelemetry-style tail processing, then forwards the trace to the sampler with the spans received by then. Evaluation can therefore run on partial traces for very long requests.
+
+<Info>
+  The aggregation window is configurable through the Helm value `sampling.tailSampling.traceAggregationWaitDuration` (for example `'45s'` or `'2m'`). The same value applies to every trace in the cluster. Larger windows hold more memory and delay traces appearing in your backend; smaller windows risk evaluating partial traces and fragmenting a single trace across multiple sampling decisions.
+</Info>
 
 <Note>
-  Observability UIs typically show tail-sampled data about 30 seconds later than head-sampled data for the same workload. Export, queueing, storage, and indexing add further delay on top of that gap.
+  Observability UIs typically show tail-sampled data delayed by the configured aggregation window (about 30 seconds by default). Export, queueing, storage, and indexing add further delay on top of that gap.
 </Note>
 
 ## Head vs. tail: quick comparison
