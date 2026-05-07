@@ -11,6 +11,8 @@ import (
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestCalcRemoteConfigHashConsistent(t *testing.T) {
@@ -51,6 +53,7 @@ func TestUpdateWorkloadRemoteConfigRefreshesLegacySDKSection(t *testing.T) {
 	}
 	cache.AddConnection("instance-1", &ConnectionInfo{
 		Workload:      workload,
+		Pod:           &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "checkout-abc123", Namespace: "shop"}},
 		ContainerName: "app",
 		AgentRemoteConfig: &protobufs.AgentRemoteConfig{Config: &protobufs.AgentConfigMap{
 			ConfigMap: map[string]*protobufs.AgentConfigFile{
