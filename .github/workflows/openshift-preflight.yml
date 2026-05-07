@@ -8,16 +8,6 @@ on:
         description: "Image tag (e.g. v1.22.1)"
         required: true
         type: string
-      registry:
-        description: "Registry to pull the RHEL-certified images from"
-        required: true
-        type: choice
-        default: registry-rh.odigos.io
-        options:
-          - quay.io/odigos
-          - registry-rh.odigos.io
-          - docker.io/keyval
-          - ghcr.io/odigos-io
       dry_run:
         description: "Run preflight checks only; do not submit results to Red Hat"
         required: false
@@ -173,7 +163,6 @@ jobs:
           TAG: ${{ needs.prepare.outputs.tag }}
           DRY_RUN: ${{ needs.prepare.outputs.dry_run }}
           IS_PRERELEASE: ${{ needs.prepare.outputs.is_prerelease }}
-          REGISTRY: ${{ inputs.registry }}
           MATRIX_SERVICE: ${{ matrix.service }}
           MATRIX_PROJECT_ID: ${{ matrix.project_id }}
         run: |
@@ -188,7 +177,7 @@ jobs:
             SUBMIT_FLAG="--submit"
           fi
           ./preflight-linux-amd64 check container \
-            "${REGISTRY}/odigos-${MATRIX_SERVICE}-rhel-certified:${TAG}" \
+            "registry-rh.odigos.io/odigos-${MATRIX_SERVICE}-rhel-certified:${TAG}" \
             --pyxis-api-token="${{ secrets.OPENSHIFT_PYXIS_TOKEN }}" \
             --certification-component-id "${MATRIX_PROJECT_ID}" \
             ${SUBMIT_FLAG}
