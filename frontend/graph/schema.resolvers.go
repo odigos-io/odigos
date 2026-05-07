@@ -30,6 +30,12 @@ import (
 
 // APITokens is the resolver for the apiTokens field.
 func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.ComputePlatform) ([]*model.APIToken, error) {
+	// In readonly mode the UI's RBAC role does not grant `get` on secrets,
+	// and readonly users should not be able to see/edit the on-prem token anyway.
+	if services.IsReadonlyMode(ctx) {
+		return make([]*model.APIToken, 0), nil
+	}
+
 	ns := env.GetCurrentNamespace()
 	// The result should always be 0 or 1:
 	// If it's 0, it means this is the OSS version.
