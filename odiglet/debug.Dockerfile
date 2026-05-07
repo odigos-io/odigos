@@ -56,6 +56,10 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
 WORKDIR /instrumentations
 
+# Allows overriding the registry/repository for Node.js agents.
+# Example: --build-arg NODEJS_AGENTS_REPO=ghcr.io/odigos-io/agents
+ARG NODEJS_AGENTS_REPO=public.ecr.aws/odigos/agents
+
 # java-community
 ARG JAVA_OTEL_VERSION=v2.10.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
@@ -66,11 +70,11 @@ COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.72-py3.8 /instrum
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.78 /instrumentations/python /instrumentations/python
 
 # nodejs-community
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.5.1 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.5.1 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=${NODEJS_AGENTS_REPO}/nodejs-community:v0.5.1 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=${NODEJS_AGENTS_REPO}/nodejs-community:v0.5.1 /instrumentations/nodejs-community /instrumentations/nodejs-community
 # nodejs-community-14
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.17 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.17 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
+COPY --from=${NODEJS_AGENTS_REPO}/nodejs-community-14:v0.0.17 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
+COPY --from=${NODEJS_AGENTS_REPO}/nodejs-community-14:v0.0.17 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
 
 # dotnet-community
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet

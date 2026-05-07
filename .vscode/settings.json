@@ -7,9 +7,5 @@
         "Otel"
     ],
 
-    "go.buildTags": "embed_manifests",
-    "go.toolsEnvVars": {
-        "GOOS": "linux",
-        "GOARCH": "arm64"
-    }
+    "go.buildTags": "embed_manifests"
 }
