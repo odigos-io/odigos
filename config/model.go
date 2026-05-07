@@ -25,4 +25,9 @@ type ConfigurationField struct {
 	HelmValuePath    string                 `yaml:"helmValuePath"`
 	DocsLink         string                 `yaml:"docsLink,omitempty"`
 	ComponentProps   map[string]interface{} `yaml:"componentProps,omitempty"`
+	// RenderCondition gates whether the UI shows this field based on the value of
+	// another field in the same config. Mirrors the destination-form renderCondition
+	// shape: either ["true"|"false"] or [helmValuePath, comparison, value], where
+	// comparison is one of "==", "!=", "===", "!==", ">", "<", ">=", "<=".
+	RenderCondition []string `yaml:"renderCondition,omitempty"`
 }

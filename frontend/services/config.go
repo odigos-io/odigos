@@ -30,6 +30,7 @@ func GetConfigYamls() ([]*model.ConfigYaml, error) {
 				IsEnterpriseOnly: f.IsEnterpriseOnly,
 				Description:      f.Description,
 				HelmValuePath:    f.HelmValuePath,
+				RenderCondition:  f.RenderCondition,
 			}
 
 			if f.DocsLink != "" {
