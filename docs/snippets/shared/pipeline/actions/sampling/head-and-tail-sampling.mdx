@@ -76,4 +76,4 @@ Tail-based sampling waits until the trace is complete (or a timeout is reached) 
 - **Complex Business Rules:** When the importance of a trace depends on something that happens deep in the call stack—such as hitting a specific database or a legacy third-party API—tail sampling provides the necessary full context.
 
 **The Trade-off:** <br/>
-It is resource-intensive. The gateway must buffer all spans for a trace (often for 30 seconds or more) to ensure it has the "full picture" before deciding. This increases memory usage at the gateway and introduces a delay before traces appear in your UI. Furthermore, it requires "trace-aware load balancing" to ensure all spans for a single trace arrive at the same collector.
+It is resource-intensive. The gateway must buffer all spans for a trace (often for 30 seconds or more) to ensure it has the "full picture" before deciding. This increases memory usage at the gateway and introduces a delay before traces appear in your UI. Furthermore, it requires "trace-based load balancing" to ensure all spans for a single trace arrive at the same collector.

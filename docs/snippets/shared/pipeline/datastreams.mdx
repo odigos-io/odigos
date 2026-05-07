@@ -3,14 +3,14 @@ import BetaWarning from '/snippets/shared/beta-warning.mdx';
 <BetaWarning />
 
 # Introduction
-Odigos supports Datastreams, a powerful feature that allows you to split telemetry sources into multiple logical streams. Each stream can be independently routed to different destinations and have specific actions applied—such as sampling, attribute enrichment, masking rules, and more.
+Odigos supports Datastreams, a powerful feature that allows you to split telemetry sources into multiple logical streams. Each stream can be independently routed to different destinations and have specific actions applied—such as [sampling](../pipeline/actions/sampling/introduction), attribute enrichment, masking rules, and more.
 
 # Motivation
 There are many use cases for adopting Datastreams, including:
 
 1. **Cost optimization** - Route lower-priority services (like internal or backoffice apps) to more cost-effective destinations, such as Parquet files stored in S3.
 
-2. **Targeted processing** - Apply custom processing (e.g., sampling, enrichment) to only a subset of services.
+2. **Targeted processing** - Apply custom processing (e.g., [sampling](../pipeline/actions/sampling/rules/overview), enrichment) to only a subset of services.
 
 3. **Gradual migration** - Test a new destination on specific services before committing to a full migration.
 
@@ -95,4 +95,4 @@ spec:
 # Caveats and Considerations
 1. **Trace integrity** - Distributed traces often span multiple services that participate in the same operation. If you assign these services to different datastreams, the trace will be broken across destinations. Each destination will only receive part of the trace, making it incomplete and harder to troubleshoot. To preserve trace integrity, keep all services involved in a single transaction within the same datastream.
 
-2. **Action support** - At present, actions defined in Odigos are applied globally to all streams. Stream-specific actions (e.g., custom sampling rules per datastream) are not yet supported but will be in a future release.
+2. **Action support** - At present, actions defined in Odigos are applied globally to all streams. Stream-specific actions (e.g., custom [sampling rules](../pipeline/actions/sampling/rules/overview) per datastream) are not yet supported but will be in a future release.

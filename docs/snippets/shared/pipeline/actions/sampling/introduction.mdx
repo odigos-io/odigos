@@ -41,7 +41,7 @@ Traditional framing often starts from dropping data to save money. Odigos shifts
 
 ### Sampling level
 
-Sampling in Odigos is **per trace**. The decision to **keep** or **drop** a trace is made **at the root span**. **Partial** retention would **break** parent–child links, timing, and attributes that **span the request**. When a trace is **kept**, it is **complete** from the root span through its children.
+Sampling in Odigos is **per trace**. The decision to keep or drop is made **at the root span** and applies to every span in the trace. Partial retention would break parent–child links, timing, and attributes that span the whole request, so a kept trace is always **complete** from the root span through its children.
 
 ### Key terminology
 

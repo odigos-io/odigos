@@ -15,10 +15,10 @@ This page describes how **sampling rules** are evaluated in Odigos: the three **
 </CardGroup>
 
 <Note>
-  See [Head vs. tail sampling](../head-and-tail-sampling) for how head and tail sampling differ in Odigos (root‑span decisions versus aggregation at the gateway).
+  See [Head vs. tail sampling](../head-and-tail-sampling) for how head and tail sampling differ in Odigos (root-span decisions versus aggregation at the gateway).
 </Note>
 
-If you only define **highly relevant** rules and **no** cost‑reduction rules, **unimportant** traffic is not aggressively reduced by those rules alone—policy may still require **full trace** context to evaluate importance, which increases gateway work without cutting volume. Use **highly relevant** and **cost reduction** together when you need both signal and volume control.
+If you only define **Highly Relevant** rules and **no Cost Reduction** rules, unimportant traffic is not aggressively reduced by those rules alone—policy may still require full-trace context to evaluate importance, which increases gateway work without cutting volume. Use **Highly Relevant** and **Cost Reduction** together when you need both signal and volume control.
 
 ## Order of operations between categories
 
@@ -30,7 +30,7 @@ Categories are **not** all evaluated for every trace in parallel. Odigos applies
     <div className="w-full md:w-[46%]">
       <Card title="Noisy Operation" icon="filter">
         <div className="text-sm leading-snug text-zinc-700 dark:text-zinc-300">
-          If the trace <strong>matches</strong> a Noisy rule, it is <strong>dropped or sampled down</strong> as configured. <strong>Highly Relevant</strong> and <strong>Cost Reduction</strong> are <strong>not</strong> evaluated for that trace; <strong>Dropped</strong> traces do not continue to the other categories.
+          If the trace <strong>matches</strong> a Noisy rule, it is <strong>dropped or sampled down</strong> as configured. The trace exits the pipeline at this stage; <strong>Highly Relevant</strong> and <strong>Cost Reduction</strong> are <strong>not</strong> evaluated for that trace.
         </div>
       </Card>
     </div>
@@ -134,4 +134,4 @@ When a trace matches rules in **both** the **Highly Relevant** and **Cost Reduct
 
 ## Why full traces still matter
 
-For traces that are evaluated on the **tail** path, the evaluator needs the **assembled** trace (within the aggregation window) so it can apply **highly relevant** conditions that depend on **any** span. That is why **tail sampling** and aggregation are part of the pipeline for those policies, even when **category order** is Noisy → Highly Relevant → Cost Reduction.
+For traces that are evaluated on the **tail** path, the evaluator needs the assembled trace (within the aggregation window) so it can apply **Highly Relevant** conditions that depend on any span. That is why tail sampling and aggregation are part of the pipeline for those policies, even when the category order is Noisy → Highly Relevant → Cost Reduction.

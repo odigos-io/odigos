@@ -58,7 +58,7 @@ The Operation options depend on the rule's category.
   </Tab>
 </Tabs>
 
-## Keep Percentage/Drop Percentage
+## Keep Percentage
 
 Each rule defines what fraction of matching traffic is retained. The available choices have the same shape across all three categories—**Drop All** or **Sample**—but the **meaning** of the Sample percentage differs:
 
@@ -78,10 +78,10 @@ For how these percentages interact within a category and between Highly Relevant
 
 Both fields are optional and exist purely to make rules easier to identify and maintain—they have **no effect** on evaluation or matching.
 
-- **Name** — a short, free‑text label for the rule. The name appears in the rule list in the UI and may also surface on metrics and span attributes, so use something descriptive that makes the rule recognizable in dashboards and queries.
-- **Notes** — free‑text describing **why** the rule exists. Use this to capture context that isn't obvious from the matcher itself: the incident that triggered the rule, the team that owns it, or the cost target it's serving. Especially useful when auditing rules or onboarding new operators.
+- **Name** — a short, free-text label for the rule. The name appears in the rule list in the UI and may also surface on metrics and span attributes, so use something descriptive that makes the rule recognizable in dashboards and queries.
+- **Notes** — free-text describing **why** the rule exists. Use this to capture context that isn't obvious from the matcher itself: the incident that triggered the rule, the team that owns it, or the cost target it's serving. Especially useful when auditing rules or onboarding new operators.
 
 <Tip>
-  Treat Name and Notes like a commit message for your sampling policy. A good Name + Notes pair turns "what does this rule do?" into a one‑line answer at a glance.
+  Treat Name and Notes like a commit message for your sampling policy. A good Name + Notes pair turns "what does this rule do?" into a one-line answer at a glance.
 </Tip>
 

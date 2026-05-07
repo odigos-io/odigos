@@ -26,29 +26,13 @@ Attribute Actions are a way to modify the OpenTelemetry data recorded by Odigos 
 
 ### Sampling Actions
 
-Sampling Actions allow you to configure various types of sampling methods before exporting traces to your destinations.
-  - [Sampling](../../pipeline/actions/sampling/introduction)
+Sampling Actions decide which traces are kept and which are dropped before they reach your destinations. Rules are organized into three categories, evaluated in order—**Noisy Operation → Highly Relevant → Cost Reduction**—so you can drop noise early, guarantee retention for important traffic, and cap everything else for cost.
 
-<AccordionGroup>
-  <Accordion title="Scope Categories">
-    Odigos Sampling actions are divided into three main categories, each representing the action's scope. The action scope defines the range that the sampler covers. The categories are:
-
-    1. **Global Actions**: These actions sample all data without specificity. All traces flowing through Odigos will be sampled regardless of their source. For example, ErrorSampler.
-    2. **Service Actions**: These sample actions are applied only to traces coming from a specified service.
-    3. **Endpoint Actions**: These sample actions are applied to traces coming from a specific service and a specific endpoint. For example, LatencySampler.
-  </Accordion>
-  <Accordion title="Relation Between Sampling Actions">
-    When multiple sampling actions are configured, the most specific rule applies. For example:
-
-    - If two rules are configured: an Endpoint action for `Service: Frontend, Endpoint: /buy` with a latency threshold of 1 second and a fallback of 50%, and a Global ErrorSampler with a fallback of 20%:
-      1. Error traces will always be sampled due to the Global ErrorSampler, regardless of any Service or Endpoint rule.
-      2. Traces from `Frontend /buy` below 1 second latency will fall under the Endpoint action's fallback and retain 50% of these traces.
-      3. Traces from `Frontend /buy` above 1 second latency will always be retained.
-      4. Any other non-error traces that are not from `Frontend /buy` will be sampled at 20%.
-
-    Each rule ensures you get the specified sampling behavior for your conditions.
-  </Accordion>
-</AccordionGroup>
+  - [Sampling overview](../../pipeline/actions/sampling/introduction)
+  - [Head and tail sampling](../../pipeline/actions/sampling/head-and-tail-sampling)
+  - [Rules overview](../../pipeline/actions/sampling/rules/overview)
+  - [Configuration reference](../../pipeline/actions/sampling/configuration) 
+  - [Examples](../../pipeline/actions/sampling/examples)
 
 ### Custom Actions
 

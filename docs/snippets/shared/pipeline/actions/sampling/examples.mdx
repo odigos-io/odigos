@@ -235,7 +235,7 @@ For the field reference behind each example—every Source scope option, every O
           error: true
           percentageAtLeast: 100
           sourceScopes:
-            - workloadNamespace: prod
+            - workloadNamespace: odimall
               workloadKind: Deployment
               workloadName: payment-service
       costReductionRules:
@@ -243,7 +243,7 @@ For the field reference behind each example—every Source scope option, every O
           notes: Cap healthy payment-service traffic to keep cost in check; HR errors above always win.
           percentageAtMost: 1
           sourceScopes:
-            - workloadNamespace: prod
+            - workloadNamespace: odimall
               workloadKind: Deployment
               workloadName: payment-service
     ```
@@ -351,7 +351,7 @@ To take a rule out of sampling decisions without deleting it, you can either fli
           disabled: true
           percentageAtMost: 1
           sourceScopes:
-            - workloadNamespace: prod
+            - workloadNamespace: odimall
               workloadKind: Deployment
               workloadName: payment-service
     ```
