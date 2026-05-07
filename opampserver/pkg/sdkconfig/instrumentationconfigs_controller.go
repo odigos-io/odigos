@@ -32,7 +32,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	i.ConnectionCache.UpdateWorkloadRemoteConfig(podWorkload, instrumentationConfig.Spec.SdkConfigs, instrumentationConfig.Spec.Containers)
+	i.ConnectionCache.UpdateWorkloadRemoteConfig(podWorkload, instrumentationConfig.Spec.Containers)
 
 	return ctrl.Result{}, nil
 }
