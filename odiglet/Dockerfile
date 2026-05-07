@@ -36,8 +36,8 @@ FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS agents-builder
 WORKDIR /instrumentations
 
 # Allows overriding the registry
-# Example: --build-arg DOCKER_REGISTRY=p0xd21zf5r.registry.depot.dev
-ARG DOCKER_REGISTRY=public.ecr.aws/odigos/agents
+# Example: --build-arg AGENTS_REGISTRY=p0xd21zf5r.registry.depot.dev
+ARG AGENTS_REGISTRY=public.ecr.aws/odigos/agents
 
 # java-community
 ARG JAVA_OTEL_VERSION=v2.10.0
@@ -48,8 +48,8 @@ COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.72-py3.8 /instrum
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.81 /instrumentations/python /instrumentations/python
 
 # nodejs-community
-COPY --from=${DOCKER_REGISTRY}/nodejs-community:v0.6.2 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=${DOCKER_REGISTRY}/nodejs-community:v0.6.2 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=${AGENTS_REGISTRY}/nodejs-community:v0.6.2 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=${AGENTS_REGISTRY}/nodejs-community:v0.6.2 /instrumentations/nodejs-community /instrumentations/nodejs-community
 # nodejs-community-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.17 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.17 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14

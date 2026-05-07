@@ -259,6 +259,7 @@ jobs:
             ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
             LD_FLAGS=-s -w
             RHEL=false
+            AGENTS_REGISTRY=p0xd21zf5r.registry.depot.dev
           platforms: linux/amd64,linux/arm64
           file: >-
             ${{ matrix.service == 'odiglet' && 'odiglet/Dockerfile' ||
