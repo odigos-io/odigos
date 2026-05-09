@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/opampserver/pkg/agent"
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
 )
@@ -127,6 +128,12 @@ func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWork
 			return fmt.Errorf("container config not found for container %s", conn.ContainerName)
 		}
 
+		sdkRemoteConfig := configsections.CalcSdkRemoteConfig(conn.RemoteResourceAttributes, containerConfig)
+		opampRemoteConfigSdk, sdkSectionName, err := configsections.SdkRemoteConfigToOpamp(sdkRemoteConfig)
+		if err != nil {
+			return err
+		}
+
 		containerConfigBytes, err := json.Marshal(containerConfig)
 		if err != nil {
 			return err
@@ -138,9 +145,8 @@ func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWork
 
 		// copy the old remote config to avoid it being accessed concurrently
 		newRemoteConfigMap := proto.Clone(conn.AgentRemoteConfig.Config).(*protobufs.AgentConfigMap)
-		if containerConfigContent != nil {
-			newRemoteConfigMap.ConfigMap["container_config"] = containerConfigContent
-		}
+		newRemoteConfigMap.ConfigMap[sdkSectionName] = opampRemoteConfigSdk
+		newRemoteConfigMap.ConfigMap[string(configsections.RemoteConfigContainerConfigSectionName)] = containerConfigContent
 
 		conn.AgentRemoteConfig = &protobufs.AgentRemoteConfig{
 			Config:     newRemoteConfigMap,
