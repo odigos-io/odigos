@@ -4,7 +4,8 @@ package common
 type ObservabilitySignal string
 
 const (
-	LogsObservabilitySignal    ObservabilitySignal = "LOGS"
-	TracesObservabilitySignal  ObservabilitySignal = "TRACES"
-	MetricsObservabilitySignal ObservabilitySignal = "METRICS"
+	LogsObservabilitySignal     ObservabilitySignal = "LOGS"
+	TracesObservabilitySignal   ObservabilitySignal = "TRACES"
+	MetricsObservabilitySignal  ObservabilitySignal = "METRICS"
+	ProfilesObservabilitySignal ObservabilitySignal = "PROFILES"
 )

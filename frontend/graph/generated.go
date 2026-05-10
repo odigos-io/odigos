@@ -474,9 +474,10 @@ type ComplexityRoot struct {
 	}
 
 	ExportedSignals struct {
-		Logs    func(childComplexity int) int
-		Metrics func(childComplexity int) int
-		Traces  func(childComplexity int) int
+		Logs     func(childComplexity int) int
+		Metrics  func(childComplexity int) int
+		Profiles func(childComplexity int) int
+		Traces   func(childComplexity int) int
 	}
 
 	GatewayDeploymentInfo struct {
@@ -1324,9 +1325,10 @@ type ComplexityRoot struct {
 	}
 
 	SupportedSignals struct {
-		Logs    func(childComplexity int) int
-		Metrics func(childComplexity int) int
-		Traces  func(childComplexity int) int
+		Logs     func(childComplexity int) int
+		Metrics  func(childComplexity int) int
+		Profiles func(childComplexity int) int
+		Traces   func(childComplexity int) int
 	}
 
 	TailSamplingConfig struct {
@@ -3529,6 +3531,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ExportedSignals.Metrics(childComplexity), true
+
+	case "ExportedSignals.profiles":
+		if e.complexity.ExportedSignals.Profiles == nil {
+			break
+		}
+
+		return e.complexity.ExportedSignals.Profiles(childComplexity), true
 
 	case "ExportedSignals.traces":
 		if e.complexity.ExportedSignals.Traces == nil {
@@ -7284,6 +7293,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SupportedSignals.Metrics(childComplexity), true
+
+	case "SupportedSignals.profiles":
+		if e.complexity.SupportedSignals.Profiles == nil {
+			break
+		}
+
+		return e.complexity.SupportedSignals.Profiles(childComplexity), true
 
 	case "SupportedSignals.traces":
 		if e.complexity.SupportedSignals.Traces == nil {
@@ -18639,6 +18655,8 @@ func (ec *executionContext) fieldContext_Destination_exportedSignals(_ context.C
 				return ec.fieldContext_ExportedSignals_metrics(ctx, field)
 			case "logs":
 				return ec.fieldContext_ExportedSignals_logs(ctx, field)
+			case "profiles":
+				return ec.fieldContext_ExportedSignals_profiles(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ExportedSignals", field.Name)
 		},
@@ -19512,6 +19530,8 @@ func (ec *executionContext) fieldContext_DestinationTypesCategoryItem_supportedS
 				return ec.fieldContext_SupportedSignals_metrics(ctx, field)
 			case "logs":
 				return ec.fieldContext_SupportedSignals_logs(ctx, field)
+			case "profiles":
+				return ec.fieldContext_SupportedSignals_profiles(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SupportedSignals", field.Name)
 		},
@@ -22835,6 +22855,50 @@ func (ec *executionContext) _ExportedSignals_logs(ctx context.Context, field gra
 }
 
 func (ec *executionContext) fieldContext_ExportedSignals_logs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExportedSignals",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExportedSignals_profiles(ctx context.Context, field graphql.CollectedField, obj *model.ExportedSignals) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExportedSignals_profiles(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Profiles, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ExportedSignals_profiles(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ExportedSignals",
 		Field:      field,
@@ -47359,6 +47423,54 @@ func (ec *executionContext) fieldContext_SupportedSignals_logs(_ context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _SupportedSignals_profiles(ctx context.Context, field graphql.CollectedField, obj *model.SupportedSignals) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SupportedSignals_profiles(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Profiles, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ObservabilitySignalSupport)
+	fc.Result = res
+	return ec.marshalNObservabilitySignalSupport2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐObservabilitySignalSupport(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SupportedSignals_profiles(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SupportedSignals",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "supported":
+				return ec.fieldContext_ObservabilitySignalSupport_supported(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ObservabilitySignalSupport", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _TailSamplingConfig_disabled(ctx context.Context, field graphql.CollectedField, obj *model.TailSamplingConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_TailSamplingConfig_disabled(ctx, field)
 	if err != nil {
@@ -51153,7 +51265,7 @@ func (ec *executionContext) unmarshalInputExportedSignalsInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"traces", "metrics", "logs"}
+	fieldsInOrder := [...]string{"traces", "metrics", "logs", "profiles"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -51181,6 +51293,13 @@ func (ec *executionContext) unmarshalInputExportedSignalsInput(ctx context.Conte
 				return it, err
 			}
 			it.Logs = data
+		case "profiles":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("profiles"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Profiles = data
 		}
 	}
 
@@ -56302,6 +56421,11 @@ func (ec *executionContext) _ExportedSignals(ctx context.Context, sel ast.Select
 			}
 		case "logs":
 			out.Values[i] = ec._ExportedSignals_logs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "profiles":
+			out.Values[i] = ec._ExportedSignals_profiles(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -63585,6 +63709,11 @@ func (ec *executionContext) _SupportedSignals(ctx context.Context, sel ast.Selec
 			}
 		case "logs":
 			out.Values[i] = ec._SupportedSignals_logs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "profiles":
+			out.Values[i] = ec._SupportedSignals_profiles(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

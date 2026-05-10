@@ -522,15 +522,17 @@ type EnvVar struct {
 }
 
 type ExportedSignals struct {
-	Traces  bool `json:"traces"`
-	Metrics bool `json:"metrics"`
-	Logs    bool `json:"logs"`
+	Traces   bool `json:"traces"`
+	Metrics  bool `json:"metrics"`
+	Logs     bool `json:"logs"`
+	Profiles bool `json:"profiles"`
 }
 
 type ExportedSignalsInput struct {
-	Traces  bool `json:"traces"`
-	Metrics bool `json:"metrics"`
-	Logs    bool `json:"logs"`
+	Traces   bool `json:"traces"`
+	Metrics  bool `json:"metrics"`
+	Logs     bool `json:"logs"`
+	Profiles bool `json:"profiles"`
 }
 
 type FieldInput struct {
@@ -1605,9 +1607,10 @@ type StringConditionInput struct {
 }
 
 type SupportedSignals struct {
-	Traces  *ObservabilitySignalSupport `json:"traces"`
-	Metrics *ObservabilitySignalSupport `json:"metrics"`
-	Logs    *ObservabilitySignalSupport `json:"logs"`
+	Traces   *ObservabilitySignalSupport `json:"traces"`
+	Metrics  *ObservabilitySignalSupport `json:"metrics"`
+	Logs     *ObservabilitySignalSupport `json:"logs"`
+	Profiles *ObservabilitySignalSupport `json:"profiles"`
 }
 
 type TailSamplingConfig struct {
