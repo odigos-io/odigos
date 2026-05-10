@@ -13,6 +13,8 @@ spec:
       supported: false
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: LOKI_URL
       displayName: Endpoint
@@ -28,8 +30,8 @@ spec:
       componentProps:
         type: text
         required: false
-        tooltip: 'use this X-Scope-OrgID if you need to scope the data to a specific org. Multiple orgs can be chained using `|`'
-        placeholder: 'org1|org2|org3'
+        tooltip: "use this X-Scope-OrgID if you need to scope the data to a specific org. Multiple orgs can be chained using `|`"
+        placeholder: "org1|org2|org3"
     - name: LOKI_USERNAME
       displayName: Basic Auth Username
       componentType: input

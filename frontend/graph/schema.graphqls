@@ -36,6 +36,7 @@ enum SignalType {
   TRACES
   METRICS
   LOGS
+  PROFILES
 }
 
 enum SpanKind {
@@ -324,6 +325,7 @@ type SupportedSignals {
   traces: ObservabilitySignalSupport!
   metrics: ObservabilitySignalSupport!
   logs: ObservabilitySignalSupport!
+  profiles: ObservabilitySignalSupport!
 }
 
 type ObservabilitySignalSupport {
@@ -371,6 +373,7 @@ type ExportedSignals {
   traces: Boolean!
   metrics: Boolean!
   logs: Boolean!
+  profiles: Boolean!
 }
 
 type Destination {
@@ -403,6 +406,7 @@ input ExportedSignalsInput {
   traces: Boolean!
   metrics: Boolean!
   logs: Boolean!
+  profiles: Boolean! = false
 }
 
 input PersistNamespaceItemInput {
