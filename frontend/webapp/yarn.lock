@@ -635,10 +635,10 @@
   resolved "https://registry.npmjs.org/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@0.0.230":
-  version "0.0.230"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.230.tgz#b1e0cf8341ee54690f1aeb7e23ee5be339fc2c1f"
-  integrity sha512-sTSac+/kkCazcjS+mTddQlPVIlhkIE25OfGZlW9+dDTIL5z/I28c6dFFIHCyC5tl5b6xeY1ZV7nal/qgzL1zJA==
+"@odigos/ui-kit@0.0.233":
+  version "0.0.233"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.233.tgz#31c9804541e11f6b93413f2157f0fe85d1f185fd"
+  integrity sha512-AW4sqKm/o0lx5R5QzjftqqhwYROrP9fLt7kamPPPWqN+Zd3vlZcMDxh/Sr2za6Np9pg5j9SRgqGXYT/whgOVyg==
   dependencies:
     "@xyflow/react" "^12.10.2"
     elkjs "^0.11.1"
@@ -650,7 +650,7 @@
     react-error-boundary "^6.1.1"
     styled-components "6.3.12"
     virtua "^0.49.1"
-    zustand "^5.0.12"
+    zustand "^5.0.13"
 
 "@polka/url@^1.0.0-next.24":
   version "1.0.0-next.29"
@@ -4633,7 +4633,7 @@ zustand@^4.4.0:
   dependencies:
     use-sync-external-store "^1.2.2"
 
-zustand@^5.0.12:
-  version "5.0.12"
-  resolved "https://registry.yarnpkg.com/zustand/-/zustand-5.0.12.tgz#ed36f647aa89965c4019b671dfc23ef6c6e3af8c"
-  integrity sha512-i77ae3aZq4dhMlRhJVCYgMLKuSiZAaUPAct2AksxQ+gOtimhGMdXljRT21P5BNpeT4kXlLIckvkPM029OljD7g==
+zustand@^5.0.12, zustand@^5.0.13:
+  version "5.0.13"
+  resolved "https://registry.yarnpkg.com/zustand/-/zustand-5.0.13.tgz#06995c126e8903cd27100af04da91c36ae3051ed"
+  integrity sha512-efI2tVaVQPqtOh114loML/Z80Y4NP3yc+Ff0fYiZJPauNeWZeIp/bRFD7I9bfmCOYBh/PHxlglQ9+wvlwnPikQ==
