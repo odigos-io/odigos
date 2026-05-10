@@ -88,6 +88,9 @@ func DestinationTypeConfigToCategoryItem(destConfig destinations.Destination) mo
 			Logs: &model.ObservabilitySignalSupport{
 				Supported: destConfig.Spec.Signals.Logs.Supported,
 			},
+			Profiles: &model.ObservabilitySignalSupport{
+				Supported: destConfig.Spec.Signals.Profiles.Supported,
+			},
 		},
 		Fields: fields,
 	}
@@ -240,9 +243,10 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 		Disabled:        disabled,
 		DataStreamNames: ExtractDataStreamsFromDestination(k8sDest),
 		ExportedSignals: &model.ExportedSignals{
-			Traces:  isSignalExported(k8sDest, common.TracesObservabilitySignal),
-			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),
-			Logs:    isSignalExported(k8sDest, common.LogsObservabilitySignal),
+			Traces:   isSignalExported(k8sDest, common.TracesObservabilitySignal),
+			Metrics:  isSignalExported(k8sDest, common.MetricsObservabilitySignal),
+			Logs:     isSignalExported(k8sDest, common.LogsObservabilitySignal),
+			Profiles: isSignalExported(k8sDest, common.ProfilesObservabilitySignal),
 		},
 		Fields:          string(fieldsJSON),
 		DestinationType: &destTypeConfig,
@@ -283,6 +287,9 @@ func ExportedSignalsObjectToSlice(signals *model.ExportedSignalsInput) []common.
 	}
 	if signals.Logs {
 		resp = append(resp, common.LogsObservabilitySignal)
+	}
+	if signals.Profiles {
+		resp = append(resp, common.ProfilesObservabilitySignal)
 	}
 
 	return resp

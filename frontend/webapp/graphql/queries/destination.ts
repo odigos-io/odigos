@@ -21,6 +21,9 @@ export const GET_DESTINATION_CATEGORIES = gql`
             traces {
               supported
             }
+            profiles {
+              supported
+            }
           }
           fields {
             name
@@ -65,6 +68,7 @@ export const GET_DESTINATIONS = gql`
           logs
           metrics
           traces
+          profiles
         }
         destinationType {
           type
@@ -78,6 +82,9 @@ export const GET_DESTINATIONS = gql`
               supported
             }
             traces {
+              supported
+            }
+            profiles {
               supported
             }
           }

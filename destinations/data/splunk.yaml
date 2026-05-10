@@ -13,6 +13,8 @@ spec:
       supported: false
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: SPLUNK_ACCESS_TOKEN
       displayName: Access Token

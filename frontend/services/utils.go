@@ -92,6 +92,8 @@ func ConvertSignals(signals []model.SignalType) ([]common.ObservabilitySignal, e
 			signal = common.MetricsObservabilitySignal
 		case model.SignalTypeLogs:
 			signal = common.LogsObservabilitySignal
+		case model.SignalTypeProfiles:
+			signal = common.ProfilesObservabilitySignal
 		default:
 			return nil, fmt.Errorf("unknown signal type: %v", s)
 		}
