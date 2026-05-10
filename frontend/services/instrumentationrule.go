@@ -63,7 +63,6 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 			Disabled:                 &r.Spec.Disabled,
 			Mutable:                  mutable,
 			ProfileName:              profileName,
-			Workloads:                convertWorkloads(r.Spec.Workloads),
 			SourcesScopes:            convertSourcesScope(r.Spec.SourcesScopes),
 			InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 			Conditions:               ConvertConditions(r.Status.Conditions),
@@ -98,7 +97,6 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		Disabled:                 &r.Spec.Disabled,
 		Mutable:                  mutable,
 		ProfileName:              profileName,
-		Workloads:                convertWorkloads(r.Spec.Workloads),
 		SourcesScopes:            convertSourcesScope(r.Spec.SourcesScopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
@@ -268,19 +266,6 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	existingRule.Spec.RuleName = *input.RuleName
 	existingRule.Spec.Notes = *input.Notes
 	existingRule.Spec.Disabled = *input.Disabled
-	if input.Workloads != nil {
-		convertedWorkloads := make([]k8sconsts.PodWorkload, len(input.Workloads))
-		for i, w := range input.Workloads {
-			convertedWorkloads[i] = k8sconsts.PodWorkload{
-				Name:      w.Name,
-				Namespace: w.Namespace,
-				Kind:      k8sconsts.WorkloadKind(w.Kind),
-			}
-		}
-		existingRule.Spec.Workloads = &convertedWorkloads
-	} else {
-		existingRule.Spec.Workloads = nil
-	}
 
 	if input.SourcesScopes != nil {
 		converted := convertSourcesScopeInput(input.SourcesScopes)
@@ -342,7 +327,6 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		Disabled:                 &updatedRule.Spec.Disabled,
 		Mutable:                  profileName == "",
 		ProfileName:              profileName,
-		Workloads:                convertWorkloads(updatedRule.Spec.Workloads),
 		SourcesScopes:            convertSourcesScope(updatedRule.Spec.SourcesScopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(updatedRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(updatedRule.Spec.CodeAttributes),
@@ -372,19 +356,6 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	notes := *input.Notes
 	disabled := *input.Disabled
 
-	var workloads *[]k8sconsts.PodWorkload
-	if input.Workloads != nil {
-		convertedWorkloads := make([]k8sconsts.PodWorkload, len(input.Workloads))
-		for i, w := range input.Workloads {
-			convertedWorkloads[i] = k8sconsts.PodWorkload{
-				Name:      w.Name,
-				Namespace: w.Namespace,
-				Kind:      k8sconsts.WorkloadKind(w.Kind),
-			}
-		}
-		workloads = &convertedWorkloads
-	}
-
 	var sourcesScopes *[]k8sconsts.SourcesScope
 	if input.SourcesScopes != nil {
 		convertedScopes := convertSourcesScopeInput(input.SourcesScopes)
@@ -413,7 +384,6 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			RuleName:                 ruleName,
 			Notes:                    notes,
 			Disabled:                 disabled,
-			Workloads:                workloads,
 			SourcesScopes:            sourcesScopes,
 			InstrumentationLibraries: instrumentationLibraries,
 			CodeAttributes:           getCodeAttributesInput(input),
@@ -438,7 +408,6 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		Disabled:                 &createdRule.Spec.Disabled,
 		Mutable:                  true, // New rules are always mutable
 		ProfileName:              "",   // New rules are not associated with a profile
-		Workloads:                convertWorkloads(createdRule.Spec.Workloads),
 		SourcesScopes:            convertSourcesScope(createdRule.Spec.SourcesScopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(createdRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(createdRule.Spec.CodeAttributes),

@@ -5,7 +5,6 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
@@ -295,13 +294,6 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 		Items: []odigosv1.InstrumentationRule{
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
-					Workloads: &[]k8sconsts.PodWorkload{
-						{
-							Name:      "test",
-							Kind:      k8sconsts.WorkloadKindDeployment,
-							Namespace: "testns",
-						},
-					},
 					PayloadCollection: &instrumentationrules.PayloadCollection{
 						HttpRequest: &instrumentationrules.HttpPayloadCollection{
 							MimeTypes: &[]string{"application/json"},
@@ -351,13 +343,6 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 		Items: []odigosv1.InstrumentationRule{
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
-					Workloads: &[]k8sconsts.PodWorkload{
-						{
-							Name:      "someotherdeployment",
-							Kind:      k8sconsts.WorkloadKindDeployment,
-							Namespace: "testns",
-						},
-					},
 					PayloadCollection: &instrumentationrules.PayloadCollection{
 						HttpRequest: &instrumentationrules.HttpPayloadCollection{
 							MimeTypes: &[]string{"application/json"},

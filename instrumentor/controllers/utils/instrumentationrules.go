@@ -15,7 +15,7 @@ func IsWorkloadParticipatingInRule(
 	containerName string,
 	language common.ProgrammingLanguage,
 ) bool {
-	if rule.Spec.SourcesScopes == nil && rule.Spec.Workloads == nil {
+	if rule.Spec.SourcesScopes == nil {
 		return true
 	}
 
@@ -30,14 +30,7 @@ func IsWorkloadParticipatingInRule(
 				return true
 			}
 		}
-		return false
-	}
-
-	// If no SourcesScopes, fallback into the (now deprecated) Workloads
-	for _, allowedWorkload := range *rule.Spec.Workloads {
-		if allowedWorkload == workload {
-			return true
-		}
+		return scope.AnySourceScopeMatchesContainer(scopes, workload, name, lang)
 	}
 	return false
 }

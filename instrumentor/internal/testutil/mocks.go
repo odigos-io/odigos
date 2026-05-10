@@ -338,8 +338,6 @@ func NewMockInstrumentationRuleWithSourcesScope(name, ns string, scopes []k8scon
 // NewMockInstrumentationRuleWithWorkloads returns a rule that matches only via deprecated workloads.
 func NewMockInstrumentationRuleWithWorkloads(name, ns string, workloads []k8sconsts.PodWorkload) *odigosv1.InstrumentationRule {
 	r := NewMockEmptyInstrumentationRule(name, ns)
-	copyW := append([]k8sconsts.PodWorkload(nil), workloads...)
-	r.Spec.Workloads = &copyW
 	return r
 }
 
@@ -347,9 +345,7 @@ func NewMockInstrumentationRuleWithWorkloads(name, ns string, workloads []k8scon
 func NewMockInstrumentationRuleWithSourcesScopeAndWorkloads(name, ns string, scopes []k8sconsts.SourcesScope, workloads []k8sconsts.PodWorkload) *odigosv1.InstrumentationRule {
 	r := NewMockEmptyInstrumentationRule(name, ns)
 	copyScopes := append([]k8sconsts.SourcesScope(nil), scopes...)
-	copyW := append([]k8sconsts.PodWorkload(nil), workloads...)
 	r.Spec.SourcesScopes = &copyScopes
-	r.Spec.Workloads = &copyW
 	return r
 }
 

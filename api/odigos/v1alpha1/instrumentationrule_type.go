@@ -54,10 +54,6 @@ type InstrumentationRuleSpec struct {
 	// A boolean field allowing to temporarily disable the rule, but keep it around for future use
 	Disabled bool `json:"disabled,omitempty"`
 
-	// DEPRECATED - USE SourcesScopes INSTEAD:
-	// An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.
-	Workloads *[]k8sconsts.PodWorkload `json:"workloads,omitempty"`
-
 	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.
 	SourcesScopes *[]k8sconsts.SourcesScope `json:"sourcesScopes,omitempty"`
 
