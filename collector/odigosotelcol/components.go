@@ -279,7 +279,6 @@ func components() (otelcol.Factories, error) {
 	factories.Processors, err = otelcol.MakeFactoryMap[processor.Factory](
 		odigossamplingprocessor.NewFactory(),
 		odigostailsamplingprocessor.NewFactory(),
-		odigostracefilterprocessor.NewFactory(),
 		odigostracestateprocessor.NewFactory(),
 		odigosconditionalattributes.NewFactory(),
 		odigossqldboperationprocessor.NewFactory(),
@@ -307,6 +306,7 @@ func components() (otelcol.Factories, error) {
 		odigosurltemplateprocessor.NewFactory(),
 		odigoslogsresourceattrsprocessor.NewFactory(),
 		odigosextractattributeprocessor.NewFactory(),
+		odigostracefilterprocessor.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -314,7 +314,6 @@ func components() (otelcol.Factories, error) {
 	factories.ProcessorModules = makeModulesMap(factories.Processors, map[component.Type]string{
 		odigossamplingprocessor.NewFactory().Type():          "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.148.0",
 		odigostailsamplingprocessor.NewFactory().Type():      "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.148.0",
-		odigostracefilterprocessor.NewFactory().Type():        "github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.148.0",
 		odigostracestateprocessor.NewFactory().Type():        "github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.148.0",
 		odigosconditionalattributes.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.148.0",
 		odigossqldboperationprocessor.NewFactory().Type():    "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.148.0",
@@ -342,6 +341,7 @@ func components() (otelcol.Factories, error) {
 		odigosurltemplateprocessor.NewFactory().Type():       "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.148.0",
 		odigoslogsresourceattrsprocessor.NewFactory().Type(): "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.148.0",
 		odigosextractattributeprocessor.NewFactory().Type():  "github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor v0.148.0",
+		odigostracefilterprocessor.NewFactory().Type():       "github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.148.0",
 	})
 
 	factories.Connectors, err = otelcol.MakeFactoryMap[connector.Factory](

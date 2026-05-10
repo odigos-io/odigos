@@ -13,6 +13,8 @@ import (
 	"go.opentelemetry.io/collector/confmap/confmaptest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processortest"
@@ -35,6 +37,7 @@ func TestComponentLifecycle(t *testing.T) {
 		createFn func(ctx context.Context, set processor.Settings, cfg component.Config) (component.Component, error)
 		name     string
 	}{
+
 		{
 			name: "traces",
 			createFn: func(ctx context.Context, set processor.Settings, cfg component.Config) (component.Component, error) {
@@ -65,6 +68,22 @@ func TestComponentLifecycle(t *testing.T) {
 			require.NoError(t, err)
 			require.NotPanics(t, func() {
 				switch tt.name {
+				case "logs":
+					e, ok := c.(processor.Logs)
+					require.True(t, ok)
+					logs := generateLifecycleTestLogs()
+					if !e.Capabilities().MutatesData {
+						logs.MarkReadOnly()
+					}
+					err = e.ConsumeLogs(context.Background(), logs)
+				case "metrics":
+					e, ok := c.(processor.Metrics)
+					require.True(t, ok)
+					metrics := generateLifecycleTestMetrics()
+					if !e.Capabilities().MutatesData {
+						metrics.MarkReadOnly()
+					}
+					err = e.ConsumeMetrics(context.Background(), metrics)
 				case "traces":
 					e, ok := c.(processor.Traces)
 					require.True(t, ok)
@@ -80,6 +99,29 @@ func TestComponentLifecycle(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func generateLifecycleTestLogs() plog.Logs {
+	logs := plog.NewLogs()
+	rl := logs.ResourceLogs().AppendEmpty()
+	rl.Resource().Attributes().PutStr("resource", "R1")
+	l := rl.ScopeLogs().AppendEmpty().LogRecords().AppendEmpty()
+	l.Body().SetStr("test log message")
+	l.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
+	return logs
+}
+
+func generateLifecycleTestMetrics() pmetric.Metrics {
+	metrics := pmetric.NewMetrics()
+	rm := metrics.ResourceMetrics().AppendEmpty()
+	rm.Resource().Attributes().PutStr("resource", "R1")
+	m := rm.ScopeMetrics().AppendEmpty().Metrics().AppendEmpty()
+	m.SetName("test_metric")
+	dp := m.SetEmptyGauge().DataPoints().AppendEmpty()
+	dp.Attributes().PutStr("test_attr", "value_1")
+	dp.SetIntValue(123)
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
+	return metrics
 }
 
 func generateLifecycleTestTraces() ptrace.Traces {

@@ -767,8 +767,6 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/process
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor => ../processors/odigossqldboperationprocessor
 
-replace github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor => ../processors/odigostracefilterprocessor
-
 replace github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor => ../processors/odigostracestateprocessor
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter => ../exporters/azureblobstorageexporter
@@ -786,6 +784,8 @@ replace github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocess
 replace github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor => ../processors/odigoslogsresourceattrsprocessor
 
 replace github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor => ../processors/odigosextractattributeprocessor
+
+replace github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor => ../processors/odigostracefilterprocessor
 
 replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
 
