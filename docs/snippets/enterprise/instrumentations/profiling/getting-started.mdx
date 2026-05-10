@@ -1,0 +1,88 @@
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+## Prerequisites
+
+- Odigos **v1.25.0** or newer installed on the cluster
+- The workload you want to profile must already be a [Source](/enterprise/pipeline/sources/introduction)
+
+## Step 1: Enable Profiling
+
+Profiling is an **opt-in** feature controlled by a single Helm value.
+Set `profiling.enabled=true` when installing or upgrading Odigos:
+
+```bash
+helm upgrade --install odigos odigos/odigos \
+  --namespace odigos-system \
+  --create-namespace \
+  --set profiling.enabled=true
+```
+
+When this flag is set Odigos provisions the following automatically:
+- The eBPF profiler receiver is activated on every Data Collector
+- A `profiles` pipeline gets enabled in Odigos components and as soon as profile samples start to arrive, Odigos UI buffers start generating the flame graph
+- You can also export profiling data to any third-party Destination that supports viewing profiling data
+
+<Info>
+  Profiling does not replace or interfere with your existing traces, metrics, or logs pipelines. It runs as a separate pipeline inside the same collector processes.
+</Info>
+
+## Step 2: View Profiles in the Odigos UI
+
+Once profiling is enabled on the cluster, you can inspect profiles for any Source directly from the Odigos UI.
+
+<Frame>
+  <img src="/images/enterprise/profiling/profiling-demo.gif" alt="Demo of continuous CPU profiling workflow in Odigos — enabling a slot, viewing the flame graph, and inspecting symbols" />
+</Frame>
+
+<Steps>
+  <Step title="Open the Profiling tab">
+    Navigate to **Sources** in the Odigos UI and click on the workload you want to investigate. This opens the source drawer. Inside the source drawer, click the **Profiling** tab. Click **Enable Profiling** to open a slot for this workload. Odigos will start buffering profile data as it arrives from the node.
+
+    <Frame>
+      <img src="/images/enterprise/profiling/profiling4.png" alt="Source drawer showing the Profiling tab with flame graph and symbol table" />
+    </Frame>
+  </Step>
+
+  <Step title="Inspect the flame graph">
+      Send traffic to your service or wait for background activity. The eBPF profiler samples continuously at the kernel level, higher CPU activity means more profiles getting collected for that workload.
+      The flame graph updates as profile data accumulates in the buffer. Wider bars represent more CPU time. Click any frame to zoom in.
+  </Step>
+
+  <Step title="Inspect the symbols table">
+      The symbols table lists every function captured in the profile with its **Self** time (CPU spent exclusively in that function) and **Total** time (including all callees). Use it alongside the flame graph to quickly rank the top CPU consumers without navigating the call tree visually.
+  </Step>
+</Steps>
+
+<Note>
+  Closing the Profiling tab does **not** immediately destroy the slot. The slot and its buffered data persist until the TTL expires or the UI pod restarts. This is intentional, it lets you reopen the tab and see the same data during an ongoing investigation.
+</Note>
+
+## Advanced: Buffer Tuning
+
+The in-memory profile store is sized from **environment variables** read by the UI pod at startup.
+
+| Environment variable | Default | Description |
+|----------------------|---------|-------------|
+| `PROFILES_MAX_SLOTS` | `24` | Maximum number of concurrently active profiling slots (one per workload). When the limit is reached the oldest slot is evicted (LRU). |
+| `PROFILES_SLOT_TTL_SECONDS` | `120` | Seconds of inactivity after which a slot is swept by the background cleanup loop. |
+| `PROFILES_SLOT_MAX_BYTES` | `8388608` (8 MiB) | Maximum bytes of raw OTLP profile chunks retained per slot. Older chunks are dropped when this cap is reached. |
+| `PROFILES_CLEANUP_INTERVAL_SECONDS` | `15` | How often the background TTL sweep runs inside the UI process. |
+
+## OTLP Exporter Tuning
+
+If you need to adjust retry behaviour or compression on the profiling OTLP pipelines (node → gateway, gateway → UI), use the `profiling.exporter.*` values:
+
+```yaml
+profiling:
+  enabled: true
+  exporter:
+    enableDataCompression: false
+    timeout: 5s
+    retryOnFailure:
+      enabled: true
+      initialInterval: 5s
+      maxInterval: 30s
+      maxElapsedTime: 300s
+```
+
+<GettingHelp />
