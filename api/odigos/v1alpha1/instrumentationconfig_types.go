@@ -621,11 +621,14 @@ func init() {
 	SchemeBuilder.Register(&InstrumentationConfig{}, &InstrumentationConfigList{})
 }
 
-// Languages returns the set of languages that this configuration applies to
+// Languages returns the set of languages that this configuration applies to,
+// derived from the runtime details of each container.
 func (ic *InstrumentationConfig) Languages() map[common.ProgrammingLanguage]struct{} {
 	langs := make(map[common.ProgrammingLanguage]struct{})
-	for _, sdkConfig := range ic.Spec.SdkConfigs {
-		langs[sdkConfig.Language] = struct{}{}
+	for _, details := range ic.RuntimeDetailsByContainer() {
+		if details != nil && details.Language != "" && details.Language != common.UnknownProgrammingLanguage {
+			langs[details.Language] = struct{}{}
+		}
 	}
 	return langs
 }

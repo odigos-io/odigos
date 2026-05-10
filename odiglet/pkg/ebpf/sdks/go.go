@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"google.golang.org/grpc"
 
 	commonlogger "github.com/odigos-io/odigos/common/logger"
@@ -50,7 +49,7 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 
 	initialConfig, err := convertToGoInstrumentationConfig(settings.InitialConfig)
 	if err != nil {
-		return nil, fmt.Errorf("invalid initial config type, expected *odigosv1.SdkConfig, got %T", settings.InitialConfig)
+		return nil, fmt.Errorf("invalid initial config type, expected *odigosv1.ContainerAgentConfig, got %T", settings.InitialConfig)
 	}
 
 	cp := ebpf.NewConfigProvider(initialConfig)
@@ -95,32 +94,32 @@ func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, sdkConfig instrumentati
 	return g.cp.SendConfig(ctx, updatedConfig)
 }
 
-func convertToGoInstrumentationConfig(sdkConfig instrumentation.Config) (auto.InstrumentationConfig, error) {
-	initialConfig, ok := sdkConfig.(*odigosv1.SdkConfig)
+func convertToGoInstrumentationConfig(config instrumentation.Config) (auto.InstrumentationConfig, error) {
+	containerConfig, ok := config.(*odigosv1.ContainerAgentConfig)
 	if !ok {
-		return auto.InstrumentationConfig{}, fmt.Errorf("invalid initial config type, expected *odigosv1.SdkConfig, got %T", sdkConfig)
+		return auto.InstrumentationConfig{}, fmt.Errorf("invalid config type, expected *odigosv1.ContainerAgentConfig, got %T", config)
 	}
 	ic := auto.InstrumentationConfig{}
-	if sdkConfig == nil {
-		log.Info("No SDK config provided for Go instrumentation, using default")
+	if containerConfig == nil || containerConfig.Traces == nil {
+		log.Info("No traces config provided for Go instrumentation, using default")
 		return ic, nil
 	}
-	ic.InstrumentationLibraryConfigs = make(map[auto.InstrumentationLibraryID]auto.InstrumentationLibrary)
-	for _, ilc := range initialConfig.InstrumentationLibraryConfigs {
-		libID := auto.InstrumentationLibraryID{
-			InstrumentedPkg: ilc.InstrumentationLibraryId.InstrumentationLibraryName,
-			SpanKind:        common.SpanKindOdigosToOtel(ilc.InstrumentationLibraryId.SpanKind),
+
+	if containerConfig.Traces.TraceVerbosity != nil {
+		ic.InstrumentationLibraryConfigs = make(map[auto.InstrumentationLibraryID]auto.InstrumentationLibrary)
+		falseVal := false
+		trueVal := true
+		for _, lib := range containerConfig.Traces.TraceVerbosity.DisabledLibraries {
+			libID := auto.InstrumentationLibraryID{InstrumentedPkg: lib.LibraryName}
+			ic.InstrumentationLibraryConfigs[libID] = auto.InstrumentationLibrary{TracesEnabled: &falseVal}
 		}
-		var tracesEnabled *bool
-		if ilc.TraceConfig != nil {
-			tracesEnabled = ilc.TraceConfig.Enabled
-		}
-		ic.InstrumentationLibraryConfigs[libID] = auto.InstrumentationLibrary{
-			TracesEnabled: tracesEnabled,
+		for _, lib := range containerConfig.Traces.TraceVerbosity.EnabledLibraries {
+			libID := auto.InstrumentationLibraryID{InstrumentedPkg: lib.LibraryName}
+			ic.InstrumentationLibraryConfigs[libID] = auto.InstrumentationLibrary{TracesEnabled: &trueVal}
 		}
 	}
 
-	// TODO: take sampling config from the CR
+	// TODO: take sampling config from containerConfig.Traces.HeadSampling
 	ic.Sampler = auto.DefaultSampler()
 	return ic, nil
 }
