@@ -47,10 +47,24 @@ func getOrCreateSamplingCR(ctx context.Context, samplingID string) (*v1alpha1.Sa
 		},
 	}
 	created, createErr := kube.DefaultClient.OdigosClient.Samplings(odigosNs).Create(ctx, newCR, metav1.CreateOptions{})
-	if createErr != nil {
-		return nil, fmt.Errorf("failed to create sampling CR %q: %w", samplingID, createErr)
+	if createErr == nil {
+		return created, nil
 	}
-	return created, nil
+
+	// The informer cache lags a live Create from another mutation in the same
+	// request burst (e.g. onboarding flow firing several mutations back-to-back).
+	// In that case the cache-backed Get above returns NotFound but the live
+	// Create reports AlreadyExists; recover by reading the existing CR from the
+	// API server directly so the caller can proceed with its mutation.
+	if apierrors.IsAlreadyExists(createErr) {
+		existing, getErr := kube.DefaultClient.OdigosClient.Samplings(odigosNs).Get(ctx, samplingID, metav1.GetOptions{})
+		if getErr != nil {
+			return nil, fmt.Errorf("failed to fetch existing sampling CR %q after AlreadyExists: %w", samplingID, getErr)
+		}
+		return existing, nil
+	}
+
+	return nil, fmt.Errorf("failed to create sampling CR %q: %w", samplingID, createErr)
 }
 
 func updateSamplingCR(ctx context.Context, cr *v1alpha1.Sampling) (*v1alpha1.Sampling, error) {
