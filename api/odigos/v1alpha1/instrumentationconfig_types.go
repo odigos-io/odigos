@@ -621,18 +621,6 @@ func init() {
 	SchemeBuilder.Register(&InstrumentationConfig{}, &InstrumentationConfigList{})
 }
 
-// Languages returns the set of languages that this configuration applies to,
-// derived from the runtime details of each container.
-func (ic *InstrumentationConfig) Languages() map[common.ProgrammingLanguage]struct{} {
-	langs := make(map[common.ProgrammingLanguage]struct{})
-	for _, details := range ic.RuntimeDetailsByContainer() {
-		if details != nil && details.Language != "" && details.Language != common.UnknownProgrammingLanguage {
-			langs[details.Language] = struct{}{}
-		}
-	}
-	return langs
-}
-
 // RuntimeDetailsByContainer will return a map containing runtime details for each container name present in the instrumented workload.
 // The keys are container names. Each value can be nil in case we have no runtime details for this container
 // from automatic runtime detection or overrides.
