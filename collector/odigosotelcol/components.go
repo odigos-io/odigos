@@ -107,6 +107,7 @@ import (
 	odigoslogsresourceattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor"
 	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
 	odigostailsamplingprocessor "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor"
+	odigostracefilterprocessor "github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor"
 	odigostracestateprocessor "github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor"
 	odigosebpfreceiver "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
 )
@@ -278,6 +279,7 @@ func components() (otelcol.Factories, error) {
 	factories.Processors, err = otelcol.MakeFactoryMap[processor.Factory](
 		odigossamplingprocessor.NewFactory(),
 		odigostailsamplingprocessor.NewFactory(),
+		odigostracefilterprocessor.NewFactory(),
 		odigostracestateprocessor.NewFactory(),
 		odigosconditionalattributes.NewFactory(),
 		odigossqldboperationprocessor.NewFactory(),
@@ -312,6 +314,7 @@ func components() (otelcol.Factories, error) {
 	factories.ProcessorModules = makeModulesMap(factories.Processors, map[component.Type]string{
 		odigossamplingprocessor.NewFactory().Type():          "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.148.0",
 		odigostailsamplingprocessor.NewFactory().Type():      "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.148.0",
+		odigostracefilterprocessor.NewFactory().Type():        "github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.148.0",
 		odigostracestateprocessor.NewFactory().Type():        "github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.148.0",
 		odigosconditionalattributes.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.148.0",
 		odigossqldboperationprocessor.NewFactory().Type():    "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.148.0",
