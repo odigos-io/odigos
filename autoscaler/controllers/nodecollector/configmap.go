@@ -230,12 +230,14 @@ func calculateCollectorConfigDomains(
 	metricsEnabled := slices.Contains(clusterCollectorSignals, odigoscommon.MetricsObservabilitySignal)
 	metricsConfigSettings := nodeCG.Spec.Metrics
 	var additionalTraceExporters []string
+	var postSpanMetricsProcessorNames []string
 	if metricsEnabled && metricsConfigSettings != nil {
 
 		// span metrics
 		if metricsConfigSettings.SpanMetrics != nil {
-			spanMetricsConfig, additionalSpanMetricsTraceExporters, _ := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics)
+			spanMetricsConfig, additionalSpanMetricsTraceExporters, _, spanMetricsPostProcessors := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics)
 			additionalTraceExporters = append(additionalTraceExporters, additionalSpanMetricsTraceExporters...)
+			postSpanMetricsProcessorNames = append(postSpanMetricsProcessorNames, spanMetricsPostProcessors...)
 			// NOTICE: temporarily bypass the normal metrics pipeline.
 			// this is to allow span metrics to be reported without any additional metric resource attributes.
 			// once finer control is implemented as to what resource attributes are included in the metrics pipeline,
@@ -268,7 +270,7 @@ func calculateCollectorConfigDomains(
 	if tracesEnabledInClusterCollector || len(additionalTraceExporters) > 0 {
 		tracesConfig := collectorconfig.TracesConfig(nodeCG, collectorconfig.TracesConfigOptions{
 			CommonSignalConfig:              commonSignalConfig.WithProcessors(processorsResults.TracesProcessors),
-			PostSpanMetricsProcessorNames:   processorsResults.TracesProcessorsPostSpanMetrics,
+			PostSpanMetricsProcessorNames:   append(processorsResults.TracesProcessorsPostSpanMetrics, postSpanMetricsProcessorNames...),
 			AdditionalTraceExporters:        additionalTraceExporters,
 			TracesEnabledInClusterCollector: tracesEnabledInClusterCollector,
 			LoadBalancingNeeded:             loadBalancingNeeded,
