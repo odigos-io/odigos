@@ -12,8 +12,8 @@ import (
 func IsWorkloadParticipatingInRule(
 	workload k8sconsts.PodWorkload,
 	rule *odigosv1alpha1.InstrumentationRule,
-	containerName string,
-	language common.ProgrammingLanguage,
+	containerName *string,
+	language *common.ProgrammingLanguage,
 ) bool {
 	if rule.Spec.SourcesScopes == nil {
 		return true
@@ -25,17 +25,20 @@ func IsWorkloadParticipatingInRule(
 		if len(scopes) == 0 {
 			return false
 		}
-		for i := range scopes {
-			if scope.SourcesScopeMatchesContainer(scopes[i], workload, containerName, language) {
-				return true
-			}
+		name := ""
+		if containerName != nil {
+			name = *containerName
+		}
+		lang := common.UnknownProgrammingLanguage
+		if language != nil {
+			lang = *language
 		}
 		return scope.AnySourceScopeMatchesContainer(scopes, workload, name, lang)
 	}
 	return false
 }
 
-// Resolves whether the rule applies to the workload for at least one container on the InstrumentationConfig
+// Resolves whether the rule applies to the workload for at least one container on the InstrumentationConfig.
 func IsInstrumentationConfigParticipatingInRule(
 	workload k8sconsts.PodWorkload,
 	ic *odigosv1alpha1.InstrumentationConfig,
@@ -43,11 +46,6 @@ func IsInstrumentationConfigParticipatingInRule(
 ) bool {
 	if rule.Spec.Disabled {
 		return false
-	}
-
-	// If no IC, we default to checking workloads without container name or language
-	if ic == nil {
-		return IsWorkloadParticipatingInRule(workload, rule, "", common.UnknownProgrammingLanguage)
 	}
 
 	// If we don't have overrides, iterate on runtime details by container and extract details from there
@@ -58,11 +56,11 @@ func IsInstrumentationConfigParticipatingInRule(
 			if rd.Language != "" {
 				lang = rd.Language
 			}
-			if IsWorkloadParticipatingInRule(workload, rule, rd.ContainerName, lang) {
+			if IsWorkloadParticipatingInRule(workload, rule, &rd.ContainerName, &lang) {
 				return true
 			}
 		}
-		return IsWorkloadParticipatingInRule(workload, rule, "", common.UnknownProgrammingLanguage)
+		return IsWorkloadParticipatingInRule(workload, rule, nil, nil)
 	}
 
 	// For overrides, do the same but with the override structs
@@ -74,7 +72,7 @@ func IsInstrumentationConfigParticipatingInRule(
 		if runtimeDetails != nil && runtimeDetails.Language != "" {
 			lang = runtimeDetails.Language
 		}
-		if IsWorkloadParticipatingInRule(workload, rule, containerName, lang) {
+		if IsWorkloadParticipatingInRule(workload, rule, &containerName, &lang) {
 			return true
 		}
 	}

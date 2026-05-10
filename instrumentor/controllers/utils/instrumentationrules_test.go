@@ -32,7 +32,7 @@ func Test_IsWorkloadParticipatingInRule_BothFields_ScopeNoMatch_IgnoresWorkloads
 	)
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
+	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
 
 	// Assert
 	assert.False(t, isParticipatingInRule, "sourcesScopes wins; deprecated workloads must be ignored")
@@ -56,7 +56,7 @@ func Test_IsWorkloadParticipatingInRule_BothFields_ScopeMatch_IgnoresWorkloads(t
 	)
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
+	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
 
 	// Assert
 	assert.True(t, isParticipatingInRule, "sourcesScopes match is sufficient")
@@ -74,7 +74,7 @@ func Test_IsWorkloadParticipatingInRule_SourcesScopeOnly(t *testing.T) {
 	}})
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
+	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
 
 	// Assert
 	assert.True(t, isParticipatingInRule)
@@ -88,7 +88,7 @@ func Test_IsWorkloadParticipatingInRule_WorkloadsOnly(t *testing.T) {
 	rule := testutil.NewMockInstrumentationRuleWithWorkloads("ir", ns.Name, []k8sconsts.PodWorkload{pw})
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
+	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
 
 	// Assert
 	assert.True(t, isParticipatingInRule)
@@ -104,7 +104,7 @@ func Test_IsWorkloadParticipatingInRule_SourcesScope_PartialNamespace_Match(t *t
 	}})
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
+	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
 
 	// Assert
 	assert.True(t, isParticipatingInRule)
@@ -120,7 +120,7 @@ func Test_IsWorkloadParticipatingInRule_SourcesScope_PartialNamespace_Miss(t *te
 	}})
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
+	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
 
 	// Assert
 	assert.False(t, isParticipatingInRule)
@@ -135,7 +135,7 @@ func Test_IsWorkloadParticipatingInRule_SourcesScopeEmpty_Inactive(t *testing.T)
 	rule := testutil.NewMockInstrumentationRuleWithSourcesScopeAndWorkloads("ir", ns.Name, emptyScopes, []k8sconsts.PodWorkload{pw})
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
+	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
 
 	// Assert
 	assert.False(t, isParticipatingInRule, "empty sourcesScopes means no participation")
@@ -149,7 +149,7 @@ func Test_IsWorkloadParticipatingInRule_AllWorkloadsWhenNoScope(t *testing.T) {
 	rule := testutil.NewMockInstrumentationRuleAllWorkloads("ir", ns.Name)
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
+	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
 
 	// Assert
 	assert.True(t, isParticipatingInRule)
@@ -187,20 +187,6 @@ func Test_IsInstrumentationConfigParticipatingInRule_Disabled_ShortCircuits(t *t
 
 	// Assert
 	assert.False(t, got)
-}
-
-func Test_IsInstrumentationConfigParticipatingInRule_NilIC_DelegatesToWorkloadOnlyCheck(t *testing.T) {
-	// Arrange
-	ns := testutil.NewMockNamespace()
-	dep := testutil.NewMockTestDeployment(ns, "svc")
-	pw := testutil.PodWorkloadFromDeployment(dep)
-	rule := testutil.NewMockInstrumentationRuleAllWorkloads("ir", ns.Name)
-
-	// Act
-	got := utils.IsInstrumentationConfigParticipatingInRule(pw, nil, rule)
-
-	// Assert
-	assert.True(t, got)
 }
 
 func Test_IsInstrumentationConfigParticipatingInRule_NoContainerOverrides_Fallback(t *testing.T) {
