@@ -33,7 +33,7 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 	// In readonly mode the UI's RBAC role does not grant `get` on secrets,
 	// and readonly users should not be able to see/edit the on-prem token anyway.
 	if services.IsReadonlyMode(ctx) {
-		return make([]*model.APIToken, 0), nil
+		return []*model.APIToken{}, nil
 	}
 
 	ns := env.GetCurrentNamespace()
@@ -44,7 +44,7 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 	secret, err := kube.DefaultClient.CoreV1().Secrets(ns).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return make([]*model.APIToken, 0), nil
+			return []*model.APIToken{}, nil
 		}
 		return nil, err
 	}
