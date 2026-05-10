@@ -27,7 +27,7 @@ export default function Page() {
       samplingRules={samplingRules}
       k8sHealthProbesConfig={k8sHealthProbesConfig}
       loading={loading}
-      tableRowsMaxHeight='calc(100vh - 480px)'
+      tableRowsMaxHeight='calc(100vh - 410px)'
       fetchSamplingRules={fetchSamplingRules}
       createNoisyOperationRule={createNoisyOperationRule}
       updateNoisyOperationRule={updateNoisyOperationRule}
