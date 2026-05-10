@@ -453,6 +453,15 @@
                     ]
                   },
                   {
+                    "group": "Continuous Profiling",
+                    "icon": "gauge-high",
+                    "pages": [
+                      "enterprise/instrumentations/profiling/overview",
+                      "enterprise/instrumentations/profiling/getting-started",
+                      "enterprise/instrumentations/profiling/destinations"
+                    ]
+                  },
+                  {
                     "group": "Advanced",
                     "icon": "gear",
                     "pages": [
