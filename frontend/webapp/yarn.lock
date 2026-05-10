@@ -635,10 +635,10 @@
   resolved "https://registry.npmjs.org/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@0.0.230":
-  version "0.0.230"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.230.tgz#b1e0cf8341ee54690f1aeb7e23ee5be339fc2c1f"
-  integrity sha512-sTSac+/kkCazcjS+mTddQlPVIlhkIE25OfGZlW9+dDTIL5z/I28c6dFFIHCyC5tl5b6xeY1ZV7nal/qgzL1zJA==
+"@odigos/ui-kit@0.0.232":
+  version "0.0.232"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.232.tgz#ede71ca984895113a70b46fb9ce4b790d5189c3b"
+  integrity sha512-12VpMdgTSX97qaE5WxoJWmqVHCsgF3tSdZyjp/mQab4cU4zi4h2TtoANFzvj5/1AXLe13ElA8UQplUnqmpCeeA==
   dependencies:
     "@xyflow/react" "^12.10.2"
     elkjs "^0.11.1"
@@ -650,7 +650,7 @@
     react-error-boundary "^6.1.1"
     styled-components "6.3.12"
     virtua "^0.49.1"
-    zustand "^5.0.12"
+    zustand "^5.0.13"
 
 "@polka/url@^1.0.0-next.24":
   version "1.0.0-next.29"
@@ -3628,13 +3628,6 @@ react-dom@19.2.5:
   dependencies:
     scheduler "^0.27.0"
 
-react-dom@19.2.6:
-  version "19.2.6"
-  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-19.2.6.tgz#44a81b0bcca22da814c00847d09d01c8615529b7"
-  integrity sha512-0prMI+hvBbPjsWnxDLxlCGyM8PN6UuWjEUCYmZhO67xIV9Xasa/r/vDnq+Xyq4Lo27g8QSbO5YzARu0D1Sps3g==
-  dependencies:
-    scheduler "^0.27.0"
-
 react-error-boundary@^6.1.1:
   version "6.1.1"
   resolved "https://registry.npmjs.org/react-error-boundary/-/react-error-boundary-6.1.1.tgz"
@@ -3649,11 +3642,6 @@ react@19.2.5:
   version "19.2.5"
   resolved "https://registry.yarnpkg.com/react/-/react-19.2.5.tgz#c888ab8b8ef33e2597fae8bdb2d77edbdb42858b"
   integrity sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA==
-
-react@19.2.6:
-  version "19.2.6"
-  resolved "https://registry.yarnpkg.com/react/-/react-19.2.6.tgz#3dadb8e12b2a7934c1d5317973e5dce1301f9a4d"
-  integrity sha512-sfWGGfavi0xr8Pg0sVsyHMAOziVYKgPLNrS7ig+ivMNb3wbCBw3KxtflsGBAwD3gYQlE/AEZsTLgToRrSCjb0Q==
 
 rechoir@^0.6.2:
   version "0.6.2"
@@ -4644,11 +4632,6 @@ zustand@^4.4.0:
   integrity sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==
   dependencies:
     use-sync-external-store "^1.2.2"
-
-zustand@^5.0.12:
-  version "5.0.12"
-  resolved "https://registry.yarnpkg.com/zustand/-/zustand-5.0.12.tgz#ed36f647aa89965c4019b671dfc23ef6c6e3af8c"
-  integrity sha512-i77ae3aZq4dhMlRhJVCYgMLKuSiZAaUPAct2AksxQ+gOtimhGMdXljRT21P5BNpeT4kXlLIckvkPM029OljD7g==
 
 zustand@^5.0.13:
   version "5.0.13"

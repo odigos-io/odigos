@@ -16,11 +16,11 @@
   "dependencies": {
     "@apollo/client": "^3.13.9",
     "@apollo/experimental-nextjs-app-support": "^0.12.3",
-    "@odigos/ui-kit": "0.0.230",
+    "@odigos/ui-kit": "0.0.232",
     "graphql": "^16.13.2",
     "next": "15.5.14",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
     "react-error-boundary": "^6.1.1",
     "styled-components": "6.3.12",
     "zustand": "^5.0.13"
