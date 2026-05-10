@@ -266,6 +266,19 @@ export const awaitToast = ({ message }: AwaitToastOptions, callback?: () => void
   if (!!callback) callback();
 };
 
+// The sampling page in @odigos/ui-kit auto-opens an onboarding modal whenever
+// it renders with zero sampling CRDs. The cypress sampling spec begins by
+// wiping all sampling CRDs, so the modal pops up on the very first visit and
+// blocks the create-rule button. Click "Skip" if the modal is currently
+// rendered, otherwise no-op.
+export const dismissSamplingOnboardingModal = () => {
+  cy.get('body').then(($body) => {
+    if ($body.find(DATA_IDS.SAMPLING_ONBOARDING_BTN_SKIP).length > 0) {
+      cy.get(DATA_IDS.SAMPLING_ONBOARDING_BTN_SKIP).click();
+    }
+  });
+};
+
 export const handleExceptions = () => {
   return cy.on('uncaught:exception', (err, runnable) => {
     if (err.message.includes('ResizeObserver loop completed with undelivered notifications')) {
