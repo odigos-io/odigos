@@ -49,33 +49,15 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 		return nil, fmt.Errorf("container config not found for container %s", containerName)
 	}
 
-	sdkRemoteConfig := configsections.CalcSdkRemoteConfig(remoteResourceAttributes, containerConfig)
-	opampRemoteConfigSdk, sdkSectionName, err := configsections.SdkRemoteConfigToOpamp(sdkRemoteConfig)
-	if err != nil {
-		m.logger.Error(err, "failed to marshal server offered resource attributes")
-		return nil, err
-	}
-
-	instrumentationLibrariesRemoteConfig, err := configsections.CalcInstrumentationLibrariesRemoteConfig(ctx, m.mgr.GetClient(), instrumentedAppName, podWorkload.Namespace)
-	if err != nil {
-		m.logger.Error(err, "failed to calculate instrumentation libraries config", "k8sAttributes", remoteResourceAttributes)
-		return nil, err
-	}
-
-	opampRemoteConfigInstrumentationLibraries, instrumentationLibrariesSectionName, err := configsections.InstrumentationLibrariesRemoteConfigToOpamp(instrumentationLibrariesRemoteConfig)
+	// TODO: remove this after v1.40.0 where we fully migrated to the container config.
+	// this is return  empty for now just to avoid breaking changes for old agents.
+	opampRemoteConfigInstrumentationLibraries, instrumentationLibrariesSectionName, err := configsections.InstrumentationLibrariesRemoteConfigToOpamp()
 	if err != nil {
 		m.logger.Error(err, "failed to marshal instrumentation libraries config")
 		return nil, err
 	}
 
-	// // We are moving towards passing all Instrumentation capabilities unchanged within the instrumentationConfig to the opamp client.
-	// // Gradually, we will migrate the InstrumentationLibraryConfigs and SDK remote config into the instrumentationConfig and the agents to use it.
-	opampRemoteConfigInstrumentationConfig, err := configsections.FilterRelevantSdk(instrumentationConfig, programmingLanguage)
-	if err != nil {
-		m.logger.Error(err, "failed to filter relevant sdk config")
-		return nil, err
-	}
-	opampRemoteConfigContainerConfig, err := configsections.FilterRelevantContainerConfig(instrumentationConfig, containerName)
+	opampRemoteConfigContainerConfig, containerConfigSectionName, err := configsections.FilterRelevantContainerConfig(instrumentationConfig, containerName)
 	if err != nil {
 		m.logger.Error(err, "failed to filter relevant container config")
 		return nil, err
@@ -83,10 +65,8 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 
 	agentConfigMap := protobufs.AgentConfigMap{
 		ConfigMap: map[string]*protobufs.AgentConfigFile{
-			sdkSectionName:                      opampRemoteConfigSdk,
 			instrumentationLibrariesSectionName: opampRemoteConfigInstrumentationLibraries,
-			"":                                  opampRemoteConfigInstrumentationConfig,
-			"container_config":                  opampRemoteConfigContainerConfig,
+			containerConfigSectionName:          opampRemoteConfigContainerConfig,
 		},
 	}
 	configHash := connection.CalcRemoteConfigHash(&agentConfigMap)
