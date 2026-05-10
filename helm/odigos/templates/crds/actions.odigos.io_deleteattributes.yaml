@@ -62,6 +62,7 @@ spec:
                   - LOGS
                   - TRACES
                   - METRICS
+                  - PROFILES
                   type: string
                 type: array
             required:

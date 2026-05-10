@@ -12,6 +12,7 @@ export const CREATE_DESTINATION = gql`
         logs
         metrics
         traces
+        profiles
       }
       destinationType {
         type
@@ -25,6 +26,9 @@ export const CREATE_DESTINATION = gql`
             supported
           }
           traces {
+            supported
+          }
+          profiles {
             supported
           }
         }
