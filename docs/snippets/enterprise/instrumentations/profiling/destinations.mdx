@@ -1,0 +1,13 @@
+<Warning>
+    Exporting profiles to third-party destinations — including Pyroscope — is **coming soon**.
+</Warning>
+
+## Exporting Profiles to a Destination
+
+The Odigos UI gives you fast, in-memory access to profiles for enabled sources. For **long-term retention**, **time-range analysis**, and **cross-service comparison**, you can route profile data to an external backend the same way you route traces or metrics by configuring a destination in Odigos.
+
+When a profiling-capable destination is configured, the cluster gateway's profiles pipeline exports OTLP Profiles data to the configured Destination alongside the Odigos UI.
+
+## Supported Format
+
+Profile data is emitted as **OTLP Profiles** (the OpenTelemetry profiles signal). Any backend that can ingest OTLP Profiles over gRPC or HTTP can receive data from Odigos.

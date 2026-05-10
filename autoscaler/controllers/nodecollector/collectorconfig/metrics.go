@@ -73,17 +73,25 @@ func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsColl
 	return receivers, pipelineReceiverNames
 }
 
-func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) config.Config {
+type MetricsConfigOptions struct {
+	CommonSignalConfig
+	MetricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings
+}
 
-	metricsPipelineProcessors := append([]string{
+func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) config.Config {
+
+	baseProcessors := []string{
 		batchProcessorName,         // always start with batch
 		memoryLimiterProcessorName, // consider removing this for metrics, as they have footprint anyway
 		nodeNameProcessorName,
-		resourceDetectionProcessorName,
-	}, manifestProcessorNames...)
+	}
+	if opts.ResourceDetectionEnabled {
+		baseProcessors = append(baseProcessors, resourceDetectionProcessorName)
+	}
+	metricsPipelineProcessors := append(baseProcessors, opts.ManifestProcessorNames...)
 	metricsPipelineProcessors = append(metricsPipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
-	receivers, pipelineReceiverNames := metricsReceivers(metricsConfigSettings)
+	receivers, pipelineReceiverNames := metricsReceivers(opts.MetricsConfigSettings)
 	if len(pipelineReceiverNames) == 0 {
 		// if all metrics sources are not enabled, skip the metrics pipeline generation as it has no receivers and will fail the collector
 		return config.Config{}

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	odigosOwnTelemetryOtlpReceiverName = "otlp_grpc/odigos-own-metrics-in"
+	odigosOwnTelemetryOtlpReceiverName = "otlp/odigos-own-metrics-in"
 	gatewayPrometheusReceiverName      = "prometheus/gateway-own-metrics"
 	ownMetricsStorePipelineName        = "metrics/own-metrics"
 	odigosVictoriametricsExporterName  = "otlp_http/odigos-victoriametrics"

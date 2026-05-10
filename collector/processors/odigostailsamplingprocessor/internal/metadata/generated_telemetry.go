@@ -23,11 +23,13 @@ func Tracer(settings component.TelemetrySettings) trace.Tracer {
 // TelemetryBuilder provides an interface for components to report telemetry
 // as defined in metadata and user config.
 type TelemetryBuilder struct {
-	meter                         metric.Meter
-	mu                            sync.Mutex
-	registrations                 []metric.Registration
-	OdigosSamplingTraceCheckCount metric.Int64Counter
-	OdigosSamplingTraceMatchCount metric.Int64Counter
+	meter                          metric.Meter
+	mu                             sync.Mutex
+	registrations                  []metric.Registration
+	OdigosSamplingSpanCheckCount   metric.Int64Counter
+	OdigosSamplingSpanMatchedCount metric.Int64Counter
+	OdigosSamplingTraceCheckCount  metric.Int64Counter
+	OdigosSamplingTraceMatchCount  metric.Int64Counter
 }
 
 // TelemetryBuilderOption applies changes to default builder.
@@ -59,6 +61,18 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 	}
 	builder.meter = Meter(settings)
 	var err, errs error
+	builder.OdigosSamplingSpanCheckCount, err = builder.meter.Int64Counter(
+		"otelcol_odigos.sampling.span.check_count",
+		metric.WithDescription("Number of spans checked for sampling decisions per rule. [Development]"),
+		metric.WithUnit("{spans}"),
+	)
+	errs = errors.Join(errs, err)
+	builder.OdigosSamplingSpanMatchedCount, err = builder.meter.Int64Counter(
+		"otelcol_odigos.sampling.span.matched_count",
+		metric.WithDescription("Number of spans that matched this rule. [Development]"),
+		metric.WithUnit("{spans}"),
+	)
+	errs = errors.Join(errs, err)
 	builder.OdigosSamplingTraceCheckCount, err = builder.meter.Int64Counter(
 		"otelcol_odigos.sampling.trace.check_count",
 		metric.WithDescription("Number of traces checked for sampling decisions per rule. [Development]"),
