@@ -279,6 +279,7 @@ type ConfigYamlField struct {
 	HelmValuePath    string    `json:"helmValuePath"`
 	DocsLink         *string   `json:"docsLink,omitempty"`
 	ComponentProps   *string   `json:"componentProps,omitempty"`
+	RenderCondition  []string  `json:"renderCondition,omitempty"`
 }
 
 type ContainerAgentConfigAnalyze struct {
