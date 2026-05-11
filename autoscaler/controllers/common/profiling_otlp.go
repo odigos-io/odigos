@@ -109,13 +109,10 @@ func ProfilingServiceNameTransformConfig() config.GenericMap {
 	return config.GenericMap{
 		"error_mode": "ignore",
 		"profile_statements": []string{
-			`set(resource.attributes["service.name"], Concat([resource.attributes["k8s.namespace.name"], resource.attributes["k8s.deployment.name"]], "/")) where resource.attributes["k8s.deployment.name"] != nil and resource.attributes["k8s.namespace.name"] != nil`,
-			`set(resource.attributes["service.name"], Concat([resource.attributes["k8s.namespace.name"], resource.attributes["k8s.statefulset.name"]], "/")) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] != nil and resource.attributes["k8s.namespace.name"] != nil`,
-			`set(resource.attributes["service.name"], Concat([resource.attributes["k8s.namespace.name"], resource.attributes["k8s.daemonset.name"]], "/")) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] == nil and resource.attributes["k8s.daemonset.name"] != nil and resource.attributes["k8s.namespace.name"] != nil`,
+			`set(resource.attributes["service.name"], resource.attributes["k8s.deployment.name"]) where resource.attributes["k8s.deployment.name"] != nil`,
+			`set(resource.attributes["service.name"], resource.attributes["k8s.statefulset.name"]) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] != nil`,
+			`set(resource.attributes["service.name"], resource.attributes["k8s.daemonset.name"]) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] == nil and resource.attributes["k8s.daemonset.name"] != nil`,
 			`set(resource.attributes["service.name"], resource.attributes["k8s.pod.name"]) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] == nil and resource.attributes["k8s.daemonset.name"] == nil and resource.attributes["k8s.pod.name"] != nil`,
-			`set(resource.attributes["service.name"], resource.attributes["k8s.deployment.name"]) where resource.attributes["service.name"] == nil and resource.attributes["k8s.deployment.name"] != nil`,
-			`set(resource.attributes["service.name"], resource.attributes["k8s.statefulset.name"]) where resource.attributes["service.name"] == nil and resource.attributes["k8s.statefulset.name"] != nil`,
-			`set(resource.attributes["service.name"], resource.attributes["k8s.daemonset.name"]) where resource.attributes["service.name"] == nil and resource.attributes["k8s.daemonset.name"] != nil`,
 		},
 	}
 }

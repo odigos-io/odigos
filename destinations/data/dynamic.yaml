@@ -14,7 +14,7 @@ spec:
     logs:
       supported: true
     profiles:
-      supported: false
+      supported: true
   fields:
     - name: DYNAMIC_DESTINATION_TYPE
       displayName: Destination Type
