@@ -1,10 +1,12 @@
 package agentenabled
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -233,7 +235,15 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 				}
 			}
 		}
-		rulesForThisContainer := rulesForContainer
+		// Since we can have multiple rules editing the distro for the same language, sort the rules since the list order is not deterministic
+		rulesForThisContainer := slices.Clone(rulesForContainer)
+		slices.SortFunc(rulesForThisContainer, func(a, b odigosv1.InstrumentationRule) int {
+			if c := cmp.Compare(a.Namespace, b.Namespace); c != 0 {
+				return c
+			}
+			return cmp.Compare(a.Name, b.Name)
+		})
+
 		distroPerLanguage := distroresolver.CalculateDefaultDistroPerLanguage(defaultDistrosPerLanguage, &rulesForThisContainer, distroProvider.Getter)
 
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container

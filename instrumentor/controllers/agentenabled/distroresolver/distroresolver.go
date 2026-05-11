@@ -1,9 +1,7 @@
 package distroresolver
 
 import (
-	"cmp"
 	"fmt"
-	"slices"
 
 	"github.com/hashicorp/go-version"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -81,17 +79,7 @@ func CalculateDefaultDistroPerLanguage(defaultDistros map[common.ProgrammingLang
 		return distrosPerLanguage
 	}
 
-	// The rules dictate the distro per language. Since we can have multiple rules editing the distro for the same language,
-	// sort the rules since the list order is not deterministic
-	rules := slices.Clone(*instrumentationRules)
-	slices.SortFunc(rules, func(a, b odigosv1.InstrumentationRule) int {
-		if c := cmp.Compare(a.Namespace, b.Namespace); c != 0 {
-			return c
-		}
-		return cmp.Compare(a.Name, b.Name)
-	})
-
-	for _, rule := range rules {
+	for _, rule := range *instrumentationRules {
 		if rule.Spec.OtelDistros == nil {
 			continue
 		}
