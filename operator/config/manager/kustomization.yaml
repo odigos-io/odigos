@@ -4,34 +4,34 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: autoscaler
-  newName: registry.connect.redhat.com/odigos/odigos-autoscaler-certified
+  newName: registry.connect.redhat.com/odigos/odigos-autoscaler-rhel-certified
   newTag: v1.25.0
 - name: cli
-  newName: registry.connect.redhat.com/odigos/odigos-cli-certified
+  newName: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified
   newTag: v1.25.0
 - name: collector
-  newName: registry.connect.redhat.com/odigos/odigos-collector-certified
+  newName: registry.connect.redhat.com/odigos/odigos-collector-rhel-certified
   newTag: v1.25.0
 - name: controller
-  newName: registry.connect.redhat.com/odigos/odigos-certified-operator-certified
+  newName: registry.connect.redhat.com/odigos/odigos-certified-operator-rhel-certified
   newTag: v1.25.0
 - name: enterprise-instrumentor
-  newName: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-certified
+  newName: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified
   newTag: v1.25.0
 - name: enterprise-odiglet
-  newName: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-certified
+  newName: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified
   newTag: v1.25.0
 - name: frontend
-  newName: registry.connect.redhat.com/odigos/odigos-ui-certified
+  newName: registry.connect.redhat.com/odigos/odigos-ui-rhel-certified
   newTag: v1.25.0
 - name: instrumentor
-  newName: registry.connect.redhat.com/odigos/odigos-instrumentor-certified
+  newName: registry.connect.redhat.com/odigos/odigos-instrumentor-rhel-certified
   newTag: v1.25.0
 - name: odiglet
-  newName: registry.connect.redhat.com/odigos/odigos-odiglet-certified
+  newName: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified
   newTag: v1.25.0
 - name: scheduler
-  newName: registry.connect.redhat.com/odigos/odigos-scheduler-certified
+  newName: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified
   newTag: v1.25.0
 configMapGenerator:
 - literals:
