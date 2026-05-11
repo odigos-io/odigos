@@ -30,7 +30,10 @@ images:
 - name: scheduler
   newName: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified
   newTag: v1.22.2
+- name: cli
+  newName: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified
+  newTag: v1.25.0
 configMapGenerator:
 - literals:
-  - ODIGOS_VERSION=1.22.2
+  - ODIGOS_VERSION=1.25.0
   name: odigos-version

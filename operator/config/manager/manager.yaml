@@ -93,6 +93,8 @@ spec:
           value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified:v1.22.2
         - name: RELATED_IMAGE_SCHEDULER
           value: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified:v1.22.2
+        - name: RELATED_IMAGE_CLI
+          value: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified:v1.25.0
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
