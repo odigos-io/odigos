@@ -14,6 +14,7 @@ const (
 	otlpHttpTracesEndpointKey     = "OTLP_HTTP_TRACES_ENDPOINT"
 	otlpHttpMetricsEndpointKey    = "OTLP_HTTP_METRICS_ENDPOINT"
 	otlpHttpLogsEndpointKey       = "OTLP_HTTP_LOGS_ENDPOINT"
+	otlpHttpProfilesEndpointKey   = "OTLP_HTTP_PROFILES_ENDPOINT"
 	otlpHttpTlsKey                = "OTLP_HTTP_TLS_ENABLED"
 	otlpHttpCaPemKey              = "OTLP_HTTP_CA_PEM"
 	otlpHttpInsecureSkipVerify    = "OTLP_HTTP_INSECURE_SKIP_VERIFY"
@@ -43,9 +44,10 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	tracesURL := strings.TrimSpace(config[otlpHttpTracesEndpointKey])
 	metricsURL := strings.TrimSpace(config[otlpHttpMetricsEndpointKey])
 	logsURL := strings.TrimSpace(config[otlpHttpLogsEndpointKey])
+	profilesURL := strings.TrimSpace(config[otlpHttpProfilesEndpointKey])
 
 	// Require base endpoint only if no per-signal endpoints are provided
-	if !baseExists && tracesURL == "" && metricsURL == "" && logsURL == "" {
+	if !baseExists && tracesURL == "" && metricsURL == "" && logsURL == "" && profilesURL == "" {
 		return nil, errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
 
@@ -156,6 +158,13 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		}
 		exporterConf["logs_endpoint"] = parsed
 	}
+	if profilesURL != "" {
+		parsed, err := parseOtlpHttpEndpoint(profilesURL, "", "")
+		if err != nil {
+			return nil, errors.Join(err, errors.New("OTLP_HTTP_PROFILES_ENDPOINT invalid"))
+		}
+		exporterConf["profiles_endpoint"] = parsed
+	}
 	// ----------------------------------------------------------------
 
 	currentConfig.Exporters[otlpHttpExporterName] = exporterConf
@@ -183,6 +192,10 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 			Exporters: []string{otlpHttpExporterName},
 		}
 		pipelineNames = append(pipelineNames, logsPipelineName)
+	}
+
+	if isProfilingEnabled(dest) {
+		addProfilesPipeline(currentConfig, "otlphttp", dest.GetID(), otlpHttpExporterName)
 	}
 
 	return pipelineNames, nil

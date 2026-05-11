@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: true
   fields:
     - name: OTLP_HTTP_ENDPOINT
       displayName: OTLP http Endpoint
@@ -20,7 +22,7 @@ spec:
       componentProps:
         type: text
         required: true
-        placeholder: 'http://host:port'
+        placeholder: "http://host:port"
         tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`.
 
     - name: OTLP_HTTP_BASIC_AUTH_USERNAME
@@ -29,7 +31,7 @@ spec:
       componentProps:
         type: text
         required: false
-        placeholder: 'username'
+        placeholder: "username"
         tooltip: in case the otlp receiver requires basic auth, this is the username
 
     - name: OTLP_HTTP_BASIC_AUTH_PASSWORD
@@ -38,7 +40,7 @@ spec:
       componentProps:
         type: password
         required: false
-        placeholder: 'password'
+        placeholder: "password"
         tooltip: in case the otlp receiver requires basic auth, this is the password
       secret: true
 
@@ -48,14 +50,14 @@ spec:
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Enable OAuth2 client credentials authentication'
+        tooltip: "Enable OAuth2 client credentials authentication"
       customReadDataLabels:
-        - condition: 'true'
-          title: 'OAuth2'
-          value: 'Enabled'
-        - condition: 'false'
-          title: 'OAuth2'
-          value: 'Disabled'
+        - condition: "true"
+          title: "OAuth2"
+          value: "Enabled"
+        - condition: "false"
+          title: "OAuth2"
+          value: "Disabled"
 
     - name: OTLP_HTTP_OAUTH2_CLIENT_ID
       displayName: OAuth2 Client ID
@@ -63,9 +65,9 @@ spec:
       componentProps:
         type: text
         required: false # TODO: required only if 'Enable OAuth2' is true
-        placeholder: 'your-client-id'
-        tooltip: 'OAuth2 client identifier for client credentials flow'
-      renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
+        placeholder: "your-client-id"
+        tooltip: "OAuth2 client identifier for client credentials flow"
+      renderCondition: ["OTLP_HTTP_OAUTH2_ENABLED", "==", "true"]
 
     - name: OTLP_HTTP_OAUTH2_CLIENT_SECRET
       displayName: OAuth2 Client Secret
@@ -73,9 +75,9 @@ spec:
       componentProps:
         type: password
         required: false # TODO: required only if 'Enable OAuth2' is true
-        placeholder: 'your-client-secret'
-        tooltip: 'OAuth2 client secret for client credentials flow'
-      renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
+        placeholder: "your-client-secret"
+        tooltip: "OAuth2 client secret for client credentials flow"
+      renderCondition: ["OTLP_HTTP_OAUTH2_ENABLED", "==", "true"]
       secret: true
 
     - name: OTLP_HTTP_OAUTH2_TOKEN_URL
@@ -84,9 +86,9 @@ spec:
       componentProps:
         type: text
         required: false # TODO: required only if 'Enable OAuth2' is true
-        placeholder: 'https://example.com/oauth2/token'
-        tooltip: 'OAuth2 token endpoint URL for obtaining access tokens'
-      renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
+        placeholder: "https://example.com/oauth2/token"
+        tooltip: "OAuth2 token endpoint URL for obtaining access tokens"
+      renderCondition: ["OTLP_HTTP_OAUTH2_ENABLED", "==", "true"]
 
     - name: OTLP_HTTP_OAUTH2_SCOPES
       displayName: OAuth2 Scopes
@@ -94,9 +96,9 @@ spec:
       componentProps:
         type: text
         required: false
-        placeholder: 'api.metrics,api.traces'
+        placeholder: "api.metrics,api.traces"
         tooltip: 'Comma-separated list of OAuth2 scopes to request (e.g., "api.metrics,api.traces")'
-      renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
+      renderCondition: ["OTLP_HTTP_OAUTH2_ENABLED", "==", "true"]
 
     - name: OTLP_HTTP_OAUTH2_AUDIENCE
       displayName: OAuth2 Audience
@@ -104,9 +106,9 @@ spec:
       componentProps:
         type: text
         required: false
-        placeholder: 'api.example.com'
-        tooltip: 'OAuth2 audience parameter for token requests'
-      renderCondition: ['OTLP_HTTP_OAUTH2_ENABLED', '==', 'true']
+        placeholder: "api.example.com"
+        tooltip: "OAuth2 audience parameter for token requests"
+      renderCondition: ["OTLP_HTTP_OAUTH2_ENABLED", "==", "true"]
 
     - name: OTLP_HTTP_COMPRESSION
       displayName: Destination Compression Type
@@ -121,14 +123,14 @@ spec:
           - deflate
           - zstd
         required: false
-        tooltip: 'Compression type to use for the destination. The default is `none`. The compression type must be supported by the destination.'
-      initialValue: 'none'
+        tooltip: "Compression type to use for the destination. The default is `none`. The compression type must be supported by the destination."
+      initialValue: "none"
     - name: OTLP_HTTP_HEADERS
       displayName: Headers
       componentType: keyValuePairs
       componentProps:
         required: false
-        tooltip: 'Headers is the option to set custom HTTP headers for OTLP HTTP destination. If specified, please provide each header in the format: key:value. Multiple headers can be added. Keys must be non-empty strings and follow standard HTTP header conventions. Values must be non-empty strings and may include alphanumerics, whitespace, and standard punctuation.'
+        tooltip: "Headers is the option to set custom HTTP headers for OTLP HTTP destination. If specified, please provide each header in the format: key:value. Multiple headers can be added. Keys must be non-empty strings and follow standard HTTP header conventions. Values must be non-empty strings and may include alphanumerics, whitespace, and standard punctuation."
 
     - name: OTLP_HTTP_TRACES_ENDPOINT
       displayName: OTLP http traces Endpoint
@@ -136,7 +138,7 @@ spec:
       componentProps:
         type: text
         required: false
-        placeholder: 'http://host:port/v1/traces'
+        placeholder: "http://host:port/v1/traces"
         tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/traces` will be used.
 
     - name: OTLP_HTTP_METRICS_ENDPOINT
@@ -145,7 +147,7 @@ spec:
       componentProps:
         type: text
         required: false
-        placeholder: 'http://host:port/v1/metrics'
+        placeholder: "http://host:port/v1/metrics"
         tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/metrics` will be used.
 
     - name: OTLP_HTTP_LOGS_ENDPOINT
@@ -154,8 +156,17 @@ spec:
       componentProps:
         type: text
         required: false
-        placeholder: 'http://host:port/v1/logs'
+        placeholder: "http://host:port/v1/logs"
         tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/logs` will be used.
+
+    - name: OTLP_HTTP_PROFILES_ENDPOINT
+      displayName: OTLP http profiles Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 'http://host:port/v1/profiles'
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/profiles` will be used.
 
     - name: OTLP_HTTP_TLS_ENABLED
       displayName: Enable TLS
@@ -163,29 +174,29 @@ spec:
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Secure connection'
+        tooltip: "Secure connection"
       customReadDataLabels:
-        - condition: 'true'
-          title: 'TLS'
-          value: 'Encrypted'
-        - condition: 'false'
-          title: 'TLS'
-          value: 'Unencrypted'
+        - condition: "true"
+          title: "TLS"
+          value: "Encrypted"
+        - condition: "false"
+          title: "TLS"
+          value: "Unencrypted"
     - name: OTLP_HTTP_CA_PEM
       displayName: Certificate Authority
       componentType: textarea
       componentProps:
         required: false
-        placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA'
-      renderCondition: ['OTLP_HTTP_TLS_ENABLED', '==', 'true']
-      hideFromReadData: ['true']
+        placeholder: "-----BEGIN CERTIFICATE-----"
+        tooltip: "When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA"
+      renderCondition: ["OTLP_HTTP_TLS_ENABLED", "==", "true"]
+      hideFromReadData: ["true"]
     - name: OTLP_HTTP_INSECURE_SKIP_VERIFY
       displayName: Insecure Skip Verify
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Skip TLS certificate verification'
-      renderCondition: ['OTLP_HTTP_TLS_ENABLED', '==', 'true']
+        tooltip: "Skip TLS certificate verification"
+      renderCondition: ["OTLP_HTTP_TLS_ENABLED", "==", "true"]
   testConnectionSupported: true

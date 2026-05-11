@@ -211,6 +211,7 @@ export const GET_CONFIG_YAMLS = gql`
         helmValuePath
         docsLink
         componentProps
+        renderCondition
       }
     }
   }

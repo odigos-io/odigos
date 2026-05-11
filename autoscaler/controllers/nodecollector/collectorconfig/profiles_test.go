@@ -28,12 +28,17 @@ func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 	require.Contains(t, got.Receivers, commonconf.ProfilingReceiver)
 	require.Contains(t, got.Processors, commonconf.ProfilingNodeFilterProcessor)
 	require.Contains(t, got.Processors, commonconf.ProfilingNodeK8sAttributesProcessor)
+	require.Contains(t, got.Processors, commonconf.ProfilingNodeServiceNameProcessor)
 	require.Contains(t, got.Exporters, commonconf.ProfilingNodeToGatewayExporter)
 
 	pl, ok := got.Service.Pipelines["profiles"]
 	require.True(t, ok)
 	assert.Equal(t, []string{commonconf.ProfilingReceiver}, pl.Receivers)
-	assert.Equal(t, []string{commonconf.ProfilingNodeFilterProcessor, commonconf.ProfilingNodeK8sAttributesProcessor}, pl.Processors)
+	assert.Equal(t, []string{
+		commonconf.ProfilingNodeFilterProcessor,
+		commonconf.ProfilingNodeK8sAttributesProcessor,
+		commonconf.ProfilingNodeServiceNameProcessor,
+	}, pl.Processors)
 	assert.Equal(t, []string{commonconf.ProfilingNodeToGatewayExporter}, pl.Exporters)
 
 	filterCfg, ok := got.Processors[commonconf.ProfilingNodeFilterProcessor].(config.GenericMap)

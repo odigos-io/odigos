@@ -13,6 +13,8 @@ spec:
       supported: false
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: GRAFANA_CLOUD_TEMPO_ENDPOINT
       displayName: Endpoint
@@ -37,4 +39,4 @@ spec:
         type: password
         required: true
         tooltip: This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `traces:write` scope.
-        placeholder: 'glc_eyJvIj...'
+        placeholder: "glc_eyJvIj..."
