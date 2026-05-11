@@ -175,6 +175,10 @@ export const DATA_IDS = {
   SAMPLING_BTN_EDIT_AUTO_RULE: '[data-id=sampling-btn-edit-auto-rule]',
   SAMPLING_EDIT_AUTO_RULE_BTN_SAVE: '[data-id=sampling-edit-auto-rule-btn-save]',
   SAMPLING_EDIT_AUTO_RULE_BTN_CANCEL: '[data-id=sampling-edit-auto-rule-btn-cancel]',
+
+  // Sampling onboarding modal (introduced in @odigos/ui-kit, opens automatically
+  // whenever the sampling page loads with zero existing sampling CRDs)
+  SAMPLING_ONBOARDING_BTN_SKIP: '[data-id=sampling-onboarding-btn-skip]',
 };
 
 export const BUTTONS = {
