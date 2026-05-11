@@ -53,7 +53,7 @@ endif
 # This is useful for CI or a project to utilize a specific version of the operator-sdk toolkit.
 OPERATOR_SDK_VERSION ?= v1.39.1
 # Image URL to use all building/pushing image targets
-IMG ?= registry.connect.redhat.com/odigos/odigos-certified-operator-rhel-certified:v$(VERSION)
+IMG ?= registry.connect.redhat.com/odigos/odigos-operator-rhel-certified:v$(VERSION)
 AUTOSCALER_IMG ?= $(ORG)/odigos-autoscaler-rhel-certified:v$(VERSION)
 COLLECTOR_IMG ?= $(ORG)/odigos-collector-rhel-certified:v$(VERSION)
 FRONTEND_IMG ?= $(ORG)/odigos-ui-rhel-certified:v$(VERSION)
