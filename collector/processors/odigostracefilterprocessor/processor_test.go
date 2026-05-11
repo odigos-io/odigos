@@ -129,6 +129,36 @@ func TestMultipleSpansMixedFlags(t *testing.T) {
 	assert.Equal(t, "sampled-multi-flag", spans.At(1).Name())
 }
 
+func TestRubyResourceKeepsSpansWithoutSampledBit(t *testing.T) {
+	proc := &traceFilterProcessor{
+		logger:     zap.NewNop(),
+		evaluators: []SpanFilterEvaluator{&unsampledBitEvaluator{}},
+	}
+
+	td := ptrace.NewTraces()
+
+	rubyResource := td.ResourceSpans().AppendEmpty()
+	rubyResource.Resource().Attributes().PutStr(telemetrySDKLanguageAttributeName, rubyTelemetrySDKLanguage)
+	rubySpan := rubyResource.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+	rubySpan.SetName("ruby-span")
+	rubySpan.SetFlags(0)
+
+	pythonResource := td.ResourceSpans().AppendEmpty()
+	pythonResource.Resource().Attributes().PutStr(telemetrySDKLanguageAttributeName, "python")
+	pythonSpan := pythonResource.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+	pythonSpan.SetName("python-unsampled")
+	pythonSpan.SetFlags(0)
+
+	result, err := proc.processTraces(context.Background(), td)
+	require.NoError(t, err)
+	assert.Equal(t, 1, countSpans(result))
+	require.Equal(t, 1, result.ResourceSpans().Len())
+
+	spans := result.ResourceSpans().At(0).ScopeSpans().At(0).Spans()
+	require.Equal(t, 1, spans.Len())
+	assert.Equal(t, "ruby-span", spans.At(0).Name())
+}
+
 func TestEmptyResourceSpansRemoved(t *testing.T) {
 	proc := &traceFilterProcessor{
 		logger:     zap.NewNop(),
