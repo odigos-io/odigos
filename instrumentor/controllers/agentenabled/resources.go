@@ -15,7 +15,7 @@ import (
 // if err is returned, the reconciliation should be retried.
 // the function can return without error, but some of the resources might be nil.
 // this indicates that they were not found, but it is valid.
-func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig) (
+func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (
 	*odigosv1.CollectorsGroup,
 	*odigosv1.CollectorsGroup,
 	*[]odigosv1.InstrumentationRule,
@@ -106,7 +106,7 @@ func getCollectorsGroup(ctx context.Context, c client.Client, name string) (*odi
 }
 
 // Returns rules whose spec affects agent-enabled logic (distro selection, signal toggles, etc.)
-// Per container scoping is applied later in sync.go via IsWorkloadParticipatingInRule
+// Per container scoping is applied later in sync.go via utils.IsContainerParticipatingInRule.
 func getRelevantInstrumentationRules(ctx context.Context, c client.Client) (*[]odigosv1.InstrumentationRule, error) {
 	relevantIr := []odigosv1.InstrumentationRule{}
 	irList := odigosv1.InstrumentationRuleList{}
@@ -117,7 +117,9 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client) (*[]o
 
 	for i := range irList.Items {
 		ir := &irList.Items[i]
-
+		if ir.Spec.Disabled {
+			continue
+		}
 		if (ir.Spec.OtelDistros != nil) ||
 			(ir.Spec.TraceConfig != nil && ir.Spec.TraceConfig.Disabled != nil) ||
 			(ir.Spec.PayloadCollection != nil) ||

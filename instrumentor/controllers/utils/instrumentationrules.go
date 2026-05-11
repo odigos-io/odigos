@@ -7,38 +7,28 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 )
 
-// naive implementation, can be optimized.
-// assumption is that the list of workloads is small
-func IsWorkloadParticipatingInRule(
+// IsContainerParticipatingInRule reports whether the rule applies to the given container of a
+// workload. A rule applies when it is enabled and its sources scope matches the workload +
+// container + language. A nil SourcesScopes pointer on the rule is treated as "match all";
+// an empty (non-nil) slice is also "match all" (see AnySourceScopeMatchesContainer).
+// Callers pass concrete values: "" for containerName and common.UnknownProgrammingLanguage for
+// language when the container's identity is not yet known. These defaults are matched
+// literally, so scopes pinning ContainerName or WorkloadLanguage will not match unresolved
+// containers.
+func IsContainerParticipatingInRule(
 	workload k8sconsts.PodWorkload,
 	rule *odigosv1alpha1.InstrumentationRule,
-	containerName *string,
-	language *common.ProgrammingLanguage,
+	containerName string,
+	language common.ProgrammingLanguage,
 ) bool {
 	if rule.Spec.Disabled {
 		return false
 	}
-	if rule.Spec.SourcesScopes == nil {
-		return true
-	}
-
-	// check if we have SourcesScopes in the instrumentation rule - check those first
+	var scopes []scope.SourcesScope
 	if rule.Spec.SourcesScopes != nil {
-		scopes := *rule.Spec.SourcesScopes
-		if len(scopes) == 0 {
-			return false
-		}
-		name := ""
-		if containerName != nil {
-			name = *containerName
-		}
-		lang := common.UnknownProgrammingLanguage
-		if language != nil {
-			lang = *language
-		}
-		return scope.AnySourceScopeMatchesContainer(scopes, workload, name, lang)
+		scopes = *rule.Spec.SourcesScopes
 	}
-	return false
+	return scope.AnySourceScopeMatchesContainer(scopes, workload, containerName, language)
 }
 
 // Resolves whether the rule applies to the workload for at least one container on the InstrumentationConfig.
@@ -51,35 +41,29 @@ func IsInstrumentationConfigParticipatingInRule(
 		return false
 	}
 
-	// If we don't have overrides, iterate on runtime details by container and extract details from there
 	if len(ic.Spec.ContainersOverrides) == 0 {
-		// No runtime details yet - try to match the workload only
+		// No runtime details yet - match only on workload-level scope fields by passing the
+		// "unknown" defaults for container name and language.
 		if len(ic.Status.RuntimeDetailsByContainer) == 0 {
-			return IsWorkloadParticipatingInRule(workload, rule, nil, nil)
+			return IsContainerParticipatingInRule(workload, rule, "", common.UnknownProgrammingLanguage)
 		}
 		for i := range ic.Status.RuntimeDetailsByContainer {
 			rd := &ic.Status.RuntimeDetailsByContainer[i]
-			lang := common.UnknownProgrammingLanguage
-			if rd.Language != "" {
-				lang = rd.Language
-			}
-			if IsWorkloadParticipatingInRule(workload, rule, &rd.ContainerName, &lang) {
+			if IsContainerParticipatingInRule(workload, rule, rd.ContainerName, rd.Language) {
 				return true
 			}
 		}
 		return false
 	}
 
-	// For overrides, do the same but with the override structs
 	detailsByContainer := ic.RuntimeDetailsByContainer()
 	for i := range ic.Spec.ContainersOverrides {
 		containerName := ic.Spec.ContainersOverrides[i].ContainerName
-		runtimeDetails := detailsByContainer[containerName]
-		lang := common.UnknownProgrammingLanguage
-		if runtimeDetails != nil && runtimeDetails.Language != "" {
-			lang = runtimeDetails.Language
+		language := common.UnknownProgrammingLanguage
+		if runtimeDetails := detailsByContainer[containerName]; runtimeDetails != nil {
+			language = runtimeDetails.Language
 		}
-		if IsWorkloadParticipatingInRule(workload, rule, &containerName, &lang) {
+		if IsContainerParticipatingInRule(workload, rule, containerName, language) {
 			return true
 		}
 	}

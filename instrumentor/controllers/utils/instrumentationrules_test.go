@@ -1,7 +1,7 @@
 package utils_test
 
 // ****************
-// IsWorkloadParticipatingInRule tests
+// IsContainerParticipatingInRule tests
 // ****************
 
 import (
@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_IsWorkloadParticipatingInRule_BothFields_ScopeNoMatch_IgnoresWorkloads(t *testing.T) {
+func Test_IsContainerParticipatingInRule_BothFields_ScopeNoMatch_IgnoresWorkloads(t *testing.T) {
 	// Arrange: workload listed in deprecated workloads only; sourcesScopes does not match
 	ns := testutil.NewMockNamespace()
 	svcDep := testutil.NewMockTestDeployment(ns, "svc")
@@ -32,13 +32,13 @@ func Test_IsWorkloadParticipatingInRule_BothFields_ScopeNoMatch_IgnoresWorkloads
 	)
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
+	isParticipatingInRule := utils.IsContainerParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
 
 	// Assert
 	assert.False(t, isParticipatingInRule, "sourcesScopes wins; deprecated workloads must be ignored")
 }
 
-func Test_IsWorkloadParticipatingInRule_BothFields_ScopeMatch_IgnoresWorkloads(t *testing.T) {
+func Test_IsContainerParticipatingInRule_BothFields_ScopeMatch_IgnoresWorkloads(t *testing.T) {
 	// Arrange: sourcesScopes matches actual workload; deprecated workloads lists wrong workload only
 	ns := testutil.NewMockNamespace()
 	svcDep := testutil.NewMockTestDeployment(ns, "svc")
@@ -56,13 +56,13 @@ func Test_IsWorkloadParticipatingInRule_BothFields_ScopeMatch_IgnoresWorkloads(t
 	)
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
+	isParticipatingInRule := utils.IsContainerParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
 
 	// Assert
 	assert.True(t, isParticipatingInRule, "sourcesScopes match is sufficient")
 }
 
-func Test_IsWorkloadParticipatingInRule_SourcesScopeOnly(t *testing.T) {
+func Test_IsContainerParticipatingInRule_SourcesScopeOnly(t *testing.T) {
 	// Arrange
 	ns := testutil.NewMockNamespace()
 	dep := testutil.NewMockTestDeployment(ns, "svc")
@@ -74,13 +74,13 @@ func Test_IsWorkloadParticipatingInRule_SourcesScopeOnly(t *testing.T) {
 	}})
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
+	isParticipatingInRule := utils.IsContainerParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
 
 	// Assert
 	assert.True(t, isParticipatingInRule)
 }
 
-func Test_IsWorkloadParticipatingInRule_WorkloadsOnly(t *testing.T) {
+func Test_IsContainerParticipatingInRule_WorkloadsOnly(t *testing.T) {
 	// Arrange
 	ns := testutil.NewMockNamespace()
 	dep := testutil.NewMockTestDeployment(ns, "svc")
@@ -88,13 +88,13 @@ func Test_IsWorkloadParticipatingInRule_WorkloadsOnly(t *testing.T) {
 	rule := testutil.NewMockInstrumentationRuleWithWorkloads("ir", ns.Name, []k8sconsts.PodWorkload{pw})
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
+	isParticipatingInRule := utils.IsContainerParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
 
 	// Assert
 	assert.True(t, isParticipatingInRule)
 }
 
-func Test_IsWorkloadParticipatingInRule_SourcesScope_PartialNamespace_Match(t *testing.T) {
+func Test_IsContainerParticipatingInRule_SourcesScope_PartialNamespace_Match(t *testing.T) {
 	// Arrange: only namespace set in scope — wildcard for name/kind
 	ns := testutil.NewMockNamespace()
 	dep := testutil.NewMockTestDeployment(ns, "svc")
@@ -104,13 +104,13 @@ func Test_IsWorkloadParticipatingInRule_SourcesScope_PartialNamespace_Match(t *t
 	}})
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
+	isParticipatingInRule := utils.IsContainerParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
 
 	// Assert
 	assert.True(t, isParticipatingInRule)
 }
 
-func Test_IsWorkloadParticipatingInRule_SourcesScope_PartialNamespace_Miss(t *testing.T) {
+func Test_IsContainerParticipatingInRule_SourcesScope_PartialNamespace_Miss(t *testing.T) {
 	// Arrange
 	ns := testutil.NewMockNamespace()
 	dep := testutil.NewMockTestDeployment(ns, "svc")
@@ -120,14 +120,14 @@ func Test_IsWorkloadParticipatingInRule_SourcesScope_PartialNamespace_Miss(t *te
 	}})
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
+	isParticipatingInRule := utils.IsContainerParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
 
 	// Assert
 	assert.False(t, isParticipatingInRule)
 }
 
-func Test_IsWorkloadParticipatingInRule_SourcesScopeEmpty_Inactive(t *testing.T) {
-	// Arrange: explicit empty sourcesScopes — inactive; workloads must not rescue
+func Test_IsContainerParticipatingInRule_SourcesScopeEmpty_MatchAll(t *testing.T) {
+	// Arrange: explicit empty sourcesScopes is treated as wildcard ("match all"), matching AnySourceScopeMatchesContainer semantics.
 	ns := testutil.NewMockNamespace()
 	dep := testutil.NewMockTestDeployment(ns, "svc")
 	pw := testutil.PodWorkloadFromDeployment(dep)
@@ -135,13 +135,13 @@ func Test_IsWorkloadParticipatingInRule_SourcesScopeEmpty_Inactive(t *testing.T)
 	rule := testutil.NewMockInstrumentationRuleWithSourcesScopeAndWorkloads("ir", ns.Name, emptyScopes, []k8sconsts.PodWorkload{pw})
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
+	isParticipatingInRule := utils.IsContainerParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
 
 	// Assert
-	assert.False(t, isParticipatingInRule, "empty sourcesScopes means no participation")
+	assert.True(t, isParticipatingInRule, "empty sourcesScopes acts as wildcard")
 }
 
-func Test_IsWorkloadParticipatingInRule_AllWorkloadsWhenNoScope(t *testing.T) {
+func Test_IsContainerParticipatingInRule_AllWorkloadsWhenNoScope(t *testing.T) {
 	// Arrange
 	ns := testutil.NewMockNamespace()
 	dep := testutil.NewMockTestDeployment(ns, "svc")
@@ -149,7 +149,7 @@ func Test_IsWorkloadParticipatingInRule_AllWorkloadsWhenNoScope(t *testing.T) {
 	rule := testutil.NewMockInstrumentationRuleAllWorkloads("ir", ns.Name)
 
 	// Act
-	isParticipatingInRule := utils.IsWorkloadParticipatingInRule(pw, rule, nil, nil)
+	isParticipatingInRule := utils.IsContainerParticipatingInRule(pw, rule, "", common.UnknownProgrammingLanguage)
 
 	// Assert
 	assert.True(t, isParticipatingInRule)
