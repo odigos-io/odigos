@@ -19,7 +19,7 @@ package v1alpha1
 
 import (
 	k8sconsts "github.com/odigos-io/odigos/api/k8sconsts"
-	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
+	instrumentationrules "github.com/odigos-io/odigos/common/api/instrumentationrules"
 )
 
 // InstrumentationRuleSpecApplyConfiguration represents a declarative configuration of the InstrumentationRuleSpec type for use

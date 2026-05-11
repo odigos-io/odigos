@@ -18,7 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
+	instrumentationrules "github.com/odigos-io/odigos/common/api/instrumentationrules"
 )
 
 // AgentLogsConfigApplyConfiguration represents a declarative configuration of the AgentLogsConfig type for use
