@@ -15,6 +15,9 @@ func IsWorkloadParticipatingInRule(
 	containerName *string,
 	language *common.ProgrammingLanguage,
 ) bool {
+	if rule.Spec.Disabled {
+		return false
+	}
 	if rule.Spec.SourcesScopes == nil {
 		return true
 	}
@@ -50,6 +53,10 @@ func IsInstrumentationConfigParticipatingInRule(
 
 	// If we don't have overrides, iterate on runtime details by container and extract details from there
 	if len(ic.Spec.ContainersOverrides) == 0 {
+		// No runtime details yet - try to match the workload only
+		if len(ic.Status.RuntimeDetailsByContainer) == 0 {
+			return IsWorkloadParticipatingInRule(workload, rule, nil, nil)
+		}
 		for i := range ic.Status.RuntimeDetailsByContainer {
 			rd := &ic.Status.RuntimeDetailsByContainer[i]
 			lang := common.UnknownProgrammingLanguage
@@ -60,7 +67,7 @@ func IsInstrumentationConfigParticipatingInRule(
 				return true
 			}
 		}
-		return IsWorkloadParticipatingInRule(workload, rule, nil, nil)
+		return false
 	}
 
 	// For overrides, do the same but with the override structs

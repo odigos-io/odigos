@@ -233,16 +233,6 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 				}
 			}
 		}
-		// In we have instrumentation rules and none of them apply to the container, mark the container as AgentEnabled == false
-		if len(rulesForContainer) == 0 && irls != nil && len(*irls) > 0 {
-			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
-				AgentEnabledMessage: "container is not included in the source scope of any instrumentation rule that applies to this workload",
-			})
-			continue
-		}
 		rulesForThisContainer := rulesForContainer
 		distroPerLanguage := distroresolver.CalculateDefaultDistroPerLanguage(defaultDistrosPerLanguage, &rulesForThisContainer, distroProvider.Getter)
 
