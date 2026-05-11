@@ -98,7 +98,7 @@ jobs:
 
   build-agents:
     name: build-agents
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
@@ -238,7 +238,7 @@ jobs:
 
   build-and-test-odiglet:
     name: build-and-test-odiglet
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-2
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
