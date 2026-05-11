@@ -102,9 +102,14 @@ interface GetCrdByIdOptions {
   expectedError: string;
   expectedKey: string;
   expectedValue: string | boolean;
+  // When true, asserts `spec[expectedKey]` *contains* `expectedValue` (substring)
+  // instead of equalling it. Used when CRDs are renamed to per-entity unique
+  // values (e.g. `${UPDATED_NAME} ${actionType}`) but the test only needs to
+  // verify the shared marker substring landed on every CRD.
+  expectedValueContains?: boolean;
 }
 
-export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedKey, expectedValue }: GetCrdByIdOptions, callback?: () => void) => {
+export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedKey, expectedValue, expectedValueContains }: GetCrdByIdOptions, callback?: () => void) => {
   if (!crdId) {
     throw new Error('No CRD ID provided to getCrdById');
   }
@@ -122,7 +127,11 @@ export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedK
     const { spec } = parsed?.items?.[0] || parsed || {};
 
     expect(spec).to.not.be.empty;
-    expect(spec[expectedKey]).to.eq(expectedValue);
+    if (expectedValueContains) {
+      expect(spec[expectedKey]).to.include(expectedValue);
+    } else {
+      expect(spec[expectedKey]).to.eq(expectedValue);
+    }
 
     if (!!callback) callback();
   });
@@ -255,6 +264,19 @@ export const awaitToast = ({ message }: AwaitToastOptions, callback?: () => void
   cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click({ force: true });
 
   if (!!callback) callback();
+};
+
+// The sampling page in @odigos/ui-kit auto-opens an onboarding modal whenever
+// it renders with zero sampling CRDs. The cypress sampling spec begins by
+// wiping all sampling CRDs, so the modal pops up on the very first visit and
+// blocks the create-rule button. Click "Skip" if the modal is currently
+// rendered, otherwise no-op.
+export const dismissSamplingOnboardingModal = () => {
+  cy.get('body').then(($body) => {
+    if ($body.find(DATA_IDS.SAMPLING_ONBOARDING_BTN_SKIP).length > 0) {
+      cy.get(DATA_IDS.SAMPLING_ONBOARDING_BTN_SKIP).click();
+    }
+  });
 };
 
 export const handleExceptions = () => {

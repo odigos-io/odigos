@@ -1,5 +1,5 @@
 import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES } from '../constants';
-import { aliasQuery, awaitToast, handleExceptions, hasOperationName, visitPage, waitForGraphqlOperation } from '../functions';
+import { aliasQuery, awaitToast, dismissSamplingOnboardingModal, handleExceptions, hasOperationName, visitPage, waitForGraphqlOperation } from '../functions';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CrdSpec = Record<string, any>;
@@ -39,6 +39,11 @@ describe('Sampling Rules CRUD', () => {
   it('Should create a Noisy Operation rule with HTTP server route', () => {
     visitPage(ROUTES.SAMPLING, () => {
       waitForGraphqlOperation('GetSamplingRules').then(() => {
+        // First visit after CRD cleanup — the ui-kit onboarding modal opens
+        // automatically when there are no sampling rules. Skip past it so
+        // we can interact with the page below.
+        dismissSamplingOnboardingModal();
+
         // Already on Noisy Operations tab by default
         cy.get(DATA_IDS.SAMPLING_BTN_CREATE_RULE).click();
 

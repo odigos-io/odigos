@@ -13,6 +13,8 @@ spec:
       supported: false
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: GCP_PROJECT_ID
       displayName: Project ID
@@ -20,7 +22,7 @@ spec:
       componentProps:
         type: text
         required: false
-        placeholder: 'project-id'
+        placeholder: "project-id"
         tooltip: The project ID for the Google Cloud Monitoring API to send data to. This defaults to the Application Credentials project ID (which is automatically detected when running on GCP). Setting this can override the Application Credentials project ID. Required if running Odigos outside of Google Cloud.
 
     - name: GCP_APPLICATION_CREDENTIALS
@@ -30,5 +32,5 @@ spec:
       componentProps:
         type: text
         required: false
-        placeholder: 'Credentials config... (optional)'
+        placeholder: "Credentials config... (optional)"
         tooltip: The JSON GCP Application Credentials file for the GCP project. Either a Workload Identity Federation config file or Service Account Key. Required if running Odigos outside of Google Cloud.

@@ -13,11 +13,13 @@ spec:
       supported: true
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: TRACELOOP_ENDPOINT
       displayName: Traceloop OTLP HTTP Endpoint
       componentType: input
-      initialValue: 'https://api.traceloop.com'
+      initialValue: "https://api.traceloop.com"
       componentProps:
         type: text
         required: true
