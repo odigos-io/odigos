@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
@@ -343,6 +344,13 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 		Items: []odigosv1.InstrumentationRule{
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
+					SourcesScopes: &[]k8sconsts.SourcesScope{
+						{
+							WorkloadName:      "other-app",
+							WorkloadNamespace: "testns",
+							WorkloadKind:      string(k8sconsts.WorkloadKindDeployment),
+						},
+					},
 					PayloadCollection: &instrumentationrules.PayloadCollection{
 						HttpRequest: &instrumentationrules.HttpPayloadCollection{
 							MimeTypes: &[]string{"application/json"},
@@ -358,9 +366,9 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 		t.Errorf("Expected nil error, got %v", err)
 	}
 	if len(ic.Spec.SdkConfigs) != 1 {
-		t.Errorf("Expected 0 sdk config, got %d", len(ic.Spec.SdkConfigs))
+		t.Errorf("Expected 1 sdk config, got %d", len(ic.Spec.SdkConfigs))
 	}
-	// rule should be ignored since "test" deployment is not in the workload list
+	// rule should be ignored since deployment-test is not matched by sourcesScopes (other-app only)
 	if ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest != nil {
 		t.Errorf("Expected nil, got %v", ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest)
 	}
