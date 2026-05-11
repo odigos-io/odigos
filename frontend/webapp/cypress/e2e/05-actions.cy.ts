@@ -119,7 +119,12 @@ describe('Actions CRUD', () => {
             nodeContains: actionType,
             prefix: DATA_IDS.ACTION_DRAWER_PREFIX,
             fieldKey: DATA_IDS.ACTION_NAME_INPUT,
-            fieldValue: TEXTS.UPDATED_NAME,
+            // Embed the action type in the new name. The v2 ListItem renders
+            // `name || type`, so renaming every row to a single shared value
+            // would erase the per-row text we use to find rows in the delete
+            // test (`cy.contains('div', actionType)`). Keeping `actionType` in
+            // the value lets that substring lookup keep working.
+            fieldValue: `${TEXTS.UPDATED_NAME} ${actionType}`,
           },
           () => {
             // Wait for the action to update
@@ -135,7 +140,10 @@ describe('Actions CRUD', () => {
   it(`Should update ${totalEntities} ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
       crdIds.forEach((crdId) => {
-        getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'actionName', expectedValue: TEXTS.UPDATED_NAME });
+        // Each action's `actionName` was renamed to `${UPDATED_NAME} ${type}`;
+        // verify the shared marker landed on every CRD without coupling to the
+        // CRD-id ↔ actionType mapping (which we don't track here).
+        getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'actionName', expectedValue: TEXTS.UPDATED_NAME, expectedValueContains: true });
       });
     });
   });

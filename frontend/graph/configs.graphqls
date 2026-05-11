@@ -365,6 +365,7 @@ type ConfigYamlField {
   helmValuePath: String!
   docsLink: String
   componentProps: String # JSON string representation of map[string]any
+  renderCondition: [String!] # Conditional rendering: either ["true"|"false"] or [helmValuePath, comparison, value]
 }
 
 type ConfigYaml {

@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: GRAFANA_CLOUD_PROMETHEUS_RW_ENDPOINT
       displayName: Prometheus Remote Write Endpoint
@@ -20,7 +22,7 @@ spec:
       componentProps:
         type: text
         required: true
-        placeholder: 'https://{hostname}.grafana.net/api/prom/push'
+        placeholder: "https://{hostname}.grafana.net/api/prom/push"
         tooltip: This is the URL of the Prometheus service. From the grafana cloud UI, Prometheus page, make sure you copy the URL from “Remote Write Endpoint” section, and not the first Endpoint which is used for queries
     - name: GRAFANA_CLOUD_PROMETHEUS_USERNAME
       displayName: Username / Instance ID
@@ -28,8 +30,8 @@ spec:
       componentProps:
         type: text
         required: true
-        placeholder: '12345678'
-        tooltip: 'You can find the Username / Instance ID on the Prometheus page. Value is a number.'
+        placeholder: "12345678"
+        tooltip: "You can find the Username / Instance ID on the Prometheus page. Value is a number."
     - name: GRAFANA_CLOUD_PROMETHEUS_PASSWORD
       displayName: Password / Api Token
       secret: true
@@ -38,18 +40,18 @@ spec:
         type: password
         required: true
         tooltip: This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `metrics:write` scope.
-        placeholder: 'glc_eyJvIj...'
+        placeholder: "glc_eyJvIj..."
     - name: PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS
       displayName: Resource Attributes Labels
       componentType: multiInput
       componentProps:
-        tooltip: 'use these OpenTelemetry resource attributes as prometheus labels for each metric data point'
+        tooltip: "use these OpenTelemetry resource attributes as prometheus labels for each metric data point"
       initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'
     - name: PROMETHEUS_RESOURCE_EXTERNAL_LABELS
       displayName: External Labels
       componentType: keyValuePairs
       componentProps:
-        titleKey: 'Label Name'
-        titleButton: 'Add Label'
-        titleValue: 'Value'
-        tooltip: 'map of labels names and values to be attached to each metric data point'
+        titleKey: "Label Name"
+        titleButton: "Add Label"
+        titleValue: "Value"
+        tooltip: "map of labels names and values to be attached to each metric data point"

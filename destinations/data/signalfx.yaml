@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: SIGNALFX_ACCESS_TOKEN
       displayName: Access Token

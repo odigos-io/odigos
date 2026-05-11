@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: LAST9_OTLP_ENDPOINT
       displayName: Last9 OpenTelemetry Endpoint
@@ -27,4 +29,4 @@ spec:
       componentProps:
         type: password
         required: true
-        placeholder: 'Basic ...'
+        placeholder: "Basic ..."

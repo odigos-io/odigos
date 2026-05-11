@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: true
   fields:
     - name: DYNAMIC_DESTINATION_TYPE
       displayName: Destination Type
@@ -20,7 +22,7 @@ spec:
       componentProps:
         type: text
         required: true
-        placeholder: 'otlp'
+        placeholder: "otlp"
         tooltip: The type of OpenTelemetry Collector Exporter to use for the destination.
     - name: DYNAMIC_CONFIGURATION_DATA
       displayName: Config
