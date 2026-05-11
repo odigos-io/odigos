@@ -136,6 +136,8 @@ func (i *InstrumentationConfigReconciler) sendConfigUpdates(ctx context.Context,
 		return nil
 	}
 
+	// send a config update request for all the instrumentation which are part of the workload.
+	// if the config request is sent, the configuration updates will occur asynchronously.
 	configUpdate := instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]{}
 	for idx := range instrumentationConfig.Spec.Containers {
 		containerConfig := &instrumentationConfig.Spec.Containers[idx]
