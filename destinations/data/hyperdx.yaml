@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: HYPERDX_API_KEY
       displayName: HyperDX API Key
@@ -32,9 +34,9 @@ spec:
       renderCondition: ["SIGNALS", "INCLUDES", "logs"]
       hideFromReadData: ["HYPERDX_LOG_NORMALIZER", "==", "false"]
       customReadDataLabels:
-        - condition: 'true'
-          title: 'Log Normalizer'
-          value: 'Enabled'
+        - condition: "true"
+          title: "Log Normalizer"
+          value: "Enabled"
   note:
     type: Check
     content: |

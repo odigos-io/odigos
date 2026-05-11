@@ -72,6 +72,7 @@ func CalculateGatewayConfig(
 	tracesEnabled := false
 	metricsEnabled := false
 	logsEnabled := false
+	profilesEnabled := false
 
 	// Configure processors
 	processorsResults := config.CrdProcessorToConfig(processors)
@@ -141,6 +142,8 @@ func CalculateGatewayConfig(
 				metricsEnabled = true
 			case strings.HasPrefix(pipelineName, "logs/"):
 				logsEnabled = true
+			case strings.HasPrefix(pipelineName, "profiles/"):
+				profilesEnabled = true
 			}
 
 			// save the updated pipeline with the new receiver
@@ -149,6 +152,19 @@ func CalculateGatewayConfig(
 
 		status.Destination[dest.GetID()] = nil // mark this destination as success
 	}
+	// Profile destinations (e.g. Pyroscope) register their pipelines directly under
+	// "profiles/<id>" and intentionally return no destination pipeline names from
+	// ModifyConfig — so they bypass the forward-connector loop above. Detect them
+	// by scanning registered pipelines so PROFILES is reflected in enabledSignals.
+	if !profilesEnabled {
+		for pipelineName := range currentConfig.Service.Pipelines {
+			if strings.HasPrefix(pipelineName, "profiles/") {
+				profilesEnabled = true
+				break
+			}
+		}
+	}
+
 	// track which signals are enabled
 	enabledSignals := []common.ObservabilitySignal{}
 
@@ -160,6 +176,9 @@ func CalculateGatewayConfig(
 	}
 	if logsEnabled {
 		enabledSignals = append(enabledSignals, common.LogsObservabilitySignal)
+	}
+	if profilesEnabled {
+		enabledSignals = append(enabledSignals, common.ProfilesObservabilitySignal)
 	}
 
 	if tracesEnabled {
