@@ -96,14 +96,21 @@ jobs:
             with:
               username: ${{ secrets.DOCKERHUB_USERNAME }}
               password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
+
           - name: Login to GitHub Container Registry
             uses: docker/login-action@v3
             with:
               registry: ghcr.io
               username: ${{ github.actor }}
               password: ${{ secrets.GITHUB_TOKEN }}
-      
+
+          - name: Login to Quay.io
+            uses: docker/login-action@v3
+            with:
+              registry: quay.io
+              username: ${{ secrets.QUAY_USERNAME }}
+              password: ${{ secrets.QUAY_TOKEN }}
+
           - name: Build and Push Docker Image for ${{ matrix.service }}
             uses: docker/build-push-action@v6
             env:
@@ -119,6 +126,7 @@ jobs:
                 us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}-rhel-certified:${{ env.ODIGOS_TAG }}
                 keyval/odigos-${{ matrix.service }}-rhel-certified:${{ env.ODIGOS_TAG }}
                 ghcr.io/odigos-io/odigos-${{ matrix.service }}-rhel-certified:${{ env.ODIGOS_TAG }}
+                quay.io/odigos/odigos-${{ matrix.service }}-rhel-certified:${{ env.ODIGOS_TAG }}
               build-args: |
                 SERVICE_NAME=${{ matrix.service }}
                 ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
@@ -145,6 +153,7 @@ jobs:
         permissions:
           contents: 'read'
           id-token: 'write'
+          packages: 'write'
         steps:
           - name: Checkout repository
             uses: actions/checkout@v5
@@ -175,6 +184,26 @@ jobs:
               username: oauth2accesstoken
               password: ${{ steps.gcp-auth.outputs.access_token }}
 
+          - name: Login to Docker Hub
+            uses: docker/login-action@v3
+            with:
+              username: ${{ secrets.DOCKERHUB_USERNAME }}
+              password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+          - name: Login to GitHub Container Registry
+            uses: docker/login-action@v3
+            with:
+              registry: ghcr.io
+              username: ${{ github.actor }}
+              password: ${{ secrets.GITHUB_TOKEN }}
+
+          - name: Login to Quay.io
+            uses: docker/login-action@v3
+            with:
+              registry: quay.io
+              username: ${{ secrets.QUAY_USERNAME }}
+              password: ${{ secrets.QUAY_TOKEN }}
+
           - name: Set up QEMU
             uses: docker/setup-qemu-action@v4
 
@@ -189,7 +218,10 @@ jobs:
               platforms: linux/amd64,linux/arm64
               push: true
               provenance: false
-              tags: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-ko-base:${{ inputs.tag }}
+              tags: |
+                us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-ko-base:${{ inputs.tag }}
+                keyval/odigos-cli-rhel-ko-base:${{ inputs.tag }}
+                ghcr.io/odigos-io/odigos-cli-rhel-ko-base:${{ inputs.tag }}
 
           - uses: ko-build/setup-ko@v0.9
 
@@ -200,6 +232,7 @@ jobs:
               echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
 
           - name: Publish CLI certified image to GCR registry
+            id: ko-publish
             working-directory: ./cli
             env:
               KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-certified
@@ -209,15 +242,37 @@ jobs:
               DATE: ${{ steps.vars.outputs.date }}
               KO_DEFAULTBASEIMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-ko-base:${{ inputs.tag }}
             run: |
-              ko build --bare --tags latest --tags ${{ inputs.tag }} \
-              --image-label name=odigos-cli \
-              --image-label vendor=Odigos \
-              --image-label maintainer=Odigos \
-              --image-label version=${{ inputs.tag }} \
-              --image-label release=${{ inputs.tag }} \
-              --image-label summary="Odigos CLI" \
-              --image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
-              --platform=all .
+              # `ko build --bare` prints the digest-pinned image reference of the
+              # multi-arch index it just pushed; capture it so we can mirror to
+              # the other registries below without rebuilding.
+              IMAGE=$(ko build --bare --tags latest --tags ${{ inputs.tag }} \
+                --image-label name=odigos-cli \
+                --image-label vendor=Odigos \
+                --image-label maintainer=Odigos \
+                --image-label version=${{ inputs.tag }} \
+                --image-label release=${{ inputs.tag }} \
+                --image-label summary="Odigos CLI" \
+                --image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
+                --platform=all .)
+              echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+
+          - name: Install crane
+            uses: imjasonh/setup-crane@v0.4
+
+          # ko only supports a single KO_DOCKER_REPO, so mirror the published
+          # multi-arch index to Docker Hub, GHCR, and Quay with `crane copy` to
+          # match the destinations used for the other RHEL-certified images.
+          - name: Mirror CLI image to Docker Hub, GHCR, and Quay
+            env:
+              SOURCE: ${{ steps.ko-publish.outputs.image }}
+              TAG: ${{ inputs.tag }}
+            run: |
+              for DEST in keyval/odigos-cli-rhel-certified ghcr.io/odigos-io/odigos-cli-rhel-certified quay.io/odigos/odigos-cli-rhel-certified; do
+                for T in "${TAG}" latest; do
+                  echo "Copying ${SOURCE} -> ${DEST}:${T}"
+                  crane copy "${SOURCE}" "${DEST}:${T}"
+                done
+              done
 
     trigger-enterprise-publish:
         needs: publish-cli-rhel
