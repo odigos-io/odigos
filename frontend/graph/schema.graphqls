@@ -139,6 +139,15 @@ input K8sSourceId {
   name: String!
 }
 
+# Deprecated. Kept only so that InstrumentationRuleInput.workloads (also deprecated) can be parsed
+# from older @odigos/ui-kit clients. Server ignores the value.
+# TODO: remove together with InstrumentationRuleInput.workloads.
+input PodWorkloadInput {
+  namespace: String!
+  kind: K8sResourceKind!
+  name: String!
+}
+
 # Mirrors k8sconsts.SourcesScope for InstrumentationRule only (sampling uses SourcesScope in sampling.graphqls).
 type InstrumentationRuleSourcesScope {
   workloadName: String
@@ -177,6 +186,10 @@ input InstrumentationRuleInput {
   ruleName: String
   notes: String
   disabled: Boolean
+  # Deprecated. Accepted but ignored by the resolver to keep older @odigos/ui-kit clients working
+  # after the CRD/back-end dropped `workloads`. Use `sourcesScopes` instead.
+  # TODO: remove once @odigos/ui-kit no longer sends `workloads` in the rule form payload.
+  workloads: [PodWorkloadInput!] @deprecated(reason: "use sourcesScopes; field is ignored by the server")
   sourcesScopes: [InstrumentationRuleSourcesScopeInput!]
   instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
   codeAttributes: CodeAttributesInput

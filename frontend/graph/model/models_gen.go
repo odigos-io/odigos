@@ -706,7 +706,6 @@ type InstrumentationRule struct {
 	Disabled                 *bool                              `json:"disabled,omitempty"`
 	Mutable                  bool                               `json:"mutable"`
 	ProfileName              string                             `json:"profileName"`
-	Workloads                []*PodWorkload                     `json:"workloads,omitempty"`
 	SourcesScopes            []*InstrumentationRuleSourcesScope `json:"sourcesScopes,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID  `json:"instrumentationLibraries,omitempty"`
 	Conditions               []*Condition                       `json:"conditions,omitempty"`
@@ -1388,12 +1387,6 @@ type PodInfo struct {
 	CreationTimestamp string               `json:"creationTimestamp"`
 	Image             string               `json:"image"`
 	CollectorMetrics  *CollectorPodMetrics `json:"collectorMetrics,omitempty"`
-}
-
-type PodWorkload struct {
-	Namespace string          `json:"namespace"`
-	Name      string          `json:"name"`
-	Kind      K8sResourceKind `json:"kind"`
 }
 
 type PodWorkloadInput struct {

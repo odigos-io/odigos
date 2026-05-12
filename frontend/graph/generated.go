@@ -594,7 +594,6 @@ type ComplexityRoot struct {
 		RuleName                 func(childComplexity int) int
 		SourcesScopes            func(childComplexity int) int
 		Type                     func(childComplexity int) int
-		Workloads                func(childComplexity int) int
 	}
 
 	InstrumentationRuleSourcesScope struct {
@@ -1116,12 +1115,6 @@ type ComplexityRoot struct {
 		NodeName          func(childComplexity int) int
 		RestartsCount     func(childComplexity int) int
 		Status            func(childComplexity int) int
-	}
-
-	PodWorkload struct {
-		Kind      func(childComplexity int) int
-		Name      func(childComplexity int) int
-		Namespace func(childComplexity int) int
 	}
 
 	ProfilingConfig struct {
@@ -4053,13 +4046,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationRule.Type(childComplexity), true
 
-	case "InstrumentationRule.workloads":
-		if e.complexity.InstrumentationRule.Workloads == nil {
-			break
-		}
-
-		return e.complexity.InstrumentationRule.Workloads(childComplexity), true
-
 	case "InstrumentationRuleSourcesScope.containerName":
 		if e.complexity.InstrumentationRuleSourcesScope.ContainerName == nil {
 			break
@@ -6411,27 +6397,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PodInfo.Status(childComplexity), true
-
-	case "PodWorkload.kind":
-		if e.complexity.PodWorkload.Kind == nil {
-			break
-		}
-
-		return e.complexity.PodWorkload.Kind(childComplexity), true
-
-	case "PodWorkload.name":
-		if e.complexity.PodWorkload.Name == nil {
-			break
-		}
-
-		return e.complexity.PodWorkload.Name(childComplexity), true
-
-	case "PodWorkload.namespace":
-		if e.complexity.PodWorkload.Namespace == nil {
-			break
-		}
-
-		return e.complexity.PodWorkload.Namespace(childComplexity), true
 
 	case "ProfilingConfig.enabled":
 		if e.complexity.ProfilingConfig.Enabled == nil {
@@ -15659,8 +15624,6 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
 			case "profileName":
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
-			case "workloads":
-				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -25770,55 +25733,6 @@ func (ec *executionContext) fieldContext_InstrumentationRule_profileName(_ conte
 	return fc, nil
 }
 
-func (ec *executionContext) _InstrumentationRule_workloads(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InstrumentationRule_workloads(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Workloads, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.PodWorkload)
-	fc.Result = res
-	return ec.marshalOPodWorkload2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodWorkloadᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InstrumentationRule_workloads(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InstrumentationRule",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "namespace":
-				return ec.fieldContext_PodWorkload_namespace(ctx, field)
-			case "name":
-				return ec.fieldContext_PodWorkload_name(ctx, field)
-			case "kind":
-				return ec.fieldContext_PodWorkload_kind(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type PodWorkload", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _InstrumentationRule_sourcesScopes(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 	if err != nil {
@@ -35683,8 +35597,6 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
 			case "profileName":
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
-			case "workloads":
-				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -35770,8 +35682,6 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_mutable(ctx, field)
 			case "profileName":
 				return ec.fieldContext_InstrumentationRule_profileName(ctx, field)
-			case "workloads":
-				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "sourcesScopes":
 				return ec.fieldContext_InstrumentationRule_sourcesScopes(ctx, field)
 			case "instrumentationLibraries":
@@ -41237,138 +41147,6 @@ func (ec *executionContext) fieldContext_PodInfo_collectorMetrics(_ context.Cont
 				return ec.fieldContext_CollectorPodMetrics_lastScrape(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CollectorPodMetrics", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _PodWorkload_namespace(ctx context.Context, field graphql.CollectedField, obj *model.PodWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PodWorkload_namespace(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Namespace, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PodWorkload_namespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PodWorkload",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _PodWorkload_name(ctx context.Context, field graphql.CollectedField, obj *model.PodWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PodWorkload_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PodWorkload_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PodWorkload",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _PodWorkload_kind(ctx context.Context, field graphql.CollectedField, obj *model.PodWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PodWorkload_kind(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Kind, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.K8sResourceKind)
-	fc.Result = res
-	return ec.marshalNK8sResourceKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PodWorkload_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PodWorkload",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type K8sResourceKind does not have child fields")
 		},
 	}
 	return fc, nil
@@ -57563,8 +57341,6 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "workloads":
-			out.Values[i] = ec._InstrumentationRule_workloads(ctx, field, obj)
 		case "sourcesScopes":
 			out.Values[i] = ec._InstrumentationRule_sourcesScopes(ctx, field, obj)
 		case "instrumentationLibraries":
@@ -61885,55 +61661,6 @@ func (ec *executionContext) _PodInfo(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "collectorMetrics":
 			out.Values[i] = ec._PodInfo_collectorMetrics(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var podWorkloadImplementors = []string{"PodWorkload"}
-
-func (ec *executionContext) _PodWorkload(ctx context.Context, sel ast.SelectionSet, obj *model.PodWorkload) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, podWorkloadImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PodWorkload")
-		case "namespace":
-			out.Values[i] = ec._PodWorkload_namespace(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "name":
-			out.Values[i] = ec._PodWorkload_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "kind":
-			out.Values[i] = ec._PodWorkload_kind(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -67753,16 +67480,6 @@ func (ec *executionContext) marshalNPodInfo2ᚖgithubᚗcomᚋodigosᚑioᚋodig
 	return ec._PodInfo(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPodWorkload2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodWorkload(ctx context.Context, sel ast.SelectionSet, v *model.PodWorkload) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._PodWorkload(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNPodWorkloadInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodWorkloadInput(ctx context.Context, v any) (*model.PodWorkloadInput, error) {
 	res, err := ec.unmarshalInputPodWorkloadInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -70716,53 +70433,6 @@ func (ec *executionContext) marshalOPodPhase2ᚖgithubᚗcomᚋodigosᚑioᚋodi
 		return graphql.Null
 	}
 	return v
-}
-
-func (ec *executionContext) marshalOPodWorkload2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodWorkloadᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.PodWorkload) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNPodWorkload2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodWorkload(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) unmarshalOPodWorkloadInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodWorkloadInputᚄ(ctx context.Context, v any) ([]*model.PodWorkloadInput, error) {

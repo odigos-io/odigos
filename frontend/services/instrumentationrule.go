@@ -427,21 +427,6 @@ func handleNotFoundError(err error, id string, entity string) error {
 	return fmt.Errorf("error getting %s: %w", entity, err)
 }
 
-// Converts Workloads to GraphQL-compatible format
-func convertWorkloads(workloads *[]k8sconsts.PodWorkload) []*model.PodWorkload {
-	var gqlWorkloads []*model.PodWorkload
-	if workloads != nil {
-		for _, w := range *workloads {
-			gqlWorkloads = append(gqlWorkloads, &model.PodWorkload{
-				Namespace: w.Namespace,
-				Kind:      model.K8sResourceKind(w.Kind),
-				Name:      w.Name,
-			})
-		}
-	}
-	return gqlWorkloads
-}
-
 // Converts GraphQL InstrumentationRuleSourcesScopeInput list to the CRD []k8sconsts.SourcesScope for spec.sourcesScopes
 func convertSourcesScopeInput(scopes []*model.InstrumentationRuleSourcesScopeInput) []k8sconsts.SourcesScope {
 	var result []k8sconsts.SourcesScope
