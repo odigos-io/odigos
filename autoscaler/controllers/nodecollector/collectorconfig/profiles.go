@@ -28,6 +28,7 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 		Processors: config.GenericMap{
 			commonconf.ProfilingNodeFilterProcessor:        commonconf.ProfilingFilterProcessorConfig(),
 			commonconf.ProfilingNodeK8sAttributesProcessor: commonconf.K8sAttributesProfilesProcessorConfig(),
+			commonconf.ProfilingNodeServiceNameProcessor:   commonconf.ProfilingServiceNameTransformConfig(),
 		},
 		Exporters: config.GenericMap{
 			commonconf.ProfilingNodeToGatewayExporter: exp,
@@ -35,9 +36,13 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				"profiles": {
-					Receivers:  []string{commonconf.ProfilingReceiver},
-					Processors: []string{commonconf.ProfilingNodeFilterProcessor, commonconf.ProfilingNodeK8sAttributesProcessor},
-					Exporters:  []string{commonconf.ProfilingNodeToGatewayExporter},
+					Receivers: []string{commonconf.ProfilingReceiver},
+					Processors: []string{
+						commonconf.ProfilingNodeFilterProcessor,
+						commonconf.ProfilingNodeK8sAttributesProcessor,
+						commonconf.ProfilingNodeServiceNameProcessor,
+					},
+					Exporters: []string{commonconf.ProfilingNodeToGatewayExporter},
 				},
 			},
 		},

@@ -36,6 +36,7 @@ enum SignalType {
   TRACES
   METRICS
   LOGS
+  PROFILES
 }
 
 enum SpanKind {
@@ -132,22 +133,36 @@ input K8sDesiredSourceInput {
   autoInstrument: Boolean
 }
 
-type PodWorkload {
+input K8sSourceId {
   namespace: String!
-  name: String!
   kind: K8sResourceKind!
+  name: String!
 }
 
+# Deprecated. Kept only so that InstrumentationRuleInput.workloads (also deprecated) can be parsed
+# from older @odigos/ui-kit clients. Server ignores the value.
+# TODO: remove together with InstrumentationRuleInput.workloads.
 input PodWorkloadInput {
   namespace: String!
   kind: K8sResourceKind!
   name: String!
 }
 
-input K8sSourceId {
-  namespace: String!
-  kind: K8sResourceKind!
-  name: String!
+# Mirrors k8sconsts.SourcesScope for InstrumentationRule only (sampling uses SourcesScope in sampling.graphqls).
+type InstrumentationRuleSourcesScope {
+  workloadName: String
+  workloadKind: K8sResourceKind
+  workloadNamespace: String
+  containerName: String
+  workloadLanguage: SamplingWorkloadLanguage
+}
+
+input InstrumentationRuleSourcesScopeInput {
+  workloadName: String
+  workloadKind: K8sResourceKind
+  workloadNamespace: String
+  containerName: String
+  workloadLanguage: SamplingWorkloadLanguage
 }
 
 type InstrumentationRule {
@@ -158,7 +173,7 @@ type InstrumentationRule {
   disabled: Boolean
   mutable: Boolean!
   profileName: String!
-  workloads: [PodWorkload!]
+  sourcesScopes: [InstrumentationRuleSourcesScope!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
   conditions: [Condition!]
   codeAttributes: CodeAttributes
@@ -171,7 +186,11 @@ input InstrumentationRuleInput {
   ruleName: String
   notes: String
   disabled: Boolean
-  workloads: [PodWorkloadInput!]
+  # Deprecated. Accepted but ignored by the resolver to keep older @odigos/ui-kit clients working
+  # after the CRD/back-end dropped `workloads`. Use `sourcesScopes` instead.
+  # TODO: remove once @odigos/ui-kit no longer sends `workloads` in the rule form payload.
+  workloads: [PodWorkloadInput!] @deprecated(reason: "use sourcesScopes; field is ignored by the server")
+  sourcesScopes: [InstrumentationRuleSourcesScopeInput!]
   instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
   codeAttributes: CodeAttributesInput
   headersCollection: HeadersCollectionInput
@@ -324,6 +343,7 @@ type SupportedSignals {
   traces: ObservabilitySignalSupport!
   metrics: ObservabilitySignalSupport!
   logs: ObservabilitySignalSupport!
+  profiles: ObservabilitySignalSupport!
 }
 
 type ObservabilitySignalSupport {
@@ -371,6 +391,7 @@ type ExportedSignals {
   traces: Boolean!
   metrics: Boolean!
   logs: Boolean!
+  profiles: Boolean!
 }
 
 type Destination {
@@ -403,6 +424,7 @@ input ExportedSignalsInput {
   traces: Boolean!
   metrics: Boolean!
   logs: Boolean!
+  profiles: Boolean! = false
 }
 
 input PersistNamespaceItemInput {

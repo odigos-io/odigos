@@ -33,13 +33,9 @@ func updateInstrumentationConfigForWorkload(ctx context.Context, ic *odigosv1alp
 	// iterate over all the payload collection rules, and update the instrumentation config accordingly
 	for i := range rules.Items {
 		rule := &rules.Items[i]
-		// skip disabled rules
-		if rule.Spec.Disabled {
-			continue
-		}
-		// filter out rules where the workload does not match
-		participating := utils.IsWorkloadParticipatingInRule(workload, rule)
-		if !participating {
+
+		// filter out rules where the workload's IC does not match
+		if !utils.IsInstrumentationConfigParticipatingInRule(workload, ic, rule) {
 			continue
 		}
 		// merge the rule into all the sdk configs

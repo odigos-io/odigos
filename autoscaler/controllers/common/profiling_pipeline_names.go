@@ -9,7 +9,10 @@ const (
 	// Node collector profiles domain — receive on host, forward to cluster gateway.
 	ProfilingNodeFilterProcessor        = "filter/profiles-node"
 	ProfilingNodeK8sAttributesProcessor = "k8s_attributes/profiles-node"
-	ProfilingNodeToGatewayExporter      = "otlp_grpc/profiles-to-gateway"
+	// ProfilingNodeServiceNameProcessor sets service.name from K8s metadata so Pyroscope
+	// (and other backends) show workload names instead of unknown_service:<process>.
+	ProfilingNodeServiceNameProcessor = "transform/profiles-service-name"
+	ProfilingNodeToGatewayExporter    = "otlp_grpc/profiles-to-gateway"
 
 	// Cluster gateway profiles pipeline — OTLP in from nodes, export to UI (no extra processors).
 	ProfilingGatewayToUIExporter = "otlp_grpc/profiles-to-ui"
