@@ -129,6 +129,36 @@ func TestMultipleSpansMixedFlags(t *testing.T) {
 	assert.Equal(t, "sampled-multi-flag", spans.At(1).Name())
 }
 
+func TestRubyResourceKeepsSpansWithoutSampledBit(t *testing.T) {
+	proc := &traceFilterProcessor{
+		logger:     zap.NewNop(),
+		evaluators: []SpanFilterEvaluator{&unsampledBitEvaluator{}},
+	}
+
+	td := ptrace.NewTraces()
+
+	rubyResource := td.ResourceSpans().AppendEmpty()
+	rubyResource.Resource().Attributes().PutStr(telemetrySDKLanguageAttributeName, rubyTelemetrySDKLanguage)
+	rubySpan := rubyResource.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+	rubySpan.SetName("ruby-span")
+	rubySpan.SetFlags(0)
+
+	pythonResource := td.ResourceSpans().AppendEmpty()
+	pythonResource.Resource().Attributes().PutStr(telemetrySDKLanguageAttributeName, "python")
+	pythonSpan := pythonResource.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+	pythonSpan.SetName("python-unsampled")
+	pythonSpan.SetFlags(0)
+
+	result, err := proc.processTraces(context.Background(), td)
+	require.NoError(t, err)
+	assert.Equal(t, 1, countSpans(result))
+	require.Equal(t, 1, result.ResourceSpans().Len())
+
+	spans := result.ResourceSpans().At(0).ScopeSpans().At(0).Spans()
+	require.Equal(t, 1, spans.Len())
+	assert.Equal(t, "ruby-span", spans.At(0).Name())
+}
+
 func TestEmptyResourceSpansRemoved(t *testing.T) {
 	proc := &traceFilterProcessor{
 		logger:     zap.NewNop(),
@@ -153,6 +183,46 @@ func TestEmptyResourceSpansRemoved(t *testing.T) {
 	svcName, ok := result.ResourceSpans().At(0).Resource().Attributes().Get("service.name")
 	require.True(t, ok)
 	assert.Equal(t, "svc2", svcName.Str())
+}
+
+func TestRemovesMultipleEmptyResourcesWithoutPanic(t *testing.T) {
+	proc := &traceFilterProcessor{
+		logger:     zap.NewNop(),
+		evaluators: []SpanFilterEvaluator{&unsampledBitEvaluator{}},
+	}
+
+	td := ptrace.NewTraces()
+
+	emptyResource := td.ResourceSpans().AppendEmpty()
+	emptyResource.Resource().Attributes().PutStr("service.name", "already-empty")
+
+	drainedResource := td.ResourceSpans().AppendEmpty()
+	drainedResource.Resource().Attributes().PutStr("service.name", "drained")
+	drainedSpan := drainedResource.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+	drainedSpan.SetFlags(0)
+
+	result, err := proc.processTraces(context.Background(), td)
+	require.NoError(t, err)
+	assert.Equal(t, 0, result.ResourceSpans().Len())
+}
+
+func TestRemovesMultipleEmptyScopeSpansWithoutPanic(t *testing.T) {
+	proc := &traceFilterProcessor{
+		logger:     zap.NewNop(),
+		evaluators: []SpanFilterEvaluator{&unsampledBitEvaluator{}},
+	}
+
+	td := ptrace.NewTraces()
+	rs := td.ResourceSpans().AppendEmpty()
+
+	rs.ScopeSpans().AppendEmpty()
+	drainedScope := rs.ScopeSpans().AppendEmpty()
+	drainedSpan := drainedScope.Spans().AppendEmpty()
+	drainedSpan.SetFlags(0)
+
+	result, err := proc.processTraces(context.Background(), td)
+	require.NoError(t, err)
+	assert.Equal(t, 0, result.ResourceSpans().Len())
 }
 
 func createTestTraces(flags uint32) ptrace.Traces {
