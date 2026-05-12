@@ -1,17 +1,7 @@
 import { getWorkloadId } from '@odigos/ui-kit/functions';
 import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
 import type { NamespaceInstrumentInput, SourceInstrumentInput, WorkloadResponse, K8sWorkloadConditions } from '@/types';
-import {
-  EntityTypes,
-  DesiredStateProgress,
-  StatusType,
-  OtherStatus,
-  type WorkloadId,
-  type Source,
-  type Condition,
-  type DesiredConditionStatus,
-  type ProgrammingLanguages,
-} from '@odigos/ui-kit/types';
+import { EntityTypes, DesiredStateProgress, StatusType, OtherStatus, type WorkloadId, type Source, type Condition, type DesiredConditionStatus, type ProgrammingLanguages } from '@odigos/ui-kit/types';
 
 function mapDesiredStatusToConditionStatus(status: DesiredStateProgress): StatusType | OtherStatus {
   switch (status) {
@@ -50,8 +40,9 @@ export function mapConditionsToConditionArray(conditions: K8sWorkloadConditions 
     if (!dcs) continue;
 
     result.push({
-      type: dcs.name ?? field,
       status: mapDesiredStatusToConditionStatus(dcs.status),
+      type: dcs.name ?? field,
+      name: dcs.name ?? field,
       reason: dcs.reasonEnum ?? null,
       message: dcs.message ?? null,
     });
