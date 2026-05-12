@@ -100,18 +100,20 @@ jobs:
     name: build-agents
     runs-on: depot-ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build Agents Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           platforms: linux/amd64
           push: false
           tags: agents:pr-${{ github.event.number || github.run_number }}
           provenance: false
           file: odiglet/Dockerfile
-          build-args: SERVICE_NAME=agents
+          build-args: |
+            SERVICE_NAME=agents
+            AGENTS_REGISTRY=p0xd21zf5r.registry.depot.dev
           target: agents
           outputs: type=docker,dest=/tmp/agents.tar
       - name: Load Docker image for scanning
@@ -254,6 +256,8 @@ jobs:
           push: false
           tags: odiglet:pr-${{ github.event.number || github.run_number }}
           provenance: false
+          build-args: |
+            AGENTS_REGISTRY=p0xd21zf5r.registry.depot.dev
           outputs: type=docker,dest=/tmp/odiglet.tar
       - name: Load Docker image for scanning
         run: docker load -i /tmp/odiglet.tar

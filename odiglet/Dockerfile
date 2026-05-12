@@ -1,5 +1,9 @@
 ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.16
 
+# Allows overriding the agents registry/repository.
+# Example: --build-arg AGENTS_REGISTRY=p0xd21zf5r.registry.depot.dev
+ARG AGENTS_REGISTRY=public.ecr.aws/odigos/agents
+
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.9.0
@@ -29,6 +33,9 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
     mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc/OpenTelemetry.AutoInstrumentation.Native.so
 
+# Docker/BuildKit limitation: COPY --from= doesn’t support ARG-based variable expansion
+# Using a FROM statement with the ARG-based variable expansion is a workaround.
+FROM --platform=$BUILDPLATFORM ${AGENTS_REGISTRY}/nodejs-community:v0.6.2 AS nodejs-community
 
 ######### agents builder #########
 # combine all agents into a single image
@@ -44,8 +51,8 @@ COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8 /instrum
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.81 /instrumentations/python /instrumentations/python
 
 # nodejs-community
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.5.1 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.5.1 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=nodejs-community /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=nodejs-community /instrumentations/nodejs-community /instrumentations/nodejs-community
 # nodejs-community-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.17 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.17 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
