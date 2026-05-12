@@ -1,10 +1,12 @@
 package agentenabled
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -20,7 +22,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signals"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
@@ -107,7 +109,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 
 	err = c.Update(ctx, &ic)
 	if err != nil {
-		return utils.K8SUpdateErrorHandler(err)
+		return k8sutils.K8SUpdateErrorHandler(err)
 	}
 
 	cond := metav1.Condition{
@@ -123,7 +125,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	if rolloutResult.StatusChanged || agentEnabledChanged {
 		updateErr := c.Status().Update(ctx, &ic)
 		if updateErr != nil {
-			return utils.K8SUpdateErrorHandler(updateErr)
+			return k8sutils.K8SUpdateErrorHandler(updateErr)
 		}
 	}
 
@@ -182,7 +184,6 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	}
 
 	defaultDistrosPerLanguage := distroProvider.GetDefaultDistroNames()
-	distroPerLanguage := distroresolver.CalculateDefaultDistroPerLanguage(defaultDistrosPerLanguage, irls, distroProvider.Getter)
 
 	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff or ImagePullBackOff we'd like to stop
 	// instrumentating it and to disable future instrumentation of this service.
@@ -218,6 +219,30 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	podManifestInjectionOptional := true // pod manifest is optional, unless some container agent requires it
 
 	for containerName, containerRuntimeDetails := range runtimeDetailsByContainer {
+		containerLanguage := common.UnknownProgrammingLanguage
+		if containerRuntimeDetails != nil && containerRuntimeDetails.Language != "" {
+			containerLanguage = containerRuntimeDetails.Language
+		}
+
+		// filter the relevant rules from irls for this container specifically
+		rulesForContainer := make([]odigosv1.InstrumentationRule, 0)
+		if irls != nil {
+			for _, rule := range *irls {
+				if utils.IsContainerParticipatingInRule(pw, &rule, containerName, containerLanguage) {
+					rulesForContainer = append(rulesForContainer, rule)
+				}
+			}
+		}
+		// Since we can have multiple rules editing the same target, sort the rules since the list order is not deterministic
+		// This will prevent magical behavior that will arise from the nondeterminism of rule applying due to ordering
+		slices.SortFunc(rulesForContainer, func(a, b odigosv1.InstrumentationRule) int {
+			if c := cmp.Compare(a.Namespace, b.Namespace); c != 0 {
+				return c
+			}
+			return cmp.Compare(a.Name, b.Name)
+		})
+
+		distroPerLanguage := distroresolver.CalculateDefaultDistroPerLanguage(defaultDistrosPerLanguage, &rulesForContainer, distroProvider.Getter)
 
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
@@ -236,7 +261,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		}
 
 		// calculate and verify there are enabled signals for this container.
-		enabledSignals, disabledInfo := signals.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
+		enabledSignals, disabledInfo := signals.GetEnabledSignalsForContainer(nodeCollectorsGroup, &rulesForContainer)
 		if disabledInfo != nil {
 			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
@@ -248,7 +273,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		}
 
 		// calculate the dynamic configs for this container.
-		dynamicContainerConfigs, disabledInfo := dynamicconfig.CalculateDynamicContainerConfig(containerName, irls, effectiveConfig, containerRuntimeDetails, agentLevelActions, samplingRules, workloadObj, pw, containerDistro, enabledSignals, nodeCollectorsGroup, clusterCollectorsGroup)
+		dynamicContainerConfigs, disabledInfo := dynamicconfig.CalculateDynamicContainerConfig(containerName, &rulesForContainer, effectiveConfig, containerRuntimeDetails, agentLevelActions, samplingRules, workloadObj, pw, containerDistro, enabledSignals, nodeCollectorsGroup, clusterCollectorsGroup)
 		if disabledInfo != nil {
 			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
