@@ -70,6 +70,13 @@ type K8sConfigGroup struct {
 	ContainerName string
 }
 
+// K8sInstrumentationRequests is the send-end of the instrumentation manager's request channel
+// for the K8s instantiation. Re-exported as a named alias so callers (the OSS kube
+// reconcilers, the odiglet's InstrumentationRequests getter, and external producers such as
+// the enterprise Go offsets-file watcher) don't need to re-spell the long generic type at
+// every call site.
+type K8sInstrumentationRequests = chan<- instrumentation.Request[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]
+
 func (kd *K8sProcessDetails) ConfigGroup(ctx context.Context) (K8sConfigGroup, error) {
 	if kd.Pw == nil {
 		return K8sConfigGroup{}, errors.New("podWorkload is not provided, cannot resolve config group")

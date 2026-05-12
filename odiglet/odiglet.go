@@ -32,12 +32,28 @@ import (
 )
 
 type Odiglet struct {
-	clientset               *kubernetes.Clientset
-	mgr                     controllerruntime.Manager
-	ebpfManager             commonInstrumentation.Manager
-	configUpdates           chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	instrumentationRequests chan<- commonInstrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
+	clientset     *kubernetes.Clientset
+	mgr           controllerruntime.Manager
+	ebpfManager   commonInstrumentation.Manager
+	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	// instrumentationRequests is kept as a bidirectional channel so we can hand out the
+	// write-end to external producers via InstrumentationRequests() while also reading from it
+	// in the embedded instrumentation manager.
+	instrumentationRequests chan commonInstrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
 	criClient               *criwrapper.CriClient
+}
+
+// InstrumentationRequests returns the write-end of the instrumentation manager's request
+// channel. External producers (e.g. the enterprise odiglet's Go offsets file watcher) can use
+// this to send instrumentation, un-instrumentation, or retry-failed requests alongside the OSS
+// odiglet's own kube reconcilers. See instrumentation.Request for the encoding of each request
+// kind.
+//
+// Callers must use a non-blocking send (select with a default branch) and must NOT close the
+// returned channel: the OSS odiglet stops the consumer via ctx.Done(), and an external close()
+// would race with the kube reconcilers that also write to the same channel.
+func (o *Odiglet) InstrumentationRequests() ebpf.K8sInstrumentationRequests {
+	return o.instrumentationRequests
 }
 
 // channel sizes for sending events to the instrumentation manager's event loop.
@@ -193,9 +209,10 @@ func (o *Odiglet) Run(ctx context.Context) {
 		if o.configUpdates != nil {
 			close(o.configUpdates)
 		}
-		if o.instrumentationRequests != nil {
-			close(o.instrumentationRequests)
-		}
+		// We don't close instrumentationRequests here: the manager's runEventLoop returns on
+		// ctx.Done() so it doesn't need a channel close to terminate, and external producers
+		// can obtain the write-end via InstrumentationRequests(). Closing would race with
+		// those producers (including the OSS kube reconcilers themselves if they're mid-send).
 		return err
 	})
 

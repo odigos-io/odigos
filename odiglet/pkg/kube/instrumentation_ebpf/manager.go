@@ -4,9 +4,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentation"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -15,7 +15,7 @@ import (
 func SetupWithManager(
 	mgr ctrl.Manager,
 	configUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup],
-	InstrumentationRequests chan<- instrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails],
+	InstrumentationRequests ebpf.K8sInstrumentationRequests,
 	distributionGetter *distros.Getter,
 ) error {
 	commonlogger.LoggerCompat().With("subsystem", "instrumentationebpf").Info("Starting reconcilers for ebpf instrumentation")

@@ -38,15 +38,25 @@ var meter = otel.Meter(otelMeterName)
 // The manager will apply the configuration to all instrumentations that match the config group.
 type ConfigUpdate[configGroup ConfigGroup] map[configGroup]Config
 
-// Request is used to send an instrumentation or un-instrumentation request to the manager.
-// For instrumentation requests, the ProcessDetailsByPid map should be populated with the details of each process to instrument.
-// For un-instrumentation requests, the ProcessGroup should be populated to un-instrument all processes that match it.
-// reasoning is that the manager saves an index of the instrumented processes by their process group, to make the un-instrumentation efficient
-// and easy.
+// Request is used to send an instrumentation, un-instrumentation, or retry-failed request to
+// the manager.
+//
+// For instrumentation requests, set Instrument=true and populate ProcessDetailsByPid with the
+// details of each process to instrument. For un-instrumentation requests, set Instrument=false
+// and populate ProcessGroup to un-instrument all processes that match it (the manager keeps an
+// index of instrumented processes by process group to make this efficient).
+//
+// For retry-failed requests, set RetryDistros to a non-nil slice; the manager will then iterate
+// over its tracked instrumentations and retry any whose previous initialize/load failed (i.e.
+// inst == nil) AND whose OTel distribution name matches one of the supplied values. A non-nil
+// empty slice retries every failed instrumentation regardless of distribution. When
+// RetryDistros is non-nil the Instrument / ProcessDetailsByPid / ProcessGroup fields are
+// ignored.
 type Request[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
 	Instrument          bool
 	ProcessDetailsByPid map[int]processDetails
 	ProcessGroup        processGroup
+	RetryDistros        []string
 }
 
 type instrumentationDetails[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
@@ -85,9 +95,10 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 	// The caller is responsible for closing the channel once no more updates are expected.
 	ConfigUpdates <-chan ConfigUpdate[configGroup]
 
-	// InstrumentationRequests is a channel for receiving explicit instrumentation/un- instrumentation requests.
-	// The sender can request instrumentation for specific processes by providing their process details mapped by pid.
-	// For un-instrumentation requests, the sender provides the process group to un-instrument all processes that match it.
+	// InstrumentationRequests is a channel for receiving explicit instrumentation, un-
+	// instrumentation, or retry-failed requests. See the Request docs for the encoding of each
+	// request type. The same channel carries all three so callers (e.g. enterprise odiglet) can
+	// piggy-back retry signals on the existing pipeline without plumbing a second channel.
 	InstrumentationRequests <-chan Request[processGroup, configGroup, processDetails]
 
 	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
@@ -264,6 +275,13 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 				m.logger.Info("instrumentation requests channel closed, stopping eBPF instrumentation manager")
 				return
 			}
+			// A non-nil RetryDistros marks this request as a retry-failed signal rather than a
+			// normal instrument / un-instrument request. We check it first so the rest of the
+			// request fields can be left zero by retry senders.
+			if req.RetryDistros != nil {
+				m.retryFailedInstrumentationsForDistros(ctx, req.RetryDistros)
+				continue
+			}
 			if req.Instrument {
 				instrumentedPIDs := make([]int, len(req.ProcessDetailsByPid))
 				for pid, details := range req.ProcessDetailsByPid {
@@ -306,6 +324,67 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 				}
 			}
 		}
+	}
+}
+
+// retryFailedInstrumentationsForDistros re-attempts instrumentation for every entry in
+// detailsByPid whose previous initialize/load attempt failed (inst == nil). When distroFilter is
+// non-empty, only failed entries whose OTel distribution name matches one of the supplied values
+// are retried; an empty (but non-nil) filter retries every failed entry regardless of
+// distribution.
+//
+// We iterate the full detailsByPid map here because there is typically a small number of tracked
+// processes per node and maintaining a parallel "failed" sub-index doesn't pay for itself. The
+// distribution name comes from pd.Distribution(ctx), which is already memoized after the first
+// successful resolution that happened when we tracked the entry.
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) retryFailedInstrumentationsForDistros(ctx context.Context, distroFilter []string) {
+	wanted := make(map[string]struct{}, len(distroFilter))
+	for _, name := range distroFilter {
+		wanted[name] = struct{}{}
+	}
+
+	// Collect the PIDs to retry into a snapshot first; tryInstrument re-enters
+	// startTrackInstrumentation, which mutates detailsByPid for the same pid, and we don't want
+	// to modify the map while ranging over it.
+	type retryEntry struct {
+		pid int
+		pd  ProcessDetails
+	}
+	var toRetry []retryEntry
+
+	for pid, details := range m.detailsByPid {
+		if details.inst != nil {
+			continue
+		}
+		if len(wanted) > 0 {
+			distribution, err := details.pd.Distribution(ctx)
+			if err != nil || distribution == nil {
+				continue
+			}
+			if _, ok := wanted[distribution.Name]; !ok {
+				continue
+			}
+		}
+		toRetry = append(toRetry, retryEntry{pid: pid, pd: details.pd})
+	}
+
+	if len(toRetry) == 0 {
+		return
+	}
+
+	m.logger.Info("retrying failed instrumentations", "count", len(toRetry), "distroFilter", distroFilter)
+	retriedPIDs := make([]int, 0, len(toRetry))
+	for _, e := range toRetry {
+		if err := m.tryInstrument(ctx, e.pd, e.pid); err != nil {
+			m.handleInstrumentError(err)
+			continue
+		}
+		retriedPIDs = append(retriedPIDs, e.pid)
+	}
+	if len(retriedPIDs) > 0 {
+		// Re-arm the detector for the successfully retried processes so we still get their exit
+		// events for cleanup. TrackProcesses is idempotent for already-tracked PIDs.
+		m.detector.TrackProcesses(retriedPIDs)
 	}
 }
 
@@ -549,6 +628,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 	configGroup ConfigGroup,
 	distribution *distro.OtelDistro,
 ) {
+	prevDetails, hadPrev := m.detailsByPid[pid]
+	prevHadInst := hadPrev && prevDetails.inst != nil
+
 	instDetails := &instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]{
 		inst: inst,
 		pd:   processDetails,
@@ -572,9 +654,14 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 	}
 
 	metricAttributeSet := m.metricsAttributeSet(distribution)
-	if inst == nil {
+	switch {
+	case inst == nil && !hadPrev:
+		// First time we are tracking this pid and the attempt failed; count it once.
 		m.metrics.failedInstrumentations.Add(ctx, 1, metric.WithAttributeSet(metricAttributeSet))
-	} else {
+	case inst != nil && !prevHadInst:
+		// Transition from "not instrumented" (either never seen or previously failed) to
+		// "instrumented". failedInstrumentations is a monotonic counter so we don't decrement
+		// it; we just record the successful instrumentation.
 		m.metrics.instrumentedProcesses.Add(ctx, 1, metric.WithAttributeSet(metricAttributeSet))
 	}
 }
