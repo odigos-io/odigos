@@ -31,8 +31,8 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	Notes *string `json:"notes,omitempty"`
 	// A boolean field allowing to temporarily disable the rule, but keep it around for future use
 	Disabled *bool `json:"disabled,omitempty"`
-	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.
-	SourcesScopes *[]k8sconsts.SourcesScope `json:"sourcesScopes,omitempty"`
+	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If unset or empty, the rule applies to all workloads.
+	SourcesScopes []k8sconsts.SourcesScope `json:"sourcesScopes,omitempty"`
 	// For fine grained control, the user can specify the instrumentation library to use.
 	// One can specify same rule for multiple languages and libraries at the same time.
 	// If nil, all instrumentation libraries will be used.
@@ -93,11 +93,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithDisabled(value bool) *In
 	return b
 }
 
-// WithSourcesScopes sets the SourcesScopes field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the SourcesScopes field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithSourcesScopes(value []k8sconsts.SourcesScope) *InstrumentationRuleSpecApplyConfiguration {
-	b.SourcesScopes = &value
+// WithSourcesScopes adds the given value to the SourcesScopes field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the SourcesScopes field.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithSourcesScopes(values ...k8sconsts.SourcesScope) *InstrumentationRuleSpecApplyConfiguration {
+	for i := range values {
+		b.SourcesScopes = append(b.SourcesScopes, values[i])
+	}
 	return b
 }
 

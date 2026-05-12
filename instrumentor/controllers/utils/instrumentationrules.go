@@ -26,7 +26,7 @@ func IsContainerParticipatingInRule(
 	}
 	var scopes []scope.SourcesScope
 	if rule.Spec.SourcesScopes != nil {
-		scopes = *rule.Spec.SourcesScopes
+		scopes = rule.Spec.SourcesScopes
 	}
 	return scope.AnySourceScopeMatchesContainer(scopes, workload, containerName, language)
 }

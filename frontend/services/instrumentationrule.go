@@ -268,8 +268,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	existingRule.Spec.Disabled = *input.Disabled
 
 	if input.SourcesScopes != nil {
-		converted := convertSourcesScopeInput(input.SourcesScopes)
-		existingRule.Spec.SourcesScopes = &converted
+		existingRule.Spec.SourcesScopes = convertSourcesScopeInput(input.SourcesScopes)
 	} else {
 		existingRule.Spec.SourcesScopes = nil
 	}
@@ -356,10 +355,9 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	notes := *input.Notes
 	disabled := *input.Disabled
 
-	var sourcesScopes *[]k8sconsts.SourcesScope
+	var sourcesScopes []k8sconsts.SourcesScope
 	if input.SourcesScopes != nil {
-		convertedScopes := convertSourcesScopeInput(input.SourcesScopes)
-		sourcesScopes = &convertedScopes
+		sourcesScopes = convertSourcesScopeInput(input.SourcesScopes)
 	}
 
 	var instrumentationLibraries *[]v1alpha1.InstrumentationLibraryGlobalId
@@ -446,21 +444,19 @@ func convertSourcesScopeInput(scopes []*model.InstrumentationRuleSourcesScopeInp
 }
 
 // Converts spec.sourcesScopes ([]k8sconsts.SourcesScope) to GraphQL InstrumentationRuleSourcesScope list
-func convertSourcesScope(sourcesScope *[]k8sconsts.SourcesScope) []*model.InstrumentationRuleSourcesScope {
+func convertSourcesScope(sourcesScope []k8sconsts.SourcesScope) []*model.InstrumentationRuleSourcesScope {
 	var gqlSourcesScope []*model.InstrumentationRuleSourcesScope
-	if sourcesScope != nil {
-		for _, s := range *sourcesScope {
-			scope := s
-			kind := model.K8sResourceKind(scope.WorkloadKind)
-			lang := model.SamplingWorkloadLanguage(scope.WorkloadLanguage)
-			gqlSourcesScope = append(gqlSourcesScope, &model.InstrumentationRuleSourcesScope{
-				WorkloadName:      &scope.WorkloadName,
-				WorkloadKind:      &kind,
-				WorkloadNamespace: &scope.WorkloadNamespace,
-				ContainerName:     &scope.ContainerName,
-				WorkloadLanguage:  &lang,
-			})
-		}
+	for _, s := range sourcesScope {
+		scope := s
+		kind := model.K8sResourceKind(scope.WorkloadKind)
+		lang := model.SamplingWorkloadLanguage(scope.WorkloadLanguage)
+		gqlSourcesScope = append(gqlSourcesScope, &model.InstrumentationRuleSourcesScope{
+			WorkloadName:      &scope.WorkloadName,
+			WorkloadKind:      &kind,
+			WorkloadNamespace: &scope.WorkloadNamespace,
+			ContainerName:     &scope.ContainerName,
+			WorkloadLanguage:  &lang,
+		})
 	}
 	return gqlSourcesScope
 }

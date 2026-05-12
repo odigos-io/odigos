@@ -344,7 +344,7 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 		Items: []odigosv1.InstrumentationRule{
 			{
 				Spec: odigosv1.InstrumentationRuleSpec{
-					SourcesScopes: &[]k8sconsts.SourcesScope{
+					SourcesScopes: []k8sconsts.SourcesScope{
 						{
 							WorkloadName:      "other-app",
 							WorkloadNamespace: "testns",

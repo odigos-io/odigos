@@ -331,7 +331,7 @@ func NewMockInstrumentationRuleDisabled(name, ns string) *odigosv1.Instrumentati
 func NewMockInstrumentationRuleWithSourcesScope(name, ns string, scopes []k8sconsts.SourcesScope) *odigosv1.InstrumentationRule {
 	r := NewMockEmptyInstrumentationRule(name, ns)
 	copyScopes := append([]k8sconsts.SourcesScope(nil), scopes...)
-	r.Spec.SourcesScopes = &copyScopes
+	r.Spec.SourcesScopes = copyScopes
 	return r
 }
 
@@ -345,7 +345,7 @@ func NewMockInstrumentationRuleWithWorkloads(name, ns string, workloads []k8scon
 func NewMockInstrumentationRuleWithSourcesScopeAndWorkloads(name, ns string, scopes []k8sconsts.SourcesScope, workloads []k8sconsts.PodWorkload) *odigosv1.InstrumentationRule {
 	r := NewMockEmptyInstrumentationRule(name, ns)
 	copyScopes := append([]k8sconsts.SourcesScope(nil), scopes...)
-	r.Spec.SourcesScopes = &copyScopes
+	r.Spec.SourcesScopes = copyScopes
 	return r
 }
 

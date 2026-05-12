@@ -335,8 +335,8 @@ spec:
                 type: string
               sourcesScopes:
                 description: SourcesScopes lists SourcesScope entries to which the
-                  rule should be applied. If not specified, the rule will be applied
-                  to all workloads. empty array will render the rule inactive.
+                  rule should be applied. If unset or empty, the rule applies to all
+                  workloads.
                 items:
                   description: |-
                     define conditions to match specific sources (containers) managed by odigos.
