@@ -13,13 +13,15 @@ spec:
       supported: false
     logs:
       supported: false
+    profiles:
+      supported: false
   fields:
     - name: AWS_XRAY_REGION
       displayName: Region
       componentType: dropdown
       componentProps:
         required: false
-        tooltip: 'Send segments to AWS X-Ray service in a specific region.'
+        tooltip: "Send segments to AWS X-Ray service in a specific region."
         values:
           - af-south-1
           - ap-east-1
@@ -60,102 +62,102 @@ spec:
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Optionally override the default X-Ray service endpoint.'
+        tooltip: "Optionally override the default X-Ray service endpoint."
     - name: AWS_XRAY_PROXY_ADDRESS
       displayName: Proxy Address
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Upload segments to AWS X-Ray through a proxy.'
+        tooltip: "Upload segments to AWS X-Ray through a proxy."
     - name: AWS_XRAY_RESOURCE_ARN
       displayName: Resource ARN
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Amazon Resource Name (ARN) of the AWS resource running the collector.'
+        tooltip: "Amazon Resource Name (ARN) of the AWS resource running the collector."
     - name: AWS_XRAY_ROLE_ARN
       displayName: Role ARN
       componentType: input
       componentProps:
         required: false
-        tooltip: 'IAM role to upload segments to a different account.'
+        tooltip: "IAM role to upload segments to a different account."
     - name: AWS_XRAY_EXTERNAL_ID
       displayName: External ID
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Shared identitier used when assuming an IAM role in an external AWS account.'
+        tooltip: "Shared identitier used when assuming an IAM role in an external AWS account."
     - name: AWS_XRAY_LOG_GROUPS
       displayName: Log Groups
       componentType: multiInput
       componentProps:
         required: false
-        tooltip: 'List of log group names for CloudWatch.'
+        tooltip: "List of log group names for CloudWatch."
     - name: AWS_XRAY_DISABLE_SSL
       displayName: Disable SSL Verification
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Enable or disable TLS certificate verification.'
+        tooltip: "Enable or disable TLS certificate verification."
     - name: AWS_XRAY_LOCAL_MODE
       displayName: Local Mode
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Local mode to skip EC2 instance metadata check.'
+        tooltip: "Local mode to skip EC2 instance metadata check."
     - name: AWS_XRAY_TELEMETRY_ENABLED
       displayName: Telemetry - Enabled
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Whether telemetry collection is enabled at all.'
+        tooltip: "Whether telemetry collection is enabled at all."
     - name: AWS_XRAY_TELEMETRY_INCLUDE_METADATA
       displayName: Telemetry - Include Metadata
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Whether to include metadata in the telemetry (InstanceID, Hostname, ResourceARN)'
+        tooltip: "Whether to include metadata in the telemetry (InstanceID, Hostname, ResourceARN)"
     - name: AWS_XRAY_TELEMETRY_HOSTNAME
       displayName: Telemetry - Hostname
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Sets the Hostname included in the telemetry.'
+        tooltip: "Sets the Hostname included in the telemetry."
     - name: AWS_XRAY_TELEMETRY_INSTANCE_ID
       displayName: Telemetry - Instance ID
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Sets the InstanceID included in the telemetry.'
+        tooltip: "Sets the InstanceID included in the telemetry."
     - name: AWS_XRAY_TELEMETRY_RESOURCE_ARN
       displayName: Telemetry - Resource ARN
       componentType: input
       componentProps:
         required: false
-        tooltip: 'Sets the Amazon Resource Name (ARN) included in the telemetry.'
+        tooltip: "Sets the Amazon Resource Name (ARN) included in the telemetry."
     - name: AWS_XRAY_TELEMETRY_CONTRIBUTORS
       displayName: Telemetry - Contributors
       componentType: multiInput
       componentProps:
         required: false
-        tooltip: 'List of X-Ray component IDs contributing to the telemetry (ex. for multiple X-Ray receivers: awsxray/1, awsxray/2)'
+        tooltip: "List of X-Ray component IDs contributing to the telemetry (ex. for multiple X-Ray receivers: awsxray/1, awsxray/2)"
     - name: AWS_XRAY_INDEX_ALL_ATTRIBUTES
       displayName: Index All Attributes
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Enable or disable conversion of all OpenTelemetry attributes to X-Ray annotations.'
+        tooltip: "Enable or disable conversion of all OpenTelemetry attributes to X-Ray annotations."
     - name: AWS_XRAY_INDEXED_ATTRIBUTES
       displayName: Indexed Attributes
       componentType: multiInput
       componentProps:
         required: false
-        tooltip: 'List of attribute names to be converted to X-Ray annotations.'
+        tooltip: "List of attribute names to be converted to X-Ray annotations."
   note:
     type: Note
     content: |

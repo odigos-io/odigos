@@ -12,7 +12,7 @@
 {{- end -}}
 odigos-enterprise-{{- .Component -}}
 {{- if $.Values.openshift.enabled -}}
--certified
+-rhel-certified
 {{- end -}}
 :
 {{- .Tag -}}

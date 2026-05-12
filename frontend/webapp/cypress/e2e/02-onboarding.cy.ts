@@ -14,12 +14,19 @@ describe('Onboarding', () => {
       cy.get(DATA_IDS.ONBOARDING_GET_STARTED).click();
 
       // Step 2: Sources
+      // The v2 wide-drawer Skip button opens a "Skip setup?" warning modal
+      // (rather than skipping immediately like the v1 drawer did). After
+      // pressing Skip we have to approve the modal to advance the wizard.
       cy.contains('Add Source').should('be.visible');
       cy.get(DATA_IDS.WIDE_DRAWER_SKIP).should('be.visible').click();
+      cy.get(DATA_IDS.MODAL).contains('Skip setup?').should('be.visible');
+      cy.get(DATA_IDS.APPROVE).click();
 
       // Step 3: Destinations
       cy.contains('Add Destinations').should('be.visible');
       cy.get(DATA_IDS.WIDE_DRAWER_SKIP).should('be.visible').click();
+      cy.get(DATA_IDS.MODAL).contains('Skip setup?').should('be.visible');
+      cy.get(DATA_IDS.APPROVE).click();
 
       // Step 4: Summary
       cy.contains('Summary').should('be.visible');

@@ -13,17 +13,23 @@ interface GqlNamespaceWithWorkloads {
   dataStreamNames: string[];
   workloads: NamespaceWorkload[];
 }
+
 //TODO: this is a temporary function to transform the namespaces response to the namespace type.
-function transformNamespacesResponse(gqlNamespaces: GqlNamespaceWithWorkloads[]): Namespace[] {
+//
+// `currentStreamName` scopes the `selected` flag to the active data stream. Without it,
+// a workload instrumented in *any* stream renders pre-checked in another stream's
+// add-source drawer (e.g. the add drawer for a brand-new stream would show every
+// already-instrumented workload as already part of the new stream).
+function transformNamespacesResponse(gqlNamespaces: GqlNamespaceWithWorkloads[], currentStreamName: string): Namespace[] {
   return gqlNamespaces.map((ns) => ({
     name: ns.name,
-    selected: ns.markedForInstrumentation,
+    selected: ns.markedForInstrumentation && ns.dataStreamNames.includes(currentStreamName),
     dataStreamNames: ns.dataStreamNames,
     sources: ns.workloads.map((w) => ({
       namespace: w.id.namespace,
       kind: w.id.kind,
       name: w.id.name,
-      selected: w.markedForInstrumentation.markedForInstrumentation ?? false,
+      selected: (w.markedForInstrumentation.markedForInstrumentation ?? false) && w.dataStreamNames.includes(currentStreamName),
       dataStreamNames: w.dataStreamNames,
       numberOfInstances: w.numberOfInstances ?? undefined,
       otelServiceName: '',
@@ -83,7 +89,7 @@ export const useNamespace = () => {
     }
 
     if (data?.namespaces) {
-      const transformed = transformNamespacesResponse(data.namespaces);
+      const transformed = transformNamespacesResponse(data.namespaces, selectedStreamName);
 
       const namespacesOnly = transformed.map(({ sources, ...ns }) => ns) as Namespace[];
       setEntities(EntityTypes.Namespace, namespacesOnly);

@@ -36,6 +36,7 @@ spec:
       isHelmOnly: false
       description: Verify the virtual device health before injecting instrumentation into a pod.
       helmValuePath: instrumentor.checkDeviceHealthBeforeInjection
+      renderCondition: ["instrumentor.mountMethod", "==", "k8s-virtual-device"]
     - displayName: Wasp Enabled
       componentType: toggle
       isHelmOnly: false

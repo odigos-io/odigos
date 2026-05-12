@@ -99,12 +99,14 @@ def generate_signals(yaml_content):
     with_traces = signals.get("traces", {}).get("supported", False)
     with_metrics = signals.get("metrics", {}).get("supported", False)
     with_logs = signals.get("logs", {}).get("supported", False)
+    with_profiles = signals.get("profiles", {}).get("supported", False)
 
     content = (
         "<Accordion title=\"Supported Signals:\">"
         + f"\n{indent_lines('✅' if with_traces else '❌', 2)} Traces"
         + f"\n{indent_lines('✅' if with_metrics else '❌', 2)} Metrics"
         + f"\n{indent_lines('✅' if with_logs else '❌', 2)} Logs"
+        + f"\n{indent_lines('✅' if with_profiles else '❌', 2)} Profiles"
         + "\n</Accordion>"
     )
 
@@ -241,6 +243,8 @@ def generate_kubectl_apply(yaml_content):
         destination_yaml["spec"]["signals"].append("METRICS")
     if signals.get("logs", {}).get("supported", False):
         destination_yaml["spec"]["signals"].append("LOGS")
+    if signals.get("profiles", {}).get("supported", False):
+        destination_yaml["spec"]["signals"].append("PROFILES")
 
     # Separate required, optional, and secret fields
     required_fields = {}
@@ -572,7 +576,8 @@ def process_overview(backend_yaml_dir, docs_dir):
                         f"{'Managed' if category == 'managed' else 'Self-Hosted'} | "
                         f"{'✅' if signals.get('traces', {}).get('supported', False) else ''} | "
                         f"{'✅' if signals.get('metrics', {}).get('supported', False) else ''} | "
-                        f"{'✅' if signals.get('logs', {}).get('supported', False) else ''} |"
+                        f"{'✅' if signals.get('logs', {}).get('supported', False) else ''} | "
+                        f"{'✅' if signals.get('profiles', {}).get('supported', False) else ''} |"
                     )
 
     content = (
@@ -580,8 +585,8 @@ def process_overview(backend_yaml_dir, docs_dir):
         + "\n  Can't find your backend in Odigos? Please tell us! We are constantly adding new integrations.<br />"
         + "\n  You can also follow our quick [add new destination](/adding-new-dest) guide and submit a PR."
         + "\n</Tip>"
-        + "\n\n| | | | Traces | Metrics | Logs |"
-        + "\n|---|---|---|:---:|:---:|:---:|"
+        + "\n\n| | | | Traces | Metrics | Logs | Profiles |"
+        + "\n|---|---|---|:---:|:---:|:---:|:---:|"
         + "\n"
         + "\n".join(rows)
     )
@@ -622,15 +627,22 @@ def process_mint(backend_mdx_dir, docs_dir):
     ), None)
 
     if k8s_product:
-        for version in k8s_product.get("versions", []):
-            for tab in version.get("tabs", []):
-                tab_href = tab.get("href", "")
-                prefix = f"{tab_href}/backends" if tab_href else "backends"
-                for group in tab.get("groups", []):
-                    if group.get("group") == "Destinations":
-                        for page in group.get("pages", []):
-                            if isinstance(page, dict) and page.get("group") == "Supported Backends":
-                                page["pages"] = [f"{prefix}/{name}" for name in backend_pages]
+        # docs.json may list tabs under product ("tabs") or under "versions"[] (legacy).
+        tabs_to_process = []
+        if k8s_product.get("versions"):
+            for version in k8s_product["versions"]:
+                tabs_to_process.extend(version.get("tabs", []))
+        else:
+            tabs_to_process = k8s_product.get("tabs", [])
+
+        for tab in tabs_to_process:
+            tab_href = tab.get("href", "")
+            prefix = f"{tab_href}/backends" if tab_href else "backends"
+            for group in tab.get("groups", []):
+                if group.get("group") == "Destinations":
+                    for page in group.get("pages", []):
+                        if isinstance(page, dict) and page.get("group") == "Supported Backends":
+                            page["pages"] = [f"{prefix}/{name}" for name in backend_pages]
 
     # Save the modified JSON back to the file
     with open(docs_json_path, 'w') as file:
