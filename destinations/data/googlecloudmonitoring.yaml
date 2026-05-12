@@ -13,6 +13,8 @@ spec:
       supported: false
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: GCP_TIMEOUT
       displayName: Timeout
@@ -29,7 +31,7 @@ spec:
       componentProps:
         type: text
         required: false
-        placeholder: 'project-id'
+        placeholder: "project-id"
         tooltip: The project ID for the Google Cloud Monitoring API to send data to. Required if running Odigos outside of Google Cloud. Defaults to the detected project ID when running on GCP.
 
     - name: GCP_APPLICATION_CREDENTIALS
@@ -39,5 +41,5 @@ spec:
       componentProps:
         type: text
         required: false
-        placeholder: 'Credentials config... (optional)'
+        placeholder: "Credentials config... (optional)"
         tooltip: The JSON GCP Application Credentials file for the GCP project. Either a Workload Identity Federation config file or Service Account Key. Required if running Odigos outside of Google Cloud.

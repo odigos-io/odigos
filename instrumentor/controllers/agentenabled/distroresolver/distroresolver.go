@@ -75,6 +75,10 @@ func CalculateDefaultDistroPerLanguage(defaultDistros map[common.ProgrammingLang
 		distrosPerLanguage[lang] = distroName
 	}
 
+	if instrumentationRules == nil || len(*instrumentationRules) == 0 {
+		return distrosPerLanguage
+	}
+
 	for _, rule := range *instrumentationRules {
 		if rule.Spec.OtelDistros == nil {
 			continue

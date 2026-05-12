@@ -32,6 +32,9 @@ type Spec struct {
 		Logs struct {
 			Supported bool `yaml:"supported"`
 		}
+		Profiles struct {
+			Supported bool `yaml:"supported"`
+		}
 	}
 	Fields                  []Field `yaml:"fields"`
 	TestConnectionSupported bool    `yaml:"testConnectionSupported"`

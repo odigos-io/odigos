@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/config"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
@@ -20,6 +21,7 @@ var (
 	spanMetricsExportingPipelineName                 = "metrics/spanmetrics-exporting"
 	spanMetricsResourceRemoveDimensionsProcessorName = "resource/spanmetrics/remove-dimensions"
 	spanMetricsCopyScopeSpanMetricsProcessorName     = "transform/copy-scope-span-metrics"
+	odigosTraceFilterProcessorName                   = "odigos_trace_filter"
 )
 
 func getSpanMetricsConnectorConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfiguration) config.GenericMap {
@@ -155,7 +157,7 @@ func getSpanMetricsPipelineProcessors(spanMetricsConfig common.MetricsSourceSpan
 	return processors, processorNames
 }
 
-func GetSpanMetricsConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfiguration) (config.Config, []string, []string) {
+func GetSpanMetricsConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfiguration) (config.Config, []string, []string, []string) {
 	connectors := getSpanMetricsConnectors(spanMetricsConfig)
 	processors, processorNames := getSpanMetricsPipelineProcessors(spanMetricsConfig)
 
@@ -169,6 +171,19 @@ func GetSpanMetricsConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfi
 	// use the exporter directly instead.
 	additionalTraceExporters := []string{spanMetricsTracesInConnectorName}
 	additionalMetricsRecivers := []string{spanMetricsConnectorName}
+
+	// In "all-spans" mode, unsampled spans are forwarded for metric computation
+	// but should be dropped before export to the gateway.
+	// The odigos_trace_filter processor is added as a post-span-metrics processor
+	// so it runs after spans have been included in span metrics.
+	var postSpanMetricsProcessorNames []string
+	if spanMetricsConfig.SpanMetricsMode != nil && *spanMetricsConfig.SpanMetricsMode == sampling.SpanMetricsModeAllSpans {
+		processors[odigosTraceFilterProcessorName] = config.GenericMap{
+			"drop_unsampled": true,
+		}
+		postSpanMetricsProcessorNames = append(postSpanMetricsProcessorNames, odigosTraceFilterProcessorName)
+	}
+
 	configDomain := config.Config{
 		Connectors: connectors,
 		Processors: processors,
@@ -191,5 +206,5 @@ func GetSpanMetricsConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfi
 		},
 	}
 
-	return configDomain, additionalTraceExporters, additionalMetricsRecivers
+	return configDomain, additionalTraceExporters, additionalMetricsRecivers, postSpanMetricsProcessorNames
 }

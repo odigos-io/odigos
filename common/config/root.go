@@ -76,6 +76,7 @@ var availableConfigers = []Configer{
 	&Traceloop{},
 	&Uptrace{},
 	&VictoriaMetricsCloud{},
+	&Pyroscope{},
 }
 
 type Configer interface {
@@ -120,6 +121,28 @@ func isMetricsEnabled(dest SignalSpecific) bool {
 
 func isLoggingEnabled(dest SignalSpecific) bool {
 	return isSignalExists(dest, common.LogsObservabilitySignal)
+}
+
+func isProfilingEnabled(dest SignalSpecific) bool {
+	return isSignalExists(dest, common.ProfilesObservabilitySignal)
+}
+
+// addProfilesPipeline registers a direct profiles pipeline that consumes from
+// the gateway "otlp" receiver and exports via the supplied exporter.
+//
+// Profile pipelines deliberately bypass the data-stream router connector that
+// traces/metrics/logs flow through. The router connector and per-data-stream
+// pipelines do not yet support the profiles signal, so the OTel collector fans
+// the gateway OTLP receiver out to this pipeline directly. Callers must not
+// include the registered name in the destinationPipelineNames slice they
+// return from ModifyConfig; doing so would cause the gateway builder to wire
+// a forward connector that has no upstream producer.
+func addProfilesPipeline(currentConfig *Config, prefix, destID, exporterName string) {
+	name := fmt.Sprintf("profiles/%s-%s", prefix, destID)
+	currentConfig.Service.Pipelines[name] = Pipeline{
+		Receivers: []string{"otlp"},
+		Exporters: []string{exporterName},
+	}
 }
 
 func addProtocol(s string) string {
