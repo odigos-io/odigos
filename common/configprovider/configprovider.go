@@ -61,11 +61,10 @@ func (c *ConfigProvider[C]) SendConfig(ctx context.Context, newConfig C) error {
 	defer c.stoppedMutex.Unlock()
 
 	if c.stopped {
-		commonlogger.LoggerCompat().With("subsystem", "configprovider").Info("SendConfig called on stopped ConfigProvider, this config will be ignored")
+		commonlogger.LoggerCompat().With("subsystem", "configprovider").Info("SendConfig called on stopped ConfigProvider, the supplied config will be ignored")
 		return nil
 	}
 
-	// send a config or potentially return an error on timeout
 	applyCtx, cancel := context.WithTimeout(ctx, applyConfigTimeout)
 	defer cancel()
 
