@@ -306,6 +306,49 @@ func NewMockEmptyInstrumentationRule(name, ns string) *odigosv1.InstrumentationR
 	}
 }
 
+// PodWorkloadFromDeployment returns the PodWorkload identity for a Deployment (tests).
+func PodWorkloadFromDeployment(d *appsv1.Deployment) k8sconsts.PodWorkload {
+	return k8sconsts.PodWorkload{
+		Name:      d.Name,
+		Namespace: d.Namespace,
+		Kind:      k8sconsts.WorkloadKindDeployment,
+	}
+}
+
+// NewMockInstrumentationRuleAllWorkloads returns a rule with no sourcesScopes or workloads (matches all workloads).
+func NewMockInstrumentationRuleAllWorkloads(name, ns string) *odigosv1.InstrumentationRule {
+	return NewMockEmptyInstrumentationRule(name, ns)
+}
+
+// NewMockInstrumentationRuleDisabled returns a rule with Disabled set.
+func NewMockInstrumentationRuleDisabled(name, ns string) *odigosv1.InstrumentationRule {
+	r := NewMockEmptyInstrumentationRule(name, ns)
+	r.Spec.Disabled = true
+	return r
+}
+
+// NewMockInstrumentationRuleWithSourcesScope returns a rule that matches only via sourcesScopes.
+func NewMockInstrumentationRuleWithSourcesScope(name, ns string, scopes []k8sconsts.SourcesScope) *odigosv1.InstrumentationRule {
+	r := NewMockEmptyInstrumentationRule(name, ns)
+	copyScopes := append([]k8sconsts.SourcesScope(nil), scopes...)
+	r.Spec.SourcesScopes = copyScopes
+	return r
+}
+
+// NewMockInstrumentationRuleWithWorkloads returns a rule that matches only via deprecated workloads.
+func NewMockInstrumentationRuleWithWorkloads(name, ns string, workloads []k8sconsts.PodWorkload) *odigosv1.InstrumentationRule {
+	r := NewMockEmptyInstrumentationRule(name, ns)
+	return r
+}
+
+// NewMockInstrumentationRuleWithSourcesScopeAndWorkloads returns a rule with both fields set (sourcesScopes takes precedence when matching).
+func NewMockInstrumentationRuleWithSourcesScopeAndWorkloads(name, ns string, scopes []k8sconsts.SourcesScope, workloads []k8sconsts.PodWorkload) *odigosv1.InstrumentationRule {
+	r := NewMockEmptyInstrumentationRule(name, ns)
+	copyScopes := append([]k8sconsts.SourcesScope(nil), scopes...)
+	r.Spec.SourcesScopes = copyScopes
+	return r
+}
+
 func NewMockDataCollection() *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		ObjectMeta: metav1.ObjectMeta{

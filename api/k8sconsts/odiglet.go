@@ -12,8 +12,8 @@ const (
 	OdigletDevicePluginContainerName = "deviceplugin"
 	OdigletImageName                 = "odigos-odiglet"
 	OdigletEnterpriseImageName       = "odigos-enterprise-odiglet"
-	OdigletEnterpriseImageCertified  = "odigos-enterprise-odiglet-certified"
-	OdigletImageCertified            = "odigos-odiglet-certified"
+	OdigletEnterpriseImageCertified  = "odigos-enterprise-odiglet-rhel-certified"
+	OdigletImageCertified            = "odigos-odiglet-rhel-certified"
 
 	GrpcHealthProbePath    = "unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic"
 	GrpcHealthBinaryPath   = "/root/grpc_health_probe"
