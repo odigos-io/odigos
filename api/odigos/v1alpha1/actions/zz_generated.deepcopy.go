@@ -127,7 +127,9 @@ func (in *UrlTemplatizationRulesGroup) DeepCopyInto(out *UrlTemplatizationRulesG
 	if in.SourcesScope != nil {
 		in, out := &in.SourcesScope, &out.SourcesScope
 		*out = make([]k8sconsts.SourcesScope, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	if in.TemplatizationRules != nil {
 		in, out := &in.TemplatizationRules, &out.TemplatizationRules

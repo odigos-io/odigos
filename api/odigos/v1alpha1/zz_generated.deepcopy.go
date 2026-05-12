@@ -670,7 +670,9 @@ func (in *CostReductionRule) DeepCopyInto(out *CostReductionRule) {
 	if in.SourceScopes != nil {
 		in, out := &in.SourceScopes, &out.SourceScopes
 		*out = make([]SourcesScope, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	if in.Operation != nil {
 		in, out := &in.Operation, &out.Operation
@@ -925,7 +927,9 @@ func (in *HighlyRelevantOperation) DeepCopyInto(out *HighlyRelevantOperation) {
 	if in.SourceScopes != nil {
 		in, out := &in.SourceScopes, &out.SourceScopes
 		*out = make([]SourcesScope, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	if in.DurationAtLeastMs != nil {
 		in, out := &in.DurationAtLeastMs, &out.DurationAtLeastMs
@@ -1547,7 +1551,9 @@ func (in *NoisyOperation) DeepCopyInto(out *NoisyOperation) {
 	if in.SourceScopes != nil {
 		in, out := &in.SourceScopes, &out.SourceScopes
 		*out = make([]SourcesScope, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	if in.Operation != nil {
 		in, out := &in.Operation, &out.Operation
