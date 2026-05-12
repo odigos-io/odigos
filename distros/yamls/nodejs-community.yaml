@@ -32,4 +32,3 @@ spec:
       supported: true
     traceVerbosity:
       supportDisablingOdigosAgentLibraries: true
-      supportDisablingAnyScope: true
