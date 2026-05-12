@@ -300,6 +300,7 @@
                       "oss/backends/otlp",
                       "oss/backends/otlphttp",
                       "oss/backends/prometheus",
+                      "oss/backends/pyroscope",
                       "oss/backends/qryn",
                       "oss/backends/quickwit",
                       "oss/backends/sentry",
@@ -464,6 +465,15 @@
                     ]
                   },
                   {
+                    "group": "Continuous Profiling",
+                    "icon": "gauge-high",
+                    "pages": [
+                      "enterprise/instrumentations/profiling/overview",
+                      "enterprise/instrumentations/profiling/getting-started",
+                      "enterprise/instrumentations/profiling/destinations"
+                    ]
+                  },
+                  {
                     "group": "Advanced",
                     "icon": "gear",
                     "pages": [
@@ -610,6 +620,7 @@
                       "enterprise/backends/otlp",
                       "enterprise/backends/otlphttp",
                       "enterprise/backends/prometheus",
+                      "enterprise/backends/pyroscope",
                       "enterprise/backends/qryn",
                       "enterprise/backends/quickwit",
                       "enterprise/backends/sentry",

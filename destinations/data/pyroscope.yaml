@@ -1,0 +1,40 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: pyroscope
+  displayName: Pyroscope
+  category: self hosted
+spec:
+  image: pyroscope.svg
+  signals:
+    traces:
+      supported: false
+    metrics:
+      supported: false
+    logs:
+      supported: false
+    profiles:
+      supported: true
+  fields:
+    - name: PYROSCOPE_URL
+      displayName: Pyroscope Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        placeholder: 'host:port'
+        tooltip: Hostname and port of the Pyroscope distributor HTTP API (e.g. `pyroscope.pyroscope:4040`). Odigos sends OTLP profiles to `/v1development/profiles` on this host; do not add an `/otlp` path.
+    - name: PYROSCOPE_TLS_ENABLED
+      displayName: Enable TLS
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Secure connection'
+      customReadDataLabels:
+        - condition: 'true'
+          title: 'TLS'
+          value: 'Encrypted'
+        - condition: 'false'
+          title: 'TLS'
+          value: 'Unencrypted'

@@ -132,17 +132,17 @@ func (i *InstrumentationConfigReconciler) sendConfigUpdates(ctx context.Context,
 		return nil
 	}
 
-	if len(instrumentationConfig.Spec.SdkConfigs) == 0 {
+	if len(instrumentationConfig.Spec.Containers) == 0 {
 		return nil
 	}
 
 	// send a config update request for all the instrumentation which are part of the workload.
 	// if the config request is sent, the configuration updates will occur asynchronously.
 	configUpdate := instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]{}
-	for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
-		cg := ebpf.K8sConfigGroup{Pw: podWorkload, Lang: sdkConfig.Language}
-		currentConfig := sdkConfig
-		configUpdate[cg] = &currentConfig
+	for idx := range instrumentationConfig.Spec.Containers {
+		containerConfig := &instrumentationConfig.Spec.Containers[idx]
+		cg := ebpf.K8sConfigGroup{Pw: podWorkload, ContainerName: containerConfig.ContainerName}
+		configUpdate[cg] = containerConfig
 	}
 
 	select {

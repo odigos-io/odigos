@@ -61,7 +61,12 @@ describe('Instrumentation Rules CRUD', () => {
             nodeContains: ruleType,
             prefix: DATA_IDS.RULE_DRAWER_PREFIX,
             fieldKey: DATA_IDS.RULE_NAME_INPUT,
-            fieldValue: TEXTS.UPDATED_NAME,
+            // Embed the rule type in the new name. The v2 ListItem renders
+            // `name || type`, so renaming every row to a single shared value
+            // would erase the per-row text we use to find rows in the delete
+            // test (`cy.contains('div', ruleType)`). Keeping `ruleType` in the
+            // value lets that substring lookup keep working.
+            fieldValue: `${TEXTS.UPDATED_NAME} ${ruleType}`,
           },
           () => {
             // Wait for the rule to update
@@ -77,7 +82,10 @@ describe('Instrumentation Rules CRUD', () => {
   it(`Should update ${totalEntities} ${crdName} CRDs in the cluster`, () => {
     getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
       crdIds.forEach((crdId) => {
-        getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'ruleName', expectedValue: TEXTS.UPDATED_NAME });
+        // Each rule's `ruleName` was renamed to `${UPDATED_NAME} ${type}`;
+        // verify the shared marker landed on every CRD without coupling to
+        // the CRD-id ↔ ruleType mapping (which we don't track here).
+        getCrdById({ namespace, crdName, crdId, expectedError: '', expectedKey: 'ruleName', expectedValue: TEXTS.UPDATED_NAME, expectedValueContains: true });
       });
     });
   });

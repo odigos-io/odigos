@@ -23,7 +23,7 @@
   {{- if hasKey $.Values.openshift "certifiedImageTags" }}
     {{- $certified = $.Values.openshift.certifiedImageTags }}
   {{- end }}
-  {{- printf "%s/odigos-%s%s:%s" (include "utils.imagePrefix" .) .Component (ternary "-certified" "" (and $.Values.openshift.enabled $certified)) .Tag }}
+  {{- printf "%s/odigos-%s%s:%s" (include "utils.imagePrefix" .) .Component (ternary "-rhel-certified" "" (and $.Values.openshift.enabled $certified)) .Tag }}
 {{- end -}}
 {{- end -}}
 {{/*

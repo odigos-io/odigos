@@ -5,7 +5,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,7 +46,7 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 		return nil, nil, nil, nil, nil, nil, err
 	}
 
-	irls, err := getRelevantInstrumentationRules(ctx, c, pw)
+	irls, err := getRelevantInstrumentationRules(ctx, c)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
@@ -106,7 +105,9 @@ func getCollectorsGroup(ctx context.Context, c client.Client, name string) (*odi
 	return &cg, nil
 }
 
-func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (*[]odigosv1.InstrumentationRule, error) {
+// Returns rules whose spec affects agent-enabled logic (distro selection, signal toggles, etc.)
+// Per container scoping is applied later in sync.go via utils.IsContainerParticipatingInRule.
+func getRelevantInstrumentationRules(ctx context.Context, c client.Client) (*[]odigosv1.InstrumentationRule, error) {
 	relevantIr := []odigosv1.InstrumentationRule{}
 	irList := odigosv1.InstrumentationRuleList{}
 	err := c.List(ctx, &irList)
@@ -116,17 +117,9 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 
 	for i := range irList.Items {
 		ir := &irList.Items[i]
-
-		// ignore disabled rules
 		if ir.Spec.Disabled {
 			continue
 		}
-
-		if !utils.IsWorkloadParticipatingInRule(pw, ir) {
-			continue
-		}
-
-		// filter only rules that are relevant to the agent enabled logic
 		if (ir.Spec.OtelDistros != nil) ||
 			(ir.Spec.TraceConfig != nil && ir.Spec.TraceConfig.Disabled != nil) ||
 			(ir.Spec.PayloadCollection != nil) ||

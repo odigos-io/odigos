@@ -2,7 +2,7 @@ package k8sconsts
 
 const (
 	SchedulerImage                  = "odigos-scheduler"
-	SchedulerImageCertified         = "odigos-scheduler-certified"
+	SchedulerImageCertified         = "odigos-scheduler-rhel-certified"
 	SchedulerServiceName            = "scheduler"
 	SchedulerDeploymentName         = "odigos-scheduler"
 	SchedulerAppLabelValue          = SchedulerDeploymentName

@@ -84,7 +84,10 @@ describe('Destinations CRUD', () => {
       deleteV2Entity(
         {
           nodeId: DATA_IDS.DESTINATION_NODE(destinationIds[0]),
-          nodeContains: SELECTED_ENTITIES.DESTINATION.DISPLAY_NAME,
+          // The previous test renamed this destination to `TEXTS.UPDATED_NAME`,
+          // and the v2 ListItem renders `name || displayName` — so the row no
+          // longer contains the original display name ("Jaeger").
+          nodeContains: TEXTS.UPDATED_NAME,
           prefix: DATA_IDS.DESTINATION_DRAWER_PREFIX,
           warnModalTitle: TEXTS.DESTINATION_WARN_MODAL_TITLE,
           warnModalNote: TEXTS.DESTINATION_WARN_MODAL_NOTE,
