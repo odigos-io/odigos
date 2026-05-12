@@ -30,6 +30,11 @@ type InstrumentationManagerOptions struct {
 	OnLogsMapCreated func(*cilumebpf.Map)
 	// LogsAttrSubscribe streams per-process resource attributes to the collector.
 	LogsAttrSubscribe func() (updates <-chan string, snapshot []string)
+	// RetryFailedInstrumentations is an optional channel that, when sent on, asks the
+	// instrumentation manager to retry instrumentation for previously-failed processes.
+	// The value sent is an optional filter on OTel distribution names; nil/empty retries all.
+	// See instrumentation.ManagerOptions.RetryFailedInstrumentations for details.
+	RetryFailedInstrumentations <-chan []string
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
@@ -88,17 +93,18 @@ func NewManager(
 
 	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
 
-		Logger:                  logger,
-		Factories:               opts.Factories,
-		Handler:                 newHandler(client, opts.DistributionGetter),
-		DetectorOptions:         detector.DefaultK8sDetectorOptions(appendEnvVarSlice),
-		ConfigUpdates:           configUpdates,
-		InstrumentationRequests: instrumentationRequests,
-		TracesMap:               tracesMap,
-		MetricsMap:              metricsMap,
-		MetricsAttributesMap:    metricsAttributesMap,
-		LogsMap:                 logsMap,
-		LogsAttrSubscribe:      opts.LogsAttrSubscribe,
+		Logger:                      logger,
+		Factories:                   opts.Factories,
+		Handler:                     newHandler(client, opts.DistributionGetter),
+		DetectorOptions:             detector.DefaultK8sDetectorOptions(appendEnvVarSlice),
+		ConfigUpdates:               configUpdates,
+		InstrumentationRequests:     instrumentationRequests,
+		RetryFailedInstrumentations: opts.RetryFailedInstrumentations,
+		TracesMap:                   tracesMap,
+		MetricsMap:                  metricsMap,
+		MetricsAttributesMap:        metricsAttributesMap,
+		LogsMap:                     logsMap,
+		LogsAttrSubscribe:           opts.LogsAttrSubscribe,
 	}
 
 	// Add file open triggers from all distributions.

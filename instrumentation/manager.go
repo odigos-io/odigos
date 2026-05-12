@@ -57,6 +57,10 @@ type instrumentationDetails[processGroup ProcessGroup, configGroup ConfigGroup, 
 	pd   processDetails
 	cg   configGroup
 	pg   processGroup
+	// distroName is the name of the OTel distribution that was used (or attempted) to instrument
+	// this process. Tracked here so we can target retry of failed instrumentations by distribution
+	// without re-resolving the process details.
+	distroName string
 }
 
 type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
@@ -89,6 +93,18 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 	// The sender can request instrumentation for specific processes by providing their process details mapped by pid.
 	// For un-instrumentation requests, the sender provides the process group to un-instrument all processes that match it.
 	InstrumentationRequests <-chan Request[processGroup, configGroup, processDetails]
+
+	// RetryFailedInstrumentations is an optional channel for triggering retries of previously
+	// failed instrumentations. When a value is received, the manager will iterate through all
+	// processes whose instrumentation has previously failed (or never been created) and try to
+	// instrument them again. The value is a list of OTel distribution names that act as a filter:
+	// only failed instrumentations whose distribution matches one of the supplied names will be
+	// retried. An empty or nil slice retries every failed instrumentation regardless of distribution.
+	//
+	// This is intended for cases where some external state that affects instrumentation has been
+	// updated (for example, custom Go offsets being reloaded after a ConfigMap change) and we want
+	// to give previously-failed processes another chance without restarting the manager.
+	RetryFailedInstrumentations <-chan []string
 
 	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
 	TracesMap *cilumebpf.Map
@@ -143,6 +159,8 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 
 	requests <-chan Request[processGroup, configGroup, processDetails]
 
+	retryFailedInstrumentations <-chan []string
+
 	metrics *managerMetrics
 
 	tracesMap            *cilumebpf.Map
@@ -190,22 +208,23 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 	}
 
 	return &manager[processGroup, configGroup, processDetails]{
-		procEvents:            procEvents,
-		detector:              detector,
-		handler:               handler,
-		factories:             options.Factories,
-		logger:                logger,
-		detailsByPid:          make(map[int]*instrumentationDetails[processGroup, configGroup, processDetails]),
-		detailsByConfigGroup:  map[configGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
-		detailsByProcessGroup: map[processGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
-		configUpdates:         options.ConfigUpdates,
-		requests:              options.InstrumentationRequests,
-		metrics:               managerMetrics,
-		tracesMap:             options.TracesMap,
-		metricsMap:            options.MetricsMap,
-		metricsAttributesMap:  options.MetricsAttributesMap,
-		logsMap:               options.LogsMap,
-		logsAttrSubscribe:     options.LogsAttrSubscribe,
+		procEvents:                  procEvents,
+		detector:                    detector,
+		handler:                     handler,
+		factories:                   options.Factories,
+		logger:                      logger,
+		detailsByPid:                make(map[int]*instrumentationDetails[processGroup, configGroup, processDetails]),
+		detailsByConfigGroup:        map[configGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
+		detailsByProcessGroup:       map[processGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
+		configUpdates:               options.ConfigUpdates,
+		requests:                    options.InstrumentationRequests,
+		retryFailedInstrumentations: options.RetryFailedInstrumentations,
+		metrics:                     managerMetrics,
+		tracesMap:                   options.TracesMap,
+		metricsMap:                  options.MetricsMap,
+		metricsAttributesMap:        options.MetricsAttributesMap,
+		logsMap:                     options.LogsMap,
+		logsAttrSubscribe:           options.LogsAttrSubscribe,
 	}, nil
 }
 
@@ -305,7 +324,64 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 					m.logger.Error("failed to apply instrumentation configuration", "err", err)
 				}
 			}
+		case distroFilter, ok := <-m.retryFailedInstrumentations:
+			if !ok {
+				// channel closed; stop selecting on it but keep the loop running.
+				m.retryFailedInstrumentations = nil
+				continue
+			}
+			m.retryFailedInstrumentationsForDistros(ctx, distroFilter)
 		}
+	}
+}
+
+// retryFailedInstrumentationsForDistros walks the current tracked instrumentations and re-attempts
+// instrumentation for each one whose previous attempt failed (inst is nil). When distroFilter is
+// non-empty, only failed instrumentations whose distribution name matches one of the entries are
+// retried.
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) retryFailedInstrumentationsForDistros(ctx context.Context, distroFilter []string) {
+	filter := map[string]struct{}{}
+	for _, name := range distroFilter {
+		filter[name] = struct{}{}
+	}
+
+	// Collect the PIDs to retry first; tryInstrument re-enters startTrackInstrumentation which
+	// mutates the entry for the same pid, but it is safer to iterate over a snapshot than to
+	// modify the map while ranging over it.
+	type retryEntry struct {
+		pid int
+		pd  ProcessDetails
+	}
+	var toRetry []retryEntry
+	for pid, details := range m.detailsByPid {
+		if details.inst != nil {
+			continue
+		}
+		if len(filter) > 0 {
+			if _, ok := filter[details.distroName]; !ok {
+				continue
+			}
+		}
+		toRetry = append(toRetry, retryEntry{pid: pid, pd: details.pd})
+	}
+
+	if len(toRetry) == 0 {
+		return
+	}
+
+	m.logger.Info("retrying failed instrumentations", "count", len(toRetry), "distroFilter", distroFilter)
+	retriedPIDs := make([]int, 0, len(toRetry))
+	for _, e := range toRetry {
+		if err := m.tryInstrument(ctx, e.pd, e.pid); err != nil {
+			m.handleInstrumentError(err)
+			continue
+		}
+		retriedPIDs = append(retriedPIDs, e.pid)
+	}
+	if len(retriedPIDs) > 0 {
+		// Re-arm the detector for the successfully retried processes so we still get their exit
+		// events for cleanup. TrackProcesses is idempotent for already-tracked PIDs.
+		m.detector.TrackProcesses(retriedPIDs)
 	}
 }
 
@@ -549,11 +625,15 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 	configGroup ConfigGroup,
 	distribution *distro.OtelDistro,
 ) {
+	prevDetails, hadPrev := m.detailsByPid[pid]
+	prevHadInst := hadPrev && prevDetails.inst != nil
+
 	instDetails := &instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]{
-		inst: inst,
-		pd:   processDetails,
-		cg:   configGroup,
-		pg:   processGroup,
+		inst:       inst,
+		pd:         processDetails,
+		cg:         configGroup,
+		pg:         processGroup,
+		distroName: distribution.Name,
 	}
 	m.detailsByPid[pid] = instDetails
 
@@ -572,9 +652,14 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 	}
 
 	metricAttributeSet := m.metricsAttributeSet(distribution)
-	if inst == nil {
+	switch {
+	case inst == nil && !hadPrev:
+		// First time we are tracking this pid and the attempt failed; count it once.
 		m.metrics.failedInstrumentations.Add(ctx, 1, metric.WithAttributeSet(metricAttributeSet))
-	} else {
+	case inst != nil && !prevHadInst:
+		// Transition from "not instrumented" (either never seen or previously failed) to
+		// "instrumented". failedInstrumentations is a monotonic counter so we don't decrement
+		// it; we just record the successful instrumentation.
 		m.metrics.instrumentedProcesses.Add(ctx, 1, metric.WithAttributeSet(metricAttributeSet))
 	}
 }
