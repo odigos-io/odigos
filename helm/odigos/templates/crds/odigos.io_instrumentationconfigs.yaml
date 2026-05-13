@@ -554,7 +554,7 @@ spec:
                                         on regular expressions.
                                       properties:
                                         regexPattern:
-                                          description: regualr expression that will
+                                          description: regular expression that will
                                             be used to match the part of the span
                                             name to be replaced.
                                           type: string

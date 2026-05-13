@@ -2,6 +2,7 @@ package traces
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
 	"github.com/odigos-io/odigos/distros/distro"
 )
 
@@ -9,7 +10,7 @@ func DistroSupportsTracesHeadersCollection(distro *distro.OtelDistro) bool {
 	return distro.Traces != nil && distro.Traces.HeadersCollection != nil && distro.Traces.HeadersCollection.Supported
 }
 
-func CalculateHeaderCollectionConfig(distro *distro.OtelDistro, irls *[]odigosv1.InstrumentationRule) *odigosv1.HeadersCollectionConfig {
+func CalculateHeaderCollectionConfig(distro *distro.OtelDistro, irls *[]odigosv1.InstrumentationRule) *agentsignalconfig.HeadersCollectionConfig {
 
 	if !DistroSupportsTracesHeadersCollection(distro) {
 		return nil
@@ -26,7 +27,7 @@ func CalculateHeaderCollectionConfig(distro *distro.OtelDistro, irls *[]odigosv1
 		return nil
 	}
 
-	return &odigosv1.HeadersCollectionConfig{
+	return &agentsignalconfig.HeadersCollectionConfig{
 		HttpHeaderKeys: headerKeysToCollectHttp,
 	}
 }
