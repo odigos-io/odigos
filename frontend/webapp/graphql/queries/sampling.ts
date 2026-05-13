@@ -1,10 +1,9 @@
 import { gql } from '@apollo/client';
 
 const SOURCES_SCOPE_FIELDS = `
-  workloadName
-  workloadKind
-  workloadNamespace
-  workloadLanguage
+  sources { namespace kind name }
+  namespaces
+  languages
 `;
 
 const NOISY_OPERATION_FIELDS = `

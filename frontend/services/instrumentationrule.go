@@ -355,7 +355,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	notes := *input.Notes
 	disabled := *input.Disabled
 
-	var sourcesScopes []k8sconsts.SourcesScope
+	var sourcesScopes *k8sconsts.SourcesScopes
 	if input.SourcesScopes != nil {
 		sourcesScopes = convertSourcesScopeInput(input.SourcesScopes)
 	}
@@ -425,37 +425,72 @@ func handleNotFoundError(err error, id string, entity string) error {
 	return fmt.Errorf("error getting %s: %w", entity, err)
 }
 
-// Converts GraphQL InstrumentationRuleSourcesScopeInput list to the CRD []k8sconsts.SourcesScope for spec.sourcesScopes
-func convertSourcesScopeInput(scopes []*model.InstrumentationRuleSourcesScopeInput) []k8sconsts.SourcesScope {
-	var result []k8sconsts.SourcesScope
+// convertSourcesScopeInput folds the row-per-criterion GraphQL shape into the
+// single-object tri-list CRD shape. Each input row contributes to at most one
+// of Sources/Namespaces (workload identity vs. namespace-only) plus optionally
+// Languages. The CRD model has no equivalent for the legacy `containerName`
+// field, so it is dropped on conversion.
+func convertSourcesScopeInput(scopes []*model.InstrumentationRuleSourcesScopeInput) *k8sconsts.SourcesScopes {
+	if len(scopes) == 0 {
+		return nil
+	}
+	out := &k8sconsts.SourcesScopes{}
 	for _, scope := range scopes {
 		if scope == nil {
 			continue
 		}
-		result = append(result, k8sconsts.SourcesScope{
-			WorkloadName:      DerefString(scope.WorkloadName),
-			WorkloadKind:      DerefK8sResourceKind(scope.WorkloadKind),
-			WorkloadNamespace: DerefString(scope.WorkloadNamespace),
-			ContainerName:     DerefString(scope.ContainerName),
-			WorkloadLanguage:  DerefSamplingWorkloadLanguage(scope.WorkloadLanguage),
-		})
+		name := DerefString(scope.WorkloadName)
+		kind := DerefK8sResourceKind(scope.WorkloadKind)
+		namespace := DerefString(scope.WorkloadNamespace)
+		language := DerefSamplingWorkloadLanguage(scope.WorkloadLanguage)
+
+		switch {
+		case name != "" || kind != "":
+			out.Sources = append(out.Sources, k8sconsts.PodWorkload{
+				Name:      name,
+				Namespace: namespace,
+				Kind:      k8sconsts.WorkloadKind(kind),
+			})
+		case namespace != "":
+			out.Namespaces = append(out.Namespaces, namespace)
+		}
+		if language != "" {
+			out.Languages = append(out.Languages, language)
+		}
 	}
-	return result
+	if len(out.Sources) == 0 && len(out.Namespaces) == 0 && len(out.Languages) == 0 {
+		return nil
+	}
+	return out
 }
 
-// Converts spec.sourcesScopes ([]k8sconsts.SourcesScope) to GraphQL InstrumentationRuleSourcesScope list
-func convertSourcesScope(sourcesScope []k8sconsts.SourcesScope) []*model.InstrumentationRuleSourcesScope {
+// convertSourcesScope unfolds the single-object tri-list CRD shape back into the
+// row-per-criterion GraphQL shape: one row per Source, one per Namespace, one
+// per Language. This is the inverse of convertSourcesScopeInput for the common
+// case of single-dimension rows.
+func convertSourcesScope(scopes *k8sconsts.SourcesScopes) []*model.InstrumentationRuleSourcesScope {
+	if scopes == nil {
+		return nil
+	}
 	var gqlSourcesScope []*model.InstrumentationRuleSourcesScope
-	for _, s := range sourcesScope {
-		scope := s
-		kind := model.K8sResourceKind(scope.WorkloadKind)
-		lang := model.SamplingWorkloadLanguage(scope.WorkloadLanguage)
+	for _, src := range scopes.Sources {
+		row := &model.InstrumentationRuleSourcesScope{
+			WorkloadName:      StringPtrIfNotEmpty(src.Name),
+			WorkloadKind:      K8sResourceKindPtrIfNotEmpty(string(src.Kind)),
+			WorkloadNamespace: StringPtrIfNotEmpty(src.Namespace),
+		}
+		gqlSourcesScope = append(gqlSourcesScope, row)
+	}
+	for _, ns := range scopes.Namespaces {
+		ns := ns
 		gqlSourcesScope = append(gqlSourcesScope, &model.InstrumentationRuleSourcesScope{
-			WorkloadName:      &scope.WorkloadName,
-			WorkloadKind:      &kind,
-			WorkloadNamespace: &scope.WorkloadNamespace,
-			ContainerName:     &scope.ContainerName,
-			WorkloadLanguage:  &lang,
+			WorkloadNamespace: &ns,
+		})
+	}
+	for _, lang := range scopes.Languages {
+		l := model.SamplingWorkloadLanguage(lang)
+		gqlSourcesScope = append(gqlSourcesScope, &model.InstrumentationRuleSourcesScope{
+			WorkloadLanguage: &l,
 		})
 	}
 	return gqlSourcesScope

@@ -8,7 +8,7 @@ export const CREATE_NOISY_OPERATION_RULE = gql`
       ruleId
       name
       disabled
-      sourceScopes { workloadName workloadKind workloadNamespace workloadLanguage }
+      sourceScopes { sources { namespace kind name } namespaces languages }
       operation {
         httpServer { route routePrefix method }
         httpClient { serverAddress templatedPath templatedPathPrefix method }
@@ -25,7 +25,7 @@ export const UPDATE_NOISY_OPERATION_RULE = gql`
       ruleId
       name
       disabled
-      sourceScopes { workloadName workloadKind workloadNamespace workloadLanguage }
+      sourceScopes { sources { namespace kind name } namespaces languages }
       operation {
         httpServer { route routePrefix method }
         httpClient { serverAddress templatedPath templatedPathPrefix method }
@@ -50,7 +50,7 @@ export const CREATE_HIGHLY_RELEVANT_OPERATION_RULE = gql`
       ruleId
       name
       disabled
-      sourceScopes { workloadName workloadKind workloadNamespace workloadLanguage }
+      sourceScopes { sources { namespace kind name } namespaces languages }
       error
       durationAtLeastMs
       operation {
@@ -70,7 +70,7 @@ export const UPDATE_HIGHLY_RELEVANT_OPERATION_RULE = gql`
       ruleId
       name
       disabled
-      sourceScopes { workloadName workloadKind workloadNamespace workloadLanguage }
+      sourceScopes { sources { namespace kind name } namespaces languages }
       error
       durationAtLeastMs
       operation {
@@ -98,7 +98,7 @@ export const CREATE_COST_REDUCTION_RULE = gql`
       ruleId
       name
       disabled
-      sourceScopes { workloadName workloadKind workloadNamespace workloadLanguage }
+      sourceScopes { sources { namespace kind name } namespaces languages }
       operation {
         httpServer { route routePrefix method }
         kafkaConsumer { kafkaTopic }
@@ -116,7 +116,7 @@ export const UPDATE_COST_REDUCTION_RULE = gql`
       ruleId
       name
       disabled
-      sourceScopes { workloadName workloadKind workloadNamespace workloadLanguage }
+      sourceScopes { sources { namespace kind name } namespaces languages }
       operation {
         httpServer { route routePrefix method }
         kafkaConsumer { kafkaTopic }

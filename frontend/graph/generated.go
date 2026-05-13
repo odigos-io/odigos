@@ -1300,11 +1300,10 @@ type ComplexityRoot struct {
 		ProfileJSON func(childComplexity int) int
 	}
 
-	SourcesScope struct {
-		WorkloadKind      func(childComplexity int) int
-		WorkloadLanguage  func(childComplexity int) int
-		WorkloadName      func(childComplexity int) int
-		WorkloadNamespace func(childComplexity int) int
+	SourcesScopes struct {
+		Languages  func(childComplexity int) int
+		Namespaces func(childComplexity int) int
+		Sources    func(childComplexity int) int
 	}
 
 	SpanAttributeFilter struct {
@@ -7199,33 +7198,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SourceProfilingResult.ProfileJSON(childComplexity), true
 
-	case "SourcesScope.workloadKind":
-		if e.complexity.SourcesScope.WorkloadKind == nil {
+	case "SourcesScopes.languages":
+		if e.complexity.SourcesScopes.Languages == nil {
 			break
 		}
 
-		return e.complexity.SourcesScope.WorkloadKind(childComplexity), true
+		return e.complexity.SourcesScopes.Languages(childComplexity), true
 
-	case "SourcesScope.workloadLanguage":
-		if e.complexity.SourcesScope.WorkloadLanguage == nil {
+	case "SourcesScopes.namespaces":
+		if e.complexity.SourcesScopes.Namespaces == nil {
 			break
 		}
 
-		return e.complexity.SourcesScope.WorkloadLanguage(childComplexity), true
+		return e.complexity.SourcesScopes.Namespaces(childComplexity), true
 
-	case "SourcesScope.workloadName":
-		if e.complexity.SourcesScope.WorkloadName == nil {
+	case "SourcesScopes.sources":
+		if e.complexity.SourcesScopes.Sources == nil {
 			break
 		}
 
-		return e.complexity.SourcesScope.WorkloadName(childComplexity), true
-
-	case "SourcesScope.workloadNamespace":
-		if e.complexity.SourcesScope.WorkloadNamespace == nil {
-			break
-		}
-
-		return e.complexity.SourcesScope.WorkloadNamespace(childComplexity), true
+		return e.complexity.SourcesScopes.Sources(childComplexity), true
 
 	case "SpanAttributeFilter.attributeKey":
 		if e.complexity.SpanAttributeFilter.AttributeKey == nil {
@@ -7592,7 +7584,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputRemoteConfigRolloutInput,
 		ec.unmarshalInputSamplingConfigInput,
 		ec.unmarshalInputServiceNameFilterInput,
-		ec.unmarshalInputSourcesScopeInput,
+		ec.unmarshalInputSourcesScopesInput,
 		ec.unmarshalInputSpanAttributeFilterInput,
 		ec.unmarshalInputStringConditionInput,
 		ec.unmarshalInputTailSamplingConfigInput,
@@ -17767,9 +17759,9 @@ func (ec *executionContext) _CostReductionRule_sourceScopes(ctx context.Context,
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.SourcesScope)
+	res := resTmp.(*model.SourcesScopes)
 	fc.Result = res
-	return ec.marshalOSourcesScope2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopeᚄ(ctx, field.Selections, res)
+	return ec.marshalOSourcesScopes2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopes(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CostReductionRule_sourceScopes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17780,16 +17772,14 @@ func (ec *executionContext) fieldContext_CostReductionRule_sourceScopes(_ contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "workloadName":
-				return ec.fieldContext_SourcesScope_workloadName(ctx, field)
-			case "workloadKind":
-				return ec.fieldContext_SourcesScope_workloadKind(ctx, field)
-			case "workloadNamespace":
-				return ec.fieldContext_SourcesScope_workloadNamespace(ctx, field)
-			case "workloadLanguage":
-				return ec.fieldContext_SourcesScope_workloadLanguage(ctx, field)
+			case "sources":
+				return ec.fieldContext_SourcesScopes_sources(ctx, field)
+			case "namespaces":
+				return ec.fieldContext_SourcesScopes_namespaces(ctx, field)
+			case "languages":
+				return ec.fieldContext_SourcesScopes_languages(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type SourcesScope", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type SourcesScopes", field.Name)
 		},
 	}
 	return fc, nil
@@ -24133,9 +24123,9 @@ func (ec *executionContext) _HighlyRelevantOperationRule_sourceScopes(ctx contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.SourcesScope)
+	res := resTmp.(*model.SourcesScopes)
 	fc.Result = res
-	return ec.marshalOSourcesScope2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopeᚄ(ctx, field.Selections, res)
+	return ec.marshalOSourcesScopes2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopes(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_HighlyRelevantOperationRule_sourceScopes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -24146,16 +24136,14 @@ func (ec *executionContext) fieldContext_HighlyRelevantOperationRule_sourceScope
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "workloadName":
-				return ec.fieldContext_SourcesScope_workloadName(ctx, field)
-			case "workloadKind":
-				return ec.fieldContext_SourcesScope_workloadKind(ctx, field)
-			case "workloadNamespace":
-				return ec.fieldContext_SourcesScope_workloadNamespace(ctx, field)
-			case "workloadLanguage":
-				return ec.fieldContext_SourcesScope_workloadLanguage(ctx, field)
+			case "sources":
+				return ec.fieldContext_SourcesScopes_sources(ctx, field)
+			case "namespaces":
+				return ec.fieldContext_SourcesScopes_namespaces(ctx, field)
+			case "languages":
+				return ec.fieldContext_SourcesScopes_languages(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type SourcesScope", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type SourcesScopes", field.Name)
 		},
 	}
 	return fc, nil
@@ -37905,9 +37893,9 @@ func (ec *executionContext) _NoisyOperationRule_sourceScopes(ctx context.Context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.SourcesScope)
+	res := resTmp.(*model.SourcesScopes)
 	fc.Result = res
-	return ec.marshalOSourcesScope2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopeᚄ(ctx, field.Selections, res)
+	return ec.marshalOSourcesScopes2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopes(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_NoisyOperationRule_sourceScopes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -37918,16 +37906,14 @@ func (ec *executionContext) fieldContext_NoisyOperationRule_sourceScopes(_ conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "workloadName":
-				return ec.fieldContext_SourcesScope_workloadName(ctx, field)
-			case "workloadKind":
-				return ec.fieldContext_SourcesScope_workloadKind(ctx, field)
-			case "workloadNamespace":
-				return ec.fieldContext_SourcesScope_workloadNamespace(ctx, field)
-			case "workloadLanguage":
-				return ec.fieldContext_SourcesScope_workloadLanguage(ctx, field)
+			case "sources":
+				return ec.fieldContext_SourcesScopes_sources(ctx, field)
+			case "namespaces":
+				return ec.fieldContext_SourcesScopes_namespaces(ctx, field)
+			case "languages":
+				return ec.fieldContext_SourcesScopes_languages(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type SourcesScope", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type SourcesScopes", field.Name)
 		},
 	}
 	return fc, nil
@@ -46781,8 +46767,8 @@ func (ec *executionContext) fieldContext_SourceProfilingResult_profileJson(_ con
 	return fc, nil
 }
 
-func (ec *executionContext) _SourcesScope_workloadName(ctx context.Context, field graphql.CollectedField, obj *model.SourcesScope) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SourcesScope_workloadName(ctx, field)
+func (ec *executionContext) _SourcesScopes_sources(ctx context.Context, field graphql.CollectedField, obj *model.SourcesScopes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourcesScopes_sources(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -46795,7 +46781,7 @@ func (ec *executionContext) _SourcesScope_workloadName(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.WorkloadName, nil
+		return obj.Sources, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -46804,14 +46790,63 @@ func (ec *executionContext) _SourcesScope_workloadName(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.([]*model.K8sWorkloadID)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOK8sWorkloadId2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadIDᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SourcesScope_workloadName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SourcesScopes_sources(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "SourcesScope",
+		Object:     "SourcesScopes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "namespace":
+				return ec.fieldContext_K8sWorkloadId_namespace(ctx, field)
+			case "kind":
+				return ec.fieldContext_K8sWorkloadId_kind(ctx, field)
+			case "name":
+				return ec.fieldContext_K8sWorkloadId_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadId", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourcesScopes_namespaces(ctx context.Context, field graphql.CollectedField, obj *model.SourcesScopes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourcesScopes_namespaces(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespaces, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourcesScopes_namespaces(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourcesScopes",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -46822,8 +46857,8 @@ func (ec *executionContext) fieldContext_SourcesScope_workloadName(_ context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _SourcesScope_workloadKind(ctx context.Context, field graphql.CollectedField, obj *model.SourcesScope) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SourcesScope_workloadKind(ctx, field)
+func (ec *executionContext) _SourcesScopes_languages(ctx context.Context, field graphql.CollectedField, obj *model.SourcesScopes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourcesScopes_languages(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -46836,7 +46871,7 @@ func (ec *executionContext) _SourcesScope_workloadKind(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.WorkloadKind, nil
+		return obj.Languages, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -46845,96 +46880,14 @@ func (ec *executionContext) _SourcesScope_workloadKind(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.K8sResourceKind)
+	res := resTmp.([]model.SamplingWorkloadLanguage)
 	fc.Result = res
-	return ec.marshalOK8sResourceKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, field.Selections, res)
+	return ec.marshalOSamplingWorkloadLanguage2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguageᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_SourcesScope_workloadKind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_SourcesScopes_languages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "SourcesScope",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type K8sResourceKind does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _SourcesScope_workloadNamespace(ctx context.Context, field graphql.CollectedField, obj *model.SourcesScope) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SourcesScope_workloadNamespace(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.WorkloadNamespace, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_SourcesScope_workloadNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "SourcesScope",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _SourcesScope_workloadLanguage(ctx context.Context, field graphql.CollectedField, obj *model.SourcesScope) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SourcesScope_workloadLanguage(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.WorkloadLanguage, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.SamplingWorkloadLanguage)
-	fc.Result = res
-	return ec.marshalOSamplingWorkloadLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_SourcesScope_workloadLanguage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "SourcesScope",
+		Object:     "SourcesScopes",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -51166,7 +51119,7 @@ func (ec *executionContext) unmarshalInputCostReductionRuleInput(ctx context.Con
 			it.Disabled = data
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
-			data, err := ec.unmarshalOSourcesScopeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopeInputᚄ(ctx, v)
+			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -51717,7 +51670,7 @@ func (ec *executionContext) unmarshalInputHighlyRelevantOperationRuleInput(ctx c
 			it.Disabled = data
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
-			data, err := ec.unmarshalOSourcesScopeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopeInputᚄ(ctx, v)
+			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -52930,7 +52883,7 @@ func (ec *executionContext) unmarshalInputNoisyOperationRuleInput(ctx context.Co
 			it.Disabled = data
 		case "sourceScopes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceScopes"))
-			data, err := ec.unmarshalOSourcesScopeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopeInputᚄ(ctx, v)
+			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -53372,48 +53325,41 @@ func (ec *executionContext) unmarshalInputServiceNameFilterInput(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputSourcesScopeInput(ctx context.Context, obj any) (model.SourcesScopeInput, error) {
-	var it model.SourcesScopeInput
+func (ec *executionContext) unmarshalInputSourcesScopesInput(ctx context.Context, obj any) (model.SourcesScopesInput, error) {
+	var it model.SourcesScopesInput
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"workloadName", "workloadKind", "workloadNamespace", "workloadLanguage"}
+	fieldsInOrder := [...]string{"sources", "namespaces", "languages"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "workloadName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadName"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+		case "sources":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sources"))
+			data, err := ec.unmarshalOK8sSourceId2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceIDᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.WorkloadName = data
-		case "workloadKind":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadKind"))
-			data, err := ec.unmarshalOK8sResourceKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, v)
+			it.Sources = data
+		case "namespaces":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespaces"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.WorkloadKind = data
-		case "workloadNamespace":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadNamespace"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			it.Namespaces = data
+		case "languages":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("languages"))
+			data, err := ec.unmarshalOSamplingWorkloadLanguage2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguageᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.WorkloadNamespace = data
-		case "workloadLanguage":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadLanguage"))
-			data, err := ec.unmarshalOSamplingWorkloadLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.WorkloadLanguage = data
+			it.Languages = data
 		}
 	}
 
@@ -63710,25 +63656,23 @@ func (ec *executionContext) _SourceProfilingResult(ctx context.Context, sel ast.
 	return out
 }
 
-var sourcesScopeImplementors = []string{"SourcesScope"}
+var sourcesScopesImplementors = []string{"SourcesScopes"}
 
-func (ec *executionContext) _SourcesScope(ctx context.Context, sel ast.SelectionSet, obj *model.SourcesScope) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, sourcesScopeImplementors)
+func (ec *executionContext) _SourcesScopes(ctx context.Context, sel ast.SelectionSet, obj *model.SourcesScopes) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sourcesScopesImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("SourcesScope")
-		case "workloadName":
-			out.Values[i] = ec._SourcesScope_workloadName(ctx, field, obj)
-		case "workloadKind":
-			out.Values[i] = ec._SourcesScope_workloadKind(ctx, field, obj)
-		case "workloadNamespace":
-			out.Values[i] = ec._SourcesScope_workloadNamespace(ctx, field, obj)
-		case "workloadLanguage":
-			out.Values[i] = ec._SourcesScope_workloadLanguage(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("SourcesScopes")
+		case "sources":
+			out.Values[i] = ec._SourcesScopes_sources(ctx, field, obj)
+		case "namespaces":
+			out.Values[i] = ec._SourcesScopes_namespaces(ctx, field, obj)
+		case "languages":
+			out.Values[i] = ec._SourcesScopes_languages(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -67598,6 +67542,16 @@ func (ec *executionContext) marshalNSamplingRules2ᚖgithubᚗcomᚋodigosᚑio�
 	return ec._SamplingRules(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNSamplingWorkloadLanguage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx context.Context, v any) (model.SamplingWorkloadLanguage, error) {
+	var res model.SamplingWorkloadLanguage
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSamplingWorkloadLanguage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx context.Context, sel ast.SelectionSet, v model.SamplingWorkloadLanguage) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNServiceMap2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐServiceMap(ctx context.Context, sel ast.SelectionSet, v model.ServiceMap) graphql.Marshaler {
 	return ec._ServiceMap(ctx, sel, &v)
 }
@@ -67988,21 +67942,6 @@ func (ec *executionContext) marshalNSourceContainer2ᚖgithubᚗcomᚋodigosᚑi
 		return graphql.Null
 	}
 	return ec._SourceContainer(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNSourcesScope2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScope(ctx context.Context, sel ast.SelectionSet, v *model.SourcesScope) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._SourcesScope(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNSourcesScopeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopeInput(ctx context.Context, v any) (*model.SourcesScopeInput, error) {
-	res, err := ec.unmarshalInputSourcesScopeInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNSpanAttributeFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSpanAttributeFilter(ctx context.Context, sel ast.SelectionSet, v *model.SpanAttributeFilter) graphql.Marshaler {
@@ -69711,6 +69650,24 @@ func (ec *executionContext) marshalOK8sResourceKind2ᚖgithubᚗcomᚋodigosᚑi
 	return v
 }
 
+func (ec *executionContext) unmarshalOK8sSourceId2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceIDᚄ(ctx context.Context, v any) ([]*model.K8sSourceID, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.K8sSourceID, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNK8sSourceId2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) marshalOK8sWorkloadAgentEnabled2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadAgentEnabled(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadAgentEnabled) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -69960,6 +69917,53 @@ func (ec *executionContext) marshalOK8sWorkloadContainerOverrides2ᚖgithubᚗco
 		return graphql.Null
 	}
 	return ec._K8sWorkloadContainerOverrides(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOK8sWorkloadId2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadIDᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.K8sWorkloadID) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNK8sWorkloadId2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadID(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOK8sWorkloadPod2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadPodᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.K8sWorkloadPod) graphql.Marshaler {
@@ -70660,6 +70664,71 @@ func (ec *executionContext) unmarshalOSamplingConfigInput2ᚖgithubᚗcomᚋodig
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOSamplingWorkloadLanguage2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguageᚄ(ctx context.Context, v any) ([]model.SamplingWorkloadLanguage, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]model.SamplingWorkloadLanguage, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNSamplingWorkloadLanguage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOSamplingWorkloadLanguage2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguageᚄ(ctx context.Context, sel ast.SelectionSet, v []model.SamplingWorkloadLanguage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSamplingWorkloadLanguage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOSamplingWorkloadLanguage2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingWorkloadLanguage(ctx context.Context, v any) (*model.SamplingWorkloadLanguage, error) {
 	if v == nil {
 		return nil, nil
@@ -70795,69 +70864,19 @@ func (ec *executionContext) marshalOSourceProfilingResult2ᚖgithubᚗcomᚋodig
 	return ec._SourceProfilingResult(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOSourcesScope2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SourcesScope) graphql.Marshaler {
+func (ec *executionContext) marshalOSourcesScopes2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopes(ctx context.Context, sel ast.SelectionSet, v *model.SourcesScopes) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNSourcesScope2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScope(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
+	return ec._SourcesScopes(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOSourcesScopeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopeInputᚄ(ctx context.Context, v any) ([]*model.SourcesScopeInput, error) {
+func (ec *executionContext) unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx context.Context, v any) (*model.SourcesScopesInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var vSlice []any
-	vSlice = graphql.CoerceList(v)
-	var err error
-	res := make([]*model.SourcesScopeInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNSourcesScopeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopeInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
+	res, err := ec.unmarshalInputSourcesScopesInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOSpanAttributeFilter2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSpanAttributeFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SpanAttributeFilter) graphql.Marshaler {

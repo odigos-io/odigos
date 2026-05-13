@@ -22,7 +22,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signals"
-	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
@@ -228,7 +228,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		rulesForContainer := make([]odigosv1.InstrumentationRule, 0)
 		if irls != nil {
 			for _, rule := range *irls {
-				if utils.IsContainerParticipatingInRule(pw, &rule, containerName, containerLanguage) {
+				if scope.SourceScopeMatchesContainer(rule.Spec.SourcesScopes, pw, containerLanguage) {
 					rulesForContainer = append(rulesForContainer, rule)
 				}
 			}

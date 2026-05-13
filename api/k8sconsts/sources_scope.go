@@ -2,24 +2,16 @@ package k8sconsts
 
 import "github.com/odigos-io/odigos/common"
 
-// define conditions to match specific sources (containers) managed by odigos.
-// a source container matches, if ALL non empty fields match (AND semantics)
-// common patterns:
-//   - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
-//     all containers (usually there is only one with agent injection)
-//   - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName):
-//     only this container
-//   - All services in a kubernetes namespace (WorkloadNamespace):
-//     all containers in all sources in the namespace
-//   - All services implemented in a specific programming language (WorkloadLanguage):
-//     all container which are running odigos agent for this language
+// filter specific sources based on criterias.
+// sources can be matched based on the workload details (namespace, kind, name),
+// it's namespace, or the programming language of the container.
 //
-// +kubebuilder:object:generate=true
-// +kubebuilder:deepcopy-gen=true
-type SourcesScope struct {
-	WorkloadName      string                     `json:"workloadName,omitempty"`
-	WorkloadKind      string                     `json:"workloadKind,omitempty"` // e.g. "Deployment"
-	WorkloadNamespace string                     `json:"workloadNamespace,omitempty"`
-	ContainerName     string                     `json:"containerName,omitempty"`
-	WorkloadLanguage  common.ProgrammingLanguage `json:"workloadLanguage,omitempty"`
+// if no criterias are provided, all sources are matched.
+// empty list means "match all".
+// each criteria is matched using OR semantics, so if any of the criteria is matched, the source is matched.
+// if multiple criteria are provided, a source must match all of them to be pass the filter.
+type SourcesScopes struct {
+	Sources    []PodWorkload                `json:"sources,omitempty"`
+	Namespaces []string                     `json:"namespaces,omitempty"`
+	Languages  []common.ProgrammingLanguage `json:"languages,omitempty"`
 }
