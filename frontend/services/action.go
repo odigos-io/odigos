@@ -846,41 +846,49 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 	for _, g := range details.URLTemplatizationRulesGroups {
 		group := urlactions.UrlTemplatizationRulesGroup{}
 
-		var sourcesScope []k8sconsts.SourcesScope
+		// Fold the URL-templatization filter form into the tri-list SourcesScopes shape:
+		//   * Each WorkloadFilter row → one PodWorkload appended to Sources (with namespace baked in).
+		//   * Singleton fallback path: build one PodWorkload if a workload identity is given,
+		//     otherwise fall back to a namespace-only entry.
+		//   * FilterProgrammingLanguage → Languages.
+		scopes := &k8sconsts.SourcesScopes{}
 		if len(g.WorkloadFilters) > 0 {
 			for _, wf := range g.WorkloadFilters {
-				scope := k8sconsts.SourcesScope{}
+				pw := k8sconsts.PodWorkload{}
 				if g.FilterK8sNamespace != nil {
-					scope.WorkloadNamespace = *g.FilterK8sNamespace
+					pw.Namespace = *g.FilterK8sNamespace
 				}
 				if wf.Kind != nil {
-					scope.WorkloadKind = string(*wf.Kind)
+					pw.Kind = k8sconsts.WorkloadKind(*wf.Kind)
 				}
 				if wf.Name != nil {
-					scope.WorkloadName = *wf.Name
+					pw.Name = *wf.Name
 				}
-				if g.FilterProgrammingLanguage != nil {
-					scope.WorkloadLanguage = common.ProgrammingLanguage(*g.FilterProgrammingLanguage)
+				scopes.Sources = append(scopes.Sources, pw)
+			}
+		} else if g.FilterK8sNamespace != nil || g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil {
+			if g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil {
+				pw := k8sconsts.PodWorkload{}
+				if g.FilterK8sNamespace != nil {
+					pw.Namespace = *g.FilterK8sNamespace
 				}
-				sourcesScope = append(sourcesScope, scope)
+				if g.FilterK8sWorkloadKind != nil {
+					pw.Kind = k8sconsts.WorkloadKind(*g.FilterK8sWorkloadKind)
+				}
+				if g.FilterK8sWorkloadName != nil {
+					pw.Name = *g.FilterK8sWorkloadName
+				}
+				scopes.Sources = append(scopes.Sources, pw)
+			} else if g.FilterK8sNamespace != nil {
+				scopes.Namespaces = append(scopes.Namespaces, *g.FilterK8sNamespace)
 			}
-		} else if g.FilterK8sNamespace != nil || g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil || g.FilterProgrammingLanguage != nil {
-			scope := k8sconsts.SourcesScope{}
-			if g.FilterK8sNamespace != nil {
-				scope.WorkloadNamespace = *g.FilterK8sNamespace
-			}
-			if g.FilterK8sWorkloadKind != nil {
-				scope.WorkloadKind = string(*g.FilterK8sWorkloadKind)
-			}
-			if g.FilterK8sWorkloadName != nil {
-				scope.WorkloadName = *g.FilterK8sWorkloadName
-			}
-			if g.FilterProgrammingLanguage != nil {
-				scope.WorkloadLanguage = common.ProgrammingLanguage(*g.FilterProgrammingLanguage)
-			}
-			sourcesScope = append(sourcesScope, scope)
 		}
-		group.SourcesScope = sourcesScope
+		if g.FilterProgrammingLanguage != nil {
+			scopes.Languages = append(scopes.Languages, common.ProgrammingLanguage(*g.FilterProgrammingLanguage))
+		}
+		if len(scopes.Sources) > 0 || len(scopes.Namespaces) > 0 || len(scopes.Languages) > 0 {
+			group.SourcesScopes = scopes
+		}
 
 		for _, rule := range g.TemplatizationRules {
 			r := urlactions.URLTemplatizationRule{
@@ -907,24 +915,35 @@ func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []
 	for _, g := range cfg.TemplatizationRulesGroups {
 		group := &model.URLTemplatizationRulesGroup{}
 
-		for _, scope := range g.SourcesScope {
-			if scope.WorkloadKind != "" || scope.WorkloadName != "" {
-				filter := &model.TemplatizationWorkloadFilter{}
-				if scope.WorkloadKind != "" {
-					kind := model.K8sResourceKind(scope.WorkloadKind)
-					filter.Kind = &kind
+		// Unfold tri-list SourcesScopes back into the URL-templatization filter form.
+		// The GraphQL shape exposes only single-value FilterK8sNamespace and
+		// FilterProgrammingLanguage, so multi-namespace/multi-language scopes are
+		// projected to the first entry (best-effort; the wire format predates the list).
+		if g.SourcesScopes != nil {
+			for _, src := range g.SourcesScopes.Sources {
+				if src.Kind != "" || src.Name != "" {
+					filter := &model.TemplatizationWorkloadFilter{}
+					if src.Kind != "" {
+						kind := model.K8sResourceKind(src.Kind)
+						filter.Kind = &kind
+					}
+					if src.Name != "" {
+						name := src.Name
+						filter.Name = &name
+					}
+					group.WorkloadFilters = append(group.WorkloadFilters, filter)
 				}
-				if scope.WorkloadName != "" {
-					filter.Name = &scope.WorkloadName
+				if src.Namespace != "" && group.FilterK8sNamespace == nil {
+					ns := src.Namespace
+					group.FilterK8sNamespace = &ns
 				}
-				group.WorkloadFilters = append(group.WorkloadFilters, filter)
 			}
-
-			if scope.WorkloadNamespace != "" && group.FilterK8sNamespace == nil {
-				group.FilterK8sNamespace = &scope.WorkloadNamespace
+			if group.FilterK8sNamespace == nil && len(g.SourcesScopes.Namespaces) > 0 {
+				ns := g.SourcesScopes.Namespaces[0]
+				group.FilterK8sNamespace = &ns
 			}
-			if scope.WorkloadLanguage != "" && group.FilterProgrammingLanguage == nil {
-				lang := string(scope.WorkloadLanguage)
+			if len(g.SourcesScopes.Languages) > 0 {
+				lang := string(g.SourcesScopes.Languages[0])
 				group.FilterProgrammingLanguage = &lang
 			}
 		}
