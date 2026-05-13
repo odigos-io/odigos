@@ -2,9 +2,9 @@ package v1alpha1
 
 import (
 	actions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	commonapi "github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 
 	v1 "k8s.io/api/core/v1"

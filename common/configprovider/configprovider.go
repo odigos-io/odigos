@@ -1,4 +1,4 @@
-package ebpf
+package configprovider
 
 import (
 	"context"
@@ -23,7 +23,7 @@ type ConfigProvider[C any] struct {
 	stopped      bool
 }
 
-// NewConfigProvider creates a new configProvider with the given initial config.
+// NewConfigProvider creates a new ConfigProvider with the given initial config.
 // It allows for updating the configuration of a running instrumentation.
 func NewConfigProvider[C any](initialConfig C) *ConfigProvider[C] {
 	return &ConfigProvider[C]{
@@ -61,7 +61,7 @@ func (c *ConfigProvider[C]) SendConfig(ctx context.Context, newConfig C) error {
 	defer c.stoppedMutex.Unlock()
 
 	if c.stopped {
-		commonlogger.LoggerCompat().With("subsystem", "ebpfconfigprovider").Info("SendConfig called on stopped configProvider, the supplied config will be ignored")
+		commonlogger.LoggerCompat().With("subsystem", "configprovider").Info("SendConfig called on stopped ConfigProvider, this config will be ignored")
 		return nil
 	}
 

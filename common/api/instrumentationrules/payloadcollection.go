@@ -15,8 +15,7 @@ type HttpPayloadCollection struct {
 	// If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
 	MaxPayloadLength *int64 `json:"maxPayloadLength,omitempty"`
 
-	// If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-	// This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+	// If payload exceeds MaxPayloadLength, controls whether to truncate it or drop it entirely.
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
 
@@ -29,8 +28,7 @@ type DbQueryPayloadCollection struct {
 	// If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
 	MaxPayloadLength *int64 `json:"maxPayloadLength,omitempty"`
 
-	// If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-	// This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+	// If payload exceeds MaxPayloadLength, controls whether to truncate it or drop it entirely.
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 
 	// The sanitization policy to use for collecting the DB query payloads.
@@ -48,8 +46,7 @@ type MessagingPayloadCollection struct {
 	// If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
 	MaxPayloadLength *int64 `json:"maxPayloadLength,omitempty"`
 
-	// If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-	// This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+	// If payload exceeds MaxPayloadLength, controls whether to truncate it or drop it entirely.
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
 

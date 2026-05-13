@@ -269,7 +269,7 @@ spec:
                                     type: string
                                   packageName:
                                     description: PackageName is the name of the golang
-                                      pacakge (ie net/http); Package name is always
+                                      package (ie net/http); Package name is always
                                       required
                                     type: string
                                   receiverMethodName:
@@ -455,9 +455,8 @@ spec:
                                 mentioned workload and instrumentation libraries
                               properties:
                                 dropPartialPayloads:
-                                  description: |-
-                                    If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                    This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                  description: If payload exceeds MaxPayloadLength,
+                                    controls whether to truncate it or drop it entirely.
                                   type: boolean
                                 maxPayloadLength:
                                   description: |-
@@ -478,9 +477,8 @@ spec:
                                 Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
                               properties:
                                 dropPartialPayloads:
-                                  description: |-
-                                    If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                    This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                  description: If payload exceeds MaxPayloadLength,
+                                    controls whether to truncate it or drop it entirely.
                                   type: boolean
                                 maxPayloadLength:
                                   description: |-
@@ -503,9 +501,8 @@ spec:
                                 Can be a client response or a server response, depending on the instrumentation library
                               properties:
                                 dropPartialPayloads:
-                                  description: |-
-                                    If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                    This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                  description: If payload exceeds MaxPayloadLength,
+                                    controls whether to truncate it or drop it entirely.
                                   type: boolean
                                 maxPayloadLength:
                                   description: |-
@@ -527,9 +524,8 @@ spec:
                                 for the mentioned workload and instrumentation libraries
                               properties:
                                 dropPartialPayloads:
-                                  description: |-
-                                    If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                    This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                  description: If payload exceeds MaxPayloadLength,
+                                    controls whether to truncate it or drop it entirely.
                                   type: boolean
                                 maxPayloadLength:
                                   description: |-
@@ -848,7 +844,7 @@ spec:
                                 type: string
                               packageName:
                                 description: PackageName is the name of the golang
-                                  pacakge (ie net/http); Package name is always required
+                                  package (ie net/http); Package name is always required
                                 type: string
                               receiverMethodName:
                                 description: |-
@@ -980,9 +976,8 @@ spec:
                                   mentioned workload and instrumentation libraries
                                 properties:
                                   dropPartialPayloads:
-                                    description: |-
-                                      If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                      This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                    description: If payload exceeds MaxPayloadLength,
+                                      controls whether to truncate it or drop it entirely.
                                     type: boolean
                                   maxPayloadLength:
                                     description: |-
@@ -1003,9 +998,8 @@ spec:
                                   Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
                                 properties:
                                   dropPartialPayloads:
-                                    description: |-
-                                      If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                      This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                    description: If payload exceeds MaxPayloadLength,
+                                      controls whether to truncate it or drop it entirely.
                                     type: boolean
                                   maxPayloadLength:
                                     description: |-
@@ -1028,9 +1022,8 @@ spec:
                                   Can be a client response or a server response, depending on the instrumentation library
                                 properties:
                                   dropPartialPayloads:
-                                    description: |-
-                                      If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                      This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                    description: If payload exceeds MaxPayloadLength,
+                                      controls whether to truncate it or drop it entirely.
                                     type: boolean
                                   maxPayloadLength:
                                     description: |-
@@ -1052,9 +1045,8 @@ spec:
                                   for the mentioned workload and instrumentation libraries
                                 properties:
                                   dropPartialPayloads:
-                                    description: |-
-                                      If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                      This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                                    description: If payload exceeds MaxPayloadLength,
+                                      controls whether to truncate it or drop it entirely.
                                     type: boolean
                                   maxPayloadLength:
                                     description: |-
@@ -1105,9 +1097,8 @@ spec:
                             workload and instrumentation libraries
                           properties:
                             dropPartialPayloads:
-                              description: |-
-                                If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                              description: If payload exceeds MaxPayloadLength, controls
+                                whether to truncate it or drop it entirely.
                               type: boolean
                             maxPayloadLength:
                               description: |-
@@ -1128,9 +1119,8 @@ spec:
                             Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library
                           properties:
                             dropPartialPayloads:
-                              description: |-
-                                If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                              description: If payload exceeds MaxPayloadLength, controls
+                                whether to truncate it or drop it entirely.
                               type: boolean
                             maxPayloadLength:
                               description: |-
@@ -1153,9 +1143,8 @@ spec:
                             Can be a client response or a server response, depending on the instrumentation library
                           properties:
                             dropPartialPayloads:
-                              description: |-
-                                If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                              description: If payload exceeds MaxPayloadLength, controls
+                                whether to truncate it or drop it entirely.
                               type: boolean
                             maxPayloadLength:
                               description: |-
@@ -1177,9 +1166,8 @@ spec:
                             the mentioned workload and instrumentation libraries
                           properties:
                             dropPartialPayloads:
-                              description: |-
-                                If the payload is larger than the MaxPayloadLength, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all.
-                                This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+                              description: If payload exceeds MaxPayloadLength, controls
+                                whether to truncate it or drop it entirely.
                               type: boolean
                             maxPayloadLength:
                               description: |-
