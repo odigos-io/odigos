@@ -90,19 +90,19 @@ enum SamplingWorkloadLanguage {
   ruby
 }
 
-# scope to limit a sampling rule to specific sources
-type SourcesScope {
-  workloadName: String
-  workloadKind: K8sResourceKind
-  workloadNamespace: String
-  workloadLanguage: SamplingWorkloadLanguage
+# scope to limit a sampling rule to specific sources.
+# each list is OR'd internally; the three lists are AND'd together.
+# empty list (or missing field) means "match all" in that dimension.
+type SourcesScopes {
+  sources: [K8sWorkloadId!]
+  namespaces: [String!]
+  languages: [SamplingWorkloadLanguage!]
 }
 
-input SourcesScopeInput {
-  workloadName: String
-  workloadKind: K8sResourceKind
-  workloadNamespace: String
-  workloadLanguage: SamplingWorkloadLanguage
+input SourcesScopesInput {
+  sources: [K8sSourceId!]
+  namespaces: [String!]
+  languages: [SamplingWorkloadLanguage!]
 }
 
 # ---- Head sampling operation matchers (used by noisy operations) ----
@@ -183,7 +183,7 @@ type NoisyOperationRule {
   ruleId: ID!
   name: String
   disabled: Boolean!
-  sourceScopes: [SourcesScope!]
+  sourceScopes: SourcesScopes
   operation: HeadSamplingOperationMatcher
   # percentage (0-100) of matching traces to keep. unset defaults to 0% (drop all).
   percentageAtMost: Float
@@ -194,7 +194,7 @@ type HighlyRelevantOperationRule {
   ruleId: ID!
   name: String
   disabled: Boolean!
-  sourceScopes: [SourcesScope!]
+  sourceScopes: SourcesScopes
   # if true, only spans with SpanStatus set to Error are considered
   error: Boolean!
   # if set, only operations with duration in ms larger than this value are considered
@@ -209,7 +209,7 @@ type CostReductionRule {
   ruleId: ID!
   name: String
   disabled: Boolean!
-  sourceScopes: [SourcesScope!]
+  sourceScopes: SourcesScopes
   operation: TailSamplingOperationMatcher
   # percentage (0-100) of matching traces to keep. required field.
   percentageAtMost: Float!
@@ -221,7 +221,7 @@ type CostReductionRule {
 input NoisyOperationRuleInput {
   name: String
   disabled: Boolean
-  sourceScopes: [SourcesScopeInput!]
+  sourceScopes: SourcesScopesInput
   operation: HeadSamplingOperationMatcherInput
   percentageAtMost: Float
   notes: String
@@ -230,7 +230,7 @@ input NoisyOperationRuleInput {
 input HighlyRelevantOperationRuleInput {
   name: String
   disabled: Boolean
-  sourceScopes: [SourcesScopeInput!]
+  sourceScopes: SourcesScopesInput
   error: Boolean
   durationAtLeastMs: Int
   operation: TailSamplingOperationMatcherInput
@@ -241,7 +241,7 @@ input HighlyRelevantOperationRuleInput {
 input CostReductionRuleInput {
   name: String
   disabled: Boolean
-  sourceScopes: [SourcesScopeInput!]
+  sourceScopes: SourcesScopesInput
   operation: TailSamplingOperationMatcherInput
   percentageAtMost: Float!
   notes: String

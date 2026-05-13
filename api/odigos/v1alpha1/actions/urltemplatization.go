@@ -33,7 +33,7 @@ type URLTemplatizationRule struct {
 type UrlTemplatizationRulesGroup struct {
 	// SourcesScope selects which sources (workloads / containers / languages) the rules apply to.
 	// Empty list means "all sources" (global rules).
-	SourcesScope []k8sconsts.SourcesScope `json:"sourcesScope,omitempty"`
+	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
 
 	// the rules that will be applied to the spans matching the above filters.
 	TemplatizationRules []URLTemplatizationRule `json:"templatizationRules,omitempty"`

@@ -13,7 +13,7 @@ import (
 
 // SourcesScope is defined in api/k8sconsts so that both api and k8sutils can use it
 // without a circular module dependency (k8sutils imports api).
-type SourcesScope = k8sconsts.SourcesScope
+type SourcesScopes = k8sconsts.SourcesScopes
 
 // endpoints (or other operations) which are considered "noise", and provide no or very little observability value.
 // these traces should not be collected at all, or dropped aggresevly.
@@ -40,7 +40,7 @@ type NoisyOperation struct {
 	// for example: if "other agent" rule for noisty operation is relevant only in java,
 	// limit this rule by setting source scope to java and prevent other languages from being affected
 	// if the list is empty - all sources are matched.
-	SourceScopes []SourcesScope `json:"sourceScopes,omitempty"`
+	SourceScopes *SourcesScopes `json:"sourceScopes,omitempty"`
 
 	// limit this rule to specific operations.
 	// for example: specific http server endpoint (GET "/healthz" as an example).
@@ -82,7 +82,7 @@ type HighlyRelevantOperation struct {
 	// an empty list will match any source.
 	// if multiple items are set, the operation match if any one matches
 	// this relates to the "ResourceAttributes" part of a span.
-	SourceScopes []SourcesScope `json:"sourceScopes,omitempty"`
+	SourceScopes *SourcesScopes `json:"sourceScopes,omitempty"`
 
 	// if "Error" is set to true, only spans with SpanStatus set to "Error" are considered
 	Error bool `json:"error,omitempty"`
@@ -124,7 +124,7 @@ type CostReductionRule struct {
 	// an empty list will match any source.
 	// if multiple items are set, the operation match if any one matches
 	// this relates to the "ResourceAttributes" part of a span.
-	SourceScopes []SourcesScope `json:"sourceScopes,omitempty"`
+	SourceScopes *SourcesScopes `json:"sourceScopes,omitempty"`
 
 	// limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.

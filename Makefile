@@ -10,7 +10,7 @@ endif
 GOLANGCI_LINT_VERSION ?= v2.10.1
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
-LINT_CMD = golangci-lint run -c ../.golangci.yml
+LINT_CMD = $(GOLANGCI_LINT) run -c ../.golangci.yml
 ifdef FIX_LINT
     LINT_CMD += --fix
 endif
@@ -43,7 +43,7 @@ endif
 
 .PHONY: install-golangci-lint
 install-golangci-lint:
-	@if ! which golangci-lint >/dev/null || [ "$$(golangci-lint version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \
+	@if [ ! -x "$(GOLANGCI_LINT)" ] || [ "$$("$(GOLANGCI_LINT)" version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \
 		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION)..."; \
 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION); \
 	else \

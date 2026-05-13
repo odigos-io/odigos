@@ -18,8 +18,8 @@ package v1alpha1
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -55,7 +55,7 @@ type InstrumentationRuleSpec struct {
 	Disabled bool `json:"disabled,omitempty"`
 
 	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If unset or empty, the rule applies to all workloads.
-	SourcesScopes []k8sconsts.SourcesScope `json:"sourcesScopes,omitempty"`
+	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
 
 	// For fine grained control, the user can specify the instrumentation library to use.
 	// One can specify same rule for multiple languages and libraries at the same time.
