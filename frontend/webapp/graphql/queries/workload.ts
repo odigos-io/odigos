@@ -61,6 +61,7 @@ export const GET_WORKLOADS_BY_IDS = gql`
         }
         overrides {
           containerName
+          otelDistroName
           runtimeInfo {
             language
             runtimeVersion

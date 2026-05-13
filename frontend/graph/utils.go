@@ -68,6 +68,17 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 	}
 }
 
+func containerOverrideToModel(containerOverride *v1alpha1.ContainerOverride) *model.K8sWorkloadContainerOverrides {
+	overrides := &model.K8sWorkloadContainerOverrides{
+		ContainerName:  containerOverride.ContainerName,
+		OtelDistroName: containerOverride.OtelDistroName,
+	}
+	if containerOverride.RuntimeInfo != nil {
+		overrides.RuntimeInfo = runtimeDetailsContainersToModel(containerOverride.RuntimeInfo)
+	}
+	return overrides
+}
+
 func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgentConfig) *model.K8sWorkloadAgentEnabledContainer {
 	var envInjectionMethodStr *string
 	if containerAgentConfig.EnvInjectionMethod != nil {

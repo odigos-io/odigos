@@ -16,12 +16,14 @@ import {
   useTestConnection,
   useWorkloadUtils,
   useEffectiveConfig,
+  useMetrics,
 } from '@/hooks';
 
 const OverviewModalsAndDrawers = () => {
   const { currentModal, setCurrentModal } = useModalStore();
   const { drawerType, drawerEntityId, setDrawerType, setDrawerEntityId } = useDrawerStore();
 
+  const { metrics } = useMetrics();
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
   const { effectiveConfig } = useEffectiveConfig();
@@ -81,19 +83,19 @@ const OverviewModalsAndDrawers = () => {
           <EditSourceDrawer
             onClose={handleCloseDrawer}
             sourceId={drawerEntityId as WorkloadId}
+            metrics={metrics}
+            fetchSourceById={fetchSourceById}
             persistSources={persistSources}
             restartWorkloads={restartWorkloads}
             restartPod={restartPod}
             recoverFromRollback={recoverFromRollback}
             updateSource={updateSource}
-            fetchSourceById={fetchSourceById}
-            fetchSourceDescribe={fetchDescribeSource}
-            fetchSourceLibraries={fetchSourceLibraries}
-            fetchPeerSources={fetchPeerSources}
-            profilingEnabled={effectiveConfig?.profiling?.enabled || false}
-            enableProfiling={enableProfiling}
-            fetchSourceProfiling={fetchSourceProfiling}
-            fetchProfilingSlots={fetchProfilingSlots}
+            // fetchSourceLibraries={fetchSourceLibraries}
+            // fetchPeerSources={fetchPeerSources}
+            // profilingEnabled={effectiveConfig?.profiling?.enabled || false}
+            // enableProfiling={enableProfiling}
+            // fetchSourceProfiling={fetchSourceProfiling}
+            // fetchProfilingSlots={fetchProfilingSlots}
           />
         </SourceEditFormContextProvider>
       )}

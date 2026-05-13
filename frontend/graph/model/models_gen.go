@@ -960,8 +960,9 @@ type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition struct {
 }
 
 type K8sWorkloadContainerOverrides struct {
-	ContainerName string                           `json:"containerName"`
-	RuntimeInfo   *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
+	ContainerName  string                           `json:"containerName"`
+	RuntimeInfo    *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
+	OtelDistroName *string                          `json:"otelDistroName,omitempty"`
 }
 
 type K8sWorkloadID struct {

@@ -770,8 +770,9 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadContainerOverrides struct {
-		ContainerName func(childComplexity int) int
-		RuntimeInfo   func(childComplexity int) int
+		ContainerName  func(childComplexity int) int
+		OtelDistroName func(childComplexity int) int
+		RuntimeInfo    func(childComplexity int) int
 	}
 
 	K8sWorkloadId struct {
@@ -4759,6 +4760,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadContainerOverrides.ContainerName(childComplexity), true
+
+	case "K8sWorkloadContainerOverrides.otelDistroName":
+		if e.complexity.K8sWorkloadContainerOverrides.OtelDistroName == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerOverrides.OtelDistroName(childComplexity), true
 
 	case "K8sWorkloadContainerOverrides.runtimeInfo":
 		if e.complexity.K8sWorkloadContainerOverrides.RuntimeInfo == nil {
@@ -30320,6 +30328,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainer_overrides(_ contex
 				return ec.fieldContext_K8sWorkloadContainerOverrides_containerName(ctx, field)
 			case "runtimeInfo":
 				return ec.fieldContext_K8sWorkloadContainerOverrides_runtimeInfo(ctx, field)
+			case "otelDistroName":
+				return ec.fieldContext_K8sWorkloadContainerOverrides_otelDistroName(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadContainerOverrides", field.Name)
 		},
@@ -30927,6 +30937,47 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_runtimeIn
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRuntimeInfoContainer", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerOverrides_otelDistroName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerOverrides) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerOverrides_otelDistroName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OtelDistroName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_otelDistroName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerOverrides",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -59222,6 +59273,8 @@ func (ec *executionContext) _K8sWorkloadContainerOverrides(ctx context.Context, 
 			}
 		case "runtimeInfo":
 			out.Values[i] = ec._K8sWorkloadContainerOverrides_runtimeInfo(ctx, field, obj)
+		case "otelDistroName":
+			out.Values[i] = ec._K8sWorkloadContainerOverrides_otelDistroName(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
