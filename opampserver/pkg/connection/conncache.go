@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/opampserver/pkg/agent"
+	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
 )
@@ -136,11 +137,18 @@ func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWork
 			ContentType: "application/json",
 		}
 
+		remoteConfigSdk := configsections.CalcSdkRemoteConfig(conn.RemoteResourceAttributes, containerConfig)
+		opampRemoteConfigSdk, sdkSectionName, err := configsections.SdkRemoteConfigToOpamp(remoteConfigSdk)
+		if err != nil {
+			return err
+		}
+
 		// copy the old remote config to avoid it being accessed concurrently
 		newRemoteConfigMap := proto.Clone(conn.AgentRemoteConfig.Config).(*protobufs.AgentConfigMap)
 		if containerConfigContent != nil {
 			newRemoteConfigMap.ConfigMap["container_config"] = containerConfigContent
 		}
+		newRemoteConfigMap.ConfigMap[sdkSectionName] = opampRemoteConfigSdk
 
 		conn.AgentRemoteConfig = &protobufs.AgentRemoteConfig{
 			Config:     newRemoteConfigMap,
