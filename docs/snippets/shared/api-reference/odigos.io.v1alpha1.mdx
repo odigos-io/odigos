@@ -673,7 +673,7 @@ The presence of this struct (as opposed to nil) means that logs collection is en
 <code>ebpfLogCapture</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#EbpfLogCapture"><code>instrumentationrules.EbpfLogCapture</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#EbpfLogCapture"><code>common/api/instrumentationrules.EbpfLogCapture</code></a>
 </td>
 <td>
    <p>if set, switches the logs pipeline to use the eBPF receiver instead of filelog.</p>
@@ -811,7 +811,7 @@ if not specified, the default random id generator will be used.</p>
 <code>urlTemplatization</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#UrlTemplatizationConfig"><code>common/api.UrlTemplatizationConfig</code></a>
+<code>common/api.UrlTemplatizationConfig</code>
 </td>
 <td>
    <p>A list of URL templatization configurations to be applied to the traces.</p>
@@ -857,7 +857,7 @@ In the Future we might add another level of configuration base on the parent spa
 <code>payloadCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#PayloadCollection"><code>instrumentationrules.PayloadCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#PayloadCollection"><code>common/api/instrumentationrules.PayloadCollection</code></a>
 </td>
 <td>
    <p>configuration for payload collection for this container.</p>
@@ -868,7 +868,7 @@ In the Future we might add another level of configuration base on the parent spa
 <code>codeAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CodeAttributes"><code>instrumentationrules.CodeAttributes</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CodeAttributes"><code>common/api/instrumentationrules.CodeAttributes</code></a>
 </td>
 <td>
    <p>configuration for code attributes collection for this container.</p>
@@ -879,7 +879,7 @@ In the Future we might add another level of configuration base on the parent spa
 <code>traceVerbosity</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceVerbosity"><code>instrumentationrules.TraceVerbosity</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#TraceVerbosity"><code>common/api/instrumentationrules.TraceVerbosity</code></a>
 </td>
 <td>
    <p>configuration for how verbose the trace should be - e.g. which spans should be included / excluded.</p>
@@ -890,7 +890,7 @@ In the Future we might add another level of configuration base on the parent spa
 <code>customInstrumentations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CustomInstrumentations"><code>common/api/instrumentationrules.CustomInstrumentations</code></a>
 </td>
 <td>
    <p>custom instrumentation probes for this container.</p>
@@ -1395,7 +1395,7 @@ Only relevant for cluster gateway collector.</p>
 <code>tailSampling</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#TailSamplingConfiguration"><code>common/api/sampling.TailSamplingConfiguration</code></a>
+<code>common/api/sampling.TailSamplingConfiguration</code>
 </td>
 <td>
    <p>Sampling holds the sampling configuration derived from the OdigosConfiguration.
@@ -1421,7 +1421,7 @@ before committing to any changes that might lose data.</p>
 <code>spanSamplingAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#SpanSamplingAttributesConfiguration"><code>common/api/sampling.SpanSamplingAttributesConfiguration</code></a>
+<code>common/api/sampling.SpanSamplingAttributesConfiguration</code>
 </td>
 <td>
    <p>Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
@@ -1743,7 +1743,7 @@ this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
 <code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#TailSamplingOperationMatcher"><code>common/api/sampling.TailSamplingOperationMatcher</code></a>
+<code>common/api/sampling.TailSamplingOperationMatcher</code>
 </td>
 <td>
    <p>limit this rule to specific operations.
@@ -2072,7 +2072,7 @@ This is useful to evaluate the sampling decision before actually committing to i
 <code>spanMetricsMode</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#SpanMetricsMode"><code>common/api/sampling.SpanMetricsMode</code></a>
+<code>common/api/sampling.SpanMetricsMode</code>
 </td>
 <td>
    <p>Controls the tradeoff between metric accuracy and resource usage.
@@ -2092,7 +2092,7 @@ resulting in higher accuracy at the cost of increased resource usage.</li>
 <code>noisyOperations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#NoisyOperation"><code>[]common/api/sampling.NoisyOperation</code></a>
+<code>[]common/api/sampling.NoisyOperation</code>
 </td>
 <td>
    <p>Noisy operations are categories of matchers that are used on the root span.
@@ -2230,7 +2230,7 @@ this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
 <code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#TailSamplingOperationMatcher"><code>common/api/sampling.TailSamplingOperationMatcher</code></a>
+<code>common/api/sampling.TailSamplingOperationMatcher</code>
 </td>
 <td>
    <p>optionally, limit this rule to specific operations.
@@ -2414,7 +2414,7 @@ if false, at least one container requires pod manifest changes to enable agent i
 <code>workloadCollectorConfig</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ContainerCollectorConfig"><code>[]common/api.ContainerCollectorConfig</code></a>
+<code>[]common/api.ContainerCollectorConfig</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -2739,7 +2739,7 @@ and whether the values are considered a guaranteed API.</p>
 <code>payloadCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#PayloadCollection"><code>instrumentationrules.PayloadCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#PayloadCollection"><code>common/api/instrumentationrules.PayloadCollection</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -2750,7 +2750,7 @@ and whether the values are considered a guaranteed API.</p>
 <code>codeAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CodeAttributes"><code>instrumentationrules.CodeAttributes</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CodeAttributes"><code>common/api/instrumentationrules.CodeAttributes</code></a>
 </td>
 <td>
    <p>code attributes configuration for a specific library.
@@ -2763,7 +2763,7 @@ if set, but internal fields are empty, those fields will be used from the defaul
 <code>headersCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HttpHeadersCollection"><code>instrumentationrules.HttpHeadersCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#HttpHeadersCollection"><code>common/api/instrumentationrules.HttpHeadersCollection</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -3038,7 +3038,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>payloadCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#PayloadCollection"><code>instrumentationrules.PayloadCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#PayloadCollection"><code>common/api/instrumentationrules.PayloadCollection</code></a>
 </td>
 <td>
    <p>Allows to configure payload collection aspects for different types of payloads.</p>
@@ -3049,7 +3049,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>otelDistros</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#OtelDistros"><code>instrumentationrules.OtelDistros</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#OtelDistros"><code>common/api/instrumentationrules.OtelDistros</code></a>
 </td>
 <td>
    <p>Set the otel distros to use instead of the defaults.</p>
@@ -3060,7 +3060,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>codeAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CodeAttributes"><code>instrumentationrules.CodeAttributes</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CodeAttributes"><code>common/api/instrumentationrules.CodeAttributes</code></a>
 </td>
 <td>
    <p>Configure which code attributes should be recorded as span attributes.</p>
@@ -3071,7 +3071,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>headersCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HttpHeadersCollection"><code>instrumentationrules.HttpHeadersCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#HttpHeadersCollection"><code>common/api/instrumentationrules.HttpHeadersCollection</code></a>
 </td>
 <td>
    <p>Allows to configure the collection of http headers for different types of payloads.</p>
@@ -3082,7 +3082,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>traceConfig</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#TraceConfig"><code>common/api/instrumentationrules.TraceConfig</code></a>
 </td>
 <td>
    <p>Configure the tracing configuration for the library.</p>
@@ -3093,7 +3093,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>customInstrumentations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CustomInstrumentations"><code>common/api/instrumentationrules.CustomInstrumentations</code></a>
 </td>
 <td>
    <p>Add custom instrumentation probes</p>
@@ -3104,7 +3104,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>headSamplingFallbackFraction</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HeadSamplingFallbackFraction"><code>instrumentationrules.HeadSamplingFallbackFraction</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#HeadSamplingFallbackFraction"><code>common/api/instrumentationrules.HeadSamplingFallbackFraction</code></a>
 </td>
 <td>
    <p>Configure general fraction of traces to record if none of the rules evaluate to true.
@@ -3118,7 +3118,7 @@ note that traces will be dropped regardless of thier attributes/errors/importanc
 <code>ebpfLogCapture</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#EbpfLogCapture"><code>instrumentationrules.EbpfLogCapture</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#EbpfLogCapture"><code>common/api/instrumentationrules.EbpfLogCapture</code></a>
 </td>
 <td>
    <p>Configure eBPF-based log capture. When enabled, the node collector logs pipeline
@@ -3131,7 +3131,7 @@ register instrumented processes for eBPF log capture.</p>
 <code>traceVerbosity</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceVerbosity"><code>instrumentationrules.TraceVerbosity</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#TraceVerbosity"><code>common/api/instrumentationrules.TraceVerbosity</code></a>
 </td>
 <td>
    <p>Configure the verbosity of the traces for the library.</p>
@@ -3236,7 +3236,7 @@ if the list is empty - all sources are matched.</p>
 <code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#HeadSamplingOperationMatcher"><code>common/api/sampling.HeadSamplingOperationMatcher</code></a>
+<code>common/api/sampling.HeadSamplingOperationMatcher</code>
 </td>
 <td>
    <p>limit this rule to specific operations.
@@ -3834,7 +3834,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>payloadCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#PayloadCollection"><code>instrumentationrules.PayloadCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#PayloadCollection"><code>common/api/instrumentationrules.PayloadCollection</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -3845,7 +3845,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>codeAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CodeAttributes"><code>instrumentationrules.CodeAttributes</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CodeAttributes"><code>common/api/instrumentationrules.CodeAttributes</code></a>
 </td>
 <td>
    <p>default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.</p>
@@ -3856,7 +3856,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>headersCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HttpHeadersCollection"><code>instrumentationrules.HttpHeadersCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#HttpHeadersCollection"><code>common/api/instrumentationrules.HttpHeadersCollection</code></a>
 </td>
 <td>
    <p>default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.</p>
@@ -3867,7 +3867,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>traceConfig</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#TraceConfig"><code>common/api/instrumentationrules.TraceConfig</code></a>
 </td>
 <td>
    <p>default configuration for library tracing.</p>
@@ -3878,7 +3878,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>customInstrumentations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CustomInstrumentations"><code>common/api/instrumentationrules.CustomInstrumentations</code></a>
 </td>
 <td>
    <p>list of the custom instrumentation probes the SDK should use.</p>
@@ -3901,7 +3901,7 @@ these are language-specific metrics like JVM metrics for Java, CLR metrics for .
 <code>ebpfLogCapture</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#EbpfLogCapture"><code>instrumentationrules.EbpfLogCapture</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#EbpfLogCapture"><code>common/api/instrumentationrules.EbpfLogCapture</code></a>
 </td>
 <td>
    <p>Whether eBPF-based log capture is enabled for this SDK.

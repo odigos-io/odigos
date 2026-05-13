@@ -8,9 +8,9 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"google.golang.org/grpc"
 
+	"github.com/odigos-io/odigos/common/configprovider"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentation"
-	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 
 	"go.opentelemetry.io/auto"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -21,11 +21,11 @@ var log = commonlogger.LoggerCompat().With("subsystem", "ebpfgosdk")
 
 type GoOtelEbpfSdk struct {
 	inst *auto.Instrumentation
-	cp   *ebpf.ConfigProvider[auto.InstrumentationConfig]
+	cp   *configprovider.ConfigProvider[auto.InstrumentationConfig]
 }
 
-// compile-time check that configProvider[auto.InstrumentationConfig] implements auto.Provider
-var _ auto.ConfigProvider = (*ebpf.ConfigProvider[auto.InstrumentationConfig])(nil)
+// compile-time check that ConfigProvider[auto.InstrumentationConfig] implements auto.ConfigProvider
+var _ auto.ConfigProvider = (*configprovider.ConfigProvider[auto.InstrumentationConfig])(nil)
 
 type GoInstrumentationFactory struct {
 	otlpConn *grpc.ClientConn
@@ -52,7 +52,7 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 		return nil, fmt.Errorf("invalid initial config type, expected *odigosv1.ContainerAgentConfig, got %T", settings.InitialConfig)
 	}
 
-	cp := ebpf.NewConfigProvider(initialConfig)
+	cp := configprovider.NewConfigProvider(initialConfig)
 
 	inst, err := auto.NewInstrumentation(
 		ctx,
