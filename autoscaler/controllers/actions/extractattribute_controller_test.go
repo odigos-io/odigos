@@ -220,7 +220,7 @@ var _ = Describe("ExtractAttribute Controller", func() {
 			Expect(rendered.Extractions[2].DataFormat).Should(BeEmpty())
 		})
 
-		It("Should propagate Disabled and multiple Signals to the Processor", func() {
+		It("Should propagate Disabled and force traces-only Signals to the Processor", func() {
 			By("Creating a disabled Action with multiple signals")
 			action := &odigosv1.Action{
 				ObjectMeta: metav1.ObjectMeta{
@@ -258,10 +258,9 @@ var _ = Describe("ExtractAttribute Controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			Expect(processor.Spec.Disabled).Should(BeTrue())
-			Expect(processor.Spec.Signals).Should(ContainElements(
+			Expect(processor.Spec.Signals).Should(Equal([]common.ObservabilitySignal{
 				common.TracesObservabilitySignal,
-				common.LogsObservabilitySignal,
-			))
+			}))
 		})
 	})
 

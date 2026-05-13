@@ -74,7 +74,13 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 		if err != nil {
 			return nil, err
 		}
-		return convertToDefaultProcessor(action, action.Spec.ExtractAttribute, config)
+		processor, err := convertToDefaultProcessor(action, action.Spec.ExtractAttribute, config)
+		if err != nil {
+			return nil, err
+		}
+		// The odigosextractattribute collector processor currently implements traces only.
+		processor.Spec.Signals = []common.ObservabilitySignal{common.TracesObservabilitySignal}
+		return processor, nil
 	}
 
 	if action.Spec.K8sAttributes != nil {

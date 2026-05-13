@@ -27,6 +27,7 @@ import (
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 )
 
@@ -159,6 +160,26 @@ func TestActionsValidator_ValidateCreate(t *testing.T) {
 			expectError: true,
 			errorType:   field.ErrorTypeInvalid,
 			errorField:  "namespace",
+		},
+		{
+			name: "invalid ExtractAttribute signal",
+			action: &odigosv1.Action{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-action",
+					Namespace: "odigos-system",
+				},
+				Spec: odigosv1.ActionSpec{
+					ActionName: "test-extract-attribute",
+					Signals: []common.ObservabilitySignal{
+						common.TracesObservabilitySignal,
+						common.LogsObservabilitySignal,
+					},
+					ExtractAttribute: &odigosactions.ExtractAttributeConfig{},
+				},
+			},
+			expectError: true,
+			errorType:   field.ErrorTypeNotSupported,
+			errorField:  "spec.signals[1]",
 		},
 		{
 			name: "no action config",
@@ -401,6 +422,27 @@ func TestActionsValidator_ValidateAction(t *testing.T) {
 			errorCount:  1,
 			errorTypes:  []field.ErrorType{field.ErrorTypeInvalid},
 			errorFields: []string{"namespace"},
+		},
+		{
+			name: "invalid ExtractAttribute signal",
+			action: &odigosv1.Action{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-action",
+					Namespace: "odigos-system",
+				},
+				Spec: odigosv1.ActionSpec{
+					ActionName: "test-extract-attribute",
+					Signals: []common.ObservabilitySignal{
+						common.TracesObservabilitySignal,
+						common.MetricsObservabilitySignal,
+					},
+					ExtractAttribute: &odigosactions.ExtractAttributeConfig{},
+				},
+			},
+			expectError: true,
+			errorCount:  1,
+			errorTypes:  []field.ErrorType{field.ErrorTypeNotSupported},
+			errorFields: []string{"spec.signals[1]"},
 		},
 		{
 			name: "no action config",
