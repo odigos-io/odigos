@@ -5,6 +5,8 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
+// return true if the source matches and of the specific sources in the scope (OR semantics)
+// empty list means "match all".
 func sourceMatchScopeSources(source k8sconsts.PodWorkload, scopes *k8sconsts.SourcesScopes) bool {
 	if len(scopes.Sources) == 0 {
 		return true
@@ -17,6 +19,8 @@ func sourceMatchScopeSources(source k8sconsts.PodWorkload, scopes *k8sconsts.Sou
 	return false
 }
 
+// return true if the namespace matches and of the specific namespaces in the scope (OR semantics)
+// empty list means "match all".
 func sourceMatchScopeNamespaces(namespace string, scopes *k8sconsts.SourcesScopes) bool {
 	if len(scopes.Namespaces) == 0 {
 		return true
@@ -29,6 +33,8 @@ func sourceMatchScopeNamespaces(namespace string, scopes *k8sconsts.SourcesScope
 	return false
 }
 
+// return true if the language matches and of the specific languages in the scope (OR semantics)
+// empty list means "match all".
 func sourceMatchScopeLanguages(language common.ProgrammingLanguage, scopes *k8sconsts.SourcesScopes) bool {
 	if len(scopes.Languages) == 0 {
 		return true
@@ -53,6 +59,9 @@ func SourceScopeMatchesContainer(
 	if scopes == nil {
 		return true
 	}
+
+	// check if the source matches the relevant criterias (AND semantics between criterias)
+	// e.g. for scope with namespace "foo" and language "java", the source must match both the namespace and the language
 
 	matchSources := sourceMatchScopeSources(pw, scopes)
 	if !matchSources {
