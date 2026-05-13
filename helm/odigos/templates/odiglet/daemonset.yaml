@@ -212,7 +212,7 @@ spec:
                   key: odigos-onprem-token
           {{- end }}
             - name: GOMEMLIMIT
-              value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" (include "odigos.odiglet.resolvedResources" . | fromYaml)) }}
+              value: {{ include "odigos.odiglet.gomemlimit" . }}
           {{- if .Values.odiglet.noHostPid }}
             - name: ODIGOS_PROC_DIR
               value: /hostproc
