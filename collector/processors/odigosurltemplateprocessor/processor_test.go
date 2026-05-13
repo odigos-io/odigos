@@ -1046,3 +1046,86 @@ func TestProcessor_IncludeExclude(t *testing.T) {
 		})
 	}
 }
+
+// TestProcessor_ExplicitRulesOverrideExistingAttribute verifies that when explicit
+// templatization rules are configured, they take priority over any attribute value
+// that was already set on the span (e.g. by a previous heuristic-only run of the
+// processor before the per-workload rules were loaded into the cache).
+func TestProcessor_ExplicitRulesOverrideExistingAttribute(t *testing.T) {
+	set := processortest.NewNopSettings(processortest.NopType)
+
+	tt := []struct {
+		name              string
+		spanKind          ptrace.SpanKind
+		rules             []string
+		inputSpanAttrs    map[string]any
+		expectedAttrKey   string
+		expectedAttrValue string
+	}{
+		{
+			// CLIENT span: url.template pre-set to a heuristic value; explicit rule
+			// should win and replace it with the user-defined template name.
+			name:     "explicit-rule-overrides-heuristic-url-template",
+			spanKind: ptrace.SpanKindClient,
+			rules:    []string{"/users/{user-id}"},
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.full":            "http://example.com/users/john-doe",
+				"url.template":        "/users/{id}", // stale heuristic value
+			},
+			expectedAttrKey:   "url.template",
+			expectedAttrValue: "/users/{user-id}", // explicit rule wins
+		},
+		{
+			// SERVER span: http.route pre-set to a heuristic value; explicit rule
+			// should win and replace it.
+			name:     "explicit-rule-overrides-heuristic-http-route",
+			spanKind: ptrace.SpanKindServer,
+			rules:    []string{"/orders/{order-id}"},
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/orders/42",
+				"http.route":          "/orders/{id}", // stale heuristic value
+			},
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/orders/{order-id}", // explicit rule wins
+		},
+		{
+			// Heuristic-only (rules==nil): a pre-set attribute should be preserved.
+			// This validates that the fix does NOT change heuristic-only behaviour.
+			name:     "heuristic-only-respects-existing-attribute",
+			spanKind: ptrace.SpanKindServer,
+			rules:    nil,
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/1234",
+				"http.route":          "/user/<id>", // framework-set value
+			},
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/<id>", // preserved — heuristics never override
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			traces := generateTraceData("test-service", "GET", tc.spanKind, tc.inputSpanAttrs)
+			cfg := &Config{}
+			if tc.rules != nil {
+				cfg.TemplatizationConfig = TemplatizationConfig{
+					TemplatizationRules: tc.rules,
+				}
+			}
+			processor, err := newUrlTemplateProcessor(set, cfg)
+			require.NoError(t, err)
+
+			ctx := context.Background()
+			processedTraces, err := processor.processTraces(ctx, traces)
+			require.NoError(t, err)
+
+			processedSpan := processedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+			attrVal, found := processedSpan.Attributes().Get(tc.expectedAttrKey)
+			require.True(t, found)
+			require.Equal(t, tc.expectedAttrValue, attrVal.AsString())
+		})
+	}
+}

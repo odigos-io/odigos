@@ -361,9 +361,13 @@ func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod
 		}
 		if val.Str() == "" {
 			updateHttpSpanName(span, httpMethod, "/")
+			return
 		}
-		// avoid overriding the attribute if it is already set
-		return
+		// avoid overriding the attribute if it is already set, unless explicit rules
+		// are configured — in that case fall through and re-apply them.
+		if len(rules) == 0 {
+			return
+		}
 	}
 
 	templatedUrl, found := p.calculateTemplatedUrlFromAttrWithRules(attr, rules)
