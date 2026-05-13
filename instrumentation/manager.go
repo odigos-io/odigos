@@ -155,6 +155,15 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 	// this map is not concurrent safe, so it should be accessed only from the main event loop
 	detailsByProcessGroup map[processGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]
 
+	// failedDetailsByDistro indexes only the instrumentations that previously failed (inst == nil),
+	// keyed by their OTel distribution name and then by pid. It is a sub-index of detailsByPid and
+	// is kept in sync by startTrackInstrumentation / stopTrackInstrumentation. Having a dedicated
+	// index lets retryFailedInstrumentationsForDistros target exactly the entries that may benefit
+	// from a retry without scanning every successfully instrumented process.
+	//
+	// this map is not concurrent safe, so it should be accessed only from the main event loop.
+	failedDetailsByDistro map[string]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]
+
 	configUpdates <-chan ConfigUpdate[configGroup]
 
 	requests <-chan Request[processGroup, configGroup, processDetails]
@@ -216,6 +225,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		detailsByPid:                make(map[int]*instrumentationDetails[processGroup, configGroup, processDetails]),
 		detailsByConfigGroup:        map[configGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
 		detailsByProcessGroup:       map[processGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
+		failedDetailsByDistro:       map[string]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
 		configUpdates:               options.ConfigUpdates,
 		requests:                    options.InstrumentationRequests,
 		retryFailedInstrumentations: options.RetryFailedInstrumentations,
@@ -254,6 +264,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 		m.detailsByPid = nil
 		m.detailsByConfigGroup = nil
 		m.detailsByProcessGroup = nil
+		m.failedDetailsByDistro = nil
 		m.logger.Info("all instrumentations cleaned up")
 	}()
 
@@ -335,34 +346,40 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 	}
 }
 
-// retryFailedInstrumentationsForDistros walks the current tracked instrumentations and re-attempts
-// instrumentation for each one whose previous attempt failed (inst is nil). When distroFilter is
-// non-empty, only failed instrumentations whose distribution name matches one of the entries are
-// retried.
+// retryFailedInstrumentationsForDistros re-attempts instrumentation for every entry currently
+// indexed in failedDetailsByDistro that matches distroFilter. When distroFilter is non-empty we
+// look up only the requested distributions; an empty/nil filter retries every failed entry across
+// all distributions.
+//
+// The retry path scans only the failed sub-index rather than the full detailsByPid map, so its
+// cost is proportional to the number of (filtered) failed instrumentations rather than the total
+// number of instrumented processes on the node.
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) retryFailedInstrumentationsForDistros(ctx context.Context, distroFilter []string) {
-	filter := map[string]struct{}{}
-	for _, name := range distroFilter {
-		filter[name] = struct{}{}
-	}
-
-	// Collect the PIDs to retry first; tryInstrument re-enters startTrackInstrumentation which
-	// mutates the entry for the same pid, but it is safer to iterate over a snapshot than to
-	// modify the map while ranging over it.
+	// Collect the PIDs to retry into a snapshot first; tryInstrument re-enters
+	// startTrackInstrumentation, which mutates failedDetailsByDistro for the same pid, and we
+	// don't want to modify the map while ranging over it.
 	type retryEntry struct {
 		pid int
 		pd  ProcessDetails
 	}
 	var toRetry []retryEntry
-	for pid, details := range m.detailsByPid {
-		if details.inst != nil {
-			continue
+
+	appendEntries := func(byPid map[int]*instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]) {
+		for pid, details := range byPid {
+			toRetry = append(toRetry, retryEntry{pid: pid, pd: details.pd})
 		}
-		if len(filter) > 0 {
-			if _, ok := filter[details.distroName]; !ok {
-				continue
+	}
+
+	if len(distroFilter) == 0 {
+		for _, byPid := range m.failedDetailsByDistro {
+			appendEntries(byPid)
+		}
+	} else {
+		for _, name := range distroFilter {
+			if byPid, ok := m.failedDetailsByDistro[name]; ok {
+				appendEntries(byPid)
 			}
 		}
-		toRetry = append(toRetry, retryEntry{pid: pid, pd: details.pd})
 	}
 
 	if len(toRetry) == 0 {
@@ -651,6 +668,15 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 		m.detailsByProcessGroup[processGroup][pid] = instDetails
 	}
 
+	// Keep the failed-instrumentations sub-index in sync. If this attempt failed (inst == nil)
+	// the entry belongs in the index; if it succeeded, we have to remove the previous failed
+	// entry (if any), including under its previous distroName in case it somehow changed.
+	if inst == nil {
+		m.addFailedDetails(distribution.Name, pid, instDetails)
+	} else if hadPrev && prevDetails.inst == nil {
+		m.removeFailedDetails(prevDetails.distroName, pid)
+	}
+
 	metricAttributeSet := m.metricsAttributeSet(distribution)
 	switch {
 	case inst == nil && !hadPrev:
@@ -661,6 +687,26 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 		// "instrumented". failedInstrumentations is a monotonic counter so we don't decrement
 		// it; we just record the successful instrumentation.
 		m.metrics.instrumentedProcesses.Add(ctx, 1, metric.WithAttributeSet(metricAttributeSet))
+	}
+}
+
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) addFailedDetails(distroName string, pid int, details *instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]) {
+	byPid, ok := m.failedDetailsByDistro[distroName]
+	if !ok {
+		byPid = map[int]*instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]{}
+		m.failedDetailsByDistro[distroName] = byPid
+	}
+	byPid[pid] = details
+}
+
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) removeFailedDetails(distroName string, pid int) {
+	byPid, ok := m.failedDetailsByDistro[distroName]
+	if !ok {
+		return
+	}
+	delete(byPid, pid)
+	if len(byPid) == 0 {
+		delete(m.failedDetailsByDistro, distroName)
 	}
 }
 
@@ -675,6 +721,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) stopTrackInstrument
 	delete(m.detailsByPid, pid)
 	delete(m.detailsByConfigGroup[cg], pid)
 	delete(m.detailsByProcessGroup[pg], pid)
+	if details.inst == nil {
+		m.removeFailedDetails(details.distroName, pid)
+	}
 
 	if len(m.detailsByConfigGroup[cg]) == 0 {
 		delete(m.detailsByConfigGroup, cg)
