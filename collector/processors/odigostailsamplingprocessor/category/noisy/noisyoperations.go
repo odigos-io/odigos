@@ -29,13 +29,6 @@ func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperati
 
 		currentPercentage := category.GetPercentageOrDefault0(noisyOperation.PercentageAtMost)
 
-		// shortcut - we are only interested in the least percentage rule,
-		// so avoid checking when unnecessary.
-		// percentageAtMost as nil, means that it's the default 0%, so it's already the smallest possible.
-		if leastPercentageRule != nil && (leastPercentageRule.PercentageAtMost == nil || currentPercentage >= *(leastPercentageRule.PercentageAtMost)) {
-			continue
-		}
-
 		// check if the operation matches the span.
 		matched := matchers.HeadSamplingOperationMatcher(noisyOperation.Operation, span)
 
@@ -49,13 +42,22 @@ func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperati
 		res := rulesEvalResults[noisyOperation.Id]
 		res.SpanCheckedCount++
 
-		// at this point, we already know the current percentage is least than the one seen so far,
-		// so if we have a match, we update.
 		if matched {
-			leastPercentageRule = &noisyOperation
 			res.Matched = true
 			res.SpanMatchedCount++
 		}
+
+		if noisyOperation.Disabled || !matched {
+			continue
+		}
+
+		// shortcut - we are only interested in the least percentage enabled rule.
+		// percentageAtMost as nil, means that it's the default 0%, so it's already the smallest possible.
+		if leastPercentageRule != nil && (leastPercentageRule.PercentageAtMost == nil || currentPercentage >= *(leastPercentageRule.PercentageAtMost)) {
+			continue
+		}
+
+		leastPercentageRule = &noisyOperation
 	}
 
 	return NoisyOperationsEvaluationResult{
