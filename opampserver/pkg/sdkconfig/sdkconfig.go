@@ -49,8 +49,13 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 		return nil, fmt.Errorf("container config not found for container %s", containerName)
 	}
 
-	// TODO: remove this after v1.40.0 where we fully migrated to the container config.
-	// this is return  empty for now just to avoid breaking changes for old agents.
+	sdkRemoteConfig := configsections.CalcSdkRemoteConfig(remoteResourceAttributes, containerConfig)
+	opampRemoteConfigSdk, sdkSectionName, err := configsections.SdkRemoteConfigToOpamp(sdkRemoteConfig)
+	if err != nil {
+		m.logger.Error(err, "failed to marshal server sdk remote config")
+		return nil, err
+	}
+
 	opampRemoteConfigInstrumentationLibraries, instrumentationLibrariesSectionName, err := configsections.InstrumentationLibrariesRemoteConfigToOpamp()
 	if err != nil {
 		m.logger.Error(err, "failed to marshal instrumentation libraries config")
@@ -65,6 +70,7 @@ func (m *SdkConfigManager) GetFullConfig(ctx context.Context, remoteResourceAttr
 
 	agentConfigMap := protobufs.AgentConfigMap{
 		ConfigMap: map[string]*protobufs.AgentConfigFile{
+			sdkSectionName:                      opampRemoteConfigSdk,
 			instrumentationLibrariesSectionName: opampRemoteConfigInstrumentationLibraries,
 			containerConfigSectionName:          opampRemoteConfigContainerConfig,
 		},
