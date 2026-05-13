@@ -1,0 +1,31 @@
+**Highly Relevant** rules mark traces you want to treat as **important**, aligned with **RED**-style signals (request, **error**, **duration**). They are the **second** stage in the [rule evaluation pipeline](./overview#order-of-operations-between-categories), evaluated only on traces that did **not** match any Noisy rule.
+
+## How they're evaluated
+
+- **Tail-aware.** Importance often depends on something that only appears mid-trace—an error on a child span, or a long downstream call—so the evaluator typically needs the assembled trace. See [Head vs. tail sampling](../head-and-tail-sampling).
+- **One error span marks the entire trace.** When a Highly Relevant error rule applies, a single error span anywhere in the tree is enough to classify the whole trace as important.
+- **100% retention by default.** Highly Relevant rules keep every matching trace by default—as the built-in error rule does—which works for most workloads. If a specific operation produces too much volume, lower its Keep Percentage on a custom rule to retain only a fractional sample, while still benefiting from Highly Relevant priority.
+
+## Built-in rule: Keep All Error Traces
+
+Odigos ships a single built-in Highly Relevant rule, **Keep All Error Traces**, which retains **100%** of traces that contain at least one span with **error** status. The built-in rule's keep percentage is fixed at **100%** and is **not configurable**.
+
+Because the evaluator inspects every span in the trace, a single error anywhere in the call tree is enough to keep the whole trace—even when the root span itself succeeds.
+
+<Note>
+  If 100% retention of error traces is more than you need—for example because your error volume is high—author your own Highly Relevant rule on errors with the **Keep Percentage** you want. Custom rules are how you express any intent other than the built-in 100%.
+</Note>
+
+## Interaction with Cost Reduction
+
+When a trace matches rules in **both** Highly Relevant and Cost Reduction, the Highly Relevant Keep Percentage **always wins**, whether higher or lower than the Cost Reduction cap. See [Evaluation between Highly Relevant and Cost Reduction](./overview#evaluation-between-highly-relevant-and-cost-reduction-categories) for worked examples.
+
+<Warning>
+  Highly Relevant rules without any Cost Reduction rules **do not aggressively reduce volume** on their own. Unimportant traffic still flows through the gateway and may be evaluated as part of full-trace policy. Pair Highly Relevant with Cost Reduction when you need both signal and volume control.
+</Warning>
+
+## Typical use cases
+
+- Keep all (or most) traces with at least one error span
+- Keep a higher percentage of traces over a duration threshold (for example > 500 ms)
+- Always keep a sample from a critical service or route
