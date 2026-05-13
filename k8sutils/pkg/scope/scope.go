@@ -60,7 +60,7 @@ func SourceScopeMatchesContainer(
 		return true
 	}
 
-	// check if the source matches the relevant criterias (AND semantics between criterias)
+	// check if the source matches the relevant criteria (AND semantics between criteria)
 	// e.g. for scope with namespace "foo" and language "java", the source must match both the namespace and the language
 
 	matchSources := sourceMatchScopeSources(pw, scopes)
