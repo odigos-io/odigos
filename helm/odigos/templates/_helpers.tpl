@@ -108,6 +108,34 @@ true
 {{- end }}
 {{- end }}
 
+{{/*
+  Odiglet-specific GOMEMLIMIT: odiglet allocates significant memory for eBPF maps
+  which live outside the Go heap. The Go runtime is unaware of this memory, so we
+  use a lower GOMEMLIMIT percentage (default 60%) for memory limits >= 500Mi to
+  leave enough headroom for eBPF allocations. Below 500Mi the standard 80% is used.
+*/}}
+{{- define "odigos.odiglet.gomemlimit" -}}
+{{- $resources := include "odigos.odiglet.resolvedResources" . | fromYaml -}}
+{{- $limits := get $resources "limits" -}}
+{{- $requests := get $resources "requests" -}}
+
+{{- $raw := (get $limits "memory") | default (get $requests "memory") -}}
+{{- $number := regexFind "^[0-9]+" $raw -}}
+{{- $unit := regexFind "[a-zA-Z]+$" $raw -}}
+
+{{- if and $number $unit }}
+  {{- $num := int $number -}}
+  {{- $pct := 80 -}}
+  {{- if ge $num 500 -}}
+    {{- $pct = int (default 60 .Values.odiglet.odiglet.goMemLimitPercentage) -}}
+  {{- end -}}
+  {{- $val := div (mul $num $pct) 100 -}}
+  {{- printf "%d%sB" $val $unit -}}
+{{- else }}
+  {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q" $raw) -}}
+{{- end }}
+{{- end }}
+
 {{/* Returns "true" when UI requires write permissions (non-readonly UI or central backend set) */}}
 {{- define "odigos.ui.requiresWritePermissions" -}}
   {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") -}}

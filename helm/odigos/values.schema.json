@@ -1477,6 +1477,12 @@
               "required": [],
               "title": "capabilities"
             },
+            "goMemLimitPercentage": {
+              "default": "60",
+              "description": "Percentage of the memory limit to use for GOMEMLIMIT when the odiglet\nmemory limit is \u003e= 500Mi. Below 500Mi the default 80% is used.\nOdiglet allocates significant memory for eBPF maps which live outside\nthe Go heap. The Go runtime is unaware of this memory, so GOMEMLIMIT\nmust leave enough headroom for these allocations to avoid OOM kills.",
+              "required": [],
+              "title": "goMemLimitPercentage"
+            },
             "livenessProbe": {
               "additionalProperties": false,
               "properties": {
