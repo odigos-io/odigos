@@ -39,7 +39,7 @@ type CostReductionRuleApplyConfiguration struct {
 	// an empty list will match any source.
 	// if multiple items are set, the operation match if any one matches
 	// this relates to the "ResourceAttributes" part of a span.
-	SourceScopes []k8sconsts.SourcesScope `json:"sourceScopes,omitempty"`
+	SourceScopes *k8sconsts.SourcesScopes `json:"sourceScopes,omitempty"`
 	// limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
 	// this field is optional, and if not set, the rule will be applied to all operations.
@@ -77,13 +77,11 @@ func (b *CostReductionRuleApplyConfiguration) WithDisabled(value bool) *CostRedu
 	return b
 }
 
-// WithSourceScopes adds the given value to the SourceScopes field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the SourceScopes field.
-func (b *CostReductionRuleApplyConfiguration) WithSourceScopes(values ...k8sconsts.SourcesScope) *CostReductionRuleApplyConfiguration {
-	for i := range values {
-		b.SourceScopes = append(b.SourceScopes, values[i])
-	}
+// WithSourceScopes sets the SourceScopes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SourceScopes field is set to the value of the last call.
+func (b *CostReductionRuleApplyConfiguration) WithSourceScopes(value k8sconsts.SourcesScopes) *CostReductionRuleApplyConfiguration {
+	b.SourceScopes = &value
 	return b
 }
 

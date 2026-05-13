@@ -669,10 +669,8 @@ func (in *CostReductionRule) DeepCopyInto(out *CostReductionRule) {
 	*out = *in
 	if in.SourceScopes != nil {
 		in, out := &in.SourceScopes, &out.SourceScopes
-		*out = make([]SourcesScope, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
+		*out = new(SourcesScopes)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Operation != nil {
 		in, out := &in.Operation, &out.Operation
@@ -926,10 +924,8 @@ func (in *HighlyRelevantOperation) DeepCopyInto(out *HighlyRelevantOperation) {
 	*out = *in
 	if in.SourceScopes != nil {
 		in, out := &in.SourceScopes, &out.SourceScopes
-		*out = make([]SourcesScope, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
+		*out = new(SourcesScopes)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.DurationAtLeastMs != nil {
 		in, out := &in.DurationAtLeastMs, &out.DurationAtLeastMs
@@ -1450,8 +1446,8 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 	*out = *in
 	if in.SourcesScopes != nil {
 		in, out := &in.SourcesScopes, &out.SourcesScopes
-		*out = make([]k8sconsts.SourcesScope, len(*in))
-		copy(*out, *in)
+		*out = new(k8sconsts.SourcesScopes)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.InstrumentationLibraries != nil {
 		in, out := &in.InstrumentationLibraries, &out.InstrumentationLibraries
@@ -1546,10 +1542,8 @@ func (in *NoisyOperation) DeepCopyInto(out *NoisyOperation) {
 	*out = *in
 	if in.SourceScopes != nil {
 		in, out := &in.SourceScopes, &out.SourceScopes
-		*out = make([]SourcesScope, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
+		*out = new(SourcesScopes)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Operation != nil {
 		in, out := &in.Operation, &out.Operation
