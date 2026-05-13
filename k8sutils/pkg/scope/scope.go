@@ -49,7 +49,6 @@ func SourceScopeMatchesContainer(
 	pw k8sconsts.PodWorkload,
 	language common.ProgrammingLanguage,
 ) bool {
-
 	// empty scope means match the entire cluster
 	if scopes == nil {
 		return true
