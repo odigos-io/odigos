@@ -131,7 +131,7 @@ func Test_IsContainerParticipatingInRule_SourcesScopeEmpty_MatchAll(t *testing.T
 	ns := testutil.NewMockNamespace()
 	dep := testutil.NewMockTestDeployment(ns, "svc")
 	pw := testutil.PodWorkloadFromDeployment(dep)
-	emptyScopes := []k8sconsts.SourcesScope{}
+	emptyScopes := k8sconsts.SourcesScopes{}
 	rule := testutil.NewMockInstrumentationRuleWithSourcesScopeAndWorkloads("ir", ns.Name, emptyScopes, []k8sconsts.PodWorkload{pw})
 
 	// Act
