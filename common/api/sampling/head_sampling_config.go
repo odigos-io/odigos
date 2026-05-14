@@ -26,6 +26,7 @@ type HeadSamplingConfig struct {
 	NoisyOperations []NoisyOperation `json:"noisyOperations,omitempty"`
 
 	// +kubebuilder:default:=1
+	//
 	// Deprecated: do not use. Will be removed once python and node migration is complete.
 	// Use NoisyOperations instead.
 	FallbackFraction float64 `json:"fallbackFraction,omitempty"`
