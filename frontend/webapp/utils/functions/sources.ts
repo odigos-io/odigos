@@ -56,19 +56,14 @@ export function mapConditionsToConditionArray(conditions: K8sWorkloadConditions 
 // container shape is now structurally identical to `SourceContainer`.
 export function mapWorkloadToSource(w: WorkloadResponse): Source {
   return {
+    ...(w as unknown as Source),
     namespace: w.id.namespace,
     kind: w.id.kind,
     name: w.id.name,
     selected: w.markedForInstrumentation?.markedForInstrumentation ?? false,
     otelServiceName: w.serviceName ?? '',
-    numberOfInstances: w.numberOfInstances ?? undefined,
-    dataStreamNames: w.dataStreamNames,
-    containers: w.containers,
     conditions: mapConditionsToConditionArray(w.conditions),
     detectedLanguages: (w.runtimeInfo?.detectedLanguages as ProgrammingLanguages[] | null) ?? null,
-    workloadOdigosHealthStatus: w.workloadOdigosHealthStatus ?? null,
-    podsAgentInjectionStatus: w.podsAgentInjectionStatus,
-    rollbackOccurred: w.rollbackOccurred,
   };
 }
 

@@ -118,6 +118,67 @@ export const GET_WORKLOADS_BY_IDS = gql`
         reasonEnum
         message
       }
+      podsHealthStatus {
+        name
+        status
+        reasonEnum
+        message
+      }
+      pods {
+        podName
+        nodeName
+        startTime
+        agentInjected
+        startedPostAgentMetaHashChange
+        agentInjectedStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        runningLatestWorkloadRevision
+        podHealthStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        containers {
+          containerName
+          odigosInstrumentationDeviceName
+          otelDistroName
+          started
+          ready
+          isCrashLoop
+          restartCount
+          runningStartedTime
+          waitingReasonEnum
+          waitingMessage
+          healthStatus {
+            name
+            status
+            reasonEnum
+            message
+          }
+          processes {
+            healthy
+            healthStatus {
+              name
+              status
+              reasonEnum
+              message
+            }
+            identifyingAttributes {
+              name
+              value
+            }
+            instrumentations {
+              name
+              isStandardLibrary
+            }
+          }
+        }
+      }
       rollbackOccurred
     }
   }
