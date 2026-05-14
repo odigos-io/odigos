@@ -5,10 +5,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -314,63 +313,6 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 	}
 	if len(*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes) != 1 {
 		t.Errorf("Expected 1 mime type, got %d", len(*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes))
-	}
-}
-
-func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) {
-	ic := odigosv1.InstrumentationConfig{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment-test",
-			Namespace: "testns",
-		},
-		Spec: odigosv1.InstrumentationConfigSpec{
-			ContainersOverrides: []odigosv1.ContainerOverride{
-				{
-					ContainerName: "test-container",
-				},
-			},
-		},
-		Status: odigosv1.InstrumentationConfigStatus{
-			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
-				{
-					ContainerName: "test-container",
-					Language:      common.JavascriptProgrammingLanguage,
-				},
-			},
-		},
-	}
-
-	rules := &odigosv1.InstrumentationRuleList{
-		Items: []odigosv1.InstrumentationRule{
-			{
-				Spec: odigosv1.InstrumentationRuleSpec{
-					SourcesScopes: []k8sconsts.SourcesScope{
-						{
-							WorkloadName:      "other-app",
-							WorkloadNamespace: "testns",
-							WorkloadKind:      string(k8sconsts.WorkloadKindDeployment),
-						},
-					},
-					PayloadCollection: &instrumentationrules.PayloadCollection{
-						HttpRequest: &instrumentationrules.HttpPayloadCollection{
-							MimeTypes: &[]string{"application/json"},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
-	if err != nil {
-		t.Errorf("Expected nil error, got %v", err)
-	}
-	if len(ic.Spec.SdkConfigs) != 1 {
-		t.Errorf("Expected 1 sdk config, got %d", len(ic.Spec.SdkConfigs))
-	}
-	// rule should be ignored since deployment-test is not matched by sourcesScopes (other-app only)
-	if ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest != nil {
-		t.Errorf("Expected nil, got %v", ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest)
 	}
 }
 

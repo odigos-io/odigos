@@ -24,9 +24,9 @@ import (
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	"github.com/odigos-io/odigos/common/api/sampling"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -669,8 +669,8 @@ func (in *CostReductionRule) DeepCopyInto(out *CostReductionRule) {
 	*out = *in
 	if in.SourceScopes != nil {
 		in, out := &in.SourceScopes, &out.SourceScopes
-		*out = make([]SourcesScope, len(*in))
-		copy(*out, *in)
+		*out = new(SourcesScopes)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Operation != nil {
 		in, out := &in.Operation, &out.Operation
@@ -924,8 +924,8 @@ func (in *HighlyRelevantOperation) DeepCopyInto(out *HighlyRelevantOperation) {
 	*out = *in
 	if in.SourceScopes != nil {
 		in, out := &in.SourceScopes, &out.SourceScopes
-		*out = make([]SourcesScope, len(*in))
-		copy(*out, *in)
+		*out = new(SourcesScopes)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.DurationAtLeastMs != nil {
 		in, out := &in.DurationAtLeastMs, &out.DurationAtLeastMs
@@ -1446,8 +1446,8 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 	*out = *in
 	if in.SourcesScopes != nil {
 		in, out := &in.SourcesScopes, &out.SourcesScopes
-		*out = make([]k8sconsts.SourcesScope, len(*in))
-		copy(*out, *in)
+		*out = new(k8sconsts.SourcesScopes)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.InstrumentationLibraries != nil {
 		in, out := &in.InstrumentationLibraries, &out.InstrumentationLibraries
@@ -1542,8 +1542,8 @@ func (in *NoisyOperation) DeepCopyInto(out *NoisyOperation) {
 	*out = *in
 	if in.SourceScopes != nil {
 		in, out := &in.SourceScopes, &out.SourceScopes
-		*out = make([]SourcesScope, len(*in))
-		copy(*out, *in)
+		*out = new(SourcesScopes)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.Operation != nil {
 		in, out := &in.Operation, &out.Operation

@@ -122,25 +122,9 @@ spec:
                         an empty list will match any source.
                         if multiple items are set, the operation match if any one matches
                         this relates to the "ResourceAttributes" part of a span.
-                      items:
-                        description: |-
-                          define conditions to match specific sources (containers) managed by odigos.
-                          a source container matches, if ALL non empty fields match (AND semantics)
-                          common patterns:
-                            - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
-                              all containers (usually there is only one with agent injection)
-                            - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName):
-                              only this container
-                            - All services in a kubernetes namespace (WorkloadNamespace):
-                              all containers in all sources in the namespace
-                            - All services implemented in a specific programming language (WorkloadLanguage):
-                              all container which are running odigos agent for this language
-                        properties:
-                          containerName:
-                            type: string
-                          workloadKind:
-                            type: string
-                          workloadLanguage:
+                      properties:
+                        languages:
+                          items:
                             enum:
                             - java
                             - python
@@ -159,12 +143,37 @@ spec:
                             - ignored
                             - '*'
                             type: string
-                          workloadName:
+                          type: array
+                        namespaces:
+                          items:
                             type: string
-                          workloadNamespace:
-                            type: string
-                        type: object
-                      type: array
+                          type: array
+                        sources:
+                          items:
+                            description: |-
+                              PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                              It contains essential details about the controller such as its Name, Namespace, and Kind.
+                              'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                              This struct is useful for identifying and interacting with the overarching entity
+                              that governs the lifecycle and behavior of a Pod, especially in contexts where
+                              understanding the relationship between a Pod and its controlling workload is crucial.
+                            properties:
+                              kind:
+                                description: |-
+                                  1. the pascal case representation of the workload kind
+                                  it is used in k8s api objects as the `Kind` field.
+                                type: string
+                              name:
+                                type: string
+                              namespace:
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            - namespace
+                            type: object
+                          type: array
+                      type: object
                   required:
                   - percentageAtMost
                   type: object
@@ -261,25 +270,9 @@ spec:
                         an empty list will match any source.
                         if multiple items are set, the operation match if any one matches
                         this relates to the "ResourceAttributes" part of a span.
-                      items:
-                        description: |-
-                          define conditions to match specific sources (containers) managed by odigos.
-                          a source container matches, if ALL non empty fields match (AND semantics)
-                          common patterns:
-                            - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
-                              all containers (usually there is only one with agent injection)
-                            - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName):
-                              only this container
-                            - All services in a kubernetes namespace (WorkloadNamespace):
-                              all containers in all sources in the namespace
-                            - All services implemented in a specific programming language (WorkloadLanguage):
-                              all container which are running odigos agent for this language
-                        properties:
-                          containerName:
-                            type: string
-                          workloadKind:
-                            type: string
-                          workloadLanguage:
+                      properties:
+                        languages:
+                          items:
                             enum:
                             - java
                             - python
@@ -298,12 +291,37 @@ spec:
                             - ignored
                             - '*'
                             type: string
-                          workloadName:
+                          type: array
+                        namespaces:
+                          items:
                             type: string
-                          workloadNamespace:
-                            type: string
-                        type: object
-                      type: array
+                          type: array
+                        sources:
+                          items:
+                            description: |-
+                              PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                              It contains essential details about the controller such as its Name, Namespace, and Kind.
+                              'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                              This struct is useful for identifying and interacting with the overarching entity
+                              that governs the lifecycle and behavior of a Pod, especially in contexts where
+                              understanding the relationship between a Pod and its controlling workload is crucial.
+                            properties:
+                              kind:
+                                description: |-
+                                  1. the pascal case representation of the workload kind
+                                  it is used in k8s api objects as the `Kind` field.
+                                type: string
+                              name:
+                                type: string
+                              namespace:
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            - namespace
+                            type: object
+                          type: array
+                      type: object
                   type: object
                 type: array
               name:
@@ -398,25 +416,9 @@ spec:
                         for example: if "other agent" rule for noisty operation is relevant only in java,
                         limit this rule by setting source scope to java and prevent other languages from being affected
                         if the list is empty - all sources are matched.
-                      items:
-                        description: |-
-                          define conditions to match specific sources (containers) managed by odigos.
-                          a source container matches, if ALL non empty fields match (AND semantics)
-                          common patterns:
-                            - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
-                              all containers (usually there is only one with agent injection)
-                            - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName):
-                              only this container
-                            - All services in a kubernetes namespace (WorkloadNamespace):
-                              all containers in all sources in the namespace
-                            - All services implemented in a specific programming language (WorkloadLanguage):
-                              all container which are running odigos agent for this language
-                        properties:
-                          containerName:
-                            type: string
-                          workloadKind:
-                            type: string
-                          workloadLanguage:
+                      properties:
+                        languages:
+                          items:
                             enum:
                             - java
                             - python
@@ -435,12 +437,37 @@ spec:
                             - ignored
                             - '*'
                             type: string
-                          workloadName:
+                          type: array
+                        namespaces:
+                          items:
                             type: string
-                          workloadNamespace:
-                            type: string
-                        type: object
-                      type: array
+                          type: array
+                        sources:
+                          items:
+                            description: |-
+                              PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                              It contains essential details about the controller such as its Name, Namespace, and Kind.
+                              'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                              This struct is useful for identifying and interacting with the overarching entity
+                              that governs the lifecycle and behavior of a Pod, especially in contexts where
+                              understanding the relationship between a Pod and its controlling workload is crucial.
+                            properties:
+                              kind:
+                                description: |-
+                                  1. the pascal case representation of the workload kind
+                                  it is used in k8s api objects as the `Kind` field.
+                                type: string
+                              name:
+                                type: string
+                              namespace:
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            - namespace
+                            type: object
+                          type: array
+                      type: object
                   type: object
                 type: array
               notes:

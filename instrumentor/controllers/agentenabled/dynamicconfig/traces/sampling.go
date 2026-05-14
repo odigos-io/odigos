@@ -19,11 +19,6 @@ func DistroSupportsHeadSampling(distro *distro.OtelDistro) bool {
 	return distro.Traces != nil && distro.Traces.HeadSampling != nil && distro.Traces.HeadSampling.Supported
 }
 
-// isServiceInRuleScope returns true if the list is empty (match all) or any scope matches the given workload/container/language.
-func isServiceInRuleScope(services []scope.SourcesScope, pw k8sconsts.PodWorkload, containerName string, containerLanguage common.ProgrammingLanguage) bool {
-	return scope.AnySourceScopeMatchesContainer(services, pw, containerName, containerLanguage)
-}
-
 // used to return the result of computing the paths and rule names for kubelet health probes auto-rule.
 type kubeletProbePathAndName struct {
 	Path     string
@@ -169,7 +164,7 @@ func CalculateSamplingCategoryRulesForContainer(samplingRules *[]odigosv1.Sampli
 		// Exclude SourceScopes and Notes from the rules because we want the instrumentationConfig to be more lightweight.
 
 		for _, noisyOp := range samplingRule.Spec.NoisyOperations {
-			if isServiceInRuleScope(noisyOp.SourceScopes, pw, containerName, language) {
+			if scope.SourceScopeMatchesContainer(noisyOp.SourceScopes, pw, language) {
 				filteredNoisyOps = append(filteredNoisyOps, apisampling.NoisyOperation{
 					Id:               odigosv1.ComputeNoisyOperationHash(&noisyOp),
 					Name:             noisyOp.Name,
@@ -182,7 +177,7 @@ func CalculateSamplingCategoryRulesForContainer(samplingRules *[]odigosv1.Sampli
 
 		// Filter and convert HighlyRelevantOperations - exclude SourceScopes and Notes
 		for _, relevantOp := range samplingRule.Spec.HighlyRelevantOperations {
-			if isServiceInRuleScope(relevantOp.SourceScopes, pw, containerName, language) {
+			if scope.SourceScopeMatchesContainer(relevantOp.SourceScopes, pw, language) {
 				filteredRelevantOps = append(filteredRelevantOps, apisampling.HighlyRelevantOperation{
 					Id:                odigosv1.ComputeHighlyRelevantOperationHash(&relevantOp),
 					Name:              relevantOp.Name,
@@ -196,7 +191,7 @@ func CalculateSamplingCategoryRulesForContainer(samplingRules *[]odigosv1.Sampli
 		}
 
 		for _, costRule := range samplingRule.Spec.CostReductionRules {
-			if isServiceInRuleScope(costRule.SourceScopes, pw, containerName, language) {
+			if scope.SourceScopeMatchesContainer(costRule.SourceScopes, pw, language) {
 				filteredCostRules = append(filteredCostRules, apisampling.CostReductionRule{
 					Id:               odigosv1.ComputeCostReductionRuleHash(&costRule),
 					Name:             costRule.Name,

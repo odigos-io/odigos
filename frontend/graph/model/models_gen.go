@@ -313,7 +313,7 @@ type CostReductionRule struct {
 	RuleID           string                        `json:"ruleId"`
 	Name             *string                       `json:"name,omitempty"`
 	Disabled         bool                          `json:"disabled"`
-	SourceScopes     []*SourcesScope               `json:"sourceScopes,omitempty"`
+	SourceScopes     *SourcesScopes                `json:"sourceScopes,omitempty"`
 	Operation        *TailSamplingOperationMatcher `json:"operation,omitempty"`
 	PercentageAtMost float64                       `json:"percentageAtMost"`
 	Notes            *string                       `json:"notes,omitempty"`
@@ -322,7 +322,7 @@ type CostReductionRule struct {
 type CostReductionRuleInput struct {
 	Name             *string                            `json:"name,omitempty"`
 	Disabled         *bool                              `json:"disabled,omitempty"`
-	SourceScopes     []*SourcesScopeInput               `json:"sourceScopes,omitempty"`
+	SourceScopes     *SourcesScopesInput                `json:"sourceScopes,omitempty"`
 	Operation        *TailSamplingOperationMatcherInput `json:"operation,omitempty"`
 	PercentageAtMost float64                            `json:"percentageAtMost"`
 	Notes            *string                            `json:"notes,omitempty"`
@@ -618,7 +618,7 @@ type HighlyRelevantOperationRule struct {
 	RuleID            string                        `json:"ruleId"`
 	Name              *string                       `json:"name,omitempty"`
 	Disabled          bool                          `json:"disabled"`
-	SourceScopes      []*SourcesScope               `json:"sourceScopes,omitempty"`
+	SourceScopes      *SourcesScopes                `json:"sourceScopes,omitempty"`
 	Error             bool                          `json:"error"`
 	DurationAtLeastMs *int                          `json:"durationAtLeastMs,omitempty"`
 	Operation         *TailSamplingOperationMatcher `json:"operation,omitempty"`
@@ -629,7 +629,7 @@ type HighlyRelevantOperationRule struct {
 type HighlyRelevantOperationRuleInput struct {
 	Name              *string                            `json:"name,omitempty"`
 	Disabled          *bool                              `json:"disabled,omitempty"`
-	SourceScopes      []*SourcesScopeInput               `json:"sourceScopes,omitempty"`
+	SourceScopes      *SourcesScopesInput                `json:"sourceScopes,omitempty"`
 	Error             *bool                              `json:"error,omitempty"`
 	DurationAtLeastMs *int                               `json:"durationAtLeastMs,omitempty"`
 	Operation         *TailSamplingOperationMatcherInput `json:"operation,omitempty"`
@@ -1228,7 +1228,7 @@ type NoisyOperationRule struct {
 	RuleID           string                        `json:"ruleId"`
 	Name             *string                       `json:"name,omitempty"`
 	Disabled         bool                          `json:"disabled"`
-	SourceScopes     []*SourcesScope               `json:"sourceScopes,omitempty"`
+	SourceScopes     *SourcesScopes                `json:"sourceScopes,omitempty"`
 	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
 	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
 	Notes            *string                       `json:"notes,omitempty"`
@@ -1237,7 +1237,7 @@ type NoisyOperationRule struct {
 type NoisyOperationRuleInput struct {
 	Name             *string                            `json:"name,omitempty"`
 	Disabled         *bool                              `json:"disabled,omitempty"`
-	SourceScopes     []*SourcesScopeInput               `json:"sourceScopes,omitempty"`
+	SourceScopes     *SourcesScopesInput                `json:"sourceScopes,omitempty"`
 	Operation        *HeadSamplingOperationMatcherInput `json:"operation,omitempty"`
 	PercentageAtMost *float64                           `json:"percentageAtMost,omitempty"`
 	Notes            *string                            `json:"notes,omitempty"`
@@ -1573,18 +1573,16 @@ type SourceProfilingResult struct {
 	ProfileJSON string `json:"profileJson"`
 }
 
-type SourcesScope struct {
-	WorkloadName      *string                   `json:"workloadName,omitempty"`
-	WorkloadKind      *K8sResourceKind          `json:"workloadKind,omitempty"`
-	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
-	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
+type SourcesScopes struct {
+	Sources    []*K8sWorkloadID           `json:"sources,omitempty"`
+	Namespaces []string                   `json:"namespaces,omitempty"`
+	Languages  []SamplingWorkloadLanguage `json:"languages,omitempty"`
 }
 
-type SourcesScopeInput struct {
-	WorkloadName      *string                   `json:"workloadName,omitempty"`
-	WorkloadKind      *K8sResourceKind          `json:"workloadKind,omitempty"`
-	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
-	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
+type SourcesScopesInput struct {
+	Sources    []*K8sSourceID             `json:"sources,omitempty"`
+	Namespaces []string                   `json:"namespaces,omitempty"`
+	Languages  []SamplingWorkloadLanguage `json:"languages,omitempty"`
 }
 
 type SpanAttributeFilter struct {

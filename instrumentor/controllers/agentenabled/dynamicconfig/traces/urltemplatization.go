@@ -26,7 +26,7 @@ func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, cont
 		}
 
 		for _, rulesGroup := range action.Spec.URLTemplatization.TemplatizationRulesGroups {
-			if scope.AnySourceScopeMatchesContainer(rulesGroup.SourcesScope, pw, containerName, language) {
+			if scope.SourceScopeMatchesContainer(rulesGroup.SourcesScopes, pw, language) {
 				participating = true
 				for _, rule := range rulesGroup.TemplatizationRules {
 					rules = append(rules, rule.Template)

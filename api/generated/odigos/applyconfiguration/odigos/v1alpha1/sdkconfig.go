@@ -18,8 +18,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	common "github.com/odigos-io/odigos/common"
+	instrumentationrules "github.com/odigos-io/odigos/common/api/instrumentationrules"
 )
 
 // SdkConfigApplyConfiguration represents a declarative configuration of the SdkConfig type for use

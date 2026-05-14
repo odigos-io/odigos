@@ -887,6 +887,16 @@ odiglet:
     appArmorProfile:
       type: "Unconfined"
 
+    # @schema
+    # description: |-
+    #   Percentage of the memory limit to use for GOMEMLIMIT when the odiglet
+    #   memory limit is >= 500Mi. Below 500Mi the default 80% is used.
+    #   Odiglet allocates significant memory for eBPF maps which live outside
+    #   the Go heap. The Go runtime is unaware of this memory, so GOMEMLIMIT
+    #   must leave enough headroom for these allocations to avoid OOM kills.
+    # @schema
+    # goMemLimitPercentage: 60
+
   # @schema
   # description: |-
   #   traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.
