@@ -1,11 +1,10 @@
 package v1alpha1
 
 import (
-	actions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 	commonapi "github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
 	"github.com/odigos-io/odigos/common/api/instrumentationrules"
-	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -300,128 +299,6 @@ func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v
 	return nil
 }
 
-// random id generator is the default, and most common.
-// it creates span ids and trace ids using random bytes.
-// It has no configuration.
-type IdGeneratorRandomConfig struct{}
-
-// trace id includes timestamp, source id byte, and random number bytes.
-// this id generator can be leveraged by databases to do efficient indexing.
-type IdGeneratorTimedWallConfig struct {
-	// sourceId is a number between 0-255 (8 bits) written into the 8th byte of the trace id.
-	// if timedWall is specified, the sourceId is required.
-	SourceId uint8 `json:"sourceId"`
-}
-
-// id generator configuration for the traces
-type IdGeneratorConfig struct {
-	Random    *IdGeneratorRandomConfig    `json:"random,omitempty"`
-	TimedWall *IdGeneratorTimedWallConfig `json:"timedWall,omitempty"`
-}
-
-type AgentSpanMetricsConfig struct {
-	// additional dimensions to add for the span metrics.
-	// for example, if you add `http.method` to the dimensions,
-	// then the span metrics data points will include the `http.method` in the attributes,
-	// and different values of `http.method` will be aggregated into different time series.
-	Dimensions []string `json:"dimensions,omitempty"`
-
-	// time interval in miliseconds for flushing the span metrics.
-	// defaults: 60000 (60 seconds, 1 minute)
-	IntervalMs int `json:"intervalMs,omitempty"`
-
-	// explicit buckets list for the histogram metrics in ms
-	HistogramBucketsMs []int `json:"histogramBucketsMs,omitempty"`
-}
-
-type SpanRenamerScopeConfig struct {
-	// the name of the opentelemetry intrumentation scope which the renamed spans are written in.
-	ScopeName string `json:"scopeName"`
-
-	// if set, spans matching the above conditions will be renamed to this static value.
-	ConstantSpanName string `json:"constantSpanName,omitempty"`
-}
-
-type SpanRenamerScopeRules struct {
-	// the name of the opentelemetry intrumentation scope which the renamed spans are written in.
-	ScopeName string `json:"scopeName"`
-
-	// list of regex replacements to be applied to the span name.
-	// all options are always tried, regardless of whether the previous options have matched or not.
-	RegexReplacements []actions.SpanRenamerRegexReplacement `json:"regexReplacements,omitempty"`
-}
-
-type SpanRenamerConfig struct {
-	// list of scope rules to be applied to the span name.
-	// all options are always tried, regardless of whether the previous options have matched or not.
-	ScopeRules []SpanRenamerScopeRules `json:"scopeRules,omitempty"`
-}
-
-// HeadersCollectionConfig represents configuration for HTTP headers collection.
-type HeadersCollectionConfig struct {
-	// Limit HTTP headers collection to specific header keys.
-	// if unset, no HTTP headers will be collected.
-	// HTTP headers cannot be collected as wildcard, to avoid leaking sensitive information.
-	HttpHeaderKeys []string `json:"httpHeaderKeys,omitempty"`
-}
-
-// all "traces" related configuration for an agent running on any process in a specific container.
-// The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
-type AgentTracesConfig struct {
-	// id generator configuration for the traces.
-	// if not specified, the default random id generator will be used.
-	IdGenerator *IdGeneratorConfig `json:"idGenerator,omitempty"`
-
-	// A list of URL templatization configurations to be applied to the traces.
-	UrlTemplatization *commonapi.UrlTemplatizationConfig `json:"urlTemplatization,omitempty"`
-
-	// Configuration for headers collection. If not specified, no headers will be collected.
-	HeadersCollection *HeadersCollectionConfig `json:"headersCollection,omitempty"`
-
-	// HeadSamplingConfig is a set sampling rules.
-	// This config currently only applies to root spans.
-	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
-	HeadSampling *HeadSamplingConfig `json:"headSampling,omitempty"`
-
-	// Configuration for span renamer.
-	SpanRenamer *SpanRenamerConfig `json:"spanRenamer,omitempty"`
-
-	// configuration for payload collection for this container.
-	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
-
-	// configuration for code attributes collection for this container.
-	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
-
-	// configuration for how verbose the trace should be - e.g. which spans should be included / excluded.
-	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
-
-	// custom instrumentation probes for this container.
-	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
-}
-
-// all "metrics" related configuration for an agent running on any process in a specific container.
-// The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
-type AgentMetricsConfig struct {
-
-	// if not nil, it means agent should report span metrics,
-	// calculated directly in the agent.
-	// this is most accurate as it includes any sampled spans,
-	// and is not affected if spans are dropped anywhere in the pipeline.
-	SpanMetrics *AgentSpanMetricsConfig `json:"spanMetrics,omitempty"`
-
-	// if not nil, it means agent should report runtime metrics,
-	// such as JVM metrics for Java applications.
-	// these metrics provide insights into the runtime environment performance.
-	RuntimeMetrics *common.MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
-}
-
-// all "logs" related configuration for an agent running on any process in a specific container.
-// The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
-type AgentLogsConfig struct {
-	// if set, switches the logs pipeline to use the eBPF receiver instead of filelog.
-	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
-}
-
 // ContainerAgentConfig is a configuration for a specific container in a workload.
 type ContainerAgentConfig struct {
 	// The name of the container to which this configuration applies.
@@ -456,9 +333,9 @@ type ContainerAgentConfig struct {
 
 	// Each enabled signal must be set with a non-nil value (even if the config content is empty).
 	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
-	Traces  *AgentTracesConfig  `json:"traces,omitempty"`
-	Metrics *AgentMetricsConfig `json:"metrics,omitempty"`
-	Logs    *AgentLogsConfig    `json:"logs,omitempty"`
+	Traces  *agentsignalconfig.AgentTracesConfig  `json:"traces,omitempty"`
+	Metrics *agentsignalconfig.AgentMetricsConfig `json:"metrics,omitempty"`
+	Logs    *agentsignalconfig.AgentLogsConfig    `json:"logs,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
@@ -543,37 +420,6 @@ type SdkConfig struct {
 	// Whether eBPF-based log capture is enabled for this SDK.
 	// Set by the instrumentor based on InstrumentationRule ebpfLogCapture config.
 	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
-}
-
-type HeadSamplingConfig struct {
-
-	// If true, the sampling decision will be made in dry-run mode.
-	// When dry-run is enabled, the sampling decision will be made but the trace will not be dropped.
-	// This is useful to evaluate the sampling decision before actually committing to it.
-	// 2 additional attributes will be set on the spans:
-	// - odigos.sampling.dry_run: true
-	// - odigos.sampling.dry_run.kept: true if the trace would have been kept, false if it would have been dropped.
-	DryRun bool `json:"dryRun,omitempty"`
-
-	// Controls the tradeoff between metric accuracy and resource usage.
-	// Determines how sampling affects which spans are used to compute metrics.
-	// Possible values:
-	//   - "sampled-spans-only" (default): metrics are computed only from sampled spans.
-	//     Unsampled spans are dropped early, resulting in lower resource usage but reduced accuracy.
-	//   - "all-spans": metrics are computed from all spans, regardless of sampling.
-	//     Unsampled spans are forwarded for metric computation and dropped later in the pipeline,
-	//     resulting in higher accuracy at the cost of increased resource usage.
-	SpanMetricsMode commonapisampling.SpanMetricsMode `json:"spanMetricsMode,omitempty"`
-
-	// Noisy operations are categories of matchers that are used on the root span.
-	// If match, the fraction is used to determine the sampling decision for the entire trace.
-	// If multiple noisy operations match, the lowest fraction is used.
-	NoisyOperations []commonapisampling.NoisyOperation `json:"noisyOperations,omitempty"`
-
-	// +kubebuilder:default:=1
-	// Deprecated: do not use. Will be removed once python and node migration is complete.
-	// Use NoisyOperations instead.
-	FallbackFraction float64 `json:"fallbackFraction,omitempty"`
 }
 
 type InstrumentationLibraryConfig struct {
