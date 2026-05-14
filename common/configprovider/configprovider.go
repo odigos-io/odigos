@@ -66,6 +66,7 @@ func (c *ConfigProvider[C]) SendConfig(ctx context.Context, newConfig C) error {
 		return nil
 	}
 
+	// send a config or potentially return an error on timeout
 	applyCtx, cancel := context.WithTimeout(ctx, applyConfigTimeout)
 	defer cancel()
 

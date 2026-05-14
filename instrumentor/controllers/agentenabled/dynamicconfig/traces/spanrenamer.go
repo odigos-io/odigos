@@ -3,7 +3,7 @@ package traces
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	"github.com/odigos-io/odigos/distros/distro"
 )
 
@@ -11,14 +11,14 @@ func DistroSupportsTracesSpanRenamer(distro *distro.OtelDistro) bool {
 	return distro.Traces != nil && distro.Traces.SpanRenamer != nil && distro.Traces.SpanRenamer.Supported
 }
 
-func CalculateSpanRenamerConfig(distro *distro.OtelDistro, agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage) *agentsignalconfig.SpanRenamerConfig {
+func CalculateSpanRenamerConfig(distro *distro.OtelDistro, agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage) *instrumentationrules.SpanRenamerConfig {
 
 	if !DistroSupportsTracesSpanRenamer(distro) {
 		return nil
 	}
 
 	gotRenamingConfig := false
-	scopeRulesMap := map[string]agentsignalconfig.SpanRenamerScopeRules{}
+	scopeRulesMap := map[string]instrumentationrules.SpanRenamerScopeRules{}
 
 	for _, action := range *agentLevelActions {
 		if action.Spec.SpanRenamer != nil {
@@ -31,9 +31,9 @@ func CalculateSpanRenamerConfig(distro *distro.OtelDistro, agentLevelActions *[]
 					existing.RegexReplacements = append(existing.RegexReplacements, scopeRule)
 					scopeRulesMap[scopeName] = existing
 				} else {
-					scopeRulesMap[scopeName] = agentsignalconfig.SpanRenamerScopeRules{
+					scopeRulesMap[scopeName] = instrumentationrules.SpanRenamerScopeRules{
 						ScopeName:         scopeName,
-						RegexReplacements: []agentsignalconfig.SpanRenamerRegexReplacement{scopeRule},
+						RegexReplacements: []instrumentationrules.SpanRenamerRegexReplacement{scopeRule},
 					}
 				}
 				gotRenamingConfig = true
@@ -45,11 +45,11 @@ func CalculateSpanRenamerConfig(distro *distro.OtelDistro, agentLevelActions *[]
 		return nil
 	}
 
-	scopeRules := []agentsignalconfig.SpanRenamerScopeRules{}
+	scopeRules := []instrumentationrules.SpanRenamerScopeRules{}
 	for _, scopeRule := range scopeRulesMap {
 		scopeRules = append(scopeRules, scopeRule)
 	}
-	return &agentsignalconfig.SpanRenamerConfig{
+	return &instrumentationrules.SpanRenamerConfig{
 		ScopeRules: scopeRules,
 	}
 }
