@@ -3,7 +3,7 @@ package actions
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/api/instrumentationrules"
+	"github.com/odigos-io/odigos/common/api/actions"
 )
 
 const ActionSpanRenamer = "SpanRenamer"
@@ -20,7 +20,7 @@ type SpanRenamerConfig struct {
 
 	// list of regex replacements to be applied to the span name.
 	// all options are always tried, regardless of whether the previous options have matched or not.
-	RegexReplacements []instrumentationrules.SpanRenamerRegexReplacement `json:"regexReplacements,omitempty"`
+	RegexReplacements []actions.SpanRenamerRegexReplacement `json:"regexReplacements,omitempty"`
 }
 
 func (SpanRenamerConfig) ProcessorType() string {

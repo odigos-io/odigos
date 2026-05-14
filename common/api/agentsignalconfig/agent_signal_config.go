@@ -2,7 +2,7 @@ package agentsignalconfig
 
 import (
 	"github.com/odigos-io/odigos/common"
-	commonapi "github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	"github.com/odigos-io/odigos/common/api/sampling"
 )
@@ -43,15 +43,6 @@ type AgentSpanMetricsConfig struct {
 	HistogramBucketsMs []int `json:"histogramBucketsMs,omitempty"`
 }
 
-// HeadersCollectionConfig represents configuration for HTTP headers collection.
-// +kubebuilder:object:generate=true
-type HeadersCollectionConfig struct {
-	// Limit HTTP headers collection to specific header keys.
-	// if unset, no HTTP headers will be collected.
-	// HTTP headers cannot be collected as wildcard, to avoid leaking sensitive information.
-	HttpHeaderKeys []string `json:"httpHeaderKeys,omitempty"`
-}
-
 // all "traces" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
 // +kubebuilder:object:generate=true
@@ -61,10 +52,10 @@ type AgentTracesConfig struct {
 	IdGenerator *IdGeneratorConfig `json:"idGenerator,omitempty"`
 
 	// A list of URL templatization configurations to be applied to the traces.
-	UrlTemplatization *commonapi.UrlTemplatizationConfig `json:"urlTemplatization,omitempty"`
+	UrlTemplatization *actions.UrlTemplatizationConfig `json:"urlTemplatization,omitempty"`
 
 	// Configuration for headers collection. If not specified, no headers will be collected.
-	HeadersCollection *HeadersCollectionConfig `json:"headersCollection,omitempty"`
+	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
 
 	// HeadSamplingConfig is a set sampling rules.
 	// This config currently only applies to root spans.
@@ -72,7 +63,7 @@ type AgentTracesConfig struct {
 	HeadSampling *sampling.HeadSamplingConfig `json:"headSampling,omitempty"`
 
 	// Configuration for span renamer.
-	SpanRenamer *instrumentationrules.SpanRenamerConfig `json:"spanRenamer,omitempty"`
+	SpanRenamer *actions.SpanRenamerConfig `json:"spanRenamer,omitempty"`
 
 	// configuration for payload collection for this container.
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`

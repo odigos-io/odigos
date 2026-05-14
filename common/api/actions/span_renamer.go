@@ -1,4 +1,4 @@
-package instrumentationrules
+package actions
 
 // configuration for replacing parts of the span name with a template text based on regular expressions.
 type SpanRenamerRegexReplacement struct {
