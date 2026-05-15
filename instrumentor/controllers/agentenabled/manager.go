@@ -47,6 +47,7 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 			&instrumentorpredicate.RuntimeDetailsChangedPredicate{},
 			&instrumentorpredicate.ContainerOverridesChangedPredicate{},
 			&instrumentorpredicate.RecoveredFromRollbackAtChangedPredicate{},
+			&instrumentorpredicate.PubliclyAccessibleChangedPredicate{},
 			odigospredicate.DeletionPredicate{})).
 		Complete(&InstrumentationConfigReconciler{
 			Client:                    mgr.GetClient(),
