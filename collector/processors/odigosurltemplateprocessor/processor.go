@@ -3,6 +3,7 @@ package odigosurltemplateprocessor
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -282,7 +283,11 @@ func resolveUrlPath(attr pcommon.Map) (string, bool) {
 	}
 	fullUrl, fullUrlFound := getFullUrl(attr)
 	if fullUrlFound {
-		return fullUrl, true
+		parsed, err := url.Parse(fullUrl)
+		if err != nil {
+			return "", false
+		}
+		return parsed.Path, true
 	}
 	return "", false
 }
