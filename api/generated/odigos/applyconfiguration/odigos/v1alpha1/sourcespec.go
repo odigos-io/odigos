@@ -44,6 +44,13 @@ type SourceSpecApplyConfiguration struct {
 	// This allows matching multiple workloads with a single Source CRD.
 	// Not valid for namespace sources.
 	MatchWorkloadNameAsRegex *bool `json:"matchWorkloadNameAsRegex,omitempty"`
+	// indicate that the source accepts incoming traffic from the internet.
+	// this is used to avoid running url-templatization
+	// when an endpoint from this service returns with 400 or 500 status code.
+	// internet exposed services are commonly being "tested" by malicious actors
+	// with irrelevant or garbage requests that can contaminate the url-templatization process
+	// leading to high-cardinality of templated routes.
+	PubliclyAccessible *bool `json:"publiclyAccessible,omitempty"`
 }
 
 // SourceSpecApplyConfiguration constructs a declarative configuration of the SourceSpec type for use with
@@ -94,5 +101,13 @@ func (b *SourceSpecApplyConfiguration) WithContainerOverrides(values ...*Contain
 // If called multiple times, the MatchWorkloadNameAsRegex field is set to the value of the last call.
 func (b *SourceSpecApplyConfiguration) WithMatchWorkloadNameAsRegex(value bool) *SourceSpecApplyConfiguration {
 	b.MatchWorkloadNameAsRegex = &value
+	return b
+}
+
+// WithPubliclyAccessible sets the PubliclyAccessible field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PubliclyAccessible field is set to the value of the last call.
+func (b *SourceSpecApplyConfiguration) WithPubliclyAccessible(value bool) *SourceSpecApplyConfiguration {
+	b.PubliclyAccessible = &value
 	return b
 }
