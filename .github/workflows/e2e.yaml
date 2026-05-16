@@ -81,7 +81,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kube-version: [ "1.32", "1.23", "1.21.12" ]
+        # Default: run all scenarios only on the latest Kubernetes version
+        kube-version: [ "1.35" ]
         test-scenario:
           - "ui"
           - "helm-chart"
@@ -100,6 +101,20 @@ jobs:
           - "mount-method"
           - "argo-rollouts"
         include:
+          # Additional: scenarios that should also run on older Kubernetes versions
+          - kube-version: "1.21.12"
+            test-scenario: "helm-chart"
+          - kube-version: "1.23"
+            test-scenario: "helm-chart"
+          - kube-version: "1.32"
+            test-scenario: "helm-chart"
+          - kube-version: "1.21.12"
+            test-scenario: "helm-upgrade"
+          - kube-version: "1.23"
+            test-scenario: "helm-upgrade"
+          - kube-version: "1.32"
+            test-scenario: "helm-upgrade"
+
           - kube-version: "1.21.12"
             # use 1.21.12 for systemd cgroups compatibility changes in kind 0.13 https://github.com/kubernetes-sigs/kind/releases/tag/v0.13.0
             kind-image: "kindest/node:v1.21.12@sha256:ae05d44cc636ee961068399ea5123ae421790f472c309900c151a44ee35c3e3e"
@@ -107,6 +122,8 @@ jobs:
             kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
           - kube-version: "1.32"
             kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
+          - kube-version: "1.35"
+            kind-image: "kindest/node:v1.35.1
 
     steps:
       - name: Checkout
