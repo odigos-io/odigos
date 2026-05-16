@@ -3,3 +3,4 @@
 One-line dated entries pointing to the chat that did the work.
 
 - 2026-05-16 - Phase 0 scaffold (three containers, docker compose smoke test, graphify-out relocated under graph-mcp).
+- 2026-05-16 - Phase 1a source / instrumentation MCP tools (8 reads + propose/apply_create_source approval pair). Shared `tools.BuildClients`, `ApprovalCache`. ADR-006/007/008.

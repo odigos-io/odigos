@@ -78,3 +78,33 @@ v1 (19 MB, immutable per release).
 **Consequences.** Docker build context stays local. Repo grows by ~19 MB once.
 Revisit (Git LFS, OCI artifact, release-bucket pull) in v2 when CI rebuild
 lands.
+
+---
+
+## ADR-006 - Cluster MCP imports odigos modules via `replace` directives
+
+**Context.** The cluster MCP needs the odigos typed clientset (`api/generated/odigos/clientset/versioned`), CRD type defs (`api/odigos/v1alpha1`), and shared helpers (`k8sutils/pkg/workload`, `api/k8sconsts`, `common/consts`). Publishing those modules to a registry just for the agent is over-engineering for an in-repo POC.
+
+**Decision.** `odigos-agent/mcp/go.mod` uses local `replace` directives pointing at `../../api`, `../../common`, `../../k8sutils`, `../../odigosauth`. Matches the pattern already used elsewhere in odigos for sibling modules.
+
+**Consequences.** Cluster MCP is locked to whatever odigos commit it sits on top of, which is exactly what we want for v1 (agent is built alongside odigos, not separately released). Out-of-tree builds would need to vendor or fork.
+
+---
+
+## ADR-007 - Approval cache is in-process and ephemeral
+
+**Context.** The mutation approval flow (`propose_X` -> user approve -> `apply_X`) needs to remember the dry-run state across two tool calls. Options: external store (Redis/Postgres), file/PVC, or in-process memory.
+
+**Decision.** `sync.Mutex`-guarded `map[string]*PendingMutation` in the MCP process, 5-minute TTL, garbage-collected on every `Put`/`Take`. UUID v4 request IDs.
+
+**Consequences.** v1 ships a single MCP replica - no cross-process state to worry about. Pod restart drops in-flight approvals, which matches the 5-minute TTL semantics anyway. Scaling out (HPA on the agent pod) would require swapping this for a backing store; deferred until we hit it.
+
+---
+
+## ADR-008 - Mutation audit is `log.Printf` placeholder, not OTLP, in v1
+
+**Context.** PLAN.md says every mutation emits an OTLP audit event. The OTLP audit pipeline doesn't exist yet - building it is its own (cross-cutting) workstream.
+
+**Decision.** Every `propose_*` / `apply_*` call logs a single structured line via `log.Printf` (`audit: op=... ns=... result=...`). Stdout flows into the pod's logs, which odigos itself can scrape later.
+
+**Consequences.** Real auditability lands when OTLP audit is wired up (likely Phase 7 or 8 alongside batch-plan approval). Until then, ops team has logs, not traces. Tracking debt explicitly here so it isn't forgotten.
