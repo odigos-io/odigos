@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -271,7 +272,17 @@ func (m *collectorManager) getCollectorMetrics(ctx context.Context, request mcp.
 		return ToolError("%v", selectErr)
 	}
 	if chosen == nil {
-		return WriteJSON(map[string]any{"found": false, "role": role, "reason": "no ready collector pod"})
+		return WriteJSON(map[string]any{"found": false, "role": role, "reason": "no collector pod found"})
+	}
+	// Metrics scrape needs a routable pod IP; non-ready pods often have none
+	// and would otherwise produce a confusing "has no PodIP" error.
+	if podName == "" && !isPodReady(chosen) {
+		return WriteJSON(map[string]any{
+			"found":  false,
+			"role":   role,
+			"pod":    chosen.Name,
+			"reason": "no ready collector pod (scrape needs PodIP)",
+		})
 	}
 	if chosen.Status.PodIP == "" {
 		return ToolError("collector pod %s has no PodIP - is it still starting?", chosen.Name)
@@ -424,9 +435,9 @@ func isPodReady(pod *corev1.Pod) bool {
 	return false
 }
 
-// parseCollectorYAML decodes an otelcol-style config into a generic map. Falls
-// back to returning the raw YAML if parsing fails so the agent still has
-// something to look at.
+// parseCollectorYAML decodes an otelcol-style config into a generic map.
+// On error, returns (nil, err); the caller surfaces the message under
+// `parse_error` while keeping the raw text available.
 func parseCollectorYAML(raw string) (map[string]any, error) {
 	out := map[string]any{}
 	if err := yaml.Unmarshal([]byte(raw), &out); err != nil {
@@ -440,6 +451,7 @@ func keysOf(m map[string]string) []string {
 	for key := range m {
 		keys = append(keys, key)
 	}
+	sort.Strings(keys)
 	return keys
 }
 

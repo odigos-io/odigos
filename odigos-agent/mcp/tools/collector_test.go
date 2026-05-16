@@ -41,6 +41,14 @@ func TestParsePromCountersHandlesNoLabels(t *testing.T) {
 	}
 }
 
+func TestParsePromCountersHandlesEmptyLabelSet(t *testing.T) {
+	body := "otelcol_exporter_sent_spans{} 42\n"
+	got := ParsePromCountersForNames(body, []string{"otelcol_exporter_sent_spans"})
+	if got["otelcol_exporter_sent_spans"] != 42 {
+		t.Errorf("empty label set: got %v want 42", got["otelcol_exporter_sent_spans"])
+	}
+}
+
 func TestParsePromLineSkipsMalformed(t *testing.T) {
 	cases := []string{
 		"",
