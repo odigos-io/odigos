@@ -88,7 +88,6 @@ const (
 	IgnoredContainersProperty          = "ignored-containers"
 	MountMethodProperty                = "mount-method"
 	CustomContainerRuntimeSocketPath   = "custom-container-runtime-socket-path"
-	K8sNodeLogsDirectory               = "k8s-node-logs-directory"
 	UserInstrumentationEnvsProperty    = "user-instrumentation-envs"
 	AgentEnvVarsInjectionMethod        = "agent-env-vars-injection-method"
 	NodeSelectorProperty               = "node-selector"
@@ -138,13 +137,13 @@ const (
 
 // Processor related consts
 const (
-	GenericBatchProcessorConfigKey = "batch/generic-batch-processor"
-	SmallBatchesProcessor          = "batch/small-batches"
-	GroupByTraceProcessorV2        = "groupbytrace/samplingv2"
-
-	// URLTemplatizationProcessorName is the name of the shared Processor CR and pipeline component for URL templatization.
-	// Used by the autoscaler action controller when creating/watching the Processor CR. Not K8s-specific.
-	URLTemplatizationProcessorName = "odigos-url-templatization"
+	GenericBatchProcessorConfigKey  = "batch/generic-batch-processor"
+	SmallBatchesProcessor           = "batch/small-batches"
+	GroupByTraceProcessorV2         = "groupbytrace/samplingv2"
+	OdigosTailSamplingProcessorName = "odigostailsampling"
+	OdigosTraceStateProcessorName   = "odigostracestate"
+	URLTemplatizationProcessorName  = "odigos-url-templatization"
+	OdigosURLTemplateProcessorType  = "odigosurltemplate"
 )
 
 // Auto rollback related consts

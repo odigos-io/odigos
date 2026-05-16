@@ -3,6 +3,7 @@ package collectorconfig
 import (
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
@@ -15,6 +16,20 @@ const (
 	OTLPInReceiverName = "otlp/in"
 )
 
+// CommonSignalConfig holds configuration fields shared across all signal pipelines (traces, metrics, logs).
+type CommonSignalConfig struct {
+	Logger                   logr.Logger
+	OdigosNamespace          string
+	ManifestProcessorNames   []string
+	ResourceDetectionEnabled bool
+}
+
+// WithProcessors returns a copy of the config with the given manifest processor names set.
+func (c CommonSignalConfig) WithProcessors(names []string) CommonSignalConfig {
+	c.ManifestProcessorNames = names
+	return c
+}
+
 const (
 	healthCheckExtensionName            = "health_check"
 	odigosEbpfReceiverName              = "odigosebpf"
@@ -23,13 +38,54 @@ const (
 	memoryLimiterProcessorName          = "memory_limiter"
 	balancerName                        = "round_robin"
 	nodeNameProcessorName               = "resource/node-name"
-	clusterCollectorTracesExporterName  = "otlp/out-cluster-collector-traces"
-	clusterCollectorMetricsExporterName = "otlp/out-cluster-collector-metrics"
-	clusterCollectorLogsExporterName    = "otlp/out-cluster-collector-logs"
+	clusterCollectorTracesExporterName  = "otlp_grpc/out-cluster-collector-traces"
+	clusterCollectorMetricsExporterName = "otlp_grpc/out-cluster-collector-metrics"
+	clusterCollectorLogsExporterName    = "otlp_grpc/out-cluster-collector-logs"
 	resourceDetectionProcessorName      = "resourcedetection"
 )
 
-func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.GenericMap {
+func isDetectorEnabled(cfg *common.ResourceDetectorConfig) bool {
+	return cfg != nil && cfg.Enabled != nil && *cfg.Enabled
+}
+
+func ResourceDetectionEnabled(detectors []string) bool {
+	return len(detectors) > 0
+}
+
+func BuildResourceDetectors(cfg *common.ResourceDetectorsConfiguration, runningOnGKE bool) []string {
+	if cfg == nil {
+		return nil
+	}
+
+	var detectors []string
+
+	// GCP detector is gated behind the GKE flag due to
+	// https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/issues/1026
+	// When running on GKE the only safe detector is "gcp" unless the user explicitly
+	// enabled others. When NOT on GKE, the non-GCP detectors are considered.
+	if runningOnGKE {
+		if isDetectorEnabled(cfg.GCP) {
+			detectors = append(detectors, "gcp")
+		}
+	} else {
+		if isDetectorEnabled(cfg.EC2) {
+			detectors = append(detectors, "ec2")
+		}
+		if isDetectorEnabled(cfg.EKS) {
+			detectors = append(detectors, "eks")
+		}
+		if isDetectorEnabled(cfg.Azure) {
+			detectors = append(detectors, "azure")
+		}
+		if isDetectorEnabled(cfg.AKS) {
+			detectors = append(detectors, "aks")
+		}
+	}
+
+	return detectors
+}
+
+func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool, detectors []string) config.GenericMap {
 
 	allProcessors := config.GenericMap{}
 	for k, v := range staticProcessors {
@@ -39,17 +95,11 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 	memoryLimiterConfig := commonconf.GetMemoryLimiterConfig(nodeCG.Spec.ResourcesSettings)
 	allProcessors[memoryLimiterProcessorName] = memoryLimiterConfig
 
-	var detectors []string
-	// This is a workaround to avoid adding the gcp detector if not running on a gke environment
-	// once https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/issues/1026 is resolved, we can always put the gcp detector
-	if runningOnGKE {
-		detectors = []string{"gcp"}
-	} else {
-		detectors = []string{"ec2", "eks", "azure", "aks"}
-	}
-	allProcessors[resourceDetectionProcessorName] = config.GenericMap{
-		"detectors": detectors,
-		"timeout":   "2s",
+	if ResourceDetectionEnabled(detectors) {
+		allProcessors[resourceDetectionProcessorName] = config.GenericMap{
+			"detectors": detectors,
+			"timeout":   "2s",
+		}
 	}
 
 	return allProcessors
@@ -155,11 +205,11 @@ func init() {
 	}
 }
 
-func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string) config.Config {
+func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string, detectors []string) config.Config {
 	return config.Config{
 		Receivers:  commonReceivers,
 		Exporters:  getCommonExporters(nodeCG.Spec.OtlpExporterConfiguration, odigosNamespace),
-		Processors: commonProcessors(nodeCG, onGKE),
+		Processors: commonProcessors(nodeCG, onGKE, detectors),
 	}
 }
 

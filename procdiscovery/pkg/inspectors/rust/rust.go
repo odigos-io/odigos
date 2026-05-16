@@ -48,7 +48,7 @@ func (n *RustInspector) DeepScan(pcx *process.ProcessContext) (common.Programmin
 	return "", false
 }
 
-func (n *RustInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
+func (n *RustInspector) GetRuntimeVersion(pcx *process.ProcessContext) string {
 	// TODO: Implement this function to get the Rust runtime version
 	return ""
 }

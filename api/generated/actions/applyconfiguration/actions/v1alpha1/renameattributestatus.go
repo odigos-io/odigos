@@ -23,7 +23,11 @@ import (
 
 // RenameAttributeStatusApplyConfiguration represents a declarative configuration of the RenameAttributeStatus type for use
 // with apply.
+//
+// RenameAttributeStatus defines the observed state of RenameAttribute action
 type RenameAttributeStatusApplyConfiguration struct {
+	// Represents the observations of a RenameAttribute's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

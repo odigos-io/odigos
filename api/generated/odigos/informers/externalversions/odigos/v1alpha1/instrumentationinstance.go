@@ -56,7 +56,7 @@ func NewInstrumentationInstanceInformer(client versioned.Interface, namespace st
 // one. This reduces memory footprint and number of connections to the server.
 func NewFilteredInstrumentationInstanceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
+		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
@@ -81,7 +81,7 @@ func NewFilteredInstrumentationInstanceInformer(client versioned.Interface, name
 				}
 				return client.OdigosV1alpha1().InstrumentationInstances(namespace).Watch(ctx, options)
 			},
-		},
+		}, client),
 		&apiodigosv1alpha1.InstrumentationInstance{},
 		resyncPeriod,
 		indexers,

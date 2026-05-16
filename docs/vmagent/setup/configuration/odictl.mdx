@@ -1,0 +1,369 @@
+---
+title: "odictl"
+sidebarTitle: "odictl"
+description: "Launching and navigating the terminal user interface (TUI); `odictl`"
+---
+
+## Introduction
+
+The Odigos VM Agent is installed with a terminal user interface (TUI) called `odictl`. `odictl` is one method you can use
+to instrument processes and services, set up destinations, and add actions to Odigos.
+
+<Note>
+Want centralized visibility and management? See [Connecting VM Agent](/central/adding-connections/vmagent) to connect this host to Odigos Central.
+</Note>
+
+To launch `odictl`, run the following command from the command-line:
+
+```shell
+odictl
+```
+
+You will then see a screen similar to the one below:
+
+<img 
+  src="../../../images/vmagent/odictl/odictl-init-screen.png" 
+  alt="Initial odictl TUI screen"
+/>
+
+## Navigation
+
+The odictl interface has five main sections: <Badge color="blue">Services</Badge>, <Badge color="blue">Logs</Badge>,
+<Badge color="blue">Sources</Badge>, <Badge color="blue">Destinations</Badge>, and <Badge color="blue">Actions</Badge>.
+Use the keyboard to move between them; if you are connected through an `ssh` session from a terminal that supports
+mouse input, you can navigate the interface with your mouse.
+
+## Navigating the Interface
+
+
+
+<AccordionGroup>
+<Accordion title="Keyboard Navigation" icon="keyboard" defaultOpen="false">
+
+The following describes how to navigate using the keyboard:
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Cycle panes |
+| `↑` / `↓` | Move between items in the current section |
+| `Enter` | Select the highlighted item |
+| `q` / `Esc` | Quit |
+| `s` | Focus Services |
+| `o` | Focus Sources |
+| `d` | Focus Destinations |
+| `a` | Focus Actions |
+| `c` | Open Configuration Editor |
+| `r` | Reload status + config |
+| `e` | Edit selected |
+| `Del` / `Backspace` | Delete selected |
+| `l` | Show service logs |
+| `y` | Show YAML config |
+| `?` / `h` | Display full keymap |
+
+<Tip>The currently selected item has a secondary border around it. Press `Enter` to select it.</Tip>
+
+</Accordion>
+
+<Accordion title="Mouse Navigation" icon="mouse" defaultOpen="false">
+
+#### Requirements
+
+Mouse support requires:
+
+- A terminal emulator that supports mouse input
+- An SSH session that forwards mouse events
+
+<Tip>Most modern terminal emulators support mouse interaction automatically.</Tip>
+
+To navigate:
+
+- Click a **section** to switch sections
+- Click an **item** to select it
+
+</Accordion>
+</AccordionGroup>
+
+## Services Panel
+
+The Services section shows the status of the two services that run the Odigos VM Agent:
+<Badge color="blue">odigos-vmagent</Badge> and <Badge color="blue">odigos-otelcol</Badge>. When you highlight a service,
+the log window shows that service's logs.
+
+<img 
+  src="../../../images/vmagent/odictl/odictl-services-screen.png" 
+  alt="Services section of the odictl interface"
+  style={{    
+    width: "400px",
+    height: "auto",
+    display: "block",
+    margin: "0 auto"
+  }}
+/>
+
+The following animation shows switching between viewing logs for <Badge color="blue">odigos-vmagent</Badge>
+and <Badge color="blue">odigos-otelcol</Badge> in the Logs section.
+
+<video
+  autoPlay
+  muted
+  loop
+  playsInline
+  className="w-full aspect-video rounded-xl"
+  src="../../../images/vmagent/odictl/odictl-services-video.mp4"
+></video>
+
+## Logs Panel
+
+The Logs section shows a live stream of logs for the <Badge color="blue">odigos-vmagent</Badge> and
+<Badge color="blue">odigos-otelcol</Badge> Odigos services. When the section is focused, use the ↑ / ↓ keys
+or the mouse wheel to scroll through the logs.
+
+## Sources Panel
+
+Sources is where you define the systemd services or Linux processes on the host system that you want to instrument with
+the Odigos VM Agent. See [Add Sources](./add-sources) to learn how.
+
+<img 
+  src="../../../images/vmagent/odictl/odictl-sources-screen.png" 
+  alt="Sources screen"
+  style={{    
+    width: "400px",
+    height: "auto",
+    display: "block",
+    margin: "0 auto"
+  }}
+/>
+
+## Destinations Panel
+
+[Destinations](../../../../enterprise/backends-overview) are backends that accept data from the Odigos VM Agent.
+Odigos lets you [add as many destinations](./add-destinations) as you like, enabling you to
+execute different use cases such as:
+
+- Using different backends for different types of OpenTelemetry signals
+- Migrating from one backend to another
+- Testing different backends for different OpenTelemetry use cases
+
+<img 
+  src="../../../images/vmagent/odictl/odictl-destinations-screen.png" 
+  alt="Destinations screen"
+  style={{    
+    width: "400px",
+    height: "auto",
+    display: "block",
+    margin: "0 auto"
+  }}
+/>
+
+## Actions Panel
+
+Actions let you modify OpenTelemetry data from Odigos Sources before it is exported to your destinations. Odigos
+implements actions using OpenTelemetry Collector processors—components that transform, filter, or enrich telemetry
+before it is sent to your destinations.
+
+See [Actions overview](./actions/overview) to add or edit actions. For action types and processor options, see
+[Odigos Actions](../../../../enterprise/pipeline/actions/introduction).
+
+<img 
+  src="../../../images/vmagent/odictl/odictl-actions-screen.png" 
+  alt="Actions screen"
+  style={{    
+    width: "400px",
+    height: "auto",
+    display: "block",
+    margin: "0 auto"
+  }}
+/>
+
+## Configuration Editor
+
+The Configuration Editor lets you view and modify the VM Agent's configuration directly from the TUI
+without manually editing YAML files.
+
+### Opening the Configuration Editor
+
+Press <Badge color="blue">c</Badge> from any panel to open the Configuration Editor. The editor replaces
+the main dashboard with a three-column layout:
+
+| Column | Purpose |
+|--------|---------|
+| **Section** | Top-level configuration categories such as Logging, Network, Central, Process controller, Data collection, Instrumentation controller, and Profiling. |
+| **Subsection** | Groups within a section. For example, Instrumentation controller contains subsections for Java instrumentation and its top-level fields. Sections with a single group show the section name. |
+| **Values** | The editable fields for the selected subsection. Each field shows its label, an optional description, and an input widget (text input, dropdown, or multi-line editor). |
+
+### Navigating the Editor
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Move focus between the three columns |
+| `↑` / `↓` | Move between items in the focused column |
+| `Ctrl+←` | Jump back from the Values column to Subsection |
+| `Enter` | Open a dropdown or confirm a selection |
+| `Ctrl+S` | Save all changes to disk and reload the agent configuration |
+| `Esc` | Discard changes and return to the main dashboard |
+
+Mouse navigation is also supported: click a section, subsection, or field to focus it, and use the
+scroll wheel to browse long lists of fields.
+
+### Editing Fields
+
+- **Text fields**: Type directly into the input to change the value.
+- **Boolean / enum fields**: A dropdown appears with the available options. Use `↑` / `↓` to pick a
+  value, then press `Enter` to confirm.
+- **Read-only fields**: Displayed with a *(read-only)* label and cannot be modified.
+
+### Saving Changes
+
+Press <Badge color="blue">Ctrl+S</Badge> to validate and save. If validation fails (for example, a
+value is out of range), an error message appears at the top of the Values column. Fix the indicated
+field and save again. Saving writes the updated configuration to the YAML file on disk and triggers
+an automatic reload of the affected agent components.
+
+### Configuration Sections
+
+<AccordionGroup>
+<Accordion title="Logging" icon="file-lines" defaultOpen="false">
+
+Controls how the VM Agent writes logs to stdout and to a rotated log file on disk.
+
+| Field | Description |
+|-------|-------------|
+| **Log level** | Minimum severity written to stdout (`debug`, `info`, `warn`, `error`). |
+| **Log format** | Output format: `console` (human-readable) or `json` (structured). |
+
+**Log rotation** subsection — settings for the on-disk rotated log file:
+
+| Field | Description |
+|-------|-------------|
+| **Filename** | Path to the rotated log file. |
+| **File level** | Minimum severity written to the file. Captures levels that stdout suppresses. |
+| **Max size mb** | Maximum file size in MB before rotation. |
+| **Max backups** | Number of old rotated files to retain. |
+| **Max age days** | Days to keep old log files before deletion. |
+| **Compress** | Whether rotated files are gzip-compressed. |
+
+</Accordion>
+
+<Accordion title="Network" icon="network-wired" defaultOpen="false">
+
+Port assignments for the VM Agent process and the OpenTelemetry Collector. Changing collector receiver
+ports restarts the collector and re-instruments affected workloads.
+
+**Vmagent** subsection:
+
+| Field | Description |
+|-------|-------------|
+| **Cli port** | Port for the CLI WebSocket server used by `odictl`. |
+| **Pprof port** | Port for the VM Agent pprof profiling server. |
+
+**Collector** subsection:
+
+| Field | Description |
+|-------|-------------|
+| **Health check port** | OTel Collector health-check endpoint. |
+| **Pprof port** | OTel Collector pprof profiling endpoint. |
+| **Zpages port** | OTel Collector zpages debugging endpoint. |
+| **Prometheus port** | OTel Collector Prometheus metrics endpoint. |
+
+**Collector receivers** subsection:
+
+| Field | Description |
+|-------|-------------|
+| **OTLP gRPC port** | Port for the OTLP gRPC receiver. Changing this restarts instrumented sources. |
+| **OTLP HTTP port** | Port for the OTLP HTTP receiver. Changing this restarts instrumented sources. |
+
+</Accordion>
+
+<Accordion title="Central" icon="tower-control" defaultOpen="false">
+
+Settings for connecting this VM Agent to an Odigos Central management plane. When **Enabled** is
+`false`, the remaining fields are ignored and the agent runs standalone.
+
+| Field | Description |
+|-------|-------------|
+| **Enabled** | Enable or disable the Central controller. |
+| **Endpoint** | WebSocket endpoint of the Central server (`host:port` or URL). |
+| **Agent name** | Identifier for this VM Agent instance. |
+| **Platform type** | Platform identifier (e.g. `vm-agent`). |
+| **Version** | Reported agent version. |
+| **Deployment id** | Unique deployment identifier *(read-only)*. |
+| **Connection timeout** | Timeout in seconds for the initial connection. |
+| **Reconnection delay** | Delay in seconds between reconnection attempts. |
+| **Max reconnection attempts** | Maximum number of reconnection retries. |
+| **Verbose logging** | Enable detailed logging for Central communication. |
+| **Exit on connection failure** | Force the agent to exit if the Central connection fails. |
+
+</Accordion>
+
+<Accordion title="Process controller" icon="microchip" defaultOpen="false">
+
+Controls how the agent discovers and monitors processes on the host.
+
+| Field | Description |
+|-------|-------------|
+| **Ignored exe paths** | List of executable paths excluded from process monitoring. |
+| **Enabled classifiers** | Toggle individual process classifiers (`docker`, `systemd`, `containerd`, `process`). |
+| **Service name rules** | Rules for extracting service names from process arguments using pattern/template matching. |
+
+</Accordion>
+
+<Accordion title="Data collection" icon="database" defaultOpen="false">
+
+Configuration passed to the OpenTelemetry Collector instance managed by the VM Agent.
+
+**Otel collector** subsection:
+
+| Field | Description |
+|-------|-------------|
+| **Config** | Key-value pairs written as environment variables to the `odigos-otelcol.conf` file (e.g. `OTELCOL_OPTIONS`). |
+
+</Accordion>
+
+<Accordion title="Instrumentation controller" icon="wand-magic-sparkles" defaultOpen="false">
+
+Controls how the agent instruments discovered processes. Top-level fields apply globally; the
+Java instrumentation subsection targets Java-specific behavior.
+
+| Field | Description |
+|-------|-------------|
+| **Dynamic loader match threshold percent** | Match threshold (0–100) for partial command-line matching when the dynamic loader attaches to a process. `0` = any match if the executable matches; `100` = exact match. |
+
+**Java instrumentation** subsection:
+
+| Field | Description |
+|-------|-------------|
+| **Sdk type** | Java agent variant: `java-enterprise` or `java-ebpf-instrumentations`. |
+| **Use dynamic attach** | Whether to attach the Java agent at runtime without restarting the process. |
+| **Disabled instrumentations** | List of Java instrumentation names to turn off. |
+
+</Accordion>
+
+<Accordion title="Profiling" icon="gauge-high" defaultOpen="false">
+
+Controls the built-in profiling endpoint for the VM Agent process itself.
+
+| Field | Description |
+|-------|-------------|
+| **Enabled** | Enable or disable the profiling endpoint. Enabled by default. |
+
+</Accordion>
+</AccordionGroup>
+
+## Instrumentation Rules Panel
+
+Instrumentation Rules control how telemetry is recorded from your instrumented sources. A rule can be applied to
+specific sources and instrumentation libraries, letting you control what attributes, headers, or payloads are collected
+and how custom instrumentations behave.
+
+For rule types and configuration options, see [Instrumentation rules overview](./instrumentation-rules/overview).
+
+<img 
+  src="../../../images/vmagent/odictl/odictl-rules-screen.png" 
+  alt="Instrumentation Rules screen"
+  style={{    
+    width: "500px",
+    height: "auto",
+    display: "block",
+    margin: "0 auto"
+  }}
+/>

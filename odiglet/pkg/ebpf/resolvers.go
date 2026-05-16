@@ -39,7 +39,7 @@ func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.Proces
 		// TODO: this is ok for migration period. Once device is removed, this should be an error
 	}
 
-	podWorkload, err := workload.PodWorkloadObjectOrError(ctx, pod)
+	podWorkload, err := workload.PodWorkloadObjectOrError(pod)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find workload object from pod manifest owners references: %w", err)
 	}

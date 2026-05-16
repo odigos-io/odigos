@@ -1,0 +1,46 @@
+---
+title: "Overview"
+sidebarTitle: "Overview"
+description: "What Odigos VM Agent instrumentation rules are, their benefits, and rule types: code attributes, headers collection, payload collection, and custom instrumentation."
+---
+
+Instrumentation rules control how telemetry is recorded from your [sources](../../../overview#key-concepts). You can apply rules to specific sources and instrumentation libraries to control which attributes, headers, and payloads are collected and how custom instrumentations behave.
+
+## Benefits
+
+- **Control what is recorded** — Decide which code attributes, HTTP headers, and payloads are added to spans so you capture the right context without excess volume.
+- **Enrich without code changes** — Get better context without modifying or redeploying your application.
+- **Trace back to code** — Code attributes link spans to the code that produced them, so you can debug and analyze with confidence.
+- **Custom instrumentation** — Define custom eBPF-based instrumentations for arbitrary functions in your application or its dependencies.
+
+## Rule types
+
+You can manage instrumentation rules via [odictl](../odictl) or YAML.
+
+### Custom instrumentation
+
+Define custom eBPF-based instrumentations for arbitrary functions in your application or its dependencies. Use custom instrumentation with Java and Go applications to instrument application-specific code. See [Custom Instrumentation](./custom-instrumentation) for configuration.
+
+### Code attributes
+
+Add [semantic code attributes](https://opentelemetry.io/docs/specs/semconv/attributes-registry/code/) to spans so you can trace an operation back to the code that generated it.
+
+<Info>
+**Planned for a future release.**
+</Info>
+
+### Headers collection
+
+Add span attributes by collecting HTTP header data from requests and responses.
+
+<Info>
+**Planned for a future release.**
+</Info>
+
+### Payload collection
+
+Add span attributes by collecting payload data from HTTP requests and responses, database queries, and messaging systems.
+
+<Info>
+**Planned for a future release.**
+</Info>

@@ -3,6 +3,7 @@ package sampling
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -87,36 +88,61 @@ func convertCostReductionRuleToModel(rule *v1alpha1.CostReductionRule) *model.Co
 
 // ---- Shared conversion helpers ----
 
-func sourcesScopeInputToCRD(scopes []*model.SourcesScopeInput) []k8sconsts.SourcesScope {
-	if scopes == nil {
+func sourcesScopeInputToCRD(in *model.SourcesScopesInput) *k8sconsts.SourcesScopes {
+	if in == nil {
 		return nil
 	}
-	result := make([]k8sconsts.SourcesScope, len(scopes))
-	for i, s := range scopes {
-		result[i] = k8sconsts.SourcesScope{
-			WorkloadName:      services.DerefString(s.WorkloadName),
-			WorkloadKind:      services.DerefK8sResourceKind(s.WorkloadKind),
-			WorkloadNamespace: services.DerefString(s.WorkloadNamespace),
-			WorkloadLanguage:  services.DerefProgrammingLanguage(s.WorkloadLanguage),
+	out := &k8sconsts.SourcesScopes{}
+	if len(in.Sources) > 0 {
+		out.Sources = make([]k8sconsts.PodWorkload, 0, len(in.Sources))
+		for _, s := range in.Sources {
+			if s == nil {
+				continue
+			}
+			out.Sources = append(out.Sources, k8sconsts.PodWorkload{
+				Name:      s.Name,
+				Namespace: s.Namespace,
+				Kind:      k8sconsts.WorkloadKind(s.Kind),
+			})
 		}
 	}
-	return result
+	if len(in.Namespaces) > 0 {
+		out.Namespaces = append([]string(nil), in.Namespaces...)
+	}
+	if len(in.Languages) > 0 {
+		out.Languages = make([]common.ProgrammingLanguage, 0, len(in.Languages))
+		for _, l := range in.Languages {
+			out.Languages = append(out.Languages, common.ProgrammingLanguage(l))
+		}
+	}
+	return out
 }
 
-func sourcesScopeCRDToModel(scopes []k8sconsts.SourcesScope) []*model.SourcesScope {
-	if len(scopes) == 0 {
+func sourcesScopeCRDToModel(in *k8sconsts.SourcesScopes) *model.SourcesScopes {
+	if in == nil {
 		return nil
 	}
-	result := make([]*model.SourcesScope, len(scopes))
-	for i, s := range scopes {
-		result[i] = &model.SourcesScope{
-			WorkloadName:      services.StringPtrIfNotEmpty(s.WorkloadName),
-			WorkloadKind:      services.K8sResourceKindPtrIfNotEmpty(s.WorkloadKind),
-			WorkloadNamespace: services.StringPtrIfNotEmpty(s.WorkloadNamespace),
-			WorkloadLanguage:  services.ProgrammingLanguagePtrIfNotEmpty(s.WorkloadLanguage),
+	out := &model.SourcesScopes{}
+	if len(in.Sources) > 0 {
+		out.Sources = make([]*model.K8sWorkloadID, 0, len(in.Sources))
+		for _, s := range in.Sources {
+			out.Sources = append(out.Sources, &model.K8sWorkloadID{
+				Name:      s.Name,
+				Namespace: s.Namespace,
+				Kind:      model.K8sResourceKind(s.Kind),
+			})
 		}
 	}
-	return result
+	if len(in.Namespaces) > 0 {
+		out.Namespaces = append([]string(nil), in.Namespaces...)
+	}
+	if len(in.Languages) > 0 {
+		out.Languages = make([]model.SamplingWorkloadLanguage, 0, len(in.Languages))
+		for _, l := range in.Languages {
+			out.Languages = append(out.Languages, model.SamplingWorkloadLanguage(l))
+		}
+	}
+	return out
 }
 
 func headSamplingOperationMatcherInputToCRD(input *model.HeadSamplingOperationMatcherInput) *commonapisampling.HeadSamplingOperationMatcher {

@@ -10,6 +10,7 @@ import (
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	cacheutils "github.com/odigos-io/odigos/k8sutils/pkg/cache"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -23,21 +24,22 @@ import (
 )
 
 var CacheClient client.Client
+var K8sCache cache.Cache
 
-// SetupK8sCache initializes and starts the controller runtime cache for Source resources
-// Returns the cache client for direct usage
-func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, odigosNs string) (client.Client, error) {
+// SetupK8sCache initializes and starts the controller runtime cache for Source resources.
+// Returns the cache client for direct usage and the underlying cache for registering event handlers.
+func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, odigosNs string) (client.Client, cache.Cache, error) {
 	// Get the Kubernetes config
 	cfg, err := config.GetConfigWithContext(kubeContext)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get kubernetes config: %w", err)
+		return nil, nil, fmt.Errorf("failed to get kubernetes config: %w", err)
 	}
 
 	// Override config if kubeConfig path is provided
 	if kubeConfig != "" {
 		cfg, err = config.GetConfigWithContext(kubeContext)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get kubernetes config with custom path: %w", err)
+			return nil, nil, fmt.Errorf("failed to get kubernetes config with custom path: %w", err)
 		}
 	}
 
@@ -50,58 +52,79 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 	utilruntime.Must(openshiftappsv1.AddToScheme(scheme))
 
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
-	// Create cache options
-	cacheOptions := cache.Options{
-		Scheme:                      scheme,
-		ReaderFailOnMissingInformer: true,
-		DefaultTransform:            cache.TransformStripManagedFields(),
-		ByObject: map[client.Object]cache.ByObject{
-			&corev1.ConfigMap{}: {
-				Field: nsSelector, // odigos effective config, collector configs, odigos deployment etc
-			},
-			&corev1.Pod{}: {
-				Transform: podsTransformFunc,
-			},
-			&corev1.Namespace{}: {},
-			&appsv1.Deployment{}: {
-				Transform: deploymentsTransformFunc,
-			},
-			&appsv1.DaemonSet{}: {
-				Transform: daemonsetsTransformFunc,
-			},
-			&appsv1.StatefulSet{}: {
-				Transform: statefulsetsTransformFunc,
-			},
-			&batchv1.CronJob{}: {
-				Transform: cronjobsTransformFunc,
-			},
-			&odigosv1.Source{}:                  {},
-			&odigosv1.InstrumentationConfig{}:   {},
-			&odigosv1.InstrumentationInstance{}: {},
-			&odigosv1.Sampling{}: {
-				Field: nsSelector,
-			},
+
+	unsafeDisableDeepCopy := true
+
+	cacheByObjectConfig := map[client.Object]cache.ByObject{
+		&corev1.ConfigMap{}: {
+			Field: nsSelector, // odigos effective config, collector configs, odigos deployment etc
+		},
+		&corev1.Pod{}: {
+			Transform:             podsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
+		},
+		&corev1.Namespace{}: {},
+		&appsv1.Deployment{}: {
+			Transform:             deploymentsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
+		},
+		&appsv1.DaemonSet{}: {
+			Transform:             daemonsetsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
+		},
+		&appsv1.StatefulSet{}: {
+			Transform:             statefulsetsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
+		},
+		&batchv1.CronJob{}: {
+			Transform: cronjobsTransformFunc,
+		},
+		&odigosv1.Source{}: {},
+		&odigosv1.InstrumentationConfig{}: {
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
+		},
+		&odigosv1.InstrumentationInstance{}: {
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
+		},
+		&odigosv1.Destination{}: {
+			Field: nsSelector,
+		},
+		&odigosv1.Sampling{}: {
+			Field: nsSelector,
 		},
 	}
 
 	// if argo rollout is available, add it to the cache as well
 	if IsArgoRolloutAvailable {
-		cacheOptions.ByObject[&argorolloutsv1alpha1.Rollout{}] = cache.ByObject{
-			Transform: argoRolloutsTransformFunc,
+		cacheByObjectConfig[&argorolloutsv1alpha1.Rollout{}] = cache.ByObject{
+			Transform:             argoRolloutsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
 		}
 	}
 
 	// if open shift deployment config is available, add it to the cache as well
 	if IsOpenShiftDeploymentConfigAvailable {
-		cacheOptions.ByObject[&openshiftappsv1.DeploymentConfig{}] = cache.ByObject{
-			Transform: deploymentConfigsTransformFunc,
+		cacheByObjectConfig[&openshiftappsv1.DeploymentConfig{}] = cache.ByObject{
+			Transform:             deploymentConfigsTransformFunc,
+			UnsafeDisableDeepCopy: &unsafeDisableDeepCopy,
 		}
+	}
+
+	newInformerWithTransformFunc := cacheutils.CreateNewInformerWithTransformFunc(scheme, cacheByObjectConfig)
+
+	// Create cache options
+	cacheOptions := cache.Options{
+		Scheme:                      scheme,
+		ReaderFailOnMissingInformer: true,
+		DefaultTransform:            cache.TransformStripManagedFields(),
+		ByObject:                    cacheByObjectConfig,
+		NewInformer:                 newInformerWithTransformFunc,
 	}
 
 	// Create the cache
 	k8sCache, err := cache.New(cfg, cacheOptions)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cache: %w", err)
+		return nil, nil, fmt.Errorf("failed to create cache: %w", err)
 	}
 
 	// Create a client that uses the cache
@@ -112,7 +135,7 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cache client: %w", err)
+		return nil, nil, fmt.Errorf("failed to create cache client: %w", err)
 	}
 
 	// Start the cache in a goroutine
@@ -137,25 +160,26 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 	for obj := range cacheOptions.ByObject {
 		_, err = k8sCache.GetInformer(ctx, obj) // just need to call it to initialize the informer
 		if err != nil {
-			return nil, fmt.Errorf("failed to get informer for %s: %w", obj.GetObjectKind().GroupVersionKind().Kind, err)
+			return nil, nil, fmt.Errorf("failed to get informer for %s: %w", obj.GetObjectKind().GroupVersionKind().Kind, err)
 		}
 		if sequentialCacheLoad {
 			ok := k8sCache.WaitForCacheSync(ctx)
 			if !ok {
-				return nil, fmt.Errorf("failed to sync kubernetes cache")
+				return nil, nil, fmt.Errorf("failed to sync kubernetes cache")
 			}
 		}
 	}
 
 	if !sequentialCacheLoad {
 		if !k8sCache.WaitForCacheSync(ctx) {
-			return nil, fmt.Errorf("failed to sync kubernetes cache")
+			return nil, nil, fmt.Errorf("failed to sync kubernetes cache")
 		}
 	}
 
 	log.Println("internal kubernetes objects cache is synced", "duration", time.Since(startTime))
 
 	CacheClient = k8sCacheClient
+	K8sCache = k8sCache
 
-	return k8sCacheClient, nil
+	return k8sCacheClient, k8sCache, nil
 }

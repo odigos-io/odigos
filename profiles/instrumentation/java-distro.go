@@ -13,5 +13,5 @@ var JavaNativeInstrumentationsProfile = profile.Profile{
 var JavaEbpfInstrumentationsProfile = profile.Profile{
 	ProfileName:      common.ProfileName("java-ebpf-instrumentations"),
 	MinimumTier:      common.OnPremOdigosTier,
-	ShortDescription: "Instrument Java applications using eBPF instrumentation and eBPF enterprise processing",
+	ShortDescription: "Deprecated, eBPF instrumentations are now enabled by default",
 }

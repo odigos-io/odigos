@@ -71,6 +71,9 @@ spec:
         ports:
           - containerPort: 3000
             name: ui
+          - containerPort: 4317
+            name: otlp-grpc
+            protocol: TCP
         livenessProbe:
           httpGet:
             path: /healthz

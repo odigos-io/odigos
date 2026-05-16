@@ -71,6 +71,23 @@ const (
 	UiModeReadonly UiMode = "readonly"
 )
 
+// +kubebuilder:object:generate=true
+// ResourceDetectorConfig holds the configuration for a single resource detector.
+type ResourceDetectorConfig struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ResourceDetectorsConfiguration controls which resource detectors are enabled
+// on the node collector's resourcedetection processor.
+type ResourceDetectorsConfiguration struct {
+	EC2   *ResourceDetectorConfig `json:"ec2,omitempty"`
+	EKS   *ResourceDetectorConfig `json:"eks,omitempty"`
+	Azure *ResourceDetectorConfig `json:"azure,omitempty"`
+	AKS   *ResourceDetectorConfig `json:"aks,omitempty"`
+	GCP   *ResourceDetectorConfig `json:"gcp,omitempty"`
+}
+
 type CollectorNodeConfiguration struct {
 	// The port to use for exposing the collector's own metrics as a prometheus endpoint.
 	// This can be used to resolve conflicting ports when a collector is using the host network.
@@ -111,13 +128,6 @@ type CollectorNodeConfiguration struct {
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 
-	// Odigos will by default attempt to collect logs from '/var/log' on each k8s node.
-	// Sometimes, this directory is actually a symlink to another directory.
-	// In this case, for logs collection to work, we need to add a mount to the target directory.
-	// This field is used to specify this target directory in these cases.
-	// A common target directory is '/mnt/var/log'.
-	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
-
 	// Deprecated - use OtlpExporterConfiguration instead.
 	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
@@ -125,6 +135,10 @@ type CollectorNodeConfiguration struct {
 
 	// OtlpExporterConfiguration is the configuration for the OTLP exporter.
 	OtlpExporterConfiguration *OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
+
+	// ResourceDetectors controls which OpenTelemetry resource detectors are enabled.
+	// Defaults: ec2=true, eks=false, azure=true, aks=true, gcp=true.
+	ResourceDetectors *ResourceDetectorsConfiguration `json:"resourceDetectors,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -140,6 +154,30 @@ type RetryOnFailure struct {
 	InitialInterval string `json:"initialInterval,omitempty"`
 	MaxInterval     string `json:"maxInterval,omitempty"`
 	MaxElapsedTime  string `json:"maxElapsedTime,omitempty"`
+}
+
+// ServiceGraphOptions holds all configuration for the OpenTelemetry service graph connector.
+// It is serialized as a nested "serviceGraph" block inside CollectorGatewayConfiguration.
+// CollectorsGroupSpec (CRD) still stores these as flat fields to preserve CRD backward compatibility.
+// At the function-signature level it is also used directly in GatewayConfigOptions and
+// collector group construction.
+type ServiceGraphOptions struct {
+	// Disabled controls whether the service graph connector is active.
+	// Defaults to false (enabled). When disabled, the topology map in the UI will be unavailable
+	// and load-balancing between node collectors and the gateway is also removed.
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// ExtraDimensions are additional attribute names to include as dimensions in the
+	// service graph metrics, on top of the default service.name dimension.
+	// Both span-level and resource-level attributes are supported.
+	ExtraDimensions []string `json:"extraDimensions,omitempty"`
+
+	// VirtualNodePeerAttributes is an ordered list of span-level attributes used to identify
+	// uninstrumented (virtual) nodes (e.g. Redis, Kafka). The connector picks the first
+	// attribute that has a value on the CLIENT span.
+	// When empty, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+	// Only span-level attributes are supported here; resource attributes are silently ignored.
+	VirtualNodePeerAttributes []string `json:"virtualNodePeerAttributes,omitempty"`
 }
 
 type CollectorGatewayConfiguration struct {
@@ -185,9 +223,8 @@ type CollectorGatewayConfiguration struct {
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 
-	// ServiceGraphDisabled is a feature that allows you to visualize the service graph of your application.
-	// It is enabled by default and can be disabled by setting the disabled flag to true.
-	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
+	// ServiceGraph holds all configuration for the service graph connector.
+	ServiceGraph *ServiceGraphOptions `json:"serviceGraph,omitempty"`
 
 	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
 	// https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver
@@ -302,6 +339,10 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// This list controls which resource attributes are included in the metric stream identity.
 	// These attributes are used to determines how span metrics are grouped.
 	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
+
+	// Controls the tradeoff between metric accuracy and resource usage.
+	// See sampling.SpanMetricsMode for possible values.
+	SpanMetricsMode *sampling.SpanMetricsMode `json:"spanMetricsMode,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -466,6 +507,21 @@ type SamplingConfiguration struct {
 	K8sHealthProbesSampling *K8sHealthProbesSamplingConfiguration `json:"k8sHealthProbesSampling,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+// ProfilingUiConfiguration holds optional UI resource limits and OTLP listen overrides for profiling.
+type ProfilingUiConfiguration struct {
+	SlotTTLSeconds int `json:"slotTTLSeconds,omitempty" yaml:"slotTTLSeconds,omitempty"`
+	MaxSlots       int `json:"maxSlots,omitempty" yaml:"maxSlots,omitempty"`
+	SlotMaxBytes   int `json:"slotMaxBytes,omitempty" yaml:"slotMaxBytes,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ProfilingConfiguration is cluster-wide continuous profiling; disabled unless Enabled is set.
+type ProfilingConfiguration struct {
+	Enabled  *bool                      `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Exporter *OtlpExporterConfiguration `json:"exporter,omitempty" yaml:"exporter,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
 	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
@@ -528,4 +584,17 @@ type OdigosConfiguration struct {
 
 	// ComponentLogLevels: default = global level (e.g. from Helm); per-component overrides (e.g. from UI).
 	ComponentLogLevels *ComponentLogLevels `json:"componentLogLevels,omitempty" yaml:"componentLogLevels,omitempty"`
+
+	Profiling *ProfilingConfiguration `json:"profiling,omitempty" yaml:"profiling,omitempty"`
+}
+
+// ProfilingPipelineActive reports whether profiling pipelines and related collector settings should be applied.
+// Profiling is opt-in: Enabled must be explicitly true; nil or false keeps profiling off.
+func ProfilingPipelineActive(p *ProfilingConfiguration) bool {
+	return p != nil && p.Enabled != nil && *p.Enabled
+}
+
+// ProfilingEnabled reports whether profiling is explicitly enabled on this configuration.
+func (o *OdigosConfiguration) ProfilingEnabled() bool {
+	return o != nil && ProfilingPipelineActive(o.Profiling)
 }

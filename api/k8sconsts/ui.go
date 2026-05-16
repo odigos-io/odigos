@@ -2,7 +2,7 @@ package k8sconsts
 
 const (
 	UIImage              = "odigos-ui"
-	UIImageCertified     = "odigos-ui-certified"
+	UIImageCertified     = "odigos-ui-rhel-certified"
 	UIServiceName        = "ui"
 	UIDeploymentName     = "odigos-ui"
 	UIAppLabelValue      = "odigos-ui"

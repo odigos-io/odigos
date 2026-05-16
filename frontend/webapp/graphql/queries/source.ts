@@ -24,7 +24,6 @@ export const GET_SOURCE = gql`
           type
           reason
           message
-          lastTransitionTime
         }
         manifestYAML
         instrumentationConfigYAML

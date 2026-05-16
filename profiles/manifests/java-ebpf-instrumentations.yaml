@@ -5,11 +5,6 @@ metadata:
 spec:
   ruleName: "java ebpf instrumentations"
   notes: "Auto generated rule from java-ebpf-instrumentations profile. Do not edit."
-  otelSdks:
-    otelSdkByLanguage:
-      java:
-        sdkTier: "enterprise"
-        sdkType: "ebpf"
   otelDistros:
     otelDistroNames:
     - "java-ebpf-instrumentations"

@@ -1,0 +1,35 @@
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: extract-attribute-e2e
+  namespace: odigos-test
+spec:
+  actionName: "extract attribute e2e"
+  signals:
+    - TRACES
+  extractAttribute:
+    extractions:
+      # JSON variation - matches in messaging.message.payload
+      - source: study_id
+        dataFormat: json
+        target: extracted.json.study_id
+
+      # SQL variation (FormatJSON regex also handles SQL syntax) - matches in db.statement
+      - source: order_id
+        dataFormat: json
+        target: extracted.sql.order_id
+
+      # URL variation - all three match in http.request.payload
+      - source: projects
+        dataFormat: url
+        target: extracted.url.project
+      - source: locations
+        dataFormat: url
+        target: extracted.url.location
+      - source: studies
+        dataFormat: url
+        target: extracted.url.study
+
+      # Free regex variation - matches in db.statement
+      - regex: "req-([a-z0-9]+)"
+        target: extracted.regex.request_id

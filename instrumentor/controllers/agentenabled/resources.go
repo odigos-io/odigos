@@ -5,7 +5,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,6 +17,7 @@ import (
 // this indicates that they were not found, but it is valid.
 func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (
 	*odigosv1.CollectorsGroup,
+	*odigosv1.CollectorsGroup,
 	*[]odigosv1.InstrumentationRule,
 	*[]odigosv1.Action,
 	*[]odigosv1.Sampling,
@@ -28,35 +28,40 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 	obj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, obj)
 	if err != nil && !apierrors.IsNotFound(err) {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	workloadObj, err := workload.ObjectToWorkload(obj)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
-	cg, err := getCollectorsGroup(ctx, c)
+	nodeCollectorsGroup, err := getCollectorsGroup(ctx, c, k8sconsts.OdigosNodeCollectorCollectorGroupName)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
-	irls, err := getRelevantInstrumentationRules(ctx, c, pw)
+	gatewayCollectorsGroup, err := getCollectorsGroup(ctx, c, k8sconsts.OdigosClusterCollectorCollectorGroupName)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
+	irls, err := getRelevantInstrumentationRules(ctx, c)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	actions, err := getAgentLevelRelatedActions(ctx, c)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	samplings, err := getAllSamplingRules(ctx, c)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
-	return cg, irls, actions, samplings, workloadObj, nil
+	return nodeCollectorsGroup, gatewayCollectorsGroup, irls, actions, samplings, workloadObj, nil
 }
 
 func getAllSamplingRules(ctx context.Context, c client.Client) (*[]odigosv1.Sampling, error) {
@@ -65,7 +70,8 @@ func getAllSamplingRules(ctx context.Context, c client.Client) (*[]odigosv1.Samp
 	if err != nil {
 		return nil, err
 	}
-	return &samplingList.Items, nil
+	samplingObjects := samplingList.Items
+	return &samplingObjects, nil
 }
 
 func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigosv1.Action, error) {
@@ -90,16 +96,18 @@ func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigo
 
 	return &agentLevelActions, nil
 }
-func getCollectorsGroup(ctx context.Context, c client.Client) (*odigosv1.CollectorsGroup, error) {
+func getCollectorsGroup(ctx context.Context, c client.Client, name string) (*odigosv1.CollectorsGroup, error) {
 	cg := odigosv1.CollectorsGroup{}
-	err := c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, &cg)
+	err := c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: name}, &cg)
 	if err != nil {
 		return nil, client.IgnoreNotFound(err)
 	}
 	return &cg, nil
 }
 
-func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (*[]odigosv1.InstrumentationRule, error) {
+// Returns rules whose spec affects agent-enabled logic (distro selection, signal toggles, etc.)
+// Per container scoping is applied later in sync.go via utils.IsContainerParticipatingInRule.
+func getRelevantInstrumentationRules(ctx context.Context, c client.Client) (*[]odigosv1.InstrumentationRule, error) {
 	relevantIr := []odigosv1.InstrumentationRule{}
 	irList := odigosv1.InstrumentationRuleList{}
 	err := c.List(ctx, &irList)
@@ -109,21 +117,17 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 
 	for i := range irList.Items {
 		ir := &irList.Items[i]
-
-		// ignore disabled rules
 		if ir.Spec.Disabled {
 			continue
 		}
-
-		if !utils.IsWorkloadParticipatingInRule(pw, ir) {
-			continue
-		}
-
-		// filter only rules that are relevant to the agent enabled logic
-		if (ir.Spec.OtelSdks != nil || ir.Spec.OtelDistros != nil) ||
+		if (ir.Spec.OtelDistros != nil) ||
 			(ir.Spec.TraceConfig != nil && ir.Spec.TraceConfig.Disabled != nil) ||
-			(ir.Spec.HeadersCollection != nil ||
-				ir.Spec.HeadSamplingFallbackFraction != nil) {
+			(ir.Spec.PayloadCollection != nil) ||
+			(ir.Spec.CodeAttributes != nil) ||
+			(ir.Spec.HeadersCollection != nil) ||
+			(ir.Spec.TraceVerbosity != nil) ||
+			(ir.Spec.CustomInstrumentations != nil) ||
+			(ir.Spec.EbpfLogCapture != nil) {
 
 			relevantIr = append(relevantIr, *ir)
 		}

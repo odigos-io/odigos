@@ -73,7 +73,7 @@ spec:
               tar -xvzf odigos-latest-cli.tar.gz
 
               echo "🚀 Installing Odigos $LATEST_RELEASE_TAG from CLI Binary..."
-              ./odigos install --ns odigos-test || true
+              ./odigos install --ns odigos-test --set imagePrefix=ghcr.io/odigos-io || true
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
             timeout: 5m
@@ -125,7 +125,7 @@ spec:
     - name: Upgrade to HEAD version with the current compiled cli
       try:
         - script:
-            content: ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
+            content: ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set imagePrefix=registry.odigos.io
             timeout: 3m
         - assert:
             file: ../../common/assert/odigos-upgraded.yaml

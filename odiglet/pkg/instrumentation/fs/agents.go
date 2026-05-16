@@ -45,9 +45,12 @@ func CopyAgentsDirectoryToHost() error {
 		// These shared objects (.so files) are loaded by Python processes and mapped into process memory.
 		// They cannot be replaced while loaded, so we must keep them in the host filesystem to avoid removal.
 		// These files are versioned and renamed when their respective library versions change.
-		"/var/odigos/python/google/_upb/_message.abi3.so":                     {}, // Google protobuf library
-		"/var/odigos/python/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so": {}, // Wrapt library on arm64
-		"/var/odigos/python/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":  {}, // Wrapt library on x86_64
+		"/var/odigos/python/google/_upb/_message.abi3.so":                        {}, // Google protobuf library
+		"/var/odigos/python/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so":    {}, // Wrapt library on arm64
+		"/var/odigos/python/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":     {}, // Wrapt library on x86_64
+		"/var/odigos/python3.8/google/_upb/_message.abi3.so":                     {}, // Google protobuf library [python 3.8 distro]
+		"/var/odigos/python3.8/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so": {}, // Wrapt library on arm64 [python 3.8 distro]
+		"/var/odigos/python3.8/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":  {}, // Wrapt library on x86_64 [python 3.8 distro]
 		// PHP native extension loaded by the PHP runtime via dlopen().
 		// Must be preserved during upgrades to avoid crashing running PHP-FPM processes.
 		"/var/odigos/php/8.1/opentelemetry.so": {},

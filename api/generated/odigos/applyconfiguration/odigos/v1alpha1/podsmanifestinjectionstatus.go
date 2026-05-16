@@ -19,10 +19,18 @@ package v1alpha1
 
 // PodsManifestInjectionStatusApplyConfiguration represents a declarative configuration of the PodsManifestInjectionStatus type for use
 // with apply.
+//
+// represents the status of odigos MANIFEST injection to existing pods template.
+// each pod can be in one of 3 states: injected and up-to-date, injected and out-of-date, or not injected.
+// actual agent in pod container can be injected or not regardless of the pod manifest injection status.
+// status only shows if pods exists from each category and not count, to avoid frequent (noisy/expensive) updates in steady state
 type PodsManifestInjectionStatusApplyConfiguration struct {
-	HasInjectedUpToDatePods  *bool `json:"hasInjectedUpToDatePods,omitempty"`
+	// if the source has any pods which are using the latest agent deployment setup.
+	HasInjectedUpToDatePods *bool `json:"hasInjectedUpToDatePods,omitempty"`
+	// if the source has any pods which are using an outdated agent deployment setup.
 	HasInjectedOutOfDatePods *bool `json:"hasInjectedOutOfDatePods,omitempty"`
-	HasUninjectedPods        *bool `json:"hasUninjectedPods,omitempty"`
+	// if the source has any pods which do not have the odigos agent injected.
+	HasUninjectedPods *bool `json:"hasUninjectedPods,omitempty"`
 }
 
 // PodsManifestInjectionStatusApplyConfiguration constructs a declarative configuration of the PodsManifestInjectionStatus type for use with

@@ -23,7 +23,7 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		return nil, errors.New("New relic endpoint not specified, gateway will not be configured for New Relic")
 	}
 
-	exporterName := "otlp/newrelic-" + dest.GetID()
+	exporterName := "otlp_grpc/newrelic-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s:4317", endpoint),
 		"headers": GenericMap{

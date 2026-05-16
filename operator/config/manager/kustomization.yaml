@@ -4,33 +4,36 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: autoscaler
-  newName: registry.connect.redhat.com/odigos/odigos-autoscaler-certified
-  newTag: v1.8.7
+  newName: registry.connect.redhat.com/odigos/odigos-autoscaler-rhel-certified
+  newTag: v1.25.0
+- name: cli
+  newName: registry.connect.redhat.com/odigos/odigos-cli-rhel-certified
+  newTag: v1.25.0
 - name: collector
-  newName: registry.connect.redhat.com/odigos/odigos-collector-certified
-  newTag: v1.8.7
+  newName: registry.connect.redhat.com/odigos/odigos-collector-rhel-certified
+  newTag: v1.25.0
 - name: controller
-  newName: registry.connect.redhat.com/odigos/odigos-operator-certified
-  newTag: v1.8.7
+  newName: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified
+  newTag: v1.25.0
 - name: enterprise-instrumentor
-  newName: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-certified
-  newTag: v1.8.7
+  newName: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified
+  newTag: v1.25.0
 - name: enterprise-odiglet
-  newName: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-certified
-  newTag: v1.8.7
+  newName: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified
+  newTag: v1.25.0
 - name: frontend
-  newName: registry.connect.redhat.com/odigos/odigos-ui-certified
-  newTag: v1.8.7
+  newName: registry.connect.redhat.com/odigos/odigos-ui-rhel-certified
+  newTag: v1.25.0
 - name: instrumentor
-  newName: registry.connect.redhat.com/odigos/odigos-instrumentor-certified
-  newTag: v1.8.7
+  newName: registry.connect.redhat.com/odigos/odigos-instrumentor-rhel-certified
+  newTag: v1.25.0
 - name: odiglet
-  newName: registry.connect.redhat.com/odigos/odigos-odiglet-certified
-  newTag: v1.8.7
+  newName: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified
+  newTag: v1.25.0
 - name: scheduler
-  newName: registry.connect.redhat.com/odigos/odigos-scheduler-certified
-  newTag: v1.8.7
+  newName: registry.connect.redhat.com/odigos/odigos-scheduler-rhel-certified
+  newTag: v1.25.0
 configMapGenerator:
 - literals:
-  - ODIGOS_VERSION=1.8.7
+  - ODIGOS_VERSION=1.25.0
   name: odigos-version

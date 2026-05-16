@@ -2,7 +2,6 @@ package sourceinstrumentation
 
 import (
 	"slices"
-	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,11 +22,10 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 	// remove this: aug 2025
 	if len(ic.Status.RuntimeDetailsByContainer) > 0 {
 		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
-			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
-			Status:             metav1.ConditionTrue,
-			Reason:             string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
-			Message:            "runtime detection completed successfully",
-			LastTransitionTime: metav1.NewTime(time.Now()),
+			Type:    v1alpha1.RuntimeDetectionStatusConditionType,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
+			Message: "runtime detection completed successfully",
 		})
 		return true
 	}
@@ -36,11 +34,10 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 	if workloadObj.AvailableReplicas() == 0 &&
 		workloadObj.GetObjectKind().GroupVersionKind().Kind != string(k8sconsts.WorkloadKindCronJob) {
 		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
-			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
-			Status:             metav1.ConditionFalse,
-			Reason:             string(v1alpha1.RuntimeDetectionReasonNoRunningPods),
-			Message:            "No running pods available to detect source runtime",
-			LastTransitionTime: metav1.NewTime(time.Now()),
+			Type:    v1alpha1.RuntimeDetectionStatusConditionType,
+			Status:  metav1.ConditionFalse,
+			Reason:  string(v1alpha1.RuntimeDetectionReasonNoRunningPods),
+			Message: "No running pods available to detect source runtime",
 		})
 		return true
 	}
@@ -54,19 +51,17 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 	}
 	if isCronJob {
 		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
-			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
-			Status:             metav1.ConditionUnknown,
-			Reason:             string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
-			Message:            "Runtime detection pending Job to start",
-			LastTransitionTime: metav1.NewTime(time.Now()),
+			Type:    v1alpha1.RuntimeDetectionStatusConditionType,
+			Status:  metav1.ConditionUnknown,
+			Reason:  string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
+			Message: "Runtime detection pending Job to start",
 		})
 	} else {
 		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
-			Type:               v1alpha1.RuntimeDetectionStatusConditionType,
-			Status:             metav1.ConditionUnknown,
-			Reason:             string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
-			Message:            "Waiting for odiglet to initiate runtime detection in a node with running pod",
-			LastTransitionTime: metav1.NewTime(time.Now()),
+			Type:    v1alpha1.RuntimeDetectionStatusConditionType,
+			Status:  metav1.ConditionUnknown,
+			Reason:  string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
+			Message: "Waiting for odiglet to initiate runtime detection in a node with running pod",
 		})
 	}
 	return true
@@ -90,11 +85,10 @@ func initiateAgentEnabledConditionIfMissing(ic *v1alpha1.InstrumentationConfig) 
 	}
 
 	ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
-		Type:               v1alpha1.AgentEnabledStatusConditionType,
-		Status:             metav1.ConditionUnknown,
-		Reason:             reason,
-		Message:            message,
-		LastTransitionTime: metav1.NewTime(time.Now()),
+		Type:    v1alpha1.AgentEnabledStatusConditionType,
+		Status:  metav1.ConditionUnknown,
+		Reason:  reason,
+		Message: message,
 	})
 
 	return true

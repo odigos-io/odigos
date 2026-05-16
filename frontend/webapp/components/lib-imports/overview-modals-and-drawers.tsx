@@ -1,5 +1,8 @@
-import React from 'react';
-import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, SourceDrawer, SourceModal } from '@odigos/ui-kit/containers';
+import React, { useCallback } from 'react';
+import { EntityTypes } from '@odigos/ui-kit/types';
+import { useDrawerStore, useModalStore } from '@odigos/ui-kit/store';
+import { ActionFormContextProvider, DestinationFormContextProvider, RuleFormContextProvider, SourceInstrumentFormContextProvider } from '@odigos/ui-kit/contexts';
+import { AddActionDrawer, AddDestinationDrawer, AddRuleDrawer, AddSourceDrawer, EditActionDrawer, EditDestinationDrawer, EditRuleDrawer } from '@odigos/ui-kit/containers/v2';
 import {
   useActionCRUD,
   useDescribe,
@@ -9,53 +12,129 @@ import {
   useNamespace,
   usePotentialDestinations,
   useSourceCRUD,
+  useProfiling,
   useTestConnection,
   useWorkloadUtils,
+  useEffectiveConfig,
 } from '@/hooks';
+import { SourceDrawer } from '@odigos/ui-kit/containers';
 
 const OverviewModalsAndDrawers = () => {
-  const { fetchNamespacesWithWorkloads } = useNamespace();
+  const { currentModal, setCurrentModal } = useModalStore();
+  const { drawerType, drawerEntityId, setDrawerType, setDrawerEntityId } = useDrawerStore();
+
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
-  const { categories } = useDestinationCategories();
+  const { effectiveConfig } = useEffectiveConfig();
+  const { fetchNamespacesWithWorkloads } = useNamespace();
+  const { getDestinationCategories } = useDestinationCategories();
+  const { getPotentialDestinations } = usePotentialDestinations();
+  const { createActionV2, updateAction, deleteAction } = useActionCRUD();
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
-  const { potentialDestinations } = usePotentialDestinations();
-  const { createAction, updateAction, deleteAction } = useActionCRUD();
-  const { persistSources, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
+  const { fetchProfilingSlots, enableProfiling, fetchSourceProfiling } = useProfiling();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
-  const { createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
+  const { createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
+  const { persistSources, persistSourcesV2, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
+
+  const handleCloseModal = useCallback(() => {
+    setCurrentModal('');
+  }, []);
+  const handleCloseDrawer = useCallback(() => {
+    setDrawerType('');
+    setDrawerEntityId(null);
+  }, []);
 
   return (
     <>
-      {/* modals */}
-      <SourceModal fetchNamespacesWithWorkloads={fetchNamespacesWithWorkloads} persistSources={persistSources} />
-      <DestinationModal
-        isOnboarding={false}
-        categories={categories}
-        potentialDestinations={potentialDestinations}
-        createDestination={createDestination}
-        updateDestination={updateDestination}
-        deleteDestination={deleteDestination}
-        testConnection={testConnection}
-      />
-      <InstrumentationRuleModal createInstrumentationRule={createInstrumentationRule} />
-      <ActionModal createAction={createAction} />
+      {/* add drawers (v2) */}
+      {currentModal === EntityTypes.Source && (
+        <SourceInstrumentFormContextProvider>
+          <AddSourceDrawer onClose={handleCloseModal} fetchNamespacesWithWorkloads={fetchNamespacesWithWorkloads} persistSources={persistSourcesV2} withOverlay />
+        </SourceInstrumentFormContextProvider>
+      )}
+      {currentModal === EntityTypes.Destination && (
+        <DestinationFormContextProvider>
+          <AddDestinationDrawer
+            onClose={handleCloseModal}
+            getDestinationCategories={getDestinationCategories}
+            getPotentialDestinations={getPotentialDestinations}
+            testConnection={testConnection}
+            createDestination={createDestination}
+            updateDestination={updateDestination}
+            withOverlay
+          />
+        </DestinationFormContextProvider>
+      )}
+      {currentModal === EntityTypes.InstrumentationRule && (
+        <RuleFormContextProvider>
+          <AddRuleDrawer onClose={handleCloseModal} createInstrumentationRule={createInstrumentationRuleV2} withOverlay />
+        </RuleFormContextProvider>
+      )}
+      {currentModal === EntityTypes.Action && (
+        <ActionFormContextProvider>
+          <AddActionDrawer onClose={handleCloseModal} createAction={createActionV2} withOverlay />
+        </ActionFormContextProvider>
+      )}
 
-      {/* drawers */}
-      <SourceDrawer
-        persistSources={persistSources}
-        restartWorkloads={restartWorkloads}
-        restartPod={restartPod}
-        recoverFromRollback={recoverFromRollback}
-        updateSource={updateSource}
-        fetchSourceById={fetchSourceById}
-        fetchSourceDescribe={fetchDescribeSource}
-        fetchSourceLibraries={fetchSourceLibraries}
-        fetchPeerSources={fetchPeerSources}
-      />
-      <DestinationDrawer categories={categories} updateDestination={updateDestination} deleteDestination={deleteDestination} testConnection={testConnection} />
-      <InstrumentationRuleDrawer updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />
-      <ActionDrawer updateAction={updateAction} deleteAction={deleteAction} />
+      {/* edit drawers */}
+      {drawerType === EntityTypes.Source && drawerEntityId && (
+        // <SourceEditFormContextProvider>
+        //   <EditSourceDrawer
+        //     onClose={handleCloseDrawer}
+        //     sourceId={drawerEntityId as WorkloadId}
+        //     persistSources={persistSources}
+        //     restartWorkloads={restartWorkloads}
+        //     restartPod={restartPod}
+        //     recoverFromRollback={recoverFromRollback}
+        //     updateSource={updateSource}
+        //     fetchSourceById={fetchSourceById}
+        //     fetchSourceDescribe={fetchDescribeSource}
+        //     fetchSourceLibraries={fetchSourceLibraries}
+        //     fetchPeerSources={fetchPeerSources}
+        //     profilingEnabled={effectiveConfig?.profiling?.enabled || false}
+        //     enableProfiling={enableProfiling}
+        //     fetchSourceProfiling={fetchSourceProfiling}
+        //     fetchProfilingSlots={fetchProfilingSlots}
+        //   />
+        // </SourceEditFormContextProvider>
+        <SourceDrawer
+          persistSources={persistSources}
+          restartWorkloads={restartWorkloads}
+          restartPod={restartPod}
+          recoverFromRollback={recoverFromRollback}
+          updateSource={updateSource}
+          fetchSourceById={fetchSourceById}
+          fetchSourceDescribe={fetchDescribeSource}
+          fetchSourceLibraries={fetchSourceLibraries}
+          fetchPeerSources={fetchPeerSources}
+          profilingEnabled={effectiveConfig?.profiling?.enabled || false}
+          enableProfiling={enableProfiling}
+          fetchSourceProfiling={fetchSourceProfiling}
+          fetchProfilingSlots={fetchProfilingSlots}
+        />
+      )}
+      {drawerType === EntityTypes.Destination && drawerEntityId && (
+        <DestinationFormContextProvider>
+          <EditDestinationDrawer
+            onClose={handleCloseDrawer}
+            destinationId={drawerEntityId as string}
+            getDestinationCategories={getDestinationCategories}
+            testConnection={testConnection}
+            updateDestination={updateDestination}
+            deleteDestination={deleteDestination}
+          />
+        </DestinationFormContextProvider>
+      )}
+      {drawerType === EntityTypes.InstrumentationRule && drawerEntityId && (
+        <RuleFormContextProvider>
+          <EditRuleDrawer onClose={handleCloseDrawer} ruleId={drawerEntityId} updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />
+        </RuleFormContextProvider>
+      )}
+      {drawerType === EntityTypes.Action && drawerEntityId && (
+        <ActionFormContextProvider>
+          <EditActionDrawer onClose={handleCloseDrawer} actionId={drawerEntityId} updateAction={updateAction} deleteAction={deleteAction} />
+        </ActionFormContextProvider>
+      )}
     </>
   );
 };

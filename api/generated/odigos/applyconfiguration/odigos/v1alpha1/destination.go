@@ -25,6 +25,8 @@ import (
 
 // DestinationApplyConfiguration represents a declarative configuration of the Destination type for use
 // with apply.
+//
+// Destination is the Schema for the destinations API
 type DestinationApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +44,7 @@ func Destination(name, namespace string) *DestinationApplyConfiguration {
 	b.WithAPIVersion("odigos.io/v1alpha1")
 	return b
 }
+
 func (b DestinationApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

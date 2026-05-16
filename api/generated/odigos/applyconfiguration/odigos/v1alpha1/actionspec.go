@@ -26,18 +26,32 @@ import (
 // ActionSpecApplyConfiguration represents a declarative configuration of the ActionSpec type for use
 // with apply.
 type ActionSpecApplyConfiguration struct {
-	ActionName        *string                                `json:"actionName,omitempty"`
-	Notes             *string                                `json:"notes,omitempty"`
-	Disabled          *bool                                  `json:"disabled,omitempty"`
-	Signals           []common.ObservabilitySignal           `json:"signals,omitempty"`
-	AddClusterInfo    *actionsv1alpha1.AddClusterInfoConfig  `json:"addClusterInfo,omitempty"`
-	DeleteAttribute   *actionsv1alpha1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
-	RenameAttribute   *actionsv1alpha1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
-	PiiMasking        *actionsv1alpha1.PiiMaskingConfig      `json:"piiMasking,omitempty"`
-	K8sAttributes     *actionsv1alpha1.K8sAttributesConfig   `json:"k8sAttributes,omitempty"`
-	Samplers          *actionsv1alpha1.SamplersConfig        `json:"samplers,omitempty"`
-	URLTemplatization *actions.URLTemplatizationConfig       `json:"urlTemplatization,omitempty"`
-	SpanRenamer       *actions.SpanRenamerConfig             `json:"spanRenamer,omitempty"`
+	// Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.
+	ActionName *string `json:"actionName,omitempty"`
+	// A free-form text field that allows you to attach notes regarding the action for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.
+	Notes *string `json:"notes,omitempty"`
+	// A boolean field allowing to temporarily disable the action, but keep it around for future use
+	Disabled *bool `json:"disabled,omitempty"`
+	// Which signals should this action operate on.
+	Signals []common.ObservabilitySignal `json:"signals,omitempty"`
+	// AddClusterInfo is the config for the AddClusterInfo Action.
+	AddClusterInfo *actionsv1alpha1.AddClusterInfoConfig `json:"addClusterInfo,omitempty"`
+	// DeleteAttribute is the config for the DeleteAttribute Action.
+	DeleteAttribute *actionsv1alpha1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
+	// RenameAttribute is the config for the RenameAttribute Action.
+	RenameAttribute *actionsv1alpha1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
+	// PiiMasking is the config for the PiiMasking Action.
+	PiiMasking *actionsv1alpha1.PiiMaskingConfig `json:"piiMasking,omitempty"`
+	// K8sAttributes is the config for the K8sAttributes Action.
+	K8sAttributes *actionsv1alpha1.K8sAttributesConfig `json:"k8sAttributes,omitempty"`
+	// Samplers is the config for the Samplers Action.
+	Samplers *actionsv1alpha1.SamplersConfig `json:"samplers,omitempty"`
+	// URLTemplatization is the config for the URLTemplatization Action.
+	URLTemplatization *actions.URLTemplatizationConfig `json:"urlTemplatization,omitempty"`
+	// SpanRenamer is the config for the SpanRenamer Action.
+	SpanRenamer *actions.SpanRenamerConfig `json:"spanRenamer,omitempty"`
+	// ExtractAttribute is the config for the ExtractAttribute Action.
+	ExtractAttribute *actions.ExtractAttributeConfig `json:"extractAttribute,omitempty"`
 }
 
 // ActionSpecApplyConfiguration constructs a declarative configuration of the ActionSpec type for use with
@@ -141,5 +155,13 @@ func (b *ActionSpecApplyConfiguration) WithURLTemplatization(value actions.URLTe
 // If called multiple times, the SpanRenamer field is set to the value of the last call.
 func (b *ActionSpecApplyConfiguration) WithSpanRenamer(value actions.SpanRenamerConfig) *ActionSpecApplyConfiguration {
 	b.SpanRenamer = &value
+	return b
+}
+
+// WithExtractAttribute sets the ExtractAttribute field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ExtractAttribute field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithExtractAttribute(value actions.ExtractAttributeConfig) *ActionSpecApplyConfiguration {
+	b.ExtractAttribute = &value
 	return b
 }

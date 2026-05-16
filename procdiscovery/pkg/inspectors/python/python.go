@@ -13,8 +13,7 @@ import (
 type PythonInspector struct{}
 
 const (
-	pythonProcessName = "python"
-	libPythonStr      = "libpython3"
+	libPythonStr = "libpython3"
 )
 
 // pythonExeRegex matches executable names that represent Python interpreters.
@@ -26,6 +25,9 @@ const (
 //
 // The pattern ensures that after the "python" prefix, only numeric versions (optionally with a single dot) are allowed.
 var pythonExeRegex = regexp.MustCompile(`^python(\d+(\.\d+)?)?$`)
+
+// exeVersionRegex extracts the version from exe paths like /usr/bin/python3.11 or /usr/bin/python3.11.2
+var exeVersionRegex = regexp.MustCompile(`python(\d+\.\d+(?:\.\d+)?)`)
 
 func (p *PythonInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
 	baseExe := filepath.Base(pcx.ExePath)
@@ -45,11 +47,17 @@ func (p *PythonInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 	return "", false
 }
 
-func (p *PythonInspector) GetRuntimeVersion(proc *process.ProcessContext, containerURL string) string {
+func (p *PythonInspector) GetRuntimeVersion(proc *process.ProcessContext) string {
+	// 1. PYTHON_VERSION env var (set by official Docker images)
 	if value, exists := proc.GetDetailedEnvsValue(process.PythonVersionConst); exists {
 		return value
 	}
 
+	// 2. Exe path e.g. /usr/bin/python3.11 (3.11) or /usr/bin/python3.11.2 (3.11.2)
+	baseExe := filepath.Base(proc.ExePath)
+	if subMatch := exeVersionRegex.FindStringSubmatch(baseExe); len(subMatch) > 1 {
+		return subMatch[1]
+	}
 	return ""
 }
 

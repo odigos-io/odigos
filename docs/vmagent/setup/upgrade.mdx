@@ -1,0 +1,34 @@
+---
+title: "Upgrade"
+sidebarTitle: "Upgrade"
+description: "Upgrade the Odigos VM Agent on your Linux host"
+---
+
+To upgrade the Odigos VM Agent, run the following based on your Linux package manager:
+
+<Tabs>
+  <Tab title="DNF">
+    Using `dnf` (RHEL, Fedora, Rocky Linux):
+
+    ```shell
+    sudo dnf upgrade odigos
+    ```
+  </Tab>
+  <Tab title="APT">
+    Using `apt` (Debian, Ubuntu):
+
+    ```shell
+    sudo apt upgrade odigos
+    ```
+  </Tab>
+  <Tab title="RPM">
+
+    If you use a package manager other than `dnf` or `apt`, run the following to upgrade the agent:
+
+    <Note>Replace \<otelcol-version\> and \<agent-version\> with the versions you downloaded.</Note>
+
+    ```shell
+    rpm -Uvh odigos-otelcol-<otelcol-version>.rpm odigos-<agent-version>.rpm
+    ```
+  </Tab>
+</Tabs>

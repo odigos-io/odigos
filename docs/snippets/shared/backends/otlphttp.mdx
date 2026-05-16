@@ -51,6 +51,7 @@ To configure basic authentication, use the optional config options `Basic Auth U
   ✅ Traces
   ✅ Metrics
   ✅ Logs
+  ✅ Profiles
 </Accordion>
 
 - **OTLP_HTTP_ENDPOINT** `string` : OTLP http Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`.
@@ -92,6 +93,9 @@ To configure basic authentication, use the optional config options `Basic Auth U
 - **OTLP_HTTP_LOGS_ENDPOINT** `string` : OTLP http logs Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/logs` will be used.
   - This field is optional
   - Example: `http://host:port/v1/logs`
+- **OTLP_HTTP_PROFILES_ENDPOINT** `string` : OTLP http profiles Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/profiles` will be used.
+  - This field is optional
+  - Example: `http://host:port/v1/profiles`
 - **OTLP_HTTP_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
   - This field is optional and defaults to `False`
 - **OTLP_HTTP_CA_PEM** `string` : Certificate Authority. When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA
@@ -144,6 +148,7 @@ There are two primary methods for configuring destinations in Odigos:
         # OTLP_HTTP_TRACES_ENDPOINT: <OTLP http traces Endpoint>
         # OTLP_HTTP_METRICS_ENDPOINT: <OTLP http metrics Endpoint>
         # OTLP_HTTP_LOGS_ENDPOINT: <OTLP http logs Endpoint>
+        # OTLP_HTTP_PROFILES_ENDPOINT: <OTLP http profiles Endpoint>
         # OTLP_HTTP_TLS_ENABLED: <Enable TLS>
         # OTLP_HTTP_CA_PEM: <Certificate Authority>
         # OTLP_HTTP_INSECURE_SKIP_VERIFY: <Insecure Skip Verify>
@@ -155,6 +160,7 @@ There are two primary methods for configuring destinations in Odigos:
       - TRACES
       - METRICS
       - LOGS
+      - PROFILES
       type: otlphttp
 
     ---

@@ -129,13 +129,16 @@ spec:
           # # it does not run any actual code, just pulls the image
           # we add the resources here to make sure any policy that may validate resources exist
           # is satisfied, there should be no need to configure this as this is not running anything.
+          # NOTE: memory limit is set to 12Mi which is the OpenShift minimum
+          # (https://docs.redhat.com/en/documentation/openshift_container_platform/4.20/html/nodes/working-with-clusters#nodes-cluster-resource-configure-about_nodes-cluster-resource-configure);
+          # going lower causes kubelet to reject the pod with "set memory limit ... too low".
           resources:
             requests:
               cpu: 1m
-              memory: 10Mi
+              memory: 12Mi
             limits:
               cpu: 1m
-              memory: 10Mi
+              memory: 12Mi
       {{- end }}
       containers:
         - name: odiglet
@@ -212,7 +215,7 @@ spec:
                   key: odigos-onprem-token
           {{- end }}
             - name: GOMEMLIMIT
-              value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" (include "odigos.odiglet.resolvedResources" . | fromYaml)) }}
+              value: {{ include "odigos.odiglet.gomemlimit" . }}
           {{- if .Values.odiglet.noHostPid }}
             - name: ODIGOS_PROC_DIR
               value: /hostproc
@@ -263,6 +266,7 @@ spec:
             - /odigosotelcol
           args:
             - --config=k8scm:{{ .Release.Namespace }}/odigos-data-collection/conf
+            - --feature-gates=service.profilesSupport
           securityContext:
             {{- if $privilegedRequired }}
             privileged: true
@@ -347,6 +351,9 @@ spec:
               mountPath: /hostfs
               readOnly: true
             {{- end }}
+            - name: sys-kernel
+              mountPath: /sys/kernel
+              readOnly: true
             - name: exchange-dir
               mountPath: /var/exchange
 # if hostMounts are not allowed we must use mountMethod of "k8s-init-container"

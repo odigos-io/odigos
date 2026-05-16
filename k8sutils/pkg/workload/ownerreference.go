@@ -1,7 +1,6 @@
 package workload
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -14,8 +13,8 @@ import (
 )
 
 // PodWorkloadObjectOrError is the same as PodWorkloadObject but returns an error if the workload is not found.
-func PodWorkloadObjectOrError(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
-	pw, err := PodWorkloadObject(ctx, pod)
+func PodWorkloadObjectOrError(pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
+	pw, err := PodWorkloadObject(pod)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +28,7 @@ func PodWorkloadObjectOrError(ctx context.Context, pod *corev1.Pod) (*k8sconsts.
 
 // PodWorkload returns the workload object that manages the provided pod.
 // If the pod is not owned by a controller, it returns a nil workload with no error.
-func PodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
+func PodWorkloadObject(pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
 		workloadName, workloadKind, err := GetWorkloadFromOwnerReference(owner, pod)
 		if err != nil {

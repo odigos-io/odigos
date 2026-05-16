@@ -54,7 +54,8 @@ spec:
               helm upgrade --install odigos ./odigos-latest-chart.tgz \
                 --create-namespace \
                 --namespace odigos-test \
-                --set nodeSelector."kubernetes\.io/os"=linux
+                --set nodeSelector."kubernetes\.io/os"=linux \
+                --set imagePrefix=ghcr.io/odigos-io
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
             timeout: 5m

@@ -108,12 +108,21 @@ rules:
       - instrumentationconfigs
       - instrumentationinstances
       - sources
+      - samplings
     verbs:
       - update
       - patch
       - create
       - delete
   {{- end }}
+  - apiGroups:
+      - operator.odigos.io
+    resources:
+      - odigos
+    verbs:
+      - get
+      - list
+      - watch
   - apiGroups:
       - actions.odigos.io
     resources:

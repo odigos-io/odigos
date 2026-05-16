@@ -3,7 +3,6 @@ package common
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	k8spod "github.com/odigos-io/odigos/k8sutils/pkg/pod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -18,14 +17,6 @@ func IsPodInCurrentNode(pod *corev1.Pod) bool {
 	return pod.Spec.NodeName == env.Current.NodeName
 }
 
-func GetPodExternalURL(ip string, ports []corev1.ContainerPort) string {
-	if ports != nil && len(ports) > 0 {
-		return fmt.Sprintf("http://%s:%d", ip, ports[0].ContainerPort)
-	}
-
-	return ""
-}
-
 func WorkloadPodsOnCurrentNode(c client.Client, ctx context.Context, ic *odigosv1.InstrumentationConfig) ([]corev1.Pod, error) {
 	// find pods that are managed by the workload,
 	// filter out pods that are being deleted or not ready,
@@ -37,6 +28,11 @@ func WorkloadPodsOnCurrentNode(c client.Client, ctx context.Context, ic *odigosv
 		return nil, err
 	}
 
+	return MatchingPodsForWorkloadOnNode(ic, podList)
+}
+
+// MatchingPodsForWorkloadOnNode returns the running pods on the node from the given pod list that are associated with the workload instrumented by ic.
+func MatchingPodsForWorkloadOnNode(ic *odigosv1.InstrumentationConfig, podList corev1.PodList) ([]corev1.Pod, error) {
 	var selectedPods []corev1.Pod
 	for _, pod := range podList.Items {
 		// skip pods that are being deleted or not ready
@@ -50,7 +46,7 @@ func WorkloadPodsOnCurrentNode(c client.Client, ctx context.Context, ic *odigosv
 		if !IsPodInCurrentNode(&pod) {
 			continue
 		}
-		podWorkload, err := workload.PodWorkloadObject(ctx, &pod)
+		podWorkload, err := workload.PodWorkloadObject(&pod)
 		if errors.Is(err, workload.ErrKindNotSupported) {
 			continue
 		}

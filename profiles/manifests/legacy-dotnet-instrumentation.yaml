@@ -5,11 +5,6 @@ metadata:
 spec:
   ruleName: "legacy dotnet instrumentation"
   notes: "Auto generated rule from legacy-dotnet-instrumentation profile. Do not edit."
-  otelSdks:
-    otelSdkByLanguage:
-      dotnet:
-        sdkTier: "enterprise"
-        sdkType: "native"
   otelDistros:
     otelDistroNames:
     - "dotnet-legacy"

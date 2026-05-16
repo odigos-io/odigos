@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: CLICKHOUSE_ENDPOINT
       displayName: Endpoint
@@ -59,39 +61,39 @@ spec:
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Secure connection'
+        tooltip: "Secure connection"
       customReadDataLabels:
-        - condition: 'true'
-          title: 'TLS'
-          value: 'Encrypted'
-        - condition: 'false'
-          title: 'TLS'
-          value: 'Unencrypted'
+        - condition: "true"
+          title: "TLS"
+          value: "Encrypted"
+        - condition: "false"
+          title: "TLS"
+          value: "Unencrypted"
     - name: CLICKHOUSE_INSECURE_SKIP_VERIFY
       displayName: Insecure Skip Verify
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Skip TLS certificate verification'
-      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
+        tooltip: "Skip TLS certificate verification"
+      renderCondition: ["CLICKHOUSE_TLS_ENABLED", "==", "true"]
     - name: CLICKHOUSE_USE_CUSTOM_CA
       displayName: Use Custom CA Certificate
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Use a custom CA certificate instead of the system root CA'
-      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
+        tooltip: "Use a custom CA certificate instead of the system root CA"
+      renderCondition: ["CLICKHOUSE_TLS_ENABLED", "==", "true"]
     - name: CLICKHOUSE_CA_PEM
       displayName: Certificate Authority (CA PEM)
       componentType: textarea
       componentProps:
         required: false
-        placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'CA certificate in PEM format to verify the server'
-      renderCondition: ['CLICKHOUSE_USE_CUSTOM_CA', '==', 'true']
-      hideFromReadData: ['true']
+        placeholder: "-----BEGIN CERTIFICATE-----"
+        tooltip: "CA certificate in PEM format to verify the server"
+      renderCondition: ["CLICKHOUSE_USE_CUSTOM_CA", "==", "true"]
+      hideFromReadData: ["true"]
       secret: true
 
     - name: CLICKHOUSE_TRACES_TABLE
@@ -181,6 +183,6 @@ spec:
       renderCondition: ["SIGNALS", "INCLUDES", "logs"]
       hideFromReadData: ["HYPERDX_LOG_NORMALIZER", "==", "false"]
       customReadDataLabels:
-        - condition: 'true'
-          title: 'Log Normalizer'
-          value: 'Enabled'
+        - condition: "true"
+          title: "Log Normalizer"
+          value: "Enabled"

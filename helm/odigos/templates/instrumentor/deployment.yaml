@@ -85,11 +85,6 @@ spec:
                 fieldPath: metadata.namespace
           - name: ODIGOS_LOG_LEVEL
             value: {{ .Values.instrumentor.logLevel | default .Values.logLevel | default "info" | quote }}
-          - name: ODIGOS_TIER
-            valueFrom:
-              configMapKeyRef:
-                key: ODIGOS_TIER
-                name: odigos-deployment
           - name: ODIGOS_VERSION
             valueFrom:
               configMapKeyRef:

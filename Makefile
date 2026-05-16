@@ -10,7 +10,7 @@ endif
 GOLANGCI_LINT_VERSION ?= v2.10.1
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
-LINT_CMD = golangci-lint run -c ../.golangci.yml
+LINT_CMD = $(GOLANGCI_LINT) run -c ../.golangci.yml
 ifdef FIX_LINT
     LINT_CMD += --fix
 endif
@@ -20,6 +20,10 @@ IMG_SUFFIX?=
 TARGET?=
 RHEL?=false
 BUILD_DIR=.
+
+# RHEL-certified CLI (ko + Dockerfile.rhel-base); matches .github/workflows/publish-modules-rhel publish-cli-rhel
+CLI_RHEL_IMAGE_NAME ?= odigos-cli-rhel-certified
+CLI_RHEL_KO_BASE_IMAGE ?= $(ORG)/odigos-cli-rhel-ko-base:$(TAG)
 
 ifeq ($(RHEL),true)
     IMG_SUFFIX=-rhel-certified
@@ -39,7 +43,7 @@ endif
 
 .PHONY: install-golangci-lint
 install-golangci-lint:
-	@if ! which golangci-lint >/dev/null || [ "$$(golangci-lint version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \
+	@if [ ! -x "$(GOLANGCI_LINT)" ] || [ "$$("$(GOLANGCI_LINT)" version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \
 		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION)..."; \
 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION); \
 	else \
@@ -103,8 +107,9 @@ $(HELM_SCHEMA_BIN):
 helm-schema-clean:
 	rm -f $(HELM_SCHEMA_BIN)
 
+# Pass DOCKER_BUILD_OPTS=--no-cache to force a clean build (e.g. when go.mod replace changes and cache is stale).
 build-image/%:
-	docker build $(TARGET_FLAG) \
+	docker build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) \
 	-t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg ODIGOS_VERSION=$(TAG) \
@@ -173,7 +178,7 @@ build-images-rhel:
 	$(MAKE) build-images RHEL=true TAG=$(TAG) ORG=$(ORG)
 
 push-image/%:
-	docker buildx build $(TARGET_FLAG) \
+	docker buildx build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) \
 	--platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	$(if $(filter true,$(PUSH_IMAGE)),--push,) \
 	$(if $(filter true,$(GCP_MARKETPLACE)),--annotation="index:com.googleapis.cloudmarketplace.product.service.name=services/odigos.endpoints.odigos-public.cloud.goog",) \
@@ -261,15 +266,15 @@ restart-collector:
 	-kubectl -n odigos-system patch daemonset odiglet -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
 
 deploy-%:
-	make build-$* ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX)
-	make load-to-kind-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) build-$* ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) load-to-kind-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
 	@if [ "$*" != "agents" ]; then \
-		make restart-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX); \
+		$(MAKE) restart-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX); \
 	fi
 
 .PHONY: deploy
 deploy:
-	make deploy-odiglet && make deploy-autoscaler && make deploy-collector && make deploy-instrumentor && make deploy-scheduler && make deploy-ui
+	make deploy-odiglet deploy-autoscaler deploy-collector deploy-instrumentor deploy-scheduler deploy-ui
 
 .PHONY: debug-odiglet
 debug-odiglet:
@@ -293,8 +298,8 @@ update-dep/%: DIR=$*
 update-dep/%:
 	cd $(DIR) && go get $(MODULE)@$(VERSION)
 
-UNSTABLE_COLLECTOR_VERSION=v0.141.0
-STABLE_COLLECTOR_VERSION=v1.47.0
+UNSTABLE_COLLECTOR_VERSION=v0.148.0
+STABLE_COLLECTOR_VERSION=v1.54.0
 STABLE_OTEL_GO_VERSION=v1.38.0
 UNSTABLE_OTEL_GO_VERSION=v0.63.0
 
@@ -401,6 +406,20 @@ helm-install:
 		--set clusterName=$(CLUSTER_NAME) \
 		--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL) \
 		--set onPremToken=$(ONPREM_TOKEN)
+
+.PHONY: helm-install-community
+helm-install-community:
+	@echo "Installing odigos community using helm"
+	make helm-install ONPREM_TOKEN=
+
+.PHONY: helm-install-enterprise
+helm-install-enterprise:
+	@echo "Installing odigos enterprise using helm"
+	if [ -z "$(ONPREM_TOKEN)" ]; then \
+		echo "❌ ONPREM_TOKEN is not set"; \
+		exit 1; \
+	fi
+	make helm-install ONPREM_TOKEN=$(ONPREM_TOKEN)
 
 .PHONY: helm-install-central
 helm-install-central:
@@ -524,6 +543,48 @@ build-cli-image:
 	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
 	DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S') \
 	ko build --bare --tags $(TAG) --local .
+
+.PHONY: build-cli-image-rhel
+build-cli-image-rhel:
+	cd cli && $(MAKE) licenses
+	cd cli && docker build -f Dockerfile.rhel-base -t $(CLI_RHEL_KO_BASE_IMAGE) .
+	cd cli && \
+	KO_DOCKER_REPO=$(ORG)/$(CLI_RHEL_IMAGE_NAME) \
+	KO_DEFAULTBASEIMAGE=$(CLI_RHEL_KO_BASE_IMAGE) \
+	KO_CONFIG_PATH=./.ko.yaml \
+	VERSION=$(TAG) \
+	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
+	DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
+	ko build --bare --tags $(TAG) --local .
+
+.PHONY: push-cli-image-rhel
+push-cli-image-rhel:
+	@if [ "$(PUSH_IMAGE)" != "true" ]; then \
+		echo "this command will push the image to the public registry; set PUSH_IMAGE=true" >&2; \
+		exit 1; \
+	fi
+	cd cli && $(MAKE) licenses
+	docker buildx build --platform linux/amd64,linux/arm64 \
+		-f cli/Dockerfile.rhel-base \
+		-t $(CLI_RHEL_KO_BASE_IMAGE) \
+		--push \
+		cli
+	cd cli && \
+	KO_DOCKER_REPO=$(ORG)/$(CLI_RHEL_IMAGE_NAME) \
+	KO_DEFAULTBASEIMAGE=$(CLI_RHEL_KO_BASE_IMAGE) \
+	KO_CONFIG_PATH=./.ko.yaml \
+	VERSION=$(TAG) \
+	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
+	DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
+	ko build --bare --tags $(TAG) \
+		--image-label name=odigos-cli \
+		--image-label vendor=Odigos \
+		--image-label maintainer=Odigos \
+		--image-label version=$(TAG) \
+		--image-label release=$(TAG) \
+		--image-label summary="Odigos CLI" \
+		--image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
+		--platform=all .
 
 # install gatekeeper to prevent:
 # 1. privileged containers

@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
+
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -62,28 +63,23 @@ type K8sProcessGroup struct {
 }
 
 // K8sConfigGroup is the k8s specific ConfigGroup used to group config changes requests.
-// Currently the InstrumentationConfig CRD groups the configuration for a given Source in the sdkConfigs field
-// in which the configuration is indexed by programming language.
-//
-// In the InstrumentationConfig CRD we have the Containers slice which groups configuration by containers.
-// This is the preferred approach and we should migrate away from the sdkConfigs since grouping by containers allows for more flexibility and cleaner code.
-// Once the migration is done - this config group can change internally to replace the language field with a container field.
+// The InstrumentationConfig CRD groups configuration by containers in the Containers slice.
 // For each container, we save its resolved distribution in the InstrumentationConfig - thus we can have access to the language as well.
 type K8sConfigGroup struct {
-	Pw   k8sconsts.PodWorkload
-	Lang common.ProgrammingLanguage
+	Pw            k8sconsts.PodWorkload
+	ContainerName string
 }
 
 func (kd *K8sProcessDetails) ConfigGroup(ctx context.Context) (K8sConfigGroup, error) {
 	if kd.Pw == nil {
 		return K8sConfigGroup{}, errors.New("podWorkload is not provided, cannot resolve config group")
 	}
-	if kd.Distro == nil {
-		return K8sConfigGroup{}, errors.New("distribution is not provided, cannot resolve config group")
+	if kd.ContainerName == "" {
+		return K8sConfigGroup{}, errors.New("container name is not provided, cannot resolve config group")
 	}
 	return K8sConfigGroup{
-		Pw:   *kd.Pw,
-		Lang: kd.Distro.Language,
+		Pw:            *kd.Pw,
+		ContainerName: kd.ContainerName,
 	}, nil
 }
 
@@ -102,6 +98,12 @@ func (kd *K8sProcessDetails) Distribution(ctx context.Context) (*distro.OtelDist
 		} else {
 			return nil, instrumentation.ErrProcessLanguageNotMatchesDistribution
 		}
+	}
+
+	// Wildcard-language distros skip process language verification.
+	if common.IsProgrammingLanguageWildcard(kd.Distro.Language) {
+		kd.langVerified = &trueVal
+		return kd.Distro, nil
 	}
 
 	// verify the language of the process event matches the detected language for the container

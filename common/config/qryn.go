@@ -76,7 +76,7 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 	otlpHttpExporterName := ""
 	otlpHttpExporter := GenericMap{}
 	if isTracingEnabled(dest) {
-		otlpHttpExporterName = "otlphttp/qryn-" + dest.GetID()
+		otlpHttpExporterName = "otlp_http/qryn-" + dest.GetID()
 		otlpHttpExporter["traces_endpoint"] = fmt.Sprintf("%s/v1/traces", baseURL)
 		otlpHttpExporter["encoding"] = "proto"
 		otlpHttpExporter["compression"] = "none"
@@ -96,7 +96,7 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 	}
 
 	if isLoggingEnabled(dest) {
-		otlpHttpExporterName = "otlphttp/qryn-" + dest.GetID()
+		otlpHttpExporterName = "otlp_http/qryn-" + dest.GetID()
 		otlpHttpExporter["logs_endpoint"] = fmt.Sprintf("%s/v1/logs", baseURL)
 		logsPipelineName := "logs/qryn-" + dest.GetID()
 		otlpHttpExporter["encoding"] = "proto"

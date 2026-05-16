@@ -14,6 +14,7 @@ interface UseActionCrud {
   actionsLoading: boolean;
   fetchActions: () => void;
   createAction: (action: ActionFormData) => void;
+  createActionV2: (...args: Parameters<UseActionCrud['createAction']>) => Promise<{ error?: string } | undefined>;
   updateAction: (id: string, action: ActionFormData) => void;
   deleteAction: (id: string, actionType: ActionType) => void;
 }
@@ -32,13 +33,47 @@ const stringifyRenames = (action: ActionFormData): ActionInput => {
     });
   };
 
+  const sanitizeUrlTemplatizationGroups = (
+    groups: ActionFormData['fields']['urlTemplatizationRulesGroups'],
+  ): ActionFormData['fields']['urlTemplatizationRulesGroups'] => {
+    if (!Array.isArray(groups)) return groups;
+
+    return groups.map((group) => {
+      const sanitizedGroup = { ...group };
+
+      // Normalize empty string to undefined (form inputs may send '' but type is WorkloadKind | undefined)
+      const kind = sanitizedGroup.filterK8sWorkloadKind as string | undefined | null;
+      if (kind === '') {
+        sanitizedGroup.filterK8sWorkloadKind = undefined;
+      }
+
+      if (Array.isArray(sanitizedGroup.workloadFilters)) {
+        const validFilters = sanitizedGroup.workloadFilters.filter(
+          (f) => f.kind && typeof f.kind === 'string' && f.kind.trim() !== '',
+        );
+        sanitizedGroup.workloadFilters = validFilters.length > 0 ? validFilters : undefined;
+      }
+
+      if (Array.isArray(sanitizedGroup.templatizationRules)) {
+        sanitizedGroup.templatizationRules = sanitizedGroup.templatizationRules.filter(
+          (r) => r.template && typeof r.template === 'string' && r.template.trim() !== '',
+        );
+      }
+
+      return sanitizedGroup;
+    });
+  };
+
+  const { id, conditions, ...actionInput } = action as ActionFormData & { id?: string; conditions?: unknown };
+
   return {
-    ...action,
+    ...actionInput,
     fields: {
       ...action.fields,
       labelsAttributes: sanitizeFromArray(action.fields.labelsAttributes as any),
       annotationsAttributes: sanitizeFromArray(action.fields.annotationsAttributes as any),
       renames: action.fields.renames ? JSON.stringify(action.fields.renames) : null,
+      urlTemplatizationRulesGroups: sanitizeUrlTemplatizationGroups(action.fields.urlTemplatizationRulesGroups),
     },
   };
 };
@@ -83,8 +118,7 @@ export const useActionCRUD = (): UseActionCrud => {
     onCompleted: (res) => {
       const action = res.createAction;
       const { id, type } = action;
-      // addEntities(EntityTypes.Action, [action]);
-      fetchActions(); // refetch because of conditions
+      fetchActions();
       notifyUser(StatusType.Success, Crud.Create, `Successfully created "${type}" action`, id);
     },
   });
@@ -94,8 +128,7 @@ export const useActionCRUD = (): UseActionCrud => {
     onCompleted: (res) => {
       const action = res.updateAction;
       const { id, type } = action;
-      // addEntities(EntityTypes.Action, [action]);
-      fetchActions(); // refetch because of conditions
+      fetchActions();
       notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${type}" action`, id);
     },
   });
@@ -115,6 +148,15 @@ export const useActionCRUD = (): UseActionCrud => {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       mutateCreate({ variables: { action: stringifyRenames(action) } });
+    }
+  };
+
+  const createActionV2: UseActionCrud['createActionV2'] = async (...args) => {
+    try {
+      await createAction(...args);
+      return undefined;
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to create action' };
     }
   };
 
@@ -143,6 +185,7 @@ export const useActionCRUD = (): UseActionCrud => {
     actionsLoading,
     fetchActions,
     createAction,
+    createActionV2,
     updateAction,
     deleteAction,
   };

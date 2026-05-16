@@ -1,10 +1,9 @@
 import { gql } from '@apollo/client';
 
 const SOURCES_SCOPE_FIELDS = `
-  workloadName
-  workloadKind
-  workloadNamespace
-  workloadLanguage
+  sources { namespace kind name }
+  namespaces
+  languages
 `;
 
 const NOISY_OPERATION_FIELDS = `
@@ -53,6 +52,14 @@ const COST_REDUCTION_RULE_FIELDS = `
 export const GET_SAMPLING_RULES = gql`
   query GetSamplingRules {
     sampling {
+      configs {
+        effective {
+          k8sHealthProbesSampling {
+            enabled
+            keepPercentage
+          }
+        }
+      }
       rules {
         id
         name

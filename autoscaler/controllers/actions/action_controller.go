@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -66,6 +67,14 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 			return nil, err
 		}
 		return convertToDefaultProcessor(action, action.Spec.RenameAttribute, config)
+	}
+
+	if action.Spec.ExtractAttribute != nil {
+		config, err := extractAttributeConfig(action.Spec.ExtractAttribute)
+		if err != nil {
+			return nil, err
+		}
+		return convertToDefaultProcessor(action, action.Spec.ExtractAttribute, config)
 	}
 
 	if action.Spec.K8sAttributes != nil {
@@ -173,7 +182,7 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 // - owner reference to the action
 // - type and order hint based on the function input
 // - config based on the function input, stringified in JSON
-// - collector roles set to ClusterGateway
+// - collector roles from actionConfig.CollectorRoles()
 func convertToDefaultProcessor(action *odigosv1.Action, actionConfig ActionConfig, processorConfig any) (*odigosv1.Processor, error) {
 
 	configJson, err := json.Marshal(processorConfig)
@@ -181,9 +190,9 @@ func convertToDefaultProcessor(action *odigosv1.Action, actionConfig ActionConfi
 		return nil, err
 	}
 
-	collectorRoles := []odigosv1.CollectorsGroupRole{}
-	for _, role := range actionConfig.CollectorRoles() {
-		collectorRoles = append(collectorRoles, odigosv1.CollectorsGroupRole(role))
+	collectorRoles := make([]odigosv1.CollectorsGroupRole, 0, len(actionConfig.CollectorRoles()))
+	for _, r := range actionConfig.CollectorRoles() {
+		collectorRoles = append(collectorRoles, odigosv1.CollectorsGroupRole(r))
 	}
 
 	processor := odigosv1.Processor{
@@ -281,16 +290,26 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	action := &odigosv1.Action{}
 	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	// If the action is a URL templatization action, we should not need to transform it to a processor CR.
-	if action.Spec.URLTemplatization != nil {
-		err = r.reportProcessorNotRequired(ctx, action)
-		if err != nil {
-			return ctrl.Result{}, client.IgnoreNotFound(err)
+		if apierrors.IsNotFound(err) {
+			// Reconcile after delete: sync so the shared URL-templatization Processor is removed when no URL actions remain.
+			if syncErr := SyncUrlTemplatizationProcessor(ctx, r.Client, URLTemplatizationSyncApplyFull); syncErr != nil {
+				logger.Error(syncErr, "sync URL templatization processor after action delete failed")
+				return ctrl.Result{}, syncErr
+			}
+			return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
+	}
+	// ToDo: once we add a mutating webhook to actions, we will inject the labels for URL templatization
+	// and then we can filter out actions where we need to run SyncUrlTemplatizationProcessor
+	// Right now running for every Action so shared processor lifecycle is correctly managed
+	if err := SyncUrlTemplatizationProcessor(ctx, r.Client, URLTemplatizationSyncCreateIfMissing); err != nil {
+		logger.Error(err, "sync URL templatization processor failed")
+		return ctrl.Result{}, err
+	}
+	if action.Spec.URLTemplatization != nil {
+		err = r.reportReconciledToProcessor(ctx, action)
+		return utils.K8SUpdateErrorHandler(err)
 	}
 
 	processor, err := convertActionToProcessor(ctx, r.Client, action)

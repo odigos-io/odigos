@@ -20,9 +20,16 @@ package v1alpha1
 // ContainerOverrideApplyConfiguration represents a declarative configuration of the ContainerOverride type for use
 // with apply.
 type ContainerOverrideApplyConfiguration struct {
-	ContainerName  *string                                      `json:"containerName,omitempty"`
-	RuntimeInfo    *RuntimeDetailsByContainerApplyConfiguration `json:"runtimeInfo,omitempty"`
-	OtelDistroName *string                                      `json:"otelDistroName,omitempty"`
+	// The name of the container to override.
+	ContainerName *string `json:"containerName,omitempty"`
+	// RuntimeInfo to use for agent enabling.
+	// If set for a container, the automatic detection will not be used for this container,
+	// and the distro to use will be calculated based on this value.
+	RuntimeInfo *RuntimeDetailsByContainerApplyConfiguration `json:"runtimeInfo,omitempty"`
+	// select one specific otel distro to use for this container.
+	// the selected distro must match the programming language and any constraints of the distro.
+	// if the programmin language is incorrect, the runtime info can be overridden to match
+	OtelDistroName *string `json:"otelDistroName,omitempty"`
 }
 
 // ContainerOverrideApplyConfiguration constructs a declarative configuration of the ContainerOverride type for use with

@@ -5,8 +5,8 @@ import "github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configresolvers"
 type ConfigSectionName string
 
 const (
-	RemoteConfigSdkConfigSectionName                      ConfigSectionName = "SDK"
 	RemoteConfigInstrumentationLibrariesConfigSectionName ConfigSectionName = "InstrumentationLibraries"
+	RemoteConfigContainerConfigSectionName                ConfigSectionName = "container_config"
 )
 
 type TraceSignalGeneralConfig struct {

@@ -45,7 +45,7 @@ func (j *JavaInspector) DeepScan(pcx *process.ProcessContext) (common.Programmin
 	return "", false
 }
 
-func (j *JavaInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
+func (j *JavaInspector) GetRuntimeVersion(pcx *process.ProcessContext) string {
 	javaVersion := ""
 	if value, exists := pcx.GetDetailedEnvsValue(process.JavaVersionConst); exists {
 		javaVersion = versionRegex.FindString(value)

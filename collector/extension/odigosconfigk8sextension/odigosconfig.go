@@ -40,11 +40,12 @@ func (o *OdigosWorkloadConfig) Start(ctx context.Context, _ component.Host) erro
 	return o.startInformer(ctx)
 }
 
-// Shutdown stops the informer and clears the cache.
+// Shutdown stops the informer and clears the cache and callbacks so the collector can prune memory.
 func (o *OdigosWorkloadConfig) Shutdown(ctx context.Context) error {
 	if o.cancel != nil {
 		o.cancel()
 	}
+	o.cache.clear()
 	return nil
 }
 
@@ -78,4 +79,24 @@ func (o *OdigosWorkloadConfig) RegisterWorkloadConfigCacheCallback(cb collector.
 	if backfillCount > 0 {
 		o.logger.Debug("workload config callback backfill replayed", zap.Int("entries", backfillCount))
 	}
+}
+
+// UnregisterWorkloadConfigCacheCallback removes the callback so the extension stops invoking it.
+// Processors should call this in Shutdown when removed from the pipeline so caches are pruned nicely.
+func (o *OdigosWorkloadConfig) UnregisterWorkloadConfigCacheCallback(cb collector.WorkloadConfigCacheCallback) {
+	o.cache.removeCallback(cb)
+	o.logger.Debug("workload config cache callback unregistered")
+}
+
+func (o *OdigosWorkloadConfig) GetDataStreamsForWorkload(res pcommon.Resource) ([]string, bool) {
+	key, err := workloadContainerKeyFromResourceAttributes(res.Attributes())
+	if err != nil {
+		return nil, false
+	}
+	streams, found := o.cache.GetDataStreams(key)
+	if !found {
+		o.logger.Debug("data streams not found for workload", zap.String("key", key))
+		return nil, false
+	}
+	return streams, true
 }

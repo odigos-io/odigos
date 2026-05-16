@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 1.8.7
+VERSION ?= 1.25.0
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -53,15 +53,16 @@ endif
 # This is useful for CI or a project to utilize a specific version of the operator-sdk toolkit.
 OPERATOR_SDK_VERSION ?= v1.39.1
 # Image URL to use all building/pushing image targets
-IMG ?= registry.connect.redhat.com/odigos/odigos-operator-certified:v$(VERSION)
-AUTOSCALER_IMG ?= $(ORG)/odigos-autoscaler-certified:v$(VERSION)
-COLLECTOR_IMG ?= $(ORG)/odigos-collector-certified:v$(VERSION)
-FRONTEND_IMG ?= $(ORG)/odigos-ui-certified:v$(VERSION)
-INSTRUMENTOR_IMG ?= $(ORG)/odigos-instrumentor-certified:v$(VERSION)
-ENTERPRISE_INSTRUMENTOR_IMG ?= $(ORG)/odigos-enterprise-instrumentor-certified:v$(VERSION)
-ODIGLET_IMG ?= $(ORG)/odigos-odiglet-certified:v$(VERSION)
-ENTERPRISE_ODIGLET_IMG ?= $(ORG)/odigos-enterprise-odiglet-certified:v$(VERSION)
-SCHEDULER_IMG ?= $(ORG)/odigos-scheduler-certified:v$(VERSION)
+IMG ?= registry.connect.redhat.com/odigos/odigos-operator-rhel-certified:v$(VERSION)
+AUTOSCALER_IMG ?= $(ORG)/odigos-autoscaler-rhel-certified:v$(VERSION)
+COLLECTOR_IMG ?= $(ORG)/odigos-collector-rhel-certified:v$(VERSION)
+FRONTEND_IMG ?= $(ORG)/odigos-ui-rhel-certified:v$(VERSION)
+INSTRUMENTOR_IMG ?= $(ORG)/odigos-instrumentor-rhel-certified:v$(VERSION)
+ENTERPRISE_INSTRUMENTOR_IMG ?= $(ORG)/odigos-enterprise-instrumentor-rhel-certified:v$(VERSION)
+ODIGLET_IMG ?= $(ORG)/odigos-odiglet-rhel-certified:v$(VERSION)
+ENTERPRISE_ODIGLET_IMG ?= $(ORG)/odigos-enterprise-odiglet-rhel-certified:v$(VERSION)
+SCHEDULER_IMG ?= $(ORG)/odigos-scheduler-rhel-certified:v$(VERSION)
+CLI_IMG ?= $(ORG)/odigos-cli-rhel-certified:v$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.31.0
 
@@ -291,6 +292,7 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 	cd config/manager && $(KUSTOMIZE) edit set image odiglet=$(ODIGLET_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set image enterprise-odiglet=$(ENTERPRISE_ODIGLET_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set image scheduler=$(SCHEDULER_IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image cli=$(CLI_IMG)
 	cd config/manager && $(KUSTOMIZE) edit set configmap odigos-version --from-literal=ODIGOS_VERSION=$(VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 	$(OPERATOR_SDK) bundle validate ./bundle

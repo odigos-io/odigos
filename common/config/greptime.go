@@ -49,7 +49,7 @@ func (j *Greptime) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string,
 		},
 	}
 
-	exporterName := "otlphttp/" + uniqueUri
+	exporterName := "otlp_http/" + uniqueUri
 	cfg.Exporters[exporterName] = GenericMap{
 		"endpoint": endpoint,
 		"auth": GenericMap{

@@ -6,8 +6,8 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	instrumentationrules "github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -63,7 +63,7 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 			Disabled:                 &r.Spec.Disabled,
 			Mutable:                  mutable,
 			ProfileName:              profileName,
-			Workloads:                convertWorkloads(r.Spec.Workloads),
+			SourcesScopes:            convertSourcesScope(r.Spec.SourcesScopes),
 			InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 			Conditions:               ConvertConditions(r.Status.Conditions),
 			CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
@@ -97,7 +97,7 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		Disabled:                 &r.Spec.Disabled,
 		Mutable:                  mutable,
 		ProfileName:              profileName,
-		Workloads:                convertWorkloads(r.Spec.Workloads),
+		SourcesScopes:            convertSourcesScope(r.Spec.SourcesScopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
@@ -266,18 +266,11 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	existingRule.Spec.RuleName = *input.RuleName
 	existingRule.Spec.Notes = *input.Notes
 	existingRule.Spec.Disabled = *input.Disabled
-	if input.Workloads != nil {
-		convertedWorkloads := make([]k8sconsts.PodWorkload, len(input.Workloads))
-		for i, w := range input.Workloads {
-			convertedWorkloads[i] = k8sconsts.PodWorkload{
-				Name:      w.Name,
-				Namespace: w.Namespace,
-				Kind:      k8sconsts.WorkloadKind(w.Kind),
-			}
-		}
-		existingRule.Spec.Workloads = &convertedWorkloads
+
+	if input.SourcesScopes != nil {
+		existingRule.Spec.SourcesScopes = convertSourcesScopeInput(input.SourcesScopes)
 	} else {
-		existingRule.Spec.Workloads = nil
+		existingRule.Spec.SourcesScopes = nil
 	}
 
 	if input.InstrumentationLibraries != nil {
@@ -333,7 +326,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		Disabled:                 &updatedRule.Spec.Disabled,
 		Mutable:                  profileName == "",
 		ProfileName:              profileName,
-		Workloads:                convertWorkloads(updatedRule.Spec.Workloads),
+		SourcesScopes:            convertSourcesScope(updatedRule.Spec.SourcesScopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(updatedRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(updatedRule.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(updatedRule.Spec.HeadersCollection),
@@ -362,18 +355,11 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 	notes := *input.Notes
 	disabled := *input.Disabled
 
-	var workloads *[]k8sconsts.PodWorkload
-	if input.Workloads != nil {
-		convertedWorkloads := make([]k8sconsts.PodWorkload, len(input.Workloads))
-		for i, w := range input.Workloads {
-			convertedWorkloads[i] = k8sconsts.PodWorkload{
-				Name:      w.Name,
-				Namespace: w.Namespace,
-				Kind:      k8sconsts.WorkloadKind(w.Kind),
-			}
-		}
-		workloads = &convertedWorkloads
+	var sourcesScopes *k8sconsts.SourcesScopes
+	if input.SourcesScopes != nil {
+		sourcesScopes = convertSourcesScopeInput(input.SourcesScopes)
 	}
+
 	var instrumentationLibraries *[]v1alpha1.InstrumentationLibraryGlobalId
 	if input.InstrumentationLibraries != nil {
 		convertedLibraries := make([]v1alpha1.InstrumentationLibraryGlobalId, len(input.InstrumentationLibraries))
@@ -396,7 +382,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			RuleName:                 ruleName,
 			Notes:                    notes,
 			Disabled:                 disabled,
-			Workloads:                workloads,
+			SourcesScopes:            sourcesScopes,
 			InstrumentationLibraries: instrumentationLibraries,
 			CodeAttributes:           getCodeAttributesInput(input),
 			HeadersCollection:        getHeadersCollectionInput(input),
@@ -420,7 +406,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		Disabled:                 &createdRule.Spec.Disabled,
 		Mutable:                  true, // New rules are always mutable
 		ProfileName:              "",   // New rules are not associated with a profile
-		Workloads:                convertWorkloads(createdRule.Spec.Workloads),
+		SourcesScopes:            convertSourcesScope(createdRule.Spec.SourcesScopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(createdRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(createdRule.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(createdRule.Spec.HeadersCollection),
@@ -439,19 +425,75 @@ func handleNotFoundError(err error, id string, entity string) error {
 	return fmt.Errorf("error getting %s: %w", entity, err)
 }
 
-// Converts Workloads to GraphQL-compatible format
-func convertWorkloads(workloads *[]k8sconsts.PodWorkload) []*model.PodWorkload {
-	var gqlWorkloads []*model.PodWorkload
-	if workloads != nil {
-		for _, w := range *workloads {
-			gqlWorkloads = append(gqlWorkloads, &model.PodWorkload{
-				Namespace: w.Namespace,
-				Kind:      model.K8sResourceKind(w.Kind),
-				Name:      w.Name,
+// convertSourcesScopeInput folds the row-per-criterion GraphQL shape into the
+// single-object tri-list CRD shape. Each input row contributes to at most one
+// of Sources/Namespaces (workload identity vs. namespace-only) plus optionally
+// Languages. The CRD model has no equivalent for the legacy `containerName`
+// field, so it is dropped on conversion.
+func convertSourcesScopeInput(scopes []*model.InstrumentationRuleSourcesScopeInput) *k8sconsts.SourcesScopes {
+	if len(scopes) == 0 {
+		return nil
+	}
+	out := &k8sconsts.SourcesScopes{}
+	for _, scope := range scopes {
+		if scope == nil {
+			continue
+		}
+		name := DerefString(scope.WorkloadName)
+		kind := DerefK8sResourceKind(scope.WorkloadKind)
+		namespace := DerefString(scope.WorkloadNamespace)
+		language := DerefSamplingWorkloadLanguage(scope.WorkloadLanguage)
+
+		switch {
+		case name != "" || kind != "":
+			out.Sources = append(out.Sources, k8sconsts.PodWorkload{
+				Name:      name,
+				Namespace: namespace,
+				Kind:      k8sconsts.WorkloadKind(kind),
 			})
+		case namespace != "":
+			out.Namespaces = append(out.Namespaces, namespace)
+		}
+		if language != "" {
+			out.Languages = append(out.Languages, language)
 		}
 	}
-	return gqlWorkloads
+	if len(out.Sources) == 0 && len(out.Namespaces) == 0 && len(out.Languages) == 0 {
+		return nil
+	}
+	return out
+}
+
+// convertSourcesScope unfolds the single-object tri-list CRD shape back into the
+// row-per-criterion GraphQL shape: one row per Source, one per Namespace, one
+// per Language. This is the inverse of convertSourcesScopeInput for the common
+// case of single-dimension rows.
+func convertSourcesScope(scopes *k8sconsts.SourcesScopes) []*model.InstrumentationRuleSourcesScope {
+	if scopes == nil {
+		return nil
+	}
+	var gqlSourcesScope []*model.InstrumentationRuleSourcesScope
+	for _, src := range scopes.Sources {
+		row := &model.InstrumentationRuleSourcesScope{
+			WorkloadName:      StringPtrIfNotEmpty(src.Name),
+			WorkloadKind:      K8sResourceKindPtrIfNotEmpty(string(src.Kind)),
+			WorkloadNamespace: StringPtrIfNotEmpty(src.Namespace),
+		}
+		gqlSourcesScope = append(gqlSourcesScope, row)
+	}
+	for _, ns := range scopes.Namespaces {
+		ns := ns
+		gqlSourcesScope = append(gqlSourcesScope, &model.InstrumentationRuleSourcesScope{
+			WorkloadNamespace: &ns,
+		})
+	}
+	for _, lang := range scopes.Languages {
+		l := model.SamplingWorkloadLanguage(lang)
+		gqlSourcesScope = append(gqlSourcesScope, &model.InstrumentationRuleSourcesScope{
+			WorkloadLanguage: &l,
+		})
+	}
+	return gqlSourcesScope
 }
 
 // Converts InstrumentationLibraries to GraphQL-compatible format

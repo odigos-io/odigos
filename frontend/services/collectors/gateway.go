@@ -184,13 +184,11 @@ func computeGatewayHPA(dep *appsv1.Deployment, hpa *autoscalingv2.HorizontalPodA
 		for _, cond := range hpa.Status.Conditions {
 			if cond.Type == autoscalingv2.ScalingActive {
 				status := services.TransformConditionStatus(metav1.ConditionStatus(cond.Status), string(cond.Type), cond.Reason)
-				lastTransitionTime := services.Metav1TimeToString(cond.LastTransitionTime)
 				h.Conditions = append(h.Conditions, &model.Condition{
-					Status:             status,
-					Type:               string(cond.Type),
-					Reason:             &cond.Reason,
-					Message:            &cond.Message,
-					LastTransitionTime: &lastTransitionTime,
+					Status:  status,
+					Type:    string(cond.Type),
+					Reason:  &cond.Reason,
+					Message: &cond.Message,
 				})
 				break
 			}

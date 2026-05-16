@@ -30,6 +30,12 @@ import (
 
 // APITokens is the resolver for the apiTokens field.
 func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.ComputePlatform) ([]*model.APIToken, error) {
+	// In readonly mode the UI's RBAC role does not grant `get` on secrets,
+	// and readonly users should not be able to see/edit the on-prem token anyway.
+	if services.IsReadonlyMode(ctx) {
+		return []*model.APIToken{}, nil
+	}
+
 	ns := env.GetCurrentNamespace()
 	// The result should always be 0 or 1:
 	// If it's 0, it means this is the OSS version.
@@ -38,7 +44,7 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 	secret, err := kube.DefaultClient.CoreV1().Secrets(ns).Get(ctx, k8sconsts.OdigosProSecretName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return make([]*model.APIToken, 0), nil
+			return []*model.APIToken{}, nil
 		}
 		return nil, err
 	}
@@ -49,28 +55,23 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 	iat, _ := tokenPayload["iat"].(float64)
 	exp, _ := tokenPayload["exp"].(float64)
 
-	if err != nil {
-		msg := err.Error()
-		return []*model.APIToken{
-			{
-				Token:     token,
-				Name:      aud,
-				IssuedAt:  0,
-				ExpiresAt: 0,
-				Message:   &msg,
-			},
-		}, nil
-	}
-
-	// We need to return an array (even if it's just 1 token), because in the future we will have to support multiple platforms.
-	return []*model.APIToken{
+	returnPayload := []*model.APIToken{
 		{
 			Token:     token,
 			Name:      aud,
 			IssuedAt:  int(iat) * 1000, // Convert to milliseconds
 			ExpiresAt: int(exp) * 1000, // Convert to milliseconds
 		},
-	}, nil
+	}
+
+	if err != nil {
+		msg := err.Error()
+		returnPayload[0].Message = &msg
+		return returnPayload, nil
+	}
+
+	// We need to return an array (even if it's just 1 token), because in the future we will have to support multiple platforms.
+	return returnPayload, nil
 }
 
 // K8sActualNamespaces is the resolver for the k8sActualNamespaces field.
@@ -152,8 +153,6 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		payload.Conditions = append(payload.Conditions, item.Conditions...)
 	}
 
-	services.SortConditions(payload.Conditions)
-
 	return payload, nil
 }
 
@@ -197,40 +196,36 @@ func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj 
 
 // DataStreams is the resolver for the dataStreams field.
 func (r *computePlatformResolver) DataStreams(ctx context.Context, obj *model.ComputePlatform) ([]*model.DataStream, error) {
-	ns := env.GetCurrentNamespace()
-
 	dataStreams := make([]*model.DataStream, 0)
-	seen := make(map[string]bool) // prevent duplicates
+	seen := make(map[string]bool)
 
 	dataStreams = append(dataStreams, &model.DataStream{Name: "default"})
 	seen["default"] = true
 
-	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
-	if err != nil {
+	// Use cache client with zero-copy instead of direct API call to avoid
+	// fetching and deep-copying all ICs from the API server at scale.
+	var instrumentationConfigs v1alpha1.InstrumentationConfigList
+	if err := r.K8sCacheClient.List(ctx, &instrumentationConfigs); err != nil {
 		return nil, err
 	}
 	for _, ic := range instrumentationConfigs.Items {
 		for _, name := range services.ExtractDataStreamsFromInstrumentationConfig(&ic) {
 			if !seen[*name] {
 				seen[*name] = true
-				dataStreams = append(dataStreams, &model.DataStream{
-					Name: *name,
-				})
+				dataStreams = append(dataStreams, &model.DataStream{Name: *name})
 			}
 		}
 	}
 
-	destinations, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
+	var destinations v1alpha1.DestinationList
+	if err := r.K8sCacheClient.List(ctx, &destinations); err != nil {
 		return nil, err
 	}
 	for _, dest := range destinations.Items {
 		for _, name := range services.ExtractDataStreamsFromDestination(dest) {
 			if !seen[*name] {
 				seen[*name] = true
-				dataStreams = append(dataStreams, &model.DataStream{
-					Name: *name,
-				})
+				dataStreams = append(dataStreams, &model.DataStream{Name: *name})
 			}
 		}
 	}
@@ -920,26 +915,23 @@ func (r *queryResolver) GetServiceMap(ctx context.Context) (*model.ServiceMap, e
 	}
 
 	serviceMap := r.MetricsConsumer.GetServiceGraphEdges()
-	services := make([]*model.ServiceMapFromSource, 0)
+	mapServices := make([]*model.ServiceMapFromSource, 0)
 
-	for serviceName, toServices := range serviceMap {
+	for compositeKey, toServices := range serviceMap {
 		to := make([]*model.ServiceMapToSource, 0)
 
-		for toServiceName, info := range toServices {
-			to = append(to, &model.ServiceMapToSource{
-				ServiceName: toServiceName,
-				Requests:    int(info.RequestCount),
-				DateTime:    info.LastUpdated.Format(time.RFC3339),
-			})
+		for toCompositeKey, info := range toServices {
+			to = append(to, services.EdgeToModel(toCompositeKey, info, services.ServiceGraphNodeAttributesForServer(info.Attributes)))
 		}
 
-		services = append(services, &model.ServiceMapFromSource{
-			ServiceName: serviceName,
+		mapServices = append(mapServices, &model.ServiceMapFromSource{
+			NodeID:      compositeKey,
+			ServiceName: services.BaseServiceName(compositeKey),
 			Services:    to,
 		})
 	}
 
-	return &model.ServiceMap{Services: services}, nil
+	return &model.ServiceMap{Services: mapServices}, nil
 }
 
 // PeerSources is the resolver for the peerSources field.
@@ -1040,6 +1032,9 @@ func (r *Resolver) K8sActualNamespace() K8sActualNamespaceResolver {
 	return &k8sActualNamespaceResolver{r}
 }
 
+// K8sActualSource returns K8sActualSourceResolver implementation.
+func (r *Resolver) K8sActualSource() K8sActualSourceResolver { return &k8sActualSourceResolver{r} }
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
@@ -1048,5 +1043,6 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type computePlatformResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
+type k8sActualSourceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

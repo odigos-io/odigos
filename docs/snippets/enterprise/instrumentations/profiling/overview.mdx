@@ -1,0 +1,42 @@
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+## What is CPU Profiling?
+
+CPU profiling continuously samples what your processes are spending time on. Every few milliseconds the profiler captures a snapshot of every running thread's call stack. Aggregated over time, these snapshots form a **flame graph** — a visualization that makes it immediately obvious where CPU cycles are going, which functions are hot, and which library call is the unexpected bottleneck.
+
+Unlike traces, which tell you *that* a request was slow, a CPU profile tells you *why*: the exact code path consuming the most time. This makes profiling the natural next step after you've identified a latency problem in your trace data.
+
+<Frame>
+  <img src="/images/enterprise/profiling/profiling1.png" alt="Continuous CPU Profiling in Odigos — symbol table and flame graph view" />
+</Frame>
+
+## Why Profiling in Odigos?
+
+Continuous profiling in Odigos is built directly into the same pipeline that handles your traces, metrics, and logs:
+
+- **Zero-code changes.** Profiling uses an eBPF kernel agent. No SDK, no agent library, no application restart required.
+- **Language-agnostic.** Because collection happens at the OS level, every process on the node is profiled regardless of runtime — Java, Python, Ruby, PHP, Node.js, Perl, Erlang, .NET, Go, and Native executables (including C/C++, Rust, and Zig)
+- **No separate infrastructure.** Profiles flow through the Odigos collector pipeline you already run. For quick investigation workflows the Odigos UI holds profiles in memory; for long-term storage you route them to a destination backend.
+- **Per-workload, on-demand.** After enabling profiling, it works efficiently by only dynamically enabling in-memory buffer for workloads you are actively investigating, keeping Odigos resource usage predictable and under control.
+
+## How It Works
+
+Odigos integrates the upstream [OpenTelemetry eBPF Profiler](https://github.com/open-telemetry/opentelemetry-ebpf-profiler) as a receiver inside the Data Collector.
+Profiles are emitted as OTLP Profiles signals and travel through the same collector pipeline as your other telemetry.
+
+Odigos doesn't require you to provision any data storage layer to view profiling data live, it does that by creating an efficient **in-memory and per workload** cache which maintains the lifecycle of profiling data based on cache size and TTL expiry.
+
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card
+    title="Continuous Profiling in Odigos"
+    icon="newspaper"
+    href="https://odigos.io/blog/continuous-profiling-in-odigos"
+  >
+    Deep-dive blog post on how profiling was built into the Odigos pipeline.
+  </Card>
+</CardGroup>
+
+<GettingHelp />

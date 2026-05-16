@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/distros/yamls"
@@ -76,6 +77,40 @@ func (g *Getter) GetAllDistros() []*distro.OtelDistro {
 		distros = append(distros, d)
 	}
 	return distros
+}
+
+// ResolveDistroNameForVersion walks the fallbackDistro chain starting from defaultDistroName,
+// returning the name of the first distro whose SupportedVersions constraint matches runtimeVersion.
+// If runtimeVersion is empty or cannot be parsed, defaultDistroName is returned unchanged.
+// If the end of the chain is reached with no match, the last name in the chain is returned so the
+// downstream version-unsupported check in the caller can surface the appropriate error.
+func (g *Getter) ResolveDistroNameForVersion(defaultDistroName string, runtimeVersion string) string {
+	if runtimeVersion == "" {
+		return defaultDistroName
+	}
+
+	detectedVersion, err := version.NewVersion(runtimeVersion)
+	if err != nil {
+		return defaultDistroName
+	}
+
+	currentName := defaultDistroName
+	for {
+		current := g.GetDistroByName(currentName)
+		if current == nil {
+			return defaultDistroName
+		}
+		if len(current.RuntimeEnvironments) > 0 && current.RuntimeEnvironments[0].SupportedVersions != "" {
+			constraint, err := version.NewConstraint(current.RuntimeEnvironments[0].SupportedVersions)
+			if err == nil && constraint.Check(detectedVersion) {
+				return currentName
+			}
+		}
+		if current.FallbackDistro == nil {
+			return currentName
+		}
+		currentName = *current.FallbackDistro
+	}
 }
 
 type Provider struct {

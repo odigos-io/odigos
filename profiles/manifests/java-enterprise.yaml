@@ -1,0 +1,10 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: java-enterprise
+spec:
+  ruleName: "java enterprise"
+  notes: "Auto generated rule from java-enterprise profile. Do not edit."
+  otelDistros:
+    otelDistroNames:
+    - "java-enterprise"

@@ -19,35 +19,35 @@ jobs:
             service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
             include:
               - service: autoscaler
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'Autoscaler for Odigos'
                 description: 'Autoscaler manages the installation of Odigos components.'
               - service: scheduler
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'Scheduler for Odigos'
                 description: 'Scheduler manages the installation of OpenTelemetry Collectors with Odigos.'
               - service: instrumentor
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'Instrumentor for Odigos'
                 description: 'Instrumentor manages auto-instrumentation for workloads with Odigos.'
               - service: collector
-                runner: large-runner
+                runner: depot-ubuntu-24.04-16
                 summary: 'Odigos Collector'
                 description: 'The Odigos build of the OpenTelemetry Collector.'
               - service: odiglet
-                runner: ubuntu-latest
+                runner: depot-ubuntu-24.04-4
                 summary: 'Odiglet for Odigos'
                 description: 'Odiglet is the core component of Odigos managing auto-instrumentation. This image requires a root user to load and manage eBPF programs.'
               - service: ui
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'UI for Odigos'
                 description: 'UI provides the frontend webapp for managing an Odigos installation.'
               - service: operator
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'Odigos Operator'
                 description: 'The Odigos Operator installs and manages Odigos in a cluster'
               - service: agents
-                runner: ubuntu-latest
+                runner: depot-ubuntu-latest
                 summary: 'Odigos Agents'
                 description: 'The Odigos Agents used to copy Odigos agent relevant files into the user workloads.'
         steps:
@@ -56,11 +56,11 @@ jobs:
             with:
               ref: ${{ inputs.tag }}
 
-          - name: Set up Docker Buildx
-            uses: docker/setup-buildx-action@v3
-      
           - name: Set up QEMU
-            uses: docker/setup-qemu-action@v3
+            uses: docker/setup-qemu-action@v4
+      
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v4
       
           - id: gcp-auth
             name: Authenticate with Google Cloud
@@ -77,31 +77,56 @@ jobs:
               registry: us-central1-docker.pkg.dev
               username: oauth2accesstoken
               password: ${{ steps.gcp-auth.outputs.access_token }}
-      
+
+          # Authenticate to AWS Public ECR so the Dockerfile's `COPY --from=public.ecr.aws/...`
+          # references for community agents (python, nodejs, php, ruby) are pulled with the
+          # higher per-account rate limit instead of the anonymous one (which causes 429s).
+          - name: Configure AWS credentials for ECR Public
+            uses: aws-actions/configure-aws-credentials@v5
+            with:
+              role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
+              aws-region: us-east-1
+
+          - name: Login to Amazon ECR Public
+            run: |
+              aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
           - name: Login to Docker Hub
             uses: docker/login-action@v3
             with:
               username: ${{ secrets.DOCKERHUB_USERNAME }}
               password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
+
           - name: Login to GitHub Container Registry
             uses: docker/login-action@v3
             with:
               registry: ghcr.io
               username: ${{ github.actor }}
               password: ${{ secrets.GITHUB_TOKEN }}
-      
+
+          - name: Login to Quay.io
+            uses: docker/login-action@v3
+            with:
+              registry: quay.io
+              username: ${{ secrets.QUAY_USERNAME }}
+              password: ${{ secrets.QUAY_TOKEN }}
+
           - name: Build and Push Docker Image for ${{ matrix.service }}
             uses: docker/build-push-action@v6
             env:
               ODIGOS_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || steps.extract_tag.outputs.tag}}
             with:
+              # Use the checked-out files (at inputs.tag) instead of build-push-action's
+              # default Git context, which would otherwise build from the workflow's
+              # triggering ref (e.g. main) and ignore the actions/checkout above.
+              context: .
               push: true
               provenance: false
               tags: |
                 us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}-rhel-certified:${{ env.ODIGOS_TAG }}
                 keyval/odigos-${{ matrix.service }}-rhel-certified:${{ env.ODIGOS_TAG }}
                 ghcr.io/odigos-io/odigos-${{ matrix.service }}-rhel-certified:${{ env.ODIGOS_TAG }}
+                quay.io/odigos/odigos-${{ matrix.service }}-rhel-certified:${{ env.ODIGOS_TAG }}
               build-args: |
                 SERVICE_NAME=${{ matrix.service }}
                 ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
@@ -124,15 +149,24 @@ jobs:
 
     publish-cli-rhel:
         needs: publish-images-rhel
-        runs-on: ubuntu-latest
+        runs-on: depot-ubuntu-latest
         permissions:
           contents: 'read'
           id-token: 'write'
+          packages: 'write'
         steps:
           - name: Checkout repository
             uses: actions/checkout@v5
             with:
               ref: ${{ inputs.tag }}
+
+          - uses: actions/setup-go@v6
+            with:
+              go-version-file: cli/go.mod
+
+          - name: Generate CLI licenses for RHEL base image
+            working-directory: ./cli
+            run: make licenses
 
           - id: gcp-auth
             name: Authenticate with Google Cloud
@@ -150,34 +184,114 @@ jobs:
               username: oauth2accesstoken
               password: ${{ steps.gcp-auth.outputs.access_token }}
 
+          - name: Login to Docker Hub
+            uses: docker/login-action@v3
+            with:
+              username: ${{ secrets.DOCKERHUB_USERNAME }}
+              password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+          - name: Login to GitHub Container Registry
+            uses: docker/login-action@v3
+            with:
+              registry: ghcr.io
+              username: ${{ github.actor }}
+              password: ${{ secrets.GITHUB_TOKEN }}
+
+          - name: Login to Quay.io
+            uses: docker/login-action@v3
+            with:
+              registry: quay.io
+              username: ${{ secrets.QUAY_USERNAME }}
+              password: ${{ secrets.QUAY_TOKEN }}
+
+          - name: Set up QEMU
+            uses: docker/setup-qemu-action@v4
+
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v4
+
+          - name: Build and push RHEL ko base image (/licenses for preflight)
+            uses: docker/build-push-action@v6
+            with:
+              context: ./cli
+              file: ./cli/Dockerfile.rhel-base
+              platforms: linux/amd64,linux/arm64
+              push: true
+              provenance: false
+              tags: |
+                us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-ko-base:${{ inputs.tag }}
+                keyval/odigos-cli-rhel-ko-base:${{ inputs.tag }}
+                ghcr.io/odigos-io/odigos-cli-rhel-ko-base:${{ inputs.tag }}
+
           - uses: ko-build/setup-ko@v0.9
 
+          - name: Set ko ldflags env (matches cli/.ko.yaml)
+            id: vars
+            run: |
+              echo "short_commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+              echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
+
           - name: Publish CLI certified image to GCR registry
+            id: ko-publish
             working-directory: ./cli
             env:
               KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-certified
               KO_CONFIG_PATH: ./.ko.yaml
               VERSION: ${{ inputs.tag }}
-              KO_DEFAULTBASEIMAGE: registry.access.redhat.com/ubi9/ubi-micro:latest
+              SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
+              DATE: ${{ steps.vars.outputs.date }}
+              KO_DEFAULTBASEIMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-ko-base:${{ inputs.tag }}
             run: |
-              ko build --bare --tags latest --tags ${{ inputs.tag }} \
-              --image-label name=odigos-cli \
-              --image-label vendor=Odigos \
-              --image-label maintainer=Odigos \
-              --image-label version=${{ inputs.tag }} \
-              --image-label release=${{ inputs.tag }} \
-              --image-label summary="Odigos CLI" \
-              --image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
-              --platform=all .
+              # `ko build --bare` prints the digest-pinned image reference of the
+              # multi-arch index it just pushed; capture it so we can mirror to
+              # the other registries below without rebuilding.
+              IMAGE=$(ko build --bare --tags latest --tags ${{ inputs.tag }} \
+                --image-label name=odigos-cli \
+                --image-label vendor=Odigos \
+                --image-label maintainer=Odigos \
+                --image-label version=${{ inputs.tag }} \
+                --image-label release=${{ inputs.tag }} \
+                --image-label summary="Odigos CLI" \
+                --image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
+                --platform=all .)
+              echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+
+          - name: Install crane
+            uses: imjasonh/setup-crane@v0.4
+
+          # ko only supports a single KO_DOCKER_REPO, so mirror the published
+          # multi-arch index to Docker Hub, GHCR, and Quay with `crane copy` to
+          # match the destinations used for the other RHEL-certified images.
+          - name: Mirror CLI image to Docker Hub, GHCR, and Quay
+            env:
+              SOURCE: ${{ steps.ko-publish.outputs.image }}
+              TAG: ${{ inputs.tag }}
+            run: |
+              for DEST in keyval/odigos-cli-rhel-certified ghcr.io/odigos-io/odigos-cli-rhel-certified quay.io/odigos/odigos-cli-rhel-certified; do
+                for T in "${TAG}" latest; do
+                  echo "Copying ${SOURCE} -> ${DEST}:${T}"
+                  crane copy "${SOURCE}" "${DEST}:${T}"
+                done
+              done
 
     trigger-enterprise-publish:
         needs: publish-cli-rhel
         runs-on: ubuntu-latest
+        permissions:
+          id-token: write
         steps:
+          - name: Get sts tokens
+            id: sts-enterprise
+            uses: odigos-io/ci-core/sts@main
+            with:
+              scope: odigos-io/odigos-enterprise
+              identity: trigger-release-pr
+              output-git-config: "false"
+
           - name: Trigger Enterprise Publish job
-            run: |
-              curl -X POST \
-                -H "Accept: application/vnd.github.v3+json" \
-                -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
-                https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
-                -d '{"event_type": "publish_images_rhel", "client_payload": {"tag": "${{ inputs.tag }}"}}'
+            uses: peter-evans/repository-dispatch@v4
+            with:
+              token: ${{ steps.sts-enterprise.outputs.GH_TOKEN }}
+              repository: odigos-io/odigos-enterprise
+              event-type: publish_images_rhel
+              client-payload: '{"tag": "${{ inputs.tag }}"}'

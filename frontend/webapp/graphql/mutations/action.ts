@@ -59,13 +59,28 @@ export const CREATE_ACTION = gql`
             }
           }
         }
+        urlTemplatizationRulesGroups {
+          filterK8sNamespace
+          filterK8sWorkloadKind
+          filterK8sWorkloadName
+          filterProgrammingLanguage
+          notes
+          workloadFilters {
+            kind
+            name
+          }
+          templatizationRules {
+            template
+            notes
+            examples
+          }
+        }
       }
       conditions {
         status
         type
         reason
         message
-        lastTransitionTime
       }
     }
   }
@@ -130,13 +145,28 @@ export const UPDATE_ACTION = gql`
             }
           }
         }
+        urlTemplatizationRulesGroups {
+          filterK8sNamespace
+          filterK8sWorkloadKind
+          filterK8sWorkloadName
+          filterProgrammingLanguage
+          notes
+          workloadFilters {
+            kind
+            name
+          }
+          templatizationRules {
+            template
+            notes
+            examples
+          }
+        }
       }
       conditions {
         status
         type
         reason
         message
-        lastTransitionTime
       }
     }
   }

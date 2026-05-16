@@ -36,6 +36,7 @@ enum SignalType {
   TRACES
   METRICS
   LOGS
+  PROFILES
 }
 
 enum SpanKind {
@@ -96,7 +97,6 @@ type Condition {
   type: String!
   reason: String
   message: String
-  lastTransitionTime: String
 }
 
 type K8sActualNamespace {
@@ -133,22 +133,36 @@ input K8sDesiredSourceInput {
   autoInstrument: Boolean
 }
 
-type PodWorkload {
+input K8sSourceId {
   namespace: String!
-  name: String!
   kind: K8sResourceKind!
+  name: String!
 }
 
+# Deprecated. Kept only so that InstrumentationRuleInput.workloads (also deprecated) can be parsed
+# from older @odigos/ui-kit clients. Server ignores the value.
+# TODO: remove together with InstrumentationRuleInput.workloads.
 input PodWorkloadInput {
   namespace: String!
   kind: K8sResourceKind!
   name: String!
 }
 
-input K8sSourceId {
-  namespace: String!
-  kind: K8sResourceKind!
-  name: String!
+# Mirrors k8sconsts.SourcesScope for InstrumentationRule only (sampling uses SourcesScope in sampling.graphqls).
+type InstrumentationRuleSourcesScope {
+  workloadName: String
+  workloadKind: K8sResourceKind
+  workloadNamespace: String
+  containerName: String
+  workloadLanguage: SamplingWorkloadLanguage
+}
+
+input InstrumentationRuleSourcesScopeInput {
+  workloadName: String
+  workloadKind: K8sResourceKind
+  workloadNamespace: String
+  containerName: String
+  workloadLanguage: SamplingWorkloadLanguage
 }
 
 type InstrumentationRule {
@@ -159,7 +173,7 @@ type InstrumentationRule {
   disabled: Boolean
   mutable: Boolean!
   profileName: String!
-  workloads: [PodWorkload!]
+  sourcesScopes: [InstrumentationRuleSourcesScope!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
   conditions: [Condition!]
   codeAttributes: CodeAttributes
@@ -172,7 +186,11 @@ input InstrumentationRuleInput {
   ruleName: String
   notes: String
   disabled: Boolean
-  workloads: [PodWorkloadInput!]
+  # Deprecated. Accepted but ignored by the resolver to keep older @odigos/ui-kit clients working
+  # after the CRD/back-end dropped `workloads`. Use `sourcesScopes` instead.
+  # TODO: remove once @odigos/ui-kit no longer sends `workloads` in the rule form payload.
+  workloads: [PodWorkloadInput!] @deprecated(reason: "use sourcesScopes; field is ignored by the server")
+  sourcesScopes: [InstrumentationRuleSourcesScopeInput!]
   instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
   codeAttributes: CodeAttributesInput
   headersCollection: HeadersCollectionInput
@@ -325,6 +343,7 @@ type SupportedSignals {
   traces: ObservabilitySignalSupport!
   metrics: ObservabilitySignalSupport!
   logs: ObservabilitySignalSupport!
+  profiles: ObservabilitySignalSupport!
 }
 
 type ObservabilitySignalSupport {
@@ -372,6 +391,7 @@ type ExportedSignals {
   traces: Boolean!
   metrics: Boolean!
   logs: Boolean!
+  profiles: Boolean!
 }
 
 type Destination {
@@ -404,6 +424,7 @@ input ExportedSignalsInput {
   traces: Boolean!
   metrics: Boolean!
   logs: Boolean!
+  profiles: Boolean! = false
 }
 
 input PersistNamespaceItemInput {
@@ -478,6 +499,7 @@ input ActionFieldsInput {
 input URLTemplatizationRuleInput {
   template: String!
   notes: String
+  examples: [String!]
 }
 
 input TemplatizationWorkloadFilterInput {
@@ -595,6 +617,7 @@ type ActionFields {
 type URLTemplatizationRule {
   template: String!
   notes: String
+  examples: [String!]
 }
 
 type TemplatizationWorkloadFilter {
@@ -878,14 +901,23 @@ type ServiceMap {
 }
 
 type ServiceMapFromSource {
+  nodeId: String!
   serviceName: String!
   services: [ServiceMapToSource!]!
 }
 
 type ServiceMapToSource {
+  nodeId: String!
+  # Virtual nodes, for example: databases, external services, are not instrumented,
+  # and are inferred from the client span that calls them.
+  # we do not know anything about them (name, language, external connections, etc.)
+  isVirtual: Boolean!
   serviceName: String!
   requests: Int!
   dateTime: String!
+  # Extra attributes for this node (from service-graph metrics). Dotted keys (e.g. k8s.namespace.name);
+  # no client_/server_ prefix; service.name omitted (same as serviceName).
+  nodeAttributes: [NonIdentifyingAttribute!]!
 }
 
 type PeerSources {

@@ -18,8 +18,8 @@ package v1alpha1
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -54,8 +54,8 @@ type InstrumentationRuleSpec struct {
 	// A boolean field allowing to temporarily disable the rule, but keep it around for future use
 	Disabled bool `json:"disabled,omitempty"`
 
-	// An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.
-	Workloads *[]k8sconsts.PodWorkload `json:"workloads,omitempty"`
+	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If unset or empty, the rule applies to all workloads.
+	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
 
 	// For fine grained control, the user can specify the instrumentation library to use.
 	// One can specify same rule for multiple languages and libraries at the same time.
@@ -65,9 +65,6 @@ type InstrumentationRuleSpec struct {
 
 	// Allows to configure payload collection aspects for different types of payloads.
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
-
-	// Deprecated: use OtelDistros instead.
-	OtelSdks *instrumentationrules.OtelSdks `json:"otelSdks,omitempty"`
 
 	// Set the otel distros to use instead of the defaults.
 	OtelDistros *instrumentationrules.OtelDistros `json:"otelDistros,omitempty"`
@@ -89,6 +86,14 @@ type InstrumentationRuleSpec struct {
 	// note that traces will be dropped regardless of thier attributes/errors/importance.
 	// @deprecated: use odigos config to set this value instead.
 	HeadSamplingFallbackFraction *instrumentationrules.HeadSamplingFallbackFraction `json:"headSamplingFallbackFraction,omitempty"`
+
+	// Configure eBPF-based log capture. When enabled, the node collector logs pipeline
+	// will use only the eBPF receiver instead of the filelog receiver, and odiglet will
+	// register instrumented processes for eBPF log capture.
+	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
+
+	// Configure the verbosity of the traces for the library.
+	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
 }
 
 // Verify validates the InstrumentationRuleSpec.

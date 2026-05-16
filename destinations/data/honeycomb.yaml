@@ -13,6 +13,8 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: HONEYCOMB_API_KEY
       displayName: API Key
@@ -31,4 +33,3 @@ spec:
         required: true
         tooltip: Choose one of the endpoints in the dropdown (`api.honeycomb.io` is the US instance, `api.eu1.honeycomb.io` is EU instance)
   testConnectionSupported: true
-  

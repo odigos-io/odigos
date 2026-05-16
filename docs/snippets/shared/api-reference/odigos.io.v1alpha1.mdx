@@ -602,6 +602,17 @@ auto_generated: true
    <p>SpanRenamer is the config for the SpanRenamer Action.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>extractAttribute</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions.ExtractAttributeConfig</code>
+</td>
+<td>
+   <p>ExtractAttribute is the config for the ExtractAttribute Action.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -641,191 +652,6 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 - [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
 
 
-
-## `AgentLogsConfig` <a id="odigos-io-v1alpha1-AgentLogsConfig"></a>
-
-
-**Appears in:**
-
-- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
-
-<p>all &quot;logs&quot; related configuration for an agent running on any process in a specific container.
-The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.</p>
-
-
-
-## `AgentMetricsConfig` <a id="odigos-io-v1alpha1-AgentMetricsConfig"></a>
-
-
-**Appears in:**
-
-- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
-
-<p>all &quot;metrics&quot; related configuration for an agent running on any process in a specific container.
-The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>spanMetrics</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-AgentSpanMetricsConfig"><code>AgentSpanMetricsConfig</code></a>
-</td>
-<td>
-   <p>if not nil, it means agent should report span metrics,
-calculated directly in the agent.
-this is most accurate as it includes any sampled spans,
-and is not affected if spans are dropped anywhere in the pipeline.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>runtimeMetrics</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceAgentRuntimeMetricsConfiguration"><code>common.MetricsSourceAgentRuntimeMetricsConfiguration</code></a>
-</td>
-<td>
-   <p>if not nil, it means agent should report runtime metrics,
-such as JVM metrics for Java applications.
-these metrics provide insights into the runtime environment performance.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `AgentSpanMetricsConfig` <a id="odigos-io-v1alpha1-AgentSpanMetricsConfig"></a>
-
-
-**Appears in:**
-
-- [AgentMetricsConfig](#odigos-io-v1alpha1-AgentMetricsConfig)
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>dimensions</code> <B>[Required]</B>
-</td>
-<td>
-<code>[]string</code>
-</td>
-<td>
-   <p>additional dimensions to add for the span metrics.
-for example, if you add <code>http.method</code> to the dimensions,
-then the span metrics data points will include the <code>http.method</code> in the attributes,
-and different values of <code>http.method</code> will be aggregated into different time series.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>intervalMs</code> <B>[Required]</B>
-</td>
-<td>
-<code>int</code>
-</td>
-<td>
-   <p>time interval in miliseconds for flushing the span metrics.
-defaults: 60000 (60 seconds, 1 minute)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>histogramBucketsMs</code> <B>[Required]</B>
-</td>
-<td>
-<code>[]int</code>
-</td>
-<td>
-   <p>explicit buckets list for the histogram metrics in ms</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `AgentTracesConfig` <a id="odigos-io-v1alpha1-AgentTracesConfig"></a>
-
-
-**Appears in:**
-
-- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
-
-<p>all &quot;traces&quot; related configuration for an agent running on any process in a specific container.
-The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>idGenerator</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-IdGeneratorConfig"><code>IdGeneratorConfig</code></a>
-</td>
-<td>
-   <p>id generator configuration for the traces.
-if not specified, the default random id generator will be used.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>urlTemplatization</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#UrlTemplatizationConfig"><code>common/api.UrlTemplatizationConfig</code></a>
-</td>
-<td>
-   <p>A list of URL templatization configurations to be applied to the traces.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>headersCollection</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-HeadersCollectionConfig"><code>HeadersCollectionConfig</code></a>
-</td>
-<td>
-   <p>Configuration for headers collection. If not specified, no headers will be collected.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>headSampling</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-HeadSamplingConfig"><code>HeadSamplingConfig</code></a>
-</td>
-<td>
-   <p>HeadSamplingConfig is a set sampling rules.
-This config currently only applies to root spans.
-In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>spanRenamer</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-SpanRenamerConfig"><code>SpanRenamerConfig</code></a>
-</td>
-<td>
-   <p>Configuration for span renamer.</p>
-</td>
-</tr>
-</tbody>
-</table>
 
 ## `AgentsTelemetrySettings` <a id="odigos-io-v1alpha1-AgentsTelemetrySettings"></a>
 
@@ -872,104 +698,6 @@ In the Future we might add another level of configuration base on the parent spa
 <td>
    <span class="text-muted">No description provided.</span>
    </td>
-</tr>
-</tbody>
-</table>
-
-## `AttributeCondition` <a id="odigos-io-v1alpha1-AttributeCondition"></a>
-
-
-**Appears in:**
-
-- [AttributesAndSamplerRule](#odigos-io-v1alpha1-AttributesAndSamplerRule)
-
-<p>'Operand' represents the attributes and values that an operator acts upon in an expression</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>key</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>attribute key (e.g. &quot;url.path&quot;)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>val</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>currently only string values are supported.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>operator</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-Operator"><code>Operator</code></a>
-</td>
-<td>
-   <p>The operator to use to compare the attribute value.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `AttributesAndSamplerRule` <a id="odigos-io-v1alpha1-AttributesAndSamplerRule"></a>
-
-
-**Appears in:**
-
-- [HeadSamplingConfig](#odigos-io-v1alpha1-HeadSamplingConfig)
-
-<p>AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
-If all attribute conditions evaluate to true, the AND sampler evaluates to true,
-and the fraction is used to determine the sampling decision.
-If any of the attribute compare samplers evaluate to false,
-the fraction is not used and the rule is skipped.
-An &quot;empty&quot; AttributesAndSamplerRule with no attribute conditions is considered to always evaluate to true.
-and the fraction is used to determine the sampling decision.
-This entity is refered to a rule in Odigos terminology for head-sampling.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>attributeConditions</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-AttributeCondition"><code>[]AttributeCondition</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>fraction</code> <B>[Required]</B>
-</td>
-<td>
-<code>float64</code>
-</td>
-<td>
-   <p>The fraction of spans to sample, in the range [0, 1].
-If the fraction is 0, no spans are sampled.
-If the fraction is 1, all spans are sampled.</p>
-</td>
 </tr>
 </tbody>
 </table>
@@ -1260,18 +988,6 @@ This can be used to resolve conflicting ports when a collector is using the host
 </tr>
 <tr>
 <td>
-<code>k8sNodeLogsDirectory</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>Additional directory to mount in the node collector pod for logs.
-This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>resourcesSettings</code> <B>[Required]</B>
 </td>
 <td>
@@ -1301,6 +1017,32 @@ It is enabled by default and can be disabled by setting the enabled flag to fals
 </tr>
 <tr>
 <td>
+<code>serviceGraphExtraDimensions</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <p>ServiceGraphExtraDimensions are additional span attribute names to include as dimensions
+in the service graph metrics, on top of the default service.name dimension.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>serviceGraphVirtualNodePeerAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <p>ServiceGraphVirtualNodePeerAttributes is an ordered list of span attributes used to identify
+uninstrumented (virtual) nodes in the service graph.
+The connector picks the first attribute that has a value on the span.
+When nil/empty, the connector uses its built-in defaults: [peer.service, db.name, db.system].</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>enableDataCompression</code> <B>[Required]</B>
 </td>
 <td>
@@ -1321,6 +1063,18 @@ It is disabled by default and can be enabled by setting the enabled flag to true
 </td>
 <td>
    <p>OtlpExporterConfiguration is the configuration for the OTLP exporter from node collector to cluster gateway collector.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resourceDetectors</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ResourceDetectorsConfiguration"><code>common.ResourceDetectorsConfiguration</code></a>
+</td>
+<td>
+   <p>ResourceDetectors controls which OpenTelemetry resource detectors are enabled
+on the node collector's resourcedetection processor.</p>
 </td>
 </tr>
 <tr>
@@ -1395,7 +1149,7 @@ Only relevant for cluster gateway collector.</p>
 <code>tailSampling</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#TailSamplingConfiguration"><code>common/api/sampling.TailSamplingConfiguration</code></a>
+<code>common/api/sampling.TailSamplingConfiguration</code>
 </td>
 <td>
    <p>Sampling holds the sampling configuration derived from the OdigosConfiguration.
@@ -1421,7 +1175,7 @@ before committing to any changes that might lose data.</p>
 <code>spanSamplingAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#SpanSamplingAttributesConfiguration"><code>common/api/sampling.SpanSamplingAttributesConfiguration</code></a>
+<code>common/api/sampling.SpanSamplingAttributesConfiguration</code>
 </td>
 <td>
    <p>Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
@@ -1599,7 +1353,7 @@ Nil means that this container should not have env injection (agent should not be
 <code>traces</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-AgentTracesConfig"><code>AgentTracesConfig</code></a>
+<code>common/api/agentsignalconfig.AgentTracesConfig</code>
 </td>
 <td>
    <p>Each enabled signal must be set with a non-nil value (even if the config content is empty).
@@ -1611,7 +1365,7 @@ nil means that the signal is disabled and should not be instrumented/collected b
 <code>metrics</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-AgentMetricsConfig"><code>AgentMetricsConfig</code></a>
+<code>common/api/agentsignalconfig.AgentMetricsConfig</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -1622,7 +1376,7 @@ nil means that the signal is disabled and should not be instrumented/collected b
 <code>logs</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-AgentLogsConfig"><code>AgentLogsConfig</code></a>
+<code>common/api/agentsignalconfig.AgentLogsConfig</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -1729,7 +1483,7 @@ allowing enhanced tools and data for troubleshooting and sampling maintenance.</
 <code>sourceScopes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#SourcesScope"><code>[]k8sconsts.SourcesScope</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#SourcesScopes"><code>k8sconsts.SourcesScopes</code></a>
 </td>
 <td>
    <p>limit this rule to specific sources (by name, namespace, language, etc.)
@@ -1743,7 +1497,7 @@ this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
 <code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#TailSamplingOperationMatcher"><code>common/api/sampling.TailSamplingOperationMatcher</code></a>
+<code>common/api/sampling.TailSamplingOperationMatcher</code>
 </td>
 <td>
    <p>limit this rule to specific operations.
@@ -2037,81 +1791,6 @@ If not specified, defaults to &quot;all&quot;.</p>
 </tbody>
 </table>
 
-## `HeadSamplingConfig` <a id="odigos-io-v1alpha1-HeadSamplingConfig"></a>
-
-
-**Appears in:**
-
-- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
-- [SdkConfig](#odigos-io-v1alpha1-SdkConfig)
-
-<p>HeadSamplingConfig is a set of attribute rules.
-The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.</p>
-<p>If none of the rules evaluate to true, the fallback fraction is used to determine the sampling decision.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>attributesAndSamplerRules</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-AttributesAndSamplerRule"><code>[]AttributesAndSamplerRule</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>fallbackFraction</code> <B>[Required]</B>
-</td>
-<td>
-<code>float64</code>
-</td>
-<td>
-   <p>Used as a fallback if all rules evaluate to false,
-it may be empty - in this case the default value will be 1 - all spans are sampled.
-it should be a float value in the range [0, 1] - the fraction of spans to sample.
-a value of 0 means no spans are sampled if none of the rules evaluate to true.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `HeadersCollectionConfig` <a id="odigos-io-v1alpha1-HeadersCollectionConfig"></a>
-
-
-**Appears in:**
-
-- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
-
-<p>HeadersCollectionConfig represents configuration for HTTP headers collection.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>httpHeaderKeys</code> <B>[Required]</B>
-</td>
-<td>
-<code>[]string</code>
-</td>
-<td>
-   <p>Limit HTTP headers collection to specific header keys.
-if unset, no HTTP headers will be collected.
-HTTP headers cannot be collected as wildcard, to avoid leaking sensitive information.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
 ## `HighlyRelevantOperation` <a id="odigos-io-v1alpha1-HighlyRelevantOperation"></a>
 
 
@@ -2161,7 +1840,7 @@ allowing enhanced tools and data for troubleshooting and sampling maintenance.</
 <code>sourceScopes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#SourcesScope"><code>[]k8sconsts.SourcesScope</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#SourcesScopes"><code>k8sconsts.SourcesScopes</code></a>
 </td>
 <td>
    <p>limit the operation to specific sources.
@@ -2197,7 +1876,7 @@ this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
 <code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#TailSamplingOperationMatcher"><code>common/api/sampling.TailSamplingOperationMatcher</code></a>
+<code>common/api/sampling.TailSamplingOperationMatcher</code>
 </td>
 <td>
    <p>optionally, limit this rule to specific operations.
@@ -2228,88 +1907,6 @@ if unset, 100% of such the traces will be sampled.</p>
    <p>optional free-form text field that allows you to attach notes
 for future context and maintenance.
 users can write why this rule was added, observations, document considerations, etc.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `IdGeneratorConfig` <a id="odigos-io-v1alpha1-IdGeneratorConfig"></a>
-
-
-**Appears in:**
-
-- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
-
-<p>id generator configuration for the traces</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>random</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-IdGeneratorRandomConfig"><code>IdGeneratorRandomConfig</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>timedWall</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-IdGeneratorTimedWallConfig"><code>IdGeneratorTimedWallConfig</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-</tbody>
-</table>
-
-## `IdGeneratorRandomConfig` <a id="odigos-io-v1alpha1-IdGeneratorRandomConfig"></a>
-
-
-**Appears in:**
-
-- [IdGeneratorConfig](#odigos-io-v1alpha1-IdGeneratorConfig)
-
-<p>random id generator is the default, and most common.
-it creates span ids and trace ids using random bytes.
-It has no configuration.</p>
-
-
-
-## `IdGeneratorTimedWallConfig` <a id="odigos-io-v1alpha1-IdGeneratorTimedWallConfig"></a>
-
-
-**Appears in:**
-
-- [IdGeneratorConfig](#odigos-io-v1alpha1-IdGeneratorConfig)
-
-<p>trace id includes timestamp, source id byte, and random number bytes.
-this id generator can be leveraged by databases to do efficient indexing.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>sourceId</code> <B>[Required]</B>
-</td>
-<td>
-<code>byte</code>
-</td>
-<td>
-   <p>sourceId is a number between 0-255 (8 bits) written into the 8th byte of the trace id.
-if timedWall is specified, the sourceId is required.</p>
 </td>
 </tr>
 </tbody>
@@ -2381,7 +1978,7 @@ if false, at least one container requires pod manifest changes to enable agent i
 <code>workloadCollectorConfig</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ContainerCollectorConfig"><code>[]common/api.ContainerCollectorConfig</code></a>
+<code>[]common/api.ContainerCollectorConfig</code>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -2706,7 +2303,7 @@ and whether the values are considered a guaranteed API.</p>
 <code>payloadCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#PayloadCollection"><code>instrumentationrules.PayloadCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#PayloadCollection"><code>common/api/instrumentationrules.PayloadCollection</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -2717,7 +2314,7 @@ and whether the values are considered a guaranteed API.</p>
 <code>codeAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CodeAttributes"><code>instrumentationrules.CodeAttributes</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CodeAttributes"><code>common/api/instrumentationrules.CodeAttributes</code></a>
 </td>
 <td>
    <p>code attributes configuration for a specific library.
@@ -2730,7 +2327,7 @@ if set, but internal fields are empty, those fields will be used from the defaul
 <code>headersCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HttpHeadersCollection"><code>instrumentationrules.HttpHeadersCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#HttpHeadersCollection"><code>common/api/instrumentationrules.HttpHeadersCollection</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -2977,13 +2574,13 @@ and whether the values are considered a guaranteed API.</p>
 </tr>
 <tr>
 <td>
-<code>workloads</code> <B>[Required]</B>
+<code>sourcesScopes</code> <B>[Required]</B>
 </td>
 <td>
-<code>[]github.com/odigos-io/odigos/api/k8sconsts.PodWorkload</code>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#SourcesScopes"><code>k8sconsts.SourcesScopes</code></a>
 </td>
 <td>
-   <p>An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.</p>
+   <p>SourcesScopes lists SourcesScope entries to which the rule should be applied. If unset or empty, the rule applies to all workloads.</p>
 </td>
 </tr>
 <tr>
@@ -3005,7 +2602,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>payloadCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#PayloadCollection"><code>instrumentationrules.PayloadCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#PayloadCollection"><code>common/api/instrumentationrules.PayloadCollection</code></a>
 </td>
 <td>
    <p>Allows to configure payload collection aspects for different types of payloads.</p>
@@ -3013,21 +2610,10 @@ If empty, no instrumentation libraries will be used.</p>
 </tr>
 <tr>
 <td>
-<code>otelSdks</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#OtelSdks"><code>instrumentationrules.OtelSdks</code></a>
-</td>
-<td>
-   <p>Deprecated: use OtelDistros instead.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>otelDistros</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#OtelDistros"><code>instrumentationrules.OtelDistros</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#OtelDistros"><code>common/api/instrumentationrules.OtelDistros</code></a>
 </td>
 <td>
    <p>Set the otel distros to use instead of the defaults.</p>
@@ -3038,7 +2624,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>codeAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CodeAttributes"><code>instrumentationrules.CodeAttributes</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CodeAttributes"><code>common/api/instrumentationrules.CodeAttributes</code></a>
 </td>
 <td>
    <p>Configure which code attributes should be recorded as span attributes.</p>
@@ -3049,7 +2635,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>headersCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HttpHeadersCollection"><code>instrumentationrules.HttpHeadersCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#HttpHeadersCollection"><code>common/api/instrumentationrules.HttpHeadersCollection</code></a>
 </td>
 <td>
    <p>Allows to configure the collection of http headers for different types of payloads.</p>
@@ -3060,7 +2646,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>traceConfig</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#TraceConfig"><code>common/api/instrumentationrules.TraceConfig</code></a>
 </td>
 <td>
    <p>Configure the tracing configuration for the library.</p>
@@ -3071,7 +2657,7 @@ If empty, no instrumentation libraries will be used.</p>
 <code>customInstrumentations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CustomInstrumentations"><code>common/api/instrumentationrules.CustomInstrumentations</code></a>
 </td>
 <td>
    <p>Add custom instrumentation probes</p>
@@ -3082,13 +2668,37 @@ If empty, no instrumentation libraries will be used.</p>
 <code>headSamplingFallbackFraction</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HeadSamplingFallbackFraction"><code>instrumentationrules.HeadSamplingFallbackFraction</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#HeadSamplingFallbackFraction"><code>common/api/instrumentationrules.HeadSamplingFallbackFraction</code></a>
 </td>
 <td>
    <p>Configure general fraction of traces to record if none of the rules evaluate to true.
 this can help in reducing very noisy and heavy traffic services.
 note that traces will be dropped regardless of thier attributes/errors/importance.
 @deprecated: use odigos config to set this value instead.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ebpfLogCapture</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#EbpfLogCapture"><code>common/api/instrumentationrules.EbpfLogCapture</code></a>
+</td>
+<td>
+   <p>Configure eBPF-based log capture. When enabled, the node collector logs pipeline
+will use only the eBPF receiver instead of the filelog receiver, and odiglet will
+register instrumented processes for eBPF log capture.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>traceVerbosity</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#TraceVerbosity"><code>common/api/instrumentationrules.TraceVerbosity</code></a>
+</td>
+<td>
+   <p>Configure the verbosity of the traces for the library.</p>
 </td>
 </tr>
 </tbody>
@@ -3176,7 +2786,7 @@ allowing enhanced tools and data for troubleshooting and sampling maintenance.</
 <code>sourceScopes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#SourcesScope"><code>[]k8sconsts.SourcesScope</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#SourcesScopes"><code>k8sconsts.SourcesScopes</code></a>
 </td>
 <td>
    <p>limit this rule to specific sources (by name, namespace, language, etc.)
@@ -3190,7 +2800,7 @@ if the list is empty - all sources are matched.</p>
 <code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#HeadSamplingOperationMatcher"><code>common/api/sampling.HeadSamplingOperationMatcher</code></a>
+<code>common/api/sampling.HeadSamplingOperationMatcher</code>
 </td>
 <td>
    <p>limit this rule to specific operations.
@@ -3283,16 +2893,6 @@ it can help in presenting a consistent view of odigos itself, without relying on
 </tr>
 </tbody>
 </table>
-
-## `Operator` <a id="odigos-io-v1alpha1-Operator"></a>
-
-(Alias of `string`)
-
-**Appears in:**
-
-- [AttributeCondition](#odigos-io-v1alpha1-AttributeCondition)
-
-
 
 ## `OtherAgent` <a id="odigos-io-v1alpha1-OtherAgent"></a>
 
@@ -3795,23 +3395,10 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tr>
 <tr>
 <td>
-<code>headSamplerConfig</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-HeadSamplingConfig"><code>HeadSamplingConfig</code></a>
-</td>
-<td>
-   <p>HeadSamplingConfig is a set sampling rules.
-This config currently only applies to root spans.
-In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>payloadCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#PayloadCollection"><code>instrumentationrules.PayloadCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#PayloadCollection"><code>common/api/instrumentationrules.PayloadCollection</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -3822,7 +3409,7 @@ In the Future we might add another level of configuration base on the parent spa
 <code>codeAttributes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CodeAttributes"><code>instrumentationrules.CodeAttributes</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CodeAttributes"><code>common/api/instrumentationrules.CodeAttributes</code></a>
 </td>
 <td>
    <p>default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.</p>
@@ -3833,7 +3420,7 @@ In the Future we might add another level of configuration base on the parent spa
 <code>headersCollection</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HttpHeadersCollection"><code>instrumentationrules.HttpHeadersCollection</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#HttpHeadersCollection"><code>common/api/instrumentationrules.HttpHeadersCollection</code></a>
 </td>
 <td>
    <p>default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.</p>
@@ -3844,7 +3431,7 @@ In the Future we might add another level of configuration base on the parent spa
 <code>traceConfig</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#TraceConfig"><code>common/api/instrumentationrules.TraceConfig</code></a>
 </td>
 <td>
    <p>default configuration for library tracing.</p>
@@ -3855,7 +3442,7 @@ In the Future we might add another level of configuration base on the parent spa
 <code>customInstrumentations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CustomInstrumentations"><code>common/api/instrumentationrules.CustomInstrumentations</code></a>
 </td>
 <td>
    <p>list of the custom instrumentation probes the SDK should use.</p>
@@ -3871,6 +3458,18 @@ In the Future we might add another level of configuration base on the parent spa
 <td>
    <p>configuration for runtime metrics that the SDK should generate.
 these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ebpfLogCapture</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#EbpfLogCapture"><code>common/api/instrumentationrules.EbpfLogCapture</code></a>
+</td>
+<td>
+   <p>Whether eBPF-based log capture is enabled for this SDK.
+Set by the instrumentor based on InstrumentationRule ebpfLogCapture config.</p>
 </td>
 </tr>
 </tbody>
@@ -4030,71 +3629,6 @@ Not valid for namespace sources.</p>
 <td>
    <p>Represents the observations of a source's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `SpanRenamerConfig` <a id="odigos-io-v1alpha1-SpanRenamerConfig"></a>
-
-
-**Appears in:**
-
-- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>scopeRules</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-SpanRenamerScopeRules"><code>[]SpanRenamerScopeRules</code></a>
-</td>
-<td>
-   <p>list of scope rules to be applied to the span name.
-all options are always tried, regardless of whether the previous options have matched or not.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `SpanRenamerScopeRules` <a id="odigos-io-v1alpha1-SpanRenamerScopeRules"></a>
-
-
-**Appears in:**
-
-- [SpanRenamerConfig](#odigos-io-v1alpha1-SpanRenamerConfig)
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>scopeName</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>the name of the opentelemetry intrumentation scope which the renamed spans are written in.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>regexReplacements</code> <B>[Required]</B>
-</td>
-<td>
-<code>[]actions.SpanRenamerRegexReplacement</code>
-</td>
-<td>
-   <p>list of regex replacements to be applied to the span name.
-all options are always tried, regardless of whether the previous options have matched or not.</p>
 </td>
 </tr>
 </tbody>

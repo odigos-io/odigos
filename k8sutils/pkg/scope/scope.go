@@ -5,53 +5,79 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-// SourcesScope is defined in api/k8sconsts to avoid circular module dependencies
-// (k8sutils imports api, so api cannot import k8sutils).
-// This alias keeps all existing callers working without changes.
-type SourcesScope = k8sconsts.SourcesScope
-
-// SourcesScopeMatchesContainer returns true if the scope matches the given workload, container,
-// and language. All non-empty scope fields must match (AND semantics).
-// Empty fields in scope act as wildcards.
-func SourcesScopeMatchesContainer(
-	scope SourcesScope,
-	pw k8sconsts.PodWorkload,
-	containerName string,
-	language common.ProgrammingLanguage,
-) bool {
-	if scope.WorkloadName != "" && scope.WorkloadName != pw.Name {
-		return false
-	}
-	if scope.WorkloadKind != "" && scope.WorkloadKind != string(pw.Kind) {
-		return false
-	}
-	if scope.WorkloadNamespace != "" && scope.WorkloadNamespace != pw.Namespace {
-		return false
-	}
-	if scope.ContainerName != "" && scope.ContainerName != containerName {
-		return false
-	}
-	if scope.WorkloadLanguage != "" && scope.WorkloadLanguage != language {
-		return false
-	}
-	return true
-}
-
-// AnySourceScopeMatchesContainer returns true if scopes is empty (match all) or any scope
-// matches the given workload, container, and language.
-func AnySourceScopeMatchesContainer(
-	scopes []SourcesScope,
-	pw k8sconsts.PodWorkload,
-	containerName string,
-	language common.ProgrammingLanguage,
-) bool {
-	if len(scopes) == 0 {
+// return true if the source matches and of the specific sources in the scope (OR semantics)
+// empty list means "match all".
+func sourceMatchScopeSources(source k8sconsts.PodWorkload, scopes *k8sconsts.SourcesScopes) bool {
+	if len(scopes.Sources) == 0 {
 		return true
 	}
-	for _, s := range scopes {
-		if SourcesScopeMatchesContainer(s, pw, containerName, language) {
+	for _, scope := range scopes.Sources {
+		if scope == source {
 			return true
 		}
 	}
 	return false
+}
+
+// return true if the namespace matches and of the specific namespaces in the scope (OR semantics)
+// empty list means "match all".
+func sourceMatchScopeNamespaces(namespace string, scopes *k8sconsts.SourcesScopes) bool {
+	if len(scopes.Namespaces) == 0 {
+		return true
+	}
+	for _, scope := range scopes.Namespaces {
+		if scope == namespace {
+			return true
+		}
+	}
+	return false
+}
+
+// return true if the language matches and of the specific languages in the scope (OR semantics)
+// empty list means "match all".
+func sourceMatchScopeLanguages(language common.ProgrammingLanguage, scopes *k8sconsts.SourcesScopes) bool {
+	if len(scopes.Languages) == 0 {
+		return true
+	}
+	for _, scope := range scopes.Languages {
+		if scope == language {
+			return true
+		}
+	}
+	return false
+}
+
+// SourceScopeMatchesContainer returns true if the scope matches the given workload,
+// and language. All non-empty scope fields must match (AND semantics).
+// Empty fields in scope act as wildcards.
+func SourceScopeMatchesContainer(
+	scopes *k8sconsts.SourcesScopes,
+	pw k8sconsts.PodWorkload,
+	language common.ProgrammingLanguage,
+) bool {
+	// empty scope means match the entire cluster
+	if scopes == nil {
+		return true
+	}
+
+	// check if the source matches the relevant criteria (AND semantics between criteria)
+	// e.g. for scope with namespace "foo" and language "java", the source must match both the namespace and the language
+
+	matchSources := sourceMatchScopeSources(pw, scopes)
+	if !matchSources {
+		return false
+	}
+
+	matchNamespaces := sourceMatchScopeNamespaces(pw.Namespace, scopes)
+	if !matchNamespaces {
+		return false
+	}
+
+	matchLanguages := sourceMatchScopeLanguages(language, scopes)
+	if !matchLanguages {
+		return false
+	}
+
+	// all critireas are empty or matched, so the scope matches
+	return true
 }

@@ -16,8 +16,7 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development
 
     odigos_accepted_metric_points:
       enabled: true
@@ -26,8 +25,7 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development
 
     odigos_accepted_spans:
       enabled: true
@@ -36,8 +34,7 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development
 
     odigos_log_data_size:
       enabled: true
@@ -46,8 +43,7 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development
 
     odigos_metric_data_size:
       enabled: true
@@ -56,8 +52,7 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development
 
     odigos_trace_data_size:
       enabled: true
@@ -66,5 +61,4 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
-      stability:
-        level: development
+      stability: development

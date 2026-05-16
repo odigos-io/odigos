@@ -42,6 +42,7 @@ func Action(name, namespace string) *ActionApplyConfiguration {
 	b.WithAPIVersion("odigos.io/v1alpha1")
 	return b
 }
+
 func (b ActionApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

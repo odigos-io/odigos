@@ -25,6 +25,10 @@ import (
 
 // ServiceNameSamplerApplyConfiguration represents a declarative configuration of the ServiceNameSampler type for use
 // with apply.
+//
+// ServiceNameSampler is the Schema for the servicenamesamplers API.
+// It enables trace sampling based on whether specific services appear within a trace.
+// DEPRECATED: Use odigosv1.Action instead
 type ServiceNameSamplerApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -42,6 +46,7 @@ func ServiceNameSampler(name, namespace string) *ServiceNameSamplerApplyConfigur
 	b.WithAPIVersion("actions/v1alpha1")
 	return b
 }
+
 func (b ServiceNameSamplerApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value

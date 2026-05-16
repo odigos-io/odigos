@@ -23,7 +23,11 @@ import (
 
 // PiiMaskingStatusApplyConfiguration represents a declarative configuration of the PiiMaskingStatus type for use
 // with apply.
+//
+// PiiMaskingStatus defines the observed state of PiiMasking action
 type PiiMaskingStatusApplyConfiguration struct {
+	// Represents the observations of a piiMasking's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
 	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 }
 

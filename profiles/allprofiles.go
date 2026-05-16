@@ -27,13 +27,22 @@ var AllProfiles = []profile.Profile{
 	attributes.ReduceSpanNameCardinalityProfile,
 
 	instrumentation.AllowConcurrentAgents,
+	instrumentation.EbpfLogCaptureProfile,
 	instrumentation.JavaEbpfInstrumentationsProfile,
+	instrumentation.JavaEnterpriseProfile,
 	instrumentation.JavaNativeInstrumentationsProfile,
 	instrumentation.LegacyDotNetProfile,
 	instrumentation.MountMethodK8sHostPathProfile,
 	instrumentation.MountMethodK8sVirtualDevice,
 	instrumentation.PodManifestEnvVarInjection,
+
+	// golang
 	instrumentation.DisableGinProfile,
+	instrumentation.DisableGinNewProfile,
+
+	// nodejs
+	instrumentation.DisableNodejsExpressProfile,
+	instrumentation.NodejsVerbosityFullProfile,
 
 	pipeline.SmallBatchesProfile,
 }

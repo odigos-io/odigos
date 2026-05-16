@@ -63,6 +63,8 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 		r.startTracesReceiver(ctx)
 	case ReceiverTypeMetrics:
 		r.startMetricsReceiver(ctx)
+	case ReceiverTypeLogs:
+		r.startLogsReceiver(ctx)
 	}
 
 	return nil
@@ -316,6 +318,123 @@ func (r *ebpfReceiver) startMetricsReceiver(ctx context.Context) {
 			r.logger.Error("metrics FD client failed", zap.Error(err))
 		}
 	}()
+}
+
+// startLogsReceiver connects to odiglet to receive the logs ring buffer FD
+// and stream per-process attribute events.
+func (r *ebpfReceiver) startLogsReceiver(ctx context.Context) {
+	updates := make(chan *ebpf.Map, 1)
+	attrCache := &logsAttrCache{cache: make(map[uint32]string)}
+
+	r.wg.Add(1)
+	go func() {
+		defer r.wg.Done()
+
+		var (
+			currentRingBuf *ebpf.Map
+			readerCancel   context.CancelFunc
+			readerWg       sync.WaitGroup
+		)
+
+		defer func() {
+			if readerCancel != nil {
+				readerCancel()
+				readerWg.Wait()
+			}
+			if currentRingBuf != nil {
+				currentRingBuf.Close()
+			}
+		}()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case newMap, ok := <-updates:
+				if !ok {
+					return
+				}
+
+				if readerCancel != nil {
+					readerCancel()
+					readerWg.Wait()
+				}
+				if currentRingBuf != nil {
+					currentRingBuf.Close()
+				}
+
+				currentRingBuf = newMap
+
+				r.logger.Info("received new logs ring buffer",
+					zap.Int("ringBuf_fd", currentRingBuf.FD()))
+
+				readerCtx, cancel := context.WithCancel(ctx)
+				readerCancel = cancel
+
+				ringBuf := currentRingBuf
+				readerWg.Add(1)
+				go func() {
+					defer func() {
+						r.logger.Info("logs reader stopped")
+						readerWg.Done()
+					}()
+
+					if err := r.logsReadLoop(readerCtx, ringBuf, attrCache); err != nil {
+						r.logger.Error("logsReadLoop failed", zap.Error(err))
+					}
+				}()
+			}
+		}
+	}()
+
+	r.wg.Add(1)
+	go func() {
+		defer r.wg.Done()
+		defer close(updates)
+
+		r.logger.Info("starting logs FD client")
+
+		err := unixfd.ConnectAndListenLogs(ctx, unixfd.DefaultSocketPath, r.logger,
+			func(fd int) {
+				r.logger.Info("received logs ring buffer FD from odiglet", zap.Int("fd", fd))
+
+				ringBuf, err := ebpf.NewMapFromFD(fd)
+				if err != nil {
+					r.logger.Error("failed to create ring buffer map from FD", zap.Error(err), zap.Int("fd", fd))
+					unix.Close(fd)
+					return
+				}
+
+				select {
+				case updates <- ringBuf:
+					r.logger.Info("queued new logs ring buffer for processing")
+				case <-ctx.Done():
+					ringBuf.Close()
+				}
+			},
+			func(line string) {
+				r.handleLogsAttrEvent(line, attrCache)
+			},
+		)
+
+		if err != nil && ctx.Err() == nil {
+			r.logger.Error("logs FD client failed", zap.Error(err))
+		}
+	}()
+}
+
+// handleLogsAttrEvent parses "R<pid>:<attrs>" or "U<pid>" and updates the cache.
+func (r *ebpfReceiver) handleLogsAttrEvent(line string, cache *logsAttrCache) {
+	ev, ok := unixfd.DecodeLogsAttrEvent(line)
+	if !ok {
+		return
+	}
+	switch ev.Type {
+	case unixfd.LogsAttrRegister:
+		cache.set(ev.PID, ev.Attrs)
+	case unixfd.LogsAttrUnregister:
+		cache.delete(ev.PID)
+	}
 }
 
 func (r *ebpfReceiver) Shutdown(ctx context.Context) error {

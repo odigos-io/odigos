@@ -23,11 +23,24 @@ import (
 
 // LatencySamplerSpecApplyConfiguration represents a declarative configuration of the LatencySamplerSpec type for use
 // with apply.
+//
+// LatencySamplerSpec defines the desired state of a LatencySampler.
+// This sampler filters traces based on HTTP route and latency thresholds.
+// Traces with spans whose latency exceeds the specified threshold will be considered for sampling.
 type LatencySamplerSpecApplyConfiguration struct {
-	ActionName       *string                             `json:"actionName,omitempty"`
-	Notes            *string                             `json:"notes,omitempty"`
-	Disabled         *bool                               `json:"disabled,omitempty"`
-	Signals          []common.ObservabilitySignal        `json:"signals,omitempty"`
+	// ActionName is a user-defined identifier for this sampling action.
+	// It can be used to reference this policy in UIs or configuration tools.
+	ActionName *string `json:"actionName,omitempty"`
+	// Notes is an optional field for storing human-readable documentation or context for this sampler.
+	Notes *string `json:"notes,omitempty"`
+	// Disabled indicates whether the sampler is currently active.
+	// When true, this sampler will not be applied.
+	Disabled *bool `json:"disabled,omitempty"`
+	// Signals lists the observability signal types (e.g., traces, metrics, logs)
+	// that this sampler applies to.
+	Signals []common.ObservabilitySignal `json:"signals,omitempty"`
+	// EndpointsFilters defines the list of route-based latency sampling filters.
+	// Each filter targets a specific service and HTTP route with a latency threshold.
 	EndpointsFilters []HttpRouteFilterApplyConfiguration `json:"endpoints_filters,omitempty"`
 }
 

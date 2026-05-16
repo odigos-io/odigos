@@ -379,6 +379,24 @@
           "description": "Service Graph settings\nService Graph is a feature that allows you to visualize the service graph of your application.\nIt is enabled by default and can be disabled by setting the disabled flag to true.",
           "required": [],
           "title": "serviceGraphDisabled"
+        },
+        "serviceGraphExtraDimensions": {
+          "default": "",
+          "description": "Extra attribute names to include as additional dimensions in service graph metrics,\non top of the default service.name dimension.\nUse this when multiple services share the same service.name but should appear as distinct\nnodes in the graph. For example, if the same service is deployed in multiple namespaces\n(e.g. staging and production in the same cluster), adding \"k8s.namespace.name\" will\nproduce a separate node per namespace instead of merging them into one.\nNOTE: both span-level and resource-level attributes (e.g. k8s.namespace.name) are\nsupported here.",
+          "items": {
+            "type": "string"
+          },
+          "title": "serviceGraphExtraDimensions",
+          "type": "array"
+        },
+        "serviceGraphVirtualNodePeerAttributes": {
+          "default": "",
+          "description": "Ordered list of span-level attributes used to identify uninstrumented (virtual) nodes in the service graph.\nThe connector picks the first attribute that has a value on the CLIENT span and uses it as the node name.\nWhen not set, the connector uses its built-in defaults: [peer.service, db.name, db.system].\nAdd \"server.address\" before \"db.system\" to distinguish individual Redis/DB instances by hostname.\nIMPORTANT: only span-level attributes work here (e.g. server.address, db.system, peer.service).",
+          "items": {
+            "type": "string"
+          },
+          "title": "serviceGraphVirtualNodePeerAttributes",
+          "type": "array"
         }
       },
       "required": [],
@@ -1026,6 +1044,16 @@
               },
               "required": [],
               "title": "resourceMetricsKeyAttributes"
+            },
+            "spanMetricsMode": {
+              "default": "sampled-spans-only",
+              "description": "Controls the tradeoff between metric accuracy and resource usage.\nDetermines how sampling affects which spans are used to compute metrics.\nPossible values:\n  - \"sampled-spans-only\" (default): metrics are computed only from sampled spans.\n    Unsampled spans are dropped early, resulting in lower resource usage but reduced accuracy.\n  - \"all-spans\": metrics are computed from all spans, regardless of sampling.\n    Unsampled spans are forwarded for metric computation and dropped later in the pipeline,\n    resulting in higher accuracy at the cost of increased resource usage.",
+              "enum": [
+                "sampled-spans-only",
+                "all-spans"
+              ],
+              "required": [],
+              "title": "spanMetricsMode"
             }
           },
           "required": [],
@@ -1449,6 +1477,12 @@
               "required": [],
               "title": "capabilities"
             },
+            "goMemLimitPercentage": {
+              "default": "60",
+              "description": "Percentage of the memory limit to use for GOMEMLIMIT when the odiglet\nmemory limit is \u003e= 500Mi. Below 500Mi the default 80% is used.\nOdiglet allocates significant memory for eBPF maps which live outside\nthe Go heap. The Go runtime is unaware of this memory, so GOMEMLIMIT\nmust leave enough headroom for these allocations to avoid OOM kills.",
+              "required": [],
+              "title": "goMemLimitPercentage"
+            },
             "livenessProbe": {
               "additionalProperties": false,
               "properties": {
@@ -1590,7 +1624,7 @@
       "properties": {
         "certifiedImageTags": {
           "default": "false",
-          "description": "Controls whether to use Red Hat certified image tags (-certified suffix).\nBy default, this is unset and will inherit the value of openshift.enabled.\nSet to false to explicitly disable certified images even when openshift.enabled is true.\nSet to true to explicitly enable certified images (requires openshift.enabled to also be true).\nNote that certifiedImageTags must be true (either by default or explicitly set) if pulling from the default Red Hat registry\n(registry.connect.redhat.com) which is used when openshift.enabled is true.\nSetting this to false is useful if you are hosting images in your own registry (with imagePrefix set) but\nstill deploying on OpenShift, which requires other settings that are applied by openshift.enabled for OpenShift compatibility.",
+          "description": "Controls whether to use Red Hat certified image tags (-rhel-certified suffix).\nBy default, this is unset and will inherit the value of openshift.enabled.\nSet to false to explicitly disable certified images even when openshift.enabled is true.\nSet to true to explicitly enable certified images (requires openshift.enabled to also be true).\nNote that certifiedImageTags must be true (either by default or explicitly set) if pulling from the default Red Hat registry\n(registry.connect.redhat.com) which is used when openshift.enabled is true.\nSetting this to false is useful if you are hosting images in your own registry (with imagePrefix set) but\nstill deploying on OpenShift, which requires other settings that are applied by openshift.enabled for OpenShift compatibility.",
           "required": [],
           "title": "certifiedImageTags"
         },
@@ -1647,6 +1681,98 @@
       "required": [],
       "title": "profiles"
     },
+    "profiling": {
+      "additionalProperties": false,
+      "description": "Continuous profiling (off by default): node collector → gateway → UI over OTLP gRPC. UI buffers only workloads\nwith an open Profiler tab / enableSourceProfiling; scrape ui:3000/metrics for odigos_ui_profiling_* when enabled.\nWhen enabled, profiling.exporter and profiling.ui are written to odigos-configuration; any field you omit in a\npartial override falls back to the chart defaults below.",
+      "properties": {
+        "enabled": {
+          "default": "false",
+          "description": "When true, enables profiling pipelines on the node collector and cluster gateway.",
+          "required": [],
+          "title": "enabled"
+        },
+        "exporter": {
+          "additionalProperties": false,
+          "description": "OTLP settings for profiling exporters (node → gateway, gateway → UI). Omitted from config when profiling.enabled is false.",
+          "properties": {
+            "enableDataCompression": {
+              "default": "false",
+              "description": "Enable gzip compression on profiling OTLP exports.",
+              "required": [],
+              "title": "enableDataCompression"
+            },
+            "retryOnFailure": {
+              "additionalProperties": false,
+              "description": "Retry policy for profiling OTLP exports.",
+              "properties": {
+                "enabled": {
+                  "default": "true",
+                  "description": "Whether to retry failed OTLP sends for profiling.",
+                  "required": [],
+                  "title": "enabled"
+                },
+                "initialInterval": {
+                  "default": "5s",
+                  "description": "Backoff after the first failure.",
+                  "required": [],
+                  "title": "initialInterval"
+                },
+                "maxElapsedTime": {
+                  "default": "300s",
+                  "description": "Maximum time spent retrying a batch; 0 means retry until success.",
+                  "required": [],
+                  "title": "maxElapsedTime"
+                },
+                "maxInterval": {
+                  "default": "30s",
+                  "description": "Upper bound on backoff between retries.",
+                  "required": [],
+                  "title": "maxInterval"
+                }
+              },
+              "required": [],
+              "title": "retryOnFailure"
+            },
+            "timeout": {
+              "default": "5s",
+              "description": "Per-attempt send timeout for profiling OTLP exporters.",
+              "required": [],
+              "title": "timeout"
+            }
+          },
+          "required": [],
+          "title": "exporter"
+        },
+        "ui": {
+          "additionalProperties": false,
+          "description": "UI-side profiling resource limits (written when profiling.enabled is true). Override any field from Helm as needed.",
+          "properties": {
+            "maxSlots": {
+              "default": "32",
+              "description": "Max in-memory profile slots.",
+              "required": [],
+              "title": "maxSlots"
+            },
+            "slotMaxBytes": {
+              "default": "8388608",
+              "description": "Max bytes per slot (default 8 MiB).",
+              "required": [],
+              "title": "slotMaxBytes"
+            },
+            "slotTTLSeconds": {
+              "default": "300",
+              "description": "Slot TTL in seconds.",
+              "required": [],
+              "title": "slotTTLSeconds"
+            }
+          },
+          "required": [],
+          "title": "ui"
+        }
+      },
+      "required": [],
+      "title": "profiling"
+    },
     "psp": {
       "additionalProperties": false,
       "description": "Pod Security Policy",
@@ -1659,6 +1785,84 @@
       },
       "required": [],
       "title": "psp"
+    },
+    "resourceDetectors": {
+      "additionalProperties": false,
+      "description": "Controls which OpenTelemetry resource detectors are enabled on the node collector's\nresourcedetection processor. Each detector can be individually enabled or disabled.\nBy default all detectors are enabled except EKS which is disabled by default.",
+      "properties": {
+        "aks": {
+          "additionalProperties": false,
+          "description": "AKS resource detector configuration.",
+          "properties": {
+            "enabled": {
+              "default": "true",
+              "description": "Enable the AKS resource detector.",
+              "required": [],
+              "title": "enabled"
+            }
+          },
+          "required": [],
+          "title": "aks"
+        },
+        "azure": {
+          "additionalProperties": false,
+          "description": "Azure resource detector configuration.",
+          "properties": {
+            "enabled": {
+              "default": "true",
+              "description": "Enable the Azure resource detector.",
+              "required": [],
+              "title": "enabled"
+            }
+          },
+          "required": [],
+          "title": "azure"
+        },
+        "ec2": {
+          "additionalProperties": false,
+          "description": "EC2 resource detector configuration.",
+          "properties": {
+            "enabled": {
+              "default": "true",
+              "description": "Enable the EC2 resource detector.",
+              "required": [],
+              "title": "enabled"
+            }
+          },
+          "required": [],
+          "title": "ec2"
+        },
+        "eks": {
+          "additionalProperties": false,
+          "description": "EKS resource detector configuration (disabled by default).",
+          "properties": {
+            "enabled": {
+              "default": "false",
+              "description": "Enable the EKS resource detector.",
+              "required": [],
+              "title": "enabled"
+            }
+          },
+          "required": [],
+          "title": "eks"
+        },
+        "gcp": {
+          "additionalProperties": false,
+          "description": "GCP resource detector configuration.",
+          "properties": {
+            "enabled": {
+              "default": "true",
+              "description": "Enable the GCP resource detector.",
+              "required": [],
+              "title": "enabled"
+            }
+          },
+          "required": [],
+          "title": "gcp"
+        }
+      },
+      "required": [],
+      "title": "resourceDetectors"
     },
     "rollout": {
       "additionalProperties": false,

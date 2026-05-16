@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
@@ -14,6 +15,35 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		For(&odigosv1.Action{}).
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&ActionReconciler{
+			Client: mgr.GetClient(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = ctrl.NewControllerManagedBy(mgr).
+		Named("shared-url-templatization-processor").
+		For(&odigosv1.Processor{}).
+		WithEventFilter(predicate.And(
+			&predicate.GenerationChangedPredicate{},
+			&odigospredicate.OdigosURLTemplatizationProcessorPredicate,
+		)).
+		Complete(&SharedURLTemplatizationProcessorReconciler{
+			Client: mgr.GetClient(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = ctrl.NewControllerManagedBy(mgr).
+		Named("urltemplate-node-cg").
+		For(&odigosv1.CollectorsGroup{}).
+		WithEventFilter(predicate.And(
+			&predicate.GenerationChangedPredicate{},
+			&odigospredicate.OdigosCollectorsGroupNodePredicate,
+			&urlTemplateNodeCGSpanMetricsTogglePredicate{},
+		)).
+		Complete(&URLTemplateNodeCGReconciler{
 			Client: mgr.GetClient(),
 		})
 	if err != nil {
@@ -122,9 +152,8 @@ func SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func RegisterWebhooks(mgr ctrl.Manager) error {
-	err := builder.WebhookManagedBy(mgr).
-		For(&odigosv1.Action{}).
-		WithValidator(&ActionsValidator{}).
+	err := builder.WebhookManagedBy(mgr, &odigosv1.Action{}).
+		WithCustomValidator(&ActionsValidator{}).
 		Complete()
 	if err != nil {
 		return err

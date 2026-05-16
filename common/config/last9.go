@@ -26,7 +26,7 @@ func (m *Last9) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	}
 
 	// to make sure that the exporter name is unique, we'll ask a ID from destination
-	exporterName := "otlp/last9-" + dest.GetID()
+	exporterName := "otlp_grpc/last9-" + dest.GetID()
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": l9OtlpEndpoint,
 		"headers": GenericMap{

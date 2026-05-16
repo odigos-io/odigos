@@ -73,6 +73,67 @@ clusterName: ''
 logLevel: "info"
 
 # @schema
+# description: |-
+#   Continuous profiling (off by default): node collector → gateway → UI over OTLP gRPC. UI buffers only workloads
+#   with an open Profiler tab / enableSourceProfiling; scrape ui:3000/metrics for odigos_ui_profiling_* when enabled.
+#   When enabled, profiling.exporter and profiling.ui are written to odigos-configuration; any field you omit in a
+#   partial override falls back to the chart defaults below.
+# @schema
+profiling:
+  # @schema
+  # description: When true, enables profiling pipelines on the node collector and cluster gateway.
+  # @schema
+  enabled: false
+  # @schema
+  # description: OTLP settings for profiling exporters (node → gateway, gateway → UI). Omitted from config when profiling.enabled is false.
+  # @schema
+  exporter:
+    # @schema
+    # description: Enable gzip compression on profiling OTLP exports.
+    # @schema
+    enableDataCompression: false
+    # @schema
+    # description: Per-attempt send timeout for profiling OTLP exporters.
+    # @schema
+    timeout: 5s
+    # @schema
+    # description: Retry policy for profiling OTLP exports.
+    # @schema
+    retryOnFailure:
+      # @schema
+      # description: Whether to retry failed OTLP sends for profiling.
+      # @schema
+      enabled: true
+      # @schema
+      # description: Backoff after the first failure.
+      # @schema
+      initialInterval: 5s
+      # @schema
+      # description: Upper bound on backoff between retries.
+      # @schema
+      maxInterval: 30s
+      # @schema
+      # description: Maximum time spent retrying a batch; 0 means retry until success.
+      # @schema
+      maxElapsedTime: 300s
+  # @schema
+  # description: UI-side profiling resource limits (written when profiling.enabled is true). Override any field from Helm as needed.
+  # @schema
+  ui:
+    # @schema
+    # description: Slot TTL in seconds.
+    # @schema
+    slotTTLSeconds: 300
+    # @schema
+    # description: Max in-memory profile slots.
+    # @schema
+    maxSlots: 32
+    # @schema
+    # description: Max bytes per slot (default 8 MiB).
+    # @schema
+    slotMaxBytes: 8388608
+
+# @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
 # @schema
 userInstrumentationEnvs:
@@ -233,6 +294,41 @@ collectorGateway:
   #   It is enabled by default and can be disabled by setting the disabled flag to true.
   # @schema
   serviceGraphDisabled: false
+
+  # @schema
+  # type: array
+  # items:
+  #   type: string
+  # description: |-
+  #   Extra attribute names to include as additional dimensions in service graph metrics,
+  #   on top of the default service.name dimension.
+  #   Use this when multiple services share the same service.name but should appear as distinct
+  #   nodes in the graph. For example, if the same service is deployed in multiple namespaces
+  #   (e.g. staging and production in the same cluster), adding "k8s.namespace.name" will
+  #   produce a separate node per namespace instead of merging them into one.
+  #   NOTE: both span-level and resource-level attributes (e.g. k8s.namespace.name) are
+  #   supported here.
+  # @schema
+  # serviceGraphExtraDimensions:
+  #   - k8s.namespace.name
+
+  # @schema
+  # type: array
+  # items:
+  #   type: string
+  # description: |-
+  #   Ordered list of span-level attributes used to identify uninstrumented (virtual) nodes in the service graph.
+  #   The connector picks the first attribute that has a value on the CLIENT span and uses it as the node name.
+  #   When not set, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+  #   Add "server.address" before "db.system" to distinguish individual Redis/DB instances by hostname.
+  #   IMPORTANT: only span-level attributes work here (e.g. server.address, db.system, peer.service).
+  # @schema
+  # serviceGraphVirtualNodePeerAttributes:
+  #   - peer.service
+  #   - server.address
+  #   - net.peer.name
+  #   - db.name
+  #   - db.system
 
   # @schema
   # description: |-
@@ -791,6 +887,16 @@ odiglet:
     appArmorProfile:
       type: "Unconfined"
 
+    # @schema
+    # description: |-
+    #   Percentage of the memory limit to use for GOMEMLIMIT when the odiglet
+    #   memory limit is >= 500Mi. Below 500Mi the default 80% is used.
+    #   Odiglet allocates significant memory for eBPF maps which live outside
+    #   the Go heap. The Go runtime is unaware of this memory, so GOMEMLIMIT
+    #   must leave enough headroom for these allocations to avoid OOM kills.
+    # @schema
+    # goMemLimitPercentage: 60
+
   # @schema
   # description: |-
   #   traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.
@@ -1084,7 +1190,7 @@ openshift:
 
   # @schema
   # description: |-
-  #   Controls whether to use Red Hat certified image tags (-certified suffix).
+  #   Controls whether to use Red Hat certified image tags (-rhel-certified suffix).
   #   By default, this is unset and will inherit the value of openshift.enabled.
   #   Set to false to explicitly disable certified images even when openshift.enabled is true.
   #   Set to true to explicitly enable certified images (requires openshift.enabled to also be true).
@@ -1100,6 +1206,54 @@ openshift:
 # @schema
 gke:
   enabled: false
+
+# @schema
+# description: |-
+#   Controls which OpenTelemetry resource detectors are enabled on the node collector's
+#   resourcedetection processor. Each detector can be individually enabled or disabled.
+#   By default all detectors are enabled except EKS which is disabled by default.
+# @schema
+resourceDetectors:
+  # @schema
+  # description: EC2 resource detector configuration.
+  # @schema
+  ec2:
+    # @schema
+    # description: Enable the EC2 resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: EKS resource detector configuration (disabled by default).
+  # @schema
+  eks:
+    # @schema
+    # description: Enable the EKS resource detector.
+    # @schema
+    enabled: false
+  # @schema
+  # description: Azure resource detector configuration.
+  # @schema
+  azure:
+    # @schema
+    # description: Enable the Azure resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: AKS resource detector configuration.
+  # @schema
+  aks:
+    # @schema
+    # description: Enable the AKS resource detector.
+    # @schema
+    enabled: true
+  # @schema
+  # description: GCP resource detector configuration.
+  # @schema
+  gcp:
+    # @schema
+    # description: Enable the GCP resource detector.
+    # @schema
+    enabled: true
 
 # @schema
 # description: "List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] | (CLI): --set profiles={PROFILE_NAME}"
@@ -1300,6 +1454,20 @@ metricsSources:
     #   These attributes are used to determines how span metrics are grouped.
     # @schema
     # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
+
+    # @schema
+    # description: |-
+    #   Controls the tradeoff between metric accuracy and resource usage.
+    #   Determines how sampling affects which spans are used to compute metrics.
+    #   Possible values:
+    #     - "sampled-spans-only" (default): metrics are computed only from sampled spans.
+    #       Unsampled spans are dropped early, resulting in lower resource usage but reduced accuracy.
+    #     - "all-spans": metrics are computed from all spans, regardless of sampling.
+    #       Unsampled spans are forwarded for metric computation and dropped later in the pipeline,
+    #       resulting in higher accuracy at the cost of increased resource usage.
+    # enum: [sampled-spans-only, all-spans]
+    # @schema
+    # spanMetricsMode: sampled-spans-only
 
   # @schema
   # description: Configuration for Odigos own metrics collection.

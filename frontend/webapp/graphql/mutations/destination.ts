@@ -12,6 +12,7 @@ export const CREATE_DESTINATION = gql`
         logs
         metrics
         traces
+        profiles
       }
       destinationType {
         type
@@ -27,6 +28,9 @@ export const CREATE_DESTINATION = gql`
           traces {
             supported
           }
+          profiles {
+            supported
+          }
         }
       }
       conditions {
@@ -34,7 +38,6 @@ export const CREATE_DESTINATION = gql`
         type
         reason
         message
-        lastTransitionTime
       }
     }
   }

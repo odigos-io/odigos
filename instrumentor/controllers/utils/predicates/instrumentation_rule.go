@@ -7,17 +7,24 @@ import (
 
 type AgentInjectionRelevantRulesPredicate struct{}
 
+func isRuleRelevantForAgentInjection(spec *odigosv1alpha1.InstrumentationRuleSpec) bool {
+	return spec.OtelDistros != nil ||
+		spec.HeadersCollection != nil ||
+		spec.TraceConfig != nil ||
+		spec.PayloadCollection != nil ||
+		spec.TraceVerbosity != nil ||
+		spec.CustomInstrumentations != nil ||
+		spec.CodeAttributes != nil ||
+		spec.EbpfLogCapture != nil
+}
+
 func (o AgentInjectionRelevantRulesPredicate) Create(e event.CreateEvent) bool {
-	// check if delete rule is relevant for agent enabling controllers
 	instrumentationRule, ok := e.Object.(*odigosv1alpha1.InstrumentationRule)
 	if !ok {
 		return false
 	}
 
-	return instrumentationRule.Spec.OtelSdks != nil ||
-		instrumentationRule.Spec.OtelDistros != nil ||
-		instrumentationRule.Spec.HeadersCollection != nil ||
-		instrumentationRule.Spec.TraceConfig != nil
+	return isRuleRelevantForAgentInjection(&instrumentationRule.Spec)
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Update(e event.UpdateEvent) bool {
@@ -28,24 +35,16 @@ func (i AgentInjectionRelevantRulesPredicate) Update(e event.UpdateEvent) bool {
 		return false
 	}
 
-	// only handle rules for otel sdks or distros configuration
-	return old.Spec.OtelSdks != nil || new.Spec.OtelSdks != nil ||
-		old.Spec.OtelDistros != nil || new.Spec.OtelDistros != nil ||
-		old.Spec.TraceConfig != nil || new.Spec.TraceConfig != nil ||
-		old.Spec.HeadersCollection != nil || new.Spec.HeadersCollection != nil
+	return isRuleRelevantForAgentInjection(&old.Spec) || isRuleRelevantForAgentInjection(&new.Spec)
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Delete(e event.DeleteEvent) bool {
-	// check if delete rule is for otel sdk
 	instrumentationRule, ok := e.Object.(*odigosv1alpha1.InstrumentationRule)
 	if !ok {
 		return false
 	}
 
-	return instrumentationRule.Spec.OtelSdks != nil ||
-		instrumentationRule.Spec.OtelDistros != nil ||
-		instrumentationRule.Spec.TraceConfig != nil ||
-		instrumentationRule.Spec.HeadersCollection != nil
+	return isRuleRelevantForAgentInjection(&instrumentationRule.Spec)
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Generic(e event.GenericEvent) bool {

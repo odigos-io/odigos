@@ -2,7 +2,7 @@ package k8sconsts
 
 const (
 	OdigosClusterCollectorImage          = "odigos-collector"
-	OdigosClusterCollectorImageCertified = "odigos-collector-certified"
+	OdigosClusterCollectorImageCertified = "odigos-collector-rhel-certified"
 
 	OdigosClusterCollectorDeploymentName = "odigos-gateway"
 	OdigosClusterCollectorConfigMapName  = OdigosClusterCollectorDeploymentName

@@ -78,3 +78,15 @@ func getContainerName(attrs pcommon.Map) string {
 	}
 	return containerName.Str()
 }
+
+// workloadContainerKeyFromResourceAttributes builds a workload-level cache key prefix
+// from resource attributes. Unlike workloadKeyFromResourceAttributes, it does not
+// require k8s.container.name. Returns the key in "ns/Kind/name/" format.
+func workloadContainerKeyFromResourceAttributes(attrs pcommon.Map) (string, error) {
+	ns := getNamespace(attrs)
+	kind, name := getKindAndName(attrs)
+	if ns == "" || kind == "" || name == "" {
+		return "", errors.New("workload info cannot be calculated from the resource attributes")
+	}
+	return WorkloadKeyString(ns, kind, name) + "/", nil
+}

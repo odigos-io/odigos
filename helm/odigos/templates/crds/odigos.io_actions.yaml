@@ -83,6 +83,53 @@ spec:
                 description: A boolean field allowing to temporarily disable the action,
                   but keep it around for future use
                 type: boolean
+              extractAttribute:
+                description: ExtractAttribute is the config for the ExtractAttribute
+                  Action.
+                properties:
+                  extractions:
+                    description: Extractions is the list of extraction rules to apply,
+                      in order.
+                    items:
+                      description: |-
+                        Extraction describes a single extraction rule applied by the
+                        odigosextractattribute processor. Either (Source + DataFormat) or
+                        Regex must be provided; the captured value is written to Target.
+                      properties:
+                        dataFormat:
+                          description: |-
+                            A pre-set definition which resolves into a regex (e.g. JSON DataFormat would give a regex that searches
+                            inside a JSON string), which also applies Source for searching inside it.
+                            Required when using Source.
+                            You can input either Source+DataFormat, or supply your own Regex.
+                          enum:
+                          - url
+                          - json
+                          type: string
+                        regex:
+                          description: |-
+                            Regex is a custom regular expression with a single capture group whose value is
+                            written to Target.
+                            You can input either Regex, or Source+DataFormat.
+                          type: string
+                        source:
+                          description: |-
+                            The string key that is searched within the pre-set regex patterns resolved by DataFormat.
+                            Required when using DataFormat.
+                            You can input either Source+DataFormat, or supply your own Regex.
+                          type: string
+                        target:
+                          description: Target is the attribute key the extracted value
+                            will be written to on the span.
+                          type: string
+                      required:
+                      - target
+                      type: object
+                    minItems: 1
+                    type: array
+                required:
+                - extractions
+                type: object
               k8sAttributes:
                 description: K8sAttributes is the config for the K8sAttributes Action.
                 properties:
@@ -572,6 +619,7 @@ spec:
                   - LOGS
                   - TRACES
                   - METRICS
+                  - PROFILES
                   type: string
                 type: array
               spanRenamer:
@@ -596,6 +644,7 @@ spec:
                     - postgres
                     - unknown
                     - ignored
+                    - '*'
                     type: string
                   regexReplacements:
                     description: |-
@@ -606,7 +655,7 @@ spec:
                         with a template text based on regular expressions.
                       properties:
                         regexPattern:
-                          description: regualr expression that will be used to match
+                          description: regular expression that will be used to match
                             the part of the span name to be replaced.
                           type: string
                         templateText:
@@ -644,29 +693,13 @@ spec:
                         If SourcesScope is empty, the rules apply to all sources (global).
                         If set, rules apply to selected scope.
                       properties:
-                        sourcesScope:
+                        sourcesScopes:
                           description: |-
                             SourcesScope selects which sources (workloads / containers / languages) the rules apply to.
                             Empty list means "all sources" (global rules).
-                          items:
-                            description: |-
-                              define conditions to match specific sources (containers) managed by odigos.
-                              a source container matches, if ALL non empty fields match (AND semantics)
-                              common patterns:
-                                - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
-                                  all containers (usually there is only one with agent injection)
-                                - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName):
-                                  only this container
-                                - All services in a kubernetes namespace (WorkloadNamespace):
-                                  all containers in all sources in the namespace
-                                - All services implemented in a specific programming language (WorkloadLanguage):
-                                  all container which are running odigos agent for this language
-                            properties:
-                              containerName:
-                                type: string
-                              workloadKind:
-                                type: string
-                              workloadLanguage:
+                          properties:
+                            languages:
+                              items:
                                 enum:
                                 - java
                                 - python
@@ -683,13 +716,39 @@ spec:
                                 - postgres
                                 - unknown
                                 - ignored
+                                - '*'
                                 type: string
-                              workloadName:
+                              type: array
+                            namespaces:
+                              items:
                                 type: string
-                              workloadNamespace:
-                                type: string
-                            type: object
-                          type: array
+                              type: array
+                            sources:
+                              items:
+                                description: |-
+                                  PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                                  It contains essential details about the controller such as its Name, Namespace, and Kind.
+                                  'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                                  This struct is useful for identifying and interacting with the overarching entity
+                                  that governs the lifecycle and behavior of a Pod, especially in contexts where
+                                  understanding the relationship between a Pod and its controlling workload is crucial.
+                                properties:
+                                  kind:
+                                    description: |-
+                                      1. the pascal case representation of the workload kind
+                                      it is used in k8s api objects as the `Kind` field.
+                                    type: string
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                required:
+                                - kind
+                                - name
+                                - namespace
+                                type: object
+                              type: array
+                          type: object
                         templatizationRules:
                           description: the rules that will be applied to the spans
                             matching the above filters.

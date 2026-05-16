@@ -13,11 +13,13 @@ spec:
       supported: true
     logs:
       supported: true
+    profiles:
+      supported: false
   fields:
     - name: LUMIGO_ENDPOINT
       displayName: Lumigo OTLP HTTP Endpoint
       componentType: input
-      initialValue: 'https://ga-otlp.lumigo-tracer-edge.golumigo.com'
+      initialValue: "https://ga-otlp.lumigo-tracer-edge.golumigo.com"
       componentProps:
         type: text
         required: true

@@ -446,7 +446,6 @@ status:
       secureExecutionMode: false
   (runtimeDetailsByContainer[?containerName=='nginx']):
     - language: nginx
-      runtimeVersion: 1.27.5
       secureExecutionMode: false
 ---
 apiVersion: odigos.io/v1alpha1
@@ -475,23 +474,52 @@ metadata:
     instrumented-app: deployment-coupon
 status:
   healthy: true
-  identifyingAttributes:
-    - key: service.instance.id
-      (value != null): true
-    - key: telemetry.sdk.language
-      value: nodejs
-    - key: process.runtime.version
-      (value != null): true
-    - key: telemetry.distro.version
-      (value != null): true
-    - key: process.vpid
-      (value != null): true
-    - key: k8s.namespace.name
-      (value != null): true
-    - key: k8s.container.name
-      (value != null): true
-    - key: k8s.pod.name
-      (value != null): true
+  (identifyingAttributes[?key == 'telemetry.sdk.language']):
+    - value: nodejs
+  (identifyingAttributes[?key == 'process.runtime.version']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'process.runtime.name']):
+    - value: nodejs
+  (identifyingAttributes[?key == 'process.runtime.description']):
+    - value: Node.js
+  (identifyingAttributes[?key == 'telemetry.distro.name']):
+    - value: nodejs-community
+  (identifyingAttributes[?key == 'telemetry.distro.version']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'process.vpid']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'process.executable.name']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'process.executable.path']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'process.command']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'process.command_args']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'host.name']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'host.arch']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'service.name']):
+    - value: coupon
+  (identifyingAttributes[?key == 'service.instance.id']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'k8s.namespace.name']):
+    - value: default
+  (identifyingAttributes[?key == 'k8s.pod.name']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'k8s.container.name']):
+    - value: coupon
+  (identifyingAttributes[?key == 'k8s.deployment.name']):
+    - value: coupon
+  (identifyingAttributes[?key == 'k8s.replicaset.name']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'k8s.replicaset.uid']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'odigos.workload.kind']):
+    - value: Deployment
+  (identifyingAttributes[?key == 'odigos.workload.name']):
+    - value: coupon
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance
@@ -501,19 +529,18 @@ metadata:
     instrumented-app: deployment-inventory
 status:
   healthy: true
-  identifyingAttributes:
-    - key: service.instance.id
-      (value != null): true
-    - key: process.vpid
-      (value != null): true
-    - key: telemetry.sdk.language
-      value: python
-    - key: k8s.namespace.name
-      (value != null): true
-    - key: k8s.container.name
-      (value != null): true
-    - key: k8s.pod.name
-      (value != null): true
+  (identifyingAttributes[?key == 'service.instance.id']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'process.vpid']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'telemetry.sdk.language']):
+    - value: python
+  (identifyingAttributes[?key == 'k8s.namespace.name']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'k8s.container.name']):
+    - (value != null): true
+  (identifyingAttributes[?key == 'k8s.pod.name']):
+    - (value != null): true
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationInstance

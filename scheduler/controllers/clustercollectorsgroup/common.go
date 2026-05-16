@@ -9,10 +9,10 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/sampling"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/scheduler/utils"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,8 +62,11 @@ func getOwnMetricsConfig(odigosConfiguration *common.OdigosConfiguration, allDes
 	}
 }
 
-func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings, serviceGraphDisabled *bool, clusterMetricsEnabled *bool,
-	httpsProxyAddress *string, nodeSelector *map[string]string, deploymentName string, metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings, tailSampling *sampling.TailSamplingConfiguration, dryRun *bool, spanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration) *odigosv1.CollectorsGroup {
+func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings,
+	serviceGraph common.ServiceGraphOptions, clusterMetricsEnabled *bool,
+	httpsProxyAddress *string, nodeSelector *map[string]string, deploymentName string,
+	metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings, tailSampling *sampling.TailSamplingConfiguration,
+	dryRun *bool, spanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration) *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -74,18 +77,20 @@ func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.Coll
 			Namespace: namespace,
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
-			Role:                    odigosv1.CollectorsGroupRoleClusterGateway,
-			CollectorOwnMetricsPort: k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault,
-			ResourcesSettings:       *resourcesSettings,
-			ServiceGraphDisabled:    serviceGraphDisabled,
-			ClusterMetricsEnabled:   clusterMetricsEnabled,
-			HttpsProxyAddress:       httpsProxyAddress,
-			NodeSelector:            nodeSelector,
-			DeploymentName:          deploymentName,
-			Metrics:                 metricsConfig,
-			TailSampling:                       tailSampling,
-			SamplingDryRun:                     dryRun,
-			SpanSamplingAttributes:     spanSamplingAttributes,
+			Role:                                  odigosv1.CollectorsGroupRoleClusterGateway,
+			CollectorOwnMetricsPort:               k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault,
+			ResourcesSettings:                     *resourcesSettings,
+			ServiceGraphDisabled:                  serviceGraph.Disabled,
+			ServiceGraphExtraDimensions:           serviceGraph.ExtraDimensions,
+			ServiceGraphVirtualNodePeerAttributes: serviceGraph.VirtualNodePeerAttributes,
+			ClusterMetricsEnabled:                 clusterMetricsEnabled,
+			HttpsProxyAddress:                     httpsProxyAddress,
+			NodeSelector:                          nodeSelector,
+			DeploymentName:                        deploymentName,
+			Metrics:                               metricsConfig,
+			TailSampling:                          tailSampling,
+			SamplingDryRun:                        dryRun,
+			SpanSamplingAttributes:                spanSamplingAttributes,
 		},
 	}
 }
@@ -100,11 +105,11 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	}
 	resourceSettings := getGatewayResourceSettings(&odigosConfiguration)
 
-	// default servicegraph is enabled (serviceGraphDisabled to false)
-	serviceGraphDisabled := odigosConfiguration.CollectorGateway.ServiceGraphDisabled
-	if serviceGraphDisabled == nil {
-		result := false
-		serviceGraphDisabled = &result
+	serviceGraph := odigosConfiguration.CollectorGateway.ServiceGraph
+	// Default Disabled to false (feature is enabled by default).
+	if serviceGraph.Disabled == nil {
+		disabled := false
+		serviceGraph.Disabled = &disabled
 	}
 
 	// default cluster metrics is disabled (clusterMetricsEnabled to false)
@@ -140,7 +145,9 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	// and started.
 	// in the future we might want to support a deployment of instrumentations only and allow user
 	// to setup their own collectors, then we would avoid adding the cluster collector by default.
-	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress, nodeSelector, deploymentName, ownMetricsConfig, tailSampling, dryRun, spanSamplingAttributes)
+	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings,
+		*serviceGraph, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress,
+		nodeSelector, deploymentName, ownMetricsConfig, tailSampling, dryRun, spanSamplingAttributes)
 	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, clusterCollectorGroup, scheme)
 	if err != nil {
 		return err

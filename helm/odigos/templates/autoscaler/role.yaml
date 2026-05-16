@@ -138,6 +138,7 @@ rules:
       - create
       - patch
       - update
+      - delete
   - apiGroups:
       - actions.odigos.io
     resources:
