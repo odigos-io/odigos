@@ -96,7 +96,7 @@ func (m *destinationManager) register(server *mcpserver.MCPServer) {
 
 	server.AddTool(mcp.NewTool(
 		"probe_destination_endpoint",
-		mcp.WithDescription("Resolve and TCP/TLS-probe the destination endpoint from inside the MCP pod. No auth headers are sent."),
+		mcp.WithDescription("Resolve and TCP/TLS-probe the destination endpoint from the MCP pod. No auth headers sent. For TLS schemes the result distinguishes `tls_handshake_ok` (TCP+TLS protocol round-trip works) from `tls_verified` (server cert chain is trusted by the MCP container) so the agent can tell a self-signed enterprise destination from a genuinely unreachable one."),
 		mcp.WithString("namespace", mcp.Required(), mcp.Description("Destination namespace.")),
 		mcp.WithString("name", mcp.Required(), mcp.Description("Destination CR name.")),
 	), m.probeDestinationEndpoint)
@@ -154,7 +154,7 @@ func (m *destinationManager) inspectDestinationSecret(ctx context.Context, reque
 	destination, err := m.clients.Odigos.OdigosV1alpha1().Destinations(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return WriteJSON(map[string]any{"found": false, "destination": name})
+			return WriteJSON(map[string]any{"found": false, "name": name})
 		}
 		return ToolError("get Destination %s/%s: %v", namespace, name, err)
 	}
@@ -162,7 +162,7 @@ func (m *destinationManager) inspectDestinationSecret(ctx context.Context, reque
 		return WriteJSON(map[string]any{
 			"found":          true,
 			"has_secret_ref": false,
-			"destination":    name,
+			"name":           name,
 			"reason":         "Destination has no secretRef",
 		})
 	}
@@ -286,7 +286,7 @@ func (m *destinationManager) probeDestinationEndpoint(ctx context.Context, reque
 	destination, err := m.clients.Odigos.OdigosV1alpha1().Destinations(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return WriteJSON(map[string]any{"found": false, "destination": name})
+			return WriteJSON(map[string]any{"found": false, "name": name})
 		}
 		return ToolError("get Destination %s/%s: %v", namespace, name, err)
 	}
@@ -388,31 +388,87 @@ func probeTCPAndTLS(ctx context.Context, endpoint string) map[string]any {
 	if !schemeUsesTLS(scheme) {
 		return result
 	}
-	tlsConfig := &tls.Config{
-		ServerName: host,
-		MinVersion: tls.VersionTLS12,
-	}
+
+	// TLS verification can fail two ways the LLM must distinguish:
+	//   (a) handshake itself fails - destination is not actually a TLS server
+	//       on this port, or the server presents a malformed/expired cert.
+	//   (b) handshake succeeds but cert chain is untrusted - common with
+	//       self-signed or private-CA destinations in enterprise setups.
+	// We do a strict handshake first; on failure that looks like a verify
+	// error we retry with InsecureSkipVerify so we can report `tls_handshake_ok`
+	// independently of `tls_verified`. The TCP conn from above is consumed by
+	// the first attempt, so the retry dials again with a fresh conn.
 	deadline, ok := ctx.Deadline()
 	if !ok {
 		deadline = time.Now().Add(destinationProbeTimeout)
 	}
 	if err := connection.SetDeadline(deadline); err != nil {
-		result["tls_ok"] = false
+		result["tls_handshake_ok"] = false
+		result["tls_verified"] = false
 		result["tls_error"] = err.Error()
 		return result
 	}
+
+	tlsConfig := &tls.Config{ServerName: host, MinVersion: tls.VersionTLS12}
 	tlsClient := tls.Client(connection, tlsConfig)
 	tlsStart := time.Now()
-	if err := tlsClient.HandshakeContext(ctx); err != nil {
-		result["tls_ok"] = false
-		result["tls_error"] = err.Error()
-		result["tls_elapsed_ms"] = time.Since(tlsStart).Milliseconds()
+	strictErr := tlsClient.HandshakeContext(ctx)
+	tlsElapsed := time.Since(tlsStart).Milliseconds()
+
+	if strictErr == nil {
+		state := tlsClient.ConnectionState()
+		result["tls_handshake_ok"] = true
+		result["tls_verified"] = true
+		result["tls_ok"] = true // backwards-compat field
+		result["tls_elapsed_ms"] = tlsElapsed
+		result["tls_version"] = tlsVersionString(state.Version)
+		result["tls_cipher_suite"] = tls.CipherSuiteName(state.CipherSuite)
+		result["tls_certs"] = summarizeCertificates(state.PeerCertificates)
+		_ = tlsClient.Close()
 		return result
 	}
-	defer tlsClient.Close()
-	state := tlsClient.ConnectionState()
-	result["tls_ok"] = true
-	result["tls_elapsed_ms"] = time.Since(tlsStart).Milliseconds()
+	_ = tlsClient.Close()
+
+	// Retry insecure to distinguish trust-store mismatch from real handshake
+	// failure. New TCP conn since the previous one is now closed.
+	retryConn, retryDialErr := dialer.DialContext(ctx, "tcp", address)
+	if retryDialErr != nil {
+		result["tls_handshake_ok"] = false
+		result["tls_verified"] = false
+		result["tls_error"] = strictErr.Error()
+		result["tls_elapsed_ms"] = tlsElapsed
+		return result
+	}
+	defer retryConn.Close()
+	if err := retryConn.SetDeadline(deadline); err != nil {
+		result["tls_handshake_ok"] = false
+		result["tls_verified"] = false
+		result["tls_error"] = strictErr.Error()
+		result["tls_elapsed_ms"] = tlsElapsed
+		return result
+	}
+	insecureConfig := &tls.Config{
+		ServerName:         host,
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: true, //nolint:gosec // diagnostic probe only, never exchanges payload
+	}
+	insecureClient := tls.Client(retryConn, insecureConfig)
+	insecureStart := time.Now()
+	if err := insecureClient.HandshakeContext(ctx); err != nil {
+		result["tls_handshake_ok"] = false
+		result["tls_verified"] = false
+		result["tls_error"] = strictErr.Error()
+		result["tls_insecure_error"] = err.Error()
+		result["tls_elapsed_ms"] = tlsElapsed + time.Since(insecureStart).Milliseconds()
+		return result
+	}
+	defer insecureClient.Close()
+	state := insecureClient.ConnectionState()
+	result["tls_handshake_ok"] = true
+	result["tls_verified"] = false
+	result["tls_ok"] = false
+	result["tls_verify_error"] = strictErr.Error()
+	result["tls_elapsed_ms"] = tlsElapsed + time.Since(insecureStart).Milliseconds()
 	result["tls_version"] = tlsVersionString(state.Version)
 	result["tls_cipher_suite"] = tls.CipherSuiteName(state.CipherSuite)
 	result["tls_certs"] = summarizeCertificates(state.PeerCertificates)
@@ -490,17 +546,19 @@ func summarizeCertificates(certificates []*x509.Certificate) []map[string]any {
 
 // findExportersForDestination scans the otelcol exporters map for keys that
 // reference the destination name. Odigos names exporters like
-// `otlp/<destinationName>` so a substring match on the destination name is
-// the reliable signal.
+// `<type>/<destinationName>` (e.g. `otlp/datadog`, `awsxray/aws-traces`), so
+// we require the destination name to be either the full key or preceded by a
+// slash to avoid false positives for short or generic names like "aws" or
+// "gcp".
 func findExportersForDestination(parsed map[string]any, destinationName string) map[string]any {
 	exporters, ok := parsed["exporters"].(map[string]any)
-	if !ok {
+	if !ok || destinationName == "" {
 		return map[string]any{}
 	}
 	matches := map[string]any{}
 	count := 0
 	for key, value := range exporters {
-		if !strings.Contains(key, destinationName) {
+		if !exporterKeyMatchesDestination(key, destinationName) {
 			continue
 		}
 		matches[key] = value
@@ -510,6 +568,18 @@ func findExportersForDestination(parsed map[string]any, destinationName string) 
 		}
 	}
 	return matches
+}
+
+// exporterKeyMatchesDestination checks whether an exporter key refers to the
+// given destination. Accepts both exact key match (rare - some destinations
+// produce just `<type>` with no suffix) and the canonical `<type>/<name>`
+// form, where <name> is the destination CR name.
+func exporterKeyMatchesDestination(exporterKey, destinationName string) bool {
+	if exporterKey == destinationName {
+		return true
+	}
+	suffix := "/" + destinationName
+	return strings.HasSuffix(exporterKey, suffix)
 }
 
 // findPipelinesUsingExporters walks service.pipelines.<name>.exporters and

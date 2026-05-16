@@ -155,6 +155,56 @@ func TestFindExportersForDestination(t *testing.T) {
 	}
 }
 
+func TestFindExportersForDestinationRejectsAccidentalSubstringMatches(t *testing.T) {
+	parsed := map[string]any{
+		"exporters": map[string]any{
+			"otlp/datadog":         map[string]any{},
+			"otlp/datadog-staging": map[string]any{},
+			"otlp/not-datadog":     map[string]any{},
+			"awsxray/aws-traces":   map[string]any{},
+			"logging":              map[string]any{},
+		},
+	}
+	got := findExportersForDestination(parsed, "datadog")
+	if _, has := got["otlp/datadog"]; !has {
+		t.Error("expected otlp/datadog match")
+	}
+	if _, has := got["otlp/datadog-staging"]; has {
+		t.Error("otlp/datadog-staging is a different destination - must not match")
+	}
+	if _, has := got["otlp/not-datadog"]; has {
+		t.Error("otlp/not-datadog has the destination name as a suffix only, must not match")
+	}
+
+	// Short destination name (the actual bug the substring approach hid).
+	got = findExportersForDestination(parsed, "aws")
+	if _, has := got["awsxray/aws-traces"]; has {
+		t.Error("destination 'aws' must not bind to awsxray/aws-traces")
+	}
+}
+
+func TestExporterKeyMatchesDestination(t *testing.T) {
+	cases := []struct {
+		key  string
+		name string
+		want bool
+	}{
+		{"otlp/datadog", "datadog", true},
+		{"datadog", "datadog", true},
+		{"otlp/datadog-staging", "datadog", false},
+		{"otlp/not-datadog", "datadog", false},
+		{"otlp/datadog-traces", "datadog", false},
+		{"logging", "datadog", false},
+		{"", "datadog", false},
+	}
+	for _, testCase := range cases {
+		got := exporterKeyMatchesDestination(testCase.key, testCase.name)
+		if got != testCase.want {
+			t.Errorf("(%q, %q): got %v want %v", testCase.key, testCase.name, got, testCase.want)
+		}
+	}
+}
+
 func TestFindExportersForDestinationNoExportersKey(t *testing.T) {
 	parsed := map[string]any{"service": map[string]any{}}
 	got := findExportersForDestination(parsed, "datadog")
