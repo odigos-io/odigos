@@ -8,8 +8,9 @@ import (
 	mcpserver "github.com/mark3labs/mcp-go/server"
 )
 
-// New builds the cluster MCP HTTP server. Phase 0 exposes a single `ping`
-// tool. Real cluster tools (source/collector/destination) land in Phase 1.
+// New builds the cluster MCP HTTP server. Phase 0 exposes a single
+// `cluster_ping` smoke tool. Real cluster tools (source/collector/destination)
+// land in Phase 1.
 func New() (*mcpserver.StreamableHTTPServer, error) {
 	mcpServer := mcpserver.NewMCPServer(
 		"odigos-agent-cluster-mcp",

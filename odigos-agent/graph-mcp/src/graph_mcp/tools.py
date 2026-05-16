@@ -1,6 +1,6 @@
 """MCP tools exposed by graph-mcp.
 
-Phase 0: `ping` and `graph_metadata`. Phase 1d adds `graph_query`,
+Phase 0: `graph_ping` and `graph_metadata`. Phase 1d adds `graph_query`,
 `graph_neighbors`, `graph_path`, `graph_community`, `graph_god_nodes`,
 `graph_list_communities`, `wiki_read`.
 """

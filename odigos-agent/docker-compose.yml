@@ -4,9 +4,10 @@
 # dev we bind to 0.0.0.0 and reach each via the compose service DNS.
 #
 # Usage:
-#   export ANTHROPIC_API_KEY=...
-#   docker compose up -d --build mcp-cluster mcp-graph
-#   docker compose run --rm agent "Call cluster_ping, graph_ping, and graph_metadata and report each."
+#   # one-time: copy .env.example to .env and fill in ANTHROPIC_API_KEY
+#   docker compose up -d --build
+#   docker compose --profile cli run --rm agent
+# (Plain `docker compose up` only starts the two MCPs - agent is profile-gated.)
 
 services:
   mcp-cluster:

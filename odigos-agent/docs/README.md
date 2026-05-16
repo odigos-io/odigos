@@ -28,11 +28,14 @@ Phase 0 - scaffold + smoke test. See [PLAN.md](PLAN.md).
 ## Local dev (Phase 0 smoke)
 
 ```bash
-export ANTHROPIC_API_KEY=...
 cd odigos-agent
-docker compose up -d
+cp .env.example .env  # then fill in ANTHROPIC_API_KEY
+docker compose up -d --build
 docker compose --profile cli run --rm agent \
   "Call cluster_ping, graph_ping, and graph_metadata and report each."
 ```
 
-Expected: ping responses from both MCPs and the bundled commit hash `37cf1aee`.
+Expected: ping responses from both MCPs and the bundled commit hash
+`37cf1aee2c0dc10d5801b350eecf870915669d7f`. Plain `docker compose up`
+only starts the two MCPs - the agent CLI is profile-gated so it runs
+one-shot via `docker compose --profile cli run`.

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/odigos-io/odigos-agent/mcp/server"
 )
@@ -38,7 +39,9 @@ func main() {
 		}
 	case sig := <-sigCh:
 		log.Printf("shutdown requested (%s)", sig)
-		ctx, cancel := context.WithCancel(context.Background())
+		// Bound shutdown so a stuck streamable-HTTP request can't hold us past
+		// the kubelet's terminationGracePeriodSeconds.
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		if err := httpServer.Shutdown(ctx); err != nil {
 			log.Fatalf("shutdown error: %v", err)
