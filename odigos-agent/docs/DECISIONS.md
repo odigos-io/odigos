@@ -118,3 +118,43 @@ lands.
 **Decision.** Scrape collector `/metrics` directly via an HTTP GET to `http://<podIP>:8888/metrics` from the MCP container, with a 5-second timeout. The MCP pod sits in the same cluster network as the collectors, so PodIP is reachable.
 
 **Consequences.** No `pods/exec` RBAC verb needed. No SPDY code. Smaller blast radius. If the collector binds the metrics endpoint to localhost-only (it doesn't, by default in odigos's rendered config) the scrape would fail and we'd revisit. Phase 6 kind validation will confirm reachability end-to-end. Same direction applies to `probe_destination_endpoint` in Phase 1c (direct dial, not exec into a debug pod).
+
+---
+
+## ADR-010 - ReAct loop per subgraph, not one big agent
+
+**Context.** Phase 2 needs three diagnostic flows (source, collector, destination). One option is a single ReAct agent with all tools and a long system prompt that switches mode based on triage. Another is one small ReAct agent per domain, dispatched from a LangGraph router node.
+
+**Decision.** Per-subgraph ReAct agents. Each is created with `create_react_agent` bound to a filtered tool catalog and a focused system prompt. The LangGraph router node (`route_after_triage`) returns a list of node names; LangGraph fans out in parallel when the list has more than one entry (the `ambiguous` case).
+
+**Consequences.** Smaller tool catalogs per call -> cheaper, less prompt-bloat, less off-domain tool drift. Each subgraph's prompt can be tuned independently in Phase 6. Cost: one extra LLM call for triage. Parallel fan-out for ambiguous cases works out of the box because `step_log` uses an `operator.add` reducer in `AgentState`.
+
+---
+
+## ADR-011 - Defer `apply_create_source` to Phase 3, never expose it in Phase 2
+
+**Context.** PLAN.md Phase 2 says the source subgraph "yields control back to the API layer to await user decision." The `apply_create_source` MCP tool exists (Phase 1a) but applying without human approval would defeat the gated-mutation design.
+
+**Decision.** Phase 2 deliberately excludes `apply_create_source` from the source subgraph's tool catalog. The subgraph may call `propose_create_source` (caching a dry-run + request_id in the MCP), then stops. The node code extracts the proposal from the conversation, writes it to `state.proposed_remediation` with `status="pending_approval"`, and execution proceeds to synthesis. Phase 3 will add an interrupt-based approval node and wire `apply_create_source` behind it.
+
+**Consequences.** Phase 2 produces a complete Report including a pending mutation, but never mutates the cluster. Tests pin this contract (`test_partition_excludes_apply_create_source`). Phase 3 has a clean seam: insert an `await_approval` node between source and synthesize, gated on `state.proposed_remediation is not None`.
+
+---
+
+## ADR-012 - Tool partitioning by explicit name set, not pattern
+
+**Context.** The merged MCP tool catalog mixes cluster + graph tools. Each subgraph should only see its own domain's tools (plus the graph/wiki tools as cross-cutting reference). Options: prefix matching (`get_collector_*`), regex, or an explicit set of names per bucket.
+
+**Decision.** Explicit `frozenset` per bucket in `graph.py`. Tools not in any bucket are dropped from subgraph catalogs.
+
+**Consequences.** Adding a new MCP tool requires a one-line update to the right bucket. Worth it: prefix matching would accidentally include `apply_create_source` in the source bucket (the very thing ADR-011 forbids). Naming MCP tools is part of the agent's contract; making the partition explicit forces the conversation when a new tool is added.
+
+---
+
+## ADR-013 - Graph/wiki tools available to every subgraph, not just a dedicated node
+
+**Context.** The codebase knowledge graph (Phase 1d) is most useful when a domain subgraph is mid-diagnosis and needs to look up how some controller works. We considered a dedicated "research" node that owns graph access and a tool-router that hands relevant code excerpts to the domain subgraphs.
+
+**Decision.** Each domain subgraph's tool catalog includes the full graph/wiki tool set (`graph_query`, `graph_neighbors`, `graph_path`, `graph_community`, `graph_god_nodes`, `graph_list_communities`, `wiki_read`, `graph_metadata`, `gh_read_file`).
+
+**Consequences.** Subgraphs can reach for codebase context in the same loop where they're reading cluster state - no extra round trip through a router. Cost: every subgraph's prompt sees the graph tool descriptions. The per-session budget (max 30 graph/wiki queries + 10 citation reads) lives at the MCP / agent loop level, not per-subgraph, so the catalog overlap doesn't multiply the budget.
