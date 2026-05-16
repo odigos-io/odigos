@@ -57,6 +57,10 @@ Once profiling is enabled on the cluster, you can inspect profiles for any Sourc
   Closing the Profiling tab does **not** immediately destroy the slot. The slot and its buffered data persist until the TTL expires or the UI pod restarts. This is intentional, it lets you reopen the tab and see the same data during an ongoing investigation.
 </Note>
 
+## Step 3: Send Profiles to a Backend (Optional)
+
+The in-memory UI buffer is great for live investigation, but for long-term retention and cross-service comparison you'll want to route profiles to a profile-capable Destination. Today Odigos supports [Pyroscope](/enterprise/backends/pyroscope); see [Exporting Profiles to Destinations](/enterprise/instrumentations/profiling/destinations) for the full topology and prerequisites.
+
 ## Advanced: Buffer Tuning
 
 The in-memory profile store is sized from **environment variables** read by the UI pod at startup.
