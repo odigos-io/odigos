@@ -169,12 +169,20 @@ def _tool_message_text(message: ToolMessage) -> str | None:
         return content
     if isinstance(content, list):
         for block in content:
-            if isinstance(block, dict) and block.get("type") == "text":
+            if isinstance(block, str):
+                return block
+            if not isinstance(block, dict):
+                continue
+            if block.get("type") == "text":
                 text = block.get("text")
                 if isinstance(text, str):
                     return text
-            if isinstance(block, str):
-                return block
+                continue
+            if block.get("type") == "json" and isinstance(block.get("json"), dict):
+                return json.dumps(block["json"])
+            # Bare dict block with no recognized type wrapper - try it as-is.
+            if "type" not in block:
+                return json.dumps(block)
         return None
     if isinstance(content, dict):
         return json.dumps(content)
@@ -215,6 +223,23 @@ def _extract_proposed_remediation(messages: list[Any]) -> ProposedRemediation | 
             status="pending_approval",
         )
     return None
+
+
+def _override_remediation_from_state(
+    report: Report, state: AgentState
+) -> Report:
+    """Force `report.proposed_remediation` to match `state.proposed_remediation`.
+
+    The synthesizer is an `llm.with_structured_output(Report)` call and the
+    LLM can ignore the prompt instruction to leave the field null. Trusting
+    the model here would let a hallucinated `request_id` reach the UI and
+    Phase 3 approval modal, where it would 404 on apply. The MCP's approval
+    cache is the single source of truth for which mutations actually exist
+    - this helper enforces that boundary unconditionally.
+    """
+    return report.model_copy(
+        update={"proposed_remediation": state.get("proposed_remediation")}
+    )
 
 
 def _format_findings_for_synthesis(state: AgentState) -> str:
@@ -327,7 +352,7 @@ def build_graph(
             ],
         }
         if phase == "source":
-            proposed = _extract_proposed_remediation(result["messages"])
+            proposed = _extract_proposed_remediation(result.get("messages", []))
             if proposed is not None:
                 update["proposed_remediation"] = proposed
                 update["step_log"].append(
@@ -377,9 +402,7 @@ def build_graph(
         )
         if not isinstance(report, Report):
             report = Report(root_cause="unknown", confidence=0.0)
-        proposed = state.get("proposed_remediation")
-        if proposed is not None:
-            report = report.model_copy(update={"proposed_remediation": proposed})
+        report = _override_remediation_from_state(report, state)
         return {
             "report": report,
             "step_log": [

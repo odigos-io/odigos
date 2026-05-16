@@ -8,6 +8,7 @@ import typing
 from odigos_agent.graph import (
     _coerce_finding,
     _format_findings_for_synthesis,
+    _override_remediation_from_state,
     initial_state,
 )
 from odigos_agent.state import (
@@ -113,6 +114,82 @@ def test_format_findings_skips_absent_phases():
     assert "[source]" in formatted
     assert "[collector]" not in formatted
     assert "[destination]" not in formatted
+
+
+def test_synthesize_drops_hallucinated_remediation_when_state_has_none():
+    """If the LLM ignores the synthesis prompt and fabricates a
+    proposed_remediation, the override must strip it. The MCP approval cache
+    is the single source of truth - a fake request_id reaching the UI would
+    404 at apply time."""
+    hallucinated = ProposedRemediation(
+        op="create_source",
+        request_id="totally-made-up",
+        yaml="apiVersion: odigos.io/v1alpha1\n",
+        diff="+ apiVersion: odigos.io/v1alpha1\n",
+        rollback_command="kubectl delete source ...",
+    )
+    raw_report = Report(
+        root_cause="source_not_instrumented",
+        confidence=0.7,
+        proposed_remediation=hallucinated,
+    )
+    state: AgentState = {
+        "input_workload": WorkloadInput(namespace="ns", kind="Deployment", name="x"),
+        "step_log": [],
+    }
+    final = _override_remediation_from_state(raw_report, state)
+    assert final.proposed_remediation is None
+
+
+def test_synthesize_preserves_real_remediation_from_state():
+    real = ProposedRemediation(
+        op="create_source",
+        request_id="req-real",
+        yaml="apiVersion: odigos.io/v1alpha1\n",
+        diff="+ apiVersion: odigos.io/v1alpha1\n",
+        rollback_command="kubectl delete source ...",
+    )
+    raw_report = Report(root_cause="source_not_instrumented", confidence=0.9)
+    state: AgentState = {
+        "input_workload": WorkloadInput(namespace="ns", kind="Deployment", name="x"),
+        "proposed_remediation": real,
+        "step_log": [],
+    }
+    final = _override_remediation_from_state(raw_report, state)
+    assert final.proposed_remediation is not None
+    assert final.proposed_remediation.request_id == "req-real"
+
+
+def test_synthesize_overrides_hallucination_with_state_remediation():
+    """When state has a real proposal and the LLM also hallucinated a
+    different one, the state value wins."""
+    real = ProposedRemediation(
+        op="create_source",
+        request_id="req-real",
+        yaml="",
+        diff="",
+        rollback_command="",
+    )
+    fake = ProposedRemediation(
+        op="create_source",
+        request_id="req-fake",
+        yaml="",
+        diff="",
+        rollback_command="",
+    )
+    raw_report = Report(
+        root_cause="source_not_instrumented",
+        confidence=0.5,
+        proposed_remediation=fake,
+    )
+    state: AgentState = {
+        "input_workload": WorkloadInput(namespace="ns", kind="Deployment", name="x"),
+        "proposed_remediation": real,
+        "step_log": [],
+    }
+    final = _override_remediation_from_state(raw_report, state)
+    assert final.proposed_remediation is not None
+    assert final.proposed_remediation.request_id == "req-real"
 
 
 def test_report_with_proposed_remediation_roundtrip():

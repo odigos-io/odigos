@@ -64,6 +64,47 @@ def test_extracts_from_content_block_list():
     assert proposed.request_id == "req-block"
 
 
+def test_extracts_from_json_typed_content_block():
+    """langchain-mcp-adapters may surface structured tool output as
+    {"type": "json", "json": <dict>} blocks. The extractor must handle
+    this transport shape, not just text blocks."""
+    payload = {
+        "request_id": "req-json-block",
+        "yaml": "y",
+        "diff": "d",
+        "rollback_command": "kubectl delete",
+    }
+    message = ToolMessage(
+        content=[{"type": "json", "json": payload}],
+        tool_call_id="call-j",
+        name="propose_create_source",
+    )
+    message.status = "success"
+    proposed = _extract_proposed_remediation([message])
+    assert proposed is not None
+    assert proposed.request_id == "req-json-block"
+
+
+def test_extracts_from_bare_dict_content_block():
+    """Some transport versions surface raw dict blocks without a "type"
+    wrapper. Treat them as the payload itself."""
+    payload = {
+        "request_id": "req-bare-dict",
+        "yaml": "y",
+        "diff": "d",
+        "rollback_command": "kubectl delete",
+    }
+    message = ToolMessage(
+        content=[payload],
+        tool_call_id="call-b",
+        name="propose_create_source",
+    )
+    message.status = "success"
+    proposed = _extract_proposed_remediation([message])
+    assert proposed is not None
+    assert proposed.request_id == "req-bare-dict"
+
+
 def test_returns_none_when_no_propose_call():
     messages = [
         HumanMessage(content="hi"),
