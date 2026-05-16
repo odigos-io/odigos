@@ -196,7 +196,7 @@ def register(server: FastMCP, artifact: GraphArtifact) -> None:
             _summarize_node(node_id, attributes, artifact)
             for node_id, attributes in nodes_sorted[:top_nodes]
         ]
-        wiki_excerpt, wiki_filename = _read_wiki_excerpt(community_id, artifact)
+        wiki_excerpt, wiki_filename, _ = _read_wiki_excerpt(community_id, artifact)
         return {
             "found": True,
             "community_id": community_id,
@@ -275,8 +275,8 @@ def register(server: FastMCP, artifact: GraphArtifact) -> None:
         community_id = _resolve_community(community_name, artifact)
         if community_id is None:
             return {"found": False, "input": community_name}
-        excerpt, filename = _read_wiki_excerpt(
-            community_id, artifact, max_lines=max_lines, full=True
+        excerpt, filename, truncated = _read_wiki_excerpt(
+            community_id, artifact, max_lines=max_lines
         )
         if excerpt is None:
             return {"found": False, "input": community_name, "reason": "no wiki page on disk"}
@@ -286,7 +286,7 @@ def register(server: FastMCP, artifact: GraphArtifact) -> None:
             "community_name": artifact.community_labels.get(community_id, f"Community {community_id}"),
             "wiki_filename": filename,
             "content": excerpt,
-            "truncated": excerpt.count("\n") >= max_lines,
+            "truncated": truncated,
         }
 
 
@@ -373,32 +373,27 @@ def _read_wiki_excerpt(
     community_id: int,
     artifact: GraphArtifact,
     max_lines: int = 80,
-    full: bool = False,
-) -> tuple[str | None, str | None]:
+) -> tuple[str | None, str | None, bool]:
     """Locate and read the community's wiki page.
 
     Resolution order:
       1. `<community_name>.md` (with spaces preserved as-is from the labels file)
       2. `<community_name with spaces replaced by underscores>.md`
       3. `Community_<id>.md`
-    Returns (content_or_None, filename_or_None). When found=True content is
-    truncated to max_lines lines unless `full` is True (then the truncation
-    is still applied but the caller asked for a longer view).
+    Returns (content_or_None, filename_or_None, truncated). `truncated` is
+    True iff the file actually had more lines than `max_lines`.
     """
     name = artifact.community_labels.get(community_id, f"Community {community_id}")
-    candidates = [
-        f"{name}.md",
-        f"{name.replace(' ', '_')}.md",
-        f"Community_{community_id}.md",
-    ]
+    candidates = _candidate_wiki_filenames(name, community_id)
     for candidate in candidates:
         candidate_path = (artifact.wiki_dir / candidate)
         if candidate_path.is_file():
             text = read_wiki_file(candidate_path)
             lines = text.split("\n")
-            limit = max_lines if full else min(max_lines, len(lines))
-            return ("\n".join(lines[:limit]), candidate)
-    return (None, None)
+            truncated = len(lines) > max_lines
+            content = "\n".join(lines[:max_lines])
+            return (content, candidate, truncated)
+    return (None, None, False)
 
 
 def _candidate_wiki_filenames(name: str, community_id: int) -> list[str]:

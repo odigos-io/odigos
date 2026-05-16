@@ -269,9 +269,45 @@ def test_wiki_read_returns_content(server):
     result = tool(community_name="Instrumentor Reconcilers")
     assert result["found"] is True
     assert "Reconciles workloads" in result["content"]
+    # Small fixture file is well under the default max_lines, so not truncated.
+    assert result["truncated"] is False
 
 
 def test_wiki_read_unknown_community(server):
     tool = _get_tool_callable(server, "wiki_read")
     result = tool(community_name="No Such Community")
     assert result["found"] is False
+
+
+def test_wiki_read_reports_truncation(graph_artifact: GraphArtifact, tmp_path: Path):
+    # Replace the existing wiki page with one that has 50 lines and read with
+    # max_lines=10. We expect truncated=True and exactly 10 lines back.
+    big_path = graph_artifact.wiki_dir / "Instrumentor_Reconcilers.md"
+    big_path.write_text("\n".join(f"line {index}" for index in range(50)))
+
+    from mcp.server.fastmcp import FastMCP
+    from graph_mcp.tools import register
+    server = FastMCP("graph-mcp-trunc")
+    register(server, graph_artifact)
+    tool = _get_tool_callable(server, "wiki_read")
+
+    result = tool(community_name="Instrumentor Reconcilers", max_lines=10)
+    assert result["found"] is True
+    assert result["truncated"] is True
+    assert result["content"].count("\n") == 9  # 10 lines = 9 newlines between them
+
+
+def test_wiki_read_no_false_truncated_when_file_fits(graph_artifact: GraphArtifact):
+    # Exact-fit case: file has exactly 5 lines, ask for max_lines=10.
+    fit_path = graph_artifact.wiki_dir / "Destination CRD.md"
+    fit_path.write_text("\n".join(f"line {index}" for index in range(5)))
+
+    from mcp.server.fastmcp import FastMCP
+    from graph_mcp.tools import register
+    server = FastMCP("graph-mcp-fit")
+    register(server, graph_artifact)
+    tool = _get_tool_callable(server, "wiki_read")
+
+    result = tool(community_name="Destination CRD", max_lines=10)
+    assert result["found"] is True
+    assert result["truncated"] is False
