@@ -1,0 +1,45 @@
+# Local 3-container Phase 0 smoke setup.
+#
+# In production each MCP listens on 127.0.0.1 (sidecars in one pod). For local
+# dev we bind to 0.0.0.0 and reach each via the compose service DNS.
+#
+# Usage:
+#   export ANTHROPIC_API_KEY=...
+#   docker compose up -d --build mcp-cluster mcp-graph
+#   docker compose run --rm agent "Call cluster_ping, graph_ping, and graph_metadata and report each."
+
+services:
+  mcp-cluster:
+    build:
+      context: ./mcp
+    image: odigos-agent-mcp:dev
+    environment:
+      MCP_CLUSTER_LISTEN_ADDR: 0.0.0.0:9090
+    expose:
+      - "9090"
+
+  mcp-graph:
+    build:
+      context: ./graph-mcp
+    image: odigos-agent-graph:dev
+    environment:
+      MCP_GRAPH_HOST: 0.0.0.0
+      MCP_GRAPH_PORT: "9091"
+    expose:
+      - "9091"
+
+  # One-shot CLI. Use `docker compose run --rm agent "<prompt>"`. Hidden from
+  # `up` by the profile so the two MCPs can be started independently.
+  agent:
+    build:
+      context: ./agent
+    image: odigos-agent:dev
+    profiles: ["cli"]
+    depends_on:
+      - mcp-cluster
+      - mcp-graph
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      MCP_CLUSTER_URL: http://mcp-cluster:9090/mcp
+      MCP_GRAPH_URL: http://mcp-graph:9091/mcp
+      ODIGOS_AGENT_MODEL: ${ODIGOS_AGENT_MODEL:-claude-sonnet-4-5}
