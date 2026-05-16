@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -40,6 +41,9 @@ func updateInstrumentationConfigForWorkload(ctx context.Context, ic *odigosv1alp
 		}
 		// merge the rule into all the sdk configs
 		for i := range sdkConfigs {
+			if !scope.SourceScopeMatchesContainer(rule.Spec.SourcesScopes, workload, sdkConfigs[i].Language) {
+				continue
+			}
 			// If we've recieved nil for the instrumentation libraries, then we apply the given rules as global rules to the SDK.
 			if rule.Spec.InstrumentationLibraries == nil {
 				if rule.Spec.PayloadCollection != nil {
