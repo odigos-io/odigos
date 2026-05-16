@@ -108,3 +108,13 @@ lands.
 **Decision.** Every `propose_*` / `apply_*` call logs a single structured line via `log.Printf` (`audit: op=... ns=... result=...`). Stdout flows into the pod's logs, which odigos itself can scrape later.
 
 **Consequences.** Real auditability lands when OTLP audit is wired up (likely Phase 7 or 8 alongside batch-plan approval). Until then, ops team has logs, not traces. Tracking debt explicitly here so it isn't forgotten.
+
+---
+
+## ADR-009 - Collector metrics scraped via direct in-cluster HTTP, not pods/exec
+
+**Context.** PLAN.md calls for `pods/exec` to `wget -qO- localhost:8888/metrics` inside each collector pod for `get_collector_metrics`. That requires the agent's RBAC to include `pods/exec` `create` plus SPDY wiring (`k8s.io/client-go/tools/remotecommand`).
+
+**Decision.** Scrape collector `/metrics` directly via an HTTP GET to `http://<podIP>:8888/metrics` from the MCP container, with a 5-second timeout. The MCP pod sits in the same cluster network as the collectors, so PodIP is reachable.
+
+**Consequences.** No `pods/exec` RBAC verb needed. No SPDY code. Smaller blast radius. If the collector binds the metrics endpoint to localhost-only (it doesn't, by default in odigos's rendered config) the scrape would fail and we'd revisit. Phase 6 kind validation will confirm reachability end-to-end. Same direction applies to `probe_destination_endpoint` in Phase 1c (direct dial, not exec into a debug pod).

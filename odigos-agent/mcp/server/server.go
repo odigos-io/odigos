@@ -34,6 +34,7 @@ func New() (*mcpserver.StreamableHTTPServer, error) {
 	} else {
 		approvalCache := tools.NewApprovalCache(0)
 		tools.RegisterSourceTools(mcpServer, clients, approvalCache)
+		tools.RegisterCollectorTools(mcpServer, clients)
 	}
 
 	httpServer := mcpserver.NewStreamableHTTPServer(
