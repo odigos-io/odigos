@@ -38,6 +38,11 @@ func New() (*mcpserver.StreamableHTTPServer, error) {
 		tools.RegisterDestinationTools(mcpServer, clients)
 	}
 
+	// Citation tool runs without kube creds - it only talks to
+	// raw.githubusercontent.com. Register it unconditionally so the agent
+	// can still cite source even if kube clients are unavailable.
+	tools.RegisterCitationTools(mcpServer)
+
 	httpServer := mcpserver.NewStreamableHTTPServer(
 		mcpServer,
 		mcpserver.WithEndpointPath("/mcp"),

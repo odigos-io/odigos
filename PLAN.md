@@ -6,11 +6,11 @@ Canonical plan file: [.cursor/plans/odigos-ai-agent-scaffold_aa1c2042.plan.md](.
 
 ## Phase checklist
 
-- [ ] **Phase 0** - Scaffold `odigos-agent/` (mcp/ + graph-mcp/ + agent/), move `graphify-out/` under `graph-mcp/`, three-container docker compose smoke test
-- [ ] **Phase 1a** - MCP tools for source/instrumentation diagnosis + the single v1 mutation `propose_create_source` / `apply_create_source` (just creates a `Source` CR; richer source-side mutations land in Phase 7)
-- [ ] **Phase 1b** - MCP tools for collector diagnosis
-- [ ] **Phase 1c** - MCP tools for destination diagnosis
-- [ ] **Phase 1d** - graph-mcp tools over bundled `graphify-out/` + minimal `gh_read_file` for citations
+- [x] **Phase 0** - Scaffold `odigos-agent/` (mcp/ + graph-mcp/ + agent/), move `graphify-out/` under `graph-mcp/`, three-container docker compose smoke test
+- [x] **Phase 1a** - MCP tools for source/instrumentation diagnosis + the single v1 mutation `propose_create_source` / `apply_create_source` (just creates a `Source` CR; richer source-side mutations land in Phase 7)
+- [x] **Phase 1b** - MCP tools for collector diagnosis
+- [x] **Phase 1c** - MCP tools for destination diagnosis
+- [x] **Phase 1d** - graph-mcp tools over bundled `graphify-out/` + minimal `gh_read_file` for citations
 - [ ] **Phase 2** - LangGraph diagnostic workflow with three subgraphs and structured findings
 - [ ] **Phase 3** - Agent HTTP API with SSE streaming + approval endpoint
 - [ ] **Phase 4** - Containerize, RBAC, k8s manifests / Helm subchart, deploy to `odigos-system`
@@ -447,6 +447,17 @@ Exit criteria: clicking "Fix with AI" on a workload missing its `Source` CR stre
 ---
 
 ## Phase 6 - End-to-end validation and prompt tuning (single chat)
+
+> **Deferred from Phase 1**: Each subphase commit only runs build + unit tests,
+> not a kind-cluster smoke test. Phase 6 is where every Phase 1 tool gets
+> exercised against a real cluster: `kubectl apply` the dev manifests (or
+> install the Helm subchart once Phase 4 lands), `kubectl exec` into the MCP
+> pod, `curl` the `/mcp` endpoint, and assert each tool returns plausible
+> structured JSON against a real workload, CollectorsGroup, Destination, and
+> the bundled graph. Then exercise `propose_create_source` ->
+> `apply_create_source` end-to-end on a deliberately uninstrumented workload.
+> This is the network-path validation that Phase 1's pure-build checks
+> intentionally skip.
 
 - Use the kind setup from the workspace rule. Install demo workloads.
 - Reproduce each failure mode:
