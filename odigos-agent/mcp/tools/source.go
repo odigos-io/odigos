@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -15,8 +14,6 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,10 +21,12 @@ import (
 )
 
 const (
-	maxLogTailLines      = 2000
-	defaultLogTailLines  = 200
-	maxWorkloadPodsList  = 50
-	maxContainerEnvItems = 100
+	maxLogTailLines             = 2000
+	defaultLogTailLines         = 200
+	maxWorkloadPodsList         = 50
+	maxContainerEnvItems        = 100
+	maxInstrumentationInstances = 200
+	maxInstrumentationRules     = 200
 )
 
 // RegisterSourceTools wires the source/instrumentation MCP tools.
@@ -203,10 +202,18 @@ func (m *sourceManager) listInstrumentationInstances(ctx context.Context, reques
 	if err != nil {
 		return ToolError("list InstrumentationInstances in %s: %v", namespace, err)
 	}
+	items := list.Items
+	truncated := false
+	if len(items) > maxInstrumentationInstances {
+		items = items[:maxInstrumentationInstances]
+		truncated = true
+	}
 	return WriteJSON(map[string]any{
 		"runtime_object_name": runtimeObject,
 		"label_selector":      selector,
-		"items":               list.Items,
+		"items":               items,
+		"truncated":           truncated,
+		"total":               len(list.Items),
 	})
 }
 
@@ -351,7 +358,7 @@ func (m *sourceManager) getOdigletLogsForNode(ctx context.Context, request mcp.C
 		return ToolError("node required: %v", err)
 	}
 	tail := ClampInt(request.GetInt("tail", defaultLogTailLines), 1, maxLogTailLines)
-	sinceSeconds := request.GetInt("since_seconds", 0)
+	sinceSeconds := ClampInt(request.GetInt("since_seconds", 0), 0, 7*24*3600)
 
 	namespace := OdigosNamespace()
 	pods, err := m.clients.Core.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
@@ -401,9 +408,17 @@ func (m *sourceManager) listInstrumentationRules(ctx context.Context, _ mcp.Call
 	if err != nil {
 		return ToolError("list InstrumentationRules: %v", err)
 	}
+	items := list.Items
+	truncated := false
+	if len(items) > maxInstrumentationRules {
+		items = items[:maxInstrumentationRules]
+		truncated = true
+	}
 	return WriteJSON(map[string]any{
-		"items": list.Items,
-		"count": len(list.Items),
+		"items":     items,
+		"count":     len(items),
+		"total":     len(list.Items),
+		"truncated": truncated,
 	})
 }
 
@@ -425,11 +440,23 @@ func (m *sourceManager) proposeCreateSource(ctx context.Context, request mcp.Cal
 		return ToolError("unsupported workload kind: %s", kind)
 	}
 
-	if _, _, _, err := m.fetchPodTemplate(ctx, namespace, kind, name); err != nil {
-		if apierrors.IsNotFound(err) {
-			return ToolError("workload %s %s/%s not found - refusing to create Source for a missing workload", kind, namespace, name)
+	// Namespace-scope Sources don't reference a workload pod template - validate
+	// the namespace exists instead. Pod-bound kinds get their pod template fetched
+	// to catch typos and missing workloads before we cache an approval entry.
+	if k8sconsts.WorkloadKind(kind) == k8sconsts.WorkloadKindNamespace {
+		if _, nsErr := m.clients.Core.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{}); nsErr != nil {
+			if apierrors.IsNotFound(nsErr) {
+				return ToolError("namespace %s not found - refusing to create Source for a missing namespace", name)
+			}
+			return ToolError("validate namespace %s: %v", name, nsErr)
 		}
-		return ToolError("validate workload %s %s/%s: %v", kind, namespace, name, err)
+	} else {
+		if _, _, _, err := m.fetchPodTemplate(ctx, namespace, kind, name); err != nil {
+			if apierrors.IsNotFound(err) {
+				return ToolError("workload %s %s/%s not found - refusing to create Source for a missing workload", kind, namespace, name)
+			}
+			return ToolError("validate workload %s %s/%s: %v", kind, namespace, name, err)
+		}
 	}
 
 	existing, err := m.findWorkloadSource(ctx, namespace, kind, name)
@@ -678,17 +705,17 @@ func summarizeContainers(containers []corev1.Container) []map[string]any {
 	for _, container := range containers {
 		envEntries, more := describeEnv(container.Env)
 		result = append(result, map[string]any{
-			"name":           container.Name,
-			"image":          container.Image,
-			"command":        container.Command,
-			"args":           container.Args,
-			"env":            envEntries,
-			"more_env":       more,
-			"env_from":       container.EnvFrom,
-			"resources":      container.Resources,
-			"volume_mounts":  container.VolumeMounts,
-			"ports":          container.Ports,
-			"working_dir":    container.WorkingDir,
+			"name":          container.Name,
+			"image":         container.Image,
+			"command":       container.Command,
+			"args":          container.Args,
+			"env":           envEntries,
+			"more_env":      more,
+			"env_from":      container.EnvFrom,
+			"resources":     container.Resources,
+			"volume_mounts": container.VolumeMounts,
+			"ports":         container.Ports,
+			"working_dir":   container.WorkingDir,
 		})
 	}
 	return result
@@ -817,10 +844,3 @@ func prefixLines(text, prefix string) string {
 }
 
 func ptrInt64(value int64) *int64 { return &value }
-
-// compile-time use checks so unused imports surface early.
-var (
-	_ = appsv1.Deployment{}
-	_ = batchv1.Job{}
-	_ = errors.New
-)

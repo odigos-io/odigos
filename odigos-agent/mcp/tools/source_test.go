@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
+	odigosfake "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/fake"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	odigosfake "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/fake"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 )
 
@@ -192,6 +192,65 @@ func TestFindWorkloadSourceMatchByWorkloadSpec(t *testing.T) {
 	}
 	if got == nil || got.Name != "src-abc" {
 		t.Fatalf("expected to find src-abc, got %+v", got)
+	}
+}
+
+func TestFindWorkloadSourceMatchesRegexPattern(t *testing.T) {
+	source := &odigosv1.Source{
+		ObjectMeta: metav1.ObjectMeta{Name: "src-regex", Namespace: "default"},
+		Spec: odigosv1.SourceSpec{
+			Workload: k8sconsts.PodWorkload{
+				Namespace: "default",
+				Name:      "pay.*",
+				Kind:      k8sconsts.WorkloadKindDeployment,
+			},
+			MatchWorkloadNameAsRegex: true,
+		},
+	}
+	manager := &sourceManager{clients: &Clients{
+		Core:   kubefake.NewSimpleClientset(),
+		Odigos: odigosfake.NewSimpleClientset(source),
+	}}
+
+	got, err := manager.findWorkloadSource(context.Background(), "default", "Deployment", "payments")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got == nil || got.Name != "src-regex" {
+		t.Fatalf("expected to match pay.* against payments, got %+v", got)
+	}
+
+	got, err = manager.findWorkloadSource(context.Background(), "default", "Deployment", "checkout")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != nil {
+		t.Errorf("pay.* must not match checkout, got %+v", got)
+	}
+}
+
+func TestFindWorkloadSourceSkipsInvalidRegex(t *testing.T) {
+	source := &odigosv1.Source{
+		ObjectMeta: metav1.ObjectMeta{Name: "src-bad", Namespace: "default"},
+		Spec: odigosv1.SourceSpec{
+			Workload: k8sconsts.PodWorkload{
+				Namespace: "default",
+				Name:      "[unclosed",
+				Kind:      k8sconsts.WorkloadKindDeployment,
+			},
+			MatchWorkloadNameAsRegex: true,
+		},
+	}
+	manager := &sourceManager{clients: &Clients{
+		Core:   kubefake.NewSimpleClientset(),
+		Odigos: odigosfake.NewSimpleClientset(source),
+	}}
+	got, err := manager.findWorkloadSource(context.Background(), "default", "Deployment", "anything")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != nil {
+		t.Errorf("invalid regex must not match, got %+v", got)
 	}
 }
 

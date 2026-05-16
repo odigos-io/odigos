@@ -78,14 +78,14 @@ func OdigosNamespace() string {
 // rebuilds the runtime object from these on apply rather than trusting cached
 // bytes.
 type PendingMutation struct {
-	Operation      string
-	Namespace      string
-	WorkloadKind   string
-	WorkloadName   string
-	YAML           string
-	Diff           string
-	RollbackHint   string
-	CreatedAt      time.Time
+	Operation    string
+	Namespace    string
+	WorkloadKind string
+	WorkloadName string
+	YAML         string
+	Diff         string
+	RollbackHint string
+	CreatedAt    time.Time
 }
 
 // ApprovalCache stores proposed mutations keyed by an opaque request_id. Pure
