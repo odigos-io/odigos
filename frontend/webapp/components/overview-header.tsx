@@ -3,7 +3,7 @@ import { TerminalIcon } from '@odigos/ui-kit/icons';
 import { Tooltip } from '@odigos/ui-kit/components';
 import { FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { OtherStatusType } from '@odigos/ui-kit/types';
-import { StatusKeys, useStatusStore } from '../../store';
+import { StatusKeys, useStatusStore } from '../store';
 import { SystemDrawer } from '@odigos/ui-kit/containers/v2';
 import { OdigosLogoTextByTier } from '@odigos/ui-kit/snippets/v2';
 import { useConfig, useDescribe, useDiagnose, useTokenCRUD } from '@/hooks';
