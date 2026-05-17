@@ -6,6 +6,7 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/instrumentationrules"
+	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -398,7 +399,25 @@ func mergeDbPayloadCollectionRules(rule1 *instrumentationrules.DbQueryPayloadCol
 		mergedRules.DropPartialPayloads = boolPtr(*rule1.DropPartialPayloads || *rule2.DropPartialPayloads)
 	}
 
+	mergedRules.SanitizationPolicy = mergeDbQuerySanitizationPolicy(rule1.SanitizationPolicy, rule2.SanitizationPolicy)
+
 	return &mergedRules
+}
+
+func mergeDbQuerySanitizationPolicy(rule1 *consts.DbQuerySanitizationPolicy, rule2 *consts.DbQuerySanitizationPolicy) *consts.DbQuerySanitizationPolicy {
+	switch {
+	case rule1 == nil && rule2 == nil:
+		return nil
+	case rule1 == nil:
+		return rule2
+	case rule2 == nil:
+		return rule1
+	default:
+		if consts.DbQuerySanitizationPolicyPriority(*rule1) >= consts.DbQuerySanitizationPolicyPriority(*rule2) {
+			return rule1
+		}
+		return rule2
+	}
 }
 
 func mergeMessagingPayloadCollectionRules(rule1 *instrumentationrules.MessagingPayloadCollection, rule2 *instrumentationrules.MessagingPayloadCollection) *instrumentationrules.MessagingPayloadCollection {
