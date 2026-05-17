@@ -16,12 +16,12 @@ const (
 
 func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string) (config.GenericMap, []string) {
 
-	if isEbpfLogCaptureEnabled(sources) {
-		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here
-		return config.GenericMap{}, []string{odigosEbpfReceiverName}
+	if sources == nil {
+		return config.GenericMap{}, nil
 	}
 
 	includes := make([]string, 0)
+	ebpfLogCaptureEnabled := false
 	for _, element := range sources.Items {
 		// Paths for log files: /var/log/pods/<namespace>_<pod name>_<pod ID>/<container name>/<auto-incremented file number>.log
 		// Pod specifiers
@@ -38,12 +38,15 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 			continue
 		}
 		owner := element.OwnerReferences[0]
-		name := owner.Name
-		includes = append(includes, fmt.Sprintf("/var/log/pods/%s_%s-*_*/*/*.log", element.Namespace, name))
+		filelogIncludes, sourceUsesEbpf := filelogIncludesForSource(&element, owner.Name)
+		ebpfLogCaptureEnabled = ebpfLogCaptureEnabled || sourceUsesEbpf
+		includes = append(includes, filelogIncludes...)
 	}
 
-	return config.GenericMap{
-		filelogReceiverName: config.GenericMap{
+	receivers := config.GenericMap{}
+	pipelineReceivers := []string{}
+	if len(includes) > 0 {
+		receivers[filelogReceiverName] = config.GenericMap{
 			"include": includes,
 			"exclude": []string{"/var/log/pods/kube-system_*/**/*", "/var/log/pods/" + odigosNamespace + "_*/**/*"},
 			// 5s (vs upstream 200ms default) avoids a readdir storm from stanza's per-include glob loop on busy nodes.
@@ -68,35 +71,69 @@ func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigLis
 				// downstream pressure.
 				"enabled": true,
 			},
-		},
-	}, []string{filelogReceiverName}
+		}
+		pipelineReceivers = append(pipelineReceivers, filelogReceiverName)
+	}
+	if ebpfLogCaptureEnabled {
+		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here.
+		pipelineReceivers = append(pipelineReceivers, odigosEbpfReceiverName)
+	}
+
+	return receivers, pipelineReceivers
 }
 
-func isEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
-	if sources == nil {
-		return false
+func filelogIncludesForSource(ic *odigosv1.InstrumentationConfig, ownerName string) ([]string, bool) {
+	sourceUsesEbpf := sourceEbpfLogCaptureEnabled(ic)
+	if !sourceUsesEbpf {
+		return []string{workloadFilelogInclude(ic.Namespace, ownerName, "*")}, false
 	}
-	for _, ic := range sources.Items {
-		// check container config (new path)
-		for _, container := range ic.Spec.Containers {
-			if container.Logs != nil &&
-				container.Logs.EbpfLogCapture != nil &&
-				container.Logs.EbpfLogCapture.Enabled != nil &&
-				*container.Logs.EbpfLogCapture.Enabled {
-				return true
-			}
-		}
 
-		// TODO: remove once fully migrated to container config
-		for _, sdkConfig := range ic.Spec.SdkConfigs {
-			if sdkConfig.EbpfLogCapture != nil &&
-				sdkConfig.EbpfLogCapture.Enabled != nil &&
-				*sdkConfig.EbpfLogCapture.Enabled {
-				return true
-			}
+	if len(ic.Spec.Containers) == 0 || sdkEbpfLogCaptureEnabled(ic) {
+		return nil, true
+	}
+
+	includes := make([]string, 0)
+	for _, container := range ic.Spec.Containers {
+		if !containerEbpfLogCaptureEnabled(container) {
+			includes = append(includes, workloadFilelogInclude(ic.Namespace, ownerName, container.ContainerName))
+		}
+	}
+
+	return includes, true
+}
+
+func workloadFilelogInclude(namespace string, ownerName string, containerName string) string {
+	return fmt.Sprintf("/var/log/pods/%s_%s-*_*/%s/*.log", namespace, ownerName, containerName)
+}
+
+func sourceEbpfLogCaptureEnabled(ic *odigosv1.InstrumentationConfig) bool {
+	// check container config (new path)
+	for _, container := range ic.Spec.Containers {
+		if containerEbpfLogCaptureEnabled(container) {
+			return true
+		}
+	}
+
+	return sdkEbpfLogCaptureEnabled(ic)
+}
+
+func sdkEbpfLogCaptureEnabled(ic *odigosv1.InstrumentationConfig) bool {
+	// TODO: remove once fully migrated to container config
+	for _, sdkConfig := range ic.Spec.SdkConfigs {
+		if sdkConfig.EbpfLogCapture != nil &&
+			sdkConfig.EbpfLogCapture.Enabled != nil &&
+			*sdkConfig.EbpfLogCapture.Enabled {
+			return true
 		}
 	}
 	return false
+}
+
+func containerEbpfLogCaptureEnabled(container odigosv1.ContainerAgentConfig) bool {
+	return container.Logs != nil &&
+		container.Logs.EbpfLogCapture != nil &&
+		container.Logs.EbpfLogCapture.Enabled != nil &&
+		*container.Logs.EbpfLogCapture.Enabled
 }
 
 type LogsConfigOptions struct {
