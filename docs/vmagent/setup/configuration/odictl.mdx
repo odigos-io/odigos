@@ -340,21 +340,18 @@ Java instrumentation subsection targets Java-specific behavior.
 
 <Accordion title="Profiling" icon="gauge-high" defaultOpen="false">
 
-Configures **application** continuous profiling on **odigos-otelcol** (eBPF OTLP Profiles). This is separate from VM Agent **pprof** (process debugging).
-
-**Collector** subsection:
+Enables **continuous CPU profiling** (eBPF, OTLP Profiles) on **odigos-otelcol**. Separate from VM Agent **pprof** (process debugging).
 
 | Field | Description |
 |-------|-------------|
-| **profiling.collector.enabled** | Turn on the `profiling` receiver and `profiles` export pipeline. |
-| **debug_exporter** | Echo profile payloads to collector logs (optional). |
-| **require_container_id_filter** | Drop profiles without `container.id` (default on; set `false` for systemd-only hosts). |
-| **resource_detection** | Add host/env attributes via the resourcedetection processor. |
-| **profiler_receiver** | Optional tuning keys merged into `receivers.profiling`. |
+| **profiling.enabled** | Turn on the `profiling` receiver and `profiles` export pipeline. Default `false`. |
 
-You can also set **`profiling.enabled: true`** in YAML; on load it is normalized to `profiling.collector.enabled`.
+```yaml
+profiling:
+  enabled: true
+```
 
-Toggling profiling reloads collector config and syncs the PID registry. **Enabling profiling after the vm-agent process started with it off** still requires a **vm-agent restart** for `GET_PROF_ATTR` on `/var/exchange/exchange.sock` (collector reload alone is not enough for `service.name` labels).
+Toggling profiling reloads collector config and syncs the PID registry. **Enabling profiling after the vm-agent process started with it off** requires a **vm-agent restart** for `GET_PROF_ATTR` on `/var/exchange/exchange.sock`.
 
 See [Continuous profiling getting started](../../instrumentations/profiling/getting-started).
 
