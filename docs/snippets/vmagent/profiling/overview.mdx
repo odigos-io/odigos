@@ -10,7 +10,7 @@ Unlike traces, which show *that* a request was slow, profiles show *where* CPU t
 
 The VM Agent does **not** include an in-product profiling UI (unlike Odigos on Kubernetes). On a VM host, profiling works like this:
 
-1. You enable the **collector profiling pipeline** in agent config (`profiling.collector.enabled`).
+1. You enable the **collector profiling pipeline** in agent config (`profiling.collector.enabled`, or `profiling.enabled` which migrates to the same switch on load).
 2. **odigos-otelcol** runs the OpenTelemetry [eBPF profiler](https://github.com/open-telemetry/opentelemetry-ebpf-profiler) receiver on the host.
 3. The VM Agent maps each **source** (systemd unit or process) to `service.name` and streams PID registrations to the collector over `/var/exchange/exchange.sock`.
 4. Profiles are exported as **OTLP Profiles** to a destination you configure—typically **Grafana Pyroscope**.
@@ -27,5 +27,15 @@ Traces, metrics, and logs pipelines are unchanged. Profiling is an additional `p
 <Info>
   VM Agent **pprof** (`pprof.enabled`) is only for debugging the vm-agent process itself. It is not application continuous profiling.
 </Info>
+
+## Config changes at runtime
+
+| Action | Collector | PID → `service.name` stream (`GET_PROF_ATTR`) |
+|--------|-----------|-----------------------------------------------|
+| **Disable** profiling | Config reload (systemd reload / SIGHUP when supported) — not a full process restart | Registry cleared immediately; collector drops stale PIDs after reload |
+| **Enable** profiling (agent started with it **off**) | Reload adds the `profiles` pipeline and starts the enrichment processor | Requires **vm-agent restart** so the unix socket registers `GET_PROF_ATTR` |
+| **Enable** profiling (agent started with it **on**) | Reload only | Stream already active; sources/workloads update live |
+
+The collector enrichment client reconnects automatically when the profiles processor starts after reload. A full **odigos-otelcol** restart is only needed if config reload is unavailable on your host.
 
 <GettingHelp />

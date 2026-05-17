@@ -352,6 +352,10 @@ Configures **application** continuous profiling on **odigos-otelcol** (eBPF OTLP
 | **resource_detection** | Add host/env attributes via the resourcedetection processor. |
 | **profiler_receiver** | Optional tuning keys merged into `receivers.profiling`. |
 
+You can also set **`profiling.enabled: true`** in YAML; on load it is normalized to `profiling.collector.enabled`.
+
+Toggling profiling reloads collector config and syncs the PID registry. **Enabling profiling after the vm-agent process started with it off** still requires a **vm-agent restart** for `GET_PROF_ATTR` on `/var/exchange/exchange.sock` (collector reload alone is not enough for `service.name` labels).
+
 See [Continuous profiling getting started](../../instrumentations/profiling/getting-started).
 
 </Accordion>

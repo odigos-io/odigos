@@ -23,7 +23,14 @@ Turn on the eBPF profiles pipeline on **odigos-otelcol**. You can use **odictl**
     </Steps>
   </Tab>
   <Tab title="YAML">
-    Add or merge the following into `/etc/odigos-vmagent/config.yaml`:
+    Add or merge either form into `/etc/odigos-vmagent/config.yaml` (both enable the same pipeline):
+
+    ```yaml
+    profiling:
+      enabled: true
+    ```
+
+    or:
 
     ```yaml
     profiling:
@@ -31,11 +38,13 @@ Turn on the eBPF profiles pipeline on **odigos-otelcol**. You can use **odictl**
         enabled: true
     ```
 
-    Restart the agent so config is applied and the collector config is regenerated:
+    **First-time enable** (or enable after the agent started with profiling off): restart vm-agent so the profile-attribute socket is registered:
 
     ```shell
     sudo systemctl restart odigos-vmagent
     ```
+
+    If profiling was already enabled when the agent started, saving config is enough—the agent reloads **odigos-otelcol** without a full collector restart.
 
     Optional: disable strict container filtering on bare-metal/systemd hosts if profiles are dropped:
 
