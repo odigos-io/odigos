@@ -1,15 +1,12 @@
 'use client';
 
 import React, { type PropsWithChildren } from 'react';
-import { useDarkMode } from '@odigos/ui-kit/store';
 import dynamic from 'next/dynamic';
 
 const ApolloProvider = dynamic(() => import('@/lib/apollo-provider'), { ssr: false });
 const ThemeProvider = dynamic(() => import('@/lib/theme-provider'), { ssr: false });
 
 function RootLayout({ children }: PropsWithChildren) {
-  const { darkMode } = useDarkMode();
-
   return (
     <html lang='en'>
       <head>
@@ -25,7 +22,7 @@ function RootLayout({ children }: PropsWithChildren) {
           width: '100vw',
           height: '100vh',
           margin: 0,
-          backgroundColor: darkMode ? '#111111' : '#EEEEEE',
+          backgroundColor: '#151618',
         }}
       >
         <ThemeProvider>

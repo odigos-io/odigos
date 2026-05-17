@@ -8,9 +8,5 @@ import { HEADER_HEIGHT, MENU_BAR_HEIGHT } from '@/utils';
 export default function Page() {
   const { serviceMap, refetch } = useServiceMap();
 
-  return (
-    <>
-      <ServiceMap heightToRemove={HEADER_HEIGHT + MENU_BAR_HEIGHT} serviceMap={serviceMap} onRefresh={() => refetch()} />
-    </>
-  );
+  return <ServiceMap heightToRemove={HEADER_HEIGHT + MENU_BAR_HEIGHT} serviceMap={serviceMap} onRefresh={() => refetch()} />;
 }
