@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
 )
 
@@ -153,6 +154,76 @@ func TestEmptyResourceSpansRemoved(t *testing.T) {
 	svcName, ok := result.ResourceSpans().At(0).Resource().Attributes().Get("service.name")
 	require.True(t, ok)
 	assert.Equal(t, "svc2", svcName.Str())
+}
+
+func TestMultipleEmptyScopeSpansDoNotPanic(t *testing.T) {
+	proc := &traceFilterProcessor{
+		logger:     zap.NewNop(),
+		evaluators: []SpanFilterEvaluator{&unsampledBitEvaluator{}},
+	}
+
+	td := ptrace.NewTraces()
+	rs := td.ResourceSpans().AppendEmpty()
+	rs.ScopeSpans().AppendEmpty()
+	span := rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+	span.SetFlags(0)
+
+	var result ptrace.Traces
+	var err error
+	require.NotPanics(t, func() {
+		result, err = proc.processTraces(context.Background(), td)
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 0, result.ResourceSpans().Len())
+}
+
+func TestMultipleEmptyResourceSpansDoNotPanic(t *testing.T) {
+	proc := &traceFilterProcessor{
+		logger:     zap.NewNop(),
+		evaluators: []SpanFilterEvaluator{&unsampledBitEvaluator{}},
+	}
+
+	td := ptrace.NewTraces()
+	td.ResourceSpans().AppendEmpty()
+	rs := td.ResourceSpans().AppendEmpty()
+	span := rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+	span.SetFlags(0)
+
+	var result ptrace.Traces
+	var err error
+	require.NotPanics(t, func() {
+		result, err = proc.processTraces(context.Background(), td)
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 0, result.ResourceSpans().Len())
+}
+
+func TestRubySpansWithoutSampledFlagAreKept(t *testing.T) {
+	proc := &traceFilterProcessor{
+		logger:     zap.NewNop(),
+		evaluators: []SpanFilterEvaluator{&unsampledBitEvaluator{}},
+	}
+
+	td := ptrace.NewTraces()
+	rubyResource := td.ResourceSpans().AppendEmpty()
+	rubyResource.Resource().Attributes().PutStr(string(semconv.TelemetrySDKLanguageKey), "ruby")
+	rubySpan := rubyResource.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+	rubySpan.SetName("ruby")
+	rubySpan.SetFlags(0)
+
+	javaResource := td.ResourceSpans().AppendEmpty()
+	javaResource.Resource().Attributes().PutStr(string(semconv.TelemetrySDKLanguageKey), "java")
+	javaSpan := javaResource.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+	javaSpan.SetName("java")
+	javaSpan.SetFlags(0)
+
+	result, err := proc.processTraces(context.Background(), td)
+	require.NoError(t, err)
+	require.Equal(t, 1, result.ResourceSpans().Len())
+	require.Equal(t, 1, result.ResourceSpans().At(0).ScopeSpans().Len())
+	spans := result.ResourceSpans().At(0).ScopeSpans().At(0).Spans()
+	require.Equal(t, 1, spans.Len())
+	assert.Equal(t, "ruby", spans.At(0).Name())
 }
 
 func createTestTraces(flags uint32) ptrace.Traces {
