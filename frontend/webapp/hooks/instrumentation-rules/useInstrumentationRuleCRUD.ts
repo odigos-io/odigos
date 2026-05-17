@@ -99,7 +99,17 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     } else if (!isEnterprise) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.ENTERPRISE_TIER, FORM_ALERTS.ENTERPRISE_ONLY(DISPLAY_TITLES.INSTRUMENTATION_RULE), undefined, true);
     } else {
-      mutateUpdate({ variables: { ruleId, instrumentationRule } });
+      const existingRule = instrumentationRules.find((rule) => rule.ruleId === ruleId) as (InstrumentationRule & { sourcesScopes?: unknown; instrumentationLibraries?: unknown }) | undefined;
+      const ruleWithPreservedScope = { ...instrumentationRule } as InstrumentationRuleFormData & { sourcesScopes?: unknown; instrumentationLibraries?: unknown };
+
+      if (ruleWithPreservedScope.sourcesScopes === undefined && existingRule?.sourcesScopes !== undefined) {
+        ruleWithPreservedScope.sourcesScopes = existingRule.sourcesScopes;
+      }
+      if (ruleWithPreservedScope.instrumentationLibraries === undefined && existingRule?.instrumentationLibraries !== undefined) {
+        ruleWithPreservedScope.instrumentationLibraries = existingRule.instrumentationLibraries;
+      }
+
+      mutateUpdate({ variables: { ruleId, instrumentationRule: ruleWithPreservedScope } });
     }
   };
 
