@@ -10,5 +10,5 @@ type HeadSamplingFallbackFraction struct {
 	// +kubebuilder:default:=1
 	// +kubebuilder:validation:Minimum:=0
 	// +kubebuilder:validation:Maximum:=1
-	FractionToKeep float64 `json:"fractionToKeep,omitempty"`
+	FractionToKeep float64 `json:"fractionToKeep,omitempty" yaml:"fractionToKeep,omitempty"`
 }
