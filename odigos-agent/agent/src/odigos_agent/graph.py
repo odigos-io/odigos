@@ -18,10 +18,13 @@ from typing import Any
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import ToolMessage
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import create_react_agent
+from langgraph.types import interrupt
 
 from .prompts import (
     COLLECTOR_SUBGRAPH_PROMPT,
@@ -242,6 +245,37 @@ def _override_remediation_from_state(
     )
 
 
+def _coerce_decision(payload: Any) -> str:
+    """Normalize a resume payload from the API into a decision string.
+
+    Accepts a bare string ("approve"), a dict ({"decision": "approve", ...}),
+    or anything else (treated as timed_out). Keeps the resume contract loose
+    so the API layer doesn't have to match an exact shape.
+    """
+    if isinstance(payload, str):
+        value = payload
+    elif isinstance(payload, dict):
+        value = str(payload.get("decision", ""))
+    else:
+        value = ""
+    if value in ("approve", "deny", "timed_out"):
+        return value
+    return "timed_out"
+
+
+def _stringify_tool_result(result: Any) -> str:
+    """Render a langchain tool result as a short string for `result` field."""
+    if isinstance(result, str):
+        return result
+    if isinstance(result, ToolMessage):
+        text = _tool_message_text(result)
+        return text or ""
+    try:
+        return json.dumps(result, default=str)
+    except (TypeError, ValueError):
+        return str(result)
+
+
 def _format_findings_for_synthesis(state: AgentState) -> str:
     """Render the per-domain findings as a compact prompt section."""
     lines: list[str] = []
@@ -273,10 +307,21 @@ def build_graph(
     tools: list[BaseTool],
     model: str = DEFAULT_MODEL,
     max_tokens: int = 4096,
+    checkpointer: BaseCheckpointSaver | None = None,
 ) -> CompiledStateGraph:
-    """Compile the diagnostic StateGraph against the merged MCP tool catalog."""
+    """Compile the diagnostic StateGraph against the merged MCP tool catalog.
+
+    `checkpointer` is required for the API mode where `apply_remediation`
+    pauses on `interrupt(...)`. CLI mode passes None and relies on the
+    `enable_approval_interrupt` config flag being False so the apply node
+    no-ops instead.
+    """
     llm = ChatAnthropic(model=model, max_tokens=max_tokens)
     partitioned = partition_tools(tools)
+    apply_tool = next(
+        (tool for tool in tools if tool.name == "apply_create_source"),
+        None,
+    )
 
     triage_agent = create_react_agent(
         llm,
@@ -388,6 +433,110 @@ def build_graph(
             "Diagnose destination configuration issues.",
         )
 
+    async def apply_remediation_node(
+        state: AgentState, config: RunnableConfig
+    ) -> dict:
+        """Gate between source-family and synthesize.
+
+        Pass-through when there's nothing to apply. Otherwise either:
+        - In API mode (config.enable_approval_interrupt=True): pause on
+          interrupt(...) until the API resumes us with a decision, then call
+          apply_create_source via MCP if approved.
+        - In CLI mode (default): leave status as pending_approval and let
+          synthesize emit the report. The user can run apply manually later.
+        """
+        proposed = state.get("proposed_remediation")
+        if proposed is None:
+            return {}
+
+        configurable = (config or {}).get("configurable", {}) or {}
+        enable_interrupt = bool(configurable.get("enable_approval_interrupt", False))
+        if not enable_interrupt:
+            return {
+                "step_log": [
+                    make_step(
+                        "apply_remediation",
+                        "skipping apply (interrupt disabled)",
+                        {"request_id": proposed.request_id},
+                    )
+                ]
+            }
+
+        decision_payload = interrupt(
+            {
+                "request_id": proposed.request_id,
+                "op": proposed.op,
+                "yaml": proposed.yaml,
+                "diff": proposed.diff,
+                "rollback_command": proposed.rollback_command,
+            }
+        )
+        decision = _coerce_decision(decision_payload)
+        log_entries = [
+            make_step(
+                "apply_remediation",
+                f"decision={decision}",
+                {"request_id": proposed.request_id},
+            )
+        ]
+
+        if decision == "approve":
+            if apply_tool is None:
+                updated = proposed.model_copy(
+                    update={
+                        "status": "failed",
+                        "result": "apply_create_source tool not available",
+                    }
+                )
+                log_entries.append(
+                    make_step(
+                        "apply_remediation",
+                        "failed: apply tool missing",
+                        {"request_id": proposed.request_id},
+                    )
+                )
+                return {"proposed_remediation": updated, "step_log": log_entries}
+            try:
+                tool_result = await apply_tool.ainvoke(
+                    {"request_id": proposed.request_id}
+                )
+                updated = proposed.model_copy(
+                    update={
+                        "status": "approved_applied",
+                        "result": _stringify_tool_result(tool_result),
+                    }
+                )
+                log_entries.append(
+                    make_step(
+                        "apply_remediation",
+                        "applied",
+                        {"request_id": proposed.request_id},
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001 - record the failure verbatim
+                updated = proposed.model_copy(
+                    update={"status": "failed", "result": f"{type(exc).__name__}: {exc}"}
+                )
+                log_entries.append(
+                    make_step(
+                        "apply_remediation",
+                        "apply raised",
+                        {
+                            "request_id": proposed.request_id,
+                            "error": type(exc).__name__,
+                        },
+                    )
+                )
+            return {"proposed_remediation": updated, "step_log": log_entries}
+
+        if decision == "deny":
+            updated = proposed.model_copy(update={"status": "denied"})
+            return {"proposed_remediation": updated, "step_log": log_entries}
+
+        # decision == "timed_out" or anything unexpected
+        updated = proposed.model_copy(update={"status": "timed_out"})
+        return {"proposed_remediation": updated, "step_log": log_entries}
+
     async def synthesize_node(state: AgentState) -> dict:
         findings_text = _format_findings_for_synthesis(state)
         user_message = (
@@ -419,6 +568,7 @@ def build_graph(
     builder.add_node("source", source_node)
     builder.add_node("collector", collector_node)
     builder.add_node("destination", destination_node)
+    builder.add_node("apply_remediation", apply_remediation_node)
     builder.add_node("synthesize", synthesize_node)
 
     builder.add_edge(START, "triage")
@@ -427,11 +577,14 @@ def build_graph(
         route_after_triage,
         ["source", "collector", "destination", "synthesize"],
     )
-    builder.add_edge("source", "synthesize")
+    builder.add_edge("source", "apply_remediation")
+    builder.add_edge("apply_remediation", "synthesize")
     builder.add_edge("collector", "synthesize")
     builder.add_edge("destination", "synthesize")
     builder.add_edge("synthesize", END)
 
+    if checkpointer is not None:
+        return builder.compile(checkpointer=checkpointer)
     return builder.compile()
 
 
