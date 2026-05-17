@@ -40,7 +40,7 @@ export default function Page() {
 
   return (
     <Overview
-      columnsMaxHeight={`calc(100vh - ${224}px)`}
+      columnsMaxHeight='calc(100vh - 224px)'
       metrics={metrics}
       effectiveConfig={effectiveConfig}
       refetchSources={fetchSources}
