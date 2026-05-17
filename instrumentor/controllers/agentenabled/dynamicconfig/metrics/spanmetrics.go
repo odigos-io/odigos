@@ -7,6 +7,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/distros/distro"
 )
@@ -24,7 +25,7 @@ func AgentSpanMetricsEnabled(effectiveConfig *common.OdigosConfiguration) bool {
 		effectiveConfig.MetricsSources.AgentMetrics.SpanMetrics.Enabled
 }
 
-func CalculateAgentSpanMetricsConfig(effectiveConfig *common.OdigosConfiguration, distro *distro.OtelDistro) (*odigosv1.AgentSpanMetricsConfig, *odigosv1.AgentDisabledInfo) {
+func CalculateAgentSpanMetricsConfig(effectiveConfig *common.OdigosConfiguration, distro *distro.OtelDistro) (*agentsignalconfig.AgentSpanMetricsConfig, *odigosv1.AgentDisabledInfo) {
 	// TODO: these defaults are duplication of the value written to the
 	// collector config in autoscaler.
 	// it would be better to consolidate them going forward.
@@ -66,19 +67,19 @@ func CalculateAgentSpanMetricsConfig(effectiveConfig *common.OdigosConfiguration
 			}
 		}
 	}
-	return &odigosv1.AgentSpanMetricsConfig{
+	return &agentsignalconfig.AgentSpanMetricsConfig{
 		IntervalMs:         intervalMs,
 		HistogramBucketsMs: histogramBuckets,
 		Dimensions:         dimensions,
 	}, nil
 }
 
-func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosConfiguration, distro *distro.OtelDistro, containerName string) (*odigosv1.AgentMetricsConfig, *odigosv1.ContainerAgentConfig) {
+func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosConfiguration, distro *distro.OtelDistro, containerName string) (*agentsignalconfig.AgentMetricsConfig, *odigosv1.ContainerAgentConfig) {
 	if !metricsEnabled {
 		return nil, nil
 	}
 
-	metricsConfig := &odigosv1.AgentMetricsConfig{}
+	metricsConfig := &agentsignalconfig.AgentMetricsConfig{}
 
 	distroSupportsAgentSpanMetrics := distro.AgentMetrics != nil &&
 		distro.AgentMetrics.SpanMetrics != nil &&

@@ -37,14 +37,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.ActionSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ActionStatus"):
 		return &odigosv1alpha1.ActionStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AgentLogsConfig"):
-		return &odigosv1alpha1.AgentLogsConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AgentMetricsConfig"):
-		return &odigosv1alpha1.AgentMetricsConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AgentSpanMetricsConfig"):
-		return &odigosv1alpha1.AgentSpanMetricsConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AgentTracesConfig"):
-		return &odigosv1alpha1.AgentTracesConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Attribute"):
 		return &odigosv1alpha1.AttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup"):
@@ -73,16 +65,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.DestinationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("EnvVar"):
 		return &odigosv1alpha1.EnvVarApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("HeadersCollectionConfig"):
-		return &odigosv1alpha1.HeadersCollectionConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingConfig"):
-		return &odigosv1alpha1.HeadSamplingConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("HighlyRelevantOperation"):
 		return &odigosv1alpha1.HighlyRelevantOperationApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("IdGeneratorConfig"):
-		return &odigosv1alpha1.IdGeneratorConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("IdGeneratorTimedWallConfig"):
-		return &odigosv1alpha1.IdGeneratorTimedWallConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfig"):
 		return &odigosv1alpha1.InstrumentationConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfigSpec"):
@@ -141,10 +125,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.SourceSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SourceStatus"):
 		return &odigosv1alpha1.SourceStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("SpanRenamerConfig"):
-		return &odigosv1alpha1.SpanRenamerConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("SpanRenamerScopeRules"):
-		return &odigosv1alpha1.SpanRenamerScopeRulesApplyConfiguration{}
 
 	}
 	return nil

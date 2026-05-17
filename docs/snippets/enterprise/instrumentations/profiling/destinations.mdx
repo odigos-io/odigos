@@ -1,13 +1,60 @@
-<Warning>
-    Exporting profiles to third-party destinations — including Pyroscope — is **coming soon**.
-</Warning>
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
 
 ## Exporting Profiles to a Destination
 
-The Odigos UI gives you fast, in-memory access to profiles for enabled sources. For **long-term retention**, **time-range analysis**, and **cross-service comparison**, you can route profile data to an external backend the same way you route traces or metrics by configuring a destination in Odigos.
+The Odigos UI gives you fast, in-memory access to profiles for enabled Sources — ideal for live investigation while you have a workload under the microscope. For **long-term retention**, **time-range analysis**, and **cross-service comparison**, you can route profile data to an external backend the same way you route traces or metrics, by configuring a Destination in Odigos.
 
-When a profiling-capable destination is configured, the cluster gateway's profiles pipeline exports OTLP Profiles data to the configured Destination alongside the Odigos UI.
+When a profile-capable Destination is configured, the cluster gateway's profiles pipeline exports OTLP Profiles data to that backend alongside the Odigos UI. Both consumers run independently — adding a Destination does not turn off the in-product flame graph, and removing it does not interrupt UI buffering.
+
+## Currently Supported Destinations
+
+<CardGroup cols={2}>
+  <Card
+    title="Pyroscope"
+    icon="fire-flame-curved"
+    href="/enterprise/backends/pyroscope"
+  >
+    Self-hosted Grafana Pyroscope. Receives OTLP profiles over HTTP at `/v1development/profiles`.
+  </Card>
+</CardGroup>
+
+More profile-capable Destinations will be added as the OpenTelemetry Profiles signal matures upstream and additional vendors ship OTLP profiles ingestion.
 
 ## Supported Format
 
-Profile data is emitted as **OTLP Profiles** (the OpenTelemetry profiles signal). Any backend that can ingest OTLP Profiles over gRPC or HTTP can receive data from Odigos.
+Profile data is emitted as **OTLP Profiles** — the OpenTelemetry profiles signal. Any backend that can ingest OTLP Profiles over HTTP can, in principle, receive data from Odigos.
+
+<Note>
+  OTLP Profiles is still an **experimental** OpenTelemetry signal. The wire format and ingestion path (`/v1development/profiles`) may change in future releases. Odigos tracks upstream changes — make sure your Pyroscope (or other) backend is on a recent version that speaks the same revision of the protocol.
+</Note>
+
+## Prerequisites
+
+Before exporting profiles to a Destination:
+
+1. Profiling is enabled cluster-wide (`profiling.enabled=true` Helm value). See [Getting Started](/enterprise/instrumentations/profiling/getting-started).
+2. The workload you want to profile is registered as a [Source](/enterprise/pipeline/sources/introduction).
+3. The Destination CRD is configured with the `PROFILES` signal.
+4. Your chosen backend is reachable from the Odigos gateway and accepts OTLP Profiles.
+
+The Destination can be created through the Odigos UI, CLI, or Kubernetes CRD. Profile export starts once profiling is enabled and the Destination includes the `PROFILES` signal.
+
+## Topology
+
+The export path mirrors the rest of the Odigos pipeline:
+
+```
+eBPF profiler (per node)
+        │  OTLP Profiles
+        ▼
+Data Collector (per node)
+        │  OTLP Profiles
+        ▼
+Gateway profiles pipeline
+        ├──► Odigos UI buffer (in-memory flame graph)
+        └──► Configured Destination (Pyroscope, …)
+```
+
+The UI buffer is sized via the env vars described in [Buffer Tuning](/enterprise/instrumentations/profiling/getting-started#advanced-buffer-tuning). The `profiling.exporter.*` Helm values tune the internal Data Collector to gateway profiling pipeline; external export to Pyroscope is configured by the Destination fields (`PYROSCOPE_URL` and optional `PYROSCOPE_TLS_ENABLED`).
+
+<GettingHelp />
