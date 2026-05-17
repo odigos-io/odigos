@@ -10,6 +10,18 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
       disabled
       mutable
       profileName
+      sourcesScopes {
+        workloadName
+        workloadKind
+        workloadNamespace
+        containerName
+        workloadLanguage
+      }
+      instrumentationLibraries {
+        name
+        spanKind
+        language
+      }
       payloadCollection {
         httpRequest {
           mimeTypes
@@ -67,6 +79,18 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
       disabled
       mutable
       profileName
+      sourcesScopes {
+        workloadName
+        workloadKind
+        workloadNamespace
+        containerName
+        workloadLanguage
+      }
+      instrumentationLibraries {
+        name
+        spanKind
+        language
+      }
       payloadCollection {
         httpRequest {
           mimeTypes
