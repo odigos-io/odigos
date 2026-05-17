@@ -3,6 +3,7 @@ package odigostracefilterprocessor
 import (
 	"context"
 
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/zap"
 )
@@ -22,7 +23,7 @@ func (p *traceFilterProcessor) processTraces(_ context.Context, td ptrace.Traces
 
 		for j := rs.ScopeSpans().Len() - 1; j >= 0; j-- {
 			ss := rs.ScopeSpans().At(j)
-			p.filterSpans(ss.Spans())
+			p.filterSpans(rs.Resource(), ss.Spans())
 
 			if ss.Spans().Len() == 0 {
 				rs.ScopeSpans().RemoveIf(func(s ptrace.ScopeSpans) bool {
@@ -41,10 +42,10 @@ func (p *traceFilterProcessor) processTraces(_ context.Context, td ptrace.Traces
 	return td, nil
 }
 
-func (p *traceFilterProcessor) filterSpans(spans ptrace.SpanSlice) {
+func (p *traceFilterProcessor) filterSpans(resource pcommon.Resource, spans ptrace.SpanSlice) {
 	spans.RemoveIf(func(span ptrace.Span) bool {
 		for _, eval := range p.evaluators {
-			if eval.ShouldDrop(span) {
+			if eval.ShouldDrop(resource, span) {
 				p.logger.Debug("odigos_trace_filter: dropping span",
 					zap.String("span_name", span.Name()),
 					zap.Uint32("flags", span.Flags()),
