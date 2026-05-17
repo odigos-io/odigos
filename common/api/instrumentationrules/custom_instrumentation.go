@@ -10,6 +10,7 @@ import (
 type CustomInstrumentations struct {
 	Golang []GolangCustomProbe `json:"golang,omitempty" yaml:"golang,omitempty"`
 	Java   []JavaCustomProbe   `json:"java,omitempty" yaml:"java,omitempty"`
+	Cpp    []CppCustomProbe    `json:"cpp,omitempty" yaml:"cpp,omitempty"`
 }
 
 // Verify iterates all custom instrumentations' probes and validates them.
@@ -92,4 +93,21 @@ func (gcp *GolangCustomProbe) Verify() error {
 	default:
 		return nil
 	}
+}
+
+type CppCustomProbe struct {
+	// function signature to add custom probe for.
+	// the following scenarios are possible:
+	// namespace::class::function - for example std::vector::push_back - all overloads of this function
+	// namespace::function - targeting a function (and its possible overloads) in a specific namespac
+	// function - for C-like functions a single function name can be used: e.g SSL_write
+	Signature string `json:"signature"`
+}
+
+func (c *CppCustomProbe) Verify() error {
+	if c.Signature == "" {
+		return errors.New("signature is required")
+	}
+
+	return nil
 }
