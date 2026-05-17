@@ -340,11 +340,29 @@ Java instrumentation subsection targets Java-specific behavior.
 
 <Accordion title="Profiling" icon="gauge-high" defaultOpen="false">
 
-Controls the built-in profiling endpoint for the VM Agent process itself.
+Configures **application** continuous profiling on **odigos-otelcol** (eBPF OTLP Profiles). This is separate from VM Agent **pprof** (process debugging).
+
+**Collector** subsection:
 
 | Field | Description |
 |-------|-------------|
-| **Enabled** | Enable or disable the profiling endpoint. Enabled by default. |
+| **profiling.collector.enabled** | Turn on the `profiling` receiver and `profiles` export pipeline. |
+| **debug_exporter** | Echo profile payloads to collector logs (optional). |
+| **require_container_id_filter** | Drop profiles without `container.id` (default on; set `false` for systemd-only hosts). |
+| **resource_detection** | Add host/env attributes via the resourcedetection processor. |
+| **profiler_receiver** | Optional tuning keys merged into `receivers.profiling`. |
+
+See [Continuous profiling getting started](../../instrumentations/profiling/getting-started).
+
+</Accordion>
+
+<Accordion title="Pprof" icon="bug" defaultOpen="false">
+
+Controls the Go **net/http/pprof** endpoint for the **vm-agent process itself** (not application workloads).
+
+| Field | Description |
+|-------|-------------|
+| **pprof.enabled** | Enable or disable the VM Agent pprof server. Enabled by default. |
 
 </Accordion>
 </AccordionGroup>

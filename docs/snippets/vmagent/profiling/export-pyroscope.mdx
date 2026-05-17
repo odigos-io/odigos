@@ -1,0 +1,74 @@
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+The VM Agent exports continuous profiles to external backends using the same **destinations** model as traces. For profiling, add a destination with signal **PROFILES**. **Grafana Pyroscope** is the typical choice.
+
+## Pyroscope destination fields
+
+See the [Pyroscope backend reference](/enterprise/backends/pyroscope) for all fields. Common settings for a local Pyroscope container on the same host:
+
+| Field | Example | Notes |
+|-------|---------|--------|
+| `PYROSCOPE_ENDPOINT` | `localhost:4040` | OTLP gRPC endpoint (`host:port`) |
+| `PYROSCOPE_TLS_ENABLED` | `false` | Use `true` for TLS |
+| `signals` | `PROFILES` | Required—do not omit |
+
+## Add destination with odictl
+
+<Steps>
+  <Step title="Launch odictl">
+    ```shell
+    odictl
+    ```
+  </Step>
+  <Step title="Add destination">
+    Open **Destinations → Add Destination**, search for **Pyroscope**, and set **PYROSCOPE_ENDPOINT** (and TLS options if needed). Ensure **PROFILES** is included in signals.
+  </Step>
+  <Step title="Confirm">
+    ```shell
+    sudo journalctl -u odigos-vmagent | grep 'Destination signals configured'
+    ```
+    Look for `signals=[PROFILES]` or a list that includes `PROFILES`.
+  </Step>
+</Steps>
+
+## Add destination with YAML
+
+Create a file under `/etc/odigos-vmagent/destinations.d/`, for example `pyroscope.yaml`:
+
+```yaml
+- name: pyroscope
+  type: pyroscope
+  signals:
+    - PROFILES
+  config:
+    PYROSCOPE_ENDPOINT: "localhost:4040"
+    PYROSCOPE_TLS_ENABLED: "false"
+```
+
+Restart is not always required; the destination controller reloads when files change. If profiles do not appear, restart the agent:
+
+```shell
+sudo systemctl restart odigos-vmagent
+```
+
+## Run Pyroscope on the host
+
+Example Docker run (adjust versions and ports for your environment):
+
+```shell
+docker run -d --name pyroscope -p 4040:4040 grafana/pyroscope:latest
+```
+
+Port-forward from your laptop if Pyroscope listens only on localhost:
+
+```shell
+ssh -L 4040:localhost:4040 <your-vm>
+```
+
+Then open `http://localhost:4040`, choose **`process_cpu`**, and filter by **`service.name`**.
+
+## Other OTLP backends
+
+Any backend that ingests **OTLP Profiles** over gRPC can be used with destination type `otlp` and `signals: [PROFILES]`. Pyroscope is documented here because it is the primary self-hosted profiles UI for VM deployments.
+
+<GettingHelp />

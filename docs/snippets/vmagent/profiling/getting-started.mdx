@@ -1,0 +1,84 @@
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+## Step 1: Enable the profiling pipeline
+
+Turn on the eBPF profiles pipeline on **odigos-otelcol**. You can use **odictl** or edit `/etc/odigos-vmagent/config.yaml` directly.
+
+<Tabs>
+  <Tab title="odictl">
+    <Steps>
+      <Step title="Open configuration">
+        ```shell
+        odictl
+        ```
+        Go to **Profiling → Collector** and set **profiling.collector.enabled** to `true`. Save and exit.
+      </Step>
+      <Step title="Confirm the collector reloaded">
+        ```shell
+        sudo journalctl -u odigos-vmagent -n 20 --no-pager | grep -i profile
+        sudo journalctl -u odigos-otelcol -n 20 --no-pager | grep profiling
+        ```
+        You should see the `profiling` receiver start and a `profiles` pipeline in `/etc/odigos-otelcol/config.yaml`.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="YAML">
+    Add or merge the following into `/etc/odigos-vmagent/config.yaml`:
+
+    ```yaml
+    profiling:
+      collector:
+        enabled: true
+    ```
+
+    Restart the agent so config is applied and the collector config is regenerated:
+
+    ```shell
+    sudo systemctl restart odigos-vmagent
+    ```
+
+    Optional: disable strict container filtering on bare-metal/systemd hosts if profiles are dropped:
+
+    ```yaml
+    profiling:
+      collector:
+        enabled: true
+        require_container_id_filter: false
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  The collector needs sufficient privileges for eBPF (capabilities on the `odigos-otelcol` systemd unit). See [System requirements](../../setup/system-requirements).
+</Warning>
+
+## Step 2: Add sources
+
+Profiling only keeps samples for workloads the VM Agent knows about. Add [sources](../../setup/configuration/add-sources) for your systemd services (or processes) before expecting labeled data in Pyroscope.
+
+## Step 3: Add a Pyroscope destination
+
+Configure a destination with the **PROFILES** signal. See [Export to Pyroscope](./export-pyroscope).
+
+## Step 4: View profiles in Pyroscope
+
+Open your Pyroscope UI (self-hosted or Grafana Cloud). Select profile type **`process_cpu`** and filter by **`service.name`** values that match your source names (for example `odigos-demo-frontend`).
+
+<Note>
+  There is no profiling tab in `odictl`. All visualization happens in Pyroscope (or another OTLP Profiles backend).
+</Note>
+
+## Verify the pipeline
+
+```shell
+# Profile attribute registry (should list R<pid>:service.name:... lines)
+timeout 2 bash -c '(printf GET_PROF_ATTR; sleep 0.3) | nc -U /var/exchange/exchange.sock' | head
+
+# Collector health
+curl -sf http://127.0.0.1:13133/ && echo "collector OK"
+
+# Pyroscope ready (after container start)
+curl -sf http://127.0.0.1:4040/ready && echo "pyroscope OK"
+```
+
+<GettingHelp />

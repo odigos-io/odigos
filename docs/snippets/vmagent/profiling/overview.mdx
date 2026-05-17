@@ -1,0 +1,31 @@
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+## What is continuous CPU profiling?
+
+CPU profiling samples what your processes are doing on the CPU. Over time, those samples form a **flame graph** that shows which functions and libraries consume the most time.
+
+Unlike traces, which show *that* a request was slow, profiles show *where* CPU time was spent. Use profiles after traces (or metrics) point you at a hot service.
+
+## How it works on the VM Agent
+
+The VM Agent does **not** include an in-product profiling UI (unlike Odigos on Kubernetes). On a VM host, profiling works like this:
+
+1. You enable the **collector profiling pipeline** in agent config (`profiling.collector.enabled`).
+2. **odigos-otelcol** runs the OpenTelemetry [eBPF profiler](https://github.com/open-telemetry/opentelemetry-ebpf-profiler) receiver on the host.
+3. The VM Agent maps each **source** (systemd unit or process) to `service.name` and streams PID registrations to the collector over `/var/exchange/exchange.sock`.
+4. Profiles are exported as **OTLP Profiles** to a destination you configure—typically **Grafana Pyroscope**.
+
+Traces, metrics, and logs pipelines are unchanged. Profiling is an additional `profiles` pipeline on the same collector binary.
+
+## Prerequisites
+
+- Linux host meeting [VM Agent system requirements](../../setup/system-requirements) (eBPF-capable kernel).
+- **odigos-otelcol** build that includes the `profiling` receiver (shipped with current Odigos VM packages).
+- At least one [source](../../setup/configuration/add-sources) for the workloads you want to profile.
+- A destination that accepts **PROFILES** (see [Export to Pyroscope](./export-pyroscope)).
+
+<Info>
+  VM Agent **pprof** (`pprof.enabled`) is only for debugging the vm-agent process itself. It is not application continuous profiling.
+</Info>
+
+<GettingHelp />

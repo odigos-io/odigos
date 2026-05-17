@@ -132,6 +132,8 @@ There are two ways to add [destinations](../../../overview#key-concepts) to the 
         ```
         <Info>The above is an example of an [OTLP http](../../../../enterprise/backends-overview) destination.</Info>
 
+        For continuous CPU profiling, add a [Pyroscope](../../../../enterprise/backends/pyroscope) destination with `signals: [PROFILES]`. See [Export to Pyroscope](../../instrumentations/profiling/export-pyroscope).
+
         <Note>You can define multiple destinations in a single YAML file, and you can organize destinations across multiple YAML files.</Note>
 
       </Step>
