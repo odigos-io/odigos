@@ -86,26 +86,45 @@ true
 {{- end }}
 
 
+{{- define "odigos.memoryQuantityMiB" -}}
+{{- $raw := . -}}
+{{- $number := regexFind "^[0-9]+" $raw -}}
+{{- $unit := regexFind "[a-zA-Z]+$" $raw | lower -}}
+{{- if and $number $unit }}
+  {{- $num := int $number -}}
+  {{- if eq $unit "ki" -}}
+    {{- div $num 1024 -}}
+  {{- else if eq $unit "mi" -}}
+    {{- $num -}}
+  {{- else if eq $unit "gi" -}}
+    {{- mul $num 1024 -}}
+  {{- else if eq $unit "ti" -}}
+    {{- mul $num 1048576 -}}
+  {{- else if eq $unit "k" -}}
+    {{- div (mul $num 1000) 1048576 -}}
+  {{- else if eq $unit "m" -}}
+    {{- div (mul $num 1000000) 1048576 -}}
+  {{- else if eq $unit "g" -}}
+    {{- div (mul $num 1000000000) 1048576 -}}
+  {{- else if eq $unit "t" -}}
+    {{- div (mul $num 1000000000000) 1048576 -}}
+  {{- else -}}
+    {{- fail (printf "Invalid memory unit for GOMEMLIMIT: %q" $raw) -}}
+  {{- end -}}
+{{- else }}
+  {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q" $raw) -}}
+{{- end }}
+{{- end }}
+
 {{- define "odigos.gomemlimitFromResources" -}}
 {{- $resources := .Resources | default dict -}}
 {{- $limits := get $resources "limits" -}}
 {{- $requests := get $resources "requests" -}}
 
 {{- $raw := (get $limits "memory") | default (get $requests "memory") -}}
-{{- $number := regexFind "^[0-9]+" $raw -}}
-{{- $unit := regexFind "[a-zA-Z]+$" $raw -}}
-
-{{- if and $number $unit }}
-  {{- $num := int $number -}}
-  {{- $val := div (mul $num 80) 100 -}}
-  {{- /*
-     GOMEMLIMIT requires units like "MiB" or "GiB", whereas Kubernetes uses "Mi" or "Gi".
-     To ensure Go runtime parses the value correctly, we must always append "B" to the unit.
-*/ -}}
-  {{- printf "%d%sB" $val $unit -}}
-{{- else }}
-   {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q" $raw) -}}
-{{- end }}
+{{- $limitMiB := int (include "odigos.memoryQuantityMiB" $raw) -}}
+{{- $valMiB := div (mul $limitMiB 80) 100 -}}
+{{- printf "%dMiB" $valMiB -}}
 {{- end }}
 
 {{/*
@@ -120,20 +139,13 @@ true
 {{- $requests := get $resources "requests" -}}
 
 {{- $raw := (get $limits "memory") | default (get $requests "memory") -}}
-{{- $number := regexFind "^[0-9]+" $raw -}}
-{{- $unit := regexFind "[a-zA-Z]+$" $raw -}}
-
-{{- if and $number $unit }}
-  {{- $num := int $number -}}
-  {{- $pct := 80 -}}
-  {{- if ge $num 500 -}}
-    {{- $pct = int (default 60 .Values.odiglet.odiglet.goMemLimitPercentage) -}}
-  {{- end -}}
-  {{- $val := div (mul $num $pct) 100 -}}
-  {{- printf "%d%sB" $val $unit -}}
-{{- else }}
-  {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q" $raw) -}}
-{{- end }}
+{{- $limitMiB := int (include "odigos.memoryQuantityMiB" $raw) -}}
+{{- $pct := 80 -}}
+{{- if ge $limitMiB 500 -}}
+  {{- $pct = int (default 60 .Values.odiglet.odiglet.goMemLimitPercentage) -}}
+{{- end -}}
+{{- $valMiB := div (mul $limitMiB $pct) 100 -}}
+{{- printf "%dMiB" $valMiB -}}
 {{- end }}
 
 {{/* Returns "true" when UI requires write permissions (non-readonly UI or central backend set) */}}
