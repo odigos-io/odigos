@@ -274,6 +274,12 @@ func mergeCustomInstrumentations(rule1 *instrumentationrules.CustomInstrumentati
 	mergedJavaProbes = append(mergedJavaProbes, rule2.Java...)
 	mergedRules.Java = mergedJavaProbes
 
+	// Merge C++ custom probes
+	mergedCppProbes := make([]instrumentationrules.CppCustomProbe, 0, len(rule1.Cpp)+len(rule2.Cpp))
+	mergedCppProbes = append(mergedCppProbes, rule1.Cpp...)
+	mergedCppProbes = append(mergedCppProbes, rule2.Cpp...)
+	mergedRules.Cpp = mergedCppProbes
+
 	return mergedRules
 }
 
