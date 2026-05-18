@@ -1,0 +1,175 @@
+import BetaWarning from '/snippets/shared/beta-warning.mdx';
+import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
+
+<BetaWarning />
+
+## Overview
+
+The **URL Templatization** action normalizes HTTP paths in your trace spans to low-cardinality route templates before data is sent to your destinations. For example, paths like `/api/users/12345` and `/api/users/67890` become `/api/users/{id}`, reducing cardinality in span names and attributes such as `http.route` and `url.template`.
+
+This improves dashboard usability, reduces storage and query cost in backends, and aligns with [HTTP semantic conventions](https://opentelemetry.io/docs/specs/semconv/http/) that recommend templated route values.
+
+<Warning>
+  Improper or overly broad templatization can still produce high cardinality (e.g., templating too few segments). Test rules in a non-production environment and monitor the resulting `http.route` / `url.template` values. Use **sourcesScope** to limit which workloads are affected.
+</Warning>
+
+## Considerations
+
+- **Supports only traces.** The action operates on trace spans that carry HTTP attributes.
+- **Runs in the Cluster Gateway.** Templatization is applied in the cluster-gateway collector role before export.
+- **Scoped by group.** You can define multiple groups: each group has its own **sourcesScope** (which workloads the rules apply to) and **templatizationRules**. Empty **sourcesScope** means the rules apply to all sources (global).
+- **Rule format.** Each rule **template** uses `{paramName}` for dynamic path segments. Static segments must match exactly. Use `*` to match any single segment without naming it (e.g. `/v1/*`).
+
+## Use Cases
+
+**Lower cardinality and cost**
+
+- Reduce unique values in `http.route` / `url.template` and span names so backends and dashboards group by route instead of raw path.
+
+**Compliance with semantic conventions**
+
+- Populate `http.route` (server) or `url.template` (client) when instrumentation does not, so downstream tools can aggregate by route.
+
+**Per-service or per-namespace rules**
+
+- Apply different templates to different workloads (e.g., one set of rules for a payment service, another for a public API) using **sourcesScope**.
+
+## Configuration Options
+
+The URL Templatization action is configured using the `odigos.io/v1alpha1.Action` CRD with the `urlTemplatization` section.
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : A display name for the action.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Notes about the action for your own reference.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : When `true`, the action is not applied but remains saved.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : Signals the action applies to.
+    - This field is *required*
+    - Supported value: `TRACES`
+  </Accordion>
+  <Accordion title="urlTemplatization *">
+    **urlTemplatization** `object` : Configuration for URL templatization.
+    - This field is *required* for this action type
+    <AccordionGroup>
+      <Accordion title="templatizationRulesGroups *">
+        **templatizationRulesGroups** `array` : List of rule groups. Each group defines a **sourcesScope** (which spans to match) and **templatizationRules** (templates to apply).
+        - This field is *required*
+        <AccordionGroup>
+          <Accordion title="sourcesScope">
+            **sourcesScope** `array` : Selects which sources (workloads) the rules apply to. If empty or omitted, rules apply to **all sources** (global).
+            - This field is *optional*
+            - Each element can specify: **workloadNamespace**, **workloadKind** (e.g. `Deployment`, `StatefulSet`), **workloadName**, and optionally **workloadLanguage** or **containerName** for finer scope.
+          </Accordion>
+          <Accordion title="templatizationRules *">
+            **templatizationRules** `array` : List of template rules for this group.
+            - This field is *required*
+            <AccordionGroup>
+              <Accordion title="template *">
+                **template** `string` : The route template (e.g. `/api/users/{id}`). Use `{name}` for dynamic segments and `*` for a single wildcard segment.
+                - This field is *required*
+              </Accordion>
+              <Accordion title="examples">
+                **examples** `string[]` : Example URLs that match this rule (for documentation and maintenance only; not used at runtime).
+                - This field is *optional*
+              </Accordion>
+              <Accordion title="notes">
+                **notes** `string` : Human-readable notes for this rule (not used by the system).
+                - This field is *optional*
+              </Accordion>
+            </AccordionGroup>
+          </Accordion>
+        </AccordionGroup>
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+Apply URL templatization so that paths like `/api/users/123` and `/api/items/abc` are normalized to `/api/users/{id}` and `/api/items/{itemId}`. This example uses one global group (empty **sourcesScope**) and one group scoped to a specific deployment.
+
+```yaml url-templatization.yaml
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: url-templatization-example
+  namespace: odigos-system
+spec:
+  signals:
+    - TRACES
+  urlTemplatization:
+    templatizationRulesGroups:
+      # Scoped to a specific workload
+      - sourcesScope:
+          - workloadNamespace: default
+            workloadKind: Deployment
+            workloadName: my-api
+        templatizationRules:
+          - template: "/api/users/{id}"
+          - template: "/api/items/{itemId}"
+      # Global rules (all sources)
+      - sourcesScope: []
+        templatizationRules:
+          - template: "/api/users/{userId}/orders/{orderId}"
+          - template: "/v1/tenants/{tenantId}/resources/{resourceId}"
+```
+
+Apply the action:
+
+```bash
+kubectl apply -f url-templatization.yaml
+```
+
+## Template Syntax
+
+- **Templated segment:** `{paramName}` — matches one path segment and replaces it with `{paramName}` in the output (e.g. `/users/{id}`).
+- **Static segment:** literal path segment — must match exactly (e.g. `/api/users` matches only that path).
+- **Wildcard:** `*` — matches exactly one segment without templating it (e.g. `/v1/*` matches `/v1/users` or `/v1/orders` but not `/v1/a/b`).
+
+The processor sets **`http.route`** on server spans and **`url.template`** on client spans when it successfully matches a rule. Span names may also be updated to `{method} {target}` when applicable.
+
+## Multiple Groups Example
+
+You can combine global and scoped groups. More specific scopes (e.g. workload name) take precedence when a span matches multiple groups; typically the first matching group is used.
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: url-templatization-multi
+  namespace: odigos-system
+spec:
+  signals:
+    - TRACES
+  urlTemplatization:
+    templatizationRulesGroups:
+      - sourcesScope:
+          - workloadNamespace: default
+            workloadKind: Deployment
+            workloadName: payment-service
+        templatizationRules:
+          - template: "/payments/{paymentId}"
+            notes: "Payment API"
+          - template: "/refunds/{refundId}"
+      - sourcesScope: []
+        templatizationRules:
+          - template: "/health"
+          - template: "/api/v2/*"
+```
+
+## Best Practices
+
+- **Start narrow:** Use **sourcesScope** to apply rules to a few workloads first, then expand after validating output.
+- **Use examples and notes:** Populate **examples** and **notes** on rules so teammates can understand and maintain them.
+- **Monitor cardinality:** Check `http.route` / `url.template` in your backend to ensure values are low-cardinality and expected.
