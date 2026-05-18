@@ -57,6 +57,14 @@ func (o *OdigosWorkloadConfig) GetFromResource(res pcommon.Resource) (*commonapi
 	return o.cache.Get(key)
 }
 
+func (o *OdigosWorkloadConfig) HasCachedWorkloadContainerConfig(res pcommon.Resource) bool {
+	prefix, err := workloadContainerKeyFromResourceAttributes(res.Attributes())
+	if err != nil {
+		return false
+	}
+	return o.cache.hasContainersForWorkloadPrefix(prefix)
+}
+
 // GetWorkloadCacheKey returns the cache key for the container identified by the given resource.
 // Processors use this to look up their own caches without duplicating key logic.
 // Key format: "namespace/kind/name/containerName".

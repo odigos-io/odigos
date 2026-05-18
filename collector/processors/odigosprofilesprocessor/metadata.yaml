@@ -1,0 +1,12 @@
+type: odigosprofilesprocessor
+status:
+  class: processor
+  stability:
+    alpha: [profiles]
+  distributions: [odigos]
+  codeowners:
+    active: [odigos]
+
+tests:
+  # Processor.Start requires odigos_config_extension on the host, which mdatagen's NopHost cannot provide.
+  skip_lifecycle: true

@@ -9,6 +9,8 @@ const (
 	// Node collector profiles domain — receive on host, forward to cluster gateway.
 	ProfilingNodeFilterProcessor        = "filter/profiles-node"
 	ProfilingNodeK8sAttributesProcessor = "k8s_attributes/profiles-node"
+	// ProfilingNodeOdigosProfilesProcessor keeps only profiles for workloads present in odigos_config_k8s (InstrumentationConfig).
+	ProfilingNodeOdigosProfilesProcessor = "odigosprofilesprocessor/profiles-node"
 	// ProfilingNodeServiceNameProcessor sets service.name from K8s metadata so Pyroscope
 	// (and other backends) show workload names instead of unknown_service:<process>.
 	ProfilingNodeServiceNameProcessor = "transform/profiles-service-name"
