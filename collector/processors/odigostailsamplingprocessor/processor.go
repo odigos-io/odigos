@@ -191,15 +191,15 @@ func (p *tailSamplingProcessor) recordMetrics(ctx context.Context, category cons
 	p.telemetryBuilder.OdigosSamplingTraceCheckCount.Add(ctx, 1, categoryMeasurementOptions)
 }
 
-func (p *tailSamplingProcessor) recordCategoryMatchMetrics(ctx context.Context, measurementOptions metric.MeasurementOption, dropped bool, sapnsCount int) {
+func (p *tailSamplingProcessor) recordCategoryMatchMetrics(ctx context.Context, measurementOptions metric.MeasurementOption, kept bool, spansCount int) {
 	p.telemetryBuilder.OdigosSamplingTraceMatchCount.Add(ctx, 1, measurementOptions)
-	p.telemetryBuilder.OdigosSamplingSpanMatchCount.Add(ctx, int64(sapnsCount), measurementOptions)
-	if dropped {
-		p.telemetryBuilder.OdigosSamplingTraceDropCount.Add(ctx, 1, measurementOptions)
-		p.telemetryBuilder.OdigosSamplingSpanDropCount.Add(ctx, int64(sapnsCount), measurementOptions)
-	} else {
+	p.telemetryBuilder.OdigosSamplingSpanMatchCount.Add(ctx, int64(spansCount), measurementOptions)
+	if kept {
 		p.telemetryBuilder.OdigosSamplingTraceKeepCount.Add(ctx, 1, measurementOptions)
-		p.telemetryBuilder.OdigosSamplingSpanKeepCount.Add(ctx, int64(sapnsCount), measurementOptions)
+		p.telemetryBuilder.OdigosSamplingSpanKeepCount.Add(ctx, int64(spansCount), measurementOptions)
+	} else {
+		p.telemetryBuilder.OdigosSamplingTraceDropCount.Add(ctx, 1, measurementOptions)
+		p.telemetryBuilder.OdigosSamplingSpanDropCount.Add(ctx, int64(spansCount), measurementOptions)
 	}
 }
 
