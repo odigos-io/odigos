@@ -20,6 +20,7 @@ package v1alpha1
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	common "github.com/odigos-io/odigos/common"
+	agentsignalconfig "github.com/odigos-io/odigos/common/api/agentsignalconfig"
 )
 
 // ContainerAgentConfigApplyConfiguration represents a declarative configuration of the ContainerAgentConfig type for use
@@ -51,9 +52,9 @@ type ContainerAgentConfigApplyConfiguration struct {
 	EnvInjectionMethod *common.EnvInjectionDecision `json:"envInjectionMethod,omitempty"`
 	// Each enabled signal must be set with a non-nil value (even if the config content is empty).
 	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
-	Traces  *AgentTracesConfigApplyConfiguration  `json:"traces,omitempty"`
-	Metrics *AgentMetricsConfigApplyConfiguration `json:"metrics,omitempty"`
-	Logs    *AgentLogsConfigApplyConfiguration    `json:"logs,omitempty"`
+	Traces  *agentsignalconfig.AgentTracesConfig  `json:"traces,omitempty"`
+	Metrics *agentsignalconfig.AgentMetricsConfig `json:"metrics,omitempty"`
+	Logs    *agentsignalconfig.AgentLogsConfig    `json:"logs,omitempty"`
 }
 
 // ContainerAgentConfigApplyConfiguration constructs a declarative configuration of the ContainerAgentConfig type for use with
@@ -135,23 +136,23 @@ func (b *ContainerAgentConfigApplyConfiguration) WithEnvInjectionMethod(value co
 // WithTraces sets the Traces field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Traces field is set to the value of the last call.
-func (b *ContainerAgentConfigApplyConfiguration) WithTraces(value *AgentTracesConfigApplyConfiguration) *ContainerAgentConfigApplyConfiguration {
-	b.Traces = value
+func (b *ContainerAgentConfigApplyConfiguration) WithTraces(value agentsignalconfig.AgentTracesConfig) *ContainerAgentConfigApplyConfiguration {
+	b.Traces = &value
 	return b
 }
 
 // WithMetrics sets the Metrics field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Metrics field is set to the value of the last call.
-func (b *ContainerAgentConfigApplyConfiguration) WithMetrics(value *AgentMetricsConfigApplyConfiguration) *ContainerAgentConfigApplyConfiguration {
-	b.Metrics = value
+func (b *ContainerAgentConfigApplyConfiguration) WithMetrics(value agentsignalconfig.AgentMetricsConfig) *ContainerAgentConfigApplyConfiguration {
+	b.Metrics = &value
 	return b
 }
 
 // WithLogs sets the Logs field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Logs field is set to the value of the last call.
-func (b *ContainerAgentConfigApplyConfiguration) WithLogs(value *AgentLogsConfigApplyConfiguration) *ContainerAgentConfigApplyConfiguration {
-	b.Logs = value
+func (b *ContainerAgentConfigApplyConfiguration) WithLogs(value agentsignalconfig.AgentLogsConfig) *ContainerAgentConfigApplyConfiguration {
+	b.Logs = &value
 	return b
 }

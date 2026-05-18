@@ -6,13 +6,14 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
 )
 
 func TimedWallEnabled(effectiveConfig *common.OdigosConfiguration) bool {
 	return effectiveConfig.TraceIdSuffix != ""
 }
 
-func CalculateIdGeneratorConfig(effectiveConfig *common.OdigosConfiguration) (*odigosv1.IdGeneratorConfig, *odigosv1.AgentDisabledInfo) {
+func CalculateIdGeneratorConfig(effectiveConfig *common.OdigosConfiguration) (*agentsignalconfig.IdGeneratorConfig, *odigosv1.AgentDisabledInfo) {
 
 	// currentlly supporting just one id generator type
 	if !TimedWallEnabled(effectiveConfig) {
@@ -27,8 +28,8 @@ func CalculateIdGeneratorConfig(effectiveConfig *common.OdigosConfiguration) (*o
 		}
 	}
 
-	return &odigosv1.IdGeneratorConfig{
-		TimedWall: &odigosv1.IdGeneratorTimedWallConfig{
+	return &agentsignalconfig.IdGeneratorConfig{
+		TimedWall: &agentsignalconfig.IdGeneratorTimedWallConfig{
 			SourceId: uint8(sourceId),
 		},
 	}, nil

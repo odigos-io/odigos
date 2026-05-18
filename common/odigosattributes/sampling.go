@@ -32,4 +32,7 @@ const (
 	// Whether the trace would be kept (true) or dropped (false) by the sampling decision. Only set in dry-run mode. Type: bool.
 	// Set only when dry run is enabled, to indicate the trace would have been kept or dropped if dry run was disabled.
 	SamplingTraceKept = "odigos.sampling.trace.kept"
+	// Whether the sampling rule was disabled. Type: bool.
+	// When a rule is disabled, it was evaluated but not taken into account for any sampling decisions.
+	SamplingRuleDisabled = "odigos.sampling.rule.disabled"
 )
