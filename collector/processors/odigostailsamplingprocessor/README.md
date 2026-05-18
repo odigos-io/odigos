@@ -21,7 +21,18 @@ The processor emits OpenTelemetry metrics via the collector’s internal telemet
 
 All metrics are monotonic counters with **development** stability.
 
-Every data point includes `odigos.sampling.category` (`noise`, `highly relevant`, or `cost reduction`). When `dry_run` is enabled in config, `odigos.sampling.dry_run=true` is added to all data points.
+Metrics are recorded at three granularities: **general** (no category or rule labels), **per rule**, and **per category**. Per-rule and per-category data points include `odigos.sampling.category` (`noise`, `highly relevant`, or `cost reduction`). When `dry_run` is enabled in config, `odigos.sampling.dry_run=true` is added to per-rule and per-category data points only.
+
+### General metrics
+
+Emitted once per trace that enters tail sampling (after prerequisites pass), before any category is evaluated. **No metric attributes** are set — use these counters for overall tail-sampling volume.
+
+| Metric | Unit | When incremented |
+| ------ | ---- | ---------------- |
+| `odigos.sampling.trace.check_count` | `{traces}` | `+1` per trace when tail sampling evaluation starts. |
+| `odigos.sampling.span.check_count` | `{spans}` | By span count in the trace when tail sampling evaluation starts. |
+
+**Not emitted at general scope:** `span.match_count`, `span.drop_count`, `span.keep_count`, `trace.match_count`, `trace.drop_count`, `trace.keep_count`.
 
 ### Per-rule metrics
 
@@ -32,9 +43,9 @@ Emitted during rule evaluation for **each rule** in a category. Labels identify 
 | Metric | Unit | When incremented |
 | ------ | ---- | ---------------- |
 | `odigos.sampling.span.check_count` | `{spans}` | By `SpanCheckedCount` — once per span evaluated against this rule. |
-| `odigos.sampling.span.match_count` | `{spans}` | By `SpanMatchedCount` — spans that matched this rule during evaluation. |
 | `odigos.sampling.trace.check_count` | `{traces}` | `+1` per trace for each rule in the category evaluation results (including rules that did not match). |
-| `odigos.sampling.trace.match_count` | `{traces}` | `+1` per trace when this rule’s `Matched` flag is true. |
+| `odigos.sampling.trace.match_count` | `{traces}` | `+1` per trace when `SpanMatchedCount > 0` for this rule. |
+| `odigos.sampling.span.match_count` | `{spans}` | By `SpanMatchedCount` when `SpanMatchedCount > 0`. |
 | `odigos.sampling.trace.drop_count` | `{traces}` | `+1` per trace when the rule matched and `tracePercentage > RulePercentage` (would drop). Recorded even in dry-run mode. |
 | `odigos.sampling.trace.keep_count` | `{traces}` | `+1` per trace when the rule matched and `tracePercentage <= RulePercentage` (would keep). Recorded even in dry-run mode. |
 
@@ -62,29 +73,27 @@ Per-category keep/drop counters are mutually exclusive for a given trace (one of
 
 ### Quick reference
 
-| Metric | Per rule | Per category |
-| ------ | :------: | :------------: |
-| `odigos.sampling.span.check_count` | ✓ | |
-| `odigos.sampling.span.match_count` | ✓ | ✓ |
-| `odigos.sampling.span.drop_count` | | ✓ |
-| `odigos.sampling.span.keep_count` | | ✓ |
-| `odigos.sampling.trace.check_count` | ✓ | ✓ |
-| `odigos.sampling.trace.match_count` | ✓ | ✓ |
-| `odigos.sampling.trace.drop_count` | ✓ | ✓ |
-| `odigos.sampling.trace.keep_count` | ✓ | ✓ |
+| Metric | General | Per rule | Per category |
+| ------ | :-----: | :------: | :------------: |
+| `odigos.sampling.span.check_count` | ✓ | ✓ | |
+| `odigos.sampling.span.match_count` | | ✓ | ✓ |
+| `odigos.sampling.span.drop_count` | | | ✓ |
+| `odigos.sampling.span.keep_count` | | | ✓ |
+| `odigos.sampling.trace.check_count` | ✓ | ✓ | ✓ |
+| `odigos.sampling.trace.match_count` | | ✓ | ✓ |
+| `odigos.sampling.trace.drop_count` | | ✓ | ✓ |
+| `odigos.sampling.trace.keep_count` | | ✓ | ✓ |
 
 ## Evaluation flow and metrics
 
-For each trace that passes prerequisites, categories are tried in order:
+For each trace that passes prerequisites:
 
-1. **Noise** — rules on the root span; deciding rule is the matching rule with the lowest `percentageAtMost`.
-2. **Highly relevant** — rules across spans in the trace; deciding rule uses `percentageAtLeast`.
-3. **Cost reduction** — rules across spans; deciding rule uses `percentageAtMost`.
-
-For every category reached in this chain:
-
-1. **Per-rule metrics** — `recordMetrics` emits one data point per rule (and a category-level `trace.check_count`).
-2. **Per-category metrics** — if a deciding rule is found, `recordCategoryMatchMetrics` emits the category decision metrics; later categories are skipped.
+1. **General metrics** — `recordTraceCheckMetrics` records `trace.check_count` and `span.check_count` with no labels.
+2. **Category evaluation** — categories are tried in order until one produces a deciding rule:
+   - **Noise** — rules on the root span; deciding rule is the matching rule with the lowest `percentageAtMost`.
+   - **Highly relevant** — rules across spans; deciding rule uses `percentageAtLeast`.
+   - **Cost reduction** — rules across spans; deciding rule uses `percentageAtMost`.
+3. **Per-rule / per-category metrics** — for every category reached, `recordMetrics` emits per-rule data points and a category-level `trace.check_count`. If a deciding rule is found, `recordCategoryMatchMetrics` emits the category decision metrics and later categories are skipped.
 
 Per-rule `trace.drop_count` / `trace.keep_count` reflect what each matching rule would decide. Per-category keep/drop reflect the **final** decision for that trace in the winning category.
 

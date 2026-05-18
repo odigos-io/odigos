@@ -51,6 +51,9 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		return td, nil
 	}
 
+	// record that we are checking a new trace for tail sampling.
+	p.recordTraceCheckMetrics(ctx, nil, spanCount)
+
 	rnd := sampling.TraceIDToRandomness(traceID)
 	// convert from range [0-MaxAdjustedCount] to range [0-100]
 	tracePercentage := float64(rnd.Unsigned()) / float64(sampling.MaxAdjustedCount) * 100.0
@@ -171,9 +174,10 @@ func (p *tailSamplingProcessor) recordMetrics(ctx context.Context, category cons
 		rulesMeasurementOptions := metric.WithAttributes(rulesAttrs...)
 
 		p.telemetryBuilder.OdigosSamplingSpanCheckCount.Add(ctx, int64(result.SpanCheckedCount), rulesMeasurementOptions)
-		p.telemetryBuilder.OdigosSamplingSpanMatchCount.Add(ctx, int64(result.SpanMatchedCount), rulesMeasurementOptions)
 		p.telemetryBuilder.OdigosSamplingTraceCheckCount.Add(ctx, 1, rulesMeasurementOptions)
-		if result.Matched {
+
+		if result.SpanMatchedCount > 0 {
+			p.telemetryBuilder.OdigosSamplingSpanMatchCount.Add(ctx, int64(result.SpanMatchedCount), rulesMeasurementOptions)
 			p.telemetryBuilder.OdigosSamplingTraceMatchCount.Add(ctx, 1, rulesMeasurementOptions)
 
 			// for each rule, record if it is evaluated to drop or keep the trace.
@@ -201,6 +205,11 @@ func (p *tailSamplingProcessor) recordCategoryMatchMetrics(ctx context.Context, 
 		p.telemetryBuilder.OdigosSamplingTraceDropCount.Add(ctx, 1, measurementOptions)
 		p.telemetryBuilder.OdigosSamplingSpanDropCount.Add(ctx, int64(spansCount), measurementOptions)
 	}
+}
+
+func (p *tailSamplingProcessor) recordTraceCheckMetrics(ctx context.Context, kept *bool, spansCount int) {
+	p.telemetryBuilder.OdigosSamplingTraceCheckCount.Add(ctx, 1)
+	p.telemetryBuilder.OdigosSamplingSpanCheckCount.Add(ctx, int64(spansCount))
 }
 
 func (p *tailSamplingProcessor) ruleMetricsAttributes(category consts.SamplingCategory, result *category.RuleEvaluationResult) []attribute.KeyValue {

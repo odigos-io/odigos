@@ -5,7 +5,6 @@ type RuleEvaluationResult struct {
 	RuleName       string
 	RulePercentage float64
 	RuleDisabled   bool // true if the rule was disabled
-	Matched        bool
 
 	// number of spans on which we evaluated this rule
 	SpanCheckedCount int

@@ -55,7 +55,6 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 
 						evalResult, found := rulesEvalResults[matchedRule.Id]
 						if found {
-							evalResult.Matched = true
 							evalResult.SpanMatchedCount++
 						}
 					}
