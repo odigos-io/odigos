@@ -87,10 +87,10 @@ func enrichSpansWithSamplingAttributes(td ptrace.Traces, category consts.Samplin
 //   - traceID: the common trace ID when shouldProcess is true, or the zero value when skipping or on error.
 //   - shouldProcess: true only when there is at least one span, all share traceID, and none carry odigos tracestate.
 //   - err: non-nil only when multiple trace IDs appear in the same batch.
-func checkPrerequists(td ptrace.Traces) (pcommon.TraceID, bool, error) {
+func checkPrerequists(td ptrace.Traces) (pcommon.TraceID, bool, int, error) {
 
 	var traceId pcommon.TraceID
-	found := false
+	spanCount := 0
 
 	for i := 0; i < td.ResourceSpans().Len(); i++ {
 		resourceSpan := td.ResourceSpans().At(i)
@@ -100,25 +100,24 @@ func checkPrerequists(td ptrace.Traces) (pcommon.TraceID, bool, error) {
 				span := scopeSpan.Spans().At(k)
 
 				currTraceId := span.TraceID()
-				if !found {
+				if spanCount == 0 {
 					traceId = currTraceId
-					found = true
+					spanCount++
 				} else if currTraceId != traceId {
-					return pcommon.TraceID{}, false, errors.New("not all spans belong to the same trace")
+					return pcommon.TraceID{}, false, 0, errors.New("not all spans belong to the same trace")
 				}
 
 				// check if we have odigos entry in the trace state, which indicates head sampling was applied.
 				odigosTraceState := extractOdigosTraceStateValue(span.TraceState().AsRaw())
 				if odigosTraceState != "" {
 					// trace has already been sampled by head sampling, no need to process it again.
-					return pcommon.TraceID{}, false, nil
+					return pcommon.TraceID{}, false, 0, nil
 				}
 			}
 		}
 	}
 
-	// if no spans found, we will return false to indicate it should be skipped.
-	return traceId, found, nil
+	return traceId, spanCount > 0, spanCount, nil
 }
 
 // extractOdigosTraceStateValue extracts the value of the "odigos" key from a W3C tracestate string.

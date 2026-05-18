@@ -41,7 +41,7 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 				matchedRules := matchCostReductionRulesForSingleSpan(span, costReductionRules)
 				spanLeastPercentageRule := selectCostReductionRuleFromMatches(matchedRules)
 
-				recordEvalResultForSingleSpan(rulesEvalResults, matchedRules)
+				recordEvalResultForSingleSpan(rulesEvalResults, costReductionRules)
 
 				if spanLeastPercentageRule != nil {
 					setCostReductionRuleAttributesOnSpan(span, spanLeastPercentageRule)
@@ -52,7 +52,6 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 
 						evalResult, found := rulesEvalResults[matchedRule.Id]
 						if found {
-							evalResult.Matched = true
 							evalResult.SpanMatchedCount++
 						}
 					}

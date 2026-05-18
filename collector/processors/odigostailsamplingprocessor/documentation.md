@@ -14,7 +14,23 @@ Number of spans checked for sampling decisions per rule.
 | ---- | ----------- | ---------- | --------- | --------- |
 | {spans} | Sum | Int | true | Development |
 
-### otelcol_odigos.sampling.span.matched_count
+### otelcol_odigos.sampling.span.drop_count
+
+Number of spans that are evaluated to be dropped
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {spans} | Sum | Int | true | Development |
+
+### otelcol_odigos.sampling.span.keep_count
+
+Number of spans that are evaluated to be kept
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {spans} | Sum | Int | true | Development |
+
+### otelcol_odigos.sampling.span.match_count
 
 Number of spans that matched this rule.
 
@@ -25,6 +41,22 @@ Number of spans that matched this rule.
 ### otelcol_odigos.sampling.trace.check_count
 
 Number of traces checked for sampling decisions per rule.
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {traces} | Sum | Int | true | Development |
+
+### otelcol_odigos.sampling.trace.drop_count
+
+Number of traces that are evaluated to be dropped
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {traces} | Sum | Int | true | Development |
+
+### otelcol_odigos.sampling.trace.keep_count
+
+Number of traces that are evaluated to be kept
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |
