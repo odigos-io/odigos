@@ -13,6 +13,7 @@ func recordEvalResultForSingleSpan(aggregatedResults map[string]*category.RuleEv
 				RuleId:         rule.Id,
 				RuleName:       rule.Name,
 				RulePercentage: category.GetPercentageOrDefault100(rule.PercentageAtLeast),
+				RuleDisabled:   rule.Disabled,
 			}
 			aggregatedResults[rule.Id] = currResult
 		}

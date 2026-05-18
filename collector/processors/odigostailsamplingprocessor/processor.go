@@ -28,6 +28,10 @@ type tailSamplingProcessor struct {
 	config                *Config
 	odigosConfigExtension collector.OdigosConfigExtension
 
+	noisyOperationsCategoryMeasurementOptions metric.MeasurementOption
+	highlyRelevantCategoryMeasurementOptions  metric.MeasurementOption
+	costReductionCategoryMeasurementOptions   metric.MeasurementOption
+
 	telemetryBuilder *metadata.TelemetryBuilder
 }
 
@@ -38,7 +42,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		return td, nil // for auto generated tests, and not to crash in case it somehow happens
 	}
 
-	traceID, shouldProcess, err := checkPrerequists(td)
+	traceID, shouldProcess, spanCount, err := checkPrerequists(td)
 	if err != nil {
 		p.logger.Error("failed to check prerequists", zap.Error(err))
 		return td, nil
@@ -53,11 +57,13 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 
 	// Noisy operations category.
 	noisyOperationRes := p.evaluateNoisyOperations(td)
-	p.recordMetrics(ctx, consts.SamplingCategoryNoise, noisyOperationRes.RulesEvalResults)
+	p.recordMetrics(ctx, consts.SamplingCategoryNoise, noisyOperationRes.RulesEvalResults, tracePercentage, p.noisyOperationsCategoryMeasurementOptions)
 	if noisyOperationRes.DecidingRule != nil {
 		noisyOperationRule := noisyOperationRes.DecidingRule
 		percentageAtMost := category.GetPercentageOrDefault0(noisyOperationRule.PercentageAtMost)
 		keepTrace := tracePercentage <= percentageAtMost
+
+		p.recordCategoryMatchMetrics(ctx, p.noisyOperationsCategoryMeasurementOptions, keepTrace, spanCount)
 
 		if keepTrace || p.config.DryRun {
 			enrichSpansWithSamplingAttributes(td, consts.SamplingCategoryNoise, noisyOperationRule.Id, noisyOperationRule.Name, percentageAtMost, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
@@ -67,11 +73,13 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 	}
 
 	highlyRelevantRes := highlyrelevant.Evaluate(td, p.odigosConfigExtension)
-	p.recordMetrics(ctx, consts.SamplingCategoryHighlyRelevant, highlyRelevantRes.RulesEvalResults)
+	p.recordMetrics(ctx, consts.SamplingCategoryHighlyRelevant, highlyRelevantRes.RulesEvalResults, tracePercentage, p.highlyRelevantCategoryMeasurementOptions)
 	if highlyRelevantRes.DecidingRule != nil {
 		highlyRelevantOperationRule := highlyRelevantRes.DecidingRule
 		percentageAtLeast := category.GetPercentageOrDefault100(highlyRelevantOperationRule.PercentageAtLeast)
 		keepTrace := tracePercentage <= percentageAtLeast
+
+		p.recordCategoryMatchMetrics(ctx, p.highlyRelevantCategoryMeasurementOptions, keepTrace, spanCount)
 
 		if keepTrace || p.config.DryRun {
 			enrichSpansWithSamplingAttributes(td, consts.SamplingCategoryHighlyRelevant, highlyRelevantOperationRule.Id, highlyRelevantOperationRule.Name, percentageAtLeast, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
@@ -81,11 +89,13 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 	}
 
 	costReductionRes := costreduction.Evaluate(td, p.odigosConfigExtension)
-	p.recordMetrics(ctx, consts.SamplingCategoryCostReduction, costReductionRes.RulesEvalResults)
+	p.recordMetrics(ctx, consts.SamplingCategoryCostReduction, costReductionRes.RulesEvalResults, tracePercentage, p.costReductionCategoryMeasurementOptions)
 	if costReductionRes.DecidingRule != nil {
 		costReductionRule := costReductionRes.DecidingRule
 		percentageAtMost := costReductionRule.PercentageAtMost
 		keepTrace := tracePercentage <= percentageAtMost
+
+		p.recordCategoryMatchMetrics(ctx, p.costReductionCategoryMeasurementOptions, keepTrace, spanCount)
 
 		if keepTrace || p.config.DryRun {
 			enrichSpansWithSamplingAttributes(td, consts.SamplingCategoryCostReduction, costReductionRule.Id, costReductionRule.Name, percentageAtMost, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
@@ -152,25 +162,75 @@ func (p *tailSamplingProcessor) getTailSamplingConfig(resource pcommon.Resource)
 	return collectorConfig.TailSampling, true
 }
 
-func (p *tailSamplingProcessor) recordMetrics(ctx context.Context, category consts.SamplingCategory, evalResult category.CategoryRulesEvaluationResults) {
+func (p *tailSamplingProcessor) recordMetrics(ctx context.Context, category consts.SamplingCategory, evalResult category.CategoryRulesEvaluationResults, tracePercentage float64, categoryMeasurementOptions metric.MeasurementOption) {
+
+	// record per rule metrics.
 	for _, result := range evalResult {
-		attrs := []attribute.KeyValue{
-			attribute.String(odigosattributes.SamplingCategory, string(category)),
-			attribute.String(odigosattributes.SamplingRuleId, result.RuleId),
-			attribute.String(odigosattributes.SamplingRuleName, result.RuleName),
-		}
 
-		if p.config.DryRun {
-			attrs = append(attrs, attribute.Bool(odigosattributes.SamplingDryRun, true))
-		}
+		rulesAttrs := p.ruleMetricsAttributes(category, result)
+		rulesMeasurementOptions := metric.WithAttributes(rulesAttrs...)
 
-		p.telemetryBuilder.OdigosSamplingSpanCheckCount.Add(ctx, int64(result.SpanCheckedCount), metric.WithAttributes(attrs...))
-		p.telemetryBuilder.OdigosSamplingSpanMatchedCount.Add(ctx, int64(result.SpanMatchedCount), metric.WithAttributes(attrs...))
-		p.telemetryBuilder.OdigosSamplingTraceCheckCount.Add(ctx, 1, metric.WithAttributes(attrs...))
+		p.telemetryBuilder.OdigosSamplingSpanCheckCount.Add(ctx, int64(result.SpanCheckedCount), rulesMeasurementOptions)
+		p.telemetryBuilder.OdigosSamplingSpanMatchCount.Add(ctx, int64(result.SpanMatchedCount), rulesMeasurementOptions)
+		p.telemetryBuilder.OdigosSamplingTraceCheckCount.Add(ctx, 1, rulesMeasurementOptions)
 		if result.Matched {
-			p.telemetryBuilder.OdigosSamplingTraceMatchCount.Add(ctx, 1, metric.WithAttributes(attrs...))
+			p.telemetryBuilder.OdigosSamplingTraceMatchCount.Add(ctx, 1, rulesMeasurementOptions)
+
+			// for each rule, record if it is evaluated to drop or keep the trace.
+			// even if disabled or in dry run mode, we can still monitor the decision.
+			dropped := tracePercentage > result.RulePercentage
+			if dropped {
+				p.telemetryBuilder.OdigosSamplingTraceDropCount.Add(ctx, 1, rulesMeasurementOptions)
+			} else {
+				p.telemetryBuilder.OdigosSamplingTraceKeepCount.Add(ctx, 1, rulesMeasurementOptions)
+			}
 		}
 	}
+
+	// record that a category was checked for single trace.
+	p.telemetryBuilder.OdigosSamplingTraceCheckCount.Add(ctx, 1, categoryMeasurementOptions)
+}
+
+func (p *tailSamplingProcessor) recordCategoryMatchMetrics(ctx context.Context, measurementOptions metric.MeasurementOption, dropped bool, sapnsCount int) {
+	p.telemetryBuilder.OdigosSamplingTraceMatchCount.Add(ctx, 1, measurementOptions)
+	p.telemetryBuilder.OdigosSamplingSpanMatchCount.Add(ctx, int64(sapnsCount), measurementOptions)
+	if dropped {
+		p.telemetryBuilder.OdigosSamplingTraceDropCount.Add(ctx, 1, measurementOptions)
+		p.telemetryBuilder.OdigosSamplingSpanDropCount.Add(ctx, int64(sapnsCount), measurementOptions)
+	} else {
+		p.telemetryBuilder.OdigosSamplingTraceKeepCount.Add(ctx, 1, measurementOptions)
+		p.telemetryBuilder.OdigosSamplingSpanKeepCount.Add(ctx, int64(sapnsCount), measurementOptions)
+	}
+}
+
+func (p *tailSamplingProcessor) ruleMetricsAttributes(category consts.SamplingCategory, result *category.RuleEvaluationResult) []attribute.KeyValue {
+
+	rulesAttrs := []attribute.KeyValue{
+		attribute.String(odigosattributes.SamplingCategory, string(category)),
+		attribute.String(odigosattributes.SamplingRuleId, result.RuleId),
+		attribute.String(odigosattributes.SamplingRuleName, result.RuleName),
+	}
+
+	// if rule was evaluated but disabled, add an attribute so it's visible in the metrics.
+	if result.RuleDisabled {
+		rulesAttrs = append(rulesAttrs, attribute.Bool(odigosattributes.SamplingRuleDisabled, true))
+	}
+
+	if p.config.DryRun {
+		rulesAttrs = append(rulesAttrs, attribute.Bool(odigosattributes.SamplingDryRun, true))
+	}
+
+	return rulesAttrs
+}
+
+func categoryMetricsAttributes(category consts.SamplingCategory, dryRun bool) []attribute.KeyValue {
+	categoryAttrs := []attribute.KeyValue{
+		attribute.String(odigosattributes.SamplingCategory, string(category)),
+	}
+	if dryRun {
+		categoryAttrs = append(categoryAttrs, attribute.Bool(odigosattributes.SamplingDryRun, true))
+	}
+	return categoryAttrs
 }
 
 func newTailSamplingProcessor(logger *zap.Logger, cfg *Config, set component.TelemetrySettings) *tailSamplingProcessor {
@@ -178,9 +238,18 @@ func newTailSamplingProcessor(logger *zap.Logger, cfg *Config, set component.Tel
 	if err != nil {
 		logger.Error("failed to create telemetry builder", zap.Error(err))
 	}
+
+	// compute once to to avoid creating new sets on each call.
+	noisyOperationsCategoryAttributes := categoryMetricsAttributes(consts.SamplingCategoryNoise, cfg.DryRun)
+	highlyRelevantCategoryAttributes := categoryMetricsAttributes(consts.SamplingCategoryHighlyRelevant, cfg.DryRun)
+	costReductionCategoryAttributes := categoryMetricsAttributes(consts.SamplingCategoryCostReduction, cfg.DryRun)
+
 	return &tailSamplingProcessor{
 		logger:           logger,
 		config:           cfg,
 		telemetryBuilder: telemetryBuilder,
+		noisyOperationsCategoryMeasurementOptions: metric.WithAttributes(noisyOperationsCategoryAttributes...),
+		highlyRelevantCategoryMeasurementOptions:  metric.WithAttributes(highlyRelevantCategoryAttributes...),
+		costReductionCategoryMeasurementOptions:   metric.WithAttributes(costReductionCategoryAttributes...),
 	}
 }

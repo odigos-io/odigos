@@ -44,6 +44,7 @@ func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperati
 				RuleId:         noisyOperation.Id,
 				RuleName:       noisyOperation.Name,
 				RulePercentage: currentPercentage,
+				RuleDisabled:   noisyOperation.Disabled,
 			}
 		}
 		res := rulesEvalResults[noisyOperation.Id]

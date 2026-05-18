@@ -37,9 +37,41 @@ func AssertEqualOdigosSamplingSpanCheckCount(t *testing.T, tt *componenttest.Tel
 	metricdatatest.AssertEqual(t, want, got, opts...)
 }
 
-func AssertEqualOdigosSamplingSpanMatchedCount(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+func AssertEqualOdigosSamplingSpanDropCount(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
-		Name:        "otelcol_odigos.sampling.span.matched_count",
+		Name:        "otelcol_odigos.sampling.span.drop_count",
+		Description: "Number of spans that are evaluated to be dropped [Development]",
+		Unit:        "{spans}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos.sampling.span.drop_count")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
+func AssertEqualOdigosSamplingSpanKeepCount(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos.sampling.span.keep_count",
+		Description: "Number of spans that are evaluated to be kept [Development]",
+		Unit:        "{spans}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos.sampling.span.keep_count")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
+func AssertEqualOdigosSamplingSpanMatchCount(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos.sampling.span.match_count",
 		Description: "Number of spans that matched this rule. [Development]",
 		Unit:        "{spans}",
 		Data: metricdata.Sum[int64]{
@@ -48,7 +80,7 @@ func AssertEqualOdigosSamplingSpanMatchedCount(t *testing.T, tt *componenttest.T
 			DataPoints:  dps,
 		},
 	}
-	got, err := tt.GetMetric("otelcol_odigos.sampling.span.matched_count")
+	got, err := tt.GetMetric("otelcol_odigos.sampling.span.match_count")
 	require.NoError(t, err)
 	metricdatatest.AssertEqual(t, want, got, opts...)
 }
@@ -65,6 +97,38 @@ func AssertEqualOdigosSamplingTraceCheckCount(t *testing.T, tt *componenttest.Te
 		},
 	}
 	got, err := tt.GetMetric("otelcol_odigos.sampling.trace.check_count")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
+func AssertEqualOdigosSamplingTraceDropCount(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos.sampling.trace.drop_count",
+		Description: "Number of traces that are evaluated to be dropped [Development]",
+		Unit:        "{traces}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos.sampling.trace.drop_count")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
+func AssertEqualOdigosSamplingTraceKeepCount(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos.sampling.trace.keep_count",
+		Description: "Number of traces that are evaluated to be kept [Development]",
+		Unit:        "{traces}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos.sampling.trace.keep_count")
 	require.NoError(t, err)
 	metricdatatest.AssertEqual(t, want, got, opts...)
 }
