@@ -340,30 +340,28 @@ Java instrumentation subsection targets Java-specific behavior.
 
 <Accordion title="Profiling" icon="gauge-high" defaultOpen="false">
 
-Enables **continuous CPU profiling** (eBPF, OTLP Profiles) on **odigos-otelcol**. Separate from VM Agent **pprof** (process debugging).
+Enables **continuous CPU profiling** (eBPF, OTLP Profiles) on **odigos-otelcol**. This is separate from Go **pprof** (see **Pprof** below).
 
 | Field | Description |
 |-------|-------------|
-| **profiling.enabled** | Turn on the `profiling` receiver and `profiles` export pipeline. Default `false`. |
+| **profiling.enabled** | Turns on the `profiling` receiver and `profiles` pipeline when a destination includes **PROFILES**. Default `false`. |
 
 ```yaml
 profiling:
   enabled: true
 ```
 
-Toggling profiling reloads collector config and syncs the PID registry. **Enabling profiling after the vm-agent process started with it off** requires a **vm-agent restart** for `GET_PROF_ATTR` on `/var/exchange/exchange.sock`.
-
-See [Continuous profiling getting started](../../instrumentations/profiling/getting-started).
+When you toggle profiling, the agent reloads collector config and syncs the PID→`service.name` registry. **Enabling profiling after the vm-agent process started** still requires a **vm-agent restart** so the unix socket accepts `GET_PROF_ATTR`; the collector itself is reloaded, not fully restarted.
 
 </Accordion>
 
 <Accordion title="Pprof" icon="bug" defaultOpen="false">
 
-Controls the Go **net/http/pprof** endpoint for the **vm-agent process itself** (not application workloads).
+Controls the **Go `net/http/pprof`** debug endpoint for the **vm-agent process only** (not application CPU profiling).
 
 | Field | Description |
 |-------|-------------|
-| **pprof.enabled** | Enable or disable the VM Agent pprof server. Enabled by default. |
+| **Enabled** | Expose pprof on `network.vmagent.pprof_port` (default `7771`). Enabled by default. |
 
 </Accordion>
 </AccordionGroup>

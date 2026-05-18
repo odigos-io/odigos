@@ -24,14 +24,14 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-[Grafana Pyroscope](https://grafana.com/oss/pyroscope/) is an open-source continuous profiling backend. Odigos exports profile data over OTLP/HTTP to Pyroscope's OTLP profiles receiver, so the same eBPF profiler that powers the in-product flame graph can also feed long-term, queryable storage.
+[Grafana Pyroscope](https://grafana.com/oss/pyroscope/) is an open-source continuous profiling backend. Odigos exports profile data over OTLP to Pyroscope so the same eBPF profiler that powers in-product views can also feed long-term, queryable storage.
 
 <Note>
-  This destination only emits the **Profiles** signal. The Destination CRD must include `PROFILES`, and cluster-wide profiling must be enabled for Odigos to produce profile data — see the [Continuous Profiling overview](/enterprise/instrumentations/profiling/overview) and [getting started guide](/enterprise/instrumentations/profiling/getting-started).
+  This destination only emits the **Profiles** signal. The destination must include `PROFILES`, and VM profiling must be enabled — see [Continuous profiling overview](/vmagent/instrumentations/profiling/overview) and [getting started](/vmagent/instrumentations/profiling/getting-started).
 </Note>
 
 **Pyroscope version**<br />
-Pyroscope must include the OTLP profiles HTTP receiver (`/v1development/profiles`). This is available in recent versions of Pyroscope — if you are not sure, upgrade to the latest release before configuring Odigos.
+Use a Pyroscope build that accepts OTLP profiles on the endpoint you configure. If you are unsure, upgrade to a recent release before configuring Odigos.
 
 **Quickstart: self-hosted Pyroscope**<br />
 If you don't already run Pyroscope, the upstream Helm chart gets you a working instance in a couple of commands:
@@ -43,17 +43,17 @@ helm install pyroscope grafana/pyroscope \
   --namespace pyroscope --create-namespace
 ```
 
-The distributor will be reachable in-cluster at `pyroscope.pyroscope:4040` — use that as the `PYROSCOPE_URL` value below.
+The distributor will be reachable in-cluster at `pyroscope.pyroscope:4040` — use that as the `PYROSCOPE_ENDPOINT` value below.
 
 <Warning>
-  Provide the distributor's `host:port` only. Do **not** add `/otlp` or any path — Odigos appends `/v1development/profiles` automatically. Adding `/otlp` produces requests to `.../otlp/v1development/profiles`, which Pyroscope rejects with 404.
+  Provide the distributor's `host:port` only. Do **not** add `/otlp` or other path suffixes unless your Pyroscope deployment requires them.
 </Warning>
 
 **TLS**<br />
-Toggle `PYROSCOPE_TLS_ENABLED` on when Pyroscope is fronted by HTTPS (for example, behind an ingress or a managed gateway). Odigos switches the OTLP exporter to `https://` and enables certificate verification. For plain in-cluster traffic, leave it off.
+Toggle `PYROSCOPE_TLS_ENABLED` when Pyroscope is fronted by TLS. For plain in-cluster traffic, leave it off.
 
 **Verifying the export**<br />
-After applying the destination and sending traffic to a profiled Source, open the Pyroscope UI (`kubectl -n pyroscope port-forward svc/pyroscope 4040`) and confirm that profiles appear under your service. You can keep watching the in-product flame graph in the Odigos UI in parallel — both pipelines run independently.
+After applying the destination and sending traffic to a profiled source, open the Pyroscope UI (`kubectl -n pyroscope port-forward svc/pyroscope 4040`) and confirm that profiles appear under your service.
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
@@ -69,10 +69,15 @@ After applying the destination and sending traffic to a profiled Source, open th
   ✅ Profiles
 </Accordion>
 
-- **PYROSCOPE_URL** `string` : Pyroscope Endpoint. Hostname and port of the Pyroscope distributor HTTP API (e.g. `pyroscope.pyroscope:4040`). Odigos sends OTLP profiles to `/v1development/profiles` on this host; do not add an `/otlp` path.
+- **PYROSCOPE_ENDPOINT** `string` : Endpoint. Pyroscope OTLP gRPC endpoint. Format: host:port (default port 4040).
   - This field is required
-  - Example: `host:port`
-- **PYROSCOPE_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
+  - Example: `host:4040`
+- **PYROSCOPE_TLS_ENABLED** `boolean` : Enable TLS. Enable TLS for the gRPC connection to Pyroscope.
+  - This field is optional and defaults to `False`
+- **PYROSCOPE_CA_PEM** `string` : Certificate Authority. CA certificate in PEM format to verify the Pyroscope server. Leave empty to use system root CA.
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
+- **PYROSCOPE_INSECURE_SKIP_VERIFY** `boolean` : Insecure Skip Verify. Skip TLS certificate verification.
   - This field is optional and defaults to `False`
 
 ### Adding Destination to Odigos
@@ -106,9 +111,11 @@ There are two primary methods for configuring destinations in Odigos:
       namespace: odigos-system
     spec:
       data:
-        PYROSCOPE_URL: <Pyroscope Endpoint>
+        PYROSCOPE_ENDPOINT: <Endpoint>
         # Note: The commented fields below are optional.
         # PYROSCOPE_TLS_ENABLED: <Enable TLS>
+        # PYROSCOPE_CA_PEM: <Certificate Authority>
+        # PYROSCOPE_INSECURE_SKIP_VERIFY: <Insecure Skip Verify>
       destinationName: pyroscope
       signals:
       - PROFILES
