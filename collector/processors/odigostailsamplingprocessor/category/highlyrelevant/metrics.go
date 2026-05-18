@@ -5,7 +5,7 @@ import (
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
-func recordEvalResultForSingleSpan(aggregatedResults map[string]*category.RuleEvaluationResult, rules []*commonapisampling.HighlyRelevantOperation) {
+func recordEvalResultForSingleSpan(aggregatedResults map[string]*category.RuleEvaluationResult, rules []commonapisampling.HighlyRelevantOperation) {
 	for _, rule := range rules {
 		currResult, found := aggregatedResults[rule.Id]
 		if !found {

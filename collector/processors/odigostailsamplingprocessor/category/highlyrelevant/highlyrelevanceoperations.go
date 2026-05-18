@@ -44,7 +44,7 @@ func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtensio
 				matchedRules := matchHighlyRelevantRulesForSingleSpan(span, highlyRelevantOperations)
 				spanMostPercentageRule := selectHighlyRelevantRuleFromMatches(matchedRules)
 
-				recordEvalResultForSingleSpan(rulesEvalResults, matchedRules)
+				recordEvalResultForSingleSpan(rulesEvalResults, highlyRelevantOperations)
 
 				if spanMostPercentageRule != nil {
 					setHighlyRelevantRuleAttributesOnSpan(span, spanMostPercentageRule)
