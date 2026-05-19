@@ -1,7 +1,9 @@
 package graph
 
 import (
+	"cmp"
 	"context"
+	"slices"
 	"sync"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -130,12 +132,16 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 				uniqueLanguages[container.Language] = struct{}{}
 			}
 		}
+		slices.SortFunc(containers, func(a, b *model.K8sWorkloadRuntimeInfoContainer) int {
+			return cmp.Compare(a.ContainerName, b.ContainerName)
+		})
 		var detectedLanguages []model.ProgrammingLanguage
 		if completed {
 			detectedLanguages = make([]model.ProgrammingLanguage, 0, len(uniqueLanguages))
 			for language := range uniqueLanguages {
 				detectedLanguages = append(detectedLanguages, model.ProgrammingLanguage(language))
 			}
+			slices.Sort(detectedLanguages)
 		}
 		w.RuntimeInfo = &model.K8sWorkloadRuntimeInfo{
 			Completed:         completed,
@@ -179,6 +185,9 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 		for _, container := range containerByName {
 			w.Containers = append(w.Containers, container)
 		}
+		slices.SortFunc(w.Containers, func(a, b *model.K8sWorkloadContainer) int {
+			return cmp.Compare(a.ContainerName, b.ContainerName)
+		})
 	}
 
 	// Pod-dependent fields: conditions, workloadOdigosHealthStatus, podsAgentInjectionStatus.
