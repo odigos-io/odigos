@@ -89,6 +89,22 @@ func (c *cache) Get(key string) (*commonapi.ContainerCollectorConfig, bool) {
 	return val, found
 }
 
+// hasContainersForWorkloadPrefix returns true when the workload key prefix (e.g. "ns/Kind/name/")
+// has at least one full container cache key. Used for profile filtering where resource attributes
+// may not include k8s.container.name.
+//
+// The len(containerKeys) > 0 check is load-bearing, not defensive. The index entry's lifetime is
+// the union of its containerKeys and dataStreams: SetDataStreams creates an entry with an empty
+// containerKeys map, and Delete only removes the entry when both sets are empty. So entry != nil
+// alone does not imply "has at least one InstrumentationConfig container entry" — a workload that
+// only has data-stream labels would falsely return true without the length check.
+func (c *cache) hasContainersForWorkloadPrefix(workloadKeyPrefix string) bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	entry := c.workloadKeysIndex[workloadKeyPrefix]
+	return entry != nil && len(entry.containerKeys) > 0
+}
+
 // Set stores the required config for the given workload key, updates the workload keys index, then invokes all registered callbacks.
 // We snapshot the callback list under the lock (so we never read c.callbacks after unlock, avoiding
 // a race with addCallback), then unlock and invoke each callback.

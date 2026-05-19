@@ -3,6 +3,7 @@ package collectorconfig
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 )
@@ -15,6 +16,23 @@ func NodeHasURLTemplateProcessor(processors []*odigosv1.Processor) bool {
 			return true
 		}
 	}
+	return false
+}
+
+// NodeNeedsOdigosConfigK8sExtension reports whether the node collector should merge
+// the odigos_config_k8s extension domain.
+func NodeNeedsOdigosConfigK8sExtension(processors []*odigosv1.Processor, profiling *odigoscommon.ProfilingConfiguration) bool {
+	// odigos_config_k8s is added in two scenarios:
+	// 1. URL templatization
+	if NodeHasURLTemplateProcessor(processors) {
+		return true
+	}
+
+	// 2. Profiling enabled
+	if odigoscommon.ProfilingPipelineActive(profiling) {
+		return true
+	}
+
 	return false
 }
 
