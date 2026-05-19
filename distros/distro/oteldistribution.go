@@ -4,6 +4,7 @@ import (
 	"text/template"
 
 	"github.com/odigos-io/odigos/common"
+	commonopamp "github.com/odigos-io/odigos/common/opamp"
 )
 
 const AgentPlaceholderDirectory = "{{ODIGOS_AGENTS_DIR}}"
@@ -47,6 +48,10 @@ type StaticEnvironmentVariable struct {
 type EnvironmentVariables struct {
 	// if this distribution runs an opamp client, add the environment variables that configures the server endpoint (local node)
 	OpAmpClientEnvironments bool `yaml:"opAmpClientEnvironments,omitempty"`
+
+	// opAmpTransport selects how the agent reaches the node-local OpAMP server (http or unix).
+	// When empty, distros with opAmpClientEnvironments default to http.
+	OpAmpTransport commonopamp.OpAmpTransport `yaml:"opAmpTransport,omitempty"`
 
 	// set to true if this distribution uses the OTLP HTTP protocol to emit telemetry data to node collector.
 	// if `true` the OTEL_EXPORTER_OTLP_ENDPOINT environment variable will be set to LocalTrafficOTLPHttpDataCollectionEndpoint

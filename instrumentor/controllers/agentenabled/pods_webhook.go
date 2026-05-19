@@ -21,6 +21,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	commonopamp "github.com/odigos-io/odigos/common/opamp"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
@@ -327,7 +328,18 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		return false, nil, err
 	}
 	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroMetadata.Name, pw.Namespace)
-	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
+	mountMethod := common.K8sVirtualDeviceMountMethod
+	if config.MountMethod != nil {
+		mountMethod = *config.MountMethod
+	}
+	switch commonopamp.ResolveTransport(
+		distroMetadata.EnvironmentVariables.OpAmpTransport,
+		distroMetadata.EnvironmentVariables.OpAmpClientEnvironments,
+		mountMethod,
+	) {
+	case commonopamp.OpAmpTransportUnix:
+		existingEnvNames = podswebhook.InjectOpampUnixSocketEnvVar(existingEnvNames, podContainerSpec)
+	case commonopamp.OpAmpTransportHTTP:
 		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
 	}
 	if distroMetadata.EnvironmentVariables.SignalsAsStaticOtelEnvVars {
