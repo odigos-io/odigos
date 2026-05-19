@@ -5,7 +5,6 @@ import { Overview } from '@odigos/ui-kit/containers/v2';
 import {
   useActionCRUD,
   useDataStreamsCRUD,
-  useDescribe,
   useDestinationCRUD,
   useDestinationCategories,
   useEffectiveConfig,
@@ -24,7 +23,6 @@ export default function Page() {
   const { effectiveConfig } = useEffectiveConfig();
 
   const { fetchActions } = useActionCRUD();
-  const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
   const { fetchDestinations } = useDestinationCRUD();
   const { fetchNamespacesWithWorkloads } = useNamespace();
@@ -35,7 +33,7 @@ export default function Page() {
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
   const { fetchProfilingSlots, enableProfiling, fetchSourceProfiling } = useProfiling();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
-  const { fetchSources, persistSourcesV2, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
+  const { fetchSources, persistSourcesV2, updateSource, fetchSourceById, fetchPeerSources } = useSourceCRUD();
   const { fetchInstrumentationRules, createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   return (
@@ -56,8 +54,6 @@ export default function Page() {
       recoverFromRollback={recoverFromRollback}
       updateSource={updateSource}
       fetchSourceById={fetchSourceById}
-      fetchSourceDescribe={fetchDescribeSource}
-      fetchSourceLibraries={fetchSourceLibraries}
       fetchPeerSources={fetchPeerSources}
       enableProfiling={enableProfiling}
       fetchProfilingSlots={fetchProfilingSlots}

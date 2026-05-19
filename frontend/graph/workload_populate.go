@@ -1,7 +1,9 @@
 package graph
 
 import (
+	"cmp"
 	"context"
+	"slices"
 	"sync"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -130,12 +132,16 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 				uniqueLanguages[container.Language] = struct{}{}
 			}
 		}
+		slices.SortFunc(containers, func(a, b *model.K8sWorkloadRuntimeInfoContainer) int {
+			return cmp.Compare(a.ContainerName, b.ContainerName)
+		})
 		var detectedLanguages []model.ProgrammingLanguage
 		if completed {
 			detectedLanguages = make([]model.ProgrammingLanguage, 0, len(uniqueLanguages))
 			for language := range uniqueLanguages {
 				detectedLanguages = append(detectedLanguages, model.ProgrammingLanguage(language))
 			}
+			slices.Sort(detectedLanguages)
 		}
 		w.RuntimeInfo = &model.K8sWorkloadRuntimeInfo{
 			Completed:         completed,
@@ -166,24 +172,22 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 			}
 			containerByName[container.ContainerName].RuntimeInfo = runtimeDetailsContainersToModel(&container)
 		}
-		for _, container := range ic.Spec.ContainersOverrides {
+		for i := range ic.Spec.ContainersOverrides {
+			container := &ic.Spec.ContainersOverrides[i]
 			if _, ok := containerByName[container.ContainerName]; !ok {
 				containerByName[container.ContainerName] = &model.K8sWorkloadContainer{
 					ContainerName: container.ContainerName,
 				}
 			}
-			overrides := &model.K8sWorkloadContainerOverrides{
-				ContainerName: container.ContainerName,
-			}
-			if container.RuntimeInfo != nil {
-				overrides.RuntimeInfo = runtimeDetailsContainersToModel(container.RuntimeInfo)
-			}
-			containerByName[container.ContainerName].Overrides = overrides
+			containerByName[container.ContainerName].Overrides = containerOverrideToModel(container)
 		}
 		w.Containers = make([]*model.K8sWorkloadContainer, 0, len(containerByName))
 		for _, container := range containerByName {
 			w.Containers = append(w.Containers, container)
 		}
+		slices.SortFunc(w.Containers, func(a, b *model.K8sWorkloadContainer) int {
+			return cmp.Compare(a.ContainerName, b.ContainerName)
+		})
 	}
 
 	// Pod-dependent fields: conditions, workloadOdigosHealthStatus, podsAgentInjectionStatus.
