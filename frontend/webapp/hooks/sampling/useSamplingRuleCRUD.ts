@@ -62,7 +62,10 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
   const { addNotification } = useNotificationStore();
   const [samplingRules, setSamplingRules] = useState<SamplingRules[]>([]);
   const [k8sHealthProbesConfig, setK8sHealthProbesConfig] = useState<K8sHealthProbesSamplingConfig | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Initialize loading as true so the first render (before any fetch has resolved) reports
+  // "loading" — without this, consumers (e.g. the sampling onboarding modal) can't distinguish
+  // the pre-fetch initial state from a resolved-but-empty response and may auto-open prematurely.
+  const [loading, setLoading] = useState(true);
 
   const notifyUser = useCallback(
     (type: StatusType, title: string, message: string) => {
