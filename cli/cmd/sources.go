@@ -236,7 +236,7 @@ It is important to note that if a Source [name] is provided, all --workload-* fl
 		} else {
 			namespaceText, providedWorkloadFlags, namespaceList, labelSet := parseSourceLabelFlags()
 
-			if !cmd.Flag("yes").Changed {
+			if !mustGetBoolFlag(cmd, "yes") {
 				fmt.Printf("About to delete all Sources in %s that match:\n%s", namespaceText, providedWorkloadFlags)
 				confirmed, err := confirm.Ask("Are you sure?")
 				if err != nil || !confirmed {
@@ -316,7 +316,7 @@ It is important to note that if a Source [name] is provided, all --workload-* fl
 		} else {
 			namespaceText, providedWorkloadFlags, namespaceList, labelSet := parseSourceLabelFlags()
 
-			if !cmd.Flag("yes").Changed {
+			if !mustGetBoolFlag(cmd, "yes") {
 				fmt.Printf("About to update all Sources in %s that match:\n%s", namespaceText, providedWorkloadFlags)
 				confirmed, err := confirm.Ask("Are you sure?")
 				if err != nil || !confirmed {
@@ -618,7 +618,7 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 			if len(sourceList) > 0 {
 				fmt.Printf("NOTE: Configured Namespace Source, but the following Workload Sources will not be affected (individual Workload Sources take priority over Namespace Sources):\n")
 				for _, line := range sourceList {
-					fmt.Printf(line)
+					fmt.Print(line)
 				}
 			}
 		}

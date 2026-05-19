@@ -61,7 +61,7 @@ and rollback any metadata changes made to your objects.`,
 		odigosNsFound := !resources.IsErrNoOdigosNamespaceFound(err)
 
 		if odigosNsFound {
-			if !cmd.Flag("yes").Changed {
+			if !mustGetBoolFlag(cmd, "yes") {
 				fmt.Printf("About to uninstall Odigos from namespace %s\n", ns)
 				confirmed, err := confirm.Ask("Are you sure?")
 				if err != nil || !confirmed {
@@ -92,7 +92,7 @@ and rollback any metadata changes made to your objects.`,
 			}
 			if autoRolloutDisabled {
 				fmt.Println("Odigos is configured to NOT rollout workloads automatically; existing pods will remain instrumented until a manual rollout is triggered.")
-			} else if !cmd.Flag("no-wait").Changed {
+			} else if !mustGetBoolFlag(cmd, "no-wait") {
 				err = waitForPodsToRolloutWithoutInstrumentation(ctx, client)
 				if err != nil {
 					fmt.Printf("\033[31mERROR\033[0m Failed to wait for pods to rollout without instrumentation: %s\n", err)
@@ -103,7 +103,7 @@ and rollback any metadata changes made to your objects.`,
 			// If the user only wants to uninstall instrumentation, we exit here.
 			// This flag being used by users who want to remove instrumentation without removing the entire Odigos setup,
 			// And by cleanup jobs that runs as helm pre-uninstall hook before helm uninstall command.
-			if cmd.Flag("instrumentation-only").Changed {
+			if mustGetBoolFlag(cmd, "instrumentation-only") {
 				// Node labels are added by the Odiglet, and since it's not managed by Helm, we need to clean them up here.
 				// In CLI logic, this is done in UninstallClusterResources after the Odiglet is deleted.
 				cmdutil.CreateKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
