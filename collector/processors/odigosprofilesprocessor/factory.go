@@ -1,5 +1,7 @@
 package odigosprofilesprocessor
 
+//go:generate mdatagen metadata.yaml
+
 import (
 	"context"
 

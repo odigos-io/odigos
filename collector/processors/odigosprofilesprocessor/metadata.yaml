@@ -7,6 +7,17 @@ status:
   codeowners:
     active: [odigos]
 
+telemetry:
+  metrics:
+    odigos.profiles.processor.dropped.resource_profiles:
+      enabled: true
+      description: "ResourceProfiles dropped because the workload is not in the odigos_config_k8s cache or workload identity could not be derived from resource attributes."
+      unit: "{resource_profiles}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+
 tests:
   # Processor.Start requires odigos_config_extension on the host, which mdatagen's NopHost cannot provide.
   skip_lifecycle: true

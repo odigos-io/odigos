@@ -6,9 +6,9 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pprofile"
-	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 
+	"github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor/internal/metadata"
 	"github.com/odigos-io/odigos/common/collector"
 )
 
@@ -21,20 +21,19 @@ type odigosProfilesProcessor struct {
 	logger *zap.Logger
 	cfg    *Config
 
-	provider        collector.OdigosConfigExtension
-	droppedProfiles metric.Int64Counter
+	provider         collector.OdigosConfigExtension
+	telemetryBuilder *metadata.TelemetryBuilder
 }
 
 func newOdigosProfilesProcessor(logger *zap.Logger, tel component.TelemetrySettings, cfg *Config) *odigosProfilesProcessor {
-	meter := tel.MeterProvider.Meter("github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor")
-	dropped, _ := meter.Int64Counter(
-		"odigos.profiles.processor.dropped.resource_profiles",
-		metric.WithDescription("ResourceProfiles dropped because the workload is not in the odigos_config_k8s cache or workload identity could not be derived from resource attributes"),
-	)
+	telemetryBuilder, err := metadata.NewTelemetryBuilder(tel)
+	if err != nil {
+		logger.Error("failed to create telemetry builder", zap.Error(err))
+	}
 	return &odigosProfilesProcessor{
-		logger:          logger,
-		cfg:             cfg,
-		droppedProfiles: dropped,
+		logger:           logger,
+		cfg:              cfg,
+		telemetryBuilder: telemetryBuilder,
 	}
 }
 
@@ -57,6 +56,9 @@ func (p *odigosProfilesProcessor) Start(ctx context.Context, host component.Host
 
 func (p *odigosProfilesProcessor) Shutdown(context.Context) error {
 	p.provider = nil
+	if p.telemetryBuilder != nil {
+		p.telemetryBuilder.Shutdown()
+	}
 	return nil
 }
 
@@ -65,7 +67,9 @@ func (p *odigosProfilesProcessor) processProfiles(ctx context.Context, pd pprofi
 		if p.provider.HasCachedWorkloadContainerConfig(rp.Resource()) {
 			return false
 		}
-		p.droppedProfiles.Add(ctx, 1)
+		if p.telemetryBuilder != nil {
+			p.telemetryBuilder.OdigosProfilesProcessorDroppedResourceProfiles.Add(ctx, 1)
+		}
 		return true
 	})
 	return pd, nil
