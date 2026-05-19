@@ -323,7 +323,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 	}
 
 	var featureGates []string
-	if common.ProfilingPipelineActive(odigosConfiguration.Profiling) {
+	if common.ProfilingPipelineActive(odigosConfiguration.Profiling) || hasProfilesDestination(enabledDests) {
 		featureGates = append(featureGates, "service.profilesSupport")
 	}
 	if odigosConfiguration.ClickhouseJsonTypeEnabledProperty != nil && *odigosConfiguration.ClickhouseJsonTypeEnabledProperty {
@@ -359,6 +359,21 @@ func getSecretsFromDests(destList *odigosv1.DestinationList) []corev1.EnvFromSou
 	}
 
 	return result
+}
+
+func hasProfilesDestination(destList *odigosv1.DestinationList) bool {
+	if destList == nil {
+		return false
+	}
+
+	for _, dst := range destList.Items {
+		for _, signal := range dst.Spec.Signals {
+			if signal == common.ProfilesObservabilitySignal {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func boolPtr(b bool) *bool {
