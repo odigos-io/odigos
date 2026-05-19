@@ -319,7 +319,12 @@ type K8sWorkloadPodContainerProcessAttribute {
 
 type K8sWorkloadPodContainerProcessInstrumentation {
   name: String!
+  type: String
+  healthy: Boolean
+  message: String
+  lastStatusTime: String
   isStandardLibrary: Boolean
+  nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }
 
 # describes a single process instance in a pod container.

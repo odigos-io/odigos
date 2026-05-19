@@ -265,7 +265,15 @@ export const GET_WORKLOADS_BY_IDS = gql`
         }
         instrumentations {
           name
+          type
+          healthy
+          message
+          lastStatusTime
           isStandardLibrary
+          nonIdentifyingAttributes {
+            key
+            value
+          }
         }
       }
       pods {
@@ -318,7 +326,15 @@ export const GET_WORKLOADS_BY_IDS = gql`
             }
             instrumentations {
               name
+              type
+              healthy
+              message
+              lastStatusTime
               isStandardLibrary
+              nonIdentifyingAttributes {
+                key
+                value
+              }
             }
           }
         }

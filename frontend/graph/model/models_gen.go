@@ -1023,8 +1023,13 @@ type K8sWorkloadPodContainerProcessAttribute struct {
 }
 
 type K8sWorkloadPodContainerProcessInstrumentation struct {
-	Name              string `json:"name"`
-	IsStandardLibrary *bool  `json:"isStandardLibrary,omitempty"`
+	Name                     string                     `json:"name"`
+	Type                     *string                    `json:"type,omitempty"`
+	Healthy                  *bool                      `json:"healthy,omitempty"`
+	Message                  *string                    `json:"message,omitempty"`
+	LastStatusTime           *string                    `json:"lastStatusTime,omitempty"`
+	IsStandardLibrary        *bool                      `json:"isStandardLibrary,omitempty"`
+	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
 }
 
 type K8sWorkloadRollout struct {

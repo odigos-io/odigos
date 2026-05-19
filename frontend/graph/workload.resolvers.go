@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strconv"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -404,29 +403,21 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 			return nil, err
 		}
 
-		instrumentations := map[string]model.K8sWorkloadPodContainerProcessInstrumentation{}
+		instrumentations := map[string]*model.K8sWorkloadPodContainerProcessInstrumentation{}
 		for _, instrumentationInstance := range instrumentationInstances {
 			for _, component := range instrumentationInstance.Status.Components {
-				if component.Type == "instrumentation" {
-					if _, ok := instrumentations[component.Name]; !ok {
-						isStandardLibrary := false
-						for _, attribute := range component.NonIdentifyingAttributes {
-							if attribute.Key == "is_standard_lib" {
-								isStandardLibrary = attribute.Value == "true"
-								break
-							}
-						}
-						instrumentations[component.Name] = model.K8sWorkloadPodContainerProcessInstrumentation{
-							Name:              component.Name,
-							IsStandardLibrary: &isStandardLibrary,
-						}
-					}
+				if component.Type != odigosv1.InstrumentationLibraryTypeInstrumentation {
+					continue
 				}
+				if _, ok := instrumentations[component.Name]; ok {
+					continue
+				}
+				instrumentations[component.Name] = componentToInstrumentation(component)
 			}
 		}
 		container.Instrumentations = make([]*model.K8sWorkloadPodContainerProcessInstrumentation, 0, len(instrumentations))
 		for _, instrumentation := range instrumentations {
-			container.Instrumentations = append(container.Instrumentations, &instrumentation)
+			container.Instrumentations = append(container.Instrumentations, instrumentation)
 		}
 		slices.SortFunc(container.Instrumentations, func(a, b *model.K8sWorkloadPodContainerProcessInstrumentation) int {
 			return cmp.Compare(a.Name, b.Name)
@@ -732,21 +723,11 @@ func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *mo
 		})
 
 		instrumentations := make([]*model.K8sWorkloadPodContainerProcessInstrumentation, 0, len(instrumentationInstance.Status.Components))
-		for _, components := range instrumentationInstance.Status.Components {
-			if components.Type == "instrumentation" {
-				var isStandardLibrary *bool
-				for _, attribute := range components.NonIdentifyingAttributes {
-					if attribute.Key == "is_standard_lib" {
-						valBool := attribute.Value == "true"
-						isStandardLibrary = &valBool
-						break
-					}
-				}
-				instrumentations = append(instrumentations, &model.K8sWorkloadPodContainerProcessInstrumentation{
-					Name:              components.Name,
-					IsStandardLibrary: isStandardLibrary,
-				})
+		for _, component := range instrumentationInstance.Status.Components {
+			if component.Type != odigosv1.InstrumentationLibraryTypeInstrumentation {
+				continue
 			}
+			instrumentations = append(instrumentations, componentToInstrumentation(component))
 		}
 		slices.SortFunc(instrumentations, func(a, b *model.K8sWorkloadPodContainerProcessInstrumentation) int {
 			return cmp.Compare(a.Name, b.Name)
@@ -763,43 +744,6 @@ func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *mo
 		return compareProcessesByPid(a, b)
 	})
 	return processes, nil
-}
-
-// compareProcessesByPid orders two processes by their reported PID — preferring
-// process.pid, falling back to process.vpid — using numeric ordering when both
-// values are valid integers (so "10" sorts after "2"), and lexicographic
-// otherwise. Mirrors the fallback rules the UI used to apply on the client.
-func compareProcessesByPid(a, b *model.K8sWorkloadPodContainerProcess) int {
-	aPid := processPidFromAttributes(a.IdentifyingAttributes)
-	bPid := processPidFromAttributes(b.IdentifyingAttributes)
-
-	aInt, aErr := strconv.Atoi(aPid)
-	bInt, bErr := strconv.Atoi(bPid)
-	if aErr == nil && bErr == nil {
-		return cmp.Compare(aInt, bInt)
-	}
-	return cmp.Compare(aPid, bPid)
-}
-
-// processPidFromAttributes returns the PID-like value used to order processes
-// deterministically across re-fetches. Prefers process.pid, falling back to
-// process.vpid (the virtual PID emitted by some agents) so processes that only
-// report vpid still sort meaningfully instead of clustering under the empty
-// string.
-func processPidFromAttributes(attrs []*model.K8sWorkloadPodContainerProcessAttribute) string {
-	var vpid string
-	for _, attr := range attrs {
-		if attr == nil {
-			continue
-		}
-		switch attr.Name {
-		case processAttributeNamePid:
-			return attr.Value
-		case processAttributeNameVpid:
-			vpid = attr.Value
-		}
-	}
-	return vpid
 }
 
 // ExpectingTelemetry is the resolver for the expectingTelemetry field.
