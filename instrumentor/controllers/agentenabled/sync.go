@@ -273,7 +273,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		}
 
 		// calculate the dynamic configs for this container.
-		dynamicContainerConfigs, disabledInfo := dynamicconfig.CalculateDynamicContainerConfig(containerName, &rulesForContainer, effectiveConfig, containerRuntimeDetails, agentLevelActions, samplingRules, workloadObj, pw, containerDistro, enabledSignals, nodeCollectorsGroup, clusterCollectorsGroup)
+		dynamicContainerConfigs, disabledInfo := dynamicconfig.CalculateDynamicContainerConfig(containerName, &rulesForContainer, effectiveConfig, containerRuntimeDetails, agentLevelActions, samplingRules, workloadObj, pw, containerDistro, enabledSignals, nodeCollectorsGroup, clusterCollectorsGroup, ic.Spec.PubliclyAccessible)
 		if disabledInfo != nil {
 			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,

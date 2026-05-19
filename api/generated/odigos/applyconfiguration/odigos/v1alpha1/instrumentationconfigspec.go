@@ -59,6 +59,10 @@ type InstrumentationConfigSpecApplyConfiguration struct {
 	// The SDKs are identified by the programming language they are written in.
 	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
 	SdkConfigs []SdkConfigApplyConfiguration `json:"sdkConfigs,omitempty"`
+	// indicate that the workload accepts incoming traffic from the internet.
+	// reconciled from source object and used to propagate to the agents and collectors config.
+	// currently used for url templatization configuration to avoid bots garbage routes causing high-cardinality.
+	PubliclyAccessible *bool `json:"publiclyAccessible,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -161,5 +165,13 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithSdkConfigs(values ...*
 		}
 		b.SdkConfigs = append(b.SdkConfigs, *values[i])
 	}
+	return b
+}
+
+// WithPubliclyAccessible sets the PubliclyAccessible field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PubliclyAccessible field is set to the value of the last call.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithPubliclyAccessible(value bool) *InstrumentationConfigSpecApplyConfiguration {
+	b.PubliclyAccessible = &value
 	return b
 }

@@ -15,7 +15,7 @@ func DistroSupportsTracesUrlTemplatization(distro *distro.OtelDistro) bool {
 
 // CalculateUrlTemplatizationConfig filters template rules to only include those relevant to the container.
 // A rule group is applied if its SourcesScope matches (empty scope = global, applies to all).
-func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, containerName string, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *actions.UrlTemplatizationConfig {
+func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, containerName string, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload, publiclyAccessible bool) *actions.UrlTemplatizationConfig {
 	var rules []string
 	participating := false
 
@@ -43,5 +43,6 @@ func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, cont
 
 	return &actions.UrlTemplatizationConfig{
 		TemplatizationRules: rules,
+		PubliclyAccessible:  publiclyAccessible,
 	}
 }

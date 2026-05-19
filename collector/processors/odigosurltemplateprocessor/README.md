@@ -96,6 +96,12 @@ processors:
         template_name: "incidentId"
 ```
 
+## Publicly accessible workloads (extension mode only)
+
+For internet-exposed services, bot and scanner traffic often hits random paths that return **404**. Default heuristic templatization would turn each of those into a distinct route and cause high cardinality.
+
+Set `spec.publiclyAccessible: true` on the **Source** CR (opt-in, default `false`). In extension mode, when this flag is set, spans with HTTP status **404** skip default heuristic templatization after custom rules are tried. Custom templatization rules still apply first. This flag is not used on the legacy static processor path.
+
 ## Include/Exclude Filters
 
 This processor is powerful and well polished based on real world usage. However, it is not hermetic, and the consequences of a false positive can be high cardinality values in span names and attributes which can lead to performance issues in some backends and is generally not recommended.

@@ -2049,6 +2049,19 @@ The SDKs are identified by the programming language they are written in.
 TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>publiclyAccessible</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>indicate that the workload accepts incoming traffic from the internet.
+reconciled from source object and used to propagate to the agents and collectors config.
+currently used for url templatization configuration to avoid bots garbage routes causing high-cardinality.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -3602,6 +3615,22 @@ All containers not listed will retain their default behavior.</p>
 When true, spec.workload.name is treated as a regular expression pattern.
 This allows matching multiple workloads with a single Source CRD.
 Not valid for namespace sources.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>publiclyAccessible</code>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>indicate that the source accepts incoming traffic from the internet.
+this is used to avoid running url-templatization
+when an endpoint from this service returns with 400 or 500 status code.
+internet exposed services are commonly being &quot;tested&quot; by malicious actors
+with irrelevant or garbage requests that can contaminate the url-templatization process
+leading to high-cardinality of templated routes.</p>
 </td>
 </tr>
 </tbody>

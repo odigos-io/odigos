@@ -330,6 +330,10 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 
 	desiredDataStreamsLabels := sourceutils.CalculateDataStreamsLabels(sources)
 	desiredServiceName := calculateDesiredServiceName(pw, sources)
+	desiredPubliclyAccessible := false
+	if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
+		desiredPubliclyAccessible = sources.Workload.Spec.PubliclyAccessible
+	}
 
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 	ic := &odigosv1.InstrumentationConfig{}
@@ -344,7 +348,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 			return ctrl.Result{}, err
 		}
 
-		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString, desiredServiceName, desiredDataStreamsLabels, rollbackRecoveryAtAnnotation)
+		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString, desiredServiceName, desiredDataStreamsLabels, rollbackRecoveryAtAnnotation, desiredPubliclyAccessible)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				// If we hit AlreadyExists here, we just hit a race in the api/cache and want to requeue. No need to log an error
@@ -357,8 +361,9 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		dataStreamsChanged := updateDatastreamLabels(ic, desiredDataStreamsLabels)
 		containerOverridesChanged := updateContainerOverride(ic, containers, hashString)
 		serviceNameChanged := updateServiceName(ic, desiredServiceName)
+		publiclyAccessibleChanged := updatePubliclyAccessible(ic, desiredPubliclyAccessible)
 		recoveredFromRollbackAtChanged := updateRecoveredFromRollbackAt(ic, rollbackRecoveryAtAnnotation)
-		if containerOverridesChanged || dataStreamsChanged || serviceNameChanged || recoveredFromRollbackAtChanged {
+		if containerOverridesChanged || dataStreamsChanged || serviceNameChanged || publiclyAccessibleChanged || recoveredFromRollbackAtChanged {
 			err = k8sClient.Update(ctx, ic)
 			if err != nil {
 				return k8sutils.K8SUpdateErrorHandler(err)
@@ -383,7 +388,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	return ctrl.Result{}, nil
 }
 
-func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string, rollbackRecoveryAtAnnotation string) (*odigosv1.InstrumentationConfig, error) {
+func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string, rollbackRecoveryAtAnnotation string, publiclyAccessible bool) (*odigosv1.InstrumentationConfig, error) {
 	logger := commonlogger.FromContext(ctx)
 
 	annotations := map[string]string{}
@@ -407,6 +412,7 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 	instConfig.Spec.ServiceName = serviceName
 	instConfig.Spec.ContainersOverrides = containers
 	instConfig.Spec.ContainerOverridesHash = containersOverridesHash
+	instConfig.Spec.PubliclyAccessible = publiclyAccessible
 
 	if err := ctrl.SetControllerReference(obj, &instConfig, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)
@@ -489,6 +495,14 @@ func calculateDesiredServiceName(pw k8sconsts.PodWorkload, sources *odigosv1.Wor
 func updateServiceName(ic *odigosv1.InstrumentationConfig, desiredServiceName string) (updated bool) {
 	if desiredServiceName != ic.Spec.ServiceName {
 		ic.Spec.ServiceName = desiredServiceName
+		return true
+	}
+	return false
+}
+
+func updatePubliclyAccessible(ic *odigosv1.InstrumentationConfig, desiredPubliclyAccessible bool) (updated bool) {
+	if desiredPubliclyAccessible != ic.Spec.PubliclyAccessible {
+		ic.Spec.PubliclyAccessible = desiredPubliclyAccessible
 		return true
 	}
 	return false
