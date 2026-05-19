@@ -97,12 +97,17 @@ true
 
 {{- if and $number $unit }}
   {{- $num := int $number -}}
+  {{- if eq $unit "Ki" -}}
+    {{- $num = div $num 1024 -}}
+  {{- else if eq $unit "Gi" -}}
+    {{- $num = mul $num 1024 -}}
+  {{- else if eq $unit "Ti" -}}
+    {{- $num = mul $num 1048576 -}}
+  {{- else if ne $unit "Mi" -}}
+    {{- fail (printf "Unsupported memory unit %q in %q for GOMEMLIMIT: use Ki, Mi, Gi, or Ti" $unit $raw) -}}
+  {{- end -}}
   {{- $val := div (mul $num 80) 100 -}}
-  {{- /*
-     GOMEMLIMIT requires units like "MiB" or "GiB", whereas Kubernetes uses "Mi" or "Gi".
-     To ensure Go runtime parses the value correctly, we must always append "B" to the unit.
-*/ -}}
-  {{- printf "%d%sB" $val $unit -}}
+  {{- printf "%dMiB" $val -}}
 {{- else }}
    {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q" $raw) -}}
 {{- end }}
@@ -125,12 +130,21 @@ true
 
 {{- if and $number $unit }}
   {{- $num := int $number -}}
+  {{- if eq $unit "Ki" -}}
+    {{- $num = div $num 1024 -}}
+  {{- else if eq $unit "Gi" -}}
+    {{- $num = mul $num 1024 -}}
+  {{- else if eq $unit "Ti" -}}
+    {{- $num = mul $num 1048576 -}}
+  {{- else if ne $unit "Mi" -}}
+    {{- fail (printf "Unsupported memory unit %q in %q for GOMEMLIMIT: use Ki, Mi, Gi, or Ti" $unit $raw) -}}
+  {{- end -}}
   {{- $pct := 80 -}}
   {{- if ge $num 500 -}}
     {{- $pct = int (default 60 .Values.odiglet.odiglet.goMemLimitPercentage) -}}
   {{- end -}}
   {{- $val := div (mul $num $pct) 100 -}}
-  {{- printf "%d%sB" $val $unit -}}
+  {{- printf "%dMiB" $val -}}
 {{- else }}
   {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q" $raw) -}}
 {{- end }}

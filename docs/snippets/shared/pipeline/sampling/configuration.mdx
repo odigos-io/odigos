@@ -1,0 +1,93 @@
+You can configure sampling rules in the **UI** or as **YAML** (Kubernetes **CRDs**). The schema matches the same concepts as the UI, so GitOps workflows can express the same behavior as in the product.
+
+Every rule has three parts: a **Source scope** that defines which workloads the rule applies to, an **Operation** that picks the specific operations within that scope, and a **Keep Percentage** that controls how much matching traffic is retained. The Source scope options are identical across all three categories; the Operation and Keep Percentage options differ by category. Each rule can also carry an optional **Name** and **Notes** for easier identification.
+
+<Tip>
+  This page is the **field reference**. For end-to-end walkthroughs—UI steps and the equivalent YAML side by side—see [Examples](./examples).
+</Tip>
+
+## Source scope
+
+A rule can be scoped to one of:
+
+- **Entire cluster** — the rule applies to every source in the cluster.
+- **Specific Source** — one or more named sources (services).
+- **Specific Namespace** — one or more Kubernetes namespaces.
+- **Specific Programming Language** — one or more runtimes: **Python**, **Java**, **NodeJS**, **.Net**, **PHP**, **Ruby**, or **Go**.
+
+You can select multiple values within a scope type—for example several namespaces, or several languages.
+
+<Warning>
+  When you populate more than one scope type on the same rule, the selections are combined with **AND**, not **OR**. A rule scoped to "Specific Namespace = `prod`" plus "Specific Programming Language = Java" matches **only** Java workloads in the `prod` namespace; it does not match every workload in `prod` or every Java workload across the cluster.
+</Warning>
+
+## Operation
+
+The Operation options depend on the rule's category.
+
+<Tabs>
+  <Tab title="Noisy Operation">
+    - **All Operations** — every operation in scope.
+    - **HTTP Server** — match HTTP requests received by a server. Configure:
+      - An **HTTP route** (exact path) or **HTTP route prefix**.
+      - A **method**: **Any**, **GET**, **POST**, **PATCH**, **DELETE**, or **PUT**.
+    - **HTTP Client** — match outbound HTTP calls made by the source. Configure:
+      - A **server address** (the remote host being called).
+      - A **templated path** (exact) or **templated path prefix**.
+      - A **method**: **Any**, **GET**, **POST**, **PATCH**, **DELETE**, or **PUT**.
+  </Tab>
+  <Tab title="Highly Relevant">
+    - **All Operations** — every operation in scope.
+    - **HTTP Server** — match HTTP requests received by a server. Configure:
+      - An **HTTP route** (exact path) or **HTTP route prefix**.
+      - A **method**: **Any**, **GET**, **POST**, **PATCH**, **DELETE**, or **PUT**.
+    - **Kafka Consumer** — match traces from a Kafka consumer. Configure the **Kafka topic**.
+    - **Kafka Producer** — match traces from a Kafka producer. Configure the **Kafka topic**.
+
+    HTTP Client is **not** available in this category.
+  </Tab>
+  <Tab title="Cost Reduction">
+    - **All Operations** — every operation in scope.
+    - **HTTP Server** — match HTTP requests received by a server. Configure:
+      - An **HTTP route** (exact path) or **HTTP route prefix**.
+      - A **method**: **Any**, **GET**, **POST**, **PATCH**, **DELETE**, or **PUT**.
+    - **Kafka Consumer** — match traces from a Kafka consumer. Configure the **Kafka topic**.
+    - **Kafka Producer** — match traces from a Kafka producer. Configure the **Kafka topic**.
+
+    HTTP Client is **not** available in this category.
+  </Tab>
+</Tabs>
+
+## Keep Percentage
+
+Each rule defines what fraction of matching traffic is retained. The available options differ by category:
+
+| Category          | Options                                                  |
+| ----------------- | -------------------------------------------------------- |
+| Noisy Operation   | **Drop All**, or **Keep at most** *N*%                   |
+| Highly Relevant   | **Keep All**, or **Keep at least** *N*%                  |
+| Cost Reduction    | **Keep at most** *N*% (set *N* = 0 to drop everything)   |
+
+**Keep at most** is a cap; **Keep at least** is a floor. See [Rule evaluation](./rules/overview#rule-evaluation) for how these percentages interact within a category and between Highly Relevant and Cost Reduction.
+
+## Enabled
+
+Every rule has an **Enabled** toggle that controls whether it participates in sampling decisions. Disabled rules stay in your configuration but are excluded from evaluation, which makes the toggle useful for several patterns:
+
+- **Temporary suspension.** Turn a rule off during an incident, debugging session, or evaluation period when you need broader visibility—without losing the rule's configuration.
+- **Disable vs. delete.** Disabling preserves the matcher, scope, and Keep Percentage so you can re-enable later without re-authoring. Use it when a rule may still be useful later but isn't needed right now.
+- **"What-if" metrics.** Disabled rules continue to record matching metrics: how many traces *would have* matched, and how many would have been kept or dropped if the rule were active. Useful for sizing a candidate rule's impact before committing to it.
+
+See [Disabling a rule](./examples#disabling-a-rule) for UI screenshots and the equivalent YAML.
+
+## Name and Notes
+
+Both fields are optional and exist purely to make rules easier to identify and maintain—they have **no effect** on evaluation or matching.
+
+- **Name** — a short, free-text label for the rule. The name appears in the rule list in the UI and may also surface on metrics and span attributes, so use something descriptive that makes the rule recognizable in dashboards and queries.
+- **Notes** — free-text describing **why** the rule exists. Use this to capture context that isn't obvious from the matcher itself: the incident that triggered the rule, the team that owns it, or the cost target it's serving. Especially useful when auditing rules or onboarding new operators.
+
+<Tip>
+  Treat Name and Notes like a commit message for your sampling policy. A good Name + Notes pair turns "what does this rule do?" into a one-line answer at a glance.
+</Tip>
+

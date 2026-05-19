@@ -207,19 +207,30 @@
                           "oss/pipeline/actions/attributes/extractattribute"
                         ]
                       },
-                      {
-                        "group": "Sampling",
-                        "icon": "tag",
-                        "pages": [
-                          "oss/pipeline/actions/sampling/errorsampler",
-                          "oss/pipeline/actions/sampling/latencysampler",
-                          "oss/pipeline/actions/sampling/probabilisticsampler",
-                          "oss/pipeline/actions/sampling/servicenamesampler",
-                          "oss/pipeline/actions/sampling/spanattributesampler"
-                        ]
-                      },
                       "oss/pipeline/actions/crd",
                       "oss/pipeline/actions/troubleshooting"
+                    ]
+                  },
+                  {
+                    "group": "Sampling",
+                    "icon": "tag",
+                    "pages": [
+                      "oss/pipeline/sampling/introduction",
+                      "oss/pipeline/sampling/head-and-tail-sampling",
+                      {
+                        "group": "Rules",
+                        "icon": "list-check",
+                        "pages": [
+                          "oss/pipeline/sampling/rules/overview",
+                          "oss/pipeline/sampling/rules/noisy-operation",
+                          "oss/pipeline/sampling/rules/highly-relevant",
+                          "oss/pipeline/sampling/rules/cost-reduction"
+                        ]
+                      },
+                      "oss/pipeline/sampling/configuration",
+                      "oss/pipeline/sampling/examples",
+                      "oss/pipeline/sampling/considerations",
+                      "oss/pipeline/sampling/faqs"
                     ]
                   },
                   {
@@ -516,19 +527,30 @@
                           "enterprise/pipeline/actions/attributes/extractattribute"
                         ]
                       },
-                      {
-                        "group": "Sampling",
-                        "icon": "tag",
-                        "pages": [
-                          "enterprise/pipeline/actions/sampling/errorsampler",
-                          "enterprise/pipeline/actions/sampling/latencysampler",
-                          "enterprise/pipeline/actions/sampling/probabilisticsampler",
-                          "enterprise/pipeline/actions/sampling/servicenamesampler",
-                          "enterprise/pipeline/actions/sampling/spanattributesampler"
-                        ]
-                      },
                       "enterprise/pipeline/actions/crd",
                       "enterprise/pipeline/actions/troubleshooting"
+                    ]
+                  },
+                  {
+                    "group": "Sampling",
+                    "icon": "tag",
+                    "pages": [
+                      "enterprise/pipeline/sampling/introduction",
+                      "enterprise/pipeline/sampling/head-and-tail-sampling",
+                      {
+                        "group": "Rules",
+                        "icon": "list-check",
+                        "pages": [
+                          "enterprise/pipeline/sampling/rules/overview",
+                          "enterprise/pipeline/sampling/rules/noisy-operation",
+                          "enterprise/pipeline/sampling/rules/highly-relevant",
+                          "enterprise/pipeline/sampling/rules/cost-reduction"
+                        ]
+                      },
+                      "enterprise/pipeline/sampling/configuration",
+                      "enterprise/pipeline/sampling/examples",
+                      "enterprise/pipeline/sampling/considerations",
+                      "enterprise/pipeline/sampling/faqs"
                     ]
                   },
                   {
@@ -761,6 +783,46 @@
       "destination": "/oss/overview"
     },
     {
+      "source": "/oss/pipeline/sampling/rules",
+      "destination": "/oss/pipeline/sampling/rules/overview"
+    },
+    {
+      "source": "/oss/pipeline/sampling/noisy-operation",
+      "destination": "/oss/pipeline/sampling/rules/noisy-operation"
+    },
+    {
+      "source": "/oss/pipeline/sampling/highly-relevant",
+      "destination": "/oss/pipeline/sampling/rules/highly-relevant"
+    },
+    {
+      "source": "/oss/pipeline/sampling/cost-reduction",
+      "destination": "/oss/pipeline/sampling/rules/cost-reduction"
+    },
+    {
+      "source": "/enterprise/pipeline/sampling/rules",
+      "destination": "/enterprise/pipeline/sampling/rules/overview"
+    },
+    {
+      "source": "/enterprise/pipeline/sampling/noisy-operation",
+      "destination": "/enterprise/pipeline/sampling/rules/noisy-operation"
+    },
+    {
+      "source": "/enterprise/pipeline/sampling/highly-relevant",
+      "destination": "/enterprise/pipeline/sampling/rules/highly-relevant"
+    },
+    {
+      "source": "/enterprise/pipeline/sampling/cost-reduction",
+      "destination": "/enterprise/pipeline/sampling/rules/cost-reduction"
+    },
+    {
+      "source": "/oss/pipeline/actions/sampling/:slug*",
+      "destination": "/oss/pipeline/sampling/:slug*"
+    },
+    {
+      "source": "/enterprise/pipeline/actions/sampling/:slug*",
+      "destination": "/enterprise/pipeline/sampling/:slug*"
+    },
+    {
       "source": "/quickstart/:slug*",
       "destination": "/oss/quickstart/:slug*"
     },
@@ -823,6 +885,14 @@
     {
       "source": "/debugging",
       "destination": "/oss/debugging"
+    },
+    {
+      "source": "/oss/pipeline/sampling/framework",
+      "destination": "/oss/pipeline/sampling/head-and-tail-sampling"
+    },
+    {
+      "source": "/enterprise/pipeline/sampling/framework",
+      "destination": "/enterprise/pipeline/sampling/head-and-tail-sampling"
     },
     {
       "source": "/central/remote-clusters",

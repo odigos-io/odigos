@@ -21,16 +21,32 @@ func TestSetupTelemetry(t *testing.T) {
 	require.NoError(t, err)
 	defer tb.Shutdown()
 	tb.OdigosSamplingSpanCheckCount.Add(context.Background(), 1)
-	tb.OdigosSamplingSpanMatchedCount.Add(context.Background(), 1)
+	tb.OdigosSamplingSpanDropCount.Add(context.Background(), 1)
+	tb.OdigosSamplingSpanKeepCount.Add(context.Background(), 1)
+	tb.OdigosSamplingSpanMatchCount.Add(context.Background(), 1)
 	tb.OdigosSamplingTraceCheckCount.Add(context.Background(), 1)
+	tb.OdigosSamplingTraceDropCount.Add(context.Background(), 1)
+	tb.OdigosSamplingTraceKeepCount.Add(context.Background(), 1)
 	tb.OdigosSamplingTraceMatchCount.Add(context.Background(), 1)
 	AssertEqualOdigosSamplingSpanCheckCount(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
-	AssertEqualOdigosSamplingSpanMatchedCount(t, testTel,
+	AssertEqualOdigosSamplingSpanDropCount(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosSamplingSpanKeepCount(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosSamplingSpanMatchCount(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
 	AssertEqualOdigosSamplingTraceCheckCount(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosSamplingTraceDropCount(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosSamplingTraceKeepCount(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
 	AssertEqualOdigosSamplingTraceMatchCount(t, testTel,
