@@ -212,7 +212,7 @@ func calculateCollectorConfigDomains(
 	}
 	configDomains["processors"] = processorsResults.ProcessorsConfig
 
-	if collectorconfig.NodeHasURLTemplateProcessor(processors) {
+	if collectorconfig.NodeNeedsOdigosConfigK8sExtension(processors, profiling) {
 		configDomains["odigos_config_extension"] = collectorconfig.NodeOdigosExtDomain()
 	}
 

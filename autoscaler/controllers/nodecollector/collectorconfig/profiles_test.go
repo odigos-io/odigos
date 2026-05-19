@@ -3,6 +3,7 @@ package collectorconfig
 import (
 	"testing"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
@@ -28,6 +29,7 @@ func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 	require.Contains(t, got.Receivers, commonconf.ProfilingReceiver)
 	require.Contains(t, got.Processors, commonconf.ProfilingNodeFilterProcessor)
 	require.Contains(t, got.Processors, commonconf.ProfilingNodeK8sAttributesProcessor)
+	require.Contains(t, got.Processors, commonconf.ProfilingNodeOdigosProfilesProcessor)
 	require.Contains(t, got.Processors, commonconf.ProfilingNodeServiceNameProcessor)
 	require.Contains(t, got.Exporters, commonconf.ProfilingNodeToGatewayExporter)
 
@@ -37,6 +39,7 @@ func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 	assert.Equal(t, []string{
 		commonconf.ProfilingNodeFilterProcessor,
 		commonconf.ProfilingNodeK8sAttributesProcessor,
+		commonconf.ProfilingNodeOdigosProfilesProcessor,
 		commonconf.ProfilingNodeServiceNameProcessor,
 	}, pl.Processors)
 	assert.Equal(t, []string{commonconf.ProfilingNodeToGatewayExporter}, pl.Exporters)
@@ -45,4 +48,8 @@ func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 	require.True(t, ok)
 	wantFilter := commonconf.ProfilingFilterProcessorConfig()
 	assert.Equal(t, wantFilter, filterCfg)
+
+	odigosProfilesCfg, ok := got.Processors[commonconf.ProfilingNodeOdigosProfilesProcessor].(config.GenericMap)
+	require.True(t, ok)
+	assert.Equal(t, k8sconsts.OdigosConfigK8sExtensionType, odigosProfilesCfg["odigos_config_extension"])
 }

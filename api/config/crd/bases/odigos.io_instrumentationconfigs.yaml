@@ -256,6 +256,21 @@ spec:
                         customInstrumentations:
                           description: custom instrumentation probes for this container.
                           properties:
+                            cpp:
+                              items:
+                                properties:
+                                  signature:
+                                    description: |-
+                                      function signature to add custom probe for.
+                                      the following scenarios are possible:
+                                      namespace::class::function - for example std::vector::push_back - all overloads of this function
+                                      namespace::function - targeting a function (and its possible overloads) in a specific namespac
+                                      function - for C-like functions a single function name can be used: e.g SSL_write
+                                    type: string
+                                required:
+                                - signature
+                                type: object
+                              type: array
                             golang:
                               items:
                                 description: |-
@@ -844,6 +859,21 @@ spec:
                       description: list of the custom instrumentation probes the SDK
                         should use.
                       properties:
+                        cpp:
+                          items:
+                            properties:
+                              signature:
+                                description: |-
+                                  function signature to add custom probe for.
+                                  the following scenarios are possible:
+                                  namespace::class::function - for example std::vector::push_back - all overloads of this function
+                                  namespace::function - targeting a function (and its possible overloads) in a specific namespac
+                                  function - for C-like functions a single function name can be used: e.g SSL_write
+                                type: string
+                            required:
+                            - signature
+                            type: object
+                          type: array
                         golang:
                           items:
                             description: |-

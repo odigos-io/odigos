@@ -44,6 +44,7 @@ func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperati
 				RuleId:         noisyOperation.Id,
 				RuleName:       noisyOperation.Name,
 				RulePercentage: currentPercentage,
+				RuleDisabled:   noisyOperation.Disabled,
 			}
 		}
 		res := rulesEvalResults[noisyOperation.Id]
@@ -53,7 +54,6 @@ func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperati
 		// so if we have a match, we update.
 		if matched {
 			leastPercentageRule = &noisyOperation
-			res.Matched = true
 			res.SpanMatchedCount++
 		}
 	}

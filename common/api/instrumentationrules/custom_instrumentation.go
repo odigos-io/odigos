@@ -8,8 +8,9 @@ import (
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type CustomInstrumentations struct {
-	Golang []GolangCustomProbe `json:"golang,omitempty"`
-	Java   []JavaCustomProbe   `json:"java,omitempty"`
+	Golang []GolangCustomProbe `json:"golang,omitempty" yaml:"golang,omitempty"`
+	Java   []JavaCustomProbe   `json:"java,omitempty" yaml:"java,omitempty"`
+	Cpp    []CppCustomProbe    `json:"cpp,omitempty" yaml:"cpp,omitempty"`
 }
 
 // Verify iterates all custom instrumentations' probes and validates them.
@@ -38,8 +39,8 @@ func (ci *CustomInstrumentations) Verify() error {
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type JavaCustomProbe struct {
-	ClassName  string `json:"className,omitempty"`
-	MethodName string `json:"methodName,omitempty"`
+	ClassName  string `json:"className,omitempty" yaml:"className,omitempty"`
+	MethodName string `json:"methodName,omitempty" yaml:"methodName,omitempty"`
 }
 
 // For java we always require both class name and method name
@@ -65,17 +66,17 @@ func (jcp *JavaCustomProbe) String() string {
 // +kubebuilder:deepcopy-gen=true
 type GolangCustomProbe struct {
 	// PackageName is the name of the golang package (ie net/http); Package name is always required
-	PackageName string `json:"packageName"`
+	PackageName string `json:"packageName" yaml:"packageName"`
 	// FunctionName is the name of the golang function to be instrumented, ie package name is "net/http" and the function
 	// name will be "ListenAndServe"; Function name is disallowed if ReceiverName and ReceiverMethodName are provided
-	FunctionName string `json:"functionName,omitempty"`
+	FunctionName string `json:"functionName,omitempty" yaml:"functionName,omitempty"`
 	// ReceiverName is the name of the golang receiver struct to be instrumented, ie for the "net/http" package, "response" is a receiver struct
 	// ReceiverName is disallowed if FunctionName is provided; Receiver must be a concrete type (not an interface)
-	ReceiverName string `json:"receiverName,omitempty"`
+	ReceiverName string `json:"receiverName,omitempty" yaml:"receiverName,omitempty"`
 	// ReceiverMethodName is the name of the golang method, given a receiver struct, to be instrumented
 	// for example for "net/http" package, "response" is a receiver struct and "WriteHeader" is a method of that struct
 	// ReceiverMethodName is mandatory if ReceiverName is provided, and disallowed if FunctionName is provided
-	ReceiverMethodName string `json:"receiverMethodName,omitempty"`
+	ReceiverMethodName string `json:"receiverMethodName,omitempty" yaml:"receiverMethodName,omitempty"`
 }
 
 // For golang we require package name and either function name or receiver name + method name
@@ -92,4 +93,21 @@ func (gcp *GolangCustomProbe) Verify() error {
 	default:
 		return nil
 	}
+}
+
+type CppCustomProbe struct {
+	// function signature to add custom probe for.
+	// the following scenarios are possible:
+	// namespace::class::function - for example std::vector::push_back - all overloads of this function
+	// namespace::function - targeting a function (and its possible overloads) in a specific namespac
+	// function - for C-like functions a single function name can be used: e.g SSL_write
+	Signature string `json:"signature"`
+}
+
+func (c *CppCustomProbe) Verify() error {
+	if c.Signature == "" {
+		return errors.New("signature is required")
+	}
+
+	return nil
 }
