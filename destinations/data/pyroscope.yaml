@@ -16,21 +16,21 @@ spec:
     profiles:
       supported: true
   fields:
-    - name: PYROSCOPE_URL
-      displayName: Pyroscope Endpoint
+    - name: PYROSCOPE_ENDPOINT
+      displayName: Endpoint
       componentType: input
       componentProps:
         type: text
         required: true
-        placeholder: 'host:port'
-        tooltip: Hostname and port of the Pyroscope distributor HTTP API (e.g. `pyroscope.pyroscope:4040`). Odigos sends OTLP profiles to `/v1development/profiles` on this host; do not add an `/otlp` path.
+        placeholder: 'pyroscope.pyroscope:4040'
+        tooltip: 'Pyroscope OTLP/gRPC endpoint as host:port (default port 4040). Use host:port only — no http:// or path suffix.'
     - name: PYROSCOPE_TLS_ENABLED
       displayName: Enable TLS
       componentType: checkbox
       initialValue: false
       componentProps:
         required: false
-        tooltip: 'Secure connection'
+        tooltip: 'Enable TLS for the OTLP gRPC connection to Pyroscope.'
       customReadDataLabels:
         - condition: 'true'
           title: 'TLS'
@@ -38,3 +38,21 @@ spec:
         - condition: 'false'
           title: 'TLS'
           value: 'Unencrypted'
+    - name: PYROSCOPE_CA_PEM
+      displayName: Certificate Authority
+      componentType: textarea
+      componentProps:
+        required: false
+        placeholder: '-----BEGIN CERTIFICATE-----'
+        tooltip: 'CA certificate in PEM format to verify the Pyroscope server. Leave empty to use system root CA.'
+      renderCondition: ['PYROSCOPE_TLS_ENABLED', '==', 'true']
+      hideFromReadData: ['true']
+    - name: PYROSCOPE_INSECURE_SKIP_VERIFY
+      displayName: Insecure Skip Verify
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Skip TLS certificate verification.'
+      renderCondition: ['PYROSCOPE_TLS_ENABLED', '==', 'true']
+  testConnectionSupported: false

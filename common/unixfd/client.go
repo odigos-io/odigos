@@ -128,6 +128,63 @@ func ConnectAndListenLogs(ctx context.Context, socketPath string, logger *zap.Lo
 	}
 }
 
+// ConnectAndListenProfileAttrs streams PID→resource attribute events from the VM agent.
+// No FD exchange; the server responds with RespOK then newline-delimited R/U lines.
+func ConnectAndListenProfileAttrs(ctx context.Context, socketPath string, logger *zap.Logger, onAttr func(line string)) error {
+	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		err := connectProfileAttrsSession(ctx, socketPath, onAttr)
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		logger.Info("Profiles attr connection lost, reconnecting", zap.Error(err), zap.Duration("backoff", reconnectBackoff))
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(reconnectBackoff):
+		}
+	}
+}
+
+func connectProfileAttrsSession(ctx context.Context, socketPath string, onAttr func(line string)) error {
+	var d net.Dialer
+	conn, err := d.DialContext(ctx, "unix", socketPath)
+	if err != nil {
+		return fmt.Errorf("dial: %w", err)
+	}
+	uc := conn.(*net.UnixConn)
+	defer func() { _ = uc.Close() }()
+
+	go func() {
+		<-ctx.Done()
+		_ = uc.Close()
+	}()
+
+	if _, err := uc.Write([]byte(ReqGetProfilesAttr)); err != nil {
+		return fmt.Errorf("write request: %w", err)
+	}
+
+	scanner := bufio.NewScanner(uc)
+	if !scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return fmt.Errorf("read ack: %w", err)
+		}
+		return fmt.Errorf("read ack: empty response")
+	}
+	if scanner.Text() != RespOK {
+		return fmt.Errorf("unexpected server response: %q, expected %q", scanner.Text(), RespOK)
+	}
+
+	for scanner.Scan() {
+		onAttr(scanner.Text())
+	}
+	return scanner.Err()
+}
+
 func connectLogsSession(ctx context.Context, socketPath string, onFD func(fd int), onAttr func(line string)) error {
 	var d net.Dialer
 	conn, err := d.DialContext(ctx, "unix", socketPath)
