@@ -6,6 +6,8 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/stretchr/testify/require"
@@ -17,6 +19,12 @@ import (
 )
 
 func TestGetDesiredDeploymentEnablesProfilesFeatureGateForProfilesDestination(t *testing.T) {
+	previousControllerConfig := commonconfig.ControllerConfig
+	commonconfig.ControllerConfig = &controllerconfig.ControllerConfig{CollectorImage: "otelcol"}
+	t.Cleanup(func() {
+		commonconfig.ControllerConfig = previousControllerConfig
+	})
+
 	scheme := runtime.NewScheme()
 	require.NoError(t, corev1.AddToScheme(scheme))
 	require.NoError(t, appsv1.AddToScheme(scheme))
