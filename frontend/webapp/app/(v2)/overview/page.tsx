@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { HEADER_HEIGHT, MENU_BAR_HEIGHT } from '@/utils';
 import { Overview } from '@odigos/ui-kit/containers/v2';
 import {
   useActionCRUD,
@@ -41,7 +40,7 @@ export default function Page() {
 
   return (
     <Overview
-      columnsMaxHeight={`calc(100vh - ${HEADER_HEIGHT + MENU_BAR_HEIGHT + 100}px)`}
+      columnsMaxHeight='calc(100vh - 224px)'
       metrics={metrics}
       effectiveConfig={effectiveConfig}
       refetchSources={fetchSources}
