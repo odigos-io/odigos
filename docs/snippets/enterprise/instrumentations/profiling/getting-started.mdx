@@ -8,19 +8,22 @@ import GettingHelp from '/snippets/shared/getting-help-section.mdx'
 ## Step 1: Enable Profiling
 
 Profiling is an **opt-in** feature controlled by a single Helm value.
-Set `profiling.enabled=true` when installing or upgrading Odigos:
+Set `profiling.enabled=true` when installing or upgrading Odigos (enterprise installs also require your on‑prem token, same as a normal Odigos install):
 
 ```bash
 helm upgrade --install odigos odigos/odigos \
   --namespace odigos-system \
   --create-namespace \
+  --set onPremToken=$ODIGOS_ONPREM_TOKEN \
   --set profiling.enabled=true
 ```
+
+Export `ODIGOS_ONPREM_TOKEN` in your shell before running the command (or replace the reference with your token value). For other Helm flags, see [Enterprise installation](/enterprise/setup/installation).
 
 When this flag is set Odigos provisions the following automatically:
 - The eBPF profiler receiver is activated on every Data Collector
 - A `profiles` pipeline gets enabled in Odigos components and as soon as profile samples start to arrive, Odigos UI buffers start generating the flame graph
-- You can also export profiling data to any third-party Destination that supports viewing profiling data
+- You can export profiling data to destinations that ingest **OTLP Profiles** (see [Destinations](/enterprise/instrumentations/profiling/destinations))
 
 <Info>
   Profiling does not replace or interfere with your existing traces, metrics, or logs pipelines. It runs as a separate pipeline inside the same collector processes.
@@ -74,7 +77,7 @@ The in-memory profile store is sized from **environment variables** read by the 
 
 ## OTLP Exporter Tuning
 
-If you need to adjust retry behaviour or compression on the profiling OTLP pipelines (node → gateway, gateway → UI), use the `profiling.exporter.*` values:
+If you need to adjust retry behaviour or compression on the profiling OTLP pipelines (node → gateway, gateway → UI), set the nested keys under `profiling.exporter` in your Helm values (defaults live in the chart’s [`values.yaml`](https://github.com/odigos-io/odigos/blob/main/helm/odigos/values.yaml) under the `profiling:` block):
 
 ```yaml
 profiling:

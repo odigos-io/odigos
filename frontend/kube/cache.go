@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
@@ -145,12 +144,8 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		}
 	}()
 
-	// check if sequential cache load is enabled
-	sequentialCacheLoadVal := os.Getenv("ODIGOS_SEQUENTIAL_CACHE_LOAD")
-	sequentialCacheLoad := sequentialCacheLoadVal == "true"
-
 	startTime := time.Now()
-	log.Println("start syncing internal kubernetes objects cache", "sequentialCacheLoad", sequentialCacheLoad)
+	log.Println("start syncing internal kubernetes objects cache")
 
 	// Explicitly initialize informers for all configured resource types with selectors.
 	// Controller-runtime cache uses lazy initialization - informers are created on-demand.
@@ -162,18 +157,10 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get informer for %s: %w", obj.GetObjectKind().GroupVersionKind().Kind, err)
 		}
-		if sequentialCacheLoad {
-			ok := k8sCache.WaitForCacheSync(ctx)
-			if !ok {
-				return nil, nil, fmt.Errorf("failed to sync kubernetes cache")
-			}
-		}
 	}
 
-	if !sequentialCacheLoad {
-		if !k8sCache.WaitForCacheSync(ctx) {
-			return nil, nil, fmt.Errorf("failed to sync kubernetes cache")
-		}
+	if !k8sCache.WaitForCacheSync(ctx) {
+		return nil, nil, fmt.Errorf("failed to sync kubernetes cache")
 	}
 
 	log.Println("internal kubernetes objects cache is synced", "duration", time.Since(startTime))

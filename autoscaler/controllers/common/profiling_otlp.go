@@ -1,6 +1,7 @@
 package common
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 )
@@ -99,6 +100,15 @@ func ProfilingFilterProcessorConfig() config.GenericMap {
 	return config.GenericMap{
 		"error_mode":         "ignore",
 		"profile_conditions": ProfilingProfileDropConditions(),
+	}
+}
+
+// OdigosProfilesProcessorConfig is the odigosprofilesprocessor block on the node collector
+// profiles pipeline. It points the processor at the odigos_config_k8s extension so it can
+// drop ResourceProfiles for workloads without an InstrumentationConfig.
+func OdigosProfilesProcessorConfig() config.GenericMap {
+	return config.GenericMap{
+		"odigos_config_extension": k8sconsts.OdigosConfigK8sExtensionType,
 	}
 }
 
