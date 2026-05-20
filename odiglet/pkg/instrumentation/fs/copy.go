@@ -19,6 +19,8 @@ const (
 
 	// 32 KB buffer for I/O operations
 	bufferSize = 32 * 1024
+
+	directoryTraversalMode os.FileMode = 0755
 )
 
 // getNumberOfWorkers determines the number of concurrent workers to use for copying files.
@@ -38,7 +40,7 @@ func copyDirectories(srcDir string, destDir string) error {
 	}
 
 	// Create the destination directory if it doesn't exist
-	err = os.MkdirAll(destDir, os.ModePerm)
+	err = os.MkdirAll(destDir, directoryTraversalMode)
 	if err != nil {
 		return err
 	}
@@ -63,7 +65,7 @@ func copyDirectories(srcDir string, destDir string) error {
 	close(fileChan)
 	wg.Wait()
 	logger.Info("Finished copying instrumentation files to host", "duration", time.Since(start))
-	return nil
+	return ensureDirectoryTraversalPermissions(destDir)
 }
 
 func createDotnetDeprecatedDirectories(destDir string) error {
@@ -77,11 +79,11 @@ func createDotnetDeprecatedDirectories(destDir string) error {
 	glibcDirWithArch := filepath.Join(destDir, "linux-glibc-"+arch)
 	muslDirWithArch := filepath.Join(destDir, "linux-musl-"+arch)
 
-	err = os.MkdirAll(glibcDirWithArch, os.ModePerm)
+	err = os.MkdirAll(glibcDirWithArch, directoryTraversalMode)
 	if err != nil {
 		return err
 	}
-	err = os.MkdirAll(muslDirWithArch, os.ModePerm)
+	err = os.MkdirAll(muslDirWithArch, directoryTraversalMode)
 	if err != nil {
 		return err
 	}
@@ -136,7 +138,7 @@ func copyFile(src, dst string, buf []byte) error {
 	defer srcFile.Close()
 
 	// Create destination file and directories if needed
-	err = os.MkdirAll(filepath.Dir(dst), os.ModePerm)
+	err = os.MkdirAll(filepath.Dir(dst), directoryTraversalMode)
 	if err != nil {
 		return err
 	}
@@ -164,6 +166,52 @@ func copyFile(src, dst string, buf []byte) error {
 	}
 
 	return nil
+}
+
+func ensureDirectoryTraversalPermissions(root string) error {
+	if err := ensureDirectoryTraversalPermission(root); err != nil {
+		return err
+	}
+
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		if err := ensureDirectoryTraversalPermissions(filepath.Join(root, entry.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ensureDirectoryTraversalPermission(dir string) error {
+	info, err := os.Stat(dir)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return nil
+	}
+
+	mode := info.Mode().Perm()
+	fixedMode := mode
+	if mode&0400 != 0 {
+		fixedMode |= 0100
+	}
+	if mode&0040 != 0 {
+		fixedMode |= 0010
+	}
+	if mode&0004 != 0 {
+		fixedMode |= 0001
+	}
+	if fixedMode == mode {
+		return nil
+	}
+	return os.Chmod(dir, fixedMode)
 }
 
 func HostContainsEbpfDir(dir string) bool {

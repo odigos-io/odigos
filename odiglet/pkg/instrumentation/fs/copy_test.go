@@ -3,6 +3,7 @@ package fs
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -93,6 +94,42 @@ func TestCopyDirectories(t *testing.T) {
 
 		if srcStat.Size() != destStat.Size() {
 			t.Fatalf("file sizes do not match: %s (%d) != %s (%d)", srcFile, srcStat.Size(), destFile, destStat.Size())
+		}
+	}
+}
+
+func TestEnsureDirectoryTraversalPermissions(t *testing.T) {
+	root := t.TempDir()
+	nestedDir := filepath.Join(root, "java", "nested")
+	if err := os.MkdirAll(nestedDir, 0755); err != nil {
+		t.Fatalf("failed to create nested directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(nestedDir, "javaagent.jar"), []byte("agent"), 0644); err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+
+	restrictedJavaDir := filepath.Join(root, "java")
+	defer os.Chmod(restrictedJavaDir, 0755)
+	defer os.Chmod(nestedDir, 0755)
+
+	if err := os.Chmod(nestedDir, 0644); err != nil {
+		t.Fatalf("failed to restrict nested directory: %v", err)
+	}
+	if err := os.Chmod(restrictedJavaDir, 0644); err != nil {
+		t.Fatalf("failed to restrict java directory: %v", err)
+	}
+
+	if err := ensureDirectoryTraversalPermissions(root); err != nil {
+		t.Fatalf("ensureDirectoryTraversalPermissions failed: %v", err)
+	}
+
+	for _, dir := range []string{restrictedJavaDir, nestedDir} {
+		info, err := os.Stat(dir)
+		if err != nil {
+			t.Fatalf("failed to stat directory %s: %v", dir, err)
+		}
+		if got := info.Mode().Perm(); got&0111 != 0111 {
+			t.Fatalf("directory %s is not traversable, mode: %v", dir, got)
 		}
 	}
 }
