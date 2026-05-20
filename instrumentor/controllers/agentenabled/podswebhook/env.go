@@ -87,7 +87,7 @@ func InjectOpampServerEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.
 	return existingEnvNames
 }
 
-// InjectOpampUnixSocketEnvVar sets ODIGOS_OPAMP_UNIX_SOCKET; agents treat this as Unix OpAMP (no ODIGOS_OPAMP_SERVER_HOST).
+// InjectOpampUnixSocketEnvVar sets ODIGOS_OPAMP_UNIX_SOCKET (Unix OpAMP; no ODIGOS_OPAMP_SERVER_HOST).
 func InjectOpampUnixSocketEnvVar(existingEnvNames EnvVarNamesMap, container *corev1.Container) EnvVarNamesMap {
 	return InjectConstEnvVarToPodContainer(existingEnvNames, container, k8sconsts.OpampUnixSocketEnvName, k8sconsts.OdigosOpampUnixSocketPath)
 }

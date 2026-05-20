@@ -1,8 +1,6 @@
 package opamp
 
 import (
-	"fmt"
-
 	"github.com/odigos-io/odigos/common"
 )
 
@@ -28,26 +26,11 @@ func ResolveTransport(
 		}
 		return ""
 	}
-
-	switch opAmpTransport {
-	case OpAmpTransportUnix:
-		return OpAmpTransportUnix
-	case OpAmpTransportHTTP:
-		return OpAmpTransportHTTP
+	if opAmpTransport == OpAmpTransportUnix || opAmpTransport == OpAmpTransportHTTP {
+		return opAmpTransport
 	}
-
 	if opAmpClientEnvironments {
 		return OpAmpTransportHTTP
 	}
 	return ""
-}
-
-// ParseOpAmpTransport parses a YAML or env value into OpAmpTransport.
-func ParseOpAmpTransport(value string) (OpAmpTransport, error) {
-	switch OpAmpTransport(value) {
-	case "", OpAmpTransportHTTP, OpAmpTransportUnix:
-		return OpAmpTransport(value), nil
-	default:
-		return "", fmt.Errorf("invalid opamp transport %q: must be %q or %q", value, OpAmpTransportHTTP, OpAmpTransportUnix)
-	}
 }

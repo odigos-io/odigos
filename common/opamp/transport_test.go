@@ -17,14 +17,3 @@ func TestResolveTransport(t *testing.T) {
 	require.Equal(t, OpAmpTransport(""), ResolveTransport(OpAmpTransportUnix, false, common.K8sInitContainerMountMethod))
 	require.Equal(t, OpAmpTransportHTTP, ResolveTransport("", true, common.K8sInitContainerMountMethod))
 }
-
-func TestParseOpAmpTransport(t *testing.T) {
-	t.Parallel()
-
-	transport, err := ParseOpAmpTransport("unix")
-	require.NoError(t, err)
-	require.Equal(t, OpAmpTransportUnix, transport)
-
-	_, err = ParseOpAmpTransport("invalid")
-	require.Error(t, err)
-}

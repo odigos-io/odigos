@@ -40,11 +40,9 @@ func (p *MessageProcessor) Process(ctx context.Context, agentToServer *protobufs
 		return nil, opamptypes.ProcessBadRequest
 	}
 
-	isAgentDisconnect := agentToServer.AgentDisconnect != nil
-
+	connectionInfo, exists := p.connectionCache.GetConnection(instanceUid)
 	var serverToAgent *protobufs.ServerToAgent
 	var err error
-	connectionInfo, exists := p.connectionCache.GetConnection(instanceUid)
 	if !exists {
 		connectionInfo, serverToAgent, err = p.handlers.OnNewConnection(ctx, agentToServer)
 		if err != nil {
@@ -81,7 +79,7 @@ func (p *MessageProcessor) Process(ctx context.Context, agentToServer *protobufs
 		return nil, opamptypes.ProcessError
 	}
 
-	if isAgentDisconnect {
+	if agentToServer.AgentDisconnect != nil {
 		if connectionInfo != nil {
 			p.logger.Debug("Agent disconnected",
 				"transport", transport,

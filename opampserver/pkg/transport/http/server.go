@@ -14,23 +14,16 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type Server struct {
-	ListenAddr string
-}
+type Server struct{}
 
 func NewServer() *Server {
-	return &Server{
-		ListenAddr: fmt.Sprintf("0.0.0.0:%d", commonconsts.OpAMPPort),
-	}
-}
-
-func (s *Server) Kind() commonopamp.OpAmpTransport {
-	return commonopamp.OpAmpTransportHTTP
+	return &Server{}
 }
 
 func (s *Server) Start(ctx context.Context, processor opamptypes.Processor) error {
+	listenAddr := fmt.Sprintf("0.0.0.0:%d", commonconsts.OpAMPPort)
 	logger := commonlogger.LoggerCompat().With("subsystem", "opampserver", "transport", "http")
-	logger.Info("Starting opamp HTTP server", "listenEndpoint", s.ListenAddr)
+	logger.Info("Starting opamp HTTP server", "listenEndpoint", listenAddr)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /v1/opamp", func(w http.ResponseWriter, req *http.Request) {
@@ -53,12 +46,12 @@ func (s *Server) Start(ctx context.Context, processor opamptypes.Processor) erro
 		}
 
 		serverToAgent, status := processor.Process(req.Context(), &agentToServer, commonopamp.OpAmpTransportHTTP)
-		if status == opamptypes.ProcessBadRequest {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		if status == opamptypes.ProcessError || serverToAgent == nil {
-			w.WriteHeader(http.StatusInternalServerError)
+		if status != opamptypes.ProcessOK {
+			if status == opamptypes.ProcessBadRequest {
+				w.WriteHeader(http.StatusBadRequest)
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
 			return
 		}
 
@@ -74,7 +67,7 @@ func (s *Server) Start(ctx context.Context, processor opamptypes.Processor) erro
 		}
 	})
 
-	httpServer := &http.Server{Addr: s.ListenAddr, Handler: mux}
+	httpServer := &http.Server{Addr: listenAddr, Handler: mux}
 
 	go func() {
 		<-ctx.Done()
