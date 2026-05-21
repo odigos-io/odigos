@@ -50,8 +50,7 @@ type Odiglet struct {
 // kind.
 //
 // Callers must use a non-blocking send (select with a default branch) and must NOT close the
-// returned channel: the OSS odiglet stops the consumer via ctx.Done(), and an external close()
-// would race with the kube reconcilers that also write to the same channel.
+// returned channel.
 func (o *Odiglet) InstrumentationRequests() ebpf.K8sInstrumentationRequests {
 	return o.instrumentationRequests
 }
