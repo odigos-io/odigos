@@ -46,10 +46,10 @@ type StaticEnvironmentVariable struct {
 }
 
 type EnvironmentVariables struct {
-	// if this distribution runs an opamp client, add the environment variables that configures the server endpoint (local node)
+	// OpAmpClientEnvironments enables the OpAMP client. When opAmpTransport is empty, defaults to http.
 	OpAmpClientEnvironments bool `yaml:"opAmpClientEnvironments,omitempty"`
 
-	// opAmpTransport selects how the agent reaches the node-local OpAMP server (http or unix).
+	// opAmpTransport selects unix or http. When unix, injects ODIGOS_OPAMP_UNIX_SOCKET (not HTTP).
 	// When empty, distros with opAmpClientEnvironments default to http.
 	OpAmpTransport commonopamp.OpAmpTransport `yaml:"opAmpTransport,omitempty"`
 

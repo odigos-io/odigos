@@ -21,8 +21,8 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	commonopamp "github.com/odigos-io/odigos/common/opamp"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	commonopamp "github.com/odigos-io/odigos/common/opamp"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
@@ -197,7 +197,12 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 			return ErrUnknownDistroName
 		}
 
-		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfiguration, distroMetadata, pod.OwnerReferences)
+		runtimeVersion := ""
+		if rd := getRuntimeInfoForContainerName(&ic, podContainerSpec.Name); rd != nil {
+			runtimeVersion = rd.RuntimeVersion
+		}
+		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(
+			containerConfig, podContainerSpec, *pw, serviceName, odigosConfiguration, distroMetadata, pod.OwnerReferences, runtimeVersion)
 		if err != nil {
 			return err
 		}
@@ -316,7 +321,8 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 }
 
 func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container,
-	pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration, distroMetadata *distro.OtelDistro, ownerReferences []metav1.OwnerReference) (bool, map[string]struct{}, error) {
+	pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration, distroMetadata *distro.OtelDistro,
+	ownerReferences []metav1.OwnerReference, runtimeVersion string) (bool, map[string]struct{}, error) {
 	var err error
 
 	// check for existing env vars so we don't introduce them again
@@ -336,11 +342,13 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		distroMetadata.EnvironmentVariables.OpAmpTransport,
 		distroMetadata.EnvironmentVariables.OpAmpClientEnvironments,
 		mountMethod,
+		runtimeVersion,
 	) {
 	case commonopamp.OpAmpTransportUnix:
 		existingEnvNames = podswebhook.InjectOpampUnixSocketEnvVar(existingEnvNames, podContainerSpec)
 	case commonopamp.OpAmpTransportHTTP:
 		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
+	case commonopamp.OpAmpTransportNone:
 	}
 	if distroMetadata.EnvironmentVariables.SignalsAsStaticOtelEnvVars {
 		tracesEnabled := containerConfig.Traces != nil

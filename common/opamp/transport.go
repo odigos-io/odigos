@@ -1,36 +1,54 @@
 package opamp
 
 import (
+	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/common"
 )
 
-// OpAmpTransport selects how an agent reaches the node-local OpAMP server.
+// OpAmpTransport is the OpAMP client transport to inject into the workload.
 type OpAmpTransport string
 
 const (
 	OpAmpTransportHTTP OpAmpTransport = "http"
 	OpAmpTransportUnix OpAmpTransport = "unix"
+	OpAmpTransportNone OpAmpTransport = "none" // do not inject ODIGOS_OPAMP_* env vars
+
+	// java unix OpAMP needs JVM 16+ (java.net Unix sockets / SO_RCVTIMEO in the agent).
+	javaOpAmpUnixMinVersion = ">= 16.0.0"
 )
 
-// ResolveTransport decides which OpAMP transport env vars to inject for a distro.
-// Returns empty when no OpAMP client env should be injected.
-func ResolveTransport(
-	opAmpTransport OpAmpTransport,
-	opAmpClientEnvironments bool,
-	mountMethod common.MountMethod,
-) OpAmpTransport {
-	if mountMethod == common.K8sInitContainerMountMethod {
-		// Pod-local emptyDir cannot see the node socket.
-		if opAmpClientEnvironments {
-			return OpAmpTransportHTTP
+// ResolveTransport picks which ODIGOS_OPAMP_* env var the webhook should inject.
+// When opAmpTransport is empty, opAmpClientEnvironments defaults to http.
+func ResolveTransport(opAmpTransport OpAmpTransport, opAmpClientEnvironments bool, mountMethod common.MountMethod, runtimeVersion string) OpAmpTransport {
+	if !opAmpClientEnvironments {
+		return OpAmpTransportNone
+	}
+
+	transport := OpAmpTransportHTTP
+	if opAmpTransport == OpAmpTransportUnix {
+		transport = OpAmpTransportUnix
+	}
+
+	if transport == OpAmpTransportUnix {
+		if mountMethod == common.K8sInitContainerMountMethod {
+			return OpAmpTransportNone
 		}
-		return ""
+		if !javaSupportsOpAmpUnix(runtimeVersion) {
+			return OpAmpTransportNone
+		}
 	}
-	if opAmpTransport == OpAmpTransportUnix || opAmpTransport == OpAmpTransportHTTP {
-		return opAmpTransport
+
+	return transport
+}
+
+func javaSupportsOpAmpUnix(runtimeVersion string) bool {
+	v := common.GetVersion(runtimeVersion)
+	if v == nil {
+		return false
 	}
-	if opAmpClientEnvironments {
-		return OpAmpTransportHTTP
+	constraint, err := version.NewConstraint(javaOpAmpUnixMinVersion)
+	if err != nil {
+		return false
 	}
-	return ""
+	return constraint.Check(v)
 }

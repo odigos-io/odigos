@@ -20,14 +20,12 @@ OpAMP messages (`AgentToServer` / `ServerToAgent` protobuf) are handled by a sha
 | HTTP | `0.0.0.0:4320` `POST /v1/opamp` | Raw protobuf body |
 | Unix | `/var/odigos/exchange/exchange.sock` | 4-byte big-endian length + protobuf |
 
-Instrumentor selects the agent transport via distro `opAmpTransport` (`http` or `unix`). When unset, distros with `opAmpClientEnvironments` default to HTTP.
+Instrumentor uses `common/opamp.ResolveTransport`: `opAmpClientEnvironments` with empty `opAmpTransport` defaults to HTTP; `opAmpTransport: unix` injects the unix socket env except on `k8s-init-container` mount or java on JVM &lt; 16. Feature config uses `configAsEnvVars` on the distro YAML (same as main).
 
 Environment variables (mutually exclusive):
 
-- `ODIGOS_OPAMP_UNIX_SOCKET` — Unix OpAMP (path to socket)
-- `ODIGOS_OPAMP_SERVER_HOST` — HTTP OpAMP when Unix socket env is not set
-
-`k8s-init-container` mount method does not inject Unix socket env (pod-local volumes cannot see the node socket).
+- `ODIGOS_OPAMP_UNIX_SOCKET` — Unix OpAMP
+- `ODIGOS_OPAMP_SERVER_HOST` — HTTP OpAMP
 
 ## Development
 
