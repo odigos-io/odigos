@@ -30,7 +30,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: frontend
       language: java
-      runtimeVersion: 17.0.18+8
+      runtimeVersion: 17.0.19+10
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -50,7 +50,7 @@ status:
         - name: PYTHONPATH
           value: /app # this env exists in the test image
       language: python
-      runtimeVersion: 3.11.14
+      runtimeVersion: 3.11.15
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
