@@ -2,6 +2,7 @@ package opamp
 
 import (
 	"github.com/hashicorp/go-version"
+
 	"github.com/odigos-io/odigos/common"
 )
 
@@ -19,7 +20,12 @@ const (
 
 // ResolveTransport picks which ODIGOS_OPAMP_* env var the webhook should inject.
 // When opAmpTransport is empty, opAmpClientEnvironments defaults to http.
-func ResolveTransport(opAmpTransport OpAmpTransport, opAmpClientEnvironments bool, mountMethod common.MountMethod, runtimeVersion string) OpAmpTransport {
+func ResolveTransport(
+	opAmpTransport OpAmpTransport,
+	opAmpClientEnvironments bool,
+	mountMethod common.MountMethod,
+	runtimeVersion string,
+) OpAmpTransport {
 	if !opAmpClientEnvironments {
 		return OpAmpTransportNone
 	}
