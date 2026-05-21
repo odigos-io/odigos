@@ -67,6 +67,8 @@ func K8sAttributesProfilesProcessorConfig() config.GenericMap {
 				"k8s.deployment.name",
 				"k8s.statefulset.name",
 				"k8s.daemonset.name",
+				"k8s.job.name",
+				"k8s.cronjob.name",
 				"container.id",
 			},
 		},
@@ -122,7 +124,9 @@ func ProfilingServiceNameTransformConfig() config.GenericMap {
 			`set(resource.attributes["service.name"], resource.attributes["k8s.deployment.name"]) where resource.attributes["k8s.deployment.name"] != nil`,
 			`set(resource.attributes["service.name"], resource.attributes["k8s.statefulset.name"]) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] != nil`,
 			`set(resource.attributes["service.name"], resource.attributes["k8s.daemonset.name"]) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] == nil and resource.attributes["k8s.daemonset.name"] != nil`,
-			`set(resource.attributes["service.name"], resource.attributes["k8s.pod.name"]) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] == nil and resource.attributes["k8s.daemonset.name"] == nil and resource.attributes["k8s.pod.name"] != nil`,
+			`set(resource.attributes["service.name"], resource.attributes["k8s.job.name"]) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] == nil and resource.attributes["k8s.daemonset.name"] == nil and resource.attributes["k8s.job.name"] != nil`,
+			`set(resource.attributes["service.name"], resource.attributes["k8s.cronjob.name"]) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] == nil and resource.attributes["k8s.daemonset.name"] == nil and resource.attributes["k8s.job.name"] == nil and resource.attributes["k8s.cronjob.name"] != nil`,
+			`set(resource.attributes["service.name"], resource.attributes["k8s.pod.name"]) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] == nil and resource.attributes["k8s.daemonset.name"] == nil and resource.attributes["k8s.job.name"] == nil and resource.attributes["k8s.cronjob.name"] == nil and resource.attributes["k8s.pod.name"] != nil`,
 		},
 	}
 }

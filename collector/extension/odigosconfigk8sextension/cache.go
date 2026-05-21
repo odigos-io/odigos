@@ -21,6 +21,7 @@ type workloadKey struct {
 type workloadEntry struct {
 	containerKeys map[string]struct{}
 	dataStreams   []string
+	managed       bool
 }
 
 // keyPrefixFromKey returns the workload prefix for a full cache key (e.g. "ns/kind/name/container" -> "ns/kind/name/").
@@ -89,20 +90,14 @@ func (c *cache) Get(key string) (*commonapi.ContainerCollectorConfig, bool) {
 	return val, found
 }
 
-// hasContainersForWorkloadPrefix returns true when the workload key prefix (e.g. "ns/Kind/name/")
-// has at least one full container cache key. Used for profile filtering where resource attributes
-// may not include k8s.container.name.
-//
-// The len(containerKeys) > 0 check is load-bearing, not defensive. The index entry's lifetime is
-// the union of its containerKeys and dataStreams: SetDataStreams creates an entry with an empty
-// containerKeys map, and Delete only removes the entry when both sets are empty. So entry != nil
-// alone does not imply "has at least one InstrumentationConfig container entry" — a workload that
-// only has data-stream labels would falsely return true without the length check.
-func (c *cache) hasContainersForWorkloadPrefix(workloadKeyPrefix string) bool {
+// hasManagedWorkloadPrefix returns true when the workload key prefix (e.g. "ns/Kind/name/")
+// belongs to an InstrumentationConfig with at least one enabled agent container. Used for profile
+// filtering where resource attributes may not include k8s.container.name.
+func (c *cache) hasManagedWorkloadPrefix(workloadKeyPrefix string) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	entry := c.workloadKeysIndex[workloadKeyPrefix]
-	return entry != nil && len(entry.containerKeys) > 0
+	return entry != nil && entry.managed
 }
 
 // Set stores the required config for the given workload key, updates the workload keys index, then invokes all registered callbacks.
@@ -148,7 +143,7 @@ func (c *cache) Delete(key string) {
 	if workloadKey != "" {
 		if entry := c.workloadKeysIndex[workloadKey]; entry != nil {
 			delete(entry.containerKeys, key)
-			if len(entry.containerKeys) == 0 && len(entry.dataStreams) == 0 {
+			if entry.isEmpty() {
 				delete(c.workloadKeysIndex, workloadKey)
 			}
 		}
@@ -178,16 +173,23 @@ func (c *cache) getContainerKeysForWorkload(workloadKey string) []string {
 	return out
 }
 
-// SetDataStreams stores the data stream names for the given workload key prefix.
-func (c *cache) SetDataStreams(workloadKey string, streams []string) {
+// SetWorkloadMetadata stores workload-level metadata for the given workload key prefix.
+func (c *cache) SetWorkloadMetadata(workloadKey string, streams []string, managed bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	entry := c.workloadKeysIndex[workloadKey]
 	if entry == nil {
+		if len(streams) == 0 && !managed {
+			return
+		}
 		entry = &workloadEntry{containerKeys: make(map[string]struct{})}
 		c.workloadKeysIndex[workloadKey] = entry
 	}
 	entry.dataStreams = streams
+	entry.managed = managed
+	if entry.isEmpty() {
+		delete(c.workloadKeysIndex, workloadKey)
+	}
 }
 
 // GetDataStreams returns the data stream names for the given workload key prefix.
@@ -199,4 +201,8 @@ func (c *cache) GetDataStreams(workloadKey string) ([]string, bool) {
 		return nil, false
 	}
 	return entry.dataStreams, true
+}
+
+func (e *workloadEntry) isEmpty() bool {
+	return len(e.containerKeys) == 0 && len(e.dataStreams) == 0 && !e.managed
 }

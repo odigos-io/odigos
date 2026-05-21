@@ -120,17 +120,18 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {
 	specMap, ok, _ := unstructured.NestedMap(u.Object, "spec")
 	if !ok || len(specMap) == 0 {
 		o.logger.Info("failed to get instrumentation config spec; clearing workload state", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
-		o.syncWorkloadToDesiredState(workloadKey, nil, dataStreams)
+		o.syncWorkloadToDesiredState(workloadKey, nil, dataStreams, false)
 		return
 	}
 
+	managed := hasEnabledAgentContainer(specMap)
 	workloadCollectorConfigSlice, ok, _ := unstructured.NestedSlice(specMap, "workloadCollectorConfig")
 	if !ok || len(workloadCollectorConfigSlice) == 0 {
-		o.syncWorkloadToDesiredState(workloadKey, nil, dataStreams)
+		o.syncWorkloadToDesiredState(workloadKey, nil, dataStreams, managed)
 		return
 	}
 	desired := o.parseWorkloadCollectorConfig(workloadKey, workloadCollectorConfigSlice)
-	o.syncWorkloadToDesiredState(workloadKey, desired, dataStreams)
+	o.syncWorkloadToDesiredState(workloadKey, desired, dataStreams, managed || len(desired) > 0)
 }
 
 // handleInstrumentationConfigDelete is called when an IC is removed. Desired state for this workload is empty.
@@ -146,7 +147,25 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}
 	if !ok {
 		return
 	}
-	o.syncWorkloadToDesiredState(workloadKey, nil, nil)
+	o.syncWorkloadToDesiredState(workloadKey, nil, nil, false)
+}
+
+func hasEnabledAgentContainer(specMap map[string]interface{}) bool {
+	containersSlice, ok, _ := unstructured.NestedSlice(specMap, "containers")
+	if !ok {
+		return false
+	}
+	for _, item := range containersSlice {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		agentEnabled, ok, _ := unstructured.NestedBool(itemMap, "agentEnabled")
+		if ok && agentEnabled {
+			return true
+		}
+	}
+	return false
 }
 
 // containerEntry is a single container's cache key and config for the desired state.
@@ -187,7 +206,7 @@ func (o *OdigosWorkloadConfig) parseWorkloadCollectorConfig(workloadKey workload
 //
 // Order: (1) apply new/updated entries — cache.Set (cache invokes OnSet); (2) remove stale
 // entries — cache.Delete (cache invokes OnDeleteKey). No span sees a gap.
-func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKey, desired []containerEntry, dataStreams []string) {
+func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKey, desired []containerEntry, dataStreams []string, managed bool) {
 	workloadKeyStr := WorkloadKeyString(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name)
 	workloadIndexKey := workloadKeyStr + "/"
 
@@ -209,14 +228,15 @@ func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKe
 		}
 	}
 
-	// 3) Update data stream membership for this workload.
-	o.cache.SetDataStreams(workloadIndexKey, dataStreams)
+	// 3) Update workload-level metadata.
+	o.cache.SetWorkloadMetadata(workloadIndexKey, dataStreams, managed)
 
 	o.logger.Debug("synced workload to desired state",
 		zap.String("workload", workloadKeyStr),
 		zap.Int("desired", len(desired)),
 		zap.Int("removed", numRemoved),
 		zap.Strings("dataStreams", dataStreams),
+		zap.Bool("managed", managed),
 	)
 }
 

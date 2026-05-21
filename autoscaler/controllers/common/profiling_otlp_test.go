@@ -64,3 +64,26 @@ func TestProfilingFilterProcessorConfig(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, ProfilingProfileDropConditions(), pc)
 }
+
+func TestK8sAttributesProfilesProcessorConfigIncludesSupportedWorkloads(t *testing.T) {
+	m := K8sAttributesProfilesProcessorConfig()
+	extract, ok := m["extract"].(config.GenericMap)
+	require.True(t, ok)
+	metadata, ok := extract["metadata"].([]string)
+	require.True(t, ok)
+
+	assert.Contains(t, metadata, "k8s.deployment.name")
+	assert.Contains(t, metadata, "k8s.statefulset.name")
+	assert.Contains(t, metadata, "k8s.daemonset.name")
+	assert.Contains(t, metadata, "k8s.job.name")
+	assert.Contains(t, metadata, "k8s.cronjob.name")
+}
+
+func TestProfilingServiceNameTransformConfigIncludesJobWorkloads(t *testing.T) {
+	m := ProfilingServiceNameTransformConfig()
+	statements, ok := m["profile_statements"].([]string)
+	require.True(t, ok)
+
+	assert.Contains(t, statements, `set(resource.attributes["service.name"], resource.attributes["k8s.job.name"]) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] == nil and resource.attributes["k8s.daemonset.name"] == nil and resource.attributes["k8s.job.name"] != nil`)
+	assert.Contains(t, statements, `set(resource.attributes["service.name"], resource.attributes["k8s.cronjob.name"]) where resource.attributes["k8s.deployment.name"] == nil and resource.attributes["k8s.statefulset.name"] == nil and resource.attributes["k8s.daemonset.name"] == nil and resource.attributes["k8s.job.name"] == nil and resource.attributes["k8s.cronjob.name"] != nil`)
+}

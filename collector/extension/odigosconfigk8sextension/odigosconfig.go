@@ -62,7 +62,7 @@ func (o *OdigosWorkloadConfig) HasCachedWorkloadContainerConfig(res pcommon.Reso
 	if err != nil {
 		return false
 	}
-	return o.cache.hasContainersForWorkloadPrefix(prefix)
+	return o.cache.hasManagedWorkloadPrefix(prefix)
 }
 
 // GetWorkloadCacheKey returns the cache key for the container identified by the given resource.

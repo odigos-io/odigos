@@ -25,8 +25,8 @@ type OdigosConfigExtension interface {
 	// GetFromResource returns the container collector config for the given resource if it exists.
 	GetFromResource(res pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool)
 
-	// HasCachedWorkloadContainerConfig reports whether the extension cache has at least one
-	// container config row for the workload identified on the resource (namespace/kind/name).
+	// HasCachedWorkloadContainerConfig reports whether the extension cache has an enabled
+	// Odigos agent for the workload identified on the resource (namespace/kind/name).
 	// Unlike GetFromResource, this does not require k8s.container.name.
 	HasCachedWorkloadContainerConfig(res pcommon.Resource) bool
 

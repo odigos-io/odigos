@@ -52,6 +52,11 @@ func getNamespace(attrs pcommon.Map) string {
 }
 
 func getKindAndName(attrs pcommon.Map) (string, string) {
+	// Odigos-specific workload attributes preserve exact source kind for workloads
+	// that share Kubernetes metadata keys, such as OpenShift DeploymentConfig.
+	if kind, name := getOdigosKindAndName(attrs); kind != "" && name != "" {
+		return kind, name
+	}
 
 	for _, pair := range attrKindPairs {
 		if val, ok := attrs.Get(pair.key); ok && val.Type() == pcommon.ValueTypeStr {
@@ -59,7 +64,10 @@ func getKindAndName(attrs pcommon.Map) (string, string) {
 		}
 	}
 
-	// Fallback to Odigos-specific workload attributes when no k8s workload attribute matched.
+	return "", ""
+}
+
+func getOdigosKindAndName(attrs pcommon.Map) (string, string) {
 	kind, ok := attrs.Get(consts.OdigosWorkloadKindAttribute)
 	if !ok {
 		return "", ""
