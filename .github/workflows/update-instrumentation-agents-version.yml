@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       agents_category: 
-        description: "Category of the agents to update (supported values: nodejs, php, ruby)"
+        description: "Category of the agents to update (supported values: nodejs, php, ruby, python)"
         required: true
         type: string
       new_agent_version:
@@ -55,26 +55,19 @@ jobs:
           # Normalize agents category and determine agent type
           AGENTS_CATEGORY_LOWER=$(echo "$AGENTS_CATEGORY" | tr '[:upper:]' '[:lower:]')
           
-          if [ "$AGENTS_CATEGORY_LOWER" = "nodejs-community" ] || \
-             [ "$AGENTS_CATEGORY_LOWER" = "nodejs" ]; then
-            AGENT_TYPE="java-community"
-            echo "agent_type=nodejs-community" >> $GITHUB_OUTPUT
-            echo "agent_version=$AGENT_VERSION" >> $GITHUB_OUTPUT
-          elif [ "$AGENTS_CATEGORY_LOWER" = "php-community" ] || \
-               [ "$AGENTS_CATEGORY_LOWER" = "php" ]; then
-            AGENT_TYPE="php-community"
-            echo "agent_type=php-community" >> $GITHUB_OUTPUT
-            echo "agent_version=$AGENT_VERSION" >> $GITHUB_OUTPUT
-          elif [ "$AGENTS_CATEGORY_LOWER" = "ruby-community" ] || \
-               [ "$AGENTS_CATEGORY_LOWER" = "ruby" ]; then
-            AGENT_TYPE="ruby-community"
-            echo "agent_type=ruby-community" >> $GITHUB_OUTPUT
-            echo "agent_version=$AGENT_VERSION" >> $GITHUB_OUTPUT
-          else
-            echo "ERROR: Invalid agents_category '$AGENTS_CATEGORY'. Supported values: nodejs-community, nodejs, php-community, php"
-            exit 1
-          fi
-          
+          case "$AGENTS_CATEGORY_LOWER" in
+            nodejs|nodejs-community) AGENT_TYPE="nodejs-community" ;;
+            php|php-community)       AGENT_TYPE="php-community" ;;
+            ruby|ruby-community)     AGENT_TYPE="ruby-community" ;;
+            python|python-community) AGENT_TYPE="python-community" ;;
+            *)
+              echo "ERROR: Invalid agents_category '$AGENTS_CATEGORY'. Supported values: nodejs-community, nodejs, php-community, php, ruby-community, ruby, python-community, python"
+              exit 1
+              ;;
+          esac
+
+          echo "agent_type=$AGENT_TYPE" >> $GITHUB_OUTPUT
+          echo "agent_version=$AGENT_VERSION" >> $GITHUB_OUTPUT
           echo "agents_category=$AGENTS_CATEGORY" >> $GITHUB_OUTPUT
 
       - name: Update Agent Version
@@ -82,7 +75,12 @@ jobs:
         run: |
           export AGENT_DISTRO="${{ steps.agent.outputs.agent_type }}"
           export AGENT_VERSION="${{ steps.agent.outputs.agent_version }}"
-          make -f deps.mk upgrade-odiglet-agent-version
+          # python-community ships two image tags, so it calls a specific make target to avoid updating both
+          if [ "$AGENT_DISTRO" = "python-community" ]; then
+            make -f deps.mk upgrade-odiglet-python-community-version
+          else
+            make -f deps.mk upgrade-odiglet-agent-version
+          fi
 
       - name: Get agent version updater token
         id: agent-version-sts
