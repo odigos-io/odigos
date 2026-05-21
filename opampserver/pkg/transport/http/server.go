@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	commonconsts "github.com/odigos-io/odigos/common/consts"
-	commonopamp "github.com/odigos-io/odigos/common/opamp"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	commonopamp "github.com/odigos-io/odigos/common/opamp"
 	"github.com/odigos-io/odigos/opampserver/pkg/opamptypes"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
@@ -45,7 +45,7 @@ func (s *Server) Start(ctx context.Context, processor opamptypes.Processor) erro
 			return
 		}
 
-		serverToAgent, status := processor.Process(req.Context(), &agentToServer, commonopamp.OpAmpTransportHTTP)
+		serverToAgent, status := processor.Process(ctx, &agentToServer, commonopamp.OpAmpTransportHTTP)
 		if status != opamptypes.ProcessOK {
 			if status == opamptypes.ProcessBadRequest {
 				w.WriteHeader(http.StatusBadRequest)
