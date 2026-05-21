@@ -1,16 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { TerminalIcon } from '@odigos/ui-kit/icons';
+import { Tooltip } from '@odigos/ui-kit/components';
 import { FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { OtherStatusType } from '@odigos/ui-kit/types';
-import { StatusKeys, useStatusStore } from '../../store';
-import { Header, Tooltip } from '@odigos/ui-kit/components';
+import { StatusKeys, useStatusStore } from '../store';
 import { SystemDrawer } from '@odigos/ui-kit/containers/v2';
+import { NotificationManager } from '@odigos/ui-kit/containers';
 import { OdigosLogoTextByTier } from '@odigos/ui-kit/snippets/v2';
 import { useConfig, useDescribe, useDiagnose, useTokenCRUD } from '@/hooks';
-import { NotificationManager, SlackInvite } from '@odigos/ui-kit/containers';
 import { IconButton, Badge as V2Badge, Header as V2Header } from '@odigos/ui-kit/components/v2';
 
-const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
+export const OverviewHeader = () => {
   const { isReadonly } = useConfig();
   const { downloadDiagnose } = useDiagnose();
   const { fetchDescribeOdigos } = useDescribe();
@@ -59,7 +59,7 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
     }
 
     return arr;
-  }, [v2, isReadonly, backendStatus?.label, instrumentationStatus?.label]);
+  }, [isReadonly, backendStatus, instrumentationStatus]);
 
   const right = useMemo(() => {
     const arr = [];
@@ -84,36 +84,13 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
         <IconButton icon={TerminalIcon} onClick={toggleSystemDrawer} />
       </div>,
     );
-    arr.push(
-      ...[
-        <div key='slack-invite' data-id='slack-invite'>
-          <SlackInvite />
-        </div>,
-      ],
-    );
 
     return arr;
-  }, [v2, tokenStatus?.label]);
-
-  if (v2) {
-    return (
-      <>
-        <V2Header left={left} right={right} />
-        <SystemDrawer
-          isOpen={isSystemDrawerOpen}
-          onClose={toggleSystemDrawer}
-          fetchDescribeOdigos={fetchDescribeOdigos}
-          downloadDiagnose={downloadDiagnose}
-          token={tokens[0]}
-          updateToken={updateToken}
-        />
-      </>
-    );
-  }
+  }, [tokenStatus]);
 
   return (
     <>
-      <Header left={left} right={right} />
+      <V2Header left={left} right={right} />
       <SystemDrawer
         isOpen={isSystemDrawerOpen}
         onClose={toggleSystemDrawer}
@@ -125,5 +102,3 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
     </>
   );
 };
-
-export { OverviewHeader };

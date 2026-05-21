@@ -1,11 +1,10 @@
 'use client';
 
-import React, { type PropsWithChildren, useEffect } from 'react';
+import React, { type PropsWithChildren } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { getNavbarIcons } from '@/utils';
 import { OverviewHeader } from '@/components';
-import { useDarkMode } from '@odigos/ui-kit/store';
 import { Navbar } from '@odigos/ui-kit/components/v2';
 import { ToastList } from '@odigos/ui-kit/containers';
 import { OdigosProvider } from '@odigos/ui-kit/contexts';
@@ -27,13 +26,6 @@ function OverviewLayout({ children }: PropsWithChildren) {
   useSSE();
   useTokenTracker();
 
-  // TODO: remove this after migration to v2
-  const { darkMode, setDarkMode } = useDarkMode();
-  useEffect(() => {
-    if (!darkMode) setDarkMode(true);
-    document.body.style.backgroundColor = '#151618';
-  }, []);
-
   const router = useRouter();
   const pathname = usePathname();
   const { config } = useConfig();
@@ -42,7 +34,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
     <ErrorBoundary>
       <OdigosProvider platformType={config?.platformType} tier={config?.tier} version={config?.odigosVersion || ''}>
         <ViewportColumn $gap={0}>
-          <OverviewHeader v2 />
+          <OverviewHeader />
           <ContentRow $gap={0}>
             <Navbar height='calc(100vh - 60px)' icons={getNavbarIcons(router, pathname)} />
             {children}
