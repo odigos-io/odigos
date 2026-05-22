@@ -26,7 +26,6 @@ import (
 
 func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string) error {
 	logger := commonlogger.LoggerCompat().With("subsystem", "opampserver")
-	logger.Info("Starting opamp server")
 
 	connectionCache := connection.NewConnectionsCache()
 	sdkConfig := sdkconfig.NewSdkConfigManager(mgr, connectionCache, odigosNs)
