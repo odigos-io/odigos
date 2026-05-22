@@ -41,7 +41,7 @@ func init() {
 type KubeManagerOptions struct {
 	Mgr                     ctrl.Manager
 	ConfigUpdates           chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	InstrumentationRequests chan<- instrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
+	InstrumentationRequests ebpf.K8sInstrumentationRequests
 	CriClient               *criwrapper.CriClient
 	// map where keys are the names of the environment variables that participate in append mechanism
 	// they need to be recorded by runtime detection into the runtime info, and this list instruct what to collect.
