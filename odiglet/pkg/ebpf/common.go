@@ -98,7 +98,7 @@ func NewManager(
 		MetricsMap:              metricsMap,
 		MetricsAttributesMap:    metricsAttributesMap,
 		LogsMap:                 logsMap,
-		LogsAttrSubscribe:      opts.LogsAttrSubscribe,
+		LogsAttrSubscribe:       opts.LogsAttrSubscribe,
 	}
 
 	// Add file open triggers from all distributions.

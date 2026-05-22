@@ -27,7 +27,7 @@ type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme                  *runtime.Scheme
 	ConfigUpdates           chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	InstrumentationRequests chan<- instrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
+	InstrumentationRequests ebpf.K8sInstrumentationRequests
 	DistributionGetter      *distros.Getter
 }
 
