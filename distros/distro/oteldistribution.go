@@ -48,8 +48,8 @@ type StaticEnvironmentVariable struct {
 type EnvironmentVariables struct {
 	// if this distribution runs an opamp client, add the environment variables that configure the
 	// server endpoint. The actual transport (and which ODIGOS_OPAMP_* env var to inject) is picked
-	// from OtelDistro.OpAmpTransports based on cluster constraints; if no transports are declared,
-	// http (ODIGOS_OPAMP_SERVER_HOST) is used by default.
+	// from OtelDistro.OpAmpTransportsSupported based on cluster constraints; if no transports are
+	// declared, http (ODIGOS_OPAMP_SERVER_HOST) is used by default.
 	OpAmpClientEnvironments bool `yaml:"opAmpClientEnvironments,omitempty"`
 
 	// set to true if this distribution uses the OTLP HTTP protocol to emit telemetry data to node collector.
@@ -285,11 +285,11 @@ type OtelDistro struct {
 	// to enable the distribution.
 	EnvironmentVariables EnvironmentVariables `yaml:"environmentVariables,omitempty"`
 
-	// OpAmpTransports is the ordered list of OpAMP client transports this distribution's agent
-	// can speak. The webhook picks the first entry that is usable on the target node given
+	// OpAmpTransportsSupported is the ordered list of OpAMP client transports this distribution's
+	// agent can speak. The webhook picks the first entry that is usable on the target node given
 	// runtime constraints (mount method, runtime version, …). Empty defaults to [http].
 	// Only consulted when EnvironmentVariables.OpAmpClientEnvironments is true.
-	OpAmpTransports []commonopamp.OpAmpTransport `yaml:"opAmpTransports,omitempty"`
+	OpAmpTransportsSupported []commonopamp.OpAmpTransport `yaml:"opAmpTransportsSupported,omitempty"`
 
 	// Metadata and properties of the runtime agent that is used to enable the distribution.
 	// Can be nil in case no runtime agent is required.

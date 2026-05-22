@@ -340,7 +340,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 	switch commonopamp.ResolveTransport(
 		distroMetadata.EnvironmentVariables.OpAmpClientEnvironments,
-		distroMetadata.OpAmpTransports,
+		distroMetadata.OpAmpTransportsSupported,
 		mountMethod,
 		runtimeVersion,
 	) {
