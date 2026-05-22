@@ -126,17 +126,17 @@ func ResolveDistroForContainer(
 		}
 	}
 
-	// check unknown language first. if language is not supported, we can skip the rest of the checks.
+	// if the user specifically overwritten the distro to use for this container, use it.
+	if containerOverride != nil && containerOverride.OtelDistroName != nil {
+		return resolveDistroByOverride(*containerOverride.OtelDistroName, distroGetter, runtimeDetails.Language)
+	}
+
+	// check unknown language before automatic distro resolution.
 	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
 		return nil, &odigosv1.AgentDisabledInfo{
 			AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
 			AgentEnabledMessage: "unknown programming language",
 		}
-	}
-
-	// if the user specifically overwritten the distro to use for this container, use it.
-	if containerOverride != nil && containerOverride.OtelDistroName != nil {
-		return resolveDistroByOverride(*containerOverride.OtelDistroName, distroGetter, runtimeDetails.Language)
 	}
 
 	// use the default distro and detected language to resolve the distro to use.
