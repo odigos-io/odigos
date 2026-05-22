@@ -104,8 +104,7 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 		for {
 			select {
 			case <-ctx.Done():
-				// Close the updateChannel here so the worker goroutine exits.
-				// HTTP graceful shutdown (and its error logging) runs in the HTTP transport goroutine.
+				// Close the updateChannel here so the worker goroutine exits
 				close(updateChannel)
 				logger.Info("Shutting down live connections timeout monitor")
 				return
@@ -181,6 +180,8 @@ func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan Instr
 			if err != nil {
 				logger.Error("Failed to update instrumentation instance", "err", err)
 			}
+		// Do not delete the instrumentation instance if the connection failed;
+		// Instead, retain it in an unhealthy state so the UI can display relevant information.
 		case DeleteInstance:
 			if task.connectionInfo.Status == agent.HealthStatusNoConnectionToOpAMPServer {
 				logger.Info("Skipping deletion of instrumentation instance on connection failure to opamp server", "connectionInfo", task.connectionInfo)
@@ -193,6 +194,7 @@ func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan Instr
 			}
 		default:
 			logger.Error("Unknown task type received", "taskType", task.taskType)
+
 		}
 	}
 	logger.Info("Shutting down instrumentation update worker")
