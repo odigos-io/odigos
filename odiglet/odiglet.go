@@ -169,6 +169,7 @@ func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.
 	return []Runnable{
 		{
 			Name:         "pprof server",
+			// if we fail to start the pprof server, don't return an error as it is not critical
 			PropagateErr: false,
 			Run: func(ctx context.Context) error {
 				return common.StartPprofServer(ctx, commonlogger.ToLogr(), int(k8sconsts.DefaultPprofEndpointPort))
@@ -193,6 +194,7 @@ func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.
 			Name:         "kube manager",
 			PropagateErr: true,
 			Run: func(ctx context.Context) error {
+				// Create a context that will be cancelled when eBPF manager exits during shutdown
 				kubeManagerCtx, kubeManagerCancel := context.WithCancel(context.Background())
 				defer kubeManagerCancel()
 
@@ -233,6 +235,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 
 	defer o.criClient.Close()
 
+	// Channel to signal when eBPF manager has exited
 	ebpfDone := make(chan struct{})
 	runnables := append(o.builtInRunnables(ebpfDone, logger), o.runnables...)
 	for _, runnable := range runnables {
