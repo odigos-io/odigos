@@ -164,7 +164,7 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	}, nil
 }
 
-func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, groupCtx context.Context, logger *commonlogger.OdigosLogger) []Runnable {
+func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.OdigosLogger) []Runnable {
 	odigosNs := env.GetCurrentNamespace()
 	return []Runnable{
 		{
@@ -198,7 +198,7 @@ func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, groupCtx context.Cont
 
 				go func() {
 					select {
-					case <-groupCtx.Done():
+					case <-ctx.Done():
 						logger.Info("Shutdown initiated, waiting for eBPF manager to exit before stopping kube manager")
 						<-ebpfDone
 						logger.Info("eBPF manager exited, now stopping kube manager")
@@ -234,7 +234,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	defer o.criClient.Close()
 
 	ebpfDone := make(chan struct{})
-	runnables := append(o.builtInRunnables(ebpfDone, groupCtx, logger), o.runnables...)
+	runnables := append(o.builtInRunnables(ebpfDone, logger), o.runnables...)
 	for _, runnable := range runnables {
 		o.goRunnable(g, groupCtx, logger, runnable)
 	}
