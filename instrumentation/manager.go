@@ -282,7 +282,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 				continue
 			}
 			if req.Instrument {
-				m.instrumentFromDetails(ctx, req.ProcessDetailsByPid, true)
+				m.instrumentFromDetails(ctx, req.ProcessDetailsByPid)
 			} else {
 				// for un-instrumentation requests, we find all instrumentations that match the process group
 				// and clean them up.
@@ -312,8 +312,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 // instrumentFromDetails runs tryInstrument for each (pid, pd) that is not already live-
 // instrumented, then re-arms the process detector for successes. Duplicate or in-flight
 // requests are skipped via isInstrumented; failed-but-tracked entries (inst == nil) are retried.
-// When logExplicitRequests is true, each attempt is logged as an explicit instrumentation request.
-func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) instrumentFromDetails(ctx context.Context, byPid map[int]ProcessDetails, logExplicitRequests bool) {
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) instrumentFromDetails(ctx context.Context, byPid map[int]ProcessDetails) {
 	var tracked []int
 	for pid, pd := range byPid {
 		// Handle duplicate requests gracefully; this can happen when external systems such as
@@ -321,9 +320,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) instrumentFromDetai
 		if m.isInstrumented(pid) {
 			continue
 		}
-		if logExplicitRequests {
-			m.logger.Info("received explicit instrumentation request", "process details", pd, "pid", pid)
-		}
+		m.logger.Info("attempting instrumentation", "pid", pid, "process details", pd)
 		if err := m.tryInstrument(ctx, pd, pid); err != nil {
 			m.handleInstrumentError(err)
 			continue
@@ -376,7 +373,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) retryFailedInstrume
 		return
 	}
 	m.logger.Info("retrying failed instrumentations", "count", len(byPid), "distroFilter", distroFilter)
-	m.instrumentFromDetails(ctx, byPid, false)
+	m.instrumentFromDetails(ctx, byPid)
 }
 
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) handleInstrumentError(err error) {
