@@ -45,6 +45,7 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 
 	var wg sync.WaitGroup
 
+	// Start the worker goroutine to process instrumentation instances updates sequentially
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
