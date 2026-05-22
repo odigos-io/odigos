@@ -31,6 +31,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
 
+// Runnable is a named task started in Odiglet.Run's errgroup. Run should block until ctx is
+// canceled. Return nil on normal shutdown. When PropagateErr is true, a non-nil error is
+// returned to the errgroup and cancels the other runnables.
+type Runnable struct {
+	Name         string
+	PropagateErr bool
+	Run          func(ctx context.Context) error
+}
+
 type Odiglet struct {
 	clientset     *kubernetes.Clientset
 	mgr           controllerruntime.Manager
@@ -41,6 +50,29 @@ type Odiglet struct {
 	// in the embedded instrumentation manager.
 	instrumentationRequests chan commonInstrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
 	criClient               *criwrapper.CriClient
+	runnables               []Runnable
+}
+
+// AddRunnable registers a task to run inside Odiglet.Run's errgroup. Call before Run; safe to
+// call multiple times to register several tasks.
+func (o *Odiglet) AddRunnable(r Runnable) {
+	o.runnables = append(o.runnables, r)
+}
+
+// goRunnable runs r in the odiglet errgroup with standard logging derived from r.Name.
+func (o *Odiglet) goRunnable(g *errgroup.Group, ctx context.Context, logger *commonlogger.OdigosLogger, r Runnable) {
+	g.Go(func() error {
+		err := r.Run(ctx)
+		if err != nil {
+			logger.Error("failed to run "+r.Name, "err", err)
+		} else {
+			logger.Info(r.Name + " exited")
+		}
+		if r.PropagateErr {
+			return err
+		}
+		return nil
+	})
 }
 
 // InstrumentationRequests returns the write-end of the instrumentation manager's request
@@ -132,6 +164,64 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	}, nil
 }
 
+func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, groupCtx context.Context, logger *commonlogger.OdigosLogger) []Runnable {
+	odigosNs := env.GetCurrentNamespace()
+	return []Runnable{
+		{
+			Name:         "pprof server",
+			PropagateErr: false,
+			Run: func(ctx context.Context) error {
+				return common.StartPprofServer(ctx, commonlogger.ToLogr(), int(k8sconsts.DefaultPprofEndpointPort))
+			},
+		},
+		{
+			Name:         "eBPF manager",
+			PropagateErr: true,
+			Run: func(ctx context.Context) error {
+				defer close(ebpfDone)
+				return o.ebpfManager.Run(ctx)
+			},
+		},
+		{
+			Name:         "OpAmp server",
+			PropagateErr: true,
+			Run: func(ctx context.Context) error {
+				return server.StartOpAmpServer(ctx, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
+			},
+		},
+		{
+			Name:         "kube manager",
+			PropagateErr: true,
+			Run: func(ctx context.Context) error {
+				kubeManagerCtx, kubeManagerCancel := context.WithCancel(context.Background())
+				defer kubeManagerCancel()
+
+				go func() {
+					select {
+					case <-groupCtx.Done():
+						logger.Info("Shutdown initiated, waiting for eBPF manager to exit before stopping kube manager")
+						<-ebpfDone
+						logger.Info("eBPF manager exited, now stopping kube manager")
+						kubeManagerCancel()
+					case <-kubeManagerCtx.Done():
+						return
+					}
+				}()
+
+				err := o.mgr.Start(kubeManagerCtx)
+				if o.configUpdates != nil {
+					close(o.configUpdates)
+				}
+				// We don't close instrumentationRequests here: the manager's runEventLoop returns on
+				// ctx.Done() so it doesn't need a channel close to terminate, and external producers
+				// can obtain the write-end via InstrumentationRequests(). Closing would race with
+				// those producers (including the OSS kube reconcilers themselves if they're mid-send).
+				return err
+			},
+		},
+	}
+}
+
 // Run starts the Odiglet components and blocks until the context is cancelled, or a critical error occurs.
 func (o *Odiglet) Run(ctx context.Context) {
 	logger := commonlogger.LoggerCompat().With("subsystem", "eventloop")
@@ -143,77 +233,11 @@ func (o *Odiglet) Run(ctx context.Context) {
 
 	defer o.criClient.Close()
 
-	// Channel to signal when eBPF manager has exited
 	ebpfDone := make(chan struct{})
-
-	// Start pprof server
-	g.Go(func() error {
-		err := common.StartPprofServer(groupCtx, commonlogger.ToLogr(), int(k8sconsts.DefaultPprofEndpointPort))
-		if err != nil {
-			logger.Error("Failed to start pprof server", "err", err)
-		} else {
-			logger.Info("Pprof server exited")
-		}
-		// if we fail to start the pprof server, don't return an error as it is not critical
-		return nil
-	})
-
-	g.Go(func() error {
-		defer close(ebpfDone)
-		err := o.ebpfManager.Run(groupCtx)
-		if err != nil {
-			logger.Error("Failed to run ebpf manager", "err", err)
-		}
-		logger.Info("eBPF manager exited")
-		return err
-	})
-
-	// start OpAmp server
-	odigosNs := env.GetCurrentNamespace()
-	g.Go(func() error {
-		err := server.StartOpAmpServer(groupCtx, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
-		if err != nil {
-			logger.Error("Failed to start opamp server", "err", err)
-		}
-		logger.Info("OpAmp server exited")
-		return err
-	})
-
-	// start kube manager
-	g.Go(func() error {
-		// Create a context that will be cancelled when eBPF manager exits during shutdown
-		kubeManagerCtx, kubeManagerCancel := context.WithCancel(context.Background())
-		defer kubeManagerCancel()
-
-		go func() {
-			select {
-			case <-groupCtx.Done():
-				logger.Info("Shutdown initiated, waiting for eBPF manager to exit before stopping kube manager")
-				<-ebpfDone
-				logger.Info("eBPF manager exited, now stopping kube manager")
-				kubeManagerCancel()
-			case <-kubeManagerCtx.Done():
-				// Kube context already cancelled
-				return
-			}
-		}()
-
-		err := o.mgr.Start(kubeManagerCtx)
-		if err != nil {
-			logger.Error("error starting kube manager", "err", err)
-		} else {
-			logger.Info("Kube manager exited")
-		}
-		// the manager is stopped, it is now safe to close the config updates channel
-		if o.configUpdates != nil {
-			close(o.configUpdates)
-		}
-		// We don't close instrumentationRequests here: the manager's runEventLoop returns on
-		// ctx.Done() so it doesn't need a channel close to terminate, and external producers
-		// can obtain the write-end via InstrumentationRequests(). Closing would race with
-		// those producers (including the OSS kube reconcilers themselves if they're mid-send).
-		return err
-	})
+	runnables := append(o.builtInRunnables(ebpfDone, groupCtx, logger), o.runnables...)
+	for _, runnable := range runnables {
+		o.goRunnable(g, groupCtx, logger, runnable)
+	}
 
 	err := g.Wait()
 	if err != nil {
