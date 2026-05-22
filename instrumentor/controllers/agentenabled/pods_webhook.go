@@ -334,15 +334,10 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	if config.MountMethod != nil {
 		mountMethod = *config.MountMethod
 	}
-	runtimeVersion := ""
-	if rd := getRuntimeInfoForContainerName(ic, podContainerSpec.Name); rd != nil {
-		runtimeVersion = rd.RuntimeVersion
-	}
 	switch commonopamp.ResolveTransport(
 		distroMetadata.EnvironmentVariables.OpAmpClientEnvironments,
 		distroMetadata.OpAmpTransportsSupported,
 		mountMethod,
-		runtimeVersion,
 	) {
 	case commonopamp.OpAmpTransportUnix:
 		existingEnvNames = podswebhook.InjectOpampUnixSocketEnvVar(existingEnvNames, podContainerSpec)

@@ -13,33 +13,29 @@ func TestResolveTransport(t *testing.T) {
 
 	// client disabled -> none regardless of supported transports
 	require.Equal(t, OpAmpTransportNone,
-		ResolveTransport(false, []OpAmpTransport{OpAmpTransportHTTP}, common.K8sVirtualDeviceMountMethod, ""))
+		ResolveTransport(false, []OpAmpTransport{OpAmpTransportHTTP}, common.K8sVirtualDeviceMountMethod))
 
 	// client enabled, empty supported -> defaults to http
 	require.Equal(t, OpAmpTransportHTTP,
-		ResolveTransport(true, nil, common.K8sInitContainerMountMethod, ""))
+		ResolveTransport(true, nil, common.K8sInitContainerMountMethod))
 
-	// http only -> http on any mount/runtime
+	// http only -> http on any mount
 	require.Equal(t, OpAmpTransportHTTP,
-		ResolveTransport(true, []OpAmpTransport{OpAmpTransportHTTP}, common.K8sInitContainerMountMethod, "8"))
+		ResolveTransport(true, []OpAmpTransport{OpAmpTransportHTTP}, common.K8sInitContainerMountMethod))
 
-	// unix only, virtual device, JVM >= 16 -> unix
+	// unix only on a mount that supports it -> unix
 	require.Equal(t, OpAmpTransportUnix,
-		ResolveTransport(true, []OpAmpTransport{OpAmpTransportUnix}, common.K8sVirtualDeviceMountMethod, "17"))
+		ResolveTransport(true, []OpAmpTransport{OpAmpTransportUnix}, common.K8sVirtualDeviceMountMethod))
 
-	// unix only, virtual device, JVM < 16 -> none (no http fallback declared)
+	// unix only on init-container -> none (no http fallback declared)
 	require.Equal(t, OpAmpTransportNone,
-		ResolveTransport(true, []OpAmpTransport{OpAmpTransportUnix}, common.K8sVirtualDeviceMountMethod, "1.8.0"))
+		ResolveTransport(true, []OpAmpTransport{OpAmpTransportUnix}, common.K8sInitContainerMountMethod))
 
-	// unix only, init-container mount -> none
-	require.Equal(t, OpAmpTransportNone,
-		ResolveTransport(true, []OpAmpTransport{OpAmpTransportUnix}, common.K8sInitContainerMountMethod, "21"))
-
-	// preference order: [unix, http]: unix not usable on init-container -> http fallback
+	// preference order [unix, http]: unix not usable on init-container -> http fallback
 	require.Equal(t, OpAmpTransportHTTP,
-		ResolveTransport(true, []OpAmpTransport{OpAmpTransportUnix, OpAmpTransportHTTP}, common.K8sInitContainerMountMethod, "21"))
+		ResolveTransport(true, []OpAmpTransport{OpAmpTransportUnix, OpAmpTransportHTTP}, common.K8sInitContainerMountMethod))
 
-	// preference order: [unix, http]: unix usable -> unix wins
+	// preference order [unix, http]: unix usable -> unix wins
 	require.Equal(t, OpAmpTransportUnix,
-		ResolveTransport(true, []OpAmpTransport{OpAmpTransportUnix, OpAmpTransportHTTP}, common.K8sVirtualDeviceMountMethod, "21"))
+		ResolveTransport(true, []OpAmpTransport{OpAmpTransportUnix, OpAmpTransportHTTP}, common.K8sVirtualDeviceMountMethod))
 }
