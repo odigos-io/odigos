@@ -339,8 +339,8 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		runtimeVersion = rd.RuntimeVersion
 	}
 	switch commonopamp.ResolveTransport(
-		distroMetadata.EnvironmentVariables.OpAmpTransport,
 		distroMetadata.EnvironmentVariables.OpAmpClientEnvironments,
+		distroMetadata.OpAmpTransports,
 		mountMethod,
 		runtimeVersion,
 	) {

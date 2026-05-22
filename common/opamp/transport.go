@@ -19,10 +19,15 @@ const (
 )
 
 // ResolveTransport picks which ODIGOS_OPAMP_* env var the webhook should inject.
-// When opAmpTransport is empty, opAmpClientEnvironments defaults to http.
+//
+// opAmpClientEnvironments is the intent flag (does this distro run an OpAMP client at all);
+// supported is the ordered list of transports the distro's agent can speak. The first transport
+// in the list that is usable on this node given the cluster constraints wins. An empty list
+// defaults to [http] to preserve the historical behavior of distros that only set
+// opAmpClientEnvironments: true.
 func ResolveTransport(
-	opAmpTransport OpAmpTransport,
 	opAmpClientEnvironments bool,
+	supported []OpAmpTransport,
 	mountMethod common.MountMethod,
 	runtimeVersion string,
 ) OpAmpTransport {
@@ -30,21 +35,32 @@ func ResolveTransport(
 		return OpAmpTransportNone
 	}
 
-	transport := OpAmpTransportHTTP
-	if opAmpTransport == OpAmpTransportUnix {
-		transport = OpAmpTransportUnix
+	if len(supported) == 0 {
+		supported = []OpAmpTransport{OpAmpTransportHTTP}
 	}
 
-	if transport == OpAmpTransportUnix {
+	for _, t := range supported {
+		if isTransportUsable(t, mountMethod, runtimeVersion) {
+			return t
+		}
+	}
+	return OpAmpTransportNone
+}
+
+// checks if the transport is usable on given constraints (mount method, runtime version).
+func isTransportUsable(t OpAmpTransport, mountMethod common.MountMethod, runtimeVersion string) bool {
+	switch t {
+	case OpAmpTransportHTTP:
+		// http is always usable regardless of mount method or runtime version
+		return true
+	case OpAmpTransportUnix:
 		if mountMethod == common.K8sInitContainerMountMethod {
-			return OpAmpTransportNone
+			return false
 		}
-		if !javaSupportsOpAmpUnix(runtimeVersion) {
-			return OpAmpTransportNone
-		}
+		return javaSupportsOpAmpUnix(runtimeVersion)
+	default:
+		return false
 	}
-
-	return transport
 }
 
 func javaSupportsOpAmpUnix(runtimeVersion string) bool {

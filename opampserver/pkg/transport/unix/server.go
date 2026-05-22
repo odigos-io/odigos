@@ -30,7 +30,7 @@ func (s *Server) Kind() commonopamp.OpAmpTransport {
 func (s *Server) Start(ctx context.Context, processor opamptypes.Processor) error {
 	logger := commonlogger.LoggerCompat().With("subsystem", "opampserver", "transport", "unix")
 
-	if err := os.MkdirAll(k8sconsts.OdigosOpampExchangeDir, 0o777); err != nil {
+	if err := os.MkdirAll(k8sconsts.OdigosOpampExchangeDir, 0o755); err != nil {
 		return fmt.Errorf("mkdir exchange dir: %w", err)
 	}
 
