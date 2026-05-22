@@ -64,7 +64,7 @@ func (p *odigosProfilesProcessor) Shutdown(context.Context) error {
 
 func (p *odigosProfilesProcessor) processProfiles(ctx context.Context, pd pprofile.Profiles) (pprofile.Profiles, error) {
 	pd.ResourceProfiles().RemoveIf(func(rp pprofile.ResourceProfiles) bool {
-		if p.provider.HasCachedWorkloadContainerConfig(rp.Resource()) {
+		if p.provider.IsActiveSource(rp.Resource()) {
 			return false
 		}
 		if p.telemetryBuilder != nil {
