@@ -39,6 +39,7 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 		nodeName:      nodeName,
 	}
 
+	// Buffered channel for instrumentation instances updates
 	updateChannel := make(chan InstrumentationUpdateTask, 1000)
 	processor := NewMessageProcessor(handlers, connectionCache, updateChannel)
 
