@@ -8,6 +8,7 @@ require (
 	go.opentelemetry.io/collector/pdata v1.54.0
 	go.opentelemetry.io/otel/trace v1.42.0
 	go.uber.org/zap v1.27.1
+	go.uber.org/zap/exp v0.3.0
 	golang.org/x/sys v0.42.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
