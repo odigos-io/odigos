@@ -126,11 +126,17 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 }
 
 func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) (InspectionResults, error) {
-	var pcs []process.PodContainerUID
+	var pcs []process.PodContainer
 	for _, pod := range pods {
 		uid := workload.PodUID(&pod)
 		for _, c := range pod.Spec.Containers {
-			pcs = append(pcs, process.PodContainerUID{PodUID: uid, ContainerName: c.Name})
+			pcs = append(pcs, process.PodContainer{
+				PodContainerKey: process.PodContainerKey{
+					PodUID: uid, ContainerName: c.Name,
+				},
+				ContainerID: getContainerID(pod.Status.ContainerStatuses, c.Name),
+				QOSClass:    string(pod.Status.QOSClass),
+			})
 		}
 	}
 
@@ -143,7 +149,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 }
 
 // runtimeInspectionFromGroupedPIDs is like runtimeInspection but uses pre-grouped PIDs.
-func runtimeInspectionFromGroupedPIDs(ctx context.Context, pods []corev1.Pod, groupedPIDs map[process.PodContainerUID]map[int]struct{}, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) (InspectionResults, error) {
+func runtimeInspectionFromGroupedPIDs(ctx context.Context, pods []corev1.Pod, groupedPIDs map[process.PodContainerKey]map[int]struct{}, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) (InspectionResults, error) {
 	logger := commonlogger.LoggerCompat().With("subsystem", "runtimeinspection")
 	results := InspectionResults{
 		containerNameToNewRuntimeDetails: make(map[string]odigosv1.RuntimeDetailsByContainer),
@@ -151,7 +157,7 @@ func runtimeInspectionFromGroupedPIDs(ctx context.Context, pods []corev1.Pod, gr
 	}
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
-			pc := process.PodContainerUID{PodUID: workload.PodUID(&pod), ContainerName: container.Name}
+			pc := process.PodContainerKey{PodUID: workload.PodUID(&pod), ContainerName: container.Name}
 			pidSet := groupedPIDs[pc]
 			processes := make([]procdiscovery.Details, 0, len(pidSet))
 			for pid := range pidSet {
