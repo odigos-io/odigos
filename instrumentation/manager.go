@@ -310,10 +310,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 }
 
 // instrumentFromDetails runs tryInstrument for each (pid, pd) that is not already live-
-// instrumented, then re-arms the process detector for successes. Duplicate or in-flight
-// requests are skipped via isInstrumented; failed-but-tracked entries (inst == nil) are retried.
+// instrumented. Duplicate or in-flight requests are skipped via isInstrumented;
+// failed-but-tracked entries (inst == nil) are retried.
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) instrumentFromDetails(ctx context.Context, byPid map[int]ProcessDetails) {
-	var tracked []int
 	for pid, pd := range byPid {
 		// Handle duplicate requests gracefully; this can happen when external systems such as
 		// k8s controllers re-send instrumentation for an already-live process.
@@ -325,12 +324,6 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) instrumentFromDetai
 			m.handleInstrumentError(err)
 			continue
 		}
-		tracked = append(tracked, pid)
-	}
-	if len(tracked) > 0 {
-		// Let the detector know we want exit events for these processes so we can clean up.
-		// TrackProcesses is idempotent for already-tracked PIDs.
-		m.detector.TrackProcesses(tracked)
 	}
 }
 
@@ -639,6 +632,14 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 		m.detailsByProcessGroup[processGroup] = map[int]*instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]{pid: instDetails}
 	} else {
 		m.detailsByProcessGroup[processGroup][pid] = instDetails
+	}
+
+	if !hadPrev {
+		// Let the detector know we want exit events for every tracked process, including
+		// failed init/load attempts that may be retried later.
+		if err := m.detector.TrackProcesses([]int{pid}); err != nil {
+			m.logger.Error("failed to track process for exit cleanup", "err", err, "pid", pid)
+		}
 	}
 
 	metricAttributeSet := m.metricsAttributeSet(distribution)
