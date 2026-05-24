@@ -69,7 +69,10 @@ func populateNamespaceWorkloadLightFields(ctx context.Context, l *loaders.Loader
 // gqlgen spawning a goroutine per field per workload.
 // Errors are logged but don't fail the entire batch — individual workloads
 // get nil/zero values for fields that fail to resolve.
-func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.Loaders, w *model.K8sWorkload) {
+//
+// tier is the Odigos tier resolved once by the caller; passed in to avoid
+// re-fetching it per workload in the hot list path.
+func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.Loaders, w *model.K8sWorkload, tier model.Tier) {
 	id := *w.ID
 
 	ic, _ := l.GetInstrumentationConfig(ctx, id)
@@ -238,6 +241,11 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 		})
 	}
 	healthConditions = append(healthConditions, agentInjected, processesHealth, expectingTelemetry)
+
+	if override := status.StaticPodEnterpriseFeatureHealthStatus(id.Kind, tier); override != nil {
+		w.WorkloadOdigosHealthStatus = override
+		return
+	}
 
 	mostSevere := aggregateConditionsBySeverity(healthConditions)
 	if mostSevere == nil {
