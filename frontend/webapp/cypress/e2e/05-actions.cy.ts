@@ -88,11 +88,10 @@ describe('Actions CRUD', () => {
             break;
           }
           case 'ExtractAttribute': {
-            cy.get('[data-id=extractions]').find('input[data-id=target]').type('http.request.id');
+            // Default mode is "Preset extract" with dataFormat=json already selected,
+            // so we just need to fill source + target to make a valid action.
             cy.get('[data-id=extractions]').find('input[data-id=source]').type('http.url');
-            // Pick the URL data-format from the dropdown
-            cy.get('[data-id=extractions]').find('input[data-id=dataFormat]').scrollIntoView().click({ force: true });
-            cy.get('[data-id=option-url]').click({ force: true });
+            cy.get('[data-id=extractions]').find('input[data-id=target]').type('http.request.id');
             break;
           }
 
