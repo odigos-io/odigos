@@ -23,7 +23,7 @@ func (s *stubOdigosConfigExtension) GetFromResource(pcommon.Resource) (*commonap
 	return nil, false
 }
 
-func (s *stubOdigosConfigExtension) HasCachedWorkloadContainerConfig(res pcommon.Resource) bool {
+func (s *stubOdigosConfigExtension) IsActiveSource(res pcommon.Resource) bool {
 	attrs := res.Attributes()
 	ns, _ := attrs.Get(string(semconv.K8SNamespaceNameKey))
 	dep, ok := attrs.Get(string(semconv.K8SDeploymentNameKey))

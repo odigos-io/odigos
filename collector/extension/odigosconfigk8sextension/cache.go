@@ -89,20 +89,23 @@ func (c *cache) Get(key string) (*commonapi.ContainerCollectorConfig, bool) {
 	return val, found
 }
 
-// hasContainersForWorkloadPrefix returns true when the workload key prefix (e.g. "ns/Kind/name/")
-// has at least one full container cache key. Used for profile filtering where resource attributes
-// may not include k8s.container.name.
-//
-// The len(containerKeys) > 0 check is load-bearing, not defensive. The index entry's lifetime is
-// the union of its containerKeys and dataStreams: SetDataStreams creates an entry with an empty
-// containerKeys map, and Delete only removes the entry when both sets are empty. So entry != nil
-// alone does not imply "has at least one InstrumentationConfig container entry" — a workload that
-// only has data-stream labels would falsely return true without the length check.
-func (c *cache) hasContainersForWorkloadPrefix(workloadKeyPrefix string) bool {
+// isSourceWorkloadPrefix returns true when the workload key prefix (e.g. "ns/Kind/name/")
+// has an entry in the workloadKeysIndex — i.e. an InstrumentationConfig currently exists for
+// the workload. Used by odigosprofilesprocessor (which only has ns/kind/name on the resource,
+// not k8s.container.name) to forward profiles only for active Sources.
+func (c *cache) isSourceWorkloadPrefix(workloadKeyPrefix string) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	entry := c.workloadKeysIndex[workloadKeyPrefix]
-	return entry != nil && len(entry.containerKeys) > 0
+	_, ok := c.workloadKeysIndex[workloadKeyPrefix]
+	return ok
+}
+
+// removeWorkloadEntry removes the entry for the given workload key prefix from the
+// workloadKeysIndex. Called by the informer on InstrumentationConfig delete events
+func (c *cache) removeWorkloadEntry(workloadKeyPrefix string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.workloadKeysIndex, workloadKeyPrefix)
 }
 
 // Set stores the required config for the given workload key, updates the workload keys index, then invokes all registered callbacks.

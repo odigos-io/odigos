@@ -86,6 +86,16 @@ spec:
             timeout: 70s
             content: ../../common/wait_for_rollout.sh
 
+    - name: '[2 - Workload Instrumentation] Shipping (C++) instrumented with OBI container override'
+      try:
+        - assert:
+            timeout: 4m
+            file: 01-shipping-instrumented.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
     - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:
         - apply:
@@ -114,6 +124,27 @@ spec:
             content: |
               java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
               kubectl logs $java_pod_name -n default
+
+    - name: '[2 - Workload Instrumentation] Wait For Shipping Trace (OBI)'
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh wait-for-shipping-trace.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 2
+              done
+      catch:
+        - script:
+            content: |
+              shipping_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^shipping)
+              kubectl logs "$shipping_pod_name" -n default || true
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
 
     - name: '[2 - Workload Instrumentation] Verify Trace - Context Propagation'
       try:
