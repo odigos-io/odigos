@@ -13,7 +13,7 @@ It resides in its own module, but is intended to run as part of odiglet, as a da
 
 ## Transports
 
-OpAMP messages (`AgentToServer` / `ServerToAgent` protobuf) are handled by a shared `MessageProcessor`. Two transports run in parallel:
+OpAMP messages (`AgentToServer` / `ServerToAgent` protobuf) are accepted on two transports in parallel; both are served by the same `http.Server` + handler:
 
 | Transport | Endpoint | Wire format |
 |-----------|----------|-------------|

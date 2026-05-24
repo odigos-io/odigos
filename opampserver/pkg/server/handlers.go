@@ -148,10 +148,6 @@ func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request
 	return &response, nil
 }
 
-func (c *ConnectionHandlers) OnConnectionClosed(ctx context.Context, connectionInfo *connection.ConnectionInfo) {
-	// keep the instrumentation instance CR in unhealthy state so it can be used for troubleshooting
-}
-
 func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Context, message *protobufs.AgentToServer, connectionInfo *connection.ConnectionInfo) error {
 
 	isAgentDisconnect := message.AgentDisconnect != nil

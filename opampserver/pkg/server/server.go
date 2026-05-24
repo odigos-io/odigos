@@ -3,29 +3,31 @@ package server
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
-	commonopamp "github.com/odigos-io/odigos/common/opamp"
 	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/opampserver/pkg/agent"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
-	"github.com/odigos-io/odigos/opampserver/pkg/transport"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 )
 
 func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string) error {
 	logger := commonlogger.LoggerCompat().With("subsystem", "opampserver")
+	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", commonconsts.OpAMPPort)
+	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
 
 	connectionCache := connection.NewConnectionsCache()
 	sdkConfig := sdkconfig.NewSdkConfigManager(mgr, connectionCache, odigosNs)
@@ -41,8 +43,115 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 
 	// Buffered channel for instrumentation instances updates
 	updateChannel := make(chan InstrumentationUpdateTask, 1000)
-	processor := NewMessageProcessor(handlers, connectionCache, updateChannel)
 
+	http.HandleFunc("POST /v1/opamp", func(w http.ResponseWriter, req *http.Request) {
+
+		// we only support plain http connections.
+		// this check will filter out WS connections if they arrive for any reasons.
+		if req.Header.Get("Content-Type") != "application/x-protobuf" {
+			http.Error(w, "Content-Type header is not application/x-protobuf", http.StatusBadRequest)
+			return
+		}
+
+		bytes, err := io.ReadAll(req.Body)
+		if err != nil {
+			http.Error(w, "Failed to read request body", http.StatusBadRequest)
+			return
+		}
+		// assume the data is not compressed, which is not relevant and not supported in odigos
+
+		// Decode the message as a Protobuf message.
+		var agentToServer protobufs.AgentToServer
+		err = proto.Unmarshal(bytes, &agentToServer)
+		if err != nil {
+			logger.Error("Cannot decode opamp message from HTTP Body", "err", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		instanceUid := string(agentToServer.InstanceUid)
+		if instanceUid == "" {
+			logger.Error("InstanceUid is missing")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		isAgentDisconnect := agentToServer.AgentDisconnect != nil
+
+		var serverToAgent *protobufs.ServerToAgent
+		connectionInfo, exists := connectionCache.GetConnection(instanceUid)
+		if !exists {
+			connectionInfo, serverToAgent, err = handlers.OnNewConnection(ctx, &agentToServer)
+			if err != nil {
+				logger.Error("Failed to process new connection", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			if connectionInfo != nil {
+				connectionCache.AddConnection(instanceUid, connectionInfo)
+			}
+		} else {
+			serverToAgent, err = handlers.OnAgentToServerMessage(ctx, &agentToServer, connectionInfo)
+			if err != nil {
+				logger.Error("Failed to process opamp message", "err", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		// Only update the InstrumentationInstance if the message contains the relevant data
+		// This is to avoid unnecessary updates when the message is a heartbeat
+		if connectionInfo != nil && (agentToServer.AgentDescription != nil || agentToServer.Health != nil) {
+			select {
+			case updateChannel <- InstrumentationUpdateTask{ctx, UpdateInstance, &agentToServer, connectionInfo}:
+			default:
+				logger.Error("Update channel is full, dropping task")
+			}
+		}
+
+		if serverToAgent == nil {
+			logger.Error("No response from opamp handler")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if isAgentDisconnect {
+
+			// This may occurs when Odiglet restarts, and a previously connected pod sends a disconnect message right after reconnecting.
+			if connectionInfo != nil {
+				logger.Info("Agent disconnected", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
+			}
+			// if agent disconnects, remove the connection from the cache
+			// as it is not expected to send additional messages
+			connectionCache.RemoveConnection(instanceUid)
+		} else {
+			// keep record in memory of last message time, to detect stale connections
+			healthStatus := agent.HealthStatusUnknown
+			if agentToServer.Health != nil {
+				healthStatus = agent.GetAgentHealthStatus(agentToServer.Health.Status)
+			}
+			connectionCache.RecordMessageTime(instanceUid, healthStatus)
+		}
+
+		serverToAgent.InstanceUid = agentToServer.InstanceUid
+
+		// Marshal the response.
+		bytes, err = proto.Marshal(serverToAgent)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Send the response.
+		w.Header().Set("Content-Type", "application/x-protobuf")
+		_, err = w.Write(bytes)
+
+		if err != nil {
+			logger.Error("Failed to write response", "err", err)
+		}
+	})
+
+	server := &http.Server{Addr: listenEndpoint, Handler: nil}
 	var wg sync.WaitGroup
 
 	// Start the worker goroutine to process instrumentation instances updates sequentially
@@ -52,47 +161,21 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 		ProcessInstrumentationUpdates(ctx, updateChannel, handlers)
 	}()
 
-	// Both listeners speak plain HTTP/1.1 over their respective transports and share
-	// the same MessageProcessor + connection cache. Agents choose via injected env:
-	//   ODIGOS_OPAMP_SERVER_HOST    (HTTP over TCP)
-	//   ODIGOS_OPAMP_UNIX_SOCKET    (HTTP over node-local unix socket)
-	tcpServer := &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", commonconsts.OpAMPPort),
-		Handler: transport.NewHandler(ctx, processor, commonopamp.OpAmpTransportHTTP),
-	}
-	unixServer := &http.Server{
-		Handler: transport.NewHandler(ctx, processor, commonopamp.OpAmpTransportUnix),
-	}
-
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		logger.Info("Starting opamp HTTP server", "listenEndpoint", tcpServer.Addr)
-		if err := tcpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error("OpAMP HTTP transport exited with error", "err", err)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Error("Error starting opamp server", "err", err)
 		}
 	}()
 
+	// Second listener: a node-local unix socket. Both listeners share the same
+	// *http.Server (and DefaultServeMux); a single server.Shutdown drains both.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		logger.Info("Starting opamp Unix server", "socket", k8sconsts.OdigosOpampUnixSocketPath)
-		if err := serveUnix(ctx, unixServer, logger); err != nil && ctx.Err() == nil {
-			logger.Error("OpAMP Unix transport exited with error", "err", err)
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		<-ctx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := tcpServer.Shutdown(shutdownCtx); err != nil {
-			logger.Error("Failed to shut down HTTP opamp server", "err", err)
-		}
-		if err := unixServer.Shutdown(shutdownCtx); err != nil {
-			logger.Error("Failed to shut down Unix opamp server", "err", err)
+		if err := serveUnix(ctx, server, logger); err != nil && ctx.Err() == nil {
+			logger.Error("Error starting opamp Unix server", "err", err)
 		}
 	}()
 
@@ -105,8 +188,13 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 		for {
 			select {
 			case <-ctx.Done():
+
 				// Close the updateChannel here so the worker goroutine exits
 				close(updateChannel)
+
+				if err := server.Shutdown(ctx); err != nil {
+					logger.Error("Failed to shut down the http server for incoming connections", "err", err)
+				}
 				logger.Info("Shutting down live connections timeout monitor")
 				return
 			case <-ticker.C:
@@ -118,6 +206,7 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 					default:
 						logger.Error("Update channel is full, dropping task")
 					}
+
 				}
 			}
 		}
