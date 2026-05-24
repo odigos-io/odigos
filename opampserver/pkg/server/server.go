@@ -4,10 +4,17 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+	"k8s.io/client-go/kubernetes"
+	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
@@ -15,9 +22,6 @@ import (
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
-	"google.golang.org/protobuf/proto"
-	"k8s.io/client-go/kubernetes"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string) error {
@@ -26,7 +30,6 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
 
 	connectionCache := connection.NewConnectionsCache()
-
 	sdkConfig := sdkconfig.NewSdkConfigManager(mgr, connectionCache, odigosNs)
 
 	handlers := &ConnectionHandlers{
@@ -162,8 +165,19 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		logger.Info("opamp HTTP transport listening", "listenEndpoint", listenEndpoint)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("Error starting opamp server", "err", err)
+		}
+	}()
+
+	// Second listener: a node-local unix socket. Both listeners share the same
+	// *http.Server (and DefaultServeMux); a single server.Shutdown drains both.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := serveUnix(ctx, server, logger); err != nil && ctx.Err() == nil {
+			logger.Error("Error starting opamp Unix server", "err", err)
 		}
 	}()
 
@@ -201,6 +215,36 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 	}()
 
 	wg.Wait()
+	return nil
+}
+
+// serveUnix starts a unix-socket HTTP listener under /var/odigos/exchange/exchange.sock.
+// The socket file is recreated on startup and removed on shutdown.
+func serveUnix(ctx context.Context, srv *http.Server, logger *commonlogger.OdigosLogger) error {
+	socketPath := k8sconsts.OdigosOpampUnixSocketPath
+	if err := os.MkdirAll(k8sconsts.OdigosOpampExchangeDir, 0o755); err != nil {
+		return fmt.Errorf("mkdir exchange dir: %w", err)
+	}
+	_ = os.Remove(socketPath)
+
+	var lc net.ListenConfig
+	listener, err := lc.Listen(ctx, "unix", socketPath)
+	if err != nil {
+		return fmt.Errorf("listen on %s: %w", socketPath, err)
+	}
+	defer func() {
+		if err := os.Remove(socketPath); err != nil && !os.IsNotExist(err) {
+			logger.Error("Failed to remove Unix opamp socket", "err", err, "socket", socketPath)
+		}
+	}()
+	if err := os.Chmod(socketPath, 0o666); err != nil {
+		logger.Error("Failed to chmod unix socket", "err", err, "socket", socketPath)
+	}
+	logger.Info("opamp Unix transport listening", "socket", socketPath)
+
+	if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
+		return err
+	}
 	return nil
 }
 
