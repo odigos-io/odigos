@@ -51,30 +51,35 @@ describe('Actions CRUD', () => {
             break;
           }
           case 'ErrorSampler': {
-            cy.get('input[data-id=fallbackSamplingRatio]').type('1');
+            // Regression test for PLAT-1105: sampling-ratio inputs must clamp to [0, 100],
+            // otherwise the API rejects the create with a kubebuilder validation error.
+            // We type a value >100 and assert the input value was clamped to 100 before submit.
+            cy.get('input[data-id=fallbackSamplingRatio]').type('250').should('have.value', '100');
             break;
           }
           case 'ProbabilisticSampler': {
-            cy.get('input[data-id=samplingPercentage]').type('1');
+            cy.get('input[data-id=samplingPercentage]').type('250').should('have.value', '100');
             break;
           }
           case 'LatencySampler': {
             cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
             cy.get('tbody').find('input[placeholder="e.g. /api/v1/users"]').type('/path');
             cy.get('tbody').find('input[placeholder="e.g. 1000"]').type('1');
-            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
+            // Same clamping check as above — the latency sampler's fallback ratio shares the [0, 100] constraint.
+            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('250').should('have.value', '100');
             break;
           }
           case 'ServiceNameSampler': {
             cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
-            cy.get('tbody').find('input[placeholder="e.g. 10"]').type('1');
-            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
+            // Exercises the original PLAT-1105 repro: typing >100 used to slip through and crash the API call.
+            cy.get('tbody').find('input[placeholder="e.g. 10"]').type('123').should('have.value', '100');
+            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('250').should('have.value', '100');
             break;
           }
           case 'SpanAttributeSampler': {
             cy.get('[data-id=attributeFilters]').find('input[data-id=serviceName]').type('service');
             cy.get('[data-id=attributeFilters]').find('input[data-id=attributeKey]').type('attribute');
-            cy.get('[data-id=attributeFilters]').find('input[data-id=fallbackSamplingRatio]').first().type('1');
+            cy.get('[data-id=attributeFilters]').find('input[data-id=fallbackSamplingRatio]').first().type('250').should('have.value', '100');
 
             // Click the Condition dropdown and select "String condition"
             cy.get('[data-id=attributeFilters]').find('input[data-id=condition]').scrollIntoView().click({ force: true });
