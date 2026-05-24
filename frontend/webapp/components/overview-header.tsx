@@ -26,7 +26,7 @@ export const OverviewHeader = () => {
   const left = useMemo(() => {
     const arr = [
       <div key='logo' data-id='logo'>
-        <OdigosLogoTextByTier size={150} />
+        <OdigosLogoTextByTier size={200} />
       </div>,
     ];
 
