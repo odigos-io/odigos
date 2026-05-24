@@ -247,6 +247,10 @@ spec:
             - name: odigos
               mountPath: /var/odigos
               readOnly: true
+            # OpAMP Unix socket lives under /var/odigos/exchange on the host; must be writable
+            # while the parent /var/odigos mount stays read-only for agent binaries.
+            - name: odigos-opamp-exchange
+              mountPath: /var/odigos/exchange
           {{- end }} # end of optional hostPath mounts
           {{- if .Values.odiglet.noHostPid }}
             - name: hostproc
@@ -516,6 +520,10 @@ spec:
         - name: odigos
           hostPath:
             path: /var/odigos
+        - name: odigos-opamp-exchange
+          hostPath:
+            path: /var/odigos/exchange
+            type: DirectoryOrCreate
 {{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}
         # CSI Driver volumes
         - name: csi-socket-dir

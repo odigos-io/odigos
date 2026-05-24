@@ -22,6 +22,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	commonopamp "github.com/odigos-io/odigos/common/opamp"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
@@ -196,7 +197,8 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 			return ErrUnknownDistroName
 		}
 
-		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfiguration, distroMetadata, pod.OwnerReferences)
+		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(
+			containerConfig, podContainerSpec, &ic, *pw, serviceName, odigosConfiguration, distroMetadata, pod.OwnerReferences)
 		if err != nil {
 			return err
 		}
@@ -315,7 +317,8 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 }
 
 func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container,
-	pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration, distroMetadata *distro.OtelDistro, ownerReferences []metav1.OwnerReference) (bool, map[string]struct{}, error) {
+	ic *odigosv1.InstrumentationConfig, pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration,
+	distroMetadata *distro.OtelDistro, ownerReferences []metav1.OwnerReference) (bool, map[string]struct{}, error) {
 	var err error
 
 	// check for existing env vars so we don't introduce them again
@@ -327,8 +330,20 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		return false, nil, err
 	}
 	existingEnvNames = podswebhook.InjectOdigosK8sEnvVars(existingEnvNames, podContainerSpec, distroMetadata.Name, pw.Namespace)
-	if distroMetadata.EnvironmentVariables.OpAmpClientEnvironments {
+	mountMethod := common.K8sVirtualDeviceMountMethod
+	if config.MountMethod != nil {
+		mountMethod = *config.MountMethod
+	}
+	switch commonopamp.ResolveTransport(
+		distroMetadata.EnvironmentVariables.OpAmpClientEnvironments,
+		distroMetadata.OpAmpTransportsSupported,
+		mountMethod,
+	) {
+	case commonopamp.OpAmpTransportUnix:
+		existingEnvNames = podswebhook.InjectOpampUnixSocketEnvVar(existingEnvNames, podContainerSpec)
+	case commonopamp.OpAmpTransportHTTP:
 		existingEnvNames = podswebhook.InjectOpampServerEnvVar(existingEnvNames, podContainerSpec)
+	case commonopamp.OpAmpTransportNone:
 	}
 	if distroMetadata.EnvironmentVariables.SignalsAsStaticOtelEnvVars {
 		tracesEnabled := containerConfig.Traces != nil
