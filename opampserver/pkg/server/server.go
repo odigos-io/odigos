@@ -165,6 +165,7 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		logger.Info("opamp HTTP transport listening", "listenEndpoint", listenEndpoint)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("Error starting opamp server", "err", err)
 		}
@@ -239,6 +240,7 @@ func serveUnix(ctx context.Context, srv *http.Server, logger *commonlogger.Odigo
 	if err := os.Chmod(socketPath, 0o666); err != nil {
 		logger.Error("Failed to chmod unix socket", "err", err, "socket", socketPath)
 	}
+	logger.Info("opamp Unix transport listening", "socket", socketPath)
 
 	if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
 		return err
