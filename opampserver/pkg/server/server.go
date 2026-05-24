@@ -110,7 +110,7 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 		}
 
 		if serverToAgent == nil {
-			logger.Error("No response from opamp handler")
+			logger.Error("No response from opamp handler", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -119,7 +119,7 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 
 			// This may occurs when Odiglet restarts, and a previously connected pod sends a disconnect message right after reconnecting.
 			if connectionInfo != nil {
-				logger.Info("Agent disconnected", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
+				logger.Debug("Agent disconnected", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
 			}
 			// if agent disconnects, remove the connection from the cache
 			// as it is not expected to send additional messages
@@ -270,9 +270,9 @@ func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan Instr
 			if err != nil {
 				logger.Error("Failed to update instrumentation instance", "err", err)
 			}
-		// Do not delete the instrumentation instance if the connection failed;
-		// Instead, retain it in an unhealthy state so the UI can display relevant information.
 		case DeleteInstance:
+			// Do not delete the instrumentation instance if the connection failed;
+			// Instead, retain it in an unhealthy state so the UI can display relevant information.
 			if task.connectionInfo.Status == agent.HealthStatusNoConnectionToOpAMPServer {
 				logger.Info("Skipping deletion of instrumentation instance on connection failure to opamp server", "connectionInfo", task.connectionInfo)
 				continue
