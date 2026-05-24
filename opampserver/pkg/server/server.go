@@ -126,6 +126,7 @@ func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kube
 			connectionCache.RemoveConnection(instanceUid)
 		} else {
 			// keep record in memory of last message time, to detect stale connections
+			// Check if agentToServer.Health is nil; if so, use HealthStatusUnknown
 			healthStatus := agent.HealthStatusUnknown
 			if agentToServer.Health != nil {
 				healthStatus = agent.GetAgentHealthStatus(agentToServer.Health.Status)
