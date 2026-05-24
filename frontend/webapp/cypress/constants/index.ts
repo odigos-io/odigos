@@ -82,6 +82,7 @@ export const SELECTED_ENTITIES = {
     'ProbabilisticSampler',
     'ServiceNameSampler',
     'SpanAttributeSampler',
+    'ExtractAttribute',
   ],
   INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };

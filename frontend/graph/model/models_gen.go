@@ -37,6 +37,7 @@ type ActionFields struct {
 	ServicesNameFilters          []*ServiceNameFilter           `json:"servicesNameFilters,omitempty"`
 	AttributeFilters             []*SpanAttributeFilter         `json:"attributeFilters,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroup `json:"urlTemplatizationRulesGroups,omitempty"`
+	Extractions                  []*Extraction                  `json:"extractions,omitempty"`
 }
 
 type ActionFieldsInput struct {
@@ -57,6 +58,7 @@ type ActionFieldsInput struct {
 	ServicesNameFilters          []*ServiceNameFilterInput           `json:"servicesNameFilters,omitempty"`
 	AttributeFilters             []*SpanAttributeFilterInput         `json:"attributeFilters,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroupInput `json:"urlTemplatizationRulesGroups,omitempty"`
+	Extractions                  []*ExtractionInput                  `json:"extractions,omitempty"`
 }
 
 type ActionInput struct {
@@ -534,6 +536,20 @@ type ExportedSignalsInput struct {
 	Metrics  bool `json:"metrics"`
 	Logs     bool `json:"logs"`
 	Profiles bool `json:"profiles"`
+}
+
+type Extraction struct {
+	Target     string                `json:"target"`
+	Source     *string               `json:"source,omitempty"`
+	DataFormat *ExtractionDataFormat `json:"dataFormat,omitempty"`
+	Regex      *string               `json:"regex,omitempty"`
+}
+
+type ExtractionInput struct {
+	Target     string                `json:"target"`
+	Source     *string               `json:"source,omitempty"`
+	DataFormat *ExtractionDataFormat `json:"dataFormat,omitempty"`
+	Regex      *string               `json:"regex,omitempty"`
 }
 
 type FieldInput struct {
@@ -1744,6 +1760,7 @@ const (
 	ActionTypeServiceNameSampler    ActionType = "ServiceNameSampler"
 	ActionTypeSpanAttributeSampler  ActionType = "SpanAttributeSampler"
 	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
+	ActionTypeExtractAttribute      ActionType = "ExtractAttribute"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
 
@@ -1759,12 +1776,13 @@ var AllActionType = []ActionType{
 	ActionTypeServiceNameSampler,
 	ActionTypeSpanAttributeSampler,
 	ActionTypeURLTemplatization,
+	ActionTypeExtractAttribute,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeURLTemplatization, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeURLTemplatization, ActionTypeExtractAttribute, ActionTypeUnknownType:
 		return true
 	}
 	return false
@@ -2058,6 +2076,47 @@ func (e *EnvInjectionMethod) UnmarshalGQL(v any) error {
 }
 
 func (e EnvInjectionMethod) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ExtractionDataFormat string
+
+const (
+	ExtractionDataFormatURL  ExtractionDataFormat = "url"
+	ExtractionDataFormatJSON ExtractionDataFormat = "json"
+)
+
+var AllExtractionDataFormat = []ExtractionDataFormat{
+	ExtractionDataFormatURL,
+	ExtractionDataFormatJSON,
+}
+
+func (e ExtractionDataFormat) IsValid() bool {
+	switch e {
+	case ExtractionDataFormatURL, ExtractionDataFormatJSON:
+		return true
+	}
+	return false
+}
+
+func (e ExtractionDataFormat) String() string {
+	return string(e)
+}
+
+func (e *ExtractionDataFormat) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ExtractionDataFormat(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ExtractionDataFormat", str)
+	}
+	return nil
+}
+
+func (e ExtractionDataFormat) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

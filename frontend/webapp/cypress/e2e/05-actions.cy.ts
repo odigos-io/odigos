@@ -87,6 +87,14 @@ describe('Actions CRUD', () => {
             cy.get('[data-id=attributeFilters]').find('input[data-id=expectedValue]').type('x');
             break;
           }
+          case 'ExtractAttribute': {
+            cy.get('[data-id=extractions]').find('input[data-id=target]').type('http.request.id');
+            cy.get('[data-id=extractions]').find('input[data-id=source]').type('http.url');
+            // Pick the URL data-format from the dropdown
+            cy.get('[data-id=extractions]').find('input[data-id=dataFormat]').scrollIntoView().click({ force: true });
+            cy.get('[data-id=option-url]').click({ force: true });
+            break;
+          }
 
           default: {
             // purposely fail the test

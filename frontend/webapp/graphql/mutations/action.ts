@@ -75,6 +75,12 @@ export const CREATE_ACTION = gql`
             examples
           }
         }
+        extractions {
+          target
+          source
+          dataFormat
+          regex
+        }
       }
       conditions {
         status
@@ -160,6 +166,12 @@ export const UPDATE_ACTION = gql`
             notes
             examples
           }
+        }
+        extractions {
+          target
+          source
+          dataFormat
+          regex
         }
       }
       conditions {

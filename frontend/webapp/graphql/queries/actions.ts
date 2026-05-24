@@ -76,6 +76,12 @@ export const GET_ACTIONS = gql`
               examples
             }
           }
+          extractions {
+            target
+            source
+            dataFormat
+            regex
+          }
         }
         conditions {
           status

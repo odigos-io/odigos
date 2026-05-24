@@ -71,7 +71,16 @@ enum ActionType {
   ServiceNameSampler
   SpanAttributeSampler
   URLTemplatization
+  ExtractAttribute
   UnknownType
+}
+
+# ExtractionDataFormat is a pre-set definition that resolves into a regex
+# applied to the value of `source` on the span. Must be one of the supported
+# formats; see odigos.io_actions CRD for the exact backend enum.
+enum ExtractionDataFormat {
+  url
+  json
 }
 
 enum InstrumentationRuleType {
@@ -189,7 +198,8 @@ input InstrumentationRuleInput {
   # Deprecated. Accepted but ignored by the resolver to keep older @odigos/ui-kit clients working
   # after the CRD/back-end dropped `workloads`. Use `sourcesScopes` instead.
   # TODO: remove once @odigos/ui-kit no longer sends `workloads` in the rule form payload.
-  workloads: [PodWorkloadInput!] @deprecated(reason: "use sourcesScopes; field is ignored by the server")
+  workloads: [PodWorkloadInput!]
+    @deprecated(reason: "use sourcesScopes; field is ignored by the server")
   sourcesScopes: [InstrumentationRuleSourcesScopeInput!]
   instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
   codeAttributes: CodeAttributesInput
@@ -494,6 +504,18 @@ input ActionFieldsInput {
   servicesNameFilters: [ServiceNameFilterInput!]
   attributeFilters: [SpanAttributeFilterInput!]
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroupInput!]
+
+  extractions: [ExtractionInput!]
+}
+
+# Extraction describes a single ExtractAttribute extraction rule. Either
+# (source + dataFormat) or regex must be provided; the captured value is
+# written to `target`.
+input ExtractionInput {
+  target: String!
+  source: String
+  dataFormat: ExtractionDataFormat
+  regex: String
 }
 
 input URLTemplatizationRuleInput {
@@ -612,6 +634,15 @@ type ActionFields {
   servicesNameFilters: [ServiceNameFilter!]
   attributeFilters: [SpanAttributeFilter!]
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroup!]
+
+  extractions: [Extraction!]
+}
+
+type Extraction {
+  target: String!
+  source: String
+  dataFormat: ExtractionDataFormat
+  regex: String
 }
 
 type URLTemplatizationRule {
