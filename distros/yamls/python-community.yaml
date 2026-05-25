@@ -28,6 +28,7 @@ spec:
     device: 'instrumentation.odigos.io/generic'
     k8sAttrsViaEnvVars: true
     ldPreloadInjectionSupported: true
+    opAmpTransportsSupported: [unix, http]
   traces:
     headSampling:
       supported: true
