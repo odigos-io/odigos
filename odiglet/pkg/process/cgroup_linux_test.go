@@ -2,6 +2,7 @@ package process
 
 import (
 	"testing"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestExtractKubepodsPrefix(t *testing.T) {
@@ -25,31 +26,6 @@ func TestExtractKubepodsPrefix(t *testing.T) {
 			got, ok := extractKubepodsPrefix(tt.in)
 			if ok != tt.ok || got != tt.want {
 				t.Fatalf("got (%q,%v) want (%q,%v)", got, ok, tt.want, tt.ok)
-			}
-		})
-	}
-}
-
-func TestPodSystemdSlice(t *testing.T) {
-	uid := "12345678-1234-1234-1234-123456789012"
-	tests := []struct {
-		name           string
-		kubepodsPrefix string
-		qos            string
-		want           string
-	}{
-		{"stock guaranteed", "", "Guaranteed", "kubepods-pod12345678_1234_1234_1234_123456789012.slice"},
-		{"stock burstable", "", "Burstable", "kubepods-burstable-pod12345678_1234_1234_1234_123456789012.slice"},
-		{"stock besteffort", "", "BestEffort", "kubepods-besteffort-pod12345678_1234_1234_1234_123456789012.slice"},
-		{"kind guaranteed", "kubelet", "Guaranteed", "kubelet-kubepods-pod12345678_1234_1234_1234_123456789012.slice"},
-		{"kind burstable", "kubelet", "Burstable", "kubelet-kubepods-burstable-pod12345678_1234_1234_1234_123456789012.slice"},
-		{"kind besteffort", "kubelet", "BestEffort", "kubelet-kubepods-besteffort-pod12345678_1234_1234_1234_123456789012.slice"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := podSystemdSlice(tt.kubepodsPrefix, tt.qos, uid)
-			if got != tt.want {
-				t.Fatalf("got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -95,45 +71,45 @@ func TestContainerCgroupDir(t *testing.T) {
 	tests := []struct {
 		name   string
 		layout cgroupLayout
-		qos    string
+		qos    corev1.PodQOSClass
 		want   string
 	}{
 		{
-			"stock systemd v2 guaranteed", stockV2, "Guaranteed",
+			"stock systemd v2 guaranteed", stockV2, corev1.PodQOSGuaranteed,
 			"/sys/fs/cgroup/kubepods.slice/kubepods-pod" + uidUnder + ".slice/" + scope,
 		},
 		{
-			"stock systemd v2 burstable", stockV2, "Burstable",
+			"stock systemd v2 burstable", stockV2, corev1.PodQOSBurstable,
 			"/sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod" + uidUnder + ".slice/" + scope,
 		},
 		{
-			"stock systemd v2 besteffort", stockV2, "BestEffort",
+			"stock systemd v2 besteffort", stockV2, corev1.PodQOSBestEffort,
 			"/sys/fs/cgroup/kubepods.slice/kubepods-besteffort.slice/kubepods-besteffort-pod" + uidUnder + ".slice/" + scope,
 		},
 
 		{
-			"kind systemd v2 guaranteed", kindV2, "Guaranteed",
+			"kind systemd v2 guaranteed", kindV2, corev1.PodQOSGuaranteed,
 			"/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-pod" + uidUnder + ".slice/" + scope,
 		},
 		{
-			"kind systemd v2 burstable", kindV2, "Burstable",
+			"kind systemd v2 burstable", kindV2, corev1.PodQOSBurstable,
 			"/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-burstable.slice/kubelet-kubepods-burstable-pod" + uidUnder + ".slice/" + scope,
 		},
 		{
-			"kind systemd v2 besteffort", kindV2, "BestEffort",
+			"kind systemd v2 besteffort", kindV2, corev1.PodQOSBestEffort,
 			"/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-besteffort.slice/kubelet-kubepods-besteffort-pod" + uidUnder + ".slice/" + scope,
 		},
 
 		{
-			"cgroupfs v2 guaranteed", cgfsV2, "Guaranteed",
+			"cgroupfs v2 guaranteed", cgfsV2, corev1.PodQOSGuaranteed,
 			"/sys/fs/cgroup/kubepods/pod" + uid + "/abc",
 		},
 		{
-			"cgroupfs v2 burstable", cgfsV2, "Burstable",
+			"cgroupfs v2 burstable", cgfsV2, corev1.PodQOSBurstable,
 			"/sys/fs/cgroup/kubepods/burstable/pod" + uid + "/abc",
 		},
 		{
-			"cgroupfs v2 besteffort", cgfsV2, "BestEffort",
+			"cgroupfs v2 besteffort", cgfsV2, corev1.PodQOSBestEffort,
 			"/sys/fs/cgroup/kubepods/besteffort/pod" + uid + "/abc",
 		},
 	}

@@ -135,7 +135,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 					PodUID: uid, ContainerName: c.Name,
 				},
 				ContainerID: getContainerID(pod.Status.ContainerStatuses, c.Name),
-				QOSClass:    string(pod.Status.QOSClass),
+				QOSClass:    pod.Status.QOSClass,
 			})
 		}
 	}
@@ -271,7 +271,8 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 // updateRuntimeDetailsWithContainerRuntimeEnvs checks if relevant environment variables are set in the Runtime
 // and updates the RuntimeDetailsByContainer accordingly.
 func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
-	programLanguageDetails common.ProgramLanguageDetails, results *InspectionResults, procEnvVars map[string]string) {
+	programLanguageDetails common.ProgramLanguageDetails, results *InspectionResults, procEnvVars map[string]string,
+) {
 	// Retrieve environment variable names for the specified language
 	envVarNames, exists := envOverwrite.EnvVarsForLanguage[programLanguageDetails.Language]
 	if !exists {
@@ -295,7 +296,8 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 
 // fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's Image and updates the runtime details.
 func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
-	envVarKeys []string, results *InspectionResults, procEnvVars map[string]string) {
+	envVarKeys []string, results *InspectionResults, procEnvVars map[string]string,
+) {
 	logger := commonlogger.LoggerCompat().With("subsystem", "runtimeinspection")
 	containerID := getContainerID(pod.Status.ContainerStatuses, container.Name)
 	if containerID == "" {
@@ -367,7 +369,6 @@ func checkEnvVarsInContainerManifest(container corev1.Container, envVarNames []s
 }
 
 func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, inspectionResults InspectionResults) error {
-
 	// fetch a fresh copy of instrumentation config.
 	// TODO: is this necessary? can we do it with the existing object?
 	currentConfig := &odigosv1.InstrumentationConfig{}
@@ -519,7 +520,6 @@ func mergeLdPreloadEnvVars(
 	existingEnvs []odigosv1.EnvVar,
 	skipIfContains *string,
 ) ([]odigosv1.EnvVar, bool) {
-
 	newLdPreloadValue, newHasLdPreload := env.FindLdPreloadInEnvs(newEnvs)
 	_, existingHasLdPreload := env.FindLdPreloadInEnvs(existingEnvs)
 

@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/odigos-io/odigos/common/logger"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/opencontainers/cgroups"
 	"github.com/opencontainers/cgroups/systemd"
@@ -24,8 +25,7 @@ const (
 
 // sysCgroupRoot returns the root path where the host cgroupfs is visible
 // inside this process. Reads ODIGOS_CGROUP_ROOT, falling back to
-// /sys/fs/cgroup for non-Kubernetes deployments where the binary runs
-// directly on a node.
+// /sys/fs/cgroup.
 func sysCgroupRoot() string {
 	if v := os.Getenv(cgroupRootEnvVar); v != "" {
 		return v
@@ -187,70 +187,59 @@ func extractKubepodsPrefix(cgroupPath string) (prefix string, ok bool) {
 // containerCgroupDir returns the absolute on-host directory holding the
 // container's cgroup.procs file.
 func containerCgroupDir(l cgroupLayout, pc PodContainer) (string, error) {
+	// from the k8s docs:
+	// ContainerID is the ID of the container in the format '<type>://<container_id>'.
+	// Where type is a container runtime identifier, returned from Version call of CRI API
+	// (for example "containerd").
 	i := strings.Index(pc.ContainerID, "://")
 	if i < 0 {
 		return "", fmt.Errorf("invalid container ref: %q", pc.ContainerID)
 	}
-	id := pc.ContainerID[i+3:]
-	pod, err := podCgroupDir(l, pc.QOSClass, pc.PodUID)
-	if err != nil {
-		return "", err
-	}
-	if l.Systemd {
-		return filepath.Join(pod, containerSystemdScope(l.SystemdScopePrefix, id)), nil
-	}
-	return filepath.Join(pod, id), nil
-}
+	containerID := pc.ContainerID[i+3:]
 
-func podCgroupDir(l cgroupLayout, qos, podUID string) (string, error) {
-	root := l.root
+	podUID := pc.PodUID
 	if l.Systemd {
-		slice := podSystemdSlice(l.KubepodsPrefix, qos, podUID)
+		podUID = strings.ReplaceAll(podUID, "-", "_")
+	}
+	segs := podSegments(l.KubepodsPrefix, pc.QOSClass, podUID)
+
+	var podRel, containerLeaf string
+	if l.Systemd {
+		slice := strings.Join(segs, "-") + ".slice"
 		tree, err := systemd.ExpandSlice(slice)
 		if err != nil {
-			return "", fmt.Errorf("expand slice %q: %w", slice, err)
+			return "", fmt.Errorf("expand systemd slice %q: %w", slice, err)
 		}
-		return filepath.Join(root, tree), nil
+		podRel = tree
+		containerLeaf = fmt.Sprintf("%s-%s.scope", l.SystemdScopePrefix, containerID)
+	} else {
+		podRel = filepath.Join(segs...)
+		containerLeaf = containerID
 	}
-	return filepath.Join(root, cgroupfsPodRel(l.KubepodsPrefix, qos, podUID)), nil
+	return filepath.Join(l.root, podRel, containerLeaf), nil
 }
 
-// podSystemdSlice builds the systemd slice name for a pod. Per kubelet,
-// the pod UID has '-' escaped to '_' inside the slice segment.
-func podSystemdSlice(kubepodsPrefix, qos, podUID string) string {
-	uid := strings.ReplaceAll(podUID, "-", "_")
-	parts := []string{}
-	if kubepodsPrefix != "" {
-		parts = append(parts, kubepodsPrefix)
+func podSegments(prefix string, qos corev1.PodQOSClass, podUID string) []string {
+	var parts []string
+	if prefix != "" {
+		parts = append(parts, prefix)
 	}
 	parts = append(parts, "kubepods")
-	if q := strings.ToLower(qos); q != "" && q != "guaranteed" {
+	if q := strings.ToLower(string(qos)); q != "" && q != "guaranteed" {
 		parts = append(parts, q)
 	}
-	parts = append(parts, "pod"+uid)
-	return strings.Join(parts, "-") + ".slice"
-}
-
-func cgroupfsPodRel(prefix, qos, podUID string) string {
-	base := filepath.Join(prefix, "kubepods")
-	if q := strings.ToLower(qos); q != "" && q != "guaranteed" {
-		base = filepath.Join(base, q)
-	}
-	return filepath.Join(base, "pod"+podUID)
-}
-
-func containerSystemdScope(scopePrefix, id string) string {
-	return fmt.Sprintf("%s-%s.scope", scopePrefix, id)
+	parts = append(parts, "pod"+podUID)
+	return parts
 }
 
 // ErrCgroupMissing is returned when the resolved cgroup directory does
 // not exist on disk. Callers can treat this as "container already gone".
 var ErrCgroupMissing = errors.New("container cgroup not found")
 
-// pidsInContainer returns the PIDs currently in the container's cgroup.
+// pidsInContainerByCgroup returns the PIDs currently in the container's cgroup.
 // It returns ErrCgroupMissing if the resolved cgroup directory does not
 // exist (the container exited or never started).
-func pidsInContainer(l cgroupLayout, pc PodContainer) ([]int, error) {
+func pidsInContainerByCgroup(l cgroupLayout, pc PodContainer) ([]int, error) {
 	dir, err := containerCgroupDir(l, pc)
 	if err != nil {
 		return nil, err

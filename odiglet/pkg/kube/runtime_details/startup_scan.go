@@ -88,7 +88,7 @@ func (s *startupRuntimeDetection) scan(ctx context.Context) (int, error) {
 						PodUID: uid, ContainerName: c.Name,
 					},
 					ContainerID: getContainerID(pod.Status.ContainerStatuses, c.Name),
-					QOSClass:    string(pod.Status.QOSClass),
+					QOSClass:    pod.Status.QOSClass,
 				})
 			}
 		}

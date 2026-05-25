@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"os"
 
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func groupByCgroup(pcs []PodContainer) (map[PodContainerKey]map[int]struct{}, error) {
@@ -16,7 +18,7 @@ func groupByCgroup(pcs []PodContainer) (map[PodContainerKey]map[int]struct{}, er
 		if pc.ContainerID == "" {
 			continue
 		}
-		pids, err := pidsInContainer(hostCgroupLayout, pc)
+		pids, err := pidsInContainerByCgroup(hostCgroupLayout, pc)
 		if err != nil {
 			if errors.Is(err, ErrCgroupMissing) {
 				continue
@@ -85,7 +87,7 @@ type PodContainerKey struct {
 
 type PodContainer struct {
 	PodContainerKey
-	QOSClass    string
+	QOSClass    corev1.PodQOSClass
 	ContainerID string
 }
 
@@ -99,8 +101,13 @@ func GroupByPodContainer(pcs []PodContainer) (map[PodContainerKey]map[int]struct
 	if hostCgroupLayout.Valid {
 		groups, err := groupByCgroup(pcs)
 		// if we had and error or no groups, fallback to the legacy proc mountinfo parsing
-		if err == nil && len(groups) > 0 {
+		// currently we fallback even when err is nil and no matches were found,
+		// to avoid possible regressions due to the cgroup path resolution logic.
+		switch {
+		case err == nil && len(groups) > 0:
 			return groups, nil
+		case err != nil:
+			commonlogger.LoggerCompat().Warn("failed to perfrom pid resolution based on cgroup, fallback to proc scan", "error", err)
 		}
 	}
 	// fallback to /proc/<pid>/mountinfo parsing

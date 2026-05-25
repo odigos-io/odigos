@@ -188,10 +188,9 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 	pcs := make([]process.PodContainer, 0, len(selectedPods)*len(distroByContainer))
 	for _, p := range selectedPods {
 		uid := workload.PodUID(&p)
-		qos := string(p.Status.QOSClass)
 		statusByName := make(map[string]string, len(p.Status.ContainerStatuses))
 		for _, cs := range p.Status.ContainerStatuses {
-			statusByName[cs.Name] = cs.ContainerID
+		statusByName[cs.Name] = cs.ContainerID
 		}
 		for c := range distroByContainer {
 			cid := statusByName[c]
@@ -203,14 +202,15 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 					PodUID:        uid,
 					ContainerName: c,
 				},
-				QOSClass:    qos,
+				QOSClass:    p.Status.QOSClass,
 				ContainerID: cid,
 			})
 		}
 	}
 
 	// group relevant processes by (podUID, containerName)
-	// this is an expensive operation and can be optimized in the future
+	// if we have cgroup layout available, this is not expensive,
+	// otherwise we will fallback to a more expensive /proc scan.
 	pidsByPodContainer, err := process.GroupByPodContainer(pcs)
 	if err != nil {
 		return err
