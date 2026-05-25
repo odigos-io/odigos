@@ -105,6 +105,7 @@ func GroupByPodContainer(pcs []PodContainer) (map[PodContainerKey]map[int]struct
 		// to avoid possible regressions due to the cgroup path resolution logic.
 		switch {
 		case err == nil && len(groups) > 0:
+			commonlogger.LoggerCompat().Debug("found process groups based on cgroups", "groups", len(groups), "pod-containers", pcs)
 			return groups, nil
 		case err != nil:
 			commonlogger.LoggerCompat().Warn("failed to perfrom pid resolution based on cgroup, fallback to proc scan", "error", err)
