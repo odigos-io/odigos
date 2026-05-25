@@ -4,7 +4,6 @@ metadata:
   name: python-community
 spec:
   name: python-community
-  opAmpTransportsSupported: [unix, http]
   language: python
   runtimeEnvironments:
     - name: python-runtime
@@ -29,6 +28,7 @@ spec:
     device: 'instrumentation.odigos.io/generic'
     k8sAttrsViaEnvVars: true
     ldPreloadInjectionSupported: true
+    opAmpTransportsSupported: [unix, http]
   traces:
     headSampling:
       supported: true
