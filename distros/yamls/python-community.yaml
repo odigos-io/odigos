@@ -4,6 +4,7 @@ metadata:
   name: python-community
 spec:
   name: python-community
+  opAmpTransportsSupported: [unix, http]
   language: python
   runtimeEnvironments:
     - name: python-runtime
