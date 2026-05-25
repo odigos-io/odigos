@@ -1,87 +1,23 @@
 import { getWorkloadId } from '@odigos/ui-kit/functions';
+import type { NamespaceInstrumentInput, SourceInstrumentInput } from '@/types';
+import { EntityTypes, type WorkloadId, type Workload } from '@odigos/ui-kit/types';
 import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
-import type { NamespaceInstrumentInput, SourceInstrumentInput, WorkloadResponse, K8sWorkloadConditions } from '@/types';
-import { EntityTypes, DesiredStateProgress, StatusType, OtherStatus, type WorkloadId, type Source, type Condition, type DesiredConditionStatus, type ProgrammingLanguages } from '@odigos/ui-kit/types';
 
-function mapDesiredStatusToConditionStatus(status: DesiredStateProgress): StatusType | OtherStatus {
-  switch (status) {
-    case DesiredStateProgress.Failure:
-    case DesiredStateProgress.Error:
-      return StatusType.Error;
-    case DesiredStateProgress.Notice:
-      return StatusType.Warning;
-    case DesiredStateProgress.Pending:
-    case DesiredStateProgress.Waiting:
-      return OtherStatus.Loading;
-    case DesiredStateProgress.Unsupported:
-    case DesiredStateProgress.Disabled:
-      return OtherStatus.Disabled;
-    case DesiredStateProgress.Success:
-      return StatusType.Success;
-    case DesiredStateProgress.Irrelevant:
-    case DesiredStateProgress.Unknown:
-    default:
-      return StatusType.Info;
-  }
-}
-
-// Flattens the GraphQL `K8sWorkloadConditions` object into the ui-kit's
-// `Condition[]`. We keep this as the only nontrivial transform on the
-// workload→source path because the ui-kit consumes conditions as an array
-// across many components.
-export function mapConditionsToConditionArray(conditions: K8sWorkloadConditions | null): Condition[] | null {
-  if (!conditions) return null;
-
-  const result: Condition[] = [];
-  const fields: (keyof K8sWorkloadConditions)[] = ['runtimeDetection', 'agentInjectionEnabled', 'rollout', 'agentInjected', 'processesAgentHealth', 'expectingTelemetry'];
-
-  for (const field of fields) {
-    const dcs: DesiredConditionStatus | null = conditions[field];
-    if (!dcs) continue;
-
-    result.push({
-      status: mapDesiredStatusToConditionStatus(dcs.status),
-      type: dcs.name ?? field,
-      name: dcs.name ?? field,
-      reason: dcs.reasonEnum ?? null,
-      message: dcs.message ?? null,
-    });
-  }
-
-  return result.length > 0 ? result : null;
-}
-
-// Thin adapter from the GraphQL `K8sWorkload` shape to the ui-kit's `Source`.
-// All container-level fields pass through unchanged because the GraphQL
-// container shape is now structurally identical to `SourceContainer`.
-export function mapWorkloadToSource(w: WorkloadResponse): Source {
-  return {
-    ...(w as unknown as Source),
-    namespace: w.id.namespace,
-    kind: w.id.kind,
-    name: w.id.name,
-    selected: w.markedForInstrumentation?.markedForInstrumentation ?? false,
-    otelServiceName: w.serviceName ?? '',
-    conditions: mapConditionsToConditionArray(w.conditions),
-    detectedLanguages: (w.runtimeInfo?.detectedLanguages as ProgrammingLanguages[] | null) ?? null,
-  };
-}
-
-export function sortSources(sources: Source[]): Source[] {
+export function sortSources(sources: Workload[]): Workload[] {
   return [...sources].sort((a, b) => {
-    const ns = a.namespace.localeCompare(b.namespace);
+    const ns = a.id.namespace.localeCompare(b.id.namespace);
     if (ns !== 0) return ns;
-    return a.name.localeCompare(b.name);
+    return a.id.name.localeCompare(b.id.name);
   });
 }
 
 export const prepareSourcePayloads = (
   selectAppsList: SourceSelectionFormData,
-  existingSources: Source[],
+  existingSources: Workload[],
   selectedStreamName: string,
   handleInstrumentationCount: (toAddCount: number, toDeleteCount: number) => void,
   removeEntities: (entityType: EntityTypes, entityIds: WorkloadId[]) => void,
-  addEntities: (entityType: EntityTypes, entities: Source[]) => void,
+  addEntities: (entityType: EntityTypes, entities: Workload[]) => void,
 ) => {
   let isEmpty = true;
   const payload: SourceInstrumentInput = { sources: [] };
@@ -90,28 +26,27 @@ export const prepareSourcePayloads = (
     if (items.length) {
       isEmpty = false;
 
-      const mappedItems = items.map(({ namespace, name, kind, selected, currentStreamName }) => ({
-        namespace,
-        name,
-        kind,
+      const mappedItems = items.map(({ id, selected, currentStreamName }) => ({
+        namespace: id.namespace,
+        name: id.name,
+        kind: id.kind,
         // this is to map selected=undefined to selected=false
         selected: selected === undefined ? false : selected,
-
         // currentStreamName comes from the UI Kit, if it's missing we use selectedStreamName as a fallback,
         // we could rely on only the selectedStreamName, but if we want to override the selected then we need to use the currentStreamName
         // (for example - if we want to have a single page to manage all groups, then we need to override the selected)
         currentStreamName: currentStreamName || selectedStreamName,
       }));
 
-      const toAddToStore: Source[] = [];
-      const toUpdateInStore: Source[] = [];
+      const toAddToStore: Workload[] = [];
+      const toUpdateInStore: Workload[] = [];
       const toDeleteFromStore: WorkloadId[] = [];
 
       let toAddCount = 0;
       let toDeleteCount = 0;
 
       for (const item of mappedItems) {
-        const foundExisting = existingSources.find((src) => src.namespace === ns && src.name === item.name && src.kind === item.kind);
+        const foundExisting = existingSources.find((src) => src.id.namespace === ns && src.id.name === item.name && src.id.kind === item.kind);
 
         // Check if the instrumenting-source does not exist, this confirms an expected creation of the CRD
         if (item.selected && !foundExisting) {
@@ -120,17 +55,17 @@ export const prepareSourcePayloads = (
         }
         // Else the instrumenting-source should be updated in store to include the selected stream name
         else if (item.selected && foundExisting) {
-          toUpdateInStore.push({ ...foundExisting, dataStreamNames: foundExisting.dataStreamNames.concat([selectedStreamName]) });
+          toUpdateInStore.push({ ...foundExisting, dataStreamNames: (foundExisting.dataStreamNames || []).concat([selectedStreamName]) });
         }
 
         // Check if the uninstrumenting-source has 1 or none data streams, this confirms an expected deletion of the CRD
-        else if (!item.selected && foundExisting && foundExisting.dataStreamNames.length <= 1) {
+        else if (!item.selected && foundExisting && (foundExisting.dataStreamNames || []).length <= 1) {
           toDeleteCount++;
           toDeleteFromStore.push(getWorkloadId(foundExisting));
         }
         // Else the uninstrumenting-source should be updated in store to exclude the selected stream name
         else if (!item.selected && foundExisting) {
-          toUpdateInStore.push({ ...foundExisting, dataStreamNames: foundExisting.dataStreamNames.filter((name) => name !== selectedStreamName) });
+          toUpdateInStore.push({ ...foundExisting, dataStreamNames: (foundExisting.dataStreamNames || []).filter((name) => name !== selectedStreamName) });
         }
       }
 

@@ -47,12 +47,6 @@ export const GET_WORKLOADS_BY_IDS = gql`
         reasonEnum
         message
       }
-      workloadHealthStatus {
-        name
-        status
-        reasonEnum
-        message
-      }
       podsAgentInjectionStatus {
         name
         status
@@ -65,16 +59,8 @@ export const GET_WORKLOADS_BY_IDS = gql`
         reasonEnum
         message
       }
-      processesHealthStatus {
-        name
-        status
-        reasonEnum
-        message
-      }
       markedForInstrumentation {
         markedForInstrumentation
-        decisionEnum
-        message
       }
       conditions {
         runtimeDetection {
@@ -115,164 +101,27 @@ export const GET_WORKLOADS_BY_IDS = gql`
         }
       }
       runtimeInfo {
-        completed
-        completedStatus {
-          name
-          status
-          reasonEnum
-          message
-        }
         detectedLanguages
-        containers {
-          containerName
-          language
-          runtimeVersion
-          processEnvVars {
-            name
-            value
-          }
-          containerRuntimeEnvVars {
-            name
-            value
-          }
-          criErrorMessage
-          libcType
-          secureExecutionMode
-          otherAgentName
-        }
-      }
-      agentEnabled {
-        agentEnabled
-        enabledStatus {
-          name
-          status
-          reasonEnum
-          message
-        }
-        containers {
-          containerName
-          agentEnabled
-          agentEnabledStatus {
-            name
-            status
-            reasonEnum
-            message
-          }
-          otelDistroName
-          envInjectionMethod
-          distroParams {
-            name
-            value
-          }
-          traces {
-            enabled
-          }
-          metrics {
-            enabled
-          }
-          logs {
-            enabled
-          }
-        }
-      }
-      rollout {
-        rolloutStatus {
-          name
-          status
-          reasonEnum
-          message
-        }
       }
       containers {
         containerName
         runtimeInfo {
-          containerName
           language
           runtimeVersion
-          processEnvVars {
-            name
-            value
-          }
-          containerRuntimeEnvVars {
-            name
-            value
-          }
-          criErrorMessage
-          libcType
-          secureExecutionMode
-          otherAgentName
         }
         agentEnabled {
-          containerName
           agentEnabled
           agentEnabledStatus {
-            name
-            status
-            reasonEnum
             message
           }
           otelDistroName
-          envInjectionMethod
-          distroParams {
-            name
-            value
-          }
-          traces {
-            enabled
-          }
-          metrics {
-            enabled
-          }
-          logs {
-            enabled
-          }
         }
         overrides {
           containerName
           otelDistroName
           runtimeInfo {
-            containerName
             language
             runtimeVersion
-            processEnvVars {
-              name
-              value
-            }
-            containerRuntimeEnvVars {
-              name
-              value
-            }
-            criErrorMessage
-            libcType
-            secureExecutionMode
-            otherAgentName
-          }
-        }
-        agentConfig {
-          traces {
-            headSampling {
-              checks {
-                conditions {
-                  key
-                  operator
-                  value
-                }
-                percentage
-              }
-              fallbackPercentage
-            }
-          }
-        }
-        instrumentations {
-          name
-          type
-          healthy
-          message
-          lastStatusTime
-          isStandardLibrary
-          nonIdentifyingAttributes {
-            key
-            value
           }
         }
       }
@@ -281,14 +130,12 @@ export const GET_WORKLOADS_BY_IDS = gql`
         nodeName
         startTime
         agentInjected
-        startedPostAgentMetaHashChange
         agentInjectedStatus {
           name
           status
           reasonEnum
           message
         }
-        runningLatestWorkloadRevision
         podHealthStatus {
           name
           status
@@ -297,7 +144,6 @@ export const GET_WORKLOADS_BY_IDS = gql`
         }
         containers {
           containerName
-          odigosInstrumentationDeviceName
           otelDistroName
           started
           ready
@@ -326,31 +172,15 @@ export const GET_WORKLOADS_BY_IDS = gql`
             }
             instrumentations {
               name
-              type
               healthy
               message
-              lastStatusTime
               isStandardLibrary
-              nonIdentifyingAttributes {
-                key
-                value
-              }
             }
           }
         }
       }
       telemetryMetrics {
-        totalDataSentBytes
         throughputBytes
-        expectingTelemetry {
-          isExpectingTelemetry
-          telemetryObservedStatus {
-            name
-            status
-            reasonEnum
-            message
-          }
-        }
       }
     }
   }

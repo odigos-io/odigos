@@ -3,11 +3,11 @@ import { useConfig } from '../config';
 import { useNamespace } from '../namespaces';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import type { NamespaceInstrumentInput, SourceInstrumentInput } from '@/types';
 import { getIdFromSseTarget, getSseTargetFromId } from '@odigos/ui-kit/functions';
-import type { NamespaceInstrumentInput, SourceInstrumentInput, WorkloadResponse } from '@/types';
-import { mapWorkloadToSource, sortSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
+import { sortSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
 import { GET_PEER_SOURCES, GET_SOURCE_LIBRARIES, GET_WORKLOADS, GET_WORKLOADS_BY_IDS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type WorkloadId, type Source, type SourceFormData, type PeerSources, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent, PersistSourceInput } from '@odigos/ui-kit/types';
+import { type WorkloadId, type SourceFormData, type PeerSources, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent, PersistSourceInput, type Workload } from '@odigos/ui-kit/types';
 import {
   type NamespaceSelectionFormData,
   type SourceSelectionFormData,
@@ -23,11 +23,11 @@ import {
 const MAX_INDIVIDUAL_FETCH = 50;
 
 interface UseSourceCrud {
-  sources: Source[];
+  sources: Workload[];
   sourcesLoading: boolean;
   fetchSources: () => Promise<void>;
   fetchSourcesByTargets: (targets: string[]) => Promise<void>;
-  fetchSourceById: (id: WorkloadId) => Promise<Source | undefined>;
+  fetchSourceById: (id: WorkloadId) => Promise<Workload | undefined>;
   fetchSourceLibraries: (id: WorkloadId) => Promise<{ data?: { instrumentationInstanceComponents: InstrumentationInstanceComponent[] } }>;
   fetchPeerSources: (serviceName: string) => Promise<{ data?: { peerSources: PeerSources } }>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
@@ -54,8 +54,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const [queryPeerSources] = useLazyQuery<{ peerSources: PeerSources }, { serviceName: string }>(GET_PEER_SOURCES, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message),
   });
-  const [queryWorkloads] = useLazyQuery<{ workloads: WorkloadResponse[] }, { filter?: { markedForInstrumentation?: boolean } & Partial<WorkloadId> }>(GET_WORKLOADS);
-  const [queryWorkloadsByIds] = useLazyQuery<{ workloadsByIds: WorkloadResponse[] }, { ids: { namespace: string; kind: string; name: string }[] }>(GET_WORKLOADS_BY_IDS);
+  const [queryWorkloads] = useLazyQuery<{ workloads: Workload[] }, { filter?: { markedForInstrumentation?: boolean } & Partial<WorkloadId> }>(GET_WORKLOADS);
+  const [queryWorkloadsByIds] = useLazyQuery<{ workloadsByIds: Workload[] }, { ids: { namespace: string; kind: string; name: string }[] }>(GET_WORKLOADS_BY_IDS);
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCES, {
     onError: (error) => {
@@ -94,7 +94,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
     } else if (data?.workloads) {
-      const mappedSources = sortSources(data.workloads.map(mapWorkloadToSource));
+      const mappedSources = sortSources(data.workloads);
       setEntities(EntityTypes.Source, mappedSources);
     }
 
@@ -118,13 +118,13 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
     } else if (data?.workloadsByIds) {
-      addEntities(EntityTypes.Source, data.workloadsByIds.map(mapWorkloadToSource));
+      addEntities(EntityTypes.Source, data.workloadsByIds);
     }
   };
 
-  const fetchSourceById: UseSourceCrud['fetchSourceById'] = async (id): Promise<Source | undefined> => {
+  const fetchSourceById: UseSourceCrud['fetchSourceById'] = async (id): Promise<Workload | undefined> => {
     await fetchSourcesByTargets([getSseTargetFromId(id, EntityTypes.Source)]);
-    return useEntityStore.getState().sources.find((s) => s.namespace === id.namespace && s.kind === id.kind && s.name === id.name);
+    return useEntityStore.getState().sources.find((s) => s.id.namespace === id.namespace && s.id.kind === id.kind && s.id.name === id.name);
   };
 
   const persistSources: UseSourceCrud['persistSources'] = async (selectAppsList, futureSelectAppsList) => {
