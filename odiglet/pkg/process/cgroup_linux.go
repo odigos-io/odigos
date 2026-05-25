@@ -30,6 +30,8 @@ func sysCgroupRoot() string {
 	if v := os.Getenv(cgroupRootEnvVar); v != "" {
 		return v
 	}
+	// we might be running in a privileged container for which defaultCgroupRoot is the host's cgroupfs
+	// this can be the case when we run as privileged and no host mounts are allowed.
 	return defaultCgroupRoot
 }
 
@@ -59,7 +61,7 @@ func DiscoverCgroupLayout() {
 		// cgroup v1 uses many per-controller mounts that need HostToContainer propagation,
 		// which only works if the host marked /sys/fs/cgroup as shared — not always true, and forcing it requires a privileged init container that mutates host state.
 		if !isCgroupV2 {
-			log.Info("detected cgroup v1, the fast path for PID resolution will be disabled")
+			log.Info("detected cgroup v1 or v2 hybrid, the fast path for PID resolution will be disabled")
 			return
 		}
 
@@ -83,6 +85,8 @@ func DiscoverCgroupLayout() {
 					break
 				}
 			}
+		} else {
+			log.Warn("failed to parse self cgroup file, falling back to probing cgroup layout from filesystem", "error", err)
 		}
 
 		// selfCgroupPath gives the cgroup-ns-relativized view. When

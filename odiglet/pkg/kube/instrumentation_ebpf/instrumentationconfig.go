@@ -190,7 +190,7 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 		uid := workload.PodUID(&p)
 		statusByName := make(map[string]string, len(p.Status.ContainerStatuses))
 		for _, cs := range p.Status.ContainerStatuses {
-		statusByName[cs.Name] = cs.ContainerID
+			statusByName[cs.Name] = cs.ContainerID
 		}
 		for c := range distroByContainer {
 			cid := statusByName[c]
