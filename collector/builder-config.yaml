@@ -61,7 +61,6 @@ exporters:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.148.0
 
 processors:
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.148.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.148.0
@@ -125,7 +124,6 @@ providers:
   - gomod: go.opentelemetry.io/collector/confmap/provider/fileprovider v0.148.0
 
 replaces:
-  - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor => ../processors/odigossamplingprocessor
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes => ../processors/odigosconditionalattributes
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor => ../processors/odigossqldboperationprocessor
   - github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor => ../processors/odigostracestateprocessor

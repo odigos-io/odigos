@@ -29,14 +29,9 @@ type ActionsV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AddClusterInfosGetter
 	DeleteAttributesGetter
-	ErrorSamplersGetter
 	K8sAttributesResolversGetter
-	LatencySamplersGetter
 	PiiMaskingsGetter
-	ProbabilisticSamplersGetter
 	RenameAttributesGetter
-	ServiceNameSamplersGetter
-	SpanAttributeSamplersGetter
 }
 
 // ActionsV1alpha1Client is used to interact with features provided by the actions group.
@@ -52,36 +47,16 @@ func (c *ActionsV1alpha1Client) DeleteAttributes(namespace string) DeleteAttribu
 	return newDeleteAttributes(c, namespace)
 }
 
-func (c *ActionsV1alpha1Client) ErrorSamplers(namespace string) ErrorSamplerInterface {
-	return newErrorSamplers(c, namespace)
-}
-
 func (c *ActionsV1alpha1Client) K8sAttributesResolvers(namespace string) K8sAttributesResolverInterface {
 	return newK8sAttributesResolvers(c, namespace)
-}
-
-func (c *ActionsV1alpha1Client) LatencySamplers(namespace string) LatencySamplerInterface {
-	return newLatencySamplers(c, namespace)
 }
 
 func (c *ActionsV1alpha1Client) PiiMaskings(namespace string) PiiMaskingInterface {
 	return newPiiMaskings(c, namespace)
 }
 
-func (c *ActionsV1alpha1Client) ProbabilisticSamplers(namespace string) ProbabilisticSamplerInterface {
-	return newProbabilisticSamplers(c, namespace)
-}
-
 func (c *ActionsV1alpha1Client) RenameAttributes(namespace string) RenameAttributeInterface {
 	return newRenameAttributes(c, namespace)
-}
-
-func (c *ActionsV1alpha1Client) ServiceNameSamplers(namespace string) ServiceNameSamplerInterface {
-	return newServiceNameSamplers(c, namespace)
-}
-
-func (c *ActionsV1alpha1Client) SpanAttributeSamplers(namespace string) SpanAttributeSamplerInterface {
-	return newSpanAttributeSamplers(c, namespace)
 }
 
 // NewForConfig creates a new ActionsV1alpha1Client for the given config.

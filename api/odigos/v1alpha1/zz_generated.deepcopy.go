@@ -126,11 +126,6 @@ func (in *ActionSpec) DeepCopyInto(out *ActionSpec) {
 		*out = new(actionsv1alpha1.K8sAttributesConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Samplers != nil {
-		in, out := &in.Samplers, &out.Samplers
-		*out = new(actionsv1alpha1.SamplersConfig)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.URLTemplatization != nil {
 		in, out := &in.URLTemplatization, &out.URLTemplatization
 		*out = new(actions.URLTemplatizationConfig)
