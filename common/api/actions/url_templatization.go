@@ -5,13 +5,9 @@ type UrlTemplatizationConfig struct {
 	// Template rules to apply to URLs
 	TemplatizationRules []string `json:"templatizationRules,omitempty"`
 
-	// indicate that the workload accepts incoming traffic from the internet.
-	// this is used to avoid running url-templatization
-	// when an endpoint from this service returns with 404 status code.
-	// internet exposed services are commonly being "tested" by malicious actors
-	// with irrelevant or garbage requests that can contaminate the url-templatization process
+	// indicate that the workload can accept garbage requests that can contaminate the url-templatization process
 	// leading to high-cardinality of templated routes.
-	// +kubebuilder:validation:Optional
-	// +optional
-	PubliclyAccessible bool `json:"publiclyAccessible,omitempty"`
+	// when set to true, requests that did not match any custom templatization rule and ended with 404 status code
+	// will not be templatized (no route and span name will be GET or the http method)
+	AvoidDefaultTemplatizationOnError bool `json:"avoidDefaultTemplatizationOnError,omitempty"`
 }

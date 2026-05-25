@@ -35,7 +35,7 @@ type workloadUrlTemplatizationConfig struct {
 	// internet exposed services are commonly being "tested" by malicious actors
 	// with irrelevant or garbage requests that can contaminate the url-templatization process
 	// leading to high-cardinality of templated routes.
-	publiclyAccessible bool
+	avoidDefaultTemplatizationOnError bool
 }
 
 type urlTemplateProcessor struct {
@@ -141,19 +141,19 @@ func (p *urlTemplateProcessor) Shutdown(context.Context) error {
 // OnSet implements collector.WorkloadConfigCacheCallback; called when the extension cache adds/updates an entry.
 // Empty or nil rules: store entry with parsedRules=nil so the workload gets default heuristic templatization (same as when extension is disabled).
 func (p *urlTemplateProcessor) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
-	publiclyAccessible := cfg.UrlTemplatization.PubliclyAccessible
+	avoidDefaultTemplatizationOnError := cfg.UrlTemplatization.AvoidDefaultTemplatizationOnError
 	if cfg.UrlTemplatization == nil || len(cfg.UrlTemplatization.TemplatizationRules) == 0 {
 		p.parsedRulesCache.set(key, workloadUrlTemplatizationConfig{
-			parsedRules:        nil,
-			publiclyAccessible: publiclyAccessible,
+			parsedRules:                       nil,
+			avoidDefaultTemplatizationOnError: avoidDefaultTemplatizationOnError,
 		})
 		p.logger.Debug("workload config cache OnSet: no rules, use default heuristic", zap.String("key", key))
 		return
 	}
 	parsedRules := p.parseRuleStrings(cfg.UrlTemplatization.TemplatizationRules)
 	p.parsedRulesCache.set(key, workloadUrlTemplatizationConfig{
-		parsedRules:        parsedRules,
-		publiclyAccessible: publiclyAccessible,
+		parsedRules:                       parsedRules,
+		avoidDefaultTemplatizationOnError: avoidDefaultTemplatizationOnError,
 	})
 	p.logger.Debug("workload config cache OnSet", zap.String("key", key))
 }
@@ -348,8 +348,8 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 	}
 
 	// check for malicious bots routes so not to templatize them.
-	// do it after the custom rules to allow legitimate routes to be templatized even for publicly accessible services with http errors.
-	if config.publiclyAccessible {
+	// do it after the custom rules to allow legitimate routes to be templatized even for services with http errors.
+	if config.avoidDefaultTemplatizationOnError {
 		statusCode, found := getHttpResponseStatusCode(attr)
 		if found {
 			// currently evaluating only 404 status code.
@@ -454,5 +454,5 @@ func (p *urlTemplateProcessor) processSpanWithStaticRules(span ptrace.Span) {
 	// for static mode, we do not set publiclyAccessible flag.
 	// it is only used with extension mode.
 	// this code will be removed once we fully migrate to extension mode.
-	p.processSpanWithRules(span, workloadUrlTemplatizationConfig{parsedRules: p.templatizationRules, publiclyAccessible: false})
+	p.processSpanWithRules(span, workloadUrlTemplatizationConfig{parsedRules: p.templatizationRules, avoidDefaultTemplatizationOnError: false})
 }

@@ -93,16 +93,6 @@ type SourceSpec struct {
 	// +kubebuilder:validation:Optional
 	// +optional
 	MatchWorkloadNameAsRegex bool `json:"matchWorkloadNameAsRegex,omitempty"`
-
-	// indicate that the source accepts incoming traffic from the internet.
-	// this is used to avoid running url-templatization
-	// when an endpoint from this service returns with 400 or 500 status code.
-	// internet exposed services are commonly being "tested" by malicious actors
-	// with irrelevant or garbage requests that can contaminate the url-templatization process
-	// leading to high-cardinality of templated routes.
-	// +kubebuilder:validation:Optional
-	// +optional
-	PubliclyAccessible bool `json:"publiclyAccessible,omitempty"`
 }
 
 type SourceStatus struct {

@@ -141,31 +141,3 @@ func (i ContainerOverridesChangedPredicate) Delete(e event.DeleteEvent) bool {
 func (i ContainerOverridesChangedPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
-
-type PubliclyAccessibleChangedPredicate struct{}
-
-var _ predicate.Predicate = &PubliclyAccessibleChangedPredicate{}
-
-func (p PubliclyAccessibleChangedPredicate) Create(e event.CreateEvent) bool {
-	return true
-}
-
-func (p PubliclyAccessibleChangedPredicate) Update(e event.UpdateEvent) bool {
-	if e.ObjectOld == nil || e.ObjectNew == nil {
-		return false
-	}
-	oldIc, oldOk := e.ObjectOld.(*odigosv1.InstrumentationConfig)
-	newIc, newOk := e.ObjectNew.(*odigosv1.InstrumentationConfig)
-	if !oldOk || !newOk {
-		return false
-	}
-	return oldIc.Spec.PubliclyAccessible != newIc.Spec.PubliclyAccessible
-}
-
-func (p PubliclyAccessibleChangedPredicate) Delete(e event.DeleteEvent) bool {
-	return false
-}
-
-func (p PubliclyAccessibleChangedPredicate) Generic(e event.GenericEvent) bool {
-	return false
-}

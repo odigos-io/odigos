@@ -39,9 +39,25 @@ type UrlTemplatizationRulesGroup struct {
 	TemplatizationRules []URLTemplatizationRule `json:"templatizationRules,omitempty"`
 }
 
+// Used to mark sources to avoid default templatization on error.
+// Publicly accessible services are commonly being "tested" by malicious actors
+// with irrelevant or garbage requests that can contaminate the url-templatization process
+// leading to high-cardinality of templated routes.
+// if a source is marked with this setting, and no custom templatization rule matched,
+// and the request returns with 404 status code, the default templatization will be avoided.
+//
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type AvoidDefaultTemplatizationOnErrorConfig struct {
+
+	// which sources to mark as avoid default templatization on error.
+	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
+}
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type URLTemplatizationConfig struct {
+	AvoidDefaultTemplatizationOnError *AvoidDefaultTemplatizationOnErrorConfig `json:"avoidDefaultTemplatizationOnError,omitempty"`
 
 	// list here all the groups of rules that will be applied to the spans.
 	// each group targets a specific set of spans that share the same filters.

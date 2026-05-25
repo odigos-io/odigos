@@ -15,14 +15,21 @@ func DistroSupportsTracesUrlTemplatization(distro *distro.OtelDistro) bool {
 
 // CalculateUrlTemplatizationConfig filters template rules to only include those relevant to the container.
 // A rule group is applied if its SourcesScope matches (empty scope = global, applies to all).
-func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, containerName string, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload, publiclyAccessible bool) *actions.UrlTemplatizationConfig {
+func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, containerName string, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *actions.UrlTemplatizationConfig {
 	var rules []string
 	participating := false
+	avoidDefaultTemplatizationOnError := false
 
 	for _, action := range *agentLevelActions {
 		// Safety check: actions were already filtered to only include template actions.
 		if action.Spec.URLTemplatization == nil {
 			continue
+		}
+
+		if action.Spec.URLTemplatization.AvoidDefaultTemplatizationOnError != nil {
+			if scope.SourceScopeMatchesContainer(action.Spec.URLTemplatization.AvoidDefaultTemplatizationOnError.SourcesScopes, pw, language) {
+				avoidDefaultTemplatizationOnError = true
+			}
 		}
 
 		for _, rulesGroup := range action.Spec.URLTemplatization.TemplatizationRulesGroups {
@@ -42,7 +49,7 @@ func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, cont
 	}
 
 	return &actions.UrlTemplatizationConfig{
-		TemplatizationRules: rules,
-		PubliclyAccessible:  publiclyAccessible,
+		TemplatizationRules:               rules,
+		AvoidDefaultTemplatizationOnError: avoidDefaultTemplatizationOnError,
 	}
 }

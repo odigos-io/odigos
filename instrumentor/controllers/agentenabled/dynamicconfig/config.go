@@ -40,7 +40,6 @@ func calculateTracesConfig(
 	samplingRules *[]odigosv1.Sampling,
 	irls *[]odigosv1.InstrumentationRule,
 	nodeCollectorsGroup *odigosv1.CollectorsGroup,
-	publiclyAccessible bool,
 ) (*agentsignalconfig.AgentTracesConfig, *commonapi.ContainerCollectorConfig, *odigosv1.AgentDisabledInfo) {
 	agentConfig := &agentsignalconfig.AgentTracesConfig{}
 	var collectorConfig *commonapi.ContainerCollectorConfig
@@ -53,7 +52,7 @@ func calculateTracesConfig(
 	agentConfig.IdGenerator = idGeneratorConfig // can be nil
 
 	// Url Templatization
-	urlTemplatizationConfig := traces.CalculateUrlTemplatizationConfig(agentLevelActions, containerName, runtimeDetails.Language, pw, publiclyAccessible)
+	urlTemplatizationConfig := traces.CalculateUrlTemplatizationConfig(agentLevelActions, containerName, runtimeDetails.Language, pw)
 	if urlTemplatizationConfig != nil {
 		agentSpanMetricsEnabled := metrics.AgentSpanMetricsEnabled(effectiveConfig)
 		if traces.DistroSupportsTracesUrlTemplatization(d) && agentSpanMetricsEnabled {
@@ -186,14 +185,13 @@ func CalculateDynamicContainerConfig(
 	enabledSignals signals.EnabledSignals,
 	nodeCollectorsGroup *odigosv1.CollectorsGroup,
 	clusterCollectorsGroup *odigosv1.CollectorsGroup,
-	publiclyAccessible bool,
 ) (*DynamicContainerConfigs, *odigosv1.AgentDisabledInfo) {
 
 	var collectorConfig *commonapi.ContainerCollectorConfig
 
 	var tracesConfig *agentsignalconfig.AgentTracesConfig
 	if enabledSignals.TracesEnabled {
-		agentTracesConfig, collectorTracesConfig, err := calculateTracesConfig(agentLevelActions, containerName, runtimeDetails, pw, d, workloadObj, effectiveConfig, samplingRules, irls, nodeCollectorsGroup, publiclyAccessible)
+		agentTracesConfig, collectorTracesConfig, err := calculateTracesConfig(agentLevelActions, containerName, runtimeDetails, pw, d, workloadObj, effectiveConfig, samplingRules, irls, nodeCollectorsGroup)
 		if err != nil {
 			return nil, err
 		}

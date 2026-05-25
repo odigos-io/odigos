@@ -380,11 +380,6 @@ type InstrumentationConfigSpec struct {
 	// The SDKs are identified by the programming language they are written in.
 	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
 	SdkConfigs []SdkConfig `json:"sdkConfigs,omitempty"`
-
-	// indicate that the workload accepts incoming traffic from the internet.
-	// reconciled from source object and used to propagate to the agents and collectors config.
-	// currently used for url templatization configuration to avoid bots garbage routes causing high-cardinality.
-	PubliclyAccessible bool `json:"publiclyAccessible,omitempty"`
 }
 
 func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName string) *ContainerAgentConfig {
