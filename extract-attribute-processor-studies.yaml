@@ -1,0 +1,21 @@
+apiVersion: odigos.io/v1alpha1
+kind: Processor
+metadata:
+  name: extract-study-id-from-studies
+  namespace: odigos-system
+spec:
+  type: odigosextractattribute
+  processorName: "extract study.id from /studies/<id>/ and project.id from /projects/<id>/ URL path"
+  signals:
+    - TRACES
+  collectorRoles:
+    - CLUSTER_GATEWAY
+  orderHint: 1
+  processorConfig:
+    extractions:
+      - lookup_key: studies
+        data_format: resource_path
+        target_attribute_name: naty_extracted_study.id
+      - lookup_key: projects
+        data_format: resource_path
+        target_attribute_name: naty_extracted_project.id

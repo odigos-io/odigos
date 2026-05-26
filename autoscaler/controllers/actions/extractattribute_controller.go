@@ -27,14 +27,14 @@ type extractAttributeProcessorConfig struct {
 }
 
 type extractAttributeRule struct {
-	Target     string `json:"target"`
-	Source     string `json:"source,omitempty"`
-	DataFormat string `json:"data_format,omitempty"`
-	Regex      string `json:"regex,omitempty"`
+	TargetAttributeName string `json:"target_attribute_name"`
+	LookupKey        string `json:"lookup_key,omitempty"`
+	DataFormat       string `json:"data_format,omitempty"`
+	Regex            string `json:"regex,omitempty"`
 }
 
 // extractAttributeConfig translates the API-level ExtractAttributeConfig into the processor-level config and validates cross-field invariants
-// that the CRD schema cannot express on its own (Source+DataForm vs. Regex).
+// that the CRD schema cannot express on its own (LookupKey+DataFormat vs. Regex).
 func extractAttributeConfig(cfg *actions.ExtractAttributeConfig) (extractAttributeProcessorConfig, error) {
 	if cfg == nil {
 		return extractAttributeProcessorConfig{}, fmt.Errorf("extractAttribute config is nil")
@@ -46,38 +46,38 @@ func extractAttributeConfig(cfg *actions.ExtractAttributeConfig) (extractAttribu
 	config := extractAttributeProcessorConfig{
 		Extractions: make([]extractAttributeRule, 0, len(cfg.Extractions)),
 	}
-	seenTargets := make(map[string]int, len(cfg.Extractions))
+	seenNames := make(map[string]int, len(cfg.Extractions))
 	for i, extraction := range cfg.Extractions {
-		if extraction.Target == "" {
-			return config, fmt.Errorf("extractions[%d]: target is required", i)
+		if extraction.TargetAttributeName == "" {
+			return config, fmt.Errorf("extractions[%d]: targetAttributeName is required", i)
 		}
-		if prev, dup := seenTargets[extraction.Target]; dup {
-			return config, fmt.Errorf("extractions[%d]: duplicate target %q (also used by extractions[%d])", i, extraction.Target, prev)
+		if prev, dup := seenNames[extraction.TargetAttributeName]; dup {
+			return config, fmt.Errorf("extractions[%d]: duplicate targetAttributeName %q (also used by extractions[%d])", i, extraction.TargetAttributeName, prev)
 		}
-		seenTargets[extraction.Target] = i
+		seenNames[extraction.TargetAttributeName] = i
 
-		// Check the Source+DataForm vs. Regex logic - exactly one of them need to be used
-		hasSource := extraction.Source != ""
+		// Check the LookupKey+DataFormat vs. Regex logic - exactly one of them need to be used
+		hasLookupKey := extraction.LookupKey != ""
 		hasRegex := extraction.Regex != ""
 
-		if hasSource == hasRegex {
-			return config, fmt.Errorf("extractions[%d]: exactly one of source or regex must be set", i)
+		if hasLookupKey == hasRegex {
+			return config, fmt.Errorf("extractions[%d]: exactly one of lookupKey or regex must be set", i)
 		}
-		if hasSource && extraction.DataFormat == "" {
-			return config, fmt.Errorf("extractions[%d]: dataFormat is required when source is set", i)
+		if hasLookupKey && extraction.DataFormat == "" {
+			return config, fmt.Errorf("extractions[%d]: dataFormat is required when lookupKey is set", i)
 		}
 		if hasRegex && extraction.DataFormat != "" {
 			return config, fmt.Errorf("extractions[%d]: dataFormat must be empty when regex is set", i)
 		}
-		if hasRegex && extraction.Source != "" {
-			return config, fmt.Errorf("extractions[%d]: source must be empty when regex is set", i)
+		if hasRegex && extraction.LookupKey != "" {
+			return config, fmt.Errorf("extractions[%d]: lookupKey must be empty when regex is set", i)
 		}
 
 		config.Extractions = append(config.Extractions, extractAttributeRule{
-			Target:     extraction.Target,
-			Source:     extraction.Source,
-			DataFormat: string(extraction.DataFormat),
-			Regex:      extraction.Regex,
+			TargetAttributeName: extraction.TargetAttributeName,
+			LookupKey:        extraction.LookupKey,
+			DataFormat:       string(extraction.DataFormat),
+			Regex:            extraction.Regex,
 		})
 	}
 	return config, nil
