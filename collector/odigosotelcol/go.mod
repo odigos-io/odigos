@@ -14,6 +14,7 @@ require (
 	github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.148.0
 	github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.148.0
 	github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.148.0
+	github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor v0.148.0
 	github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.148.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.148.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.148.0
@@ -96,7 +97,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.55.0
 	go.opentelemetry.io/collector/component/componenttest v0.149.0
-	go.opentelemetry.io/collector/confmap v1.56.0
+	go.opentelemetry.io/collector/confmap v1.58.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.54.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.54.0
 	go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.148.0
@@ -498,7 +499,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/odigos-io/go-rtml v0.0.1 // indirect
-	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000 // indirect
+	github.com/odigos-io/odigos/common v0.0.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.148.0 // indirect
@@ -663,7 +664,7 @@ require (
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.148.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.148.0 // indirect
 	go.opentelemetry.io/collector/extension/xextension v0.148.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.56.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.58.0 // indirect
 	go.opentelemetry.io/collector/filter v0.148.0 // indirect
 	go.opentelemetry.io/collector/internal/componentalias v0.149.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.148.0 // indirect
@@ -719,7 +720,7 @@ require (
 	go.uber.org/fx v1.24.0 // indirect
 	go.uber.org/goleak v1.3.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.27.1 // indirect
+	go.uber.org/zap v1.28.0 // indirect
 	go.uber.org/zap/exp v0.3.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
@@ -789,6 +790,8 @@ replace github.com/odigos-io/odigos/collector/processor/odigosextractattributepr
 replace github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor => ../processors/odigostracefilterprocessor
 
 replace github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor => ../processors/odigosprofilesprocessor
+
+replace github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor => ../processors/odigosvmprofileattrsprocessor
 
 replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
 
