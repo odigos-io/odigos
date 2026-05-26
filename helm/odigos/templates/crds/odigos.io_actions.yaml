@@ -116,15 +116,15 @@ spec:
                             Required when using DataFormat.
                             You can input either LookupKey+DataFormat, or supply your own Regex.
                           type: string
-                        targetAttributeName:
-                          description: TargetAttributeName is the name of the new span
-                            attribute the extracted value will be written to.
-                          type: string
                         regex:
                           description: |-
                             Regex is a custom regular expression with a single capture group whose value is
                             written to the new span attribute named TargetAttributeName.
                             You can input either Regex, or LookupKey+DataFormat.
+                          type: string
+                        targetAttributeName:
+                          description: TargetAttributeName is the name of the new
+                            span attribute the extracted value will be written to.
                           type: string
                       required:
                       - targetAttributeName

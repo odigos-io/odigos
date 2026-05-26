@@ -20,7 +20,7 @@ var RELEVANT_SPAN_ATTRIBUTES = map[string]struct{}{
 }
 
 type extractor struct {
-	regex            *regexp.Regexp
+	regex               *regexp.Regexp
 	targetAttributeName string
 }
 

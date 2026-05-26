@@ -9,10 +9,10 @@ import (
 type DataFormat string
 
 const (
-	FormatUnset DataFormat = ""
-	FormatResourcePath   DataFormat = "resource_path"
-	FormatJSON  DataFormat = "json"
-	FormatSQL   DataFormat = "sql"
+	FormatUnset        DataFormat = ""
+	FormatResourcePath DataFormat = "resource_path"
+	FormatJSON         DataFormat = "json"
+	FormatSQL          DataFormat = "sql"
 )
 
 // Extraction is one self-contained extraction rule.
@@ -20,9 +20,9 @@ const (
 // to a new span attribute named TargetAttributeName.
 type Extraction struct {
 	TargetAttributeName string     `mapstructure:"target_attribute_name"`
-	LookupKey        string     `mapstructure:"lookup_key"`
-	DataFormat       DataFormat `mapstructure:"data_format"`
-	Regex            string     `mapstructure:"regex"`
+	LookupKey           string     `mapstructure:"lookup_key"`
+	DataFormat          DataFormat `mapstructure:"data_format"`
+	Regex               string     `mapstructure:"regex"`
 }
 
 type Config struct {
