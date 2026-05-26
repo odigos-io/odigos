@@ -1,8 +1,6 @@
 package process
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -10,16 +8,16 @@ import (
 
 func TestGroupByPodContainerFallsBackForMissingCgroupResults(t *testing.T) {
 	prevLayout := hostCgroupLayout
+	prevCgroup := groupByCgroupFunc
 	prevFallback := groupByProcMountInfoFunc
 	t.Cleanup(func() {
 		hostCgroupLayout = prevLayout
+		groupByCgroupFunc = prevCgroup
 		groupByProcMountInfoFunc = prevFallback
 	})
 
-	cgroupRoot := t.TempDir()
 	hostCgroupLayout = cgroupLayout{
 		Valid: true,
-		root:  cgroupRoot,
 	}
 
 	resolvedPC := PodContainer{
@@ -33,12 +31,13 @@ func TestGroupByPodContainerFallsBackForMissingCgroupResults(t *testing.T) {
 		ContainerID:     "containerd://missing-container",
 	}
 
-	resolvedCgroupDir := filepath.Join(cgroupRoot, "kubepods", "podresolved", "resolved-container")
-	if err := os.MkdirAll(resolvedCgroupDir, 0o755); err != nil {
-		t.Fatalf("mkdir cgroup dir: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(resolvedCgroupDir, "cgroup.procs"), []byte("101\n"), 0o644); err != nil {
-		t.Fatalf("write cgroup.procs: %v", err)
+	groupByCgroupFunc = func(pcs []PodContainer) (map[PodContainerKey]map[int]struct{}, error) {
+		if len(pcs) != 2 {
+			t.Fatalf("cgroup resolver called with %#v, want both pod-containers", pcs)
+		}
+		return map[PodContainerKey]map[int]struct{}{
+			resolvedPC.PodContainerKey: {101: {}},
+		}, nil
 	}
 
 	groupByProcMountInfoFunc = func(pcs []PodContainer) (map[PodContainerKey]map[int]struct{}, error) {

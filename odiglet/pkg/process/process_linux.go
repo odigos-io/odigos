@@ -37,6 +37,8 @@ func groupByCgroup(pcs []PodContainer) (map[PodContainerKey]map[int]struct{}, er
 	return result, nil
 }
 
+var groupByCgroupFunc = groupByCgroup
+
 // groupByProcMountInfo is the legacy fallback: a single /proc scan
 // that checks each PID's mountinfo for the k8s service-account mount
 // path identifying its pod+container. Slower per-PID but only walks
@@ -101,7 +103,7 @@ func GroupByPodContainer(pcs []PodContainer) (map[PodContainerKey]map[int]struct
 	// if we have the cgroup layout available,
 	// use it for grouping as it's more efficient.
 	if hostCgroupLayout.Valid {
-		groups, err := groupByCgroup(pcs)
+		groups, err := groupByCgroupFunc(pcs)
 		// if we had an error or no groups, fallback to the legacy proc mountinfo parsing.
 		// currently we fallback even when err is nil and no matches were found,
 		// to avoid possible regressions due to the cgroup path resolution logic.
