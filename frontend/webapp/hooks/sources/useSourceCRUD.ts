@@ -3,9 +3,9 @@ import { useConfig } from '../config';
 import { useNamespace } from '../namespaces';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
+import { prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
 import type { NamespaceInstrumentInput, SourceInstrumentInput } from '@/types';
 import { getIdFromSseTarget, getSseTargetFromId } from '@odigos/ui-kit/functions';
-import { sortSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
 import { GET_PEER_SOURCES, GET_SOURCE_LIBRARIES, GET_WORKLOADS, GET_WORKLOADS_BY_IDS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { type WorkloadId, type SourceFormData, type PeerSources, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent, PersistSourceInput, type Workload } from '@odigos/ui-kit/types';
 import {
@@ -94,8 +94,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
     } else if (data?.workloads) {
-      const mappedSources = sortSources(data.workloads);
-      setEntities(EntityTypes.Source, mappedSources);
+      setEntities(EntityTypes.Source, data.workloads);
     }
 
     setEntitiesLoading(EntityTypes.Source, false);

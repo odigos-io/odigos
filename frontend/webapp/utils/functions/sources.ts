@@ -3,14 +3,6 @@ import type { NamespaceInstrumentInput, SourceInstrumentInput } from '@/types';
 import { EntityTypes, type WorkloadId, type Workload } from '@odigos/ui-kit/types';
 import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
 
-export function sortSources(sources: Workload[]): Workload[] {
-  return [...sources].sort((a, b) => {
-    const ns = a.id.namespace.localeCompare(b.id.namespace);
-    if (ns !== 0) return ns;
-    return a.id.name.localeCompare(b.id.name);
-  });
-}
-
 export const prepareSourcePayloads = (
   selectAppsList: SourceSelectionFormData,
   existingSources: Workload[],
