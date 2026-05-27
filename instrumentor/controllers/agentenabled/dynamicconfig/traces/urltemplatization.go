@@ -13,12 +13,82 @@ func DistroSupportsTracesUrlTemplatization(distro *distro.OtelDistro) bool {
 	return distro.Traces != nil && distro.Traces.UrlTemplatization != nil && distro.Traces.UrlTemplatization.Supported
 }
 
+func dedupeStatusCodes(codes []int) []int {
+
+	// short circuit if there are no or only one code
+	if len(codes) <= 1 {
+		return codes
+	}
+
+	seen := make(map[int]struct{}, len(codes))
+	result := []int{}
+	for _, code := range codes {
+		if _, ok := seen[code]; ok {
+			continue
+		}
+		seen[code] = struct{}{}
+		result = append(result, code)
+	}
+	return result
+}
+
+func mergeDefaultTemplatizationSkipOnErrorConfigs(c1 *actions.DefaultTemplatizationSkipOnErrorConfig, c2 *actions.DefaultTemplatizationSkipOnErrorConfig) *actions.DefaultTemplatizationSkipOnErrorConfig {
+	if c1 == nil {
+		return c2
+	}
+	if c2 == nil {
+		return c1
+	}
+
+	// both are not nil, merge them.
+	skipForNonSuccessCodes := c1.SkipForNonSuccessCodes || c2.SkipForNonSuccessCodes
+	if skipForNonSuccessCodes {
+		return &actions.DefaultTemplatizationSkipOnErrorConfig{
+			SkipForNonSuccessCodes: skipForNonSuccessCodes,
+		}
+	}
+
+	return &actions.DefaultTemplatizationSkipOnErrorConfig{
+		SkipForNonSuccessCodes: false,
+		StatusCodes:            append(c1.StatusCodes, c2.StatusCodes...),
+	}
+}
+
+func mergeDefaultTemplatizationConfigs(c1 *actions.DefaultTemplatizationConfig, c2 *actions.DefaultTemplatizationConfig) *actions.DefaultTemplatizationConfig {
+	if c1 == nil {
+		return c2
+	}
+	if c2 == nil {
+		return c1
+	}
+
+	// both are not nil, merge them.
+	disabled := c1.Disabled || c2.Disabled
+	if disabled {
+		return &actions.DefaultTemplatizationConfig{
+			Disabled: disabled,
+		}
+	}
+
+	return &actions.DefaultTemplatizationConfig{
+		Disabled:    disabled,
+		SkipOnError: mergeDefaultTemplatizationSkipOnErrorConfigs(c1.SkipOnError, c2.SkipOnError),
+	}
+}
+
 // CalculateUrlTemplatizationConfig filters template rules to only include those relevant to the container.
 // A rule group is applied if its SourcesScope matches (empty scope = global, applies to all).
 func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, containerName string, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *actions.UrlTemplatizationConfig {
 	var rules []string
+
+	// if at least one rule group or default templatization config matches, the container participates.
 	participating := false
-	avoidDefaultTemplatizationOnError := false
+
+	// the combined default templatization config from all actions.
+	// for the default templatization to take effect, at least one default templatization config must be set and match the container.
+	// one can set a rule to apply default templatization on the entire cluster, or add more granular configs for specific scopes.
+	// if this is nil, the default templatization will not be applied.
+	var configForDefaultTemplatization *actions.DefaultTemplatizationConfig
 
 	for _, action := range *agentLevelActions {
 		// Safety check: actions were already filtered to only include template actions.
@@ -26,9 +96,12 @@ func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, cont
 			continue
 		}
 
-		if action.Spec.URLTemplatization.AvoidDefaultTemplatizationOnError != nil {
-			if scope.SourceScopeMatchesContainer(action.Spec.URLTemplatization.AvoidDefaultTemplatizationOnError.SourcesScopes, pw, language) {
-				avoidDefaultTemplatizationOnError = true
+		if action.Spec.URLTemplatization.DefaultTemplatizations != nil {
+			for _, defaultTemplatization := range action.Spec.URLTemplatization.DefaultTemplatizations {
+				participating = true
+				if scope.SourceScopeMatchesContainer(defaultTemplatization.SourcesScopes, pw, language) {
+					configForDefaultTemplatization = mergeDefaultTemplatizationConfigs(configForDefaultTemplatization, &defaultTemplatization.Config)
+				}
 			}
 		}
 
@@ -48,8 +121,24 @@ func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, cont
 		return nil
 	}
 
+	// replace disabled with nil to align with the source api conventions.
+	if configForDefaultTemplatization != nil && configForDefaultTemplatization.Disabled {
+		configForDefaultTemplatization = nil
+	}
+
+	// no templatization, return nil to disable it entirely.
+	if configForDefaultTemplatization == nil && len(rules) == 0 {
+		return nil
+	}
+
+	if configForDefaultTemplatization != nil && configForDefaultTemplatization.SkipOnError != nil {
+		configForDefaultTemplatization.SkipOnError.StatusCodes = dedupeStatusCodes(
+			configForDefaultTemplatization.SkipOnError.StatusCodes,
+		)
+	}
+
 	return &actions.UrlTemplatizationConfig{
-		TemplatizationRules:               rules,
-		AvoidDefaultTemplatizationOnError: avoidDefaultTemplatizationOnError,
+		TemplatizationRules:   rules,
+		DefaultTemplatization: configForDefaultTemplatization,
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 
 	"go.opentelemetry.io/collector/component"
@@ -16,6 +17,7 @@ import (
 	"go.uber.org/zap"
 
 	commonapi "github.com/odigos-io/odigos/common/api"
+	commonactionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/common/collector"
 )
 
@@ -29,13 +31,10 @@ type workloadUrlTemplatizationConfig struct {
 	// the rules to apply for templatization for this workload.
 	parsedRules map[int][]TemplatizationRule // nil means heuristic-only (no explicit rules)
 
-	// if true, skip default templatization for non-successful responses.
-	// this is used to avoid high-cardinality of templated routes
-	// when an endpoint from this service returns with 404 status code.
-	// internet exposed services are commonly being "tested" by malicious actors
-	// with irrelevant or garbage requests that can contaminate the url-templatization process
-	// leading to high-cardinality of templated routes.
-	avoidDefaultTemplatizationOnError bool
+	// configurations for default templatization.
+	// this will be applied if no custom templatization rules matched.
+	// if not set, the default config for default templatization will be used.
+	defaultTemplatizationConfig *commonactionsapi.DefaultTemplatizationConfig
 }
 
 type urlTemplateProcessor struct {
@@ -141,19 +140,24 @@ func (p *urlTemplateProcessor) Shutdown(context.Context) error {
 // OnSet implements collector.WorkloadConfigCacheCallback; called when the extension cache adds/updates an entry.
 // Empty or nil rules: store entry with parsedRules=nil so the workload gets default heuristic templatization (same as when extension is disabled).
 func (p *urlTemplateProcessor) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
-	avoidDefaultTemplatizationOnError := cfg.UrlTemplatization.AvoidDefaultTemplatizationOnError
+
+	var defaultTemplatizationConfig *commonactionsapi.DefaultTemplatizationConfig
+	if cfg.UrlTemplatization != nil && cfg.UrlTemplatization.DefaultTemplatization != nil {
+		defaultTemplatizationConfig = cfg.UrlTemplatization.DefaultTemplatization
+	}
+
 	if cfg.UrlTemplatization == nil || len(cfg.UrlTemplatization.TemplatizationRules) == 0 {
 		p.parsedRulesCache.set(key, workloadUrlTemplatizationConfig{
-			parsedRules:                       nil,
-			avoidDefaultTemplatizationOnError: avoidDefaultTemplatizationOnError,
+			parsedRules:                 nil,
+			defaultTemplatizationConfig: defaultTemplatizationConfig,
 		})
 		p.logger.Debug("workload config cache OnSet: no rules, use default heuristic", zap.String("key", key))
 		return
 	}
 	parsedRules := p.parseRuleStrings(cfg.UrlTemplatization.TemplatizationRules)
 	p.parsedRulesCache.set(key, workloadUrlTemplatizationConfig{
-		parsedRules:                       parsedRules,
-		avoidDefaultTemplatizationOnError: avoidDefaultTemplatizationOnError,
+		parsedRules:                 parsedRules,
+		defaultTemplatizationConfig: defaultTemplatizationConfig,
 	})
 	p.logger.Debug("workload config cache OnSet", zap.String("key", key))
 }
@@ -321,9 +325,11 @@ func splitPathToSegments(path string) ([]string, bool) {
 }
 
 // calculateTemplatedUrlFromAttrWithRules calculates a templated URL using the given rules.
+// returns the templated path, an boolean to indicate if templatization was applied.
 func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcommon.Map, config workloadUrlTemplatizationConfig) (string, bool) {
 	urlPath, urlPathFound := resolveUrlPath(attr)
 	if !urlPathFound {
+		p.logger.Debug("calculateTemplatedUrlFromAttrWithRules: no url/path in attributes, skip templatization")
 		return "", false
 	}
 
@@ -347,21 +353,35 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 		}
 	}
 
+	// skip default templatization if the config is unset or disabled.
+	if config.defaultTemplatizationConfig == nil || config.defaultTemplatizationConfig.Disabled {
+		return "", false
+	}
+
 	// check for malicious bots routes so not to templatize them.
 	// do it after the custom rules to allow legitimate routes to be templatized even for services with http errors.
-	if config.avoidDefaultTemplatizationOnError {
+	if config.defaultTemplatizationConfig.SkipOnError != nil {
+		skipOnErrorConfig := config.defaultTemplatizationConfig.SkipOnError
 		statusCode, found := getHttpResponseStatusCode(attr)
 		if found {
-			// currently evaluating only 404 status code.
-			// in the future we might want to extend it to cover more cases or make it configurable.
-			if statusCode == 404 {
-				p.logger.Debug("applyTemplatizationOnPath: 404 status code, skip templatization", zap.String("path", urlPath))
-				return "", false
+			if skipOnErrorConfig.SkipForNonSuccessCodes {
+				if statusCode < 200 || statusCode >= 300 {
+					p.logger.Debug("applyTemplatizationOnPath: non-success http status code on span, skip default templatization", zap.Int("status_code", statusCode))
+					return "", false
+				}
+			}
+
+			if len(skipOnErrorConfig.StatusCodes) > 0 {
+				if slices.Contains(skipOnErrorConfig.StatusCodes, statusCode) {
+					p.logger.Debug("applyTemplatizationOnPath: http status code on span is in skip list, skip default templatization", zap.Int("status_code", statusCode))
+					return "", false
+				}
 			}
 		}
 	}
 
-	// default templatization
+	// at this point no custom rules matched, default templatization is enabled, and no skip on error was triggered.
+	// so we apply default templatization.
 	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments, p.customIds)
 	if isTemplated {
 		if hadLeadingSlash {
@@ -413,9 +433,8 @@ func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod
 		return
 	}
 
-	templatedUrl, found := p.calculateTemplatedUrlFromAttrWithRules(attr, config)
-	if !found {
-		p.logger.Debug("enhanceSpanWithRules: no url/path in attributes or publically accessible service with http error, skip", zap.String("span_name", span.Name()))
+	templatedUrl, templatizationApplied := p.calculateTemplatedUrlFromAttrWithRules(attr, config)
+	if !templatizationApplied {
 		return
 	}
 
@@ -454,5 +473,5 @@ func (p *urlTemplateProcessor) processSpanWithStaticRules(span ptrace.Span) {
 	// for static mode, we do not set publiclyAccessible flag.
 	// it is only used with extension mode.
 	// this code will be removed once we fully migrate to extension mode.
-	p.processSpanWithRules(span, workloadUrlTemplatizationConfig{parsedRules: p.templatizationRules, avoidDefaultTemplatizationOnError: false})
+	p.processSpanWithRules(span, workloadUrlTemplatizationConfig{parsedRules: p.templatizationRules})
 }

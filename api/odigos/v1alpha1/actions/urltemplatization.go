@@ -2,6 +2,7 @@ package actions
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/common/consts"
 )
 
@@ -39,25 +40,21 @@ type UrlTemplatizationRulesGroup struct {
 	TemplatizationRules []URLTemplatizationRule `json:"templatizationRules,omitempty"`
 }
 
-// Used to mark sources to avoid default templatization on error.
-// Publicly accessible services are commonly being "tested" by malicious actors
-// with irrelevant or garbage requests that can contaminate the url-templatization process
-// leading to high-cardinality of templated routes.
-// if a source is marked with this setting, and no custom templatization rule matched,
-// and the request returns with 404 status code, the default templatization will be avoided.
-//
+// URLTemplatizationDefaultTemplatizationGroup is a group of services for which default templatization will be applied.
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
-type AvoidDefaultTemplatizationOnErrorConfig struct {
-
-	// which sources to mark as avoid default templatization on error.
+type URLTemplatizationDefaultTemplatizationGroup struct {
+	// the scope of services for which this templatization config will be applied.
 	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
+
+	// configurations for default templatization.
+	// default templatization is applied on a single http span if none of the custom templatization rules matched.
+	Config actionsapi.DefaultTemplatizationConfig `json:"defaultTemplatization"`
 }
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type URLTemplatizationConfig struct {
-	AvoidDefaultTemplatizationOnError *AvoidDefaultTemplatizationOnErrorConfig `json:"avoidDefaultTemplatizationOnError,omitempty"`
 
 	// list here all the groups of rules that will be applied to the spans.
 	// each group targets a specific set of spans that share the same filters.
@@ -66,6 +63,10 @@ type URLTemplatizationConfig struct {
 	// 2. some rules for deployment foo in namespace default
 	// 3. rules without filters that will be applied to all spans.
 	TemplatizationRulesGroups []UrlTemplatizationRulesGroup `json:"templatizationRulesGroups"`
+
+	// configurations for default templatization, on groups of services.
+	// default templatization is applied on a single http span if none of the custom templatization rules matched.
+	DefaultTemplatizations []URLTemplatizationDefaultTemplatizationGroup `json:"defaultTemplatization,omitempty"`
 }
 
 func (URLTemplatizationConfig) ProcessorType() string {
