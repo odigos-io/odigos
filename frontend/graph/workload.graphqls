@@ -366,7 +366,11 @@ type K8sWorkloadPodContainer {
 
   # the status of the health of the container itself, which is not directly related to the agent and instrumentation.
   # it tracks the started, ready, and crash loop back off and present a unified status to show container health.
-  healthStatus: DesiredConditionStatus!
+  k8sHealthStatus: DesiredConditionStatus!
+
+  # the status of the health of the odigos instrumentation for the container.
+  # if the container is not instrumented by odigos, this will be null.
+  odigosHealthStatus: DesiredConditionStatus
 
   # the processes running with odigos agent in the container
   processes: [K8sWorkloadPodContainerProcess!]!
@@ -406,8 +410,11 @@ type K8sWorkloadPod {
   # this value indicates if a specific pod is running the latest revision of the workload.
   runningLatestWorkloadRevision: String
 
-  # the general health of the pod containers, as one aggregated status for all containers.
-  podHealthStatus: DesiredConditionStatus!
+  # indicates the health of the pod as reported by kubernetes fields.
+  k8sHealthStatus: DesiredConditionStatus!
+
+  # indicates the health of the odigos instrumentation for the pod.
+  odigosHealthStatus: DesiredConditionStatus
 
   # all containers that are part of the pod.
   # all containers are always included, even if the agent is not enabled for them for any reason.

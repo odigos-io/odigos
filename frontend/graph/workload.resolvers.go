@@ -154,7 +154,7 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, totalDataSent)
 	conditions = append(conditions, telemetryMetrics.TelemetryObservedStatus)
 
-	mostSevereCondition := aggregateConditionsBySeverity(conditions)
+	mostSevereCondition := status.AggregateConditionsBySeverity(conditions)
 	if mostSevereCondition == nil {
 		mostSevereCondition = &model.DesiredConditionStatus{
 			Name:       status.WorkloadOdigosHealthStatus,
@@ -442,14 +442,39 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 		return nil, err
 	}
 
+	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil || ic == nil {
+		return nil, err
+	}
+
 	podModels := make([]*model.K8sWorkloadPod, 0, len(pods))
 	for _, pod := range pods {
 		containerModels := make([]*model.K8sWorkloadPodContainer, 0, len(pod.Containers))
 
-		containersHealthConditions := make([]*model.DesiredConditionStatus, 0, len(pod.Containers))
+		containersK8sHealthConditions := make([]*model.DesiredConditionStatus, 0, len(pod.Containers))
+		containersOdigosHealthConditions := []*model.DesiredConditionStatus{}
 		for _, container := range pod.Containers {
-			healthStatus := status.CalculatePodContainerHealthStatus(&container)
-			containersHealthConditions = append(containersHealthConditions, healthStatus)
+
+			containerConfig := getContainerConfigByName(ic, container.ContainerName)
+
+			// k8s health status
+			k8sHealthStatus := status.CalculatePodContainerK8sHealthStatus(&container)
+			containersK8sHealthConditions = append(containersK8sHealthConditions, k8sHealthStatus)
+
+			// odigos health status
+			iis, err := l.GetInstrumentationInstancesForContainer(ctx, loaders.PodContainerId{
+				Namespace:     pod.PodNamespace,
+				PodName:       pod.PodName,
+				ContainerName: container.ContainerName,
+			})
+			if err != nil {
+				return nil, err
+			}
+			odigosHealthStatus := status.CalculatePodContainerHealthOdigosStatus(&container, containerConfig, iis)
+			if odigosHealthStatus != nil {
+				containersOdigosHealthConditions = append(containersOdigosHealthConditions, odigosHealthStatus)
+			}
+
 			containerModels = append(containerModels, &model.K8sWorkloadPodContainer{
 				ContainerName:                   container.ContainerName,
 				OtelDistroName:                  container.OtelDistroName,
@@ -461,33 +486,13 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 				RunningStartedTime:              container.RunningStartedTime,
 				WaitingReasonEnum:               container.WaitingReasonEnum,
 				WaitingMessage:                  container.WaitingMessage,
-				HealthStatus:                    healthStatus,
+				K8sHealthStatus:                 k8sHealthStatus,
+				OdigosHealthStatus:              odigosHealthStatus,
 			})
 		}
 
-		podHealthStatus := aggregateConditionsBySeverity(containersHealthConditions)
-		if podHealthStatus == nil {
-			// should not happen, all containers health status should be calculated.
-			reasonStr := string(status.PodContainerHealthReasonUnknown)
-			podHealthStatus = &model.DesiredConditionStatus{
-				Name:       status.PodHealthStatus,
-				Status:     model.DesiredStateProgressError,
-				ReasonEnum: &reasonStr,
-				Message:    "not able to determine health status for containers in pod",
-			}
-		}
-		if podHealthStatus.ReasonEnum != nil {
-			// set a better message for the pod health condition
-			if *podHealthStatus.ReasonEnum == string(status.PodContainerHealthReasonHealthy) {
-				podHealthStatus.Message = "all containers in pod are reported healthy in kubernetes"
-			} else if *podHealthStatus.ReasonEnum == string(status.PodContainerHealthReasonNotStarted) {
-				podHealthStatus.Message = "some containers in pod are not started yet"
-			} else if *podHealthStatus.ReasonEnum == string(status.PodContainerHealthReasonNotReady) {
-				podHealthStatus.Message = "some containers in pod are not ready yet"
-			} else if *podHealthStatus.ReasonEnum == string(status.PodContainerHealthReasonCrashLoopBackOff) {
-				podHealthStatus.Message = "some containers in pod are in crash loop back off"
-			}
-		}
+		k8sPodHealthStatus := status.CalculatePodHealthK8sStatus(&pod, containersK8sHealthConditions)
+		odigosPodHealthStatus := status.CalculatePodHealthOdigosStatus(&pod, containersOdigosHealthConditions)
 
 		podModels = append(podModels, &model.K8sWorkloadPod{
 			PodName:                        pod.PodName,
@@ -497,8 +502,9 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 			StartedPostAgentMetaHashChange: pod.StartedPostAgentMetaHashChange,
 			AgentInjectedStatus:            pod.AgentInjectedStatus,
 			// TODO: RunningLatestWorkloadRevision
-			Containers:      containerModels,
-			PodHealthStatus: podHealthStatus,
+			Containers:         containerModels,
+			K8sHealthStatus:    k8sPodHealthStatus,
+			OdigosHealthStatus: odigosPodHealthStatus,
 		})
 	}
 	return podModels, nil
@@ -535,14 +541,14 @@ func (r *k8sWorkloadResolver) PodsHealthStatus(ctx context.Context, obj *model.K
 	containersHealthConditions := make([]*model.DesiredConditionStatus, 0, len(pods))
 	for _, pod := range pods {
 		for _, container := range pod.Containers {
-			healthStatus := status.CalculatePodContainerHealthStatus(&container)
+			healthStatus := status.CalculatePodContainerK8sHealthStatus(&container)
 			containersHealthConditions = append(containersHealthConditions, healthStatus)
 		}
 	}
 
-	aggregatePodHealthStatus := aggregateConditionsBySeverity(containersHealthConditions)
+	aggregatePodHealthStatus := status.AggregateConditionsBySeverity(containersHealthConditions)
 	if aggregatePodHealthStatus == nil {
-		reasonStr := string(status.PodContainerHealthReasonUnknown)
+		reasonStr := string(status.PodContainerK8sHealthReasonUnknown)
 		return &model.DesiredConditionStatus{
 			Name:       status.PodHealthStatus,
 			Status:     model.DesiredStateProgressError,
@@ -551,13 +557,13 @@ func (r *k8sWorkloadResolver) PodsHealthStatus(ctx context.Context, obj *model.K
 		}, nil
 	}
 	if aggregatePodHealthStatus.ReasonEnum != nil {
-		if *aggregatePodHealthStatus.ReasonEnum == string(status.PodContainerHealthReasonHealthy) {
+		if *aggregatePodHealthStatus.ReasonEnum == string(status.PodContainerK8sHealthReasonHealthy) {
 			aggregatePodHealthStatus.Message = "all containers in all pods are reported healthy in kubernetes"
-		} else if *aggregatePodHealthStatus.ReasonEnum == string(status.PodContainerHealthReasonNotStarted) {
+		} else if *aggregatePodHealthStatus.ReasonEnum == string(status.PodContainerK8sHealthReasonNotStarted) {
 			aggregatePodHealthStatus.Message = "some containers in this workload's pods are not started yet"
-		} else if *aggregatePodHealthStatus.ReasonEnum == string(status.PodContainerHealthReasonNotReady) {
+		} else if *aggregatePodHealthStatus.ReasonEnum == string(status.PodContainerK8sHealthReasonNotReady) {
 			aggregatePodHealthStatus.Message = "some containers in this workload's pods are not ready yet"
-		} else if *aggregatePodHealthStatus.ReasonEnum == string(status.PodContainerHealthReasonCrashLoopBackOff) {
+		} else if *aggregatePodHealthStatus.ReasonEnum == string(status.PodContainerK8sHealthReasonCrashLoopBackOff) {
 			aggregatePodHealthStatus.Message = "some containers in this workload's pods are in crash loop back off"
 		}
 	}
