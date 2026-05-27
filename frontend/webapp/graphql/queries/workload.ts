@@ -112,6 +112,8 @@ export const GET_WORKLOADS_BY_IDS = gql`
         agentEnabled {
           agentEnabled
           agentEnabledStatus {
+            status
+            reasonEnum
             message
           }
           otelDistroName
