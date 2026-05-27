@@ -790,8 +790,9 @@ type ComplexityRoot struct {
 		AgentInjected                  func(childComplexity int) int
 		AgentInjectedStatus            func(childComplexity int) int
 		Containers                     func(childComplexity int) int
+		K8sHealthStatus                func(childComplexity int) int
 		NodeName                       func(childComplexity int) int
-		PodHealthStatus                func(childComplexity int) int
+		OdigosHealthStatus             func(childComplexity int) int
 		PodName                        func(childComplexity int) int
 		RunningLatestWorkloadRevision  func(childComplexity int) int
 		StartTime                      func(childComplexity int) int
@@ -800,8 +801,9 @@ type ComplexityRoot struct {
 
 	K8sWorkloadPodContainer struct {
 		ContainerName                   func(childComplexity int) int
-		HealthStatus                    func(childComplexity int) int
 		IsCrashLoop                     func(childComplexity int) int
+		K8sHealthStatus                 func(childComplexity int) int
+		OdigosHealthStatus              func(childComplexity int) int
 		OdigosInstrumentationDeviceName func(childComplexity int) int
 		OtelDistroName                  func(childComplexity int) int
 		Processes                       func(childComplexity int) int
@@ -4829,6 +4831,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadPod.Containers(childComplexity), true
 
+	case "K8sWorkloadPod.k8sHealthStatus":
+		if e.complexity.K8sWorkloadPod.K8sHealthStatus == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPod.K8sHealthStatus(childComplexity), true
+
 	case "K8sWorkloadPod.nodeName":
 		if e.complexity.K8sWorkloadPod.NodeName == nil {
 			break
@@ -4836,12 +4845,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadPod.NodeName(childComplexity), true
 
-	case "K8sWorkloadPod.podHealthStatus":
-		if e.complexity.K8sWorkloadPod.PodHealthStatus == nil {
+	case "K8sWorkloadPod.odigosHealthStatus":
+		if e.complexity.K8sWorkloadPod.OdigosHealthStatus == nil {
 			break
 		}
 
-		return e.complexity.K8sWorkloadPod.PodHealthStatus(childComplexity), true
+		return e.complexity.K8sWorkloadPod.OdigosHealthStatus(childComplexity), true
 
 	case "K8sWorkloadPod.podName":
 		if e.complexity.K8sWorkloadPod.PodName == nil {
@@ -4878,19 +4887,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadPodContainer.ContainerName(childComplexity), true
 
-	case "K8sWorkloadPodContainer.healthStatus":
-		if e.complexity.K8sWorkloadPodContainer.HealthStatus == nil {
-			break
-		}
-
-		return e.complexity.K8sWorkloadPodContainer.HealthStatus(childComplexity), true
-
 	case "K8sWorkloadPodContainer.isCrashLoop":
 		if e.complexity.K8sWorkloadPodContainer.IsCrashLoop == nil {
 			break
 		}
 
 		return e.complexity.K8sWorkloadPodContainer.IsCrashLoop(childComplexity), true
+
+	case "K8sWorkloadPodContainer.k8sHealthStatus":
+		if e.complexity.K8sWorkloadPodContainer.K8sHealthStatus == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainer.K8sHealthStatus(childComplexity), true
+
+	case "K8sWorkloadPodContainer.odigosHealthStatus":
+		if e.complexity.K8sWorkloadPodContainer.OdigosHealthStatus == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainer.OdigosHealthStatus(childComplexity), true
 
 	case "K8sWorkloadPodContainer.odigosInstrumentationDeviceName":
 		if e.complexity.K8sWorkloadPodContainer.OdigosInstrumentationDeviceName == nil {
@@ -28694,8 +28710,10 @@ func (ec *executionContext) fieldContext_K8sWorkload_pods(_ context.Context, fie
 				return ec.fieldContext_K8sWorkloadPod_agentInjectedStatus(ctx, field)
 			case "runningLatestWorkloadRevision":
 				return ec.fieldContext_K8sWorkloadPod_runningLatestWorkloadRevision(ctx, field)
-			case "podHealthStatus":
-				return ec.fieldContext_K8sWorkloadPod_podHealthStatus(ctx, field)
+			case "k8sHealthStatus":
+				return ec.fieldContext_K8sWorkloadPod_k8sHealthStatus(ctx, field)
+			case "odigosHealthStatus":
+				return ec.fieldContext_K8sWorkloadPod_odigosHealthStatus(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sWorkloadPod_containers(ctx, field)
 			}
@@ -31493,8 +31511,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPod_runningLatestWorkloadRev
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sWorkloadPod_podHealthStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPod) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadPod_podHealthStatus(ctx, field)
+func (ec *executionContext) _K8sWorkloadPod_k8sHealthStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPod_k8sHealthStatus(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -31507,7 +31525,7 @@ func (ec *executionContext) _K8sWorkloadPod_podHealthStatus(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PodHealthStatus, nil
+		return obj.K8sHealthStatus, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31524,7 +31542,58 @@ func (ec *executionContext) _K8sWorkloadPod_podHealthStatus(ctx context.Context,
 	return ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadPod_podHealthStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadPod_k8sHealthStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPod_odigosHealthStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPod_odigosHealthStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OdigosHealthStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPod_odigosHealthStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadPod",
 		Field:      field,
@@ -31606,8 +31675,10 @@ func (ec *executionContext) fieldContext_K8sWorkloadPod_containers(_ context.Con
 				return ec.fieldContext_K8sWorkloadPodContainer_waitingReasonEnum(ctx, field)
 			case "waitingMessage":
 				return ec.fieldContext_K8sWorkloadPodContainer_waitingMessage(ctx, field)
-			case "healthStatus":
-				return ec.fieldContext_K8sWorkloadPodContainer_healthStatus(ctx, field)
+			case "k8sHealthStatus":
+				return ec.fieldContext_K8sWorkloadPodContainer_k8sHealthStatus(ctx, field)
+			case "odigosHealthStatus":
+				return ec.fieldContext_K8sWorkloadPodContainer_odigosHealthStatus(ctx, field)
 			case "processes":
 				return ec.fieldContext_K8sWorkloadPodContainer_processes(ctx, field)
 			}
@@ -32030,8 +32101,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_waitingMessage(
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sWorkloadPodContainer_healthStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainer) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadPodContainer_healthStatus(ctx, field)
+func (ec *executionContext) _K8sWorkloadPodContainer_k8sHealthStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainer_k8sHealthStatus(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -32044,7 +32115,7 @@ func (ec *executionContext) _K8sWorkloadPodContainer_healthStatus(ctx context.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.HealthStatus, nil
+		return obj.K8sHealthStatus, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32061,7 +32132,58 @@ func (ec *executionContext) _K8sWorkloadPodContainer_healthStatus(ctx context.Co
 	return ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_healthStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_k8sHealthStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodContainer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodContainer_odigosHealthStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainer_odigosHealthStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OdigosHealthStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_odigosHealthStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadPodContainer",
 		Field:      field,
@@ -59326,11 +59448,13 @@ func (ec *executionContext) _K8sWorkloadPod(ctx context.Context, sel ast.Selecti
 			}
 		case "runningLatestWorkloadRevision":
 			out.Values[i] = ec._K8sWorkloadPod_runningLatestWorkloadRevision(ctx, field, obj)
-		case "podHealthStatus":
-			out.Values[i] = ec._K8sWorkloadPod_podHealthStatus(ctx, field, obj)
+		case "k8sHealthStatus":
+			out.Values[i] = ec._K8sWorkloadPod_k8sHealthStatus(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "odigosHealthStatus":
+			out.Values[i] = ec._K8sWorkloadPod_odigosHealthStatus(ctx, field, obj)
 		case "containers":
 			out.Values[i] = ec._K8sWorkloadPod_containers(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -59393,11 +59517,13 @@ func (ec *executionContext) _K8sWorkloadPodContainer(ctx context.Context, sel as
 			out.Values[i] = ec._K8sWorkloadPodContainer_waitingReasonEnum(ctx, field, obj)
 		case "waitingMessage":
 			out.Values[i] = ec._K8sWorkloadPodContainer_waitingMessage(ctx, field, obj)
-		case "healthStatus":
-			out.Values[i] = ec._K8sWorkloadPodContainer_healthStatus(ctx, field, obj)
+		case "k8sHealthStatus":
+			out.Values[i] = ec._K8sWorkloadPodContainer_k8sHealthStatus(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "odigosHealthStatus":
+			out.Values[i] = ec._K8sWorkloadPodContainer_odigosHealthStatus(ctx, field, obj)
 		case "processes":
 			field := field
 

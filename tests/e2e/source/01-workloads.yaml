@@ -46,3 +46,12 @@ metadata:
   generation: 2
   name: geolocation
   namespace: default
+---
+# Shipping is instrumented with OBI (eBPF), which does not require a pod restart,
+# so its generation is expected to remain at 1.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 1
+  name: shipping
+  namespace: default

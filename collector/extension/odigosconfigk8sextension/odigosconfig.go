@@ -57,12 +57,15 @@ func (o *OdigosWorkloadConfig) GetFromResource(res pcommon.Resource) (*commonapi
 	return o.cache.Get(key)
 }
 
-func (o *OdigosWorkloadConfig) HasCachedWorkloadContainerConfig(res pcommon.Resource) bool {
+// IsActiveSource reports whether the workload identified on the resource (namespace/kind/name)
+// is an active Odigos Source — i.e. the informer currently holds an InstrumentationConfig
+// for it. See cache.isSourceWorkloadPrefix for the contract.
+func (o *OdigosWorkloadConfig) IsActiveSource(res pcommon.Resource) bool {
 	prefix, err := workloadContainerKeyFromResourceAttributes(res.Attributes())
 	if err != nil {
 		return false
 	}
-	return o.cache.hasContainersForWorkloadPrefix(prefix)
+	return o.cache.isSourceWorkloadPrefix(prefix)
 }
 
 // GetWorkloadCacheKey returns the cache key for the container identified by the given resource.

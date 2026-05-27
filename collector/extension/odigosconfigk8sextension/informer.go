@@ -147,6 +147,8 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}
 		return
 	}
 	o.syncWorkloadToDesiredState(workloadKey, nil, nil)
+	workloadIndexKey := WorkloadKeyString(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name) + "/"
+	o.cache.removeWorkloadEntry(workloadIndexKey)
 }
 
 // containerEntry is a single container's cache key and config for the desired state.

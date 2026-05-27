@@ -12,9 +12,9 @@ import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
     - `messaging.message.payload`
     - `http.request.payload`
     - `http.response.payload`
-  - If the `target` attribute already exists on the span, it will **not** be overridden.
-  - Each extraction must specify either `source` + `dataFormat`, **or** a custom `regex` — not both. When using `regex`, the pattern must contain exactly one capture group; the value of the first capture group is written to `target`.
-  - Each `target` must be unique within a single action.
+  - If the `targetAttributeName` attribute already exists on the span, it will **not** be overridden.
+  - Each extraction must specify either `lookupKey` + `dataFormat`, **or** a custom `regex` — not both. When using `regex`, the pattern must contain exactly one capture group; the value of the first capture group is written to the attribute named `targetAttributeName`.
+  - Each `targetAttributeName` must be unique within a single action.
 </Warning>
 
 ## Use Cases
@@ -67,25 +67,26 @@ The ExtractAttribute action is configured using the `odigos.io/v1alpha1.Action` 
         **extractions** `object[]` : An ordered array of extraction rules to apply to each span. Must contain at least one entry.
         - This field is *required*
         <AccordionGroup>
-          <Accordion title="target *">
-            **target** `string` : The attribute key the extracted value will be written to on the span.
+          <Accordion title="targetAttributeName *">
+            **targetAttributeName** `string` : The name of the new span attribute the extracted value will be written to.
             - This field is *required*
             - Must be unique across all extractions in the same action.
           </Accordion>
-          <Accordion title="source">
-            **source** `string` : The key to look up inside the scanned attributes (resolved via `dataFormat` into a regex).
+          <Accordion title="lookupKey">
+            **lookupKey** `string` : The literal key to look up inside the scanned attributes (resolved via `dataFormat` into a regex).
             - This field is *required* when `dataFormat` is set, and must be omitted when `regex` is set.
           </Accordion>
           <Accordion title="dataFormat">
-            **dataFormat** `string` : A pre-set format that defines how `source` is matched inside the scanned attributes.
-            - This field is *required* when `source` is set, and must be omitted when `regex` is set.
+            **dataFormat** `string` : A pre-set format that defines how `lookupKey` is matched inside the scanned attributes.
+            - This field is *required* when `lookupKey` is set, and must be omitted when `regex` is set.
             - Supported values:
-              - `json` — matches `key: value` / `key = value` pairs in JSON envelopes **and** in SQL statements (e.g. `WHERE order_id = '42'`).
-              - `url` — matches `key/value` segments inside URL paths (e.g. `/projects/test-project`), stopping at the next `/`, whitespace, `?`, `&`, `#`, or quote.
+              - `json` — matches `key: value` pairs in JSON envelopes (e.g. `{"order_id": "42"}` or `order_id: 42`).
+              - `sql` — matches `key = value` pairs in SQL statements (e.g. `WHERE order_id = '42'` or `order_id=42`).
+              - `resource_path` — matches `key/value` segments inside URL paths (e.g. `/projects/test-project`), stopping at the next `/`, whitespace, `?`, `&`, `#`, or quote.
           </Accordion>
           <Accordion title="regex">
-            **regex** `string` : A custom regular expression with a single capture group whose value is written to `target`.
-            - This field is *required* when `source` and `dataFormat` are not set.
+            **regex** `string` : A custom regular expression with a single capture group whose value is written to the attribute named `targetAttributeName`.
+            - This field is *required* when `lookupKey` and `dataFormat` are not set.
             - The first capture group of the first match is used.
           </Accordion>
         </AccordionGroup>
@@ -96,7 +97,7 @@ The ExtractAttribute action is configured using the `odigos.io/v1alpha1.Action` 
 
 <Tip>
   Each extraction rule must use **exactly one** of:
-  - `source` + `dataFormat` — for the built-in JSON/SQL/URL matchers, or
+  - `lookupKey` + `dataFormat` — for the built-in JSON/SQL/URL matchers, or
   - `regex` — for a custom pattern with a single capture group.
 </Tip>
 
@@ -110,7 +111,7 @@ The following example demonstrates the four extraction variations against a sing
 
 After the action runs, the span will be enriched with the following extracted attributes:
 
-| Target attribute               | Extracted value  |
+| New attribute name             | Extracted value  |
 | ------------------------------ | ---------------- |
 | `extracted.json.task_id`       | `task-7f3a9b2c`  |
 | `extracted.sql.invoice_id`     | `42`             |
@@ -136,29 +137,29 @@ After the action runs, the span will be enriched with the following extracted at
       extractAttribute:
         extractions:
           # JSON variation - matches a JSON envelope inside messaging.message.payload
-          - source: task_id
+          - lookupKey: task_id
             dataFormat: json
-            target: extracted.json.task_id
+            targetAttributeName: extracted.json.task_id
 
-          # SQL variation - the json dataFormat also handles SQL `key = 'value'` syntax
-          - source: invoice_id
-            dataFormat: json
-            target: extracted.sql.invoice_id
+          # SQL variation - matches `key = 'value'` syntax in SQL statements
+          - lookupKey: invoice_id
+            dataFormat: sql
+            targetAttributeName: extracted.sql.invoice_id
 
           # URL variation - matches `key/value` segments inside http.request.payload
-          - source: tenants
-            dataFormat: url
-            target: extracted.url.tenant
-          - source: regions
-            dataFormat: url
-            target: extracted.url.region
-          - source: jobs
-            dataFormat: url
-            target: extracted.url.job
+          - lookupKey: tenants
+            dataFormat: resource_path
+            targetAttributeName: extracted.url.tenant
+          - lookupKey: regions
+            dataFormat: resource_path
+            targetAttributeName: extracted.url.region
+          - lookupKey: jobs
+            dataFormat: resource_path
+            targetAttributeName: extracted.url.job
 
-          # Custom regex variation - one capture group, value goes to target
+          # Custom regex variation - one capture group, value goes to the new attribute
           - regex: "req-([a-z0-9]+)"
-            target: extracted.regex.request_id
+            targetAttributeName: extracted.regex.request_id
     ```
   </Step>
   <Step>

@@ -731,6 +731,14 @@
                       "vmagent/setup/configuration/instrumentation-rules/overview",
                       "vmagent/setup/configuration/instrumentation-rules/custom-instrumentation"
                     ]
+                  },
+                  {
+                    "group": "Continuous Profiling",
+                    "pages": [
+                      "vmagent/instrumentations/profiling/overview",
+                      "vmagent/instrumentations/profiling/getting-started",
+                      "vmagent/instrumentations/profiling/export-pyroscope"
+                    ]
                   }
                 ]
               }

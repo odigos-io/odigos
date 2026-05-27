@@ -127,8 +127,8 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-      (env[?name == 'ODIGOS_OPAMP_SERVER_HOST']):
-        - (($values.k8sMinorVersion < `26` && value == '$(NODE_IP):4320') || value == 'odiglet-local.odigos-test:4320'): true
+      (env[?name == 'ODIGOS_OPAMP_UNIX_SOCKET']):
+        - value: /var/odigos/exchange/exchange.sock
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
         - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
       (env[?name == 'LD_PRELOAD']):
@@ -376,7 +376,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: frontend
       language: java
-      runtimeVersion: 17.0.18+8
+      runtimeVersion: 17.0.19+10
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -393,7 +393,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: inventory
       language: python
-      runtimeVersion: 3.11.14
+      runtimeVersion: 3.11.15
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig

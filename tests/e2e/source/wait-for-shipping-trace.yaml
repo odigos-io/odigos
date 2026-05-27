@@ -1,0 +1,15 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: |
+  Verifies that the C++ shipping service from simple-demo v0.1.36 emits server
+  spans once it is instrumented via the OBI container override
+  (opentelemetry-ebpf-instrumentation). The frontend's /buy traffic fans out
+  to shipping (via SHIPPING_SERVICE_HOST), so OBI should produce server spans
+  reported under the configured service name.
+query: |
+  length([?(
+    span.serviceName == 'shipping' &&
+    span.kind == 'server'
+  )]) > `0`
+expected:
+  minimum: 1

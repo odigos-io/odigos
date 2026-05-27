@@ -176,13 +176,7 @@ odigos pro update-offsets --from-file /path/to/local/offsets.json
 			os.Exit(1)
 		}
 
-		fmt.Println("Updated Go Offsets, restarting Odiglet to use the new offsets.")
-		err = kube.RestartOdiglet(ctx, client, ns)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Unable to restart Odiglet: %s\n", err)
-			os.Exit(1)
-		}
-		fmt.Println("Odiglet restarted successfully.")
+		fmt.Println("Updated Go Offsets.")
 	},
 }
 

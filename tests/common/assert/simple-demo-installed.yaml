@@ -109,3 +109,19 @@ status:
   readyReplicas: 1
   availableReplicas: 1
   updatedReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  replicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  updatedReplicas: 1
