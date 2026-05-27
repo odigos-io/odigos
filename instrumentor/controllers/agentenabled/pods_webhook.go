@@ -334,9 +334,13 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	if config.MountMethod != nil {
 		mountMethod = *config.MountMethod
 	}
+	var opAmpTransportsSupported []commonopamp.OpAmpTransport
+	if distroMetadata.RuntimeAgent != nil {
+		opAmpTransportsSupported = distroMetadata.RuntimeAgent.OpAmpTransportsSupported
+	}
 	switch commonopamp.ResolveTransport(
 		distroMetadata.EnvironmentVariables.OpAmpClientEnvironments,
-		distroMetadata.OpAmpTransportsSupported,
+		opAmpTransportsSupported,
 		mountMethod,
 	) {
 	case commonopamp.OpAmpTransportUnix:
@@ -358,15 +362,19 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	// agent span metrics configuration
 	agentSpanMetricsEnabled := containerConfig.Metrics != nil && containerConfig.Metrics.SpanMetrics != nil
 	supportsAgentSpanMetrics := distroMetadata.AgentMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics.Supported
-	if agentSpanMetricsEnabled && supportsAgentSpanMetrics && distroMetadata.ConfigAsEnvVars {
-		// serialize span metrics config to json and inject as env var
-		spanMetricsConfigJson, err := json.Marshal(containerConfig.Metrics.SpanMetrics)
-		if err != nil {
-			return false, nil, fmt.Errorf("failed to marshal span metrics config: %w", err)
-		}
-		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_SPAN_METRICS_CONFIG", string(spanMetricsConfigJson))
+	if agentSpanMetricsEnabled && supportsAgentSpanMetrics {
+		// The metrics endpoint must be injected as an env var even when the rest of the config
+		// is delivered via unix socket, because the agent needs it to export the metrics.
 		otlpHttpMetricsEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)") + "/v1/metrics"
-		podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_EXPORTER_OTLP_METRICS_ENDPOINT", otlpHttpMetricsEndpoint)
+		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_EXPORTER_OTLP_METRICS_ENDPOINT", otlpHttpMetricsEndpoint)
+		if distroMetadata.ConfigAsEnvVars {
+			// serialize span metrics config to json and inject as env var
+			spanMetricsConfigJson, err := json.Marshal(containerConfig.Metrics.SpanMetrics)
+			if err != nil {
+				return false, nil, fmt.Errorf("failed to marshal span metrics config: %w", err)
+			}
+			existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_SPAN_METRICS_CONFIG", string(spanMetricsConfigJson))
+		}
 	}
 
 	// URL Templatization configuration

@@ -39,10 +39,10 @@ type extractAttributeRawConfig struct {
 }
 
 type extractAttributeRawRule struct {
-	Target     string `json:"target"`
-	Source     string `json:"source,omitempty"`
-	DataFormat string `json:"data_format,omitempty"`
-	Regex      string `json:"regex,omitempty"`
+	TargetAttributeName string `json:"target_attribute_name"`
+	LookupKey        string `json:"lookup_key,omitempty"`
+	DataFormat       string `json:"data_format,omitempty"`
+	Regex            string `json:"regex,omitempty"`
 }
 
 var _ = Describe("ExtractAttribute Controller", func() {
@@ -56,8 +56,8 @@ var _ = Describe("ExtractAttribute Controller", func() {
 	})
 
 	Context("When creating an Action with ExtractAttribute", func() {
-		It("Should create a Processor with the correct type and snake_case config (source+dataFormat)", func() {
-			By("Creating an Action with ExtractAttribute using source+dataFormat")
+		It("Should create a Processor with the correct type and snake_case config (lookupKey+dataFormat)", func() {
+			By("Creating an Action with ExtractAttribute using lookupKey+dataFormat")
 			action := &odigosv1.Action{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      ActionName,
@@ -71,9 +71,9 @@ var _ = Describe("ExtractAttribute Controller", func() {
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
 						Extractions: []odigosactions.Extraction{
 							{
-								Target:     "study.id",
-								Source:     "study_id",
-								DataFormat: odigosactions.FormatJSON,
+								TargetAttributeName: "study.id",
+								LookupKey:        "study_id",
+								DataFormat:       odigosactions.FormatJSON,
 							},
 						},
 					},
@@ -105,8 +105,8 @@ var _ = Describe("ExtractAttribute Controller", func() {
 			var rendered extractAttributeRawConfig
 			Expect(json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &rendered)).Should(Succeed())
 			Expect(rendered.Extractions).Should(HaveLen(1))
-			Expect(rendered.Extractions[0].Target).Should(Equal("study.id"))
-			Expect(rendered.Extractions[0].Source).Should(Equal("study_id"))
+			Expect(rendered.Extractions[0].TargetAttributeName).Should(Equal("study.id"))
+			Expect(rendered.Extractions[0].LookupKey).Should(Equal("study_id"))
 			Expect(rendered.Extractions[0].DataFormat).Should(Equal("json"))
 			Expect(rendered.Extractions[0].Regex).Should(BeEmpty())
 
@@ -130,8 +130,8 @@ var _ = Describe("ExtractAttribute Controller", func() {
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
 						Extractions: []odigosactions.Extraction{
 							{
-								Target: "request.id",
-								Regex:  `request_id=([A-Za-z0-9-]+)`,
+								TargetAttributeName: "request.id",
+								Regex:            `request_id=([A-Za-z0-9-]+)`,
 							},
 						},
 					},
@@ -150,13 +150,13 @@ var _ = Describe("ExtractAttribute Controller", func() {
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
-			By("Checking that regex-only extractions omit source and data_format")
+			By("Checking that regex-only extractions omit lookup_key and data_format")
 			var rendered extractAttributeRawConfig
 			Expect(json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &rendered)).Should(Succeed())
 			Expect(rendered.Extractions).Should(HaveLen(1))
-			Expect(rendered.Extractions[0].Target).Should(Equal("request.id"))
+			Expect(rendered.Extractions[0].TargetAttributeName).Should(Equal("request.id"))
 			Expect(rendered.Extractions[0].Regex).Should(Equal(`request_id=([A-Za-z0-9-]+)`))
-			Expect(rendered.Extractions[0].Source).Should(BeEmpty())
+			Expect(rendered.Extractions[0].LookupKey).Should(BeEmpty())
 			Expect(rendered.Extractions[0].DataFormat).Should(BeEmpty())
 		})
 
@@ -173,18 +173,18 @@ var _ = Describe("ExtractAttribute Controller", func() {
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
 						Extractions: []odigosactions.Extraction{
 							{
-								Target:     "extracted_study.id",
-								Source:     "studies",
-								DataFormat: odigosactions.FormatURL,
+								TargetAttributeName: "extracted_study.id",
+								LookupKey:        "studies",
+								DataFormat:       odigosactions.FormatResourcePath,
 							},
 							{
-								Target:     "extracted_project.id",
-								Source:     "projects",
-								DataFormat: odigosactions.FormatURL,
+								TargetAttributeName: "extracted_project.id",
+								LookupKey:        "projects",
+								DataFormat:       odigosactions.FormatResourcePath,
 							},
 							{
-								Target: "trace.id",
-								Regex:  `traceId=([0-9a-f]+)`,
+								TargetAttributeName: "trace.id",
+								Regex:            `traceId=([0-9a-f]+)`,
 							},
 						},
 					},
@@ -206,17 +206,17 @@ var _ = Describe("ExtractAttribute Controller", func() {
 			Expect(json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &rendered)).Should(Succeed())
 			Expect(rendered.Extractions).Should(HaveLen(3))
 
-			Expect(rendered.Extractions[0].Target).Should(Equal("extracted_study.id"))
-			Expect(rendered.Extractions[0].Source).Should(Equal("studies"))
-			Expect(rendered.Extractions[0].DataFormat).Should(Equal("url"))
+			Expect(rendered.Extractions[0].TargetAttributeName).Should(Equal("extracted_study.id"))
+			Expect(rendered.Extractions[0].LookupKey).Should(Equal("studies"))
+			Expect(rendered.Extractions[0].DataFormat).Should(Equal("resource_path"))
 
-			Expect(rendered.Extractions[1].Target).Should(Equal("extracted_project.id"))
-			Expect(rendered.Extractions[1].Source).Should(Equal("projects"))
-			Expect(rendered.Extractions[1].DataFormat).Should(Equal("url"))
+			Expect(rendered.Extractions[1].TargetAttributeName).Should(Equal("extracted_project.id"))
+			Expect(rendered.Extractions[1].LookupKey).Should(Equal("projects"))
+			Expect(rendered.Extractions[1].DataFormat).Should(Equal("resource_path"))
 
-			Expect(rendered.Extractions[2].Target).Should(Equal("trace.id"))
+			Expect(rendered.Extractions[2].TargetAttributeName).Should(Equal("trace.id"))
 			Expect(rendered.Extractions[2].Regex).Should(Equal(`traceId=([0-9a-f]+)`))
-			Expect(rendered.Extractions[2].Source).Should(BeEmpty())
+			Expect(rendered.Extractions[2].LookupKey).Should(BeEmpty())
 			Expect(rendered.Extractions[2].DataFormat).Should(BeEmpty())
 		})
 
@@ -237,9 +237,9 @@ var _ = Describe("ExtractAttribute Controller", func() {
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
 						Extractions: []odigosactions.Extraction{
 							{
-								Target:     "user.id",
-								Source:     "user_id",
-								DataFormat: odigosactions.FormatJSON,
+								TargetAttributeName: "user.id",
+								LookupKey:        "user_id",
+								DataFormat:       odigosactions.FormatJSON,
 							},
 						},
 					},
@@ -266,23 +266,23 @@ var _ = Describe("ExtractAttribute Controller", func() {
 	})
 
 	Context("When the ExtractAttribute config is invalid", func() {
-		It("Should not create a Processor when source and regex are both set", func() {
-			By("Creating an Action with both source and regex set on an extraction")
+		It("Should not create a Processor when lookupKey and regex are both set", func() {
+			By("Creating an Action with both lookupKey and regex set on an extraction")
 			action := &odigosv1.Action{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      ActionName + "-invalid-both",
 					Namespace: ActionNamespace,
 				},
 				Spec: odigosv1.ActionSpec{
-					ActionName: "invalid - both source and regex",
+					ActionName: "invalid - both lookupKey and regex",
 					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
 						Extractions: []odigosactions.Extraction{
 							{
-								Target:     "x",
-								Source:     "user_id",
-								DataFormat: odigosactions.FormatJSON,
-								Regex:      `user_id=(\d+)`,
+								TargetAttributeName: "x",
+								LookupKey:        "user_id",
+								DataFormat:       odigosactions.FormatJSON,
+								Regex:            `user_id=(\d+)`,
 							},
 						},
 					},
@@ -302,8 +302,8 @@ var _ = Describe("ExtractAttribute Controller", func() {
 			}, timeout, interval).Should(BeTrue())
 		})
 
-		It("Should not create a Processor when source is set without dataFormat", func() {
-			By("Creating an Action with source but no dataFormat")
+		It("Should not create a Processor when lookupKey is set without dataFormat", func() {
+			By("Creating an Action with lookupKey but no dataFormat")
 			action := &odigosv1.Action{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      ActionName + "-invalid-format",
@@ -315,8 +315,8 @@ var _ = Describe("ExtractAttribute Controller", func() {
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
 						Extractions: []odigosactions.Extraction{
 							{
-								Target: "x",
-								Source: "user_id",
+								TargetAttributeName: "x",
+								LookupKey:        "user_id",
 							},
 						},
 					},

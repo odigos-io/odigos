@@ -101,6 +101,11 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	if obj.WorkloadOdigosHealthStatus != nil {
 		return obj.WorkloadOdigosHealthStatus, nil
 	}
+	if obj != nil && obj.ID != nil {
+		if override := status.StaticPodEnterpriseFeatureHealthStatus(obj.ID.Kind, services.GetTier(ctx)); override != nil {
+			return override, nil
+		}
+	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
 	if err != nil {
@@ -783,9 +788,14 @@ func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFil
 	workloadIds := l.GetWorkloadIds()
 	results := make([]*model.K8sWorkload, 0, len(workloadIds))
 
+	// Resolved once per request and threaded through populateWorkloadFields so
+	// tier-gated checks (e.g. static-pod enterprise gating) don't re-fetch
+	// the deployment ConfigMap per workload in large clusters.
+	tier := services.GetTier(ctx)
+
 	for _, id := range workloadIds {
 		w := &model.K8sWorkload{ID: &id}
-		r.populateWorkloadFields(ctx, l, w)
+		r.populateWorkloadFields(ctx, l, w, tier)
 		results = append(results, w)
 	}
 

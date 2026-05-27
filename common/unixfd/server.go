@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"golang.org/x/sys/unix"
@@ -12,9 +13,10 @@ import (
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
-// Server serves eBPF map file descriptors to clients over a Unix socket.
-// It acts as a bridge between odiglet (which creates eBPF maps) and data collection clients
-// (which need access to those maps for reading telemetry data).
+// Server serves eBPF map file descriptors and attribute streams to clients over a Unix socket.
+// It bridges odiglet / vm-agent (which create eBPF maps and resolve workload attributes)
+// to the collector, which needs the map FDs to read telemetry and the attribute streams
+// to enrich resources with workload identity (service.name, etc.).
 type Server struct {
 	SocketPath         string
 	Logger             logr.Logger
@@ -25,6 +27,10 @@ type Server struct {
 	// LogsAttrSubscribe returns attribute event lines and a snapshot of current attrs.
 	// When non-nil, the logs connection stays open after FD exchange to stream events.
 	LogsAttrSubscribe func() (updates <-chan string, snapshot []string)
+
+	// ProfilesAttrSubscribe streams PID→resource attribute lines for continuous profiling.
+	// Used by the VM agent; connection stays open after RespOK (no FD exchange).
+	ProfilesAttrSubscribe func() (updates <-chan string, snapshot []string)
 }
 
 // Run starts the Unix domain socket server, which serves eBPF map file descriptors to connecting clients.
@@ -70,20 +76,20 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 }
 
-// handleRequest processes a single client request
+// handleRequest reads one command from the client and dispatches it. Clients send the request
+// in a single send (e.g. "GET_PROF_ATTR"), with or without a trailing newline, then wait for a
+// response — so a single conn.Read is sufficient and avoids any line-based blocking.
 func (s *Server) handleRequest(ctx context.Context, conn *net.UnixConn) {
 	logger := commonlogger.WrapLogr(s.Logger).WithName("unixfd")
 
-	// Read the request
-	buf := make([]byte, 16)
+	buf := make([]byte, 64)
 	n, err := conn.Read(buf)
 	if err != nil {
 		_ = conn.Close()
 		logger.Error(err, "failed to read request")
 		return
 	}
-
-	request := string(buf[:n])
+	request := strings.TrimSpace(string(buf[:n]))
 
 	switch request {
 	case ReqGetFD, ReqGetTracesFD:
@@ -130,6 +136,9 @@ func (s *Server) handleRequest(ctx context.Context, conn *net.UnixConn) {
 	case ReqGetLogsFD:
 		s.handleLogsRequest(ctx, conn)
 
+	case ReqGetProfilesAttr:
+		s.handleProfilesAttrRequest(ctx, conn)
+
 	default:
 		_ = conn.Close()
 		logger.Info("unknown request", "request", request)
@@ -167,11 +176,39 @@ func (s *Server) handleLogsRequest(ctx context.Context, conn *net.UnixConn) {
 		return
 	}
 
-	updates, snapshot := s.LogsAttrSubscribe()
+	streamAttrEvents(ctx, conn, logger, s.LogsAttrSubscribe, "logs attr")
+}
+
+// handleProfilesAttrRequest acknowledges the client and streams profile resource attribute events.
+func (s *Server) handleProfilesAttrRequest(ctx context.Context, conn *net.UnixConn) {
+	defer func() { _ = conn.Close() }()
+	logger := commonlogger.WrapLogr(s.Logger).WithName("unixfd")
+
+	if s.ProfilesAttrSubscribe == nil {
+		logger.Error(fmt.Errorf("profiles attr subscribe not configured"), "no profiles attr subscribe")
+		return
+	}
+
+	if _, err := conn.Write([]byte(RespOK + "\n")); err != nil {
+		logger.Error(err, "failed to send profiles attr ack")
+		return
+	}
+
+	streamAttrEvents(ctx, conn, logger, s.ProfilesAttrSubscribe, "profiles attr")
+}
+
+func streamAttrEvents(
+	ctx context.Context,
+	conn *net.UnixConn,
+	logger *commonlogger.ContextLogger,
+	subscribe func() (<-chan string, []string),
+	label string,
+) {
+	updates, snapshot := subscribe()
 
 	for _, line := range snapshot {
 		if _, err := conn.Write([]byte(line + "\n")); err != nil {
-			logger.Info("logs attr client disconnected during snapshot", "error", err)
+			logger.Info(label+" client disconnected during snapshot", "error", err)
 			return
 		}
 	}
@@ -185,7 +222,7 @@ func (s *Server) handleLogsRequest(ctx context.Context, conn *net.UnixConn) {
 				return
 			}
 			if _, err := conn.Write([]byte(line + "\n")); err != nil {
-				logger.Info("logs attr client disconnected", "error", err)
+				logger.Info(label+" client disconnected", "error", err)
 				return
 			}
 		}
