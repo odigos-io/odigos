@@ -425,14 +425,14 @@ func (r *ebpfReceiver) startLogsReceiver(ctx context.Context) {
 
 // handleLogsAttrEvent parses "R<pid>:<attrs>" or "U<pid>" and updates the cache.
 func (r *ebpfReceiver) handleLogsAttrEvent(line string, cache *logsAttrCache) {
-	ev, ok := unixfd.DecodeLogsAttrEvent(line)
+	ev, ok := unixfd.DecodeAttrEvent(line)
 	if !ok {
 		return
 	}
 	switch ev.Type {
-	case unixfd.LogsAttrRegister:
+	case unixfd.AttrEventRegister:
 		cache.set(ev.PID, ev.Attrs)
-	case unixfd.LogsAttrUnregister:
+	case unixfd.AttrEventUnregister:
 		cache.delete(ev.PID)
 	}
 }
