@@ -42,16 +42,12 @@ const setTimeInput = (fieldPath: string, value: string) => {
   const unitId = unit.toLowerCase();
 
   cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).click().focused().clear().type(num);
-  cy.get(DATA_IDS.SETTINGS_FIELD(`${fieldPath}-unit`)).click();
+  cy.get(DATA_IDS.SETTINGS_FIELD(`${fieldPath}-unit`)).click({ force: true });
   cy.get(`[data-id="option-${unitId}"]`).click();
 };
 
 const selectDropdownOption = (fieldPath: string, optionLabel: string) => {
-  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).click();
-  // The dropdown popup is rendered via React portal at document.body, so it lives
-  // outside the trigger's DOM subtree. Each option exposes `data-id="option-${id}"`
-  // and the settings dropdown uses the option string itself as the id, so we can
-  // target the option globally without scoping by ancestor.
+  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).click({ force: true });
   cy.get(`[data-id="option-${optionLabel}"]`).click();
 };
 
