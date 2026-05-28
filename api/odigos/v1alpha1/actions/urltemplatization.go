@@ -2,6 +2,7 @@ package actions
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/common/consts"
 )
 
@@ -39,6 +40,19 @@ type UrlTemplatizationRulesGroup struct {
 	TemplatizationRules []URLTemplatizationRule `json:"templatizationRules,omitempty"`
 }
 
+// URLTemplatizationDefaultTemplatizationGroup is a group of services for which default templatization will be applied.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type URLTemplatizationDefaultTemplatizationGroup struct {
+	// the scope of services for which this templatization config will be applied.
+	// if empty, the provided config will be applied to all sources.
+	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
+
+	// configurations for default templatization.
+	// default templatization is applied on a single http span if none of the custom templatization rules matched.
+	Config actionsapi.DefaultTemplatizationConfig `json:"defaultTemplatization"`
+}
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type URLTemplatizationConfig struct {
@@ -50,6 +64,10 @@ type URLTemplatizationConfig struct {
 	// 2. some rules for deployment foo in namespace default
 	// 3. rules without filters that will be applied to all spans.
 	TemplatizationRulesGroups []UrlTemplatizationRulesGroup `json:"templatizationRulesGroups"`
+
+	// configurations for default templatization, on groups of services.
+	// default templatization is applied on a single http span if none of the custom templatization rules matched.
+	DefaultTemplatizations []URLTemplatizationDefaultTemplatizationGroup `json:"defaultTemplatization,omitempty"`
 }
 
 func (URLTemplatizationConfig) ProcessorType() string {

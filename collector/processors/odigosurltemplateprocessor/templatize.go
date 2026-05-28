@@ -220,3 +220,22 @@ func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []internalC
 	templatedPath := strings.Join(templatizedSegments, "/")
 	return templatedPath, true
 }
+
+// check if specific path segments match any of the custom templatization rules
+// if so, return the templated url and true
+// if not, return false
+func applyCustomRulesForTemplatization(pathSegments []string, rules map[int][]TemplatizationRule, hadLeadingSlash bool) (string, bool) {
+	ruleList, found := rules[len(pathSegments)]
+	if !found {
+		return "", false
+	}
+	for _, rule := range ruleList {
+		if templatedUrl, matched := attemptTemplateWithRule(pathSegments, rule); matched {
+			if hadLeadingSlash {
+				templatedUrl = "/" + templatedUrl
+			}
+			return templatedUrl, true
+		}
+	}
+	return "", false
+}

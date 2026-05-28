@@ -644,9 +644,9 @@ func TestDefaultDateTemplatization(t *testing.T) {
 				"http.request.method": "GET",
 				"url.path":            "04-12-2025T14:15:16",
 			},
-			expectedSpanName:  "GET /04-12-2025T14:15:16",
+			expectedSpanName:  "GET 04-12-2025T14:15:16",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/04-12-2025T14:15:16",
+			expectedAttrValue: "04-12-2025T14:15:16",
 		},
 	}
 
