@@ -138,7 +138,13 @@ export const GET_WORKLOADS_BY_IDS = gql`
           reasonEnum
           message
         }
-        podHealthStatus {
+        k8sHealthStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        odigosHealthStatus {
           name
           status
           reasonEnum
@@ -154,7 +160,13 @@ export const GET_WORKLOADS_BY_IDS = gql`
           runningStartedTime
           waitingReasonEnum
           waitingMessage
-          healthStatus {
+          k8sHealthStatus {
+            name
+            status
+            reasonEnum
+            message
+          }
+          odigosHealthStatus {
             name
             status
             reasonEnum
