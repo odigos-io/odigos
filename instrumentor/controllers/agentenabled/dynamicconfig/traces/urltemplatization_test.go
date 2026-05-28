@@ -13,7 +13,7 @@ import (
 
 func TestMergeDefaultTemplatizationSkipPolicyConfigs_nilC1ReturnsC2(t *testing.T) {
 	c2 := &actions.DefaultTemplatizationSkipPolicyConfig{
-		StatusCodes: []int{404},
+		SkipHttpStatusCodes: []int{404},
 	}
 	got := mergeDefaultTemplatizationSkipPolicyConfigs(nil, c2)
 	require.Same(t, c2, got)
@@ -21,7 +21,7 @@ func TestMergeDefaultTemplatizationSkipPolicyConfigs_nilC1ReturnsC2(t *testing.T
 
 func TestMergeDefaultTemplatizationSkipPolicyConfigs_nilC2ReturnsC1(t *testing.T) {
 	c1 := &actions.DefaultTemplatizationSkipPolicyConfig{
-		StatusCodes: []int{401},
+		SkipHttpStatusCodes: []int{401},
 	}
 	got := mergeDefaultTemplatizationSkipPolicyConfigs(c1, nil)
 	require.Same(t, c1, got)
@@ -34,51 +34,51 @@ func TestMergeDefaultTemplatizationSkipPolicyConfigs_bothNilReturnsNil(t *testin
 
 func TestMergeDefaultTemplatizationSkipPolicyConfigs_skipForNonSuccessCodesInC1(t *testing.T) {
 	c1 := &actions.DefaultTemplatizationSkipPolicyConfig{SkipForNonSuccessCodes: true}
-	c2 := &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{404, 500}}
+	c2 := &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{404, 500}}
 
 	got := mergeDefaultTemplatizationSkipPolicyConfigs(c1, c2)
 
 	require.NotNil(t, got)
 	require.True(t, got.SkipForNonSuccessCodes)
-	require.Nil(t, got.StatusCodes)
+	require.Nil(t, got.SkipHttpStatusCodes)
 }
 
 func TestMergeDefaultTemplatizationSkipPolicyConfigs_skipForNonSuccessCodesInC2(t *testing.T) {
-	c1 := &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{401}}
+	c1 := &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{401}}
 	c2 := &actions.DefaultTemplatizationSkipPolicyConfig{SkipForNonSuccessCodes: true}
 
 	got := mergeDefaultTemplatizationSkipPolicyConfigs(c1, c2)
 
 	require.NotNil(t, got)
 	require.True(t, got.SkipForNonSuccessCodes)
-	require.Nil(t, got.StatusCodes)
+	require.Nil(t, got.SkipHttpStatusCodes)
 }
 
 func TestMergeDefaultTemplatizationSkipPolicyConfigs_mergesStatusCodes(t *testing.T) {
-	c1 := &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{404}}
-	c2 := &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{401, 500}}
+	c1 := &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{404}}
+	c2 := &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{401, 500}}
 
 	got := mergeDefaultTemplatizationSkipPolicyConfigs(c1, c2)
 
 	require.NotNil(t, got)
 	require.False(t, got.SkipForNonSuccessCodes)
-	require.Equal(t, []int{404, 401, 500}, got.StatusCodes)
+	require.Equal(t, []int{404, 401, 500}, got.SkipHttpStatusCodes)
 }
 
 func TestMergeDefaultTemplatizationSkipPolicyConfigs_keepsDuplicateStatusCodes(t *testing.T) {
-	c1 := &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{404, 401}}
-	c2 := &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{404, 500}}
+	c1 := &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{404, 401}}
+	c2 := &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{404, 500}}
 
 	got := mergeDefaultTemplatizationSkipPolicyConfigs(c1, c2)
 
 	require.NotNil(t, got)
 	require.False(t, got.SkipForNonSuccessCodes)
-	require.Equal(t, []int{404, 401, 404, 500}, got.StatusCodes)
+	require.Equal(t, []int{404, 401, 404, 500}, got.SkipHttpStatusCodes)
 }
 
 func TestMergeDefaultTemplatizationConfigs_nilC1ReturnsC2(t *testing.T) {
 	c2 := &actions.DefaultTemplatizationConfig{
-		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{404}},
+		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{404}},
 	}
 	got := mergeDefaultTemplatizationConfigs(nil, c2)
 	require.Same(t, c2, got)
@@ -86,7 +86,7 @@ func TestMergeDefaultTemplatizationConfigs_nilC1ReturnsC2(t *testing.T) {
 
 func TestMergeDefaultTemplatizationConfigs_nilC2ReturnsC1(t *testing.T) {
 	c1 := &actions.DefaultTemplatizationConfig{
-		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{401}},
+		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{401}},
 	}
 	got := mergeDefaultTemplatizationConfigs(c1, nil)
 	require.Same(t, c1, got)
@@ -100,7 +100,7 @@ func TestMergeDefaultTemplatizationConfigs_bothNilReturnsNil(t *testing.T) {
 func TestMergeDefaultTemplatizationConfigs_disabledInC1(t *testing.T) {
 	c1 := &actions.DefaultTemplatizationConfig{Disabled: true}
 	c2 := &actions.DefaultTemplatizationConfig{
-		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{404}},
+		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{404}},
 	}
 
 	got := mergeDefaultTemplatizationConfigs(c1, c2)
@@ -125,10 +125,10 @@ func TestMergeDefaultTemplatizationConfigs_disabledInC2(t *testing.T) {
 
 func TestMergeDefaultTemplatizationConfigs_mergesSkipPolicy(t *testing.T) {
 	c1 := &actions.DefaultTemplatizationConfig{
-		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{404}},
+		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{404}},
 	}
 	c2 := &actions.DefaultTemplatizationConfig{
-		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{401}},
+		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{401}},
 	}
 
 	got := mergeDefaultTemplatizationConfigs(c1, c2)
@@ -136,13 +136,13 @@ func TestMergeDefaultTemplatizationConfigs_mergesSkipPolicy(t *testing.T) {
 	require.NotNil(t, got)
 	require.False(t, got.Disabled)
 	require.NotNil(t, got.SkipPolicy)
-	require.Equal(t, []int{404, 401}, got.SkipPolicy.StatusCodes)
+	require.Equal(t, []int{404, 401}, got.SkipPolicy.SkipHttpStatusCodes)
 }
 
 func TestMergeDefaultTemplatizationConfigs_enabledWithNilSkipPolicy(t *testing.T) {
 	c1 := &actions.DefaultTemplatizationConfig{}
 	c2 := &actions.DefaultTemplatizationConfig{
-		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{StatusCodes: []int{500}},
+		SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{SkipHttpStatusCodes: []int{500}},
 	}
 
 	got := mergeDefaultTemplatizationConfigs(c1, c2)
@@ -150,7 +150,7 @@ func TestMergeDefaultTemplatizationConfigs_enabledWithNilSkipPolicy(t *testing.T
 	require.NotNil(t, got)
 	require.False(t, got.Disabled)
 	require.NotNil(t, got.SkipPolicy)
-	require.Equal(t, []int{500}, got.SkipPolicy.StatusCodes)
+	require.Equal(t, []int{500}, got.SkipPolicy.SkipHttpStatusCodes)
 }
 
 func TestCalculateUrlTemplatizationConfig_dedupesStatusCodes(t *testing.T) {
@@ -161,14 +161,14 @@ func TestCalculateUrlTemplatizationConfig_dedupesStatusCodes(t *testing.T) {
 					{
 						Config: actions.DefaultTemplatizationConfig{
 							SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{
-								StatusCodes: []int{404, 401},
+								SkipHttpStatusCodes: []int{404, 401},
 							},
 						},
 					},
 					{
 						Config: actions.DefaultTemplatizationConfig{
 							SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{
-								StatusCodes: []int{404, 500},
+								SkipHttpStatusCodes: []int{404, 500},
 							},
 						},
 					},
@@ -183,5 +183,5 @@ func TestCalculateUrlTemplatizationConfig_dedupesStatusCodes(t *testing.T) {
 	require.NotNil(t, got)
 	require.NotNil(t, got.DefaultTemplatization)
 	require.NotNil(t, got.DefaultTemplatization.SkipPolicy)
-	require.Equal(t, []int{404, 401, 500}, got.DefaultTemplatization.SkipPolicy.StatusCodes)
+	require.Equal(t, []int{404, 401, 500}, got.DefaultTemplatization.SkipPolicy.SkipHttpStatusCodes)
 }

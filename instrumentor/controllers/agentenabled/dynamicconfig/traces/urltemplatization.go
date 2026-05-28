@@ -50,7 +50,7 @@ func mergeDefaultTemplatizationSkipPolicyConfigs(c1 *actions.DefaultTemplatizati
 
 	return &actions.DefaultTemplatizationSkipPolicyConfig{
 		SkipForNonSuccessCodes: false,
-		StatusCodes:            append(c1.StatusCodes, c2.StatusCodes...),
+		SkipHttpStatusCodes:    append(c1.SkipHttpStatusCodes, c2.SkipHttpStatusCodes...),
 	}
 }
 
@@ -132,8 +132,8 @@ func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, cont
 	}
 
 	if configForDefaultTemplatization != nil && configForDefaultTemplatization.SkipPolicy != nil {
-		configForDefaultTemplatization.SkipPolicy.StatusCodes = dedupeStatusCodes(
-			configForDefaultTemplatization.SkipPolicy.StatusCodes,
+		configForDefaultTemplatization.SkipPolicy.SkipHttpStatusCodes = dedupeStatusCodes(
+			configForDefaultTemplatization.SkipPolicy.SkipHttpStatusCodes,
 		)
 	}
 
