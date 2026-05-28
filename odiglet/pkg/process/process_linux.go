@@ -80,6 +80,31 @@ func isInPodContainersBatchPredicate(keys []PodContainerKey) func(int) (PodConta
 	}
 }
 
+func fillMissingPodContainerGroups(
+	pcs []PodContainer,
+	groups map[PodContainerKey]map[int]struct{},
+	fallback func([]PodContainer) (map[PodContainerKey]map[int]struct{}, error),
+) (map[PodContainerKey]map[int]struct{}, error) {
+	missing := make([]PodContainer, 0)
+	for _, pc := range pcs {
+		if _, ok := groups[pc.PodContainerKey]; !ok {
+			missing = append(missing, pc)
+		}
+	}
+	if len(missing) == 0 {
+		return groups, nil
+	}
+
+	fallbackGroups, err := fallback(missing)
+	if err != nil {
+		return groups, err
+	}
+	for key, pids := range fallbackGroups {
+		groups[key] = pids
+	}
+	return groups, nil
+}
+
 type PodContainerKey struct {
 	PodUID        string
 	ContainerName string
@@ -105,6 +130,13 @@ func GroupByPodContainer(pcs []PodContainer) (map[PodContainerKey]map[int]struct
 		// to avoid possible regressions due to the cgroup path resolution logic.
 		switch {
 		case err == nil && len(groups) > 0:
+			if len(groups) < len(pcs) {
+				var fallbackErr error
+				groups, fallbackErr = fillMissingPodContainerGroups(pcs, groups, groupByProcMountInfo)
+				if fallbackErr != nil {
+					commonlogger.LoggerCompat().Warn("failed to complete partial cgroup pid resolution with proc scan", "error", fallbackErr)
+				}
+			}
 			commonlogger.LoggerCompat().Debug("found process groups based on cgroups", "groups", len(groups), "pod-containers", pcs)
 			return groups, nil
 		case err != nil:

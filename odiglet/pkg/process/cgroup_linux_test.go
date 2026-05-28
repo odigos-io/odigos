@@ -1,7 +1,9 @@
 package process
 
 import (
+	"reflect"
 	"testing"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -128,5 +130,63 @@ func TestContainerCgroupDir(t *testing.T) {
 				t.Fatalf("got %q want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestFillMissingPodContainerGroupsMergesFallbackResults(t *testing.T) {
+	pcs := []PodContainer{
+		{PodContainerKey: PodContainerKey{PodUID: "pod-1", ContainerName: "app"}},
+		{PodContainerKey: PodContainerKey{PodUID: "pod-2", ContainerName: "app"}},
+		{PodContainerKey: PodContainerKey{PodUID: "pod-3", ContainerName: "sidecar"}},
+	}
+	groups := map[PodContainerKey]map[int]struct{}{
+		pcs[0].PodContainerKey: {101: {}},
+	}
+
+	var fallbackInput []PodContainer
+	got, err := fillMissingPodContainerGroups(pcs, groups, func(missing []PodContainer) (map[PodContainerKey]map[int]struct{}, error) {
+		fallbackInput = append([]PodContainer(nil), missing...)
+		return map[PodContainerKey]map[int]struct{}{
+			pcs[1].PodContainerKey: {202: {}},
+			pcs[2].PodContainerKey: {303: {}},
+		}, nil
+	})
+	if err != nil {
+		t.Fatalf("fillMissingPodContainerGroups returned error: %v", err)
+	}
+
+	if !reflect.DeepEqual(fallbackInput, pcs[1:]) {
+		t.Fatalf("fallback input got %+v want %+v", fallbackInput, pcs[1:])
+	}
+	if !reflect.DeepEqual(got, map[PodContainerKey]map[int]struct{}{
+		pcs[0].PodContainerKey: {101: {}},
+		pcs[1].PodContainerKey: {202: {}},
+		pcs[2].PodContainerKey: {303: {}},
+	}) {
+		t.Fatalf("groups got %+v", got)
+	}
+}
+
+func TestFillMissingPodContainerGroupsSkipsFallbackWhenComplete(t *testing.T) {
+	pcs := []PodContainer{
+		{PodContainerKey: PodContainerKey{PodUID: "pod-1", ContainerName: "app"}},
+	}
+	groups := map[PodContainerKey]map[int]struct{}{
+		pcs[0].PodContainerKey: {101: {}},
+	}
+
+	called := false
+	got, err := fillMissingPodContainerGroups(pcs, groups, func(missing []PodContainer) (map[PodContainerKey]map[int]struct{}, error) {
+		called = true
+		return nil, nil
+	})
+	if err != nil {
+		t.Fatalf("fillMissingPodContainerGroups returned error: %v", err)
+	}
+	if called {
+		t.Fatal("fallback was called for complete cgroup results")
+	}
+	if !reflect.DeepEqual(got, groups) {
+		t.Fatalf("groups got %+v want %+v", got, groups)
 	}
 }
