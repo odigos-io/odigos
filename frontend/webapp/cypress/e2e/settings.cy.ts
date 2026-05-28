@@ -25,9 +25,10 @@ const setInput = (fieldPath: string, value: string) => {
 // The DOM exposes the number input under the field path, the unit dropdown
 // input under `${fieldPath}-unit`, and each dropdown option as
 // `[data-id="option-${unitId}"]`. The combined value (e.g. "60s") is saved.
-// The closed unit dropdown displays `Selected: ${unitLabel}` (e.g. "Selected: seconds"),
-// so we use exact data-id matching for both selection and verification to avoid
-// substring collisions like 'seconds' matching 'milliseconds' or 'Selected: seconds'.
+// The dropdown trigger is a read-only `<input>` whose `.value` is the joined
+// option labels (e.g. "seconds") — no "Selected: " prefix is applied. We use
+// exact data-id matching for option selection to avoid substring collisions
+// (e.g. selecting "option-s" would also match "option-ms").
 const TIME_UNIT_LABELS: Record<string, string> = {
   ms: 'milliseconds',
   s: 'seconds',
@@ -69,11 +70,11 @@ const verifyTimeInput = (fieldPath: string, expectedValue: string) => {
   const unitLabel = TIME_UNIT_LABELS[unit.toLowerCase()];
 
   cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).should('have.value', num);
-  cy.get(DATA_IDS.SETTINGS_FIELD(`${fieldPath}-unit`)).should('have.value', `Selected: ${unitLabel}`);
+  cy.get(DATA_IDS.SETTINGS_FIELD(`${fieldPath}-unit`)).should('have.value', unitLabel);
 };
 
 const verifyDropdown = (fieldPath: string, expectedLabel: string) => {
-  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).should('have.value', `Selected: ${expectedLabel}`);
+  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).should('have.value', expectedLabel);
 };
 
 // Toggle exposes its boolean state via the `data-toggle-value` attribute on the
