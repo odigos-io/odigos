@@ -326,7 +326,7 @@ func splitPathToSegments(path string) ([]string, bool) {
 
 // calculateTemplatedUrlFromAttrWithRules calculates a templated URL using the given rules.
 // returns the templated path, an boolean to indicate if templatization was applied.
-func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcommon.Map, config workloadUrlTemplatizationConfig) (string, bool) {
+func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcommon.Map, config workloadUrlTemplatizationConfig, spanKind ptrace.SpanKind) (string, bool) {
 	urlPath, urlPathFound := resolveUrlPath(attr)
 	if !urlPathFound {
 		p.logger.Debug("calculateTemplatedUrlFromAttrWithRules: no url/path in attributes, skip templatization")
@@ -360,7 +360,8 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 
 	// check for malicious bots routes so not to templatize them.
 	// do it after the custom rules to allow legitimate routes to be templatized even for services with http errors.
-	if config.defaultTemplatizationConfig.SkipPolicy != nil {
+	// skip policy is only applied to server spans, since it protects against garbage incoming requests, while outgoing requests are expected to be valid and not malicious.
+	if config.defaultTemplatizationConfig.SkipPolicy != nil && spanKind != ptrace.SpanKindClient {
 		skipPolicyConfig := config.defaultTemplatizationConfig.SkipPolicy
 		statusCode, found := getHttpResponseStatusCode(attr)
 		if found {
@@ -433,7 +434,7 @@ func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod
 		return
 	}
 
-	templatedUrl, templatizationApplied := p.calculateTemplatedUrlFromAttrWithRules(attr, config)
+	templatedUrl, templatizationApplied := p.calculateTemplatedUrlFromAttrWithRules(attr, config, span.Kind())
 	if !templatizationApplied {
 		return
 	}
