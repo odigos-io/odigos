@@ -10,7 +10,6 @@ import (
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation/detector"
-	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/metric/noop"
 )
 
@@ -83,7 +82,9 @@ func newTestManager(t *testing.T, detector detector.Detector, factories map[stri
 	t.Helper()
 
 	metrics, err := newManagerMetrics(noop.NewMeterProvider().Meter("test"))
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("newManagerMetrics returned error: %v", err)
+	}
 
 	return &manager[string, string, testProcessDetails]{
 		detector: detector,
@@ -118,7 +119,14 @@ func TestInstrumentFromDetailsTracksFailedAttemptsForExitCleanup(t *testing.T) {
 		},
 	})
 
-	require.Equal(t, []int{pid}, tracker.tracked)
-	require.Contains(t, m.detailsByPid, pid)
-	require.Nil(t, m.detailsByPid[pid].inst)
+	if len(tracker.tracked) != 1 || tracker.tracked[0] != pid {
+		t.Fatalf("tracked pids got %v want [%d]", tracker.tracked, pid)
+	}
+	details, ok := m.detailsByPid[pid]
+	if !ok {
+		t.Fatalf("pid %d was not tracked after failed instrumentation", pid)
+	}
+	if details.inst != nil {
+		t.Fatalf("failed instrumentation stored non-nil instance: %#v", details.inst)
+	}
 }
