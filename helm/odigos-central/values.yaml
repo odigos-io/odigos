@@ -91,6 +91,10 @@ redis:
     limits:
       cpu: 200m
       memory: 256Mi
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations: []
+  affinity: {}
 
 auth:
   # Built-in Keycloak configuration
