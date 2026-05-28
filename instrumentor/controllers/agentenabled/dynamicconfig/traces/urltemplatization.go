@@ -32,7 +32,7 @@ func dedupeStatusCodes(codes []int) []int {
 	return result
 }
 
-func mergeDefaultTemplatizationSkipOnErrorConfigs(c1 *actions.DefaultTemplatizationSkipOnErrorConfig, c2 *actions.DefaultTemplatizationSkipOnErrorConfig) *actions.DefaultTemplatizationSkipOnErrorConfig {
+func mergeDefaultTemplatizationSkipPolicyConfigs(c1 *actions.DefaultTemplatizationSkipPolicyConfig, c2 *actions.DefaultTemplatizationSkipPolicyConfig) *actions.DefaultTemplatizationSkipPolicyConfig {
 	if c1 == nil {
 		return c2
 	}
@@ -43,12 +43,12 @@ func mergeDefaultTemplatizationSkipOnErrorConfigs(c1 *actions.DefaultTemplatizat
 	// both are not nil, merge them.
 	skipForNonSuccessCodes := c1.SkipForNonSuccessCodes || c2.SkipForNonSuccessCodes
 	if skipForNonSuccessCodes {
-		return &actions.DefaultTemplatizationSkipOnErrorConfig{
+		return &actions.DefaultTemplatizationSkipPolicyConfig{
 			SkipForNonSuccessCodes: skipForNonSuccessCodes,
 		}
 	}
 
-	return &actions.DefaultTemplatizationSkipOnErrorConfig{
+	return &actions.DefaultTemplatizationSkipPolicyConfig{
 		SkipForNonSuccessCodes: false,
 		StatusCodes:            append(c1.StatusCodes, c2.StatusCodes...),
 	}
@@ -71,8 +71,8 @@ func mergeDefaultTemplatizationConfigs(c1 *actions.DefaultTemplatizationConfig, 
 	}
 
 	return &actions.DefaultTemplatizationConfig{
-		Disabled:    disabled,
-		SkipOnError: mergeDefaultTemplatizationSkipOnErrorConfigs(c1.SkipOnError, c2.SkipOnError),
+		Disabled:   disabled,
+		SkipPolicy: mergeDefaultTemplatizationSkipPolicyConfigs(c1.SkipPolicy, c2.SkipPolicy),
 	}
 }
 
@@ -131,9 +131,9 @@ func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, cont
 		return nil
 	}
 
-	if configForDefaultTemplatization != nil && configForDefaultTemplatization.SkipOnError != nil {
-		configForDefaultTemplatization.SkipOnError.StatusCodes = dedupeStatusCodes(
-			configForDefaultTemplatization.SkipOnError.StatusCodes,
+	if configForDefaultTemplatization != nil && configForDefaultTemplatization.SkipPolicy != nil {
+		configForDefaultTemplatization.SkipPolicy.StatusCodes = dedupeStatusCodes(
+			configForDefaultTemplatization.SkipPolicy.StatusCodes,
 		)
 	}
 

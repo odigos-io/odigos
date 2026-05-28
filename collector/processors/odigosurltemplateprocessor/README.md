@@ -144,7 +144,7 @@ These default rules will not templatize paths like `/user/john`, `/user/s111222`
 
 For internet-exposed services, bot and scanner traffic often hits random paths that return error status codes (for example **404**). Default heuristic templatization would turn each of those into a distinct route and cause high cardinality.
 
-When using per-workload configuration from the **URLTemplatization** Action (extension mode), you can set `skipOnError` under `spec.urlTemplatization.defaultTemplatization[].defaultTemplatization` for a `sourcesScopes` group. Custom templatization rules are still evaluated first; `skipOnError` only affects the default heuristic step when no custom rule matched. This option is not available on the legacy static processor path (processor YAML `templatization_rules` / `custom_ids` only).
+When using per-workload configuration from the **URLTemplatization** Action (extension mode), you can set `skipPolicy` under `spec.urlTemplatization.defaultTemplatization[].defaultTemplatization` for a `sourcesScopes` group. Custom templatization rules are still evaluated first; `skipPolicy` only affects the default heuristic step when no custom rule matched. This option is not available on the legacy static processor path (processor YAML `templatization_rules` / `custom_ids` only).
 
 - `skipForNonSuccessCodes: true` — skip default templatization for any HTTP status outside 2xx. When set, `statusCodes` is ignored.
 - `statusCodes` — skip default templatization only for the listed codes (for example `[404]` or `[404, 401]`).
@@ -165,7 +165,7 @@ spec:
               kind: Deployment
               name: my-public-api
         defaultTemplatization:
-          skipOnError:
+          skipPolicy:
             statusCodes: [404]
 ```
 

@@ -10,16 +10,16 @@ package actions
 //
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
-type DefaultTemplatizationSkipOnErrorConfig struct {
+type DefaultTemplatizationSkipPolicyConfig struct {
 
 	// If set to true, default templatization will be skipped for any non-success HTTP status code (i.e., any code not in the 2xx range).
 	// When this is true, the StatusCodes list is ignored.
 	SkipForNonSuccessCodes bool `json:"skipForNonSuccessCodes,omitempty"`
 
 	// the http status codes for which the default templatization will be skipped.
-	// for example: 404, 401.
+	// for example: [404, 401].
 	// advanced users can use to cherry pick specific codes for tailoring to specific use cases.
-	StatusCodes []int `json:"statusCodes,omitempty"`
+	SkipHttpStatusCodes []int `json:"skipHttpStatusCodes,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -33,7 +33,7 @@ type DefaultTemplatizationConfig struct {
 	// config if default templatization should be skipped on error.
 	// use it when sources scope describes a service that is publicly accessible to the internet
 	// to filter garbage requests that can contaminate the url-templatization process.
-	SkipOnError *DefaultTemplatizationSkipOnErrorConfig `json:"skipOnError,omitempty"`
+	SkipPolicy *DefaultTemplatizationSkipPolicyConfig `json:"skipPolicy,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

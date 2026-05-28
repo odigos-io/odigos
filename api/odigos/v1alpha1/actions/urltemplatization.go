@@ -45,6 +45,7 @@ type UrlTemplatizationRulesGroup struct {
 // +kubebuilder:deepcopy-gen=true
 type URLTemplatizationDefaultTemplatizationGroup struct {
 	// the scope of services for which this templatization config will be applied.
+	// if empty, the provided config will be applied to all sources.
 	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
 
 	// configurations for default templatization.

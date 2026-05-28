@@ -360,19 +360,19 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 
 	// check for malicious bots routes so not to templatize them.
 	// do it after the custom rules to allow legitimate routes to be templatized even for services with http errors.
-	if config.defaultTemplatizationConfig.SkipOnError != nil {
-		skipOnErrorConfig := config.defaultTemplatizationConfig.SkipOnError
+	if config.defaultTemplatizationConfig.SkipPolicy != nil {
+		skipPolicyConfig := config.defaultTemplatizationConfig.SkipPolicy
 		statusCode, found := getHttpResponseStatusCode(attr)
 		if found {
-			if skipOnErrorConfig.SkipForNonSuccessCodes {
+			if skipPolicyConfig.SkipForNonSuccessCodes {
 				if statusCode < 200 || statusCode >= 300 {
 					p.logger.Debug("applyTemplatizationOnPath: non-success http status code on span, skip default templatization", zap.Int("status_code", statusCode))
 					return "", false
 				}
 			}
 
-			if len(skipOnErrorConfig.StatusCodes) > 0 {
-				if slices.Contains(skipOnErrorConfig.StatusCodes, statusCode) {
+			if len(skipPolicyConfig.StatusCodes) > 0 {
+				if slices.Contains(skipPolicyConfig.StatusCodes, statusCode) {
 					p.logger.Debug("applyTemplatizationOnPath: http status code on span is in skip list, skip default templatization", zap.Int("status_code", statusCode))
 					return "", false
 				}
