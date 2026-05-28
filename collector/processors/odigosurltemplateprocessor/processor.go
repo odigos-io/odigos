@@ -371,8 +371,8 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 				}
 			}
 
-			if len(skipPolicyConfig.StatusCodes) > 0 {
-				if slices.Contains(skipPolicyConfig.StatusCodes, statusCode) {
+			if len(skipPolicyConfig.SkipHttpStatusCodes) > 0 {
+				if slices.Contains(skipPolicyConfig.SkipHttpStatusCodes, statusCode) {
 					p.logger.Debug("applyTemplatizationOnPath: http status code on span is in skip list, skip default templatization", zap.Int("status_code", statusCode))
 					return "", false
 				}
