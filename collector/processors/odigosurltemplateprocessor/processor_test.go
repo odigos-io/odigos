@@ -696,6 +696,30 @@ func TestProcessor_EmailAddresses(t *testing.T) {
 			expectedAttrValue: "/user/{email}",
 		},
 		{
+			name:          "email local part with RFC 5322 special chars",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/!#$%&'*+=?^`{|}~@example.com",
+			},
+			expectedSpanName:  "GET /user/{email}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{email}",
+		},
+		{
+			name:          "email local part with apostrophe",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/o'brien@example.com",
+			},
+			expectedSpanName:  "GET /user/{email}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{email}",
+		},
+		{
 			name:          "exact match no suffix",
 			spanKind:      ptrace.SpanKindServer,
 			inputSpanName: "GET",
