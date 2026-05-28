@@ -346,7 +346,7 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 	}
 
 	// attempt the rules if we have any
-	if config.parsedRules != nil {
+	if len(config.parsedRules) > 0 {
 		templatedUrl, matched := applyCustomRulesForTemplatization(inputPathSegments, config.parsedRules, hadLeadingSlash)
 		if matched {
 			return templatedUrl, true
@@ -473,5 +473,5 @@ func (p *urlTemplateProcessor) processSpanWithStaticRules(span ptrace.Span) {
 	// for static mode, we do not set publiclyAccessible flag.
 	// it is only used with extension mode.
 	// this code will be removed once we fully migrate to extension mode.
-	p.processSpanWithRules(span, workloadUrlTemplatizationConfig{parsedRules: p.templatizationRules})
+	p.processSpanWithRules(span, workloadUrlTemplatizationConfig{parsedRules: p.templatizationRules, defaultTemplatizationConfig: &commonactionsapi.DefaultTemplatizationConfig{}})
 }
