@@ -17,7 +17,7 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-TOOLS := $(PWD)/../.tools
+TOOLS := $(CURDIR)/../.tools
 
 .PHONY: all
 all: generate manifests generate-client sync-helm-crd docgen
@@ -53,13 +53,17 @@ genref: tools
 
 .PHONY: docgen
 docgen: genref
-	rm -rf $(PWD)/../docs/snippets/shared/api-reference/*
-	$(TOOLS)/genref -c genref-config.yaml -f markdown -o $(PWD)/../docs/snippets/shared/api-reference
-	for file in $(PWD)/../docs/snippets/shared/api-reference/*; do \
+	@if [ ! -f "$(CURDIR)/../go.work" ]; then \
+		echo "go.work not found; creating workspace (required for operator.odigos.io API docs)..."; \
+		cd $(CURDIR)/.. && go work init && go work use -r .; \
+	fi
+	rm -rf $(CURDIR)/../docs/snippets/shared/api-reference/*
+	$(TOOLS)/genref -c genref-config.yaml -f markdown -o $(CURDIR)/../docs/snippets/shared/api-reference
+	for file in $(CURDIR)/../docs/snippets/shared/api-reference/*; do \
 		mv $${file} $${file%.md}.mdx; \
 	done
 	# Fix known genref output issues (trailing whitespace + broken MDX <td> formatting)
-	python3 $(PWD)/fix-genref-output.py $(PWD)/../docs/snippets/shared/api-reference
+	python3 $(CURDIR)/fix-genref-output.py $(CURDIR)/../docs/snippets/shared/api-reference
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
