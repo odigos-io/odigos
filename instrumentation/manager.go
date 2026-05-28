@@ -323,6 +323,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) instrumentFromDetai
 		m.logger.Info("attempting instrumentation", "pid", pid, "process details", pd)
 		if err := m.tryInstrument(ctx, pd, pid); err != nil {
 			m.handleInstrumentError(err)
+			if _, trackedAfterFailure := m.detailsByPid[pid]; trackedAfterFailure {
+				tracked = append(tracked, pid)
+			}
 			continue
 		}
 		tracked = append(tracked, pid)
