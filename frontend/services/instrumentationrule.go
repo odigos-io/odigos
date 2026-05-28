@@ -262,15 +262,20 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	if err != nil {
 		return nil, handleNotFoundError(err, id, "instrumentation rule")
 	}
-	// Update the existing rule's specification
-	existingRule.Spec.RuleName = *input.RuleName
-	existingRule.Spec.Notes = *input.Notes
-	existingRule.Spec.Disabled = *input.Disabled
+	// Update the existing rule's specification. Nil scalar fields can be sent by
+	// partial GraphQL clients, so keep the stored value when they are omitted.
+	if input.RuleName != nil {
+		existingRule.Spec.RuleName = *input.RuleName
+	}
+	if input.Notes != nil {
+		existingRule.Spec.Notes = *input.Notes
+	}
+	if input.Disabled != nil {
+		existingRule.Spec.Disabled = *input.Disabled
+	}
 
 	if input.SourcesScopes != nil {
 		existingRule.Spec.SourcesScopes = convertSourcesScopeInput(input.SourcesScopes)
-	} else {
-		existingRule.Spec.SourcesScopes = nil
 	}
 
 	if input.InstrumentationLibraries != nil {

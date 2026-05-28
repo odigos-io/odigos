@@ -11,6 +11,18 @@ export const GET_INSTRUMENTATION_RULES = gql`
         disabled
         mutable
         profileName
+        sourcesScopes {
+          workloadName
+          workloadKind
+          workloadNamespace
+          containerName
+          workloadLanguage
+        }
+        instrumentationLibraries {
+          name
+          spanKind
+          language
+        }
         conditions {
           status
           type
