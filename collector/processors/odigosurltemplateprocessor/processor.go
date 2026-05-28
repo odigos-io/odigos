@@ -47,7 +47,7 @@ type urlTemplateProcessor struct {
 	logger              *zap.Logger
 	cfg                 *Config
 	templatizationRules map[int][]TemplatizationRule // group templatization rules by segments length
-	customIds []internalCustomIdConfig
+	customIds           []internalCustomIdConfig
 
 	// provider is set in Start() when odigos_config_extension is present (the default in Odigos-managed configs).
 	// Per-workload rules come from the extension cache.
@@ -93,8 +93,8 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 		logger:              set.Logger,
 		cfg:                 config,
 		templatizationRules: parsedRules,
-		customIds:        customIdsRegexp,
-		parsedRulesCache: newProcessorURLTemplateParsedRulesCache(),
+		customIds:           customIdsRegexp,
+		parsedRulesCache:    newProcessorURLTemplateParsedRulesCache(),
 	}, nil
 }
 
