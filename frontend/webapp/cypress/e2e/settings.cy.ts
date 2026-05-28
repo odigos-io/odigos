@@ -41,14 +41,16 @@ const setTimeInput = (fieldPath: string, value: string) => {
   const [, num, unit] = match;
   const unitId = unit.toLowerCase();
 
-  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).click().focused().clear().type(num);
-  cy.get(DATA_IDS.SETTINGS_FIELD(`${fieldPath}-unit`)).click({ force: true });
-  cy.get(`[data-id="option-${unitId}"]`).click();
+  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).scrollIntoView().click().focused().clear().type(num);
+  cy.get(DATA_IDS.SETTINGS_FIELD(`${fieldPath}-unit`)).scrollIntoView().click({ force: true });
+  // Portal-rendered option may land outside the viewport; force-click skips actionability checks.
+  cy.get(`[data-id="option-${unitId}"]`).click({ force: true });
 };
 
 const selectDropdownOption = (fieldPath: string, optionLabel: string) => {
-  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).click({ force: true });
-  cy.get(`[data-id="option-${optionLabel}"]`).click();
+  cy.get(DATA_IDS.SETTINGS_FIELD(fieldPath)).scrollIntoView().click({ force: true });
+  // Portal-rendered option may land outside the viewport; force-click skips actionability checks.
+  cy.get(`[data-id="option-${optionLabel}"]`).click({ force: true });
 };
 
 const addMultiInputValue = (fieldPath: string, value: string) => {
