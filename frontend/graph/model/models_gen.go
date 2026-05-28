@@ -991,7 +991,8 @@ type K8sWorkloadPod struct {
 	StartedPostAgentMetaHashChange *bool                      `json:"startedPostAgentMetaHashChange,omitempty"`
 	AgentInjectedStatus            *DesiredConditionStatus    `json:"agentInjectedStatus"`
 	RunningLatestWorkloadRevision  *string                    `json:"runningLatestWorkloadRevision,omitempty"`
-	PodHealthStatus                *DesiredConditionStatus    `json:"podHealthStatus"`
+	K8sHealthStatus                *DesiredConditionStatus    `json:"k8sHealthStatus"`
+	OdigosHealthStatus             *DesiredConditionStatus    `json:"odigosHealthStatus,omitempty"`
 	Containers                     []*K8sWorkloadPodContainer `json:"containers"`
 }
 
@@ -1006,7 +1007,8 @@ type K8sWorkloadPodContainer struct {
 	RunningStartedTime              *string                           `json:"runningStartedTime,omitempty"`
 	WaitingReasonEnum               *string                           `json:"waitingReasonEnum,omitempty"`
 	WaitingMessage                  *string                           `json:"waitingMessage,omitempty"`
-	HealthStatus                    *DesiredConditionStatus           `json:"healthStatus"`
+	K8sHealthStatus                 *DesiredConditionStatus           `json:"k8sHealthStatus"`
+	OdigosHealthStatus              *DesiredConditionStatus           `json:"odigosHealthStatus,omitempty"`
 	Processes                       []*K8sWorkloadPodContainerProcess `json:"processes"`
 }
 

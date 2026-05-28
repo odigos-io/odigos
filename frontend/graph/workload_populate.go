@@ -242,7 +242,7 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 		return
 	}
 
-	mostSevere := aggregateConditionsBySeverity(healthConditions)
+	mostSevere := status.AggregateConditionsBySeverity(healthConditions)
 	if mostSevere == nil {
 		mostSevere = &model.DesiredConditionStatus{Name: status.WorkloadOdigosHealthStatus, Status: model.DesiredStateProgressUnknown}
 	} else if mostSevere.Status == model.DesiredStateProgressSuccess {

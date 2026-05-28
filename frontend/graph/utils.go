@@ -118,35 +118,6 @@ func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgent
 	}
 }
 
-// givin a desired state progress enum, return a value to determine the order of severity.
-// the lower the number, the more sever the state is
-func desiredStateProgressSeverity(desiredStateProgress model.DesiredStateProgress) int {
-	switch desiredStateProgress {
-	case model.DesiredStateProgressError:
-		return 0
-	case model.DesiredStateProgressFailure:
-		return 10
-	case model.DesiredStateProgressNotice:
-		return 20
-	case model.DesiredStateProgressPending:
-		return 30
-	case model.DesiredStateProgressWaiting:
-		return 40
-	case model.DesiredStateProgressUnsupported:
-		return 50
-	case model.DesiredStateProgressDisabled:
-		return 60
-	case model.DesiredStateProgressSuccess:
-		return 70
-	case model.DesiredStateProgressIrrelevant:
-		return 80
-	case model.DesiredStateProgressUnknown:
-		return 90
-	}
-	// should not happen, only as a fallback or if forgotten in the future.
-	return 1000
-}
-
 func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.K8sWorkloadID, optionalPodManifestInjectionContainerNames map[string]struct{}) (*model.DesiredConditionStatus, error) {
 	l := loaders.For(ctx)
 	pods, err := l.GetWorkloadPods(ctx, *workloadId)
@@ -287,19 +258,6 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 	return nil, nil
 }
 
-func aggregateConditionsBySeverity(conditions []*model.DesiredConditionStatus) *model.DesiredConditionStatus {
-	var mostSevereCondition *model.DesiredConditionStatus
-	for _, condition := range conditions {
-		if condition == nil {
-			continue
-		}
-		if mostSevereCondition == nil || desiredStateProgressSeverity(condition.Status) < desiredStateProgressSeverity(mostSevereCondition.Status) {
-			mostSevereCondition = condition
-		}
-	}
-	return mostSevereCondition
-}
-
 func getContainerNamesWithOptionalPodManifestInjection(ic *v1alpha1.InstrumentationConfig) map[string]struct{} {
 	containerNamesWithOptionalPodManifestInjection := map[string]struct{}{}
 	if ic == nil {
@@ -314,4 +272,16 @@ func getContainerNamesWithOptionalPodManifestInjection(ic *v1alpha1.Instrumentat
 		}
 	}
 	return containerNamesWithOptionalPodManifestInjection
+}
+
+func getContainerConfigByName(ic *v1alpha1.InstrumentationConfig, containerName string) *v1alpha1.ContainerAgentConfig {
+	if ic == nil {
+		return nil
+	}
+	for _, container := range ic.Spec.Containers {
+		if container.ContainerName == containerName {
+			return &container
+		}
+	}
+	return nil
 }
