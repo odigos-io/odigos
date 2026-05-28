@@ -26,6 +26,9 @@ func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperati
 	var leastPercentageRule *commonapisampling.NoisyOperation
 
 	for _, noisyOperation := range noisyOperations {
+		if noisyOperation.Disabled {
+			continue
+		}
 
 		currentPercentage := category.GetPercentageOrDefault0(noisyOperation.PercentageAtMost)
 
