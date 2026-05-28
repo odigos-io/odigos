@@ -470,8 +470,7 @@ func (p *urlTemplateProcessor) processSpanWithRules(span ptrace.Span, config wor
 }
 
 func (p *urlTemplateProcessor) processSpanWithStaticRules(span ptrace.Span) {
-	// for static mode, we do not set publiclyAccessible flag.
-	// it is only used with extension mode.
+	// for static mode, we use the default config for default templatization.
 	// this code will be removed once we fully migrate to extension mode.
 	p.processSpanWithRules(span, workloadUrlTemplatizationConfig{parsedRules: p.templatizationRules, defaultTemplatizationConfig: &commonactionsapi.DefaultTemplatizationConfig{}})
 }
