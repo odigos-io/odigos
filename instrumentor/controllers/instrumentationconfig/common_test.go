@@ -46,6 +46,32 @@ func TestUpdateInstrumentationConfigForWorkload_SingleLanguage(t *testing.T) {
 	}
 }
 
+func TestMergeCustomInstrumentationsIncludesCpp(t *testing.T) {
+	rule1 := &instrumentationrules.CustomInstrumentations{
+		Cpp: []instrumentationrules.CppCustomProbe{
+			{Signature: "std::vector::push_back"},
+		},
+	}
+	rule2 := &instrumentationrules.CustomInstrumentations{
+		Cpp: []instrumentationrules.CppCustomProbe{
+			{Signature: "SSL_write"},
+		},
+	}
+
+	merged := mergeCustomInstrumentations(rule1, rule2)
+
+	if merged == nil {
+		t.Fatal("Expected merged custom instrumentations, got nil")
+	}
+	expected := []instrumentationrules.CppCustomProbe{
+		{Signature: "std::vector::push_back"},
+		{Signature: "SSL_write"},
+	}
+	if !slices.Equal(merged.Cpp, expected) {
+		t.Fatalf("Expected merged C++ probes %#v, got %#v", expected, merged.Cpp)
+	}
+}
+
 func TestUpdateInstrumentationConfigForWorkload_MultipleLanguages(t *testing.T) {
 	ic := odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{

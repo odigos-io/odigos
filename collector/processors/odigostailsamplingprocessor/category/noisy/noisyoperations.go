@@ -53,7 +53,9 @@ func Evaluate(span ptrace.Span, noisyOperations []commonapisampling.NoisyOperati
 		// at this point, we already know the current percentage is least than the one seen so far,
 		// so if we have a match, we update.
 		if matched {
-			leastPercentageRule = &noisyOperation
+			if !noisyOperation.Disabled {
+				leastPercentageRule = &noisyOperation
+			}
 			res.SpanMatchedCount++
 		}
 	}
