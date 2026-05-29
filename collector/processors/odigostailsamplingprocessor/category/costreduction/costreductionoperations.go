@@ -7,7 +7,6 @@ import (
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
-	"github.com/odigos-io/odigos/common/collector"
 	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
@@ -18,7 +17,7 @@ type CostReductionEvaluationResult struct {
 
 // EvaluateCostReductionOperations matches cost-reduction rules on each span, sets per-span attributes,
 // aggregates trace-level matches, and returns whether a non-disabled deciding rule applies.
-func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) CostReductionEvaluationResult {
+func Evaluate(trace ptrace.Traces, configProvider category.TailSamplingConfigProvider) CostReductionEvaluationResult {
 	matchingRules := map[string]*commonapisampling.CostReductionRule{}
 	rulesEvalResults := category.CategoryRulesEvaluationResults{}
 
@@ -91,18 +90,15 @@ func selectCostReductionRuleFromMatches(matchedRules []*commonapisampling.CostRe
 	return calculateCostReductionDecidingRule(byID)
 }
 
-func getCostReductionRulesConfig(configProvider collector.OdigosConfigExtension, resource pcommon.Resource) []commonapisampling.CostReductionRule {
-	cfg, found := configProvider.GetFromResource(resource)
-	if !found {
+func getCostReductionRulesConfig(configProvider category.TailSamplingConfigProvider, resource pcommon.Resource) []commonapisampling.CostReductionRule {
+	tailSampling, found := configProvider.GetTailSamplingConfig(resource)
+	if !found || tailSampling == nil {
 		return nil
 	}
-	if cfg.TailSampling == nil {
+	if len(tailSampling.CostReductionRules) == 0 {
 		return nil
 	}
-	if len(cfg.TailSampling.CostReductionRules) == 0 {
-		return nil
-	}
-	return cfg.TailSampling.CostReductionRules
+	return tailSampling.CostReductionRules
 }
 
 // calculateCostReductionDecidingRule returns the enabled rule with the lowest PercentageAtMost (most restrictive).

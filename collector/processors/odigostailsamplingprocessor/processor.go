@@ -2,11 +2,9 @@ package odigostailsamplingprocessor
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -17,16 +15,14 @@ import (
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/highlyrelevant"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/noisy"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/internal/metadata"
-	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
-	"github.com/odigos-io/odigos/common/collector"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
 type tailSamplingProcessor struct {
-	logger                *zap.Logger
-	config                *Config
-	odigosConfigExtension collector.OdigosConfigExtension
+	logger                  *zap.Logger
+	config                  *Config
+	tailSamplingConfigCache *processorTailSamplingConfigCache
 
 	noisyOperationsCategoryMeasurementOptions metric.MeasurementOption
 	highlyRelevantCategoryMeasurementOptions  metric.MeasurementOption
@@ -37,7 +33,7 @@ type tailSamplingProcessor struct {
 
 func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 
-	if p.odigosConfigExtension == nil {
+	if !p.tailSamplingConfigCache.Attached() {
 		p.logger.Error("odigos config extension is not set, skipping tail sampling")
 		return td, nil // for auto generated tests, and not to crash in case it somehow happens
 	}
@@ -75,7 +71,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		return ptrace.NewTraces(), nil
 	}
 
-	highlyRelevantRes := highlyrelevant.Evaluate(td, p.odigosConfigExtension)
+	highlyRelevantRes := highlyrelevant.Evaluate(td, p.tailSamplingConfigCache)
 	p.recordMetrics(ctx, consts.SamplingCategoryHighlyRelevant, highlyRelevantRes.RulesEvalResults, tracePercentage, p.highlyRelevantCategoryMeasurementOptions)
 	if highlyRelevantRes.DecidingRule != nil {
 		highlyRelevantOperationRule := highlyRelevantRes.DecidingRule
@@ -91,7 +87,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		return ptrace.NewTraces(), nil
 	}
 
-	costReductionRes := costreduction.Evaluate(td, p.odigosConfigExtension)
+	costReductionRes := costreduction.Evaluate(td, p.tailSamplingConfigCache)
 	p.recordMetrics(ctx, consts.SamplingCategoryCostReduction, costReductionRes.RulesEvalResults, tracePercentage, p.costReductionCategoryMeasurementOptions)
 	if costReductionRes.DecidingRule != nil {
 		costReductionRule := costReductionRes.DecidingRule
@@ -124,7 +120,7 @@ func (p *tailSamplingProcessor) evaluateNoisyOperations(td ptrace.Traces) noisy.
 		}
 	}
 
-	tailSamplingConfig, ok := p.getTailSamplingConfig(resource)
+	tailSamplingConfig, ok := p.tailSamplingConfigCache.GetTailSamplingConfig(resource)
 	if !ok {
 		// the tail sampling config is set only if there are actually any rules.
 		// this source is not relevant for noisy operations category.
@@ -138,31 +134,11 @@ func (p *tailSamplingProcessor) evaluateNoisyOperations(td ptrace.Traces) noisy.
 }
 
 func (p *tailSamplingProcessor) Start(ctx context.Context, host component.Host) error {
-	// the extension name is validated as not nil in the config validate function
-	// and can be nil in tests
-	if p.config.OdigosConfigExtension != nil {
-		ext, found := host.GetExtensions()[*p.config.OdigosConfigExtension]
-		if !found || ext == nil {
-			return fmt.Errorf("odigos config extension not found")
-		}
-		odigosConfigExtension, ok := ext.(collector.OdigosConfigExtension)
-		if !ok {
-			return fmt.Errorf("the collector extension instance %s is not a valid odigos config extension", *p.config.OdigosConfigExtension)
-		}
-		p.odigosConfigExtension = odigosConfigExtension
-	}
-	return nil
+	return p.tailSamplingConfigCache.Start(ctx, host, p.config.OdigosConfigExtension)
 }
 
-func (p *tailSamplingProcessor) getTailSamplingConfig(resource pcommon.Resource) (*commonapisampling.TailSamplingSourceConfig, bool) {
-	collectorConfig, ok := p.odigosConfigExtension.GetFromResource(resource)
-	if !ok {
-		return nil, false
-	}
-	if collectorConfig.TailSampling == nil {
-		return nil, false
-	}
-	return collectorConfig.TailSampling, true
+func (p *tailSamplingProcessor) Shutdown(ctx context.Context) error {
+	return p.tailSamplingConfigCache.Shutdown(ctx)
 }
 
 func (p *tailSamplingProcessor) recordMetrics(ctx context.Context, category consts.SamplingCategory, evalResult category.CategoryRulesEvaluationResults, tracePercentage float64, categoryMeasurementOptions metric.MeasurementOption) {
@@ -254,9 +230,10 @@ func newTailSamplingProcessor(logger *zap.Logger, cfg *Config, set component.Tel
 	costReductionCategoryAttributes := categoryMetricsAttributes(consts.SamplingCategoryCostReduction, cfg.DryRun)
 
 	return &tailSamplingProcessor{
-		logger:           logger,
-		config:           cfg,
-		telemetryBuilder: telemetryBuilder,
+		logger:                  logger,
+		config:                  cfg,
+		tailSamplingConfigCache: newProcessorTailSamplingConfigCache(logger),
+		telemetryBuilder:        telemetryBuilder,
 		noisyOperationsCategoryMeasurementOptions: metric.WithAttributes(noisyOperationsCategoryAttributes...),
 		highlyRelevantCategoryMeasurementOptions:  metric.WithAttributes(highlyRelevantCategoryAttributes...),
 		costReductionCategoryMeasurementOptions:   metric.WithAttributes(costReductionCategoryAttributes...),

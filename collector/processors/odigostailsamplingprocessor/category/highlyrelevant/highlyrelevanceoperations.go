@@ -7,7 +7,6 @@ import (
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
-	"github.com/odigos-io/odigos/common/collector"
 	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
@@ -20,7 +19,7 @@ type HighlyRelevantEvaluationResult struct {
 // - checks all highly-relevant tail-sampling rules across all spans in the trace for matches,
 // - compute a deciding rule based on the rules that matched,
 // - returns wether this category matched, and the deciding rule if it did.
-func Evaluate(trace ptrace.Traces, configProvider collector.OdigosConfigExtension) HighlyRelevantEvaluationResult {
+func Evaluate(trace ptrace.Traces, configProvider category.TailSamplingConfigProvider) HighlyRelevantEvaluationResult {
 	matchingRules := map[string]*commonapisampling.HighlyRelevantOperation{}
 
 	rulesEvalResults := map[string]*category.RuleEvaluationResult{}
@@ -98,18 +97,15 @@ func selectHighlyRelevantRuleFromMatches(matchedRules []*commonapisampling.Highl
 	return calculateDecidingRule(byID)
 }
 
-func getHighlyRelevantOperationsConfig(configProvider collector.OdigosConfigExtension, resource pcommon.Resource) []commonapisampling.HighlyRelevantOperation {
-	cfg, found := configProvider.GetFromResource(resource)
-	if !found {
+func getHighlyRelevantOperationsConfig(configProvider category.TailSamplingConfigProvider, resource pcommon.Resource) []commonapisampling.HighlyRelevantOperation {
+	tailSampling, found := configProvider.GetTailSamplingConfig(resource)
+	if !found || tailSampling == nil {
 		return nil
 	}
-	if cfg.TailSampling == nil {
+	if len(tailSampling.HighlyRelevantOperations) == 0 {
 		return nil
 	}
-	if len(cfg.TailSampling.HighlyRelevantOperations) == 0 {
-		return nil
-	}
-	return cfg.TailSampling.HighlyRelevantOperations
+	return tailSampling.HighlyRelevantOperations
 }
 
 // based on all the matching rules, find the one with the highest percentage.
