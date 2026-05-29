@@ -24,6 +24,12 @@ import (
 // Ensure urlTemplateProcessor implements the callback interface used by the extension.
 var _ collector.WorkloadConfigCacheCallback = (*urlTemplateProcessor)(nil)
 
+// internalCustomIdConfig holds a compiled custom-id regexp and template name for default templatization.
+type internalCustomIdConfig struct {
+	Regexp regexp.Regexp
+	Name   string
+}
+
 // workloadUrlTemplatizationConfig holds the result of parsing URL templatization rules for one workload/container.
 // Stored in processorURLTemplateParsedRulesCache so we parse once per entry, not per batch.
 type workloadUrlTemplatizationConfig struct {
@@ -43,11 +49,8 @@ type urlTemplateProcessor struct {
 	templatizationRules map[int][]TemplatizationRule // group templatization rules by segments length
 	customIds           []internalCustomIdConfig
 
-	excludeMatcher *PropertiesMatcher
-	includeMatcher *PropertiesMatcher
-
 	// provider is set in Start() when odigos_config_extension is present (the default in Odigos-managed configs).
-	// Per-workload rules come from the extension cache; include/exclude matchers apply only on the legacy static path.
+	// Per-workload rules come from the extension cache.
 	provider collector.OdigosConfigExtension
 
 	// processorURLTemplateParsedRulesCache caches parsed rules per workload key; updated via extension callback.
@@ -55,9 +58,6 @@ type urlTemplateProcessor struct {
 }
 
 func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTemplateProcessor, error) {
-
-	excludeMatcher := NewPropertiesMatcher(config.Exclude)
-	includeMatcher := NewPropertiesMatcher(config.Include)
 
 	parsedRules := map[int][]TemplatizationRule{}
 	for _, rule := range config.TemplatizationRules {
@@ -94,8 +94,6 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 		cfg:                 config,
 		templatizationRules: parsedRules,
 		customIds:           customIdsRegexp,
-		excludeMatcher:      excludeMatcher,
-		includeMatcher:      includeMatcher,
 		parsedRulesCache:    newProcessorURLTemplateParsedRulesCache(),
 	}, nil
 }
@@ -210,12 +208,6 @@ func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Trac
 				}
 			}
 		} else {
-			if p.excludeMatcher != nil && p.excludeMatcher.Match(resourceSpans.Resource()) {
-				continue
-			}
-			if p.includeMatcher != nil && !p.includeMatcher.Match(resourceSpans.Resource()) {
-				continue
-			}
 			for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
 				scopeSpans := resourceSpans.ScopeSpans().At(j)
 				for k := 0; k < scopeSpans.Spans().Len(); k++ {
