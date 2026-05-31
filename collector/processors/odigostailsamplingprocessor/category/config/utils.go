@@ -1,4 +1,4 @@
-package category
+package config
 
 import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
