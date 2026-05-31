@@ -1,10 +1,11 @@
 package config
 
 import (
+	"go.opentelemetry.io/otel/attribute"
+
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/odigosattributes"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // coomputed rules add some precomputed values to each rule, so it's easier and faster to evaluate them.

@@ -1,9 +1,10 @@
 package metrics
 
 import (
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/odigosattributes"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // CategoryMetricsAttributeSet returns an attribute set for the given category and dry run mode.

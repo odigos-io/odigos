@@ -1,11 +1,12 @@
 package samplingspanattrs
 
 import (
+	"go.opentelemetry.io/collector/pdata/ptrace"
+
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/config"
 	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/odigosattributes"
-	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
 func SetSpanMatchingRuleAttributesOnSpan(span ptrace.Span, rule *config.ComputedRule) {
