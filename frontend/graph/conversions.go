@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	commonapi "github.com/odigos-io/odigos/common/api"
 	"github.com/odigos-io/odigos/common/api/sampling"
+	"github.com/odigos-io/odigos/destinations/testconnection"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -1106,4 +1107,31 @@ func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration, pc *pro
 	}
 
 	return result
+}
+
+func destinationInputToConfigurer(destination model.DestinationInput) *testconnection.Configurer {
+	fields := make(map[string]string, len(destination.Fields))
+	for _, field := range destination.Fields {
+		fields[field.Key] = field.Value
+	}
+
+	var signals []common.ObservabilitySignal
+	if destination.ExportedSignals != nil {
+		if destination.ExportedSignals.Traces {
+			signals = append(signals, common.TracesObservabilitySignal)
+		}
+		if destination.ExportedSignals.Metrics {
+			signals = append(signals, common.MetricsObservabilitySignal)
+		}
+		if destination.ExportedSignals.Logs {
+			signals = append(signals, common.LogsObservabilitySignal)
+		}
+	}
+
+	return &testconnection.Configurer{
+		DestinationType: destination.Type,
+		ID:              destination.Name,
+		Config:          fields,
+		Signals:         signals,
+	}
 }

@@ -694,33 +694,6 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 	}, nil
 }
 
-func destinationInputToConfigurer(destination model.DestinationInput) *testconnection.Configurer {
-	fields := make(map[string]string, len(destination.Fields))
-	for _, field := range destination.Fields {
-		fields[field.Key] = field.Value
-	}
-
-	var signals []common.ObservabilitySignal
-	if destination.ExportedSignals != nil {
-		if destination.ExportedSignals.Traces {
-			signals = append(signals, common.TracesObservabilitySignal)
-		}
-		if destination.ExportedSignals.Metrics {
-			signals = append(signals, common.MetricsObservabilitySignal)
-		}
-		if destination.ExportedSignals.Logs {
-			signals = append(signals, common.LogsObservabilitySignal)
-		}
-	}
-
-	return &testconnection.Configurer{
-		DestinationType: destination.Type,
-		ID:              destination.Name,
-		Config:          fields,
-		Signals:         signals,
-	}
-}
-
 // CreateAction is the resolver for the createAction field.
 func (r *mutationResolver) CreateAction(ctx context.Context, action model.ActionInput) (*model.Action, error) {
 	return services.CreateAction(ctx, action)
