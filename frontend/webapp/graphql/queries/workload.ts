@@ -81,6 +81,12 @@ export const GET_WORKLOADS_BY_IDS = gql`
           reasonEnum
           message
         }
+        autoRollback {
+          name
+          status
+          reasonEnum
+          message
+        }
         agentInjected {
           name
           status
@@ -99,6 +105,15 @@ export const GET_WORKLOADS_BY_IDS = gql`
           reasonEnum
           message
         }
+      }
+      autoRollback {
+        autoRollbackStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        rollbackOccurred
       }
       runtimeInfo {
         detectedLanguages
