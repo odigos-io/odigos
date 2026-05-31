@@ -5,13 +5,14 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/config"
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/metrics"
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/samplingspanattrs"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
-	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
-	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
 type HighlyRelevantEvaluationResult struct {
-	DecidingRule     *commonapisampling.HighlyRelevantOperation
+	DecidingRule     *config.ComputedRule
 	RulesEvalResults category.CategoryRulesEvaluationResults
 }
 
@@ -19,9 +20,8 @@ type HighlyRelevantEvaluationResult struct {
 // - checks all highly-relevant tail-sampling rules across all spans in the trace for matches,
 // - compute a deciding rule based on the rules that matched,
 // - returns wether this category matched, and the deciding rule if it did.
-func Evaluate(trace ptrace.Traces, configProvider category.TailSamplingConfigProvider) HighlyRelevantEvaluationResult {
-	matchingRules := map[string]*commonapisampling.HighlyRelevantOperation{}
-
+func Evaluate(trace ptrace.Traces, configProvider config.TailSamplingConfigProvider) HighlyRelevantEvaluationResult {
+	matchingRules := map[string]*config.ComputedRule{}
 	rulesEvalResults := map[string]*category.RuleEvaluationResult{}
 
 	rss := trace.ResourceSpans()
@@ -40,23 +40,11 @@ func Evaluate(trace ptrace.Traces, configProvider category.TailSamplingConfigPro
 			for k := 0; k < spans.Len(); k++ {
 				span := spans.At(k)
 
-				matchedRules := matchHighlyRelevantRulesForSingleSpan(span, highlyRelevantOperations)
+				matchedRules := matchHighlyRelevantRulesForSingleSpan(rulesEvalResults, matchingRules, span, highlyRelevantOperations)
 				spanMostPercentageRule := selectHighlyRelevantRuleFromMatches(matchedRules)
 
-				recordEvalResultForSingleSpan(rulesEvalResults, highlyRelevantOperations)
-
 				if spanMostPercentageRule != nil {
-					setHighlyRelevantRuleAttributesOnSpan(span, spanMostPercentageRule)
-				}
-				if len(matchedRules) > 0 {
-					for _, matchedRule := range matchedRules {
-						matchingRules[matchedRule.Id] = matchedRule
-
-						evalResult, found := rulesEvalResults[matchedRule.Id]
-						if found {
-							evalResult.SpanMatchedCount++
-						}
-					}
+					samplingspanattrs.SetSpanMatchingRuleAttributesOnSpan(span, spanMostPercentageRule)
 				}
 			}
 		}
@@ -70,17 +58,23 @@ func Evaluate(trace ptrace.Traces, configProvider category.TailSamplingConfigPro
 }
 
 // matchHighlyRelevantRulesForSingleSpan returns every highly-relevant rule whose matchers all pass for this span.
-func matchHighlyRelevantRulesForSingleSpan(span ptrace.Span, highlyRelevantOperations []commonapisampling.HighlyRelevantOperation) []*commonapisampling.HighlyRelevantOperation {
-	matchedRules := []*commonapisampling.HighlyRelevantOperation{}
+// it also updates the rulesEvalResults and matchingRules maps based on the matched rules.
+func matchHighlyRelevantRulesForSingleSpan(rulesEvalResults map[string]*category.RuleEvaluationResult, matchingRules map[string]*config.ComputedRule, span ptrace.Span, highlyRelevantOperations []config.ComputedHighlyRelevantOperation) []*config.ComputedRule {
+	matchedRules := []*config.ComputedRule{}
 
 	for _, highlyRelevantOperation := range highlyRelevantOperations {
 		matched := true
-		matched = matched && matchers.TailSamplingOperationMatcher(highlyRelevantOperation.Operation, span)
-		matched = matched && matchers.SpanErrorMatcher(span, highlyRelevantOperation.Error)
-		matched = matched && matchers.SpanDurationMatcher(span, highlyRelevantOperation.DurationAtLeastMs)
+		matched = matched && matchers.TailSamplingOperationMatcher(highlyRelevantOperation.Rule.Operation, span)
+		matched = matched && matchers.SpanErrorMatcher(span, highlyRelevantOperation.Rule.Error)
+		matched = matched && matchers.SpanDurationMatcher(span, highlyRelevantOperation.Rule.DurationAtLeastMs)
+
+		metrics.RecordEvalResultForSingleSpan(rulesEvalResults, highlyRelevantOperation.ComputedRule, matched)
 
 		if matched {
-			matchedRules = append(matchedRules, &highlyRelevantOperation)
+			matchedRules = append(matchedRules, &highlyRelevantOperation.ComputedRule)
+			if _, found := matchingRules[highlyRelevantOperation.ComputedRule.RuleId]; !found {
+				matchingRules[highlyRelevantOperation.ComputedRule.RuleId] = &highlyRelevantOperation.ComputedRule
+			}
 		}
 	}
 
@@ -89,15 +83,15 @@ func matchHighlyRelevantRulesForSingleSpan(span ptrace.Span, highlyRelevantOpera
 
 // selectHighlyRelevantRuleFromMatches picks the span-level rule using the same logic as the trace deciding rule
 // (see calculateDecidingRule): highest PercentageAtLeast among enabled matches.
-func selectHighlyRelevantRuleFromMatches(matchedRules []*commonapisampling.HighlyRelevantOperation) *commonapisampling.HighlyRelevantOperation {
-	byID := make(map[string]*commonapisampling.HighlyRelevantOperation, len(matchedRules))
+func selectHighlyRelevantRuleFromMatches(matchedRules []*config.ComputedRule) *config.ComputedRule {
+	byID := make(map[string]*config.ComputedRule, len(matchedRules))
 	for _, r := range matchedRules {
-		byID[r.Id] = r
+		byID[r.RuleId] = r
 	}
 	return calculateDecidingRule(byID)
 }
 
-func getHighlyRelevantOperationsConfig(configProvider category.TailSamplingConfigProvider, resource pcommon.Resource) []commonapisampling.HighlyRelevantOperation {
+func getHighlyRelevantOperationsConfig(configProvider config.TailSamplingConfigProvider, resource pcommon.Resource) []config.ComputedHighlyRelevantOperation {
 	tailSampling, found := configProvider.GetTailSamplingConfig(resource)
 	if !found || tailSampling == nil {
 		return nil
@@ -111,18 +105,17 @@ func getHighlyRelevantOperationsConfig(configProvider category.TailSamplingConfi
 // based on all the matching rules, find the one with the highest percentage.
 // if multiple rules have the same highest percentage, one of them will be selected arbitrarily.
 // this is used to mark spans with a single rule (most allowing) for sampling traceability.
-func calculateDecidingRule(matchingRules map[string]*commonapisampling.HighlyRelevantOperation) *commonapisampling.HighlyRelevantOperation {
+func calculateDecidingRule(matchingRules map[string]*config.ComputedRule) *config.ComputedRule {
 	if len(matchingRules) == 0 {
 		return nil
 	}
 
-	var selectedRule *commonapisampling.HighlyRelevantOperation
-	var selectedPercentage float64 = 0.0
+	var selectedRule *config.ComputedRule
 	for _, matchingRule := range matchingRules {
 		if matchingRule.Disabled {
 			continue
 		}
-		percentage := category.GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
+		percentage := matchingRule.Percentage
 
 		// once we hit maximum, no point in keeping iterating.
 		if percentage == 100.0 {
@@ -130,16 +123,9 @@ func calculateDecidingRule(matchingRules map[string]*commonapisampling.HighlyRel
 		}
 
 		// update if it's the first one, or if it's greater than the current largest one.
-		if selectedRule == nil || percentage > selectedPercentage {
+		if selectedRule == nil || percentage > selectedRule.Percentage {
 			selectedRule = matchingRule
-			selectedPercentage = percentage
 		}
 	}
 	return selectedRule // can be nil if all rules are disabled.
-}
-
-func setHighlyRelevantRuleAttributesOnSpan(span ptrace.Span, rule *commonapisampling.HighlyRelevantOperation) {
-	span.Attributes().PutStr(odigosattributes.SamplingSpanMatchingRuleId, rule.Id)
-	span.Attributes().PutStr(odigosattributes.SamplingSpanMatchingRuleName, rule.Name)
-	span.Attributes().PutDouble(odigosattributes.SamplingSpanMatchingRuleKeepPercentage, category.GetPercentageOrDefault100(rule.PercentageAtLeast))
 }

@@ -1,4 +1,4 @@
-package odigostailsamplingprocessor
+package config
 
 import (
 	"context"
@@ -9,35 +9,36 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
 
-	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
 	commonapi "github.com/odigos-io/odigos/common/api"
-	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/collector"
 )
 
 var (
-	_ collector.WorkloadConfigCacheCallback = (*processorTailSamplingConfigCache)(nil)
-	_ category.TailSamplingConfigProvider     = (*processorTailSamplingConfigCache)(nil)
+	_ collector.WorkloadConfigCacheCallback = (*ConfigCache)(nil)
+	_ TailSamplingConfigProvider            = (*ConfigCache)(nil)
 )
 
 // processorTailSamplingConfigCache caches tail sampling config per workload key (namespace/kind/name/container).
-// It registers with odigos_config_extension for updates and resolves config on the hot path from the local cache.
-type processorTailSamplingConfigCache struct {
+// It registers with odigos_config_extension for updates and resolves config on the hot path from the local ConfigCache.
+type ConfigCache struct {
 	logger   *zap.Logger
 	mu       sync.RWMutex
-	data     map[string]*commonapisampling.TailSamplingSourceConfig
+	data     map[string]*ComputedWorkloadConfig
 	provider collector.OdigosConfigExtension
+
+	dryRun bool
 }
 
-func newProcessorTailSamplingConfigCache(logger *zap.Logger) *processorTailSamplingConfigCache {
-	return &processorTailSamplingConfigCache{
+func NewConfigCache(logger *zap.Logger, dryRun bool) *ConfigCache {
+	return &ConfigCache{
 		logger: logger,
-		data:   make(map[string]*commonapisampling.TailSamplingSourceConfig),
+		data:   make(map[string]*ComputedWorkloadConfig),
+		dryRun: dryRun,
 	}
 }
 
 // Start resolves odigos_config_extension and registers for workload config updates.
-func (c *processorTailSamplingConfigCache) Start(ctx context.Context, host component.Host, extID *component.ID) error {
+func (c *ConfigCache) Start(ctx context.Context, host component.Host, extID *component.ID) error {
 	if extID == nil {
 		return nil
 	}
@@ -49,7 +50,7 @@ func (c *processorTailSamplingConfigCache) Start(ctx context.Context, host compo
 	return c.attach(ctx, ext, extID.String())
 }
 
-func (c *processorTailSamplingConfigCache) attach(ctx context.Context, ext component.Component, extensionID string) error {
+func (c *ConfigCache) attach(ctx context.Context, ext component.Component, extensionID string) error {
 	odigosExt, ok := ext.(collector.OdigosConfigExtension)
 	if !ok {
 		return fmt.Errorf("extension %q is not an OdigosConfigExtension (got %T)", extensionID, ext)
@@ -63,7 +64,7 @@ func (c *processorTailSamplingConfigCache) attach(ctx context.Context, ext compo
 }
 
 // Shutdown unregisters from the extension and clears local state.
-func (c *processorTailSamplingConfigCache) Shutdown(context.Context) error {
+func (c *ConfigCache) Shutdown(context.Context) error {
 	if c.provider != nil {
 		c.provider.UnregisterWorkloadConfigCacheCallback(c)
 		c.provider = nil
@@ -73,28 +74,32 @@ func (c *processorTailSamplingConfigCache) Shutdown(context.Context) error {
 }
 
 // Attached reports whether the cache is connected to odigos_config_extension.
-func (c *processorTailSamplingConfigCache) Attached() bool {
+func (c *ConfigCache) Attached() bool {
 	return c.provider != nil
 }
 
 // OnSet implements collector.WorkloadConfigCacheCallback.
-func (c *processorTailSamplingConfigCache) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
-	var tailSampling *commonapisampling.TailSamplingSourceConfig
-	if cfg != nil && cfg.TailSampling != nil {
-		tailSampling = cfg.TailSampling
+func (c *ConfigCache) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
+
+	if cfg == nil || cfg.TailSampling == nil {
+		c.delete(key)
+		return
 	}
-	c.set(key, tailSampling)
+
+	computed := precomputeWorkloadConfig(cfg.TailSampling, c.dryRun)
+	c.set(key, computed)
+
 	c.logger.Debug("workload tail sampling config cache OnSet", zap.String("key", key))
 }
 
 // OnDeleteKey implements collector.WorkloadConfigCacheCallback.
-func (c *processorTailSamplingConfigCache) OnDeleteKey(key string) {
+func (c *ConfigCache) OnDeleteKey(key string) {
 	c.delete(key)
 	c.logger.Debug("workload tail sampling config cache OnDeleteKey", zap.String("key", key))
 }
 
 // GetTailSamplingConfig implements category.TailSamplingConfigProvider.
-func (c *processorTailSamplingConfigCache) GetTailSamplingConfig(resource pcommon.Resource) (*commonapisampling.TailSamplingSourceConfig, bool) {
+func (c *ConfigCache) GetTailSamplingConfig(resource pcommon.Resource) (*ComputedWorkloadConfig, bool) {
 	if c.provider == nil {
 		return nil, false
 	}
@@ -109,27 +114,27 @@ func (c *processorTailSamplingConfigCache) GetTailSamplingConfig(resource pcommo
 	return tailSampling, true
 }
 
-func (c *processorTailSamplingConfigCache) get(key string) (*commonapisampling.TailSamplingSourceConfig, bool) {
+func (c *ConfigCache) get(key string) (*ComputedWorkloadConfig, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	cfg, ok := c.data[key]
 	return cfg, ok
 }
 
-func (c *processorTailSamplingConfigCache) set(key string, cfg *commonapisampling.TailSamplingSourceConfig) {
+func (c *ConfigCache) set(key string, cfg *ComputedWorkloadConfig) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.data[key] = cfg
 }
 
-func (c *processorTailSamplingConfigCache) delete(key string) {
+func (c *ConfigCache) delete(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.data, key)
 }
 
-func (c *processorTailSamplingConfigCache) clear() {
+func (c *ConfigCache) clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.data = make(map[string]*commonapisampling.TailSamplingSourceConfig)
+	c.data = make(map[string]*ComputedWorkloadConfig)
 }

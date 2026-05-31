@@ -5,20 +5,21 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/config"
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/metrics"
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/samplingspanattrs"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
-	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
-	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
 type CostReductionEvaluationResult struct {
-	DecidingRule     *commonapisampling.CostReductionRule
+	DecidingRule     *config.ComputedRule
 	RulesEvalResults category.CategoryRulesEvaluationResults
 }
 
 // EvaluateCostReductionOperations matches cost-reduction rules on each span, sets per-span attributes,
 // aggregates trace-level matches, and returns whether a non-disabled deciding rule applies.
-func Evaluate(trace ptrace.Traces, configProvider category.TailSamplingConfigProvider) CostReductionEvaluationResult {
-	matchingRules := map[string]*commonapisampling.CostReductionRule{}
+func Evaluate(trace ptrace.Traces, configProvider config.TailSamplingConfigProvider) CostReductionEvaluationResult {
+	matchingRules := map[string]*config.ComputedRule{}
 	rulesEvalResults := category.CategoryRulesEvaluationResults{}
 
 	rss := trace.ResourceSpans()
@@ -37,23 +38,11 @@ func Evaluate(trace ptrace.Traces, configProvider category.TailSamplingConfigPro
 			for k := 0; k < spans.Len(); k++ {
 				span := spans.At(k)
 
-				matchedRules := matchCostReductionRulesForSingleSpan(span, costReductionRules)
+				matchedRules := matchCostReductionRulesForSingleSpan(rulesEvalResults, matchingRules, span, costReductionRules)
 				spanLeastPercentageRule := selectCostReductionRuleFromMatches(matchedRules)
 
-				recordEvalResultForSingleSpan(rulesEvalResults, costReductionRules)
-
 				if spanLeastPercentageRule != nil {
-					setCostReductionRuleAttributesOnSpan(span, spanLeastPercentageRule)
-				}
-				if len(matchedRules) > 0 {
-					for _, matchedRule := range matchedRules {
-						matchingRules[matchedRule.Id] = matchedRule
-
-						evalResult, found := rulesEvalResults[matchedRule.Id]
-						if found {
-							evalResult.SpanMatchedCount++
-						}
-					}
+					samplingspanattrs.SetSpanMatchingRuleAttributesOnSpan(span, spanLeastPercentageRule)
 				}
 			}
 		}
@@ -67,13 +56,18 @@ func Evaluate(trace ptrace.Traces, configProvider category.TailSamplingConfigPro
 }
 
 // matchCostReductionRulesForSingleSpan returns every cost-reduction rule whose operation matcher passes for this span.
-func matchCostReductionRulesForSingleSpan(span ptrace.Span, costReductionRules []commonapisampling.CostReductionRule) []*commonapisampling.CostReductionRule {
-	matchedRules := []*commonapisampling.CostReductionRule{}
+// it also updates the rulesEvalResults and matchingRules maps based on the matched rules.
+func matchCostReductionRulesForSingleSpan(rulesEvalResults map[string]*category.RuleEvaluationResult, matchingRules map[string]*config.ComputedRule, span ptrace.Span, costReductionRules []config.ComputedCostReductionRule) []*config.ComputedCostReductionRule {
+	matchedRules := []*config.ComputedCostReductionRule{}
 
 	for _, rule := range costReductionRules {
-		matched := matchers.TailSamplingOperationMatcher(rule.Operation, span)
+		matched := matchers.TailSamplingOperationMatcher(rule.Rule.Operation, span)
+		metrics.RecordEvalResultForSingleSpan(rulesEvalResults, rule.ComputedRule, matched)
 		if matched {
 			matchedRules = append(matchedRules, &rule)
+			if _, found := matchingRules[rule.ComputedRule.RuleId]; !found {
+				matchingRules[rule.ComputedRule.RuleId] = &rule.ComputedRule
+			}
 		}
 	}
 
@@ -82,15 +76,15 @@ func matchCostReductionRulesForSingleSpan(span ptrace.Span, costReductionRules [
 
 // selectCostReductionRuleFromMatches picks the span-level rule using the same logic as the trace deciding rule
 // (see calculateCostReductionDecidingRule): smallest PercentageAtMost among enabled matches.
-func selectCostReductionRuleFromMatches(matchedRules []*commonapisampling.CostReductionRule) *commonapisampling.CostReductionRule {
-	byID := make(map[string]*commonapisampling.CostReductionRule, len(matchedRules))
+func selectCostReductionRuleFromMatches(matchedRules []*config.ComputedCostReductionRule) *config.ComputedRule {
+	byID := make(map[string]*config.ComputedRule, len(matchedRules))
 	for _, r := range matchedRules {
-		byID[r.Id] = r
+		byID[r.ComputedRule.RuleId] = &r.ComputedRule
 	}
 	return calculateCostReductionDecidingRule(byID)
 }
 
-func getCostReductionRulesConfig(configProvider category.TailSamplingConfigProvider, resource pcommon.Resource) []commonapisampling.CostReductionRule {
+func getCostReductionRulesConfig(configProvider config.TailSamplingConfigProvider, resource pcommon.Resource) []config.ComputedCostReductionRule {
 	tailSampling, found := configProvider.GetTailSamplingConfig(resource)
 	if !found || tailSampling == nil {
 		return nil
@@ -103,31 +97,25 @@ func getCostReductionRulesConfig(configProvider category.TailSamplingConfigProvi
 
 // calculateCostReductionDecidingRule returns the enabled rule with the lowest PercentageAtMost (most restrictive).
 // Used for the trace-level deciding rule and for per-span attributes after a span's matches are keyed by rule id.
-func calculateCostReductionDecidingRule(matchingRules map[string]*commonapisampling.CostReductionRule) *commonapisampling.CostReductionRule {
+func calculateCostReductionDecidingRule(matchingRules map[string]*config.ComputedRule) *config.ComputedRule {
 	if len(matchingRules) == 0 {
 		return nil
 	}
 
 	// check for lowest percentage enabled sampling rule.
-	var selectedRule *commonapisampling.CostReductionRule
+	var selectedRule *config.ComputedRule
 	for _, r := range matchingRules {
 		if r.Disabled {
 			continue
 		}
 		// shortcut for when we hit the bottom and don't need to keep iterating.
-		if r.PercentageAtMost == 0 {
+		if r.Percentage == 0 {
 			return r
 		}
 		// update if it's the first one, or if it's less than the current smallest one.
-		if selectedRule == nil || r.PercentageAtMost < selectedRule.PercentageAtMost {
+		if selectedRule == nil || r.Percentage < selectedRule.Percentage {
 			selectedRule = r
 		}
 	}
 	return selectedRule
-}
-
-func setCostReductionRuleAttributesOnSpan(span ptrace.Span, rule *commonapisampling.CostReductionRule) {
-	span.Attributes().PutStr(odigosattributes.SamplingSpanMatchingRuleId, rule.Id)
-	span.Attributes().PutStr(odigosattributes.SamplingSpanMatchingRuleName, rule.Name)
-	span.Attributes().PutDouble(odigosattributes.SamplingSpanMatchingRuleKeepPercentage, rule.PercentageAtMost)
 }
