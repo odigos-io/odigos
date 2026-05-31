@@ -13,12 +13,13 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/destinations/testconnection"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
-	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
+	"github.com/odigos-io/odigos/frontend/services/testconnectionotel"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -673,21 +674,8 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 		}, nil
 	}
 
-	configurer, err := testconnection.ConvertDestinationToConfigurer(destination)
-	if err != nil {
-		return nil, err
-	}
-
-	// temporary workaround for honeycomb which does not allow empty payload in otlp export.
-	// they have a ticket open to fix that, but for now, we are using a specific honeycomb api for test connection
-	// "Permanent error: rpc error: code = InvalidArgument desc = request body should not be empty"
-	// TODO: remove once honeycomb fixes the issue
-	var res testconnection.TestConnectionResult
-	if destType == common.HoneycombDestinationType {
-		res = testconnection.TestConnectionHoneycomb(ctx, configurer)
-	} else {
-		res = testconnection.TestConnection(ctx, configurer)
-	}
+	configurer := destinationInputToConfigurer(destination)
+	res := testconnection.TestConnection(ctx, configurer, testconnectionotel.Testers())
 
 	if !res.Succeeded {
 		return &model.TestConnectionResponse{
@@ -704,6 +692,33 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 		StatusCode:      200,
 		DestinationType: (*string)(&res.DestinationType),
 	}, nil
+}
+
+func destinationInputToConfigurer(destination model.DestinationInput) *testconnection.Configurer {
+	fields := make(map[string]string, len(destination.Fields))
+	for _, field := range destination.Fields {
+		fields[field.Key] = field.Value
+	}
+
+	var signals []common.ObservabilitySignal
+	if destination.ExportedSignals != nil {
+		if destination.ExportedSignals.Traces {
+			signals = append(signals, common.TracesObservabilitySignal)
+		}
+		if destination.ExportedSignals.Metrics {
+			signals = append(signals, common.MetricsObservabilitySignal)
+		}
+		if destination.ExportedSignals.Logs {
+			signals = append(signals, common.LogsObservabilitySignal)
+		}
+	}
+
+	return &testconnection.Configurer{
+		DestinationType: destination.Type,
+		ID:              destination.Name,
+		Config:          fields,
+		Signals:         signals,
+	}
 }
 
 // CreateAction is the resolver for the createAction field.
