@@ -66,8 +66,8 @@ func CalculateAutoRollbackStatus(ic *odigosv1alpha1.InstrumentationConfig, autoR
 	timeSinceInstrumentation := time.Since(ic.Status.InstrumentationTime.Time)
 	if timeSinceInstrumentation < autoRollbackConfig.StabilityWindow {
 		// if we are within the stability window, and did not mark the rollback occurred, we are still evaluating
-		return createAutoRollbackStatus(AutoRollbackReasonEvaluating, fmt.Sprintf("evaluating pods for stability for %s", autoRollbackConfig.StabilityWindow), model.DesiredStateProgressWaiting)
+		return createAutoRollbackStatus(AutoRollbackReasonEvaluating, fmt.Sprintf("evaluating pods stability for %s", autoRollbackConfig.StabilityWindow), model.DesiredStateProgressWaiting)
 	}
 
-	return createAutoRollbackStatus(AutoRollbackReasonStable, fmt.Sprintf("pods are stable after instrumentation", autoRollbackConfig.StabilityWindow), model.DesiredStateProgressSuccess)
+	return createAutoRollbackStatus(AutoRollbackReasonStable, "pods are stable after instrumentation", model.DesiredStateProgressSuccess)
 }
