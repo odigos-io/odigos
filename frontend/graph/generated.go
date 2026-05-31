@@ -678,6 +678,7 @@ type ComplexityRoot struct {
 
 	K8sWorkload struct {
 		AgentEnabled               func(childComplexity int) int
+		AutoRollback               func(childComplexity int) int
 		Conditions                 func(childComplexity int) int
 		Containers                 func(childComplexity int) int
 		DataStreamNames            func(childComplexity int) int
@@ -729,9 +730,15 @@ type ComplexityRoot struct {
 		Enabled func(childComplexity int) int
 	}
 
+	K8sWorkloadAutoRollback struct {
+		AutoRollbackStatus func(childComplexity int) int
+		RollbackOccurred   func(childComplexity int) int
+	}
+
 	K8sWorkloadConditions struct {
 		AgentInjected         func(childComplexity int) int
 		AgentInjectionEnabled func(childComplexity int) int
+		AutoRollback          func(childComplexity int) int
 		ExpectingTelemetry    func(childComplexity int) int
 		ProcessesAgentHealth  func(childComplexity int) int
 		Rollout               func(childComplexity int) int
@@ -1432,6 +1439,7 @@ type K8sWorkloadResolver interface {
 	RuntimeInfo(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadRuntimeInfo, error)
 	AgentEnabled(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadAgentEnabled, error)
 	Rollout(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadRollout, error)
+	AutoRollback(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadAutoRollback, error)
 	Containers(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadContainer, error)
 	Pods(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadPod, error)
 	PodsAgentInjectionStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
@@ -4393,6 +4401,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkload.AgentEnabled(childComplexity), true
 
+	case "K8sWorkload.autoRollback":
+		if e.complexity.K8sWorkload.AutoRollback == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkload.AutoRollback(childComplexity), true
+
 	case "K8sWorkload.conditions":
 		if e.complexity.K8sWorkload.Conditions == nil {
 			break
@@ -4631,6 +4646,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadAgentEnabledContainerTraces.Enabled(childComplexity), true
 
+	case "K8sWorkloadAutoRollback.autoRollbackStatus":
+		if e.complexity.K8sWorkloadAutoRollback.AutoRollbackStatus == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadAutoRollback.AutoRollbackStatus(childComplexity), true
+
+	case "K8sWorkloadAutoRollback.rollbackOccurred":
+		if e.complexity.K8sWorkloadAutoRollback.RollbackOccurred == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadAutoRollback.RollbackOccurred(childComplexity), true
+
 	case "K8sWorkloadConditions.agentInjected":
 		if e.complexity.K8sWorkloadConditions.AgentInjected == nil {
 			break
@@ -4644,6 +4673,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadConditions.AgentInjectionEnabled(childComplexity), true
+
+	case "K8sWorkloadConditions.autoRollback":
+		if e.complexity.K8sWorkloadConditions.AutoRollback == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadConditions.AutoRollback(childComplexity), true
 
 	case "K8sWorkloadConditions.expectingTelemetry":
 		if e.complexity.K8sWorkloadConditions.ExpectingTelemetry == nil {
@@ -28242,6 +28278,8 @@ func (ec *executionContext) fieldContext_K8sNamespace_workloads(_ context.Contex
 				return ec.fieldContext_K8sWorkload_agentEnabled(ctx, field)
 			case "rollout":
 				return ec.fieldContext_K8sWorkload_rollout(ctx, field)
+			case "autoRollback":
+				return ec.fieldContext_K8sWorkload_autoRollback(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sWorkload_containers(ctx, field)
 			case "pods":
@@ -28465,6 +28503,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_conditions(_ context.Contex
 				return ec.fieldContext_K8sWorkloadConditions_agentInjectionEnabled(ctx, field)
 			case "rollout":
 				return ec.fieldContext_K8sWorkloadConditions_rollout(ctx, field)
+			case "autoRollback":
+				return ec.fieldContext_K8sWorkloadConditions_autoRollback(ctx, field)
 			case "agentInjected":
 				return ec.fieldContext_K8sWorkloadConditions_agentInjected(ctx, field)
 			case "processesAgentHealth":
@@ -28670,6 +28710,53 @@ func (ec *executionContext) fieldContext_K8sWorkload_rollout(_ context.Context, 
 				return ec.fieldContext_K8sWorkloadRollout_rolloutStatus(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRollout", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkload_autoRollback(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkload_autoRollback(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sWorkload().AutoRollback(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadAutoRollback)
+	fc.Result = res
+	return ec.marshalOK8sWorkloadAutoRollback2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadAutoRollback(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkload_autoRollback(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkload",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "autoRollbackStatus":
+				return ec.fieldContext_K8sWorkloadAutoRollback_autoRollbackStatus(ctx, field)
+			case "rollbackOccurred":
+				return ec.fieldContext_K8sWorkloadAutoRollback_rollbackOccurred(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadAutoRollback", field.Name)
 		},
 	}
 	return fc, nil
@@ -29966,6 +30053,104 @@ func (ec *executionContext) fieldContext_K8sWorkloadAgentEnabledContainerTraces_
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkloadAutoRollback_autoRollbackStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadAutoRollback) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadAutoRollback_autoRollbackStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AutoRollbackStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadAutoRollback_autoRollbackStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadAutoRollback",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadAutoRollback_rollbackOccurred(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadAutoRollback) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadAutoRollback_rollbackOccurred(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RollbackOccurred, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadAutoRollback_rollbackOccurred(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadAutoRollback",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadConditions_runtimeDetection(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadConditions) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadConditions_runtimeDetection(ctx, field)
 	if err != nil {
@@ -30097,6 +30282,57 @@ func (ec *executionContext) _K8sWorkloadConditions_rollout(ctx context.Context, 
 }
 
 func (ec *executionContext) fieldContext_K8sWorkloadConditions_rollout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadConditions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadConditions_autoRollback(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadConditions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadConditions_autoRollback(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AutoRollback, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadConditions_autoRollback(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadConditions",
 		Field:      field,
@@ -43664,6 +43900,8 @@ func (ec *executionContext) fieldContext_Query_workloads(ctx context.Context, fi
 				return ec.fieldContext_K8sWorkload_agentEnabled(ctx, field)
 			case "rollout":
 				return ec.fieldContext_K8sWorkload_rollout(ctx, field)
+			case "autoRollback":
+				return ec.fieldContext_K8sWorkload_autoRollback(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sWorkload_containers(ctx, field)
 			case "pods":
@@ -43761,6 +43999,8 @@ func (ec *executionContext) fieldContext_Query_workloadsByIds(ctx context.Contex
 				return ec.fieldContext_K8sWorkload_agentEnabled(ctx, field)
 			case "rollout":
 				return ec.fieldContext_K8sWorkload_rollout(ctx, field)
+			case "autoRollback":
+				return ec.fieldContext_K8sWorkload_autoRollback(ctx, field)
 			case "containers":
 				return ec.fieldContext_K8sWorkload_containers(ctx, field)
 			case "pods":
@@ -58816,6 +59056,39 @@ func (ec *executionContext) _K8sWorkload(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "autoRollback":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkload_autoRollback(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "containers":
 			field := field
 
@@ -59477,6 +59750,50 @@ func (ec *executionContext) _K8sWorkloadAgentEnabledContainerTraces(ctx context.
 	return out
 }
 
+var k8sWorkloadAutoRollbackImplementors = []string{"K8sWorkloadAutoRollback"}
+
+func (ec *executionContext) _K8sWorkloadAutoRollback(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadAutoRollback) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadAutoRollbackImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("K8sWorkloadAutoRollback")
+		case "autoRollbackStatus":
+			out.Values[i] = ec._K8sWorkloadAutoRollback_autoRollbackStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rollbackOccurred":
+			out.Values[i] = ec._K8sWorkloadAutoRollback_rollbackOccurred(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var k8sWorkloadConditionsImplementors = []string{"K8sWorkloadConditions"}
 
 func (ec *executionContext) _K8sWorkloadConditions(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadConditions) graphql.Marshaler {
@@ -59494,6 +59811,8 @@ func (ec *executionContext) _K8sWorkloadConditions(ctx context.Context, sel ast.
 			out.Values[i] = ec._K8sWorkloadConditions_agentInjectionEnabled(ctx, field, obj)
 		case "rollout":
 			out.Values[i] = ec._K8sWorkloadConditions_rollout(ctx, field, obj)
+		case "autoRollback":
+			out.Values[i] = ec._K8sWorkloadConditions_autoRollback(ctx, field, obj)
 		case "agentInjected":
 			out.Values[i] = ec._K8sWorkloadConditions_agentInjected(ctx, field, obj)
 		case "processesAgentHealth":
@@ -70392,6 +70711,13 @@ func (ec *executionContext) marshalOK8sWorkloadAgentEnabledContainerTraces2ᚖgi
 		return graphql.Null
 	}
 	return ec._K8sWorkloadAgentEnabledContainerTraces(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOK8sWorkloadAutoRollback2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadAutoRollback(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadAutoRollback) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._K8sWorkloadAutoRollback(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOK8sWorkloadContainer2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadContainerᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.K8sWorkloadContainer) graphql.Marshaler {

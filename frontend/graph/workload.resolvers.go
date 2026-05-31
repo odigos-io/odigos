@@ -119,9 +119,12 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 	conditions := []*model.DesiredConditionStatus{}
 	if ic != nil {
+		autoRollbackConfig := l.GetAutoRollbackConfig()
+
 		conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
 		conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
 		conditions = append(conditions, status.CalculateRolloutStatus(ic))
+		conditions = append(conditions, status.CalculateAutoRollbackStatus(ic, autoRollbackConfig))
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
 		conditions = append(conditions, &model.DesiredConditionStatus{
@@ -196,9 +199,12 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 		return nil, err
 	}
 
+	autoRollbackConfig := l.GetAutoRollbackConfig()
+
 	runtimeDetection := status.CalculateRuntimeInspectionStatus(ic)
 	agentInjectionEnabled := status.CalculateAgentInjectionEnabledStatus(ic)
 	rollout := status.CalculateRolloutStatus(ic)
+	autoRollback := status.CalculateAutoRollbackStatus(ic, autoRollbackConfig)
 	agentInjected := status.CalculateAgentInjectedStatus(ic, pods)
 	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
 	processesAgentHealth, err := aggregateProcessesHealthForWorkload(ctx, obj.ID, containerNamesWithOptionalPodManifestInjection)
@@ -221,6 +227,7 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 		RuntimeDetection:      runtimeDetection,
 		AgentInjectionEnabled: agentInjectionEnabled,
 		Rollout:               rollout,
+		AutoRollback:          autoRollback,
 		AgentInjected:         agentInjected,
 		ProcessesAgentHealth:  processesAgentHealth,
 		ExpectingTelemetry:    telemetryMetrics.TelemetryObservedStatus,
@@ -340,6 +347,26 @@ func (r *k8sWorkloadResolver) Rollout(ctx context.Context, obj *model.K8sWorkloa
 
 	return &model.K8sWorkloadRollout{
 		RolloutStatus: rolloutStatus,
+	}, nil
+}
+
+// AutoRollback is the resolver for the autoRollback field.
+func (r *k8sWorkloadResolver) AutoRollback(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadAutoRollback, error) {
+	if obj == nil || obj.ID == nil {
+		return nil, nil
+	}
+	l := loaders.For(ctx)
+	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil || ic == nil {
+		return nil, err
+	}
+
+	autoRollbackConfig := l.GetAutoRollbackConfig()
+	autoRollbackStatus := status.CalculateAutoRollbackStatus(ic, autoRollbackConfig)
+
+	return &model.K8sWorkloadAutoRollback{
+		AutoRollbackStatus: autoRollbackStatus,
+		RollbackOccurred:   ic.Status.RollbackOccurred,
 	}, nil
 }
 

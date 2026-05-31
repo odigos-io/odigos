@@ -683,6 +683,106 @@ spec:
                 description: URLTemplatization is the config for the URLTemplatization
                   Action.
                 properties:
+                  defaultTemplatization:
+                    description: |-
+                      configurations for default templatization, on groups of services.
+                      default templatization is applied on a single http span if none of the custom templatization rules matched.
+                    items:
+                      description: URLTemplatizationDefaultTemplatizationGroup is
+                        a group of services for which default templatization will
+                        be applied.
+                      properties:
+                        defaultTemplatization:
+                          description: |-
+                            configurations for default templatization.
+                            default templatization is applied on a single http span if none of the custom templatization rules matched.
+                          properties:
+                            enabled:
+                              description: |-
+                                if set to true, the default templatization will be disabled for the services in the scope.
+                                in case of conflict (if other action set this to false), the default templatization will be disabled.
+                              type: boolean
+                            skipPolicy:
+                              description: |-
+                                config if default templatization should be skipped on error.
+                                use it when sources scope describes a service that is publicly accessible to the internet
+                                to filter garbage requests that can contaminate the url-templatization process.
+                              properties:
+                                skipForNonSuccessCodes:
+                                  description: |-
+                                    If set to true, default templatization will be skipped for any non-success HTTP status code (i.e., any code not in the 2xx range).
+                                    When this is true, the StatusCodes list is ignored.
+                                  type: boolean
+                                skipHttpStatusCodes:
+                                  description: |-
+                                    the http status codes for which the default templatization will be skipped.
+                                    for example: [404, 401].
+                                    advanced users can use to cherry pick specific codes for tailoring to specific use cases.
+                                  items:
+                                    type: integer
+                                  type: array
+                              type: object
+                          type: object
+                        sourcesScopes:
+                          description: |-
+                            the scope of services for which this templatization config will be applied.
+                            if empty, the provided config will be applied to all sources.
+                          properties:
+                            languages:
+                              items:
+                                enum:
+                                - java
+                                - python
+                                - go
+                                - dotnet
+                                - javascript
+                                - php
+                                - ruby
+                                - rust
+                                - cplusplus
+                                - mysql
+                                - nginx
+                                - redis
+                                - postgres
+                                - unknown
+                                - ignored
+                                - '*'
+                                type: string
+                              type: array
+                            namespaces:
+                              items:
+                                type: string
+                              type: array
+                            sources:
+                              items:
+                                description: |-
+                                  PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                                  It contains essential details about the controller such as its Name, Namespace, and Kind.
+                                  'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                                  This struct is useful for identifying and interacting with the overarching entity
+                                  that governs the lifecycle and behavior of a Pod, especially in contexts where
+                                  understanding the relationship between a Pod and its controlling workload is crucial.
+                                properties:
+                                  kind:
+                                    description: |-
+                                      1. the pascal case representation of the workload kind
+                                      it is used in k8s api objects as the `Kind` field.
+                                    type: string
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                required:
+                                - kind
+                                - name
+                                - namespace
+                                type: object
+                              type: array
+                          type: object
+                      required:
+                      - defaultTemplatization
+                      type: object
+                    type: array
                   templatizationRulesGroups:
                     description: |-
                       list here all the groups of rules that will be applied to the spans.

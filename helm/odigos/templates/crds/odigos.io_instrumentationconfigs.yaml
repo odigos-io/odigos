@@ -673,6 +673,37 @@ spec:
                           description: A list of URL templatization configurations
                             to be applied to the traces.
                           properties:
+                            defaultTemplatization:
+                              description: |-
+                                configurations for default templatization.
+                                default templatization is applied on a single http span if none of the custom templatization rules matched.
+                              properties:
+                                enabled:
+                                  description: |-
+                                    if set to true, the default templatization will be disabled for the services in the scope.
+                                    in case of conflict (if other action set this to false), the default templatization will be disabled.
+                                  type: boolean
+                                skipPolicy:
+                                  description: |-
+                                    config if default templatization should be skipped on error.
+                                    use it when sources scope describes a service that is publicly accessible to the internet
+                                    to filter garbage requests that can contaminate the url-templatization process.
+                                  properties:
+                                    skipForNonSuccessCodes:
+                                      description: |-
+                                        If set to true, default templatization will be skipped for any non-success HTTP status code (i.e., any code not in the 2xx range).
+                                        When this is true, the StatusCodes list is ignored.
+                                      type: boolean
+                                    skipHttpStatusCodes:
+                                      description: |-
+                                        the http status codes for which the default templatization will be skipped.
+                                        for example: [404, 401].
+                                        advanced users can use to cherry pick specific codes for tailoring to specific use cases.
+                                      items:
+                                        type: integer
+                                      type: array
+                                  type: object
+                              type: object
                             templatizationRules:
                               description: Template rules to apply to URLs
                               items:
@@ -1492,6 +1523,37 @@ spec:
                       type: object
                     urlTemplatization:
                       properties:
+                        defaultTemplatization:
+                          description: |-
+                            configurations for default templatization.
+                            default templatization is applied on a single http span if none of the custom templatization rules matched.
+                          properties:
+                            enabled:
+                              description: |-
+                                if set to true, the default templatization will be disabled for the services in the scope.
+                                in case of conflict (if other action set this to false), the default templatization will be disabled.
+                              type: boolean
+                            skipPolicy:
+                              description: |-
+                                config if default templatization should be skipped on error.
+                                use it when sources scope describes a service that is publicly accessible to the internet
+                                to filter garbage requests that can contaminate the url-templatization process.
+                              properties:
+                                skipForNonSuccessCodes:
+                                  description: |-
+                                    If set to true, default templatization will be skipped for any non-success HTTP status code (i.e., any code not in the 2xx range).
+                                    When this is true, the StatusCodes list is ignored.
+                                  type: boolean
+                                skipHttpStatusCodes:
+                                  description: |-
+                                    the http status codes for which the default templatization will be skipped.
+                                    for example: [404, 401].
+                                    advanced users can use to cherry pick specific codes for tailoring to specific use cases.
+                                  items:
+                                    type: integer
+                                  type: array
+                              type: object
+                          type: object
                         templatizationRules:
                           description: Template rules to apply to URLs
                           items:

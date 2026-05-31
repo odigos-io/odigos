@@ -875,6 +875,7 @@ type K8sWorkload struct {
 	RuntimeInfo                *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
 	AgentEnabled               *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
 	Rollout                    *K8sWorkloadRollout                  `json:"rollout,omitempty"`
+	AutoRollback               *K8sWorkloadAutoRollback             `json:"autoRollback,omitempty"`
 	Containers                 []*K8sWorkloadContainer              `json:"containers,omitempty"`
 	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
 	PodsAgentInjectionStatus   *DesiredConditionStatus              `json:"podsAgentInjectionStatus"`
@@ -919,10 +920,16 @@ type K8sWorkloadAgentEnabledContainerTraces struct {
 	Enabled bool `json:"enabled"`
 }
 
+type K8sWorkloadAutoRollback struct {
+	AutoRollbackStatus *DesiredConditionStatus `json:"autoRollbackStatus"`
+	RollbackOccurred   bool                    `json:"rollbackOccurred"`
+}
+
 type K8sWorkloadConditions struct {
 	RuntimeDetection      *DesiredConditionStatus `json:"runtimeDetection,omitempty"`
 	AgentInjectionEnabled *DesiredConditionStatus `json:"agentInjectionEnabled,omitempty"`
 	Rollout               *DesiredConditionStatus `json:"rollout,omitempty"`
+	AutoRollback          *DesiredConditionStatus `json:"autoRollback,omitempty"`
 	AgentInjected         *DesiredConditionStatus `json:"agentInjected,omitempty"`
 	ProcessesAgentHealth  *DesiredConditionStatus `json:"processesAgentHealth,omitempty"`
 	ExpectingTelemetry    *DesiredConditionStatus `json:"expectingTelemetry,omitempty"`

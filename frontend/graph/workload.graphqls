@@ -220,6 +220,11 @@ type K8sWorkloadRollout {
   rolloutStatus: DesiredConditionStatus!
 }
 
+type K8sWorkloadAutoRollback {
+  autoRollbackStatus: DesiredConditionStatus!
+  rollbackOccurred: Boolean!
+}
+
 # the override values being used for a single workload container.
 type K8sWorkloadContainerOverrides {
   containerName: String!
@@ -481,6 +486,7 @@ type K8sWorkloadConditions {
   runtimeDetection: DesiredConditionStatus
   agentInjectionEnabled: DesiredConditionStatus
   rollout: DesiredConditionStatus
+  autoRollback: DesiredConditionStatus
   agentInjected: DesiredConditionStatus
   processesAgentHealth: DesiredConditionStatus
   expectingTelemetry: DesiredConditionStatus
@@ -518,6 +524,10 @@ type K8sWorkload {
   agentEnabled: K8sWorkloadAgentEnabled
 
   rollout: K8sWorkloadRollout
+
+  # status for the auto rollback feature.
+  # used to monitor freshly instrumented sources and roll them back in case of any suspicious status.
+  autoRollback: K8sWorkloadAutoRollback
 
   # show all info for a specific source container.
   containers: [K8sWorkloadContainer!]
