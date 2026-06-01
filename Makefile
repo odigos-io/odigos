@@ -41,6 +41,10 @@ ifneq ($(strip $(TARGET)),)
   TARGET_FLAG := --target $(TARGET)
 endif
 
+.PHONY: generate-status-reasons
+generate-status-reasons: ## Generate frontend status reason constants from status YAML manifests
+	$(MAKE) -C status generate
+
 .PHONY: install-golangci-lint
 install-golangci-lint:
 	@if [ ! -x "$(GOLANGCI_LINT)" ] || [ "$$("$(GOLANGCI_LINT)" version 2>&1 | head -n 1 | awk '{print "v"$$4}')" != "$(GOLANGCI_LINT_VERSION)" ]; then \

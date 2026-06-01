@@ -19,6 +19,7 @@ require (
 	github.com/odigos-io/odigos/config v0.0.0
 	github.com/odigos-io/odigos/destinations v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
+	github.com/odigos-io/odigos/status v0.0.0
 	github.com/odigos-io/odigos/odigosauth v0.0.0
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus/client_golang v1.23.2
@@ -393,6 +394,7 @@ replace (
 	github.com/odigos-io/odigos/config => ../config
 	github.com/odigos-io/odigos/destinations => ../destinations
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
+	github.com/odigos-io/odigos/status => ../status
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 	// Pyroscope (and Mimir) expect KnownFields YAML decoding; upstream v3.0.1 lacks DecodeWithOptions.
 	// Matches github.com/grafana/pyroscope go.mod.
