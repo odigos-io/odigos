@@ -3,7 +3,7 @@ package testconnectionotel
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/destinations/testconnection"
+	"github.com/odigos-io/odigos/common/config/testconnection"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configoptional"

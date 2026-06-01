@@ -6,7 +6,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/odigos-io/odigos/destinations/testconnection"
+	"github.com/odigos-io/odigos/common/config/testconnection"
 
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
