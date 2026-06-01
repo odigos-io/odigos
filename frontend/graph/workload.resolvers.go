@@ -598,6 +598,58 @@ func (r *k8sWorkloadResolver) PodsHealthStatus(ctx context.Context, obj *model.K
 	return aggregatePodHealthStatus, nil
 }
 
+// PodsOdigosHealthStatus is the resolver for the podsOdigosHealthStatus field.
+func (r *k8sWorkloadResolver) PodsOdigosHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
+	l := loaders.For(ctx)
+	pods, err := l.GetWorkloadPods(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(pods) == 0 {
+		reasonStr := string(status.PodHealthOdigosStatusReasonNoPods)
+		return &model.DesiredConditionStatus{
+			Name:       status.PodHealthOdigosStatus,
+			Status:     model.DesiredStateProgressUnknown,
+			ReasonEnum: &reasonStr,
+			Message:    "no pods for this workload",
+		}, nil
+	}
+
+	// aggregate the health status of all containers in all pods
+	containersHealthConditions := make([]*model.DesiredConditionStatus, 0, len(pods))
+	for _, pod := range pods {
+		containersOdigosHealthConditions := make([]*model.DesiredConditionStatus, 0, len(pod.Containers))
+		for _, container := range pod.Containers {
+			containerConfig := getContainerConfigByName(ic, container.ContainerName)
+			iis, err := l.GetInstrumentationInstancesForContainer(ctx, loaders.PodContainerId{
+				Namespace:     pod.PodNamespace,
+				PodName:       pod.PodName,
+				ContainerName: container.ContainerName,
+			})
+			if err != nil {
+				return nil, err
+			}
+			healthStatus := status.CalculatePodContainerHealthOdigosStatus(&container, containerConfig, iis)
+			if healthStatus != nil {
+				containersOdigosHealthConditions = append(containersOdigosHealthConditions, healthStatus)
+			}
+		}
+		healthStatus := status.CalculatePodHealthOdigosStatus(&pod, containersOdigosHealthConditions)
+		if healthStatus != nil {
+			containersHealthConditions = append(containersHealthConditions, healthStatus)
+		}
+	}
+
+	agg := status.AggregateConditionsBySeverity(containersHealthConditions)
+	return status.MostSeverPodStatusToAggregated(agg), nil
+}
+
 // WorkloadHealthStatus is the resolver for the workloadHealthStatus field.
 func (r *k8sWorkloadResolver) WorkloadHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
 	l := loaders.For(ctx)
