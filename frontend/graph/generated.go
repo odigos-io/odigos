@@ -1172,6 +1172,7 @@ type ComplexityRoot struct {
 		RemoteConfig                      func(childComplexity int) int
 		Sampling                          func(childComplexity int) int
 		SourceConditions                  func(childComplexity int) int
+		SourceSampling                    func(childComplexity int, workloadID model.K8sWorkloadIDInput) int
 		Workloads                         func(childComplexity int, filter *model.WorkloadFilter) int
 		WorkloadsByIds                    func(childComplexity int, ids []*model.K8sWorkloadIDInput) int
 	}
@@ -1306,8 +1307,20 @@ type ComplexityRoot struct {
 		RuntimeVersion         func(childComplexity int) int
 	}
 
+	SourceContainerSampling struct {
+		ContainerName            func(childComplexity int) int
+		CostReductionRules       func(childComplexity int) int
+		HighlyRelevantOperations func(childComplexity int) int
+		NoisyOperations          func(childComplexity int) int
+	}
+
 	SourceProfilingResult struct {
 		ProfileJSON func(childComplexity int) int
+	}
+
+	SourceSampling struct {
+		Containers func(childComplexity int) int
+		WorkloadID func(childComplexity int) int
 	}
 
 	SourcesScopes struct {
@@ -1517,6 +1530,7 @@ type QueryResolver interface {
 	Pod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
 	ProfilingSlots(ctx context.Context) (*model.ProfilingSlots, error)
 	Sampling(ctx context.Context) (*model.Sampling, error)
+	SourceSampling(ctx context.Context, workloadID model.K8sWorkloadIDInput) (*model.SourceSampling, error)
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
 	WorkloadsByIds(ctx context.Context, ids []*model.K8sWorkloadIDInput) ([]*model.K8sWorkload, error)
 	Namespaces(ctx context.Context) ([]*model.K8sNamespace, error)
@@ -6738,6 +6752,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.SourceConditions(childComplexity), true
 
+	case "Query.sourceSampling":
+		if e.complexity.Query.SourceSampling == nil {
+			break
+		}
+
+		args, err := ec.field_Query_sourceSampling_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.SourceSampling(childComplexity, args["workloadId"].(model.K8sWorkloadIDInput)), true
+
 	case "Query.workloads":
 		if e.complexity.Query.Workloads == nil {
 			break
@@ -7252,12 +7278,54 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SourceContainer.RuntimeVersion(childComplexity), true
 
+	case "SourceContainerSampling.containerName":
+		if e.complexity.SourceContainerSampling.ContainerName == nil {
+			break
+		}
+
+		return e.complexity.SourceContainerSampling.ContainerName(childComplexity), true
+
+	case "SourceContainerSampling.costReductionRules":
+		if e.complexity.SourceContainerSampling.CostReductionRules == nil {
+			break
+		}
+
+		return e.complexity.SourceContainerSampling.CostReductionRules(childComplexity), true
+
+	case "SourceContainerSampling.highlyRelevantOperations":
+		if e.complexity.SourceContainerSampling.HighlyRelevantOperations == nil {
+			break
+		}
+
+		return e.complexity.SourceContainerSampling.HighlyRelevantOperations(childComplexity), true
+
+	case "SourceContainerSampling.noisyOperations":
+		if e.complexity.SourceContainerSampling.NoisyOperations == nil {
+			break
+		}
+
+		return e.complexity.SourceContainerSampling.NoisyOperations(childComplexity), true
+
 	case "SourceProfilingResult.profileJson":
 		if e.complexity.SourceProfilingResult.ProfileJSON == nil {
 			break
 		}
 
 		return e.complexity.SourceProfilingResult.ProfileJSON(childComplexity), true
+
+	case "SourceSampling.containers":
+		if e.complexity.SourceSampling.Containers == nil {
+			break
+		}
+
+		return e.complexity.SourceSampling.Containers(childComplexity), true
+
+	case "SourceSampling.workloadId":
+		if e.complexity.SourceSampling.WorkloadID == nil {
+			break
+		}
+
+		return e.complexity.SourceSampling.WorkloadID(childComplexity), true
 
 	case "SourcesScopes.languages":
 		if e.complexity.SourcesScopes.Languages == nil {
@@ -9864,6 +9932,34 @@ func (ec *executionContext) field_Query_pod_argsName(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_sourceSampling_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_sourceSampling_argsWorkloadID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["workloadId"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_sourceSampling_argsWorkloadID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.K8sWorkloadIDInput, error) {
+	if _, ok := rawArgs["workloadId"]; !ok {
+		var zeroVal model.K8sWorkloadIDInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadId"))
+	if tmp, ok := rawArgs["workloadId"]; ok {
+		return ec.unmarshalNK8sWorkloadIdInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadIDInput(ctx, tmp)
+	}
+
+	var zeroVal model.K8sWorkloadIDInput
 	return zeroVal, nil
 }
 
@@ -43478,6 +43574,67 @@ func (ec *executionContext) fieldContext_Query_sampling(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_sourceSampling(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_sourceSampling(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().SourceSampling(rctx, fc.Args["workloadId"].(model.K8sWorkloadIDInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.SourceSampling)
+	fc.Result = res
+	return ec.marshalNSourceSampling2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceSampling(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_sourceSampling(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "workloadId":
+				return ec.fieldContext_SourceSampling_workloadId(ctx, field)
+			case "containers":
+				return ec.fieldContext_SourceSampling_containers(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SourceSampling", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_sourceSampling_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_workloads(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_workloads(ctx, field)
 	if err != nil {
@@ -47151,6 +47308,234 @@ func (ec *executionContext) fieldContext_SourceContainer_otelDistroName(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _SourceContainerSampling_containerName(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainerSampling) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainerSampling_containerName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContainerName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceContainerSampling_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceContainerSampling",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourceContainerSampling_noisyOperations(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainerSampling) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainerSampling_noisyOperations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NoisyOperations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.NoisyOperationRule)
+	fc.Result = res
+	return ec.marshalNNoisyOperationRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNoisyOperationRuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceContainerSampling_noisyOperations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceContainerSampling",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ruleId":
+				return ec.fieldContext_NoisyOperationRule_ruleId(ctx, field)
+			case "name":
+				return ec.fieldContext_NoisyOperationRule_name(ctx, field)
+			case "disabled":
+				return ec.fieldContext_NoisyOperationRule_disabled(ctx, field)
+			case "sourceScopes":
+				return ec.fieldContext_NoisyOperationRule_sourceScopes(ctx, field)
+			case "operation":
+				return ec.fieldContext_NoisyOperationRule_operation(ctx, field)
+			case "percentageAtMost":
+				return ec.fieldContext_NoisyOperationRule_percentageAtMost(ctx, field)
+			case "notes":
+				return ec.fieldContext_NoisyOperationRule_notes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NoisyOperationRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourceContainerSampling_highlyRelevantOperations(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainerSampling) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainerSampling_highlyRelevantOperations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HighlyRelevantOperations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.HighlyRelevantOperationRule)
+	fc.Result = res
+	return ec.marshalNHighlyRelevantOperationRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHighlyRelevantOperationRuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceContainerSampling_highlyRelevantOperations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceContainerSampling",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ruleId":
+				return ec.fieldContext_HighlyRelevantOperationRule_ruleId(ctx, field)
+			case "name":
+				return ec.fieldContext_HighlyRelevantOperationRule_name(ctx, field)
+			case "disabled":
+				return ec.fieldContext_HighlyRelevantOperationRule_disabled(ctx, field)
+			case "sourceScopes":
+				return ec.fieldContext_HighlyRelevantOperationRule_sourceScopes(ctx, field)
+			case "error":
+				return ec.fieldContext_HighlyRelevantOperationRule_error(ctx, field)
+			case "durationAtLeastMs":
+				return ec.fieldContext_HighlyRelevantOperationRule_durationAtLeastMs(ctx, field)
+			case "operation":
+				return ec.fieldContext_HighlyRelevantOperationRule_operation(ctx, field)
+			case "percentageAtLeast":
+				return ec.fieldContext_HighlyRelevantOperationRule_percentageAtLeast(ctx, field)
+			case "notes":
+				return ec.fieldContext_HighlyRelevantOperationRule_notes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type HighlyRelevantOperationRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourceContainerSampling_costReductionRules(ctx context.Context, field graphql.CollectedField, obj *model.SourceContainerSampling) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceContainerSampling_costReductionRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CostReductionRules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.CostReductionRule)
+	fc.Result = res
+	return ec.marshalNCostReductionRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCostReductionRuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceContainerSampling_costReductionRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceContainerSampling",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ruleId":
+				return ec.fieldContext_CostReductionRule_ruleId(ctx, field)
+			case "name":
+				return ec.fieldContext_CostReductionRule_name(ctx, field)
+			case "disabled":
+				return ec.fieldContext_CostReductionRule_disabled(ctx, field)
+			case "sourceScopes":
+				return ec.fieldContext_CostReductionRule_sourceScopes(ctx, field)
+			case "operation":
+				return ec.fieldContext_CostReductionRule_operation(ctx, field)
+			case "percentageAtMost":
+				return ec.fieldContext_CostReductionRule_percentageAtMost(ctx, field)
+			case "notes":
+				return ec.fieldContext_CostReductionRule_notes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CostReductionRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _SourceProfilingResult_profileJson(ctx context.Context, field graphql.CollectedField, obj *model.SourceProfilingResult) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SourceProfilingResult_profileJson(ctx, field)
 	if err != nil {
@@ -47190,6 +47575,112 @@ func (ec *executionContext) fieldContext_SourceProfilingResult_profileJson(_ con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourceSampling_workloadId(ctx context.Context, field graphql.CollectedField, obj *model.SourceSampling) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceSampling_workloadId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkloadID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadID)
+	fc.Result = res
+	return ec.marshalNK8sWorkloadId2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceSampling_workloadId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceSampling",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "namespace":
+				return ec.fieldContext_K8sWorkloadId_namespace(ctx, field)
+			case "kind":
+				return ec.fieldContext_K8sWorkloadId_kind(ctx, field)
+			case "name":
+				return ec.fieldContext_K8sWorkloadId_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadId", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SourceSampling_containers(ctx context.Context, field graphql.CollectedField, obj *model.SourceSampling) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SourceSampling_containers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Containers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.SourceContainerSampling)
+	fc.Result = res
+	return ec.marshalNSourceContainerSampling2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerSamplingᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SourceSampling_containers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SourceSampling",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "containerName":
+				return ec.fieldContext_SourceContainerSampling_containerName(ctx, field)
+			case "noisyOperations":
+				return ec.fieldContext_SourceContainerSampling_noisyOperations(ctx, field)
+			case "highlyRelevantOperations":
+				return ec.fieldContext_SourceContainerSampling_highlyRelevantOperations(ctx, field)
+			case "costReductionRules":
+				return ec.fieldContext_SourceContainerSampling_costReductionRules(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SourceContainerSampling", field.Name)
 		},
 	}
 	return fc, nil
@@ -62852,6 +63343,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "sourceSampling":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_sourceSampling(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "workloads":
 			field := field
 
@@ -64161,6 +64674,60 @@ func (ec *executionContext) _SourceContainer(ctx context.Context, sel ast.Select
 	return out
 }
 
+var sourceContainerSamplingImplementors = []string{"SourceContainerSampling"}
+
+func (ec *executionContext) _SourceContainerSampling(ctx context.Context, sel ast.SelectionSet, obj *model.SourceContainerSampling) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sourceContainerSamplingImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SourceContainerSampling")
+		case "containerName":
+			out.Values[i] = ec._SourceContainerSampling_containerName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "noisyOperations":
+			out.Values[i] = ec._SourceContainerSampling_noisyOperations(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "highlyRelevantOperations":
+			out.Values[i] = ec._SourceContainerSampling_highlyRelevantOperations(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "costReductionRules":
+			out.Values[i] = ec._SourceContainerSampling_costReductionRules(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var sourceProfilingResultImplementors = []string{"SourceProfilingResult"}
 
 func (ec *executionContext) _SourceProfilingResult(ctx context.Context, sel ast.SelectionSet, obj *model.SourceProfilingResult) graphql.Marshaler {
@@ -64174,6 +64741,50 @@ func (ec *executionContext) _SourceProfilingResult(ctx context.Context, sel ast.
 			out.Values[i] = graphql.MarshalString("SourceProfilingResult")
 		case "profileJson":
 			out.Values[i] = ec._SourceProfilingResult_profileJson(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var sourceSamplingImplementors = []string{"SourceSampling"}
+
+func (ec *executionContext) _SourceSampling(ctx context.Context, sel ast.SelectionSet, obj *model.SourceSampling) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sourceSamplingImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SourceSampling")
+		case "workloadId":
+			out.Values[i] = ec._SourceSampling_workloadId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "containers":
+			out.Values[i] = ec._SourceSampling_containers(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -67219,6 +67830,11 @@ func (ec *executionContext) marshalNK8sWorkloadId2ᚖgithubᚗcomᚋodigosᚑio�
 	return ec._K8sWorkloadId(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNK8sWorkloadIdInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadIDInput(ctx context.Context, v any) (model.K8sWorkloadIDInput, error) {
+	res, err := ec.unmarshalInputK8sWorkloadIdInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNK8sWorkloadIdInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadIDInputᚄ(ctx context.Context, v any) ([]*model.K8sWorkloadIDInput, error) {
 	var vSlice []any
 	vSlice = graphql.CoerceList(v)
@@ -68486,6 +69102,74 @@ func (ec *executionContext) marshalNSourceContainer2ᚖgithubᚗcomᚋodigosᚑi
 		return graphql.Null
 	}
 	return ec._SourceContainer(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSourceContainerSampling2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerSamplingᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SourceContainerSampling) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSourceContainerSampling2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerSampling(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSourceContainerSampling2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceContainerSampling(ctx context.Context, sel ast.SelectionSet, v *model.SourceContainerSampling) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SourceContainerSampling(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSourceSampling2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceSampling(ctx context.Context, sel ast.SelectionSet, v model.SourceSampling) graphql.Marshaler {
+	return ec._SourceSampling(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSourceSampling2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceSampling(ctx context.Context, sel ast.SelectionSet, v *model.SourceSampling) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SourceSampling(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNSpanAttributeFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSpanAttributeFilter(ctx context.Context, sel ast.SelectionSet, v *model.SpanAttributeFilter) graphql.Marshaler {

@@ -1577,9 +1577,21 @@ type SourceContainer struct {
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
 }
 
+type SourceContainerSampling struct {
+	ContainerName            string                         `json:"containerName"`
+	NoisyOperations          []*NoisyOperationRule          `json:"noisyOperations"`
+	HighlyRelevantOperations []*HighlyRelevantOperationRule `json:"highlyRelevantOperations"`
+	CostReductionRules       []*CostReductionRule           `json:"costReductionRules"`
+}
+
 // Pyroscope-style flame profile for one source (JSON string).
 type SourceProfilingResult struct {
 	ProfileJSON string `json:"profileJson"`
+}
+
+type SourceSampling struct {
+	WorkloadID *K8sWorkloadID             `json:"workloadId"`
+	Containers []*SourceContainerSampling `json:"containers"`
 }
 
 type SourcesScopes struct {

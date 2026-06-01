@@ -268,8 +268,42 @@ type Sampling {
   rules: [SamplingRules!]!
 }
 
+# ---- Per-source (workload) computed sampling view ----
+
+# Sampling rules that apply to a single container of a source (workload),
+# after evaluating each rule's source scope (workload + namespace + language)
+# against the workload identity and the container's detected language.
+# If runtime detection has not yet produced a language for the container,
+# language-scoped rules will not match for that container.
+type SourceContainerSampling {
+  # name of the container in the pod manifest.
+  containerName: String!
+
+  # head sampling rules (noisy operations) that apply to this container.
+  noisyOperations: [NoisyOperationRule!]!
+
+  # tail sampling rules (highly relevant operations) that apply to this container.
+  highlyRelevantOperations: [HighlyRelevantOperationRule!]!
+
+  # tail sampling rules (cost reduction) that apply to this container.
+  costReductionRules: [CostReductionRule!]!
+}
+
+# Computed sampling view for a specific source (workload).
+# The containers list mirrors the workload's pod-manifest containers and exposes,
+# per container, the subset of cluster-wide sampling rules whose source scope matches.
+type SourceSampling {
+  workloadId: K8sWorkloadId!
+  containers: [SourceContainerSampling!]!
+}
+
 extend type Query {
   sampling: Sampling!
+
+  # returns the sampling rules that apply to each container of the given source (workload).
+  # all sampling rules in the cluster are evaluated against the workload identity and the
+  # container's detected language, and only matching rules are included in the result.
+  sourceSampling(workloadId: K8sWorkloadIdInput!): SourceSampling!
 }
 
 extend type Mutation {

@@ -74,6 +74,11 @@ func (r *queryResolver) Sampling(ctx context.Context) (*model.Sampling, error) {
 	}, nil
 }
 
+// SourceSampling is the resolver for the sourceSampling field.
+func (r *queryResolver) SourceSampling(ctx context.Context, workloadID model.K8sWorkloadIDInput) (*model.SourceSampling, error) {
+	return sampling.GetSourceSamplingForWorkload(ctx, r.K8sCacheClient, workloadID)
+}
+
 // Rules is the resolver for the rules field.
 func (r *samplingResolver) Rules(ctx context.Context, obj *model.Sampling) ([]*model.SamplingRules, error) {
 	return sampling.GetAllSamplingRuleGroups(ctx)
