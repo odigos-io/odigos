@@ -169,8 +169,8 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 	// exception, if all is well, we return a special condition to denote it
 	if mostSevereCondition.Status == model.DesiredStateProgressSuccess {
-		reasonStr := string(status.WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry)
-		message := "source is instrumented, healthy and telemetry has been observed"
+		reasonStr := string(status.WorkloadOdigosHealthStatusReasonCollectingTelemetry)
+		message := "source is instrumented and telemetry is being collected"
 		return &model.DesiredConditionStatus{
 			Name:       status.WorkloadOdigosHealthStatus,
 			Status:     model.DesiredStateProgressSuccess,
