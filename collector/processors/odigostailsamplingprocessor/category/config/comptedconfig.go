@@ -4,6 +4,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/odigosattributes"
 )
@@ -22,6 +23,9 @@ type ComputedRule struct {
 	// attributes set to use for this rule when reporting metrics
 	// fast path for metrics reporting without computing the attributes set for each span.
 	MetricsAttributes attribute.Set
+
+	// pre-built span matcher for this rule.
+	Matcher matchers.Matcher
 }
 
 type ComputedNoisyOperation struct {
@@ -76,6 +80,7 @@ func precomputeNoisyOperations(cfg *commonapisampling.TailSamplingSourceConfig, 
 				Percentage:        percentage,
 				Disabled:          rule.Disabled,
 				MetricsAttributes: metricsAttributes,
+				Matcher:           matchers.NewHeadSamplingOperationMatcher(rule.Operation),
 			},
 			Rule: rule,
 		})
@@ -95,6 +100,8 @@ func precomputeHighlyRelevantOperations(cfg *commonapisampling.TailSamplingSourc
 				Percentage:        percentage,
 				Disabled:          rule.Disabled,
 				MetricsAttributes: metricsAttributes,
+				Matcher: matchers.NewHighlyRelevantOperationMatcher(
+					rule.Operation, rule.Error, rule.DurationAtLeastMs),
 			},
 			Rule: rule,
 		})
@@ -114,6 +121,7 @@ func precomputeCostReductionRules(cfg *commonapisampling.TailSamplingSourceConfi
 				Percentage:        percentage,
 				Disabled:          rule.Disabled,
 				MetricsAttributes: metricsAttributes,
+				Matcher:           matchers.NewTailSamplingOperationMatcher(rule.Operation),
 			},
 			Rule: rule,
 		})

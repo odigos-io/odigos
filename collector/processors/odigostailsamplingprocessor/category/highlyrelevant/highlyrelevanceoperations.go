@@ -8,7 +8,6 @@ import (
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/config"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/metrics"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/samplingspanattrs"
-	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 )
 
 type HighlyRelevantEvaluationResult struct {
@@ -63,10 +62,7 @@ func matchHighlyRelevantRulesForSingleSpan(rulesEvalResults map[string]*category
 	matchedRules := []*config.ComputedRule{}
 
 	for _, highlyRelevantOperation := range highlyRelevantOperations {
-		matched := true
-		matched = matched && matchers.TailSamplingOperationMatcher(highlyRelevantOperation.Rule.Operation, span)
-		matched = matched && matchers.SpanErrorMatcher(span, highlyRelevantOperation.Rule.Error)
-		matched = matched && matchers.SpanDurationMatcher(span, highlyRelevantOperation.Rule.DurationAtLeastMs)
+		matched := highlyRelevantOperation.Matcher.Match(span)
 
 		metrics.RecordEvalResultForSingleSpan(rulesEvalResults, highlyRelevantOperation.ComputedRule, matched)
 

@@ -6,23 +6,35 @@ import (
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
-func HeadSamplingOperationMatcher(operation *commonapisampling.HeadSamplingOperationMatcher, span ptrace.Span) bool {
+func NewHeadSamplingOperationMatcher(operation *commonapisampling.HeadSamplingOperationMatcher) Matcher {
 	if operation == nil {
-		// if operation is not specified, it will match any operation.
-		return true
+		return anyMatcher{}
 	}
-	if operation.HttpServer != nil {
-		return headSamplingOperationHttpServerMatcher(operation.HttpServer, span)
+	switch {
+	case operation.HttpServer != nil:
+		return newHeadSamplingHttpServerMatcher(operation.HttpServer)
+	case operation.HttpClient != nil:
+		return newHeadSamplingHttpClientMatcher(operation.HttpClient)
+	default:
+		return anyMatcher{}
 	}
-	if operation.HttpClient != nil {
-		return headSamplingOperationHttpClientMatcher(operation.HttpClient, span)
-	}
-	// no operation type specified, match any.
-	return true
 }
 
-func headSamplingOperationHttpServerMatcher(operation *commonapisampling.HeadSamplingHttpServerOperationMatcher, span ptrace.Span) bool {
+type headSamplingHttpServerMatcher struct {
+	method      string
+	route       string
+	routePrefix string
+}
 
+func newHeadSamplingHttpServerMatcher(operation *commonapisampling.HeadSamplingHttpServerOperationMatcher) Matcher {
+	return &headSamplingHttpServerMatcher{
+		method:      operation.Method,
+		route:       operation.Route,
+		routePrefix: operation.RoutePrefix,
+	}
+}
+
+func (m *headSamplingHttpServerMatcher) Match(span ptrace.Span) bool {
 	if span.Kind() != ptrace.SpanKindServer {
 		return false
 	}
@@ -31,18 +43,32 @@ func headSamplingOperationHttpServerMatcher(operation *commonapisampling.HeadSam
 	switch {
 	case !found:
 		return false
-	case operation.Method != "" && !compareHttpMethod(httpMethod, operation.Method):
+	case m.method != "" && !compareHttpMethod(httpMethod, m.method):
 		return false
-	case (operation.Route != "" || operation.RoutePrefix != "") && !matchHttpRoute(span, operation.Route, operation.RoutePrefix):
+	case (m.route != "" || m.routePrefix != "") && !matchHttpRoute(span, m.route, m.routePrefix):
 		return false
 	default:
 		return true
 	}
 }
 
-func headSamplingOperationHttpClientMatcher(operation *commonapisampling.HeadSamplingHttpClientOperationMatcher, span ptrace.Span) bool {
+type headSamplingHttpClientMatcher struct {
+	method                string
+	serverAddress         string
+	templatedPath         string
+	templatedPathPrefix   string
+}
 
-	// this matcher is for http client operations only, and only client spans are considered.
+func newHeadSamplingHttpClientMatcher(operation *commonapisampling.HeadSamplingHttpClientOperationMatcher) Matcher {
+	return &headSamplingHttpClientMatcher{
+		method:              operation.Method,
+		serverAddress:       operation.ServerAddress,
+		templatedPath:       operation.TemplatedPath,
+		templatedPathPrefix: operation.TemplatedPathPrefix,
+	}
+}
+
+func (m *headSamplingHttpClientMatcher) Match(span ptrace.Span) bool {
 	if span.Kind() != ptrace.SpanKindClient {
 		return false
 	}
@@ -51,11 +77,11 @@ func headSamplingOperationHttpClientMatcher(operation *commonapisampling.HeadSam
 	switch {
 	case !found:
 		return false
-	case operation.Method != "" && !compareHttpMethod(httpMethod, operation.Method):
+	case m.method != "" && !compareHttpMethod(httpMethod, m.method):
 		return false
-	case operation.ServerAddress != "" && !matchServerAddress(span, operation.ServerAddress):
+	case m.serverAddress != "" && !matchServerAddress(span, m.serverAddress):
 		return false
-	case (operation.TemplatedPath != "" || operation.TemplatedPathPrefix != "") && !matchTemplatedPath(span, operation.TemplatedPath, operation.TemplatedPathPrefix):
+	case (m.templatedPath != "" || m.templatedPathPrefix != "") && !matchTemplatedPath(span, m.templatedPath, m.templatedPathPrefix):
 		return false
 	default:
 		return true

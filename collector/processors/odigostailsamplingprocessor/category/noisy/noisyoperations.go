@@ -5,7 +5,6 @@ import (
 
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/config"
-	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 )
 
 type NoisyOperationsEvaluationResult struct {
@@ -41,7 +40,7 @@ func Evaluate(span ptrace.Span, noisyOperations []config.ComputedNoisyOperation)
 		}
 
 		// check if the operation matches the span.
-		matched := matchers.HeadSamplingOperationMatcher(noisyOperation.Rule.Operation, span)
+		matched := noisyOperation.Matcher.Match(span)
 
 		if _, found := rulesEvalResults[noisyOperation.Rule.Id]; !found {
 			rulesEvalResults[noisyOperation.Rule.Id] = &category.RuleEvaluationResult{

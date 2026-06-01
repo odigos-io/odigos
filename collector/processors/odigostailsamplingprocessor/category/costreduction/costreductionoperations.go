@@ -8,7 +8,6 @@ import (
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/config"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/metrics"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/samplingspanattrs"
-	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 )
 
 type CostReductionEvaluationResult struct {
@@ -61,7 +60,7 @@ func matchCostReductionRulesForSingleSpan(rulesEvalResults map[string]*category.
 	matchedRules := []*config.ComputedCostReductionRule{}
 
 	for _, rule := range costReductionRules {
-		matched := matchers.TailSamplingOperationMatcher(rule.Rule.Operation, span)
+		matched := rule.Matcher.Match(span)
 		metrics.RecordEvalResultForSingleSpan(rulesEvalResults, rule.ComputedRule, matched)
 		if matched {
 			matchedRules = append(matchedRules, &rule)
