@@ -46,7 +46,7 @@ func TestSpanErrorMatcher(t *testing.T) {
 			if tt.spanHasError {
 				span.Status().SetCode(ptrace.StatusCodeError)
 			}
-			got := SpanErrorMatcher(span, tt.requireError)
+			got := NewSpanErrorMatcher(tt.requireError).Match(span)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -106,7 +106,7 @@ func TestSpanDurationMatcher(t *testing.T) {
 			span := spanWithAttrs(t, nil)
 			span.SetStartTimestamp(pcommon.Timestamp(tt.spanStartNs))
 			span.SetEndTimestamp(pcommon.Timestamp(tt.spanEndNs))
-			got := SpanDurationMatcher(span, tt.durationMs)
+			got := NewSpanDurationMatcher(tt.durationMs).Match(span)
 			assert.Equal(t, tt.want, got)
 		})
 	}
