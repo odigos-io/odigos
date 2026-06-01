@@ -140,3 +140,24 @@ export interface SamplingQueryResponse {
     rules: SamplingRules[];
   };
 }
+
+// Computed sampling for a single source (workload), grouped by container.
+// Mirrors the GraphQL `SourceContainerSampling` type — each container exposes
+// only the rules whose source scope matches this workload + container language.
+export interface SourceContainerSampling {
+  containerName: string;
+  noisyOperations: NoisyOperationRule[];
+  highlyRelevantOperations: HighlyRelevantOperationRule[];
+  costReductionRules: CostReductionRule[];
+}
+
+// Mirrors the GraphQL `SourceSampling` type — the per-source view of computed
+// sampling rules, returned by the `sourceSampling(workloadId)` query.
+export interface SourceSampling {
+  workloadId: K8sWorkloadId;
+  containers: SourceContainerSampling[];
+}
+
+export interface SourceSamplingQueryResponse {
+  sourceSampling: SourceSampling;
+}

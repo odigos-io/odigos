@@ -70,3 +70,25 @@ export const GET_SAMPLING_RULES = gql`
     }
   }
 `;
+
+// Returns the computed sampling view for a single source (workload), with the
+// cluster-wide rules pre-filtered per container based on each rule's source
+// scope (workload identity + container language). Used by the Source Drawer
+// "Sampling" tab to show only the rules that actually apply to this source.
+export const GET_SOURCE_SAMPLING = gql`
+  query GetSourceSampling($workloadId: K8sWorkloadIdInput!) {
+    sourceSampling(workloadId: $workloadId) {
+      workloadId {
+        namespace
+        kind
+        name
+      }
+      containers {
+        containerName
+        noisyOperations { ${NOISY_OPERATION_FIELDS} }
+        highlyRelevantOperations { ${HIGHLY_RELEVANT_OPERATION_FIELDS} }
+        costReductionRules { ${COST_REDUCTION_RULE_FIELDS} }
+      }
+    }
+  }
+`;
