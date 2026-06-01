@@ -1,6 +1,7 @@
 package odigosvmprofileattrsprocessor
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,6 +11,23 @@ import (
 
 	"github.com/odigos-io/odigos/common/unixfd"
 )
+
+// resetSharedForTest cancels the singleton's client goroutine and resets package state
+// so each test starts clean and goleak (the generated TestMain) sees no lingering
+// goroutine. Production NEVER calls this — the client lives for the process lifetime.
+func resetSharedForTest(t *testing.T) {
+	t.Helper()
+	t.Cleanup(func() {
+		if sharedCancel != nil {
+			sharedCancel()
+			<-sharedDone
+		}
+		sharedOnce = sync.Once{}
+		sharedCache = nil
+		sharedCancel = nil
+		sharedDone = nil
+	})
+}
 
 func TestProfileAttrCache_RegisterUnregister(t *testing.T) {
 	cache := newProfileAttrCache()
@@ -145,4 +163,35 @@ func TestProfileAttrCache_ResetWipesState(t *testing.T) {
 	require.Equal(t, 0, c.size())
 	_, ok := c.get(1)
 	require.False(t, ok)
+}
+
+// TestSharedCache_SurvivesProcessorRebuild verifies the fix for the SIGHUP cache-loss
+// bug: the PID→attrs cache is process-global, so a config reload (which destroys and
+// rebuilds the processor) leaves the cache warm. Two start() calls — simulating the
+// pre- and post-reload processor instances — must share the same cache, and an entry
+// registered before the "reload" must survive it.
+func TestSharedCache_SurvivesProcessorRebuild(t *testing.T) {
+	resetSharedForTest(t)
+	cfg := &Config{SocketPath: "/tmp/odigos-test-nonexistent.sock"} // client retries harmlessly
+
+	p1 := &vmProfileAttrsProcessor{logger: zap.NewNop(), cfg: cfg}
+	require.NoError(t, p1.start(t.Context(), nil))
+
+	// Register a PID via the shared cache (as the live unixfd stream would).
+	p1.attrCache.applyEvent(unixfd.EncodeAttrRegister(7, "service.name:catalog"))
+	packed, ok := p1.attrCache.get(7)
+	require.True(t, ok)
+	require.Equal(t, "service.name:catalog", packed)
+
+	// Simulate a config reload: the old processor is shut down and a new one is built.
+	require.NoError(t, p1.shutdown(t.Context()))
+	p2 := &vmProfileAttrsProcessor{logger: zap.NewNop(), cfg: cfg}
+	require.NoError(t, p2.start(t.Context(), nil))
+
+	// The rebuilt processor must reference the SAME cache (not a fresh empty one)...
+	require.Same(t, p1.attrCache, p2.attrCache, "cache must survive the processor rebuild")
+	// ...and the entry registered before the reload must still be there.
+	packed, ok = p2.attrCache.get(7)
+	require.True(t, ok, "entry must survive the reload (no cache wipe)")
+	require.Equal(t, "service.name:catalog", packed)
 }
