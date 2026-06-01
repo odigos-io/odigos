@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
@@ -14,7 +13,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor/internal/metadata"
-	"github.com/odigos-io/odigos/common/unixfd"
 )
 
 // Resource attribute keys, sourced from semconv so they stay aligned with the eBPF profiler
@@ -31,9 +29,6 @@ type vmProfileAttrsProcessor struct {
 	cfg              *Config
 	attrCache        *profileAttrCache
 	telemetryBuilder *metadata.TelemetryBuilder
-
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
 }
 
 // capabilities reports that this processor mutates pprofile data.
@@ -41,35 +36,20 @@ func (p *vmProfileAttrsProcessor) capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: true}
 }
 
-// start spawns the unixfd client goroutine that streams attribute events into the cache.
-// We derive runCtx from the Start ctx (OTel collector keeps it alive for the whole component
-// lifetime, cancelled only on collector shutdown). Shutdown also explicitly cancels for early
-// teardown during config reloads. This mirrors the pattern used by odigosebpfreceiver.
-func (p *vmProfileAttrsProcessor) start(ctx context.Context, _ component.Host) error {
-	runCtx, cancel := context.WithCancel(ctx)
-	p.cancel = cancel
-
-	p.wg.Add(1)
-	go func() {
-		defer p.wg.Done()
-		err := unixfd.ConnectAndListenProfileAttrs(runCtx, p.cfg.SocketPath, p.logger,
-			func(line string) { p.attrCache.applyEvent(line) },
-			func() { p.attrCache.reset() }, // wipe cache on each new session before snapshot replay
-		)
-		if err != nil && runCtx.Err() == nil {
-			p.logger.Error("profiles attr unix client stopped", zap.Error(err))
-		}
-	}()
-
+// start binds this processor to the process-global PID→attrs cache (and starts the
+// single unixfd client on first call). The cache + client are intentionally NOT
+// owned by the processor: a config reload destroys and rebuilds the processor, but
+// the singleton survives, so the cache stays warm and no profiles are dropped during
+// the rebuild. See shared_cache.go.
+func (p *vmProfileAttrsProcessor) start(_ context.Context, _ component.Host) error {
+	p.attrCache = sharedProfileAttrCache(p.cfg.SocketPath, p.logger)
 	return nil
 }
 
-// shutdown cancels the unixfd client and releases the telemetry builder.
+// shutdown releases the telemetry builder. It deliberately does NOT stop the unixfd
+// client or clear the cache — those are process-global (shared_cache.go) and must
+// survive config reloads (which call shutdown on the retiring processor).
 func (p *vmProfileAttrsProcessor) shutdown(context.Context) error {
-	if p.cancel != nil {
-		p.cancel()
-	}
-	p.wg.Wait()
 	if p.telemetryBuilder != nil {
 		p.telemetryBuilder.Shutdown()
 	}

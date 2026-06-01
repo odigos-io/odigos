@@ -22,6 +22,7 @@ const (
 	AutoRollbackReasonStable            AutoRollbackReason = "Stable"
 	AutoRollbackReasonEvaluating        AutoRollbackReason = "Evaluating"
 	AutoRollbackReasonWaitingForRollout AutoRollbackReason = "WaitingForRollout"
+	AutoRollbackReasonNotApplicable     AutoRollbackReason = "NotApplicable"
 )
 
 func createAutoRollbackStatus(reason AutoRollbackReason, message string, status model.DesiredStateProgress) *model.DesiredConditionStatus {
@@ -57,6 +58,10 @@ func CalculateAutoRollbackStatus(ic *odigosv1alpha1.InstrumentationConfig, autoR
 		return createAutoRollbackStatus(AutoRollbackReasonRollbackOccurred, "odigos detected a crash and rolled back the source to protect your application", model.DesiredStateProgressNotice)
 	}
 
+	if ic.Spec.PodManifestInjectionOptional {
+		return createAutoRollbackStatus(AutoRollbackReasonNotApplicable, "no stability check for source that odigos agent is not restarting", model.DesiredStateProgressIrrelevant)
+	}
+
 	// rollback is only checked after the workload is rolled out.
 	if ic.Status.InstrumentationTime == nil {
 		return createAutoRollbackStatus(AutoRollbackReasonWaitingForRollout, "source stability will be checked after the source is rolled out by odigos", model.DesiredStateProgressWaiting)
@@ -66,7 +71,7 @@ func CalculateAutoRollbackStatus(ic *odigosv1alpha1.InstrumentationConfig, autoR
 	timeSinceInstrumentation := time.Since(ic.Status.InstrumentationTime.Time)
 	if timeSinceInstrumentation < autoRollbackConfig.StabilityWindow {
 		// if we are within the stability window, and did not mark the rollback occurred, we are still evaluating
-		return createAutoRollbackStatus(AutoRollbackReasonEvaluating, fmt.Sprintf("evaluating pods stability for %s", autoRollbackConfig.StabilityWindow), model.DesiredStateProgressWaiting)
+		return createAutoRollbackStatus(AutoRollbackReasonEvaluating, fmt.Sprintf("evaluating pods stability for %s", autoRollbackConfig.StabilityWindow), model.DesiredStateProgressSuccess)
 	}
 
 	return createAutoRollbackStatus(AutoRollbackReasonStable, "pods are stable after instrumentation", model.DesiredStateProgressSuccess)
