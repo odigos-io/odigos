@@ -53,7 +53,7 @@ export const GET_WORKLOADS_BY_IDS = gql`
         reasonEnum
         message
       }
-      podsHealthStatus {
+      podsOdigosHealthStatus {
         name
         status
         reasonEnum
