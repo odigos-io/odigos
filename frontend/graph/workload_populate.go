@@ -251,10 +251,10 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 	if mostSevere == nil {
 		mostSevere = &model.DesiredConditionStatus{Name: status.WorkloadOdigosHealthStatus, Status: model.DesiredStateProgressUnknown}
 	} else if mostSevere.Status == model.DesiredStateProgressSuccess {
-		reasonStr := string(status.WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry)
+		reasonStr := string(status.WorkloadOdigosHealthStatusReasonCollectingTelemetry)
 		mostSevere = &model.DesiredConditionStatus{
 			Name: status.WorkloadOdigosHealthStatus, Status: model.DesiredStateProgressSuccess,
-			ReasonEnum: &reasonStr, Message: "source is instrumented, healthy and telemetry has been observed",
+			ReasonEnum: &reasonStr, Message: "source is instrumented and telemetry is being collected",
 		}
 	}
 	w.WorkloadOdigosHealthStatus = mostSevere

@@ -18,7 +18,7 @@ const (
 	ExpectingTelemetryReasonNoRunningPod                        ExpectingTelemetryReason = "NoRunningPod"
 	ExpectingTelemetryReasonAgentNotInjected                    ExpectingTelemetryReason = "AgentNotInjected"
 	ExpectingTelemetryReasonInstrumentedContainersNotReady      ExpectingTelemetryReason = "InstrumentedContainersNotReady"
-	ExpectingTelemetryReasonAgentInjectedButNoDataSent          ExpectingTelemetryReason = "AgentInjectedButNoDataSent"
+	ExpectingTelemetryReasonAgentWaitingForTelemetry            ExpectingTelemetryReason = "AgentWaitingForTelemetry"
 	ExpectingTelemetryReasonAgentInjectedAndDataSent            ExpectingTelemetryReason = "AgentInjectedAndDataSent"
 )
 
@@ -123,14 +123,14 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 	}
 
 	if totalDataSentBytes == nil || *totalDataSentBytes == 0 {
-		reasonStr := string(ExpectingTelemetryReasonAgentInjectedButNoDataSent)
+		reasonStr := string(ExpectingTelemetryReasonAgentWaitingForTelemetry)
 		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
 			IsExpectingTelemetry: &expectingTelemetry,
 			TelemetryObservedStatus: &model.DesiredConditionStatus{
 				Name:       ExpectingTelemetryStatus,
 				Status:     model.DesiredStateProgressWaiting,
 				ReasonEnum: &reasonStr,
-				Message:    "no telemetry data was recorded yet from this source",
+				Message:    "source is instrumented and healthy, waiting for telemetry to be collected",
 			},
 		}
 	}

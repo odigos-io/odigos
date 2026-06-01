@@ -30,9 +30,8 @@ func StaticPodEnterpriseFeatureHealthStatus(kind model.K8sResourceKind, tier mod
 type WorkloadOdigosHealthStatusReason string
 
 const (
-	WorkloadOdigosHealthStatusReasonSuccess                     WorkloadOdigosHealthStatusReason = "Success"
-	WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry WorkloadOdigosHealthStatusReason = "SuccessAndEmittingTelemetry"
-	WorkloadOdigosHealthStatusReasonDisabled                    WorkloadOdigosHealthStatusReason = "DisabledForInstrumentation"
+	WorkloadOdigosHealthStatusReasonCollectingTelemetry WorkloadOdigosHealthStatusReason = "CollectingTelemetry"
+	WorkloadOdigosHealthStatusReasonDisabled            WorkloadOdigosHealthStatusReason = "DisabledForInstrumentation"
 	// WorkloadOdigosHealthStatusReasonEnterpriseFeature indicates that the workload requires an
 	// enterprise tier feature (e.g. static pod instrumentation) that is not available on the
 	// current Odigos tier. The condition is permanent for this cluster until the tier is upgraded.
