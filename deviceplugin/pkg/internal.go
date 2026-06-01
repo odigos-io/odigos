@@ -42,7 +42,14 @@ func runDeviceManager() error {
 	}
 
 	manager := dpm.NewManager(lister, commonlogger.ToLogr())
-	manager.Run(ctx)
+	manager.Run(ctx) // Blocks until SIGTERM/SIGINT
+
+	// Cancel context so background goroutines (pprof, log-level watcher) can shut down.
+	// manager.Run blocks until SIGTERM/SIGINT; once it returns the context must be
+	// cancelled before we wait, otherwise we deadlock: pprofDone waits on ctx.Done()
+	// while cancel() is deferred until after pprofDone — a circular dependency.
+	// NO-OP, can be called multiple times.
+	cancel()
 
 	// Wait for pprof server to finish
 	<-pprofDone
