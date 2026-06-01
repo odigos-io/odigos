@@ -14,12 +14,12 @@ const (
 type PodHealthOdigosStatusReason string
 
 const (
-	PodHealthOdigosStatusReasonHealthy                                    PodHealthOdigosStatusReason = "Healthy"
-	PodHealthOdigosStatusReasonNotInjected                                PodHealthOdigosStatusReason = "OdigosAgentNotInjected"
-	PodHealthOdigosStatusReasonInjectedUninstrumentedSource               PodHealthOdigosStatusReason = "OdigosAgentInjectedInUninstrumentedSource"
-	PodHealthOdigosStatusReasonInstrumentatedProcessUnhealthy             PodHealthOdigosStatusReason = "InstrumentatedProcessUnhealthy"
-	PodHealthOdigosStatusReasonNoInstrumentedProcesses                    PodHealthOdigosStatusReason = "NoInstrumentedProcesses"
-	PodHealthOdigosStatusReasonNoInstrumentedProcessesInStartingContainer PodHealthOdigosStatusReason = "NoInstrumentedProcessesInStartingContainer"
+	PodHealthOdigosStatusReasonHealthy                        PodHealthOdigosStatusReason = "Healthy"
+	PodHealthOdigosStatusReasonNotInjected                    PodHealthOdigosStatusReason = "OdigosAgentNotInjected"
+	PodHealthOdigosStatusReasonInjectedUninstrumentedSource   PodHealthOdigosStatusReason = "OdigosAgentInjectedInUninstrumentedSource"
+	PodHealthOdigosStatusReasonInstrumentatedProcessUnhealthy PodHealthOdigosStatusReason = "InstrumentatedProcessUnhealthy"
+	PodHealthOdigosStatusReasonNoInstrumentedProcesses        PodHealthOdigosStatusReason = "NoInstrumentedProcesses"
+	PodHealthOdigosStatusReasonNoPods                         PodHealthOdigosStatusReason = "NoPods"
 )
 
 func createPodContainerHealthOdigosStatus(reason PodHealthOdigosStatusReason, message string, status model.DesiredStateProgress) *model.DesiredConditionStatus {
@@ -98,4 +98,26 @@ func CalculatePodHealthOdigosStatus(computedPod *computed.CachedPod, containersO
 	}
 
 	return createPodHealthOdigosStatus(PodHealthOdigosStatusReasonHealthy, "odigos instrumentation in pod is healthy", model.DesiredStateProgressSuccess)
+}
+
+func MostSeverPodStatusToAggregated(mostSeverPodStatus *model.DesiredConditionStatus) *model.DesiredConditionStatus {
+	if mostSeverPodStatus == nil || mostSeverPodStatus.ReasonEnum == nil {
+		return nil
+	}
+
+	switch *mostSeverPodStatus.ReasonEnum {
+	case string(PodHealthOdigosStatusReasonHealthy):
+		return createPodHealthOdigosStatus(PodHealthOdigosStatusReasonHealthy, "odigos is healthy in all pods", model.DesiredStateProgressSuccess)
+	case string(PodHealthOdigosStatusReasonNotInjected):
+		return createPodHealthOdigosStatus(PodHealthOdigosStatusReasonNotInjected, "not all pods are running with odigos agent", mostSeverPodStatus.Status)
+	case string(PodHealthOdigosStatusReasonInjectedUninstrumentedSource):
+		return createPodHealthOdigosStatus(PodHealthOdigosStatusReasonInjectedUninstrumentedSource, "not all pods are running without odigos agent", mostSeverPodStatus.Status)
+	case string(PodHealthOdigosStatusReasonInstrumentatedProcessUnhealthy),
+		string(PodHealthOdigosStatusReasonNoInstrumentedProcesses),
+		string(PodHealthOdigosStatusReasonNoPods):
+		return mostSeverPodStatus
+	default:
+		return mostSeverPodStatus
+	}
+
 }
