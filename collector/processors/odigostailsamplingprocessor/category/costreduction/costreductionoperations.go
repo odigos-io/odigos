@@ -56,16 +56,17 @@ func Evaluate(trace ptrace.Traces, configProvider config.TailSamplingConfigProvi
 
 // matchCostReductionRulesForSingleSpan returns every cost-reduction rule whose operation matcher passes for this span.
 // it also updates the rulesEvalResults and matchingRules maps based on the matched rules.
-func matchCostReductionRulesForSingleSpan(rulesEvalResults map[string]*category.RuleEvaluationResult, matchingRules map[string]*config.ComputedRule, span ptrace.Span, costReductionRules []config.ComputedCostReductionRule) []*config.ComputedCostReductionRule {
-	matchedRules := []*config.ComputedCostReductionRule{}
+func matchCostReductionRulesForSingleSpan(rulesEvalResults map[string]*category.RuleEvaluationResult, matchingRules map[string]*config.ComputedRule, span ptrace.Span, costReductionRules []config.ComputedRule) []*config.ComputedRule {
+	matchedRules := []*config.ComputedRule{}
 
-	for _, rule := range costReductionRules {
+	for i := range costReductionRules {
+		rule := &costReductionRules[i]
 		matched := rule.Matcher.Match(span)
-		metrics.RecordEvalResultForSingleSpan(rulesEvalResults, rule.ComputedRule, matched)
+		metrics.RecordEvalResultForSingleSpan(rulesEvalResults, *rule, matched)
 		if matched {
-			matchedRules = append(matchedRules, &rule)
-			if _, found := matchingRules[rule.ComputedRule.RuleId]; !found {
-				matchingRules[rule.ComputedRule.RuleId] = &rule.ComputedRule
+			matchedRules = append(matchedRules, rule)
+			if _, found := matchingRules[rule.RuleId]; !found {
+				matchingRules[rule.RuleId] = rule
 			}
 		}
 	}
@@ -75,15 +76,15 @@ func matchCostReductionRulesForSingleSpan(rulesEvalResults map[string]*category.
 
 // selectCostReductionRuleFromMatches picks the span-level rule using the same logic as the trace deciding rule
 // (see calculateCostReductionDecidingRule): smallest PercentageAtMost among enabled matches.
-func selectCostReductionRuleFromMatches(matchedRules []*config.ComputedCostReductionRule) *config.ComputedRule {
+func selectCostReductionRuleFromMatches(matchedRules []*config.ComputedRule) *config.ComputedRule {
 	byID := make(map[string]*config.ComputedRule, len(matchedRules))
 	for _, r := range matchedRules {
-		byID[r.ComputedRule.RuleId] = &r.ComputedRule
+		byID[r.RuleId] = r
 	}
 	return calculateCostReductionDecidingRule(byID)
 }
 
-func getCostReductionRulesConfig(configProvider config.TailSamplingConfigProvider, resource pcommon.Resource) []config.ComputedCostReductionRule {
+func getCostReductionRulesConfig(configProvider config.TailSamplingConfigProvider, resource pcommon.Resource) []config.ComputedRule {
 	tailSampling, found := configProvider.GetTailSamplingConfig(resource)
 	if !found || tailSampling == nil {
 		return nil
