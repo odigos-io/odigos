@@ -22,6 +22,7 @@ const (
 	AutoRollbackReasonStable            AutoRollbackReason = "Stable"
 	AutoRollbackReasonEvaluating        AutoRollbackReason = "Evaluating"
 	AutoRollbackReasonWaitingForRollout AutoRollbackReason = "WaitingForRollout"
+	AutoRollbackReasonNotApplicable     AutoRollbackReason = "NotApplicable"
 )
 
 func createAutoRollbackStatus(reason AutoRollbackReason, message string, status model.DesiredStateProgress) *model.DesiredConditionStatus {
@@ -55,6 +56,10 @@ func CalculateAutoRollbackStatus(ic *odigosv1alpha1.InstrumentationConfig, autoR
 	// if we know it was rolled back due to auto-heal
 	if ic.Status.RollbackOccurred {
 		return createAutoRollbackStatus(AutoRollbackReasonRollbackOccurred, "odigos detected a crash and rolled back the source to protect your application", model.DesiredStateProgressNotice)
+	}
+
+	if ic.Spec.PodManifestInjectionOptional {
+		return createAutoRollbackStatus(AutoRollbackReasonNotApplicable, "no stability check for source that odigos agent is not restarting", model.DesiredStateProgressIrrelevant)
 	}
 
 	// rollback is only checked after the workload is rolled out.
