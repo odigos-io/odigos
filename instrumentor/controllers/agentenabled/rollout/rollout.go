@@ -65,7 +65,13 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		if ic == nil {
 			return RolloutResult{}, nil
 		}
-		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionStaticPodsNotSupported)
+
+		changed := false
+		if ic.Spec.PodManifestInjectionOptional {
+			changed = meta.SetStatusCondition(&ic.Status.Conditions, conditionRestartNotRequiredForDistro)
+		} else {
+			changed = meta.SetStatusCondition(&ic.Status.Conditions, conditionStaticPodsNotSupported)
+		}
 		return RolloutResult{StatusChanged: changed}, nil
 	}
 
