@@ -8,7 +8,6 @@ import (
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/config"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/metrics"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/samplingspanattrs"
-	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 )
 
 type HighlyRelevantEvaluationResult struct {
@@ -59,21 +58,19 @@ func Evaluate(trace ptrace.Traces, configProvider config.TailSamplingConfigProvi
 
 // matchHighlyRelevantRulesForSingleSpan returns every highly-relevant rule whose matchers all pass for this span.
 // it also updates the rulesEvalResults and matchingRules maps based on the matched rules.
-func matchHighlyRelevantRulesForSingleSpan(rulesEvalResults map[string]*category.RuleEvaluationResult, matchingRules map[string]*config.ComputedRule, span ptrace.Span, highlyRelevantOperations []config.ComputedHighlyRelevantOperation) []*config.ComputedRule {
+func matchHighlyRelevantRulesForSingleSpan(rulesEvalResults map[string]*category.RuleEvaluationResult, matchingRules map[string]*config.ComputedRule, span ptrace.Span, highlyRelevantOperations []config.ComputedRule) []*config.ComputedRule {
 	matchedRules := []*config.ComputedRule{}
 
-	for _, highlyRelevantOperation := range highlyRelevantOperations {
-		matched := true
-		matched = matched && matchers.TailSamplingOperationMatcher(highlyRelevantOperation.Rule.Operation, span)
-		matched = matched && matchers.SpanErrorMatcher(span, highlyRelevantOperation.Rule.Error)
-		matched = matched && matchers.SpanDurationMatcher(span, highlyRelevantOperation.Rule.DurationAtLeastMs)
+	for i := range highlyRelevantOperations {
+		rule := &highlyRelevantOperations[i]
+		matched := rule.Matcher.Match(span)
 
-		metrics.RecordEvalResultForSingleSpan(rulesEvalResults, highlyRelevantOperation.ComputedRule, matched)
+		metrics.RecordEvalResultForSingleSpan(rulesEvalResults, *rule, matched)
 
 		if matched {
-			matchedRules = append(matchedRules, &highlyRelevantOperation.ComputedRule)
-			if _, found := matchingRules[highlyRelevantOperation.ComputedRule.RuleId]; !found {
-				matchingRules[highlyRelevantOperation.ComputedRule.RuleId] = &highlyRelevantOperation.ComputedRule
+			matchedRules = append(matchedRules, rule)
+			if _, found := matchingRules[rule.RuleId]; !found {
+				matchingRules[rule.RuleId] = rule
 			}
 		}
 	}
@@ -91,7 +88,7 @@ func selectHighlyRelevantRuleFromMatches(matchedRules []*config.ComputedRule) *c
 	return calculateDecidingRule(byID)
 }
 
-func getHighlyRelevantOperationsConfig(configProvider config.TailSamplingConfigProvider, resource pcommon.Resource) []config.ComputedHighlyRelevantOperation {
+func getHighlyRelevantOperationsConfig(configProvider config.TailSamplingConfigProvider, resource pcommon.Resource) []config.ComputedRule {
 	tailSampling, found := configProvider.GetTailSamplingConfig(resource)
 	if !found || tailSampling == nil {
 		return nil
