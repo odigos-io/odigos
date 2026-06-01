@@ -15,7 +15,7 @@ type ExpectingTelemetryReason string
 const (
 	ExpectingTelemetryReasonWorkloadNotMarkedForInstrumentation ExpectingTelemetryReason = "WorkloadNotMarkedForInstrumentation"
 	ExpectingTelemetryReasonAgentNotEnabledForInjection         ExpectingTelemetryReason = "AgentNotEnabledForInjection"
-	ExpectingTelemetryReasonAgentNoRunningPod                   ExpectingTelemetryReason = "AgentNoRunningPod"
+	ExpectingTelemetryReasonNoRunningPod                        ExpectingTelemetryReason = "NoRunningPod"
 	ExpectingTelemetryReasonAgentNotInjected                    ExpectingTelemetryReason = "AgentNotInjected"
 	ExpectingTelemetryReasonInstrumentedContainersNotReady      ExpectingTelemetryReason = "InstrumentedContainersNotReady"
 	ExpectingTelemetryReasonAgentInjectedButNoDataSent          ExpectingTelemetryReason = "AgentInjectedButNoDataSent"
@@ -54,7 +54,7 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 	}
 
 	if len(pods) == 0 {
-		reasonStr := string(ExpectingTelemetryReasonAgentNoRunningPod)
+		reasonStr := string(ExpectingTelemetryReasonNoRunningPod)
 		return &model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus{
 			IsExpectingTelemetry: &expectingTelemetry,
 			TelemetryObservedStatus: &model.DesiredConditionStatus{
