@@ -3,8 +3,8 @@ package config
 import (
 	"go.opentelemetry.io/otel/attribute"
 
-	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/odigosattributes"
 )

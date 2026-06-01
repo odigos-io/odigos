@@ -53,10 +53,10 @@ func (m *headSamplingHttpServerMatcher) Match(span ptrace.Span) bool {
 }
 
 type headSamplingHttpClientMatcher struct {
-	method                string
-	serverAddress         string
-	templatedPath         string
-	templatedPathPrefix   string
+	method              string
+	serverAddress       string
+	templatedPath       string
+	templatedPathPrefix string
 }
 
 func newHeadSamplingHttpClientMatcher(operation *commonapisampling.HeadSamplingHttpClientOperationMatcher) Matcher {
