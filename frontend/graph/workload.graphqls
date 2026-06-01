@@ -534,6 +534,9 @@ type K8sWorkload {
   # this value is the general health of the workload, and issues here may not be related to odigos.
   podsHealthStatus: DesiredConditionStatus!
 
+  # aggregated value for the health of odigos instrumentation agent in all the pods of this workload.
+  podsOdigosHealthStatus: DesiredConditionStatus
+
   # aggregated value for the health of the workload, as reported on it's status field in kubernetes.
   # this value is not related to odigos, it can progress or error due to normal deployments in the cluster, not necessarily those related to odigos.
   workloadHealthStatus: DesiredConditionStatus

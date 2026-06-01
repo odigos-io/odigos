@@ -93,6 +93,8 @@ models:
         resolver: true
       podsHealthStatus:
         resolver: true
+      podsOdigosHealthStatus:
+        resolver: true
       workloadHealthStatus:
         resolver: true
       processesHealthStatus:
