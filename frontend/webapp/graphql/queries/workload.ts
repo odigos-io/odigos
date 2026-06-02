@@ -34,7 +34,7 @@ export const GET_WORKLOADS = gql`
 `;
 
 export const GET_WORKLOADS_BY_IDS_SLIM = gql`
-  query GetWorkloadsByIds($ids: [K8sWorkloadIdInput!]!) {
+  query GetWorkloadsByIdsSlim($ids: [K8sWorkloadIdInput!]!) {
     workloadsByIds(ids: $ids) {
       ${WORKLOAD_FIELDS_SLIM}
     }
