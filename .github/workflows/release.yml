@@ -281,8 +281,8 @@ jobs:
       - name: Copy VictoriaMetrics image to Docker Hub and GCR
         env:
           SOURCE_IMAGE: victoriametrics/victoria-metrics:${{ env.VICTORIA_METRICS_VERSION }}
-          DOCKERHUB_DEST_IMAGE: ${{ env.DOCKERHUB_ORG }}/victoriametrics
-          GCR_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/victoria-metrics
+          DOCKERHUB_DEST_IMAGE: ${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
+          GCR_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-victoria-metrics
         run: |
           crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:${{ env.TAG }}
           crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:latest
