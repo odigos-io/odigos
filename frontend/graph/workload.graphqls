@@ -240,59 +240,88 @@ type K8sWorkloadContainerOverrides {
   otelDistroName: String
 }
 
-# operators to use to compare the attributes of a span with a value for head sampling.
-enum K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator {
-  equals
-  notEquals
-  endWith
-  startWith
-}
-
-# a single condition to check for head sampling.
-# a condition checks one attribute of a span for head sampling.
-# multiple conditions can be combined to form a single check which is used to determine the sampling decision.
-type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition {
-  # attribute key to check.
-  key: String!
-
-  # operator to use to compare the attribute value
-  # one of: 'equals', 'notEquals', 'endWith', 'startWith'
-  operator: K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator!
-
-  # value to compare the attribute value to.
-  # for example: '/healthz' for 'url.path' and 'GET' for 'http.request.method'
-  value: String!
-}
-
-type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck {
-  # all the conditions that must evaluate to true for this check to be used.
-  # for example: 'url.path', 'equals', '/healthz' and 'http.request.method', 'equals', 'GET'
-  conditions: [K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition!]
-
-  # percentage to keep traces if all conditions evaluate to true.
-  percentage: Float!
-}
-
-# configuration for head sampling to apply on traces in instrumentation agent.
-type K8sWorkloadContainerAgentConfigTracesHeadSampling {
-  # these are tested one by one, and the first one that evaluates to true is used to determine the sampling decision.
-  checks: [K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck!]
-
-  # if none of the checks above evaluate to true, this fraction of traces will be kept.
-  # defaults to 100% (all traces are kept).
-  fallbackPercentage: Float!
-}
-
 # traces configuration for the instrumentation agent.
 type K8sWorkloadContainerAgentConfigTraces {
-  # configuration for head sampling to apply on traces.
   headSampling: K8sWorkloadContainerAgentConfigTracesHeadSampling
+}
+
+# head sampling configuration applied by the instrumentation agent on root spans.
+type K8sWorkloadContainerAgentConfigTracesHeadSampling {
+  # when true, sampling decisions are evaluated but traces are not dropped.
+  dryRun: Boolean
+
+  # controls the tradeoff between span-metrics accuracy and resource usage.
+  spanMetricsMode: K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode
+
+  # operation matchers with per-rule sampling percentages.
+  noisyOperations: [K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation!]
+}
+
+enum K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode {
+  sampled_spans_only
+  all_spans
+}
+
+# a single noisy-operation rule in the effective head-sampling config for a container.
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation {
+  ruleId: ID!
+  name: String
+  disabled: Boolean!
+  operation: HeadSamplingOperationMatcher
+  # percentage (0-100) of matching traces to keep. unset defaults to 0% (drop all).
+  percentageAtMost: Float
 }
 
 # configuration for the instrumentation agent.
 type K8sWorkloadContainerAgentConfig {
   # configuration for traces.
   traces: K8sWorkloadContainerAgentConfigTraces
+}
+
+# collector configuration for a workload container (odigos collector pipeline).
+type K8sWorkloadContainerCollectorConfig {
+  tailSampling: K8sWorkloadContainerCollectorConfigTailSampling
+}
+
+# tail sampling rules applied by the collector for this container.
+type K8sWorkloadContainerCollectorConfigTailSampling {
+  noisyOperations: [K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation!]
+  highlyRelevantOperations: [K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation!]
+  costReductionRules: [K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule!]
+}
+
+# a noisy-operation rule in the effective tail-sampling config for a container.
+type K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation {
+  ruleId: ID!
+  name: String
+  disabled: Boolean!
+  operation: HeadSamplingOperationMatcher
+  # percentage (0-100) of matching traces to keep. unset defaults to 0% (drop all).
+  percentageAtMost: Float
+}
+
+# a highly-relevant-operation rule in the effective tail-sampling config for a container.
+type K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation {
+  ruleId: ID!
+  name: String
+  disabled: Boolean!
+  # if true, only spans with SpanStatus set to Error are considered.
+  error: Boolean!
+  # if set, only operations with duration in ms larger than this value are considered.
+  durationAtLeastMs: Int
+  operation: TailSamplingOperationMatcher
+  # percentage (0-100) of matching traces to keep. unset defaults to 100% (keep all).
+  percentageAtLeast: Float
+}
+
+# a cost-reduction rule in the effective tail-sampling config for a container.
+type K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule {
+  ruleId: ID!
+  name: String
+  disabled: Boolean!
+  operation: TailSamplingOperationMatcher
+  # percentage (0-100) of matching traces to keep.
+  percentageAtMost: Float!
 }
 
 # show all info for a specific workload container (not container instance)
@@ -310,6 +339,9 @@ type K8sWorkloadContainer {
 
   # configuration for the instrumentation agent for this container.
   agentConfig: K8sWorkloadContainerAgentConfig
+
+  # configuration for the odigos collector pipeline for this container.
+  collectorConfig: K8sWorkloadContainerCollectorConfig
 
   # this part is a summary of all the instrumentations that were found in any process of this container.
   instrumentations: [K8sWorkloadPodContainerProcessInstrumentation!]

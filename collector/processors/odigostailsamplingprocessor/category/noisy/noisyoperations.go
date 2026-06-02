@@ -5,7 +5,6 @@ import (
 
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/config"
-	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 )
 
 type NoisyOperationsEvaluationResult struct {
@@ -16,7 +15,7 @@ type NoisyOperationsEvaluationResult struct {
 // givin a root span for a trace, and a list of noisy operation sampling rules,
 // evaluate if the trace belongs to the noisy operations category,
 // and return the "matching rule" - e.g. the rule with the least percentage.
-func Evaluate(span ptrace.Span, noisyOperations []config.ComputedNoisyOperation) NoisyOperationsEvaluationResult {
+func Evaluate(span ptrace.Span, noisyOperations []config.ComputedRule) NoisyOperationsEvaluationResult {
 
 	rulesEvalResults := category.CategoryRulesEvaluationResults{}
 
@@ -25,11 +24,12 @@ func Evaluate(span ptrace.Span, noisyOperations []config.ComputedNoisyOperation)
 	// 1 occassionally, and more very rarely.
 	var leastPercentageRule *config.ComputedRule
 
-	for _, noisyOperation := range noisyOperations {
+	for i := range noisyOperations {
+		noisyOperation := &noisyOperations[i]
 
 		currentPercentage := noisyOperation.Percentage
 
-		if noisyOperation.Rule.Disabled {
+		if noisyOperation.Disabled {
 			continue
 		}
 
@@ -40,21 +40,20 @@ func Evaluate(span ptrace.Span, noisyOperations []config.ComputedNoisyOperation)
 			continue
 		}
 
-		// check if the operation matches the span.
-		matched := matchers.HeadSamplingOperationMatcher(noisyOperation.Rule.Operation, span)
+		matched := noisyOperation.Matcher.Match(span)
 
-		if _, found := rulesEvalResults[noisyOperation.Rule.Id]; !found {
-			rulesEvalResults[noisyOperation.Rule.Id] = &category.RuleEvaluationResult{
-				ComputedRule: noisyOperation.ComputedRule,
+		if _, found := rulesEvalResults[noisyOperation.RuleId]; !found {
+			rulesEvalResults[noisyOperation.RuleId] = &category.RuleEvaluationResult{
+				ComputedRule: *noisyOperation,
 			}
 		}
-		res := rulesEvalResults[noisyOperation.Rule.Id]
+		res := rulesEvalResults[noisyOperation.RuleId]
 		res.SpanCheckedCount++
 
 		// at this point, we already know the current percentage is least than the one seen so far,
 		// so if we have a match, we update.
 		if matched {
-			leastPercentageRule = &noisyOperation.ComputedRule
+			leastPercentageRule = noisyOperation
 			res.SpanMatchedCount++
 		}
 	}

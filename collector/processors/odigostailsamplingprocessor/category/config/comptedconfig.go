@@ -3,6 +3,7 @@ package config
 import (
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/common/odigosattributes"
@@ -22,27 +23,15 @@ type ComputedRule struct {
 	// attributes set to use for this rule when reporting metrics
 	// fast path for metrics reporting without computing the attributes set for each span.
 	MetricsAttributes attribute.Set
-}
 
-type ComputedNoisyOperation struct {
-	ComputedRule
-	Rule commonapisampling.NoisyOperation
-}
-
-type ComputedHighlyRelevantOperation struct {
-	ComputedRule
-	Rule commonapisampling.HighlyRelevantOperation
-}
-
-type ComputedCostReductionRule struct {
-	ComputedRule
-	Rule commonapisampling.CostReductionRule
+	// pre-built span matcher for this rule.
+	Matcher matchers.Matcher
 }
 
 type ComputedWorkloadConfig struct {
-	NoisyOperations          []ComputedNoisyOperation
-	HighlyRelevantOperations []ComputedHighlyRelevantOperation
-	CostReductionRules       []ComputedCostReductionRule
+	NoisyOperations          []ComputedRule
+	HighlyRelevantOperations []ComputedRule
+	CostReductionRules       []ComputedRule
 }
 
 func compteRuleMetricsAttributes(category consts.SamplingCategory, ruleId string, ruleName string, ruleDisabled bool, dryRun bool) attribute.Set {
@@ -64,58 +53,53 @@ func compteRuleMetricsAttributes(category consts.SamplingCategory, ruleId string
 	return attribute.NewSet(rulesAttrs...)
 }
 
-func precomputeNoisyOperations(cfg *commonapisampling.TailSamplingSourceConfig, dryRun bool) []ComputedNoisyOperation {
-	out := make([]ComputedNoisyOperation, 0, len(cfg.NoisyOperations))
+func precomputeNoisyOperations(cfg *commonapisampling.TailSamplingSourceConfig, dryRun bool) []ComputedRule {
+	out := make([]ComputedRule, 0, len(cfg.NoisyOperations))
 	for _, rule := range cfg.NoisyOperations {
 		percentage := GetPercentageOrDefault0(rule.PercentageAtMost)
 		metricsAttributes := compteRuleMetricsAttributes(consts.SamplingCategoryNoise, rule.Id, rule.Name, rule.Disabled, dryRun)
-		out = append(out, ComputedNoisyOperation{
-			ComputedRule: ComputedRule{
-				RuleId:            rule.Id,
-				Name:              rule.Name,
-				Percentage:        percentage,
-				Disabled:          rule.Disabled,
-				MetricsAttributes: metricsAttributes,
-			},
-			Rule: rule,
+		out = append(out, ComputedRule{
+			RuleId:            rule.Id,
+			Name:              rule.Name,
+			Percentage:        percentage,
+			Disabled:          rule.Disabled,
+			MetricsAttributes: metricsAttributes,
+			Matcher:           matchers.NewHeadSamplingOperationMatcher(rule.Operation),
 		})
 	}
 	return out
 }
 
-func precomputeHighlyRelevantOperations(cfg *commonapisampling.TailSamplingSourceConfig, dryRun bool) []ComputedHighlyRelevantOperation {
-	out := make([]ComputedHighlyRelevantOperation, 0, len(cfg.HighlyRelevantOperations))
+func precomputeHighlyRelevantOperations(cfg *commonapisampling.TailSamplingSourceConfig, dryRun bool) []ComputedRule {
+	out := make([]ComputedRule, 0, len(cfg.HighlyRelevantOperations))
 	for _, rule := range cfg.HighlyRelevantOperations {
 		percentage := GetPercentageOrDefault100(rule.PercentageAtLeast)
 		metricsAttributes := compteRuleMetricsAttributes(consts.SamplingCategoryHighlyRelevant, rule.Id, rule.Name, rule.Disabled, dryRun)
-		out = append(out, ComputedHighlyRelevantOperation{
-			ComputedRule: ComputedRule{
-				RuleId:            rule.Id,
-				Name:              rule.Name,
-				Percentage:        percentage,
-				Disabled:          rule.Disabled,
-				MetricsAttributes: metricsAttributes,
-			},
-			Rule: rule,
+		out = append(out, ComputedRule{
+			RuleId:            rule.Id,
+			Name:              rule.Name,
+			Percentage:        percentage,
+			Disabled:          rule.Disabled,
+			MetricsAttributes: metricsAttributes,
+			Matcher: matchers.NewHighlyRelevantOperationMatcher(
+				rule.Operation, rule.Error, rule.DurationAtLeastMs),
 		})
 	}
 	return out
 }
 
-func precomputeCostReductionRules(cfg *commonapisampling.TailSamplingSourceConfig, dryRun bool) []ComputedCostReductionRule {
-	out := make([]ComputedCostReductionRule, 0, len(cfg.CostReductionRules))
+func precomputeCostReductionRules(cfg *commonapisampling.TailSamplingSourceConfig, dryRun bool) []ComputedRule {
+	out := make([]ComputedRule, 0, len(cfg.CostReductionRules))
 	for _, rule := range cfg.CostReductionRules {
 		percentage := rule.PercentageAtMost
 		metricsAttributes := compteRuleMetricsAttributes(consts.SamplingCategoryCostReduction, rule.Id, rule.Name, rule.Disabled, dryRun)
-		out = append(out, ComputedCostReductionRule{
-			ComputedRule: ComputedRule{
-				RuleId:            rule.Id,
-				Name:              rule.Name,
-				Percentage:        percentage,
-				Disabled:          rule.Disabled,
-				MetricsAttributes: metricsAttributes,
-			},
-			Rule: rule,
+		out = append(out, ComputedRule{
+			RuleId:            rule.Id,
+			Name:              rule.Name,
+			Percentage:        percentage,
+			Disabled:          rule.Disabled,
+			MetricsAttributes: metricsAttributes,
+			Matcher:           matchers.NewTailSamplingOperationMatcher(rule.Operation),
 		})
 	}
 	return out
