@@ -1,30 +1,42 @@
 import { gql } from '@apollo/client';
 
+const WORKLOAD_FIELDS_SLIM = `
+  id {
+    namespace
+    kind
+    name
+  }
+  serviceName
+  dataStreamNames
+  runtimeInfo {
+    detectedLanguages
+  }
+  workloadOdigosHealthStatus {
+    name
+    status
+    reasonEnum
+    message
+  }
+  podsAgentInjectionStatus {
+    name
+    status
+    reasonEnum
+    message
+  }
+`;
+
 export const GET_WORKLOADS = gql`
   query GetWorkloads($filter: WorkloadFilter) {
     workloads(filter: $filter) {
-      id {
-        namespace
-        kind
-        name
-      }
-      serviceName
-      dataStreamNames
-      runtimeInfo {
-        detectedLanguages
-      }
-      workloadOdigosHealthStatus {
-        name
-        status
-        reasonEnum
-        message
-      }
-      podsAgentInjectionStatus {
-        name
-        status
-        reasonEnum
-        message
-      }
+      ${WORKLOAD_FIELDS_SLIM}
+    }
+  }
+`;
+
+export const GET_WORKLOADS_BY_IDS_SLIM = gql`
+  query GetWorkloadsByIds($ids: [K8sWorkloadIdInput!]!) {
+    workloadsByIds(ids: $ids) {
+      ${WORKLOAD_FIELDS_SLIM}
     }
   }
 `;

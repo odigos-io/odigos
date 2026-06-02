@@ -6,7 +6,7 @@ import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
 import type { NamespaceInstrumentInput, SourceInstrumentInput } from '@/types';
 import { getIdFromSseTarget, getSseTargetFromId } from '@odigos/ui-kit/functions';
-import { GET_PEER_SOURCES, GET_SOURCE_LIBRARIES, GET_WORKLOADS, GET_WORKLOADS_BY_IDS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { GET_PEER_SOURCES, GET_SOURCE_LIBRARIES, GET_WORKLOADS, GET_WORKLOADS_BY_IDS, GET_WORKLOADS_BY_IDS_SLIM, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { type WorkloadId, type SourceFormData, type PeerSources, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent, PersistSourceInput, type Workload } from '@odigos/ui-kit/types';
 import {
   type NamespaceSelectionFormData,
@@ -26,7 +26,7 @@ interface UseSourceCrud {
   sources: Workload[];
   sourcesLoading: boolean;
   fetchSources: () => Promise<void>;
-  fetchSourcesByTargets: (targets: string[]) => Promise<void>;
+  fetchSourcesByTargets: (targets: string[], options?: { slim?: boolean }) => Promise<void>;
   fetchSourceById: (id: WorkloadId) => Promise<Workload | undefined>;
   fetchSourceLibraries: (id: WorkloadId) => Promise<{ data?: { instrumentationInstanceComponents: InstrumentationInstanceComponent[] } }>;
   fetchPeerSources: (serviceName: string) => Promise<{ data?: { peerSources: PeerSources } }>;
@@ -56,6 +56,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   });
   const [queryWorkloads] = useLazyQuery<{ workloads: Workload[] }, { filter?: { markedForInstrumentation?: boolean } & Partial<WorkloadId> }>(GET_WORKLOADS);
   const [queryWorkloadsByIds] = useLazyQuery<{ workloadsByIds: Workload[] }, { ids: { namespace: string; kind: string; name: string }[] }>(GET_WORKLOADS_BY_IDS);
+  const [queryWorkloadsByIdsSlim] = useLazyQuery<{ workloadsByIds: Workload[] }, { ids: { namespace: string; kind: string; name: string }[] }>(GET_WORKLOADS_BY_IDS_SLIM);
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCES, {
     onError: (error) => {
@@ -100,7 +101,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
     setEntitiesLoading(EntityTypes.Source, false);
   };
 
-  const fetchSourcesByTargets: UseSourceCrud['fetchSourcesByTargets'] = async (targets) => {
+  const fetchSourcesByTargets: UseSourceCrud['fetchSourcesByTargets'] = async (targets, options) => {
+    const { slim = false } = options || {};
     const ids = targets.map((t) => getIdFromSseTarget(t, EntityTypes.Source) as WorkloadId).filter((id) => id.namespace && id.name && id.kind);
 
     if (ids.length === 0) return;
@@ -110,7 +112,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
       return;
     }
 
-    const { error, data } = await queryWorkloadsByIds({
+    const { error, data } = await (slim ? queryWorkloadsByIdsSlim : queryWorkloadsByIds)({
       variables: { ids: ids.map(({ namespace, kind, name }) => ({ namespace, kind, name })) },
     });
 
