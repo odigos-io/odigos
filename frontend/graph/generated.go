@@ -683,8 +683,6 @@ type ComplexityRoot struct {
 		Containers                 func(childComplexity int) int
 		DataStreamNames            func(childComplexity int) int
 		ID                         func(childComplexity int) int
-		InstrumentationConfigYaml  func(childComplexity int) int
-		ManifestYaml               func(childComplexity int) int
 		MarkedForInstrumentation   func(childComplexity int) int
 		NumberOfInstances          func(childComplexity int) int
 		Pods                       func(childComplexity int) int
@@ -1487,8 +1485,6 @@ type K8sWorkloadResolver interface {
 	DataStreamNames(ctx context.Context, obj *model.K8sWorkload) ([]string, error)
 	NumberOfInstances(ctx context.Context, obj *model.K8sWorkload) (*int, error)
 	RollbackOccurred(ctx context.Context, obj *model.K8sWorkload) (bool, error)
-	ManifestYaml(ctx context.Context, obj *model.K8sWorkload) (*string, error)
-	InstrumentationConfigYaml(ctx context.Context, obj *model.K8sWorkload) (*string, error)
 }
 type K8sWorkloadPodContainerResolver interface {
 	Processes(ctx context.Context, obj *model.K8sWorkloadPodContainer) ([]*model.K8sWorkloadPodContainerProcess, error)
@@ -4472,20 +4468,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkload.ID(childComplexity), true
-
-	case "K8sWorkload.instrumentationConfigYAML":
-		if e.complexity.K8sWorkload.InstrumentationConfigYaml == nil {
-			break
-		}
-
-		return e.complexity.K8sWorkload.InstrumentationConfigYaml(childComplexity), true
-
-	case "K8sWorkload.manifestYAML":
-		if e.complexity.K8sWorkload.ManifestYaml == nil {
-			break
-		}
-
-		return e.complexity.K8sWorkload.ManifestYaml(childComplexity), true
 
 	case "K8sWorkload.markedForInstrumentation":
 		if e.complexity.K8sWorkload.MarkedForInstrumentation == nil {
@@ -28507,10 +28489,6 @@ func (ec *executionContext) fieldContext_K8sNamespace_workloads(_ context.Contex
 				return ec.fieldContext_K8sWorkload_numberOfInstances(ctx, field)
 			case "rollbackOccurred":
 				return ec.fieldContext_K8sWorkload_rollbackOccurred(ctx, field)
-			case "manifestYAML":
-				return ec.fieldContext_K8sWorkload_manifestYAML(ctx, field)
-			case "instrumentationConfigYAML":
-				return ec.fieldContext_K8sWorkload_instrumentationConfigYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkload", field.Name)
 		},
@@ -29529,88 +29507,6 @@ func (ec *executionContext) fieldContext_K8sWorkload_rollbackOccurred(_ context.
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _K8sWorkload_manifestYAML(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkload_manifestYAML(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.K8sWorkload().ManifestYaml(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_K8sWorkload_manifestYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "K8sWorkload",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _K8sWorkload_instrumentationConfigYAML(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkload) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkload_instrumentationConfigYAML(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.K8sWorkload().InstrumentationConfigYaml(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_K8sWorkload_instrumentationConfigYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "K8sWorkload",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -45222,10 +45118,6 @@ func (ec *executionContext) fieldContext_Query_workloads(ctx context.Context, fi
 				return ec.fieldContext_K8sWorkload_numberOfInstances(ctx, field)
 			case "rollbackOccurred":
 				return ec.fieldContext_K8sWorkload_rollbackOccurred(ctx, field)
-			case "manifestYAML":
-				return ec.fieldContext_K8sWorkload_manifestYAML(ctx, field)
-			case "instrumentationConfigYAML":
-				return ec.fieldContext_K8sWorkload_instrumentationConfigYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkload", field.Name)
 		},
@@ -45323,10 +45215,6 @@ func (ec *executionContext) fieldContext_Query_workloadsByIds(ctx context.Contex
 				return ec.fieldContext_K8sWorkload_numberOfInstances(ctx, field)
 			case "rollbackOccurred":
 				return ec.fieldContext_K8sWorkload_rollbackOccurred(ctx, field)
-			case "manifestYAML":
-				return ec.fieldContext_K8sWorkload_manifestYAML(ctx, field)
-			case "instrumentationConfigYAML":
-				return ec.fieldContext_K8sWorkload_instrumentationConfigYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkload", field.Name)
 		},
@@ -60749,72 +60637,6 @@ func (ec *executionContext) _K8sWorkload(ctx context.Context, sel ast.SelectionS
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "manifestYAML":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._K8sWorkload_manifestYAML(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "instrumentationConfigYAML":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._K8sWorkload_instrumentationConfigYAML(ctx, field, obj)
 				return res
 			}
 

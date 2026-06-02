@@ -19,7 +19,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 	frontendcommon "github.com/odigos-io/odigos/frontend/services/common"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 // MarkedForInstrumentation is the resolver for the markedForInstrumentation field.
@@ -760,30 +759,6 @@ func (r *k8sWorkloadResolver) RollbackOccurred(ctx context.Context, obj *model.K
 		return false, nil
 	}
 	return ic.Status.RollbackOccurred, nil
-}
-
-// ManifestYaml is the resolver for the manifestYAML field.
-func (r *k8sWorkloadResolver) ManifestYaml(ctx context.Context, obj *model.K8sWorkload) (*string, error) {
-	if obj == nil || obj.ID == nil {
-		return nil, nil
-	}
-	manifestYAML, err := services.K8sManifest(ctx, obj.ID.Namespace, obj.ID.Kind, obj.ID.Name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get manifest YAML: %w", err)
-	}
-	return &manifestYAML, nil
-}
-
-// InstrumentationConfigYaml is the resolver for the instrumentationConfigYAML field.
-func (r *k8sWorkloadResolver) InstrumentationConfigYaml(ctx context.Context, obj *model.K8sWorkload) (*string, error) {
-	if obj == nil || obj.ID == nil {
-		return nil, nil
-	}
-	instrumentationConfigYAML, err := services.K8sManifest(ctx, obj.ID.Namespace, model.K8sResourceKindInstrumentationConfig, workload.CalculateWorkloadRuntimeObjectName(obj.ID.Name, string(obj.ID.Kind)))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get InstrumentationConfig YAML: %w", err)
-	}
-	return &instrumentationConfigYAML, nil
 }
 
 // Processes is the resolver for the processes field.

@@ -107,10 +107,6 @@ models:
         resolver: true
       rollbackOccurred:
         resolver: true
-      manifestYAML:
-        resolver: true
-      instrumentationConfigYAML:
-        resolver: true
 
   K8sWorkloadTelemetryMetrics:
     fields:

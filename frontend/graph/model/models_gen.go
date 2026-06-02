@@ -887,8 +887,6 @@ type K8sWorkload struct {
 	DataStreamNames            []string                             `json:"dataStreamNames"`
 	NumberOfInstances          *int                                 `json:"numberOfInstances,omitempty"`
 	RollbackOccurred           bool                                 `json:"rollbackOccurred"`
-	ManifestYaml               *string                              `json:"manifestYAML,omitempty"`
-	InstrumentationConfigYaml  *string                              `json:"instrumentationConfigYAML,omitempty"`
 }
 
 type K8sWorkloadAgentEnabled struct {

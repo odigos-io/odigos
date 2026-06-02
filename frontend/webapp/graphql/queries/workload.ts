@@ -223,8 +223,6 @@ export const GET_WORKLOADS_BY_IDS = gql`
       telemetryMetrics {
         throughputBytes
       }
-      manifestYAML
-      instrumentationConfigYAML
     }
   }
 `;
