@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
+import { ROUTES } from '@/utils';
+import { useRouter } from 'next/navigation';
 import { Overview } from '@odigos/ui-kit/containers/v2';
 import {
   useActionCRUD,
@@ -20,6 +22,7 @@ import {
 } from '@/hooks';
 
 export default function Page() {
+  const router = useRouter();
   const { metrics } = useMetrics();
   const { effectiveConfig } = useEffectiveConfig();
 
@@ -37,6 +40,11 @@ export default function Page() {
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { fetchSources, persistSourcesV2, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
   const { fetchInstrumentationRules, createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
+
+  // Fired by the Source Drawer's "open in Sampling page" hover button.
+  // The kit handles both the source-drawer close and staging which rule to
+  // open (via `useSamplingDrawerStore`); the page's only job is to navigate.
+  const onRedirectToSampling = useCallback(() => router.push(ROUTES.SAMPLING), [router]);
 
   return (
     <Overview
@@ -74,6 +82,7 @@ export default function Page() {
       createAction={createActionV2}
       updateAction={updateAction}
       deleteAction={deleteAction}
+      onRedirectToSampling={onRedirectToSampling}
     />
   );
 }
