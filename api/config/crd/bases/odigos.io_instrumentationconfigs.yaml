@@ -673,12 +673,12 @@ spec:
                           description: A list of URL templatization configurations
                             to be applied to the traces.
                           properties:
-                            defaultTemplatization:
+                            default:
                               description: |-
                                 configurations for default templatization.
                                 default templatization is applied on a single http span if none of the custom templatization rules matched.
                               properties:
-                                enabled:
+                                disabled:
                                   description: |-
                                     if set to true, the default templatization will be disabled for the services in the scope.
                                     in case of conflict (if other action set this to false), the default templatization will be disabled.
@@ -1523,12 +1523,12 @@ spec:
                       type: object
                     urlTemplatization:
                       properties:
-                        defaultTemplatization:
+                        default:
                           description: |-
                             configurations for default templatization.
                             default templatization is applied on a single http span if none of the custom templatization rules matched.
                           properties:
-                            enabled:
+                            disabled:
                               description: |-
                                 if set to true, the default templatization will be disabled for the services in the scope.
                                 in case of conflict (if other action set this to false), the default templatization will be disabled.
