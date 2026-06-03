@@ -233,6 +233,11 @@ type K8sWorkloadContainerOverrides {
   # when null (most times), runtime detection values are used.
   # if not null, these values are used regardless of any runtime detection values.
   runtimeInfo: K8sWorkloadRuntimeInfoContainer
+
+  # The name of the otel distro to use for this container.
+  # when null (most times), the distro is selected based on the runtime detection values.
+  # if not null, this distro is used regardless of any runtime detection values.
+  otelDistroName: String
 }
 
 # traces configuration for the instrumentation agent.
@@ -351,7 +356,12 @@ type K8sWorkloadPodContainerProcessAttribute {
 
 type K8sWorkloadPodContainerProcessInstrumentation {
   name: String!
+  type: String
+  healthy: Boolean
+  message: String
+  lastStatusTime: String
   isStandardLibrary: Boolean
+  nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }
 
 # describes a single process instance in a pod container.

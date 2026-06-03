@@ -1,30 +1,42 @@
 import { gql } from '@apollo/client';
 
+const WORKLOAD_FIELDS_SLIM = `
+  id {
+    namespace
+    kind
+    name
+  }
+  serviceName
+  dataStreamNames
+  runtimeInfo {
+    detectedLanguages
+  }
+  workloadOdigosHealthStatus {
+    name
+    status
+    reasonEnum
+    message
+  }
+  podsAgentInjectionStatus {
+    name
+    status
+    reasonEnum
+    message
+  }
+`;
+
 export const GET_WORKLOADS = gql`
   query GetWorkloads($filter: WorkloadFilter) {
     workloads(filter: $filter) {
-      id {
-        namespace
-        kind
-        name
-      }
-      serviceName
-      dataStreamNames
-      runtimeInfo {
-        detectedLanguages
-      }
-      workloadOdigosHealthStatus {
-        name
-        status
-        reasonEnum
-        message
-      }
-      podsAgentInjectionStatus {
-        name
-        status
-        reasonEnum
-        message
-      }
+      ${WORKLOAD_FIELDS_SLIM}
+    }
+  }
+`;
+
+export const GET_WORKLOADS_BY_IDS_SLIM = gql`
+  query GetWorkloadsByIdsSlim($ids: [K8sWorkloadIdInput!]!) {
+    workloadsByIds(ids: $ids) {
+      ${WORKLOAD_FIELDS_SLIM}
     }
   }
 `;
@@ -40,32 +52,27 @@ export const GET_WORKLOADS_BY_IDS = gql`
       serviceName
       dataStreamNames
       numberOfInstances
+      rollbackOccurred
+      workloadOdigosHealthStatus {
+        name
+        status
+        reasonEnum
+        message
+      }
+      podsAgentInjectionStatus {
+        name
+        status
+        reasonEnum
+        message
+      }
+      podsOdigosHealthStatus {
+        name
+        status
+        reasonEnum
+        message
+      }
       markedForInstrumentation {
         markedForInstrumentation
-      }
-      runtimeInfo {
-        detectedLanguages
-      }
-      containers {
-        containerName
-        runtimeInfo {
-          language
-          runtimeVersion
-        }
-        agentEnabled {
-          agentEnabled
-          agentEnabledStatus {
-            message
-          }
-          otelDistroName
-        }
-        overrides {
-          containerName
-          runtimeInfo {
-            language
-            runtimeVersion
-          }
-        }
       }
       conditions {
         runtimeDetection {
@@ -81,6 +88,12 @@ export const GET_WORKLOADS_BY_IDS = gql`
           message
         }
         rollout {
+          name
+          status
+          reasonEnum
+          message
+        }
+        autoRollback {
           name
           status
           reasonEnum
@@ -105,19 +118,111 @@ export const GET_WORKLOADS_BY_IDS = gql`
           message
         }
       }
-      workloadOdigosHealthStatus {
-        name
-        status
-        reasonEnum
-        message
+      autoRollback {
+        autoRollbackStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        rollbackOccurred
       }
-      podsAgentInjectionStatus {
-        name
-        status
-        reasonEnum
-        message
+      runtimeInfo {
+        detectedLanguages
       }
-      rollbackOccurred
+      containers {
+        containerName
+        runtimeInfo {
+          language
+          runtimeVersion
+        }
+        agentEnabled {
+          agentEnabled
+          agentEnabledStatus {
+            status
+            reasonEnum
+            message
+          }
+          otelDistroName
+        }
+        overrides {
+          containerName
+          otelDistroName
+          runtimeInfo {
+            language
+            runtimeVersion
+          }
+        }
+      }
+      pods {
+        podName
+        nodeName
+        startTime
+        agentInjected
+        agentInjectedStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        k8sHealthStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        odigosHealthStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        containers {
+          containerName
+          otelDistroName
+          started
+          ready
+          isCrashLoop
+          restartCount
+          runningStartedTime
+          waitingReasonEnum
+          waitingMessage
+          k8sHealthStatus {
+            name
+            status
+            reasonEnum
+            message
+          }
+          odigosHealthStatus {
+            name
+            status
+            reasonEnum
+            message
+          }
+          processes {
+            healthy
+            healthStatus {
+              name
+              status
+              reasonEnum
+              message
+            }
+            identifyingAttributes {
+              name
+              value
+            }
+            instrumentations {
+              name
+              healthy
+              message
+              isStandardLibrary
+            }
+          }
+        }
+      }
+      telemetryMetrics {
+        throughputBytes
+      }
     }
   }
 `;

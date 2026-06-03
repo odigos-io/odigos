@@ -5,6 +5,7 @@ export * from './describe';
 export * from './destination';
 export * from './diagnose';
 export * from './instrumentation-rules';
+export * from './k8s-manifest';
 export * from './metrics';
 export * from './pipeline-collectors';
 export * from './peer-sources';
