@@ -483,10 +483,10 @@ type ComplexityRoot struct {
 	}
 
 	Extraction struct {
-		DataFormat func(childComplexity int) int
-		Regex      func(childComplexity int) int
-		Source     func(childComplexity int) int
-		Target     func(childComplexity int) int
+		DataFormat          func(childComplexity int) int
+		LookupKey           func(childComplexity int) int
+		Regex               func(childComplexity int) int
+		TargetAttributeName func(childComplexity int) int
 	}
 
 	GatewayDeploymentInfo struct {
@@ -3630,6 +3630,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Extraction.DataFormat(childComplexity), true
 
+	case "Extraction.lookupKey":
+		if e.complexity.Extraction.LookupKey == nil {
+			break
+		}
+
+		return e.complexity.Extraction.LookupKey(childComplexity), true
+
 	case "Extraction.regex":
 		if e.complexity.Extraction.Regex == nil {
 			break
@@ -3637,19 +3644,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Extraction.Regex(childComplexity), true
 
-	case "Extraction.source":
-		if e.complexity.Extraction.Source == nil {
+	case "Extraction.targetAttributeName":
+		if e.complexity.Extraction.TargetAttributeName == nil {
 			break
 		}
 
-		return e.complexity.Extraction.Source(childComplexity), true
-
-	case "Extraction.target":
-		if e.complexity.Extraction.Target == nil {
-			break
-		}
-
-		return e.complexity.Extraction.Target(childComplexity), true
+		return e.complexity.Extraction.TargetAttributeName(childComplexity), true
 
 	case "GatewayDeploymentInfo.configMapYAML":
 		if e.complexity.GatewayDeploymentInfo.ConfigMapYaml == nil {
@@ -11527,10 +11527,10 @@ func (ec *executionContext) fieldContext_ActionFields_extractions(_ context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "target":
-				return ec.fieldContext_Extraction_target(ctx, field)
-			case "source":
-				return ec.fieldContext_Extraction_source(ctx, field)
+			case "targetAttributeName":
+				return ec.fieldContext_Extraction_targetAttributeName(ctx, field)
+			case "lookupKey":
+				return ec.fieldContext_Extraction_lookupKey(ctx, field)
 			case "dataFormat":
 				return ec.fieldContext_Extraction_dataFormat(ctx, field)
 			case "regex":
@@ -23371,8 +23371,8 @@ func (ec *executionContext) fieldContext_ExportedSignals_profiles(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Extraction_target(ctx context.Context, field graphql.CollectedField, obj *model.Extraction) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Extraction_target(ctx, field)
+func (ec *executionContext) _Extraction_targetAttributeName(ctx context.Context, field graphql.CollectedField, obj *model.Extraction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Extraction_targetAttributeName(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -23385,7 +23385,7 @@ func (ec *executionContext) _Extraction_target(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Target, nil
+		return obj.TargetAttributeName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23402,7 +23402,7 @@ func (ec *executionContext) _Extraction_target(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Extraction_target(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Extraction_targetAttributeName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Extraction",
 		Field:      field,
@@ -23415,8 +23415,8 @@ func (ec *executionContext) fieldContext_Extraction_target(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Extraction_source(ctx context.Context, field graphql.CollectedField, obj *model.Extraction) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Extraction_source(ctx, field)
+func (ec *executionContext) _Extraction_lookupKey(ctx context.Context, field graphql.CollectedField, obj *model.Extraction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Extraction_lookupKey(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -23429,7 +23429,7 @@ func (ec *executionContext) _Extraction_source(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Source, nil
+		return obj.LookupKey, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23443,7 +23443,7 @@ func (ec *executionContext) _Extraction_source(ctx context.Context, field graphq
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Extraction_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Extraction_lookupKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Extraction",
 		Field:      field,
@@ -53675,27 +53675,27 @@ func (ec *executionContext) unmarshalInputExtractionInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"target", "source", "dataFormat", "regex"}
+	fieldsInOrder := [...]string{"targetAttributeName", "lookupKey", "dataFormat", "regex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "target":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("target"))
+		case "targetAttributeName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetAttributeName"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Target = data
-		case "source":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			it.TargetAttributeName = data
+		case "lookupKey":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lookupKey"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Source = data
+			it.LookupKey = data
 		case "dataFormat":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataFormat"))
 			data, err := ec.unmarshalOExtractionDataFormat2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractionDataFormat(ctx, v)
@@ -58932,13 +58932,13 @@ func (ec *executionContext) _Extraction(ctx context.Context, sel ast.SelectionSe
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Extraction")
-		case "target":
-			out.Values[i] = ec._Extraction_target(ctx, field, obj)
+		case "targetAttributeName":
+			out.Values[i] = ec._Extraction_targetAttributeName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "source":
-			out.Values[i] = ec._Extraction_source(ctx, field, obj)
+		case "lookupKey":
+			out.Values[i] = ec._Extraction_lookupKey(ctx, field, obj)
 		case "dataFormat":
 			out.Values[i] = ec._Extraction_dataFormat(ctx, field, obj)
 		case "regex":

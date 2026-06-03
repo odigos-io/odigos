@@ -76,8 +76,8 @@ export const CREATE_ACTION = gql`
           }
         }
         extractions {
-          target
-          source
+          targetAttributeName
+          lookupKey
           dataFormat
           regex
         }
@@ -168,8 +168,8 @@ export const UPDATE_ACTION = gql`
           }
         }
         extractions {
-          target
-          source
+          targetAttributeName
+          lookupKey
           dataFormat
           regex
         }

@@ -77,8 +77,8 @@ export const GET_ACTIONS = gql`
             }
           }
           extractions {
-            target
-            source
+            targetAttributeName
+            lookupKey
             dataFormat
             regex
           }

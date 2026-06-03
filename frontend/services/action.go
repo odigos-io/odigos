@@ -979,9 +979,9 @@ func convertExtractAttributeFromInput(details *model.ActionFieldsInput, existing
 	extractions := make([]urlactions.Extraction, 0, len(details.Extractions))
 	for _, e := range details.Extractions {
 		row := urlactions.Extraction{
-			Target: e.Target,
-			Source: DerefString(e.Source),
-			Regex:  DerefString(e.Regex),
+			TargetAttributeName: e.TargetAttributeName,
+			LookupKey:           DerefString(e.LookupKey),
+			Regex:               DerefString(e.Regex),
 		}
 		if e.DataFormat != nil {
 			row.DataFormat = urlactions.DataFormat(*e.DataFormat)
@@ -1002,11 +1002,11 @@ func convertExtractAttributeToModel(cfg *urlactions.ExtractAttributeConfig) []*m
 	result := make([]*model.Extraction, 0, len(cfg.Extractions))
 	for _, e := range cfg.Extractions {
 		row := &model.Extraction{
-			Target: e.Target,
+			TargetAttributeName: e.TargetAttributeName,
 		}
-		if e.Source != "" {
-			source := e.Source
-			row.Source = &source
+		if e.LookupKey != "" {
+			lookupKey := e.LookupKey
+			row.LookupKey = &lookupKey
 		}
 		if e.DataFormat != "" {
 			df := model.ExtractionDataFormat(e.DataFormat)

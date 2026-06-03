@@ -88,10 +88,11 @@ describe('Actions CRUD', () => {
             break;
           }
           case 'ExtractAttribute': {
-            // Default mode is "Preset extract" with dataFormat=json already selected,
-            // so we just need to fill source + target to make a valid action.
-            cy.get('[data-id=extractions]').find('input[data-id=source]').type('http.url');
-            cy.get('[data-id=extractions]').find('input[data-id=target]').type('http.request.id');
+            // Default mode is "Preset extract" with the first row's dataFormat=json
+            // already selected, so we just fill lookupKey + targetAttributeName to
+            // make a valid action.
+            cy.get('[data-id=extract-row-0]').find('input[data-id=extract-row-0-lookupKey]').type('task_id');
+            cy.get('[data-id=extract-row-0]').find('input[data-id=extract-row-0-targetAttributeName]').type('extracted.json.task_id');
             break;
           }
 

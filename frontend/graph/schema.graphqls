@@ -76,11 +76,12 @@ enum ActionType {
 }
 
 # ExtractionDataFormat is a pre-set definition that resolves into a regex
-# applied to the value of `source` on the span. Must be one of the supported
+# applied to the value of `lookupKey` on the span. Must be one of the supported
 # formats; see odigos.io_actions CRD for the exact backend enum.
 enum ExtractionDataFormat {
-  url
   json
+  sql
+  resource_path
 }
 
 enum InstrumentationRuleType {
@@ -509,11 +510,11 @@ input ActionFieldsInput {
 }
 
 # Extraction describes a single ExtractAttribute extraction rule. Either
-# (source + dataFormat) or regex must be provided; the captured value is
-# written to `target`.
+# (lookupKey + dataFormat) or regex must be provided; the captured value is
+# written to `targetAttributeName`.
 input ExtractionInput {
-  target: String!
-  source: String
+  targetAttributeName: String!
+  lookupKey: String
   dataFormat: ExtractionDataFormat
   regex: String
 }
@@ -639,8 +640,8 @@ type ActionFields {
 }
 
 type Extraction {
-  target: String!
-  source: String
+  targetAttributeName: String!
+  lookupKey: String
   dataFormat: ExtractionDataFormat
   regex: String
 }

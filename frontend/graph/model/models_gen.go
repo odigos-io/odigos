@@ -539,17 +539,17 @@ type ExportedSignalsInput struct {
 }
 
 type Extraction struct {
-	Target     string                `json:"target"`
-	Source     *string               `json:"source,omitempty"`
-	DataFormat *ExtractionDataFormat `json:"dataFormat,omitempty"`
-	Regex      *string               `json:"regex,omitempty"`
+	TargetAttributeName string                `json:"targetAttributeName"`
+	LookupKey           *string               `json:"lookupKey,omitempty"`
+	DataFormat          *ExtractionDataFormat `json:"dataFormat,omitempty"`
+	Regex               *string               `json:"regex,omitempty"`
 }
 
 type ExtractionInput struct {
-	Target     string                `json:"target"`
-	Source     *string               `json:"source,omitempty"`
-	DataFormat *ExtractionDataFormat `json:"dataFormat,omitempty"`
-	Regex      *string               `json:"regex,omitempty"`
+	TargetAttributeName string                `json:"targetAttributeName"`
+	LookupKey           *string               `json:"lookupKey,omitempty"`
+	DataFormat          *ExtractionDataFormat `json:"dataFormat,omitempty"`
+	Regex               *string               `json:"regex,omitempty"`
 }
 
 type FieldInput struct {
@@ -2133,18 +2133,20 @@ func (e EnvInjectionMethod) MarshalGQL(w io.Writer) {
 type ExtractionDataFormat string
 
 const (
-	ExtractionDataFormatURL  ExtractionDataFormat = "url"
-	ExtractionDataFormatJSON ExtractionDataFormat = "json"
+	ExtractionDataFormatJSON         ExtractionDataFormat = "json"
+	ExtractionDataFormatSQL          ExtractionDataFormat = "sql"
+	ExtractionDataFormatResourcePath ExtractionDataFormat = "resource_path"
 )
 
 var AllExtractionDataFormat = []ExtractionDataFormat{
-	ExtractionDataFormatURL,
 	ExtractionDataFormatJSON,
+	ExtractionDataFormatSQL,
+	ExtractionDataFormatResourcePath,
 }
 
 func (e ExtractionDataFormat) IsValid() bool {
 	switch e {
-	case ExtractionDataFormatURL, ExtractionDataFormatJSON:
+	case ExtractionDataFormatJSON, ExtractionDataFormatSQL, ExtractionDataFormatResourcePath:
 		return true
 	}
 	return false
