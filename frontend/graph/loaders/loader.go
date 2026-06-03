@@ -1,8 +1,10 @@
 package loaders
 
 import (
+	"cmp"
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +22,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
+
+// sortWorkloadIds sorts workload IDs deterministically by namespace, then name,
+// then kind. Stable ordering here is what the UI relies on instead of re-sorting
+// every re-fetch.
+func sortWorkloadIds(ids []model.K8sWorkloadID) {
+	slices.SortFunc(ids, func(a, b model.K8sWorkloadID) int {
+		return cmp.Or(
+			cmp.Compare(a.Namespace, b.Namespace),
+			cmp.Compare(a.Name, b.Name),
+			cmp.Compare(a.Kind, b.Kind),
+		)
+	})
+}
 
 type loadersKeyType string
 
@@ -434,6 +449,8 @@ func (l *Loaders) LoadWorkloadsWithFilter(ctx context.Context, filter *model.Wor
 		}
 	}
 
+	sortWorkloadIds(l.workloadIds)
+
 	l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(l.workloadIds))
 	l.nsToWorkloadIds = make(map[string][]model.K8sWorkloadID)
 	for _, workloadId := range l.workloadIds {
@@ -463,6 +480,8 @@ func (l *Loaders) SetWorkloadIdsDirect(ctx context.Context, ids []model.K8sWorkl
 	if err := l.LoadConfig(ctx); err != nil {
 		return err
 	}
+
+	sortWorkloadIds(ids)
 
 	l.workloadIds = ids
 	l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(ids))

@@ -7,11 +7,11 @@ import { Overview } from '@odigos/ui-kit/containers/v2';
 import {
   useActionCRUD,
   useDataStreamsCRUD,
-  useDescribe,
   useDestinationCRUD,
   useDestinationCategories,
   useEffectiveConfig,
   useInstrumentationRuleCRUD,
+  useK8sManifest,
   useMetrics,
   useNamespace,
   usePotentialDestinations,
@@ -27,7 +27,7 @@ export default function Page() {
   const { effectiveConfig } = useEffectiveConfig();
 
   const { fetchActions } = useActionCRUD();
-  const { fetchDescribeSource } = useDescribe();
+  const { fetchK8sManifest } = useK8sManifest();
   const { testConnection } = useTestConnection();
   const { fetchDestinations } = useDestinationCRUD();
   const { fetchNamespacesWithWorkloads } = useNamespace();
@@ -38,7 +38,7 @@ export default function Page() {
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
   const { fetchProfilingSlots, enableProfiling, fetchSourceProfiling } = useProfiling();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
-  const { fetchSources, persistSourcesV2, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
+  const { fetchSources, persistSourcesV2, updateSource, fetchSourceById, fetchPeerSources } = useSourceCRUD();
   const { fetchInstrumentationRules, createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   // Fired by the Source Drawer's "open in Sampling page" hover button.
@@ -64,12 +64,11 @@ export default function Page() {
       recoverFromRollback={recoverFromRollback}
       updateSource={updateSource}
       fetchSourceById={fetchSourceById}
-      fetchSourceDescribe={fetchDescribeSource}
-      fetchSourceLibraries={fetchSourceLibraries}
       fetchPeerSources={fetchPeerSources}
       enableProfiling={enableProfiling}
       fetchProfilingSlots={fetchProfilingSlots}
       fetchSourceProfiling={fetchSourceProfiling}
+      fetchK8sManifest={fetchK8sManifest}
       getDestinationCategories={getDestinationCategories}
       getPotentialDestinations={getPotentialDestinations}
       testConnection={testConnection}
