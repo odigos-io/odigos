@@ -24,10 +24,14 @@ interface SourceProfilingResult {
   profileJson: string;
 }
 
+// ProfileType selects which sample type the flame graph renders.
+// 'cpu' (default) shows CPU time; 'alloc_space' shows allocated memory (bytes).
+export type ProfileType = 'cpu' | 'alloc_space';
+
 interface UseProfiling {
   enableProfiling: (source: WorkloadId) => Promise<EnableProfilingResult | undefined>;
   fetchProfilingSlots: () => Promise<ProfilingSlots | undefined>;
-  fetchSourceProfiling: (source: WorkloadId) => Promise<SourceProfilingResult | undefined>;
+  fetchSourceProfiling: (source: WorkloadId, profileType?: ProfileType) => Promise<SourceProfilingResult | undefined>;
 }
 
 export const useProfiling = (): UseProfiling => {
@@ -35,7 +39,7 @@ export const useProfiling = (): UseProfiling => {
   const [querySlots] = useLazyQuery<{ profilingSlots: ProfilingSlots }>(GET_PROFILING_SLOTS, {
     fetchPolicy: 'network-only',
   });
-  const [querySourceProfiling] = useLazyQuery<{ computePlatform?: { source?: { profiling: SourceProfilingResult } } }, { sourceId: WorkloadId }>(GET_SOURCE_PROFILING, {
+  const [querySourceProfiling] = useLazyQuery<{ computePlatform?: { source?: { profiling: SourceProfilingResult } } }, { sourceId: WorkloadId; profileType?: ProfileType }>(GET_SOURCE_PROFILING, {
     fetchPolicy: 'network-only',
   });
 
@@ -58,11 +62,13 @@ export const useProfiling = (): UseProfiling => {
   );
 
   // Fetches the aggregated Pyroscope-shaped flame graph for a workload. Returns a JSON-encoded FlamebearerProfile.
-  // Example: await fetchSourceProfiling({ namespace: "default", kind: "Deployment", name: "inventory" })
-  //       => { profileJson: '{"version":1,"flamebearer":{"names":[...],"levels":[...],...},...}' }
+  // profileType selects the sample type: 'cpu' (default) or 'alloc_space' (memory). The CPU⇄memory toggle
+  // re-invokes this with the selected type to re-query the backend.
+  // Example: await fetchSourceProfiling({ namespace: "default", kind: "Deployment", name: "inventory" }, 'alloc_space')
+  //       => { profileJson: '{"version":1,"flamebearer":{"names":[...],"levels":[...],...},"metadata":{"name":"memory","units":"bytes",...}}' }
   const fetchSourceProfiling: UseProfiling['fetchSourceProfiling'] = useCallback(
-    async (source) => {
-      const { data } = await querySourceProfiling({ variables: { sourceId: source } });
+    async (source, profileType = 'cpu') => {
+      const { data } = await querySourceProfiling({ variables: { sourceId: source, profileType } });
       return data?.computePlatform?.source?.profiling;
     },
     [querySourceProfiling],

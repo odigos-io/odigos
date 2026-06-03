@@ -1,7 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
+import type { WorkloadId } from '@odigos/ui-kit/types';
 import { Overview } from '@odigos/ui-kit/containers/v2';
+import { ProfileTypeToggle } from '@/components/profiling/profile-type-toggle';
 import {
   useActionCRUD,
   useDataStreamsCRUD,
@@ -17,6 +19,7 @@ import {
   useSourceCRUD,
   useTestConnection,
   useWorkloadUtils,
+  type ProfileType,
 } from '@/hooks';
 
 export default function Page() {
@@ -34,12 +37,21 @@ export default function Page() {
   const { createActionV2, updateAction, deleteAction } = useActionCRUD();
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
   const { fetchProfilingSlots, enableProfiling, fetchSourceProfiling } = useProfiling();
+
+  // CPU⇄memory toggle state. Selecting a type re-queries the flame graph with that sample type.
+  const [profileType, setProfileType] = useState<ProfileType>('cpu');
+  // Wrap fetchSourceProfiling so the flame graph view always uses the currently-selected profile type.
+  const fetchSourceProfilingByType = useCallback((source: WorkloadId) => fetchSourceProfiling(source, profileType), [fetchSourceProfiling, profileType]);
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { fetchSources, persistSourcesV2, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
   const { fetchInstrumentationRules, createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   return (
-    <Overview
+    <>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 16px' }}>
+        <ProfileTypeToggle value={profileType} onChange={setProfileType} />
+      </div>
+      <Overview
       columnsMaxHeight='calc(100vh - 224px)'
       metrics={metrics}
       effectiveConfig={effectiveConfig}
@@ -61,7 +73,7 @@ export default function Page() {
       fetchPeerSources={fetchPeerSources}
       enableProfiling={enableProfiling}
       fetchProfilingSlots={fetchProfilingSlots}
-      fetchSourceProfiling={fetchSourceProfiling}
+      fetchSourceProfiling={fetchSourceProfilingByType}
       getDestinationCategories={getDestinationCategories}
       getPotentialDestinations={getPotentialDestinations}
       testConnection={testConnection}
@@ -75,5 +87,6 @@ export default function Page() {
       updateAction={updateAction}
       deleteAction={deleteAction}
     />
+    </>
   );
 }

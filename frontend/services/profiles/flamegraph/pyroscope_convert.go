@@ -42,9 +42,42 @@ func ParseExportProfilesServiceRequest(chunk []byte) (*pprofileotlp.ExportProfil
 	return req, nil
 }
 
+// Supported profile sample types selectable by the UI/GraphQL layer.
+const (
+	// SampleTypeCPU renders the CPU flame graph (existing default behavior).
+	SampleTypeCPU = "cpu"
+	// SampleTypeAllocSpace renders the memory (allocated bytes) flame graph.
+	SampleTypeAllocSpace = "alloc_space"
+)
+
+// DefaultSampleType is the profile sample type used when the caller does not request one.
+const DefaultSampleType = SampleTypeCPU
+
+// NormalizeProfileType maps an external profile-type selector to a supported sample type, defaulting
+// to CPU for empty or unrecognized input so existing CPU behavior is never regressed.
+func NormalizeProfileType(profileType string) string {
+	switch profileType {
+	case SampleTypeAllocSpace:
+		return SampleTypeAllocSpace
+	default:
+		return SampleTypeCPU
+	}
+}
+
 // DefaultProfileType is used when OTLP chunks do not expose a usable pprof sample type.
 func DefaultProfileType() *typesv1.ProfileType {
-	return &typesv1.ProfileType{SampleType: "cpu"}
+	return &typesv1.ProfileType{SampleType: DefaultSampleType}
+}
+
+// googleProfileMatchesSampleType reports whether a converted Google pprof profile carries the requested
+// sample type. Pyroscope's OTLP conversion rewrites the CPU sample type to "cpu" (from
+// "samples"/"samples:count:cpu:nanoseconds"); other types such as "alloc_space" pass through unchanged.
+func googleProfileMatchesSampleType(p *googleProfile.Profile, wantSampleType string) bool {
+	if p == nil {
+		return false
+	}
+	got := profileTypeFromGoogleProfile(p).SampleType
+	return got == wantSampleType
 }
 
 func profileTypeFromGoogleProfile(p *googleProfile.Profile) *typesv1.ProfileType {

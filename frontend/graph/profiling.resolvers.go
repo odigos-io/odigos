@@ -14,11 +14,16 @@ import (
 )
 
 // Profiling is the resolver for the profiling field.
-func (r *k8sActualSourceResolver) Profiling(ctx context.Context, obj *model.K8sActualSource) (*model.SourceProfilingResult, error) {
+func (r *k8sActualSourceResolver) Profiling(ctx context.Context, obj *model.K8sActualSource, profileType *string) (*model.SourceProfilingResult, error) {
 	if r.ProfileStore == nil {
 		return nil, nil
 	}
-	out, err := profiles.GetProfilingForSource(ctx, r.ProfileStore, obj.Namespace, string(obj.Kind), obj.Name)
+	// profileType is optional; empty/nil defaults to "cpu" inside GetProfilingForSource.
+	pt := ""
+	if profileType != nil {
+		pt = *profileType
+	}
+	out, err := profiles.GetProfilingForSource(ctx, r.ProfileStore, obj.Namespace, string(obj.Kind), obj.Name, pt)
 	if err != nil {
 		return nil, err
 	}

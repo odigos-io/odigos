@@ -51,9 +51,10 @@ type SourceProfilingResult {
 
 extend type K8sActualSource {
   """
-  Buffered CPU profile for this source
+  Buffered profile for this source. profileType selects the sample type to render:
+  "cpu" (default) or "alloc_space" (memory, in bytes).
   """
-  profiling: SourceProfilingResult
+  profiling(profileType: String): SourceProfilingResult
 }
 
 extend type Query {
