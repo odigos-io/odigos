@@ -35,6 +35,24 @@ func dedupeStatusCodes(codes []int) []int {
 	return result
 }
 
+func dedupeAndSortTemplates(templates []string) []string {
+	if len(templates) <= 1 {
+		return templates
+	}
+
+	seen := make(map[string]struct{}, len(templates))
+	result := []string{}
+	for _, template := range templates {
+		if _, ok := seen[template]; ok {
+			continue
+		}
+		seen[template] = struct{}{}
+		result = append(result, template)
+	}
+	slices.Sort(result)
+	return result
+}
+
 func mergeDefaultTemplatizationSkipPolicyConfigs(c1 *actions.DefaultTemplatizationSkipPolicyConfig, c2 *actions.DefaultTemplatizationSkipPolicyConfig) *actions.DefaultTemplatizationSkipPolicyConfig {
 	if c1 == nil {
 		return c2
@@ -136,6 +154,9 @@ func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, cont
 			configForDefaultTemplatization.SkipPolicy.SkipHttpStatusCodes,
 		)
 	}
+
+	// Dedupe and sort the templates using a helper, similar to dedupeStatusCodes
+	templates = dedupeAndSortTemplates(templates)
 
 	// align default templatization config with the common api conventions.
 	// e.g: if disabled, set default templatization to nil
