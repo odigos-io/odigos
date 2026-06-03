@@ -813,8 +813,9 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadContainerOverrides struct {
-		ContainerName func(childComplexity int) int
-		RuntimeInfo   func(childComplexity int) int
+		ContainerName  func(childComplexity int) int
+		OtelDistroName func(childComplexity int) int
+		RuntimeInfo    func(childComplexity int) int
 	}
 
 	K8sWorkloadId struct {
@@ -871,8 +872,13 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadPodContainerProcessInstrumentation struct {
-		IsStandardLibrary func(childComplexity int) int
-		Name              func(childComplexity int) int
+		Healthy                  func(childComplexity int) int
+		IsStandardLibrary        func(childComplexity int) int
+		LastStatusTime           func(childComplexity int) int
+		Message                  func(childComplexity int) int
+		Name                     func(childComplexity int) int
+		NonIdentifyingAttributes func(childComplexity int) int
+		Type                     func(childComplexity int) int
 	}
 
 	K8sWorkloadRollout struct {
@@ -5002,6 +5008,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadContainerOverrides.ContainerName(childComplexity), true
 
+	case "K8sWorkloadContainerOverrides.otelDistroName":
+		if e.complexity.K8sWorkloadContainerOverrides.OtelDistroName == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerOverrides.OtelDistroName(childComplexity), true
+
 	case "K8sWorkloadContainerOverrides.runtimeInfo":
 		if e.complexity.K8sWorkloadContainerOverrides.RuntimeInfo == nil {
 			break
@@ -5254,6 +5267,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadPodContainerProcessAttribute.Value(childComplexity), true
 
+	case "K8sWorkloadPodContainerProcessInstrumentation.healthy":
+		if e.complexity.K8sWorkloadPodContainerProcessInstrumentation.Healthy == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainerProcessInstrumentation.Healthy(childComplexity), true
+
 	case "K8sWorkloadPodContainerProcessInstrumentation.isStandardLibrary":
 		if e.complexity.K8sWorkloadPodContainerProcessInstrumentation.IsStandardLibrary == nil {
 			break
@@ -5261,12 +5281,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadPodContainerProcessInstrumentation.IsStandardLibrary(childComplexity), true
 
+	case "K8sWorkloadPodContainerProcessInstrumentation.lastStatusTime":
+		if e.complexity.K8sWorkloadPodContainerProcessInstrumentation.LastStatusTime == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainerProcessInstrumentation.LastStatusTime(childComplexity), true
+
+	case "K8sWorkloadPodContainerProcessInstrumentation.message":
+		if e.complexity.K8sWorkloadPodContainerProcessInstrumentation.Message == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainerProcessInstrumentation.Message(childComplexity), true
+
 	case "K8sWorkloadPodContainerProcessInstrumentation.name":
 		if e.complexity.K8sWorkloadPodContainerProcessInstrumentation.Name == nil {
 			break
 		}
 
 		return e.complexity.K8sWorkloadPodContainerProcessInstrumentation.Name(childComplexity), true
+
+	case "K8sWorkloadPodContainerProcessInstrumentation.nonIdentifyingAttributes":
+		if e.complexity.K8sWorkloadPodContainerProcessInstrumentation.NonIdentifyingAttributes == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainerProcessInstrumentation.NonIdentifyingAttributes(childComplexity), true
+
+	case "K8sWorkloadPodContainerProcessInstrumentation.type":
+		if e.complexity.K8sWorkloadPodContainerProcessInstrumentation.Type == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodContainerProcessInstrumentation.Type(childComplexity), true
 
 	case "K8sWorkloadRollout.rolloutStatus":
 		if e.complexity.K8sWorkloadRollout.RolloutStatus == nil {
@@ -30822,6 +30870,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainer_overrides(_ contex
 				return ec.fieldContext_K8sWorkloadContainerOverrides_containerName(ctx, field)
 			case "runtimeInfo":
 				return ec.fieldContext_K8sWorkloadContainerOverrides_runtimeInfo(ctx, field)
+			case "otelDistroName":
+				return ec.fieldContext_K8sWorkloadContainerOverrides_otelDistroName(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadContainerOverrides", field.Name)
 		},
@@ -30957,8 +31007,18 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainer_instrumentations(_
 			switch field.Name {
 			case "name":
 				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_name(ctx, field)
+			case "type":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_type(ctx, field)
+			case "healthy":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_healthy(ctx, field)
+			case "message":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_message(ctx, field)
+			case "lastStatusTime":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_lastStatusTime(ctx, field)
 			case "isStandardLibrary":
 				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_isStandardLibrary(ctx, field)
+			case "nonIdentifyingAttributes":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_nonIdentifyingAttributes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadPodContainerProcessInstrumentation", field.Name)
 		},
@@ -32472,6 +32532,47 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_runtimeIn
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkloadContainerOverrides_otelDistroName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerOverrides) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerOverrides_otelDistroName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OtelDistroName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_otelDistroName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerOverrides",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadId_namespace(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadID) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadId_namespace(ctx, field)
 	if err != nil {
@@ -33977,8 +34078,18 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcess_instrume
 			switch field.Name {
 			case "name":
 				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_name(ctx, field)
+			case "type":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_type(ctx, field)
+			case "healthy":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_healthy(ctx, field)
+			case "message":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_message(ctx, field)
+			case "lastStatusTime":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_lastStatusTime(ctx, field)
 			case "isStandardLibrary":
 				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_isStandardLibrary(ctx, field)
+			case "nonIdentifyingAttributes":
+				return ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_nonIdentifyingAttributes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadPodContainerProcessInstrumentation", field.Name)
 		},
@@ -34118,6 +34229,170 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessInstrumen
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkloadPodContainerProcessInstrumentation_type(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainerProcessInstrumentation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessInstrumentation_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodContainerProcessInstrumentation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodContainerProcessInstrumentation_healthy(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainerProcessInstrumentation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_healthy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Healthy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessInstrumentation_healthy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodContainerProcessInstrumentation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodContainerProcessInstrumentation_message(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainerProcessInstrumentation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessInstrumentation_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodContainerProcessInstrumentation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodContainerProcessInstrumentation_lastStatusTime(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainerProcessInstrumentation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_lastStatusTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastStatusTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessInstrumentation_lastStatusTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodContainerProcessInstrumentation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadPodContainerProcessInstrumentation_isStandardLibrary(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainerProcessInstrumentation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_isStandardLibrary(ctx, field)
 	if err != nil {
@@ -34154,6 +34429,56 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessInstrumen
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodContainerProcessInstrumentation_nonIdentifyingAttributes(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodContainerProcessInstrumentation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodContainerProcessInstrumentation_nonIdentifyingAttributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NonIdentifyingAttributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.NonIdentifyingAttribute)
+	fc.Result = res
+	return ec.marshalNNonIdentifyingAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNonIdentifyingAttributeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessInstrumentation_nonIdentifyingAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodContainerProcessInstrumentation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_NonIdentifyingAttribute_key(ctx, field)
+			case "value":
+				return ec.fieldContext_NonIdentifyingAttribute_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NonIdentifyingAttribute", field.Name)
 		},
 	}
 	return fc, nil
@@ -61141,6 +61466,8 @@ func (ec *executionContext) _K8sWorkloadContainerOverrides(ctx context.Context, 
 			}
 		case "runtimeInfo":
 			out.Values[i] = ec._K8sWorkloadContainerOverrides_runtimeInfo(ctx, field, obj)
+		case "otelDistroName":
+			out.Values[i] = ec._K8sWorkloadContainerOverrides_otelDistroName(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -61542,8 +61869,21 @@ func (ec *executionContext) _K8sWorkloadPodContainerProcessInstrumentation(ctx c
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "type":
+			out.Values[i] = ec._K8sWorkloadPodContainerProcessInstrumentation_type(ctx, field, obj)
+		case "healthy":
+			out.Values[i] = ec._K8sWorkloadPodContainerProcessInstrumentation_healthy(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._K8sWorkloadPodContainerProcessInstrumentation_message(ctx, field, obj)
+		case "lastStatusTime":
+			out.Values[i] = ec._K8sWorkloadPodContainerProcessInstrumentation_lastStatusTime(ctx, field, obj)
 		case "isStandardLibrary":
 			out.Values[i] = ec._K8sWorkloadPodContainerProcessInstrumentation_isStandardLibrary(ctx, field, obj)
+		case "nonIdentifyingAttributes":
+			out.Values[i] = ec._K8sWorkloadPodContainerProcessInstrumentation_nonIdentifyingAttributes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

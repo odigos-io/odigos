@@ -5,38 +5,13 @@ import { useLazyQuery, useMutation } from '@apollo/client';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { GET_NAMESPACES, GET_NAMESPACES_WITH_WORKLOADS, PERSIST_NAMESPACES } from '@/graphql';
 import { useDataStreamStore, useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
-import { Crud, EntityTypes, type Namespace, type NamespaceWorkload, type Source, StatusType } from '@odigos/ui-kit/types';
+import { Crud, EntityTypes, type Namespace, type NamespaceWorkload, StatusType } from '@odigos/ui-kit/types';
 
 interface GqlNamespaceWithWorkloads {
   name: string;
   markedForInstrumentation: boolean;
   dataStreamNames: string[];
   workloads: NamespaceWorkload[];
-}
-
-//TODO: this is a temporary function to transform the namespaces response to the namespace type.
-//
-// `currentStreamName` scopes the `selected` flag to the active data stream. Without it,
-// a workload instrumented in *any* stream renders pre-checked in another stream's
-// add-source drawer (e.g. the add drawer for a brand-new stream would show every
-// already-instrumented workload as already part of the new stream).
-function transformNamespacesResponse(gqlNamespaces: GqlNamespaceWithWorkloads[], currentStreamName: string): Namespace[] {
-  return gqlNamespaces.map((ns) => ({
-    name: ns.name,
-    selected: ns.markedForInstrumentation && ns.dataStreamNames.includes(currentStreamName),
-    dataStreamNames: ns.dataStreamNames,
-    sources: ns.workloads.map((w) => ({
-      namespace: w.id.namespace,
-      kind: w.id.kind,
-      name: w.id.name,
-      selected: (w.markedForInstrumentation.markedForInstrumentation ?? false) && w.dataStreamNames.includes(currentStreamName),
-      dataStreamNames: w.dataStreamNames,
-      numberOfInstances: w.numberOfInstances ?? undefined,
-      otelServiceName: '',
-      containers: null,
-      conditions: null,
-    })) as Source[],
-  }));
 }
 
 export const useNamespace = () => {
@@ -76,7 +51,7 @@ export const useNamespace = () => {
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
     } else if (data?.namespaces) {
-      setEntities(EntityTypes.Namespace, data.namespaces.map((ns) => ({ name: ns.name, selected: ns.markedForInstrumentation, dataStreamNames: ns.dataStreamNames })) as Namespace[]);
+      setEntities(EntityTypes.Namespace, data.namespaces);
     }
   };
 
@@ -89,12 +64,10 @@ export const useNamespace = () => {
     }
 
     if (data?.namespaces) {
-      const transformed = transformNamespacesResponse(data.namespaces, selectedStreamName);
-
-      const namespacesOnly = transformed.map(({ sources, ...ns }) => ns) as Namespace[];
+      const namespacesOnly = data.namespaces.map(({ workloads, ...ns }) => ns) as Namespace[];
       setEntities(EntityTypes.Namespace, namespacesOnly);
 
-      return { loading: false, data: transformed };
+      return { loading: false, data: data.namespaces };
     }
 
     return { loading: false };

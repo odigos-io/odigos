@@ -26,7 +26,7 @@ describe('Destinations CRUD', () => {
 
       // Wait for detected destinations to load before selecting
       waitForGraphqlOperation('GetPotentialDestinations').then(() => {
-        cy.contains('Detected by system').should('be.visible');
+        cy.contains('Suggested').should('be.visible');
         cy.get(DATA_IDS.SELECT_DESTINATION).first().should('exist').click({ force: true });
         cy.get(DATA_IDS.SELECT_DESTINATION_AUTOFILL_FIELD).should('have.value', SELECTED_ENTITIES.DESTINATION.AUTOFILL_VALUE);
 

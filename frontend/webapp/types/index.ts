@@ -6,4 +6,3 @@ export * from './instrumentation-rules';
 export * from './namespaces';
 export * from './sources';
 export * from './sampling';
-export * from './workloads';
