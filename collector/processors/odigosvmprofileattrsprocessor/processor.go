@@ -77,13 +77,17 @@ func (p *vmProfileAttrsProcessor) processProfiles(ctx context.Context, profiles 
 		rp := rps.At(i)
 		attrs := rp.Resource().Attributes()
 
-		pidVal, ok := attrs.Get(attrProcessPID)
+		// The eBPF profiler sets process.pid on the RESOURCE only for host (non-container)
+		// processes. For containerized workloads it groups ResourceProfiles by container.id and
+		// carries process.pid on the SAMPLES instead. Resolve the PID from either location so
+		// container sources (kind: docker, or a process running inside a container) are enriched
+		// rather than dropped for lacking a resource-level process.pid.
+		pid, ok := resolveResourcePID(profiles.Dictionary(), rp, attrs)
 		if !ok {
 			p.recordDrop(ctx)
 			p.logger.Debug("dropping profile resource without process.pid")
 			continue
 		}
-		pid := uint32(pidVal.Int())
 
 		packed, registered := p.attrCache.get(pid)
 		if !registered {
@@ -100,6 +104,10 @@ func (p *vmProfileAttrsProcessor) processProfiles(ctx context.Context, profiles 
 				zap.Error(err))
 			continue
 		}
+		// Hoist the PID onto the resource so downstream consumers (the in-agent sink cache key
+		// and flamegraph attribution) have a stable resource-level identity even for the
+		// container-grouped layout where the profiler only set container.id on the resource.
+		attrs.PutInt(attrProcessPID, int64(pid))
 
 		dest := outRps.AppendEmpty()
 		rp.CopyTo(dest)
@@ -109,6 +117,45 @@ func (p *vmProfileAttrsProcessor) processProfiles(ctx context.Context, profiles 
 	}
 
 	return out, nil
+}
+
+// resolveResourcePID returns the process PID identifying a ResourceProfiles. It prefers the
+// resource-level process.pid (host processes) and falls back to the first sample-level process.pid
+// (container-grouped output, where the profiler keys the resource by container.id and leaves the
+// PID on samples). One ResourceProfiles maps to one VM source — a docker source is one container,
+// a systemd/process source is one host process — so a single representative PID identifies it.
+func resolveResourcePID(dict pprofile.ProfilesDictionary, rp pprofile.ResourceProfiles, attrs pcommon.Map) (uint32, bool) {
+	if v, ok := attrs.Get(attrProcessPID); ok {
+		return uint32(v.Int()), true
+	}
+
+	keyIdx := stringTableIndex(dict.StringTable(), attrProcessPID)
+	if keyIdx < 0 {
+		return 0, false
+	}
+	attrTable := dict.AttributeTable()
+
+	sps := rp.ScopeProfiles()
+	for i := 0; i < sps.Len(); i++ {
+		profs := sps.At(i).Profiles()
+		for j := 0; j < profs.Len(); j++ {
+			samples := profs.At(j).Samples()
+			for k := 0; k < samples.Len(); k++ {
+				indices := samples.At(k).AttributeIndices()
+				for a := 0; a < indices.Len(); a++ {
+					idx := indices.At(a)
+					if idx < 0 || int(idx) >= attrTable.Len() {
+						continue
+					}
+					kv := attrTable.At(int(idx))
+					if kv.KeyStrindex() == keyIdx && kv.Value().Type() == pcommon.ValueTypeInt {
+						return uint32(kv.Value().Int()), true
+					}
+				}
+			}
+		}
+	}
+	return 0, false
 }
 
 // recordDrop increments the dropped_resource_profiles counter.
