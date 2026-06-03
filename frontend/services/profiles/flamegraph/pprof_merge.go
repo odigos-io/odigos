@@ -16,7 +16,11 @@ import (
 
 // googleProfilesFromParsedRequest runs the same OTLP→Google conversion as ingest for every profile
 // in an already-decoded ExportProfilesServiceRequest. The request dictionary must be non-nil.
-func googleProfilesFromParsedRequest(req *pprofileotlp.ExportProfilesServiceRequest) []*googleProfile.Profile {
+//
+// wantSampleType selects which sample type to keep (e.g. "cpu" or "alloc_space"). Each OTLP Profile
+// carries a single sample type, so chunks that mix CPU and memory arrive as separate Profile messages;
+// converted profiles whose type does not match are skipped.
+func googleProfilesFromParsedRequest(req *pprofileotlp.ExportProfilesServiceRequest, wantSampleType string) []*googleProfile.Profile {
 	if req == nil {
 		return nil
 	}
@@ -73,6 +77,9 @@ func googleProfilesFromParsedRequest(req *pprofileotlp.ExportProfilesServiceRequ
 				for _, cp := range converted {
 					cp := cp
 					if gp := extractGoogleProfile(&cp); gp != nil && len(gp.Sample) > 0 {
+						if !googleProfileMatchesSampleType(gp, wantSampleType) {
+							continue
+						}
 						out = append(out, gp)
 					}
 				}

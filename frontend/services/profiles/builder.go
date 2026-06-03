@@ -9,11 +9,13 @@ import (
 )
 
 // buildPyroscopeProfileFromChunks builds a Pyroscope-shaped profile from OTLP chunks stored in the ProfileStore buffer.
-func buildPyroscopeProfileFromChunks(ctx context.Context, chunks [][]byte) flamegraph.FlamebearerProfile {
+// profileType selects the sample type to render ("cpu" or "alloc_space"; empty defaults to "cpu").
+func buildPyroscopeProfileFromChunks(ctx context.Context, chunks [][]byte, profileType string) flamegraph.FlamebearerProfile {
 	const maxNodes = 2048
+	profileType = flamegraph.NormalizeProfileType(profileType)
 	// flamebearerProfile: Grafana Pyroscope flame-tree JSON (levels, names, ticks) from merged OTLP chunks.
 	// functionNameTree: parallel structure used only for Odigos symbol statistics on top of the same merge.
-	flamebearerProfile, functionNameTree, err := flamegraph.BuildFlamebearerViaPyroscopeSymdb(ctx, chunks, maxNodes)
+	flamebearerProfile, functionNameTree, err := flamegraph.BuildFlamebearerViaPyroscopeSymdb(ctx, chunks, maxNodes, profileType)
 	if err != nil {
 		flamebearerProfile = nil
 	}
@@ -25,13 +27,22 @@ func buildPyroscopeProfileFromChunks(ctx context.Context, chunks [][]byte) flame
 	timeline := pyroscopeTimeline(numTicks, startTimeSec)
 	symbols := flamegraph.SymbolStatsFromFunctionNameTree(functionNameTree)
 	adapted := flamegraph.AdaptPyroscopeFlamebearerProfile(flamebearerProfile, timeline, symbols)
-	if adapted.FlamebearerProfile != nil && adapted.FlamebearerProfile.Metadata.Format == "" {
-		adapted.FlamebearerProfile.Metadata = pyroscopeMetadata()
+	if adapted.FlamebearerProfile != nil {
+		if adapted.FlamebearerProfile.Metadata.Format == "" {
+			// Empty/aggregate-only profile: ExportToFlamebearer was not used, so fill metadata ourselves.
+			adapted.FlamebearerProfile.Metadata = pyroscopeMetadataFor(profileType)
+		} else if profileType == flamegraph.SampleTypeAllocSpace {
+			// ExportToFlamebearer already set Format/levels; normalize the memory metadata to the
+			// Odigos contract (name "memory", units "bytes"). CPU output is left byte-identical to today.
+			md := pyroscopeMetadataFor(profileType)
+			adapted.FlamebearerProfile.Metadata.Units = md.Units
+			adapted.FlamebearerProfile.Metadata.Name = md.Name
+		}
 	}
 	return adapted
 }
 
-// Pyroscope web UI expects this metadata shape for single CPU-style profiles (historical JSON contract).
+// Pyroscope web UI expects this metadata shape for single profiles (historical JSON contract).
 const (
 	pyroscopeFlamebearerJSONVersion = 1
 	pyroscopeMetadataFormatSingle   = "single"
@@ -39,9 +50,26 @@ const (
 	pyroscopeMetadataProfileNameCPU = "cpu"
 	// pyroscopeMetadataSampleRate matches Grafana ExportToFlamebearer for CPU (nanoseconds period hint).
 	pyroscopeMetadataSampleRate = 1_000_000_000
+
+	// Memory (alloc_space) reports byte weights; Pyroscope's bytes unit drives byte-formatted ticks.
+	pyroscopeMetadataUnitsBytes        = "bytes"
+	pyroscopeMetadataProfileNameMemory = "memory"
+	// Memory profiles have no per-second rate; ExportToFlamebearer uses 100 for non-CPU types.
+	pyroscopeMetadataSampleRateMemory = 100
 )
 
-func pyroscopeMetadata() pyrofb.FlamebearerMetadataV1 {
+// pyroscopeMetadataFor returns the flamebearer metadata for a given profile type. CPU keeps the exact
+// samples/nanoseconds shape used historically; alloc_space reports bytes under the "memory" name.
+func pyroscopeMetadataFor(profileType string) pyrofb.FlamebearerMetadataV1 {
+	if flamegraph.NormalizeProfileType(profileType) == flamegraph.SampleTypeAllocSpace {
+		return pyrofb.FlamebearerMetadataV1{
+			Format:     pyroscopeMetadataFormatSingle,
+			SpyName:    "",
+			SampleRate: pyroscopeMetadataSampleRateMemory,
+			Units:      pyrometadata.Units(pyroscopeMetadataUnitsBytes),
+			Name:       pyroscopeMetadataProfileNameMemory,
+		}
+	}
 	return pyrofb.FlamebearerMetadataV1{
 		Format:     pyroscopeMetadataFormatSingle,
 		SpyName:    "",

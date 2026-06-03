@@ -99,7 +99,8 @@ type GetProfilingOutput struct {
 }
 
 // GetProfilingForSource returns the aggregated profile for a workload.
-func GetProfilingForSource(ctx context.Context, store common.ProfileStoreRef, namespace, kindStr, name string) (*GetProfilingOutput, error) {
+// profileType selects the sample type to render ("cpu" or "alloc_space"; empty defaults to "cpu").
+func GetProfilingForSource(ctx context.Context, store common.ProfileStoreRef, namespace, kindStr, name, profileType string) (*GetProfilingOutput, error) {
 	id, err := SourceIDFromStrings(namespace, kindStr, name)
 	if err != nil {
 		return nil, err
@@ -108,12 +109,13 @@ func GetProfilingForSource(ctx context.Context, store common.ProfileStoreRef, na
 	store.EnsureSlot(key)
 	chunks := store.GetProfileData(key)
 	if chunks == nil {
-		return &GetProfilingOutput{Profile: emptyFlamebearerProfile()}, nil
+		return &GetProfilingOutput{Profile: emptyFlamebearerProfileFor(profileType)}, nil
 	}
-	return &GetProfilingOutput{Profile: buildPyroscopeProfileFromChunks(ctx, chunks)}, nil
+	return &GetProfilingOutput{Profile: buildPyroscopeProfileFromChunks(ctx, chunks, profileType)}, nil
 }
 
-func emptyFlamebearerProfile() flamegraph.FlamebearerProfile {
+// emptyFlamebearerProfileFor returns an empty profile carrying the metadata for the requested type.
+func emptyFlamebearerProfileFor(profileType string) flamegraph.FlamebearerProfile {
 	return flamegraph.FlamebearerProfile{
 		FlamebearerProfile: &pyrofb.FlamebearerProfile{
 			Version: pyroscopeFlamebearerJSONVersion,
@@ -124,7 +126,7 @@ func emptyFlamebearerProfile() flamegraph.FlamebearerProfile {
 					NumTicks: 0,
 					MaxSelf:  0,
 				},
-				Metadata: pyroscopeMetadata(),
+				Metadata: pyroscopeMetadataFor(profileType),
 			},
 		},
 	}

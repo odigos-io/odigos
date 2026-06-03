@@ -646,7 +646,7 @@ type ComplexityRoot struct {
 		Namespace                 func(childComplexity int) int
 		NumberOfInstances         func(childComplexity int) int
 		OtelServiceName           func(childComplexity int) int
-		Profiling                 func(childComplexity int) int
+		Profiling                 func(childComplexity int, profileType *string) int
 		Selected                  func(childComplexity int) int
 	}
 
@@ -1452,7 +1452,7 @@ type K8sActualNamespaceResolver interface {
 	Sources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error)
 }
 type K8sActualSourceResolver interface {
-	Profiling(ctx context.Context, obj *model.K8sActualSource) (*model.SourceProfilingResult, error)
+	Profiling(ctx context.Context, obj *model.K8sActualSource, profileType *string) (*model.SourceProfilingResult, error)
 }
 type K8sNamespaceResolver interface {
 	MarkedForInstrumentation(ctx context.Context, obj *model.K8sNamespace) (bool, error)
@@ -4314,7 +4314,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.K8sActualSource.Profiling(childComplexity), true
+		args, err := ec.field_K8sActualSource_profiling_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.K8sActualSource.Profiling(childComplexity, args["profileType"].(*string)), true
 
 	case "K8sActualSource.selected":
 		if e.complexity.K8sActualSource.Selected == nil {
@@ -8724,6 +8729,34 @@ func (ec *executionContext) field_Mutation_disableSourceProfiling_argsName(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_K8sActualSource_profiling_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_K8sActualSource_profiling_argsProfileType(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["profileType"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_K8sActualSource_profiling_argsProfileType(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["profileType"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("profileType"))
+	if tmp, ok := rawArgs["profileType"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
 	return zeroVal, nil
 }
 
@@ -27777,7 +27810,7 @@ func (ec *executionContext) _K8sActualSource_profiling(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.K8sActualSource().Profiling(rctx, obj)
+		return ec.resolvers.K8sActualSource().Profiling(rctx, obj, fc.Args["profileType"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -27791,7 +27824,7 @@ func (ec *executionContext) _K8sActualSource_profiling(ctx context.Context, fiel
 	return ec.marshalOSourceProfilingResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourceProfilingResult(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sActualSource_profiling(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sActualSource_profiling(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sActualSource",
 		Field:      field,
@@ -27804,6 +27837,17 @@ func (ec *executionContext) fieldContext_K8sActualSource_profiling(_ context.Con
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SourceProfilingResult", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_K8sActualSource_profiling_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }

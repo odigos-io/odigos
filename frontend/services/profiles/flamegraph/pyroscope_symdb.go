@@ -16,8 +16,8 @@ import (
 
 const symdbFlameMaxNodesDefault int64 = 2048
 
-func BuildFlamebearerViaPyroscopeSymdb(ctx context.Context, chunks [][]byte, maxNodes int64) (*pyrofb.FlamebearerProfile, *phlaremodel.FunctionNameTree, error) {
-	gp, pt, extra := MergedGoogleProfileForPyroscopeSymdb(chunks)
+func BuildFlamebearerViaPyroscopeSymdb(ctx context.Context, chunks [][]byte, maxNodes int64, profileType string) (*pyrofb.FlamebearerProfile, *phlaremodel.FunctionNameTree, error) {
+	gp, pt, extra := MergedGoogleProfileForPyroscopeSymdb(chunks, profileType)
 	if maxNodes <= 0 {
 		maxNodes = symdbFlameMaxNodesDefault
 	}
@@ -103,9 +103,10 @@ func SymbolStatsFromFunctionNameTree(t *phlaremodel.FunctionNameTree) []SymbolSt
 	return sym.AggregateSymbolStats()
 }
 
-// MergedGoogleProfileForPyroscopeSymdb returns one Google pprof profile to feed symdb
-func MergedGoogleProfileForPyroscopeSymdb(chunks [][]byte) (*googleProfile.Profile, *typesv1.ProfileType, []Sample) {
-	all := collectGoogleProfilesFromChunks(chunks)
+// MergedGoogleProfileForPyroscopeSymdb returns one Google pprof profile to feed symdb.
+// profileType selects which sample type ("cpu" or "alloc_space"; empty defaults to "cpu") to extract.
+func MergedGoogleProfileForPyroscopeSymdb(chunks [][]byte, profileType string) (*googleProfile.Profile, *typesv1.ProfileType, []Sample) {
+	all := collectGoogleProfilesFromChunks(chunks, profileType)
 	merged, intraExtra := mergeGoogleProfilesGrouped(all)
 	if len(merged) == 0 {
 		return nil, DefaultProfileType(), intraExtra
@@ -159,7 +160,8 @@ func MergedGoogleProfileForPyroscopeSymdb(chunks [][]byte) (*googleProfile.Profi
 	return proto.Clone(rep).(*googleProfile.Profile), profileTypeFromGoogleProfile(rep), outExtra
 }
 
-func collectGoogleProfilesFromChunks(chunks [][]byte) []*googleProfile.Profile {
+func collectGoogleProfilesFromChunks(chunks [][]byte, profileType string) []*googleProfile.Profile {
+	wantSampleType := NormalizeProfileType(profileType)
 	var all []*googleProfile.Profile
 	for _, ch := range chunks {
 		if len(ch) == 0 {
@@ -169,7 +171,7 @@ func collectGoogleProfilesFromChunks(chunks [][]byte) []*googleProfile.Profile {
 		if err != nil {
 			continue
 		}
-		all = append(all, googleProfilesFromParsedRequest(req)...)
+		all = append(all, googleProfilesFromParsedRequest(req, wantSampleType)...)
 	}
 	return all
 }
