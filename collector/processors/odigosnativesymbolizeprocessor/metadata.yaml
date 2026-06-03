@@ -1,0 +1,13 @@
+type: odigosnativesymbolizeprocessor
+status:
+  class: processor
+  stability:
+    alpha: [profiles]
+  distributions: [odigos]
+  codeowners:
+    active: [odigos]
+
+tests:
+  # The processor symbolizes native frames in-place; no background goroutines, so the
+  # generated lifecycle test runs as-is.
+  config:
