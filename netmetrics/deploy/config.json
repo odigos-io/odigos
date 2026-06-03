@@ -1,0 +1,10 @@
+{
+  "services": [
+    { "port": 18080, "service": "inventory" }
+  ],
+  "peers": [
+    { "cidr": "172.17.0.0/16", "service": "frontend" },
+    { "cidr": "172.31.0.0/16", "service": "vpc-internal" },
+    { "cidr": "10.0.0.0/8", "service": "cluster-internal" }
+  ]
+}

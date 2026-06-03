@@ -1,27 +1,35 @@
-// enricher is a thin reference consumer of the shared odigos/netmetrics package.
-// It is the stand-in for the per-agent glue (vm-agent / odiglet) and the collector
-// processor: it scrapes OBI's raw network flows, resolves identity via the SHARED
-// ServiceResolver, and re-exposes enriched, OTel-semconv-named metrics.
+// Command enricher is a deployable network-metrics enrichment service built on the
+// shared github.com/odigos-io/odigos/netmetrics package.
 //
-// The identity sources are injected here (config-file PID/peer maps) exactly as the
-// VM agent would inject its PID->Source table and odiglet its k8s informer — proving
-// the same shared resolver works under either producer.
+// It scrapes OBI's raw network flows (bare 5-tuple), resolves each flow's local
+// endpoint to a service via the shared ServiceResolver (/proc socket->PID, then an
+// injected PID->service and peer->service lookup), and re-exposes enriched,
+// OTel-semconv-named metrics for Prometheus to scrape (and thus any destination,
+// e.g. Grafana, via remote_write).
+//
+// Identity sources are injected from config here, exactly as the VM agent injects
+// its profileattrs PID->Source table and odiglet injects its k8s informer — proving
+// the one shared resolver works under either producer.
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/odigos-io/odigos/netmetrics"
@@ -62,34 +70,34 @@ func parseLabels(s string) map[string]string {
 type aggKey struct{ service, peer, transport, direction, port string }
 
 func main() {
-	obiURL := flag.String("obi", "http://localhost:8999/metrics", "OBI prometheus endpoint")
-	listen := flag.String("listen", ":9100", "enriched metrics listen address")
-	cfgPath := flag.String("config", "config.json", "service mapping config")
+	obiURL := flag.String("obi", envOr("OBI_METRICS_URL", "http://localhost:8999/metrics"), "OBI prometheus endpoint")
+	listen := flag.String("listen", envOr("LISTEN_ADDR", ":9100"), "enriched metrics + health listen address")
+	cfgPath := flag.String("config", envOr("CONFIG_PATH", "config.json"), "service mapping config")
 	interval := flag.Duration("interval", 2*time.Second, "/proc refresh interval")
 	flag.Parse()
 
-	raw, err := os.ReadFile(*cfgPath)
+	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+
+	cfg, err := loadConfig(*cfgPath)
 	if err != nil {
-		log.Fatalf("read config: %v", err)
-	}
-	var cfg config
-	if err := json.Unmarshal(raw, &cfg); err != nil {
-		log.Fatalf("parse config: %v", err)
+		log.Error("load config", "err", err)
+		os.Exit(1)
 	}
 
 	// SHARED endpoint resolver (socket->PID via /proc).
 	endpoints, err := netmetrics.NewEndpointResolver()
 	if err != nil {
-		log.Fatalf("endpoint resolver: %v", err)
+		log.Error("endpoint resolver", "err", err)
+		os.Exit(1)
 	}
 
-	// peer registry (CIDR -> service): the injected PeerToService.
+	// Injected PeerToService (CIDR registry; stand-in for k8s informer / DNS feed).
 	var peers []peerNet
 	for _, p := range cfg.Peers {
 		if _, n, err := net.ParseCIDR(p.CIDR); err == nil {
 			peers = append(peers, peerNet{n, p.Service})
 		} else {
-			log.Printf("bad peer cidr %q: %v", p.CIDR, err)
+			log.Warn("bad peer cidr", "cidr", p.CIDR, "err", err)
 		}
 	}
 	peerToSvc := netmetrics.PeerToService(func(ip string) (netmetrics.Service, bool) {
@@ -102,10 +110,9 @@ func main() {
 		return netmetrics.Service{}, false
 	})
 
-	// PID -> service: the injected PIDToService. In the real agents this is the
-	// profileattrs table (vm-agent) or the k8s informer (odiglet). Here we derive it
-	// by applying the demo config rules (port / comm / cmdline) against the shared
-	// resolver's endpoint snapshot, rebuilt each refresh.
+	// Injected PIDToService: in the real agents the profileattrs table (VM) or k8s
+	// informer (odiglet). Here we build a PID->service map by applying config rules
+	// against the shared resolver's endpoint snapshot, rebuilt each refresh.
 	var pidMu sync.RWMutex
 	pidSvc := map[int]netmetrics.Service{}
 	rebuild := func() {
@@ -133,20 +140,44 @@ func main() {
 
 	resolver := netmetrics.NewServiceResolver(endpoints, pidToSvc, peerToSvc)
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	var ready atomic.Bool
 	go func() {
-		_ = endpoints.Refresh()
+		if err := endpoints.Refresh(); err != nil {
+			log.Warn("initial /proc refresh", "err", err)
+		}
 		rebuild()
-		for range time.Tick(*interval) {
-			_ = endpoints.Refresh()
-			rebuild()
+		ready.Store(true)
+		t := time.NewTicker(*interval)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				if err := endpoints.Refresh(); err != nil {
+					log.Warn("/proc refresh", "err", err)
+				}
+				rebuild()
+			}
 		}
 	}()
 
-	log.Printf("netmetrics enricher: OBI=%s listen=%s (shared odigos/netmetrics)", *obiURL, *listen)
-	http.HandleFunc("/metrics", func(w http.ResponseWriter, _ *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) })
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {
+		if ready.Load() {
+			w.Write([]byte("ready"))
+			return
+		}
+		http.Error(w, "not ready", http.StatusServiceUnavailable)
+	})
+	mux.HandleFunc("/metrics", func(w http.ResponseWriter, _ *http.Request) {
 		obi, err := scrape(*obiURL)
 		if err != nil {
-			http.Error(w, err.Error(), 502)
+			http.Error(w, err.Error(), http.StatusBadGateway)
 			return
 		}
 		agg := map[aggKey]float64{}
@@ -161,7 +192,6 @@ func main() {
 			dp, _ := strconv.Atoi(lbl["dst_port"])
 			fi, ok := resolver.Resolve(lbl["src_address"], sp, lbl["dst_address"], dp)
 			if !ok {
-				// neither endpoint is local: leave as unknown -> peer raw IP
 				fi.Local = netmetrics.Service{Name: "unknown"}
 				fi.Peer = netmetrics.Service{Name: lbl["dst_address"]}
 				fi.ServerPort = dp
@@ -179,9 +209,35 @@ func main() {
 			fmt.Fprintf(w, "network_flow_bytes_total{service_name=%q,peer_service_name=%q,network_transport=%q,network_io_direction=%q,server_port=%q} %g\n",
 				k.service, k.peer, k.transport, k.direction, k.port, agg[k])
 		}
-		fmt.Fprintf(w, "# HELP enricher_resolved_endpoints Local socket endpoints resolved to a PID\n# TYPE enricher_resolved_endpoints gauge\nenricher_resolved_endpoints %d\n", endpoints.Size())
+		fmt.Fprintf(w, "# HELP netmetrics_resolved_endpoints Local socket endpoints resolved to a PID\n# TYPE netmetrics_resolved_endpoints gauge\nnetmetrics_resolved_endpoints %d\n", endpoints.Size())
 	})
-	log.Fatal(http.ListenAndServe(*listen, nil))
+
+	srv := &http.Server{Addr: *listen, Handler: mux}
+	go func() {
+		<-ctx.Done()
+		shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = srv.Shutdown(shutCtx)
+	}()
+
+	log.Info("netmetrics enricher started", "obi", *obiURL, "listen", *listen, "interval", interval.String())
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Error("http server", "err", err)
+		os.Exit(1)
+	}
+	log.Info("netmetrics enricher stopped")
+}
+
+func loadConfig(path string) (config, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return config{}, err
+	}
+	var cfg config
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return config{}, fmt.Errorf("parse %s: %w", path, err)
+	}
+	return cfg, nil
 }
 
 func scrape(url string) (string, error) {
@@ -193,4 +249,11 @@ func scrape(url string) (string, error) {
 	defer resp.Body.Close()
 	b, err := io.ReadAll(resp.Body)
 	return string(b), err
+}
+
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

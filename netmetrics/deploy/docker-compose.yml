@@ -1,0 +1,63 @@
+# End-to-end deployment of OBI network metrics + service enrichment.
+#
+#   OBI (netolly, node-wide)  ->  netmetrics-enricher (shared odigos/netmetrics)  ->  Prometheus  ->  Grafana
+#
+# All on host network: the enricher needs host /proc + pid namespace to resolve
+# socket->PID, host network to scrape OBI (:8999) and serve enriched metrics (:9100).
+#
+#   docker compose up -d --build
+#   Grafana http://<host>:3000 (admin/admin)
+services:
+  obi:
+    image: otel/ebpf-instrument:v0.9.0
+    container_name: obi-net
+    command: ["--config=/config/obi-config.yaml"]
+    network_mode: host
+    pid: host
+    privileged: true
+    volumes:
+      - ../../grafana/obi-config.yaml:/config/obi-config.yaml:ro
+      - /sys/kernel/debug:/sys/kernel/debug
+      - /sys/kernel/tracing:/sys/kernel/tracing
+    restart: unless-stopped
+
+  netmetrics-enricher:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: odigos/netmetrics-enricher:dev
+    container_name: netmetrics-enricher
+    command:
+      - -obi=http://localhost:8999/metrics
+      - -listen=:9100
+      - -config=/config.json
+    network_mode: host
+    pid: host
+    privileged: true
+    volumes:
+      - ./config.json:/config.json:ro
+    depends_on: [obi]
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus-netmetrics
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=2h
+    network_mode: host
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on: [netmetrics-enricher]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana-netmetrics
+    network_mode: host
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    depends_on: [prometheus]
+    restart: unless-stopped
