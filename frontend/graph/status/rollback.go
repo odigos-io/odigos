@@ -23,6 +23,7 @@ const (
 	AutoRollbackReasonEvaluating        AutoRollbackReason = "Evaluating"
 	AutoRollbackReasonWaitingForRollout AutoRollbackReason = "WaitingForRollout"
 	AutoRollbackReasonNotApplicable     AutoRollbackReason = "NotApplicable"
+	AutoRollbackReasonInvalidConfig     AutoRollbackReason = "InvalidConfig"
 )
 
 func createAutoRollbackStatus(reason AutoRollbackReason, message string, status model.DesiredStateProgress) *model.DesiredConditionStatus {
@@ -40,6 +41,10 @@ func CalculateAutoRollbackStatus(ic *odigosv1alpha1.InstrumentationConfig, autoR
 	// if the workload is not marked for instrumentation, the auto rollback status is not applicable.
 	if ic == nil {
 		return nil
+	}
+
+	if autoRollbackConfig == nil {
+		return createAutoRollbackStatus(AutoRollbackReasonInvalidConfig, "auto rollback configuration is invalid or unavailable", model.DesiredStateProgressFailure)
 	}
 
 	// disabled in config

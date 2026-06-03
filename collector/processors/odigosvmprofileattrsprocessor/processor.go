@@ -77,63 +77,48 @@ func (p *vmProfileAttrsProcessor) processProfiles(ctx context.Context, profiles 
 		rp := rps.At(i)
 		attrs := rp.Resource().Attributes()
 
+		if pid, ok := resourcePID(attrs); ok {
+			packed, registered := p.attrCache.get(pid)
+			if !registered {
+				p.recordDrop(ctx)
+				p.logger.Debug("dropping profile resource for unregistered pid",
+					zap.Uint32("pid", pid))
+				continue
+			}
+
+			p.appendEnrichedResource(ctx, outRps, out.Dictionary(), rp, pid, packed, false, svcAttrIdxCache)
+			continue
+		}
+
 		// The eBPF profiler sets process.pid on the RESOURCE only for host (non-container)
 		// processes. For containerized workloads it groups ResourceProfiles by container.id and
-		// carries process.pid on the SAMPLES instead. Resolve the PID from either location so
-		// container sources (kind: docker, or a process running inside a container) are enriched
-		// rather than dropped for lacking a resource-level process.pid.
-		pid, ok := resolveResourcePID(profiles.Dictionary(), rp, attrs)
-		if !ok {
-			p.recordDrop(ctx)
-			p.logger.Debug("dropping profile resource without process.pid")
-			continue
-		}
-
-		packed, registered := p.attrCache.get(pid)
-		if !registered {
-			p.recordDrop(ctx)
-			p.logger.Debug("dropping profile resource for unregistered pid",
-				zap.Uint32("pid", pid))
-			continue
-		}
-
-		if err := applyPackedResourceAttributes(attrs, packed); err != nil {
-			p.recordDrop(ctx)
-			p.logger.Debug("dropping profile resource after failed attribute enrichment",
-				zap.Uint32("pid", pid),
-				zap.Error(err))
-			continue
-		}
-		// Hoist the PID onto the resource so downstream consumers (the in-agent sink cache key
-		// and flamegraph attribution) have a stable resource-level identity even for the
-		// container-grouped layout where the profiler only set container.id on the resource.
-		attrs.PutInt(attrProcessPID, int64(pid))
-
-		dest := outRps.AppendEmpty()
-		rp.CopyTo(dest)
-		if svc, ok := dest.Resource().Attributes().Get(attrServiceName); ok {
-			propagateServiceNameToSamples(out.Dictionary(), dest, svc.AsString(), svcAttrIdxCache)
-		}
+		// carries process.pid on the SAMPLES instead. In that layout a resource may contain
+		// samples from several PIDs, so each registered PID must be emitted as a separate
+		// resource with only its own samples.
+		p.appendRegisteredSamplePIDResources(ctx, profiles.Dictionary(), outRps, out.Dictionary(), rp, svcAttrIdxCache)
 	}
 
 	return out, nil
 }
 
-// resolveResourcePID returns the process PID identifying a ResourceProfiles. It prefers the
-// resource-level process.pid (host processes) and falls back to the first sample-level process.pid
-// (container-grouped output, where the profiler keys the resource by container.id and leaves the
-// PID on samples). One ResourceProfiles maps to one VM source — a docker source is one container,
-// a systemd/process source is one host process — so a single representative PID identifies it.
-func resolveResourcePID(dict pprofile.ProfilesDictionary, rp pprofile.ResourceProfiles, attrs pcommon.Map) (uint32, bool) {
+func resourcePID(attrs pcommon.Map) (uint32, bool) {
 	if v, ok := attrs.Get(attrProcessPID); ok {
 		return uint32(v.Int()), true
 	}
+	return 0, false
+}
 
-	keyIdx := stringTableIndex(dict.StringTable(), attrProcessPID)
+func (p *vmProfileAttrsProcessor) appendRegisteredSamplePIDResources(ctx context.Context, inDict pprofile.ProfilesDictionary, outRps pprofile.ResourceProfilesSlice, outDict pprofile.ProfilesDictionary, rp pprofile.ResourceProfiles, svcAttrIdxCache map[string]int32) {
+	keyIdx := stringTableIndex(inDict.StringTable(), attrProcessPID)
 	if keyIdx < 0 {
-		return 0, false
+		p.recordDrop(ctx)
+		p.logger.Debug("dropping profile resource without process.pid")
+		return
 	}
-	attrTable := dict.AttributeTable()
+	attrTable := inDict.AttributeTable()
+	registeredPIDs := make(map[uint32]string)
+	orderedPIDs := make([]uint32, 0)
+	seenAnyPID := false
 
 	sps := rp.ScopeProfiles()
 	for i := 0; i < sps.Len(); i++ {
@@ -141,21 +126,106 @@ func resolveResourcePID(dict pprofile.ProfilesDictionary, rp pprofile.ResourcePr
 		for j := 0; j < profs.Len(); j++ {
 			samples := profs.At(j).Samples()
 			for k := 0; k < samples.Len(); k++ {
-				indices := samples.At(k).AttributeIndices()
-				for a := 0; a < indices.Len(); a++ {
-					idx := indices.At(a)
-					if idx < 0 || int(idx) >= attrTable.Len() {
-						continue
-					}
-					kv := attrTable.At(int(idx))
-					if kv.KeyStrindex() == keyIdx && kv.Value().Type() == pcommon.ValueTypeInt {
-						return uint32(kv.Value().Int()), true
-					}
+				pid, ok := samplePID(attrTable, keyIdx, samples.At(k))
+				if !ok {
+					continue
 				}
+				seenAnyPID = true
+				if _, alreadyRegistered := registeredPIDs[pid]; alreadyRegistered {
+					continue
+				}
+				packed, registered := p.attrCache.get(pid)
+				if !registered {
+					continue
+				}
+				registeredPIDs[pid] = packed
+				orderedPIDs = append(orderedPIDs, pid)
 			}
 		}
 	}
+
+	if len(orderedPIDs) == 0 {
+		p.recordDrop(ctx)
+		if seenAnyPID {
+			p.logger.Debug("dropping profile resource for unregistered sample pids")
+		} else {
+			p.logger.Debug("dropping profile resource without process.pid")
+		}
+		return
+	}
+
+	for _, pid := range orderedPIDs {
+		p.appendEnrichedResource(ctx, outRps, outDict, rp, pid, registeredPIDs[pid], true, svcAttrIdxCache)
+	}
+}
+
+func samplePID(attrTable pprofile.KeyValueAndUnitSlice, keyIdx int32, sample pprofile.Sample) (uint32, bool) {
+	indices := sample.AttributeIndices()
+	for a := 0; a < indices.Len(); a++ {
+		idx := indices.At(a)
+		if idx < 0 || int(idx) >= attrTable.Len() {
+			continue
+		}
+		kv := attrTable.At(int(idx))
+		if kv.KeyStrindex() == keyIdx && kv.Value().Type() == pcommon.ValueTypeInt {
+			return uint32(kv.Value().Int()), true
+		}
+	}
 	return 0, false
+}
+
+func (p *vmProfileAttrsProcessor) appendEnrichedResource(ctx context.Context, outRps pprofile.ResourceProfilesSlice, outDict pprofile.ProfilesDictionary, rp pprofile.ResourceProfiles, pid uint32, packed string, filterBySamplePID bool, svcAttrIdxCache map[string]int32) bool {
+	dest := pprofile.NewResourceProfiles()
+	rp.CopyTo(dest)
+
+	attrs := dest.Resource().Attributes()
+	if err := applyPackedResourceAttributes(attrs, packed); err != nil {
+		p.recordDrop(ctx)
+		p.logger.Debug("dropping profile resource after failed attribute enrichment",
+			zap.Uint32("pid", pid),
+			zap.Error(err))
+		return false
+	}
+	// Hoist the PID onto the resource so downstream consumers (the in-agent sink cache key
+	// and flamegraph attribution) have a stable resource-level identity even for the
+	// container-grouped layout where the profiler only set container.id on the resource.
+	attrs.PutInt(attrProcessPID, int64(pid))
+
+	if filterBySamplePID && !keepOnlySamplesForPID(outDict, dest, pid) {
+		p.recordDrop(ctx)
+		p.logger.Debug("dropping profile resource after sample pid filtering removed all samples",
+			zap.Uint32("pid", pid))
+		return false
+	}
+	if svc, ok := dest.Resource().Attributes().Get(attrServiceName); ok {
+		propagateServiceNameToSamples(outDict, dest, svc.AsString(), svcAttrIdxCache)
+	}
+	dest.CopyTo(outRps.AppendEmpty())
+	return true
+}
+
+func keepOnlySamplesForPID(dict pprofile.ProfilesDictionary, rp pprofile.ResourceProfiles, pid uint32) bool {
+	keyIdx := stringTableIndex(dict.StringTable(), attrProcessPID)
+	if keyIdx < 0 {
+		return false
+	}
+	attrTable := dict.AttributeTable()
+
+	scopeProfiles := rp.ScopeProfiles()
+	for i := 0; i < scopeProfiles.Len(); i++ {
+		profiles := scopeProfiles.At(i).Profiles()
+		profiles.RemoveIf(func(profile pprofile.Profile) bool {
+			profile.Samples().RemoveIf(func(sample pprofile.Sample) bool {
+				samplePIDValue, ok := samplePID(attrTable, keyIdx, sample)
+				return !ok || samplePIDValue != pid
+			})
+			return profile.Samples().Len() == 0
+		})
+	}
+	scopeProfiles.RemoveIf(func(sp pprofile.ScopeProfiles) bool {
+		return sp.Profiles().Len() == 0
+	})
+	return scopeProfiles.Len() > 0
 }
 
 // recordDrop increments the dropped_resource_profiles counter.
