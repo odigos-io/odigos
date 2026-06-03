@@ -143,7 +143,7 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			span := spanWithAttrsAndKind(t, tt.spanKind, tt.attrs)
-			got := operationHttpServerMatcher(tt.operation, span)
+			got := newTailSamplingHttpServerMatcher(tt.operation).Match(span)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -179,7 +179,7 @@ func TestTailSamplingOperationMatcher(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			span := spanWithAttrsAndKind(t, tt.spanKind, tt.attrs)
-			got := TailSamplingOperationMatcher(tt.operation, span)
+			got := NewTailSamplingOperationMatcher(tt.operation).Match(span)
 			assert.Equal(t, tt.want, got)
 		})
 	}

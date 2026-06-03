@@ -161,6 +161,15 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 			containerByName[container.ContainerName].AgentEnabled = agentEnabledContainersToModel(container)
 			containerByName[container.ContainerName].AgentConfig = containerAgentConfigToAgentConfigModel(container)
 		}
+		for i := range ic.Spec.WorkloadCollectorConfig {
+			collectorConfig := &ic.Spec.WorkloadCollectorConfig[i]
+			if _, ok := containerByName[collectorConfig.ContainerName]; !ok {
+				containerByName[collectorConfig.ContainerName] = &model.K8sWorkloadContainer{
+					ContainerName: collectorConfig.ContainerName,
+				}
+			}
+			containerByName[collectorConfig.ContainerName].CollectorConfig = containerCollectorConfigToModel(collectorConfig)
+		}
 		for _, container := range ic.Status.RuntimeDetailsByContainer {
 			if _, ok := containerByName[container.ContainerName]; !ok {
 				containerByName[container.ContainerName] = &model.K8sWorkloadContainer{
@@ -251,10 +260,10 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 	if mostSevere == nil {
 		mostSevere = &model.DesiredConditionStatus{Name: status.WorkloadOdigosHealthStatus, Status: model.DesiredStateProgressUnknown}
 	} else if mostSevere.Status == model.DesiredStateProgressSuccess {
-		reasonStr := string(status.WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry)
+		reasonStr := string(status.WorkloadOdigosHealthStatusReasonCollectingTelemetry)
 		mostSevere = &model.DesiredConditionStatus{
 			Name: status.WorkloadOdigosHealthStatus, Status: model.DesiredStateProgressSuccess,
-			ReasonEnum: &reasonStr, Message: "source is instrumented, healthy and telemetry has been observed",
+			ReasonEnum: &reasonStr, Message: "source is instrumented and telemetry is being collected",
 		}
 	}
 	w.WorkloadOdigosHealthStatus = mostSevere

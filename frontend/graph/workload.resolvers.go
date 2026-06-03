@@ -169,8 +169,8 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 	// exception, if all is well, we return a special condition to denote it
 	if mostSevereCondition.Status == model.DesiredStateProgressSuccess {
-		reasonStr := string(status.WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry)
-		message := "source is instrumented, healthy and telemetry has been observed"
+		reasonStr := string(status.WorkloadOdigosHealthStatusReasonCollectingTelemetry)
+		message := "source is instrumented and telemetry is being collected"
 		return &model.DesiredConditionStatus{
 			Name:       status.WorkloadOdigosHealthStatus,
 			Status:     model.DesiredStateProgressSuccess,
@@ -393,6 +393,16 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 		}
 		containerByName[container.ContainerName].AgentEnabled = agentEnabledContainersToModel(container)
 		containerByName[container.ContainerName].AgentConfig = containerAgentConfigToAgentConfigModel(container)
+	}
+
+	for i := range ic.Spec.WorkloadCollectorConfig {
+		collectorConfig := &ic.Spec.WorkloadCollectorConfig[i]
+		if _, ok := containerByName[collectorConfig.ContainerName]; !ok {
+			containerByName[collectorConfig.ContainerName] = &model.K8sWorkloadContainer{
+				ContainerName: collectorConfig.ContainerName,
+			}
+		}
+		containerByName[collectorConfig.ContainerName].CollectorConfig = containerCollectorConfigToModel(collectorConfig)
 	}
 
 	for _, container := range ic.Status.RuntimeDetailsByContainer {
