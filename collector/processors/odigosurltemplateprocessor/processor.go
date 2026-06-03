@@ -139,23 +139,15 @@ func (p *urlTemplateProcessor) Shutdown(context.Context) error {
 // Empty or nil rules: store entry with parsedRules=nil so the workload gets default heuristic templatization (same as when extension is disabled).
 func (p *urlTemplateProcessor) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
 
-	var defaultTemplatizationConfig *commonactionsapi.DefaultTemplatizationConfig
-	if cfg.UrlTemplatization != nil && cfg.UrlTemplatization.Default != nil {
-		defaultTemplatizationConfig = cfg.UrlTemplatization.Default
-	}
-
-	if cfg.UrlTemplatization == nil || len(cfg.UrlTemplatization.Templates) == 0 {
-		p.parsedRulesCache.set(key, workloadUrlTemplatizationConfig{
-			parsedRules:                 nil,
-			defaultTemplatizationConfig: defaultTemplatizationConfig,
-		})
-		p.logger.Debug("workload config cache OnSet: no rules, use default heuristic", zap.String("key", key))
+	if cfg.UrlTemplatization == nil {
+		p.parsedRulesCache.delete(key)
 		return
 	}
+
 	parsedRules := p.parseRuleStrings(cfg.UrlTemplatization.Templates)
 	p.parsedRulesCache.set(key, workloadUrlTemplatizationConfig{
 		parsedRules:                 parsedRules,
-		defaultTemplatizationConfig: defaultTemplatizationConfig,
+		defaultTemplatizationConfig: cfg.UrlTemplatization.Default,
 	})
 	p.logger.Debug("workload config cache OnSet", zap.String("key", key))
 }
