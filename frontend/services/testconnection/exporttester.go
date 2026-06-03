@@ -1,6 +1,6 @@
-// Package testconnectionotel implements the destinations/testconnection.ExporterConnectionTester port using
+// Package testconnection implements the destinations/testconnection.ExporterConnectionTester port using
 // the OTel collector exporters.
-package testconnectionotel
+package testconnection
 
 import (
 	"context"
@@ -19,10 +19,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var testers = []testconnection.ExporterConnectionTester{NewOTLPTester(), NewOTLPHTTPTester()}
+var (
+	connectionTesters = []testconnection.ExporterConnectionTester{
+		NewOTLPTester(),     // "otlp_grpc/" prefix
+		NewOTLPHTTPTester(), // "otlp_http/" prefix
+	}
+)
 
 func Testers() []testconnection.ExporterConnectionTester {
-	return testers
+	return connectionTesters
 }
 
 // configModifier strips batching/retries unsuitable for a single-shot connection test.

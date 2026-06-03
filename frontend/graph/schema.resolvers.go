@@ -19,7 +19,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
-	"github.com/odigos-io/odigos/frontend/services/testconnectionotel"
+	frontend_testconnection "github.com/odigos-io/odigos/frontend/services/testconnection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -675,7 +675,7 @@ func (r *mutationResolver) TestConnectionForDestination(ctx context.Context, des
 	}
 
 	configurer := destinationInputToConfigurer(destination)
-	res := testconnection.TestConnection(ctx, configurer, testconnectionotel.Testers())
+	res := testconnection.TestConnection(ctx, configurer, frontend_testconnection.Testers())
 
 	if !res.Succeeded {
 		return &model.TestConnectionResponse{

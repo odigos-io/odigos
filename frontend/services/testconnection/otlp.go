@@ -1,4 +1,4 @@
-package testconnectionotel
+package testconnection
 
 import (
 	"context"
