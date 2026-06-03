@@ -395,6 +395,16 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 		containerByName[container.ContainerName].AgentConfig = containerAgentConfigToAgentConfigModel(container)
 	}
 
+	for i := range ic.Spec.WorkloadCollectorConfig {
+		collectorConfig := &ic.Spec.WorkloadCollectorConfig[i]
+		if _, ok := containerByName[collectorConfig.ContainerName]; !ok {
+			containerByName[collectorConfig.ContainerName] = &model.K8sWorkloadContainer{
+				ContainerName: collectorConfig.ContainerName,
+			}
+		}
+		containerByName[collectorConfig.ContainerName].CollectorConfig = containerCollectorConfigToModel(collectorConfig)
+	}
+
 	for _, container := range ic.Status.RuntimeDetailsByContainer {
 		if _, ok := containerByName[container.ContainerName]; !ok {
 			containerByName[container.ContainerName] = &model.K8sWorkloadContainer{
