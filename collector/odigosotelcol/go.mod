@@ -15,6 +15,7 @@ require (
 	github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.148.0
 	github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.148.0
 	github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor v0.148.0
+	github.com/odigos-io/odigos/collector/processors/odigosnativesymbolizeprocessor v0.148.0
 	github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.148.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.148.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.148.0
@@ -794,6 +795,7 @@ replace github.com/odigos-io/odigos/collector/processors/odigostracefilterproces
 replace github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor => ../processors/odigosprofilesprocessor
 
 replace github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor => ../processors/odigosvmprofileattrsprocessor
+replace github.com/odigos-io/odigos/collector/processors/odigosnativesymbolizeprocessor => ../processors/odigosnativesymbolizeprocessor
 
 replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
 
