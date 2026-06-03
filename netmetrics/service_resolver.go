@@ -16,6 +16,7 @@ func (s Service) empty() bool { return s.Name == "" }
 // PIDToService resolves a PID to its service identity. INJECTED by the host agent:
 //   - VM agent: backed by the profileattrs PID->Source table.
 //   - odiglet : backed by the k8s instrumentation manager / informer.
+//
 // This is the only per-environment dependency; the join logic is shared.
 type PIDToService func(pid int) (Service, bool)
 

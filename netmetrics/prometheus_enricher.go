@@ -11,10 +11,11 @@ import (
 	"time"
 )
 
-// PrometheusEnricher scrapes OBI's raw network metrics, resolves each flow to service
-// identity via a ServiceResolver, and renders enriched, OTel-semconv-named exposition.
-// Shared by the standalone enricher service AND the VM-agent network controller so the
-// scrape+relabel logic exists once.
+// PrometheusEnricher scrapes OBI's raw network metrics and resolves each flow to service
+// identity via a ServiceResolver. It can render enriched Prometheus exposition (Render)
+// or hand back structured aggregates (ResolveFlows) for the OTLP pusher. Shared by the
+// standalone enricher service, the VM-agent controller, and odiglet so the scrape+relabel
+// logic exists once.
 type PrometheusEnricher struct {
 	obiURL   string
 	resolver *ServiceResolver
@@ -33,13 +34,23 @@ func NewPrometheusEnricher(obiURL string, resolver *ServiceResolver) *Prometheus
 
 var flowLineRe = regexp.MustCompile(`^obi_network_flow_bytes_total\{([^}]*)\}\s+([0-9.eE+-]+)`)
 
+// FlowAgg is one enriched service-to-service flow aggregate.
+type FlowAgg struct {
+	Service    string
+	Peer       string
+	Transport  string
+	Direction  string
+	ServerPort string
+	Bytes      float64
+}
+
 type enrichedKey struct{ service, peer, transport, direction, port string }
 
-// Render scrapes OBI and writes enriched exposition to w.
-func (e *PrometheusEnricher) Render(w io.Writer) error {
+// ResolveFlows scrapes OBI once and returns enriched aggregates (service -> peer bytes).
+func (e *PrometheusEnricher) ResolveFlows() ([]FlowAgg, error) {
 	obi, err := e.scrape()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	agg := map[enrichedKey]float64{}
 	for _, line := range strings.Split(obi, "\n") {
@@ -59,16 +70,25 @@ func (e *PrometheusEnricher) Render(w io.Writer) error {
 		}
 		agg[enrichedKey{fi.Local.Name, fi.Peer.Name, lbl["transport"], lbl["direction"], strconv.Itoa(fi.ServerPort)}] += val
 	}
+	out := make([]FlowAgg, 0, len(agg))
+	for k, v := range agg {
+		out = append(out, FlowAgg{k.service, k.peer, k.transport, k.direction, k.port, v})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Bytes > out[j].Bytes })
+	return out, nil
+}
+
+// Render scrapes OBI and writes enriched Prometheus exposition to w.
+func (e *PrometheusEnricher) Render(w io.Writer) error {
+	flows, err := e.ResolveFlows()
+	if err != nil {
+		return err
+	}
 	fmt.Fprintln(w, "# HELP network_flow_bytes_total Bytes between services (OBI flow enriched via odigos/netmetrics)")
 	fmt.Fprintln(w, "# TYPE network_flow_bytes_total counter")
-	keys := make([]enrichedKey, 0, len(agg))
-	for k := range agg {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool { return agg[keys[i]] > agg[keys[j]] })
-	for _, k := range keys {
+	for _, f := range flows {
 		fmt.Fprintf(w, "network_flow_bytes_total{service_name=%q,peer_service_name=%q,network_transport=%q,network_io_direction=%q,server_port=%q} %g\n",
-			k.service, k.peer, k.transport, k.direction, k.port, agg[k])
+			f.Service, f.Peer, f.Transport, f.Direction, f.ServerPort, f.Bytes)
 	}
 	fmt.Fprintf(w, "# HELP netmetrics_resolved_endpoints Local socket endpoints resolved to a PID\n# TYPE netmetrics_resolved_endpoints gauge\nnetmetrics_resolved_endpoints %d\n", e.resolver.Endpoints().Size())
 	return nil
