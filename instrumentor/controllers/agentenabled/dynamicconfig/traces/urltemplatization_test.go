@@ -157,16 +157,16 @@ func TestCalculateUrlTemplatizationConfig_dedupesStatusCodes(t *testing.T) {
 	agentLevelActions := []odigosv1.Action{{
 		Spec: odigosv1.ActionSpec{
 			URLTemplatization: &urltemplatizationactions.URLTemplatizationConfig{
-				DefaultTemplatizations: []urltemplatizationactions.URLTemplatizationDefaultTemplatizationGroup{
+				Default: []urltemplatizationactions.URLTemplatizationDefaultTemplatizationGroup{
 					{
-						Config: actions.DefaultTemplatizationConfig{
+						DefaultTemplatizationConfig: actions.DefaultTemplatizationConfig{
 							SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{
 								SkipHttpStatusCodes: []int{404, 401},
 							},
 						},
 					},
 					{
-						Config: actions.DefaultTemplatizationConfig{
+						DefaultTemplatizationConfig: actions.DefaultTemplatizationConfig{
 							SkipPolicy: &actions.DefaultTemplatizationSkipPolicyConfig{
 								SkipHttpStatusCodes: []int{404, 500},
 							},
@@ -181,7 +181,7 @@ func TestCalculateUrlTemplatizationConfig_dedupesStatusCodes(t *testing.T) {
 	got := CalculateUrlTemplatizationConfig(&agentLevelActions, "container", common.JavaProgrammingLanguage, pw)
 
 	require.NotNil(t, got)
-	require.NotNil(t, got.DefaultTemplatization)
-	require.NotNil(t, got.DefaultTemplatization.SkipPolicy)
-	require.Equal(t, []int{404, 401, 500}, got.DefaultTemplatization.SkipPolicy.SkipHttpStatusCodes)
+	require.NotNil(t, got.Default)
+	require.NotNil(t, got.Default.SkipPolicy)
+	require.Equal(t, []int{401, 404, 500}, got.Default.SkipPolicy.SkipHttpStatusCodes)
 }
