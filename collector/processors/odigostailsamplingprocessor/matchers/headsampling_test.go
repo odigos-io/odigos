@@ -151,7 +151,7 @@ func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			span := spanWithAttrsAndKind(t, tt.spanKind, tt.attrs)
-			got := headSamplingOperationHttpServerMatcher(tt.operation, span)
+			got := newHeadSamplingHttpServerMatcher(tt.operation).Match(span)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -315,7 +315,7 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			span := spanWithAttrsAndKind(t, tt.spanKind, tt.attrs)
-			got := headSamplingOperationHttpClientMatcher(tt.operation, span)
+			got := newHeadSamplingHttpClientMatcher(tt.operation).Match(span)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -397,7 +397,7 @@ func TestHeadSamplingOperationMatcher(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			span := spanWithAttrsAndKind(t, tt.spanKind, tt.attrs)
-			got := HeadSamplingOperationMatcher(tt.operation, span)
+			got := NewHeadSamplingOperationMatcher(tt.operation).Match(span)
 			assert.Equal(t, tt.want, got)
 		})
 	}

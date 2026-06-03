@@ -17,6 +17,7 @@ permissions:
 
 env:
   DOCKERHUB_ORG: "keyval"
+  VICTORIA_METRICS_VERSION: "v1.144.0"
 
 jobs:
   package-helm:
@@ -276,6 +277,17 @@ jobs:
         run: |
           crane copy ${SOURCE_IMAGE}:${{ env.TAG }} ${DEST_IMAGE}:${{ env.TAG }}
           crane copy ${SOURCE_IMAGE}:latest ${DEST_IMAGE}:latest
+
+      - name: Copy VictoriaMetrics image to Docker Hub and GCR
+        env:
+          SOURCE_IMAGE: victoriametrics/victoria-metrics:${{ env.VICTORIA_METRICS_VERSION }}
+          DOCKERHUB_DEST_IMAGE: ${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
+          GCR_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-victoria-metrics
+        run: |
+          crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:${{ env.TAG }}
+          crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:latest
+          crane copy ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:${{ env.TAG }}
+          crane copy ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
 
       - name: Set notification messages
         run: |

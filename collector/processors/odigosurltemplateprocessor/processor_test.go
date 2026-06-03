@@ -644,9 +644,9 @@ func TestDefaultDateTemplatization(t *testing.T) {
 				"http.request.method": "GET",
 				"url.path":            "04-12-2025T14:15:16",
 			},
-			expectedSpanName:  "GET /04-12-2025T14:15:16",
+			expectedSpanName:  "GET 04-12-2025T14:15:16",
 			expectedAttrKey:   "http.route",
-			expectedAttrValue: "/04-12-2025T14:15:16",
+			expectedAttrValue: "04-12-2025T14:15:16",
 		},
 	}
 
@@ -690,6 +690,30 @@ func TestProcessor_EmailAddresses(t *testing.T) {
 			inputSpanAttrs: map[string]any{
 				"http.request.method": "GET",
 				"url.path":            "/user/foo@bar.baz.bla.io",
+			},
+			expectedSpanName:  "GET /user/{email}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{email}",
+		},
+		{
+			name:          "email local part with RFC 5322 special chars",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/!#$%&'*+=?^`{|}~@example.com",
+			},
+			expectedSpanName:  "GET /user/{email}",
+			expectedAttrKey:   "http.route",
+			expectedAttrValue: "/user/{email}",
+		},
+		{
+			name:          "email local part with apostrophe",
+			spanKind:      ptrace.SpanKindServer,
+			inputSpanName: "GET",
+			inputSpanAttrs: map[string]any{
+				"http.request.method": "GET",
+				"url.path":            "/user/o'brien@example.com",
 			},
 			expectedSpanName:  "GET /user/{email}",
 			expectedAttrKey:   "http.route",
@@ -944,105 +968,6 @@ func TestProcessor_CustomIdsRegexp(t *testing.T) {
 			processedSpan := processedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
 			// Assert the span name and http.route attribute
 			assertSpanNameAndAttribute(t, processedSpan, tc.expectedName, "http.route", tc.expectedHttpRoute)
-		})
-	}
-}
-
-func TestProcessor_IncludeExclude(t *testing.T) {
-	tt := []struct {
-		name                   string
-		serviceName            string
-		include                *[]K8sWorkload
-		exclude                *[]K8sWorkload
-		expectedTemplatization bool
-	}{
-		{
-			name:                   "included rule in include list",
-			serviceName:            "test-service-name",
-			include:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "test-service-name"}},
-			expectedTemplatization: true,
-		},
-		{
-			name:                   "not included rule in include list",
-			serviceName:            "test-service-name",
-			include:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "other-service-name"}},
-			expectedTemplatization: false,
-		},
-		{
-			name:                   "in exclude list",
-			serviceName:            "test-service-name",
-			exclude:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "test-service-name"}},
-			expectedTemplatization: false,
-		},
-		{
-			name:                   "not in exclude list",
-			serviceName:            "test-service-name",
-			exclude:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "other-service-name"}},
-			expectedTemplatization: true,
-		},
-		{
-			name:                   "included rule in include list and excluded in exclude list",
-			serviceName:            "test-service-name",
-			include:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "test-service-name"}},
-			exclude:                &[]K8sWorkload{{Namespace: "default", Kind: "Deployment", Name: "test-service-name"}},
-			expectedTemplatization: false, // since it's excluded, it should not be templated
-		},
-		{
-			name:                   "no include or exclude rules",
-			serviceName:            "test-service-name",
-			expectedTemplatization: true, // since there are no rules, it should be templated (no exclude and all included)
-		},
-		{
-			name:                   "included rule exists and workload list is empty",
-			serviceName:            "test-service-name",
-			include:                &[]K8sWorkload{},
-			expectedTemplatization: false, // include section exists but the workload list is empty, so it doesn't match any workload
-		},
-	}
-
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			spanAttr := map[string]any{
-				"http.request.method": "GET",
-				"url.path":            "/user/1234",
-			}
-			traces := generateTraceData("test-service-name", "GET", ptrace.SpanKindServer, spanAttr)
-
-			var include *MatchProperties
-			if tc.include != nil {
-				include = &MatchProperties{
-					K8sWorkloads: *tc.include,
-				}
-			}
-			var exclude *MatchProperties
-			if tc.exclude != nil {
-				exclude = &MatchProperties{
-					K8sWorkloads: *tc.exclude,
-				}
-			}
-
-			// Add the templated rule to the processor
-			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{
-				MatchConfig: MatchConfig{
-					Include: include,
-					Exclude: exclude,
-				}})
-			require.NoError(t, err)
-			// Process the traces
-			ctx := context.Background()
-			processedTraces, err := processor.processTraces(ctx, traces)
-			require.NoError(t, err)
-			// Get the processed span
-			processedSpan := processedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
-			if tc.expectedTemplatization {
-				// Assert the span name and http.route attribute
-				tamplatizedName := "GET /user/{id}"
-				httpRoute := "/user/{id}"
-				assertSpanNameAndAttribute(t, processedSpan, tamplatizedName, "http.route", httpRoute)
-			} else {
-				// Should not modify the span name or add the http.route attribute
-				assertSpanNameAndAttribute(t, processedSpan, "GET", "http.route", "")
-			}
 		})
 	}
 }

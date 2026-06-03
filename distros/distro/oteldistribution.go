@@ -4,6 +4,7 @@ import (
 	"text/template"
 
 	"github.com/odigos-io/odigos/common"
+	commonopamp "github.com/odigos-io/odigos/common/opamp"
 )
 
 const AgentPlaceholderDirectory = "{{ODIGOS_AGENTS_DIR}}"
@@ -45,7 +46,10 @@ type StaticEnvironmentVariable struct {
 }
 
 type EnvironmentVariables struct {
-	// if this distribution runs an opamp client, add the environment variables that configures the server endpoint (local node)
+	// if this distribution runs an opamp client, add the environment variables that configure the
+	// server endpoint. The actual transport (and which ODIGOS_OPAMP_* env var to inject) is picked
+	// from RuntimeAgent.OpAmpTransportsSupported based on cluster constraints; if no transports are
+	// declared, http (ODIGOS_OPAMP_SERVER_HOST) is used by default.
 	OpAmpClientEnvironments bool `yaml:"opAmpClientEnvironments,omitempty"`
 
 	// set to true if this distribution uses the OTLP HTTP protocol to emit telemetry data to node collector.
@@ -123,6 +127,12 @@ type RuntimeAgent struct {
 
 	// If true, the instrumentation applied by this agent does not require application restart.
 	NoRestartRequired bool `yaml:"noRestartRequired,omitempty"`
+
+	// OpAmpTransportsSupported is the ordered list of OpAMP client transports this distribution's
+	// agent can speak. The webhook picks the first entry that is usable on the target node given
+	// runtime constraints (mount method, runtime version, …). Empty defaults to [http].
+	// Only consulted when EnvironmentVariables.OpAmpClientEnvironments is true.
+	OpAmpTransportsSupported []commonopamp.OpAmpTransport `yaml:"opAmpTransportsSupported,omitempty"`
 }
 
 type Option struct {

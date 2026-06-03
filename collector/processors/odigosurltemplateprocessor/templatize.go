@@ -65,7 +65,7 @@ var (
 	datesRegex = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?(?:Z|[+-]\d{4})?$`)
 
 	// matches email addresses
-	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	emailRegex = regexp.MustCompile(`^[a-zA-Z0-9.!#$%&'*+/=?^_` + "`" + `{|}~-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
 	// assume any invalid unicode character is not a static path segment
 	replacementChar = regexp.MustCompile(`�`)
@@ -219,4 +219,23 @@ func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []internalC
 
 	templatedPath := strings.Join(templatizedSegments, "/")
 	return templatedPath, true
+}
+
+// check if specific path segments match any of the custom templatization rules
+// if so, return the templated url and true
+// if not, return false
+func applyCustomRulesForTemplatization(pathSegments []string, rules map[int][]TemplatizationRule, hadLeadingSlash bool) (string, bool) {
+	ruleList, found := rules[len(pathSegments)]
+	if !found {
+		return "", false
+	}
+	for _, rule := range ruleList {
+		if templatedUrl, matched := attemptTemplateWithRule(pathSegments, rule); matched {
+			if hadLeadingSlash {
+				templatedUrl = "/" + templatedUrl
+			}
+			return templatedUrl, true
+		}
+	}
+	return "", false
 }

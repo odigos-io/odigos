@@ -1,0 +1,23 @@
+type: odigosvmprofileattrsprocessor
+status:
+  class: processor
+  stability:
+    alpha: [profiles]
+  distributions: [odigos]
+  codeowners:
+    active: [odigos]
+
+telemetry:
+  metrics:
+    odigos.vm.profile.attrs.processor.dropped.resource_profiles:
+      enabled: true
+      description: "ResourceProfiles dropped by the VM profile attrs processor (missing PID, unregistered PID, or attribute enrichment failure)."
+      unit: "{resource_profiles}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+
+tests:
+  # Processor.Start spawns a unixfd client goroutine that lifecycle tests cannot satisfy.
+  skip_lifecycle: true

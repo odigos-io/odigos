@@ -6,41 +6,45 @@ import (
 
 const ActionNameExtractAttribute = "ExtractAttribute"
 
-// +kubebuilder:validation:Enum=url;json
+// +kubebuilder:validation:Enum=resource_path;json;sql
 type DataFormat string
 
 const (
-	FormatURL  DataFormat = "url"
+	FormatResourcePath  DataFormat = "resource_path"
 	FormatJSON DataFormat = "json"
+	FormatSQL  DataFormat = "sql"
 )
 
 // Extraction describes a single extraction rule applied by the
-// odigosextractattribute processor. Either (Source + DataFormat) or
-// Regex must be provided; the captured value is written to Target.
+// odigosextractattribute processor. Either (LookupKey + DataFormat) or
+// Regex must be provided; the captured value is written to a new span
+// attribute named TargetAttributeName.
 //
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type Extraction struct {
-	// Target is the attribute key the extracted value will be written to on the span.
+	// TargetAttributeName is the name of the new span attribute the extracted value will be written to.
 	// +kubebuilder:validation:Required
-	Target string `json:"target"`
+	TargetAttributeName string `json:"targetAttributeName"`
 
-	// The string key that is searched within the pre-set regex patterns resolved by DataFormat.
+	// LookupKey is the literal key to search for inside the scanned span attributes.
+	// It is plugged into the pre-set regex pattern selected by DataFormat (e.g. for JSON,
+	// the processor will look for `"<lookupKey>": "<value>"` and capture the value).
 	// Required when using DataFormat.
-	// You can input either Source+DataFormat, or supply your own Regex.
+	// You can input either LookupKey+DataFormat, or supply your own Regex.
 	// +kubebuilder:validation:Optional
-	Source string `json:"source,omitempty"`
+	LookupKey string `json:"lookupKey,omitempty"`
 
 	// A pre-set definition which resolves into a regex (e.g. JSON DataFormat would give a regex that searches
-	// inside a JSON string), which also applies Source for searching inside it.
-	// Required when using Source.
-	// You can input either Source+DataFormat, or supply your own Regex.
+	// inside a JSON string), which also applies LookupKey for searching inside it.
+	// Required when using LookupKey.
+	// You can input either LookupKey+DataFormat, or supply your own Regex.
 	// +kubebuilder:validation:Optional
 	DataFormat DataFormat `json:"dataFormat,omitempty"`
 
 	// Regex is a custom regular expression with a single capture group whose value is
-	// written to Target.
-	// You can input either Regex, or Source+DataFormat.
+	// written to the new span attribute named TargetAttributeName.
+	// You can input either Regex, or LookupKey+DataFormat.
 	// +kubebuilder:validation:Optional
 	Regex string `json:"regex,omitempty"`
 }

@@ -891,10 +891,12 @@ type K8sWorkload struct {
 	RuntimeInfo                *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
 	AgentEnabled               *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
 	Rollout                    *K8sWorkloadRollout                  `json:"rollout,omitempty"`
+	AutoRollback               *K8sWorkloadAutoRollback             `json:"autoRollback,omitempty"`
 	Containers                 []*K8sWorkloadContainer              `json:"containers,omitempty"`
 	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
 	PodsAgentInjectionStatus   *DesiredConditionStatus              `json:"podsAgentInjectionStatus"`
 	PodsHealthStatus           *DesiredConditionStatus              `json:"podsHealthStatus"`
+	PodsOdigosHealthStatus     *DesiredConditionStatus              `json:"podsOdigosHealthStatus,omitempty"`
 	WorkloadHealthStatus       *DesiredConditionStatus              `json:"workloadHealthStatus,omitempty"`
 	ProcessesHealthStatus      *DesiredConditionStatus              `json:"processesHealthStatus"`
 	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
@@ -933,10 +935,16 @@ type K8sWorkloadAgentEnabledContainerTraces struct {
 	Enabled bool `json:"enabled"`
 }
 
+type K8sWorkloadAutoRollback struct {
+	AutoRollbackStatus *DesiredConditionStatus `json:"autoRollbackStatus"`
+	RollbackOccurred   bool                    `json:"rollbackOccurred"`
+}
+
 type K8sWorkloadConditions struct {
 	RuntimeDetection      *DesiredConditionStatus `json:"runtimeDetection,omitempty"`
 	AgentInjectionEnabled *DesiredConditionStatus `json:"agentInjectionEnabled,omitempty"`
 	Rollout               *DesiredConditionStatus `json:"rollout,omitempty"`
+	AutoRollback          *DesiredConditionStatus `json:"autoRollback,omitempty"`
 	AgentInjected         *DesiredConditionStatus `json:"agentInjected,omitempty"`
 	ProcessesAgentHealth  *DesiredConditionStatus `json:"processesAgentHealth,omitempty"`
 	ExpectingTelemetry    *DesiredConditionStatus `json:"expectingTelemetry,omitempty"`
@@ -948,6 +956,7 @@ type K8sWorkloadContainer struct {
 	AgentEnabled     *K8sWorkloadAgentEnabledContainer                `json:"agentEnabled,omitempty"`
 	Overrides        *K8sWorkloadContainerOverrides                   `json:"overrides,omitempty"`
 	AgentConfig      *K8sWorkloadContainerAgentConfig                 `json:"agentConfig,omitempty"`
+	CollectorConfig  *K8sWorkloadContainerCollectorConfig             `json:"collectorConfig,omitempty"`
 	Instrumentations []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
 }
 
@@ -960,24 +969,59 @@ type K8sWorkloadContainerAgentConfigTraces struct {
 }
 
 type K8sWorkloadContainerAgentConfigTracesHeadSampling struct {
-	Checks             []*K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck `json:"checks,omitempty"`
-	FallbackPercentage float64                                                   `json:"fallbackPercentage"`
+	DryRun          *bool                                                              `json:"dryRun,omitempty"`
+	SpanMetricsMode *K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode  `json:"spanMetricsMode,omitempty"`
+	NoisyOperations []*K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation `json:"noisyOperations,omitempty"`
 }
 
-type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck struct {
-	Conditions []*K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition `json:"conditions,omitempty"`
-	Percentage float64                                                            `json:"percentage"`
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
 }
 
-type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition struct {
-	Key      string                                                                  `json:"key"`
-	Operator K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator `json:"operator"`
-	Value    string                                                                  `json:"value"`
+type K8sWorkloadContainerCollectorConfig struct {
+	TailSampling *K8sWorkloadContainerCollectorConfigTailSampling `json:"tailSampling,omitempty"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSampling struct {
+	NoisyOperations          []*K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation          `json:"noisyOperations,omitempty"`
+	HighlyRelevantOperations []*K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
+	CostReductionRules       []*K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule       `json:"costReductionRules,omitempty"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	Operation        *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost float64                       `json:"percentageAtMost"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation struct {
+	RuleID            string                        `json:"ruleId"`
+	Name              *string                       `json:"name,omitempty"`
+	Disabled          bool                          `json:"disabled"`
+	Error             bool                          `json:"error"`
+	DurationAtLeastMs *int                          `json:"durationAtLeastMs,omitempty"`
+	Operation         *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtLeast *float64                      `json:"percentageAtLeast,omitempty"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
 }
 
 type K8sWorkloadContainerOverrides struct {
-	ContainerName string                           `json:"containerName"`
-	RuntimeInfo   *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
+	ContainerName  string                           `json:"containerName"`
+	RuntimeInfo    *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
+	OtelDistroName *string                          `json:"otelDistroName,omitempty"`
 }
 
 type K8sWorkloadID struct {
@@ -1006,7 +1050,8 @@ type K8sWorkloadPod struct {
 	StartedPostAgentMetaHashChange *bool                      `json:"startedPostAgentMetaHashChange,omitempty"`
 	AgentInjectedStatus            *DesiredConditionStatus    `json:"agentInjectedStatus"`
 	RunningLatestWorkloadRevision  *string                    `json:"runningLatestWorkloadRevision,omitempty"`
-	PodHealthStatus                *DesiredConditionStatus    `json:"podHealthStatus"`
+	K8sHealthStatus                *DesiredConditionStatus    `json:"k8sHealthStatus"`
+	OdigosHealthStatus             *DesiredConditionStatus    `json:"odigosHealthStatus,omitempty"`
 	Containers                     []*K8sWorkloadPodContainer `json:"containers"`
 }
 
@@ -1021,7 +1066,8 @@ type K8sWorkloadPodContainer struct {
 	RunningStartedTime              *string                           `json:"runningStartedTime,omitempty"`
 	WaitingReasonEnum               *string                           `json:"waitingReasonEnum,omitempty"`
 	WaitingMessage                  *string                           `json:"waitingMessage,omitempty"`
-	HealthStatus                    *DesiredConditionStatus           `json:"healthStatus"`
+	K8sHealthStatus                 *DesiredConditionStatus           `json:"k8sHealthStatus"`
+	OdigosHealthStatus              *DesiredConditionStatus           `json:"odigosHealthStatus,omitempty"`
 	Processes                       []*K8sWorkloadPodContainerProcess `json:"processes"`
 }
 
@@ -1038,8 +1084,13 @@ type K8sWorkloadPodContainerProcessAttribute struct {
 }
 
 type K8sWorkloadPodContainerProcessInstrumentation struct {
-	Name              string `json:"name"`
-	IsStandardLibrary *bool  `json:"isStandardLibrary,omitempty"`
+	Name                     string                     `json:"name"`
+	Type                     *string                    `json:"type,omitempty"`
+	Healthy                  *bool                      `json:"healthy,omitempty"`
+	Message                  *string                    `json:"message,omitempty"`
+	LastStatusTime           *string                    `json:"lastStatusTime,omitempty"`
+	IsStandardLibrary        *bool                      `json:"isStandardLibrary,omitempty"`
+	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
 }
 
 type K8sWorkloadRollout struct {
@@ -2459,48 +2510,44 @@ func (e K8sResourceKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator string
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode string
 
 const (
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEquals    K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "equals"
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorNotEquals K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "notEquals"
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEndWith   K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "endWith"
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorStartWith K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "startWith"
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeSampledSpansOnly K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode = "sampled_spans_only"
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeAllSpans         K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode = "all_spans"
 )
 
-var AllK8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = []K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator{
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEquals,
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorNotEquals,
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEndWith,
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorStartWith,
+var AllK8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode = []K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode{
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeSampledSpansOnly,
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeAllSpans,
 }
 
-func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) IsValid() bool {
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) IsValid() bool {
 	switch e {
-	case K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEquals, K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorNotEquals, K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEndWith, K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorStartWith:
+	case K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeSampledSpansOnly, K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeAllSpans:
 		return true
 	}
 	return false
 }
 
-func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) String() string {
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) String() string {
 	return string(e)
 }
 
-func (e *K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) UnmarshalGQL(v any) error {
+func (e *K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator(str)
+	*e = K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator", str)
+		return fmt.Errorf("%s is not a valid K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode", str)
 	}
 	return nil
 }
 
-func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) MarshalGQL(w io.Writer) {
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

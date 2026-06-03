@@ -12,8 +12,16 @@ Type=simple
 User=odigos
 Group=odigos
 
-AmbientCapabilities=CAP_SYS_ADMIN CAP_BPF CAP_PERFMON
-CapabilityBoundingSet=CAP_SYS_ADMIN CAP_BPF CAP_PERFMON
+AmbientCapabilities=CAP_SYS_ADMIN CAP_BPF CAP_PERFMON CAP_SYSLOG CAP_SYS_PTRACE CAP_DAC_READ_SEARCH CAP_SYS_RESOURCE
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_BPF CAP_PERFMON CAP_SYSLOG CAP_SYS_PTRACE CAP_DAC_READ_SEARCH CAP_SYS_RESOURCE
+
+# Memlock is required by the eBPF profiler. CAP_SYS_RESOURCE above lets the
+# process self-raise the limit, but only on kernels >= 5.11 where BPF map
+# memory is memcg-accounted and the rlimit is effectively bypassed. On older
+# kernels (RHEL 8 / 4.18, Amazon Linux 2 / 4.14) RLIMIT_MEMLOCK is hard-
+# enforced and the receiver crashes with 'failed to adjust rlimit: operation
+# not permitted' regardless of the capability. Cheap to keep on all kernels.
+LimitMEMLOCK=infinity
 
 [Install]
 WantedBy=multi-user.target

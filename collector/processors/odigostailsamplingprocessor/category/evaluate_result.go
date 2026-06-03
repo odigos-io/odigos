@@ -1,19 +1,17 @@
 package category
 
+import (
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/config"
+)
+
 type RuleEvaluationResult struct {
-	RuleId         string
-	RuleName       string
-	RulePercentage float64
-	RuleDisabled   bool // true if the rule was disabled
+	ComputedRule config.ComputedRule
 
 	// number of spans on which we evaluated this rule
 	SpanCheckedCount int
 
 	// number of spans on which we matched this rule
 	SpanMatchedCount int
-
-	// number of traces which matched this rule.
-	TraceMatchedCount int
 }
 
 type CategoryRulesEvaluationResults map[string]*RuleEvaluationResult
