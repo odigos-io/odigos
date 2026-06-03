@@ -140,11 +140,11 @@ func (p *urlTemplateProcessor) Shutdown(context.Context) error {
 func (p *urlTemplateProcessor) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
 
 	var defaultTemplatizationConfig *commonactionsapi.DefaultTemplatizationConfig
-	if cfg.UrlTemplatization != nil && cfg.UrlTemplatization.DefaultTemplatization != nil {
-		defaultTemplatizationConfig = cfg.UrlTemplatization.DefaultTemplatization
+	if cfg.UrlTemplatization != nil && cfg.UrlTemplatization.Default != nil {
+		defaultTemplatizationConfig = cfg.UrlTemplatization.Default
 	}
 
-	if cfg.UrlTemplatization == nil || len(cfg.UrlTemplatization.TemplatizationRules) == 0 {
+	if cfg.UrlTemplatization == nil || len(cfg.UrlTemplatization.Templates) == 0 {
 		p.parsedRulesCache.set(key, workloadUrlTemplatizationConfig{
 			parsedRules:                 nil,
 			defaultTemplatizationConfig: defaultTemplatizationConfig,
@@ -152,7 +152,7 @@ func (p *urlTemplateProcessor) OnSet(key string, cfg *commonapi.ContainerCollect
 		p.logger.Debug("workload config cache OnSet: no rules, use default heuristic", zap.String("key", key))
 		return
 	}
-	parsedRules := p.parseRuleStrings(cfg.UrlTemplatization.TemplatizationRules)
+	parsedRules := p.parseRuleStrings(cfg.UrlTemplatization.Templates)
 	p.parsedRulesCache.set(key, workloadUrlTemplatizationConfig{
 		parsedRules:                 parsedRules,
 		defaultTemplatizationConfig: defaultTemplatizationConfig,
