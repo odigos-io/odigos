@@ -1,0 +1,65 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "title": "OBI Network Flows — Service Enriched (VM)",
+  "uid": "obi-vm-enriched",
+  "tags": ["obi", "network", "vm", "enriched", "service"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "time": { "from": "now-15m", "to": "now" },
+  "refresh": "10s",
+  "templating": { "list": [ { "name": "DS_PROMETHEUS", "label": "Prometheus", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0 } ] },
+  "panels": [
+    { "type": "row", "title": "Service identity resolved from raw OBI flows via /proc + peer registry", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 1 },
+    {
+      "type": "stat", "title": "Resolved Local Endpoints (/proc inode→PID)", "id": 2, "gridPos": { "h": 4, "w": 8, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [{ "refId": "A", "expr": "enricher_resolved_endpoints", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }]
+    },
+    {
+      "type": "stat", "title": "Service → Service Edges", "id": 3, "gridPos": { "h": 4, "w": 8, "x": 8, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" },
+      "targets": [{ "refId": "A", "expr": "count(count by (service_name, peer_service_name) (network_flow_bytes_total))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }]
+    },
+    {
+      "type": "stat", "title": "Services Identified", "id": 4, "gridPos": { "h": 4, "w": 8, "x": 16, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "purple" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" },
+      "targets": [{ "refId": "A", "expr": "count(count by (service_name) (network_flow_bytes_total{service_name!=\"unknown\"}))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }]
+    },
+    { "type": "row", "title": "Service Dependency Graph (enriched)", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }, "id": 10 },
+    {
+      "type": "nodeGraph", "title": "Who talks to whom (service_name → peer_service_name, bytes)", "id": 11, "gridPos": { "h": 14, "w": 16, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "options": {},
+      "targets": [{
+        "refId": "edges", "format": "table", "instant": true,
+        "expr": "label_replace(label_replace(label_join(sum by (service_name, peer_service_name) (network_flow_bytes_total), \"id\", \"__\", \"service_name\", \"peer_service_name\"), \"source\", \"$1\", \"service_name\", \"(.*)\"), \"target\", \"$1\", \"peer_service_name\", \"(.*)\")",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+      }],
+      "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "service_name": true, "peer_service_name": true }, "renameByName": { "Value": "mainstat" } } }]
+    },
+    {
+      "type": "table", "title": "Service Flows (bytes)", "id": 12, "gridPos": { "h": 14, "w": 8, "x": 16, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "align": "auto", "filterable": true } }, "overrides": [{ "matcher": { "id": "byName", "options": "Bytes" }, "properties": [{ "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "gradient" } }] }] },
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "Bytes", "desc": true }] },
+      "targets": [{ "refId": "A", "format": "table", "instant": true, "expr": "topk(20, sum by (service_name, peer_service_name, server_port) (network_flow_bytes_total{service_name!=\"unknown\"}))", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }],
+      "transformations": [{ "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true }, "renameByName": { "service_name": "Service", "peer_service_name": "Peer", "server_port": "Port", "Value": "Bytes" } } }]
+    },
+    { "type": "row", "title": "Demo edge: inventory ↔ frontend", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 }, "id": 20 },
+    {
+      "type": "timeseries", "title": "inventory ↔ frontend bytes by direction", "id": 21, "gridPos": { "h": 8, "w": 24, "x": 0, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "fillOpacity": 15 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["last", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [{ "refId": "A", "expr": "sum by (network_io_direction) (network_flow_bytes_total{service_name=\"inventory\", peer_service_name=\"frontend\"})", "legendFormat": "{{network_io_direction}}", "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" } }]
+    }
+  ]
+}

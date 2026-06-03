@@ -1,0 +1,16 @@
+# OBI config for the netmetrics end-to-end deploy: node-wide network flows + TCP stats,
+# emitting the raw 5-tuple the enricher resolves to services. socket_filter avoids TC/CNI
+# conflicts. internal_metrics exposes eBPF capture-health (packets accounted/ignored).
+network:
+  enable: true
+  source: socket_filter
+prometheus_export:
+  port: 8999
+  features: [network, stats]
+internal_metrics:
+  exporter: prometheus
+  prometheus: { port: 9001, path: /metrics }
+attributes:
+  select:
+    obi_network_flow_bytes:
+      include: [src.address, dst.address, src.port, dst.port, direction, transport]
