@@ -32,7 +32,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	// A boolean field allowing to temporarily disable the rule, but keep it around for future use
 	Disabled *bool `json:"disabled,omitempty"`
 	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If unset or empty, the rule applies to all workloads.
-	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
+	Scopes *k8sconsts.SourcesScopes `json:"scopes,omitempty"`
 	// For fine grained control, the user can specify the instrumentation library to use.
 	// One can specify same rule for multiple languages and libraries at the same time.
 	// If nil, all instrumentation libraries will be used.
@@ -93,11 +93,11 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithDisabled(value bool) *In
 	return b
 }
 
-// WithSourcesScopes sets the SourcesScopes field in the declarative configuration to the given value
+// WithScopes sets the Scopes field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the SourcesScopes field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithSourcesScopes(value k8sconsts.SourcesScopes) *InstrumentationRuleSpecApplyConfiguration {
-	b.SourcesScopes = &value
+// If called multiple times, the Scopes field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithScopes(value k8sconsts.SourcesScopes) *InstrumentationRuleSpecApplyConfiguration {
+	b.Scopes = &value
 	return b
 }
 

@@ -228,7 +228,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		rulesForContainer := make([]odigosv1.InstrumentationRule, 0)
 		if irls != nil {
 			for _, rule := range *irls {
-				if scope.SourceScopeMatchesContainer(rule.Spec.SourcesScopes, pw, containerLanguage) {
+				if scope.SourceScopeMatchesContainer(rule.Spec.Scopes, pw, containerLanguage) {
 					rulesForContainer = append(rulesForContainer, rule)
 				}
 			}

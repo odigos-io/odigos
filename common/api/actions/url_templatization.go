@@ -28,7 +28,7 @@ type DefaultTemplatizationConfig struct {
 
 	// if set to true, the default templatization will be disabled for the services in the scope.
 	// in case of conflict (if other action set this to false), the default templatization will be disabled.
-	Disabled bool `json:"enabled,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
 
 	// config if default templatization should be skipped on error.
 	// use it when sources scope describes a service that is publicly accessible to the internet
@@ -39,9 +39,9 @@ type DefaultTemplatizationConfig struct {
 // +kubebuilder:object:generate=true
 type UrlTemplatizationConfig struct {
 	// Template rules to apply to URLs
-	TemplatizationRules []string `json:"templatizationRules,omitempty"`
+	Templates []string `json:"templatizationRules,omitempty"`
 
 	// configurations for default templatization.
 	// default templatization is applied on a single http span if none of the custom templatization rules matched.
-	DefaultTemplatization *DefaultTemplatizationConfig `json:"defaultTemplatization,omitempty"`
+	Default *DefaultTemplatizationConfig `json:"default,omitempty"`
 }

@@ -842,9 +842,9 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 		return nil
 	}
 
-	groups := make([]urlactions.UrlTemplatizationRulesGroup, 0, len(details.URLTemplatizationRulesGroups))
+	groups := make([]urlactions.UrlTemplatizationRule, 0, len(details.URLTemplatizationRulesGroups))
 	for _, g := range details.URLTemplatizationRulesGroups {
-		group := urlactions.UrlTemplatizationRulesGroup{}
+		group := urlactions.UrlTemplatizationRule{}
 
 		// Fold the URL-templatization filter form into the tri-list SourcesScopes shape:
 		//   * Each WorkloadFilter row → one PodWorkload appended to Sources (with namespace baked in).

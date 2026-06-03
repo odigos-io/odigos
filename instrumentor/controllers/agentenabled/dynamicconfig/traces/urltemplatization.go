@@ -1,6 +1,8 @@
 package traces
 
 import (
+	"slices"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -29,6 +31,7 @@ func dedupeStatusCodes(codes []int) []int {
 		seen[code] = struct{}{}
 		result = append(result, code)
 	}
+	slices.Sort(result)
 	return result
 }
 
@@ -79,15 +82,14 @@ func mergeDefaultTemplatizationConfigs(c1 *actions.DefaultTemplatizationConfig, 
 // CalculateUrlTemplatizationConfig filters template rules to only include those relevant to the container.
 // A rule group is applied if its SourcesScope matches (empty scope = global, applies to all).
 func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, containerName string, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *actions.UrlTemplatizationConfig {
-	var rules []string
+	var templates []string
 
 	// if at least one rule group or default templatization config matches, the container participates.
 	participating := false
 
 	// the combined default templatization config from all actions.
-	// for the default templatization to take effect, at least one default templatization config must be set and match the container.
 	// one can set a rule to apply default templatization on the entire cluster, or add more granular configs for specific scopes.
-	// if this is nil, the default templatization will not be applied.
+	// if this is nil (no specific config), the default templatization will be applied.
 	var configForDefaultTemplatization *actions.DefaultTemplatizationConfig
 
 	for _, action := range *agentLevelActions {
@@ -96,49 +98,54 @@ func CalculateUrlTemplatizationConfig(agentLevelActions *[]odigosv1.Action, cont
 			continue
 		}
 
-		if action.Spec.URLTemplatization.DefaultTemplatizations != nil {
-			for _, defaultTemplatization := range action.Spec.URLTemplatization.DefaultTemplatizations {
-				participating = true
-				if scope.SourceScopeMatchesContainer(defaultTemplatization.SourcesScopes, pw, language) {
-					configForDefaultTemplatization = mergeDefaultTemplatizationConfigs(configForDefaultTemplatization, &defaultTemplatization.Config)
+		if action.Spec.URLTemplatization.Default != nil {
+			for _, defaultTemplatization := range action.Spec.URLTemplatization.Default {
+				if scope.SourceScopeMatchesContainer(defaultTemplatization.Scopes, pw, language) {
+					configForDefaultTemplatization = mergeDefaultTemplatizationConfigs(configForDefaultTemplatization, &defaultTemplatization.DefaultTemplatizationConfig)
 				}
 			}
 		}
 
-		for _, rulesGroup := range action.Spec.URLTemplatization.TemplatizationRulesGroups {
-			if scope.SourceScopeMatchesContainer(rulesGroup.SourcesScopes, pw, language) {
+		for _, rules := range action.Spec.URLTemplatization.Rules {
+			if scope.SourceScopeMatchesContainer(rules.Scopes, pw, language) {
 				participating = true
-				for _, rule := range rulesGroup.TemplatizationRules {
-					rules = append(rules, rule.Template)
-				}
+				templates = append(templates, rules.Templates...)
 			}
 		}
 	}
 
-	// container can participate in templatization and have no rule.
-	// if at least one rule group matches, the container participates.
+	// if not explicitly disabled, the default templatization will be applied.
+	// set it to empty config to align with the common api conventions.
+	if configForDefaultTemplatization == nil {
+		configForDefaultTemplatization = &actions.DefaultTemplatizationConfig{}
+	}
+
+	// if not explicitly disabled, the container participates in templatization.
+	if !configForDefaultTemplatization.Disabled {
+		participating = true
+	}
+
+	// if not participating, return nil to disable it entirely for this container.
 	if !participating {
 		return nil
 	}
 
-	// replace disabled with nil to align with the source api conventions.
-	if configForDefaultTemplatization != nil && configForDefaultTemplatization.Disabled {
-		configForDefaultTemplatization = nil
-	}
-
-	// no templatization, return nil to disable it entirely.
-	if configForDefaultTemplatization == nil && len(rules) == 0 {
-		return nil
-	}
-
-	if configForDefaultTemplatization != nil && configForDefaultTemplatization.SkipPolicy != nil {
+	// if multiple actions set a skip policy status codes, dedupe them to keep just one of each status code.
+	if configForDefaultTemplatization.SkipPolicy != nil {
 		configForDefaultTemplatization.SkipPolicy.SkipHttpStatusCodes = dedupeStatusCodes(
 			configForDefaultTemplatization.SkipPolicy.SkipHttpStatusCodes,
 		)
 	}
 
+	// align default templatization config with the common api conventions.
+	// e.g: if disabled, set default templatization to nil
+	defaultTemplatization := configForDefaultTemplatization
+	if configForDefaultTemplatization.Disabled {
+		defaultTemplatization = nil
+	}
+
 	return &actions.UrlTemplatizationConfig{
-		TemplatizationRules:   rules,
-		DefaultTemplatization: configForDefaultTemplatization,
+		Templates: templates,
+		Default:   defaultTemplatization,
 	}
 }
