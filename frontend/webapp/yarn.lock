@@ -2560,10 +2560,10 @@ graphql-tag@^2.12.6:
   dependencies:
     tslib "^2.1.0"
 
-graphql@^16.13.2:
-  version "16.13.2"
-  resolved "https://registry.yarnpkg.com/graphql/-/graphql-16.13.2.tgz#4d2b73df5796b201f1bc2765f5d7067f689cb55f"
-  integrity sha512-5bJ+nf/UCpAjHM8i06fl7eLyVC9iuNAjm9qzkiu2ZGhM0VscSvS6WDPfAwkdkBuoXGM9FJSbKl6wylMwP9Ktig==
+graphql@^16.14.1:
+  version "16.14.1"
+  resolved "https://registry.yarnpkg.com/graphql/-/graphql-16.14.1.tgz#e692888b5103480a71e48cd9c3ed1dd8b0c5af7f"
+  integrity sha512-cQOsSMS/IrDz82PVyRDvf/Q1F/bRbBVjJlh+xYOkI1qw2bWRvWGiWc+m2O0d6l4Bt1fyY+8kzJ8JFWGJqNeDBg==
 
 gzip-size@^6.0.0:
   version "6.0.0"
