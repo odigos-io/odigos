@@ -52,5 +52,4 @@ func TestReplacePlaceholders(t *testing.T) {
 		"nestedKey2": "someValue",
 	}, gmap["key3"])
 	assert.Equal(t, 123, gmap["key2"])
-
 }
