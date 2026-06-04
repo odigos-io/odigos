@@ -805,14 +805,14 @@ func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filt
 		// Drop instances in ignored namespaces unless their workload is in the bypass set —
 		// instances for an instrumented workload in an ignored namespace must remain visible
 		// so the UI can render pod/process health for the user-instrumented component.
-		// Falls back to the instance's own namespace when the workload label is missing.
-		if _, namespaceIgnored := filters.IgnoredNamespaces[ii.Namespace]; namespaceIgnored {
-			if workloadId.Name == "" {
+		// Falls back to the instance's own namespace when the workload label is missing,
+		// since ShouldIgnoreWorkload can't evaluate bypass without a workload ID.
+		if workloadId.Name != "" {
+			if filters.ShouldIgnoreWorkload(workloadId) {
 				continue
 			}
-			if _, bypass := filters.BypassWorkloads[workloadId]; !bypass {
-				continue
-			}
+		} else if _, namespaceIgnored := filters.IgnoredNamespaces[ii.Namespace]; namespaceIgnored {
+			continue
 		}
 
 		// add to the byContainer map
