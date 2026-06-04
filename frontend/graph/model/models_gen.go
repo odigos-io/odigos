@@ -31,11 +31,6 @@ type ActionFields struct {
 	AttributeNamesToDelete       []string                       `json:"attributeNamesToDelete,omitempty"`
 	Renames                      *string                        `json:"renames,omitempty"`
 	PiiCategories                []string                       `json:"piiCategories,omitempty"`
-	SamplingPercentage           *string                        `json:"samplingPercentage,omitempty"`
-	FallbackSamplingRatio        *int                           `json:"fallbackSamplingRatio,omitempty"`
-	EndpointsFilters             []*HTTPRouteFilter             `json:"endpointsFilters,omitempty"`
-	ServicesNameFilters          []*ServiceNameFilter           `json:"servicesNameFilters,omitempty"`
-	AttributeFilters             []*SpanAttributeFilter         `json:"attributeFilters,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroup `json:"urlTemplatizationRulesGroups,omitempty"`
 }
 
@@ -51,11 +46,6 @@ type ActionFieldsInput struct {
 	AttributeNamesToDelete       []string                            `json:"attributeNamesToDelete,omitempty"`
 	Renames                      *string                             `json:"renames,omitempty"`
 	PiiCategories                []string                            `json:"piiCategories,omitempty"`
-	SamplingPercentage           *string                             `json:"samplingPercentage,omitempty"`
-	FallbackSamplingRatio        *int                                `json:"fallbackSamplingRatio,omitempty"`
-	EndpointsFilters             []*HTTPRouteFilterInput             `json:"endpointsFilters,omitempty"`
-	ServicesNameFilters          []*ServiceNameFilterInput           `json:"servicesNameFilters,omitempty"`
-	AttributeFilters             []*SpanAttributeFilterInput         `json:"attributeFilters,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroupInput `json:"urlTemplatizationRulesGroups,omitempty"`
 }
 
@@ -87,41 +77,10 @@ type APIToken struct {
 	Message   *string `json:"message,omitempty"`
 }
 
-type AttributeFilters struct {
-	ServiceName           string                     `json:"serviceName"`
-	AttributeKey          string                     `json:"attributeKey"`
-	FallbackSamplingRatio float64                    `json:"fallbackSamplingRatio"`
-	Condition             *AttributeFiltersCondition `json:"condition"`
-}
-
-type AttributeFiltersCondition struct {
-	StringCondition  *StringCondition  `json:"stringCondition,omitempty"`
-	NumberCondition  *NumberCondition  `json:"numberCondition,omitempty"`
-	BooleanCondition *BooleanCondition `json:"booleanCondition,omitempty"`
-	JSONCondition    *JSONCondition    `json:"jsonCondition,omitempty"`
-}
-
-type AttributeFiltersConditionInput struct {
-	StringCondition  *StringConditionInput  `json:"stringCondition,omitempty"`
-	NumberCondition  *NumberConditionInput  `json:"numberCondition,omitempty"`
-	BooleanCondition *BooleanConditionInput `json:"booleanCondition,omitempty"`
-	JSONCondition    *JSONConditionInput    `json:"jsonCondition,omitempty"`
-}
-
 type AutoRollbackConfig struct {
 	Disabled            *bool   `json:"disabled,omitempty"`
 	GraceTime           *string `json:"graceTime,omitempty"`
 	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
-}
-
-type BooleanCondition struct {
-	Operation     BooleanOperation `json:"operation"`
-	ExpectedValue bool             `json:"expectedValue"`
-}
-
-type BooleanConditionInput struct {
-	Operation     BooleanOperation `json:"operation"`
-	ExpectedValue bool             `json:"expectedValue"`
 }
 
 // Clearing buffered OTLP data for a workload slot
@@ -657,20 +616,6 @@ type HTTPPayloadCollectionInput struct {
 	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
 }
 
-type HTTPRouteFilter struct {
-	HTTPRoute               string  `json:"httpRoute"`
-	ServiceName             string  `json:"serviceName"`
-	MinimumLatencyThreshold int     `json:"minimumLatencyThreshold"`
-	FallbackSamplingRatio   float64 `json:"fallbackSamplingRatio"`
-}
-
-type HTTPRouteFilterInput struct {
-	HTTPRoute               string  `json:"httpRoute"`
-	ServiceName             string  `json:"serviceName"`
-	MinimumLatencyThreshold int     `json:"minimumLatencyThreshold"`
-	FallbackSamplingRatio   float64 `json:"fallbackSamplingRatio"`
-}
-
 type InstrumentationInstanceAnalyze struct {
 	Healthy               *EntityProperty   `json:"healthy"`
 	Message               *EntityProperty   `json:"message,omitempty"`
@@ -765,18 +710,6 @@ type JavaCustomProbe struct {
 type JavaCustomProbeInput struct {
 	ClassName  *string `json:"className,omitempty"`
 	MethodName *string `json:"methodName,omitempty"`
-}
-
-type JSONCondition struct {
-	Operation     JSONOperation `json:"operation"`
-	ExpectedValue *string       `json:"expectedValue,omitempty"`
-	JSONPath      *string       `json:"jsonPath,omitempty"`
-}
-
-type JSONConditionInput struct {
-	Operation     JSONOperation `json:"operation"`
-	ExpectedValue *string       `json:"expectedValue,omitempty"`
-	JSONPath      *string       `json:"jsonPath,omitempty"`
 }
 
 type K8sActualNamespace struct {
@@ -1298,16 +1231,6 @@ type NonIdentifyingAttribute struct {
 	Value string `json:"value"`
 }
 
-type NumberCondition struct {
-	Operation     NumberOperation `json:"operation"`
-	ExpectedValue float64         `json:"expectedValue"`
-}
-
-type NumberConditionInput struct {
-	Operation     NumberOperation `json:"operation"`
-	ExpectedValue float64         `json:"expectedValue"`
-}
-
 type ObservabilitySignalSupport struct {
 	Supported bool `json:"supported"`
 }
@@ -1563,18 +1486,6 @@ type ServiceMapToSource struct {
 	NodeAttributes []*NonIdentifyingAttribute `json:"nodeAttributes"`
 }
 
-type ServiceNameFilter struct {
-	ServiceName           string  `json:"serviceName"`
-	SamplingRatio         float64 `json:"samplingRatio"`
-	FallbackSamplingRatio float64 `json:"fallbackSamplingRatio"`
-}
-
-type ServiceNameFilterInput struct {
-	ServiceName           string  `json:"serviceName"`
-	SamplingRatio         float64 `json:"samplingRatio"`
-	FallbackSamplingRatio float64 `json:"fallbackSamplingRatio"`
-}
-
 type SingleDestinationMetricsResponse struct {
 	ID            string `json:"id"`
 	TotalDataSent int    `json:"totalDataSent"`
@@ -1635,36 +1546,11 @@ type SourcesScopesInput struct {
 	Languages  []SamplingWorkloadLanguage `json:"languages,omitempty"`
 }
 
-type SpanAttributeFilter struct {
-	ServiceName           string                     `json:"serviceName"`
-	AttributeKey          string                     `json:"attributeKey"`
-	Condition             *AttributeFiltersCondition `json:"condition"`
-	SamplingRatio         float64                    `json:"samplingRatio"`
-	FallbackSamplingRatio float64                    `json:"fallbackSamplingRatio"`
-}
-
-type SpanAttributeFilterInput struct {
-	ServiceName           string                          `json:"serviceName"`
-	AttributeKey          string                          `json:"attributeKey"`
-	FallbackSamplingRatio float64                         `json:"fallbackSamplingRatio"`
-	Condition             *AttributeFiltersConditionInput `json:"condition"`
-}
-
 type SpanSamplingAttributesConfig struct {
 	Disabled                       *bool `json:"disabled,omitempty"`
 	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
 	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
 	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
-}
-
-type StringCondition struct {
-	Operation     StringOperation `json:"operation"`
-	ExpectedValue *string         `json:"expectedValue,omitempty"`
-}
-
-type StringConditionInput struct {
-	Operation     StringOperation `json:"operation"`
-	ExpectedValue *string         `json:"expectedValue,omitempty"`
 }
 
 type SupportedSignals struct {
@@ -1789,11 +1675,6 @@ const (
 	ActionTypeDeleteAttribute       ActionType = "DeleteAttribute"
 	ActionTypeRenameAttribute       ActionType = "RenameAttribute"
 	ActionTypePiiMasking            ActionType = "PiiMasking"
-	ActionTypeErrorSampler          ActionType = "ErrorSampler"
-	ActionTypeProbabilisticSampler  ActionType = "ProbabilisticSampler"
-	ActionTypeLatencySampler        ActionType = "LatencySampler"
-	ActionTypeServiceNameSampler    ActionType = "ServiceNameSampler"
-	ActionTypeSpanAttributeSampler  ActionType = "SpanAttributeSampler"
 	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
@@ -1804,18 +1685,13 @@ var AllActionType = []ActionType{
 	ActionTypeDeleteAttribute,
 	ActionTypeRenameAttribute,
 	ActionTypePiiMasking,
-	ActionTypeErrorSampler,
-	ActionTypeProbabilisticSampler,
-	ActionTypeLatencySampler,
-	ActionTypeServiceNameSampler,
-	ActionTypeSpanAttributeSampler,
 	ActionTypeURLTemplatization,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeURLTemplatization, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeURLTemplatization, ActionTypeUnknownType:
 		return true
 	}
 	return false
@@ -1839,47 +1715,6 @@ func (e *ActionType) UnmarshalGQL(v any) error {
 }
 
 func (e ActionType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type BooleanOperation string
-
-const (
-	BooleanOperationExists BooleanOperation = "exists"
-	BooleanOperationEquals BooleanOperation = "equals"
-)
-
-var AllBooleanOperation = []BooleanOperation{
-	BooleanOperationExists,
-	BooleanOperationEquals,
-}
-
-func (e BooleanOperation) IsValid() bool {
-	switch e {
-	case BooleanOperationExists, BooleanOperationEquals:
-		return true
-	}
-	return false
-}
-
-func (e BooleanOperation) String() string {
-	return string(e)
-}
-
-func (e *BooleanOperation) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = BooleanOperation(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid BooleanOperation", str)
-	}
-	return nil
-}
-
-func (e BooleanOperation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -2255,59 +2090,6 @@ func (e InstrumentationRuleType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type JSONOperation string
-
-const (
-	JSONOperationExists         JSONOperation = "exists"
-	JSONOperationEquals         JSONOperation = "equals"
-	JSONOperationNotEquals      JSONOperation = "not_equals"
-	JSONOperationIsValidJSON    JSONOperation = "is_valid_json"
-	JSONOperationIsInvalidJSON  JSONOperation = "is_invalid_json"
-	JSONOperationJsonpathExists JSONOperation = "jsonpath_exists"
-	JSONOperationKeyEquals      JSONOperation = "key_equals"
-	JSONOperationKeyNotEquals   JSONOperation = "key_not_equals"
-)
-
-var AllJSONOperation = []JSONOperation{
-	JSONOperationExists,
-	JSONOperationEquals,
-	JSONOperationNotEquals,
-	JSONOperationIsValidJSON,
-	JSONOperationIsInvalidJSON,
-	JSONOperationJsonpathExists,
-	JSONOperationKeyEquals,
-	JSONOperationKeyNotEquals,
-}
-
-func (e JSONOperation) IsValid() bool {
-	switch e {
-	case JSONOperationExists, JSONOperationEquals, JSONOperationNotEquals, JSONOperationIsValidJSON, JSONOperationIsInvalidJSON, JSONOperationJsonpathExists, JSONOperationKeyEquals, JSONOperationKeyNotEquals:
-		return true
-	}
-	return false
-}
-
-func (e JSONOperation) String() string {
-	return string(e)
-}
-
-func (e *JSONOperation) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = JSONOperation(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid JsonOperation", str)
-	}
-	return nil
-}
-
-func (e JSONOperation) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 type K8sAttributesFrom string
 
 const (
@@ -2575,57 +2357,6 @@ func (e *MountMethod) UnmarshalGQL(v any) error {
 }
 
 func (e MountMethod) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type NumberOperation string
-
-const (
-	NumberOperationExists             NumberOperation = "exists"
-	NumberOperationEquals             NumberOperation = "equals"
-	NumberOperationNotEquals          NumberOperation = "not_equals"
-	NumberOperationGreaterThan        NumberOperation = "greater_than"
-	NumberOperationLessThan           NumberOperation = "less_than"
-	NumberOperationGreaterThanOrEqual NumberOperation = "greater_than_or_equal"
-	NumberOperationLessThanOrEqual    NumberOperation = "less_than_or_equal"
-)
-
-var AllNumberOperation = []NumberOperation{
-	NumberOperationExists,
-	NumberOperationEquals,
-	NumberOperationNotEquals,
-	NumberOperationGreaterThan,
-	NumberOperationLessThan,
-	NumberOperationGreaterThanOrEqual,
-	NumberOperationLessThanOrEqual,
-}
-
-func (e NumberOperation) IsValid() bool {
-	switch e {
-	case NumberOperationExists, NumberOperationEquals, NumberOperationNotEquals, NumberOperationGreaterThan, NumberOperationLessThan, NumberOperationGreaterThanOrEqual, NumberOperationLessThanOrEqual:
-		return true
-	}
-	return false
-}
-
-func (e NumberOperation) String() string {
-	return string(e)
-}
-
-func (e *NumberOperation) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = NumberOperation(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid NumberOperation", str)
-	}
-	return nil
-}
-
-func (e NumberOperation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -3008,55 +2739,6 @@ func (e *SpanKind) UnmarshalGQL(v any) error {
 }
 
 func (e SpanKind) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type StringOperation string
-
-const (
-	StringOperationExists      StringOperation = "exists"
-	StringOperationEquals      StringOperation = "equals"
-	StringOperationNotEquals   StringOperation = "not_equals"
-	StringOperationContains    StringOperation = "contains"
-	StringOperationNotContains StringOperation = "not_contains"
-	StringOperationRegex       StringOperation = "regex"
-)
-
-var AllStringOperation = []StringOperation{
-	StringOperationExists,
-	StringOperationEquals,
-	StringOperationNotEquals,
-	StringOperationContains,
-	StringOperationNotContains,
-	StringOperationRegex,
-}
-
-func (e StringOperation) IsValid() bool {
-	switch e {
-	case StringOperationExists, StringOperationEquals, StringOperationNotEquals, StringOperationContains, StringOperationNotContains, StringOperationRegex:
-		return true
-	}
-	return false
-}
-
-func (e StringOperation) String() string {
-	return string(e)
-}
-
-func (e *StringOperation) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = StringOperation(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid StringOperation", str)
-	}
-	return nil
-}
-
-func (e StringOperation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
