@@ -93,37 +93,41 @@ spec:
                     items:
                       description: |-
                         Extraction describes a single extraction rule applied by the
-                        odigosextractattribute processor. Either (Source + DataFormat) or
-                        Regex must be provided; the captured value is written to Target.
+                        odigosextractattribute processor. Either (LookupKey + DataFormat) or
+                        Regex must be provided; the captured value is written to a new span
+                        attribute named TargetAttributeName.
                       properties:
                         dataFormat:
                           description: |-
                             A pre-set definition which resolves into a regex (e.g. JSON DataFormat would give a regex that searches
-                            inside a JSON string), which also applies Source for searching inside it.
-                            Required when using Source.
-                            You can input either Source+DataFormat, or supply your own Regex.
+                            inside a JSON string), which also applies LookupKey for searching inside it.
+                            Required when using LookupKey.
+                            You can input either LookupKey+DataFormat, or supply your own Regex.
                           enum:
-                          - url
+                          - resource_path
                           - json
+                          - sql
+                          type: string
+                        lookupKey:
+                          description: |-
+                            LookupKey is the literal key to search for inside the scanned span attributes.
+                            It is plugged into the pre-set regex pattern selected by DataFormat (e.g. for JSON,
+                            the processor will look for `"<lookupKey>": "<value>"` and capture the value).
+                            Required when using DataFormat.
+                            You can input either LookupKey+DataFormat, or supply your own Regex.
                           type: string
                         regex:
                           description: |-
                             Regex is a custom regular expression with a single capture group whose value is
-                            written to Target.
-                            You can input either Regex, or Source+DataFormat.
+                            written to the new span attribute named TargetAttributeName.
+                            You can input either Regex, or LookupKey+DataFormat.
                           type: string
-                        source:
-                          description: |-
-                            The string key that is searched within the pre-set regex patterns resolved by DataFormat.
-                            Required when using DataFormat.
-                            You can input either Source+DataFormat, or supply your own Regex.
-                          type: string
-                        target:
-                          description: Target is the attribute key the extracted value
-                            will be written to on the span.
+                        targetAttributeName:
+                          description: TargetAttributeName is the name of the new
+                            span attribute the extracted value will be written to.
                           type: string
                       required:
-                      - target
+                      - targetAttributeName
                       type: object
                     minItems: 1
                     type: array
@@ -345,7 +349,99 @@ spec:
                 description: URLTemplatization is the config for the URLTemplatization
                   Action.
                 properties:
-                  templatizationRulesGroups:
+                  default:
+                    description: |-
+                      configurations for default templatization, on groups of services.
+                      default templatization is applied on a single http span if none of the custom templatization rules matched.
+                    items:
+                      description: URLTemplatizationDefaultTemplatizationGroup is
+                        a group of services for which default templatization will
+                        be applied.
+                      properties:
+                        disabled:
+                          description: |-
+                            if set to true, the default templatization will be disabled for the services in the scope.
+                            in case of conflict (if other action set this to false), the default templatization will be disabled.
+                          type: boolean
+                        scopes:
+                          description: |-
+                            the scope of services for which this templatization config will be applied.
+                            if empty, the provided config will be applied to all sources.
+                          properties:
+                            languages:
+                              items:
+                                enum:
+                                - java
+                                - python
+                                - go
+                                - dotnet
+                                - javascript
+                                - php
+                                - ruby
+                                - rust
+                                - cplusplus
+                                - mysql
+                                - nginx
+                                - redis
+                                - postgres
+                                - unknown
+                                - ignored
+                                - '*'
+                                type: string
+                              type: array
+                            namespaces:
+                              items:
+                                type: string
+                              type: array
+                            sources:
+                              items:
+                                description: |-
+                                  PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                                  It contains essential details about the controller such as its Name, Namespace, and Kind.
+                                  'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                                  This struct is useful for identifying and interacting with the overarching entity
+                                  that governs the lifecycle and behavior of a Pod, especially in contexts where
+                                  understanding the relationship between a Pod and its controlling workload is crucial.
+                                properties:
+                                  kind:
+                                    description: |-
+                                      1. the pascal case representation of the workload kind
+                                      it is used in k8s api objects as the `Kind` field.
+                                    type: string
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                required:
+                                - kind
+                                - name
+                                - namespace
+                                type: object
+                              type: array
+                          type: object
+                        skipPolicy:
+                          description: |-
+                            config if default templatization should be skipped on error.
+                            use it when sources scope describes a service that is publicly accessible to the internet
+                            to filter garbage requests that can contaminate the url-templatization process.
+                          properties:
+                            skipForNonSuccessCodes:
+                              description: |-
+                                If set to true, default templatization will be skipped for any non-success HTTP status code (i.e., any code not in the 2xx range).
+                                When this is true, the StatusCodes list is ignored.
+                              type: boolean
+                            skipHttpStatusCodes:
+                              description: |-
+                                the http status codes for which the default templatization will be skipped.
+                                for example: [404, 401].
+                                advanced users can use to cherry pick specific codes for tailoring to specific use cases.
+                              items:
+                                type: integer
+                              type: array
+                          type: object
+                      type: object
+                    type: array
+                  rules:
                     description: |-
                       list here all the groups of rules that will be applied to the spans.
                       each group targets a specific set of spans that share the same filters.
@@ -355,11 +451,11 @@ spec:
                       3. rules without filters that will be applied to all spans.
                     items:
                       description: |-
-                        UrlTemplatizationRulesGroup is a group of rules that share the same target spans.
+                        UrlTemplatizationRule is a group of rules that share the same target spans.
                         If SourcesScope is empty, the rules apply to all sources (global).
                         If set, rules apply to selected scope.
                       properties:
-                        sourcesScopes:
+                        scopes:
                           description: |-
                             SourcesScope selects which sources (workloads / containers / languages) the rules apply to.
                             Empty list means "all sources" (global rules).
@@ -415,36 +511,14 @@ spec:
                                 type: object
                               type: array
                           type: object
-                        templatizationRules:
+                        templates:
                           description: the rules that will be applied to the spans
                             matching the above filters.
                           items:
-                            properties:
-                              examples:
-                                description: |-
-                                  user can populate examples of the urls that were observed.
-                                  when someone review this rule in the future, this can be helpful to understand and maintain it.
-                                  this field is optional and can be kept empty.
-                                items:
-                                  type: string
-                                type: array
-                              notes:
-                                description: |-
-                                  notes about why this rule was added and what it's purpose is.
-                                  only for human consumption and maintenance purposes. not used by the system.
-                                type: string
-                              template:
-                                description: this is the instructions on how to match
-                                  and templatize a url for this rule.
-                                type: string
-                            required:
-                            - template
-                            type: object
+                            type: string
                           type: array
                       type: object
                     type: array
-                required:
-                - templatizationRulesGroups
                 type: object
             required:
             - signals

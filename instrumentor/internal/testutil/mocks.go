@@ -330,7 +330,7 @@ func NewMockInstrumentationRuleDisabled(name, ns string) *odigosv1.Instrumentati
 // NewMockInstrumentationRuleWithSourcesScope returns a rule that matches only via sourcesScopes.
 func NewMockInstrumentationRuleWithSourcesScope(name, ns string, scopes *k8sconsts.SourcesScopes) *odigosv1.InstrumentationRule {
 	r := NewMockEmptyInstrumentationRule(name, ns)
-	r.Spec.SourcesScopes = scopes
+	r.Spec.Scopes = scopes
 	return r
 }
 
@@ -343,7 +343,7 @@ func NewMockInstrumentationRuleWithWorkloads(name, ns string, workloads []k8scon
 // NewMockInstrumentationRuleWithSourcesScopeAndWorkloads returns a rule with both fields set (sourcesScopes takes precedence when matching).
 func NewMockInstrumentationRuleWithSourcesScopeAndWorkloads(name, ns string, scopes *k8sconsts.SourcesScopes, workloads []k8sconsts.PodWorkload) *odigosv1.InstrumentationRule {
 	r := NewMockEmptyInstrumentationRule(name, ns)
-	r.Spec.SourcesScopes = scopes
+	r.Spec.Scopes = scopes
 	return r
 }
 

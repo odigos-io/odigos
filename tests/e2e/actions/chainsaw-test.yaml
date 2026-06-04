@@ -8,9 +8,9 @@ spec:
     A minimal Flask app sets db.statement, http.request.payload, and
     messaging.message.payload on every span. The ExtractAttribute action
     extracts values from those attributes using all four processor
-    variations: JSON, SQL (via json DataFormat), URL (multi-key), and
-    free regex. The test asserts that every extracted target attribute
-    appears on spans collected by the simple-trace-db.
+    variations: JSON, SQL, URL (multi-key), and free regex. The test
+    asserts that every extracted target attribute appears on spans
+    collected by the simple-trace-db.
   skipDelete: true
   steps:
     - name: Prepare destination

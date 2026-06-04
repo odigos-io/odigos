@@ -23,6 +23,7 @@ docker pull registry.odigos.io/odigos-ui:$VERSION
 docker pull registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull registry.odigos.io/odigos-odiglet:$VERSION
 docker pull registry.odigos.io/odigos-collector:$VERSION
+docker pull registry.odigos.io/odigos-victoria-metrics:$VERSION
 ```
 
 If you are using the [k8s-init-container](../instrumentations/configuration/mount-method#3-InitContainer) mount method
@@ -52,6 +53,7 @@ docker pull --platform $PLATFORM registry.odigos.io/odigos-ui:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-odiglet:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-collector:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-victoria-metrics:$VERSION
 ```
 
 ### Step 3: Tag the Images
@@ -64,6 +66,7 @@ docker tag registry.odigos.io/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-
 docker tag registry.odigos.io/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker tag registry.odigos.io/odigos-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-odiglet:$VERSION
 docker tag registry.odigos.io/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
+docker tag registry.odigos.io/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-victoria-metrics:$VERSION
 ```
 
 
@@ -78,6 +81,7 @@ docker push $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-odiglet:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-victoria-metrics:$VERSION
 ```
 
 ### Step 5: Configure Access for Private Registries
@@ -99,6 +103,8 @@ If your Docker registry is private, configure your Kubernetes cluster to pull im
 > kubectl patch deployment odigos-autoscaler -n $ODIGOS_NAMESPACE \
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
 > kubectl patch deployment odigos-gateway -n $ODIGOS_NAMESPACE \
+> --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
+> kubectl patch deployment odigos-victoriametrics -n $ODIGOS_NAMESPACE \
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
 > kubectl patch daemonset odiglet -n $ODIGOS_NAMESPACE \
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'

@@ -78,21 +78,22 @@ func (s *startupRuntimeDetection) scan(ctx context.Context) (int, error) {
 		return 0, nil
 	}
 
-	// Build the full set of (podUID, containerName) across all pods.
-	var allPCs []process.PodContainerUID
+	var allPCs []process.PodContainer
 	for _, entry := range icPods {
-		for i := range entry.pods {
-			uid := workload.PodUID(&entry.pods[i])
-			for _, c := range entry.pods[i].Spec.Containers {
-				allPCs = append(allPCs, process.PodContainerUID{
-					PodUID:        uid,
-					ContainerName: c.Name,
+		for _, pod := range entry.pods {
+			uid := workload.PodUID(&pod)
+			for _, c := range pod.Spec.Containers {
+				allPCs = append(allPCs, process.PodContainer{
+					PodContainerKey: process.PodContainerKey{
+						PodUID: uid, ContainerName: c.Name,
+					},
+					ContainerID: getContainerID(pod.Status.ContainerStatuses, c.Name),
+					QOSClass:    pod.Status.QOSClass,
 				})
 			}
 		}
 	}
 
-	// Single /proc scan for all containers on the node, group the processes by (pod uid, container name)
 	groups, err := process.GroupByPodContainer(allPCs)
 	if err != nil {
 		return 0, fmt.Errorf("startup runtime detection: failed to group processes: %w", err)
