@@ -77,11 +77,6 @@ export const SELECTED_ENTITIES = {
     'DeleteAttribute',
     'RenameAttribute',
     'PiiMasking',
-    'ErrorSampler',
-    'LatencySampler',
-    'ProbabilisticSampler',
-    'ServiceNameSampler',
-    'SpanAttributeSampler',
   ],
   INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
