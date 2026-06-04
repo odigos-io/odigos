@@ -16,6 +16,7 @@ package netmetrics
 
 import (
 	"net"
+	"os"
 	"regexp"
 	"strconv"
 	"sync"
@@ -54,30 +55,57 @@ func NewEndpointResolver() (*EndpointResolver, error) {
 // Refresh rebuilds the endpoint->process table from /proc. Call periodically and/or
 // on cache-miss. Long-lived flows resolve reliably; very short-lived sockets may be
 // missed (best-effort) — the OBI socktrack path removes that race in production.
+//
+// It reads the socket table of EVERY network namespace present (one representative pid
+// per netns), so processes inside containers — which live in their own netns and whose
+// sockets are absent from the host's /proc/net/tcp — resolve too. Socket inodes are
+// global, so the inode->endpoint map merges cleanly across namespaces.
 func (r *EndpointResolver) Refresh() error {
-	inodeEP := map[uint64]string{} // socket inode -> "ip:port"
+	procs, err := r.fs.AllProcs()
+	if err != nil {
+		return err
+	}
+
+	// 1. inode -> "ip:port", built from each distinct network namespace's socket table.
+	inodeEP := map[uint64]string{}
 	add := func(lines procfs.NetTCP) {
 		for _, l := range lines {
 			inodeEP[l.Inode] = net.JoinHostPort(l.LocalAddr.String(), strconv.FormatUint(l.LocalPort, 10))
 		}
 	}
-	if t, err := r.fs.NetTCP(); err == nil {
-		add(t)
+	readNetTables := func(fs procfs.FS) {
+		if t, err := fs.NetTCP(); err == nil {
+			add(t)
+		}
+		if t, err := fs.NetTCP6(); err == nil {
+			add(t)
+		}
+		if u, err := fs.NetUDP(); err == nil {
+			add(procfs.NetTCP(u))
+		}
+		if u, err := fs.NetUDP6(); err == nil {
+			add(procfs.NetTCP(u))
+		}
 	}
-	if t, err := r.fs.NetTCP6(); err == nil {
-		add(t)
-	}
-	if u, err := r.fs.NetUDP(); err == nil {
-		add(procfs.NetTCP(u))
-	}
-	if u, err := r.fs.NetUDP6(); err == nil {
-		add(procfs.NetTCP(u))
+	// host netns (the default /proc mount).
+	readNetTables(r.fs)
+	// one representative pid per other netns -> read that netns's socket table.
+	seenNetns := map[string]struct{}{}
+	for _, p := range procs {
+		ns, err := os.Readlink("/proc/" + strconv.Itoa(p.PID) + "/ns/net")
+		if err != nil {
+			continue
+		}
+		if _, dup := seenNetns[ns]; dup {
+			continue
+		}
+		seenNetns[ns] = struct{}{}
+		if fs, err := procfs.NewFS("/proc/" + strconv.Itoa(p.PID)); err == nil {
+			readNetTables(fs)
+		}
 	}
 
-	procs, err := r.fs.AllProcs()
-	if err != nil {
-		return err
-	}
+	// 2. socket inode -> owning pid, by walking every pid's fds (visible host-wide via hostPID).
 	tbl := make(map[string]Endpoint, len(inodeEP))
 	for _, p := range procs {
 		targets, err := p.FileDescriptorTargets()
