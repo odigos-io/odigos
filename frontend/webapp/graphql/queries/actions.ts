@@ -36,30 +36,6 @@ export const GET_ACTIONS = gql`
           renames
           piiCategories
 
-          samplingPercentage
-          fallbackSamplingRatio
-          endpointsFilters {
-            httpRoute
-            serviceName
-            minimumLatencyThreshold
-            fallbackSamplingRatio
-          }
-          servicesNameFilters {
-            serviceName
-            samplingRatio
-            fallbackSamplingRatio
-          }
-          attributeFilters {
-            serviceName
-            attributeKey
-            fallbackSamplingRatio
-            condition {
-              stringCondition {
-                operation
-                expectedValue
-              }
-            }
-          }
           urlTemplatizationRulesGroups {
             filterK8sNamespace
             filterK8sWorkloadKind
