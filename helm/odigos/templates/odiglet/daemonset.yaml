@@ -232,6 +232,8 @@ spec:
             - name: ODIGOS_GO_DISABLE_CODE_ATTRIBUTES
               value: "true"
           {{- end}}
+            - name: ODIGOS_EBPF_MAP_SIZE
+              value: {{ .Values.ResourceSizePreset | default "size_m" | quote }}
           envFrom:
             - configMapRef:
                 name: odigos-own-telemetry-otel-config
