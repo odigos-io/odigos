@@ -842,9 +842,9 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 		return nil
 	}
 
-	groups := make([]urlactions.UrlTemplatizationRulesGroup, 0, len(details.URLTemplatizationRulesGroups))
+	rules := make([]urlactions.UrlTemplatizationRule, 0, len(details.URLTemplatizationRulesGroups))
 	for _, g := range details.URLTemplatizationRulesGroups {
-		group := urlactions.UrlTemplatizationRulesGroup{}
+		group := urlactions.UrlTemplatizationRule{}
 
 		// Fold the URL-templatization filter form into the tri-list SourcesScopes shape:
 		//   * Each WorkloadFilter row → one PodWorkload appended to Sources (with namespace baked in).
@@ -887,22 +887,17 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 			scopes.Languages = append(scopes.Languages, common.ProgrammingLanguage(*g.FilterProgrammingLanguage))
 		}
 		if len(scopes.Sources) > 0 || len(scopes.Namespaces) > 0 || len(scopes.Languages) > 0 {
-			group.SourcesScopes = scopes
+			group.Scopes = scopes
 		}
 
 		for _, rule := range g.TemplatizationRules {
-			r := urlactions.URLTemplatizationRule{
-				Template: rule.Template,
-				Notes:    DerefString(rule.Notes),
-				Examples: rule.Examples,
-			}
-			group.TemplatizationRules = append(group.TemplatizationRules, r)
+			group.Templates = append(group.Templates, rule.Template)
 		}
-		groups = append(groups, group)
+		rules = append(rules, group)
 	}
 
 	return &urlactions.URLTemplatizationConfig{
-		TemplatizationRulesGroups: groups,
+		Rules: rules,
 	}
 }
 
@@ -912,15 +907,15 @@ func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []
 	}
 
 	var result []*model.URLTemplatizationRulesGroup
-	for _, g := range cfg.TemplatizationRulesGroups {
+	for _, g := range cfg.Rules {
 		group := &model.URLTemplatizationRulesGroup{}
 
 		// Unfold tri-list SourcesScopes back into the URL-templatization filter form.
 		// The GraphQL shape exposes only single-value FilterK8sNamespace and
 		// FilterProgrammingLanguage, so multi-namespace/multi-language scopes are
 		// projected to the first entry (best-effort; the wire format predates the list).
-		if g.SourcesScopes != nil {
-			for _, src := range g.SourcesScopes.Sources {
+		if g.Scopes != nil {
+			for _, src := range g.Scopes.Sources {
 				if src.Kind != "" || src.Name != "" {
 					filter := &model.TemplatizationWorkloadFilter{}
 					if src.Kind != "" {
@@ -938,24 +933,20 @@ func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []
 					group.FilterK8sNamespace = &ns
 				}
 			}
-			if group.FilterK8sNamespace == nil && len(g.SourcesScopes.Namespaces) > 0 {
-				ns := g.SourcesScopes.Namespaces[0]
+			if group.FilterK8sNamespace == nil && len(g.Scopes.Namespaces) > 0 {
+				ns := g.Scopes.Namespaces[0]
 				group.FilterK8sNamespace = &ns
 			}
-			if len(g.SourcesScopes.Languages) > 0 {
-				lang := string(g.SourcesScopes.Languages[0])
+			if len(g.Scopes.Languages) > 0 {
+				lang := string(g.Scopes.Languages[0])
 				group.FilterProgrammingLanguage = &lang
 			}
 		}
 
-		for _, rule := range g.TemplatizationRules {
-			notes := rule.Notes
-			r := &model.URLTemplatizationRule{
-				Template: rule.Template,
-				Notes:    &notes,
-				Examples: rule.Examples,
-			}
-			group.TemplatizationRules = append(group.TemplatizationRules, r)
+		for _, rule := range g.Templates {
+			group.TemplatizationRules = append(group.TemplatizationRules, &model.URLTemplatizationRule{
+				Template: rule,
+			})
 		}
 		result = append(result, group)
 	}
