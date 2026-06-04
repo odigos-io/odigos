@@ -37,26 +37,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.AddClusterInfoSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AddClusterInfoStatus"):
 		return &actionsv1alpha1.AddClusterInfoStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AttributeCondition"):
-		return &actionsv1alpha1.AttributeConditionApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("BooleanAttributeCondition"):
-		return &actionsv1alpha1.BooleanAttributeConditionApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DeleteAttribute"):
 		return &actionsv1alpha1.DeleteAttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DeleteAttributeSpec"):
 		return &actionsv1alpha1.DeleteAttributeSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DeleteAttributeStatus"):
 		return &actionsv1alpha1.DeleteAttributeStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ErrorSampler"):
-		return &actionsv1alpha1.ErrorSamplerApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ErrorSamplerSpec"):
-		return &actionsv1alpha1.ErrorSamplerSpecApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ErrorSamplerStatus"):
-		return &actionsv1alpha1.ErrorSamplerStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("HttpRouteFilter"):
-		return &actionsv1alpha1.HttpRouteFilterApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("JsonAttributeCondition"):
-		return &actionsv1alpha1.JsonAttributeConditionApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("K8sAnnotationAttribute"):
 		return &actionsv1alpha1.K8sAnnotationAttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("K8sAttributesResolver"):
@@ -67,14 +53,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.K8sAttributesStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("K8sLabelAttribute"):
 		return &actionsv1alpha1.K8sLabelAttributeApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("LatencySampler"):
-		return &actionsv1alpha1.LatencySamplerApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("LatencySamplerSpec"):
-		return &actionsv1alpha1.LatencySamplerSpecApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("LatencySamplerStatus"):
-		return &actionsv1alpha1.LatencySamplerStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("NumberAttributeCondition"):
-		return &actionsv1alpha1.NumberAttributeConditionApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtelAttributeWithValue"):
 		return &actionsv1alpha1.OtelAttributeWithValueApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("PiiMasking"):
@@ -83,36 +61,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.PiiMaskingSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("PiiMaskingStatus"):
 		return &actionsv1alpha1.PiiMaskingStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ProbabilisticSampler"):
-		return &actionsv1alpha1.ProbabilisticSamplerApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ProbabilisticSamplerSpec"):
-		return &actionsv1alpha1.ProbabilisticSamplerSpecApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ProbabilisticSamplerStatus"):
-		return &actionsv1alpha1.ProbabilisticSamplerStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RenameAttribute"):
 		return &actionsv1alpha1.RenameAttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RenameAttributeSpec"):
 		return &actionsv1alpha1.RenameAttributeSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RenameAttributeStatus"):
 		return &actionsv1alpha1.RenameAttributeStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ServiceNameFilter"):
-		return &actionsv1alpha1.ServiceNameFilterApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ServiceNameSampler"):
-		return &actionsv1alpha1.ServiceNameSamplerApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ServiceNameSamplerSpec"):
-		return &actionsv1alpha1.ServiceNameSamplerSpecApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("ServiceNameSamplerStatus"):
-		return &actionsv1alpha1.ServiceNameSamplerStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("SpanAttributeFilter"):
-		return &actionsv1alpha1.SpanAttributeFilterApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("SpanAttributeSampler"):
-		return &actionsv1alpha1.SpanAttributeSamplerApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("SpanAttributeSamplerSpec"):
-		return &actionsv1alpha1.SpanAttributeSamplerSpecApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("SpanAttributeSamplerStatus"):
-		return &actionsv1alpha1.SpanAttributeSamplerStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("StringAttributeCondition"):
-		return &actionsv1alpha1.StringAttributeConditionApplyConfiguration{}
 
 	}
 	return nil

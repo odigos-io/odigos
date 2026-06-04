@@ -63,7 +63,7 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 			Disabled:                 &r.Spec.Disabled,
 			Mutable:                  mutable,
 			ProfileName:              profileName,
-			SourcesScopes:            convertSourcesScope(r.Spec.SourcesScopes),
+			SourcesScopes:            convertSourcesScope(r.Spec.Scopes),
 			InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 			Conditions:               ConvertConditions(r.Status.Conditions),
 			CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
@@ -97,7 +97,7 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		Disabled:                 &r.Spec.Disabled,
 		Mutable:                  mutable,
 		ProfileName:              profileName,
-		SourcesScopes:            convertSourcesScope(r.Spec.SourcesScopes),
+		SourcesScopes:            convertSourcesScope(r.Spec.Scopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
@@ -268,9 +268,9 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	existingRule.Spec.Disabled = *input.Disabled
 
 	if input.SourcesScopes != nil {
-		existingRule.Spec.SourcesScopes = convertSourcesScopeInput(input.SourcesScopes)
+		existingRule.Spec.Scopes = convertSourcesScopeInput(input.SourcesScopes)
 	} else {
-		existingRule.Spec.SourcesScopes = nil
+		existingRule.Spec.Scopes = nil
 	}
 
 	if input.InstrumentationLibraries != nil {
@@ -326,7 +326,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		Disabled:                 &updatedRule.Spec.Disabled,
 		Mutable:                  profileName == "",
 		ProfileName:              profileName,
-		SourcesScopes:            convertSourcesScope(updatedRule.Spec.SourcesScopes),
+		SourcesScopes:            convertSourcesScope(updatedRule.Spec.Scopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(updatedRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(updatedRule.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(updatedRule.Spec.HeadersCollection),
@@ -382,7 +382,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			RuleName:                 ruleName,
 			Notes:                    notes,
 			Disabled:                 disabled,
-			SourcesScopes:            sourcesScopes,
+			Scopes:                   sourcesScopes,
 			InstrumentationLibraries: instrumentationLibraries,
 			CodeAttributes:           getCodeAttributesInput(input),
 			HeadersCollection:        getHeadersCollectionInput(input),
@@ -406,7 +406,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		Disabled:                 &createdRule.Spec.Disabled,
 		Mutable:                  true, // New rules are always mutable
 		ProfileName:              "",   // New rules are not associated with a profile
-		SourcesScopes:            convertSourcesScope(createdRule.Spec.SourcesScopes),
+		SourcesScopes:            convertSourcesScope(createdRule.Spec.Scopes),
 		InstrumentationLibraries: convertInstrumentationLibraries(createdRule.Spec.InstrumentationLibraries),
 		CodeAttributes:           (*model.CodeAttributes)(createdRule.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(createdRule.Spec.HeadersCollection),

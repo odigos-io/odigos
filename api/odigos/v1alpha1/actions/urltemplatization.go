@@ -8,36 +8,19 @@ import (
 
 const ActionNameURLTemplatization = "URLTemplatization"
 
-// +kubebuilder:object:generate=true
-// +kubebuilder:deepcopy-gen=true
-type URLTemplatizationRule struct {
-
-	// this is the instructions on how to match and templatize a url for this rule.
-	Template string `json:"template"`
-
-	// user can populate examples of the urls that were observed.
-	// when someone review this rule in the future, this can be helpful to understand and maintain it.
-	// this field is optional and can be kept empty.
-	Examples []string `json:"examples,omitempty"`
-
-	// notes about why this rule was added and what it's purpose is.
-	// only for human consumption and maintenance purposes. not used by the system.
-	Notes string `json:"notes,omitempty"`
-}
-
-// UrlTemplatizationRulesGroup is a group of rules that share the same target spans.
+// UrlTemplatizationRule is a group of rules that share the same target spans.
 // If SourcesScope is empty, the rules apply to all sources (global).
 // If set, rules apply to selected scope.
 //
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
-type UrlTemplatizationRulesGroup struct {
+type UrlTemplatizationRule struct {
 	// SourcesScope selects which sources (workloads / containers / languages) the rules apply to.
 	// Empty list means "all sources" (global rules).
-	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
+	Scopes *k8sconsts.SourcesScopes `json:"scopes,omitempty"`
 
 	// the rules that will be applied to the spans matching the above filters.
-	TemplatizationRules []URLTemplatizationRule `json:"templatizationRules,omitempty"`
+	Templates []string `json:"templates,omitempty"`
 }
 
 // URLTemplatizationDefaultTemplatizationGroup is a group of services for which default templatization will be applied.
@@ -46,11 +29,11 @@ type UrlTemplatizationRulesGroup struct {
 type URLTemplatizationDefaultTemplatizationGroup struct {
 	// the scope of services for which this templatization config will be applied.
 	// if empty, the provided config will be applied to all sources.
-	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
+	Scopes *k8sconsts.SourcesScopes `json:"scopes,omitempty"`
 
 	// configurations for default templatization.
 	// default templatization is applied on a single http span if none of the custom templatization rules matched.
-	Config actionsapi.DefaultTemplatizationConfig `json:"defaultTemplatization"`
+	actionsapi.DefaultTemplatizationConfig `json:",inline"`
 }
 
 // +kubebuilder:object:generate=true
@@ -63,11 +46,11 @@ type URLTemplatizationConfig struct {
 	// 1. some rules for java spans
 	// 2. some rules for deployment foo in namespace default
 	// 3. rules without filters that will be applied to all spans.
-	TemplatizationRulesGroups []UrlTemplatizationRulesGroup `json:"templatizationRulesGroups"`
+	Rules []UrlTemplatizationRule `json:"rules,omitempty"`
 
 	// configurations for default templatization, on groups of services.
 	// default templatization is applied on a single http span if none of the custom templatization rules matched.
-	DefaultTemplatizations []URLTemplatizationDefaultTemplatizationGroup `json:"defaultTemplatization,omitempty"`
+	Default []URLTemplatizationDefaultTemplatizationGroup `json:"default,omitempty"`
 }
 
 func (URLTemplatizationConfig) ProcessorType() string {

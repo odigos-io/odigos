@@ -50,43 +50,6 @@ describe('Actions CRUD', () => {
             // default values are enough 👍
             break;
           }
-          case 'ErrorSampler': {
-            cy.get('input[data-id=fallbackSamplingRatio]').type('1');
-            break;
-          }
-          case 'ProbabilisticSampler': {
-            cy.get('input[data-id=samplingPercentage]').type('1');
-            break;
-          }
-          case 'LatencySampler': {
-            cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
-            cy.get('tbody').find('input[placeholder="e.g. /api/v1/users"]').type('/path');
-            cy.get('tbody').find('input[placeholder="e.g. 1000"]').type('1');
-            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
-            break;
-          }
-          case 'ServiceNameSampler': {
-            cy.get('tbody').find('input[placeholder="e.g. my-service"]').type('service');
-            cy.get('tbody').find('input[placeholder="e.g. 10"]').type('1');
-            cy.get('tbody').find('input[placeholder="e.g. 100"]').type('1');
-            break;
-          }
-          case 'SpanAttributeSampler': {
-            cy.get('[data-id=attributeFilters]').find('input[data-id=serviceName]').type('service');
-            cy.get('[data-id=attributeFilters]').find('input[data-id=attributeKey]').type('attribute');
-            cy.get('[data-id=attributeFilters]').find('input[data-id=fallbackSamplingRatio]').first().type('1');
-
-            // Click the Condition dropdown and select "String condition"
-            cy.get('[data-id=attributeFilters]').find('input[data-id=condition]').scrollIntoView().click({ force: true });
-            cy.get('[data-id=option-stringCondition]').click({ force: true });
-
-            // Click the Operation dropdown and select "Equals"
-            cy.get('[data-id=attributeFilters]').find('input[data-id=operation]').scrollIntoView().click({ force: true });
-            cy.get('[data-id=option-equals]').click({ force: true });
-
-            cy.get('[data-id=attributeFilters]').find('input[data-id=expectedValue]').type('x');
-            break;
-          }
           case 'ExtractAttribute': {
             // Default mode is "Preset extract" with the first row's dataFormat=json
             // already selected, so we just fill lookupKey + targetAttributeName to
@@ -95,7 +58,6 @@ describe('Actions CRUD', () => {
             cy.get('[data-id=extract-row-0]').find('input[data-id=extract-row-0-targetAttributeName]').type('extracted.json.task_id');
             break;
           }
-
           default: {
             // purposely fail the test
             cy.get('unknown action').should('eq', true);

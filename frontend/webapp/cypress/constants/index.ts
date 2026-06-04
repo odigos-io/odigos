@@ -71,19 +71,7 @@ export const SELECTED_ENTITIES = {
     AUTOFILL_FIELD: 'JAEGER_URL',
     AUTOFILL_VALUE: `jaeger.${NAMESPACES.DESTINATIONS}:4317`,
   },
-  ACTIONS: [
-    'K8sAttributesResolver',
-    'AddClusterInfo',
-    'DeleteAttribute',
-    'RenameAttribute',
-    'PiiMasking',
-    'ErrorSampler',
-    'LatencySampler',
-    'ProbabilisticSampler',
-    'ServiceNameSampler',
-    'SpanAttributeSampler',
-    'ExtractAttribute',
-  ],
+  ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'RenameAttribute', 'PiiMasking', 'ExtractAttribute'],
   INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
 
