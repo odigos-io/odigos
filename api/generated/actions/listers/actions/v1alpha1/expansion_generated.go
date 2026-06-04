@@ -33,14 +33,6 @@ type DeleteAttributeListerExpansion interface{}
 // DeleteAttributeNamespaceLister.
 type DeleteAttributeNamespaceListerExpansion interface{}
 
-// ErrorSamplerListerExpansion allows custom methods to be added to
-// ErrorSamplerLister.
-type ErrorSamplerListerExpansion interface{}
-
-// ErrorSamplerNamespaceListerExpansion allows custom methods to be added to
-// ErrorSamplerNamespaceLister.
-type ErrorSamplerNamespaceListerExpansion interface{}
-
 // K8sAttributesResolverListerExpansion allows custom methods to be added to
 // K8sAttributesResolverLister.
 type K8sAttributesResolverListerExpansion interface{}
@@ -48,14 +40,6 @@ type K8sAttributesResolverListerExpansion interface{}
 // K8sAttributesResolverNamespaceListerExpansion allows custom methods to be added to
 // K8sAttributesResolverNamespaceLister.
 type K8sAttributesResolverNamespaceListerExpansion interface{}
-
-// LatencySamplerListerExpansion allows custom methods to be added to
-// LatencySamplerLister.
-type LatencySamplerListerExpansion interface{}
-
-// LatencySamplerNamespaceListerExpansion allows custom methods to be added to
-// LatencySamplerNamespaceLister.
-type LatencySamplerNamespaceListerExpansion interface{}
 
 // PiiMaskingListerExpansion allows custom methods to be added to
 // PiiMaskingLister.
@@ -65,14 +49,6 @@ type PiiMaskingListerExpansion interface{}
 // PiiMaskingNamespaceLister.
 type PiiMaskingNamespaceListerExpansion interface{}
 
-// ProbabilisticSamplerListerExpansion allows custom methods to be added to
-// ProbabilisticSamplerLister.
-type ProbabilisticSamplerListerExpansion interface{}
-
-// ProbabilisticSamplerNamespaceListerExpansion allows custom methods to be added to
-// ProbabilisticSamplerNamespaceLister.
-type ProbabilisticSamplerNamespaceListerExpansion interface{}
-
 // RenameAttributeListerExpansion allows custom methods to be added to
 // RenameAttributeLister.
 type RenameAttributeListerExpansion interface{}
@@ -80,19 +56,3 @@ type RenameAttributeListerExpansion interface{}
 // RenameAttributeNamespaceListerExpansion allows custom methods to be added to
 // RenameAttributeNamespaceLister.
 type RenameAttributeNamespaceListerExpansion interface{}
-
-// ServiceNameSamplerListerExpansion allows custom methods to be added to
-// ServiceNameSamplerLister.
-type ServiceNameSamplerListerExpansion interface{}
-
-// ServiceNameSamplerNamespaceListerExpansion allows custom methods to be added to
-// ServiceNameSamplerNamespaceLister.
-type ServiceNameSamplerNamespaceListerExpansion interface{}
-
-// SpanAttributeSamplerListerExpansion allows custom methods to be added to
-// SpanAttributeSamplerLister.
-type SpanAttributeSamplerListerExpansion interface{}
-
-// SpanAttributeSamplerNamespaceListerExpansion allows custom methods to be added to
-// SpanAttributeSamplerNamespaceLister.
-type SpanAttributeSamplerNamespaceListerExpansion interface{}

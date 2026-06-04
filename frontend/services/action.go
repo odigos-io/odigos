@@ -33,21 +33,6 @@ func deriveTypeFromAction(action *model.Action) model.ActionType {
 	if action.Fields.PiiCategories != nil {
 		return model.ActionTypePiiMasking
 	}
-	if action.Fields.SamplingPercentage != nil {
-		return model.ActionTypeProbabilisticSampler
-	}
-	if action.Fields.FallbackSamplingRatio != nil {
-		return model.ActionTypeErrorSampler
-	}
-	if len(action.Fields.EndpointsFilters) > 0 {
-		return model.ActionTypeLatencySampler
-	}
-	if len(action.Fields.ServicesNameFilters) > 0 {
-		return model.ActionTypeServiceNameSampler
-	}
-	if len(action.Fields.AttributeFilters) > 0 {
-		return model.ActionTypeSpanAttributeSampler
-	}
 	if action.Fields.URLTemplatizationRulesGroups != nil {
 		return model.ActionTypeURLTemplatization
 	}
@@ -191,7 +176,6 @@ func getSpecFromInput(input model.ActionInput, existingAction *v1alpha1.Action) 
 	spec.RenameAttribute = renameAttribute
 
 	spec.PiiMasking = convertPiiMaskingFromInput(input.Fields, existingAction)
-	spec.Samplers = convertSamplersFromInput(input.Fields, existingAction)
 	spec.URLTemplatization = convertUrlTemplatizationFromInput(input.Fields, existingAction)
 
 	return &spec, nil
@@ -383,178 +367,6 @@ func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction
 	return config
 }
 
-func convertSamplersFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *actionsv1.SamplersConfig {
-	withAnySampler := false
-	var config *actionsv1.SamplersConfig
-
-	// Check if any sampler fields are provided
-	if details.SamplingPercentage != nil ||
-		details.FallbackSamplingRatio != nil ||
-		details.EndpointsFilters != nil ||
-		details.ServicesNameFilters != nil ||
-		details.AttributeFilters != nil {
-
-		config = &actionsv1.SamplersConfig{}
-
-		// Convert ProbabilisticSampler
-		withProbabilisticSampler := false
-		if details.SamplingPercentage != nil {
-			config.ProbabilisticSampler = &actionsv1.ProbabilisticSamplerConfig{
-				SamplingPercentage: *details.SamplingPercentage,
-			}
-			withProbabilisticSampler = true
-			withAnySampler = true
-		}
-		if !withProbabilisticSampler {
-			if existingAction != nil && existingAction.Spec.Samplers != nil && existingAction.Spec.Samplers.ProbabilisticSampler != nil {
-				config.ProbabilisticSampler = existingAction.Spec.Samplers.ProbabilisticSampler
-			}
-		}
-
-		// Convert ErrorSampler
-		withErrorSampler := false
-		if details.FallbackSamplingRatio != nil {
-			config.ErrorSampler = &actionsv1.ErrorSamplerConfig{
-				FallbackSamplingRatio: float64(*details.FallbackSamplingRatio),
-			}
-			withErrorSampler = true
-			withAnySampler = true
-		}
-		if !withErrorSampler {
-			if existingAction != nil && existingAction.Spec.Samplers != nil && existingAction.Spec.Samplers.ErrorSampler != nil {
-				config.ErrorSampler = existingAction.Spec.Samplers.ErrorSampler
-			}
-		}
-
-		// Convert LatencySampler
-		withLatencySampler := false
-		if details.EndpointsFilters != nil {
-			config.LatencySampler = &actionsv1.LatencySamplerConfig{}
-			config.LatencySampler.EndpointsFilters = make([]actionsv1.HttpRouteFilter, len(details.EndpointsFilters))
-			for i, f := range details.EndpointsFilters {
-				config.LatencySampler.EndpointsFilters[i] = actionsv1.HttpRouteFilter{
-					HttpRoute:               f.HTTPRoute,
-					ServiceName:             f.ServiceName,
-					MinimumLatencyThreshold: f.MinimumLatencyThreshold,
-					FallbackSamplingRatio:   f.FallbackSamplingRatio,
-				}
-			}
-			withLatencySampler = true
-			withAnySampler = true
-		}
-		if !withLatencySampler {
-			if existingAction != nil && existingAction.Spec.Samplers != nil && existingAction.Spec.Samplers.LatencySampler != nil {
-				config.LatencySampler = existingAction.Spec.Samplers.LatencySampler
-			}
-		}
-
-		// Convert ServiceNameSampler
-		withServiceNameSampler := false
-		if details.ServicesNameFilters != nil {
-			config.ServiceNameSampler = &actionsv1.ServiceNameSamplerConfig{}
-			config.ServiceNameSampler.ServicesNameFilters = make([]actionsv1.ServiceNameFilter, len(details.ServicesNameFilters))
-			for i, f := range details.ServicesNameFilters {
-				config.ServiceNameSampler.ServicesNameFilters[i] = actionsv1.ServiceNameFilter{
-					ServiceName:           f.ServiceName,
-					SamplingRatio:         f.SamplingRatio,
-					FallbackSamplingRatio: f.FallbackSamplingRatio,
-				}
-			}
-			withServiceNameSampler = true
-			withAnySampler = true
-		}
-		if !withServiceNameSampler {
-			if existingAction != nil && existingAction.Spec.Samplers != nil && existingAction.Spec.Samplers.ServiceNameSampler != nil {
-				config.ServiceNameSampler = existingAction.Spec.Samplers.ServiceNameSampler
-			}
-		}
-
-		// Convert SpanAttributeSampler
-		withSpanAttributeSampler := false
-		if details.AttributeFilters != nil {
-			config.SpanAttributeSampler = &actionsv1.SpanAttributeSamplerConfig{}
-			config.SpanAttributeSampler.AttributeFilters = make([]actionsv1.SpanAttributeFilter, len(details.AttributeFilters))
-			for i, f := range details.AttributeFilters {
-				config.SpanAttributeSampler.AttributeFilters[i] = actionsv1.SpanAttributeFilter{
-					ServiceName:           f.ServiceName,
-					AttributeKey:          f.AttributeKey,
-					FallbackSamplingRatio: f.FallbackSamplingRatio,
-					Condition:             *convertConditionFromInput(f.Condition),
-				}
-			}
-			withSpanAttributeSampler = true
-			withAnySampler = true
-		}
-		if !withSpanAttributeSampler {
-			if existingAction != nil && existingAction.Spec.Samplers != nil && existingAction.Spec.Samplers.SpanAttributeSampler != nil {
-				config.SpanAttributeSampler = existingAction.Spec.Samplers.SpanAttributeSampler
-			}
-		}
-	}
-
-	if !withAnySampler {
-		if existingAction != nil && existingAction.Spec.Samplers != nil {
-			return existingAction.Spec.Samplers
-		}
-		return nil
-	}
-
-	return config
-}
-
-func convertConditionFromInput(condition *model.AttributeFiltersConditionInput) *actionsv1.AttributeCondition {
-	if condition == nil {
-		return nil
-	}
-	return &actionsv1.AttributeCondition{
-		StringCondition:  convertStringConditionFromInput(condition.StringCondition),
-		NumberCondition:  convertNumberConditionFromInput(condition.NumberCondition),
-		BooleanCondition: convertBooleanConditionFromInput(condition.BooleanCondition),
-		JsonCondition:    convertJSONConditionFromInput(condition.JSONCondition),
-	}
-}
-
-func convertStringConditionFromInput(condition *model.StringConditionInput) *actionsv1.StringAttributeCondition {
-	if condition == nil {
-		return nil
-	}
-	return &actionsv1.StringAttributeCondition{
-		Operation:     string(condition.Operation),
-		ExpectedValue: *condition.ExpectedValue,
-	}
-}
-
-func convertNumberConditionFromInput(condition *model.NumberConditionInput) *actionsv1.NumberAttributeCondition {
-	if condition == nil {
-		return nil
-	}
-	return &actionsv1.NumberAttributeCondition{
-		Operation:     string(condition.Operation),
-		ExpectedValue: condition.ExpectedValue,
-	}
-}
-
-func convertBooleanConditionFromInput(condition *model.BooleanConditionInput) *actionsv1.BooleanAttributeCondition {
-	if condition == nil {
-		return nil
-	}
-	return &actionsv1.BooleanAttributeCondition{
-		Operation:     string(condition.Operation),
-		ExpectedValue: condition.ExpectedValue,
-	}
-}
-
-func convertJSONConditionFromInput(condition *model.JSONConditionInput) *actionsv1.JsonAttributeCondition {
-	if condition == nil {
-		return nil
-	}
-	return &actionsv1.JsonAttributeCondition{
-		Operation:     string(condition.Operation),
-		ExpectedValue: *condition.ExpectedValue,
-		JsonPath:      *condition.JSONPath,
-	}
-}
-
 func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	var labelAttrs []*model.K8sLabelAttribute
 	if action.Spec.K8sAttributes != nil {
@@ -585,27 +397,6 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		piiCategories = convertPiiCategoriesToModel(action.Spec.PiiMasking.PiiCategories)
 	}
 
-	var fallbackSamplingRatio *int
-	if action.Spec.Samplers != nil && action.Spec.Samplers.ErrorSampler != nil {
-		intified := int(action.Spec.Samplers.ErrorSampler.FallbackSamplingRatio)
-		fallbackSamplingRatio = &intified
-	}
-
-	var endpointsFilters []*model.HTTPRouteFilter
-	if action.Spec.Samplers != nil && action.Spec.Samplers.LatencySampler != nil {
-		endpointsFilters = convertEndpointsFiltersToModel(action.Spec.Samplers.LatencySampler.EndpointsFilters)
-	}
-
-	var servicesNameFilters []*model.ServiceNameFilter
-	if action.Spec.Samplers != nil && action.Spec.Samplers.ServiceNameSampler != nil {
-		servicesNameFilters = convertServiceNameFiltersToModel(action.Spec.Samplers.ServiceNameSampler.ServicesNameFilters)
-	}
-
-	var attributeFilters []*model.SpanAttributeFilter
-	if action.Spec.Samplers != nil && action.Spec.Samplers.SpanAttributeSampler != nil {
-		attributeFilters = convertAttributeFiltersToModel(action.Spec.Samplers.SpanAttributeSampler.AttributeFilters)
-	}
-
 	urlTemplatizationGroups := convertUrlTemplatizationToModel(action.Spec.URLTemplatization)
 
 	responseFields := &model.ActionFields{
@@ -614,10 +405,6 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		ClusterAttributes:            clustAttrs,
 		Renames:                      renames,
 		PiiCategories:                piiCategories,
-		FallbackSamplingRatio:        fallbackSamplingRatio,
-		EndpointsFilters:             endpointsFilters,
-		ServicesNameFilters:          servicesNameFilters,
-		AttributeFilters:             attributeFilters,
 		URLTemplatizationRulesGroups: urlTemplatizationGroups,
 	}
 
@@ -637,11 +424,6 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	// Handle DeleteAttribute fields
 	if action.Spec.DeleteAttribute != nil {
 		responseFields.AttributeNamesToDelete = action.Spec.DeleteAttribute.AttributeNamesToDelete
-	}
-
-	// Handle Samplers fields
-	if action.Spec.Samplers != nil && action.Spec.Samplers.ProbabilisticSampler != nil {
-		responseFields.SamplingPercentage = &action.Spec.Samplers.ProbabilisticSampler.SamplingPercentage
 	}
 
 	signals := []model.SignalType{}
@@ -751,81 +533,6 @@ func convertPiiCategoriesToModel(piiCategories []actionsv1.PiiCategory) []string
 	return result
 }
 
-func convertEndpointsFiltersToModel(endpointsFilters []actionsv1.HttpRouteFilter) []*model.HTTPRouteFilter {
-	var result []*model.HTTPRouteFilter
-
-	for _, f := range endpointsFilters {
-		result = append(result, &model.HTTPRouteFilter{
-			HTTPRoute:               f.HttpRoute,
-			ServiceName:             f.ServiceName,
-			MinimumLatencyThreshold: f.MinimumLatencyThreshold,
-			FallbackSamplingRatio:   f.FallbackSamplingRatio,
-		})
-	}
-
-	return result
-}
-
-func convertServiceNameFiltersToModel(serviceNameFilters []actionsv1.ServiceNameFilter) []*model.ServiceNameFilter {
-	var result []*model.ServiceNameFilter
-
-	for _, f := range serviceNameFilters {
-		result = append(result, &model.ServiceNameFilter{
-			ServiceName:           f.ServiceName,
-			SamplingRatio:         f.SamplingRatio,
-			FallbackSamplingRatio: f.FallbackSamplingRatio,
-		})
-	}
-
-	return result
-}
-
-func convertAttributeFiltersToModel(attributeFilters []actionsv1.SpanAttributeFilter) []*model.SpanAttributeFilter {
-	var result []*model.SpanAttributeFilter
-
-	for _, f := range attributeFilters {
-		cond := &model.AttributeFiltersCondition{}
-
-		if f.Condition.StringCondition != nil {
-			cond.StringCondition = &model.StringCondition{
-				Operation:     model.StringOperation(f.Condition.StringCondition.Operation),
-				ExpectedValue: &f.Condition.StringCondition.ExpectedValue,
-			}
-		}
-
-		if f.Condition.NumberCondition != nil {
-			cond.NumberCondition = &model.NumberCondition{
-				Operation:     model.NumberOperation(f.Condition.NumberCondition.Operation),
-				ExpectedValue: f.Condition.NumberCondition.ExpectedValue,
-			}
-		}
-
-		if f.Condition.BooleanCondition != nil {
-			cond.BooleanCondition = &model.BooleanCondition{
-				Operation:     model.BooleanOperation(f.Condition.BooleanCondition.Operation),
-				ExpectedValue: f.Condition.BooleanCondition.ExpectedValue,
-			}
-		}
-
-		if f.Condition.JsonCondition != nil {
-			cond.JSONCondition = &model.JSONCondition{
-				Operation:     model.JSONOperation(f.Condition.JsonCondition.Operation),
-				ExpectedValue: &f.Condition.JsonCondition.ExpectedValue,
-				JSONPath:      &f.Condition.JsonCondition.JsonPath,
-			}
-		}
-
-		result = append(result, &model.SpanAttributeFilter{
-			ServiceName:           f.ServiceName,
-			AttributeKey:          f.AttributeKey,
-			FallbackSamplingRatio: f.FallbackSamplingRatio,
-			Condition:             cond,
-		})
-	}
-
-	return result
-}
-
 func stringifyMap(m map[string]string) (string, error) {
 	json, err := json.Marshal(m)
 	if err != nil {
@@ -842,9 +549,9 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 		return nil
 	}
 
-	groups := make([]urlactions.UrlTemplatizationRulesGroup, 0, len(details.URLTemplatizationRulesGroups))
+	rules := make([]urlactions.UrlTemplatizationRule, 0, len(details.URLTemplatizationRulesGroups))
 	for _, g := range details.URLTemplatizationRulesGroups {
-		group := urlactions.UrlTemplatizationRulesGroup{}
+		group := urlactions.UrlTemplatizationRule{}
 
 		// Fold the URL-templatization filter form into the tri-list SourcesScopes shape:
 		//   * Each WorkloadFilter row → one PodWorkload appended to Sources (with namespace baked in).
@@ -887,22 +594,17 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 			scopes.Languages = append(scopes.Languages, common.ProgrammingLanguage(*g.FilterProgrammingLanguage))
 		}
 		if len(scopes.Sources) > 0 || len(scopes.Namespaces) > 0 || len(scopes.Languages) > 0 {
-			group.SourcesScopes = scopes
+			group.Scopes = scopes
 		}
 
 		for _, rule := range g.TemplatizationRules {
-			r := urlactions.URLTemplatizationRule{
-				Template: rule.Template,
-				Notes:    DerefString(rule.Notes),
-				Examples: rule.Examples,
-			}
-			group.TemplatizationRules = append(group.TemplatizationRules, r)
+			group.Templates = append(group.Templates, rule.Template)
 		}
-		groups = append(groups, group)
+		rules = append(rules, group)
 	}
 
 	return &urlactions.URLTemplatizationConfig{
-		TemplatizationRulesGroups: groups,
+		Rules: rules,
 	}
 }
 
@@ -912,15 +614,15 @@ func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []
 	}
 
 	var result []*model.URLTemplatizationRulesGroup
-	for _, g := range cfg.TemplatizationRulesGroups {
+	for _, g := range cfg.Rules {
 		group := &model.URLTemplatizationRulesGroup{}
 
 		// Unfold tri-list SourcesScopes back into the URL-templatization filter form.
 		// The GraphQL shape exposes only single-value FilterK8sNamespace and
 		// FilterProgrammingLanguage, so multi-namespace/multi-language scopes are
 		// projected to the first entry (best-effort; the wire format predates the list).
-		if g.SourcesScopes != nil {
-			for _, src := range g.SourcesScopes.Sources {
+		if g.Scopes != nil {
+			for _, src := range g.Scopes.Sources {
 				if src.Kind != "" || src.Name != "" {
 					filter := &model.TemplatizationWorkloadFilter{}
 					if src.Kind != "" {
@@ -938,24 +640,20 @@ func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []
 					group.FilterK8sNamespace = &ns
 				}
 			}
-			if group.FilterK8sNamespace == nil && len(g.SourcesScopes.Namespaces) > 0 {
-				ns := g.SourcesScopes.Namespaces[0]
+			if group.FilterK8sNamespace == nil && len(g.Scopes.Namespaces) > 0 {
+				ns := g.Scopes.Namespaces[0]
 				group.FilterK8sNamespace = &ns
 			}
-			if len(g.SourcesScopes.Languages) > 0 {
-				lang := string(g.SourcesScopes.Languages[0])
+			if len(g.Scopes.Languages) > 0 {
+				lang := string(g.Scopes.Languages[0])
 				group.FilterProgrammingLanguage = &lang
 			}
 		}
 
-		for _, rule := range g.TemplatizationRules {
-			notes := rule.Notes
-			r := &model.URLTemplatizationRule{
-				Template: rule.Template,
-				Notes:    &notes,
-				Examples: rule.Examples,
-			}
-			group.TemplatizationRules = append(group.TemplatizationRules, r)
+		for _, rule := range g.Templates {
+			group.TemplatizationRules = append(group.TemplatizationRules, &model.URLTemplatizationRule{
+				Template: rule,
+			})
 		}
 		result = append(result, group)
 	}

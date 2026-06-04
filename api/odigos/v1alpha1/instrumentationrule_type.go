@@ -55,7 +55,7 @@ type InstrumentationRuleSpec struct {
 	Disabled bool `json:"disabled,omitempty"`
 
 	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If unset or empty, the rule applies to all workloads.
-	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
+	Scopes *k8sconsts.SourcesScopes `json:"scopes,omitempty"`
 
 	// For fine grained control, the user can specify the instrumentation library to use.
 	// One can specify same rule for multiple languages and libraries at the same time.

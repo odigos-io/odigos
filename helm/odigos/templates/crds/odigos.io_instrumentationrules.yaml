@@ -344,7 +344,7 @@ spec:
                   convenience. Odigos does not use or assume any meaning from this
                   field.
                 type: string
-              sourcesScopes:
+              scopes:
                 description: SourcesScopes lists SourcesScope entries to which the
                   rule should be applied. If unset or empty, the rule applies to all
                   workloads.

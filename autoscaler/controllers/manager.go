@@ -128,22 +128,7 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&apiactions.DeleteAttribute{}: {
 					Field: nsSelector,
 				},
-				&apiactions.ErrorSampler{}: {
-					Field: nsSelector,
-				},
-				&apiactions.LatencySampler{}: {
-					Field: nsSelector,
-				},
-				&apiactions.SpanAttributeSampler{}: {
-					Field: nsSelector,
-				},
-				&apiactions.ServiceNameSampler{}: {
-					Field: nsSelector,
-				},
 				&apiactions.PiiMasking{}: {
-					Field: nsSelector,
-				},
-				&apiactions.ProbabilisticSampler{}: {
 					Field: nsSelector,
 				},
 				&apiactions.RenameAttribute{}: {
