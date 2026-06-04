@@ -44,8 +44,6 @@ type ActionSpecApplyConfiguration struct {
 	PiiMasking *actionsv1alpha1.PiiMaskingConfig `json:"piiMasking,omitempty"`
 	// K8sAttributes is the config for the K8sAttributes Action.
 	K8sAttributes *actionsv1alpha1.K8sAttributesConfig `json:"k8sAttributes,omitempty"`
-	// Samplers is the config for the Samplers Action.
-	Samplers *actionsv1alpha1.SamplersConfig `json:"samplers,omitempty"`
 	// URLTemplatization is the config for the URLTemplatization Action.
 	URLTemplatization *actions.URLTemplatizationConfig `json:"urlTemplatization,omitempty"`
 	// SpanRenamer is the config for the SpanRenamer Action.
@@ -131,14 +129,6 @@ func (b *ActionSpecApplyConfiguration) WithPiiMasking(value actionsv1alpha1.PiiM
 // If called multiple times, the K8sAttributes field is set to the value of the last call.
 func (b *ActionSpecApplyConfiguration) WithK8sAttributes(value actionsv1alpha1.K8sAttributesConfig) *ActionSpecApplyConfiguration {
 	b.K8sAttributes = &value
-	return b
-}
-
-// WithSamplers sets the Samplers field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Samplers field is set to the value of the last call.
-func (b *ActionSpecApplyConfiguration) WithSamplers(value actionsv1alpha1.SamplersConfig) *ActionSpecApplyConfiguration {
-	b.Samplers = &value
 	return b
 }
 

@@ -41,7 +41,6 @@ var validActionConfigNames = []string{
 	actionsv1alpha1.ActionNameRenameAttribute,
 	actionsv1alpha1.ActionNamePiiMasking,
 	actionsv1alpha1.ActionNameK8sAttributes,
-	actionsv1alpha1.ActionNameSamplers,
 	actions.ActionNameURLTemplatization,
 	actions.ActionSpanRenamer,
 	actions.ActionNameExtractAttribute,
@@ -124,56 +123,6 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 	if action.Spec.K8sAttributes != nil {
 		path := field.NewPath("spec").Child("k8sAttributes")
 		fields[path] = action.Spec.K8sAttributes
-	}
-	if action.Spec.Samplers != nil {
-		path := field.NewPath("spec").Child("samplers")
-		fields[path] = action.Spec.Samplers
-
-		var validSamplerFields = []string{
-			actionsv1alpha1.ActionNameSpanAttributeSampler,
-			actionsv1alpha1.ActionNameLatencySampler,
-			actionsv1alpha1.ActionNameErrorSampler,
-			actionsv1alpha1.ActionNameServiceNameSampler,
-			actionsv1alpha1.ActionNameProbabilisticSampler,
-			actionsv1alpha1.ActionNameIgnoreHealthChecks,
-		}
-
-		samplerFields := make(map[*field.Path]interface{})
-		if action.Spec.Samplers.SpanAttributeSampler != nil {
-			path := field.NewPath("spec").Child("samplers").Child("spanAttributeSampler")
-			samplerFields[path] = action.Spec.Samplers.SpanAttributeSampler
-		}
-		if action.Spec.Samplers.LatencySampler != nil {
-			path := field.NewPath("spec").Child("samplers").Child("latencySampler")
-			samplerFields[path] = action.Spec.Samplers.LatencySampler
-		}
-		if action.Spec.Samplers.ErrorSampler != nil {
-			path := field.NewPath("spec").Child("samplers").Child("errorSampler")
-			samplerFields[path] = action.Spec.Samplers.ErrorSampler
-		}
-		if action.Spec.Samplers.ServiceNameSampler != nil {
-			path := field.NewPath("spec").Child("samplers").Child("serviceNameSampler")
-			samplerFields[path] = action.Spec.Samplers.ServiceNameSampler
-		}
-		if action.Spec.Samplers.ProbabilisticSampler != nil {
-			path := field.NewPath("spec").Child("samplers").Child("probabilisticSampler")
-			samplerFields[path] = action.Spec.Samplers.ProbabilisticSampler
-		}
-		if action.Spec.Samplers.IgnoreHealthChecks != nil {
-			// check if the ignore health checks fraction is in range 0-1
-			if action.Spec.Samplers.IgnoreHealthChecks.FractionToRecord < 0 || action.Spec.Samplers.IgnoreHealthChecks.FractionToRecord > 1 {
-				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("samplers").Child("ignoreHealthChecks").Child("fractionToRecord"), action.Spec.Samplers.IgnoreHealthChecks.FractionToRecord, "fractionToRecord must be in range 0-1"))
-			} else {
-				path := field.NewPath("spec").Child("samplers").Child("ignoreHealthChecks")
-				samplerFields[path] = action.Spec.Samplers.IgnoreHealthChecks
-			}
-		}
-		if len(samplerFields) == 0 {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("samplers"), samplerFields, fmt.Sprintf("At least one of (%s) must be set", strings.Join(validSamplerFields, ", "))))
-		}
-		if len(samplerFields) > 1 {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("samplers"), samplerFields, fmt.Sprintf("Only one of (%s) may be set", strings.Join(validSamplerFields, ", "))))
-		}
 	}
 	if action.Spec.URLTemplatization != nil {
 		path := field.NewPath("spec").Child("urlTemplatization")

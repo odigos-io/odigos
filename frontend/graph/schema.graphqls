@@ -65,11 +65,6 @@ enum ActionType {
   DeleteAttribute
   RenameAttribute
   PiiMasking
-  ErrorSampler
-  ProbabilisticSampler
-  LatencySampler
-  ServiceNameSampler
-  SpanAttributeSampler
   URLTemplatization
   UnknownType
 }
@@ -488,11 +483,6 @@ input ActionFieldsInput {
   renames: String
   piiCategories: [String!]
 
-  samplingPercentage: String
-  fallbackSamplingRatio: Int
-  endpointsFilters: [HttpRouteFilterInput!]
-  servicesNameFilters: [ServiceNameFilterInput!]
-  attributeFilters: [SpanAttributeFilterInput!]
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroupInput!]
 }
 
@@ -536,51 +526,6 @@ input ClusterAttributeInput {
   attributeStringValue: String!
 }
 
-input HttpRouteFilterInput {
-  httpRoute: String!
-  serviceName: String!
-  minimumLatencyThreshold: Int!
-  fallbackSamplingRatio: Float!
-}
-
-input ServiceNameFilterInput {
-  serviceName: String!
-  samplingRatio: Float!
-  fallbackSamplingRatio: Float!
-}
-
-input SpanAttributeFilterInput {
-  serviceName: String!
-  attributeKey: String!
-  fallbackSamplingRatio: Float!
-  condition: AttributeFiltersConditionInput!
-}
-
-input StringConditionInput {
-  operation: StringOperation!
-  expectedValue: String
-}
-input NumberConditionInput {
-  operation: NumberOperation!
-  expectedValue: Float!
-}
-input BooleanConditionInput {
-  operation: BooleanOperation!
-  expectedValue: Boolean!
-}
-input JsonConditionInput {
-  operation: JsonOperation!
-  expectedValue: String
-  jsonPath: String
-}
-
-input AttributeFiltersConditionInput {
-  stringCondition: StringConditionInput
-  numberCondition: NumberConditionInput
-  booleanCondition: BooleanConditionInput
-  jsonCondition: JsonConditionInput
-}
-
 type Action {
   id: ID!
   type: ActionType!
@@ -606,11 +551,6 @@ type ActionFields {
   renames: String
   piiCategories: [String!]
 
-  samplingPercentage: String
-  fallbackSamplingRatio: Int
-  endpointsFilters: [HttpRouteFilter!]
-  servicesNameFilters: [ServiceNameFilter!]
-  attributeFilters: [SpanAttributeFilter!]
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroup!]
 }
 
@@ -654,94 +594,10 @@ type ClusterAttribute {
   attributeStringValue: String!
 }
 
-type HttpRouteFilter {
-  httpRoute: String!
-  serviceName: String!
-  minimumLatencyThreshold: Int!
-  fallbackSamplingRatio: Float!
-}
-
-type ServiceNameFilter {
-  serviceName: String!
-  samplingRatio: Float!
-  fallbackSamplingRatio: Float!
-}
-
-type SpanAttributeFilter {
-  serviceName: String!
-  attributeKey: String!
-  condition: AttributeFiltersCondition!
-  samplingRatio: Float!
-  fallbackSamplingRatio: Float!
-}
-
-enum StringOperation {
-  exists
-  equals
-  not_equals
-  contains
-  not_contains
-  regex
-}
 enum K8sAttributesFrom {
   pod
   namespace
   node
-}
-enum NumberOperation {
-  exists
-  equals
-  not_equals
-  greater_than
-  less_than
-  greater_than_or_equal
-  less_than_or_equal
-}
-enum BooleanOperation {
-  exists
-  equals
-}
-enum JsonOperation {
-  exists
-  equals
-  not_equals
-  is_valid_json
-  is_invalid_json
-  jsonpath_exists
-  key_equals
-  key_not_equals
-}
-
-type StringCondition {
-  operation: StringOperation!
-  expectedValue: String
-}
-type NumberCondition {
-  operation: NumberOperation!
-  expectedValue: Float!
-}
-type BooleanCondition {
-  operation: BooleanOperation!
-  expectedValue: Boolean!
-}
-type JsonCondition {
-  operation: JsonOperation!
-  expectedValue: String
-  jsonPath: String
-}
-
-type AttributeFiltersCondition {
-  stringCondition: StringCondition
-  numberCondition: NumberCondition
-  booleanCondition: BooleanCondition
-  jsonCondition: JsonCondition
-}
-
-type AttributeFilters {
-  serviceName: String!
-  attributeKey: String!
-  fallbackSamplingRatio: Float!
-  condition: AttributeFiltersCondition!
 }
 
 type OverviewMetricsResponse {
