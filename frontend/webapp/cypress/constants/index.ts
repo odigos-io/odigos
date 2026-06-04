@@ -136,9 +136,12 @@ export const DATA_IDS = {
   // v2 edit-source-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
   SOURCE_DRAWER_PREFIX: 'edit-source',
 
-  TOAST: '[data-id=toast]',
-  TOAST_CLOSE: '[data-id=toast-close]',
-  TOAST_ACTION: '[data-id=toast-action]',
+  // Toasts in @odigos/ui-kit >=0.0.244 are rendered via the v2 `Note` component,
+  // which no longer puts a stable `data-id` on the toast container or action
+  // button. Only the close button has a (renamed) data-id of `note-close`, so
+  // `awaitToast` scopes by locating the close button and walking up to the
+  // toast that contains the expected message.
+  TOAST_CLOSE: '[data-id=note-close]',
 
   MULTI_SOURCE_CONTROL: '[data-id=multi-source-control]',
   SOURCE_NODE_HEADER: '[data-id=Source-header]',
