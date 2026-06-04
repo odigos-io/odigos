@@ -50,7 +50,6 @@ describe('Actions CRUD', () => {
             // default values are enough 👍
             break;
           }
-
           default: {
             // purposely fail the test
             cy.get('unknown action').should('eq', true);
