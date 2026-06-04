@@ -19,6 +19,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/prometheus/procfs"
@@ -26,11 +27,21 @@ import (
 
 var sockInodeRe = regexp.MustCompile(`socket:\[(\d+)\]`)
 
+// TCP socket states in /proc/net/tcp (hex in the file; procfs parses to these values).
+const (
+	tcpEstablished uint64 = 0x01
+	tcpListen      uint64 = 0x0A
+)
+
 // Endpoint identifies the process owning a local socket endpoint.
 type Endpoint struct {
 	PID  int
 	Comm string
 	Cmd  string
+
+	// boundKey is the table key this Endpoint was stored under; used internally so a
+	// concrete-IP listen key is not overwritten by a bare wildcard key for the same port.
+	boundKey string
 }
 
 // EndpointResolver maps a local socket endpoint ("ip:port") to the owning process,
@@ -60,36 +71,22 @@ func NewEndpointResolver() (*EndpointResolver, error) {
 // per netns), so processes inside containers — which live in their own netns and whose
 // sockets are absent from the host's /proc/net/tcp — resolve too. Socket inodes are
 // global, so the inode->endpoint map merges cleanly across namespaces.
+//
+// Wildcard listen sockets (0.0.0.0:port / [::]:port) are also indexed under each
+// concrete local IP observed in their namespace, so a server reachable as
+// containerIP:port resolves to its listening process even when many containers listen
+// on the same port in different namespaces (which would otherwise collide on the bare
+// "0.0.0.0:port" key).
 func (r *EndpointResolver) Refresh() error {
 	procs, err := r.fs.AllProcs()
 	if err != nil {
 		return err
 	}
 
-	// 1. inode -> "ip:port", built from each distinct network namespace's socket table.
-	inodeEP := map[uint64]string{}
-	add := func(lines procfs.NetTCP) {
-		for _, l := range lines {
-			inodeEP[l.Inode] = net.JoinHostPort(l.LocalAddr.String(), strconv.FormatUint(l.LocalPort, 10))
-		}
-	}
-	readNetTables := func(fs procfs.FS) {
-		if t, err := fs.NetTCP(); err == nil {
-			add(t)
-		}
-		if t, err := fs.NetTCP6(); err == nil {
-			add(t)
-		}
-		if u, err := fs.NetUDP(); err == nil {
-			add(procfs.NetTCP(u))
-		}
-		if u, err := fs.NetUDP6(); err == nil {
-			add(procfs.NetTCP(u))
-		}
-	}
-	// host netns (the default /proc mount).
-	readNetTables(r.fs)
-	// one representative pid per other netns -> read that netns's socket table.
+	// One representative pid per distinct network namespace (one of them is the host
+	// netns). Reading a netns's /proc/<pid>/net/tcp{,6} is dominated by the kernel
+	// regenerating that namespace's socket table.
+	repPids := []int{}
 	seenNetns := map[string]struct{}{}
 	for _, p := range procs {
 		ns, err := os.Readlink("/proc/" + strconv.Itoa(p.PID) + "/ns/net")
@@ -100,29 +97,108 @@ func (r *EndpointResolver) Refresh() error {
 			continue
 		}
 		seenNetns[ns] = struct{}{}
-		if fs, err := procfs.NewFS("/proc/" + strconv.Itoa(p.PID)); err == nil {
-			readNetTables(fs)
+		repPids = append(repPids, p.PID)
+	}
+
+	// indexNS reads one namespace and returns its inode -> [ip:port keys] fragment.
+	// For TCP only LISTEN/ESTABLISHED sockets are kept (skip TIME_WAIT churn → fast);
+	// UDP has no such states so all are kept. Wildcard listeners are synthesized under
+	// each concrete local IP observed in the namespace (so containerIP:port resolves
+	// even though the listen socket is bound to 0.0.0.0).
+	indexNS := func(fs procfs.FS) map[uint64][]string {
+		frag := map[uint64][]string{}
+		ingest := func(lines procfs.NetTCP, tcpStates bool) {
+			keep := func(st uint64) bool { return !tcpStates || st == tcpListen || st == tcpEstablished }
+			var nsIPs []string
+			seen := map[string]struct{}{}
+			for _, l := range lines {
+				if !keep(l.St) || l.LocalAddr.IsUnspecified() {
+					continue
+				}
+				s := l.LocalAddr.String()
+				if _, dup := seen[s]; !dup {
+					seen[s] = struct{}{}
+					nsIPs = append(nsIPs, s)
+				}
+			}
+			for _, l := range lines {
+				if !keep(l.St) {
+					continue
+				}
+				port := strconv.FormatUint(l.LocalPort, 10)
+				if l.LocalAddr.IsUnspecified() {
+					frag[l.Inode] = append(frag[l.Inode], net.JoinHostPort(l.LocalAddr.String(), port))
+					for _, ip := range nsIPs {
+						frag[l.Inode] = append(frag[l.Inode], net.JoinHostPort(ip, port))
+					}
+				} else {
+					frag[l.Inode] = append(frag[l.Inode], net.JoinHostPort(l.LocalAddr.String(), port))
+				}
+			}
+		}
+		if t, err := fs.NetTCP(); err == nil {
+			ingest(t, true)
+		}
+		if t, err := fs.NetTCP6(); err == nil {
+			ingest(t, true)
+		}
+		if u, err := fs.NetUDP(); err == nil {
+			ingest(procfs.NetTCP(u), false)
+		}
+		if u, err := fs.NetUDP6(); err == nil {
+			ingest(procfs.NetTCP(u), false)
+		}
+		return frag
+	}
+
+	// inode -> one or more "ip:port" keys, read serially per namespace. Concurrent reads
+	// of different namespaces' /proc/net/tcp contend heavily on kernel locks and can be
+	// far slower than serial, so namespaces are read one at a time. (Socket inodes are
+	// global, so per-namespace fragments merge cleanly.) Under extreme container/socket
+	// counts this is the /proc approach's cost ceiling; the eBPF socktrack path removes it.
+	inodeEP := map[uint64][]string{}
+	for _, pid := range repPids {
+		fs, err := procfs.NewFS("/proc/" + strconv.Itoa(pid))
+		if err != nil {
+			continue
+		}
+		for inode, keys := range indexNS(fs) {
+			inodeEP[inode] = append(inodeEP[inode], keys...)
 		}
 	}
 
-	// 2. socket inode -> owning pid, by walking every pid's fds (visible host-wide via hostPID).
+	// socket inode -> owning pid, by walking every pid's fds (visible host-wide via hostPID).
 	tbl := make(map[string]Endpoint, len(inodeEP))
 	for _, p := range procs {
 		targets, err := p.FileDescriptorTargets()
 		if err != nil {
 			continue // process exited or no permission
 		}
-		comm, _ := p.Comm()
-		cmdParts, _ := p.CmdLine()
-		cmd := joinArgs(cmdParts)
+		var comm, cmd string
 		for _, t := range targets {
 			m := sockInodeRe.FindStringSubmatch(t)
 			if m == nil {
 				continue
 			}
 			inode, _ := strconv.ParseUint(m[1], 10, 64)
-			if ep, ok := inodeEP[inode]; ok {
-				tbl[ep] = Endpoint{PID: p.PID, Comm: comm, Cmd: cmd}
+			keys, ok := inodeEP[inode]
+			if !ok {
+				continue
+			}
+			if comm == "" { // resolve process metadata lazily, only for procs that own a socket
+				comm, _ = p.Comm()
+				parts, _ := p.CmdLine()
+				cmd = joinArgs(parts)
+			}
+			ep := Endpoint{PID: p.PID, Comm: comm, Cmd: cmd}
+			for _, k := range keys {
+				// concrete-IP keys win over bare wildcard keys on collision.
+				if existing, exists := tbl[k]; exists && isWildcardKey(k) && !isWildcardKey(existing.boundKey) {
+					continue
+				}
+				e := ep
+				e.boundKey = k
+				tbl[k] = e
 			}
 		}
 	}
@@ -130,6 +206,10 @@ func (r *EndpointResolver) Refresh() error {
 	r.table = tbl
 	r.mu.Unlock()
 	return nil
+}
+
+func isWildcardKey(k string) bool {
+	return strings.HasPrefix(k, "0.0.0.0:") || strings.HasPrefix(k, "[::]:") || strings.HasPrefix(k, ":::")
 }
 
 // Lookup returns the process owning the local endpoint ip:port, trying the exact
