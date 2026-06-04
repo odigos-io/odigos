@@ -35,7 +35,6 @@ export const GET_ACTIONS = gql`
           attributeNamesToDelete
           renames
           piiCategories
-
           urlTemplatizationRulesGroups {
             filterK8sNamespace
             filterK8sWorkloadKind

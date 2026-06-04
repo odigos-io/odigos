@@ -34,7 +34,6 @@ export const CREATE_ACTION = gql`
         attributeNamesToDelete
         renames
         piiCategories
-
         urlTemplatizationRulesGroups {
           filterK8sNamespace
           filterK8sWorkloadKind
@@ -96,7 +95,6 @@ export const UPDATE_ACTION = gql`
         attributeNamesToDelete
         renames
         piiCategories
-
         urlTemplatizationRulesGroups {
           filterK8sNamespace
           filterK8sWorkloadKind
