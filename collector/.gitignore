@@ -1,1 +1,4 @@
 .tools
+
+# Generated at build time by goreleaser before-hook (release version stamp)
+distribution/odigos-otelcol/VERSION
