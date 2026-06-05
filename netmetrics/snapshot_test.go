@@ -111,3 +111,42 @@ func TestSnapshot_StatesOrientationAndRates(t *testing.T) {
 		t.Errorf("total throughput should be positive, got %g", s2.Totals.BytesPerSec)
 	}
 }
+
+// TestSnapshot_BaselineHeldUnderRapidPolling verifies the rate baseline is NOT
+// re-sampled on every Build — only once per minRateWindow — so polling faster than
+// OBI refreshes its counters still yields a rate instead of 0.
+func TestSnapshot_BaselineHeldUnderRapidPolling(t *testing.T) {
+	resolver := newTestResolver(
+		map[string]Endpoint{"172.17.0.1:18080": {PID: 100, Comm: "python3"}},
+		map[int]Service{100: {Name: "inventory", Instrumented: true}}, nil,
+	)
+	b := NewSnapshotBuilder(fakeOBI(t, flow("172.17.0.3", 40000, "172.17.0.1", 18080, "tcp", "ingress", 1000)), resolver, "s", "h")
+
+	if _, err := b.Build(); err != nil { // first build: sets baseline
+		t.Fatal(err)
+	}
+	baseline := b.prevTime
+	if baseline.IsZero() {
+		t.Fatal("first build should set a baseline")
+	}
+
+	// Counter grows; poll again immediately (dt << minRateWindow).
+	b.enricher.obiURL = fakeOBI(t, flow("172.17.0.3", 40000, "172.17.0.1", 18080, "tcp", "ingress", 5000))
+	s2, err := b.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !b.prevTime.Equal(baseline) {
+		t.Error("baseline must be HELD (not advanced) within minRateWindow under rapid polling")
+	}
+	// rate is still reported despite the tiny gap, because it diffs against the held baseline.
+	var rate float64
+	for _, n := range s2.Nodes {
+		if n.Name == "inventory" {
+			rate = n.RxPerSec
+		}
+	}
+	if rate <= 0 {
+		t.Errorf("rapid re-poll should still report a rate from the held baseline, got %g", rate)
+	}
+}

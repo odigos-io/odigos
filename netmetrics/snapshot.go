@@ -14,6 +14,11 @@ import (
 // service.name with its traces/profiles, and an External node is off-host.
 type NodeState string
 
+// minRateWindow is the shortest interval over which a byte/sec rate is computed. The
+// rate baseline is held (not re-sampled) until this elapses, so rates stay correct even
+// when Build is polled faster than OBI refreshes its counters. See Build.
+const minRateWindow = 5 * time.Second
+
 const (
 	// StateInstrumented: resolved to an enabled Odigos Source — has traces/profiles
 	// under the same service.name.
@@ -119,8 +124,9 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 
 	now := time.Now()
 	b.mu.Lock()
+	firstBuild := b.prevTime.IsZero()
 	dt := now.Sub(b.prevTime).Seconds()
-	haveBaseline := !b.prevTime.IsZero() && dt > 0
+	haveBaseline := !firstBuild && dt > 0
 	prev := b.prev
 	b.mu.Unlock()
 
@@ -252,9 +258,17 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 
 	sort.Slice(outNodes, func(i, j int) bool { return outNodes[i].BytesPerSec > outNodes[j].BytesPerSec })
 
+	// Advance the rate baseline only once per minRateWindow, NOT on every Build. OBI
+	// exposes monotonic counters it refreshes on its own (multi-second) cadence; if the
+	// caller polls faster than that (the TUI refreshes every ~2s) and we re-baselined
+	// every call, most polls would diff two identical counter reads and show 0. By
+	// holding the baseline until at least minRateWindow has elapsed, every Build reports
+	// the rate over a meaningful window regardless of how often it is called.
 	b.mu.Lock()
-	b.prev = cur
-	b.prevTime = now
+	if firstBuild || dt >= minRateWindow.Seconds() {
+		b.prev = cur
+		b.prevTime = now
+	}
 	b.mu.Unlock()
 
 	return Snapshot{
