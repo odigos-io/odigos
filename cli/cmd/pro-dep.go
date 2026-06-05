@@ -210,6 +210,14 @@ var centralUpgradeCmdDep = &cobra.Command{
 			imagePullSecrets = append(imagePullSecrets, centralImagePullSecretsDep...)
 		}
 
+		enterprisePullSecrets, err := ensureCentralEnterpriseRegistryPullSecretsDep(ctx, client, ns, "")
+		if err != nil {
+			fmt.Println("\033[31mERROR\033[0m Failed to prepare enterprise registry pull secret:")
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		imagePullSecrets = append(imagePullSecrets, enterprisePullSecrets...)
+
 		managerOpts := resourcemanager.ManagerOpts{
 			ImageReferences:      GetImageReferencesDep(common.OnPremOdigosTier, openshiftEnabledDep),
 			SystemObjectLabelKey: k8sconsts.OdigosSystemLabelCentralKey,
@@ -248,6 +256,33 @@ func createOdigosCentralSecretDep(ctx context.Context, client *kube.Client, ns, 
 	return nil
 }
 
+// ensureCentralEnterpriseRegistryPullSecretsDep creates/updates the enterprise registry pull secret when
+// using the default Odigos enterprise registry, and returns the secret name to mount on Central workloads.
+// onPremToken may be empty on upgrade; the token is read from the existing odigos-central secret.
+func ensureCentralEnterpriseRegistryPullSecretsDep(ctx context.Context, client *kube.Client, ns, onPremToken string) ([]string, error) {
+	useEnterprisePullSecret, err := pro.ShouldUseEnterpriseRegistryPullSecret(ctx, client, ns)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine if enterprise registry pull secret is required: %w", err)
+	}
+	if !useEnterprisePullSecret {
+		return nil, nil
+	}
+
+	token := onPremToken
+	if token == "" {
+		token, err = pro.GetCentralOnPremToken(ctx, client, ns)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err := pro.EnsureEnterpriseRegistryPullSecret(ctx, client, ns, token, true); err != nil {
+		return nil, err
+	}
+
+	return []string{k8sconsts.OdigosEnterpriseRegistryPullSecretName}, nil
+}
+
 func installCentralBackendAndUIDep(ctx context.Context, client *kube.Client, ns string, onPremToken string, storageClassNamePtr *string) error {
 
 	_, err := client.AppsV1().Deployments(ns).Get(ctx, k8sconsts.CentralBackendName, metav1.GetOptions{})
@@ -264,6 +299,12 @@ func installCentralBackendAndUIDep(ctx context.Context, client *kube.Client, ns 
 	if len(centralImagePullSecretsDep) > 0 {
 		imagePullSecrets = append(imagePullSecrets, centralImagePullSecretsDep...)
 	}
+
+	enterprisePullSecrets, err := ensureCentralEnterpriseRegistryPullSecretsDep(ctx, client, ns, onPremToken)
+	if err != nil {
+		return err
+	}
+	imagePullSecrets = append(imagePullSecrets, enterprisePullSecrets...)
 
 	managerOpts := resourcemanager.ManagerOpts{
 		ImageReferences:      GetImageReferencesDep(common.OnPremOdigosTier, openshiftEnabledDep),
@@ -296,7 +337,7 @@ func installCentralBackendAndUIDep(ctx context.Context, client *kube.Client, ns 
 }
 
 func deleteCentralTokenSecretAdapterDep(ctx context.Context, client *kube.Client, ns string, _ string) error {
-	return kube.DeleteCentralTokenSecret(ctx, client, ns)
+	return kube.DeleteCentralManagedSecrets(ctx, client, ns)
 }
 
 func deleteClusterRolesByLabelAdapterDep(ctx context.Context, client *kube.Client, _ string, labelKey string) error {

@@ -54,7 +54,7 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 		NewCentralBackendServiceAccount(m.ns),
 		NewCentralBackendRole(m.ns),
 		NewCentralBackendRoleBinding(m.ns),
-		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion, m.managerOpts.ImagePullSecrets, m.config),
+		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosEnterpriseImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion, m.managerOpts.ImagePullSecrets, m.config),
 		NewCentralBackendService(m.ns),
 		NewCentralBackendHPA(m.ns, m.client),
 	}, m.managerOpts)

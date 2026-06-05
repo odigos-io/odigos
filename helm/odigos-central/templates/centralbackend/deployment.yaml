@@ -19,7 +19,7 @@ spec:
         app: central-backend
     spec:
       serviceAccountName: central-backend
-      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      {{ include "odigos.renderPullSecrets" (merge (dict "Enterprise" true) .) | nindent 6 }}
       containers:
         - name: central-backend
           {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
