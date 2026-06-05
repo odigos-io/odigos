@@ -67,6 +67,12 @@ type ServiceNode struct {
 	Peers        int       `json:"peers"`         // distinct neighbors
 	Out          []string  `json:"out"`           // servers this node calls (as client)
 	In           []string  `json:"in"`            // clients that call this node (as server)
+
+	// Instrumentation surface — what it takes to trace this node. Populated for
+	// discovered local processes; empty for external peers.
+	WorkloadKind string `json:"workload_kind,omitempty"` // Source Kind to create ("docker"/"systemd"/"process")
+	Eligible     bool   `json:"eligible,omitempty"`      // language/runtime matches an instrumentation target
+	Runtime      string `json:"runtime,omitempty"`       // detected language/runtime
 }
 
 // Totals is the at-a-glance header summary for the whole host.
@@ -121,6 +127,9 @@ type nodeSmooth struct {
 	instrumented bool
 	peers        int
 	out, in      []string
+	kind         string
+	eligible     bool
+	runtime      string
 }
 
 // NewSnapshotBuilder builds a snapshot source over the same OBI scrape + resolver the
@@ -179,6 +188,9 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 		out          map[string]struct{}
 		in           map[string]struct{}
 		tx, rx       float64 // cumulative; converted to rates below
+		kind         string  // workload Kind (docker/systemd/process)
+		eligible     bool    // instrumentation-eligible
+		runtime      string  // detected runtime/language
 	}
 	nodes := map[string]*nodeAcc{}
 	node := func(name string) *nodeAcc {
@@ -188,6 +200,20 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 			nodes[name] = n
 		}
 		return n
+	}
+	// applyWorkloadMeta copies the instrumentation-surface fields from a resolved
+	// Service onto its node, preferring a non-empty/eligible value (a node may be
+	// seen across several flows/PIDs; an eligible sighting wins).
+	applyWorkloadMeta := func(n *nodeAcc, svc Service) {
+		if svc.Kind != "" && n.kind == "" {
+			n.kind = svc.Kind
+		}
+		if svc.Runtime != "" && n.runtime == "" {
+			n.runtime = svc.Runtime
+		}
+		if svc.Eligible {
+			n.eligible = true
+		}
 	}
 
 	for _, rf := range flows {
@@ -210,6 +236,7 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 		if rf.fi.Local.Instrumented {
 			ln.instrumented = true
 		}
+		applyWorkloadMeta(ln, rf.fi.Local)
 		if peerName != "" {
 			pn := node(peerName)
 			pn.seen = true
@@ -217,6 +244,9 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 				pn.external = true
 			} else if rf.fi.Peer.Instrumented {
 				pn.instrumented = true
+			}
+			if rf.fi.PeerIsLocal {
+				applyWorkloadMeta(pn, rf.fi.Peer)
 			}
 			node(client).out[server] = struct{}{}
 			node(server).in[client] = struct{}{}
@@ -294,6 +324,7 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 		s.state, s.instrumented = state, n.instrumented
 		s.peers = len(n.out) + len(n.in)
 		s.out, s.in = keys(n.out), keys(n.in)
+		s.kind, s.eligible, s.runtime = n.kind, n.eligible, n.runtime
 	}
 
 	// Carry forward sticky nodes (seen recently but absent this scrape): decay their
@@ -320,6 +351,9 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 			Peers:        s.peers,
 			Out:          s.out,
 			In:           s.in,
+			WorkloadKind: s.kind,
+			Eligible:     s.eligible,
+			Runtime:      s.runtime,
 		})
 		// total throughput counts each byte once: a node's rx is bytes it received,
 		// and every edge has exactly one receiver, so summing rx avoids double counting.

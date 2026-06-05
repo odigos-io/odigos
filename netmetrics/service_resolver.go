@@ -14,6 +14,13 @@ type Service struct {
 	// is a bare process resolved only by comm/cmdline (an instrumentation candidate).
 	// Set by the injected PIDToService; the comm fallback leaves it false.
 	Instrumented bool
+
+	// Workload provenance for the instrumentation surface: what it would take to
+	// turn this discovered process into an Odigos Source. Populated by the injected
+	// PIDToService from the workload report; empty for comm-only / external peers.
+	Kind     string // "docker" | "systemd" | "process" — the Source Kind to create
+	Eligible bool   // language/runtime matches an instrumentation target
+	Runtime  string // detected language/runtime (e.g. "java", "python")
 }
 
 func (s Service) empty() bool { return s.Name == "" }
