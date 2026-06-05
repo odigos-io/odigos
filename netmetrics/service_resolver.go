@@ -9,6 +9,11 @@ type Service struct {
 	// optional and only populated by producers that have them.
 	SourceKind string
 	SourceName string
+	// Instrumented is true when this identity came from an enabled Odigos Source
+	// (so it also has traces/profiles under the same service.name), false when it
+	// is a bare process resolved only by comm/cmdline (an instrumentation candidate).
+	// Set by the injected PIDToService; the comm fallback leaves it false.
+	Instrumented bool
 }
 
 func (s Service) empty() bool { return s.Name == "" }
@@ -26,10 +31,11 @@ type PeerToService func(ip string) (Service, bool)
 
 // FlowIdentity is the resolved identity for one OBI flow.
 type FlowIdentity struct {
-	Local      Service // the endpoint owned by a process on this node
-	Peer       Service // the other endpoint (may be empty / raw IP)
-	ServerPort int     // the local service's own port (stable; not the peer ephemeral)
-	LocalIsSrc bool    // whether the local endpoint was the flow's source
+	Local       Service // the endpoint owned by a process on this node
+	Peer        Service // the other endpoint (may be empty / raw IP)
+	ServerPort  int     // the local service's own port (stable; not the peer ephemeral)
+	LocalIsSrc  bool    // whether the local endpoint was the flow's source
+	PeerIsLocal bool    // whether the peer is itself a process on this node (intra-node)
 }
 
 // ServiceResolver joins an OBI flow (5-tuple) to service identity. It is constructed
@@ -91,6 +97,7 @@ func (s *ServiceResolver) Resolve(srcIP string, srcPort int, dstIP string, dstPo
 	// peer may itself be a local service (intra-node), else the injected registry.
 	if svc, ok := s.localService(peerIP, peerPort); ok {
 		fi.Peer = svc
+		fi.PeerIsLocal = true
 	} else if s.peerToSvc != nil {
 		if svc, ok := s.peerToSvc(peerIP); ok {
 			fi.Peer = svc
