@@ -1,6 +1,7 @@
 package netmetrics
 
 import (
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,6 +19,15 @@ type NodeState string
 // rate baseline is held (not re-sampled) until this elapses, so rates stay correct even
 // when Build is polled faster than OBI refreshes its counters. See Build.
 const minRateWindow = 5 * time.Second
+
+// Display-smoothing constants. The raw per-window rate is noisy (TCP bursts, OBI
+// counter cadence), so the map shows an exponential moving average instead — numbers
+// and bars glide rather than jump. Nodes also linger for stickyTTL after their last
+// sighting (with a decaying rate) so a single missed scrape doesn't blink them out.
+const (
+	smoothTau = 6 * time.Second  // EWMA time constant; larger = smoother, slower to react
+	stickyTTL = 12 * time.Second // keep a node this long after it was last seen
+)
 
 const (
 	// StateInstrumented: resolved to an enabled Odigos Source — has traces/profiles
@@ -88,15 +98,29 @@ type SnapshotBuilder struct {
 	enricher *PrometheusEnricher
 	source   string
 	host     string
+	peer     *peerResolver
 
-	mu      sync.Mutex
-	samples []rateSample // recent (time, cumulative-bytes) reads, oldest first
+	mu        sync.Mutex
+	samples   []rateSample           // recent (time, cumulative-bytes) reads, oldest first
+	smoothed  map[string]*nodeSmooth // node name -> EWMA + last-seen state (display smoothing)
+	lastBuild time.Time              // for time-aware EWMA between Build calls
 }
 
 // rateSample is one OBI read: the cumulative bytes per edge at a point in time.
 type rateSample struct {
 	t     time.Time
 	bytes map[string]float64 // edge.key() -> cumulative bytes
+}
+
+// nodeSmooth holds a node's exponentially-smoothed rates plus the metadata from its
+// most recent sighting, so a node can be carried forward (decaying) while it is sticky.
+type nodeSmooth struct {
+	bps, tx, rx  float64
+	lastSeen     time.Time
+	state        NodeState
+	instrumented bool
+	peers        int
+	out, in      []string
 }
 
 // NewSnapshotBuilder builds a snapshot source over the same OBI scrape + resolver the
@@ -106,6 +130,8 @@ func NewSnapshotBuilder(obiURL string, resolver *ServiceResolver, source, host s
 		enricher: NewPrometheusEnricher(obiURL, resolver),
 		source:   source,
 		host:     host,
+		peer:     newPeerResolver(host),
+		smoothed: map[string]*nodeSmooth{},
 	}
 }
 
@@ -227,9 +253,20 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 	}
 	sort.Slice(outEdges, func(i, j int) bool { return outEdges[i].BytesPerSec > outEdges[j].BytesPerSec })
 
-	// finalize nodes
-	var totals Totals
-	outNodes := make([]ServiceNode, 0, len(nodes))
+	// Fold this scrape's instant node rates into the per-node EWMA, carry forward
+	// recently-seen nodes that are missing this scrape (decaying), and emit the
+	// smoothed, stable result. All under the lock since b.smoothed is mutated.
+	b.mu.Lock()
+
+	// EWMA blend factor from the real gap since the last Build (time-aware so the
+	// smoothing is correct regardless of poll cadence).
+	alpha := 1.0
+	if !b.lastBuild.IsZero() {
+		if gap := now.Sub(b.lastBuild).Seconds(); gap > 0 {
+			alpha = 1 - math.Exp(-gap/smoothTau.Seconds())
+		}
+	}
+
 	for name, n := range nodes {
 		if !n.seen {
 			continue
@@ -241,24 +278,53 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 		case n.instrumented:
 			state = StateInstrumented
 		}
-		sn := ServiceNode{
-			Name:         name,
-			State:        state,
-			Instrumented: n.instrumented,
-			Peers:        len(n.out) + len(n.in),
-			Out:          keys(n.out),
-			In:           keys(n.in),
-		}
+		var tx, rx float64
 		if haveBaseline {
-			// node tx/rx rates are derived from its edges so they stay consistent with
-			// the edge rates; recompute by summing oriented edge rates.
-			sn.TxPerSec, sn.RxPerSec = nodeRates(name, outEdges)
-			sn.BytesPerSec = sn.TxPerSec + sn.RxPerSec
+			tx, rx = nodeRates(name, outEdges)
 		}
-		outNodes = append(outNodes, sn)
+		s := b.smoothed[name]
+		if s == nil {
+			s = &nodeSmooth{}
+			b.smoothed[name] = s
+		}
+		s.bps += alpha * ((tx + rx) - s.bps)
+		s.tx += alpha * (tx - s.tx)
+		s.rx += alpha * (rx - s.rx)
+		s.lastSeen = now
+		s.state, s.instrumented = state, n.instrumented
+		s.peers = len(n.out) + len(n.in)
+		s.out, s.in = keys(n.out), keys(n.in)
+	}
 
-		totals.BytesPerSec += sn.BytesPerSec
-		switch state {
+	// Carry forward sticky nodes (seen recently but absent this scrape): decay their
+	// rate toward 0 so they fade instead of blinking out; drop once past stickyTTL.
+	var totals Totals
+	outNodes := make([]ServiceNode, 0, len(b.smoothed))
+	for name, s := range b.smoothed {
+		if now.Sub(s.lastSeen) > stickyTTL {
+			delete(b.smoothed, name)
+			continue
+		}
+		if !s.lastSeen.Equal(now) {
+			s.bps += alpha * (0 - s.bps)
+			s.tx += alpha * (0 - s.tx)
+			s.rx += alpha * (0 - s.rx)
+		}
+		outNodes = append(outNodes, ServiceNode{
+			Name:         name,
+			State:        s.state,
+			Instrumented: s.instrumented,
+			BytesPerSec:  s.bps,
+			TxPerSec:     s.tx,
+			RxPerSec:     s.rx,
+			Peers:        s.peers,
+			Out:          s.out,
+			In:           s.in,
+		})
+		// total throughput counts each byte once: a node's rx is bytes it received,
+		// and every edge has exactly one receiver, so summing rx avoids double counting.
+		totals.BytesPerSec += s.rx
+		switch s.state {
 		case StateInstrumented:
 			totals.Instrumented++
 		case StateDiscovered:
@@ -270,11 +336,17 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 	totals.Services = len(outNodes)
 	totals.Edges = len(outEdges)
 
-	sort.Slice(outNodes, func(i, j int) bool { return outNodes[i].BytesPerSec > outNodes[j].BytesPerSec })
+	// Stable order: smoothed rate (changes slowly) then name, so rows don't leapfrog
+	// each other every frame the way sorting by the raw instantaneous rate would.
+	sort.Slice(outNodes, func(i, j int) bool {
+		if outNodes[i].BytesPerSec != outNodes[j].BytesPerSec {
+			return outNodes[i].BytesPerSec > outNodes[j].BytesPerSec
+		}
+		return outNodes[i].Name < outNodes[j].Name
+	})
 
 	// Record this read and drop samples older than we'd ever use as a baseline
 	// (bounding memory at hundreds of edges × a few samples).
-	b.mu.Lock()
 	b.samples = append(b.samples, rateSample{t: now, bytes: cur})
 	keepFrom := now.Add(-3 * minRateWindow)
 	drop := 0
@@ -282,6 +354,7 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 		drop++
 	}
 	b.samples = b.samples[drop:]
+	b.lastBuild = now
 	b.mu.Unlock()
 
 	return Snapshot{
@@ -325,14 +398,27 @@ func (b *SnapshotBuilder) resolveFlows() ([]resolvedFlow, error) {
 		val, _ := strconv.ParseFloat(m[2], 64)
 		sp, _ := strconv.Atoi(lbl["src_port"])
 		dp, _ := strconv.Atoi(lbl["dst_port"])
-		fi, ok := b.enricher.resolver.Resolve(lbl["src_address"], sp, lbl["dst_address"], dp)
-		if !ok {
-			// neither endpoint is a local process; still show it as an external->external
-			// flow anchored on the destination address so it is not silently dropped.
-			fi = FlowIdentity{
-				Local:      Service{Name: lbl["dst_address"]},
-				Peer:       Service{Name: lbl["src_address"]},
-				ServerPort: dp,
+		src, dst := lbl["src_address"], lbl["dst_address"]
+		fi, ok := b.enricher.resolver.Resolve(src, sp, dst, dp)
+		if ok {
+			// Local side resolved to a PID/Source. Prettify the peer if it is an
+			// off-host raw IP (reverse-DNS / hostname), leaving named peers untouched.
+			if !fi.PeerIsLocal {
+				fi.Peer.Name = b.peer.pretty(fi.Peer.Name)
+			}
+		} else {
+			// Neither endpoint resolved to a local PID. If one side is a host IP, this
+			// is host traffic we could not attribute — collapse it under a single host
+			// node (so it is not a wall of bare host-IP nodes), with the off-host side
+			// as the named external peer. Otherwise show both, reverse-DNS named.
+			srcHost, dstHost := b.peer.isHostIP(src), b.peer.isHostIP(dst)
+			switch {
+			case dstHost && !srcHost: // inbound to this host
+				fi = FlowIdentity{Local: Service{Name: b.host}, Peer: Service{Name: b.peer.pretty(src)}, ServerPort: dp}
+			case srcHost && !dstHost: // outbound from this host
+				fi = FlowIdentity{Local: Service{Name: b.host}, Peer: Service{Name: b.peer.pretty(dst)}, ServerPort: dp, LocalIsSrc: true}
+			default: // both off-host (or both host): anchor on dst, name both
+				fi = FlowIdentity{Local: Service{Name: b.peer.pretty(dst)}, Peer: Service{Name: b.peer.pretty(src)}, ServerPort: dp}
 			}
 		}
 		out = append(out, resolvedFlow{fi: fi, transport: lbl["transport"], direction: lbl["direction"], bytes: val})
