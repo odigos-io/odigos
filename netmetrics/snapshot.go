@@ -89,9 +89,14 @@ type SnapshotBuilder struct {
 	source   string
 	host     string
 
-	mu       sync.Mutex
-	prev     map[string]float64 // edge.key() -> cumulative bytes at prevTime
-	prevTime time.Time
+	mu      sync.Mutex
+	samples []rateSample // recent (time, cumulative-bytes) reads, oldest first
+}
+
+// rateSample is one OBI read: the cumulative bytes per edge at a point in time.
+type rateSample struct {
+	t     time.Time
+	bytes map[string]float64 // edge.key() -> cumulative bytes
 }
 
 // NewSnapshotBuilder builds a snapshot source over the same OBI scrape + resolver the
@@ -101,7 +106,6 @@ func NewSnapshotBuilder(obiURL string, resolver *ServiceResolver, source, host s
 		enricher: NewPrometheusEnricher(obiURL, resolver),
 		source:   source,
 		host:     host,
-		prev:     map[string]float64{},
 	}
 }
 
@@ -123,12 +127,22 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 	}
 
 	now := time.Now()
+	// Pick the rate baseline: the newest prior sample that is already at least
+	// minRateWindow old. This keeps the rate window stable (always ~minRateWindow,
+	// never near-zero) even when Build is polled faster than OBI refreshes its
+	// counters — so rates don't flicker to 0 between OBI updates.
 	b.mu.Lock()
-	firstBuild := b.prevTime.IsZero()
-	dt := now.Sub(b.prevTime).Seconds()
-	haveBaseline := !firstBuild && dt > 0
-	prev := b.prev
+	var prev map[string]float64
+	var dt float64
+	for i := len(b.samples) - 1; i >= 0; i-- {
+		if age := now.Sub(b.samples[i].t); age >= minRateWindow {
+			prev = b.samples[i].bytes
+			dt = age.Seconds()
+			break
+		}
+	}
 	b.mu.Unlock()
+	haveBaseline := prev != nil && dt > 0
 
 	edges := map[string]*Edge{}
 	// node provenance, accumulated as we see each side of every flow.
@@ -258,17 +272,16 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 
 	sort.Slice(outNodes, func(i, j int) bool { return outNodes[i].BytesPerSec > outNodes[j].BytesPerSec })
 
-	// Advance the rate baseline only once per minRateWindow, NOT on every Build. OBI
-	// exposes monotonic counters it refreshes on its own (multi-second) cadence; if the
-	// caller polls faster than that (the TUI refreshes every ~2s) and we re-baselined
-	// every call, most polls would diff two identical counter reads and show 0. By
-	// holding the baseline until at least minRateWindow has elapsed, every Build reports
-	// the rate over a meaningful window regardless of how often it is called.
+	// Record this read and drop samples older than we'd ever use as a baseline
+	// (bounding memory at hundreds of edges × a few samples).
 	b.mu.Lock()
-	if firstBuild || dt >= minRateWindow.Seconds() {
-		b.prev = cur
-		b.prevTime = now
+	b.samples = append(b.samples, rateSample{t: now, bytes: cur})
+	keepFrom := now.Add(-3 * minRateWindow)
+	drop := 0
+	for drop < len(b.samples)-1 && b.samples[drop].t.Before(keepFrom) {
+		drop++
 	}
+	b.samples = b.samples[drop:]
 	b.mu.Unlock()
 
 	return Snapshot{

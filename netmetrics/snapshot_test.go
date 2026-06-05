@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 // fakeOBI serves a fixed set of obi_network_flow_bytes_total lines so the builder
@@ -96,6 +97,9 @@ func TestSnapshot_StatesOrientationAndRates(t *testing.T) {
 		flow("10.0.0.5", 9000, "8.8.8.8", 53, "udp", "egress", 200)
 	b.enricher.obiURL = fakeOBI(t, lines2)
 
+	// Age the baseline sample past minRateWindow so the next Build will diff against it.
+	ageSamples(b, 2*minRateWindow)
+
 	s2, err := b.Build()
 	if err != nil {
 		t.Fatal(err)
@@ -112,41 +116,48 @@ func TestSnapshot_StatesOrientationAndRates(t *testing.T) {
 	}
 }
 
-// TestSnapshot_BaselineHeldUnderRapidPolling verifies the rate baseline is NOT
-// re-sampled on every Build — only once per minRateWindow — so polling faster than
-// OBI refreshes its counters still yields a rate instead of 0.
-func TestSnapshot_BaselineHeldUnderRapidPolling(t *testing.T) {
+// ageSamples backdates every recorded rate sample, simulating that time has passed so
+// a baseline becomes eligible without the test actually sleeping.
+func ageSamples(b *SnapshotBuilder, by time.Duration) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for i := range b.samples {
+		b.samples[i].t = b.samples[i].t.Add(-by)
+	}
+}
+
+// TestSnapshot_RatesStableUnderRapidPolling verifies the sample-ring keeps reporting a
+// rate (no flicker to 0) when Build is polled faster than OBI refreshes its counters:
+// even with the counter plateaued across several rapid polls, each diffs against a
+// baseline that is still >= minRateWindow old.
+func TestSnapshot_RatesStableUnderRapidPolling(t *testing.T) {
 	resolver := newTestResolver(
 		map[string]Endpoint{"172.17.0.1:18080": {PID: 100, Comm: "python3"}},
 		map[int]Service{100: {Name: "inventory", Instrumented: true}}, nil,
 	)
 	b := NewSnapshotBuilder(fakeOBI(t, flow("172.17.0.3", 40000, "172.17.0.1", 18080, "tcp", "ingress", 1000)), resolver, "s", "h")
 
-	if _, err := b.Build(); err != nil { // first build: sets baseline
+	if _, err := b.Build(); err != nil { // baseline sample at counter=1000
 		t.Fatal(err)
 	}
-	baseline := b.prevTime
-	if baseline.IsZero() {
-		t.Fatal("first build should set a baseline")
-	}
+	ageSamples(b, 2*minRateWindow) // make it an eligible baseline
 
-	// Counter grows; poll again immediately (dt << minRateWindow).
+	// Counter jumps to 5000 and then PLATEAUS; poll 3x rapidly — every poll must still
+	// report a rate from the aged baseline, not 0.
 	b.enricher.obiURL = fakeOBI(t, flow("172.17.0.3", 40000, "172.17.0.1", 18080, "tcp", "ingress", 5000))
-	s2, err := b.Build()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !b.prevTime.Equal(baseline) {
-		t.Error("baseline must be HELD (not advanced) within minRateWindow under rapid polling")
-	}
-	// rate is still reported despite the tiny gap, because it diffs against the held baseline.
-	var rate float64
-	for _, n := range s2.Nodes {
-		if n.Name == "inventory" {
-			rate = n.RxPerSec
+	for i := 0; i < 3; i++ {
+		s, err := b.Build()
+		if err != nil {
+			t.Fatal(err)
 		}
-	}
-	if rate <= 0 {
-		t.Errorf("rapid re-poll should still report a rate from the held baseline, got %g", rate)
+		var rate float64
+		for _, n := range s.Nodes {
+			if n.Name == "inventory" {
+				rate = n.RxPerSec
+			}
+		}
+		if rate <= 0 {
+			t.Fatalf("poll %d flickered to 0; the aged baseline should keep the rate stable", i+1)
+		}
 	}
 }
