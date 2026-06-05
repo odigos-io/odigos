@@ -3,6 +3,8 @@ package node
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,6 +17,15 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
+
+// IsGKEManagedNode reports whether to skip node label setup on GKE Autopilot.
+// Autopilot is auto-detected by the gk3- node name prefix, or can be forced via GKE_AUTOPILOT=true.
+func IsGKEManagedNode(nodeName string) bool {
+	if forced, err := strconv.ParseBool(env.GetEnvVarOrDefault(k8sconsts.GKEAutopilotEnvVar, "false")); err == nil && forced {
+		return true
+	}
+	return strings.HasPrefix(nodeName, k8sconsts.GKEManagedNodeNamePrefix)
+}
 
 func DetermineNodeOdigletInstalledLabelByTier() string {
 	odigosTier := env.GetOdigosTierFromEnv()
