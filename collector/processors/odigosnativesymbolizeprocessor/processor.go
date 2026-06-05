@@ -1,10 +1,12 @@
 package odigosnativesymbolizeprocessor
 
 import (
+	"bufio"
 	"context"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -122,11 +124,12 @@ func (p *nativeSymbolizeProcessor) symbolizeNative(profiles pprofile.Profiles) i
 // root in turn, returning the first path that exists on disk.
 type binaryResolver struct {
 	exeIndex  map[string]string // basename → process.executable.path
+	mapsIndex map[string]string // basename → full on-disk path (via /proc/<pid>/maps)
 	procRoots []string          // /proc/<pid>/root prefixes, one per resource with a PID
 }
 
 func newBinaryResolver(rps pprofile.ResourceProfilesSlice) *binaryResolver {
-	r := &binaryResolver{exeIndex: map[string]string{}}
+	r := &binaryResolver{exeIndex: map[string]string{}, mapsIndex: map[string]string{}}
 	for i := 0; i < rps.Len(); i++ {
 		attrs := rps.At(i).Resource().Attributes()
 
@@ -138,14 +141,53 @@ func newBinaryResolver(rps pprofile.ResourceProfilesSlice) *binaryResolver {
 		}
 
 		if pidStr := pidString(attrs); pidStr != "" {
-			r.procRoots = append(r.procRoots, filepath.Join("/proc", pidStr, "root"))
+			root := filepath.Join("/proc", pidStr, "root")
+			r.procRoots = append(r.procRoots, root)
+			// The OTLP mapping carries only the basename; shared libraries live in
+			// arbitrary directories (e.g. an app's private lib dir), so neither the
+			// executable-path map nor /proc/<pid>/root/<basename> finds them. Read
+			// /proc/<pid>/maps, which lists every mapping's real path, and index
+			// basename → /proc/<pid>/root/<path> (the prefix makes it work for
+			// containerized workloads too; for host processes the proc root is /).
+			indexProcMaps(filepath.Join("/proc", pidStr, "maps"), root, r.mapsIndex)
 		}
 	}
 	return r
 }
 
+// indexProcMaps parses /proc/<pid>/maps and records basename → on-disk path for
+// each file-backed mapping (first occurrence wins). Paths are rooted in the
+// process's mount namespace via procRoot so the same logic serves host and
+// container workloads.
+func indexProcMaps(mapsPath, procRoot string, out map[string]string) {
+	f, err := os.Open(mapsPath)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	sc := bufio.NewScanner(f)
+	sc.Buffer(make([]byte, 64*1024), 1024*1024)
+	for sc.Scan() {
+		line := sc.Text()
+		// Format: addr perms offset dev inode  pathname. The pathname (if any) is
+		// absolute, so the first '/' begins it; anonymous/special maps have none.
+		idx := strings.IndexByte(line, '/')
+		if idx < 0 {
+			continue
+		}
+		p := line[idx:]
+		base := filepath.Base(p)
+		if _, exists := out[base]; exists {
+			continue
+		}
+		if cand := filepath.Join(procRoot, p); fileExists(cand) {
+			out[base] = cand
+		}
+	}
+}
+
 func (r *binaryResolver) empty() bool {
-	return len(r.exeIndex) == 0 && len(r.procRoots) == 0
+	return len(r.exeIndex) == 0 && len(r.mapsIndex) == 0 && len(r.procRoots) == 0
 }
 
 // resolve returns the on-disk path for a mapping filename, or "" if no candidate exists on disk.
@@ -157,7 +199,12 @@ func (r *binaryResolver) resolve(fname string) string {
 		return path
 	}
 
-	// 2. Process-root fallback: /proc/<pid>/root/<basename>, for shared libraries and for
+	// 2. Shared libraries (and the executable) by their real path from /proc/<pid>/maps.
+	if path, ok := r.mapsIndex[base]; ok {
+		return path
+	}
+
+	// 3. Process-root fallback: /proc/<pid>/root/<basename>, for shared libraries and for
 	//    workloads where only process.pid is known. Try each resource's PID root.
 	for _, root := range r.procRoots {
 		cand := filepath.Join(root, base)
