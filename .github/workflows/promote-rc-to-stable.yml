@@ -15,6 +15,7 @@ permissions:
 env:
   DOCKERHUB_REPO: "keyval"
   GCR_REPO: "us-central1-docker.pkg.dev/odigos-cloud/components"
+  GCR_PRIVATE_REPO: "us-central1-docker.pkg.dev/odigos-cloud/components-private"
   GHCR_REPO: "ghcr.io/odigos-io"
 
 jobs:
@@ -116,6 +117,11 @@ jobs:
             # Define which images go to which registries
             GCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
 
+            # Enterprise images are currently published to both the public and private registries.
+            # To publish them only to the private registry, remove them from GCR_IMAGE_NAMES above
+            # and from the EXTENDED_IMAGE_NAMES loop below.
+            GCR_PRIVATE_IMAGE_NAMES=("odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
+
             GHCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator")
 
             DOCKERHUB_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
@@ -129,6 +135,18 @@ jobs:
               # Process GCR images
               for IMAGE_NAME in "${GCR_IMAGE_NAMES[@]}"; do
                 REPO=${GCR_REPO}
+                echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
+                if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
+                  echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                  FAILED_COPIES+=("${REPO}/${IMAGE_NAME}${SUFFIX}")
+                else
+                  echo "Successfully copied ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                fi
+              done
+
+              # Process GCR private images
+              for IMAGE_NAME in "${GCR_PRIVATE_IMAGE_NAMES[@]}"; do
+                REPO=${GCR_PRIVATE_REPO}
                 echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
                 if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
                   echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME}${SUFFIX}"
@@ -163,10 +181,11 @@ jobs:
               done
             done
 
-            # Handle extended tag variants for agents and odiglet (e.g. v1.0.0-rc1-extended -> v1.0.0-extended)
+            # Handle extended tag variants for agents and odiglet (e.g. v1.0.0-rc1-extended -> v1.0.0-extended).
+            # To publish extended images only to the private registry, drop ${GCR_REPO} from the loop below.
             EXTENDED_IMAGE_NAMES=("odigos-enterprise-agents" "odigos-enterprise-odiglet")
             for IMAGE_NAME in "${EXTENDED_IMAGE_NAMES[@]}"; do
-              for REPO in "${GCR_REPO}" "${DOCKERHUB_REPO}"; do
+              for REPO in "${GCR_REPO}" "${GCR_PRIVATE_REPO}" "${DOCKERHUB_REPO}"; do
                 echo "Copying ${REPO}/${IMAGE_NAME}:${{ env.RC_TAG }}-extended to ${REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended"
                 if ! crane copy ${REPO}/${IMAGE_NAME}:${{ env.RC_TAG }}-extended ${REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended; then
                   echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME} extended"
