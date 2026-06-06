@@ -21,6 +21,7 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	common "github.com/odigos-io/odigos/common"
 	agentsignalconfig "github.com/odigos-io/odigos/common/api/agentsignalconfig"
+	instrumentationrules "github.com/odigos-io/odigos/common/api/instrumentationrules"
 )
 
 // ContainerAgentConfigApplyConfiguration represents a declarative configuration of the ContainerAgentConfig type for use
@@ -55,6 +56,8 @@ type ContainerAgentConfigApplyConfiguration struct {
 	Traces  *agentsignalconfig.AgentTracesConfig  `json:"traces,omitempty"`
 	Metrics *agentsignalconfig.AgentMetricsConfig `json:"metrics,omitempty"`
 	Logs    *agentsignalconfig.AgentLogsConfig    `json:"logs,omitempty"`
+	// Configure the log level for the agent itselg
+	AgentOwnLogs *instrumentationrules.AgentOwnLogs `json:"agentOwnLogs,omitempty"`
 }
 
 // ContainerAgentConfigApplyConfiguration constructs a declarative configuration of the ContainerAgentConfig type for use with
@@ -154,5 +157,13 @@ func (b *ContainerAgentConfigApplyConfiguration) WithMetrics(value agentsignalco
 // If called multiple times, the Logs field is set to the value of the last call.
 func (b *ContainerAgentConfigApplyConfiguration) WithLogs(value agentsignalconfig.AgentLogsConfig) *ContainerAgentConfigApplyConfiguration {
 	b.Logs = &value
+	return b
+}
+
+// WithAgentOwnLogs sets the AgentOwnLogs field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AgentOwnLogs field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithAgentOwnLogs(value instrumentationrules.AgentOwnLogs) *ContainerAgentConfigApplyConfiguration {
+	b.AgentOwnLogs = &value
 	return b
 }

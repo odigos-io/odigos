@@ -336,6 +336,9 @@ type ContainerAgentConfig struct {
 	Traces  *agentsignalconfig.AgentTracesConfig  `json:"traces,omitempty"`
 	Metrics *agentsignalconfig.AgentMetricsConfig `json:"metrics,omitempty"`
 	Logs    *agentsignalconfig.AgentLogsConfig    `json:"logs,omitempty"`
+
+	// Configure the log level for the agent itselg
+	AgentOwnLogs *instrumentationrules.AgentOwnLogs `json:"agentOwnLogs,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.

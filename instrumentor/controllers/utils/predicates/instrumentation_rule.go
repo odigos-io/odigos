@@ -15,7 +15,8 @@ func isRuleRelevantForAgentInjection(spec *odigosv1alpha1.InstrumentationRuleSpe
 		spec.TraceVerbosity != nil ||
 		spec.CustomInstrumentations != nil ||
 		spec.CodeAttributes != nil ||
-		spec.EbpfLogCapture != nil
+		spec.EbpfLogCapture != nil ||
+		spec.AgentOwnLogs != nil
 }
 
 func (o AgentInjectionRelevantRulesPredicate) Create(e event.CreateEvent) bool {
