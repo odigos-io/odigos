@@ -89,8 +89,8 @@ func (g *Getter) ResolveDistroNameForVersion(defaultDistroName string, runtimeVe
 		return defaultDistroName
 	}
 
-	detectedVersion, err := version.NewVersion(runtimeVersion)
-	if err != nil {
+	detectedVersion := common.ParseRuntimeVersion(runtimeVersion)
+	if detectedVersion == nil {
 		return defaultDistroName
 	}
 
