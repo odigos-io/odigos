@@ -2,6 +2,7 @@ package securitymetrics
 
 import (
 	"context"
+	"net"
 	"time"
 
 	"github.com/odigos-io/odigos/netmetrics"
@@ -101,9 +102,11 @@ func (s *NetworkSource) emit(ctx context.Context, out chan<- SecurityEvent) {
 			Verb:    "connect",
 			Object: Object{
 				PeerService: e.Server,
+				PeerIP:      asIP(e.Server), // populated when the peer name is itself a raw IP
 				Port:        atoiPort(e.ServerPort),
 				Transport:   e.Transport,
 				External:    external,
+				BytesPerSec: e.BytesPerSec,
 			},
 		}
 		if !send(ev) {
@@ -164,6 +167,15 @@ func subjectOf(n netmetrics.ServiceNode) Subject {
 func isExternalName(byName map[string]netmetrics.ServiceNode, name string) bool {
 	n, ok := byName[name]
 	return !ok || n.State == netmetrics.StateExternal
+}
+
+// asIP returns name if it parses as an IP address, else "" — so threat-intel reputation
+// lookups (which need a routable IP) run only on unresolved raw-IP peers, not on names.
+func asIP(name string) string {
+	if net.ParseIP(name) != nil {
+		return name
+	}
+	return ""
 }
 
 func atoiPort(s string) int {

@@ -22,9 +22,10 @@ type Category string
 
 const (
 	// Network categories (MVP).
-	CategoryEgress   Category = "egress"   // a local service connecting OUT to a peer
-	CategoryExposure Category = "exposure" // a local service LISTENING (attack surface)
-	CategoryFlowNew  Category = "flow.new" // a service-to-service edge not seen before (drift)
+	CategoryEgress    Category = "egress"     // a local service connecting OUT to a peer
+	CategoryExposure  Category = "exposure"   // a local service LISTENING (attack surface)
+	CategoryFlowNew   Category = "flow.new"   // a service-to-service edge not seen before (drift)
+	CategoryTCPHealth Category = "tcp.health" // per-edge rtt/retransmits/failed-conns (scan/RST signal)
 
 	// Runtime categories (reserved — composed later, no pipeline change).
 	CategoryProcessExec Category = "process.exec"
@@ -74,11 +75,12 @@ type Subject struct {
 // (later) use Path/Binary/Syscall. One struct, source-tagged fields, so the UI renders any.
 type Object struct {
 	// Network (MVP).
-	PeerService string `json:"peer_service,omitempty"` // resolved peer name (or raw IP/host)
-	PeerIP      string `json:"peer_ip,omitempty"`
-	Port        int    `json:"port,omitempty"`
-	Transport   string `json:"transport,omitempty"` // tcp | udp
-	External    bool   `json:"external,omitempty"`  // peer is off-host
+	PeerService string  `json:"peer_service,omitempty"` // resolved peer name (or raw IP/host)
+	PeerIP      string  `json:"peer_ip,omitempty"`
+	Port        int     `json:"port,omitempty"`
+	Transport   string  `json:"transport,omitempty"`     // tcp | udp
+	External    bool    `json:"external,omitempty"`      // peer is off-host
+	BytesPerSec float64 `json:"bytes_per_sec,omitempty"` // throughput on this flow (volumetric/exfil signal)
 
 	// Runtime (reserved).
 	Path    string `json:"path,omitempty"`    // file path
