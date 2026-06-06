@@ -29,20 +29,20 @@ func (ExposureDetector) Inspect(ev SecurityEvent, _ *Baseline) []Finding {
 	if ev.Cat != CategoryExposure {
 		return nil
 	}
+	// Only WILDCARD (off-host-reachable) listeners are attack surface — a loopback-only
+	// listener is not reachable from off-host, so it is topology (visible on the network
+	// map), not a security finding. The security view stays security-only.
 	wildcard, _ := ev.Attrs["wildcard"].(bool)
+	if !wildcard {
+		return nil
+	}
 	port := ev.Object.Port
 
-	sev := SeverityInfo
-	title := fmt.Sprintf("%s listens on :%d (loopback)", ev.Subject.Service, port)
-	detail := "loopback-only listener — not externally reachable"
-	if wildcard {
-		sev = SeverityLow
-		title = fmt.Sprintf("%s exposed on 0.0.0.0:%d", ev.Subject.Service, port)
-		detail = "listening on a wildcard address — reachable from off-host"
-		if svc, ok := sensitivePlaintextPorts[port]; ok {
-			sev = SeverityMedium
-			detail = fmt.Sprintf("cleartext %s exposed on a wildcard address — reachable from off-host", svc)
-		}
+	sev := SeverityLow
+	detail := "listening on a wildcard address — reachable from off-host"
+	if svc, ok := sensitivePlaintextPorts[port]; ok {
+		sev = SeverityMedium
+		detail = fmt.Sprintf("cleartext %s exposed on a wildcard address — reachable from off-host", svc)
 	}
 	return []Finding{{
 		ID:       findingID(CategoryExposure, ev.Subject, itoa(port)),
@@ -50,7 +50,7 @@ func (ExposureDetector) Inspect(ev SecurityEvent, _ *Baseline) []Finding {
 		Severity: sev,
 		Cat:      CategoryExposure,
 		Subject:  ev.Subject,
-		Title:    title,
+		Title:    fmt.Sprintf("%s exposed on 0.0.0.0:%d", ev.Subject.Service, port),
 		Detail:   detail,
 		Evidence: []SecurityEvent{ev},
 	}}

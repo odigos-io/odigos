@@ -44,18 +44,18 @@ func TestEgressDetector_OnlyExternal(t *testing.T) {
 
 func TestExposureDetector_Severity(t *testing.T) {
 	d := ExposureDetector{}
-	// loopback listener -> info
-	if f := d.Inspect(listenEvent("svc", 8080, false), nil); f[0].Severity != SeverityInfo {
-		t.Errorf("loopback listen should be info, got %s", f[0].Severity)
+	// loopback listener -> NOT a finding (not attack surface; lives on the network map)
+	if f := d.Inspect(listenEvent("svc", 8080, false), nil); len(f) != 0 {
+		t.Errorf("loopback listen must NOT be a security finding, got %d", len(f))
 	}
 	// wildcard non-sensitive port -> low
-	if f := d.Inspect(listenEvent("svc", 8080, true), nil); f[0].Severity != SeverityLow {
-		t.Errorf("wildcard listen should be low, got %s", f[0].Severity)
+	if f := d.Inspect(listenEvent("svc", 8080, true), nil); len(f) != 1 || f[0].Severity != SeverityLow {
+		t.Errorf("wildcard listen should be low, got %+v", f)
 	}
 	// wildcard cleartext-sensitive port (postgres) -> medium
 	f := d.Inspect(listenEvent("db", 5432, true), nil)
-	if f[0].Severity != SeverityMedium {
-		t.Errorf("wildcard postgres should be medium, got %s", f[0].Severity)
+	if len(f) != 1 || f[0].Severity != SeverityMedium {
+		t.Errorf("wildcard postgres should be medium, got %+v", f)
 	}
 }
 

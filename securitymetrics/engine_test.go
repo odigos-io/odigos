@@ -21,8 +21,10 @@ func fakeSnap() netmetrics.Snapshot {
 			n("frontend", netmetrics.StateDiscovered, true),
 			n("payments", netmetrics.StateDiscovered, true),
 			n("api.stripe.com", netmetrics.StateExternal, false),
+			n("users", netmetrics.StateExternal, false), // off-host client → makes frontend a wildcard exposure
 		},
 		Edges: []netmetrics.Edge{
+			{Client: "users", Server: "frontend", ServerPort: "8080", Transport: "tcp"}, // external → frontend = wildcard exposure
 			{Client: "frontend", Server: "payments", ServerPort: "8443", Transport: "tcp"},
 			{Client: "payments", Server: "api.stripe.com", ServerPort: "443", Transport: "tcp"},
 		},

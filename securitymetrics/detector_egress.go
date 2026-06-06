@@ -2,10 +2,13 @@ package securitymetrics
 
 import "fmt"
 
-// EgressDetector raises informational findings for every external destination a service
-// talks to. It is the attack-surface inventory rendered as findings: "service X egresses to
-// Y:port". Low-noise by design (info severity, deduped per destination) — the value is the
-// complete, service-named picture of where data flows out.
+// EgressDetector raises an informational finding for every external destination a service
+// talks to. NOTE: in the default VM wiring this is NOT registered — the Engine already
+// builds an egress Inventory (its own tab in the security view) from the same events, so
+// registering this detector would duplicate that inventory into the Findings list as INFO
+// noise. The security Findings list is reserved for actual security SIGNAL (drift,
+// volumetric, threat-intel, exposure, tcp-health); benign egress is inventory, not a finding.
+// The detector is kept for callers that explicitly want per-egress findings.
 type EgressDetector struct{}
 
 func (EgressDetector) Name() string { return "egress" }
