@@ -2,7 +2,7 @@ module github.com/odigos-io/odigos/securitymetrics
 
 go 1.26.2
 
-require github.com/odigos-io/odigos/netmetrics v0.0.0-20260605230445-de8f5ed3ec47
+require github.com/odigos-io/odigos/netmetrics v0.0.0-20260606105024-9688ecf42fd8
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
