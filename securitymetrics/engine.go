@@ -15,6 +15,7 @@ type Engine struct {
 	sources   []Source
 	detectors []Detector
 	baseline  *Baseline
+	onFinding func(Finding) // sink for new / severity-escalated findings (export)
 
 	mu        sync.RWMutex
 	findings  map[string]*Finding // keyed by Finding.ID
@@ -35,6 +36,12 @@ func (e *Engine) AddSource(s Source) *Engine { e.sources = append(e.sources, s);
 
 // AddDetector registers a detector. Order is preserved but detectors are independent.
 func (e *Engine) AddDetector(d Detector) *Engine { e.detectors = append(e.detectors, d); return e }
+
+// OnFinding registers a sink called once when a finding is first created and again only when
+// its severity escalates — so the host can export findings (structured log + a JSONL file a
+// SIEM tails) without re-emitting on every repeat sighting. The sink runs under the engine
+// lock, so it must be quick and non-blocking.
+func (e *Engine) OnFinding(fn func(Finding)) *Engine { e.onFinding = fn; return e }
 
 // Baseline exposes the learned baseline (for persistence by the host).
 func (e *Engine) Baseline() *Baseline { return e.baseline }
@@ -94,12 +101,14 @@ const maxEvidencePerFinding = 10
 
 func (e *Engine) upsert(f Finding) {
 	e.mu.Lock()
-	defer e.mu.Unlock()
+	var emit *Finding // set to a finding to export after the lock is released
 	if existing, ok := e.findings[f.ID]; ok {
 		existing.Count++
 		existing.Time = f.Time
 		if f.Severity > existing.Severity {
 			existing.Severity = f.Severity
+			cp := *existing
+			emit = &cp // export on severity escalation
 		}
 		if len(existing.Evidence) < maxEvidencePerFinding {
 			existing.Evidence = append(existing.Evidence, f.Evidence...)
@@ -107,11 +116,16 @@ func (e *Engine) upsert(f Finding) {
 				existing.Evidence = existing.Evidence[:maxEvidencePerFinding]
 			}
 		}
-		return
+	} else {
+		f.Count = 1
+		fc := f
+		e.findings[f.ID] = &fc
+		emit = &fc // export on first sighting
 	}
-	f.Count = 1
-	fc := f
-	e.findings[f.ID] = &fc
+	e.mu.Unlock()
+	if emit != nil && e.onFinding != nil {
+		e.onFinding(*emit)
+	}
 }
 
 // Report is the security snapshot the host serves (over /api/security) and the TUI renders.
