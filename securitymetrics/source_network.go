@@ -32,6 +32,12 @@ func NewNetworkSource(snap SnapshotFunc, interval time.Duration) *NetworkSource 
 	return &NetworkSource{snap: snap, interval: interval}
 }
 
+// ephemeralPortFloor is the start of the Linux default ephemeral port range
+// (/proc/sys/net/ipv4/ip_local_port_range is 32768–60999). A "listener" at or above this is
+// almost certainly an OS-assigned client source port, not a real service, so exposure
+// findings are suppressed for it to keep the attack-surface view signal-rich.
+const ephemeralPortFloor = 32768
+
 func (s *NetworkSource) Name() string { return "network" }
 
 func (s *NetworkSource) Events(ctx context.Context) <-chan SecurityEvent {
@@ -116,8 +122,15 @@ func (s *NetworkSource) emit(ctx context.Context, out chan<- SecurityEvent) {
 			continue
 		}
 		port := atoiPort(e.ServerPort)
+		// Skip ephemeral ports: a "server" on an edge with a high ephemeral port is almost
+		// always the OS-assigned source port of an outbound connection, not a real listener.
+		// Real services listen on stable ports below the ephemeral range. This removes the
+		// bulk of exposure noise (observed live on systemd hosts).
+		if port == 0 || port >= ephemeralPortFloor {
+			continue
+		}
 		key := e.Server + ":" + itoa(port)
-		if seenListen[key] || port == 0 {
+		if seenListen[key] {
 			continue
 		}
 		seenListen[key] = true

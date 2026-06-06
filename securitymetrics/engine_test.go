@@ -89,6 +89,40 @@ func TestEngine_EndToEndFindings(t *testing.T) {
 	}
 }
 
+func TestNetworkSource_SkipsEphemeralExposure(t *testing.T) {
+	// a node serving on a high ephemeral port (an OS-assigned client source port) must NOT
+	// produce an exposure event; a real low listen port must.
+	snap := netmetrics.Snapshot{
+		Timestamp: time.Now(),
+		Nodes: []netmetrics.ServiceNode{
+			{Name: "svc", State: netmetrics.StateDiscovered},
+			{Name: "peer", State: netmetrics.StateDiscovered},
+		},
+		Edges: []netmetrics.Edge{
+			{Client: "peer", Server: "svc", ServerPort: "44208", Transport: "tcp"}, // ephemeral → skip
+			{Client: "peer", Server: "svc", ServerPort: "8080", Transport: "tcp"},  // real listen → keep
+		},
+	}
+	src := NewNetworkSource(func() (netmetrics.Snapshot, error) { return snap, nil }, time.Hour)
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Millisecond)
+	defer cancel()
+	exposurePorts := map[int]bool{}
+	for ev := range src.Events(ctx) {
+		if ev.Cat == CategoryExposure {
+			exposurePorts[ev.Object.Port] = true
+		}
+		if len(exposurePorts) > 0 && exposurePorts[8080] {
+			break
+		}
+	}
+	if exposurePorts[44208] {
+		t.Error("ephemeral port 44208 must not yield an exposure finding")
+	}
+	if !exposurePorts[8080] {
+		t.Error("real listen port 8080 must yield an exposure finding")
+	}
+}
+
 func TestEngine_DedupAggregates(t *testing.T) {
 	eng := NewEngine(NewBaseline(0)).AddDetector(EgressDetector{})
 	ev := egressEvent("a", "ext.example.com", 443, true, false, false)
