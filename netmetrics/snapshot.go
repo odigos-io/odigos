@@ -439,11 +439,27 @@ func (b *SnapshotBuilder) resolveFlows() ([]resolvedFlow, error) {
 		dp, _ := strconv.Atoi(lbl["dst_port"])
 		src, dst := lbl["src_address"], lbl["dst_address"]
 		fi, ok := b.enricher.resolver.Resolve(src, sp, dst, dp)
+		// Which raw IP is the peer (non-local) side, and is it one of THIS host's addresses?
+		peerRawIP := src
+		if fi.LocalIsSrc || (ok && !fi.LocalIsSrc) {
+			// when resolved, peer side is dst if local is src, else src; when unresolved we
+			// recompute below. Default to dst here and correct in the unresolved branch.
+			peerRawIP = dst
+		}
+		if ok && !fi.LocalIsSrc {
+			peerRawIP = src
+		}
+		peerIsHost := b.peer.isHostIP(peerRawIP)
 		if ok {
-			// Local side resolved to a PID/Source. Prettify the peer if it is an
-			// off-host raw IP (reverse-DNS / hostname), leaving named peers untouched.
+			// Local side resolved to a PID/Source. Name the peer: a host-IP peer (loopback,
+			// the systemd-resolved stub, etc.) collapses under THIS host's name rather than
+			// becoming a bogus "localhost" node; an off-host raw IP is reverse-DNS named.
 			if !fi.PeerIsLocal {
-				fi.Peer.Name = b.peer.pretty(fi.Peer.Name)
+				if peerIsHost {
+					fi.Peer.Name = b.host
+				} else {
+					fi.Peer.Name = b.peer.pretty(fi.Peer.Name)
+				}
 			}
 		} else {
 			// Neither endpoint resolved to a local PID. If one side is a host IP, this
@@ -460,16 +476,15 @@ func (b *SnapshotBuilder) resolveFlows() ([]resolvedFlow, error) {
 				fi = FlowIdentity{Local: Service{Name: b.peer.pretty(dst)}, Peer: Service{Name: b.peer.pretty(src)}, ServerPort: dp}
 			}
 		}
-		// The peer is the non-local side; mark it host-local when its IP is one of this
-		// host's addresses (loopback/link-local/interface) so the builder does not classify
-		// localhost-style peers as external egress.
-		peerIP := dst
-		if fi.LocalIsSrc {
-			peerIP = dst
-		} else {
-			peerIP = src
+		// In the unresolved branch fi was rebuilt with the host as local and the off-host
+		// side as peer, so recompute peerIsHost from the final orientation.
+		if !ok {
+			pip := src
+			if fi.LocalIsSrc {
+				pip = dst
+			}
+			peerIsHost = b.peer.isHostIP(pip)
 		}
-		peerIsHost := b.peer.isHostIP(peerIP)
 		out = append(out, resolvedFlow{fi: fi, transport: lbl["transport"], direction: lbl["direction"], bytes: val, peerIsHost: peerIsHost})
 	}
 	return out, nil
