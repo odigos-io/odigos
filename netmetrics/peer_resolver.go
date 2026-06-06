@@ -48,10 +48,20 @@ func newPeerResolver(host string) *peerResolver {
 	return p
 }
 
-// isHostIP reports whether addr is one of this machine's own addresses.
+// isHostIP reports whether addr belongs to this machine: an exact interface address, OR
+// any loopback (127.0.0.0/8, ::1) — which includes the systemd-resolved stub 127.0.0.53 —
+// OR a link-local address (169.254.0.0/16, fe80::/10). Loopback/link-local are never
+// "external" peers; treating them as such would flag every localhost service call and the
+// cloud metadata endpoint as external egress.
 func (p *peerResolver) isHostIP(addr string) bool {
-	_, ok := p.hostIPs[addr]
-	return ok
+	if _, ok := p.hostIPs[addr]; ok {
+		return true
+	}
+	ip := net.ParseIP(addr)
+	if ip == nil {
+		return false
+	}
+	return ip.IsLoopback() || ip.IsLinkLocalUnicast()
 }
 
 // pretty returns a display name for an off-host peer address: its cached reverse-DNS

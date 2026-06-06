@@ -146,10 +146,11 @@ func NewSnapshotBuilder(obiURL string, resolver *ServiceResolver, source, host s
 
 // resolvedFlow is one OBI flow line resolved to identities, before edge orientation.
 type resolvedFlow struct {
-	fi        FlowIdentity
-	transport string
-	direction string
-	bytes     float64
+	fi         FlowIdentity
+	transport  string
+	direction  string
+	bytes      float64
+	peerIsHost bool // peer is one of THIS host's addresses (loopback/link-local/interface) — not external
 }
 
 // Build scrapes OBI once, resolves every flow, aggregates into nodes+edges, and fills
@@ -240,7 +241,11 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 		if peerName != "" {
 			pn := node(peerName)
 			pn.seen = true
-			if !rf.fi.PeerIsLocal {
+			// A peer is external only if it is neither a local process nor one of this
+			// host's own addresses (loopback / link-local / interface IPs). Loopback peers
+			// — localhost, the systemd-resolved stub 127.0.0.53, the cloud metadata
+			// endpoint — are host-local, not external egress.
+			if !rf.fi.PeerIsLocal && !rf.peerIsHost {
 				pn.external = true
 			} else if rf.fi.Peer.Instrumented {
 				pn.instrumented = true
@@ -455,7 +460,17 @@ func (b *SnapshotBuilder) resolveFlows() ([]resolvedFlow, error) {
 				fi = FlowIdentity{Local: Service{Name: b.peer.pretty(dst)}, Peer: Service{Name: b.peer.pretty(src)}, ServerPort: dp}
 			}
 		}
-		out = append(out, resolvedFlow{fi: fi, transport: lbl["transport"], direction: lbl["direction"], bytes: val})
+		// The peer is the non-local side; mark it host-local when its IP is one of this
+		// host's addresses (loopback/link-local/interface) so the builder does not classify
+		// localhost-style peers as external egress.
+		peerIP := dst
+		if fi.LocalIsSrc {
+			peerIP = dst
+		} else {
+			peerIP = src
+		}
+		peerIsHost := b.peer.isHostIP(peerIP)
+		out = append(out, resolvedFlow{fi: fi, transport: lbl["transport"], direction: lbl["direction"], bytes: val, peerIsHost: peerIsHost})
 	}
 	return out, nil
 }

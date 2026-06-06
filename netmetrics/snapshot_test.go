@@ -178,6 +178,14 @@ func TestPeerResolver_HostAndNames(t *testing.T) {
 	if !p.isHostIP("127.0.0.1") || !p.isHostIP("::1") {
 		t.Error("loopback must be recognized as a host IP")
 	}
+	// the whole loopback range (incl. the systemd-resolved stub) and link-local are host-local,
+	// so localhost service calls and the cloud metadata endpoint are never flagged as external.
+	if !p.isHostIP("127.0.0.53") {
+		t.Error("127.0.0.53 (systemd-resolved stub) must be host-local, not external")
+	}
+	if !p.isHostIP("169.254.169.254") {
+		t.Error("link-local (cloud metadata) must be host-local, not external")
+	}
 	if p.isHostIP("8.8.8.8") {
 		t.Error("a public IP must not be a host IP")
 	}
