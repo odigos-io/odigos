@@ -44,6 +44,13 @@ func (e *PrometheusEnricher) ResolveTCPHealth() ([]TCPHealth, error) {
 	if err != nil {
 		return nil, err
 	}
+	return e.resolveTCPHealthFrom(raw), nil
+}
+
+// resolveTCPHealthFrom parses already-scraped OBI exposition for TCP health, so a caller that
+// also parses flows from the same body avoids a second (expensive) scrape of OBI's large
+// stats output.
+func (e *PrometheusEnricher) resolveTCPHealthFrom(raw string) []TCPHealth {
 	agg := map[tcpHealthKey]*tcpHealthAcc{}
 	get := func(lbl map[string]string) *tcpHealthAcc {
 		sp, _ := strconv.Atoi(lbl["src_port"])
@@ -105,5 +112,5 @@ func (e *PrometheusEnricher) ResolveTCPHealth() ([]TCPHealth, error) {
 		}
 		return out[i].Peer < out[j].Peer
 	})
-	return out, nil
+	return out
 }

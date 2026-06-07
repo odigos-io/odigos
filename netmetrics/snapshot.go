@@ -182,10 +182,14 @@ type resolvedFlow struct {
 // in per-second rates relative to the previous Build. The first Build after start has
 // no baseline, so rates are 0 until the second call (cumulative Bytes is still exact).
 func (b *SnapshotBuilder) Build() (Snapshot, error) {
-	flows, err := b.resolveFlows()
+	// Scrape OBI ONCE and parse both flows and TCP-health from the same body. A second full
+	// scrape (OBI's stats output is large) made /api/network exceed the TUI's request timeout.
+	raw, err := b.enricher.scrape()
 	if err != nil {
 		return Snapshot{}, err
 	}
+	flows := b.resolveFlowsFrom(raw)
+	tcpHealth := b.enricher.resolveTCPHealthFrom(raw)
 
 	now := time.Now()
 	// Pick the rate baseline: the newest prior sample that is already at least
@@ -314,11 +318,11 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 	sort.Slice(outEdges, func(i, j int) bool { return outEdges[i].BytesPerSec > outEdges[j].BytesPerSec })
 
 	// Fold OBI TCP-health (rtt/retransmits/failed-conns) onto each edge, keyed by
-	// service→peer→serverPort. Best-effort: if the stats pillar is off or a scrape fails,
-	// edges simply carry zero health. Resolved via the same enricher/ServiceResolver.
-	if health, err := b.enricher.ResolveTCPHealth(); err == nil && len(health) > 0 {
-		hidx := make(map[string]TCPHealth, len(health))
-		for _, h := range health {
+	// service→peer→serverPort. Parsed from the SAME scrape as flows (no extra OBI hit).
+	// Best-effort: if the stats pillar is off, edges simply carry zero health.
+	if len(tcpHealth) > 0 {
+		hidx := make(map[string]TCPHealth, len(tcpHealth))
+		for _, h := range tcpHealth {
 			hidx[h.Service+"\x00"+h.Peer+"\x00"+h.ServerPort] = h
 			hidx[h.Peer+"\x00"+h.Service+"\x00"+h.ServerPort] = h // either orientation
 		}
@@ -490,6 +494,13 @@ func (b *SnapshotBuilder) resolveFlows() ([]resolvedFlow, error) {
 	if err != nil {
 		return nil, err
 	}
+	return b.resolveFlowsFrom(raw), nil
+}
+
+// resolveFlowsFrom parses already-scraped OBI exposition (so Build can scrape ONCE and parse
+// both flows and TCP-health from the same body — a second full scrape of OBI's large stats
+// output made /api/network exceed the TUI's request timeout).
+func (b *SnapshotBuilder) resolveFlowsFrom(raw string) []resolvedFlow {
 	var out []resolvedFlow
 	for _, line := range strings.Split(raw, "\n") {
 		m := flowLineRe.FindStringSubmatch(line)
@@ -550,7 +561,7 @@ func (b *SnapshotBuilder) resolveFlows() ([]resolvedFlow, error) {
 		}
 		out = append(out, resolvedFlow{fi: fi, transport: lbl["transport"], direction: lbl["direction"], bytes: val, peerIsHost: peerIsHost})
 	}
-	return out, nil
+	return out
 }
 
 func keys(m map[string]struct{}) []string {
