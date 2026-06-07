@@ -393,7 +393,6 @@ replace (
 	github.com/odigos-io/odigos/destinations => ../destinations
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth
-	github.com/odigos-io/odigos/profiles => ../profiles
 	// Pyroscope (and Mimir) expect KnownFields YAML decoding; upstream v3.0.1 lacks DecodeWithOptions.
 	// Matches github.com/grafana/pyroscope go.mod.
 	gopkg.in/yaml.v3 => github.com/colega/go-yaml-yaml v0.0.0-20220720105220-255a8d16d094
