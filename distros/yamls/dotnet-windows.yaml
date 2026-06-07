@@ -1,0 +1,49 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: dotnet-windows
+spec:
+  name: dotnet-windows
+  language: dotnet
+  runtimeEnvironments:
+    - name: dotnet-version
+      supportedVersions: '>= 6.0'
+  framework:
+    - name: dotnet-framework
+      version: '>= 4.6.2'
+  displayName: 'Dotnet Windows Native Instrumentation'
+  description: |
+    Zero-code .NET instrumentation for Windows via the CLR Profiling API. Activated by
+    CORECLR_* (and COR_* for .NET Framework) environment variables; no application changes.
+    Enterprise: continuous profiling (thread + allocation sampling) via the CLR profiler plugin.
+  isEbpf: false
+  os: windows
+  environmentVariables:
+    otlpHttpLocalNode: true
+    signalsAsStaticOtelEnvVars: true
+    staticVariables:
+      - envName: 'CORECLR_ENABLE_PROFILING'
+        envValue: '1'
+      - envName: 'CORECLR_PROFILER'
+        envValue: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
+      - envName: 'CORECLR_PROFILER_PATH'
+        envValue: 'C:\ProgramData\odigos\dotnet\win-x64\OpenTelemetry.AutoInstrumentation.Native.dll'
+      - envName: 'OTEL_DOTNET_AUTO_HOME'
+        envValue: 'C:\ProgramData\odigos\dotnet'
+      - envName: 'DOTNET_STARTUP_HOOKS'
+        envValue: 'C:\ProgramData\odigos\dotnet\net\OpenTelemetry.AutoInstrumentation.StartupHook.dll'
+      - envName: 'DOTNET_ADDITIONAL_DEPS'
+        envValue: 'C:\ProgramData\odigos\dotnet\AdditionalDeps'
+      - envName: 'DOTNET_SHARED_STORE'
+        envValue: 'C:\ProgramData\odigos\dotnet\store'
+    # Enterprise-only (added by the agent when licensed): continuous profiling.
+    enterpriseProfilingVariables:
+      - envName: 'OTEL_DOTNET_AUTO_PLUGINS'
+        envValue: 'Odigos.Profiler.ContinuousProfilerPlugin, Odigos.Profiler'
+      - envName: 'OTEL_DOTNET_AUTO_PROFILER_THREAD_SAMPLING_ENABLED'
+        envValue: 'true'
+      - envName: 'OTEL_DOTNET_AUTO_PROFILER_ALLOCATION_SAMPLING_ENABLED'
+        envValue: 'true'
+  runtimeAgent:
+    directoryNames:
+      - 'C:\ProgramData\odigos\dotnet'

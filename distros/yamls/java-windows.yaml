@@ -1,0 +1,30 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: java-windows
+spec:
+  name: java-windows
+  language: java
+  runtimeEnvironments:
+    - name: java-version
+      supportedVersions: '>= 8'
+  displayName: 'Java Windows Native Instrumentation'
+  description: |
+    Zero-code Java instrumentation for Windows via the OpenTelemetry Java agent
+    (-javaagent), activated by JAVA_TOOL_OPTIONS; no application changes. Enterprise:
+    continuous profiling via JFR.
+  isEbpf: false
+  os: windows
+  environmentVariables:
+    otlpHttpLocalNode: true
+    signalsAsStaticOtelEnvVars: true
+    appendOdigosVariables:
+      - envName: 'JAVA_TOOL_OPTIONS'
+        replacePattern: '{{ORIGINAL_ENV_VALUE}} -javaagent:C:\ProgramData\odigos\java\javaagent.jar'
+        separator: ' '
+    enterpriseProfilingVariables:
+      - envName: 'OTEL_JAVA_PROFILER_ENABLED'
+        envValue: 'true'
+  runtimeAgent:
+    directoryNames:
+      - 'C:\ProgramData\odigos\java'

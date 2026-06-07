@@ -1,0 +1,26 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: nodejs-windows
+spec:
+  name: nodejs-windows
+  language: javascript
+  runtimeEnvironments:
+    - name: nodejs-version
+      supportedVersions: '>= 16'
+  displayName: 'Node.js Windows Native Instrumentation'
+  description: |
+    Zero-code Node.js instrumentation for Windows via NODE_OPTIONS --require; no
+    application changes.
+  isEbpf: false
+  os: windows
+  environmentVariables:
+    otlpHttpLocalNode: true
+    signalsAsStaticOtelEnvVars: true
+    appendOdigosVariables:
+      - envName: 'NODE_OPTIONS'
+        replacePattern: '{{ORIGINAL_ENV_VALUE}} --require C:\ProgramData\odigos\nodejs\autoinstrumentation.js'
+        separator: ' '
+  runtimeAgent:
+    directoryNames:
+      - 'C:\ProgramData\odigos\nodejs'

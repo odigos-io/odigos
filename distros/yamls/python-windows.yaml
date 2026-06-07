@@ -1,0 +1,29 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: python-windows
+spec:
+  name: python-windows
+  language: python
+  runtimeEnvironments:
+    - name: python-version
+      supportedVersions: '>= 3.8'
+  displayName: 'Python Windows Native Instrumentation'
+  description: |
+    Zero-code Python instrumentation for Windows via PYTHONPATH + the OpenTelemetry
+    configurator; no application changes.
+  isEbpf: false
+  os: windows
+  environmentVariables:
+    otlpHttpLocalNode: true
+    signalsAsStaticOtelEnvVars: true
+    staticVariables:
+      - envName: 'OTEL_PYTHON_CONFIGURATOR'
+        envValue: 'odigos-python-configurator'
+    appendOdigosVariables:
+      - envName: 'PYTHONPATH'
+        replacePattern: '{{ORIGINAL_ENV_VALUE}};C:\ProgramData\odigos\python;C:\ProgramData\odigos\python\opentelemetry\instrumentation\auto_instrumentation'
+        separator: ';'
+  runtimeAgent:
+    directoryNames:
+      - 'C:\ProgramData\odigos\python'
