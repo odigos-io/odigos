@@ -50,6 +50,12 @@ type Edge struct {
 	ServerPort  string  `json:"server_port"`
 	Bytes       float64 `json:"bytes"`         // cumulative bytes seen on this edge
 	BytesPerSec float64 `json:"bytes_per_sec"` // rate vs the previous snapshot
+
+	// TCP health for this edge, folded in from OBI's stats pillar (0 when stats are off
+	// or the edge has no stat data). Lets the map show connection-level detail per edge.
+	AvgRttMs    float64 `json:"avg_rtt_ms,omitempty"`
+	Retransmits float64 `json:"retransmits,omitempty"`
+	FailedConns float64 `json:"failed_connections,omitempty"`
 }
 
 func (e Edge) key() string {
@@ -68,11 +74,30 @@ type ServiceNode struct {
 	Out          []string  `json:"out"`           // servers this node calls (as client)
 	In           []string  `json:"in"`            // clients that call this node (as server)
 
+	// PeerEdges is the per-connection drill-down for this node: every edge it is part of,
+	// with transport, server port, direction, rate, and TCP health — the network-detail
+	// the TUI renders as the PEERS table. Sorted by rate desc.
+	PeerEdges []PeerEdge `json:"peer_edges,omitempty"`
+
 	// Instrumentation surface — what it takes to trace this node. Populated for
 	// discovered local processes; empty for external peers.
 	WorkloadKind string `json:"workload_kind,omitempty"` // Source Kind to create ("docker"/"systemd"/"process")
 	Eligible     bool   `json:"eligible,omitempty"`      // language/runtime matches an instrumentation target
 	Runtime      string `json:"runtime,omitempty"`       // detected language/runtime
+}
+
+// PeerEdge is one connection from a node's perspective: who the peer is, on what
+// transport/port, which direction, how fast, and how healthy. It is the network drill-down
+// unit the TUI shows in the per-node PEERS table.
+type PeerEdge struct {
+	Peer        string  `json:"peer"`
+	Direction   string  `json:"direction"`   // "out" (this node is client) | "in" (this node is server)
+	Transport   string  `json:"transport"`   // tcp | udp
+	ServerPort  string  `json:"server_port"` // the listening port of the edge
+	BytesPerSec float64 `json:"bytes_per_sec"`
+	AvgRttMs    float64 `json:"avg_rtt_ms,omitempty"`
+	Retransmits float64 `json:"retransmits,omitempty"`
+	FailedConns float64 `json:"failed_connections,omitempty"`
 }
 
 // Totals is the at-a-glance header summary for the whole host.
@@ -288,6 +313,43 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 	}
 	sort.Slice(outEdges, func(i, j int) bool { return outEdges[i].BytesPerSec > outEdges[j].BytesPerSec })
 
+	// Fold OBI TCP-health (rtt/retransmits/failed-conns) onto each edge, keyed by
+	// service→peer→serverPort. Best-effort: if the stats pillar is off or a scrape fails,
+	// edges simply carry zero health. Resolved via the same enricher/ServiceResolver.
+	if health, err := b.enricher.ResolveTCPHealth(); err == nil && len(health) > 0 {
+		hidx := make(map[string]TCPHealth, len(health))
+		for _, h := range health {
+			hidx[h.Service+"\x00"+h.Peer+"\x00"+h.ServerPort] = h
+			hidx[h.Peer+"\x00"+h.Service+"\x00"+h.ServerPort] = h // either orientation
+		}
+		for i := range outEdges {
+			e := &outEdges[i]
+			if h, ok := hidx[e.Client+"\x00"+e.Server+"\x00"+e.ServerPort]; ok {
+				e.AvgRttMs, e.Retransmits, e.FailedConns = h.AvgRttMs, h.Retransmits, h.FailedConns
+			}
+		}
+	}
+
+	// Per-node peer edges (the connection drill-down): for each finalized edge, attach a
+	// PeerEdge to BOTH endpoints with the right direction so the TUI can show, per node,
+	// every connection it is part of with transport/port/rate/health.
+	peerEdges := map[string][]PeerEdge{}
+	for _, e := range outEdges {
+		peerEdges[e.Client] = append(peerEdges[e.Client], PeerEdge{
+			Peer: e.Server, Direction: "out", Transport: e.Transport, ServerPort: e.ServerPort,
+			BytesPerSec: e.BytesPerSec, AvgRttMs: e.AvgRttMs, Retransmits: e.Retransmits, FailedConns: e.FailedConns,
+		})
+		peerEdges[e.Server] = append(peerEdges[e.Server], PeerEdge{
+			Peer: e.Client, Direction: "in", Transport: e.Transport, ServerPort: e.ServerPort,
+			BytesPerSec: e.BytesPerSec, AvgRttMs: e.AvgRttMs, Retransmits: e.Retransmits, FailedConns: e.FailedConns,
+		})
+	}
+	for name := range peerEdges {
+		pe := peerEdges[name]
+		sort.Slice(pe, func(i, j int) bool { return pe[i].BytesPerSec > pe[j].BytesPerSec })
+		peerEdges[name] = pe
+	}
+
 	// Fold this scrape's instant node rates into the per-node EWMA, carry forward
 	// recently-seen nodes that are missing this scrape (decaying), and emit the
 	// smoothed, stable result. All under the lock since b.smoothed is mutated.
@@ -356,6 +418,7 @@ func (b *SnapshotBuilder) Build() (Snapshot, error) {
 			Peers:        s.peers,
 			Out:          s.out,
 			In:           s.in,
+			PeerEdges:    peerEdges[name],
 			WorkloadKind: s.kind,
 			Eligible:     s.eligible,
 			Runtime:      s.runtime,
