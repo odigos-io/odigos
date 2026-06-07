@@ -139,7 +139,7 @@ func TestProcessCriticalFiles_RenamesChangedFile(t *testing.T) {
 	}
 
 	oldCriticalFiles := criticalFiles
-	criticalFiles = []string{relPath}
+	criticalFiles = map[string]struct{}{relPath: {}}
 	defer func() { criticalFiles = oldCriticalFiles }()
 
 	excludes, err := ProcessCriticalFiles(criticalFiles, staging, target)

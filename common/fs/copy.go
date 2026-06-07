@@ -16,33 +16,33 @@ import (
 
 // criticalFiles lists paths relative to the agents directory root that must be
 // preserved during upgrades because they may be memory-mapped by running processes.
-var criticalFiles = []string{
-	"nodejs-ebpf/build/Release/dtrace-injector-native.node",
-	"nodejs-ebpf/build/Release/obj.target/dtrace-injector-native.node",
-	"nodejs-ebpf/build/Release/.deps/Release/dtrace-injector-native.node.d",
-	"nodejs-ebpf/build/Release/.deps/Release/obj.target/dtrace-injector-native.node.d",
-	"java-ebpf/tracing_probes.so",
-	"java-ext-ebpf/end_span_usdt.so",
-	"java-ext-ebpf/javaagent.jar",
-	"java-ext-ebpf/otel_agent_extension.jar",
-	"python-ebpf/pythonUSDT.abi3.so",
-	"loader/loader.so",
+var criticalFiles = map[string]struct{}{
+	"nodejs-ebpf/build/Release/dtrace-injector-native.node":                            {},
+	"nodejs-ebpf/build/Release/obj.target/dtrace-injector-native.node":                 {},
+	"nodejs-ebpf/build/Release/.deps/Release/dtrace-injector-native.node.d":            {},
+	"nodejs-ebpf/build/Release/.deps/Release/obj.target/dtrace-injector-native.node.d": {},
+	"java-ebpf/tracing_probes.so":                                                      {},
+	"java-ext-ebpf/end_span_usdt.so":                                                   {},
+	"java-ext-ebpf/javaagent.jar":                                                      {},
+	"java-ext-ebpf/otel_agent_extension.jar":                                           {},
+	"python-ebpf/pythonUSDT.abi3.so":                                                   {},
+	"loader/loader.so":                                                                 {},
 	// Python dependency shared objects - special handling:
 	// These shared objects (.so files) are loaded by Python processes and mapped into process memory.
 	// They cannot be replaced while loaded, so we must keep them in the host filesystem to avoid removal.
 	// These files are versioned and renamed when their respective library versions change.
-	"python/google/_upb/_message.abi3.so",
-	"python/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so",
-	"python/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so",
-	"python3.8/google/_upb/_message.abi3.so",
-	"python3.8/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so",
-	"python3.8/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so",
+	"python/google/_upb/_message.abi3.so":                        {},
+	"python/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so":    {},
+	"python/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":     {},
+	"python3.8/google/_upb/_message.abi3.so":                     {},
+	"python3.8/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so": {},
+	"python3.8/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":  {},
 	// PHP native extension loaded by the PHP runtime via dlopen().
 	// Must be preserved during upgrades to avoid crashing running PHP-FPM processes.
-	"php/8.1/opentelemetry.so",
-	"php/8.2/opentelemetry.so",
-	"php/8.3/opentelemetry.so",
-	"php/8.4/opentelemetry.so",
+	"php/8.1/opentelemetry.so": {},
+	"php/8.2/opentelemetry.so": {},
+	"php/8.3/opentelemetry.so": {},
+	"php/8.4/opentelemetry.so": {},
 }
 
 func CopyDirectories(srcDir, dstDir string, excludes map[string]bool) error {
@@ -208,10 +208,10 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
-func ProcessCriticalFiles(files []string, stagingDir, targetDir string) (map[string]bool, error) {
+func ProcessCriticalFiles(files map[string]struct{}, stagingDir, targetDir string) (map[string]bool, error) {
 	excludes := make(map[string]bool)
 
-	for _, relPath := range files {
+	for relPath := range files {
 		targetPath := filepath.Join(targetDir, relPath)
 		stagingPath := filepath.Join(stagingDir, relPath)
 

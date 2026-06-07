@@ -40,7 +40,7 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string) error {
 			return err
 		}
 	} else {
-		logger.Info("Odigos agents directory is not empty, performing safe upgrade")
+		logger.Info("Odigos agents directory is not empty, performing safe copy of agent files")
 		excludes, err := ProcessCriticalFiles(criticalFiles, srcDir, dstDir)
 		if err != nil {
 			logger.Error("Error processing critical files", "err", err)
