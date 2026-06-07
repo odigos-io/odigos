@@ -72,7 +72,7 @@ For the field reference behind each example—every Source scope option, every O
     - **Operation:** HTTP Server, route `/api/products`, method **GET**
     - **Keep Percentage:** Keep All
     - **Duration:** 500ms
-    
+
     <div style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto' }}>
       <Frame caption="Highly Relevant rule keeping all GET /api/products traces longer than 500 ms on the frontend Deployment.">
         <img src="/images/sampling/keep-slow-products-example.png" alt="UI screenshot of a Highly Relevant rule that keeps 100% of slow GET /api/products traces, scoped to the frontend Deployment in the odimall namespace." />
@@ -271,44 +271,26 @@ For the field reference behind each example—every Source scope option, every O
 
 **Goal:** Drop standard gRPC liveness/readiness checks (`grpc.health.v1.Health.Check`, `Watch`, ...) on the `inventory` Deployment. This is the gRPC counterpart of [Example 1](#1-drop-a-noisy-custom-endpoint), and shows how setting `service` alone scopes a rule to every method of a whole gRPC service.
 
-<Tabs>
-  <Tab title="UI">
-    Create a Noisy rule with:
-    - **Name:** `Drop gRPC health checks`
-    - **Notes:** `Standard liveness/readiness pings; not useful for tracing.`
-    - **Source scope:** Specific Source = `odimall / Deployment / inventory`
-    - **Operation:** gRPC Server, service `grpc.health.v1.Health` (method left empty)
-    - **Drop Percentage:** Drop All
-
-    <div style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto' }}>
-      <Frame caption="Noisy rule dropping all gRPC traces for the standard Health service on the inventory Deployment.">
-        <img src="/images/sampling/drop-grpc-health-checks-example.png" alt="UI screenshot of a Noisy rule that drops gRPC Health service traces, scoped to the inventory Deployment in the odimall namespace." />
-      </Frame>
-    </div>
-  </Tab>
-  <Tab title="YAML">
-    ```yaml drop-grpc-health-checks.yaml
-    apiVersion: odigos.io/v1alpha1
-    kind: Sampling
-    metadata:
-      name: drop-grpc-health-checks
-      namespace: odigos-system
-    spec:
-      name: Drop gRPC health checks
-      noisyOperations:
-        - name: Drop gRPC health checks
-          notes: Standard liveness/readiness pings; not useful for tracing.
-          percentageAtMost: 0
-          sourceScopes:
-            - workloadNamespace: odimall
-              workloadKind: Deployment
-              workloadName: inventory
-          operation:
-            grpcServer:
-              service: grpc.health.v1.Health
-    ```
-  </Tab>
-</Tabs>
+```yaml drop-grpc-health-checks.yaml
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: drop-grpc-health-checks
+  namespace: odigos-system
+spec:
+  name: Drop gRPC health checks
+  noisyOperations:
+    - name: Drop gRPC health checks
+      notes: Standard liveness/readiness pings; not useful for tracing.
+      percentageAtMost: 0
+      sourceScopes:
+        - workloadNamespace: odimall
+          workloadKind: Deployment
+          workloadName: inventory
+      operation:
+        grpcServer:
+          service: grpc.health.v1.Health
+```
 
 <Tip>
   Because `service` and `method` are independent, a single `service:` line filters every method on a service. Add `method: ListItems` to scope to one specific RPC instead, or combine with `grpcClient.serverAddress` to drop outgoing calls to a particular backend.
