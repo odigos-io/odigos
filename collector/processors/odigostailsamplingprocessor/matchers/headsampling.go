@@ -15,6 +15,10 @@ func NewHeadSamplingOperationMatcher(operation *commonapisampling.HeadSamplingOp
 		return newHeadSamplingHttpServerMatcher(operation.HttpServer)
 	case operation.HttpClient != nil:
 		return newHeadSamplingHttpClientMatcher(operation.HttpClient)
+	case operation.GrpcServer != nil:
+		return newHeadSamplingGrpcServerMatcher(operation.GrpcServer)
+	case operation.GrpcClient != nil:
+		return newHeadSamplingGrpcClientMatcher(operation.GrpcClient)
 	default:
 		return anyMatcher{}
 	}
@@ -86,4 +90,69 @@ func (m *headSamplingHttpClientMatcher) Match(span ptrace.Span) bool {
 	default:
 		return true
 	}
+}
+
+type headSamplingGrpcServerMatcher struct {
+	method  string
+	service string
+}
+
+func newHeadSamplingGrpcServerMatcher(operation *commonapisampling.HeadSamplingGrpcServerOperationMatcher) Matcher {
+	return &headSamplingGrpcServerMatcher{
+		method:  operation.Method,
+		service: operation.Service,
+	}
+}
+
+func (m *headSamplingGrpcServerMatcher) Match(span ptrace.Span) bool {
+	if span.Kind() != ptrace.SpanKindServer {
+		return false
+	}
+	return matchGrpcMethodAndService(span, m.method, m.service)
+}
+
+type headSamplingGrpcClientMatcher struct {
+	method        string
+	service       string
+	serverAddress string
+}
+
+func newHeadSamplingGrpcClientMatcher(operation *commonapisampling.HeadSamplingGrpcClientOperationMatcher) Matcher {
+	return &headSamplingGrpcClientMatcher{
+		method:        operation.Method,
+		service:       operation.Service,
+		serverAddress: operation.ServerAddress,
+	}
+}
+
+func (m *headSamplingGrpcClientMatcher) Match(span ptrace.Span) bool {
+	if span.Kind() != ptrace.SpanKindClient {
+		return false
+	}
+	if !matchGrpcMethodAndService(span, m.method, m.service) {
+		return false
+	}
+	if m.serverAddress != "" && !matchServerAddress(span, m.serverAddress) {
+		return false
+	}
+	return true
+}
+
+// matchGrpcMethodAndService matches a span against rule-supplied gRPC method/service.
+// The span must look like a gRPC span (have at least rpc.method or rpc.service); otherwise the matcher
+// would falsely fire on non-gRPC server/client spans when both rule fields are empty.
+// Rule fields are AND-ed; empty rule fields are wildcards.
+func matchGrpcMethodAndService(span ptrace.Span, ruleMethod string, ruleService string) bool {
+	spanMethod, methodFound := getRpcMethod(span)
+	spanService, serviceFound := getRpcService(span)
+	if !methodFound && !serviceFound {
+		return false
+	}
+	if ruleMethod != "" && spanMethod != ruleMethod {
+		return false
+	}
+	if ruleService != "" && spanService != ruleService {
+		return false
+	}
+	return true
 }

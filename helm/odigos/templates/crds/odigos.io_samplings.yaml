@@ -366,6 +366,36 @@ spec:
                         for example: specific http server endpoint (GET "/healthz" as an example).
                         this field is optional, and if not set, the rule will be applied to all operations.
                       properties:
+                        grpcClient:
+                          description: |-
+                            match grpc client operation (trace that starts with an outgoing grpc call).
+                            common for agents that are internally calling home over grpc, and exporting data.
+                          properties:
+                            method:
+                              description: match the fully-qualified method exactly
+                              type: string
+                            methodPrefix:
+                              description: |-
+                                match prefix of the fully-qualified method.
+                                with a trailing "/" this is effectively a per-service filter (e.g. "com.example.ExampleService/").
+                              type: string
+                            serverAddress:
+                              description: match server address exactly (e.g. collector.my.vendor.com)
+                              type: string
+                          type: object
+                        grpcServer:
+                          description: match grpc server operation (trace that starts
+                            with an incoming grpc call)
+                          properties:
+                            method:
+                              description: match the fully-qualified method exactly
+                              type: string
+                            methodPrefix:
+                              description: |-
+                                match prefix of the fully-qualified method.
+                                with a trailing "/" this is effectively a per-service filter (e.g. "com.example.ExampleService/").
+                              type: string
+                          type: object
                         httpClient:
                           description: |-
                             match http client operation (trace that starts with an http client operation)

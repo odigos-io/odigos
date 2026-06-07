@@ -33,3 +33,4 @@ func comparePathToTemplate(path string, exactMatch string, prefix string) bool {
 	}
 	return false
 }
+

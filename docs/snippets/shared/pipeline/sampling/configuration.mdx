@@ -35,6 +35,12 @@ The Operation options depend on the rule's category.
       - A **server address** (the remote host being called).
       - A **templated path** (exact) or **templated path prefix**.
       - A **method**: **Any**, **GET**, **POST**, **PATCH**, **DELETE**, or **PUT**.
+    - **gRPC Server** — match incoming gRPC calls received by a server. Configure:
+      - A **service** — the fully-qualified gRPC service name (e.g. `acme.inventory.v1.InventoryService`). Set only the service to match every method on that service.
+      - A **method** — the bare method name (e.g. `ListItems`). Combine with **service** for a single specific RPC.
+    - **gRPC Client** — match outbound gRPC calls made by the source. Configure:
+      - A **server address** (the remote host being called).
+      - A **service** and/or **method** with the same semantics as gRPC Server.
   </Tab>
   <Tab title="Highly Relevant">
     - **All Operations** — every operation in scope.

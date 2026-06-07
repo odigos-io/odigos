@@ -55,3 +55,19 @@ func getServerAddress(span ptrace.Span) (string, bool) {
 	}
 	return "", false
 }
+
+func getRpcMethod(span ptrace.Span) (string, bool) {
+	rpcMethod, found := span.Attributes().Get(string(semconv.RPCMethodKey))
+	if found {
+		return rpcMethod.Str(), true
+	}
+	return "", false
+}
+
+func getRpcService(span ptrace.Span) (string, bool) {
+	rpcService, found := span.Attributes().Get(string(semconv.RPCServiceKey))
+	if found {
+		return rpcService.Str(), true
+	}
+	return "", false
+}
