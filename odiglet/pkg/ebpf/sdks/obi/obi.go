@@ -73,14 +73,12 @@ func obiConfigForOdigos() *obi.Config {
 		attributes.NetworkFlow.Section: attributes.InclusionLists{
 			Include: []string{"src.address", "dst.address", "src.port", "dst.port", "direction", "transport"},
 		},
+		// OBI v0.8.0 exposes a single TCP stat metric: obi_stat_tcp_rtt_seconds. Retransmits and
+		// failed-connection stats are not emitted by this OBI version, so there is nothing to select
+		// for them here; the downstream TCP-health parser (string-based over the Prometheus text)
+		// simply finds no such lines and the TCPHealth detector stays inert until OBI ships them.
 		attributes.StatTCPRtt.Section: attributes.InclusionLists{
 			Include: []string{"src.address", "dst.address", "src.port", "dst.port"},
-		},
-		attributes.StatTCPRetransmits.Section: attributes.InclusionLists{
-			Include: []string{"src.address", "dst.address", "src.port", "dst.port"},
-		},
-		attributes.StatTCPFailedConnections.Section: attributes.InclusionLists{
-			Include: []string{"src.address", "dst.address", "src.port", "dst.port", "reason"},
 		},
 	}
 	// instrumenter.Run does not call normalize() (only LoadConfig does); normalize ourselves.
