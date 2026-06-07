@@ -326,7 +326,8 @@ A few details that aren't obvious from YAML alone but matter when authoring rule
   <Accordion title="gRPC matchers: service and method are independent fields">
     - `service` matches the fully-qualified gRPC service name (e.g., `acme.inventory.v1.InventoryService`, `grpc.health.v1.Health`); `method` matches the bare method name (e.g., `ListItems`, `Check`). Both fields are **exact match** and **case-sensitive**, mirroring proto naming.
     - The canonical "drop every call to this service" rule is one line: set `service` and leave `method` empty. To target a single RPC, set both. To match every gRPC call regardless of service, leave both empty.
-    - Odigos agents normalize the OpenTelemetry `rpc.service` and `rpc.method` attributes onto the span so each matcher field maps to one attribute. A span must carry at least `rpc.service` **or** `rpc.method` to be considered a gRPC span; rules on the absent attribute will not match.
+    - Both OpenTelemetry semconv conventions are supported transparently: the older split form (`rpc.service` + bare `rpc.method`) and the newer fully-qualified form (`rpc.method` = `"Service/method"`, with `rpc.service` deprecated). For the latter the matcher splits `rpc.method` on the first `/` to derive the service/method, so the same rule matches spans from agents on either version.
+    - A span must carry at least `rpc.service` **or** `rpc.method` to be considered a gRPC span; rules on an attribute that can't be derived from the span will not match (e.g. a `service:` rule against a span whose only RPC attribute is the bare-method `rpc.method` or the `_OTHER` sentinel).
     - gRPC Client matchers (Noisy only) additionally support `serverAddress` for matching the remote host (the gRPC channel target). Leave it empty to match any address.
   </Accordion>
 

@@ -176,6 +176,159 @@ func TestGetHttpServerPath(t *testing.T) {
 	}
 }
 
+func TestGetRpcMethod(t *testing.T) {
+	tests := []struct {
+		name       string
+		attrs      map[string]string
+		wantMethod string
+		wantFound  bool
+	}{
+		{
+			name: "old semconv: bare method in rpc.method",
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "ListItems",
+			},
+			wantMethod: "ListItems",
+			wantFound:  true,
+		},
+		{
+			name: "new semconv: fully-qualified rpc.method splits to bare method",
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "acme.inventory.v1.InventoryService/ListItems",
+			},
+			wantMethod: "ListItems",
+			wantFound:  true,
+		},
+		{
+			name: "new semconv: short fully-qualified Service/Method splits",
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "EchoService/Echo",
+			},
+			wantMethod: "Echo",
+			wantFound:  true,
+		},
+		{
+			name: "_OTHER sentinel returned as-is",
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "_OTHER",
+			},
+			wantMethod: "_OTHER",
+			wantFound:  true,
+		},
+		{
+			name: "degenerate trailing slash returned as-is",
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "Service/",
+			},
+			wantMethod: "Service/",
+			wantFound:  true,
+		},
+		{
+			name: "degenerate leading slash returned as-is",
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "/Echo",
+			},
+			wantMethod: "/Echo",
+			wantFound:  true,
+		},
+		{
+			name:       "no rpc.method attribute",
+			attrs:      map[string]string{"other.attr": "value"},
+			wantMethod: "",
+			wantFound:  false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			span := spanWithAttrs(t, tt.attrs)
+			gotMethod, gotFound := getRpcMethod(span)
+			require.Equal(t, tt.wantFound, gotFound, "found")
+			assert.Equal(t, tt.wantMethod, gotMethod, "method")
+		})
+	}
+}
+
+func TestGetRpcService(t *testing.T) {
+	tests := []struct {
+		name        string
+		attrs       map[string]string
+		wantService string
+		wantFound   bool
+	}{
+		{
+			name: "old semconv: rpc.service present takes precedence",
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "acme.inventory.v1.InventoryService",
+				string(semconv.RPCMethodKey):  "ListItems",
+			},
+			wantService: "acme.inventory.v1.InventoryService",
+			wantFound:   true,
+		},
+		{
+			name: "old semconv: rpc.service only (no rpc.method)",
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "myservice.EchoService",
+			},
+			wantService: "myservice.EchoService",
+			wantFound:   true,
+		},
+		{
+			name: "new semconv: derive service from fully-qualified rpc.method",
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "acme.inventory.v1.InventoryService/ListItems",
+			},
+			wantService: "acme.inventory.v1.InventoryService",
+			wantFound:   true,
+		},
+		{
+			name: "new semconv: rpc.service explicitly empty falls back to rpc.method split",
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "EchoService/Echo",
+			},
+			wantService: "EchoService",
+			wantFound:   true,
+		},
+		{
+			name: "rpc.method without slash yields no service",
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "ListItems",
+			},
+			wantService: "",
+			wantFound:   false,
+		},
+		{
+			name: "_OTHER sentinel yields no service",
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "_OTHER",
+			},
+			wantService: "",
+			wantFound:   false,
+		},
+		{
+			name: "degenerate trailing slash yields no service",
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "Service/",
+			},
+			wantService: "",
+			wantFound:   false,
+		},
+		{
+			name:        "no rpc attributes",
+			attrs:       map[string]string{"other.attr": "value"},
+			wantService: "",
+			wantFound:   false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			span := spanWithAttrs(t, tt.attrs)
+			gotService, gotFound := getRpcService(span)
+			require.Equal(t, tt.wantFound, gotFound, "found")
+			assert.Equal(t, tt.wantService, gotService, "service")
+		})
+	}
+}
+
 func TestGetServerAddress(t *testing.T) {
 	tests := []struct {
 		name        string

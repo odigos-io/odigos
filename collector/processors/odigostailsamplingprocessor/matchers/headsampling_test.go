@@ -580,7 +580,7 @@ func TestHeadSamplingOperationGrpcServerMatcher(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "server span service rule fails when rpc.service is absent",
+			name: "server span service rule fails when rpc.service is absent and rpc.method is bare",
 			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
 				Service: "com.example.ExampleService",
 			},
@@ -589,6 +589,40 @@ func TestHeadSamplingOperationGrpcServerMatcher(t *testing.T) {
 				string(semconv.RPCMethodKey): "exampleMethod",
 			},
 			want: false,
+		},
+		{
+			name: "new semconv: rule on method+service matches fully-qualified rpc.method only",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Method:  "exampleMethod",
+				Service: "com.example.ExampleService",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "com.example.ExampleService/exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name: "new semconv: service-only rule matches fully-qualified rpc.method",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Service: "grpc.health.v1.Health",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "grpc.health.v1.Health/Check",
+			},
+			want: true,
+		},
+		{
+			name: "new semconv: method-only rule matches bare method extracted from fully-qualified",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Method: "Check",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "grpc.health.v1.Health/Check",
+			},
+			want: true,
 		},
 	}
 	for _, tt := range tests {
