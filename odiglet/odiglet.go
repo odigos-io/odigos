@@ -20,6 +20,7 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	ebpfMetrics "github.com/odigos-io/odigos/odiglet/pkg/metrics"
+	odigletnetmetrics "github.com/odigos-io/odigos/odiglet/pkg/netmetrics"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
@@ -157,21 +158,34 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		return nil, fmt.Errorf("failed to setup controller-runtime manager %w", err)
 	}
 
-	return &Odiglet{
+	o := &Odiglet{
 		clientset:               clientset,
 		mgr:                     mgr,
 		ebpfManager:             ebpfManager,
 		configUpdates:           configUpdates,
 		instrumentationRequests: instrumentationRequests,
 		criClient:               &criWrapper,
-	}, nil
+	}
+
+	// Network-map + security: odiglet's single OBI instance now also emits node-wide network
+	// flows + TCP stats (see obi.obiConfigForOdigos); this component scrapes them, resolves each
+	// flow to a k8s service.name (PID/peer-IP -> pod -> InstrumentationConfig.ServiceName), and
+	// serves /api/network + /api/security. Lives in odiglet's process — no extra container.
+	netComp := odigletnetmetrics.NewComponent(mgr.GetClient(), mgr.GetCache(), env.Current.NodeName)
+	o.AddRunnable(Runnable{
+		Name:         "network metrics",
+		PropagateErr: false, // network/security is best-effort; never take odiglet down
+		Run:          netComp.Run,
+	})
+
+	return o, nil
 }
 
 func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.OdigosLogger) []Runnable {
 	odigosNs := env.GetCurrentNamespace()
 	return []Runnable{
 		{
-			Name:         "pprof server",
+			Name: "pprof server",
 			// if we fail to start the pprof server, don't return an error as it is not critical
 			PropagateErr: false,
 			Run: func(ctx context.Context) error {

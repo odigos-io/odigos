@@ -10,9 +10,16 @@ import (
 
 	"go.opentelemetry.io/obi/pkg/appolly/discover"
 	"go.opentelemetry.io/obi/pkg/config"
+	"go.opentelemetry.io/obi/pkg/export"
+	"go.opentelemetry.io/obi/pkg/export/attributes"
 	"go.opentelemetry.io/obi/pkg/instrumenter"
 	"go.opentelemetry.io/obi/pkg/obi"
 )
+
+// NetworkPrometheusPort is the Prometheus port OBI exposes node-wide network-flow + TCP-stats
+// metrics on, scraped in-process by the network-metrics runnable's resolver. App traces still
+// export via OTLP (cfg.Traces); this endpoint carries only the NetO11y/StatsO11y pillars.
+const NetworkPrometheusPort = 8999
 
 // OBIInstrumentationFactory creates instrumentations that add/remove PIDs on a shared
 // DynamicPIDSelector while a single OBI instrumenter runs in the background.
@@ -36,14 +43,48 @@ func NewOBIInstrumentationFactory() *OBIInstrumentationFactory {
 	}
 }
 
-// obiConfigForOdigos returns a minimal OBI config that enables App O11y and exports to the node collector.
-// PIDs are supplied dynamically via the DynamicPIDSelector.
+// obiConfigForOdigos returns an OBI config that runs App O11y (traces) AND, on the SAME OBI
+// instance, the node-wide Net O11y + Stats O11y pillars. OBI runs all enabled pillars as
+// concurrent pipelines (pkg/instrumenter: setupAppO11y + setupNetO11y in one errgroup), so a
+// single instrumenter serves both — no second OBI instance, no extra container. App PIDs are
+// still supplied dynamically via the DynamicPIDSelector; netolly is node-wide (not PID-scoped).
 func obiConfigForOdigos() *obi.Config {
 	cfg := obi.DefaultConfig
+
+	// --- App O11y (unchanged): per-workload traces exported to the node collector. ---
 	cfg.EBPF.ContextPropagation = config.ContextPropagationHeaders
-	// Export traces to the node collector (same node as odiglet). Use http scheme for insecure gRPC.
-	// Protocol is inferred from port (4317 -> gRPC) by OBI.
 	cfg.Traces.TracesEndpoint = fmt.Sprintf("http://localhost:%d", consts.OTLPPort)
+
+	// --- Net O11y + Stats O11y (added): node-wide flow + TCP-health capture. ---
+	cfg.NetworkFlows.Enable = true
+	// socket_filter is CNI-safe (it does not attach TC programs that could clash with the CNI's);
+	// in k8s pods talk over the pod network, so loopback-only capture is not the concern it is on
+	// a VM. Capture all interfaces.
+	cfg.NetworkFlows.Source = "socket_filter"
+	cfg.NetworkFlows.ExcludeInterfaces = []string{}
+	cfg.Prometheus.Port = NetworkPrometheusPort
+	cfg.Prometheus.Path = "/metrics"
+	cfg.Metrics.Features = export.LoadFeatures([]string{"network", "stats"})
+
+	// Select the per-flow / per-stat attributes the netmetrics resolver needs to map a flow's
+	// src/dst (address+port) to a PID/pod. Without these OBI emits only default-on labels and the
+	// resolver has nothing to join on. App O11y keeps the DynamicPIDSelector regardless of this.
+	cfg.Attributes.Select = attributes.Selection{
+		attributes.NetworkFlow.Section: attributes.InclusionLists{
+			Include: []string{"src.address", "dst.address", "src.port", "dst.port", "direction", "transport"},
+		},
+		attributes.StatTCPRtt.Section: attributes.InclusionLists{
+			Include: []string{"src.address", "dst.address", "src.port", "dst.port"},
+		},
+		attributes.StatTCPRetransmits.Section: attributes.InclusionLists{
+			Include: []string{"src.address", "dst.address", "src.port", "dst.port"},
+		},
+		attributes.StatTCPFailedConnections.Section: attributes.InclusionLists{
+			Include: []string{"src.address", "dst.address", "src.port", "dst.port", "reason"},
+		},
+	}
+	// instrumenter.Run does not call normalize() (only LoadConfig does); normalize ourselves.
+	cfg.Attributes.Select.Normalize()
 	return &cfg
 }
 
