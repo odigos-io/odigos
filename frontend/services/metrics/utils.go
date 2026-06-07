@@ -13,12 +13,15 @@ import (
 // rateSumByPod builds a PromQL query that returns per-pod rates over a window.
 // Uses VictoriaMetrics/OTel k8s labels and filters by pod only to be resilient
 // to environments where k8s.namespace.name label is not present on the series.
-// Example:
 //
-//	sum by (k8s.pod.name) (rate(<metric>{k8s.pod.name=~"<regex>"}[<win>]))
-func rateSumByPod(metric, namespace, podRegex, window string) string {
+// The metric name is matched with an optional "_total" suffix because the two  collector roles reach VictoriaMetrics through different paths:
+// node collector metrics arrive via OTLP -> original OTel name (no suffix),
+// gateway are scraped by Prometheus -> with suffix = original OTel name + _total
+
+// Only one variant exists per pod, so we don't get doubles.
+func rateSumByPod(metric, podRegex, window string) string {
 	return fmt.Sprintf(
-		`sum by (k8s.pod.name) (rate(%s{k8s.pod.name=~"%s"}[%s]))`,
+		`sum by (k8s.pod.name) (rate({__name__=~"%s(_total)?", k8s.pod.name=~"%s"}[%s]))`,
 		metric, podRegex, window,
 	)
 }

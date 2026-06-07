@@ -6,9 +6,7 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services/collectors"
 )
@@ -25,8 +23,7 @@ func (r *queryResolver) OdigletDaemonSetInfo(ctx context.Context) (*model.Collec
 
 // GatewayPods is the resolver for the gatewayPods field.
 func (r *queryResolver) GatewayPods(ctx context.Context) ([]*model.PodInfo, error) {
-	selector := fmt.Sprintf("%s=%s", k8sconsts.OdigosCollectorRoleLabel, string(k8sconsts.CollectorsRoleClusterGateway))
-	return collectors.GetPodsBySelector(ctx, selector)
+	return collectors.GetGatewayPodsWithMetrics(ctx, r.PromAPI)
 }
 
 // OdigletPods is the resolver for the odigletPods field.

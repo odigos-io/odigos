@@ -29,10 +29,10 @@ type PodRates struct {
 	LastScrape         time.Time
 }
 
-// GetDataCollectorContainerMetrics queries own-metrics (VictoriaMetrics via Prometheus-compatible API)
-// and aggregates per-pod rates for accepted/dropped metrics and exporter success/failures
-// for the data-collection (node) collector containers.
-func GetDataCollectorContainerMetrics(ctx context.Context, api v1.API, namespace string, podNames []string, window string) (map[string]PodRates, error) {
+// GetCollectorPodRates queries own-metrics (VictoriaMetrics via Prometheus-compatible API)
+// and aggregates per-pod rates for accepted/dropped spans and exporter success/failures.
+// Works for data collection and gateway pods.
+func GetCollectorPodRates(ctx context.Context, api v1.API, namespace string, podNames []string, window string) (map[string]PodRates, error) {
 	if api == nil {
 		return nil, fmt.Errorf("own-metrics API is nil")
 	}
@@ -49,11 +49,11 @@ func GetDataCollectorContainerMetrics(ctx context.Context, api v1.API, namespace
 	podRegex := buildPodRegex(podNames)
 	now := time.Now()
 
-	qAccepted := rateSumByPod(metricAcceptedSpans, namespace, podRegex, window)
-	qRefused := rateSumByPod(metricReceiverRefusedSpans, namespace, podRegex, window)
-	qDropped := rateSumByPod(metricReceiverDroppedSpans, namespace, podRegex, window)
-	qExpSent := rateSumByPod(metricExporterSentSpans, namespace, podRegex, window)
-	qExpFailed := rateSumByPod(metricExporterSendFailedSpans, namespace, podRegex, window)
+	qAccepted := rateSumByPod(metricAcceptedSpans, podRegex, window)
+	qRefused := rateSumByPod(metricReceiverRefusedSpans, podRegex, window)
+	qDropped := rateSumByPod(metricReceiverDroppedSpans, podRegex, window)
+	qExpSent := rateSumByPod(metricExporterSentSpans, podRegex, window)
+	qExpFailed := rateSumByPod(metricExporterSendFailedSpans, podRegex, window)
 
 	accepted, tsAcc, err := queryVector(ctx, api, qAccepted, now)
 	if err != nil {
