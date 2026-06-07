@@ -1045,16 +1045,16 @@ odiglet:
   #   unchanged: App O11y traces only, no extra eBPF, no hostNetwork on modern k8s.
   # @schema
   networkMetrics:
-    # -- Enable node-wide network map + security capture (forces odiglet hostNetwork: true).
+    # Enable node-wide network map and security capture. Forces odiglet hostNetwork on.
     enabled: false
-    # -- Port odiglet serves /api/network + /api/security on (default 9100). On hostNetwork this binds
-    #    on the node; override if it collides (e.g. node_exporter's 9100).
+    # Port odiglet serves /api/network and /api/security on (default 9100). On hostNetwork this
+    # binds on the node; override if it collides (for example node_exporter also uses 9100).
     apiPort: ""
-    # -- Run the security detectors (exposure/drift/volumetric/threat-intel/tcp-health). Default true.
+    # Run the security detectors (exposure, drift, volumetric, threat-intel, tcp-health).
     security: true
-    # -- If set, append security findings as JSON-lines to this path for SIEM ingestion.
+    # If set, append security findings as JSON-lines to this path for SIEM ingestion.
     findingsPath: ""
-    # -- If set, persist/restore the drift baseline at this path so restarts don't re-flag known activity.
+    # If set, persist and restore the drift baseline at this path so restarts do not re-flag known activity.
     baselinePath: ""
 
   # @schema

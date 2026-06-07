@@ -1391,6 +1391,44 @@
           "required": [],
           "title": "logLevel"
         },
+        "networkMetrics": {
+          "additionalProperties": false,
+          "description": "networkMetrics enables the node-wide network map + network security capture. odiglet's single\nOBI instance additionally captures node-wide L4 flows + TCP stats and serves them as a service\ngraph (/api/network) and security findings (/api/security) on the node.\n\nEnabling it forces hostNetwork: true on the odiglet daemonset (regardless of k8s version): OBI's\nsocket_filter must attach in the host network namespace to observe every pod's traffic — without\nhostNetwork it would only see odiglet's own connections. When disabled (the default) odiglet is\nunchanged: App O11y traces only, no extra eBPF, no hostNetwork on modern k8s.",
+          "properties": {
+            "apiPort": {
+              "default": "",
+              "description": "Port odiglet serves /api/network and /api/security on (default 9100). On hostNetwork this\nbinds on the node; override if it collides (for example node_exporter also uses 9100).",
+              "title": "apiPort",
+              "type": "string"
+            },
+            "baselinePath": {
+              "default": "",
+              "description": "If set, persist and restore the drift baseline at this path so restarts do not re-flag known activity.",
+              "title": "baselinePath",
+              "type": "string"
+            },
+            "enabled": {
+              "default": false,
+              "description": "Enable node-wide network map and security capture. Forces odiglet hostNetwork on.",
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "findingsPath": {
+              "default": "",
+              "description": "If set, append security findings as JSON-lines to this path for SIEM ingestion.",
+              "title": "findingsPath",
+              "type": "string"
+            },
+            "security": {
+              "default": true,
+              "description": "Run the security detectors (exposure, drift, volumetric, threat-intel, tcp-health).",
+              "title": "security",
+              "type": "boolean"
+            }
+          },
+          "required": [],
+          "title": "networkMetrics"
+        },
         "noHostNetwork": {
           "default": "false",
           "description": "noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.\nfor k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.\nfor k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.",
