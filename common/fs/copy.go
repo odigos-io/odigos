@@ -17,32 +17,32 @@ import (
 // criticalFiles lists paths relative to the agents directory root that must be
 // preserved during upgrades because they may be memory-mapped by running processes.
 var criticalFiles = map[string]struct{}{
-	"nodejs-ebpf/build/Release/dtrace-injector-native.node":                            {},
-	"nodejs-ebpf/build/Release/obj.target/dtrace-injector-native.node":                 {},
-	"nodejs-ebpf/build/Release/.deps/Release/dtrace-injector-native.node.d":            {},
-	"nodejs-ebpf/build/Release/.deps/Release/obj.target/dtrace-injector-native.node.d": {},
-	"java-ebpf/tracing_probes.so":                                                      {},
-	"java-ext-ebpf/end_span_usdt.so":                                                   {},
-	"java-ext-ebpf/javaagent.jar":                                                      {},
-	"java-ext-ebpf/otel_agent_extension.jar":                                           {},
-	"python-ebpf/pythonUSDT.abi3.so":                                                   {},
-	"loader/loader.so":                                                                 {},
+	"/var/odigos/nodejs-ebpf/build/Release/dtrace-injector-native.node":                            {},
+	"/var/odigos/nodejs-ebpf/build/Release/obj.target/dtrace-injector-native.node":                 {},
+	"/var/odigos/nodejs-ebpf/build/Release/.deps/Release/dtrace-injector-native.node.d":            {},
+	"/var/odigos/nodejs-ebpf/build/Release/.deps/Release/obj.target/dtrace-injector-native.node.d": {},
+	"/var/odigos/java-ebpf/tracing_probes.so":                                                      {},
+	"/var/odigos/java-ext-ebpf/end_span_usdt.so":                                                   {},
+	"/var/odigos/java-ext-ebpf/javaagent.jar":                                                      {},
+	"/var/odigos/java-ext-ebpf/otel_agent_extension.jar":                                           {},
+	"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
+	"/var/odigos/loader/loader.so":                                                                 {},
 	// Python dependency shared objects - special handling:
 	// These shared objects (.so files) are loaded by Python processes and mapped into process memory.
 	// They cannot be replaced while loaded, so we must keep them in the host filesystem to avoid removal.
 	// These files are versioned and renamed when their respective library versions change.
-	"python/google/_upb/_message.abi3.so":                        {},
-	"python/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so":    {},
-	"python/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":     {},
-	"python3.8/google/_upb/_message.abi3.so":                     {},
-	"python3.8/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so": {},
-	"python3.8/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":  {},
+	"/var/odigos/python/google/_upb/_message.abi3.so":                        {}, // Google protobuf library
+	"/var/odigos/python/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so":    {}, // Wrapt library on arm64
+	"/var/odigos/python/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":     {}, // Wrapt library on x86_64
+	"/var/odigos/python3.8/google/_upb/_message.abi3.so":                     {}, // Google protobuf library [python 3.8 distro]
+	"/var/odigos/python3.8/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so": {}, // Wrapt library on arm64 [python 3.8 distro]
+	"/var/odigos/python3.8/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":  {}, // Wrapt library on x86_64 [python 3.8 distro]
 	// PHP native extension loaded by the PHP runtime via dlopen().
 	// Must be preserved during upgrades to avoid crashing running PHP-FPM processes.
-	"php/8.1/opentelemetry.so": {},
-	"php/8.2/opentelemetry.so": {},
-	"php/8.3/opentelemetry.so": {},
-	"php/8.4/opentelemetry.so": {},
+	"/var/odigos/php/8.1/opentelemetry.so": {},
+	"/var/odigos/php/8.2/opentelemetry.so": {},
+	"/var/odigos/php/8.3/opentelemetry.so": {},
+	"/var/odigos/php/8.4/opentelemetry.so": {},
 }
 
 func CopyDirectories(srcDir, dstDir string, excludes map[string]bool) error {
