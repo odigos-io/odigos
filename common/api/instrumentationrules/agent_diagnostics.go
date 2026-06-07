@@ -6,7 +6,7 @@ import (
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
-type AgentOwnLogs struct {
+type AgentDiagnostics struct {
 
 	// The log level of the odigos agent itself (startup, config, features, insttrumentation loading, etc.)
 	OdigosLogLevel *common.OdigosLogLevel `json:"odigosLogLevel,omitempty"`

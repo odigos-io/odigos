@@ -30,7 +30,7 @@ type DynamicContainerConfigs struct {
 	CollectorConfig *commonapi.ContainerCollectorConfig
 
 	// Odigos Agent self logger
-	AgentOwnLogs *instrumentationrules.AgentOwnLogs
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics
 }
 
 func calculateTracesConfig(
@@ -223,13 +223,13 @@ func CalculateDynamicContainerConfig(
 		logsConfig.EbpfLogCapture = ebpfLogCaptureConfig
 	}
 
-	odigosAgentLogLevel := CalculateAgentOwnLogs(irls, d)
+	odigosAgentDiagnostics := CalculateAgentDiagnostics(irls, d)
 
 	return &DynamicContainerConfigs{
 		AgentTracesConfig:  tracesConfig,
 		AgentMetricsConfig: metricsConfig,
 		AgentLogsConfig:    logsConfig,
 		CollectorConfig:    collectorConfig,
-		AgentOwnLogs:       odigosAgentLogLevel,
+		AgentDiagnostics:   odigosAgentDiagnostics,
 	}, nil
 }

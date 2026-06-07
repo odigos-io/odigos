@@ -12,21 +12,21 @@ func DistroSupportsAgentOwnLogs(d *distro.OtelDistro) bool {
 }
 
 // calculates the agent log level for the container, by merging the log levels from all instrumentation rules.
-func CalculateAgentOwnLogs(irls *[]odigosv1.InstrumentationRule, d *distro.OtelDistro) *instrumentationrules.AgentOwnLogs {
+func CalculateAgentDiagnostics(irls *[]odigosv1.InstrumentationRule, d *distro.OtelDistro) *instrumentationrules.AgentDiagnostics {
 
 	if !DistroSupportsAgentOwnLogs(d) {
 		return nil
 	}
 
-	var odigosAgentOwnLogs *instrumentationrules.AgentOwnLogs
+	var odigosAgentDiagnostics *instrumentationrules.AgentDiagnostics
 	for _, irl := range *irls {
-		odigosAgentOwnLogs = mergeAgentOwnLogs(odigosAgentOwnLogs, irl.Spec.AgentOwnLogs, *d.OwnLogs)
+		odigosAgentDiagnostics = mergeAgentDiagnostics(odigosAgentDiagnostics, irl.Spec.AgentDiagnostics, *d.OwnLogs)
 	}
-	return odigosAgentOwnLogs
+	return odigosAgentDiagnostics
 }
 
 // merges 2 configs for agent log level, returning the most verbose one for each field.
-func mergeAgentOwnLogs(existing *instrumentationrules.AgentOwnLogs, incoming *instrumentationrules.AgentOwnLogs, distroSupport distro.OwnLogs) *instrumentationrules.AgentOwnLogs {
+func mergeAgentDiagnostics(existing *instrumentationrules.AgentDiagnostics, incoming *instrumentationrules.AgentDiagnostics, distroSupport distro.OwnLogs) *instrumentationrules.AgentDiagnostics {
 	if incoming == nil {
 		return existing
 	}
@@ -34,15 +34,15 @@ func mergeAgentOwnLogs(existing *instrumentationrules.AgentOwnLogs, incoming *in
 		return incoming
 	}
 
-	odigosAgentOwnLogs := &instrumentationrules.AgentOwnLogs{}
+	odigosAgentDiagnostics := &instrumentationrules.AgentDiagnostics{}
 	// return the log level that will output the most verbose logs from both options
 	if distroSupport.OdigosAgentOwnLogerSupported {
-		odigosAgentOwnLogs.OdigosLogLevel = mergeLogLevel(existing.OdigosLogLevel, incoming.OdigosLogLevel)
+		odigosAgentDiagnostics.OdigosLogLevel = mergeLogLevel(existing.OdigosLogLevel, incoming.OdigosLogLevel)
 	}
 	if distroSupport.OpenTelemetryComponentsLoggerSupported {
-		odigosAgentOwnLogs.OpenTelemetryComponentsLogLevel = mergeLogLevel(existing.OpenTelemetryComponentsLogLevel, incoming.OpenTelemetryComponentsLogLevel)
+		odigosAgentDiagnostics.OpenTelemetryComponentsLogLevel = mergeLogLevel(existing.OpenTelemetryComponentsLogLevel, incoming.OpenTelemetryComponentsLogLevel)
 	}
-	return odigosAgentOwnLogs
+	return odigosAgentDiagnostics
 }
 
 // merge 2 log levels, returning the most verbose one.

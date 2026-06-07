@@ -96,7 +96,7 @@ type InstrumentationRuleSpec struct {
 	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
 
 	// Configure the agent own logging configuration.
-	AgentOwnLogs *instrumentationrules.AgentOwnLogs `json:"agentOwnLogs,omitempty"`
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
 }
 
 // Verify validates the InstrumentationRuleSpec.

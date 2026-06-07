@@ -174,15 +174,15 @@ func GetEnvVarNamesSet(container *corev1.Container) EnvVarNamesMap {
 	return envSet
 }
 
-func InjectAgentOwnLogsEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, agentOwnLogs *instrumentationrules.AgentOwnLogs) EnvVarNamesMap {
-	if agentOwnLogs == nil {
+func InjectAgentDiagnosticsEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, agentDiagnostics *instrumentationrules.AgentDiagnostics) EnvVarNamesMap {
+	if agentDiagnostics == nil {
 		return existingEnvNames
 	}
-	if agentOwnLogs.OdigosLogLevel != nil {
-		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, commonconsts.OdigosLogLevelEnvVarName, agentOwnLogs.OdigosLogLevel.EnvVarValue())
+	if agentDiagnostics.OdigosLogLevel != nil {
+		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, commonconsts.OdigosLogLevelEnvVarName, agentDiagnostics.OdigosLogLevel.EnvVarValue())
 	}
-	if agentOwnLogs.OpenTelemetryComponentsLogLevel != nil {
-		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelLogLevelEnvVarName, agentOwnLogs.OpenTelemetryComponentsLogLevel.EnvVarValue())
+	if agentDiagnostics.OpenTelemetryComponentsLogLevel != nil {
+		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelLogLevelEnvVarName, agentDiagnostics.OpenTelemetryComponentsLogLevel.EnvVarValue())
 	}
 	return existingEnvNames
 }

@@ -39,7 +39,7 @@ spec:
             type: object
           spec:
             properties:
-              agentOwnLogs:
+              agentDiagnostics:
                 description: Configure the agent own logging configuration.
                 properties:
                   odigosLogLevel:

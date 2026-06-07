@@ -493,9 +493,9 @@ func (in *ContainerAgentConfig) DeepCopyInto(out *ContainerAgentConfig) {
 		*out = new(agentsignalconfig.AgentLogsConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.AgentOwnLogs != nil {
-		in, out := &in.AgentOwnLogs, &out.AgentOwnLogs
-		*out = new(instrumentationrules.AgentOwnLogs)
+	if in.AgentDiagnostics != nil {
+		in, out := &in.AgentDiagnostics, &out.AgentDiagnostics
+		*out = new(instrumentationrules.AgentDiagnostics)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -1277,9 +1277,9 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 		*out = new(instrumentationrules.TraceVerbosity)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.AgentOwnLogs != nil {
-		in, out := &in.AgentOwnLogs, &out.AgentOwnLogs
-		*out = new(instrumentationrules.AgentOwnLogs)
+	if in.AgentDiagnostics != nil {
+		in, out := &in.AgentDiagnostics, &out.AgentDiagnostics
+		*out = new(instrumentationrules.AgentDiagnostics)
 		(*in).DeepCopyInto(*out)
 	}
 }

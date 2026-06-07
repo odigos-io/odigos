@@ -62,7 +62,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	// Configure the verbosity of the traces for the library.
 	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
 	// Configure the agent own logging configuration.
-	AgentOwnLogs *instrumentationrules.AgentOwnLogs `json:"agentOwnLogs,omitempty"`
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -195,10 +195,10 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithTraceVerbosity(value ins
 	return b
 }
 
-// WithAgentOwnLogs sets the AgentOwnLogs field in the declarative configuration to the given value
+// WithAgentDiagnostics sets the AgentDiagnostics field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the AgentOwnLogs field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithAgentOwnLogs(value instrumentationrules.AgentOwnLogs) *InstrumentationRuleSpecApplyConfiguration {
-	b.AgentOwnLogs = &value
+// If called multiple times, the AgentDiagnostics field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithAgentDiagnostics(value instrumentationrules.AgentDiagnostics) *InstrumentationRuleSpecApplyConfiguration {
+	b.AgentDiagnostics = &value
 	return b
 }

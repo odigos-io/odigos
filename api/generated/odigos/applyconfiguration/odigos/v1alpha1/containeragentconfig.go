@@ -57,7 +57,7 @@ type ContainerAgentConfigApplyConfiguration struct {
 	Metrics *agentsignalconfig.AgentMetricsConfig `json:"metrics,omitempty"`
 	Logs    *agentsignalconfig.AgentLogsConfig    `json:"logs,omitempty"`
 	// Configure the log level for the agent itselg
-	AgentOwnLogs *instrumentationrules.AgentOwnLogs `json:"agentOwnLogs,omitempty"`
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
 }
 
 // ContainerAgentConfigApplyConfiguration constructs a declarative configuration of the ContainerAgentConfig type for use with
@@ -160,10 +160,10 @@ func (b *ContainerAgentConfigApplyConfiguration) WithLogs(value agentsignalconfi
 	return b
 }
 
-// WithAgentOwnLogs sets the AgentOwnLogs field in the declarative configuration to the given value
+// WithAgentDiagnostics sets the AgentDiagnostics field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the AgentOwnLogs field is set to the value of the last call.
-func (b *ContainerAgentConfigApplyConfiguration) WithAgentOwnLogs(value instrumentationrules.AgentOwnLogs) *ContainerAgentConfigApplyConfiguration {
-	b.AgentOwnLogs = &value
+// If called multiple times, the AgentDiagnostics field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithAgentDiagnostics(value instrumentationrules.AgentDiagnostics) *ContainerAgentConfigApplyConfiguration {
+	b.AgentDiagnostics = &value
 	return b
 }
