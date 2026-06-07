@@ -1,6 +1,8 @@
 package matchers
 
 import (
+	"strings"
+
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
@@ -138,11 +140,22 @@ func (m *headSamplingGrpcClientMatcher) Match(span ptrace.Span) bool {
 	return true
 }
 
+// grpcRpcSystemValue is the well-known value of rpc.system / rpc.system.name for gRPC, identical
+// across the v1.26 and the newer release-candidate OTel RPC semantic conventions.
+const grpcRpcSystemValue = "grpc"
+
 // matchGrpcMethodAndService matches a span against rule-supplied gRPC method/service.
-// The span must look like a gRPC span (have at least rpc.method or rpc.service); otherwise the matcher
-// would falsely fire on non-gRPC server/client spans when both rule fields are empty.
+// The span must look like a gRPC span — concretely: rpc.system / rpc.system.name (when present)
+// must equal "grpc", and the span must carry at least rpc.method or rpc.service. The rpc.system
+// check filters out spans from other RPC frameworks that share the rpc.* attribute namespace
+// (Apache Dubbo, Connect RPC, JSON-RPC, .NET WCF, Java RMI, ONC RPC). Older instrumentations
+// that don't set rpc.system are still considered (permissive default) and gated only by the
+// rpc.method / rpc.service presence check.
 // Rule fields are AND-ed; empty rule fields are wildcards.
 func matchGrpcMethodAndService(span ptrace.Span, ruleMethod string, ruleService string) bool {
+	if rpcSystem, found := getRpcSystem(span); found && !strings.EqualFold(rpcSystem, grpcRpcSystemValue) {
+		return false
+	}
 	spanMethod, methodFound := getRpcMethod(span)
 	spanService, serviceFound := getRpcService(span)
 	if !methodFound && !serviceFound {

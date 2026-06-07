@@ -39,8 +39,9 @@ The Operation options depend on the rule's category.
       - A **service** — the fully-qualified gRPC service name (e.g. `acme.inventory.v1.InventoryService`). Set only the service to match every method on that service.
       - A **method** — the bare method name (e.g. `ListItems`). Combine with **service** for a single specific RPC.
     - **gRPC Client** — match outbound gRPC calls made by the source. Configure:
+      - A **service** — the fully-qualified gRPC service name (e.g. `acme.inventory.v1.InventoryService`). Set only the service to match every method on that service.
+      - A **method** — the bare method name (e.g. `ListItems`). Combine with **service** for a single specific RPC.
       - A **server address** (the remote host being called).
-      - A **service** and/or **method** with the same semantics as gRPC Server.
   </Tab>
   <Tab title="Highly Relevant">
     - **All Operations** — every operation in scope.

@@ -176,6 +176,63 @@ func TestGetHttpServerPath(t *testing.T) {
 	}
 }
 
+func TestGetRpcSystem(t *testing.T) {
+	tests := []struct {
+		name       string
+		attrs      map[string]string
+		wantSystem string
+		wantFound  bool
+	}{
+		{
+			name: "new semconv: rpc.system.name takes precedence",
+			attrs: map[string]string{
+				"rpc.system.name":            "grpc",
+				string(semconv.RPCSystemKey): "dubbo",
+			},
+			wantSystem: "grpc",
+			wantFound:  true,
+		},
+		{
+			name: "new semconv only: rpc.system.name",
+			attrs: map[string]string{
+				"rpc.system.name": "grpc",
+			},
+			wantSystem: "grpc",
+			wantFound:  true,
+		},
+		{
+			name: "old semconv only: rpc.system",
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey): "grpc",
+			},
+			wantSystem: "grpc",
+			wantFound:  true,
+		},
+		{
+			name: "non-grpc rpc.system is returned verbatim",
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey): "apache_dubbo",
+			},
+			wantSystem: "apache_dubbo",
+			wantFound:  true,
+		},
+		{
+			name:       "no rpc.system attribute",
+			attrs:      map[string]string{"other.attr": "value"},
+			wantSystem: "",
+			wantFound:  false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			span := spanWithAttrs(t, tt.attrs)
+			gotSystem, gotFound := getRpcSystem(span)
+			require.Equal(t, tt.wantFound, gotFound, "found")
+			assert.Equal(t, tt.wantSystem, gotSystem, "system")
+		})
+	}
+}
+
 func TestGetRpcMethod(t *testing.T) {
 	tests := []struct {
 		name       string

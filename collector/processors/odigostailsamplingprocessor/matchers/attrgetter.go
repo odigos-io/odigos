@@ -58,6 +58,18 @@ func getServerAddress(span ptrace.Span) (string, bool) {
 	return "", false
 }
 
+// getRpcSystem returns the value of the rpc.system / rpc.system.name attribute. The newer
+// rpc.system.name is checked first since it is the current spec key.
+func getRpcSystem(span ptrace.Span) (string, bool) {
+	if rpcSystem, found := span.Attributes().Get("rpc.system.name"); found {
+		return rpcSystem.Str(), true
+	}
+	if rpcSystem, found := span.Attributes().Get(string(semconv.RPCSystemKey)); found {
+		return rpcSystem.Str(), true
+	}
+	return "", false
+}
+
 // getRpcMethod returns the bare gRPC method name from a span, handling both OTel semconv conventions:
 //   - older split convention: rpc.method already carries just the bare method (e.g. "ListItems").
 //   - newer fully-qualified convention: rpc.method is "Service/method" (e.g.

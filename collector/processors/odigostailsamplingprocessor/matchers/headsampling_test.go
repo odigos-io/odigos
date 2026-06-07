@@ -624,6 +624,82 @@ func TestHeadSamplingOperationGrpcServerMatcher(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			name:      "rpc.system=grpc: matches",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey):  "grpc",
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name:      "non-grpc rpc.system (dubbo) excludes span even with rpc.service/method",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey):  "apache_dubbo",
+				string(semconv.RPCServiceKey): "com.example.UserService",
+				string(semconv.RPCMethodKey):  "getUser",
+			},
+			want: false,
+		},
+		{
+			name: "non-grpc rpc.system overrides matching service+method rule",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Service: "com.example.UserService",
+				Method:  "getUser",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey):  "jsonrpc",
+				string(semconv.RPCServiceKey): "com.example.UserService",
+				string(semconv.RPCMethodKey):  "getUser",
+			},
+			want: false,
+		},
+		{
+			name:      "new semconv rpc.system.name=grpc: matches",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				"rpc.system.name":            "grpc",
+				string(semconv.RPCMethodKey): "grpc.health.v1.Health/Check",
+			},
+			want: true,
+		},
+		{
+			name:      "new semconv rpc.system.name=dubbo: excludes span",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				"rpc.system.name":            "dubbo",
+				string(semconv.RPCMethodKey): "com.example.UserService/getUser",
+			},
+			want: false,
+		},
+		{
+			name:      "rpc.system case-insensitive: GRPC matches",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey): "GRPC",
+				string(semconv.RPCMethodKey): "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name:      "rpc.system case-insensitive: gRPC matches",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey): "gRPC",
+				string(semconv.RPCMethodKey): "exampleMethod",
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
