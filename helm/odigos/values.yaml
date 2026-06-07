@@ -1035,6 +1035,30 @@ odiglet:
 
   # @schema
   # description: |-
+  #   networkMetrics enables the node-wide network map + network security capture. odiglet's single
+  #   OBI instance additionally captures node-wide L4 flows + TCP stats and serves them as a service
+  #   graph (/api/network) and security findings (/api/security) on the node.
+  #
+  #   Enabling it forces hostNetwork: true on the odiglet daemonset (regardless of k8s version): OBI's
+  #   socket_filter must attach in the host network namespace to observe every pod's traffic — without
+  #   hostNetwork it would only see odiglet's own connections. When disabled (the default) odiglet is
+  #   unchanged: App O11y traces only, no extra eBPF, no hostNetwork on modern k8s.
+  # @schema
+  networkMetrics:
+    # -- Enable node-wide network map + security capture (forces odiglet hostNetwork: true).
+    enabled: false
+    # -- Port odiglet serves /api/network + /api/security on (default 9100). On hostNetwork this binds
+    #    on the node; override if it collides (e.g. node_exporter's 9100).
+    apiPort: ""
+    # -- Run the security detectors (exposure/drift/volumetric/threat-intel/tcp-health). Default true.
+    security: true
+    # -- If set, append security findings as JSON-lines to this path for SIEM ingestion.
+    findingsPath: ""
+    # -- If set, persist/restore the drift baseline at this path so restarts don't re-flag known activity.
+    baselinePath: ""
+
+  # @schema
+  # description: |-
   #   Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.
   #   There is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.
   # @schema

@@ -3,6 +3,8 @@ package obi
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"sync"
 
 	"github.com/odigos-io/odigos/common/consts"
@@ -60,23 +62,50 @@ func NewOBIInstrumentationFactory() *OBIInstrumentationFactory {
 	}
 }
 
-// obiConfigForOdigos returns an OBI config that runs App O11y (traces) AND, on the SAME OBI
-// instance, the node-wide Net O11y + Stats O11y pillars. OBI runs all enabled pillars as
-// concurrent pipelines (pkg/instrumenter: setupAppO11y + setupNetO11y in one errgroup), so a
-// single instrumenter serves both — no second OBI instance, no extra container. App PIDs are
-// still supplied dynamically via the DynamicPIDSelector; netolly is node-wide (not PID-scoped).
+// NetworkMetricsEnabledEnv is the env var that turns the node-wide network-map + security
+// capture on. It is OFF by default because the feature requires odiglet to run with
+// hostNetwork (so OBI's socket_filter attaches in the HOST network namespace and observes every
+// pod's traffic — see obiConfigForOdigos); that is a deployment change the operator opts into
+// via Helm (odiglet.networkMetrics.enabled), which sets both hostNetwork and this env together.
+// When unset/false, odiglet behaves exactly as before: App O11y traces only, no network pillars.
+const NetworkMetricsEnabledEnv = "ODIGOS_NETWORK_METRICS_ENABLED"
+
+// NetworkMetricsEnabled reports whether the network-map/security capture is enabled for this
+// odiglet (default false). Read by both obiConfigForOdigos (whether to add the Net/Stats pillars
+// to OBI) and the network-metrics runnable (whether to eager-start and serve), so the two stay
+// in lockstep off a single switch.
+func NetworkMetricsEnabled() bool {
+	v, err := strconv.ParseBool(os.Getenv(NetworkMetricsEnabledEnv))
+	return err == nil && v
+}
+
+// obiConfigForOdigos returns the OBI config for odiglet. It always runs App O11y (per-workload
+// traces). When NetworkMetricsEnabled() is true it ALSO adds, on the SAME OBI instance, the
+// node-wide Net O11y + Stats O11y pillars — OBI runs all enabled pillars as concurrent pipelines
+// (pkg/instrumenter: setupAppO11y + setupNetO11y in one errgroup), so a single instrumenter serves
+// both with no second OBI instance and no extra container. App PIDs are supplied dynamically via
+// the DynamicPIDSelector; netolly is node-wide (not PID-scoped). When the feature is disabled the
+// returned config is byte-for-byte the original App-only config, so odiglet's behaviour and
+// resource profile are unchanged for clusters that do not opt in.
 func obiConfigForOdigos() *obi.Config {
 	cfg := obi.DefaultConfig
 
-	// --- App O11y (unchanged): per-workload traces exported to the node collector. ---
+	// --- App O11y (always): per-workload traces exported to the node collector. ---
 	cfg.EBPF.ContextPropagation = config.ContextPropagationHeaders
 	cfg.Traces.TracesEndpoint = fmt.Sprintf("http://localhost:%d", consts.OTLPPort)
 
-	// --- Net O11y + Stats O11y (added): node-wide flow + TCP-health capture. ---
+	if !NetworkMetricsEnabled() {
+		return &cfg
+	}
+
+	// --- Net O11y + Stats O11y (opt-in): node-wide flow + TCP-health capture. ---
 	cfg.NetworkFlows.Enable = true
-	// socket_filter is CNI-safe (it does not attach TC programs that could clash with the CNI's);
-	// in k8s pods talk over the pod network, so loopback-only capture is not the concern it is on
-	// a VM. Capture all interfaces.
+	// socket_filter is CNI-safe: it attaches an AF_PACKET socket filter rather than TC programs
+	// that could clash with the CNI's. It captures every interface in the CURRENT network namespace,
+	// so to see all pods' traffic (not just odiglet's own) odiglet must run with hostNetwork=true —
+	// then socket_filter attaches in the host netns where the CNI bridge and all pods' veth host-ends
+	// live, and node-wide pod-to-pod flows transit interfaces it can read. (Without hostNetwork the
+	// map would only show odiglet's own connections.) The Helm network-metrics flag sets hostNetwork.
 	cfg.NetworkFlows.Source = "socket_filter"
 	cfg.NetworkFlows.ExcludeInterfaces = []string{}
 	cfg.Prometheus.Port = NetworkPrometheusPort

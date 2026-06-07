@@ -228,6 +228,30 @@ spec:
             - name: ODIGOS_GO_DISABLE_CODE_ATTRIBUTES
               value: "true"
           {{- end}}
+          {{- if and .Values.odiglet.networkMetrics .Values.odiglet.networkMetrics.enabled }}
+            # Node-wide network map + security capture. Requires hostNetwork (set below) so OBI's
+            # socket_filter attaches in the host netns and observes all pods' traffic.
+            - name: ODIGOS_NETWORK_METRICS_ENABLED
+              value: "true"
+          {{- with .Values.odiglet.networkMetrics }}
+          {{- if .apiPort }}
+            - name: ODIGOS_NETWORK_METRICS_API_PORT
+              value: {{ .apiPort | quote }}
+          {{- end }}
+          {{- if not .security }}
+            - name: ODIGOS_NETWORK_SECURITY_ENABLED
+              value: "false"
+          {{- end }}
+          {{- if .findingsPath }}
+            - name: ODIGOS_NETWORK_SECURITY_FINDINGS_PATH
+              value: {{ .findingsPath | quote }}
+          {{- end }}
+          {{- if .baselinePath }}
+            - name: ODIGOS_NETWORK_SECURITY_BASELINE_PATH
+              value: {{ .baselinePath | quote }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
           envFrom:
             - configMapRef:
                 name: odigos-own-telemetry-otel-config
@@ -472,8 +496,10 @@ spec:
                 - -rpc-timeout=10s
 {{- toYaml .Values.odiglet.csidriver.readinessProbe | nindent 12 }}
 {{- end }}
-      # set hostNetwork only for k8s versions prior to v1.26 unless noHostNetwork is true
-      {{- if and (semverCompare "<1.26.0" $k8sVersion) (not .Values.odiglet.noHostNetwork) }}
+      # hostNetwork is enabled either for k8s versions prior to v1.26 (unless noHostNetwork), or
+      # whenever the network-metrics feature is on: OBI's socket_filter must attach in the host
+      # network namespace to observe every pod's traffic (not just odiglet's own).
+      {{- if or (and (semverCompare "<1.26.0" $k8sVersion) (not .Values.odiglet.noHostNetwork)) (and .Values.odiglet.networkMetrics .Values.odiglet.networkMetrics.enabled) }}
       hostNetwork: true
       {{- end}}
       {{- if not .Values.odiglet.noHostPid }}

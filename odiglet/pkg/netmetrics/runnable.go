@@ -73,7 +73,10 @@ const (
 // production defaults above for anything unset or unparseable.
 func loadConfig() Config {
 	return Config{
-		Enabled:              envBool("ODIGOS_NETWORK_METRICS_ENABLED", true),
+		// Default OFF: the feature requires odiglet hostNetwork (see obi.NetworkMetricsEnabledEnv),
+		// which the operator opts into via Helm. The same env switch gates OBI's pillars and this
+		// component, so they never disagree.
+		Enabled:              envBool(obisdk.NetworkMetricsEnabledEnv, false),
 		APIPort:              envInt("ODIGOS_NETWORK_METRICS_API_PORT", defaultAPIPort),
 		RefreshInterval:      envDuration("ODIGOS_NETWORK_METRICS_REFRESH_INTERVAL", defaultRefreshInterval),
 		SecurityEnabled:      envBool("ODIGOS_NETWORK_SECURITY_ENABLED", true),
