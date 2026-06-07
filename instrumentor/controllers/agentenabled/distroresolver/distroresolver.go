@@ -155,8 +155,8 @@ func ResolveDistroForContainer(
 				AgentEnabledMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", d.RuntimeEnvironments[0].SupportedVersions),
 			}
 		}
-		detectedVersion, err := version.NewVersion(runtimeDetails.RuntimeVersion)
-		if err != nil {
+		detectedVersion := common.ParseRuntimeVersion(runtimeDetails.RuntimeVersion)
+		if detectedVersion == nil {
 			return nil, &odigosv1.AgentDisabledInfo{
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
 				AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version: %s", runtimeDetails.RuntimeVersion),

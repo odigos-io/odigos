@@ -74,6 +74,29 @@ spec:
                   description: ContainerAgentConfig is a configuration for a specific
                     container in a workload.
                   properties:
+                    agentDiagnostics:
+                      description: Configure the log level for the agent itselg
+                      properties:
+                        odigosLogLevel:
+                          description: The log level of the odigos agent itself (startup,
+                            config, features, insttrumentation loading, etc.)
+                          enum:
+                          - error
+                          - warn
+                          - info
+                          - debug
+                          type: string
+                        openTelemetryComponentsLogLevel:
+                          description: |-
+                            The log level of the OpenTelemetry components (Sdk, instrumentation libraries, detectors, etc.)
+                            If unset, no OpenTelemetry components logs will be collected.
+                          enum:
+                          - error
+                          - warn
+                          - info
+                          - debug
+                          type: string
+                      type: object
                     agentEnabled:
                       description: boolean flag to indicate if the agent should be
                         enabled for this container.

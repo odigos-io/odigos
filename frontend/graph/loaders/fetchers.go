@@ -97,9 +97,10 @@ func fetchInstrumentationConfigs(ctx context.Context, filters *WorkloadFilter, k
 		}
 		configById := make(map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, len(instrumentationConfigs.Items))
 		for _, config := range instrumentationConfigs.Items {
-			if _, ok := filters.IgnoredNamespaces[config.Namespace]; ok {
-				continue
-			}
+			// Intentionally not filtering by IgnoredNamespaces here: the IC list is the source of truth
+			// for the bypass set used by downstream fetchers (see WorkloadFilter.BypassWorkloads).
+			// A workload that has an IC was explicitly instrumented and must remain visible/mutable
+			// even when its namespace is configured as ignored.
 			pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(config.Name, config.Namespace)
 			if err != nil {
 				return nil, err
@@ -161,7 +162,7 @@ func fetchSourcesForNamespace(ctx context.Context, filters *WorkloadFilterSingle
 	return sources, nil
 }
 
-func fetchAllSources(ctx context.Context, ignoredNamespaces map[string]struct{}, k8sCacheClient client.Client) (*odigosv1.SourceList, error) {
+func fetchAllSources(ctx context.Context, filters *WorkloadFilter, k8sCacheClient client.Client) (*odigosv1.SourceList, error) {
 	sources := &odigosv1.SourceList{}
 	err := k8sCacheClient.List(ctx, sources, client.MatchingLabels(map[string]string{}))
 	if err != nil {
@@ -170,13 +171,45 @@ func fetchAllSources(ctx context.Context, ignoredNamespaces map[string]struct{},
 
 	filteredSources := make([]odigosv1.Source, 0, len(sources.Items))
 	for _, source := range sources.Items {
-		if _, ok := ignoredNamespaces[source.Namespace]; ok {
-			continue
+		if _, ignored := filters.IgnoredNamespaces[source.Namespace]; ignored {
+			// Allow Source CRs in ignored namespaces through when the workload they target
+			// is in the bypass set (i.e. instrumented). Namespace-scoped Source CRs are kept
+			// when any bypass workload lives in that namespace so the user can still see
+			// and uninstrument the umbrella source.
+			wd := source.Spec.Workload
+			id := model.K8sWorkloadID{
+				Namespace: wd.Namespace,
+				Kind:      model.K8sResourceKind(wd.Kind),
+				Name:      wd.Name,
+			}
+			if wd.Kind == k8sconsts.WorkloadKindNamespace {
+				if !namespaceHasBypassWorkload(filters, source.Namespace) {
+					continue
+				}
+			} else if _, bypass := filters.BypassWorkloads[id]; !bypass {
+				continue
+			}
 		}
 		filteredSources = append(filteredSources, source)
 	}
 	sources.Items = filteredSources
 	return sources, nil
+}
+
+// namespaceHasBypassWorkload reports whether any bypass workload lives in the given namespace.
+// Used when deciding whether a namespace-scoped Source CR in an ignored namespace should be
+// surfaced — without this, an `odigos-system` namespace Source CR would be hidden even when
+// it's the reason an instrumented component shows up in the UI.
+func namespaceHasBypassWorkload(filters *WorkloadFilter, namespace string) bool {
+	if filters == nil {
+		return false
+	}
+	for id := range filters.BypassWorkloads {
+		if id.Namespace == namespace {
+			return true
+		}
+	}
+	return false
 }
 
 func fetchSources(ctx context.Context, filters *WorkloadFilter, k8sCacheClient client.Client) (workloadSources map[model.K8sWorkloadID]*odigosv1.Source, namespaceSources map[string]*odigosv1.Source, err error) {
@@ -187,7 +220,7 @@ func fetchSources(ctx context.Context, filters *WorkloadFilter, k8sCacheClient c
 	} else if filters.SingleNamespace != nil {
 		sources, err = fetchSourcesForNamespace(ctx, filters.SingleNamespace, k8sCacheClient)
 	} else {
-		sources, err = fetchAllSources(ctx, filters.IgnoredNamespaces, k8sCacheClient)
+		sources, err = fetchAllSources(ctx, filters, k8sCacheClient)
 	}
 	if err != nil {
 		return nil, nil, err
@@ -596,43 +629,43 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 
 	workloadManifests = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
 	for id, manifest := range deploymentsMap {
-		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
+		if filters.ShouldIgnoreWorkload(id) {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range statefulsetsMap {
-		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
+		if filters.ShouldIgnoreWorkload(id) {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range daemonsMap {
-		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
+		if filters.ShouldIgnoreWorkload(id) {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range cronjobsMap {
-		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
+		if filters.ShouldIgnoreWorkload(id) {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range deploymentconfigsMap {
-		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
+		if filters.ShouldIgnoreWorkload(id) {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range rolloutsMap {
-		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
+		if filters.ShouldIgnoreWorkload(id) {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range staticPodsMap {
-		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
+		if filters.ShouldIgnoreWorkload(id) {
 			continue
 		}
 		workloadManifests[id] = manifest
@@ -653,6 +686,9 @@ func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *Workloa
 	// instead of cluster-wide. This avoids deep-copying pods from namespaces that
 	// have no instrumented workloads, significantly reducing memory usage at scale.
 	if filters.ClusterWide != nil && len(workloadIdsMap) > 0 {
+		// relevantNamespaces is derived from workloadIdsMap which was already filtered
+		// by ShouldIgnoreWorkload upstream — namespaces only appear here if they contain
+		// either a non-ignored workload or a bypass workload, so no additional filter is needed.
 		relevantNamespaces := make(map[string]struct{}, len(workloadIdsMap))
 		for pw := range workloadIdsMap {
 			relevantNamespaces[pw.Namespace] = struct{}{}
@@ -660,14 +696,11 @@ func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *Workloa
 
 		workloadPods = make(map[model.K8sWorkloadID][]*corev1.Pod)
 		for ns := range relevantNamespaces {
-			if _, ok := filters.IgnoredNamespaces[ns]; ok {
-				continue
-			}
 			podList := &corev1.PodList{}
 			if err := k8sCacheClient.List(ctx, podList, client.InNamespace(ns)); err != nil {
 				return nil, err
 			}
-			collectWorkloadPods(podList, workloadIdsMap, filters.IgnoredNamespaces, workloadPods)
+			collectWorkloadPods(podList, workloadIdsMap, workloadPods)
 		}
 		return workloadPods, nil
 	}
@@ -679,7 +712,7 @@ func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *Workloa
 	}
 
 	workloadPods = make(map[model.K8sWorkloadID][]*corev1.Pod)
-	collectWorkloadPods(podList, workloadIdsMap, filters.IgnoredNamespaces, workloadPods)
+	collectWorkloadPods(podList, workloadIdsMap, workloadPods)
 	return workloadPods, nil
 }
 
@@ -696,16 +729,16 @@ func fetchWorkloadPodsWithSelector(ctx context.Context, filters *WorkloadFilter,
 	}
 
 	workloadPods := make(map[model.K8sWorkloadID][]*corev1.Pod)
-	collectWorkloadPods(podList, workloadIdsMap, filters.IgnoredNamespaces, workloadPods)
+	collectWorkloadPods(podList, workloadIdsMap, workloadPods)
 	return workloadPods, nil
 }
 
-func collectWorkloadPods(podList *corev1.PodList, workloadIdsMap map[k8sconsts.PodWorkload]struct{}, ignoredNamespaces map[string]struct{}, out map[model.K8sWorkloadID][]*corev1.Pod) {
+// collectWorkloadPods assigns pods to workloads. Pods are only kept when their owning workload
+// is present in workloadIdsMap — the map itself was already pruned of ignored-namespace workloads
+// (modulo bypass workloads) upstream, so no separate ignored-namespace check is needed here.
+func collectWorkloadPods(podList *corev1.PodList, workloadIdsMap map[k8sconsts.PodWorkload]struct{}, out map[model.K8sWorkloadID][]*corev1.Pod) {
 	for i := range podList.Items {
 		pod := &podList.Items[i]
-		if _, ok := ignoredNamespaces[pod.Namespace]; ok {
-			continue
-		}
 		pw, err := workload.PodWorkloadObject(pod)
 		if err != nil || pw == nil {
 			continue
@@ -749,13 +782,36 @@ func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filt
 	byPodContainer = make(map[PodContainerId][]*odigosv1.InstrumentationInstance, len(ii.Items))
 	byWorkloadContainer = make(map[WorkloadContainerId][]*odigosv1.InstrumentationInstance, len(ii.Items))
 	for _, ii := range ii.Items {
-		if _, ok := filters.IgnoredNamespaces[ii.Namespace]; ok {
-			continue
-		}
 		ownerPodLabel, ok := ii.Labels[odigosv1.OwnerPodNameLabel]
 		if !ok {
 			// instrumentation instance must have this label
 			// if it's missing for any reason, we will just skip it as we cannot use this instance.
+			continue
+		}
+
+		instrumentedAppLabel, hasAppLabel := ii.Labels[consts.InstrumentedAppNameLabel]
+		var workloadId model.K8sWorkloadID
+		if hasAppLabel {
+			instrumentedAppDetails, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instrumentedAppLabel, ii.Namespace)
+			if err == nil {
+				workloadId = model.K8sWorkloadID{
+					Namespace: instrumentedAppDetails.Namespace,
+					Kind:      model.K8sResourceKind(instrumentedAppDetails.Kind),
+					Name:      instrumentedAppDetails.Name,
+				}
+			}
+		}
+
+		// Drop instances in ignored namespaces unless their workload is in the bypass set —
+		// instances for an instrumented workload in an ignored namespace must remain visible
+		// so the UI can render pod/process health for the user-instrumented component.
+		// Falls back to the instance's own namespace when the workload label is missing,
+		// since ShouldIgnoreWorkload can't evaluate bypass without a workload ID.
+		if workloadId.Name != "" {
+			if filters.ShouldIgnoreWorkload(workloadId) {
+				continue
+			}
+		} else if _, namespaceIgnored := filters.IgnoredNamespaces[ii.Namespace]; namespaceIgnored {
 			continue
 		}
 
@@ -767,18 +823,13 @@ func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filt
 		}
 		byPodContainer[containerId] = append(byPodContainer[containerId], &ii)
 
-		instrumentedAppLabel, ok := ii.Labels[consts.InstrumentedAppNameLabel]
-		if !ok {
-			continue
-		}
-		instrumentedAppDetails, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instrumentedAppLabel, ii.Namespace)
-		if err != nil {
+		if !hasAppLabel || workloadId.Name == "" {
 			continue
 		}
 		workloadContainerId := WorkloadContainerId{
-			Namespace:     instrumentedAppDetails.Namespace,
-			Kind:          instrumentedAppDetails.Kind,
-			Name:          instrumentedAppDetails.Name,
+			Namespace:     workloadId.Namespace,
+			Kind:          k8sconsts.WorkloadKind(workloadId.Kind),
+			Name:          workloadId.Name,
 			ContainerName: ii.Spec.ContainerName,
 		}
 		byWorkloadContainer[workloadContainerId] = append(byWorkloadContainer[workloadContainerId], &ii)

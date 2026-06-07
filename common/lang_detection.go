@@ -58,11 +58,18 @@ func MapOdigosToSemConv(odigosPrograminglang ProgrammingLanguage) string {
 }
 
 func GetVersion(versionString string) *version.Version {
-	runtimeVersion, err := version.NewVersion(versionString)
+	return ParseRuntimeVersion(versionString)
+}
+
+// ParseRuntimeVersion parses a runtime version for semver constraint checks.
+// Leading "v" and prerelease/build suffixes (e.g. "v1.2.3-0", "1.2.3+build") are normalized
+// to the core release (1.2.3) so they compare correctly against supported version ranges.
+func ParseRuntimeVersion(versionString string) *version.Version {
+	v, err := version.NewVersion(versionString)
 	if err != nil {
 		return nil
 	}
-	return runtimeVersion
+	return v.Core()
 }
 
 func MajorMinorStringOnly(v *version.Version) (string, error) {
