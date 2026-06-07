@@ -5,7 +5,7 @@ go 1.26.2
 require (
 	cloud.google.com/go/compute/metadata v0.9.0
 	github.com/go-logr/logr v1.4.3
-	github.com/odigos-io/odigos/api v0.0.0
+	github.com/odigos-io/odigos/api v1.27.2
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
 	github.com/onsi/ginkgo v1.16.5

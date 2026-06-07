@@ -5,7 +5,7 @@ go 1.26.2
 require (
 	github.com/argoproj/argo-rollouts v1.8.3
 	github.com/google/uuid v1.6.0
-	github.com/odigos-io/odigos/api v0.0.0
+	github.com/odigos-io/odigos/api v1.27.2
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/profiles v0.0.0-00010101000000-000000000000

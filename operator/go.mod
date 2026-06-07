@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/operator
 go 1.26.2
 
 require (
-	github.com/odigos-io/odigos/api v0.0.0
+	github.com/odigos-io/odigos/api v1.27.2
 	github.com/odigos-io/odigos/cli v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
