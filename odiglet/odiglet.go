@@ -171,7 +171,18 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	// flows + TCP stats (see obi.obiConfigForOdigos); this component scrapes them, resolves each
 	// flow to a k8s service.name (PID/peer-IP -> pod -> InstrumentationConfig.ServiceName), and
 	// serves /api/network + /api/security. Lives in odiglet's process — no extra container.
-	netComp := odigletnetmetrics.NewComponent(mgr.GetClient(), mgr.GetCache(), env.Current.NodeName)
+	//
+	// The component eager-starts the shared OBI instrumenter so network capture begins at boot
+	// (not only once a workload is app-instrumented). Pick the factory that implements OBIStarter
+	// rather than keying on its name, so this stays correct if the factory registration changes.
+	var obiStarter odigletnetmetrics.OBIStarter
+	for _, f := range instrumentationMgrOpts.Factories {
+		if s, ok := f.(odigletnetmetrics.OBIStarter); ok {
+			obiStarter = s
+			break
+		}
+	}
+	netComp := odigletnetmetrics.NewComponent(mgr.GetClient(), mgr.GetCache(), env.Current.NodeName, obiStarter)
 	o.AddRunnable(Runnable{
 		Name:         "network metrics",
 		PropagateErr: false, // network/security is best-effort; never take odiglet down

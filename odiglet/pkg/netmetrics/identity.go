@@ -13,6 +13,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,6 +23,13 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/netmetrics"
 )
+
+// podIndexTTL bounds how often the pod IP/container-id index is rebuilt from the cache. Flow
+// resolution calls PIDToService/PeerToService once per flow (hundreds per snapshot, every couple
+// of seconds); rebuilding the index at most once per TTL turns that into a single cache List per
+// TTL instead of one List+deep-copy per flow. Pods on a node change on the order of seconds, so a
+// 1s index is effectively current.
+const podIndexTTL = 1 * time.Second
 
 // K8sIdentity resolves a flow endpoint to a k8s service identity. It backs the two closures
 // injected into the shared netmetrics ServiceResolver:
@@ -33,6 +42,14 @@ import (
 type K8sIdentity struct {
 	ctx    context.Context
 	client client.Client // the manager's cached client (node-scoped Pods + InstrumentationConfig)
+
+	// pod index, rebuilt at most once per podIndexTTL (see refreshLocked). Guards the maps and
+	// the build timestamp so concurrent resolver goroutines (the /api/network handler and the
+	// security source poll) share one index without racing.
+	mu       sync.Mutex
+	builtAt  time.Time
+	ipToPod  map[string]*corev1.Pod // pod IP -> pod (host-network pods excluded; their IP is the node IP)
+	cidToPod map[string]*corev1.Pod // runtime container id -> pod
 }
 
 // NewK8sIdentity builds the resolver over the controller-runtime cached client.
@@ -98,42 +115,62 @@ func (k *K8sIdentity) serviceForPod(pod *corev1.Pod) (netmetrics.Service, bool) 
 	}, true
 }
 
-// podByIP finds the pod owning an IP in the node-scoped cache. Cheap: the cache holds only
-// this node's pods.
+// podByIP finds the pod owning an IP via the TTL-cached index.
 func (k *K8sIdentity) podByIP(ip string) *corev1.Pod {
-	var pods corev1.PodList
-	if err := k.client.List(k.ctx, &pods); err != nil {
-		return nil
-	}
-	for i := range pods.Items {
-		p := &pods.Items[i]
-		if p.Status.PodIP == ip {
-			return p
-		}
-		for _, pip := range p.Status.PodIPs {
-			if pip.IP == ip {
-				return p
-			}
-		}
-	}
-	return nil
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	k.refreshLocked()
+	return k.ipToPod[ip]
 }
 
-// podByContainerID finds the pod whose container has the given runtime container id.
+// podByContainerID finds the pod whose container has the given runtime container id, via the
+// TTL-cached index.
 func (k *K8sIdentity) podByContainerID(cid string) *corev1.Pod {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	k.refreshLocked()
+	return k.cidToPod[cid]
+}
+
+// refreshLocked rebuilds the pod IP/container-id index from the node-scoped cache when it is
+// older than podIndexTTL. Caller must hold k.mu. On a List error the previous index is kept
+// (better a slightly stale map than no resolution). The cache List is in-memory (no API call),
+// so holding the lock across it is cheap at node scale.
+func (k *K8sIdentity) refreshLocked() {
+	if k.ipToPod != nil && time.Since(k.builtAt) < podIndexTTL {
+		return
+	}
 	var pods corev1.PodList
 	if err := k.client.List(k.ctx, &pods); err != nil {
-		return nil
+		return
 	}
+	ipIdx := make(map[string]*corev1.Pod, len(pods.Items))
+	cidIdx := make(map[string]*corev1.Pod, len(pods.Items))
 	for i := range pods.Items {
 		p := &pods.Items[i]
+		// Host-network pods report the node IP as their pod IP; indexing them would alias every
+		// host-network pod (and the node itself) to one arbitrary pod. Skip them in the IP index —
+		// such peers fall back to the raw IP / host classification. Their containers are still
+		// indexed by container id for local PID resolution.
+		if !p.Spec.HostNetwork {
+			if p.Status.PodIP != "" {
+				ipIdx[p.Status.PodIP] = p
+			}
+			for _, pip := range p.Status.PodIPs {
+				if pip.IP != "" {
+					ipIdx[pip.IP] = p
+				}
+			}
+		}
 		for _, cs := range p.Status.ContainerStatuses {
-			if stripContainerScheme(cs.ContainerID) == cid {
-				return p
+			if id := stripContainerScheme(cs.ContainerID); id != "" {
+				cidIdx[id] = p
 			}
 		}
 	}
-	return nil
+	k.ipToPod = ipIdx
+	k.cidToPod = cidIdx
+	k.builtAt = time.Now()
 }
 
 // containerIDRe matches a 64-hex container id anywhere in a cgroup path (handles both the

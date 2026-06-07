@@ -3,6 +3,7 @@ package obi
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
@@ -24,10 +25,26 @@ const NetworkPrometheusPort = 8999
 // OBIInstrumentationFactory creates instrumentations that add/remove PIDs on a shared
 // DynamicPIDSelector while a single OBI instrumenter runs in the background.
 // Requires OBI with DynamicPIDSelector support (e.g. go.opentelemetry.io/obi from main after PR 1388).
+//
+// The single instrumenter runs every enabled OBI pillar concurrently: App O11y (per-PID traces,
+// scoped by the DynamicPIDSelector) and the node-wide Net O11y + Stats O11y pillars
+// (see obiConfigForOdigos). It can be started two ways:
+//   - lazily, on the first CreateInstrumentation call (an app workload was instrumented), or
+//   - eagerly, via EnsureRunning, so node-wide network/stats capture begins at odiglet boot
+//     even when no application workload is instrumented yet.
+//
+// mu guards the start/stop lifecycle (obiCtx/obiCtxCancel/eager) so concurrent
+// CreateInstrumentation/Close/EnsureRunning calls are race-free.
 type OBIInstrumentationFactory struct {
-	logger       *commonlogger.OdigosLogger
+	logger *commonlogger.OdigosLogger
+
+	mu           sync.Mutex
 	obiCtx       context.Context
 	obiCtxCancel context.CancelFunc
+	// eager is set by EnsureRunning. When true, the instrumenter is kept running for the whole
+	// odiglet lifetime (node-wide flow capture) and is NOT torn down when the last app PID is
+	// removed by Close — only ctx cancellation stops it.
+	eager bool
 
 	selector *discover.DynamicPIDSelector
 	obiCfg   *obi.Config
@@ -86,21 +103,45 @@ func obiConfigForOdigos() *obi.Config {
 	return &cfg
 }
 
+// startLocked starts the background OBI instrumenter bound to ctx if it is not already running.
+// Caller must hold f.mu. The instrumenter runs all enabled pillars (App + Net + Stats) and lives
+// until ctx is cancelled. The first caller's ctx wins; subsequent calls are no-ops, so an early
+// EnsureRunning (odiglet's long-lived root ctx) takes precedence over a later lazy start.
+func (f *OBIInstrumentationFactory) startLocked(ctx context.Context) {
+	if f.obiCtx != nil {
+		return
+	}
+	obiCtx, obiCtxCancel := context.WithCancel(ctx)
+	f.obiCtx = obiCtx
+	f.obiCtxCancel = obiCtxCancel
+
+	go func() {
+		err := instrumenter.Run(obiCtx, f.obiCfg, instrumenter.WithDynamicPIDSelector(f.selector))
+		if err != nil && obiCtx.Err() == nil {
+			f.logger.Error("OBI instrumenter exited with error", "err", err)
+		}
+	}()
+}
+
+// EnsureRunning eagerly starts the OBI instrumenter (idempotent) bound to the given long-lived
+// context, so the node-wide Net O11y + Stats O11y pillars capture flows even when NO application
+// workload is instrumented. Without this the instrumenter starts lazily on the first
+// CreateInstrumentation call, which would leave the network map / security view empty until
+// something is app-instrumented. The eager flag also keeps the instrumenter alive across app
+// (de)instrumentation: per-PID Close no longer tears it down. Safe to call concurrently.
+func (f *OBIInstrumentationFactory) EnsureRunning(ctx context.Context) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.eager = true
+	f.startLocked(ctx)
+}
+
 // CreateInstrumentation starts the OBI instrumenter if it is not already running
 // and returns an obiInstrumentation that allows adding/removing this PID using the dynamic selector.
 func (f *OBIInstrumentationFactory) CreateInstrumentation(ctx context.Context, pid int, settings instrumentation.Settings) (instrumentation.Instrumentation, error) {
-	if f.obiCtx == nil {
-		obiCtx, obiCtxCancel := context.WithCancel(ctx)
-		f.obiCtx = obiCtx
-		f.obiCtxCancel = obiCtxCancel
-
-		go func() {
-			err := instrumenter.Run(f.obiCtx, f.obiCfg, instrumenter.WithDynamicPIDSelector(f.selector))
-			if err != nil && f.obiCtx.Err() == nil {
-				f.logger.Error("OBI instrumenter exited with error", "err", err)
-			}
-		}()
-	}
+	f.mu.Lock()
+	f.startLocked(ctx)
+	f.mu.Unlock()
 	return &obiInstrumentation{selector: f.selector, pid: pid, factory: f}, nil
 }
 
@@ -124,11 +165,20 @@ func (o *obiInstrumentation) Run(ctx context.Context) error {
 
 func (o *obiInstrumentation) Close(_ context.Context) error {
 	o.selector.RemovePIDs(uint32(o.pid))
-	if _, ok := o.selector.GetPIDs(); !ok {
-		if o.factory.obiCtxCancel != nil {
-			o.factory.obiCtxCancel()
-			o.factory.obiCtxCancel = nil
-			o.factory.obiCtx = nil
+	f := o.factory
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	// When eager-started for node-wide network/stats capture, keep the instrumenter running
+	// regardless of app PIDs — tearing it down here would stop flow collection the moment the
+	// last app workload is un-instrumented. Only ctx cancellation stops an eager instrumenter.
+	if f.eager {
+		return nil
+	}
+	if _, ok := f.selector.GetPIDs(); !ok {
+		if f.obiCtxCancel != nil {
+			f.obiCtxCancel()
+			f.obiCtxCancel = nil
+			f.obiCtx = nil
 		}
 	}
 	return nil
