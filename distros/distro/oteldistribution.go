@@ -220,10 +220,9 @@ type Logs struct {
 	EbpfLogCapture *EbpfLogCapture `yaml:"ebpfLogCapture,omitempty"`
 }
 
-// document support by this distro for agent own logging features
-// e.g. logs that the agent or the components it brings with it produce.
-// can be logs on startup, initialization, config, features, instrumentation loading, etc.
-type OwnLogs struct {
+// document support by this distro for agent own diagnostics features
+// for example - logs that the agent or the components it brings with it produce.
+type OwnDiagnostics struct {
 
 	// if true, the distro supports agent own logging.
 	OdigosAgentOwnLogerSupported bool `yaml:"odigosAgentOwnLogerSupported,omitempty"`
@@ -327,5 +326,5 @@ type OtelDistro struct {
 	Logs *Logs `yaml:"logs,omitempty"`
 
 	// document support by this distro for agent own logging features
-	OwnLogs *OwnLogs `yaml:"ownLogs,omitempty"`
+	OwnLogs *OwnDiagnostics `yaml:"ownLogs,omitempty"`
 }

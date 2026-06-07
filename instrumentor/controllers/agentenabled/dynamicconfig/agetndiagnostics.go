@@ -26,7 +26,7 @@ func CalculateAgentDiagnostics(irls *[]odigosv1.InstrumentationRule, d *distro.O
 }
 
 // merges 2 configs for agent log level, returning the most verbose one for each field.
-func mergeAgentDiagnostics(existing *instrumentationrules.AgentDiagnostics, incoming *instrumentationrules.AgentDiagnostics, distroSupport distro.OwnLogs) *instrumentationrules.AgentDiagnostics {
+func mergeAgentDiagnostics(existing *instrumentationrules.AgentDiagnostics, incoming *instrumentationrules.AgentDiagnostics, distroSupport distro.OwnDiagnostics) *instrumentationrules.AgentDiagnostics {
 	if incoming == nil {
 		return existing
 	}
