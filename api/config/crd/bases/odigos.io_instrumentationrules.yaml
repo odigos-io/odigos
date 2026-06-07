@@ -39,6 +39,29 @@ spec:
             type: object
           spec:
             properties:
+              agentDiagnostics:
+                description: Configure the agent own logging configuration.
+                properties:
+                  odigosLogLevel:
+                    description: The log level of the odigos agent itself (startup,
+                      config, features, insttrumentation loading, etc.)
+                    enum:
+                    - error
+                    - warn
+                    - info
+                    - debug
+                    type: string
+                  openTelemetryComponentsLogLevel:
+                    description: |-
+                      The log level of the OpenTelemetry components (Sdk, instrumentation libraries, detectors, etc.)
+                      If unset, no OpenTelemetry components logs will be collected.
+                    enum:
+                    - error
+                    - warn
+                    - info
+                    - debug
+                    type: string
+                type: object
               codeAttributes:
                 description: Configure which code attributes should be recorded as
                   span attributes.

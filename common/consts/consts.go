@@ -10,6 +10,8 @@ const (
 	OdigosVersionEnvVarName             = "ODIGOS_VERSION"
 	OdigosComponentDeploymentNameEnvVar = "ODIGOS_COMPONENT_DEPLOYMENT_NAME"
 	OdigosTierEnvVarName                = "ODIGOS_TIER"
+	OdigosLogLevelEnvVarName            = "ODIGOS_LOG_LEVEL"
+	OtelLogLevelEnvVarName              = "OTEL_LOG_LEVEL"
 	DefaultOdigosNamespace              = "odigos-system"
 	OdigosConfigurationName             = "odigos-configuration"
 	OdigosEffectiveConfigName           = "effective-config"

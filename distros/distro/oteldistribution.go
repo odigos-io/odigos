@@ -220,6 +220,18 @@ type Logs struct {
 	EbpfLogCapture *EbpfLogCapture `yaml:"ebpfLogCapture,omitempty"`
 }
 
+// document support by this distro for agent own diagnostics features
+// for example - logs that the agent or the components it brings with it produce.
+type OwnDiagnostics struct {
+
+	// if true, the distro supports agent own logging.
+	OdigosAgentOwnLogerSupported bool `yaml:"odigosAgentOwnLogerSupported,omitempty"`
+
+	// if set, the distro supports configuring the log level for the OpenTelemetry components.
+	// For example: SDK, instrumentation libraries, detectors, etc.
+	OpenTelemetryComponentsLoggerSupported bool `yaml:"openTelemetryComponentsLoggerSupported,omitempty"`
+}
+
 type Traces struct {
 	// if set, the distro supports head sampling based on root spans of traces.
 	HeadSampling *HeadSampling `yaml:"headSampling,omitempty"`
@@ -312,4 +324,7 @@ type OtelDistro struct {
 
 	// document support by this distro for logs features
 	Logs *Logs `yaml:"logs,omitempty"`
+
+	// document support by this distro for agent own logging features
+	OwnLogs *OwnDiagnostics `yaml:"ownLogs,omitempty"`
 }

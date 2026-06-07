@@ -6,7 +6,8 @@ import (
 
 type ProfileName string
 
-// OdigosLogLevel is the log level for components (error, warn, info, debug).
+// OdigosLogLevel is the log level for Odigos components (ODIGOS_LOG_LEVEL).
+// +kubebuilder:validation:Enum=error;warn;info;debug
 type OdigosLogLevel string
 
 const (
@@ -15,6 +16,29 @@ const (
 	LogLevelInfo  OdigosLogLevel = "info"
 	LogLevelDebug OdigosLogLevel = "debug"
 )
+
+// EnvVarValue returns the log level as a string value for the environment variable.
+// The agent and otel should support these values, or it needs to be adjusted when added for
+// language distros that use different values.
+func (l OdigosLogLevel) EnvVarValue() string {
+	return string(l)
+}
+
+// Compare returns a negative integer, zero, or a positive integer as l is less than, equal to, or greater than other.
+func (l OdigosLogLevel) Compare(other OdigosLogLevel) int {
+	switch l {
+	case LogLevelError:
+		return 10
+	case LogLevelWarn:
+		return 20
+	case LogLevelInfo:
+		return 30
+	case LogLevelDebug:
+		return 40
+	default:
+		return 0
+	}
+}
 
 // +kubebuilder:object:generate=true
 // ComponentLogLevels holds default and per-component log levels. Default is the global; per-field overrides for that component.
