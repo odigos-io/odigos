@@ -61,6 +61,8 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
 	// Configure the verbosity of the traces for the library.
 	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
+	// Configure the agent own logging configuration.
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -190,5 +192,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithEbpfLogCapture(value ins
 // If called multiple times, the TraceVerbosity field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithTraceVerbosity(value instrumentationrules.TraceVerbosity) *InstrumentationRuleSpecApplyConfiguration {
 	b.TraceVerbosity = &value
+	return b
+}
+
+// WithAgentDiagnostics sets the AgentDiagnostics field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AgentDiagnostics field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithAgentDiagnostics(value instrumentationrules.AgentDiagnostics) *InstrumentationRuleSpecApplyConfiguration {
+	b.AgentDiagnostics = &value
 	return b
 }
