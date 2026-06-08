@@ -103,6 +103,10 @@ func CopyAgentsDirectoryToHost() error {
 		logger.Error("Error creating dotnet deprecated directories", "err", err)
 		return err
 	}
+	if err := ensureDirectoryTraversalPermissions(k8sconsts.OdigosAgentsDirectory); err != nil {
+		logger.Error("Error ensuring instrumentation directory permissions", "err", err)
+		return err
+	}
 
 	logger.Info("Odigos agents directory copied to host", "elapsed", time.Since(startTime))
 
