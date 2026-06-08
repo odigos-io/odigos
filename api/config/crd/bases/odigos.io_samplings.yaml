@@ -366,6 +366,38 @@ spec:
                         for example: specific http server endpoint (GET "/healthz" as an example).
                         this field is optional, and if not set, the rule will be applied to all operations.
                       properties:
+                        grpcClient:
+                          description: match grpc client operation (trace that starts
+                            with an outgoing grpc call).
+                          properties:
+                            method:
+                              description: match the bare gRPC method name exactly
+                                (e.g. "ListItems"). leave empty to match any method.
+                              type: string
+                            serverAddress:
+                              description: match server address exactly (e.g. collector.my.vendor.com)
+                              type: string
+                            service:
+                              description: |-
+                                match the fully-qualified gRPC service name exactly (e.g. "my.example.com.InventoryService").
+                                leave empty to match any service.
+                              type: string
+                          type: object
+                        grpcServer:
+                          description: match grpc server operation (trace that starts
+                            with an incoming grpc call)
+                          properties:
+                            method:
+                              description: match the bare gRPC method name exactly
+                                (e.g. "ListItems"). leave empty to match any method.
+                              type: string
+                            service:
+                              description: |-
+                                match the fully-qualified gRPC service name exactly (e.g. "my.example.com.InventoryService").
+                                leave empty to match any service. setting only Service is the canonical way to scope a rule
+                                to every method of a single gRPC service.
+                              type: string
+                          type: object
                         httpClient:
                           description: |-
                             match http client operation (trace that starts with an http client operation)
