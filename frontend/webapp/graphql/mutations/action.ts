@@ -50,11 +50,13 @@ export const CREATE_ACTION = gql`
             examples
           }
         }
-        extractions {
-          targetAttributeName
-          lookupKey
-          dataFormat
-          regex
+        extractAttribute {
+          extractions {
+            targetAttributeName
+            lookupKey
+            dataFormat
+            regex
+          }
         }
       }
       conditions {
@@ -117,11 +119,13 @@ export const UPDATE_ACTION = gql`
             examples
           }
         }
-        extractions {
-          targetAttributeName
-          lookupKey
-          dataFormat
-          regex
+        extractAttribute {
+          extractions {
+            targetAttributeName
+            lookupKey
+            dataFormat
+            regex
+          }
         }
       }
       conditions {

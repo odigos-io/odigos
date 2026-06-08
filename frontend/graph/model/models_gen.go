@@ -32,7 +32,7 @@ type ActionFields struct {
 	Renames                      *string                        `json:"renames,omitempty"`
 	PiiCategories                []string                       `json:"piiCategories,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroup `json:"urlTemplatizationRulesGroups,omitempty"`
-	Extractions                  []*Extraction                  `json:"extractions,omitempty"`
+	ExtractAttribute             *ExtractAttribute              `json:"extractAttribute,omitempty"`
 }
 
 type ActionFieldsInput struct {
@@ -48,7 +48,7 @@ type ActionFieldsInput struct {
 	Renames                      *string                             `json:"renames,omitempty"`
 	PiiCategories                []string                            `json:"piiCategories,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroupInput `json:"urlTemplatizationRulesGroups,omitempty"`
-	Extractions                  []*ExtractionInput                  `json:"extractions,omitempty"`
+	ExtractAttribute             *ExtractAttributeInput              `json:"extractAttribute,omitempty"`
 }
 
 type ActionInput struct {
@@ -495,6 +495,14 @@ type ExportedSignalsInput struct {
 	Metrics  bool `json:"metrics"`
 	Logs     bool `json:"logs"`
 	Profiles bool `json:"profiles"`
+}
+
+type ExtractAttribute struct {
+	Extractions []*Extraction `json:"extractions"`
+}
+
+type ExtractAttributeInput struct {
+	Extractions []*ExtractionInput `json:"extractions"`
 }
 
 type Extraction struct {
