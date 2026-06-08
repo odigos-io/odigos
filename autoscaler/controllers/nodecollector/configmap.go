@@ -385,35 +385,8 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 	return signals, nil
 }
 
-func isSamplingActionsEnabled(actions *odigosv1.ActionList) bool {
-	for _, action := range actions.Items {
-		// If the action is disabled, skip it
-		if action.Spec.Disabled {
-			continue
-		}
-		// Only sampling actions that are not disabled should be considered
-		if action.Spec.Samplers != nil {
-			return true
-		}
-	}
-	return false
-}
-
-func isTracingLoadBalancingNeeded(ctx context.Context, client client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
-	// We're enabling load balancing for traces only if one of the following conditions is met:
-	// 1. Sampling actions are enabled
-	// 2. Service graph is enabled
+func isTracingLoadBalancingNeeded(_ context.Context, _ client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
+	// Tracing load balancing is required only when service graph is enabled.
 	serviceGraphEnabled := clusterCollectorGroup.Spec.ServiceGraphDisabled == nil || !*clusterCollectorGroup.Spec.ServiceGraphDisabled
-
-	if serviceGraphEnabled {
-		return true, nil
-	}
-
-	actions := odigosv1.ActionList{}
-	if err := client.List(ctx, &actions); err != nil {
-		return false, err
-	}
-	samplingActionsEnabled := isSamplingActionsEnabled(&actions)
-
-	return samplingActionsEnabled, nil
+	return serviceGraphEnabled, nil
 }

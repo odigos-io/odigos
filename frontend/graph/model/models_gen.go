@@ -31,11 +31,6 @@ type ActionFields struct {
 	AttributeNamesToDelete       []string                       `json:"attributeNamesToDelete,omitempty"`
 	Renames                      *string                        `json:"renames,omitempty"`
 	PiiCategories                []string                       `json:"piiCategories,omitempty"`
-	SamplingPercentage           *string                        `json:"samplingPercentage,omitempty"`
-	FallbackSamplingRatio        *int                           `json:"fallbackSamplingRatio,omitempty"`
-	EndpointsFilters             []*HTTPRouteFilter             `json:"endpointsFilters,omitempty"`
-	ServicesNameFilters          []*ServiceNameFilter           `json:"servicesNameFilters,omitempty"`
-	AttributeFilters             []*SpanAttributeFilter         `json:"attributeFilters,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroup `json:"urlTemplatizationRulesGroups,omitempty"`
 }
 
@@ -51,11 +46,6 @@ type ActionFieldsInput struct {
 	AttributeNamesToDelete       []string                            `json:"attributeNamesToDelete,omitempty"`
 	Renames                      *string                             `json:"renames,omitempty"`
 	PiiCategories                []string                            `json:"piiCategories,omitempty"`
-	SamplingPercentage           *string                             `json:"samplingPercentage,omitempty"`
-	FallbackSamplingRatio        *int                                `json:"fallbackSamplingRatio,omitempty"`
-	EndpointsFilters             []*HTTPRouteFilterInput             `json:"endpointsFilters,omitempty"`
-	ServicesNameFilters          []*ServiceNameFilterInput           `json:"servicesNameFilters,omitempty"`
-	AttributeFilters             []*SpanAttributeFilterInput         `json:"attributeFilters,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroupInput `json:"urlTemplatizationRulesGroups,omitempty"`
 }
 
@@ -87,41 +77,10 @@ type APIToken struct {
 	Message   *string `json:"message,omitempty"`
 }
 
-type AttributeFilters struct {
-	ServiceName           string                     `json:"serviceName"`
-	AttributeKey          string                     `json:"attributeKey"`
-	FallbackSamplingRatio float64                    `json:"fallbackSamplingRatio"`
-	Condition             *AttributeFiltersCondition `json:"condition"`
-}
-
-type AttributeFiltersCondition struct {
-	StringCondition  *StringCondition  `json:"stringCondition,omitempty"`
-	NumberCondition  *NumberCondition  `json:"numberCondition,omitempty"`
-	BooleanCondition *BooleanCondition `json:"booleanCondition,omitempty"`
-	JSONCondition    *JSONCondition    `json:"jsonCondition,omitempty"`
-}
-
-type AttributeFiltersConditionInput struct {
-	StringCondition  *StringConditionInput  `json:"stringCondition,omitempty"`
-	NumberCondition  *NumberConditionInput  `json:"numberCondition,omitempty"`
-	BooleanCondition *BooleanConditionInput `json:"booleanCondition,omitempty"`
-	JSONCondition    *JSONConditionInput    `json:"jsonCondition,omitempty"`
-}
-
 type AutoRollbackConfig struct {
 	Disabled            *bool   `json:"disabled,omitempty"`
 	GraceTime           *string `json:"graceTime,omitempty"`
 	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
-}
-
-type BooleanCondition struct {
-	Operation     BooleanOperation `json:"operation"`
-	ExpectedValue bool             `json:"expectedValue"`
-}
-
-type BooleanConditionInput struct {
-	Operation     BooleanOperation `json:"operation"`
-	ExpectedValue bool             `json:"expectedValue"`
 }
 
 // Clearing buffered OTLP data for a workload slot
@@ -657,20 +616,6 @@ type HTTPPayloadCollectionInput struct {
 	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
 }
 
-type HTTPRouteFilter struct {
-	HTTPRoute               string  `json:"httpRoute"`
-	ServiceName             string  `json:"serviceName"`
-	MinimumLatencyThreshold int     `json:"minimumLatencyThreshold"`
-	FallbackSamplingRatio   float64 `json:"fallbackSamplingRatio"`
-}
-
-type HTTPRouteFilterInput struct {
-	HTTPRoute               string  `json:"httpRoute"`
-	ServiceName             string  `json:"serviceName"`
-	MinimumLatencyThreshold int     `json:"minimumLatencyThreshold"`
-	FallbackSamplingRatio   float64 `json:"fallbackSamplingRatio"`
-}
-
 type InstrumentationInstanceAnalyze struct {
 	Healthy               *EntityProperty   `json:"healthy"`
 	Message               *EntityProperty   `json:"message,omitempty"`
@@ -765,18 +710,6 @@ type JavaCustomProbe struct {
 type JavaCustomProbeInput struct {
 	ClassName  *string `json:"className,omitempty"`
 	MethodName *string `json:"methodName,omitempty"`
-}
-
-type JSONCondition struct {
-	Operation     JSONOperation `json:"operation"`
-	ExpectedValue *string       `json:"expectedValue,omitempty"`
-	JSONPath      *string       `json:"jsonPath,omitempty"`
-}
-
-type JSONConditionInput struct {
-	Operation     JSONOperation `json:"operation"`
-	ExpectedValue *string       `json:"expectedValue,omitempty"`
-	JSONPath      *string       `json:"jsonPath,omitempty"`
 }
 
 type K8sActualNamespace struct {
@@ -875,10 +808,12 @@ type K8sWorkload struct {
 	RuntimeInfo                *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
 	AgentEnabled               *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
 	Rollout                    *K8sWorkloadRollout                  `json:"rollout,omitempty"`
+	AutoRollback               *K8sWorkloadAutoRollback             `json:"autoRollback,omitempty"`
 	Containers                 []*K8sWorkloadContainer              `json:"containers,omitempty"`
 	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
 	PodsAgentInjectionStatus   *DesiredConditionStatus              `json:"podsAgentInjectionStatus"`
 	PodsHealthStatus           *DesiredConditionStatus              `json:"podsHealthStatus"`
+	PodsOdigosHealthStatus     *DesiredConditionStatus              `json:"podsOdigosHealthStatus,omitempty"`
 	WorkloadHealthStatus       *DesiredConditionStatus              `json:"workloadHealthStatus,omitempty"`
 	ProcessesHealthStatus      *DesiredConditionStatus              `json:"processesHealthStatus"`
 	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
@@ -917,10 +852,16 @@ type K8sWorkloadAgentEnabledContainerTraces struct {
 	Enabled bool `json:"enabled"`
 }
 
+type K8sWorkloadAutoRollback struct {
+	AutoRollbackStatus *DesiredConditionStatus `json:"autoRollbackStatus"`
+	RollbackOccurred   bool                    `json:"rollbackOccurred"`
+}
+
 type K8sWorkloadConditions struct {
 	RuntimeDetection      *DesiredConditionStatus `json:"runtimeDetection,omitempty"`
 	AgentInjectionEnabled *DesiredConditionStatus `json:"agentInjectionEnabled,omitempty"`
 	Rollout               *DesiredConditionStatus `json:"rollout,omitempty"`
+	AutoRollback          *DesiredConditionStatus `json:"autoRollback,omitempty"`
 	AgentInjected         *DesiredConditionStatus `json:"agentInjected,omitempty"`
 	ProcessesAgentHealth  *DesiredConditionStatus `json:"processesAgentHealth,omitempty"`
 	ExpectingTelemetry    *DesiredConditionStatus `json:"expectingTelemetry,omitempty"`
@@ -932,6 +873,7 @@ type K8sWorkloadContainer struct {
 	AgentEnabled     *K8sWorkloadAgentEnabledContainer                `json:"agentEnabled,omitempty"`
 	Overrides        *K8sWorkloadContainerOverrides                   `json:"overrides,omitempty"`
 	AgentConfig      *K8sWorkloadContainerAgentConfig                 `json:"agentConfig,omitempty"`
+	CollectorConfig  *K8sWorkloadContainerCollectorConfig             `json:"collectorConfig,omitempty"`
 	Instrumentations []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
 }
 
@@ -944,24 +886,59 @@ type K8sWorkloadContainerAgentConfigTraces struct {
 }
 
 type K8sWorkloadContainerAgentConfigTracesHeadSampling struct {
-	Checks             []*K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck `json:"checks,omitempty"`
-	FallbackPercentage float64                                                   `json:"fallbackPercentage"`
+	DryRun          *bool                                                              `json:"dryRun,omitempty"`
+	SpanMetricsMode *K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode  `json:"spanMetricsMode,omitempty"`
+	NoisyOperations []*K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation `json:"noisyOperations,omitempty"`
 }
 
-type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck struct {
-	Conditions []*K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition `json:"conditions,omitempty"`
-	Percentage float64                                                            `json:"percentage"`
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
 }
 
-type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition struct {
-	Key      string                                                                  `json:"key"`
-	Operator K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator `json:"operator"`
-	Value    string                                                                  `json:"value"`
+type K8sWorkloadContainerCollectorConfig struct {
+	TailSampling *K8sWorkloadContainerCollectorConfigTailSampling `json:"tailSampling,omitempty"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSampling struct {
+	NoisyOperations          []*K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation          `json:"noisyOperations,omitempty"`
+	HighlyRelevantOperations []*K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
+	CostReductionRules       []*K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule       `json:"costReductionRules,omitempty"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	Operation        *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost float64                       `json:"percentageAtMost"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation struct {
+	RuleID            string                        `json:"ruleId"`
+	Name              *string                       `json:"name,omitempty"`
+	Disabled          bool                          `json:"disabled"`
+	Error             bool                          `json:"error"`
+	DurationAtLeastMs *int                          `json:"durationAtLeastMs,omitempty"`
+	Operation         *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtLeast *float64                      `json:"percentageAtLeast,omitempty"`
+}
+
+type K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
 }
 
 type K8sWorkloadContainerOverrides struct {
-	ContainerName string                           `json:"containerName"`
-	RuntimeInfo   *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
+	ContainerName  string                           `json:"containerName"`
+	RuntimeInfo    *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
+	OtelDistroName *string                          `json:"otelDistroName,omitempty"`
 }
 
 type K8sWorkloadID struct {
@@ -990,7 +967,8 @@ type K8sWorkloadPod struct {
 	StartedPostAgentMetaHashChange *bool                      `json:"startedPostAgentMetaHashChange,omitempty"`
 	AgentInjectedStatus            *DesiredConditionStatus    `json:"agentInjectedStatus"`
 	RunningLatestWorkloadRevision  *string                    `json:"runningLatestWorkloadRevision,omitempty"`
-	PodHealthStatus                *DesiredConditionStatus    `json:"podHealthStatus"`
+	K8sHealthStatus                *DesiredConditionStatus    `json:"k8sHealthStatus"`
+	OdigosHealthStatus             *DesiredConditionStatus    `json:"odigosHealthStatus,omitempty"`
 	Containers                     []*K8sWorkloadPodContainer `json:"containers"`
 }
 
@@ -1005,7 +983,8 @@ type K8sWorkloadPodContainer struct {
 	RunningStartedTime              *string                           `json:"runningStartedTime,omitempty"`
 	WaitingReasonEnum               *string                           `json:"waitingReasonEnum,omitempty"`
 	WaitingMessage                  *string                           `json:"waitingMessage,omitempty"`
-	HealthStatus                    *DesiredConditionStatus           `json:"healthStatus"`
+	K8sHealthStatus                 *DesiredConditionStatus           `json:"k8sHealthStatus"`
+	OdigosHealthStatus              *DesiredConditionStatus           `json:"odigosHealthStatus,omitempty"`
 	Processes                       []*K8sWorkloadPodContainerProcess `json:"processes"`
 }
 
@@ -1022,8 +1001,13 @@ type K8sWorkloadPodContainerProcessAttribute struct {
 }
 
 type K8sWorkloadPodContainerProcessInstrumentation struct {
-	Name              string `json:"name"`
-	IsStandardLibrary *bool  `json:"isStandardLibrary,omitempty"`
+	Name                     string                     `json:"name"`
+	Type                     *string                    `json:"type,omitempty"`
+	Healthy                  *bool                      `json:"healthy,omitempty"`
+	Message                  *string                    `json:"message,omitempty"`
+	LastStatusTime           *string                    `json:"lastStatusTime,omitempty"`
+	IsStandardLibrary        *bool                      `json:"isStandardLibrary,omitempty"`
+	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
 }
 
 type K8sWorkloadRollout struct {
@@ -1245,16 +1229,6 @@ type NoisyOperationRuleInput struct {
 type NonIdentifyingAttribute struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
-}
-
-type NumberCondition struct {
-	Operation     NumberOperation `json:"operation"`
-	ExpectedValue float64         `json:"expectedValue"`
-}
-
-type NumberConditionInput struct {
-	Operation     NumberOperation `json:"operation"`
-	ExpectedValue float64         `json:"expectedValue"`
 }
 
 type ObservabilitySignalSupport struct {
@@ -1512,18 +1486,6 @@ type ServiceMapToSource struct {
 	NodeAttributes []*NonIdentifyingAttribute `json:"nodeAttributes"`
 }
 
-type ServiceNameFilter struct {
-	ServiceName           string  `json:"serviceName"`
-	SamplingRatio         float64 `json:"samplingRatio"`
-	FallbackSamplingRatio float64 `json:"fallbackSamplingRatio"`
-}
-
-type ServiceNameFilterInput struct {
-	ServiceName           string  `json:"serviceName"`
-	SamplingRatio         float64 `json:"samplingRatio"`
-	FallbackSamplingRatio float64 `json:"fallbackSamplingRatio"`
-}
-
 type SingleDestinationMetricsResponse struct {
 	ID            string `json:"id"`
 	TotalDataSent int    `json:"totalDataSent"`
@@ -1584,36 +1546,11 @@ type SourcesScopesInput struct {
 	Languages  []SamplingWorkloadLanguage `json:"languages,omitempty"`
 }
 
-type SpanAttributeFilter struct {
-	ServiceName           string                     `json:"serviceName"`
-	AttributeKey          string                     `json:"attributeKey"`
-	Condition             *AttributeFiltersCondition `json:"condition"`
-	SamplingRatio         float64                    `json:"samplingRatio"`
-	FallbackSamplingRatio float64                    `json:"fallbackSamplingRatio"`
-}
-
-type SpanAttributeFilterInput struct {
-	ServiceName           string                          `json:"serviceName"`
-	AttributeKey          string                          `json:"attributeKey"`
-	FallbackSamplingRatio float64                         `json:"fallbackSamplingRatio"`
-	Condition             *AttributeFiltersConditionInput `json:"condition"`
-}
-
 type SpanSamplingAttributesConfig struct {
 	Disabled                       *bool `json:"disabled,omitempty"`
 	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
 	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
 	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
-}
-
-type StringCondition struct {
-	Operation     StringOperation `json:"operation"`
-	ExpectedValue *string         `json:"expectedValue,omitempty"`
-}
-
-type StringConditionInput struct {
-	Operation     StringOperation `json:"operation"`
-	ExpectedValue *string         `json:"expectedValue,omitempty"`
 }
 
 type SupportedSignals struct {
@@ -1738,11 +1675,6 @@ const (
 	ActionTypeDeleteAttribute       ActionType = "DeleteAttribute"
 	ActionTypeRenameAttribute       ActionType = "RenameAttribute"
 	ActionTypePiiMasking            ActionType = "PiiMasking"
-	ActionTypeErrorSampler          ActionType = "ErrorSampler"
-	ActionTypeProbabilisticSampler  ActionType = "ProbabilisticSampler"
-	ActionTypeLatencySampler        ActionType = "LatencySampler"
-	ActionTypeServiceNameSampler    ActionType = "ServiceNameSampler"
-	ActionTypeSpanAttributeSampler  ActionType = "SpanAttributeSampler"
 	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
@@ -1753,18 +1685,13 @@ var AllActionType = []ActionType{
 	ActionTypeDeleteAttribute,
 	ActionTypeRenameAttribute,
 	ActionTypePiiMasking,
-	ActionTypeErrorSampler,
-	ActionTypeProbabilisticSampler,
-	ActionTypeLatencySampler,
-	ActionTypeServiceNameSampler,
-	ActionTypeSpanAttributeSampler,
 	ActionTypeURLTemplatization,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeURLTemplatization, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeURLTemplatization, ActionTypeUnknownType:
 		return true
 	}
 	return false
@@ -1788,47 +1715,6 @@ func (e *ActionType) UnmarshalGQL(v any) error {
 }
 
 func (e ActionType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type BooleanOperation string
-
-const (
-	BooleanOperationExists BooleanOperation = "exists"
-	BooleanOperationEquals BooleanOperation = "equals"
-)
-
-var AllBooleanOperation = []BooleanOperation{
-	BooleanOperationExists,
-	BooleanOperationEquals,
-}
-
-func (e BooleanOperation) IsValid() bool {
-	switch e {
-	case BooleanOperationExists, BooleanOperationEquals:
-		return true
-	}
-	return false
-}
-
-func (e BooleanOperation) String() string {
-	return string(e)
-}
-
-func (e *BooleanOperation) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = BooleanOperation(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid BooleanOperation", str)
-	}
-	return nil
-}
-
-func (e BooleanOperation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -2204,59 +2090,6 @@ func (e InstrumentationRuleType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type JSONOperation string
-
-const (
-	JSONOperationExists         JSONOperation = "exists"
-	JSONOperationEquals         JSONOperation = "equals"
-	JSONOperationNotEquals      JSONOperation = "not_equals"
-	JSONOperationIsValidJSON    JSONOperation = "is_valid_json"
-	JSONOperationIsInvalidJSON  JSONOperation = "is_invalid_json"
-	JSONOperationJsonpathExists JSONOperation = "jsonpath_exists"
-	JSONOperationKeyEquals      JSONOperation = "key_equals"
-	JSONOperationKeyNotEquals   JSONOperation = "key_not_equals"
-)
-
-var AllJSONOperation = []JSONOperation{
-	JSONOperationExists,
-	JSONOperationEquals,
-	JSONOperationNotEquals,
-	JSONOperationIsValidJSON,
-	JSONOperationIsInvalidJSON,
-	JSONOperationJsonpathExists,
-	JSONOperationKeyEquals,
-	JSONOperationKeyNotEquals,
-}
-
-func (e JSONOperation) IsValid() bool {
-	switch e {
-	case JSONOperationExists, JSONOperationEquals, JSONOperationNotEquals, JSONOperationIsValidJSON, JSONOperationIsInvalidJSON, JSONOperationJsonpathExists, JSONOperationKeyEquals, JSONOperationKeyNotEquals:
-		return true
-	}
-	return false
-}
-
-func (e JSONOperation) String() string {
-	return string(e)
-}
-
-func (e *JSONOperation) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = JSONOperation(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid JsonOperation", str)
-	}
-	return nil
-}
-
-func (e JSONOperation) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 type K8sAttributesFrom string
 
 const (
@@ -2400,48 +2233,44 @@ func (e K8sResourceKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator string
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode string
 
 const (
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEquals    K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "equals"
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorNotEquals K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "notEquals"
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEndWith   K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "endWith"
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorStartWith K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "startWith"
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeSampledSpansOnly K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode = "sampled_spans_only"
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeAllSpans         K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode = "all_spans"
 )
 
-var AllK8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = []K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator{
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEquals,
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorNotEquals,
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEndWith,
-	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorStartWith,
+var AllK8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode = []K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode{
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeSampledSpansOnly,
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeAllSpans,
 }
 
-func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) IsValid() bool {
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) IsValid() bool {
 	switch e {
-	case K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEquals, K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorNotEquals, K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEndWith, K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorStartWith:
+	case K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeSampledSpansOnly, K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeAllSpans:
 		return true
 	}
 	return false
 }
 
-func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) String() string {
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) String() string {
 	return string(e)
 }
 
-func (e *K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) UnmarshalGQL(v any) error {
+func (e *K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator(str)
+	*e = K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator", str)
+		return fmt.Errorf("%s is not a valid K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode", str)
 	}
 	return nil
 }
 
-func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) MarshalGQL(w io.Writer) {
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -2528,57 +2357,6 @@ func (e *MountMethod) UnmarshalGQL(v any) error {
 }
 
 func (e MountMethod) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type NumberOperation string
-
-const (
-	NumberOperationExists             NumberOperation = "exists"
-	NumberOperationEquals             NumberOperation = "equals"
-	NumberOperationNotEquals          NumberOperation = "not_equals"
-	NumberOperationGreaterThan        NumberOperation = "greater_than"
-	NumberOperationLessThan           NumberOperation = "less_than"
-	NumberOperationGreaterThanOrEqual NumberOperation = "greater_than_or_equal"
-	NumberOperationLessThanOrEqual    NumberOperation = "less_than_or_equal"
-)
-
-var AllNumberOperation = []NumberOperation{
-	NumberOperationExists,
-	NumberOperationEquals,
-	NumberOperationNotEquals,
-	NumberOperationGreaterThan,
-	NumberOperationLessThan,
-	NumberOperationGreaterThanOrEqual,
-	NumberOperationLessThanOrEqual,
-}
-
-func (e NumberOperation) IsValid() bool {
-	switch e {
-	case NumberOperationExists, NumberOperationEquals, NumberOperationNotEquals, NumberOperationGreaterThan, NumberOperationLessThan, NumberOperationGreaterThanOrEqual, NumberOperationLessThanOrEqual:
-		return true
-	}
-	return false
-}
-
-func (e NumberOperation) String() string {
-	return string(e)
-}
-
-func (e *NumberOperation) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = NumberOperation(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid NumberOperation", str)
-	}
-	return nil
-}
-
-func (e NumberOperation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -2961,55 +2739,6 @@ func (e *SpanKind) UnmarshalGQL(v any) error {
 }
 
 func (e SpanKind) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type StringOperation string
-
-const (
-	StringOperationExists      StringOperation = "exists"
-	StringOperationEquals      StringOperation = "equals"
-	StringOperationNotEquals   StringOperation = "not_equals"
-	StringOperationContains    StringOperation = "contains"
-	StringOperationNotContains StringOperation = "not_contains"
-	StringOperationRegex       StringOperation = "regex"
-)
-
-var AllStringOperation = []StringOperation{
-	StringOperationExists,
-	StringOperationEquals,
-	StringOperationNotEquals,
-	StringOperationContains,
-	StringOperationNotContains,
-	StringOperationRegex,
-}
-
-func (e StringOperation) IsValid() bool {
-	switch e {
-	case StringOperationExists, StringOperationEquals, StringOperationNotEquals, StringOperationContains, StringOperationNotContains, StringOperationRegex:
-		return true
-	}
-	return false
-}
-
-func (e StringOperation) String() string {
-	return string(e)
-}
-
-func (e *StringOperation) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = StringOperation(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid StringOperation", str)
-	}
-	return nil
-}
-
-func (e StringOperation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

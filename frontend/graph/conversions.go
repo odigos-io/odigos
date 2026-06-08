@@ -8,7 +8,9 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	commonapi "github.com/odigos-io/odigos/common/api"
 	"github.com/odigos-io/odigos/common/api/sampling"
+	"github.com/odigos-io/odigos/common/config/testconnection"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -750,7 +752,238 @@ func convertSamplingConfigInputToOdigosConfig(config *model.SamplingConfigInput)
 
 // containerAgentConfigToAgentConfigModel converts InstrumentationConfig container agent config (traces/head sampling) to the GraphQL K8sWorkloadContainerAgentConfig model.
 func containerAgentConfigToAgentConfigModel(c *v1alpha1.ContainerAgentConfig) *model.K8sWorkloadContainerAgentConfig {
-	return nil
+	if c == nil || c.Traces == nil {
+		return nil
+	}
+	headSampling := headSamplingConfigToModel(c.Traces.HeadSampling)
+	if headSampling == nil {
+		return &model.K8sWorkloadContainerAgentConfig{
+			Traces: &model.K8sWorkloadContainerAgentConfigTraces{},
+		}
+	}
+	return &model.K8sWorkloadContainerAgentConfig{
+		Traces: &model.K8sWorkloadContainerAgentConfigTraces{
+			HeadSampling: headSampling,
+		},
+	}
+}
+
+func headSamplingConfigToModel(cfg *sampling.HeadSamplingConfig) *model.K8sWorkloadContainerAgentConfigTracesHeadSampling {
+	if cfg == nil {
+		return nil
+	}
+	result := &model.K8sWorkloadContainerAgentConfigTracesHeadSampling{}
+	if cfg.DryRun {
+		result.DryRun = ptrBool(true)
+	}
+	if cfg.SpanMetricsMode != "" {
+		mode := headSamplingSpanMetricsModeToModel(cfg.SpanMetricsMode)
+		result.SpanMetricsMode = &mode
+	}
+	if len(cfg.NoisyOperations) > 0 {
+		result.NoisyOperations = make([]*model.K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation, 0, len(cfg.NoisyOperations))
+		for i := range cfg.NoisyOperations {
+			if op := headSamplingNoisyOperationToModel(&cfg.NoisyOperations[i]); op != nil {
+				result.NoisyOperations = append(result.NoisyOperations, op)
+			}
+		}
+	}
+	return result
+}
+
+func headSamplingSpanMetricsModeToModel(mode sampling.SpanMetricsMode) model.K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsMode {
+	switch mode {
+	case sampling.SpanMetricsModeAllSpans:
+		return model.K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeAllSpans
+	default:
+		return model.K8sWorkloadContainerAgentConfigTracesHeadSamplingSpanMetricsModeSampledSpansOnly
+	}
+}
+
+func headSamplingNoisyOperationToModel(op *sampling.NoisyOperation) *model.K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation {
+	if op == nil {
+		return nil
+	}
+	ruleID := op.Id
+	if ruleID == "" {
+		ruleID = v1alpha1.ComputeNoisyOperationHash(&v1alpha1.NoisyOperation{
+			Name:             op.Name,
+			Disabled:         op.Disabled,
+			Operation:        op.Operation,
+			PercentageAtMost: op.PercentageAtMost,
+		})
+	}
+	return &model.K8sWorkloadContainerAgentConfigTracesHeadSamplingNoisyOperation{
+		RuleID:           ruleID,
+		Name:             services.StringPtrIfNotEmpty(op.Name),
+		Disabled:         op.Disabled,
+		Operation:        headSamplingOperationMatcherToModel(op.Operation),
+		PercentageAtMost: op.PercentageAtMost,
+	}
+}
+
+func headSamplingOperationMatcherToModel(matcher *sampling.HeadSamplingOperationMatcher) *model.HeadSamplingOperationMatcher {
+	if matcher == nil {
+		return nil
+	}
+	result := &model.HeadSamplingOperationMatcher{}
+	if matcher.HttpServer != nil {
+		result.HTTPServer = &model.HeadSamplingHTTPServerMatcher{
+			Route:       services.StringPtrIfNotEmpty(matcher.HttpServer.Route),
+			RoutePrefix: services.StringPtrIfNotEmpty(matcher.HttpServer.RoutePrefix),
+			Method:      services.StringPtrIfNotEmpty(matcher.HttpServer.Method),
+		}
+	}
+	if matcher.HttpClient != nil {
+		result.HTTPClient = &model.HeadSamplingHTTPClientMatcher{
+			ServerAddress:       services.StringPtrIfNotEmpty(matcher.HttpClient.ServerAddress),
+			TemplatedPath:       services.StringPtrIfNotEmpty(matcher.HttpClient.TemplatedPath),
+			TemplatedPathPrefix: services.StringPtrIfNotEmpty(matcher.HttpClient.TemplatedPathPrefix),
+			Method:              services.StringPtrIfNotEmpty(matcher.HttpClient.Method),
+		}
+	}
+	return result
+}
+
+// containerCollectorConfigToModel converts InstrumentationConfig workload collector config (tail sampling) to the GraphQL model.
+func containerCollectorConfigToModel(c *commonapi.ContainerCollectorConfig) *model.K8sWorkloadContainerCollectorConfig {
+	if c == nil {
+		return nil
+	}
+	tailSampling := tailSamplingSourceConfigToModel(c.TailSampling)
+	if tailSampling == nil {
+		return &model.K8sWorkloadContainerCollectorConfig{}
+	}
+	return &model.K8sWorkloadContainerCollectorConfig{
+		TailSampling: tailSampling,
+	}
+}
+
+func tailSamplingSourceConfigToModel(cfg *sampling.TailSamplingSourceConfig) *model.K8sWorkloadContainerCollectorConfigTailSampling {
+	if cfg == nil {
+		return nil
+	}
+	result := &model.K8sWorkloadContainerCollectorConfigTailSampling{}
+	if len(cfg.NoisyOperations) > 0 {
+		result.NoisyOperations = make([]*model.K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation, 0, len(cfg.NoisyOperations))
+		for i := range cfg.NoisyOperations {
+			if op := tailSamplingNoisyOperationToModel(&cfg.NoisyOperations[i]); op != nil {
+				result.NoisyOperations = append(result.NoisyOperations, op)
+			}
+		}
+	}
+	if len(cfg.HighlyRelevantOperations) > 0 {
+		result.HighlyRelevantOperations = make([]*model.K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation, 0, len(cfg.HighlyRelevantOperations))
+		for i := range cfg.HighlyRelevantOperations {
+			if op := tailSamplingHighlyRelevantOperationToModel(&cfg.HighlyRelevantOperations[i]); op != nil {
+				result.HighlyRelevantOperations = append(result.HighlyRelevantOperations, op)
+			}
+		}
+	}
+	if len(cfg.CostReductionRules) > 0 {
+		result.CostReductionRules = make([]*model.K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule, 0, len(cfg.CostReductionRules))
+		for i := range cfg.CostReductionRules {
+			if rule := tailSamplingCostReductionRuleToModel(&cfg.CostReductionRules[i]); rule != nil {
+				result.CostReductionRules = append(result.CostReductionRules, rule)
+			}
+		}
+	}
+	return result
+}
+
+func tailSamplingNoisyOperationToModel(op *sampling.NoisyOperation) *model.K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation {
+	if op == nil {
+		return nil
+	}
+	ruleID := op.Id
+	if ruleID == "" {
+		ruleID = v1alpha1.ComputeNoisyOperationHash(&v1alpha1.NoisyOperation{
+			Name:             op.Name,
+			Disabled:         op.Disabled,
+			Operation:        op.Operation,
+			PercentageAtMost: op.PercentageAtMost,
+		})
+	}
+	return &model.K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation{
+		RuleID:           ruleID,
+		Name:             services.StringPtrIfNotEmpty(op.Name),
+		Disabled:         op.Disabled,
+		Operation:        headSamplingOperationMatcherToModel(op.Operation),
+		PercentageAtMost: op.PercentageAtMost,
+	}
+}
+
+func tailSamplingHighlyRelevantOperationToModel(op *sampling.HighlyRelevantOperation) *model.K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation {
+	if op == nil {
+		return nil
+	}
+	ruleID := op.Id
+	if ruleID == "" {
+		ruleID = v1alpha1.ComputeHighlyRelevantOperationHash(&v1alpha1.HighlyRelevantOperation{
+			Name:              op.Name,
+			Disabled:          op.Disabled,
+			Error:             op.Error,
+			DurationAtLeastMs: op.DurationAtLeastMs,
+			Operation:         op.Operation,
+			PercentageAtLeast: op.PercentageAtLeast,
+		})
+	}
+	return &model.K8sWorkloadContainerCollectorConfigTailSamplingHighlyRelevantOperation{
+		RuleID:            ruleID,
+		Name:              services.StringPtrIfNotEmpty(op.Name),
+		Disabled:          op.Disabled,
+		Error:             op.Error,
+		DurationAtLeastMs: op.DurationAtLeastMs,
+		Operation:         tailSamplingOperationMatcherToModel(op.Operation),
+		PercentageAtLeast: op.PercentageAtLeast,
+	}
+}
+
+func tailSamplingCostReductionRuleToModel(rule *sampling.CostReductionRule) *model.K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule {
+	if rule == nil {
+		return nil
+	}
+	ruleID := rule.Id
+	if ruleID == "" {
+		ruleID = v1alpha1.ComputeCostReductionRuleHash(&v1alpha1.CostReductionRule{
+			Name:             rule.Name,
+			Disabled:         rule.Disabled,
+			Operation:        rule.Operation,
+			PercentageAtMost: rule.PercentageAtMost,
+		})
+	}
+	return &model.K8sWorkloadContainerCollectorConfigTailSamplingCostReductionRule{
+		RuleID:           ruleID,
+		Name:             services.StringPtrIfNotEmpty(rule.Name),
+		Disabled:         rule.Disabled,
+		Operation:        tailSamplingOperationMatcherToModel(rule.Operation),
+		PercentageAtMost: rule.PercentageAtMost,
+	}
+}
+
+func tailSamplingOperationMatcherToModel(matcher *sampling.TailSamplingOperationMatcher) *model.TailSamplingOperationMatcher {
+	if matcher == nil {
+		return nil
+	}
+	result := &model.TailSamplingOperationMatcher{}
+	if matcher.HttpServer != nil {
+		result.HTTPServer = &model.TailSamplingHTTPServerMatcher{
+			Route:       services.StringPtrIfNotEmpty(matcher.HttpServer.Route),
+			RoutePrefix: services.StringPtrIfNotEmpty(matcher.HttpServer.RoutePrefix),
+			Method:      services.StringPtrIfNotEmpty(matcher.HttpServer.Method),
+		}
+	}
+	if matcher.KafkaConsumer != nil {
+		result.KafkaConsumer = &model.TailSamplingKafkaMatcher{
+			KafkaTopic: services.StringPtrIfNotEmpty(matcher.KafkaConsumer.KafkaTopic),
+		}
+	}
+	if matcher.KafkaProducer != nil {
+		result.KafkaProducer = &model.TailSamplingKafkaMatcher{
+			KafkaTopic: services.StringPtrIfNotEmpty(matcher.KafkaProducer.KafkaTopic),
+		}
+	}
+	return result
 }
 
 func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration, pc *provenanceCollector) *model.MetricsSourceConfig {
@@ -874,4 +1107,31 @@ func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration, pc *pro
 	}
 
 	return result
+}
+
+func destinationInputToConfigurer(destination model.DestinationInput) *testconnection.TestConnectionConfig {
+	fields := make(map[string]string, len(destination.Fields))
+	for _, field := range destination.Fields {
+		fields[field.Key] = field.Value
+	}
+
+	var signals []common.ObservabilitySignal
+	if destination.ExportedSignals != nil {
+		if destination.ExportedSignals.Traces {
+			signals = append(signals, common.TracesObservabilitySignal)
+		}
+		if destination.ExportedSignals.Metrics {
+			signals = append(signals, common.MetricsObservabilitySignal)
+		}
+		if destination.ExportedSignals.Logs {
+			signals = append(signals, common.LogsObservabilitySignal)
+		}
+	}
+
+	return &testconnection.TestConnectionConfig{
+		DestinationType: destination.Type,
+		ID:              destination.Name,
+		Config:          fields,
+		Signals:         signals,
+	}
 }

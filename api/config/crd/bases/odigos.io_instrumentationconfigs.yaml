@@ -74,6 +74,29 @@ spec:
                   description: ContainerAgentConfig is a configuration for a specific
                     container in a workload.
                   properties:
+                    agentDiagnostics:
+                      description: Configure the log level for the agent itselg
+                      properties:
+                        odigosLogLevel:
+                          description: The log level of the odigos agent itself (startup,
+                            config, features, insttrumentation loading, etc.)
+                          enum:
+                          - error
+                          - warn
+                          - info
+                          - debug
+                          type: string
+                        openTelemetryComponentsLogLevel:
+                          description: |-
+                            The log level of the OpenTelemetry components (Sdk, instrumentation libraries, detectors, etc.)
+                            If unset, no OpenTelemetry components logs will be collected.
+                          enum:
+                          - error
+                          - warn
+                          - info
+                          - debug
+                          type: string
+                      type: object
                     agentEnabled:
                       description: boolean flag to indicate if the agent should be
                         enabled for this container.
@@ -673,6 +696,37 @@ spec:
                           description: A list of URL templatization configurations
                             to be applied to the traces.
                           properties:
+                            default:
+                              description: |-
+                                configurations for default templatization.
+                                default templatization is applied on a single http span if none of the custom templatization rules matched.
+                              properties:
+                                disabled:
+                                  description: |-
+                                    if set to true, the default templatization will be disabled for the services in the scope.
+                                    in case of conflict (if other action set this to false), the default templatization will be disabled.
+                                  type: boolean
+                                skipPolicy:
+                                  description: |-
+                                    config if default templatization should be skipped on error.
+                                    use it when sources scope describes a service that is publicly accessible to the internet
+                                    to filter garbage requests that can contaminate the url-templatization process.
+                                  properties:
+                                    skipForNonSuccessCodes:
+                                      description: |-
+                                        If set to true, default templatization will be skipped for any non-success HTTP status code (i.e., any code not in the 2xx range).
+                                        When this is true, the StatusCodes list is ignored.
+                                      type: boolean
+                                    skipHttpStatusCodes:
+                                      description: |-
+                                        the http status codes for which the default templatization will be skipped.
+                                        for example: [404, 401].
+                                        advanced users can use to cherry pick specific codes for tailoring to specific use cases.
+                                      items:
+                                        type: integer
+                                      type: array
+                                  type: object
+                              type: object
                             templatizationRules:
                               description: Template rules to apply to URLs
                               items:
@@ -1492,6 +1546,37 @@ spec:
                       type: object
                     urlTemplatization:
                       properties:
+                        default:
+                          description: |-
+                            configurations for default templatization.
+                            default templatization is applied on a single http span if none of the custom templatization rules matched.
+                          properties:
+                            disabled:
+                              description: |-
+                                if set to true, the default templatization will be disabled for the services in the scope.
+                                in case of conflict (if other action set this to false), the default templatization will be disabled.
+                              type: boolean
+                            skipPolicy:
+                              description: |-
+                                config if default templatization should be skipped on error.
+                                use it when sources scope describes a service that is publicly accessible to the internet
+                                to filter garbage requests that can contaminate the url-templatization process.
+                              properties:
+                                skipForNonSuccessCodes:
+                                  description: |-
+                                    If set to true, default templatization will be skipped for any non-success HTTP status code (i.e., any code not in the 2xx range).
+                                    When this is true, the StatusCodes list is ignored.
+                                  type: boolean
+                                skipHttpStatusCodes:
+                                  description: |-
+                                    the http status codes for which the default templatization will be skipped.
+                                    for example: [404, 401].
+                                    advanced users can use to cherry pick specific codes for tailoring to specific use cases.
+                                  items:
+                                    type: integer
+                                  type: array
+                              type: object
+                          type: object
                         templatizationRules:
                           description: Template rules to apply to URLs
                           items:

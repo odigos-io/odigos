@@ -88,7 +88,6 @@ func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigo
 			continue
 		}
 		if action.Spec.URLTemplatization != nil ||
-			(action.Spec.Samplers != nil && action.Spec.Samplers.IgnoreHealthChecks != nil) ||
 			action.Spec.SpanRenamer != nil {
 			agentLevelActions = append(agentLevelActions, action)
 		}
@@ -127,7 +126,8 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client) (*[]o
 			(ir.Spec.HeadersCollection != nil) ||
 			(ir.Spec.TraceVerbosity != nil) ||
 			(ir.Spec.CustomInstrumentations != nil) ||
-			(ir.Spec.EbpfLogCapture != nil) {
+			(ir.Spec.EbpfLogCapture != nil) ||
+			(ir.Spec.AgentDiagnostics != nil) {
 
 			relevantIr = append(relevantIr, *ir)
 		}

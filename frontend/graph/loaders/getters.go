@@ -2,8 +2,11 @@ package loaders
 
 import (
 	"context"
+	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/computed"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
@@ -17,6 +20,45 @@ func (l *Loaders) GetIgnoredContainers() map[string]struct{} {
 		ignoredContainers[container] = struct{}{}
 	}
 	return ignoredContainers
+}
+
+func (l *Loaders) GetAutoRollbackConfig() *computed.AutoRollbackConfig {
+	if l.odigosConfiguration == nil {
+		return nil
+	}
+
+	enabled := true
+	if l.odigosConfiguration.RollbackDisabled != nil && *l.odigosConfiguration.RollbackDisabled {
+		enabled = false
+	}
+
+	stabilityWindow := consts.DefaultAutoRollbackStabilityWindow
+	if l.odigosConfiguration.RollbackStabilityWindow != "" {
+		sw, err := time.ParseDuration(l.odigosConfiguration.RollbackStabilityWindow)
+		if err != nil {
+			return nil
+		}
+		stabilityWindow = sw
+	}
+
+	graceTime := consts.DefaultAutoRollbackGraceTime
+	if l.odigosConfiguration.RollbackGraceTime != "" {
+		gt, err := time.ParseDuration(l.odigosConfiguration.RollbackGraceTime)
+		if err != nil {
+			return nil
+		}
+		graceTime = gt
+	}
+
+	return &computed.AutoRollbackConfig{
+		Enabled:         enabled,
+		GraceTime:       graceTime,
+		StabilityWindow: stabilityWindow,
+	}
+}
+
+func (l *Loaders) GetOdigosConfiguration() *common.OdigosConfiguration {
+	return l.odigosConfiguration
 }
 
 func (l *Loaders) GetNamespaces(ctx context.Context) ([]string, error) {

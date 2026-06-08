@@ -220,6 +220,10 @@ spec:
             - name: ODIGOS_PROC_DIR
               value: /hostproc
           {{- end}}
+          {{- if not .Values.odiglet.noHostPathMounts }}
+            - name: ODIGOS_CGROUP_ROOT
+              value: /host/sys/fs/cgroup
+          {{- end }}
           {{- if .Values.odiglet.disableGoCodeAttributes }}
             - name: ODIGOS_GO_DISABLE_CODE_ATTRIBUTES
               value: "true"
@@ -246,6 +250,13 @@ spec:
              {{- end }}
             - name: odigos
               mountPath: /var/odigos
+              readOnly: true
+            # OpAMP Unix socket lives under /var/odigos/exchange on the host; must be writable
+            # while the parent /var/odigos mount stays read-only for agent binaries.
+            - name: odigos-opamp-exchange
+              mountPath: /var/odigos/exchange
+            - name: host-cgroup
+              mountPath: /host/sys/fs/cgroup
               readOnly: true
           {{- end }} # end of optional hostPath mounts
           {{- if .Values.odiglet.noHostPid }}
@@ -516,6 +527,10 @@ spec:
         - name: odigos
           hostPath:
             path: /var/odigos
+        - name: odigos-opamp-exchange
+          hostPath:
+            path: /var/odigos/exchange
+            type: DirectoryOrCreate
 {{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}
         # CSI Driver volumes
         - name: csi-socket-dir
@@ -542,6 +557,12 @@ spec:
         - name: sys-kernel
           hostPath:
             path: /sys/kernel
+      {{- if not .Values.odiglet.noHostPathMounts }}
+        - name: host-cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+            type: Directory
+      {{- end }}
         - name: odigos-go-offsets
           configMap:
             name: odigos-go-offsets

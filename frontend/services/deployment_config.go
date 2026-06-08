@@ -43,6 +43,17 @@ func GetConfig(ctx context.Context) model.Config {
 	return buildConfigResponse(ctx, odigosDeployment.Data)
 }
 
+// GetTier returns just the Odigos tier from the deployment ConfigMap. This is a
+// cheaper alternative to GetConfig when only the tier is needed (e.g. for tier-gated
+// feature checks during workload resolution). Falls back to community on read errors.
+func GetTier(ctx context.Context) model.Tier {
+	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		return model.Tier(common.CommunityOdigosTier)
+	}
+	return model.Tier(cm.Data[k8sconsts.OdigosDeploymentConfigMapTierKey])
+}
+
 func buildConfigResponse(ctx context.Context, deploymentData map[string]string) model.Config {
 	var response model.Config
 	config, err := GetOdigosConfiguration(ctx)

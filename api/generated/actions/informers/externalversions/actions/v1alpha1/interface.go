@@ -27,22 +27,12 @@ type Interface interface {
 	AddClusterInfos() AddClusterInfoInformer
 	// DeleteAttributes returns a DeleteAttributeInformer.
 	DeleteAttributes() DeleteAttributeInformer
-	// ErrorSamplers returns a ErrorSamplerInformer.
-	ErrorSamplers() ErrorSamplerInformer
 	// K8sAttributesResolvers returns a K8sAttributesResolverInformer.
 	K8sAttributesResolvers() K8sAttributesResolverInformer
-	// LatencySamplers returns a LatencySamplerInformer.
-	LatencySamplers() LatencySamplerInformer
 	// PiiMaskings returns a PiiMaskingInformer.
 	PiiMaskings() PiiMaskingInformer
-	// ProbabilisticSamplers returns a ProbabilisticSamplerInformer.
-	ProbabilisticSamplers() ProbabilisticSamplerInformer
 	// RenameAttributes returns a RenameAttributeInformer.
 	RenameAttributes() RenameAttributeInformer
-	// ServiceNameSamplers returns a ServiceNameSamplerInformer.
-	ServiceNameSamplers() ServiceNameSamplerInformer
-	// SpanAttributeSamplers returns a SpanAttributeSamplerInformer.
-	SpanAttributeSamplers() SpanAttributeSamplerInformer
 }
 
 type version struct {
@@ -66,19 +56,9 @@ func (v *version) DeleteAttributes() DeleteAttributeInformer {
 	return &deleteAttributeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// ErrorSamplers returns a ErrorSamplerInformer.
-func (v *version) ErrorSamplers() ErrorSamplerInformer {
-	return &errorSamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // K8sAttributesResolvers returns a K8sAttributesResolverInformer.
 func (v *version) K8sAttributesResolvers() K8sAttributesResolverInformer {
 	return &k8sAttributesResolverInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// LatencySamplers returns a LatencySamplerInformer.
-func (v *version) LatencySamplers() LatencySamplerInformer {
-	return &latencySamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // PiiMaskings returns a PiiMaskingInformer.
@@ -86,22 +66,7 @@ func (v *version) PiiMaskings() PiiMaskingInformer {
 	return &piiMaskingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// ProbabilisticSamplers returns a ProbabilisticSamplerInformer.
-func (v *version) ProbabilisticSamplers() ProbabilisticSamplerInformer {
-	return &probabilisticSamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // RenameAttributes returns a RenameAttributeInformer.
 func (v *version) RenameAttributes() RenameAttributeInformer {
 	return &renameAttributeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// ServiceNameSamplers returns a ServiceNameSamplerInformer.
-func (v *version) ServiceNameSamplers() ServiceNameSamplerInformer {
-	return &serviceNameSamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// SpanAttributeSamplers returns a SpanAttributeSamplerInformer.
-func (v *version) SpanAttributeSamplers() SpanAttributeSamplerInformer {
-	return &spanAttributeSamplerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

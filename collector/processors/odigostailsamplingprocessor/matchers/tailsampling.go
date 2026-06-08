@@ -6,60 +6,82 @@ import (
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
-func TailSamplingOperationMatcher(operation *commonapisampling.TailSamplingOperationMatcher, span ptrace.Span) bool {
+func NewTailSamplingOperationMatcher(operation *commonapisampling.TailSamplingOperationMatcher) Matcher {
 	if operation == nil {
-		// if operation is not specified, it will match any operation.
-		return true
+		return anyMatcher{}
 	}
 	switch {
 	case operation.HttpServer != nil:
-		return operationHttpServerMatcher(operation.HttpServer, span)
+		return newTailSamplingHttpServerMatcher(operation.HttpServer)
 	case operation.KafkaConsumer != nil:
-		return operationKafkaConsumerMatcher(operation.KafkaConsumer, span)
+		return newTailSamplingKafkaConsumerMatcher(operation.KafkaConsumer)
 	case operation.KafkaProducer != nil:
-		return operationKafkaProducerMatcher(operation.KafkaProducer, span)
+		return newTailSamplingKafkaProducerMatcher(operation.KafkaProducer)
+	default:
+		return anyMatcher{}
 	}
-	// no operation type specified, match any.
-	return true
 }
 
-// given a span and a http server operation matcher, will attempt to match the span to the matcher.
-//
-// will return true when:
+type tailSamplingHttpServerMatcher struct {
+	method      string
+	route       string
+	routePrefix string
+}
+
+func newTailSamplingHttpServerMatcher(operation *commonapisampling.TailSamplingHttpServerOperationMatcher) Matcher {
+	return &tailSamplingHttpServerMatcher{
+		method:      operation.Method,
+		route:       operation.Route,
+		routePrefix: operation.RoutePrefix,
+	}
+}
+
+// Match returns true when:
 // - the span is a server span.
 // - it's an http span (contains http method)
 // - all the attributes specified in the matcher are present on the span and match the values.
 //
-// will return false when:
+// Match returns false when:
 // - it's not an http server span.
 // - any of the attributes specified in the matcher are not present on the span.
-// - any of the attributes specified in the matcher are presence with a different value.
+// - any of the attributes specified in the matcher are present with a different value.
 // - templated routes for spans that don't have the http.route attribute.
-func operationHttpServerMatcher(operation *commonapisampling.TailSamplingHttpServerOperationMatcher, span ptrace.Span) bool {
+func (m *tailSamplingHttpServerMatcher) Match(span ptrace.Span) bool {
 	if span.Kind() != ptrace.SpanKindServer {
 		return false
 	}
 
 	httpMethod, found := getHttpMethod(span)
 	if !found {
-		// this matcher is for http operations only, and lack of method signals no match.
 		return false
 	}
-	if operation.Method != "" && !compareHttpMethod(httpMethod, operation.Method) {
+	if m.method != "" && !compareHttpMethod(httpMethod, m.method) {
 		return false
 	}
 
-	if !matchHttpRoute(span, operation.Route, operation.RoutePrefix) {
+	if !matchHttpRoute(span, m.route, m.routePrefix) {
 		return false
 	}
 
 	return true
 }
 
-func operationKafkaConsumerMatcher(operation *commonapisampling.TailSamplingKafkaOperationMatcher, span ptrace.Span) bool {
+type tailSamplingKafkaConsumerMatcher struct{}
+
+func newTailSamplingKafkaConsumerMatcher(_ *commonapisampling.TailSamplingKafkaOperationMatcher) Matcher {
+	return &tailSamplingKafkaConsumerMatcher{}
+}
+
+func (m *tailSamplingKafkaConsumerMatcher) Match(_ ptrace.Span) bool {
 	return false
 }
 
-func operationKafkaProducerMatcher(operation *commonapisampling.TailSamplingKafkaOperationMatcher, span ptrace.Span) bool {
+type tailSamplingKafkaProducerMatcher struct{}
+
+func newTailSamplingKafkaProducerMatcher(_ *commonapisampling.TailSamplingKafkaOperationMatcher) Matcher {
+	return &tailSamplingKafkaProducerMatcher{}
+}
+
+func (m *tailSamplingKafkaProducerMatcher) Match(_ ptrace.Span) bool {
 	return false
 }

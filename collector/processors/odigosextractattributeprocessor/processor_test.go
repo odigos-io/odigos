@@ -24,66 +24,34 @@ func TestBuildExtractionRegex_JSON(t *testing.T) {
 		extracted string // empty string means "expect no match"
 	}{
 		{
-			name:      "json double-quoted",
+			name:      "double-quoted",
 			key:       "study_id",
 			input:     `{"study_id": "abc-123"}`,
 			extracted: "abc-123",
 		},
 		{
-			name:      "json double-quoted, no space",
+			name:      "double-quoted, no space",
 			key:       "study_id",
 			input:     `{"study_id":"abc-123"}`,
 			extracted: "abc-123",
 		},
 		{
-			name:      "json with sibling keys",
+			name:      "with sibling keys",
 			key:       "study_id",
 			input:     `{"study_id": "1.3.6.1.4.1.40744.71.65797265067703624152858272792653363228","cooking_status": "Completed"}`,
 			extracted: "1.3.6.1.4.1.40744.71.65797265067703624152858272792653363228",
 		},
 		{
-			name:      "nested json object",
+			name:      "nested object",
 			key:       "study_id",
 			input:     `{"outer":{"study_id":"x"}}`,
 			extracted: "x",
-		},
-		{
-			name:      "sql single-quoted",
-			key:       "study_id",
-			input:     `WHERE study_id = '1.3.6.1.4.1.40744.71.65797265067703624152858272792653363228' RETURNING id`,
-			extracted: "1.3.6.1.4.1.40744.71.65797265067703624152858272792653363228",
-		},
-		{
-			name:      "sql single-quoted, tight",
-			key:       "study_id",
-			input:     `WHERE study_id='abc'`,
-			extracted: "abc",
-		},
-		{
-			name: "sql multi-line statement",
-			key:  "study_id",
-			input: "UPDATE orders\n      SET study_caching_status = 'Completed', study_location_code = 'cloud'\n" +
-				"      WHERE study_id = '1.3.6.1.4.1.40744.71.65797265067703624152858272792653363228'\n" +
-				"      RETURNING id",
-			extracted: "1.3.6.1.4.1.40744.71.65797265067703624152858272792653363228",
-		},
-		{
-			name:      "unquoted value with equals",
-			key:       "study_id",
-			input:     `study_id=abc`,
-			extracted: "abc",
 		},
 		{
 			name:      "unquoted value with colon and space",
 			key:       "study_id",
 			input:     `study_id: abc`,
 			extracted: "abc",
-		},
-		{
-			name:      "unquoted value with spaced equals",
-			key:       "study_id",
-			input:     `study_id = abc-123`,
-			extracted: "abc-123",
 		},
 		{
 			name:      "numeric value",
@@ -112,12 +80,6 @@ func TestBuildExtractionRegex_JSON(t *testing.T) {
 			extracted: "",
 		},
 		{
-			name:      "underscore-joined key",
-			key:       "study_id",
-			input:     `my_study_id = 'nope'`,
-			extracted: "",
-		},
-		{
 			name:      "unrelated key",
 			key:       "study_id",
 			input:     `{"other":"value"}`,
@@ -127,6 +89,12 @@ func TestBuildExtractionRegex_JSON(t *testing.T) {
 			name:      "empty content",
 			key:       "study_id",
 			input:     ``,
+			extracted: "",
+		},
+		{
+			name:      "sql equals does not match json",
+			key:       "study_id",
+			input:     `WHERE study_id = 'abc'`,
 			extracted: "",
 		},
 
@@ -151,6 +119,115 @@ func TestBuildExtractionRegex_JSON(t *testing.T) {
 			assert.NoError(t, err)
 			got := firstCapture(re.FindStringSubmatch(tc.input))
 			assert.Equal(t, tc.extracted, got, "json regex(key=%q) on %q", tc.key, tc.input)
+		})
+	}
+}
+
+func TestBuildExtractionRegex_SQL(t *testing.T) {
+	tests := []struct {
+		name      string
+		key       string
+		input     string
+		extracted string // empty string means "expect no match"
+	}{
+		{
+			name:      "single-quoted value",
+			key:       "study_id",
+			input:     `WHERE study_id = '1.3.6.1.4.1.40744.71.65797265067703624152858272792653363228' RETURNING id`,
+			extracted: "1.3.6.1.4.1.40744.71.65797265067703624152858272792653363228",
+		},
+		{
+			name:      "single-quoted, tight",
+			key:       "study_id",
+			input:     `WHERE study_id='abc'`,
+			extracted: "abc",
+		},
+		{
+			name: "multi-line statement",
+			key:  "study_id",
+			input: "UPDATE orders\n      SET study_caching_status = 'Completed', study_location_code = 'cloud'\n" +
+				"      WHERE study_id = '1.3.6.1.4.1.40744.71.65797265067703624152858272792653363228'\n" +
+				"      RETURNING id",
+			extracted: "1.3.6.1.4.1.40744.71.65797265067703624152858272792653363228",
+		},
+		{
+			name:      "unquoted value at start",
+			key:       "study_id",
+			input:     `study_id=abc`,
+			extracted: "abc",
+		},
+		{
+			name:      "unquoted value with spaced equals",
+			key:       "study_id",
+			input:     `study_id = abc-123`,
+			extracted: "abc-123",
+		},
+		{
+			name:      "numeric value",
+			key:       "study_id",
+			input:     `WHERE study_id=42`,
+			extracted: "42",
+		},
+		{
+			name:      "key inside parenthesized predicate",
+			key:       "study_id",
+			input:     `WHERE (study_id='abc') AND status='ok'`,
+			extracted: "abc",
+		},
+		{
+			name:      "value terminated by trailing semicolon",
+			key:       "study_id",
+			input:     `WHERE study_id=42;`,
+			extracted: "42",
+		},
+
+		// False positives -- these should NOT match.
+		{
+			name:      "underscore-joined key",
+			key:       "study_id",
+			input:     `my_study_id = 'nope'`,
+			extracted: "",
+		},
+		{
+			name:      "substring key suffix",
+			key:       "study_id",
+			input:     `WHERE study_id_v2 = 'nope'`,
+			extracted: "",
+		},
+		{
+			name:      "json colon does not match sql",
+			key:       "study_id",
+			input:     `{"study_id": "abc"}`,
+			extracted: "",
+		},
+		{
+			name:      "empty content",
+			key:       "study_id",
+			input:     ``,
+			extracted: "",
+		},
+
+		// Ensure regex metacharacters in the key are treated literally.
+		{
+			name:      "key with dot, literal match",
+			key:       "a.b",
+			input:     `WHERE a.b = 'matched'`,
+			extracted: "matched",
+		},
+		{
+			name:      "key with dot, metachar does not cross-match",
+			key:       "a.b",
+			input:     `WHERE aXb = 'nope'`,
+			extracted: "",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			re, err := buildExtractionRegex(tc.key, FormatSQL)
+			assert.NoError(t, err)
+			got := firstCapture(re.FindStringSubmatch(tc.input))
+			assert.Equal(t, tc.extracted, got, "sql regex(key=%q) on %q", tc.key, tc.input)
 		})
 	}
 }
@@ -254,7 +331,7 @@ func TestBuildExtractionRegex_URL(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			re, err := buildExtractionRegex(tc.key, FormatURL)
+			re, err := buildExtractionRegex(tc.key, FormatResourcePath)
 			assert.NoError(t, err)
 			got := firstCapture(re.FindStringSubmatch(tc.input))
 			assert.Equal(t, tc.extracted, got, "url regex(key=%q) on %q", tc.key, tc.input)

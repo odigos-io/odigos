@@ -20,6 +20,7 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	ebpfMetrics "github.com/odigos-io/odigos/odiglet/pkg/metrics"
+	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 
@@ -100,6 +101,8 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	if err != nil {
 		return nil, err
 	}
+
+	process.DiscoverCgroupLayout()
 
 	mgr, err := kube.CreateManager(instrumentationMgrOpts)
 	if err != nil {

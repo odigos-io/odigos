@@ -107,56 +107,6 @@ var _ = AfterSuite(func() {
 })
 
 func cleanupResources() {
-	// Clean up all legacy ErrorSamplers
-	errorSamplerList := &actionv1.ErrorSamplerList{}
-	k8sClient.List(testCtx, errorSamplerList)
-	for _, sampler := range errorSamplerList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &sampler)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-	}
-
-	// Clean up all legacy LatencySamplers
-	latencySamplerList := &actionv1.LatencySamplerList{}
-	k8sClient.List(testCtx, latencySamplerList)
-	for _, sampler := range latencySamplerList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &sampler)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-	}
-
-	// Clean up all legacy ServiceNameSamplers
-	serviceNameSamplerList := &actionv1.ServiceNameSamplerList{}
-	k8sClient.List(testCtx, serviceNameSamplerList)
-	for _, sampler := range serviceNameSamplerList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &sampler)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-	}
-
-	// Clean up all legacy SpanAttributeSamplers
-	spanAttributeSamplerList := &actionv1.SpanAttributeSamplerList{}
-	k8sClient.List(testCtx, spanAttributeSamplerList)
-	for _, sampler := range spanAttributeSamplerList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &sampler)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-	}
-
-	// Clean up all legacy ProbabilisticSamplers
-	probabilisticSamplerList := &actionv1.ProbabilisticSamplerList{}
-	k8sClient.List(testCtx, probabilisticSamplerList)
-	for _, sampler := range probabilisticSamplerList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &sampler)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-	}
-
 	// Clean up all legacy K8sAttributesResolvers
 	k8sAttributesResolverList := &actionv1.K8sAttributesResolverList{}
 	k8sClient.List(testCtx, k8sAttributesResolverList)

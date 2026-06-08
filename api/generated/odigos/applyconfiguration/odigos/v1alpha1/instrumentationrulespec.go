@@ -32,7 +32,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	// A boolean field allowing to temporarily disable the rule, but keep it around for future use
 	Disabled *bool `json:"disabled,omitempty"`
 	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If unset or empty, the rule applies to all workloads.
-	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
+	Scopes *k8sconsts.SourcesScopes `json:"scopes,omitempty"`
 	// For fine grained control, the user can specify the instrumentation library to use.
 	// One can specify same rule for multiple languages and libraries at the same time.
 	// If nil, all instrumentation libraries will be used.
@@ -61,6 +61,8 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
 	// Configure the verbosity of the traces for the library.
 	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
+	// Configure the agent own logging configuration.
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -93,11 +95,11 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithDisabled(value bool) *In
 	return b
 }
 
-// WithSourcesScopes sets the SourcesScopes field in the declarative configuration to the given value
+// WithScopes sets the Scopes field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the SourcesScopes field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithSourcesScopes(value k8sconsts.SourcesScopes) *InstrumentationRuleSpecApplyConfiguration {
-	b.SourcesScopes = &value
+// If called multiple times, the Scopes field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithScopes(value k8sconsts.SourcesScopes) *InstrumentationRuleSpecApplyConfiguration {
+	b.Scopes = &value
 	return b
 }
 
@@ -190,5 +192,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithEbpfLogCapture(value ins
 // If called multiple times, the TraceVerbosity field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithTraceVerbosity(value instrumentationrules.TraceVerbosity) *InstrumentationRuleSpecApplyConfiguration {
 	b.TraceVerbosity = &value
+	return b
+}
+
+// WithAgentDiagnostics sets the AgentDiagnostics field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AgentDiagnostics field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithAgentDiagnostics(value instrumentationrules.AgentDiagnostics) *InstrumentationRuleSpecApplyConfiguration {
+	b.AgentDiagnostics = &value
 	return b
 }

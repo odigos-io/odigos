@@ -61,7 +61,6 @@ exporters:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.148.0
 
 processors:
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.148.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.148.0
@@ -92,6 +91,7 @@ processors:
   - gomod: github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor v0.148.0
+  - gomod: github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor v0.148.0
 
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.148.0
@@ -125,7 +125,6 @@ providers:
   - gomod: go.opentelemetry.io/collector/confmap/provider/fileprovider v0.148.0
 
 replaces:
-  - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor => ../processors/odigossamplingprocessor
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes => ../processors/odigosconditionalattributes
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor => ../processors/odigossqldboperationprocessor
   - github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor => ../processors/odigostracestateprocessor
@@ -139,6 +138,7 @@ replaces:
   - github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor => ../processors/odigosextractattributeprocessor
   - github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor => ../processors/odigostracefilterprocessor
   - github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor => ../processors/odigosprofilesprocessor
+  - github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor => ../processors/odigosvmprofileattrsprocessor
   - go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
   - github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
   - github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector => ../connectors/servicegraphconnector

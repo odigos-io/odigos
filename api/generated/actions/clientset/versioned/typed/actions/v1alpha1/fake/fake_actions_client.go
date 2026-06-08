@@ -35,36 +35,16 @@ func (c *FakeActionsV1alpha1) DeleteAttributes(namespace string) v1alpha1.Delete
 	return newFakeDeleteAttributes(c, namespace)
 }
 
-func (c *FakeActionsV1alpha1) ErrorSamplers(namespace string) v1alpha1.ErrorSamplerInterface {
-	return newFakeErrorSamplers(c, namespace)
-}
-
 func (c *FakeActionsV1alpha1) K8sAttributesResolvers(namespace string) v1alpha1.K8sAttributesResolverInterface {
 	return newFakeK8sAttributesResolvers(c, namespace)
-}
-
-func (c *FakeActionsV1alpha1) LatencySamplers(namespace string) v1alpha1.LatencySamplerInterface {
-	return newFakeLatencySamplers(c, namespace)
 }
 
 func (c *FakeActionsV1alpha1) PiiMaskings(namespace string) v1alpha1.PiiMaskingInterface {
 	return newFakePiiMaskings(c, namespace)
 }
 
-func (c *FakeActionsV1alpha1) ProbabilisticSamplers(namespace string) v1alpha1.ProbabilisticSamplerInterface {
-	return newFakeProbabilisticSamplers(c, namespace)
-}
-
 func (c *FakeActionsV1alpha1) RenameAttributes(namespace string) v1alpha1.RenameAttributeInterface {
 	return newFakeRenameAttributes(c, namespace)
-}
-
-func (c *FakeActionsV1alpha1) ServiceNameSamplers(namespace string) v1alpha1.ServiceNameSamplerInterface {
-	return newFakeServiceNameSamplers(c, namespace)
-}
-
-func (c *FakeActionsV1alpha1) SpanAttributeSamplers(namespace string) v1alpha1.SpanAttributeSamplerInterface {
-	return newFakeSpanAttributeSamplers(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

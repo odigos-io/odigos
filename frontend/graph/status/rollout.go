@@ -27,6 +27,8 @@ func workloadRolloutStatusCondition(reason *string) model.DesiredStateProgress {
 		return model.DesiredStateProgressIrrelevant // rollout state is irrelevant in this case (no rollout for cronjob for example)
 	case v1alpha1.WorkloadRolloutReasonWaitingInQueue:
 		return model.DesiredStateProgressWaiting // waiting for other workloads to complete their rollouts
+	case v1alpha1.WorkloadRolloutReasonWorkloadNotSupporting:
+		return model.DesiredStateProgressUnsupported // workload kind (e.g. static pod) permanently cannot be rolled out
 	}
 
 	return model.DesiredStateProgressUnknown

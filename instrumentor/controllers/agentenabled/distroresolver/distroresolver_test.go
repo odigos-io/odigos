@@ -90,6 +90,23 @@ func TestResolveDistroForContainer_wildcardDistroSkipsRuntimeSemver(t *testing.T
 	require.Equal(t, obiDistroName, d.Name)
 }
 
+func TestResolveDistroForContainer_prereleaseRuntimeVersionAccepted(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	config := &common.OdigosConfiguration{}
+	rt := &odigosv1.RuntimeDetailsByContainer{
+		Language:       common.GoProgrammingLanguage,
+		RuntimeVersion: "v1.22.0-0",
+	}
+	dpl := map[common.ProgrammingLanguage]string{
+		common.GoProgrammingLanguage: "golang-community",
+	}
+
+	d, info := ResolveDistroForContainer(config, rt, dpl, g, nil, "c1")
+	require.Nil(t, info, "prerelease suffix on runtime version should not fail supported version check")
+	require.NotNil(t, d)
+	require.Equal(t, "golang-community", d.Name)
+}
+
 func TestResolveDistroForContainer_nonWildcardEnforcesRuntimeSemver(t *testing.T) {
 	g := mustNewCommunityGetter(t)
 	config := &common.OdigosConfiguration{}

@@ -83,6 +83,8 @@ models:
         resolver: true
       rollout:
         resolver: true
+      autoRollback:
+        resolver: true
       containers:
         resolver: true
       pods:
@@ -90,6 +92,8 @@ models:
       podsAgentInjectionStatus:
         resolver: true
       podsHealthStatus:
+        resolver: true
+      podsOdigosHealthStatus:
         resolver: true
       workloadHealthStatus:
         resolver: true
