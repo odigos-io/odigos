@@ -393,11 +393,463 @@ func TestHeadSamplingOperationMatcher(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "GrpcServer set delegates to grpc server matcher - match",
+			operation: &commonapisampling.HeadSamplingOperationMatcher{
+				GrpcServer: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name: "GrpcServer set delegates to grpc server matcher - client span no match",
+			operation: &commonapisampling.HeadSamplingOperationMatcher{
+				GrpcServer: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			},
+			spanKind: ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: false,
+		},
+		{
+			name: "GrpcClient set delegates to grpc client matcher - match",
+			operation: &commonapisampling.HeadSamplingOperationMatcher{
+				GrpcClient: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{},
+			},
+			spanKind: ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name: "GrpcClient set delegates to grpc client matcher - server span no match",
+			operation: &commonapisampling.HeadSamplingOperationMatcher{
+				GrpcClient: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{},
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			span := spanWithAttrsAndKind(t, tt.spanKind, tt.attrs)
 			got := NewHeadSamplingOperationMatcher(tt.operation).Match(span)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestHeadSamplingOperationGrpcServerMatcher(t *testing.T) {
+	tests := []struct {
+		name      string
+		operation *commonapisampling.HeadSamplingGrpcServerOperationMatcher
+		spanKind  ptrace.SpanKind
+		attrs     map[string]string
+		want      bool
+	}{
+		{
+			name:      "non-server span returns false",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: false,
+		},
+		{
+			name:      "server span without any rpc attribute returns false",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs:     map[string]string{"other.attr": "value"},
+			want:      false,
+		},
+		{
+			name:      "server span with rpc.method and empty operation matches",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name:      "server span with only rpc.service and empty operation matches",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+			},
+			want: true,
+		},
+		{
+			name: "server span method exact match",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Method: "exampleMethod",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name: "server span method mismatch",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Method: "otherMethod",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: false,
+		},
+		{
+			name: "server span method match is case-sensitive",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Method: "examplemethod",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "exampleMethod",
+			},
+			want: false,
+		},
+		{
+			name: "server span service-only match selects every method of the service",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Service: "com.example.ExampleService",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "anyMethod",
+			},
+			want: true,
+		},
+		{
+			name: "server span service no match - different service",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Service: "com.example.ExampleService",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.OtherService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: false,
+		},
+		{
+			name: "server span method and service both required - both match",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Method:  "exampleMethod",
+				Service: "com.example.ExampleService",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name: "server span method matches but service does not",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Method:  "exampleMethod",
+				Service: "com.example.ExampleService",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.OtherService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: false,
+		},
+		{
+			name: "server span service rule fails when rpc.service is absent and rpc.method is bare",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Service: "com.example.ExampleService",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "exampleMethod",
+			},
+			want: false,
+		},
+		{
+			name: "new semconv: rule on method+service matches fully-qualified rpc.method only",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Method:  "exampleMethod",
+				Service: "com.example.ExampleService",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "com.example.ExampleService/exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name: "new semconv: service-only rule matches fully-qualified rpc.method",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Service: "grpc.health.v1.Health",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "grpc.health.v1.Health/Check",
+			},
+			want: true,
+		},
+		{
+			name: "new semconv: method-only rule matches bare method extracted from fully-qualified",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Method: "Check",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "grpc.health.v1.Health/Check",
+			},
+			want: true,
+		},
+		{
+			name:      "rpc.system=grpc: matches",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey):  "grpc",
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name:      "non-grpc rpc.system (dubbo) excludes span even with rpc.service/method",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey):  "apache_dubbo",
+				string(semconv.RPCServiceKey): "com.example.UserService",
+				string(semconv.RPCMethodKey):  "getUser",
+			},
+			want: false,
+		},
+		{
+			name: "non-grpc rpc.system overrides matching service+method rule",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+				Service: "com.example.UserService",
+				Method:  "getUser",
+			},
+			spanKind: ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey):  "jsonrpc",
+				string(semconv.RPCServiceKey): "com.example.UserService",
+				string(semconv.RPCMethodKey):  "getUser",
+			},
+			want: false,
+		},
+		{
+			name:      "new semconv rpc.system.name=grpc: matches",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				"rpc.system.name":            "grpc",
+				string(semconv.RPCMethodKey): "grpc.health.v1.Health/Check",
+			},
+			want: true,
+		},
+		{
+			name:      "new semconv rpc.system.name=dubbo: excludes span",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				"rpc.system.name":            "dubbo",
+				string(semconv.RPCMethodKey): "com.example.UserService/getUser",
+			},
+			want: false,
+		},
+		{
+			name:      "rpc.system case-insensitive: GRPC matches",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey): "GRPC",
+				string(semconv.RPCMethodKey): "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name:      "rpc.system case-insensitive: gRPC matches",
+			operation: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCSystemKey): "gRPC",
+				string(semconv.RPCMethodKey): "exampleMethod",
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			span := spanWithAttrsAndKind(t, tt.spanKind, tt.attrs)
+			got := newHeadSamplingGrpcServerMatcher(tt.operation).Match(span)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestHeadSamplingOperationGrpcClientMatcher(t *testing.T) {
+	tests := []struct {
+		name      string
+		operation *commonapisampling.HeadSamplingGrpcClientOperationMatcher
+		spanKind  ptrace.SpanKind
+		attrs     map[string]string
+		want      bool
+	}{
+		{
+			name:      "non-client span returns false",
+			operation: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: false,
+		},
+		{
+			name:      "client span without any rpc attribute returns false",
+			operation: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{},
+			spanKind:  ptrace.SpanKindClient,
+			attrs:     map[string]string{"other.attr": "value"},
+			want:      false,
+		},
+		{
+			name:      "client span with rpc.method and empty operation matches",
+			operation: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{},
+			spanKind:  ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name: "client span method exact match",
+			operation: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{
+				Method: "exampleMethod",
+			},
+			spanKind: ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name: "client span method mismatch",
+			operation: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{
+				Method: "otherMethod",
+			},
+			spanKind: ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: false,
+		},
+		{
+			name: "client span service-only match selects every method of the service",
+			operation: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{
+				Service: "com.example.ExampleService",
+			},
+			spanKind: ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey): "com.example.ExampleService",
+				string(semconv.RPCMethodKey):  "exampleMethod",
+			},
+			want: true,
+		},
+		{
+			name: "client span server address match",
+			operation: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{
+				ServerAddress: "collector.example.com",
+			},
+			spanKind: ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey):    "com.example.ExampleService",
+				string(semconv.RPCMethodKey):     "exampleMethod",
+				string(semconv.ServerAddressKey): "collector.example.com",
+			},
+			want: true,
+		},
+		{
+			name: "client span server address no match",
+			operation: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{
+				ServerAddress: "other.example.com",
+			},
+			spanKind: ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey):    "com.example.ExampleService",
+				string(semconv.RPCMethodKey):     "exampleMethod",
+				string(semconv.ServerAddressKey): "collector.example.com",
+			},
+			want: false,
+		},
+		{
+			name: "client span server address missing when required",
+			operation: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{
+				ServerAddress: "collector.example.com",
+			},
+			spanKind: ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey): "exampleMethod",
+			},
+			want: false,
+		},
+		{
+			name: "client span service and serverAddress both match",
+			operation: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{
+				Service:       "com.example.ExampleService",
+				ServerAddress: "collector.example.com",
+			},
+			spanKind: ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCServiceKey):    "com.example.ExampleService",
+				string(semconv.RPCMethodKey):     "exampleMethod",
+				string(semconv.ServerAddressKey): "collector.example.com",
+			},
+			want: true,
+		},
+		{
+			name: "client span method matches but server address does not",
+			operation: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{
+				Method:        "exampleMethod",
+				ServerAddress: "collector.example.com",
+			},
+			spanKind: ptrace.SpanKindClient,
+			attrs: map[string]string{
+				string(semconv.RPCMethodKey):     "exampleMethod",
+				string(semconv.ServerAddressKey): "other.example.com",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			span := spanWithAttrsAndKind(t, tt.spanKind, tt.attrs)
+			got := newHeadSamplingGrpcClientMatcher(tt.operation).Match(span)
 			assert.Equal(t, tt.want, got)
 		})
 	}
