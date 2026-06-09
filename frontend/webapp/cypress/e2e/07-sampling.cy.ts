@@ -195,8 +195,13 @@ describe('Sampling Rules CRUD', () => {
   it('Should update the Noisy Operation rule name', () => {
     visitPage(ROUTES.SAMPLING, () => {
       waitForGraphqlOperation('GetSamplingRules').then(() => {
-        // Click the rule row to open view drawer
-        cy.contains(NOISY_RULE_NAME).click();
+        // Click the rule row to open view drawer.
+        //
+        // The ui-kit Table renders a hidden MeasurementLayer that duplicates
+        // text from auto-width column cells (rule names live in such a column)
+        // BEFORE the visible row in DOM order. Scope to `:visible` so the
+        // click resolves to the real row and not the hidden duplicate.
+        cy.contains(':visible', NOISY_RULE_NAME).click();
 
         // Click Edit button in the view drawer footer
         cy.get(DATA_IDS.SAMPLING_VIEW_BTN_EDIT).click();
@@ -227,7 +232,7 @@ describe('Sampling Rules CRUD', () => {
         cy.wait(500);
 
         // Click the rule row to open view drawer
-        cy.contains(HIGHLY_RELEVANT_RULE_NAME).click();
+        cy.contains(':visible', HIGHLY_RELEVANT_RULE_NAME).click();
 
         // Click Edit button
         cy.get(DATA_IDS.SAMPLING_VIEW_BTN_EDIT).click();
@@ -258,7 +263,7 @@ describe('Sampling Rules CRUD', () => {
         cy.wait(500);
 
         // Click the rule row to open view drawer
-        cy.contains(COST_REDUCTION_RULE_NAME).click();
+        cy.contains(':visible', COST_REDUCTION_RULE_NAME).click();
 
         // Click Edit button
         cy.get(DATA_IDS.SAMPLING_VIEW_BTN_EDIT).click();
@@ -317,7 +322,7 @@ describe('Sampling Rules CRUD', () => {
     visitPage(ROUTES.SAMPLING, () => {
       waitForGraphqlOperation('GetSamplingRules').then(() => {
         // Click the rule to open view drawer
-        cy.contains(NOISY_RULE_NAME + UPDATED_SUFFIX).click();
+        cy.contains(':visible', NOISY_RULE_NAME + UPDATED_SUFFIX).click();
 
         // Click delete in the view drawer footer
         cy.get(DATA_IDS.SAMPLING_VIEW_BTN_DELETE).click();
@@ -341,7 +346,7 @@ describe('Sampling Rules CRUD', () => {
         cy.wait(500);
 
         // Click the rule to open view drawer
-        cy.contains(HIGHLY_RELEVANT_RULE_NAME + UPDATED_SUFFIX).click();
+        cy.contains(':visible', HIGHLY_RELEVANT_RULE_NAME + UPDATED_SUFFIX).click();
 
         // Click delete in the view drawer footer
         cy.get(DATA_IDS.SAMPLING_VIEW_BTN_DELETE).click();
@@ -365,7 +370,7 @@ describe('Sampling Rules CRUD', () => {
         cy.wait(500);
 
         // Click the rule to open view drawer
-        cy.contains(COST_REDUCTION_RULE_NAME + UPDATED_SUFFIX).click();
+        cy.contains(':visible', COST_REDUCTION_RULE_NAME + UPDATED_SUFFIX).click();
 
         // Click delete in the view drawer footer
         cy.get(DATA_IDS.SAMPLING_VIEW_BTN_DELETE).click();
