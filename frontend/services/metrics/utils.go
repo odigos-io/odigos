@@ -84,6 +84,15 @@ func regexpEscape(s string) string {
 	return replacer.Replace(s)
 }
 
+// sumByPod returns the sum of a pod's value across the given maps. Missing keys contribute zero.
+func sumByPod(pod string, maps ...map[string]float64) float64 {
+	var total float64
+	for _, m := range maps {
+		total += m[pod]
+	}
+	return total
+}
+
 func maxTime(times ...time.Time) time.Time {
 	var z time.Time
 	for _, t := range times {

@@ -10,18 +10,26 @@ import (
 )
 
 const (
-	// Accepted spans as recorded by odigostrafficmetrics processor
-	metricAcceptedSpans = "otelcol_odigos_accepted_spans"
+	// Accepted spans, from two different receivers depending on the collector role.
+	// OTel built-in receiver self-telemetry (gateway pods / OTLP receiver).
+	metricOtelReceiverAcceptedSpans = "otelcol_receiver_accepted_spans"
+	// Odigos eBPF receiver (node collector / odiglet pods).
+	metricEBPFReceiverAcceptedSpans = "otelcol_odigos_ebpf_accepted_spans"
+
+	// Refused (we also call it dropped) spans, from two different receivers depending on the collector role.
 	// Receiver drop/refuse counters from collector self-telemetry
-	metricReceiverRefusedSpans = "otelcol_receiver_refused_spans"
-	metricReceiverDroppedSpans = "otelcol_receiver_dropped_spans"
-	// Exporter success/failure counters from collector self-telemetry
+	metricOtelReceiverRefusedSpans = "otelcol_receiver_refused_spans"
+	// Samples lost while reading the eBPF buffer.
+	metricEBPFReceiverLostSamples = "otelcol_odigos_ebpf_lost_samples"
+
+	// Exporter success/failure counters from collector self-telemetry.
 	metricExporterSentSpans       = "otelcol_exporter_sent_spans"
 	metricExporterSendFailedSpans = "otelcol_exporter_send_failed_spans"
 )
 
 type PodRates struct {
 	MetricsAcceptedRps float64
+	// Spans lost/refused at the receiver itself (e.g. eBPF buffer overflow, memory limiter).
 	MetricsDroppedRps  float64
 	ExporterSuccessRps float64
 	ExporterFailedRps  float64
@@ -49,21 +57,21 @@ func GetCollectorPodRates(ctx context.Context, api v1.API, namespace string, pod
 	podRegex := buildPodRegex(podNames)
 	now := time.Now()
 
-	qAccepted := rateSumByPod(metricAcceptedSpans, podRegex, window)
-	qRefused := rateSumByPod(metricReceiverRefusedSpans, podRegex, window)
-	qDropped := rateSumByPod(metricReceiverDroppedSpans, podRegex, window)
+	// Metrics from the OTel receiver
+	qOtelReceiverAccepted := rateSumByPod(metricOtelReceiverAcceptedSpans, podRegex, window)
+	qOtelReceiverRefused := rateSumByPod(metricOtelReceiverRefusedSpans, podRegex, window)
+	// Metrics from the OTel exporter
 	qExpSent := rateSumByPod(metricExporterSentSpans, podRegex, window)
 	qExpFailed := rateSumByPod(metricExporterSendFailedSpans, podRegex, window)
+	// Metrics from the Odigos eBPF receiver
+	qEBPFReceiverAccepted := rateSumByPod(metricEBPFReceiverAcceptedSpans, podRegex, window)
+	qEBPFReceiverDropped := rateSumByPod(metricEBPFReceiverLostSamples, podRegex, window)
 
-	accepted, tsAcc, err := queryVector(ctx, api, qAccepted, now)
+	otelReceiverAccepted, tsAcc, err := queryVector(ctx, api, qOtelReceiverAccepted, now)
 	if err != nil {
 		return nil, err
 	}
-	refused, tsRef, err := queryVector(ctx, api, qRefused, now)
-	if err != nil {
-		return nil, err
-	}
-	dropped, tsDrop, err := queryVector(ctx, api, qDropped, now)
+	otelReceiverRefused, tsRef, err := queryVector(ctx, api, qOtelReceiverRefused, now)
 	if err != nil {
 		return nil, err
 	}
@@ -75,10 +83,13 @@ func GetCollectorPodRates(ctx context.Context, api v1.API, namespace string, pod
 	if err != nil {
 		return nil, err
 	}
-
-	receiverDropped := refused
-	if len(receiverDropped) == 0 {
-		receiverDropped = dropped
+	ebpfReceiverAccepted, tsEBPFAccept, err := queryVector(ctx, api, qEBPFReceiverAccepted, now)
+	if err != nil {
+		return nil, err
+	}
+	ebpfReceiverDropped, tsEBPFDrop, err := queryVector(ctx, api, qEBPFReceiverDropped, now)
+	if err != nil {
+		return nil, err
 	}
 
 	result := make(map[string]PodRates, len(podNames))
@@ -88,16 +99,17 @@ func GetCollectorPodRates(ctx context.Context, api v1.API, namespace string, pod
 		}
 	}
 
-	lastScrape := maxTime(tsAcc, tsRef, tsDrop, tsSent, tsFail)
+	lastScrape := maxTime(tsAcc, tsRef, tsSent, tsFail, tsEBPFAccept, tsEBPFDrop)
 
 	for pod := range result {
 		r := result[pod]
-		if v, ok := accepted[pod]; ok {
-			r.MetricsAcceptedRps = v
-		}
-		if v, ok := receiverDropped[pod]; ok {
-			r.MetricsDroppedRps = v
-		}
+
+		// A single pod can receive spans through both the eBPF receiver and the OTel built-in receiver, since not all instrumentations go through eBPF.
+		// Sum both receiver sources for accepted.
+		// refused/dropped spans are aggregated under dropped.
+		r.MetricsAcceptedRps = sumByPod(pod, otelReceiverAccepted, ebpfReceiverAccepted)
+		r.MetricsDroppedRps = sumByPod(pod, ebpfReceiverDropped, otelReceiverRefused)
+
 		if v, ok := expSent[pod]; ok {
 			r.ExporterSuccessRps = v
 		}
