@@ -72,7 +72,7 @@ For the field reference behind each example—every Source scope option, every O
     - **Operation:** HTTP Server, route `/api/products`, method **GET**
     - **Keep Percentage:** Keep All
     - **Duration:** 500ms
-    
+
     <div style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto' }}>
       <Frame caption="Highly Relevant rule keeping all GET /api/products traces longer than 500 ms on the frontend Deployment.">
         <img src="/images/sampling/keep-slow-products-example.png" alt="UI screenshot of a Highly Relevant rule that keeps 100% of slow GET /api/products traces, scoped to the frontend Deployment in the odimall namespace." />
@@ -267,6 +267,35 @@ For the field reference behind each example—every Source scope option, every O
   A trace from `payment-service` that contains any error span is kept at 100% by the Highly Relevant rule. A trace with no errors falls through to the Cost Reduction cap of 1%. Both rules are evaluated for every matching trace; Highly Relevant's keep percentage wins when both apply. See [Evaluation between Highly Relevant and Cost Reduction](./rules/overview#evaluation-between-highly-relevant-and-cost-reduction-categories).
 </Note>
 
+## 6. Drop noisy gRPC health checks
+
+**Goal:** Drop standard gRPC liveness/readiness checks (`grpc.health.v1.Health.Check`, `Watch`, ...) on the `inventory` Deployment. This is the gRPC counterpart of [Example 1](#1-drop-a-noisy-custom-endpoint), and shows how setting `service` alone scopes a rule to every method of a whole gRPC service.
+
+```yaml drop-grpc-health-checks.yaml
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: drop-grpc-health-checks
+  namespace: odigos-system
+spec:
+  name: Drop gRPC health checks
+  noisyOperations:
+    - name: Drop gRPC health checks
+      notes: Standard liveness/readiness pings; not useful for tracing.
+      percentageAtMost: 0
+      sourceScopes:
+        - workloadNamespace: odimall
+          workloadKind: Deployment
+          workloadName: inventory
+      operation:
+        grpcServer:
+          service: grpc.health.v1.Health
+```
+
+<Tip>
+  Because `service` and `method` are independent, a single `service:` line filters every method on a service. Add `method: ListItems` to scope to one specific RPC instead, or combine with `grpcClient.serverAddress` to drop outgoing calls to a particular backend.
+</Tip>
+
 ## YAML reference notes
 
 A few details that aren't obvious from YAML alone but matter when authoring rules. The full schema—every field, type, and validation rule—is in the [`Sampling` API reference](../../../api-reference/odigos.io.v1alpha1#odigos-io-v1alpha1-Sampling).
@@ -292,6 +321,15 @@ A few details that aren't obvious from YAML alone but matter when authoring rule
     - On HTTP Server matchers, set **either** `route` (exact match) **or** `routePrefix` (prefix match)—not both. Both match the framework's **templated path** (e.g., `/users/{id}`, `/users/:id`, `/users/*`), not the resolved URL.
     - `method` is a free-form string in YAML. The UI restricts it to GET, POST, PATCH, DELETE, and PUT, but YAML accepts any method (e.g., HEAD, OPTIONS). Leave it empty to match any method.
     - HTTP Client matchers (Noisy only) use `templatedPath` / `templatedPathPrefix`—the framework's parameterized path (e.g., `/users/{id}`), **not** the resolved URL (e.g., `/users/42`). Match against the route as your HTTP library reports it.
+  </Accordion>
+
+  <Accordion title="gRPC matchers: service and method are independent fields">
+    - `service` matches the fully-qualified gRPC service name (e.g., `acme.inventory.v1.InventoryService`, `grpc.health.v1.Health`); `method` matches the bare method name (e.g., `ListItems`, `Check`). Both fields are **exact match** and **case-sensitive**, mirroring proto naming.
+    - The canonical "drop every call to this service" rule is one line: set `service` and leave `method` empty. To target a single RPC, set both. To match every gRPC call regardless of service, leave both empty.
+    - Both OpenTelemetry semconv conventions are supported transparently: the older split form (`rpc.service` + bare `rpc.method`) and the newer fully-qualified form (`rpc.method` = `"Service/method"`, with `rpc.service` deprecated). For the latter the matcher splits `rpc.method` on the first `/` to derive the service/method, so the same rule matches spans from agents on either version.
+    - The `rpc.*` attribute namespace is shared with other RPC frameworks (Apache Dubbo, Connect RPC, JSON-RPC, .NET WCF, Java RMI, ONC RPC). The matcher reads `rpc.system` / `rpc.system.name` and, when present, only matches spans whose system equals `"grpc"`; non-gRPC RPC spans never accidentally fire a gRPC rule. Spans that omit `rpc.system` entirely are still considered (permissive default for older instrumentations).
+    - A span must carry at least `rpc.service` **or** `rpc.method` to be considered a gRPC span; rules on an attribute that can't be derived from the span will not match (e.g. a `service:` rule against a span whose only RPC attribute is the bare-method `rpc.method` or the `_OTHER` sentinel).
+    - gRPC Client matchers (Noisy only) additionally support `serverAddress` for matching the remote host (the gRPC channel target). Leave it empty to match any address.
   </Accordion>
 
   <Accordion title="Kafka matchers: empty topic matches all topics">

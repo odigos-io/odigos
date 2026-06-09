@@ -126,7 +126,8 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client) (*[]o
 			(ir.Spec.HeadersCollection != nil) ||
 			(ir.Spec.TraceVerbosity != nil) ||
 			(ir.Spec.CustomInstrumentations != nil) ||
-			(ir.Spec.EbpfLogCapture != nil) {
+			(ir.Spec.EbpfLogCapture != nil) ||
+			(ir.Spec.AgentDiagnostics != nil) {
 
 			relevantIr = append(relevantIr, *ir)
 		}
