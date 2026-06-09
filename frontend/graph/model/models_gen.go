@@ -32,6 +32,7 @@ type ActionFields struct {
 	Renames                      *string                        `json:"renames,omitempty"`
 	PiiCategories                []string                       `json:"piiCategories,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroup `json:"urlTemplatizationRulesGroups,omitempty"`
+	ExtractAttribute             *ExtractAttribute              `json:"extractAttribute,omitempty"`
 }
 
 type ActionFieldsInput struct {
@@ -47,6 +48,7 @@ type ActionFieldsInput struct {
 	Renames                      *string                             `json:"renames,omitempty"`
 	PiiCategories                []string                            `json:"piiCategories,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroupInput `json:"urlTemplatizationRulesGroups,omitempty"`
+	ExtractAttribute             *ExtractAttributeInput              `json:"extractAttribute,omitempty"`
 }
 
 type ActionInput struct {
@@ -493,6 +495,28 @@ type ExportedSignalsInput struct {
 	Metrics  bool `json:"metrics"`
 	Logs     bool `json:"logs"`
 	Profiles bool `json:"profiles"`
+}
+
+type ExtractAttribute struct {
+	Extractions []*Extraction `json:"extractions"`
+}
+
+type ExtractAttributeInput struct {
+	Extractions []*ExtractionInput `json:"extractions"`
+}
+
+type Extraction struct {
+	TargetAttributeName string                `json:"targetAttributeName"`
+	LookupKey           *string               `json:"lookupKey,omitempty"`
+	DataFormat          *ExtractionDataFormat `json:"dataFormat,omitempty"`
+	Regex               *string               `json:"regex,omitempty"`
+}
+
+type ExtractionInput struct {
+	TargetAttributeName string                `json:"targetAttributeName"`
+	LookupKey           *string               `json:"lookupKey,omitempty"`
+	DataFormat          *ExtractionDataFormat `json:"dataFormat,omitempty"`
+	Regex               *string               `json:"regex,omitempty"`
 }
 
 type FieldInput struct {
@@ -1676,6 +1700,7 @@ const (
 	ActionTypeRenameAttribute       ActionType = "RenameAttribute"
 	ActionTypePiiMasking            ActionType = "PiiMasking"
 	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
+	ActionTypeExtractAttribute      ActionType = "ExtractAttribute"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
 
@@ -1686,12 +1711,13 @@ var AllActionType = []ActionType{
 	ActionTypeRenameAttribute,
 	ActionTypePiiMasking,
 	ActionTypeURLTemplatization,
+	ActionTypeExtractAttribute,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeURLTemplatization, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeURLTemplatization, ActionTypeExtractAttribute, ActionTypeUnknownType:
 		return true
 	}
 	return false
@@ -1944,6 +1970,49 @@ func (e *EnvInjectionMethod) UnmarshalGQL(v any) error {
 }
 
 func (e EnvInjectionMethod) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ExtractionDataFormat string
+
+const (
+	ExtractionDataFormatJSON         ExtractionDataFormat = "json"
+	ExtractionDataFormatSQL          ExtractionDataFormat = "sql"
+	ExtractionDataFormatResourcePath ExtractionDataFormat = "resource_path"
+)
+
+var AllExtractionDataFormat = []ExtractionDataFormat{
+	ExtractionDataFormatJSON,
+	ExtractionDataFormatSQL,
+	ExtractionDataFormatResourcePath,
+}
+
+func (e ExtractionDataFormat) IsValid() bool {
+	switch e {
+	case ExtractionDataFormatJSON, ExtractionDataFormatSQL, ExtractionDataFormatResourcePath:
+		return true
+	}
+	return false
+}
+
+func (e ExtractionDataFormat) String() string {
+	return string(e)
+}
+
+func (e *ExtractionDataFormat) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ExtractionDataFormat(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ExtractionDataFormat", str)
+	}
+	return nil
+}
+
+func (e ExtractionDataFormat) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
