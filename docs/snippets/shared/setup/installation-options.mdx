@@ -166,3 +166,123 @@ you will need to modify the YAML of the oc route with `spec.tls.termination: edg
 Check the OpenShift documentation or run `oc expose -h` for more
 information on configuring OpenShift routes according to your
 cluster's requirements.
+
+## GKE Installation
+
+Installing on Google Kubernetes Engine (GKE) requires additional settings
+that can be configured based on your cluster type:
+
+<Tabs>
+  <Tab title="Odigos CLI">
+       For GKE Standard clusters:
+
+       ```shell
+       odigos install --set gke.enabled=true
+       ```
+
+       For GKE Autopilot clusters:
+
+       ```shell
+       odigos install --set gke.enabled=true --set gke.autopilot=true
+       ```
+  </Tab>
+  <Tab title="Helm Chart">
+       For GKE Standard clusters, set `gke.enabled=true` in `values.yaml`:
+
+       ```yaml
+       gke:
+         enabled: true
+       ```
+
+       Or pass it as a flag during installation:
+
+       ```shell
+       helm install odigos odigos/odigos --set gke.enabled=true
+       ```
+
+       For GKE Autopilot clusters, also set `gke.autopilot=true`:
+
+       ```yaml
+       gke:
+         enabled: true
+         autopilot: true
+       ```
+
+       Or pass both flags during installation:
+
+       ```shell
+       helm install odigos odigos/odigos --set gke.enabled=true --set gke.autopilot=true
+       ```
+  </Tab>
+</Tabs>
+
+GKE installation with `gke.enabled=true` does the following:
+
+* Configures a `ResourceQuota` for `system-node-critical` pods, which is required for odiglet on GKE
+
+### GKE Autopilot
+
+GKE Autopilot restricts privileged workloads by default. Odiglet requires
+elevated permissions for eBPF-based instrumentation, so it must be allowlisted
+before it can run on Autopilot clusters.
+
+Allowlist synchronization requires GKE version `1.32.2-gke.1652000` or later.
+
+When `gke.autopilot=true`, the Helm chart:
+
+* Creates an `AllowlistSynchronizer` that syncs the Odigos odiglet allowlist from the [Google-managed partner repository](https://cloud.google.com/kubernetes-engine/docs/how-to/run-autopilot-partner-workloads)
+* Skips node label setup in the odiglet init phase, where Autopilot nodes cannot be modified. Autopilot is auto-detected by the `gk3-` node name prefix; set `gke.autopilot=true` to force this behavior
+
+#### Node label limitations
+
+On standard clusters, odiglet sets `odigos.io/odiglet-oss-installed=true` (or
+`odigos.io/odiglet-enterprise-installed=true` for enterprise) on each node after
+preparing it for instrumentation. Autopilot does not allow modifying node labels,
+so odiglet skips this step.
+
+Without the label:
+
+* **Instrumented pod scheduling with hostPath or CSI mount methods** — For
+  `k8s-host-path` and `k8s-csi-driver` mount methods, the instrumentor webhook
+  adds required node affinity matching the odiglet installed label so pods only
+  schedule on nodes where odiglet has prepared `/var/odigos`. Without the label
+  on Autopilot nodes, newly instrumented pods may remain Pending and fail to
+  schedule. The default `k8s-virtual-device` mount method does not rely on this
+  label and is recommended on Autopilot.
+* **Karpenter integration** — Odiglet normally removes the `odigos.io/needs-init`
+  startup taint when it sets the node label. This step is also skipped on
+  Autopilot, so the Karpenter integration workflow is not supported.
+
+#### Manually create the AllowlistSynchronizer
+
+If you do not set `gke.autopilot=true`, create the `AllowlistSynchronizer` yourself
+before odiglet pods are scheduled. See the [GKE documentation for running Autopilot
+partner workloads](https://cloud.google.com/kubernetes-engine/docs/how-to/run-autopilot-partner-workloads)
+for more details.
+
+Apply the following manifest to install all Odigos allowlists from the partner
+repository:
+
+```yaml
+apiVersion: auto.gke.io/v1
+kind: AllowlistSynchronizer
+metadata:
+  name: odigos-allowlist-synchronizer
+spec:
+  allowlistPaths:
+    - "Odigos/Odigos/*"
+```
+
+```shell
+kubectl apply -f allowlist-synchronizer.yaml
+```
+
+After the allowlist is installed, verify that it is ready before odiglet pods start:
+
+```shell
+kubectl wait --for=condition=Ready allowlistsynchronizer/odigos-allowlist-synchronizer --timeout=60s
+kubectl get workloadallowlist
+```
+
+For more information on privileged workload allowlisting in Autopilot, see the
+[GKE documentation on running Autopilot partner workloads](https://cloud.google.com/kubernetes-engine/docs/how-to/run-autopilot-partner-workloads).
