@@ -619,7 +619,7 @@ func (sc *ServerConfig) getGrpcServerOptions(
 				settings.Logger.Info("OTLP gRPC receiver detected memory limit reached, dropping a batch")
 				return ctx, errMemoryLimitReachedDataDropped
 			} else { // gateway collector
-				settings.Logger.Info("OTLP gRPC receiver detected memory limit reached")
+				settings.Logger.Debug("OTLP gRPC receiver detected memory limit reached, returning a retrible error to sender")
 				return ctx, errMemoryLimitReached
 			}
 		}
