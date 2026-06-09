@@ -61,8 +61,7 @@ func (r *ebpfReceiver) tracesReadLoop(ctx context.Context, m *ebpf.Map) error {
 
 		if record.LostSamples != 0 {
 			// Record the lost samples metric
-			r.telemetry.EbpfLostSamples.Add(ctx, int64(record.LostSamples))
-			// Keep the log for debugging, but at debug level
+			r.telemetry.OdigosEbpfLostSamples.Add(ctx, int64(record.LostSamples))
 			r.logger.Debug("lost samples", zap.Int("lost", int(record.LostSamples)))
 			continue
 		}
@@ -93,9 +92,12 @@ func (r *ebpfReceiver) tracesReadLoop(ctx context.Context, m *ebpf.Map) error {
 
 		err = r.nextTraces.ConsumeTraces(ctx, td)
 		if err != nil {
+			r.telemetry.OdigosEbpfLostSamples.Add(ctx, int64(record.LostSamples))
 			r.logger.Error("err consuming traces", zap.Error(err))
 			continue
 		}
+		// If no error, we passed the span to the next consumer, meaning it was accepted
+		r.telemetry.OdigosEbpfAcceptedSpans.Add(ctx, int64(td.SpanCount()))
 	}
 }
 

@@ -35,22 +35,6 @@ func AssertEqualEbpfLogsAttrCacheSize(t *testing.T, tt *componenttest.Telemetry,
 	metricdatatest.AssertEqual(t, want, got, opts...)
 }
 
-func AssertEqualEbpfLostSamples(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
-	want := metricdata.Metrics{
-		Name:        "otelcol_ebpf_lost_samples",
-		Description: "The number of samples lost while reading from the eBPF perf buffer. For the ring buffer, this value is always 0. [Development]",
-		Unit:        "{samples}",
-		Data: metricdata.Sum[int64]{
-			Temporality: metricdata.CumulativeTemporality,
-			IsMonotonic: true,
-			DataPoints:  dps,
-		},
-	}
-	got, err := tt.GetMetric("otelcol_ebpf_lost_samples")
-	require.NoError(t, err)
-	metricdatatest.AssertEqual(t, want, got, opts...)
-}
-
 func AssertEqualEbpfMemoryPressureWaitTimeTotal(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_ebpf_memory_pressure_wait_time_total",
@@ -79,6 +63,38 @@ func AssertEqualEbpfTotalBytesRead(t *testing.T, tt *componenttest.Telemetry, dp
 		},
 	}
 	got, err := tt.GetMetric("otelcol_ebpf_total_bytes_read")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
+func AssertEqualOdigosEbpfAcceptedSpans(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos_ebpf_accepted_spans",
+		Description: "Total number of spans accepted from the eBPF buffer (perf or ring). [Development]",
+		Unit:        "{spans}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos_ebpf_accepted_spans")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
+func AssertEqualOdigosEbpfLostSamples(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos_ebpf_lost_samples",
+		Description: "The number of samples lost while reading from the eBPF perf buffer. For the ring buffer, this value is always 0. [Development]",
+		Unit:        "{samples}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos_ebpf_lost_samples")
 	require.NoError(t, err)
 	metricdatatest.AssertEqual(t, want, got, opts...)
 }
