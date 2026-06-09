@@ -268,7 +268,9 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		os.Exit(-1)
 	}
 
-	if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
+	if k8snode.IsGKEManagedNode(nn) {
+		logger.Info("Skipping node label setup for GKE Autopilot")
+	} else if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
 		logger.Error("Failed to prepare node for Odigos installation", "err", err)
 		os.Exit(-1)
 	} else {
