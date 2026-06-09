@@ -128,7 +128,7 @@ providers:
 
 replaces:
   # Local memory-profiling fork (alloc_space / TRACE_ALLOC). Temporary local replace;
-  # swap for a pinned odigos-io/opentelemetry-ebpf-profiler version once published.
+  # swap for a pinned odigos-io/odigos-ebpf-profiler version once published.
   - go.opentelemetry.io/ebpf-profiler => ../../../opentelemetry-ebpf-profiler
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor => ../processors/odigossamplingprocessor
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes => ../processors/odigosconditionalattributes
