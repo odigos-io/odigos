@@ -635,10 +635,10 @@
   resolved "https://registry.npmjs.org/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@0.0.244":
-  version "0.0.244"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.244.tgz#09219663068a1699388bc5d030130c30a3cfc74d"
-  integrity sha512-hktWd+TFlheatUyyHolz8/63o/QgQeXWgxFdYGQ4L9ZUjY4epIOIp1O1GPKgqzFk0EUhCNeu6mgx2mjN+pjTUw==
+"@odigos/ui-kit@0.0.246":
+  version "0.0.246"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.246.tgz#192e220b85f3cc2f58e303d930c2c798a9a4e4c5"
+  integrity sha512-CXrYMlOUH4ls0S2BRLTx3PfnuZABp712lhsvzB0mX3mvV4NxZFmrbLxIDI0i8wnOcxPZXXybjEj+mexCQ7K9+A==
   dependencies:
     "@xyflow/react" "^12.10.2"
     elkjs "^0.11.1"
@@ -1794,6 +1794,8 @@ doctrine@^2.1.0:
   version "2.1.0"
   resolved "https://registry.npmjs.org/doctrine/-/doctrine-2.1.0.tgz"
   integrity sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==
+  dependencies:
+    esutils "^2.0.2"
 
 dunder-proto@^1.0.0, dunder-proto@^1.0.1:
   version "1.0.1"
