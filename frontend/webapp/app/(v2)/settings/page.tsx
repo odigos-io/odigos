@@ -20,7 +20,6 @@ export default function Page() {
 
   return (
     <Settings
-      pageHeightOffset={62}
       minSupportedVersion={1.2}
       configYamls={configYamls}
       configYamlsLoading={configYamlsLoading}
