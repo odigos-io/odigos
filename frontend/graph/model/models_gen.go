@@ -529,6 +529,28 @@ type GolangCustomProbeInput struct {
 	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
 }
 
+type HeadSamplingGrpcClientMatcher struct {
+	Method        *string `json:"method,omitempty"`
+	Service       *string `json:"service,omitempty"`
+	ServerAddress *string `json:"serverAddress,omitempty"`
+}
+
+type HeadSamplingGrpcClientMatcherInput struct {
+	Method        *string `json:"method,omitempty"`
+	Service       *string `json:"service,omitempty"`
+	ServerAddress *string `json:"serverAddress,omitempty"`
+}
+
+type HeadSamplingGrpcServerMatcher struct {
+	Method  *string `json:"method,omitempty"`
+	Service *string `json:"service,omitempty"`
+}
+
+type HeadSamplingGrpcServerMatcherInput struct {
+	Method  *string `json:"method,omitempty"`
+	Service *string `json:"service,omitempty"`
+}
+
 type HeadSamplingHTTPClientMatcher struct {
 	ServerAddress       *string `json:"serverAddress,omitempty"`
 	TemplatedPath       *string `json:"templatedPath,omitempty"`
@@ -558,11 +580,15 @@ type HeadSamplingHTTPServerMatcherInput struct {
 type HeadSamplingOperationMatcher struct {
 	HTTPServer *HeadSamplingHTTPServerMatcher `json:"httpServer,omitempty"`
 	HTTPClient *HeadSamplingHTTPClientMatcher `json:"httpClient,omitempty"`
+	GrpcServer *HeadSamplingGrpcServerMatcher `json:"grpcServer,omitempty"`
+	GrpcClient *HeadSamplingGrpcClientMatcher `json:"grpcClient,omitempty"`
 }
 
 type HeadSamplingOperationMatcherInput struct {
 	HTTPServer *HeadSamplingHTTPServerMatcherInput `json:"httpServer,omitempty"`
 	HTTPClient *HeadSamplingHTTPClientMatcherInput `json:"httpClient,omitempty"`
+	GrpcServer *HeadSamplingGrpcServerMatcherInput `json:"grpcServer,omitempty"`
+	GrpcClient *HeadSamplingGrpcClientMatcherInput `json:"grpcClient,omitempty"`
 }
 
 type HeadersCollection struct {

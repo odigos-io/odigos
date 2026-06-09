@@ -842,6 +842,19 @@ func headSamplingOperationMatcherToModel(matcher *sampling.HeadSamplingOperation
 			Method:              services.StringPtrIfNotEmpty(matcher.HttpClient.Method),
 		}
 	}
+	if matcher.GrpcServer != nil {
+		result.GrpcServer = &model.HeadSamplingGrpcServerMatcher{
+			Method:  services.StringPtrIfNotEmpty(matcher.GrpcServer.Method),
+			Service: services.StringPtrIfNotEmpty(matcher.GrpcServer.Service),
+		}
+	}
+	if matcher.GrpcClient != nil {
+		result.GrpcClient = &model.HeadSamplingGrpcClientMatcher{
+			Method:        services.StringPtrIfNotEmpty(matcher.GrpcClient.Method),
+			Service:       services.StringPtrIfNotEmpty(matcher.GrpcClient.Service),
+			ServerAddress: services.StringPtrIfNotEmpty(matcher.GrpcClient.ServerAddress),
+		}
+	}
 	return result
 }
 
