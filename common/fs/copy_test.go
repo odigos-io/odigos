@@ -166,6 +166,77 @@ func TestProcessCriticalFiles_RenamesChangedFile(t *testing.T) {
 	}
 }
 
+func TestProcessCriticalFiles_NormalizesAbsoluteCriticalPaths(t *testing.T) {
+	staging := t.TempDir()
+	target := t.TempDir()
+
+	relPath := "loader/loader.so"
+	stagingFile := filepath.Join(staging, relPath)
+	targetFile := filepath.Join(target, relPath)
+
+	if err := os.MkdirAll(filepath.Dir(stagingFile), 0755); err != nil {
+		t.Fatalf("mkdir staging: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(targetFile), 0755); err != nil {
+		t.Fatalf("mkdir target: %v", err)
+	}
+	if err := os.WriteFile(stagingFile, []byte("same-version"), 0644); err != nil {
+		t.Fatalf("write staging: %v", err)
+	}
+	if err := os.WriteFile(targetFile, []byte("same-version"), 0644); err != nil {
+		t.Fatalf("write target: %v", err)
+	}
+
+	excludes, err := ProcessCriticalFiles(map[string]struct{}{targetFile: {}}, staging, target)
+	if err != nil {
+		t.Fatalf("ProcessCriticalFiles failed: %v", err)
+	}
+
+	if !excludes[relPath] {
+		t.Fatalf("expected absolute critical path to be normalized to relative exclude %q, got %#v", relPath, excludes)
+	}
+}
+
+func TestCopyAgentsDirectoryToHost_AbortsWhenCriticalFileProtectionFails(t *testing.T) {
+	src := t.TempDir()
+	dst := t.TempDir()
+	relPath := "loader/loader.so"
+	srcFile := filepath.Join(src, relPath)
+	dstFile := filepath.Join(dst, relPath)
+
+	if err := os.MkdirAll(filepath.Dir(srcFile), 0755); err != nil {
+		t.Fatalf("mkdir src: %v", err)
+	}
+	if err := os.MkdirAll(dstFile, 0755); err != nil {
+		t.Fatalf("mkdir dst file-as-dir: %v", err)
+	}
+	if err := os.WriteFile(srcFile, []byte("new-version"), 0644); err != nil {
+		t.Fatalf("write src: %v", err)
+	}
+
+	fakeBin := t.TempDir()
+	rsyncMarker := filepath.Join(fakeBin, "rsync-called")
+	fakeRsync := filepath.Join(fakeBin, "rsync")
+	if err := os.WriteFile(fakeRsync, []byte("#!/bin/sh\ntouch \"$RSYNC_MARKER\"\n"), 0755); err != nil {
+		t.Fatalf("write fake rsync: %v", err)
+	}
+	t.Setenv("PATH", fakeBin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("RSYNC_MARKER", rsyncMarker)
+
+	oldCriticalFiles := criticalFiles
+	criticalFiles = map[string]struct{}{dstFile: {}}
+	defer func() { criticalFiles = oldCriticalFiles }()
+
+	err := CopyAgentsDirectoryToHost(src, dst)
+	if err == nil {
+		t.Fatalf("expected CopyAgentsDirectoryToHost to fail when critical-file protection fails")
+	}
+
+	if _, statErr := os.Stat(rsyncMarker); !os.IsNotExist(statErr) {
+		t.Fatalf("rsync should not run after critical-file protection failure")
+	}
+}
+
 func TestCopyDirectories_SkipsUnchangedFiles(t *testing.T) {
 	src := t.TempDir()
 	dest := t.TempDir()
