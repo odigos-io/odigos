@@ -355,6 +355,9 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		logsEnabled := containerConfig.Logs != nil
 		existingEnvNames = podswebhook.InjectSignalsAsStaticOtelEnvVars(existingEnvNames, podContainerSpec, tracesEnabled, metricsEnabled, logsEnabled)
 	}
+	if distroMetadata.OwnLogs != nil {
+		existingEnvNames = podswebhook.InjectAgentDiagnosticsEnvVars(existingEnvNames, podContainerSpec, containerConfig.AgentDiagnostics)
+	}
 	if distroMetadata.EnvironmentVariables.OtlpHttpLocalNode {
 		existingEnvNames = podswebhook.InjectOtlpHttpEndpointEnvVar(existingEnvNames, podContainerSpec)
 	}

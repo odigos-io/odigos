@@ -66,7 +66,17 @@ enum ActionType {
   RenameAttribute
   PiiMasking
   URLTemplatization
+  ExtractAttribute
   UnknownType
+}
+
+# ExtractionDataFormat is a pre-set definition that resolves into a regex
+# applied to the value of `lookupKey` on the span. Must be one of the supported
+# formats; see odigos.io_actions CRD for the exact backend enum.
+enum ExtractionDataFormat {
+  json
+  sql
+  resource_path
 }
 
 enum InstrumentationRuleType {
@@ -184,7 +194,8 @@ input InstrumentationRuleInput {
   # Deprecated. Accepted but ignored by the resolver to keep older @odigos/ui-kit clients working
   # after the CRD/back-end dropped `workloads`. Use `sourcesScopes` instead.
   # TODO: remove once @odigos/ui-kit no longer sends `workloads` in the rule form payload.
-  workloads: [PodWorkloadInput!] @deprecated(reason: "use sourcesScopes; field is ignored by the server")
+  workloads: [PodWorkloadInput!]
+    @deprecated(reason: "use sourcesScopes; field is ignored by the server")
   sourcesScopes: [InstrumentationRuleSourcesScopeInput!]
   instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
   codeAttributes: CodeAttributesInput
@@ -484,6 +495,25 @@ input ActionFieldsInput {
   piiCategories: [String!]
 
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroupInput!]
+
+  extractAttribute: ExtractAttributeInput
+}
+
+# ExtractAttribute is the input shape for the ExtractAttribute action; mirrors
+# the `extractAttribute` field on the v1alpha1 ActionSpec (which wraps an
+# `extractions` list config).
+input ExtractAttributeInput {
+  extractions: [ExtractionInput!]!
+}
+
+# Extraction describes a single ExtractAttribute extraction rule. Either
+# (lookupKey + dataFormat) or regex must be provided; the captured value is
+# written to `targetAttributeName`.
+input ExtractionInput {
+  targetAttributeName: String!
+  lookupKey: String
+  dataFormat: ExtractionDataFormat
+  regex: String
 }
 
 input URLTemplatizationRuleInput {
@@ -552,6 +582,21 @@ type ActionFields {
   piiCategories: [String!]
 
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroup!]
+
+  extractAttribute: ExtractAttribute
+}
+
+# ExtractAttribute mirrors the v1alpha1 `extractAttribute` config — a wrapper
+# around the list of extraction rules applied by the processor, in order.
+type ExtractAttribute {
+  extractions: [Extraction!]!
+}
+
+type Extraction {
+  targetAttributeName: String!
+  lookupKey: String
+  dataFormat: ExtractionDataFormat
+  regex: String
 }
 
 type URLTemplatizationRule {

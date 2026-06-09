@@ -50,6 +50,14 @@ export const CREATE_ACTION = gql`
             examples
           }
         }
+        extractAttribute {
+          extractions {
+            targetAttributeName
+            lookupKey
+            dataFormat
+            regex
+          }
+        }
       }
       conditions {
         status
@@ -109,6 +117,14 @@ export const UPDATE_ACTION = gql`
             template
             notes
             examples
+          }
+        }
+        extractAttribute {
+          extractions {
+            targetAttributeName
+            lookupKey
+            dataFormat
+            regex
           }
         }
       }

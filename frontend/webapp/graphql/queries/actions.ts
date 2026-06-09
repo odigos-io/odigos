@@ -51,6 +51,14 @@ export const GET_ACTIONS = gql`
               examples
             }
           }
+          extractAttribute {
+            extractions {
+              targetAttributeName
+              lookupKey
+              dataFormat
+              regex
+            }
+          }
         }
         conditions {
           status

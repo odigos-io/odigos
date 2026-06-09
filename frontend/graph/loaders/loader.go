@@ -361,6 +361,24 @@ func (l *Loaders) LoadConfig(ctx context.Context) error {
 	return nil
 }
 
+// loadBypassWorkloads loads the cluster-wide InstrumentationConfig list and builds the
+// bypass set of workload IDs that have an IC. These workloads bypass the ignored-namespace
+// filter — they were explicitly instrumented (typically via a manifest-created Source CR
+// in an ignored namespace like odigos-system) and must remain visible/mutable in the UI.
+//
+// The caller MUST hold l.instrumentationConfigMutex when invoking this helper.
+func (l *Loaders) loadBypassWorkloads(ctx context.Context) error {
+	if err := l.loadInstrumentationConfigs(ctx); err != nil {
+		return err
+	}
+	bypassWorkloads := make(map[model.K8sWorkloadID]struct{}, len(l.instrumentationConfigs))
+	for id := range l.instrumentationConfigs {
+		bypassWorkloads[id] = struct{}{}
+	}
+	l.workloadFilter.BypassWorkloads = bypassWorkloads
+	return nil
+}
+
 // LoadWorkloadsWithFilter resolves the set of workload IDs that match the given filter and primes the loader caches needed by downstream resolvers.
 // This is the heaviest operation in the request — for cluster-wide filters it lists all Source CRs plus 6+ cluster-wide workload-manifest kinds.
 func (l *Loaders) LoadWorkloadsWithFilter(ctx context.Context, filter *model.WorkloadFilter) error {
@@ -370,10 +388,36 @@ func (l *Loaders) LoadWorkloadsWithFilter(ctx context.Context, filter *model.Wor
 	}
 	ignoredNamespacesMap := l.workloadFilter.IgnoredNamespaces
 
+	// Build the bypass set (instrumented workloads that should ignore the ignored-namespace filter)
+	// before constructing the per-query filter, so every WorkloadFilter assignment below sees it.
+	// Held across the whole function so downstream loaders that call loadInstrumentationConfigs
+	// (loadWorkloadPods, GetInstrumentationConfig) reuse the same cached IC map.
+	l.instrumentationConfigMutex.Lock()
+	defer l.instrumentationConfigMutex.Unlock()
+	if err := l.loadBypassWorkloads(ctx); err != nil {
+		return err
+	}
+	bypassWorkloads := l.workloadFilter.BypassWorkloads
+
 	// check if it's a namespace query for ignored namespaces.
+	// A SingleWorkload query bypasses this error when the workload has an IC — without this,
+	// an SSE-driven refresh of an instrumented odigos-system component would fail outright.
 	if filter != nil && filter.Namespace != nil {
 		if _, ok := ignoredNamespacesMap[*filter.Namespace]; ok {
-			return fmt.Errorf("namespace %s is configured to be ignored by odigos", *filter.Namespace)
+			isSingleWorkload := filter.Kind != nil && filter.Name != nil &&
+				*filter.Kind != "" && *filter.Name != ""
+			bypass := false
+			if isSingleWorkload {
+				id := model.K8sWorkloadID{
+					Namespace: *filter.Namespace,
+					Kind:      *filter.Kind,
+					Name:      *filter.Name,
+				}
+				_, bypass = bypassWorkloads[id]
+			}
+			if !bypass {
+				return fmt.Errorf("namespace %s is configured to be ignored by odigos", *filter.Namespace)
+			}
 		}
 	}
 
@@ -388,6 +432,7 @@ func (l *Loaders) LoadWorkloadsWithFilter(ctx context.Context, filter *model.Wor
 			},
 			NamespaceString:   *filter.Namespace,
 			IgnoredNamespaces: ignoredNamespacesMap,
+			BypassWorkloads:   bypassWorkloads,
 		}
 	} else if filter != nil && filter.Namespace != nil && *filter.Namespace != "" {
 		l.workloadFilter = &WorkloadFilter{
@@ -396,23 +441,23 @@ func (l *Loaders) LoadWorkloadsWithFilter(ctx context.Context, filter *model.Wor
 			},
 			NamespaceString:   *filter.Namespace,
 			IgnoredNamespaces: ignoredNamespacesMap,
+			BypassWorkloads:   bypassWorkloads,
 		}
 	} else {
 		l.workloadFilter = &WorkloadFilter{
 			ClusterWide:       &WorkloadFilterClusterWide{},
 			NamespaceString:   "", // k8s interprets empty string as cluster wide.
 			IgnoredNamespaces: ignoredNamespacesMap,
+			BypassWorkloads:   bypassWorkloads,
 		}
 	}
 
 	filterMarkedForInstrumentation := filter != nil && filter.MarkedForInstrumentation != nil && *filter.MarkedForInstrumentation
 
 	if filterMarkedForInstrumentation {
-		l.instrumentationConfigMutex.Lock()
-		defer l.instrumentationConfigMutex.Unlock()
-		if err := l.loadInstrumentationConfigs(ctx); err != nil {
-			return err
-		}
+		// ICs are already loaded by loadBypassWorkloads above; reuse them as the workload set.
+		// fetchInstrumentationConfigs no longer drops ICs in ignored namespaces, so every
+		// instrumented workload — including those in odigos-system — is returned here.
 		l.workloadIds = make([]model.K8sWorkloadID, 0, len(l.instrumentationConfigs))
 		for sourceId := range l.instrumentationConfigs {
 			l.workloadIds = append(l.workloadIds, sourceId)
@@ -481,12 +526,31 @@ func (l *Loaders) SetWorkloadIdsDirect(ctx context.Context, ids []model.K8sWorkl
 		return err
 	}
 
-	sortWorkloadIds(ids)
+	// Compute the bypass set and apply the same ignored-namespace logic that workloads(...)
+	// applies cluster-wide: drop requested IDs that live in ignored namespaces unless they're
+	// instrumented (have an IC). Without this, workloadsByIds would return data for arbitrary
+	// uninstrumented workloads in odigos-system / kube-system on demand, leaking the very
+	// resources the ignored-namespace config is meant to hide.
+	l.instrumentationConfigMutex.Lock()
+	defer l.instrumentationConfigMutex.Unlock()
+	if err := l.loadBypassWorkloads(ctx); err != nil {
+		return err
+	}
 
-	l.workloadIds = ids
-	l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(ids))
+	filteredIds := make([]model.K8sWorkloadID, 0, len(ids))
+	for _, id := range ids {
+		if l.workloadFilter.ShouldIgnoreWorkload(id) {
+			continue
+		}
+		filteredIds = append(filteredIds, id)
+	}
+
+	sortWorkloadIds(filteredIds)
+
+	l.workloadIds = filteredIds
+	l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(filteredIds))
 	l.nsToWorkloadIds = make(map[string][]model.K8sWorkloadID)
-	for _, workloadId := range ids {
+	for _, workloadId := range filteredIds {
 		l.nsToWorkloadIds[workloadId.Namespace] = append(l.nsToWorkloadIds[workloadId.Namespace], workloadId)
 		l.workloadIdsMap[k8sconsts.PodWorkload{
 			Namespace: workloadId.Namespace,

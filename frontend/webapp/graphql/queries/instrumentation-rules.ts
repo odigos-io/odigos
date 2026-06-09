@@ -17,6 +17,12 @@ export const GET_INSTRUMENTATION_RULES = gql`
           reason
           message
         }
+        sourcesScopes {
+          workloadName
+          workloadKind
+          workloadNamespace
+          workloadLanguage
+        }
         payloadCollection {
           httpRequest {
             mimeTypes

@@ -36,6 +36,9 @@ func deriveTypeFromAction(action *model.Action) model.ActionType {
 	if action.Fields.URLTemplatizationRulesGroups != nil {
 		return model.ActionTypeURLTemplatization
 	}
+	if action.Fields.ExtractAttribute != nil && len(action.Fields.ExtractAttribute.Extractions) > 0 {
+		return model.ActionTypeExtractAttribute
+	}
 
 	return model.ActionTypeUnknownType
 }
@@ -177,6 +180,7 @@ func getSpecFromInput(input model.ActionInput, existingAction *v1alpha1.Action) 
 
 	spec.PiiMasking = convertPiiMaskingFromInput(input.Fields, existingAction)
 	spec.URLTemplatization = convertUrlTemplatizationFromInput(input.Fields, existingAction)
+	spec.ExtractAttribute = convertExtractAttributeFromInput(input.Fields, existingAction)
 
 	return &spec, nil
 }
@@ -398,6 +402,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	}
 
 	urlTemplatizationGroups := convertUrlTemplatizationToModel(action.Spec.URLTemplatization)
+	extractAttribute := convertExtractAttributeToModel(action.Spec.ExtractAttribute)
 
 	responseFields := &model.ActionFields{
 		LabelsAttributes:             labelAttrs,
@@ -406,6 +411,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		Renames:                      renames,
 		PiiCategories:                piiCategories,
 		URLTemplatizationRulesGroups: urlTemplatizationGroups,
+		ExtractAttribute:             extractAttribute,
 	}
 
 	// Handle K8sAttributes fields
@@ -658,4 +664,60 @@ func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []
 		result = append(result, group)
 	}
 	return result
+}
+
+func convertExtractAttributeFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *urlactions.ExtractAttributeConfig {
+	if details.ExtractAttribute == nil {
+		if existingAction != nil && existingAction.Spec.ExtractAttribute != nil {
+			return existingAction.Spec.ExtractAttribute
+		}
+		return nil
+	}
+
+	extractions := make([]urlactions.Extraction, 0, len(details.ExtractAttribute.Extractions))
+	for _, e := range details.ExtractAttribute.Extractions {
+		row := urlactions.Extraction{
+			TargetAttributeName: e.TargetAttributeName,
+			LookupKey:           DerefString(e.LookupKey),
+			Regex:               DerefString(e.Regex),
+		}
+		if e.DataFormat != nil {
+			row.DataFormat = urlactions.DataFormat(*e.DataFormat)
+		}
+		extractions = append(extractions, row)
+	}
+
+	return &urlactions.ExtractAttributeConfig{
+		Extractions: extractions,
+	}
+}
+
+func convertExtractAttributeToModel(cfg *urlactions.ExtractAttributeConfig) *model.ExtractAttribute {
+	if cfg == nil {
+		return nil
+	}
+
+	extractions := make([]*model.Extraction, 0, len(cfg.Extractions))
+	for _, e := range cfg.Extractions {
+		row := &model.Extraction{
+			TargetAttributeName: e.TargetAttributeName,
+		}
+		if e.LookupKey != "" {
+			lookupKey := e.LookupKey
+			row.LookupKey = &lookupKey
+		}
+		if e.DataFormat != "" {
+			df := model.ExtractionDataFormat(e.DataFormat)
+			row.DataFormat = &df
+		}
+		if e.Regex != "" {
+			regex := e.Regex
+			row.Regex = &regex
+		}
+		extractions = append(extractions, row)
+	}
+
+	return &model.ExtractAttribute{
+		Extractions: extractions,
+	}
 }
