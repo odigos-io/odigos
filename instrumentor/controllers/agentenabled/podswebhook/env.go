@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros/distro"
 	containersutil "github.com/odigos-io/odigos/k8sutils/pkg/containers"
@@ -171,4 +172,17 @@ func GetEnvVarNamesSet(container *corev1.Container) EnvVarNamesMap {
 		envSet[envVar.Name] = struct{}{}
 	}
 	return envSet
+}
+
+func InjectAgentDiagnosticsEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, agentDiagnostics *instrumentationrules.AgentDiagnostics) EnvVarNamesMap {
+	if agentDiagnostics == nil {
+		return existingEnvNames
+	}
+	if agentDiagnostics.OdigosLogLevel != nil {
+		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, commonconsts.OdigosLogLevelEnvVarName, agentDiagnostics.OdigosLogLevel.EnvVarValue())
+	}
+	if agentDiagnostics.OpenTelemetryComponentsLogLevel != nil {
+		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, commonconsts.OtelLogLevelEnvVarName, agentDiagnostics.OpenTelemetryComponentsLogLevel.EnvVarValue())
+	}
+	return existingEnvNames
 }

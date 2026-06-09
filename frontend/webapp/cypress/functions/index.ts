@@ -259,9 +259,23 @@ interface AwaitToastOptions {
 }
 
 export const awaitToast = ({ message }: AwaitToastOptions, callback?: () => void) => {
-  cy.get(DATA_IDS.TOAST).contains(message).as('toast-msg');
-  cy.get('@toast-msg').should('exist');
-  cy.get('@toast-msg').parent().parent().find(DATA_IDS.TOAST_CLOSE).click({ force: true });
+  // ui-kit >=0.0.244 dropped the stable `data-id=toast` wrapper, so we anchor
+  // on the close button (the only stable selector left) and filter to the
+  // toast whose subtree contains the expected message. This avoids matching
+  // unrelated elements that happen to render the same text (e.g. the
+  // token-status banner in token-tracker.cy.ts).
+  cy.get(DATA_IDS.TOAST_CLOSE, { timeout: 10000 })
+    .filter(
+      (_, el) =>
+        Cypress.$(el)
+          .parents()
+          .filter((__, p) => (Cypress.$(p).text() || '').includes(message)).length > 0,
+    )
+    .first()
+    .as('toast-close');
+
+  cy.get('@toast-close').should('exist');
+  cy.get('@toast-close').click({ force: true });
 
   if (!!callback) callback();
 };

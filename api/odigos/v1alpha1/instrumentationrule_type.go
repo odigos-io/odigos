@@ -55,7 +55,7 @@ type InstrumentationRuleSpec struct {
 	Disabled bool `json:"disabled,omitempty"`
 
 	// SourcesScopes lists SourcesScope entries to which the rule should be applied. If unset or empty, the rule applies to all workloads.
-	SourcesScopes *k8sconsts.SourcesScopes `json:"sourcesScopes,omitempty"`
+	Scopes *k8sconsts.SourcesScopes `json:"scopes,omitempty"`
 
 	// For fine grained control, the user can specify the instrumentation library to use.
 	// One can specify same rule for multiple languages and libraries at the same time.
@@ -94,13 +94,18 @@ type InstrumentationRuleSpec struct {
 
 	// Configure the verbosity of the traces for the library.
 	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
+
+	// Configure the agent own logging configuration.
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
 }
 
 // Verify validates the InstrumentationRuleSpec.
 // for future usage, you can add more validation logic here for other fields.
 func (irs *InstrumentationRuleSpec) Verify() error {
 	if irs.CustomInstrumentations != nil {
-		return irs.CustomInstrumentations.Verify()
+		if err := irs.CustomInstrumentations.Verify(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
