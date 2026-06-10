@@ -260,6 +260,11 @@ func calculateCollectorConfigDomains(
 			return nil, "", errors.Join(err, errors.New("failed to calculate own metrics config"))
 		}
 		configDomains["own_metrics"] = ownMetricsConfig
+
+		// scrape the odiglet's prometheus /metrics endpoint and forward to the cluster collector.
+		// the cluster collector decides (via its own SendToOdigosMetricsStore setting) whether
+		// to forward these to the odigos metrics store (Victoria Metrics).
+		configDomains["odiglet_metrics"] = collectorconfig.OdigletMetricsConfig(odigosNamespace)
 	}
 
 	// traces

@@ -403,4 +403,3 @@ func isOdigosTrafficMetricsProcessorRelevant(name string, destinationPipelines [
 	}
 	return false
 }
-
