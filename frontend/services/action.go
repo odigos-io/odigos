@@ -609,9 +609,13 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 		rules = append(rules, group)
 	}
 
-	return &urlactions.URLTemplatizationConfig{
+	urlTemplatization := &urlactions.URLTemplatizationConfig{
 		Rules: rules,
 	}
+	if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
+		urlTemplatization.Default = existingAction.Spec.URLTemplatization.Default
+	}
+	return urlTemplatization
 }
 
 func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []*model.URLTemplatizationRulesGroup {
