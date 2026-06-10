@@ -252,6 +252,7 @@ jobs:
           provenance: false
           tags: |
             us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}:${{ env.ODIGOS_TAG }}
+            us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-${{ matrix.service }}:${{ env.ODIGOS_TAG }}
             keyval/odigos-${{ matrix.service }}:${{ env.ODIGOS_TAG }}
             ghcr.io/odigos-io/odigos-${{ matrix.service }}:${{ env.ODIGOS_TAG }}
           build-args: |
