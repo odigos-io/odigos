@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { ROUTES } from '@/utils';
 import { useConfig } from '@/hooks';
 import { useRouter } from 'next/navigation';
-import { InstallationStatus } from '@/types';
+import { InstallationStatus } from '@odigos/ui-kit/types';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 
 export default function App() {

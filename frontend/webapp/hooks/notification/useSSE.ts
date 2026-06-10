@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
-import { useSourceCRUD } from '../sources';
-import { useDestinationCRUD } from '../destinations';
+import { useOdigosApi } from '@odigos/ui-kit/contexts/odigos-api';
 import { getIdFromSseTarget, safeJsonParse } from '@odigos/ui-kit/functions';
 import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
 import { useEntityStore, useNotificationStore, useProgressStore, ProgressKeys } from '@odigos/ui-kit/store';
@@ -28,10 +27,12 @@ interface DebouncedEvent {
 const EVENT_DEBOUNCE_MS = 5000;
 
 export const useSSE = () => {
-  const { fetchSources, fetchSourcesByTargets } = useSourceCRUD();
-  const { addNotification } = useNotificationStore();
-  const { fetchDestinations } = useDestinationCRUD();
   const { removeEntities } = useEntityStore();
+  const { addNotification } = useNotificationStore();
+  const { sources: sourcesApi, destinations: destinationsApi } = useOdigosApi();
+  const fetchSources = sourcesApi.fetchAll;
+  const fetchSourcesByTargets = sourcesApi.fetchByTargets;
+  const fetchDestinations = destinationsApi.fetchAll;
 
   const maxRetries = 10;
   const retryCount = useRef(0);

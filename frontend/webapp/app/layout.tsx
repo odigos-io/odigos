@@ -3,7 +3,6 @@
 import React, { type PropsWithChildren } from 'react';
 import dynamic from 'next/dynamic';
 
-const ApolloProvider = dynamic(() => import('@/lib/apollo-provider'), { ssr: false });
 const ThemeProvider = dynamic(() => import('@/lib/theme-provider'), { ssr: false });
 
 function RootLayout({ children }: PropsWithChildren) {
@@ -25,9 +24,7 @@ function RootLayout({ children }: PropsWithChildren) {
           backgroundColor: '#151618',
         }}
       >
-        <ThemeProvider>
-          <ApolloProvider>{children}</ApolloProvider>
-        </ThemeProvider>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
