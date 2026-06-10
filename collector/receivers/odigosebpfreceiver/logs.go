@@ -146,7 +146,7 @@ func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map, attrCache 
 		// Minimum valid size is the header (offset of Data field).
 		headerSize := int(unsafe.Offsetof(logEvent{}.Data))
 		if len(record.RawSample) < headerSize {
-			r.telemetry.EbpfLostSamples.Add(ctx, 1)
+			r.telemetry.OdigosEbpfLostSamples.Add(ctx, 1)
 			r.logger.Error("short sample", zap.Int("size", len(record.RawSample)), zap.Int("headerSize", headerSize))
 			continue
 		}
