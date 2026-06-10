@@ -52,6 +52,9 @@ func getNamespace(attrs pcommon.Map) string {
 }
 
 func getKindAndName(attrs pcommon.Map) (string, string) {
+	if kind, name, ok := getOdigosKindAndName(attrs); ok {
+		return kind, name
+	}
 
 	for _, pair := range attrKindPairs {
 		if val, ok := attrs.Get(pair.key); ok && val.Type() == pcommon.ValueTypeStr {
@@ -59,16 +62,19 @@ func getKindAndName(attrs pcommon.Map) (string, string) {
 		}
 	}
 
-	// Fallback to Odigos-specific workload attributes when no k8s workload attribute matched.
+	return "", ""
+}
+
+func getOdigosKindAndName(attrs pcommon.Map) (string, string, bool) {
 	kind, ok := attrs.Get(consts.OdigosWorkloadKindAttribute)
-	if !ok {
-		return "", ""
+	if !ok || kind.Type() != pcommon.ValueTypeStr || kind.Str() == "" {
+		return "", "", false
 	}
 	name, ok := attrs.Get(consts.OdigosWorkloadNameAttribute)
-	if !ok {
-		return "", ""
+	if !ok || name.Type() != pcommon.ValueTypeStr || name.Str() == "" {
+		return "", "", false
 	}
-	return kind.Str(), name.Str()
+	return kind.Str(), name.Str(), true
 }
 
 func getContainerName(attrs pcommon.Map) string {
