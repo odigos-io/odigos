@@ -52,6 +52,10 @@ func getNamespace(attrs pcommon.Map) string {
 }
 
 func getKindAndName(attrs pcommon.Map) (string, string) {
+	// Odigos attributes disambiguate workload kinds that share Kubernetes semantic convention keys.
+	if kind, name := getOdigosKindAndName(attrs); kind != "" && name != "" {
+		return kind, name
+	}
 
 	for _, pair := range attrKindPairs {
 		if val, ok := attrs.Get(pair.key); ok && val.Type() == pcommon.ValueTypeStr {
@@ -60,6 +64,10 @@ func getKindAndName(attrs pcommon.Map) (string, string) {
 	}
 
 	// Fallback to Odigos-specific workload attributes when no k8s workload attribute matched.
+	return getOdigosKindAndName(attrs)
+}
+
+func getOdigosKindAndName(attrs pcommon.Map) (string, string) {
 	kind, ok := attrs.Get(consts.OdigosWorkloadKindAttribute)
 	if !ok {
 		return "", ""
