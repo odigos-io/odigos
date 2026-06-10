@@ -18,6 +18,16 @@ const (
 	// Exporter success/failure counters from collector self-telemetry
 	metricExporterSentSpans       = "otelcol_exporter_sent_spans"
 	metricExporterSendFailedSpans = "otelcol_exporter_send_failed_spans"
+
+	// Python instrumentation metrics.
+	metricPythonSentSpans     = "odigos_python_ebpf_instrumentation_sent_events"
+	metricPythonFailedSpans   = "odigos_python_ebpf_instrumentation_output_failed_events"
+	metricPythonTooLargeSpans = "odigos_python_ebpf_instrumentation_events_too_larger"
+
+	// NodeJS instrumentation metrics
+	metricNodeJSSentSpans     = "odigos_nodejs_ebpf_instrumentation_sent_events"
+	metricNodeJSFailedSpans   = "odigos_nodejs_ebpf_instrumentation_output_failed_events"
+	metricNodeJSTooLargeSpans = "odigos_nodejs_ebpf_instrumentation_events_too_larger"
 )
 
 type PodRates struct {
