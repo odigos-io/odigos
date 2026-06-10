@@ -12,9 +12,9 @@ import (
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
-// GetOdigletPodsWithMetrics returns node collector (odiglet) pods enriched with per-pod collector metrics from VictoriaMetrics.
+// GetOdigletPodsWithNodeCollectorContainerMetrics returns node collector (odiglet) pods enriched with per-pod collector metrics from VictoriaMetrics.
 // If api is nil or queries fail, the pods are returned without metrics.
-func GetOdigletPodsWithMetrics(ctx context.Context, api v1.API) ([]*model.PodInfo, error) {
+func GetOdigletPodsWithNodeCollectorContainerMetrics(ctx context.Context, api v1.API) ([]*model.PodInfo, error) {
 	selector := fmt.Sprintf("%s=%s", k8sconsts.OdigosCollectorRoleLabel, string(k8sconsts.CollectorsRoleNodeCollector))
 	return getPodsWithMetrics(ctx, api, selector)
 }
@@ -41,7 +41,7 @@ func getPodsWithMetrics(ctx context.Context, api v1.API, selector string) ([]*mo
 	}
 
 	namespace := env.GetCurrentNamespace()
-	ratesByPod, err := metrics.GetCollectorPodRates(ctx, api, namespace, names, metrics.DefaultMetricsWindow)
+	ratesByPod, err := metrics.GetCollectorMetricsFromMetricsStore(ctx, api, namespace, names, metrics.DefaultMetricsWindow)
 	if err != nil {
 		return pods, nil
 	}
