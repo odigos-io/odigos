@@ -47,6 +47,7 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string) error {
 
 		if err != nil {
 			logger.Error("Error getting changed files", "err", err)
+			return fmt.Errorf("failed to protect critical agent files before sync: %w", err)
 		}
 
 		if err := writeKeeplist(dstDir, keeplistPath, updatedFilesToKeepMap); err != nil {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -264,6 +265,45 @@ func TestCopyDirectories_PreservesMtime(t *testing.T) {
 		if !srcInfo.ModTime().Equal(dstInfo.ModTime()) {
 			t.Fatalf("mtime not preserved for %s: src=%v dst=%v", file, srcInfo.ModTime(), dstInfo.ModTime())
 		}
+	}
+}
+
+func TestCopyAgentsDirectoryToHost_AbortsWhenCriticalFileProtectionFails(t *testing.T) {
+	src := t.TempDir()
+	dest := t.TempDir()
+
+	criticalRel := filepath.Join("critical", "agent.so")
+	srcCritical := filepath.Join(src, criticalRel)
+	destCritical := filepath.Join(dest, criticalRel)
+
+	if err := os.MkdirAll(filepath.Dir(srcCritical), 0755); err != nil {
+		t.Fatalf("mkdir src critical dir: %v", err)
+	}
+	if err := os.WriteFile(srcCritical, []byte("new-agent"), 0644); err != nil {
+		t.Fatalf("write src critical file: %v", err)
+	}
+	if err := os.MkdirAll(destCritical, 0755); err != nil {
+		t.Fatalf("mkdir dest critical path as directory: %v", err)
+	}
+
+	staleFile := filepath.Join(dest, "stale-file")
+	if err := os.WriteFile(staleFile, []byte("must-not-delete"), 0644); err != nil {
+		t.Fatalf("write stale file: %v", err)
+	}
+
+	oldCriticalFiles := criticalFiles
+	criticalFiles = map[string]struct{}{destCritical: {}}
+	defer func() { criticalFiles = oldCriticalFiles }()
+
+	err := CopyAgentsDirectoryToHost(src, dest)
+	if err == nil {
+		t.Fatalf("expected CopyAgentsDirectoryToHost to fail")
+	}
+	if !strings.Contains(err.Error(), "failed to protect critical agent files before sync") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, err := os.Stat(staleFile); err != nil {
+		t.Fatalf("stale file was removed, rsync should not have run: %v", err)
 	}
 }
 
