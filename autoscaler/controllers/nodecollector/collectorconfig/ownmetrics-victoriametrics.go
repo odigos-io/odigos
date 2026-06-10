@@ -13,7 +13,12 @@ const (
 	odigletMetricsExporterName = "otlp_http/odiglet-metrics-out"
 	odigletMetricsPipelineName = "metrics/odiglet-metrics"
 
-	// Adds "odiglet" as a pod name so we can filter out the odiglet's own metrics in the UI
+	odigletJobName               = "odiglet"
+	odigletMetricsScrapeInterval = "10s"
+
+	// Stamps the data collection pod's own name as k8s.pod.name on the scraped odiglet metrics.
+	// The scrape carries no per-pod identity, so without this the series from every node's data would aggregate to be the same.
+	// The UI queries these metrics grouped and filtered by k8s.pod.name, matching against the data collection pod names.
 	odigletMetricsPodNameProcessorName = "resource/odiglet-pod-name"
 
 	// keep only the eBPF instrumentation counters (java, python, nodejs) exposed by the odiglet.
@@ -35,8 +40,8 @@ func odigletMetricsReceiverConfig(odigosNamespace string) config.GenericMap {
 			"config": config.GenericMap{
 				"scrape_configs": []config.GenericMap{
 					{
-						"job_name":           "odiglet",
-						"scrape_interval":    "10s",
+						"job_name":           odigletJobName,
+						"scrape_interval":    odigletMetricsScrapeInterval,
 						"enable_compression": false,
 						"static_configs": []config.GenericMap{
 							{
