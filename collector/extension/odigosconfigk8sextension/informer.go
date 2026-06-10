@@ -3,6 +3,8 @@ package odigosconfigk8sextension
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -43,6 +45,15 @@ func (o *OdigosWorkloadConfig) startInformer(ctx context.Context) error {
 		o.logger.Warn("not running in-cluster, instrumentation config cache will be empty", zap.Error(err))
 		return nil
 	}
+
+	// HTTPS_PROXY on the gateway [collectorGateway.httpsProxyAddress]
+	// is intended for exporting to external destinations,
+	// not for reaching the in-cluster Kubernetes API server. Routing list/watch
+	// through a customer forward proxy gets the request blocked (e.g. CONNECT
+	// rejected with "URLBlocked") and the informer never syncs. Mirrors the
+	// bypass applied in collector/providers/odigosk8scmprovider/provider.go
+	// (PR #3305).
+	restConfig.Proxy = func(*http.Request) (*url.URL, error) { return nil, nil }
 
 	client, err := dynamic.NewForConfig(restConfig)
 	if err != nil {
