@@ -47,6 +47,7 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string) error {
 
 		if err != nil {
 			logger.Error("Error getting changed files", "err", err)
+			return fmt.Errorf("failed to protect critical agent files: %w", err)
 		}
 
 		if err := writeKeeplist(dstDir, keeplistPath, updatedFilesToKeepMap); err != nil {
@@ -177,9 +178,11 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 	logger := commonlogger.LoggerCompat().With("subsystem", "agents")
 	updatedFilesToKeepMap := make(map[string]struct{})
 
-	for hostPath := range filesToKeepMap {
-		// Convert host path to container path
-		containerPath := strings.Replace(hostPath, hostDir, containerDir, 1)
+	for criticalPath := range filesToKeepMap {
+		hostPath, containerPath, _, err := resolveCriticalFilePath(criticalPath, containerDir, hostDir)
+		if err != nil {
+			return nil, err
+		}
 
 		// Find and preserve existing hash version files for this base file
 		existingHashVersionFiles, err := findHashVersionFiles(hostPath)

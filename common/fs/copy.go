@@ -14,8 +14,8 @@ import (
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
-// criticalFiles lists paths relative to the agents directory root that must be
-// preserved during upgrades because they may be memory-mapped by running processes.
+// criticalFiles lists host paths that must be preserved during upgrades because
+// they may be memory-mapped by running processes.
 var criticalFiles = map[string]struct{}{
 	"/var/odigos/nodejs-ebpf/build/Release/dtrace-injector-native.node":                            {},
 	"/var/odigos/nodejs-ebpf/build/Release/obj.target/dtrace-injector-native.node":                 {},
@@ -211,9 +211,11 @@ func fileExists(path string) bool {
 func ProcessCriticalFiles(files map[string]struct{}, stagingDir, targetDir string) (map[string]bool, error) {
 	excludes := make(map[string]bool)
 
-	for relPath := range files {
-		targetPath := filepath.Join(targetDir, relPath)
-		stagingPath := filepath.Join(stagingDir, relPath)
+	for criticalPath := range files {
+		targetPath, stagingPath, relPath, err := resolveCriticalFilePath(criticalPath, stagingDir, targetDir)
+		if err != nil {
+			return nil, err
+		}
 
 		// Preserve all existing hash-versioned files for this base file.
 		hvFiles, _ := findHashVersionFiles(targetPath)
@@ -261,6 +263,23 @@ func ProcessCriticalFiles(files map[string]struct{}, stagingDir, targetDir strin
 	}
 
 	return excludes, nil
+}
+
+func resolveCriticalFilePath(filePath, srcDir, dstDir string) (dstPath, srcPath, relPath string, err error) {
+	if filepath.IsAbs(filePath) {
+		relPath, err = filepath.Rel(dstDir, filePath)
+		if err != nil {
+			return "", "", "", fmt.Errorf("resolve critical file %s relative to %s: %w", filePath, dstDir, err)
+		}
+	} else {
+		relPath = filepath.Clean(filePath)
+	}
+
+	if relPath == "." || relPath == ".." || filepath.IsAbs(relPath) || strings.HasPrefix(relPath, ".."+string(os.PathSeparator)) {
+		return "", "", "", fmt.Errorf("critical file %s is outside destination %s", filePath, dstDir)
+	}
+
+	return filepath.Join(dstDir, relPath), filepath.Join(srcDir, relPath), relPath, nil
 }
 
 func renameWithHashSuffix(filePath, hash string) (string, error) {
