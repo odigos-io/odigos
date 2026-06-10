@@ -26,15 +26,15 @@ const (
 	metricExporterSentSpans       = "otelcol_exporter_sent_spans"
 	metricExporterSendFailedSpans = "otelcol_exporter_send_failed_spans"
 
-	// Python instrumentation metrics
-	metricPythonSentSpans     = "otelcol_odigos_python_ebpf_instrumentation_sent_events"
-	metricPythonFailedSpans   = "otelcol_odigos_python_ebpf_instrumentation_output_failed_events"
-	metricPythonTooLargeSpans = "otelcol_odigos_python_ebpf_instrumentation_events_too_larger"
+	// Python instrumentation metrics.
+	metricPythonSentSpans     = "odigos_python_ebpf_instrumentation_sent_events"
+	metricPythonFailedSpans   = "odigos_python_ebpf_instrumentation_output_failed_events"
+	metricPythonTooLargeSpans = "odigos_python_ebpf_instrumentation_events_too_larger"
 
 	// NodeJS instrumentation metrics
-	metricNodeJSSentSpans     = "otelcol_odigos_nodejs_ebpf_instrumentation_sent_events"
-	metricNodeJSFailedSpans   = "otelcol_odigos_nodejs_ebpf_instrumentation_output_failed_events"
-	metricNodeJSTooLargeSpans = "otelcol_odigos_nodejs_ebpf_instrumentation_events_too_larger"
+	metricNodeJSSentSpans     = "odigos_nodejs_ebpf_instrumentation_sent_events"
+	metricNodeJSFailedSpans   = "odigos_nodejs_ebpf_instrumentation_output_failed_events"
+	metricNodeJSTooLargeSpans = "odigos_nodejs_ebpf_instrumentation_events_too_larger"
 )
 
 type PodRates struct {
