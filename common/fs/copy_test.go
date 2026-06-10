@@ -117,51 +117,48 @@ func TestCopyDirectories_RespectsExcludes(t *testing.T) {
 	}
 }
 
-func TestProcessCriticalFiles_RenamesChangedFile(t *testing.T) {
-	staging := t.TempDir()
-	target := t.TempDir()
+func TestRemoveChangedFilesFromKeepMap_RenamesChangedFile(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
 
 	relPath := "loader/loader.so"
-	stagingFile := filepath.Join(staging, relPath)
-	targetFile := filepath.Join(target, relPath)
+	srcFile := filepath.Join(srcDir, relPath)
+	dstFile := filepath.Join(dstDir, relPath)
 
-	if err := os.MkdirAll(filepath.Dir(stagingFile), 0755); err != nil {
-		t.Fatalf("mkdir staging: %v", err)
+	if err := os.MkdirAll(filepath.Dir(srcFile), 0755); err != nil {
+		t.Fatalf("mkdir source: %v", err)
 	}
-	if err := os.MkdirAll(filepath.Dir(targetFile), 0755); err != nil {
-		t.Fatalf("mkdir target: %v", err)
+	if err := os.MkdirAll(filepath.Dir(dstFile), 0755); err != nil {
+		t.Fatalf("mkdir destination: %v", err)
 	}
-	if err := os.WriteFile(stagingFile, []byte("new-version"), 0644); err != nil {
-		t.Fatalf("write staging: %v", err)
+	if err := os.WriteFile(srcFile, []byte("new-version"), 0644); err != nil {
+		t.Fatalf("write source: %v", err)
 	}
-	if err := os.WriteFile(targetFile, []byte("old-version"), 0644); err != nil {
-		t.Fatalf("write target: %v", err)
+	if err := os.WriteFile(dstFile, []byte("old-version"), 0644); err != nil {
+		t.Fatalf("write destination: %v", err)
 	}
 
-	oldCriticalFiles := criticalFiles
-	criticalFiles = map[string]struct{}{relPath: {}}
-	defer func() { criticalFiles = oldCriticalFiles }()
+	filesToKeepMap := map[string]struct{}{dstFile: {}}
 
-	excludes, err := ProcessCriticalFiles(criticalFiles, staging, target)
+	keep, err := removeChangedFilesFromKeepMap(filesToKeepMap, srcDir, dstDir)
 	if err != nil {
-		t.Fatalf("processCriticalFiles failed: %v", err)
+		t.Fatalf("removeChangedFilesFromKeepMap failed: %v", err)
 	}
 
-	// The original target file should be renamed (no longer at original path)
-	if _, err := os.Stat(targetFile); !os.IsNotExist(err) {
-		t.Fatalf("original target file should have been renamed")
+	// The original destination file should be renamed (no longer at original path)
+	if _, err := os.Stat(dstFile); !os.IsNotExist(err) {
+		t.Fatalf("original destination file should have been renamed")
 	}
 
-	// The renamed file should be in the excludes map
-	if len(excludes) == 0 {
-		t.Fatalf("expected excludes to contain renamed file")
+	// The renamed file should be in the keep map
+	if len(keep) == 0 {
+		t.Fatalf("expected keep map to contain renamed file")
 	}
 
 	// Verify the renamed file exists on disk
-	for rel := range excludes {
-		renamedPath := filepath.Join(target, rel)
-		if _, err := os.Stat(renamedPath); err != nil {
-			t.Fatalf("renamed file %s does not exist: %v", renamedPath, err)
+	for dstPath := range keep {
+		if _, err := os.Stat(dstPath); err != nil {
+			t.Fatalf("renamed file %s does not exist: %v", dstPath, err)
 		}
 	}
 }

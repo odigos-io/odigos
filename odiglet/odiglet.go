@@ -256,7 +256,7 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	// Logger already initialized in main() before calling OdigletInitPhase.
 	logger := commonlogger.LoggerCompat().With("subsystem", "init")
 
-	err := fs.CopyAgentsDirectoryToHost(k8sconsts.OdigletContainerAgentDirectory, k8sconsts.OdigosAgentsDirectory)
+	err := fs.CopyAgentsDirectoryToHost(k8sconsts.OdigletContainerAgentDirectory, k8sconsts.OdigosAgentsDirectory, nil)
 	if err != nil {
 		logger.Error("Failed to copy agents directory to host", "err", err)
 		os.Exit(-1)
