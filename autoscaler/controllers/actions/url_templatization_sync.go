@@ -48,6 +48,37 @@ func hasAnyUrlTemplatizationAction(ctx context.Context, c client.Client, namespa
 	return false, nil
 }
 
+func cleanupStaleActionOwnedUrlTemplatizationProcessors(ctx context.Context, c client.Client, namespace string) error {
+	var list odigosv1.ProcessorList
+	if err := c.List(ctx, &list, client.InNamespace(namespace)); err != nil {
+		return err
+	}
+
+	for i := range list.Items {
+		proc := &list.Items[i]
+		if proc.Name == consts.URLTemplatizationProcessorName ||
+			proc.Spec.Type != consts.OdigosURLTemplateProcessorType ||
+			!hasActionOwner(proc.OwnerReferences) {
+			continue
+		}
+
+		if err := c.Delete(ctx, proc); err != nil {
+			return client.IgnoreNotFound(err)
+		}
+	}
+
+	return nil
+}
+
+func hasActionOwner(ownerReferences []metav1.OwnerReference) bool {
+	for _, owner := range ownerReferences {
+		if owner.APIVersion == "odigos.io/v1alpha1" && owner.Kind == "Action" {
+			return true
+		}
+	}
+	return false
+}
+
 func buildUrlTemplatizationProcessor(namespace string, spanMetricsEnabled bool) (*odigosv1.Processor, error) {
 	cfg := actions.URLTemplatizationConfig{}
 	configJSON, err := json.Marshal(map[string]interface{}{
@@ -92,6 +123,10 @@ func buildUrlTemplatizationProcessor(namespace string, spanMetricsEnabled bool) 
 func SyncUrlTemplatizationProcessor(ctx context.Context, c client.Client, mode URLTemplatizationSyncMode) error {
 	logger := commonlogger.FromContext(ctx).WithName("url-templatization")
 	ns := env.GetCurrentNamespace()
+	if err := cleanupStaleActionOwnedUrlTemplatizationProcessors(ctx, c, ns); err != nil {
+		return fmt.Errorf("cleanup stale action-owned url templatization processors: %w", err)
+	}
+
 	need, err := hasAnyUrlTemplatizationAction(ctx, c, ns)
 	if err != nil {
 		return err
