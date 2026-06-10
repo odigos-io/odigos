@@ -16,10 +16,10 @@ type fakeProcessor struct {
 }
 
 func (f fakeProcessor) GetSignals() []common.ObservabilitySignal { return f.signals }
-func (f fakeProcessor) GetType() string                         { return f.pType }
-func (f fakeProcessor) GetID() string                           { return f.id }
-func (f fakeProcessor) GetConfig() (GenericMap, error)          { return f.config, nil }
-func (f fakeProcessor) GetOrderHint() int                       { return f.orderHint }
+func (f fakeProcessor) GetType() string                          { return f.pType }
+func (f fakeProcessor) GetID() string                            { return f.id }
+func (f fakeProcessor) GetConfig() (GenericMap, error)           { return f.config, nil }
+func (f fakeProcessor) GetOrderHint() int                        { return f.orderHint }
 
 func TestCrdProcessorToConfig_ProfilesBucketing(t *testing.T) {
 	profiles := []common.ObservabilitySignal{common.ProfilesObservabilitySignal}
