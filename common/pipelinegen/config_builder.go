@@ -222,6 +222,21 @@ func CalculateGatewayConfig(
 		}
 	}
 
+	// Apply user-configured processors (from Actions selecting the PROFILES signal) to the gateway
+	// profiles pipelines. Profiles bypass the data-stream router connector, so unlike traces/metrics/
+	// logs there is no single root pipeline — the gateway "profiles" (to-UI) pipeline and any
+	// "profiles/<dest>" pipelines each go otlp -> exporter directly. The profiles pipelines are
+	// registered by addProfilesPipeline (destinations) and the applySelfTelemetry callback (UI), so
+	// this must run after both. Processors are prepended so enrichment/transform happens before export.
+	if len(processorsResults.ProfilesProcessors) > 0 {
+		for name, pipe := range currentConfig.Service.Pipelines {
+			if name == "profiles" || strings.HasPrefix(name, "profiles/") {
+				pipe.Processors = append(slices.Clone(processorsResults.ProfilesProcessors), pipe.Processors...)
+				currentConfig.Service.Pipelines[name] = pipe
+			}
+		}
+	}
+
 	// Defensive nil-checks to avoid panic on optional *bool fields.
 	// Defaults:
 	// - ServiceGraph.Disabled: assume false (enabled) if nil
