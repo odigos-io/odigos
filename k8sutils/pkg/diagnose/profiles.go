@@ -114,6 +114,12 @@ var servicesProfilingMetadata = map[string]ProfilingPodConfig{
 			k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
 		}.AsSelector(),
 	},
+	"ui": {
+		Port: k8sconsts.DefaultPprofEndpointPort,
+		Selector: labels.Set{
+			"app.kubernetes.io/name": k8sconsts.UIAppLabelValue,
+		}.AsSelector(),
+	},
 }
 
 // FetchServiceProfiles collects pprof profiles for a single Odigos service (e.g. "odiglet").
