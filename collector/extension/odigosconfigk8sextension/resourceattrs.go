@@ -21,8 +21,8 @@ var attrKindPairs = []struct {
 	{key: string(semconv.K8SDeploymentNameKey), kind: "Deployment"},
 	{key: string(semconv.K8SStatefulSetNameKey), kind: "StatefulSet"},
 	{key: string(semconv.K8SDaemonSetNameKey), kind: "DaemonSet"},
-	{key: string(semconv.K8SJobNameKey), kind: "Job"},
 	{key: string(semconv.K8SCronJobNameKey), kind: "CronJob"},
+	{key: string(semconv.K8SJobNameKey), kind: "Job"},
 	{key: k8SArgoRolloutNameAttribute, kind: "Rollout"},
 }
 
@@ -52,23 +52,56 @@ func getNamespace(attrs pcommon.Map) string {
 }
 
 func getKindAndName(attrs pcommon.Map) (string, string) {
+	if kind, ok := getStringAttr(attrs, consts.OdigosWorkloadKindAttribute); ok {
+		if name, ok := getStringAttr(attrs, consts.OdigosWorkloadNameAttribute); ok {
+			return kind, name
+		}
+
+		if nameAttr := workloadNameAttrForKind(kind); nameAttr != "" {
+			if name, ok := getStringAttr(attrs, nameAttr); ok {
+				return kind, name
+			}
+		}
+
+		return "", ""
+	}
 
 	for _, pair := range attrKindPairs {
-		if val, ok := attrs.Get(pair.key); ok && val.Type() == pcommon.ValueTypeStr {
-			return pair.kind, val.Str()
+		if name, ok := getStringAttr(attrs, pair.key); ok {
+			return pair.kind, name
 		}
 	}
 
-	// Fallback to Odigos-specific workload attributes when no k8s workload attribute matched.
-	kind, ok := attrs.Get(consts.OdigosWorkloadKindAttribute)
-	if !ok {
-		return "", ""
+	return "", ""
+}
+
+func getStringAttr(attrs pcommon.Map, key string) (string, bool) {
+	val, ok := attrs.Get(key)
+	if !ok || val.Type() != pcommon.ValueTypeStr {
+		return "", false
 	}
-	name, ok := attrs.Get(consts.OdigosWorkloadNameAttribute)
-	if !ok {
-		return "", ""
+	return val.Str(), true
+}
+
+func workloadNameAttrForKind(kind string) string {
+	switch kind {
+	case "Deployment":
+		return string(semconv.K8SDeploymentNameKey)
+	case "StatefulSet":
+		return string(semconv.K8SStatefulSetNameKey)
+	case "DaemonSet":
+		return string(semconv.K8SDaemonSetNameKey)
+	case "CronJob":
+		return string(semconv.K8SCronJobNameKey)
+	case "Job":
+		return string(semconv.K8SJobNameKey)
+	case "DeploymentConfig":
+		return string(semconv.K8SDeploymentNameKey)
+	case "Rollout":
+		return k8SArgoRolloutNameAttribute
+	default:
+		return ""
 	}
-	return kind.Str(), name.Str()
 }
 
 func getContainerName(attrs pcommon.Map) string {
