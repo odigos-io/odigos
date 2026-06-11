@@ -7,20 +7,20 @@ import (
 	"github.com/odigos-io/odigos/distros/distro"
 )
 
-func DistroSupportsAgentOwnLogs(d *distro.OtelDistro) bool {
-	return d.OwnLogs != nil
+func DistroSupportsAgentDiagnostics(d *distro.OtelDistro) bool {
+	return d.OwnDiagnostics != nil
 }
 
 // calculates the agent log level for the container, by merging the log levels from all instrumentation rules.
 func CalculateAgentDiagnostics(irls *[]odigosv1.InstrumentationRule, d *distro.OtelDistro) *instrumentationrules.AgentDiagnostics {
 
-	if !DistroSupportsAgentOwnLogs(d) {
+	if !DistroSupportsAgentDiagnostics(d) {
 		return nil
 	}
 
 	var odigosAgentDiagnostics *instrumentationrules.AgentDiagnostics
 	for _, irl := range *irls {
-		odigosAgentDiagnostics = mergeAgentDiagnostics(odigosAgentDiagnostics, irl.Spec.AgentDiagnostics, *d.OwnLogs)
+		odigosAgentDiagnostics = mergeAgentDiagnostics(odigosAgentDiagnostics, irl.Spec.AgentDiagnostics, *d.OwnDiagnostics)
 	}
 	return odigosAgentDiagnostics
 }
