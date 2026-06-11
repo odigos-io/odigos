@@ -144,19 +144,29 @@ const operations: OdigosApiOperations = {
   DELETE_DATA_STREAM: { document: DELETE_DATA_STREAM },
 
   // namespaces
-  GET_NAMESPACES_WITH_WORKLOADS: { document: GET_NAMESPACES_WITH_WORKLOADS },
+  // Wire returns `{ namespaces: [...] }` flat at the root (the legacy
+  // `computePlatform.k8sActualNamespaces` path was retired in v1.20).
+  // The kit's slot already expects `{ namespaces }` directly, so the
+  // raw wire shape passes through — but we still declare a no-op
+  // `transformResult` for symmetry with central-ui's adapter, and to
+  // keep the consumer's TS narrowing happy (slot data is bare).
+  GET_NAMESPACES_WITH_WORKLOADS: {
+    document: GET_NAMESPACES_WITH_WORKLOADS,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transformResult: (raw: any) => ({ namespaces: raw?.namespaces ?? [] }),
+  },
   PERSIST_NAMESPACES: { document: PERSIST_NAMESPACES },
 
-  // k8s manifest. Bare slot expects a single string — flatten the wire
-  // envelope `{ k8sActualManifest } | { manifest }` here so consumers
-  // never have to runtime-narrow.
+  // k8s manifest. Bare slot expects a single string. Wire field is
+  // `k8sManifest`; we keep the legacy `k8sActualManifest`/`manifest`
+  // fallbacks too in case an older backend ships either of those names.
   GET_K8S_MANIFEST: {
     document: GET_K8S_MANIFEST,
     transformVariables: (vars) => ({ kind: vars?.kind, name: vars?.name, namespace: vars?.namespace, ext: vars?.ext ?? 'yaml' }),
     transformResult: (raw: unknown) => {
       if (typeof raw === 'string') return raw;
-      const obj = raw as { k8sActualManifest?: string; manifest?: string } | null | undefined;
-      return obj?.k8sActualManifest ?? obj?.manifest;
+      const obj = raw as { k8sManifest?: string; k8sActualManifest?: string; manifest?: string } | null | undefined;
+      return obj?.k8sManifest ?? obj?.k8sActualManifest ?? obj?.manifest;
     },
   },
 
@@ -185,19 +195,36 @@ const operations: OdigosApiOperations = {
     transformResult: (raw: unknown) => (raw as { diagnose?: DiagnoseResult } | null | undefined)?.diagnose,
   },
 
-  // tokens. Bare `TokenPayload[]` slot — flatten the wire envelope here.
+  // tokens. Bare `TokenPayload[]` slot — flatten the wire envelope.
+  // Wire returns `{ computePlatform: { apiTokens: [...] } }`; we also
+  // accept the legacy `tokens` field name as a fallback in case an
+  // older backend version is in play.
   GET_TOKENS: {
     document: GET_TOKENS,
     transformResult: (raw: unknown) => {
-      const env = raw as { tokens?: TokenPayload[]; computePlatform?: { tokens?: TokenPayload[] } } | null | undefined;
-      return env?.tokens ?? env?.computePlatform?.tokens ?? [];
+      const env = raw as
+        | {
+            apiTokens?: TokenPayload[];
+            tokens?: TokenPayload[];
+            computePlatform?: { apiTokens?: TokenPayload[]; tokens?: TokenPayload[] };
+          }
+        | null
+        | undefined;
+      return env?.computePlatform?.apiTokens ?? env?.computePlatform?.tokens ?? env?.apiTokens ?? env?.tokens ?? [];
     },
   },
   UPDATE_TOKEN: { document: UPDATE_API_TOKEN },
 
   // metrics / service map
   GET_METRICS: { document: GET_METRICS },
-  GET_SERVICE_MAP: { document: GET_SERVICE_MAP },
+  // Wire returns `{ getServiceMap: { services: [...] } }`; the kit's
+  // `ServiceMapApi.fetch()` consumer reads `data.serviceMap`. Flatten
+  // to that shape so the consumer stays envelope-agnostic.
+  GET_SERVICE_MAP: {
+    document: GET_SERVICE_MAP,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transformResult: (raw: any) => ({ serviceMap: raw?.getServiceMap?.services ?? raw?.serviceMap ?? [] }),
+  },
 
   // profiling — bare-shape slots; flatten the per-field envelope here.
   GET_PROFILING_SLOTS: {
@@ -206,17 +233,29 @@ const operations: OdigosApiOperations = {
   },
   GET_SOURCE_PROFILING: {
     document: GET_SOURCE_PROFILING,
-    transformResult: (raw: unknown) => (raw as { sourceProfiling?: SourceProfilingResult } | null | undefined)?.sourceProfiling,
+    // Wire returns `{ computePlatform: { source: { profiling: { profileJson } } } }`.
+    // Walk the path and surface the bare `{ profileJson }` shape so the
+    // consumer never has to narrow.
+    transformResult: (raw: unknown) => {
+      const env = raw as { computePlatform?: { source?: { profiling?: SourceProfilingResult } }; sourceProfiling?: SourceProfilingResult } | null | undefined;
+      return env?.computePlatform?.source?.profiling ?? env?.sourceProfiling;
+    },
   },
   ENABLE_SOURCE_PROFILING: {
     document: ENABLE_SOURCE_PROFILING,
     transformResult: (raw: unknown) => (raw as { enableSourceProfiling?: EnableProfilingResult } | null | undefined)?.enableSourceProfiling,
   },
 
-  // pipeline collectors — bare-shape slots
+  // pipeline collectors — bare-shape slots. The standalone backend's
+  // GraphQL field names predate the kit's normalization: the gateway
+  // is exposed as `gatewayDeploymentInfo` (it's a Deployment), the
+  // node-collector is exposed as `odigletDaemonSetInfo` / `odigletPods`
+  // (it's an Odiglet DaemonSet). The kit's slot type is bare
+  // `GatewayInfo` / `NodeCollectoInfo` / `PodInfo[]`, so extract from
+  // the wire field names here so consumers see the canonical shape.
   GET_GATEWAY_INFO: {
     document: GET_GATEWAY_INFO,
-    transformResult: (raw: unknown) => (raw as { gatewayInfo?: GatewayInfo } | null | undefined)?.gatewayInfo,
+    transformResult: (raw: unknown) => (raw as { gatewayDeploymentInfo?: GatewayInfo } | null | undefined)?.gatewayDeploymentInfo,
   },
   GET_GATEWAY_PODS: {
     document: GET_GATEWAY_PODS,
@@ -224,11 +263,11 @@ const operations: OdigosApiOperations = {
   },
   GET_NODE_COLLECTOR_INFO: {
     document: GET_NODE_COLLECTOR_INFO,
-    transformResult: (raw: unknown) => (raw as { nodeCollectorInfo?: NodeCollectoInfo } | null | undefined)?.nodeCollectorInfo,
+    transformResult: (raw: unknown) => (raw as { odigletDaemonSetInfo?: NodeCollectoInfo } | null | undefined)?.odigletDaemonSetInfo,
   },
   GET_NODE_COLLECTOR_PODS: {
     document: GET_NODE_COLLECTOR_PODS,
-    transformResult: (raw: unknown) => (raw as { nodeCollectorPods?: PodInfo[] } | null | undefined)?.nodeCollectorPods ?? [],
+    transformResult: (raw: unknown) => (raw as { odigletPods?: PodInfo[] } | null | undefined)?.odigletPods ?? [],
   },
   GET_COLLECTOR_POD_INFO: {
     document: GET_COLLECTOR_POD_INFO,
@@ -236,7 +275,19 @@ const operations: OdigosApiOperations = {
   },
 
   // sampling
-  GET_SAMPLING_RULES: { document: GET_SAMPLING_RULES },
+  // Wire returns `{ sampling: { rules: [...], configs: { effective: {
+  // k8sHealthProbesSampling: { enabled, keepPercentage } } } } }`. The
+  // kit's slot expects the bare `{ samplingRules, k8sHealthProbesConfig }`
+  // shape; flatten here so consumers don't have to dig through nested
+  // envelopes.
+  GET_SAMPLING_RULES: {
+    document: GET_SAMPLING_RULES,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    transformResult: (raw: any) => ({
+      samplingRules: raw?.sampling?.rules ?? [],
+      k8sHealthProbesConfig: raw?.sampling?.configs?.effective?.k8sHealthProbesSampling ?? null,
+    }),
+  },
   CREATE_NOISY_OPERATION_RULE: { document: CREATE_NOISY_OPERATION_RULE },
   UPDATE_NOISY_OPERATION_RULE: { document: UPDATE_NOISY_OPERATION_RULE },
   DELETE_NOISY_OPERATION_RULE: { document: DELETE_NOISY_OPERATION_RULE },
