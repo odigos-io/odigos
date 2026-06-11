@@ -1,0 +1,60 @@
+{{- if eq (include "abnormal.clickhouse.enabled" .) "true" }}
+{{- $ch := .Values.abnormal.clickhouse }}
+{{- $user := $ch.auth.username | default "default" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-clickhouse-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "abnormal.clickhouse.labels" . | nindent 4 }}
+data:
+  # Server overrides merged into the base image config (/etc/clickhouse-server/config.d/).
+  config.xml: |
+    <clickhouse>
+      <logger>
+        <level>information</level>
+      </logger>
+      <!-- Listen on all interfaces so other pods can reach ClickHouse (image also sets this). -->
+      <listen_host>0.0.0.0</listen_host>
+      <path>/var/lib/clickhouse/</path>
+      <tmp_path>/var/lib/clickhouse/tmp/</tmp_path>
+      <user_files_path>/var/lib/clickhouse/user_files/</user_files_path>
+      <format_schema_path>/var/lib/clickhouse/format_schemas/</format_schema_path>
+      <!-- Cap memory relative to the container memory limit to avoid OOMKill. -->
+      <max_server_memory_usage_to_ram_ratio>{{ $ch.maxServerMemoryUsageToRamRatio }}</max_server_memory_usage_to_ram_ratio>
+      {{- if $ch.metrics.enabled }}
+      <prometheus>
+        <endpoint>/metrics</endpoint>
+        <port>9363</port>
+        <metrics>true</metrics>
+        <events>true</events>
+        <asynchronous_metrics>true</asynchronous_metrics>
+        <status_info>true</status_info>
+      </prometheus>
+      {{- end }}
+    </clickhouse>
+  # User definitions merged into the base image config (/etc/clickhouse-server/users.d/).
+  users.xml: |
+    <clickhouse>
+      <users>
+        {{- if ne $user "default" }}
+        <!-- Remove the built-in passwordless default user when a dedicated user is configured. -->
+        <default remove="remove"/>
+        {{- end }}
+        <!-- replace: fully override any base definition for this user. -->
+        <{{ $user }} replace="replace">
+          <password from_env="ODIGOS_CH_PASSWORD"/>
+          <networks>
+            {{- range $ch.auth.allowedNetworks }}
+            <ip>{{ . }}</ip>
+            {{- end }}
+          </networks>
+          <profile>default</profile>
+          <quota>default</quota>
+          <!-- SQL-driven access management is a privilege-escalation surface; keep it off. -->
+          <access_management>0</access_management>
+        </{{ $user }}>
+      </users>
+    </clickhouse>
+{{- end }}

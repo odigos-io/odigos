@@ -1,0 +1,63 @@
+{{- if eq (include "abnormal.clickhouse.enabled" .) "true" }}
+{{- $ch := .Values.abnormal.clickhouse }}
+# Headless service: stable per-pod DNS for the StatefulSet.
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-clickhouse-headless
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "abnormal.clickhouse.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    {{- include "abnormal.clickhouse.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 8123
+      targetPort: http
+      protocol: TCP
+    - name: tcp
+      port: 9000
+      targetPort: tcp
+      protocol: TCP
+    {{- if gt (int $ch.replicaCount) 1 }}
+    - name: interserver
+      port: 9009
+      targetPort: interserver
+      protocol: TCP
+    {{- end }}
+---
+# Client service: how Odigos Abnormal connects to ClickHouse.
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-clickhouse
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "abnormal.clickhouse.labels" . | nindent 4 }}
+  {{- with $ch.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ $ch.service.type | default "ClusterIP" }}
+  selector:
+    {{- include "abnormal.clickhouse.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 8123
+      targetPort: http
+      protocol: TCP
+    - name: tcp
+      port: 9000
+      targetPort: tcp
+      protocol: TCP
+    {{- if $ch.metrics.enabled }}
+    - name: metrics
+      port: 9363
+      targetPort: metrics
+      protocol: TCP
+    {{- end }}
+{{- end }}

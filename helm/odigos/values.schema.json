@@ -24,27 +24,35 @@
             "auth": {
               "additionalProperties": false,
               "properties": {
+                "allowedNetworks": {
+                  "description": "CIDRs allowed to authenticate as this user (ClickHouse `\u003cnetworks\u003e`). Defaults to private ranges; in-cluster traffic is permitted while the public internet is denied. Enforce further with `networkPolicy`.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "required": [],
+                  "title": "allowedNetworks"
+                },
                 "existingSecret": {
                   "default": "",
-                  "description": "Existing Secret holding the password. Takes precedence over `password`.",
+                  "description": "Name of an existing Secret holding the password. Takes precedence over `password`; the chart will not create or manage the password Secret.",
                   "required": [],
                   "title": "existingSecret"
                 },
                 "existingSecretKey": {
                   "default": "password",
-                  "description": "Key within `existingSecret` holding the password.",
+                  "description": "Key within `existingSecret` holding the plaintext password.",
                   "required": [],
                   "title": "existingSecretKey"
                 },
                 "password": {
                   "default": "",
-                  "description": "Password for the user. Ignored when `existingSecret` is set; generated when both are empty.",
+                  "description": "Password for the user. When empty and no `existingSecret` is set, a strong random password is generated and persisted in a Secret.",
                   "required": [],
                   "title": "password"
                 },
                 "username": {
                   "default": "default",
-                  "description": "ClickHouse username.",
+                  "description": "ClickHouse username Odigos Abnormal connects with.",
                   "required": [],
                   "title": "username"
                 }
@@ -55,9 +63,50 @@
             },
             "image": {
               "default": "",
-              "description": "Full image override. Empty pulls `odigos-clickhouse:\u003ctag\u003e` from the Odigos registry (see `imagePrefix`).",
+              "description": "Full image override (including registry). Empty pulls `odigos-clickhouse:\u003ctag\u003e` via `imagePrefix`, so internal registries are supported through `imagePrefix`.",
               "required": [],
               "title": "image"
+            },
+            "maxServerMemoryUsageToRamRatio": {
+              "default": "0.9",
+              "description": "Fraction of the container memory limit ClickHouse may use (`max_server_memory_usage_to_ram_ratio`). Leaves headroom to avoid OOMKill.",
+              "maximum": 1,
+              "required": [],
+              "title": "maxServerMemoryUsageToRamRatio"
+            },
+            "metrics": {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "default": "true",
+                  "description": "Expose the native ClickHouse Prometheus endpoint on port 9363 at /metrics.",
+                  "required": [],
+                  "title": "enabled"
+                }
+              },
+              "required": [],
+              "title": "metrics",
+              "type": "object"
+            },
+            "networkPolicy": {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "default": "false",
+                  "description": "Create a NetworkPolicy restricting ingress to the ClickHouse pods. Off by default since it depends on a NetworkPolicy-enforcing CNI.",
+                  "required": [],
+                  "title": "enabled"
+                }
+              },
+              "required": [],
+              "title": "networkPolicy",
+              "type": "object"
+            },
+            "nodeSelector": {
+              "default": "",
+              "description": "Override the global nodeSelector (values.nodeSelector) for the ClickHouse pod.",
+              "required": [],
+              "title": "nodeSelector"
             },
             "persistence": {
               "additionalProperties": false,
@@ -84,6 +133,13 @@
               "required": [],
               "title": "persistence",
               "type": "object"
+            },
+            "replicaCount": {
+              "default": "1",
+              "description": "Number of ClickHouse replicas. Defaults to a single standalone node; values above 1 are not officially supported yet.",
+              "minimum": 1,
+              "required": [],
+              "title": "replicaCount"
             },
             "resources": {
               "additionalProperties": false,
@@ -129,13 +185,39 @@
               "title": "resources",
               "type": "object"
             },
+            "service": {
+              "additionalProperties": false,
+              "properties": {
+                "annotations": {
+                  "additionalProperties": true,
+                  "description": "Extra annotations for the ClickHouse client Service.",
+                  "required": [],
+                  "title": "annotations"
+                },
+                "type": {
+                  "default": "ClusterIP",
+                  "description": "Service type for the ClickHouse client service (HTTP 8123 / native 9000).",
+                  "enum": [
+                    "ClusterIP",
+                    "NodePort",
+                    "LoadBalancer"
+                  ],
+                  "required": [],
+                  "title": "type"
+                }
+              },
+              "required": [],
+              "title": "service",
+              "type": "object"
+            },
             "tag": {
               "default": "",
-              "description": "Image tag (ClickHouse server version). Empty uses the chart default.",
+              "description": "Image tag (ClickHouse server version). Empty uses the chart default LTS tag.",
               "required": [],
               "title": "tag"
             },
             "tolerations": {
+              "description": "  kubernetes.io/os: linux",
               "items": {
                 "required": []
               },

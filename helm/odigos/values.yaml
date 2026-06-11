@@ -1716,32 +1716,49 @@ abnormal:
   clickhouse:
 
     # @schema
-    # description: Full image override. Empty pulls `odigos-clickhouse:<tag>` from the Odigos registry (see `imagePrefix`).
+    # description: Number of ClickHouse replicas. Defaults to a single standalone node; values above 1 are not officially supported yet.
+    # minimum: 1
+    # @schema
+    replicaCount: 1
+
+    # @schema
+    # description: Full image override (including registry). Empty pulls `odigos-clickhouse:<tag>` via `imagePrefix`, so internal registries are supported through `imagePrefix`.
     # @schema
     image: ''
 
     # @schema
-    # description: Image tag (ClickHouse server version). Empty uses the chart default.
+    # description: Image tag (ClickHouse server version). Empty uses the chart default LTS tag.
     # @schema
     tag: ''
 
     auth:
       # @schema
-      # description: ClickHouse username.
+      # description: ClickHouse username Odigos Abnormal connects with.
       # @schema
       username: default
       # @schema
-      # description: Password for the user. Ignored when `existingSecret` is set; generated when both are empty.
+      # description: Password for the user. When empty and no `existingSecret` is set, a strong random password is generated and persisted in a Secret.
       # @schema
       password: ''
       # @schema
-      # description: Existing Secret holding the password. Takes precedence over `password`.
+      # description: Name of an existing Secret holding the password. Takes precedence over `password`; the chart will not create or manage the password Secret.
       # @schema
       existingSecret: ''
       # @schema
-      # description: Key within `existingSecret` holding the password.
+      # description: Key within `existingSecret` holding the plaintext password.
       # @schema
       existingSecretKey: password
+      # @schema
+      # items:
+      #   type: string
+      # description: CIDRs allowed to authenticate as this user (ClickHouse `<networks>`). Defaults to private ranges; in-cluster traffic is permitted while the public internet is denied. Enforce further with `networkPolicy`.
+      # @schema
+      allowedNetworks:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+        - 100.64.0.0/10
+        - fd00::/8
 
     persistence:
       # @schema
@@ -1757,6 +1774,12 @@ abnormal:
       # @schema
       storageClass: ''
 
+    # @schema
+    # description: Fraction of the container memory limit ClickHouse may use (`max_server_memory_usage_to_ram_ratio`). Leaves headroom to avoid OOMKill.
+    # maximum: 1
+    # @schema
+    maxServerMemoryUsageToRamRatio: 0.9
+
     resources:
       requests:
         cpu: 500m
@@ -1764,6 +1787,36 @@ abnormal:
       limits:
         cpu: '2'
         memory: 4Gi
+
+    service:
+      # @schema
+      # description: Service type for the ClickHouse client service (HTTP 8123 / native 9000).
+      # enum: [ClusterIP, NodePort, LoadBalancer]
+      # @schema
+      type: ClusterIP
+      # @schema
+      # additionalProperties: true
+      # description: Extra annotations for the ClickHouse client Service.
+      # @schema
+      annotations: {}
+
+    metrics:
+      # @schema
+      # description: Expose the native ClickHouse Prometheus endpoint on port 9363 at /metrics.
+      # @schema
+      enabled: true
+
+    networkPolicy:
+      # @schema
+      # description: Create a NetworkPolicy restricting ingress to the ClickHouse pods. Off by default since it depends on a NetworkPolicy-enforcing CNI.
+      # @schema
+      enabled: false
+
+    # @schema
+    # description: Override the global nodeSelector (values.nodeSelector) for the ClickHouse pod.
+    # @schema
+    # nodeSelector:
+    #   kubernetes.io/os: linux
 
     tolerations: []
 
