@@ -46,6 +46,9 @@ data:
         <{{ $user }} replace="replace">
           <password from_env="ODIGOS_CH_PASSWORD"/>
           <networks>
+            <!-- Loopback for in-pod operations and `kubectl exec` debugging (no external exposure). -->
+            <ip>127.0.0.1</ip>
+            <ip>::1</ip>
             {{- range $ch.auth.allowedNetworks }}
             <ip>{{ . }}</ip>
             {{- end }}
