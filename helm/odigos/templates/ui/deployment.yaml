@@ -15,6 +15,9 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: ui
+        # Roll the UI pod when odigos-configuration changes so static config read at startup
+        # (e.g. profiling.ui.* store limits) takes effect without a manual restart.
+        checksum/odigos-config: {{ include (print $.Template.BasePath "/odigos-configuration-cm.yaml") . | sha256sum }}
       labels:
         app: odigos-ui
     spec:

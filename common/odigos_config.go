@@ -544,6 +544,7 @@ type ProfilingUiConfiguration struct {
 type ProfilingConfiguration struct {
 	Enabled  *bool                      `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 	Exporter *OtlpExporterConfiguration `json:"exporter,omitempty" yaml:"exporter,omitempty"`
+	UI       *ProfilingUiConfiguration  `json:"ui,omitempty" yaml:"ui,omitempty"`
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
