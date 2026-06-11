@@ -2133,6 +2133,20 @@
           "required": [],
           "title": "logLevel"
         },
+        "mcp": {
+          "additionalProperties": false,
+          "description": "Mount the embedded MCP server at /mcp on the enterprise UI. Enterprise-only — the gate is rendered only when an onPremToken/odigos-pro secret is present (the same condition that selects the enterprise UI image); it has no effect on the community image. Served on the UI port; reachable in-cluster via the ui Service.",
+          "properties": {
+            "enabled": {
+              "default": true,
+              "title": "enabled",
+              "type": "boolean"
+            }
+          },
+          "required": [],
+          "title": "mcp",
+          "type": "object"
+        },
         "nodeSelector": {
           "default": "",
           "description": "Override the global nodeSelector (values.nodeSelector) for this component",
