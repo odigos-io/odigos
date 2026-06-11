@@ -7,8 +7,6 @@ import (
 const (
 	RedHatImagePrefix = "registry.connect.redhat.com/odigos"
 	OdigosImagePrefix = "registry.odigos.io"
-	// OdigosEnterpriseImagePrefix is the default registry for enterprise images when onPremToken is set.
-	OdigosEnterpriseImagePrefix = "enterprise-registry.odigos.io"
 	// OdigosEnterpriseRegistryPullSecretName is the dockerconfigjson secret created from onPremToken.
 	OdigosEnterpriseRegistryPullSecretName = "odigos-enterprise-registry"
 )

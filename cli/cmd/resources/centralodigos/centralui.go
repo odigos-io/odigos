@@ -29,7 +29,7 @@ func (m *centralUIResourceManager) Name() string { return k8sconsts.CentralUIApp
 
 func (m *centralUIResourceManager) InstallFromScratch(ctx context.Context) error {
 	return m.client.ApplyResources(ctx, 1, []kube.Object{
-		NewCentralUIDeployment(m.ns, k8sconsts.OdigosEnterpriseImagePrefix, m.managerOpts.ImageReferences.CentralUIImage, m.odigosVersion, m.managerOpts.ImagePullSecrets),
+		NewCentralUIDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralUIImage, m.odigosVersion, m.managerOpts.ImagePullSecrets),
 		NewCentralUIService(m.ns),
 	}, m.managerOpts)
 }

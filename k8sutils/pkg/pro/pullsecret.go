@@ -11,11 +11,11 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
-func NewEnterpriseRegistryPullSecret(namespace, token string, forCentral bool) (*corev1.Secret, error) {
+func NewEnterpriseRegistryPullSecret(namespace, token string) (*corev1.Secret, error) {
 	auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("odigos:%s", token)))
 	dockerConfigJSON, err := json.Marshal(map[string]any{
 		"auths": map[string]any{
-			k8sconsts.OdigosEnterpriseImagePrefix: map[string]string{
+			k8sconsts.OdigosImagePrefix: map[string]string{
 				"username": "odigos",
 				"password": token,
 				"auth":     auth,
@@ -30,7 +30,7 @@ func NewEnterpriseRegistryPullSecret(namespace, token string, forCentral bool) (
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosEnterpriseRegistryPullSecretName,
 			Namespace: namespace,
-			Labels:    EnterpriseRegistryPullSecretLabels(forCentral),
+			Labels:    EnterpriseRegistryPullSecretLabels(),
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
@@ -40,12 +40,8 @@ func NewEnterpriseRegistryPullSecret(namespace, token string, forCentral bool) (
 }
 
 // EnterpriseRegistryPullSecretLabels returns labels matching Helm-managed pull secrets.
-func EnterpriseRegistryPullSecretLabels(forCentral bool) map[string]string {
-	labels := map[string]string{
+func EnterpriseRegistryPullSecretLabels() map[string]string {
+	return map[string]string{
 		k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
 	}
-	if forCentral {
-		labels[k8sconsts.OdigosSystemLabelCentralKey] = k8sconsts.OdigosSystemLabelValue
-	}
-	return labels
 }

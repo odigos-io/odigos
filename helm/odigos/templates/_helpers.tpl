@@ -1,8 +1,5 @@
 {{- define "utils.imagePrefix" -}}
 {{- $defaultRegistry := "registry.odigos.io" -}}
-{{- if .Enterprise -}}
-{{- $defaultRegistry = "enterprise-registry.odigos.io" -}}
-{{- end -}}
 {{- $redHatRegistry := "registry.connect.redhat.com/odigos" -}}
 {{- if $.Values.imagePrefix -}}
     {{- $.Values.imagePrefix -}}
@@ -35,30 +32,30 @@ odigos-enterprise-registry
 {{- end -}}
 
 {{- define "odigos.hasEnterpriseRegistryPullSecret" -}}
-{{- if and (include "odigos.onPremToken" .) (include "odigos.usesDefaultEnterpriseRegistry" .) -}}
+{{- if and (include "odigos.onPremToken" .) (include "odigos.usesOdigosRegistry" .) -}}
 true
 {{- end -}}
 {{- end -}}
 
-{{- define "odigos.usesDefaultEnterpriseRegistry" -}}
-{{- eq (include "utils.imagePrefix" (dict "Values" .Values "Enterprise" true)) "enterprise-registry.odigos.io" -}}
+{{- define "odigos.usesOdigosRegistry" -}}
+{{- eq (include "utils.imagePrefix" (dict "Values" .Values)) "registry.odigos.io" -}}
 {{- end -}}
 
 {{- define "odigos.enterpriseRegistryPullSecretToMount" -}}
-{{- if and .Enterprise (include "odigos.hasEnterpriseRegistryPullSecret" .) -}}
+{{- if include "odigos.hasEnterpriseRegistryPullSecret" . -}}
 {{- include "odigos.enterpriseRegistryPullSecretName" . -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "odigos.validateEnterpriseRegistryPullSecrets" -}}
-{{- if and (include "odigos.secretExists" .) (include "odigos.usesDefaultEnterpriseRegistry" .) (not (include "odigos.onPremToken" .)) -}}
-{{- fail "Enterprise images pull from enterprise-registry.odigos.io but no on-prem token is available to the chart. Set onPremToken or ensure the odigos-pro secret exists in the release namespace before install/upgrade." -}}
+{{- if and (include "odigos.secretExists" .) (include "odigos.usesOdigosRegistry" .) (not (include "odigos.onPremToken" .)) -}}
+{{- fail "Odigos images pull from registry.odigos.io but no on-prem token is available to the chart. Set onPremToken or ensure the odigos-pro secret exists in the release namespace before install/upgrade." -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "odigos.enterpriseRegistryDockerConfigJson" -}}
 {{- $token := include "odigos.onPremToken" . -}}
-{{- $registry := include "utils.imagePrefix" (dict "Values" .Values "Enterprise" true) -}}
+{{- $registry := include "utils.imagePrefix" (dict "Values" .Values) -}}
 {{- $auth := printf "odigos:%s" $token | b64enc -}}
 {{- dict "auths" (dict $registry (dict "username" "odigos" "password" $token "auth" $auth)) | toJson -}}
 {{- end -}}
@@ -74,7 +71,7 @@ true
   {{- if hasKey $.Values.openshift "certifiedImageTags" }}
     {{- $certified = $.Values.openshift.certifiedImageTags }}
   {{- end }}
-  {{- $prefix := include "utils.imagePrefix" (dict "Values" $.Values "Enterprise" (hasPrefix "enterprise-" .Component)) -}}
+  {{- $prefix := include "utils.imagePrefix" (dict "Values" $.Values) -}}
   {{- printf "%s/odigos-%s%s:%s" $prefix .Component (ternary "-rhel-certified" "" (and $.Values.openshift.enabled $certified)) .Tag }}
 {{- end -}}
 {{- end -}}
@@ -229,7 +226,7 @@ true
 {{- end -}}
 {{- end }}
 
-{{/* Render imagePullSecrets. Set Enterprise=true on workloads that pull enterprise images. */}}
+{{/* Render imagePullSecrets, including the on-prem registry pull secret when onPremToken is set. */}}
 {{- define "odigos.renderPullSecrets" -}}
 {{- $enterpriseSecret := include "odigos.enterpriseRegistryPullSecretToMount" . -}}
 {{- if or .Values.imagePullSecrets $enterpriseSecret }}

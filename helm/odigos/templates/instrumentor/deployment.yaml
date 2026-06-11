@@ -145,7 +145,7 @@ spec:
             secretName: instrumentor-webhooks-cert
             defaultMode: 420
       terminationGracePeriodSeconds: 10
-      {{ include "odigos.renderPullSecrets" (merge (dict "Enterprise" (include "odigos.secretExists" .)) .) | nindent 6 }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.instrumentor }}
   {{- if .tolerations }}
       tolerations: {{ toYaml .tolerations | nindent 8 }}

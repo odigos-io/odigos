@@ -524,7 +524,7 @@
     },
     "externalOnpremTokenSecret": {
       "default": "false",
-      "description": "Set to true if you are providing the odigos-pro secret externally (not managed by this chart).\nWhen true, the chart will not create the odigos-pro secret but will still enable Pro features if the secret exists.\nThe chart reads the token from the existing odigos-pro secret to create the enterprise registry pull secret.\nThis is useful for GitOps workflows where secrets are managed separately.",
+      "description": "Set to true if you are providing the odigos-pro secret externally (not managed by this chart).\nWhen true, the chart will not create the odigos-pro secret but will still enable Pro features if the secret exists.\nThe chart will read the token from the existing odigos-pro secret to create the enterprise registry pull secret.\nThis is useful for GitOps workflows where secrets are managed separately.",
       "required": [],
       "title": "externalOnpremTokenSecret"
     },

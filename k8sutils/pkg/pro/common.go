@@ -23,7 +23,7 @@ func UpdateOdigosToken(ctx context.Context, client kubernetes.Interface, namespa
 	if err := updateSecretToken(ctx, client, namespace, onPremToken); err != nil {
 		return fmt.Errorf("failed to update secret token: %w", err)
 	}
-	if err := EnsureEnterpriseRegistryPullSecret(ctx, client, namespace, onPremToken, false); err != nil {
+	if err := EnsureEnterpriseRegistryPullSecret(ctx, client, namespace, onPremToken); err != nil {
 		return fmt.Errorf("failed to update enterprise registry pull secret: %w", err)
 	}
 	if err := odigletRolloutTrigger(ctx, client, namespace); err != nil {
@@ -51,14 +51,14 @@ func updateSecretToken(ctx context.Context, client kubernetes.Interface, namespa
 }
 
 // ShouldUseEnterpriseRegistryPullSecret reports whether Odigos should manage the
-// enterprise-registry.odigos.io pull secret (skipped when a custom imagePrefix is configured).
+// registry.odigos.io pull secret (skipped when a custom imagePrefix is configured).
 func ShouldUseEnterpriseRegistryPullSecret(ctx context.Context, client kubernetes.Interface, namespace string) (bool, error) {
 	return shouldUseEnterpriseRegistryPullSecret(ctx, client, namespace)
 }
 
-// EnsureEnterpriseRegistryPullSecret creates or updates the enterprise registry pull secret.
+// EnsureEnterpriseRegistryPullSecret creates or updates the registry pull secret for on-prem installs.
 // It is a no-op when a custom imagePrefix is configured.
-func EnsureEnterpriseRegistryPullSecret(ctx context.Context, client kubernetes.Interface, namespace, onPremToken string, forCentral bool) error {
+func EnsureEnterpriseRegistryPullSecret(ctx context.Context, client kubernetes.Interface, namespace, onPremToken string) error {
 	useEnterprisePullSecret, err := shouldUseEnterpriseRegistryPullSecret(ctx, client, namespace)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func EnsureEnterpriseRegistryPullSecret(ctx context.Context, client kubernetes.I
 		return nil
 	}
 
-	pullSecret, err := NewEnterpriseRegistryPullSecret(namespace, onPremToken, forCentral)
+	pullSecret, err := NewEnterpriseRegistryPullSecret(namespace, onPremToken)
 	if err != nil {
 		return fmt.Errorf("failed to build enterprise registry pull secret: %w", err)
 	}
@@ -118,20 +118,12 @@ type TokenPayload struct {
 	OnpremToken string `json:"token"`
 }
 
-// EnterpriseImagePrefix returns the registry used for enterprise images, mirroring helm utils.imagePrefix with Enterprise=true.
-func EnterpriseImagePrefix(config common.OdigosConfiguration) string {
+// UsesOdigosRegistry reports whether images pull from the default Odigos registry.
+func UsesOdigosRegistry(config *common.OdigosConfiguration) bool {
 	if config.ImagePrefix != "" {
-		return config.ImagePrefix
+		return config.ImagePrefix == k8sconsts.OdigosImagePrefix
 	}
-	if config.OpenshiftEnabled {
-		return k8sconsts.RedHatImagePrefix
-	}
-	return k8sconsts.OdigosEnterpriseImagePrefix
-}
-
-// UsesOdigosEnterpriseRegistry reports whether enterprise images pull from the default Odigos enterprise registry.
-func UsesOdigosEnterpriseRegistry(config common.OdigosConfiguration) bool {
-	return EnterpriseImagePrefix(config) == k8sconsts.OdigosEnterpriseImagePrefix
+	return !config.OpenshiftEnabled
 }
 
 func shouldUseEnterpriseRegistryPullSecret(ctx context.Context, client kubernetes.Interface, namespace string) (bool, error) {
@@ -153,5 +145,5 @@ func shouldUseEnterpriseRegistryPullSecret(ctx context.Context, client kubernete
 		return false, fmt.Errorf("failed to parse odigos configuration: %w", err)
 	}
 
-	return UsesOdigosEnterpriseRegistry(config), nil
+	return UsesOdigosRegistry(&config), nil
 }

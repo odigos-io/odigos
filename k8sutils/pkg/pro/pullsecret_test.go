@@ -9,19 +9,11 @@ import (
 func TestEnterpriseRegistryPullSecretLabels(t *testing.T) {
 	t.Parallel()
 
-	odigosLabels := EnterpriseRegistryPullSecretLabels(false)
-	if odigosLabels[k8sconsts.OdigosSystemLabelKey] != k8sconsts.OdigosSystemLabelValue {
-		t.Fatalf("expected system-object label for odigos namespace secret")
+	labels := EnterpriseRegistryPullSecretLabels()
+	if labels[k8sconsts.OdigosSystemLabelKey] != k8sconsts.OdigosSystemLabelValue {
+		t.Fatalf("expected system-object label for pull secret")
 	}
-	if _, ok := odigosLabels[k8sconsts.OdigosSystemLabelCentralKey]; ok {
+	if _, ok := labels[k8sconsts.OdigosSystemLabelCentralKey]; ok {
 		t.Fatalf("did not expect central-system-object label for odigos namespace secret")
-	}
-
-	centralLabels := EnterpriseRegistryPullSecretLabels(true)
-	if centralLabels[k8sconsts.OdigosSystemLabelKey] != k8sconsts.OdigosSystemLabelValue {
-		t.Fatalf("expected system-object label for central secret")
-	}
-	if centralLabels[k8sconsts.OdigosSystemLabelCentralKey] != k8sconsts.OdigosSystemLabelValue {
-		t.Fatalf("expected central-system-object label for central secret")
 	}
 }

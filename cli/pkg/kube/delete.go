@@ -184,28 +184,6 @@ func DeleteCentralTokenSecret(ctx context.Context, client *Client, ns string) er
 	return nil
 }
 
-func DeleteEnterpriseRegistryPullSecret(ctx context.Context, client *Client, ns string) error {
-	_, err := client.CoreV1().Secrets(ns).Get(ctx, k8sconsts.OdigosEnterpriseRegistryPullSecretName, metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	if e := client.CoreV1().Secrets(ns).Delete(ctx, k8sconsts.OdigosEnterpriseRegistryPullSecretName, metav1.DeleteOptions{}); e != nil && !apierrors.IsNotFound(e) {
-		return e
-	}
-	return nil
-}
-
-// DeleteCentralManagedSecrets removes Central secrets that may not carry the central-system-object label.
-func DeleteCentralManagedSecrets(ctx context.Context, client *Client, ns string) error {
-	if err := DeleteCentralTokenSecret(ctx, client, ns); err != nil {
-		return err
-	}
-	return DeleteEnterpriseRegistryPullSecret(ctx, client, ns)
-}
-
 func NamespaceHasLabel(ctx context.Context, client *Client, ns string, labelKey string) (bool, error) {
 	obj, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
