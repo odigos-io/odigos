@@ -1693,3 +1693,81 @@ sampling:
 #   This is useful for GitOps workflows where secrets are managed separately.
 # @schema
 # externalOnpremTokenSecret: false
+
+# @schema
+# description: Optional Odigos Abnormal product deploying extra components on top of core Odigos. Enable with `--set abnormal.enabled=true`.
+# @schema
+abnormal:
+
+  # @schema
+  # description: Deploy the Odigos Abnormal components alongside core Odigos.
+  # @schema
+  enabled: false
+
+  # @schema
+  # description: Storage backend for Odigos Abnormal. Selects which storage component is deployed; future backends can be added (e.g. `--set abnormal.storage=s3`).
+  # enum: [clickhouse]
+  # @schema
+  storage: clickhouse
+
+  # @schema
+  # description: Self-contained, single-node ClickHouse used when storage is set to clickhouse (no operator, no replication).
+  # @schema
+  clickhouse:
+
+    # @schema
+    # description: Full image override. Empty pulls `odigos-clickhouse:<tag>` from the Odigos registry (see `imagePrefix`).
+    # @schema
+    image: ''
+
+    # @schema
+    # description: Image tag (ClickHouse server version). Empty uses the chart default.
+    # @schema
+    tag: ''
+
+    auth:
+      # @schema
+      # description: ClickHouse username.
+      # @schema
+      username: default
+      # @schema
+      # description: Password for the user. Ignored when `existingSecret` is set; generated when both are empty.
+      # @schema
+      password: ''
+      # @schema
+      # description: Existing Secret holding the password. Takes precedence over `password`.
+      # @schema
+      existingSecret: ''
+      # @schema
+      # description: Key within `existingSecret` holding the password.
+      # @schema
+      existingSecretKey: password
+
+    persistence:
+      # @schema
+      # description: Use a PVC for data. False uses ephemeral emptyDir (not for production).
+      # @schema
+      enabled: true
+      # @schema
+      # description: Persistent volume size.
+      # @schema
+      size: 50Gi
+      # @schema
+      # description: StorageClass for the PVC. Empty uses the cluster default.
+      # @schema
+      storageClass: ''
+
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: '2'
+        memory: 4Gi
+
+    tolerations: []
+
+    # @schema
+    # additionalProperties: true
+    # @schema
+    affinity: {}

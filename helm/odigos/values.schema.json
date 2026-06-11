@@ -8,6 +8,163 @@
       "required": [],
       "title": "ResourceSizePreset"
     },
+    "abnormal": {
+      "additionalProperties": false,
+      "description": "Optional Odigos Abnormal product deploying extra components on top of core Odigos. Enable with `--set abnormal.enabled=true`.",
+      "properties": {
+        "clickhouse": {
+          "additionalProperties": false,
+          "description": "Self-contained, single-node ClickHouse used when storage is set to clickhouse (no operator, no replication).",
+          "properties": {
+            "affinity": {
+              "additionalProperties": true,
+              "required": [],
+              "title": "affinity"
+            },
+            "auth": {
+              "additionalProperties": false,
+              "properties": {
+                "existingSecret": {
+                  "default": "",
+                  "description": "Existing Secret holding the password. Takes precedence over `password`.",
+                  "required": [],
+                  "title": "existingSecret"
+                },
+                "existingSecretKey": {
+                  "default": "password",
+                  "description": "Key within `existingSecret` holding the password.",
+                  "required": [],
+                  "title": "existingSecretKey"
+                },
+                "password": {
+                  "default": "",
+                  "description": "Password for the user. Ignored when `existingSecret` is set; generated when both are empty.",
+                  "required": [],
+                  "title": "password"
+                },
+                "username": {
+                  "default": "default",
+                  "description": "ClickHouse username.",
+                  "required": [],
+                  "title": "username"
+                }
+              },
+              "required": [],
+              "title": "auth",
+              "type": "object"
+            },
+            "image": {
+              "default": "",
+              "description": "Full image override. Empty pulls `odigos-clickhouse:\u003ctag\u003e` from the Odigos registry (see `imagePrefix`).",
+              "required": [],
+              "title": "image"
+            },
+            "persistence": {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "default": "true",
+                  "description": "Use a PVC for data. False uses ephemeral emptyDir (not for production).",
+                  "required": [],
+                  "title": "enabled"
+                },
+                "size": {
+                  "default": "50Gi",
+                  "description": "Persistent volume size.",
+                  "required": [],
+                  "title": "size"
+                },
+                "storageClass": {
+                  "default": "",
+                  "description": "StorageClass for the PVC. Empty uses the cluster default.",
+                  "required": [],
+                  "title": "storageClass"
+                }
+              },
+              "required": [],
+              "title": "persistence",
+              "type": "object"
+            },
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "2",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "4Gi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "limits",
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "500m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "1Gi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "requests",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "resources",
+              "type": "object"
+            },
+            "tag": {
+              "default": "",
+              "description": "Image tag (ClickHouse server version). Empty uses the chart default.",
+              "required": [],
+              "title": "tag"
+            },
+            "tolerations": {
+              "items": {
+                "required": []
+              },
+              "title": "tolerations",
+              "type": "array"
+            }
+          },
+          "required": [],
+          "title": "clickhouse"
+        },
+        "enabled": {
+          "default": "false",
+          "description": "Deploy the Odigos Abnormal components alongside core Odigos.",
+          "required": [],
+          "title": "enabled"
+        },
+        "storage": {
+          "default": "clickhouse",
+          "description": "Storage backend for Odigos Abnormal. Selects which storage component is deployed; future backends can be added (e.g. `--set abnormal.storage=s3`).",
+          "enum": [
+            "clickhouse"
+          ],
+          "required": [],
+          "title": "storage"
+        }
+      },
+      "required": [],
+      "title": "abnormal"
+    },
     "allowConcurrentAgents": {
       "additionalProperties": false,
       "description": "Setting for allowing Odigos to run concurrently with other agents",
