@@ -4,14 +4,14 @@
 
 "@apollo/client-integration-nextjs@0.12.3":
   version "0.12.3"
-  resolved "https://registry.npmjs.org/@apollo/client-integration-nextjs/-/client-integration-nextjs-0.12.3.tgz"
+  resolved "https://registry.yarnpkg.com/@apollo/client-integration-nextjs/-/client-integration-nextjs-0.12.3.tgz#154c9d7fbb52d8a1c8220fad8ae9029e4e52fa04"
   integrity sha512-kX/PwWYJqwNBusnxm5AEM/0eEgkRJWAG04iKcJE2wAg1M+81X+sojlZXdFK5oQB2tc5+H2atzwWiLBq+mk5ddQ==
   dependencies:
     "@apollo/client-react-streaming" "0.12.3"
 
 "@apollo/client-react-streaming@0.12.3":
   version "0.12.3"
-  resolved "https://registry.npmjs.org/@apollo/client-react-streaming/-/client-react-streaming-0.12.3.tgz"
+  resolved "https://registry.yarnpkg.com/@apollo/client-react-streaming/-/client-react-streaming-0.12.3.tgz#f0123a25550af56cc4ff776481387f5d930aa282"
   integrity sha512-RyLHV29R79lJQ/qVhXevDV0lVgTujFsbzr4RzyhtjWRknDX4GP7CGKTESHu8/JDM1y6XC8AdNwnXT3dkSBjUsw==
   dependencies:
     "@types/react-dom" "^19.0.0"
@@ -39,7 +39,7 @@
 
 "@apollo/experimental-nextjs-app-support@^0.12.3":
   version "0.12.3"
-  resolved "https://registry.npmjs.org/@apollo/experimental-nextjs-app-support/-/experimental-nextjs-app-support-0.12.3.tgz"
+  resolved "https://registry.yarnpkg.com/@apollo/experimental-nextjs-app-support/-/experimental-nextjs-app-support-0.12.3.tgz#82c710bdb300b25dea860d3803df4d3262a7cb2e"
   integrity sha512-4bcBJvYBaqdDacLPyVPT2H3P+kwjZfjziMwgLSnO+vzbF5gscQQmayjgwTTyuW6yJNJEenh/jhiAfgVW1w1imA==
   dependencies:
     "@apollo/client-integration-nextjs" "0.12.3"
@@ -635,10 +635,10 @@
   resolved "https://registry.npmjs.org/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@0.0.246":
-  version "0.0.246"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.246.tgz#192e220b85f3cc2f58e303d930c2c798a9a4e4c5"
-  integrity sha512-CXrYMlOUH4ls0S2BRLTx3PfnuZABp712lhsvzB0mX3mvV4NxZFmrbLxIDI0i8wnOcxPZXXybjEj+mexCQ7K9+A==
+"@odigos/ui-kit@0.0.249":
+  version "0.0.249"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.249.tgz#a6de5c9c45c2064bef218527ac380d850ca28510"
+  integrity sha512-xeNOQrbBLKJ1uk9wkqmlyec94FST/+C4KJTxuJQG8VahRmUSV0LABBMooMXN2rlff9H2WsqpQNMeOwtySujUBg==
   dependencies:
     "@xyflow/react" "^12.10.2"
     elkjs "^0.11.1"
@@ -751,7 +751,7 @@
 
 "@types/react-dom@19.2.3", "@types/react-dom@^19.0.0":
   version "19.2.3"
-  resolved "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.2.3.tgz"
+  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-19.2.3.tgz#c1e305d15a52a3e508d54dca770d202cb63abf2c"
   integrity sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==
 
 "@types/react@19.2.14":
