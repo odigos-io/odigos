@@ -19,10 +19,11 @@ import (
 )
 
 const (
-	chrootDir      = "/host"
-	semanagePath   = "/sbin/semanage"
-	restoreconPath = "/sbin/restorecon"
-	keeplistPath   = "/tmp/keeplist"
+	chrootDir        = "/host"
+	semanagePath     = "/sbin/semanage"
+	restoreconPath   = "/sbin/restorecon"
+	keeplistPath     = "/tmp/keeplist"
+	rsyncDefaultPath = "rsync"
 )
 
 func CopyAgentsDirectoryToHost(srcDir, dstDir string, optionalRsyncPath *string) error {
@@ -43,7 +44,8 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string, optionalRsyncPath *string)
 		}
 	} else {
 		logger.Info("Odigos agents directory is not empty, syncing files with rsync")
-		updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(getCriticalFiles(dstDir), srcDir, dstDir)
+		criticalFiles := getCriticalFiles(dstDir)
+		updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(criticalFiles, srcDir, dstDir)
 
 		if err != nil {
 			logger.Error("Error getting changed files", "err", err)
@@ -274,7 +276,7 @@ func runSingleRsyncSync(srcDir, dstDir, excludeFile string, optionalRsyncPath *s
 	// --whole-file: disables delta-transfer algorithm (lower CPU, better for local copying)
 	// --inplace: update files in-place without temp files (avoids disk pressure)
 	// --exclude-from: skip deleting or overwriting files listed in keeplist.txt
-	rsyncPath := "rsync"
+	rsyncPath := rsyncDefaultPath
 	if optionalRsyncPath != nil {
 		rsyncPath = *optionalRsyncPath
 	}
@@ -300,34 +302,33 @@ func runSingleRsyncSync(srcDir, dstDir, excludeFile string, optionalRsyncPath *s
 // criticalFiles lists paths relative to the agents directory root that must be
 // preserved during upgrades because they may be memory-mapped by running processes.
 // The path is relative to the srcDir.
-
-func getCriticalFiles(basePath string) map[string]struct{} {
-	criticalFiles := make(map[string]struct{})
-	criticalFiles[filepath.Join(basePath, "nodejs-ebpf", "build", "Release", "dtrace-injector-native.node")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "nodejs-ebpf", "build", "Release", "obj.target", "dtrace-injector-native.node")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "nodejs-ebpf", "build", "Release", ".deps", "Release", "dtrace-injector-native.node.d")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "nodejs-ebpf", "build", "Release", ".deps", "Release", "obj.target", "dtrace-injector-native.node.d")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "java-ebpf", "tracing_probes.so")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "java-ext-ebpf", "end_span_usdt.so")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "java-ext-ebpf", "javaagent.jar")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "java-ext-ebpf", "otel_agent_extension.jar")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "python-ebpf", "pythonUSDT.abi3.so")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "loader", "loader.so")] = struct{}{}
+func getCriticalFiles(bp string) map[string]struct{} {
+	cf := make(map[string]struct{})
+	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", "dtrace-injector-native.node")] = struct{}{}
+	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", "obj.target", "dtrace-injector-native.node")] = struct{}{}
+	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", ".deps", "Release", "dtrace-injector-native.node.d")] = struct{}{}
+	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", ".deps", "Release", "obj.target", "dtrace-injector-native.node.d")] = struct{}{}
+	cf[filepath.Join(bp, "java-ebpf", "tracing_probes.so")] = struct{}{}
+	cf[filepath.Join(bp, "java-ext-ebpf", "end_span_usdt.so")] = struct{}{}
+	cf[filepath.Join(bp, "java-ext-ebpf", "javaagent.jar")] = struct{}{}
+	cf[filepath.Join(bp, "java-ext-ebpf", "otel_agent_extension.jar")] = struct{}{}
+	cf[filepath.Join(bp, "python-ebpf", "pythonUSDT.abi3.so")] = struct{}{}
+	cf[filepath.Join(bp, "loader", "loader.so")] = struct{}{}
 	// Python dependency shared objects - special handling:
 	// These shared objects (.so files) are loaded by Python processes and mapped into process memory.
 	// They cannot be replaced while loaded, so we must keep them in the host filesystem to avoid removal.
 	// These files are versioned and renamed when their respective library versions change.
-	criticalFiles[filepath.Join(basePath, "python", "google", "_upb", "_message.abi3.so")] = struct{}{}                     // Google protobuf library
-	criticalFiles[filepath.Join(basePath, "python", "wrapt", "_wrappers.cpython-311-aarch64-linux-gnu.so")] = struct{}{}    // Wrapt library on arm64
-	criticalFiles[filepath.Join(basePath, "python", "wrapt", "_wrappers.cpython-311-x86_64-linux-gnu.so")] = struct{}{}     // Wrapt library on x86_64
-	criticalFiles[filepath.Join(basePath, "python3.8", "google", "_upb", "_message.abi3.so")] = struct{}{}                  // Google protobuf library [python 3.8 distro]
-	criticalFiles[filepath.Join(basePath, "python3.8", "wrapt", "_wrappers.cpython-311-aarch64-linux-gnu.so")] = struct{}{} // Wrapt library on arm64 [python 3.8 distro]
-	criticalFiles[filepath.Join(basePath, "python3.8", "wrapt", "_wrappers.cpython-311-x86_64-linux-gnu.so")] = struct{}{}  // Wrapt library on x86_64 [python 3.8 distro]
+	cf[filepath.Join(bp, "python", "google", "_upb", "_message.abi3.so")] = struct{}{}                     // Google protobuf library
+	cf[filepath.Join(bp, "python", "wrapt", "_wrappers.cpython-311-aarch64-linux-gnu.so")] = struct{}{}    // Wrapt library on arm64
+	cf[filepath.Join(bp, "python", "wrapt", "_wrappers.cpython-311-x86_64-linux-gnu.so")] = struct{}{}     // Wrapt library on x86_64
+	cf[filepath.Join(bp, "python3.8", "google", "_upb", "_message.abi3.so")] = struct{}{}                  // Google protobuf library [python 3.8 distro]
+	cf[filepath.Join(bp, "python3.8", "wrapt", "_wrappers.cpython-311-aarch64-linux-gnu.so")] = struct{}{} // Wrapt library on arm64 [python 3.8 distro]
+	cf[filepath.Join(bp, "python3.8", "wrapt", "_wrappers.cpython-311-x86_64-linux-gnu.so")] = struct{}{}  // Wrapt library on x86_64 [python 3.8 distro]
 	// PHP native extension loaded by the PHP runtime via dlopen().
 	// Must be preserved during upgrades to avoid crashing running PHP-FPM processes.
-	criticalFiles[filepath.Join(basePath, "php", "8.1", "opentelemetry.so")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "php", "8.2", "opentelemetry.so")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "php", "8.3", "opentelemetry.so")] = struct{}{}
-	criticalFiles[filepath.Join(basePath, "php", "8.4", "opentelemetry.so")] = struct{}{}
-	return criticalFiles
+	cf[filepath.Join(bp, "php", "8.1", "opentelemetry.so")] = struct{}{}
+	cf[filepath.Join(bp, "php", "8.2", "opentelemetry.so")] = struct{}{}
+	cf[filepath.Join(bp, "php", "8.3", "opentelemetry.so")] = struct{}{}
+	cf[filepath.Join(bp, "php", "8.4", "opentelemetry.so")] = struct{}{}
+	return cf
 }
