@@ -55,11 +55,14 @@ spec:
                 fieldPath: metadata.namespace
           - name: ODIGOS_LOG_LEVEL
             value: {{ .Values.ui.logLevel | default .Values.logLevel | default "info" | quote }}
-          # MCP server gate consumed by the enterprise UI (ui/cmd/main.go). The
-          # /mcp endpoint is served on the UI port (3000) and is reachable
-          # in-cluster via the ui Service; community image ignores this.
+          {{- if include "odigos.secretExists" . }}
+          # MCP is an enterprise-only feature, so this gate is rendered only for
+          # the enterprise UI image (same condition that selects it above). The
+          # enterprise UI (ui/cmd/main.go) serves /mcp on the UI port (3000),
+          # reachable in-cluster via the ui Service.
           - name: ODIGOS_MCP_ENABLED
             value: {{ .Values.ui.mcp.enabled | default true | quote }}
+          {{- end }}
           {{- if .Values.ui.centralBackendURL }}
           - name: CENTRAL_BACKEND_WS_URL
             valueFrom:
