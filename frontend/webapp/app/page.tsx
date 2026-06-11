@@ -1,13 +1,24 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { ROUTES } from '@/utils';
 import { useConfig } from '@/hooks';
 import { useRouter } from 'next/navigation';
+import OdigosApiAdapter from '@/lib/odigos-api-adapter';
 import { InstallationStatus } from '@odigos/ui-kit/types';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 
-export default function App() {
+/**
+ * The root `/` page reads `config.installationStatus` and redirects
+ * to either `/onboarding` (fresh install) or `/overview` (already
+ * installed). `useConfig` goes through the kit's `useApiQuery`, which
+ * requires `<OdigosApiProvider>` mounted above it — `(v2)` and
+ * `(setup)` route groups each have their own adapter, but the bare
+ * root page does not. We wrap inline so this page can also fetch
+ * config without crashing the kit's "called outside of provider"
+ * guard.
+ */
+function Redirect() {
   const router = useRouter();
   const { config } = useConfig();
 
@@ -24,5 +35,13 @@ export default function App() {
     <CenterThis style={{ height: '100%' }}>
       <FadeLoader scale={2} />
     </CenterThis>
+  );
+}
+
+export default function App() {
+  return (
+    <OdigosApiAdapter>
+      <Redirect />
+    </OdigosApiAdapter>
   );
 }
