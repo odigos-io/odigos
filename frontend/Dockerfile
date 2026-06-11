@@ -22,7 +22,10 @@ RUN yarn build
 FROM --platform=$BUILDPLATFORM golang:1.26.2 AS backend
 WORKDIR /app
 COPY . .
-RUN rm -rf frontend/webapp/*
+# Strip the webapp source tree but keep embed.go — the frontend/webapp Go
+# package embeds the built bundle (//go:embed all:out) and the server package
+# imports it, so deleting it breaks the build.
+RUN find frontend/webapp -mindepth 1 -maxdepth 1 ! -name embed.go -exec rm -rf {} +
 COPY --from=builder /webapp/out frontend/webapp/out
 WORKDIR /app/frontend
 ARG TARGETARCH
