@@ -607,6 +607,13 @@ scheduler:
 # @schema
 ui:
   # @schema
+  # description: Mount the embedded MCP server at /mcp on the enterprise UI (enterprise image only). Served on the UI port; reachable in-cluster via the ui Service.
+  # type: object
+  # @schema
+  mcp:
+    enabled: true
+
+  # @schema
   # description: Log level for UI. Defaults to info.
   # @schema
   logLevel: "info"
