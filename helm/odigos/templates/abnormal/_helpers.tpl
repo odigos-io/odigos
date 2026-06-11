@@ -27,43 +27,51 @@ Resolve the ClickHouse image.
 {{- end -}}
 
 {{/*
-Name of the Secret holding the ClickHouse password.
-Uses the user-provided existingSecret when set, otherwise the chart-managed Secret.
+In-cluster DNS name of the ClickHouse client Service.
 */}}
-{{- define "abnormal.clickhouse.secretName" -}}
-{{- $auth := .Values.abnormal.clickhouse.auth -}}
-{{- if $auth.existingSecret -}}
-{{- $auth.existingSecret -}}
-{{- else -}}
-odigos-clickhouse-auth
+{{- define "abnormal.clickhouse.host" -}}
+odigos-clickhouse.{{ .Release.Namespace }}.svc.cluster.local
 {{- end -}}
+
+{{/*
+Whether the chart owns (generates/holds) the ClickHouse password.
+False when the user brings their own Secret via auth.existingSecret.
+*/}}
+{{- define "abnormal.clickhouse.chartOwnsPassword" -}}
+{{- if .Values.abnormal.clickhouse.auth.existingSecret -}}false{{- else -}}true{{- end -}}
+{{- end -}}
+
+{{/*
+Name of the Secret the StatefulSet reads the password from.
+*/}}
+{{- define "abnormal.clickhouse.passwordSecretName" -}}
+{{- with .Values.abnormal.clickhouse.auth.existingSecret -}}{{ . }}{{- else -}}odigos-clickhouse-connection{{- end -}}
 {{- end -}}
 
 {{/*
 Key within the password Secret that holds the plaintext password.
 */}}
-{{- define "abnormal.clickhouse.secretKey" -}}
-{{- $auth := .Values.abnormal.clickhouse.auth -}}
-{{- if $auth.existingSecret -}}
-{{- $auth.existingSecretKey | default "password" -}}
-{{- else -}}
-password
-{{- end -}}
+{{- define "abnormal.clickhouse.passwordSecretKey" -}}
+{{- with .Values.abnormal.clickhouse.auth.existingSecret -}}
+{{- $.Values.abnormal.clickhouse.auth.existingSecretKey | default "password" -}}
+{{- else -}}CLICKHOUSE_PASSWORD{{- end -}}
 {{- end -}}
 
 {{/*
-Resolve the ClickHouse password for the chart-managed Secret, stable across upgrades:
-explicit auth.password > existing chart-managed Secret value > freshly generated random.
-(Only used when abnormal.clickhouse.auth.existingSecret is NOT set.)
+Resolve the chart-owned ClickHouse password, stable across upgrades:
+  1. auth.password                          -> explicit value from values (GitOps-friendly)
+  2. existing connection Secret value       -> preserve generated password across `helm upgrade`
+  3. freshly generated random
+Only evaluated when the chart owns the password (no auth.existingSecret).
 */}}
-{{- define "abnormal.clickhouse.password" -}}
+{{- define "abnormal.clickhouse.resolvedPassword" -}}
 {{- $auth := .Values.abnormal.clickhouse.auth -}}
 {{- if $auth.password -}}
 {{- $auth.password -}}
 {{- else -}}
-{{- $existing := lookup "v1" "Secret" .Release.Namespace "odigos-clickhouse-auth" -}}
-{{- if and $existing $existing.data (index $existing.data "password") -}}
-{{- index $existing.data "password" | b64dec -}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace "odigos-clickhouse-connection" -}}
+{{- if and $existing $existing.data (index $existing.data "CLICKHOUSE_PASSWORD") -}}
+{{- index $existing.data "CLICKHOUSE_PASSWORD" | b64dec -}}
 {{- else -}}
 {{- randAlphaNum 32 -}}
 {{- end -}}

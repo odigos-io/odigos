@@ -78,8 +78,8 @@ spec:
             - name: ODIGOS_CH_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "abnormal.clickhouse.secretName" . }}
-                  key: {{ include "abnormal.clickhouse.secretKey" . }}
+                  name: {{ include "abnormal.clickhouse.passwordSecretName" . }}
+                  key: {{ include "abnormal.clickhouse.passwordSecretKey" . }}
           volumeMounts:
             - name: data
               mountPath: /var/lib/clickhouse
