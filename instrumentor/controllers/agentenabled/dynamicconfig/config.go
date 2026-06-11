@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	commonapi "github.com/odigos-io/odigos/common/api"
 	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig/logs"
@@ -27,6 +28,9 @@ type DynamicContainerConfigs struct {
 
 	// Collector
 	CollectorConfig *commonapi.ContainerCollectorConfig
+
+	// Odigos Agent self logger
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics
 }
 
 func calculateTracesConfig(
@@ -219,10 +223,13 @@ func CalculateDynamicContainerConfig(
 		logsConfig.EbpfLogCapture = ebpfLogCaptureConfig
 	}
 
+	odigosAgentDiagnostics := CalculateAgentDiagnostics(irls, d)
+
 	return &DynamicContainerConfigs{
 		AgentTracesConfig:  tracesConfig,
 		AgentMetricsConfig: metricsConfig,
 		AgentLogsConfig:    logsConfig,
 		CollectorConfig:    collectorConfig,
+		AgentDiagnostics:   odigosAgentDiagnostics,
 	}, nil
 }

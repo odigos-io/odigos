@@ -532,6 +532,12 @@
       "additionalProperties": false,
       "description": "GKE-specific configuration.",
       "properties": {
+        "autopilot": {
+          "default": "false",
+          "description": "GKE Autopilot settings. When enabled, installs an AllowlistSynchronizer for the Odigos\nodiglet allowlist and skips node label setup in the odiglet init phase.\nAutopilot is auto-detected by the gk3- node name prefix; set this to true to force both behaviors.",
+          "required": [],
+          "title": "autopilot"
+        },
         "enabled": {
           "default": false,
           "title": "enabled",

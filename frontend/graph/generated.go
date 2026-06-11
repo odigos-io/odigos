@@ -76,6 +76,7 @@ type ComplexityRoot struct {
 		CollectContainerAttributes   func(childComplexity int) int
 		CollectReplicaSetAttributes  func(childComplexity int) int
 		CollectWorkloadID            func(childComplexity int) int
+		ExtractAttribute             func(childComplexity int) int
 		LabelsAttributes             func(childComplexity int) int
 		OverwriteExistingValues      func(childComplexity int) int
 		PiiCategories                func(childComplexity int) int
@@ -455,6 +456,17 @@ type ComplexityRoot struct {
 		Metrics  func(childComplexity int) int
 		Profiles func(childComplexity int) int
 		Traces   func(childComplexity int) int
+	}
+
+	ExtractAttribute struct {
+		Extractions func(childComplexity int) int
+	}
+
+	Extraction struct {
+		DataFormat          func(childComplexity int) int
+		LookupKey           func(childComplexity int) int
+		Regex               func(childComplexity int) int
+		TargetAttributeName func(childComplexity int) int
 	}
 
 	GatewayDeploymentInfo struct {
@@ -1639,6 +1651,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ActionFields.CollectWorkloadID(childComplexity), true
+
+	case "ActionFields.extractAttribute":
+		if e.complexity.ActionFields.ExtractAttribute == nil {
+			break
+		}
+
+		return e.complexity.ActionFields.ExtractAttribute(childComplexity), true
 
 	case "ActionFields.labelsAttributes":
 		if e.complexity.ActionFields.LabelsAttributes == nil {
@@ -3441,6 +3460,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ExportedSignals.Traces(childComplexity), true
+
+	case "ExtractAttribute.extractions":
+		if e.complexity.ExtractAttribute.Extractions == nil {
+			break
+		}
+
+		return e.complexity.ExtractAttribute.Extractions(childComplexity), true
+
+	case "Extraction.dataFormat":
+		if e.complexity.Extraction.DataFormat == nil {
+			break
+		}
+
+		return e.complexity.Extraction.DataFormat(childComplexity), true
+
+	case "Extraction.lookupKey":
+		if e.complexity.Extraction.LookupKey == nil {
+			break
+		}
+
+		return e.complexity.Extraction.LookupKey(childComplexity), true
+
+	case "Extraction.regex":
+		if e.complexity.Extraction.Regex == nil {
+			break
+		}
+
+		return e.complexity.Extraction.Regex(childComplexity), true
+
+	case "Extraction.targetAttributeName":
+		if e.complexity.Extraction.TargetAttributeName == nil {
+			break
+		}
+
+		return e.complexity.Extraction.TargetAttributeName(childComplexity), true
 
 	case "GatewayDeploymentInfo.configMapYAML":
 		if e.complexity.GatewayDeploymentInfo.ConfigMapYaml == nil {
@@ -7545,6 +7599,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputDestinationInput,
 		ec.unmarshalInputDiagnoseInput,
 		ec.unmarshalInputExportedSignalsInput,
+		ec.unmarshalInputExtractAttributeInput,
+		ec.unmarshalInputExtractionInput,
 		ec.unmarshalInputFieldInput,
 		ec.unmarshalInputGolangCustomProbeInput,
 		ec.unmarshalInputHeadSamplingHttpClientMatcherInput,
@@ -10301,6 +10357,8 @@ func (ec *executionContext) fieldContext_Action_fields(_ context.Context, field 
 				return ec.fieldContext_ActionFields_piiCategories(ctx, field)
 			case "urlTemplatizationRulesGroups":
 				return ec.fieldContext_ActionFields_urlTemplatizationRulesGroups(ctx, field)
+			case "extractAttribute":
+				return ec.fieldContext_ActionFields_extractAttribute(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ActionFields", field.Name)
 		},
@@ -10888,6 +10946,51 @@ func (ec *executionContext) fieldContext_ActionFields_urlTemplatizationRulesGrou
 				return ec.fieldContext_UrlTemplatizationRulesGroup_notes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationRulesGroup", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFields_extractAttribute(ctx context.Context, field graphql.CollectedField, obj *model.ActionFields) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFields_extractAttribute(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExtractAttribute, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ExtractAttribute)
+	fc.Result = res
+	return ec.marshalOExtractAttribute2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractAttribute(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFields_extractAttribute(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFields",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "extractions":
+				return ec.fieldContext_ExtractAttribute_extractions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ExtractAttribute", field.Name)
 		},
 	}
 	return fc, nil
@@ -22253,6 +22356,227 @@ func (ec *executionContext) fieldContext_ExportedSignals_profiles(_ context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ExtractAttribute_extractions(ctx context.Context, field graphql.CollectedField, obj *model.ExtractAttribute) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ExtractAttribute_extractions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Extractions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Extraction)
+	fc.Result = res
+	return ec.marshalNExtraction2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ExtractAttribute_extractions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ExtractAttribute",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "targetAttributeName":
+				return ec.fieldContext_Extraction_targetAttributeName(ctx, field)
+			case "lookupKey":
+				return ec.fieldContext_Extraction_lookupKey(ctx, field)
+			case "dataFormat":
+				return ec.fieldContext_Extraction_dataFormat(ctx, field)
+			case "regex":
+				return ec.fieldContext_Extraction_regex(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Extraction", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Extraction_targetAttributeName(ctx context.Context, field graphql.CollectedField, obj *model.Extraction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Extraction_targetAttributeName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TargetAttributeName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Extraction_targetAttributeName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Extraction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Extraction_lookupKey(ctx context.Context, field graphql.CollectedField, obj *model.Extraction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Extraction_lookupKey(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LookupKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Extraction_lookupKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Extraction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Extraction_dataFormat(ctx context.Context, field graphql.CollectedField, obj *model.Extraction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Extraction_dataFormat(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DataFormat, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ExtractionDataFormat)
+	fc.Result = res
+	return ec.marshalOExtractionDataFormat2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractionDataFormat(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Extraction_dataFormat(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Extraction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ExtractionDataFormat does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Extraction_regex(ctx context.Context, field graphql.CollectedField, obj *model.Extraction) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Extraction_regex(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Regex, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Extraction_regex(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Extraction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -50853,7 +51177,7 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "urlTemplatizationRulesGroups"}
+	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "urlTemplatizationRulesGroups", "extractAttribute"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -50944,6 +51268,13 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 				return it, err
 			}
 			it.URLTemplatizationRulesGroups = data
+		case "extractAttribute":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extractAttribute"))
+			data, err := ec.unmarshalOExtractAttributeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractAttributeInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExtractAttribute = data
 		}
 	}
 
@@ -51421,6 +51752,81 @@ func (ec *executionContext) unmarshalInputExportedSignalsInput(ctx context.Conte
 				return it, err
 			}
 			it.Profiles = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputExtractAttributeInput(ctx context.Context, obj any) (model.ExtractAttributeInput, error) {
+	var it model.ExtractAttributeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"extractions"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "extractions":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extractions"))
+			data, err := ec.unmarshalNExtractionInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractionInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Extractions = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputExtractionInput(ctx context.Context, obj any) (model.ExtractionInput, error) {
+	var it model.ExtractionInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"targetAttributeName", "lookupKey", "dataFormat", "regex"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "targetAttributeName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetAttributeName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TargetAttributeName = data
+		case "lookupKey":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lookupKey"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LookupKey = data
+		case "dataFormat":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataFormat"))
+			data, err := ec.unmarshalOExtractionDataFormat2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractionDataFormat(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DataFormat = data
+		case "regex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("regex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Regex = data
 		}
 	}
 
@@ -53664,6 +54070,8 @@ func (ec *executionContext) _ActionFields(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._ActionFields_piiCategories(ctx, field, obj)
 		case "urlTemplatizationRulesGroups":
 			out.Values[i] = ec._ActionFields_urlTemplatizationRulesGroups(ctx, field, obj)
+		case "extractAttribute":
+			out.Values[i] = ec._ActionFields_extractAttribute(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -56211,6 +56619,90 @@ func (ec *executionContext) _ExportedSignals(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var extractAttributeImplementors = []string{"ExtractAttribute"}
+
+func (ec *executionContext) _ExtractAttribute(ctx context.Context, sel ast.SelectionSet, obj *model.ExtractAttribute) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, extractAttributeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ExtractAttribute")
+		case "extractions":
+			out.Values[i] = ec._ExtractAttribute_extractions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var extractionImplementors = []string{"Extraction"}
+
+func (ec *executionContext) _Extraction(ctx context.Context, sel ast.SelectionSet, obj *model.Extraction) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, extractionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Extraction")
+		case "targetAttributeName":
+			out.Values[i] = ec._Extraction_targetAttributeName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lookupKey":
+			out.Values[i] = ec._Extraction_lookupKey(ctx, field, obj)
+		case "dataFormat":
+			out.Values[i] = ec._Extraction_dataFormat(ctx, field, obj)
+		case "regex":
+			out.Values[i] = ec._Extraction_regex(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -65512,6 +66004,80 @@ func (ec *executionContext) unmarshalNExportedSignalsInput2ᚖgithubᚗcomᚋodi
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNExtraction2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Extraction) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNExtraction2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtraction(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNExtraction2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtraction(ctx context.Context, sel ast.SelectionSet, v *model.Extraction) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Extraction(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNExtractionInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractionInputᚄ(ctx context.Context, v any) ([]*model.ExtractionInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.ExtractionInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNExtractionInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractionInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNExtractionInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractionInput(ctx context.Context, v any) (*model.ExtractionInput, error) {
+	res, err := ec.unmarshalInputExtractionInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNFieldInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐFieldInputᚄ(ctx context.Context, v any) ([]*model.FieldInput, error) {
 	var vSlice []any
 	vSlice = graphql.CoerceList(v)
@@ -68446,6 +69012,37 @@ func (ec *executionContext) marshalOEnvVar2ᚕᚖgithubᚗcomᚋodigosᚑioᚋod
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOExtractAttribute2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractAttribute(ctx context.Context, sel ast.SelectionSet, v *model.ExtractAttribute) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ExtractAttribute(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOExtractAttributeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractAttributeInput(ctx context.Context, v any) (*model.ExtractAttributeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputExtractAttributeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOExtractionDataFormat2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractionDataFormat(ctx context.Context, v any) (*model.ExtractionDataFormat, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.ExtractionDataFormat)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOExtractionDataFormat2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractionDataFormat(ctx context.Context, sel ast.SelectionSet, v *model.ExtractionDataFormat) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v any) (*float64, error) {

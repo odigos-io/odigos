@@ -10,6 +10,12 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
       disabled
       mutable
       profileName
+      sourcesScopes {
+        workloadName
+        workloadKind
+        workloadNamespace
+        workloadLanguage
+      }
       payloadCollection {
         httpRequest {
           mimeTypes
@@ -42,7 +48,7 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
         headerKeys
       }
       customInstrumentations {
-        golang{
+        golang {
           packageName
           functionName
           receiverName
@@ -67,6 +73,12 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
       disabled
       mutable
       profileName
+      sourcesScopes {
+        workloadName
+        workloadKind
+        workloadNamespace
+        workloadLanguage
+      }
       payloadCollection {
         httpRequest {
           mimeTypes
@@ -99,7 +111,7 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
         headerKeys
       }
       customInstrumentations {
-        golang{
+        golang {
           packageName
           functionName
           receiverName

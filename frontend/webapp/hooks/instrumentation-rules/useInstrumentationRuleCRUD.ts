@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { GET_INSTRUMENTATION_RULES } from '@/graphql';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
 import { CREATE_INSTRUMENTATION_RULE, UPDATE_INSTRUMENTATION_RULE, DELETE_INSTRUMENTATION_RULE } from '@/graphql/mutations';
 import { Crud, EntityTypes, type InstrumentationRule, type InstrumentationRuleFormData, StatusType } from '@odigos/ui-kit/types';
+import { adaptInstrumentationRuleFromWire, adaptInstrumentationRuleInputForWire, getSseTargetFromId, type InstrumentationRuleInputWire, type InstrumentationRuleWire } from '@odigos/ui-kit/functions';
 
 interface UseInstrumentationRuleCrud {
   instrumentationRules: InstrumentationRule[];
@@ -27,7 +27,11 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     addNotification({ type, title, message, crdType: EntityTypes.InstrumentationRule, target: id ? getSseTargetFromId(id, EntityTypes.InstrumentationRule) : undefined, hideFromHistory });
   };
 
-  const [fetchAll] = useLazyQuery<{ computePlatform?: { instrumentationRules?: InstrumentationRule[] } }>(GET_INSTRUMENTATION_RULES);
+  // Apollo response is typed against the *wire* shape (row-per-criterion
+  // `sourcesScopes`), not the kit's spec shape — we adapt right after the
+  // request resolves so the rest of the app (entity store, drawers, forms)
+  // sees the kit shape exclusively.
+  const [fetchAll] = useLazyQuery<{ computePlatform?: { instrumentationRules?: InstrumentationRuleWire[] } }>(GET_INSTRUMENTATION_RULES);
 
   const fetchInstrumentationRules = async () => {
     setEntitiesLoading(EntityTypes.InstrumentationRule, true);
@@ -36,27 +40,27 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
     } else if (data?.computePlatform?.instrumentationRules) {
-      const { instrumentationRules: items } = data.computePlatform;
+      const items = data.computePlatform.instrumentationRules.map(adaptInstrumentationRuleFromWire);
 
       setEntities(EntityTypes.InstrumentationRule, items);
       setEntitiesLoading(EntityTypes.InstrumentationRule, false);
     }
   };
 
-  const [mutateCreate] = useMutation<{ createInstrumentationRule: InstrumentationRule }, { instrumentationRule: InstrumentationRuleFormData }>(CREATE_INSTRUMENTATION_RULE, {
+  const [mutateCreate] = useMutation<{ createInstrumentationRule: InstrumentationRuleWire }, { instrumentationRule: InstrumentationRuleInputWire }>(CREATE_INSTRUMENTATION_RULE, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Create, error.cause?.message || error.message),
     onCompleted: (res) => {
-      const rule = res.createInstrumentationRule;
+      const rule = adaptInstrumentationRuleFromWire(res.createInstrumentationRule);
       const { ruleId, type } = rule;
       addEntities(EntityTypes.InstrumentationRule, [rule]);
       notifyUser(StatusType.Success, Crud.Create, `Successfully created "${type}" rule`, ruleId);
     },
   });
 
-  const [mutateUpdate] = useMutation<{ updateInstrumentationRule: InstrumentationRule }, { ruleId: string; instrumentationRule: InstrumentationRuleFormData }>(UPDATE_INSTRUMENTATION_RULE, {
+  const [mutateUpdate] = useMutation<{ updateInstrumentationRule: InstrumentationRuleWire }, { ruleId: string; instrumentationRule: InstrumentationRuleInputWire }>(UPDATE_INSTRUMENTATION_RULE, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
     onCompleted: (res) => {
-      const rule = res.updateInstrumentationRule;
+      const rule = adaptInstrumentationRuleFromWire(res.updateInstrumentationRule);
       const { ruleId, type } = rule;
       addEntities(EntityTypes.InstrumentationRule, [rule]);
       notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${type}" rule`, ruleId);
@@ -80,7 +84,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     } else if (!isEnterprise) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.ENTERPRISE_TIER, FORM_ALERTS.ENTERPRISE_ONLY(DISPLAY_TITLES.INSTRUMENTATION_RULE), undefined, true);
     } else {
-      mutateCreate({ variables: { instrumentationRule } });
+      mutateCreate({ variables: { instrumentationRule: adaptInstrumentationRuleInputForWire(instrumentationRule) } });
     }
   };
 
@@ -99,7 +103,7 @@ export const useInstrumentationRuleCRUD = (): UseInstrumentationRuleCrud => {
     } else if (!isEnterprise) {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.ENTERPRISE_TIER, FORM_ALERTS.ENTERPRISE_ONLY(DISPLAY_TITLES.INSTRUMENTATION_RULE), undefined, true);
     } else {
-      mutateUpdate({ variables: { ruleId, instrumentationRule } });
+      mutateUpdate({ variables: { ruleId, instrumentationRule: adaptInstrumentationRuleInputForWire(instrumentationRule) } });
     }
   };
 

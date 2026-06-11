@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	gatewayRejectionMetricName = "odigos_gateway_memory_limiter_rejections_total"
+	gatewayRejectionMetricName = "odigos_collector_memory_limiter_batch_rejections_total"
 )
 
 type MetricValueList struct {
@@ -82,10 +82,10 @@ func MetricHandler(ctx context.Context, k8sClient client.Client, namespace strin
 			value, err := scrapeGatewayMetric(pod.Status.PodIP)
 			if err != nil {
 				log.Debug("Failed to scrape gateway pod metrics",
-				"pod", pod.Name,
-				"podIP", pod.Status.PodIP,
-				"err", err,
-			)
+					"pod", pod.Name,
+					"podIP", pod.Status.PodIP,
+					"err", err,
+				)
 				continue // skip unreachable pods
 			}
 

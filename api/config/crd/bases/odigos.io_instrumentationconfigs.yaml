@@ -74,6 +74,29 @@ spec:
                   description: ContainerAgentConfig is a configuration for a specific
                     container in a workload.
                   properties:
+                    agentDiagnostics:
+                      description: Configure the log level for the agent itselg
+                      properties:
+                        odigosLogLevel:
+                          description: The log level of the odigos agent itself (startup,
+                            config, features, insttrumentation loading, etc.)
+                          enum:
+                          - error
+                          - warn
+                          - info
+                          - debug
+                          type: string
+                        openTelemetryComponentsLogLevel:
+                          description: |-
+                            The log level of the OpenTelemetry components (Sdk, instrumentation libraries, detectors, etc.)
+                            If unset, no OpenTelemetry components logs will be collected.
+                          enum:
+                          - error
+                          - warn
+                          - info
+                          - debug
+                          type: string
+                      type: object
                     agentEnabled:
                       description: boolean flag to indicate if the agent should be
                         enabled for this container.
@@ -364,6 +387,41 @@ spec:
                                   operation:
                                     description: The operation to match for sampling.
                                     properties:
+                                      grpcClient:
+                                        description: match grpc client operation (trace
+                                          that starts with an outgoing grpc call).
+                                        properties:
+                                          method:
+                                            description: match the bare gRPC method
+                                              name exactly (e.g. "ListItems"). leave
+                                              empty to match any method.
+                                            type: string
+                                          serverAddress:
+                                            description: match server address exactly
+                                              (e.g. collector.my.vendor.com)
+                                            type: string
+                                          service:
+                                            description: |-
+                                              match the fully-qualified gRPC service name exactly (e.g. "my.example.com.InventoryService").
+                                              leave empty to match any service.
+                                            type: string
+                                        type: object
+                                      grpcServer:
+                                        description: match grpc server operation (trace
+                                          that starts with an incoming grpc call)
+                                        properties:
+                                          method:
+                                            description: match the bare gRPC method
+                                              name exactly (e.g. "ListItems"). leave
+                                              empty to match any method.
+                                            type: string
+                                          service:
+                                            description: |-
+                                              match the fully-qualified gRPC service name exactly (e.g. "my.example.com.InventoryService").
+                                              leave empty to match any service. setting only Service is the canonical way to scope a rule
+                                              to every method of a single gRPC service.
+                                            type: string
+                                        type: object
                                       httpClient:
                                         description: |-
                                           match http client operation (trace that starts with an http client operation)
@@ -1474,6 +1532,41 @@ spec:
                               operation:
                                 description: The operation to match for sampling.
                                 properties:
+                                  grpcClient:
+                                    description: match grpc client operation (trace
+                                      that starts with an outgoing grpc call).
+                                    properties:
+                                      method:
+                                        description: match the bare gRPC method name
+                                          exactly (e.g. "ListItems"). leave empty
+                                          to match any method.
+                                        type: string
+                                      serverAddress:
+                                        description: match server address exactly
+                                          (e.g. collector.my.vendor.com)
+                                        type: string
+                                      service:
+                                        description: |-
+                                          match the fully-qualified gRPC service name exactly (e.g. "my.example.com.InventoryService").
+                                          leave empty to match any service.
+                                        type: string
+                                    type: object
+                                  grpcServer:
+                                    description: match grpc server operation (trace
+                                      that starts with an incoming grpc call)
+                                    properties:
+                                      method:
+                                        description: match the bare gRPC method name
+                                          exactly (e.g. "ListItems"). leave empty
+                                          to match any method.
+                                        type: string
+                                      service:
+                                        description: |-
+                                          match the fully-qualified gRPC service name exactly (e.g. "my.example.com.InventoryService").
+                                          leave empty to match any service. setting only Service is the canonical way to scope a rule
+                                          to every method of a single gRPC service.
+                                        type: string
+                                    type: object
                                   httpClient:
                                     description: |-
                                       match http client operation (trace that starts with an http client operation)

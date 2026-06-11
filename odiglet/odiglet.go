@@ -17,13 +17,13 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/metrics"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
-	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	ebpfMetrics "github.com/odigos-io/odigos/odiglet/pkg/metrics"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/odigos-io/odigos/common/fs"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -171,7 +171,7 @@ func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.
 	odigosNs := env.GetCurrentNamespace()
 	return []Runnable{
 		{
-			Name:         "pprof server",
+			Name: "pprof server",
 			// if we fail to start the pprof server, don't return an error as it is not critical
 			PropagateErr: false,
 			Run: func(ctx context.Context) error {
@@ -256,7 +256,7 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	// Logger already initialized in main() before calling OdigletInitPhase.
 	logger := commonlogger.LoggerCompat().With("subsystem", "init")
 
-	err := fs.CopyAgentsDirectoryToHost()
+	err := fs.CopyAgentsDirectoryToHost(k8sconsts.OdigletContainerAgentDirectory, k8sconsts.OdigosAgentsDirectory, nil)
 	if err != nil {
 		logger.Error("Failed to copy agents directory to host", "err", err)
 		os.Exit(-1)
@@ -268,7 +268,9 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		os.Exit(-1)
 	}
 
-	if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
+	if k8snode.IsGKEManagedNode(nn) {
+		logger.Info("Skipping node label setup for GKE Autopilot")
+	} else if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
 		logger.Error("Failed to prepare node for Odigos installation", "err", err)
 		os.Exit(-1)
 	} else {
@@ -277,7 +279,7 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 
 	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
 	// executing selinux commands to make agents readable by pods.
-	if err := fs.ApplyOpenShiftSELinuxSettings(); err != nil {
+	if err := fs.ApplyOpenShiftSELinuxSettings(k8sconsts.OdigosAgentsDirectory); err != nil {
 		logger.Error("Failed to apply SELinux settings on RHEL host", "err", err)
 		os.Exit(-1)
 	}

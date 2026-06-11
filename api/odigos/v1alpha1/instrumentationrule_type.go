@@ -94,13 +94,18 @@ type InstrumentationRuleSpec struct {
 
 	// Configure the verbosity of the traces for the library.
 	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
+
+	// Configure the agent own logging configuration.
+	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
 }
 
 // Verify validates the InstrumentationRuleSpec.
 // for future usage, you can add more validation logic here for other fields.
 func (irs *InstrumentationRuleSpec) Verify() error {
 	if irs.CustomInstrumentations != nil {
-		return irs.CustomInstrumentations.Verify()
+		if err := irs.CustomInstrumentations.Verify(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
