@@ -1727,7 +1727,7 @@ abnormal:
     image: ''
 
     # @schema
-    # description: Image tag (ClickHouse server version). Empty uses the chart default LTS tag.
+    # description: Override the image tag. Empty defaults to the Odigos version (the release pipeline mirrors ClickHouse into the Odigos registry tagged with the Odigos version, like odigos-victoria-metrics).
     # @schema
     tag: ''
 

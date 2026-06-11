@@ -18,6 +18,7 @@ permissions:
 env:
   DOCKERHUB_ORG: "keyval"
   VICTORIA_METRICS_VERSION: "v1.144.0"
+  CLICKHOUSE_VERSION: "26.3"
 
 jobs:
   package-helm:
@@ -287,6 +288,20 @@ jobs:
           DOCKERHUB_DEST_IMAGE: ${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
           GCR_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-victoria-metrics
           GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-victoria-metrics
+        run: |
+          crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:${{ env.TAG }}
+          crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:latest
+          crane copy ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:${{ env.TAG }}
+          crane copy ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
+          crane copy ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
+          crane copy ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:latest
+
+      - name: Copy ClickHouse image to Docker Hub and GCR
+        env:
+          SOURCE_IMAGE: clickhouse/clickhouse-server:${{ env.CLICKHOUSE_VERSION }}
+          DOCKERHUB_DEST_IMAGE: ${{ env.DOCKERHUB_ORG }}/odigos-clickhouse
+          GCR_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-clickhouse
+          GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-clickhouse
         run: |
           crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:${{ env.TAG }}
           crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:latest

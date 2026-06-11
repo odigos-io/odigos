@@ -6,22 +6,20 @@ Whether the bundled ClickHouse should be deployed: Abnormal enabled AND storage 
 {{- end -}}
 
 {{/*
-Default ClickHouse image tag (current LTS line). Overridable via abnormal.clickhouse.tag.
-*/}}
-{{- define "abnormal.clickhouse.defaultTag" -}}26.3{{- end -}}
-
-{{/*
 Resolve the ClickHouse image.
 - If abnormal.clickhouse.image is set, use it verbatim (supports arbitrary/air-gapped registries).
 - Otherwise build `<imagePrefix>/odigos-clickhouse:<tag>` via the shared helper, so internal
   registries configured through imagePrefix are honored automatically.
+Tag resolution mirrors the bundled VictoriaMetrics image: the release pipeline mirrors the
+upstream ClickHouse image into the Odigos registry re-tagged with the Odigos version, so the
+default tag is the chart AppVersion (overridable via abnormal.clickhouse.tag or global image.tag).
 */}}
 {{- define "abnormal.clickhouse.image" -}}
 {{- $ch := .Values.abnormal.clickhouse -}}
 {{- if $ch.image -}}
 {{- $ch.image -}}
 {{- else -}}
-{{- $tag := $ch.tag | default (include "abnormal.clickhouse.defaultTag" .) -}}
+{{- $tag := $ch.tag | default .Values.image.tag | default .Chart.AppVersion -}}
 {{- include "utils.imageName" (dict "Values" .Values "Component" "clickhouse" "Tag" $tag) -}}
 {{- end -}}
 {{- end -}}
