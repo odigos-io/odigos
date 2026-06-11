@@ -35,13 +35,14 @@ export default function Page() {
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
   const { fetchProfilingSlots, enableProfiling, fetchSourceProfiling } = useProfiling();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
-  const { fetchSources, persistSourcesV2, updateSource, fetchSourceById, fetchPeerSources } = useSourceCRUD();
+  const { sources, fetchSources, persistSourcesV2, updateSource, fetchSourceById, fetchPeerSources } = useSourceCRUD();
   const { fetchInstrumentationRules, createInstrumentationRuleV2, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
   return (
     <Overview
       metrics={metrics}
       effectiveConfig={effectiveConfig}
+      workloads={sources}
       refetchSources={fetchSources}
       refetchDestinations={fetchDestinations}
       refetchActions={fetchActions}
