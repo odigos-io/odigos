@@ -1,0 +1,151 @@
+Odigos can collect the distributed traces emitted by the [Istio](https://istio.io/) service mesh and route them through the same pipeline as your application traces. Once enabled, the Envoy sidecars report a span for every meshed hop;connection-level latency, retries, response codes, and mTLS — over OTLP to the Odigos collector, where they are correlated with the spans Odigos already generates for your applications. The result is a single trace that spans both the network and application layers.
+
+<Note>
+This page covers how to point an **existing** Istio mesh at Odigos. It is not a guide to installing or operating Istio. For mesh setup, see the [Istio installation guide](https://istio.io/latest/docs/setup/install/helm/).
+</Note>
+
+## Prerequisites
+
+<Steps>
+<Step title="A running Istio mesh">
+Istio's control plane (`istiod`) must be installed in your cluster. Follow the [Istio installation guide](https://istio.io/latest/docs/setup/install/helm/). You do not need to enroll any workloads in the mesh yet.
+</Step>
+
+<Step title="Workloads enrolled in the mesh">
+Istio only emits spans for workloads that have an Envoy sidecar. Label the namespaces you want traced and restart their workloads so the sidecar is injected:
+
+```bash
+kubectl label namespace <namespace> istio-injection=enabled
+kubectl rollout restart deployment -n <namespace>
+```
+
+For the full set of injection options, see Istio's [sidecar injection](https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/) documentation.
+</Step>
+</Steps>
+
+## Configuration
+
+<Steps>
+<Step title="Register Odigos as an OpenTelemetry provider">
+Add an OpenTelemetry extension provider to Istio's `MeshConfig` that points at the Odigos node collector's OTLP/HTTP endpoint. For background on this field, see Istio's reference for [enabling OpenTelemetry tracing](https://istio.io/latest/docs/tasks/observability/distributed-tracing/opentelemetry/).
+
+Apply it using whichever method you use to manage your mesh:
+
+<Tabs>
+<Tab title="Helm">
+Add the `meshConfig` block to the values for the `istiod` chart (for example, `istiod-values.yaml`):
+
+```yaml istiod-values.yaml
+meshConfig:
+  enableTracing: true
+  extensionProviders:
+    - name: odigos-otel
+      opentelemetry:
+        service: odigos-data-collection-local-traffic.odigos-system.svc.cluster.local
+        port: 4318
+        http:
+          path: "/v1/traces"
+          timeout: 5s
+        resource_detectors:
+          environment: {}
+```
+
+```bash
+helm upgrade istiod istio/istiod -n istio-system --reuse-values -f istiod-values.yaml
+```
+</Tab>
+<Tab title="istioctl">
+Define the `meshConfig` block in an `IstioOperator` configuration file (for example, `istio-otel.yaml`):
+
+```yaml istio-otel.yaml
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  meshConfig:
+    enableTracing: true
+    extensionProviders:
+      - name: odigos-otel
+        opentelemetry:
+          service: odigos-data-collection-local-traffic.odigos-system.svc.cluster.local
+          port: 4318
+          http:
+            path: "/v1/traces"
+            timeout: 5s
+          resource_detectors:
+            environment: {}
+```
+
+```bash
+istioctl install -f istio-otel.yaml
+```
+</Tab>
+</Tabs>
+
+Defining the provider on its own does not start any tracing — it only tells Istio where Odigos is.
+</Step>
+
+<Step title="Enable tracing with the Telemetry API">
+Create a `Telemetry` resource in the Istio root namespace (usually `istio-system`) that references the provider. This is what actually turns on span reporting. See the [Istio Telemetry API](https://istio.io/latest/docs/tasks/observability/telemetry/) for scoping options.
+
+```yaml
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: mesh-default
+  namespace: istio-system
+spec:
+  tracing:
+    - providers:
+        - name: odigos-otel
+      randomSamplingPercentage: 100
+```
+
+<Tip>
+Leave `randomSamplingPercentage` at `100` so every meshed hop is reported. If you need to reduce volume, do it with [Odigos tail sampling](../../pipeline/sampling/head-and-tail-sampling) rather than at the Envoy layer — that way the decision sees the full trace (errors, latency, and downstream spans) instead of being made blindly per request at the sidecar.
+</Tip>
+</Step>
+
+<Step title="Confirm a destination on the default data stream">
+The Odigos collector only exports data when at least one destination is configured. Because Envoy emits Istio spans on behalf of the mesh rather than any specific Odigos-instrumented workload, the collector routes them through the **default data stream** — so make sure the destination you want the Istio traces to reach is assigned to the default data stream.
+</Step>
+</Steps>
+
+<Note>
+Istio produces spans only for L7 HTTP traffic on Service ports named `http` / `http-*` (or with `appProtocol: http`). Plain TCP protocols such as Redis or AMQP will not generate mesh spans.
+</Note>
+
+## Validation
+
+After traffic flows through a meshed workload, look for Envoy spans in your tracing backend. They appear under service names in the form `<workload>.<namespace>` (for example, `frontend.default`), distinct from the application service names Odigos reports. You can identify them by:
+
+- `otel.scope.name` = `envoy`
+- `component` = `proxy`
+- `istio.*` resource attributes such as `istio.canonical_service` and `istio.mesh_id`
+
+### Example
+
+Real meshed traces interleave Istio and Odigos spans — every meshed hop adds a pair of Istio sidecar spans (one on each side of the wire) that wrap the callee's application work, which itself can fan out into more application spans and another mesh hop. A two-hop call through `frontend → checkout → payments` lays out like this:
+
+Horizontal position is wall-clock time; label indentation follows the true parent/child nesting. A child bar always starts after and ends within its parent.
+
+```
+                                0ms      50       100      150      200ms
+                                 ├────────┼────────┼────────┼────────┤
+  frontend · POST /checkout       ████████████████████████████████████
+    frontend · Istio→checkout          ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
+      checkout · Istio server           ┏━━━━━━━━━━━━━━━━━━━┓
+        checkout · POST /checkout        ██████████████████████
+          checkout · SELECT cart         ██████
+          checkout · Istio→payments              ┏━━━━━━━━━┓
+            payments · Istio server               ┏━━━━━━━┓
+              payments · POST /charge             █████████
+                payments · INSERT txn              ██████
+
+  Legend:  █ Odigos (app)   ┏━┓ Istio (mesh)
+```
+
+Each Istio client/server pair brackets the next service's application work. The gap between the two Istio spans is **on-the-wire time** (DNS, TCP, mTLS handshakes, retries); the gap between the Istio server span and the application span is **proxy overhead**. With each additional meshed hop, another sidecar pair is added — both costs become directly attributable instead of being absorbed into a single application-latency number.
+
+<Note>
+Istio spans are additive — they do not replace the application spans Odigos generates. Each meshed HTTP hop yields an Istio client span, an Istio server span, and the application span(s), all sharing the same trace.
+</Note>
