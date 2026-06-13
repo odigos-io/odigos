@@ -1554,7 +1554,13 @@ traceCorrelations:
     # @schema
     inputSpanAttributes:
       - http.route
+      - rpc.service
       - rpc.method
+      - http.status_code
+      - http.response.status_code	
+      - http.method
+      - http.request.method
+      - server.address
 
     # @schema
     # description: |-
@@ -1564,8 +1570,18 @@ traceCorrelations:
     outputSpanAttributes:
       - http.route
       - rpc.service
+      - rpc.method
       - db.system
       - db.statement
+      - db.operation
+      - http.status_code
+      - http.response.status_code
+      - http.method
+      - http.request.method
+      - net.host.name
+      - server.address
+      - http.user_agent
+      - 'http.request.headers.user-agent'
 
     # @schema
     # description: |-
