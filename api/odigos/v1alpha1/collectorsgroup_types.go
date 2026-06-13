@@ -109,6 +109,12 @@ type AgentsTelemetrySettings struct {
 	// it is not expected to have many or any settings here.
 }
 
+// CollectorsGroupTraceCorrelationsSettings holds trace correlations configuration
+// derived from OdigosConfiguration. Currently only relevant for the cluster gateway collector.
+type CollectorsGroupTraceCorrelationsSettings struct {
+	ServiceIO *common.TraceCorrelationsServiceIOConfiguration `json:"serviceIO,omitempty"`
+}
+
 type CollectorsGroupMetricsCollectionSettings struct {
 
 	// if not nil for node collector, it means span to metrics is enabled,
@@ -203,6 +209,10 @@ type CollectorsGroupSpec struct {
 	// it allows for the collector group reconciler to be simplified,
 	// and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
 	Metrics *CollectorsGroupMetricsCollectionSettings `json:"metrics,omitempty"`
+
+	// TraceCorrelations holds trace correlations configuration derived from OdigosConfiguration.
+	// Currently only relevant for the cluster gateway collector.
+	TraceCorrelations *CollectorsGroupTraceCorrelationsSettings `json:"traceCorrelations,omitempty"`
 
 	// Node selector for the collectors group deployment.
 	// Use this to force the gateway to run only on nodes with specific labels.

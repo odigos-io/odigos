@@ -1109,6 +1109,18 @@ and for visibility into the aggregated settings being used to derive configurati
 </tr>
 <tr>
 <td>
+<code>traceCorrelations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CollectorsGroupTraceCorrelationsSettings"><code>CollectorsGroupTraceCorrelationsSettings</code></a>
+</td>
+<td>
+   <p>TraceCorrelations holds trace correlations configuration derived from OdigosConfiguration.
+Currently only relevant for the node collector.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>nodeSelector</code> <B>[Required]</B>
 </td>
 <td>
@@ -1225,6 +1237,35 @@ this list is calculated based on the odigos destinations that were configured</p
    <p>Represents the observations of a collectorsroup's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
 </td>
+</tr>
+</tbody>
+</table>
+
+## `CollectorsGroupTraceCorrelationsSettings` <a id="odigos-io-v1alpha1-CollectorsGroupTraceCorrelationsSettings"></a>
+
+
+**Appears in:**
+
+- [CollectorsGroupSpec](#odigos-io-v1alpha1-CollectorsGroupSpec)
+
+<p>CollectorsGroupTraceCorrelationsSettings holds trace correlations configuration
+derived from OdigosConfiguration. Currently only relevant for the node collector.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>serviceIO</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#TraceCorrelationsServiceIOConfiguration"><code>common.TraceCorrelationsServiceIOConfiguration</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 </tbody>
 </table>

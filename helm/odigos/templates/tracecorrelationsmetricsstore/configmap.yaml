@@ -1,0 +1,17 @@
+{{- if include "traceCorrelations.serviceIO.enabled" . | eq "true" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-correlations-metrics-config
+  namespace: {{ .Release.Namespace }}
+data:
+  scrape.yml: |
+    scrape_configs:
+    - job_name: self
+      static_configs:
+      - targets: ['localhost:8428']
+      metric_relabel_configs:
+        - source_labels: [__name__]
+          regex: '(.*tsdb.*)'
+          action: keep
+{{- end }}
