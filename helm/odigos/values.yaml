@@ -1553,9 +1553,9 @@ traceCorrelations:
     #   each name should refer to a low-cardinality attribute (e.g. http.route, rpc.service).
     # @schema
     inputSpanAttributes:
-      - http.route
       - rpc.service
       - rpc.method
+      - http.route
       - http.status_code
       - http.response.status_code	
       - http.method
@@ -1568,20 +1568,23 @@ traceCorrelations:
     #   each name should refer to a low-cardinality attribute.
     # @schema
     outputSpanAttributes:
-      - http.route
       - rpc.service
       - rpc.method
       - db.system
       - db.statement
       - db.operation
+      - db.name
+      - db.user
+      - url.template
       - http.status_code
       - http.response.status_code
       - http.method
       - http.request.method
-      - net.host.name
+      - net.peer.name
       - server.address
       - http.user_agent
       - 'http.request.headers.user-agent'
+      - user_agent.original
 
     # @schema
     # description: |-

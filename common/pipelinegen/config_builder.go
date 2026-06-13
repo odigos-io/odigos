@@ -104,13 +104,7 @@ func CalculateGatewayConfig(
 		processorsResults.TracesProcessors = append(processorsNames, processorsResults.TracesProcessors...)
 	}
 
-	allTracesProcessors := make([]string, 0, len(processorsResults.TracesProcessors)+len(processorsResults.TracesProcessorsPostSpanMetrics))
-	allTracesProcessors = append(allTracesProcessors, processorsResults.TracesProcessors...)
-	allTracesProcessors = append(allTracesProcessors, processorsResults.TracesProcessorsPostSpanMetrics...)
-
-	// TODO: this is a temporary solution to add the small batches processor to the destination pipelines
-	// we need to remove this once we have a proper way to processors per pipeline.
-	allTracesProcessors, smallBatchesEnabled := filterSmallBatchesProcessor(allTracesProcessors)
+	tracesProcessors, smallBatchesEnabled := filterSmallBatchesProcessor(processorsResults.TracesProcessors)
 
 	unifiedDestinationPipelineNames := []string{}
 	for _, dest := range dests {
@@ -192,7 +186,6 @@ func CalculateGatewayConfig(
 
 	if tracesEnabled {
 		currentConfig.Processors[consts.OdigosTraceStateProcessorName] = config.GenericMap{}
-		allTracesProcessors = append(allTracesProcessors, consts.OdigosTraceStateProcessorName)
 	}
 
 	//  Add pipelines that receive from routing connectors and forward to destinations
@@ -202,8 +195,13 @@ func CalculateGatewayConfig(
 	}
 
 	// Create root pipelines for each signal and connectors
+	tracesPostForwardProcessors := processorsResults.TracesProcessorsPostSpanMetrics
+	if tracesEnabled {
+		tracesPostForwardProcessors = append(tracesPostForwardProcessors, consts.OdigosTraceStateProcessorName)
+	}
 	insertRootPipelinesToConfig(currentConfig,
-		allTracesProcessors,
+		tracesProcessors,
+		tracesPostForwardProcessors,
 		processorsResults.MetricsProcessors,
 		processorsResults.LogsProcessors,
 		enabledSignals,
@@ -250,13 +248,14 @@ func CalculateGatewayConfig(
 }
 
 func insertRootPipelinesToConfig(currentConfig *config.Config,
-	tracesProcessors, metricsProcessors, logsProcessors []string,
+	tracesProcessors, tracesPostForwardProcessors, metricsProcessors, logsProcessors []string,
 	signals []common.ObservabilitySignal, gatewayOptions *GatewayConfigOptions) {
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
 		if traceAggregationNeeded(gatewayOptions) {
-			applySplitTracesRootPipelines(currentConfig, tracesProcessors, gatewayOptions.OdigosConfigExtensionName)
+			applySplitTracesRootPipelines(currentConfig, tracesProcessors, tracesPostForwardProcessors, gatewayOptions.OdigosConfigExtensionName)
 		} else {
-			applyRootPipelineForSignal(currentConfig, common.TracesObservabilitySignal, tracesProcessors, gatewayOptions.OdigosConfigExtensionName)
+			allTracesProcessors := append(slices.Clone(tracesProcessors), tracesPostForwardProcessors...)
+			applyRootPipelineForSignal(currentConfig, common.TracesObservabilitySignal, allTracesProcessors, gatewayOptions.OdigosConfigExtensionName)
 		}
 	}
 
@@ -269,23 +268,25 @@ func insertRootPipelinesToConfig(currentConfig *config.Config,
 	}
 }
 
-// applySplitTracesRootPipelines forks traces after groupbytrace so complete trace batches can be
-// consumed before tail sampling and batching. traces/in aggregates and forwards; traces/exporting
-// continues through the remaining processors to the router connector.
-func applySplitTracesRootPipelines(currentConfig *config.Config, tracesProcessors []string, odigosConfigExtensionName *string) {
+// applySplitTracesRootPipelines forks traces after enrichment processors so complete trace batches
+// are templated before tail sampling. traces/in aggregates and forwards; traces/exporting tail-samples,
+// batches, and routes to destinations.
+func applySplitTracesRootPipelines(
+	currentConfig *config.Config,
+	tracesProcessors, tracesPostForwardProcessors []string,
+	odigosConfigExtensionName *string,
+) {
 	forwardConnectorName := consts.TracesPostGroupByForwardConnectorName
 	currentConfig.Connectors[forwardConnectorName] = config.GenericMap{}
+
+	tracesInProcessors, tracesExportingProcessors := splitTracesProcessorsForPipelines(tracesProcessors, tracesPostForwardProcessors)
 
 	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
 	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
 		Receivers:  []string{"otlp"},
-		Processors: []string{"resource/odigos-version", consts.GroupByTraceProcessorV2},
+		Processors: append([]string{"resource/odigos-version"}, tracesInProcessors...),
 		Exporters:  []string{forwardConnectorName},
 	}
-
-	postGroupByProcessors := slices.DeleteFunc(slices.Clone(tracesProcessors), func(p string) bool {
-		return p == consts.GroupByTraceProcessorV2
-	})
 
 	routerConnectorName := fmt.Sprintf("odigosrouterconnector/%s", strings.ToLower(string(common.TracesObservabilitySignal)))
 	routerConnectorCfg := config.GenericMap{}
@@ -296,9 +297,50 @@ func applySplitTracesRootPipelines(currentConfig *config.Config, tracesProcessor
 
 	currentConfig.Service.Pipelines[consts.TracesExportingPipelineName] = config.Pipeline{
 		Receivers:  []string{forwardConnectorName},
-		Processors: postGroupByProcessors,
+		Processors: tracesExportingProcessors,
 		Exporters:  []string{routerConnectorName},
 	}
+}
+
+func splitTracesProcessorsForPipelines(tracesProcessors, tracesPostForwardProcessors []string) (tracesIn, tracesExporting []string) {
+	exportingPipelineProcessors := map[string]struct{}{
+		consts.OdigosTailSamplingProcessorName: {},
+		consts.GenericBatchProcessorConfigKey:  {},
+	}
+
+	for _, processor := range tracesProcessors {
+		if processor == consts.GroupByTraceProcessorV2 {
+			tracesIn = append(tracesIn, processor)
+			continue
+		}
+		if _, isExportingProcessor := exportingPipelineProcessors[processor]; isExportingProcessor {
+			tracesExporting = append(tracesExporting, processor)
+			continue
+		}
+		tracesIn = append(tracesIn, processor)
+	}
+
+	tracesExporting = orderExportingPipelineProcessors(tracesExporting)
+	return tracesIn, append(tracesExporting, tracesPostForwardProcessors...)
+}
+
+func orderExportingPipelineProcessors(processors []string) []string {
+	ordered := make([]string, 0, len(processors))
+	for _, processor := range []string{
+		consts.OdigosTailSamplingProcessorName,
+		consts.GenericBatchProcessorConfigKey,
+	} {
+		if slices.Contains(processors, processor) {
+			ordered = append(ordered, processor)
+		}
+	}
+	for _, processor := range processors {
+		if processor == consts.OdigosTailSamplingProcessorName || processor == consts.GenericBatchProcessorConfigKey {
+			continue
+		}
+		ordered = append(ordered, processor)
+	}
+	return ordered
 }
 
 func tracesPipelineForDownstreamConnectors(currentConfig *config.Config) string {
@@ -370,8 +412,8 @@ func insertServiceGraphPipeline(currentConfig *config.Config, extraDimensions []
 		Exporters: []string{"prometheus/servicegraph"},
 	}
 
-	// Add the service graph exporter to the traces pipeline that feeds destinations
-	// (traces/exporting when groupbytrace splits the pipeline, otherwise traces/in).
+	// Add the service graph exporter to the traces pipeline that routes to destinations
+	// (traces/exporting when the pipeline is split, otherwise traces/in).
 	tracesPipelineName := tracesPipelineForDownstreamConnectors(currentConfig)
 	pipeline, exists := currentConfig.Service.Pipelines[tracesPipelineName]
 	if !exists {

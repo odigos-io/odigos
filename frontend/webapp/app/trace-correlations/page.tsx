@@ -274,12 +274,39 @@ const InputHeaderRow = styled.div`
   gap: 10px;
 `;
 
-const SectionLabel = styled.div<{ $variant?: 'inbound' | 'outbound' }>`
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: ${({ $variant }) => ($variant === 'outbound' ? '#c4b5fd' : '#67e8f9')};
-  margin-bottom: 8px;
+const ScopeSection = styled.div`
+  display: grid;
+  gap: 12px;
+`;
+
+const ScopeGroupHeader = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const ScopeGroupTitle = styled.div`
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: 0.01em;
+`;
+
+const ScopeGroupSubtitle = styled.div`
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: 'SF Mono', 'JetBrains Mono', monospace;
+  word-break: break-word;
+`;
+
+const ScopeGroupDirection = styled.span`
+  color: #64748b;
+  font-weight: 500;
+`;
+
+const ScopeGroupList = styled.div`
+  display: grid;
+  gap: 18px;
 `;
 
 const InboundPanel = styled.div`
@@ -288,6 +315,8 @@ const InboundPanel = styled.div`
   border: 1px solid rgba(34, 211, 238, 0.22);
   background: linear-gradient(135deg, rgba(34, 211, 238, 0.1), rgba(14, 165, 233, 0.04));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  display: grid;
+  gap: 10px;
 `;
 
 const OutboundPanel = styled.div`
@@ -296,6 +325,7 @@ const OutboundPanel = styled.div`
   border: 1px solid rgba(167, 139, 250, 0.22);
   background: linear-gradient(135deg, rgba(167, 139, 250, 0.1), rgba(99, 102, 241, 0.04));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  min-width: 0;
 `;
 
 const FlowBody = styled.div`
@@ -347,7 +377,7 @@ const OutputFlowList = styled.div`
 const OutputFlowRow = styled.div<{ $classification?: RowClassification }>`
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto minmax(148px, auto);
+  grid-template-columns: minmax(0, 1fr) auto minmax(148px, auto);
   gap: 14px;
   align-items: start;
   padding: 12px;
@@ -444,9 +474,41 @@ const AttributeList = styled.ul`
 `;
 
 const AttributeItem = styled.li`
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   font-size: 12px;
   line-height: 1.45;
   word-break: break-word;
+`;
+
+const AttributeContent = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const CopyButton = styled.button<{ $copied?: boolean }>`
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid ${({ $copied }) => ($copied ? 'rgba(52, 211, 153, 0.45)' : 'rgba(148, 163, 184, 0.18)')};
+  background: ${({ $copied }) => ($copied ? 'rgba(16, 185, 129, 0.14)' : 'rgba(15, 23, 42, 0.72)')};
+  color: ${({ $copied }) => ($copied ? '#6ee7b7' : '#94a3b8')};
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    opacity: 1;
+    border-color: rgba(34, 211, 238, 0.45);
+    color: #67e8f9;
+  }
 `;
 
 const AttributeKey = styled.span`
@@ -463,11 +525,19 @@ const AttributeValue = styled.span`
 `;
 
 const HttpSummary = styled.li`
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   font-family: 'SF Mono', 'JetBrains Mono', monospace;
   font-size: 12px;
   line-height: 1.45;
   color: #e2e8f0;
   word-break: break-word;
+`;
+
+const HttpSummaryContent = styled.span`
+  flex: 1;
+  min-width: 0;
 `;
 
 const HttpMethod = styled.span<{ $method: string }>`
@@ -483,9 +553,194 @@ const HttpTarget = styled.span`
   color: #94a3b8;
 `;
 
+const SqlStatement = styled.span`
+  display: inline;
+  white-space: pre-wrap;
+  word-break: break-word;
+`;
+
+const SqlLabel = styled.span`
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+`;
+
+const SqlToken = styled.span<{ $type: SqlTokenType }>`
+  color: ${({ $type }) => {
+    switch ($type) {
+      case 'keyword':
+        return '#c084fc';
+      case 'string':
+        return '#6ee7b7';
+      case 'param':
+        return '#fbbf24';
+      case 'number':
+        return '#60a5fa';
+      case 'identifier':
+        return '#e2e8f0';
+      case 'punct':
+        return '#64748b';
+      default:
+        return '#f8fafc';
+    }
+  }};
+`;
+
+const SQL_KEYWORDS = new Set([
+  'SELECT',
+  'FROM',
+  'WHERE',
+  'AND',
+  'OR',
+  'NOT',
+  'IN',
+  'LIKE',
+  'IS',
+  'NULL',
+  'INSERT',
+  'INTO',
+  'VALUES',
+  'UPDATE',
+  'SET',
+  'DELETE',
+  'JOIN',
+  'INNER',
+  'LEFT',
+  'RIGHT',
+  'OUTER',
+  'FULL',
+  'CROSS',
+  'ON',
+  'AS',
+  'ORDER',
+  'BY',
+  'GROUP',
+  'HAVING',
+  'LIMIT',
+  'OFFSET',
+  'DISTINCT',
+  'ALL',
+  'UNION',
+  'EXISTS',
+  'BETWEEN',
+  'CASE',
+  'WHEN',
+  'THEN',
+  'ELSE',
+  'END',
+  'ASC',
+  'DESC',
+  'TRUE',
+  'FALSE',
+]);
+
+type SqlTokenType = 'keyword' | 'string' | 'param' | 'number' | 'identifier' | 'punct' | 'ws';
+
+type SqlTokenPart = {
+  type: SqlTokenType;
+  text: string;
+};
+
+function looksLikeSqlStatement(value: string) {
+  const trimmed = value.trim();
+  if (/^SQL:\s*/i.test(trimmed)) {
+    return true;
+  }
+  return /^(SELECT|INSERT|UPDATE|DELETE|WITH|CREATE|ALTER|DROP)\b/i.test(trimmed);
+}
+
+function tokenizeSql(sql: string): SqlTokenPart[] {
+  const tokens: SqlTokenPart[] = [];
+  let index = 0;
+
+  while (index < sql.length) {
+    const rest = sql.slice(index);
+
+    const whitespace = rest.match(/^\s+/);
+    if (whitespace) {
+      tokens.push({ type: 'ws', text: whitespace[0] });
+      index += whitespace[0].length;
+      continue;
+    }
+
+    const stringLiteral = rest.match(/^'(?:[^'\\]|\\.)*'/);
+    if (stringLiteral) {
+      tokens.push({ type: 'string', text: stringLiteral[0] });
+      index += stringLiteral[0].length;
+      continue;
+    }
+
+    const parameter = rest.match(/^(\$\d+|\?)/);
+    if (parameter) {
+      tokens.push({ type: 'param', text: parameter[0] });
+      index += parameter[0].length;
+      continue;
+    }
+
+    const number = rest.match(/^\d+(?:\.\d+)?/);
+    if (number) {
+      tokens.push({ type: 'number', text: number[0] });
+      index += number[0].length;
+      continue;
+    }
+
+    const word = rest.match(/^[a-zA-Z_][a-zA-Z0-9_]*/);
+    if (word) {
+      const upper = word[0].toUpperCase();
+      tokens.push({
+        type: SQL_KEYWORDS.has(upper) ? 'keyword' : 'identifier',
+        text: word[0],
+      });
+      index += word[0].length;
+      continue;
+    }
+
+    tokens.push({ type: 'punct', text: rest[0] });
+    index += 1;
+  }
+
+  return tokens;
+}
+
+function SqlHighlightedStatement({ value }: { value: string }) {
+  const trimmed = value.trim();
+  const prefixMatch = trimmed.match(/^(SQL:)(\s*)/i);
+  const sqlBody = prefixMatch ? trimmed.slice(prefixMatch[0].length) : trimmed;
+
+  if (!looksLikeSqlStatement(value)) {
+    return <>{value}</>;
+  }
+
+  const tokens = tokenizeSql(sqlBody);
+
+  return (
+    <SqlStatement>
+      {prefixMatch ? (
+        <>
+          <SqlLabel>{prefixMatch[1]}</SqlLabel>
+          {prefixMatch[2] || null}
+        </>
+      ) : null}
+      {tokens.map((token, tokenIndex) => (
+        <SqlToken key={`${tokenIndex}-${token.text}`} $type={token.type}>
+          {token.text}
+        </SqlToken>
+      ))}
+    </SqlStatement>
+  );
+}
+
+function renderAttributeValue(key: string, value: string) {
+  if (key === 'db.statement' && looksLikeSqlStatement(value)) {
+    return <SqlHighlightedStatement value={value} />;
+  }
+  return value;
+}
+
 const HTTP_SUMMARY_KEYS = new Set([
   'http.method',
   'http.request.method',
+  'url.template',
   'http.route',
   'http.target',
   'url.path',
@@ -546,6 +801,7 @@ function buildHttpSummary(attributes: { key: string; value: string }[]) {
   const map = attributesToMap(attributes);
   const method = map['http.method'] || map['http.request.method'];
   const path =
+    map['url.template'] ||
     map['http.route'] ||
     map['http.target'] ||
     map['url.path'] ||
@@ -575,29 +831,68 @@ function partitionHttpAttributes(attributes: { key: string; value: string }[]) {
   return { summary, remaining };
 }
 
+function CopyAttributeButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <CopyButton
+      type='button'
+      $copied={copied}
+      onClick={copy}
+      title={copied ? 'Copied' : label}
+      aria-label={copied ? 'Copied' : label}
+    >
+      {copied ? (
+        '✓'
+      ) : (
+        <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' aria-hidden='true'>
+          <rect x='9' y='9' width='13' height='13' rx='2' />
+          <path d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' />
+        </svg>
+      )}
+    </CopyButton>
+  );
+}
+
 function HttpSummaryLine({ summary }: { summary: NonNullable<ReturnType<typeof buildHttpSummary>> }) {
+  const summaryText = formatHttpSummaryText(summary);
+
   return (
     <HttpSummary>
-      {summary.method ? (
-        <>
-          <HttpMethod $method={summary.method}>{summary.method.toUpperCase()}</HttpMethod>{' '}
-        </>
-      ) : null}
-      {summary.path ? <span>{summary.path}</span> : null}
-      {summary.status ? (
-        <>
-          {summary.path || summary.method ? ' ' : null}
-          <HttpStatus>{summary.status}</HttpStatus>
-        </>
-      ) : null}
-      {summary.target ? (
-        <>
-          {' '}
-          <HttpTarget>
-            to {summary.target}
-          </HttpTarget>
-        </>
-      ) : null}
+      <HttpSummaryContent>
+        {summary.method ? (
+          <>
+            <HttpMethod $method={summary.method}>{summary.method.toUpperCase()}</HttpMethod>{' '}
+          </>
+        ) : null}
+        {summary.path ? <span>{summary.path}</span> : null}
+        {summary.status ? (
+          <>
+            {summary.path || summary.method ? ' ' : null}
+            <HttpStatus>{summary.status}</HttpStatus>
+          </>
+        ) : null}
+        {summary.target ? (
+          <>
+            {' '}
+            <HttpTarget>
+              to {summary.target}
+            </HttpTarget>
+          </>
+        ) : null}
+      </HttpSummaryContent>
+      <CopyAttributeButton text={summaryText} label='Copy HTTP summary' />
     </HttpSummary>
   );
 }
@@ -611,9 +906,14 @@ function formatHttpSummaryText(summary: NonNullable<ReturnType<typeof buildHttpS
   return parts.join(' ');
 }
 
-const CountBadge = styled.div`
-  justify-self: start;
+const RowMeta = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   align-self: start;
+`;
+
+const CountBadge = styled.div`
   padding: 8px 12px;
   border-radius: 12px;
   background: rgba(16, 185, 129, 0.12);
@@ -624,18 +924,27 @@ const CountBadge = styled.div`
   white-space: nowrap;
 `;
 
-const Timestamp = styled.div`
-  color: #cbd5e1;
+const Timestamp = styled.div<{ $fresh?: boolean }>`
   font-size: 13px;
-  align-self: start;
+  padding: ${({ $fresh }) => ($fresh ? '8px 10px' : '0')};
+  border-radius: ${({ $fresh }) => ($fresh ? '10px' : '0')};
+  background: ${({ $fresh }) => ($fresh ? 'rgba(34, 211, 238, 0.12)' : 'transparent')};
+  border: ${({ $fresh }) => ($fresh ? '1px solid rgba(34, 211, 238, 0.38)' : 'none')};
+  color: ${({ $fresh }) => ($fresh ? '#67e8f9' : '#cbd5e1')};
+  box-shadow: ${({ $fresh }) => ($fresh ? '0 0 14px rgba(34, 211, 238, 0.16)' : 'none')};
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+  strong {
+    color: ${({ $fresh }) => ($fresh ? '#f0fdff' : 'inherit')};
+  }
 `;
 
-const RelativeTime = styled.span`
+const RelativeTime = styled.span<{ $fresh?: boolean }>`
   display: block;
   margin-top: 4px;
-  color: #64748b;
+  color: ${({ $fresh }) => ($fresh ? '#22d3ee' : '#64748b')};
   font-size: 12px;
-  font-weight: 500;
+  font-weight: ${({ $fresh }) => ($fresh ? 700 : 500)};
 `;
 
 const EmptyState = styled.div`
@@ -679,6 +988,90 @@ const HiddenAttributesNote = styled.span`
 
 const HIDDEN_ATTRIBUTE_KEYS = new Set(['otel.scope.name', 'otel.scope.version', 'span.kind']);
 
+const SCOPE_NAME_KEY = 'otel.scope.name';
+
+function getAttributeValue(attributes: { key: string; value: string }[], key: string) {
+  return attributes.find((attr) => attr.key === key)?.value;
+}
+
+function getScopeName(attributes: { key: string; value: string }[]) {
+  return getAttributeValue(attributes, SCOPE_NAME_KEY);
+}
+
+function isDbAttributes(attributes: { key: string; value: string }[]) {
+  return attributes.some((attr) => attr.key.startsWith('db.') || attr.key === 'db.system');
+}
+
+function formatDbSystem(value: string) {
+  const normalized = value.trim().toLowerCase();
+  const labels: Record<string, string> = {
+    postgresql: 'PostgreSQL',
+    postgres: 'PostgreSQL',
+    redis: 'Redis',
+    mysql: 'MySQL',
+    mongodb: 'MongoDB',
+    mariadb: 'MariaDB',
+    mssql: 'SQL Server',
+    sqlite: 'SQLite',
+    memcached: 'Memcached',
+    elasticsearch: 'Elasticsearch',
+    cassandra: 'Cassandra',
+    dynamodb: 'DynamoDB',
+  };
+
+  return labels[normalized] ?? value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function getScopeGroupTitle(attributes: { key: string; value: string }[]) {
+  const map = attributesToMap(attributes);
+
+  if (isDbAttributes(attributes)) {
+    const dbSystem = map['db.system'];
+    return dbSystem ? `Database · ${formatDbSystem(dbSystem)}` : 'Database';
+  }
+
+  if (isHttpAttributes(attributes)) {
+    return 'Http';
+  }
+
+  const scopeName = getScopeName(attributes);
+  return scopeName || 'Connection';
+}
+
+function ScopeHeader({
+  attributes,
+  direction,
+}: {
+  attributes: { key: string; value: string }[];
+  direction: 'inbound' | 'outbound';
+}) {
+  const scopeName = getScopeName(attributes);
+  const title = getScopeGroupTitle(attributes);
+
+  return (
+    <ScopeGroupHeader>
+      <ScopeGroupTitle>
+        {title}
+        <ScopeGroupDirection>{direction === 'inbound' ? ' · Inbound' : ' · Outbound'}</ScopeGroupDirection>
+      </ScopeGroupTitle>
+      {scopeName ? <ScopeGroupSubtitle>{scopeName}</ScopeGroupSubtitle> : null}
+    </ScopeGroupHeader>
+  );
+}
+
+function groupOutputsByScope(outputs: TraceCorrelationsOutputSeries[]) {
+  const groups = new Map<string, TraceCorrelationsOutputSeries[]>();
+
+  for (const output of outputs) {
+    const scopeName = getScopeName(output.attributes) ?? 'Unknown scope';
+    const existing = groups.get(scopeName) ?? [];
+    existing.push(output);
+    groups.set(scopeName, existing);
+  }
+
+  return Array.from(groups.entries()).sort(([left], [right]) => left.localeCompare(right));
+}
+
 function filterVisibleAttributes(attributes: { key: string; value: string }[], showFullData: boolean) {
   if (showFullData) return attributes;
   return attributes.filter((attr) => !HIDDEN_ATTRIBUTE_KEYS.has(attr.key));
@@ -697,6 +1090,19 @@ function formatTimestamp(value: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date);
+}
+
+const FRESH_CONNECTION_MS = 10 * 60 * 1000;
+
+function getFirstSeenAgeMs(value: string, now = Date.now()) {
+  if (!value) return Number.POSITIVE_INFINITY;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return Number.POSITIVE_INFINITY;
+  return Math.max(0, now - date.getTime());
+}
+
+function isFreshConnection(value: string, now = Date.now()) {
+  return getFirstSeenAgeMs(value, now) < FRESH_CONNECTION_MS;
 }
 
 function formatTimeAgo(value: string, now = Date.now()) {
@@ -732,13 +1138,14 @@ function FirstSeenTimestamp({ value }: { value: string }) {
   }, []);
 
   const timeAgo = useMemo(() => formatTimeAgo(value, now), [value, now]);
+  const isFresh = useMemo(() => isFreshConnection(value, now), [value, now]);
 
   return (
-    <Timestamp>
-      First seen
+    <Timestamp $fresh={isFresh}>
+      {isFresh ? 'New connection' : 'First seen'}
       <br />
       <strong>{formatTimestamp(value)}</strong>
-      {timeAgo ? <RelativeTime>{timeAgo} ago</RelativeTime> : null}
+      {timeAgo ? <RelativeTime $fresh={isFresh}>{timeAgo} ago</RelativeTime> : null}
     </Timestamp>
   );
 }
@@ -771,8 +1178,11 @@ function AttributeChips({ attributes, showFullData }: { attributes: { key: strin
       {summary ? <HttpSummaryLine summary={summary} /> : null}
       {remaining.map((attr) => (
         <AttributeItem key={`${attr.key}:${attr.value}`}>
-          <AttributeKey>{attr.key}</AttributeKey>
-          <AttributeValue>{attr.value}</AttributeValue>
+          <AttributeContent>
+            <AttributeKey>{attr.key}</AttributeKey>
+            <AttributeValue>{renderAttributeValue(attr.key, attr.value)}</AttributeValue>
+          </AttributeContent>
+          <CopyAttributeButton text={attr.value} label={`Copy ${attr.key}`} />
         </AttributeItem>
       ))}
     </AttributeList>
@@ -814,11 +1224,12 @@ function ConnectionRow({
   return (
     <OutputFlowRow $classification={classification === 'none' ? undefined : classification}>
       <OutboundPanel>
-        <SectionLabel $variant='outbound'>Outbound</SectionLabel>
         <AttributeChips attributes={output.attributes} showFullData={showFullData} />
       </OutboundPanel>
-      <CountBadge>{output.connectionCount.toLocaleString()} connections</CountBadge>
-      <FirstSeenTimestamp value={output.firstDetectedAt} />
+      <RowMeta>
+        <CountBadge>{output.connectionCount.toLocaleString()} connections</CountBadge>
+        <FirstSeenTimestamp value={output.firstDetectedAt} />
+      </RowMeta>
       <RowActions>
         <RowActionButton type='button' $variant='baseline' $active={classification === 'baseline'} onClick={setBaseline}>
           Add to baseline
@@ -833,6 +1244,9 @@ function ConnectionRow({
 
 function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInputGroup; showFullData: boolean }) {
   const [expanded, setExpanded] = useState(true);
+  const outboundScopeGroups = useMemo(() => groupOutputsByScope(group.outputs), [group.outputs]);
+  const inboundTitle = useMemo(() => getScopeGroupTitle(group.attributes), [group.attributes]);
+  const inboundScopeName = useMemo(() => getScopeName(group.attributes), [group.attributes]);
 
   return (
     <InputGroupCard>
@@ -845,11 +1259,14 @@ function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInput
         <InputHeaderRow>
           <CollapseIcon $expanded={expanded}>›</CollapseIcon>
           <div>
-            <SectionLabel $variant='inbound'>Inbound pattern</SectionLabel>
             {expanded ? (
               <HeaderSummary>{group.outputs.length} outbound pattern{group.outputs.length === 1 ? '' : 's'}</HeaderSummary>
             ) : (
-              <HeaderSummary>{summarizeAttributes(group.attributes, showFullData)}</HeaderSummary>
+              <>
+                <ScopeGroupTitle>{inboundTitle}</ScopeGroupTitle>
+                {inboundScopeName ? <ScopeGroupSubtitle>{inboundScopeName}</ScopeGroupSubtitle> : null}
+                <HeaderSummary>{summarizeAttributes(group.attributes, showFullData)}</HeaderSummary>
+              </>
             )}
           </div>
         </InputHeaderRow>
@@ -858,7 +1275,7 @@ function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInput
       {expanded ? (
         <FlowBody>
           <InboundPanel>
-            <SectionLabel $variant='inbound'>Inbound</SectionLabel>
+            <ScopeHeader attributes={group.attributes} direction='inbound' />
             <AttributeChips attributes={group.attributes} showFullData={showFullData} />
           </InboundPanel>
 
@@ -868,15 +1285,22 @@ function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInput
             <FlowDividerLine />
           </FlowDivider>
 
-          <OutputFlowList>
-            {group.outputs.map((output) => (
-              <ConnectionRow
-                key={connectionRowKey(group.attributes, output)}
-                output={output}
-                showFullData={showFullData}
-              />
+          <ScopeGroupList>
+            {outboundScopeGroups.map(([scopeName, outputs]) => (
+              <ScopeSection key={scopeName}>
+                <ScopeHeader attributes={outputs[0].attributes} direction='outbound' />
+                <OutputFlowList>
+                  {outputs.map((output) => (
+                    <ConnectionRow
+                      key={connectionRowKey(group.attributes, output)}
+                      output={output}
+                      showFullData={showFullData}
+                    />
+                  ))}
+                </OutputFlowList>
+              </ScopeSection>
             ))}
-          </OutputFlowList>
+          </ScopeGroupList>
         </FlowBody>
       ) : null}
     </InputGroupCard>
