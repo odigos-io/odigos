@@ -39,6 +39,10 @@ func (s *stubOdigosConfigExtension) GetWorkloadCacheKey(pcommon.Resource) (strin
 	return "", nil
 }
 
+func (s *stubOdigosConfigExtension) GetWorkloadIdentityFromResource(pcommon.Resource) (string, pcommon.Map, error) {
+	return "", pcommon.NewMap(), nil
+}
+
 func (s *stubOdigosConfigExtension) RegisterWorkloadConfigCacheCallback(collector.WorkloadConfigCacheCallback) {
 }
 

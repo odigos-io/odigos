@@ -1,0 +1,88 @@
+package serviceioconnector
+
+import (
+	"context"
+	"fmt"
+	"sort"
+	"time"
+
+	"github.com/cespare/xxhash/v2"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+)
+
+const attributeHashSeparator = byte(0)
+
+type metricSeries struct {
+	dimensions pcommon.Map
+	count      int64
+}
+
+// hashAttributes returns a deterministic hash of sorted metric attribute names and values.
+func hashAttributes(attrs pcommon.Map) uint64 {
+	names := make([]string, 0, attrs.Len())
+	attrs.Range(func(name string, _ pcommon.Value) bool {
+		names = append(names, name)
+		return true
+	})
+	sort.Strings(names)
+
+	h := xxhash.New()
+	sep := []byte{attributeHashSeparator}
+	for _, name := range names {
+		value, _ := attrs.Get(name)
+		strValue, ok := attributeValueAsString(value)
+		if !ok {
+			continue
+		}
+		_, _ = h.WriteString(name)
+		_, _ = h.Write(sep)
+		_, _ = h.WriteString(strValue)
+	}
+	return h.Sum64()
+}
+
+func (c *serviceioConnector) nowWithOffset() time.Time {
+	return time.Now().Add(-c.config.MetricsTimestampOffset)
+}
+
+func (c *serviceioConnector) buildMetrics() (pmetric.Metrics, error) {
+	m := pmetric.NewMetrics()
+	if len(c.keyToMetric) == 0 {
+		return m, nil
+	}
+
+	sm := m.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty()
+	sm.Scope().SetName(metricScopeName())
+
+	mCount := sm.Metrics().AppendEmpty()
+	mCount.SetName(metricNameConnectionTotal)
+	mCount.SetEmptySum().SetIsMonotonic(true)
+	mCount.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+
+	c.seriesMutex.Lock()
+	defer c.seriesMutex.Unlock()
+
+	for _, series := range c.keyToMetric {
+		dp := mCount.Sum().DataPoints().AppendEmpty()
+		dp.SetStartTimestamp(pcommon.NewTimestampFromTime(c.startTime))
+		dp.SetTimestamp(pcommon.NewTimestampFromTime(c.nowWithOffset()))
+		dp.SetIntValue(series.count)
+		series.dimensions.CopyTo(dp.Attributes())
+	}
+
+	return m, nil
+}
+
+func (c *serviceioConnector) flushMetrics(ctx context.Context) error {
+	md, err := c.buildMetrics()
+	if err != nil {
+		return fmt.Errorf("failed to build metrics: %w", err)
+	}
+
+	if md.MetricCount() == 0 {
+		return nil
+	}
+
+	return c.metricsConsumer.ConsumeMetrics(ctx, md)
+}
