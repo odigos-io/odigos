@@ -23,11 +23,16 @@ type GatewayConfigOptions struct {
 	// the extension and it's name are platform specific.
 	OdigosConfigExtensionName *string
 
-	// Sampling config option
-	SamplingEnabled              *bool
+	// groupbytrace wait duration when tail sampling or service I/O trace correlations are active.
 	TraceAggregationWaitDuration *string
+
+	// Tail sampling v2 processors when tail sampling is active.
+	TailSamplingEnabled          *bool
 	SamplingDryRun               bool
 	SamplingSpanAttributes       *sampling.SpanSamplingAttributesConfiguration
+
+	// Trace correlations configuration for the serviceio connector (service I/O metrics).
+	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
 }
 
 func GetGatewayConfig(
@@ -85,8 +90,12 @@ func CalculateGatewayConfig(
 		currentConfig.Processors[processorKey] = processorCfg
 	}
 
-	// If sampling v2 is enabled, we need to add the groupbytrace processor to the traces processors.
-	if gatewayOptions.SamplingEnabled != nil && *gatewayOptions.SamplingEnabled && gatewayOptions.OdigosConfigExtensionName != nil {
+	if traceAggregationNeeded(gatewayOptions) {
+		ensureGroupByTraceProcessor(currentConfig, &processorsResults, gatewayOptions)
+	}
+
+	// If tail sampling v2 is enabled, add the tail sampling processor to the traces processors.
+	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled && gatewayOptions.OdigosConfigExtensionName != nil {
 		processorsNames, processorsConfig := getTailSamplingProcessors(gatewayOptions)
 		for name, cfg := range processorsConfig {
 			currentConfig.Processors[name] = cfg
@@ -198,7 +207,7 @@ func CalculateGatewayConfig(
 		processorsResults.MetricsProcessors,
 		processorsResults.LogsProcessors,
 		enabledSignals,
-		gatewayOptions.OdigosConfigExtensionName)
+		gatewayOptions)
 
 	// Optional: Add collector self-observability
 	if applySelfTelemetry != nil {
@@ -213,6 +222,9 @@ func CalculateGatewayConfig(
 	// - ClusterMetricsEnabled: assume false (disabled) if nil
 	if tracesEnabled && (gatewayOptions.ServiceGraph.Disabled == nil || !*gatewayOptions.ServiceGraph.Disabled) {
 		insertServiceGraphPipeline(currentConfig, gatewayOptions.ServiceGraph.ExtraDimensions, gatewayOptions.ServiceGraph.VirtualNodePeerAttributes)
+	}
+	if tracesEnabled {
+		insertTraceCorrelationsServiceIOPipeline(currentConfig, gatewayOptions)
 	}
 	if metricsEnabled && gatewayOptions.ClusterMetricsEnabled != nil && *gatewayOptions.ClusterMetricsEnabled {
 		insertClusterMetricsResources(currentConfig, gatewayOptions.OdigosNamespace)
@@ -239,18 +251,61 @@ func CalculateGatewayConfig(
 
 func insertRootPipelinesToConfig(currentConfig *config.Config,
 	tracesProcessors, metricsProcessors, logsProcessors []string,
-	signals []common.ObservabilitySignal, odigosConfigExtensionName *string) {
+	signals []common.ObservabilitySignal, gatewayOptions *GatewayConfigOptions) {
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
-		applyRootPipelineForSignal(currentConfig, common.TracesObservabilitySignal, tracesProcessors, odigosConfigExtensionName)
+		if traceAggregationNeeded(gatewayOptions) {
+			applySplitTracesRootPipelines(currentConfig, tracesProcessors, gatewayOptions.OdigosConfigExtensionName)
+		} else {
+			applyRootPipelineForSignal(currentConfig, common.TracesObservabilitySignal, tracesProcessors, gatewayOptions.OdigosConfigExtensionName)
+		}
 	}
 
 	if slices.Contains(signals, common.MetricsObservabilitySignal) {
-		applyRootPipelineForSignal(currentConfig, common.MetricsObservabilitySignal, metricsProcessors, odigosConfigExtensionName)
+		applyRootPipelineForSignal(currentConfig, common.MetricsObservabilitySignal, metricsProcessors, gatewayOptions.OdigosConfigExtensionName)
 	}
 
 	if slices.Contains(signals, common.LogsObservabilitySignal) {
-		applyRootPipelineForSignal(currentConfig, common.LogsObservabilitySignal, logsProcessors, odigosConfigExtensionName)
+		applyRootPipelineForSignal(currentConfig, common.LogsObservabilitySignal, logsProcessors, gatewayOptions.OdigosConfigExtensionName)
 	}
+}
+
+// applySplitTracesRootPipelines forks traces after groupbytrace so complete trace batches can be
+// consumed before tail sampling and batching. traces/in aggregates and forwards; traces/exporting
+// continues through the remaining processors to the router connector.
+func applySplitTracesRootPipelines(currentConfig *config.Config, tracesProcessors []string, odigosConfigExtensionName *string) {
+	forwardConnectorName := consts.TracesPostGroupByForwardConnectorName
+	currentConfig.Connectors[forwardConnectorName] = config.GenericMap{}
+
+	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
+	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
+		Receivers:  []string{"otlp"},
+		Processors: []string{"resource/odigos-version", consts.GroupByTraceProcessorV2},
+		Exporters:  []string{forwardConnectorName},
+	}
+
+	postGroupByProcessors := slices.DeleteFunc(slices.Clone(tracesProcessors), func(p string) bool {
+		return p == consts.GroupByTraceProcessorV2
+	})
+
+	routerConnectorName := fmt.Sprintf("odigosrouterconnector/%s", strings.ToLower(string(common.TracesObservabilitySignal)))
+	routerConnectorCfg := config.GenericMap{}
+	if odigosConfigExtensionName != nil {
+		routerConnectorCfg["odigos_config_extension"] = *odigosConfigExtensionName
+	}
+	currentConfig.Connectors[routerConnectorName] = routerConnectorCfg
+
+	currentConfig.Service.Pipelines[consts.TracesExportingPipelineName] = config.Pipeline{
+		Receivers:  []string{forwardConnectorName},
+		Processors: postGroupByProcessors,
+		Exporters:  []string{routerConnectorName},
+	}
+}
+
+func tracesPipelineForDownstreamConnectors(currentConfig *config.Config) string {
+	if _, exists := currentConfig.Service.Pipelines[consts.TracesExportingPipelineName]; exists {
+		return consts.TracesExportingPipelineName
+	}
+	return GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
 }
 
 func applyRootPipelineForSignal(currentConfig *config.Config, signal common.ObservabilitySignal,
@@ -315,15 +370,75 @@ func insertServiceGraphPipeline(currentConfig *config.Config, extraDimensions []
 		Exporters: []string{"prometheus/servicegraph"},
 	}
 
-	// Add the service graph exporter to the root traces pipeline
-	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
-	// This pipeline should already exist because entering this function means that traces are enabled, but we'll check just in case
-	pipeline, exists := currentConfig.Service.Pipelines[rootPipelineName]
+	// Add the service graph exporter to the traces pipeline that feeds destinations
+	// (traces/exporting when groupbytrace splits the pipeline, otherwise traces/in).
+	tracesPipelineName := tracesPipelineForDownstreamConnectors(currentConfig)
+	pipeline, exists := currentConfig.Service.Pipelines[tracesPipelineName]
 	if !exists {
 		return
 	}
 	pipeline.Exporters = append(pipeline.Exporters, consts.ServiceGraphConnectorName)
-	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
+	currentConfig.Service.Pipelines[tracesPipelineName] = pipeline
+}
+
+func insertTraceCorrelationsServiceIOPipeline(currentConfig *config.Config, gatewayOptions *GatewayConfigOptions) {
+	cfg := gatewayOptions.TraceCorrelationsServiceIO
+	if !common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
+		ServiceIO: cfg,
+	}) {
+		return
+	}
+
+	connectorCfg := config.GenericMap{}
+	if len(cfg.InputSpanAttributes) > 0 {
+		connectorCfg["input_span_attributes"] = cfg.InputSpanAttributes
+	}
+	if len(cfg.OutputSpanAttributes) > 0 {
+		connectorCfg["output_span_attributes"] = cfg.OutputSpanAttributes
+	}
+	if cfg.MetricsFlushInterval != "" {
+		connectorCfg["metrics_flush_interval"] = cfg.MetricsFlushInterval
+	}
+	if gatewayOptions.OdigosConfigExtensionName != nil {
+		connectorCfg["odigos_config_extension"] = *gatewayOptions.OdigosConfigExtensionName
+	}
+
+	currentConfig.Connectors[consts.ServiceIOConnectorName] = connectorCfg
+
+	exporterName := consts.TraceCorrelationsVictoriaMetricsExporterName
+	currentConfig.Exporters[exporterName] = traceCorrelationsVictoriaMetricsExporter(gatewayOptions.OdigosNamespace)
+
+	currentConfig.Service.Pipelines[consts.TraceCorrelationsMetricsPipelineName] = config.Pipeline{
+		Receivers: []string{consts.ServiceIOConnectorName},
+		Exporters: []string{exporterName},
+	}
+
+	tracesInPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
+	pipeline, exists := currentConfig.Service.Pipelines[tracesInPipelineName]
+	if !exists {
+		return
+	}
+	if !slices.Contains(pipeline.Exporters, consts.ServiceIOConnectorName) {
+		pipeline.Exporters = append(pipeline.Exporters, consts.ServiceIOConnectorName)
+	}
+	currentConfig.Service.Pipelines[tracesInPipelineName] = pipeline
+}
+
+func traceCorrelationsVictoriaMetricsExporter(odigosNamespace string) config.GenericMap {
+	endpoint := fmt.Sprintf(
+		"http://%s.%s:8428/opentelemetry",
+		consts.TraceCorrelationsMetricsServiceName,
+		odigosNamespace,
+	)
+	return config.GenericMap{
+		"endpoint": endpoint,
+		"retry_on_failure": config.GenericMap{
+			"enabled": false,
+		},
+		"tls": config.GenericMap{
+			"insecure": true,
+		},
+	}
 }
 
 func GetBasicConfig() *config.Config {
@@ -468,6 +583,40 @@ func insertClusterMetricsResources(currentConfig *config.Config, odigosNs string
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
 }
 
+const defaultTraceAggregationWaitDuration = "30s"
+
+func traceAggregationNeeded(gatewayOptions *GatewayConfigOptions) bool {
+	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled {
+		return true
+	}
+	return common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
+		ServiceIO: gatewayOptions.TraceCorrelationsServiceIO,
+	})
+}
+
+func ensureGroupByTraceProcessor(
+	currentConfig *config.Config,
+	processorsResults *config.CrdProcessorResults,
+	gatewayOptions *GatewayConfigOptions,
+) {
+	if slices.Contains(processorsResults.TracesProcessors, consts.GroupByTraceProcessorV2) {
+		return
+	}
+
+	waitDuration := defaultTraceAggregationWaitDuration
+	if gatewayOptions.TraceAggregationWaitDuration != nil && *gatewayOptions.TraceAggregationWaitDuration != "" {
+		waitDuration = *gatewayOptions.TraceAggregationWaitDuration
+	}
+
+	currentConfig.Processors[consts.GroupByTraceProcessorV2] = config.GenericMap{
+		"wait_duration": waitDuration,
+	}
+	processorsResults.TracesProcessors = append(
+		[]string{consts.GroupByTraceProcessorV2},
+		processorsResults.TracesProcessors...,
+	)
+}
+
 func getTailSamplingProcessors(gatewayOptions *GatewayConfigOptions) ([]string, map[string]config.GenericMap) {
 	tailSamplingProcessorCfg := config.GenericMap{
 		"odigos_config_extension": *gatewayOptions.OdigosConfigExtensionName,
@@ -493,14 +642,8 @@ func getTailSamplingProcessors(gatewayOptions *GatewayConfigOptions) ([]string, 
 	}
 
 	processors := map[string]config.GenericMap{
-		consts.GroupByTraceProcessorV2: {
-			"wait_duration": gatewayOptions.TraceAggregationWaitDuration,
-		},
 		consts.OdigosTailSamplingProcessorName: tailSamplingProcessorCfg,
 	}
 
-	// add the groupbytrace processor to the beginning of the traces processors
-	samplingProcessors := []string{consts.GroupByTraceProcessorV2, consts.OdigosTailSamplingProcessorName}
-
-	return samplingProcessors, processors
+	return []string{consts.OdigosTailSamplingProcessorName}, processors
 }

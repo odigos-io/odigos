@@ -395,6 +395,68 @@ func TestServiceGraphOptions(t *testing.T) {
 	}
 }
 
+func TestTracesPipelineSplitAfterGroupByTrace(t *testing.T) {
+	ext := "odigosconfigk8s"
+	enabled := true
+	wait := "45s"
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:              "odigos-system",
+		OdigosConfigExtensionName:    &ext,
+		TailSamplingEnabled:          &enabled,
+		TraceAggregationWaitDuration: &wait,
+	}
+	out, err, _, signals := pipelinegen.CalculateGatewayConfig(
+		baseConfigWithSelfMetrics(),
+		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
+		[]config.ProcessorConfigurer{},
+		nil, nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+	require.Contains(t, signals, common.TracesObservabilitySignal)
+
+	assert.Contains(t, out, consts.TracesPostGroupByForwardConnectorName+":")
+	assert.Contains(t, out, consts.TracesExportingPipelineName+":")
+	assert.Contains(t, out, "traces/in:\n")
+	assert.Contains(t, out, "- "+consts.GroupByTraceProcessorV2+"\n")
+	assert.Contains(t, out, "- "+consts.TracesPostGroupByForwardConnectorName+"\n")
+	assert.Contains(t, out, "- "+consts.OdigosTailSamplingProcessorName+"\n")
+}
+
+func TestTraceCorrelationsServiceIOPipeline(t *testing.T) {
+	ext := "odigosconfigk8s"
+	enabled := true
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:           "odigos-system",
+		OdigosConfigExtensionName: &ext,
+		TraceCorrelationsServiceIO: &common.TraceCorrelationsServiceIOConfiguration{
+			Enabled:              &enabled,
+			InputSpanAttributes:  []string{"http.route"},
+			OutputSpanAttributes: []string{"db.system"},
+			MetricsFlushInterval: "60s",
+		},
+	}
+	out, err, _, signals := pipelinegen.CalculateGatewayConfig(
+		baseConfigWithSelfMetrics(),
+		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
+		[]config.ProcessorConfigurer{},
+		nil, nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+	require.Contains(t, signals, common.TracesObservabilitySignal)
+
+	assert.Contains(t, out, consts.ServiceIOConnectorName+":")
+	assert.Contains(t, out, consts.TraceCorrelationsMetricsPipelineName+":")
+	assert.Contains(t, out, consts.TraceCorrelationsVictoriaMetricsExporterName+":")
+	assert.Contains(t, out, "http://odigos-correlations-metrics.odigos-system:8428/opentelemetry\n")
+	assert.Contains(t, out, "- "+consts.ServiceIOConnectorName+"\n")
+	assert.Contains(t, out, "input_span_attributes:\n")
+	assert.Contains(t, out, "- http.route\n")
+	assert.Contains(t, out, "output_span_attributes:\n")
+	assert.Contains(t, out, "- db.system\n")
+	assert.Contains(t, out, "metrics_flush_interval: 60s\n")
+	assert.Contains(t, out, "odigos_config_extension: odigosconfigk8s\n")
+}
+
 // TestCalculateDataStreamMissingDestination tests the case where we have a datastream with sources but no destination
 func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 	want := openTestData(t, "testdata/sourcesnodest.yaml")
