@@ -1644,6 +1644,29 @@ type TestConnectionResponse struct {
 	Reason          *string `json:"reason,omitempty"`
 }
 
+type TraceCorrelations struct {
+	Workloads []*TraceCorrelationsWorkload `json:"workloads"`
+}
+
+type TraceCorrelationsInputGroup struct {
+	Attributes []*NonIdentifyingAttribute       `json:"attributes"`
+	Outputs    []*TraceCorrelationsOutputSeries `json:"outputs"`
+}
+
+type TraceCorrelationsOutputSeries struct {
+	Attributes      []*NonIdentifyingAttribute `json:"attributes"`
+	ConnectionCount int                        `json:"connectionCount"`
+	FirstDetectedAt string                     `json:"firstDetectedAt"`
+}
+
+type TraceCorrelationsWorkload struct {
+	Namespace     string                         `json:"namespace"`
+	Kind          K8sResourceKind                `json:"kind"`
+	Name          string                         `json:"name"`
+	ContainerName string                         `json:"containerName"`
+	Inputs        []*TraceCorrelationsInputGroup `json:"inputs"`
+}
+
 type URLTemplatizationRule struct {
 	Template string   `json:"template"`
 	Notes    *string  `json:"notes,omitempty"`
@@ -2252,6 +2275,7 @@ const (
 	K8sResourceKindDaemonSet             K8sResourceKind = "DaemonSet"
 	K8sResourceKindStatefulSet           K8sResourceKind = "StatefulSet"
 	K8sResourceKindCronJob               K8sResourceKind = "CronJob"
+	K8sResourceKindJob                   K8sResourceKind = "Job"
 	K8sResourceKindConfigMap             K8sResourceKind = "ConfigMap"
 	K8sResourceKindPod                   K8sResourceKind = "Pod"
 	K8sResourceKindStaticPod             K8sResourceKind = "StaticPod"
@@ -2265,6 +2289,7 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindDaemonSet,
 	K8sResourceKindStatefulSet,
 	K8sResourceKindCronJob,
+	K8sResourceKindJob,
 	K8sResourceKindConfigMap,
 	K8sResourceKindPod,
 	K8sResourceKindStaticPod,
@@ -2275,7 +2300,7 @@ var AllK8sResourceKind = []K8sResourceKind{
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindStaticPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout, K8sResourceKindInstrumentationConfig:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindStaticPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout, K8sResourceKindInstrumentationConfig:
 		return true
 	}
 	return false
