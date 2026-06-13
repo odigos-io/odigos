@@ -12,6 +12,6 @@ import (
 )
 
 // TraceCorrelations is the resolver for the traceCorrelations field.
-func (r *queryResolver) TraceCorrelations(ctx context.Context, filter *model.WorkloadFilter) (*model.TraceCorrelations, error) {
-	return tracecorrelations.GetTraceCorrelations(ctx, r.CorrelationsPromAPI, r.CorrelationsMetricsStoreURL, filter)
+func (r *queryResolver) TraceCorrelations(ctx context.Context, filter *model.WorkloadFilter, timeRange *model.TraceCorrelationsTimeRangeInput) (*model.TraceCorrelations, error) {
+	return tracecorrelations.GetTraceCorrelations(ctx, r.CorrelationsPromAPI, r.CorrelationsMetricsStoreURL, filter, timeRange)
 }

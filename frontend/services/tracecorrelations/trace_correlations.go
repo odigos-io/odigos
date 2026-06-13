@@ -41,7 +41,13 @@ type aggregatedSeries struct {
 
 // GetTraceCorrelations reads service I/O connection metrics from the trace correlations
 // VictoriaMetrics store and groups them by workload, input attributes, and output attributes.
-func GetTraceCorrelations(ctx context.Context, api v1.API, metricsStoreURL string, filter *model.WorkloadFilter) (*model.TraceCorrelations, error) {
+func GetTraceCorrelations(
+	ctx context.Context,
+	api v1.API,
+	metricsStoreURL string,
+	filter *model.WorkloadFilter,
+	timeRange *model.TraceCorrelationsTimeRangeInput,
+) (*model.TraceCorrelations, error) {
 	if api == nil {
 		return nil, fmt.Errorf("trace correlations metrics store not available")
 	}
@@ -49,19 +55,63 @@ func GetTraceCorrelations(ctx context.Context, api v1.API, metricsStoreURL strin
 		return nil, fmt.Errorf("trace correlations metrics store URL is empty")
 	}
 
-	now := time.Now()
-	counts, err := queryInstantVector(ctx, api, metricSelector, now)
+	start, end, err := resolveTimeRange(timeRange)
+	if err != nil {
+		return nil, err
+	}
+
+	counts, err := queryConnectionCountsInRange(ctx, api, start, end)
 	if err != nil {
 		return nil, fmt.Errorf("query trace correlation connection counts: %w", err)
 	}
 
-	firstSeen, err := queryFirstSeenFromExport(ctx, metricsStoreURL, now.Add(-exportLookback))
+	firstSeen, err := queryFirstSeenFromExport(ctx, metricsStoreURL, start, end)
 	if err != nil {
 		return nil, fmt.Errorf("query trace correlation first-seen timestamps: %w", err)
 	}
 
 	aggregated := aggregateSeries(counts, firstSeen, filter)
 	return buildResponse(aggregated), nil
+}
+
+func resolveTimeRange(timeRange *model.TraceCorrelationsTimeRangeInput) (time.Time, time.Time, error) {
+	if timeRange == nil {
+		end := time.Now()
+		return end.Add(-exportLookback), end, nil
+	}
+
+	start, err := time.Parse(time.RFC3339, timeRange.Start)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("parse time range start: %w", err)
+	}
+	end, err := time.Parse(time.RFC3339, timeRange.End)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("parse time range end: %w", err)
+	}
+	if !end.After(start) {
+		return time.Time{}, time.Time{}, fmt.Errorf("time range end must be after start")
+	}
+	return start, end, nil
+}
+
+func queryConnectionCountsInRange(ctx context.Context, api v1.API, start, end time.Time) (prommodel.Vector, error) {
+	duration := end.Sub(start)
+	query := fmt.Sprintf(`increase(%s[%s])`, metricSelector, promDuration(duration))
+	return queryInstantVector(ctx, api, query, end)
+}
+
+func promDuration(duration time.Duration) string {
+	if duration >= time.Hour && duration%time.Hour == 0 {
+		return fmt.Sprintf("%dh", int(duration.Hours()))
+	}
+	if duration >= time.Minute && duration%time.Minute == 0 {
+		return fmt.Sprintf("%dm", int(duration.Minutes()))
+	}
+	seconds := int(duration.Seconds())
+	if seconds < 1 {
+		seconds = 1
+	}
+	return fmt.Sprintf("%ds", seconds)
 }
 
 func queryInstantVector(ctx context.Context, api v1.API, query string, ts time.Time) (prommodel.Vector, error) {
@@ -106,11 +156,18 @@ func aggregateSeries(counts prommodel.Vector, firstSeenByLabels map[string]time.
 			byOutput[seriesKey] = series
 		}
 
-		series.connectionCount += int64(sample.Value)
+		increase := int64(sample.Value)
+		if increase <= 0 {
+			continue
+		}
 
-		if firstDetected, ok := firstSeenByLabels[labels.String()]; ok {
-			if series.firstDetected.IsZero() || firstDetected.Before(series.firstDetected) {
-				series.firstDetected = firstDetected
+		series.connectionCount += increase
+
+		if key, ok := seriesIdentityKey(labels); ok {
+			if firstDetected, ok := firstSeenByLabels[key]; ok {
+				if series.firstDetected.IsZero() || firstDetected.Before(series.firstDetected) {
+					series.firstDetected = firstDetected
+				}
 			}
 		}
 	}
@@ -123,6 +180,9 @@ func buildResponse(aggregated map[workloadKey]map[string]*aggregatedSeries) *mod
 
 	for workload, seriesByKey := range aggregated {
 		inputGroups := groupByInput(seriesByKey)
+		if len(inputGroups) == 0 {
+			continue
+		}
 		workloads = append(workloads, &model.TraceCorrelationsWorkload{
 			Namespace:     workload.namespace,
 			Kind:          kindToModel(workload.kind),

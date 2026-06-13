@@ -27,6 +27,12 @@ type TraceCorrelationsOutputSeries {
   firstDetectedAt: String!
 }
 
+# Limits trace correlation metrics to samples within [start, end] (RFC3339, inclusive).
+input TraceCorrelationsTimeRangeInput {
+  start: String!
+  end: String!
+}
+
 extend type Query {
-  traceCorrelations(filter: WorkloadFilter): TraceCorrelations!
+  traceCorrelations(filter: WorkloadFilter, timeRange: TraceCorrelationsTimeRangeInput): TraceCorrelations!
 }

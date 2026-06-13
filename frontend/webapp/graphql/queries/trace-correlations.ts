@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const GET_TRACE_CORRELATIONS = gql`
-  query GetTraceCorrelations($filter: WorkloadFilter) {
-    traceCorrelations(filter: $filter) {
+  query GetTraceCorrelations($filter: WorkloadFilter, $timeRange: TraceCorrelationsTimeRangeInput) {
+    traceCorrelations(filter: $filter, timeRange: $timeRange) {
       workloads {
         namespace
         kind

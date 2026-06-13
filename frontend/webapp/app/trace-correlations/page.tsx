@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { useTraceCorrelations, type TraceCorrelationsInputGroup, type TraceCorrelationsOutputSeries, type TraceCorrelationsWorkload } from '@/hooks/metrics/useTraceCorrelations';
+import { useTraceCorrelations, TRACE_CORRELATIONS_TIME_PRESETS, formatTraceCorrelationsTimeRangeLabel, resolveTraceCorrelationsTimeRange, toDatetimeLocalValue, type TraceCorrelationsInputGroup, type TraceCorrelationsOutputSeries, type TraceCorrelationsTimePreset, type TraceCorrelationsWorkload } from '@/hooks/metrics/useTraceCorrelations';
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(8px); }
@@ -63,6 +63,93 @@ const Toolbar = styled.div`
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
+`;
+
+const TimeRangeBar = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+`;
+
+const TimeRangeLabel = styled.div`
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-right: 4px;
+`;
+
+const TimeRangePresets = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const TimeRangeHint = styled.div`
+  font-size: 12px;
+  color: #64748b;
+`;
+
+const DataCoverageBanner = styled.div`
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  background: rgba(14, 165, 233, 0.08);
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.5;
+`;
+
+const DataCoverageLabel = styled.strong`
+  color: #f8fafc;
+  font-weight: 600;
+`;
+
+const TimeRangeCustomFields = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  width: 100%;
+`;
+
+const TimeRangeField = styled.label`
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+`;
+
+const DateTimeInput = styled.input`
+  min-width: 210px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.72);
+  color: #f8fafc;
+  outline: none;
+  color-scheme: dark;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  &:focus {
+    border-color: rgba(34, 211, 238, 0.55);
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+  }
+`;
+
+const TimeRangeError = styled.div`
+  width: 100%;
+  font-size: 12px;
+  color: #fca5a5;
 `;
 
 const Input = styled.input`
@@ -242,7 +329,291 @@ const MiniStatValue = styled.div`
 const InputGroupList = styled.div`
   display: grid;
   gap: 14px;
+  padding: 0 24px 24px;
+`;
+
+const ViewModeBar = styled.div`
+  display: flex;
+  gap: 10px;
+  padding: 16px 24px 0;
+`;
+
+const FlowDiagramWrapper = styled.div`
   padding: 20px 24px 24px;
+`;
+
+const FlowDiagramContainer = styled.div`
+  position: relative;
+  min-height: 280px;
+`;
+
+const FlowDiagramGrid = styled.div`
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: start;
+  gap: 0;
+  width: 100%;
+  z-index: 1;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+`;
+
+const FlowColumn = styled.div<{ $side: 'inbound' | 'outbound' }>`
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: ${({ $side }) => ($side === 'inbound' ? 'flex-end' : 'flex-start')};
+  width: 100%;
+  min-width: 0;
+`;
+
+const FlowConnectionLane = styled.div`
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+
+  @media (max-width: 900px) {
+    display: none;
+  }
+`;
+
+const FlowColumnTitle = styled.div<{ $variant: 'inbound' | 'outbound'; $align?: 'start' | 'end' }>`
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: ${({ $variant }) => ($variant === 'outbound' ? '#c4b5fd' : '#67e8f9')};
+  margin-bottom: 4px;
+  align-self: stretch;
+  width: 100%;
+  text-align: ${({ $align = 'start' }) => ($align === 'end' ? 'right' : 'left')};
+`;
+
+const FlowNodeCard = styled.div<{ $variant: 'inbound' | 'outbound'; $nested?: boolean; $highlighted?: boolean; $dimmed?: boolean }>`
+  width: 100%;
+  padding: ${({ $nested }) => ($nested ? '10px 12px' : '12px 14px')};
+  border-radius: 14px;
+  border: 1px solid
+    ${({ $variant, $highlighted }) => {
+      if ($highlighted) {
+        return $variant === 'outbound' ? 'rgba(167, 139, 250, 0.75)' : 'rgba(34, 211, 238, 0.75)';
+      }
+      return $variant === 'outbound' ? 'rgba(167, 139, 250, 0.28)' : 'rgba(34, 211, 238, 0.28)';
+    }};
+  background: ${({ $variant, $highlighted }) => {
+    if ($highlighted) {
+      return $variant === 'outbound'
+        ? 'linear-gradient(135deg, rgba(167, 139, 250, 0.22), rgba(99, 102, 241, 0.12))'
+        : 'linear-gradient(135deg, rgba(34, 211, 238, 0.22), rgba(14, 165, 233, 0.12))';
+    }
+    return $variant === 'outbound'
+      ? 'linear-gradient(135deg, rgba(167, 139, 250, 0.12), rgba(99, 102, 241, 0.06))'
+      : 'linear-gradient(135deg, rgba(34, 211, 238, 0.12), rgba(14, 165, 233, 0.06))';
+  }};
+  box-shadow: ${({ $highlighted, $variant }) =>
+    $highlighted
+      ? $variant === 'outbound'
+        ? '0 0 16px rgba(167, 139, 250, 0.28)'
+        : '0 0 16px rgba(34, 211, 238, 0.28)'
+      : 'inset 0 1px 0 rgba(255, 255, 255, 0.04)'};
+  opacity: ${({ $dimmed }) => ($dimmed ? 0.38 : 1)};
+  display: grid;
+  gap: 8px;
+  transition: opacity 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+`;
+
+const FlowHttpGroup = styled.div<{ $variant: 'inbound' | 'outbound' }>`
+  width: 100%;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid
+    ${({ $variant }) => ($variant === 'outbound' ? 'rgba(167, 139, 250, 0.34)' : 'rgba(34, 211, 238, 0.34)')};
+  background: ${({ $variant }) =>
+    $variant === 'outbound' ? 'rgba(99, 102, 241, 0.08)' : 'rgba(14, 165, 233, 0.08)'};
+  display: grid;
+  gap: 10px;
+`;
+
+const FlowHttpGroupHeader = styled.div`
+  font-family: 'SF Mono', 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+  word-break: break-word;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+`;
+
+const FlowHttpGroupMeta = styled.div`
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: -4px;
+`;
+
+const FlowNodeDetails = styled.div`
+  margin-top: 2px;
+`;
+
+const FlowSvg = styled.svg`
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+
+  @media (max-width: 900px) {
+    display: none;
+  }
+`;
+
+const FlowEdgeLabelBox = styled.div<{ $fresh?: boolean; $highlighted?: boolean; $dimmed?: boolean; $x: number; $y: number }>`
+  position: absolute;
+  left: ${({ $x }) => $x}px;
+  top: ${({ $y }) => $y}px;
+  transform: translate(-50%, -50%);
+  padding: 5px 8px;
+  border-radius: 999px;
+  border: 1px solid
+    ${({ $fresh, $highlighted }) => {
+      if ($highlighted) {
+        return $fresh ? 'rgba(34, 211, 238, 0.85)' : 'rgba(148, 163, 184, 0.55)';
+      }
+      return $fresh ? 'rgba(34, 211, 238, 0.45)' : 'rgba(148, 163, 184, 0.22)';
+    }};
+  background: ${({ $fresh, $highlighted }) => {
+    if ($highlighted) {
+      return $fresh ? 'rgba(34, 211, 238, 0.28)' : 'rgba(15, 23, 42, 0.96)';
+    }
+    return $fresh ? 'rgba(34, 211, 238, 0.16)' : 'rgba(15, 23, 42, 0.92)';
+  }};
+  color: ${({ $fresh, $highlighted }) => {
+    if ($highlighted) {
+      return $fresh ? '#a5f3fc' : '#f8fafc';
+    }
+    return $fresh ? '#67e8f9' : '#cbd5e1';
+  }};
+  font-size: 11px;
+  font-weight: ${({ $highlighted }) => ($highlighted ? 700 : 600)};
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  z-index: ${({ $highlighted }) => ($highlighted ? 3 : 2)};
+  pointer-events: none;
+  opacity: ${({ $dimmed }) => ($dimmed ? 0.2 : 1)};
+  box-shadow: ${({ $fresh, $highlighted }) => {
+    if ($highlighted) {
+      return $fresh ? '0 0 14px rgba(34, 211, 238, 0.45)' : '0 0 10px rgba(148, 163, 184, 0.25)';
+    }
+    return $fresh ? '0 0 10px rgba(34, 211, 238, 0.2)' : 'none';
+  }};
+  transition: opacity 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+  @media (max-width: 900px) {
+    display: none;
+  }
+`;
+
+const FlowMobileEdgeList = styled.div`
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+  min-width: 0;
+
+  @media (max-width: 900px) {
+    display: flex;
+  }
+`;
+
+const FlowMobileEdge = styled.div<{ $fresh?: boolean }>`
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid ${({ $fresh }) => ($fresh ? 'rgba(34, 211, 238, 0.35)' : 'rgba(148, 163, 184, 0.16)')};
+  background: rgba(15, 23, 42, 0.55);
+  color: ${({ $fresh }) => ($fresh ? '#67e8f9' : '#94a3b8')};
+  font-size: 11px;
+  line-height: 1.45;
+`;
+
+const FlowHoverPopup = styled.div<{ $x: number; $y: number; $side: 'inbound' | 'outbound' }>`
+  position: absolute;
+  left: ${({ $x }) => $x}px;
+  top: ${({ $y }) => $y}px;
+  transform: ${({ $side }) =>
+    $side === 'inbound' ? 'translate(14px, -50%)' : 'translate(calc(-100% - 14px), -50%)'};
+  min-width: 240px;
+  max-width: 320px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.96);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  z-index: 12;
+  pointer-events: none;
+  display: grid;
+  gap: 10px;
+
+  @media (max-width: 900px) {
+    display: none;
+  }
+`;
+
+const FlowHoverPopupTitle = styled.div`
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.35;
+`;
+
+const FlowHoverPopupScope = styled.div`
+  font-family: 'SF Mono', 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #94a3b8;
+  word-break: break-word;
+`;
+
+const FlowHoverPopupSummary = styled.div`
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  font-family: 'SF Mono', 'JetBrains Mono', monospace;
+  word-break: break-word;
+`;
+
+const FlowHoverPopupStats = styled.div`
+  display: grid;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  font-size: 12px;
+  color: #94a3b8;
+`;
+
+const FlowHoverPopupStat = styled.div<{ $emphasis?: boolean }>`
+  color: ${({ $emphasis }) => ($emphasis ? '#67e8f9' : '#94a3b8')};
+  font-weight: ${({ $emphasis }) => ($emphasis ? 600 : 400)};
+`;
+
+const FlowHoverPopupAttributes = styled.ul`
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  max-height: 160px;
+  overflow: auto;
+`;
+
+const FlowHoverPopupAttribute = styled.li`
+  font-size: 11px;
+  line-height: 1.4;
+  word-break: break-word;
+  font-family: 'SF Mono', 'JetBrains Mono', monospace;
 `;
 
 const InputGroupCard = styled.div`
@@ -865,8 +1236,23 @@ function CopyAttributeButton({ text, label }: { text: string; label: string }) {
   );
 }
 
-function HttpSummaryLine({ summary }: { summary: NonNullable<ReturnType<typeof buildHttpSummary>> }) {
-  const summaryText = formatHttpSummaryText(summary);
+function getHttpRouteKey(attributes: { key: string; value: string }[]) {
+  if (!isHttpAttributes(attributes)) {
+    return null;
+  }
+
+  const map = attributesToMap(attributes);
+  return map['url.template'] || map['http.route'] || null;
+}
+
+function HttpSummaryLine({
+  summary,
+  hidePath,
+}: {
+  summary: NonNullable<ReturnType<typeof buildHttpSummary>>;
+  hidePath?: boolean;
+}) {
+  const summaryText = formatHttpSummaryText(summary, hidePath);
 
   return (
     <HttpSummary>
@@ -876,10 +1262,10 @@ function HttpSummaryLine({ summary }: { summary: NonNullable<ReturnType<typeof b
             <HttpMethod $method={summary.method}>{summary.method.toUpperCase()}</HttpMethod>{' '}
           </>
         ) : null}
-        {summary.path ? <span>{summary.path}</span> : null}
+        {!hidePath && summary.path ? <span>{summary.path}</span> : null}
         {summary.status ? (
           <>
-            {summary.path || summary.method ? ' ' : null}
+            {(!hidePath && summary.path) || summary.method ? ' ' : null}
             <HttpStatus>{summary.status}</HttpStatus>
           </>
         ) : null}
@@ -897,10 +1283,10 @@ function HttpSummaryLine({ summary }: { summary: NonNullable<ReturnType<typeof b
   );
 }
 
-function formatHttpSummaryText(summary: NonNullable<ReturnType<typeof buildHttpSummary>>) {
+function formatHttpSummaryText(summary: NonNullable<ReturnType<typeof buildHttpSummary>>, hidePath = false) {
   const parts: string[] = [];
   if (summary.method) parts.push(summary.method.toUpperCase());
-  if (summary.path) parts.push(summary.path);
+  if (!hidePath && summary.path) parts.push(summary.path);
   if (summary.status) parts.push(summary.status);
   if (summary.target) parts.push(`to ${summary.target}`);
   return parts.join(' ');
@@ -998,6 +1384,13 @@ function getScopeName(attributes: { key: string; value: string }[]) {
   return getAttributeValue(attributes, SCOPE_NAME_KEY);
 }
 
+function getVisibleScopeName(attributes: { key: string; value: string }[], showFullData: boolean) {
+  if (!showFullData) {
+    return undefined;
+  }
+  return getScopeName(attributes);
+}
+
 function isDbAttributes(attributes: { key: string; value: string }[]) {
   return attributes.some((attr) => attr.key.startsWith('db.') || attr.key === 'db.system');
 }
@@ -1022,7 +1415,7 @@ function formatDbSystem(value: string) {
   return labels[normalized] ?? value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function getScopeGroupTitle(attributes: { key: string; value: string }[]) {
+function getScopeGroupTitle(attributes: { key: string; value: string }[], showFullData = true) {
   const map = attributesToMap(attributes);
 
   if (isDbAttributes(attributes)) {
@@ -1034,6 +1427,10 @@ function getScopeGroupTitle(attributes: { key: string; value: string }[]) {
     return 'Http';
   }
 
+  if (!showFullData) {
+    return 'Connection';
+  }
+
   const scopeName = getScopeName(attributes);
   return scopeName || 'Connection';
 }
@@ -1041,12 +1438,14 @@ function getScopeGroupTitle(attributes: { key: string; value: string }[]) {
 function ScopeHeader({
   attributes,
   direction,
+  showFullData,
 }: {
   attributes: { key: string; value: string }[];
   direction: 'inbound' | 'outbound';
+  showFullData: boolean;
 }) {
-  const scopeName = getScopeName(attributes);
-  const title = getScopeGroupTitle(attributes);
+  const scopeName = getVisibleScopeName(attributes, showFullData);
+  const title = getScopeGroupTitle(attributes, showFullData);
 
   return (
     <ScopeGroupHeader>
@@ -1059,14 +1458,16 @@ function ScopeHeader({
   );
 }
 
-function groupOutputsByScope(outputs: TraceCorrelationsOutputSeries[]) {
+function groupOutputsByScope(outputs: TraceCorrelationsOutputSeries[], showFullData: boolean) {
   const groups = new Map<string, TraceCorrelationsOutputSeries[]>();
 
   for (const output of outputs) {
-    const scopeName = getScopeName(output.attributes) ?? 'Unknown scope';
-    const existing = groups.get(scopeName) ?? [];
+    const groupKey = showFullData
+      ? (getScopeName(output.attributes) ?? 'Unknown scope')
+      : getScopeGroupTitle(output.attributes, showFullData);
+    const existing = groups.get(groupKey) ?? [];
     existing.push(output);
-    groups.set(scopeName, existing);
+    groups.set(groupKey, existing);
   }
 
   return Array.from(groups.entries()).sort(([left], [right]) => left.localeCompare(right));
@@ -1160,7 +1561,15 @@ function workloadStats(workload: TraceCorrelationsWorkload) {
   return { inputGroups, outputSeries, connections };
 }
 
-function AttributeChips({ attributes, showFullData }: { attributes: { key: string; value: string }[]; showFullData: boolean }) {
+function AttributeChips({
+  attributes,
+  showFullData,
+  hideHttpPath,
+}: {
+  attributes: { key: string; value: string }[];
+  showFullData: boolean;
+  hideHttpPath?: boolean;
+}) {
   const visibleAttributes = filterVisibleAttributes(attributes, showFullData);
   const hiddenCount = attributes.length - visibleAttributes.length;
   const { summary, remaining } = partitionHttpAttributes(visibleAttributes);
@@ -1175,7 +1584,7 @@ function AttributeChips({ attributes, showFullData }: { attributes: { key: strin
 
   return (
     <AttributeList>
-      {summary ? <HttpSummaryLine summary={summary} /> : null}
+      {summary ? <HttpSummaryLine summary={summary} hidePath={hideHttpPath} /> : null}
       {remaining.map((attr) => (
         <AttributeItem key={`${attr.key}:${attr.value}`}>
           <AttributeContent>
@@ -1202,6 +1611,613 @@ function summarizeAttributes(attributes: { key: string; value: string }[], showF
 
 function connectionRowKey(inputAttributes: { key: string; value: string }[], output: TraceCorrelationsOutputSeries) {
   return `${formatAttributes(inputAttributes)}::${formatAttributes(output.attributes)}::${output.firstDetectedAt}`;
+}
+
+type FlowNode = {
+  id: string;
+  attributes: { key: string; value: string }[];
+};
+
+type FlowNodeGroup = {
+  id: string;
+  kind: 'http' | 'default';
+  title?: string;
+  nodes: FlowNode[];
+};
+
+type FlowEdge = {
+  id: string;
+  inputId: string;
+  outputId: string;
+  connectionCount: number;
+  firstDetectedAt: string;
+};
+
+type FlowEdgeLayout = FlowEdge & {
+  path: string;
+  labelX: number;
+  labelY: number;
+  ageLabel: string;
+  fresh: boolean;
+};
+
+function groupFlowNodes(nodes: FlowNode[]): FlowNodeGroup[] {
+  const httpGroups = new Map<string, FlowNode[]>();
+  const ungrouped: FlowNode[] = [];
+
+  for (const node of nodes) {
+    const routeKey = getHttpRouteKey(node.attributes);
+    if (routeKey) {
+      const existing = httpGroups.get(routeKey) ?? [];
+      existing.push(node);
+      httpGroups.set(routeKey, existing);
+    } else {
+      ungrouped.push(node);
+    }
+  }
+
+  const groups: FlowNodeGroup[] = Array.from(httpGroups.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([routeKey, groupNodes]) => ({
+      id: `http:${routeKey}`,
+      kind: 'http' as const,
+      title: routeKey,
+      nodes: [...groupNodes].sort((left, right) => left.id.localeCompare(right.id)),
+    }));
+
+  for (const node of ungrouped.sort((left, right) => left.id.localeCompare(right.id))) {
+    groups.push({
+      id: node.id,
+      kind: 'default',
+      nodes: [node],
+    });
+  }
+
+  return groups;
+}
+
+function buildWorkloadFlowGraph(workload: TraceCorrelationsWorkload) {
+  const inputs: FlowNode[] = workload.inputs.map((group) => ({
+    id: formatAttributes(group.attributes),
+    attributes: group.attributes,
+  }));
+
+  const outputNodes = new Map<string, FlowNode>();
+  const edges: FlowEdge[] = [];
+
+  for (const group of workload.inputs) {
+    const inputId = formatAttributes(group.attributes);
+    for (const output of group.outputs) {
+      const outputId = formatAttributes(output.attributes);
+      if (!outputNodes.has(outputId)) {
+        outputNodes.set(outputId, { id: outputId, attributes: output.attributes });
+      }
+      edges.push({
+        id: connectionRowKey(group.attributes, output),
+        inputId,
+        outputId,
+        connectionCount: output.connectionCount,
+        firstDetectedAt: output.firstDetectedAt,
+      });
+    }
+  }
+
+  const outputs = Array.from(outputNodes.values()).sort((left, right) => left.id.localeCompare(right.id));
+
+  return {
+    inputs: [...inputs].sort((left, right) => left.id.localeCompare(right.id)),
+    outputs,
+    inputGroups: groupFlowNodes(inputs),
+    outputGroups: groupFlowNodes(outputs),
+    edges,
+  };
+}
+
+type FlowHoverPopupAnchor = {
+  x: number;
+  y: number;
+  side: 'inbound' | 'outbound';
+};
+
+type FlowNodeHoverInfo = {
+  node: FlowNode;
+  direction: 'inbound' | 'outbound';
+  title: string;
+  scopeName?: string;
+  summary: string;
+  totalConnections: number;
+  peerCount: number;
+  earliestFirstSeen?: string;
+  fresh: boolean;
+};
+
+function buildFlowNodeHoverInfo(
+  nodeId: string,
+  graph: ReturnType<typeof buildWorkloadFlowGraph>,
+  showFullData: boolean,
+  now: number,
+): FlowNodeHoverInfo | null {
+  const node = graph.inputs.find((entry) => entry.id === nodeId) ?? graph.outputs.find((entry) => entry.id === nodeId);
+  if (!node) {
+    return null;
+  }
+
+  const direction = graph.inputs.some((entry) => entry.id === nodeId) ? 'inbound' : 'outbound';
+  const relatedEdges = graph.edges.filter((edge) => edge.inputId === nodeId || edge.outputId === nodeId);
+  const totalConnections = relatedEdges.reduce((sum, edge) => sum + edge.connectionCount, 0);
+  const peerCount = new Set(
+    relatedEdges.map((edge) => (edge.inputId === nodeId ? edge.outputId : edge.inputId)),
+  ).size;
+
+  let earliestFirstSeen: string | undefined;
+  for (const edge of relatedEdges) {
+    if (!earliestFirstSeen || edge.firstDetectedAt < earliestFirstSeen) {
+      earliestFirstSeen = edge.firstDetectedAt;
+    }
+  }
+
+  return {
+    node,
+    direction,
+    title: getScopeGroupTitle(node.attributes, showFullData),
+    scopeName: getVisibleScopeName(node.attributes, showFullData),
+    summary: summarizeAttributes(node.attributes, showFullData),
+    totalConnections,
+    peerCount,
+    earliestFirstSeen,
+    fresh: earliestFirstSeen ? isFreshConnection(earliestFirstSeen, now) : false,
+  };
+}
+
+function FlowNodeHoverPopup({
+  info,
+  anchor,
+  now,
+  showFullData,
+}: {
+  info: FlowNodeHoverInfo;
+  anchor: FlowHoverPopupAnchor;
+  now: number;
+  showFullData: boolean;
+}) {
+  const visibleAttributes = filterVisibleAttributes(info.node.attributes, showFullData);
+  const peerLabel = info.direction === 'inbound' ? 'outbound' : 'inbound';
+
+  return (
+    <FlowHoverPopup $x={anchor.x} $y={anchor.y} $side={anchor.side}>
+      <FlowHoverPopupTitle>
+        {info.title} · {info.direction === 'inbound' ? 'Inbound' : 'Outbound'}
+      </FlowHoverPopupTitle>
+      {info.scopeName ? <FlowHoverPopupScope>{info.scopeName}</FlowHoverPopupScope> : null}
+      <FlowHoverPopupSummary>{info.summary}</FlowHoverPopupSummary>
+      <FlowHoverPopupStats>
+        <FlowHoverPopupStat $emphasis>{info.totalConnections.toLocaleString()} total connections</FlowHoverPopupStat>
+        <FlowHoverPopupStat>
+          {info.peerCount} linked {peerLabel} pattern{info.peerCount === 1 ? '' : 's'}
+        </FlowHoverPopupStat>
+        {info.earliestFirstSeen ? (
+          <FlowHoverPopupStat $emphasis={info.fresh}>
+            First seen {formatTimestamp(info.earliestFirstSeen)}
+            {formatTimeAgo(info.earliestFirstSeen, now) ? ` (${formatTimeAgo(info.earliestFirstSeen, now)} ago)` : ''}
+          </FlowHoverPopupStat>
+        ) : null}
+      </FlowHoverPopupStats>
+      {visibleAttributes.length ? (
+        <FlowHoverPopupAttributes>
+          {visibleAttributes.map((attr) => (
+            <FlowHoverPopupAttribute key={`${attr.key}:${attr.value}`}>
+              <span style={{ color: '#64748b' }}>{attr.key}: </span>
+              {attr.key === 'db.statement' && looksLikeSqlStatement(attr.value) ? (
+                <SqlHighlightedStatement value={attr.value} />
+              ) : (
+                attr.value
+              )}
+            </FlowHoverPopupAttribute>
+          ))}
+        </FlowHoverPopupAttributes>
+      ) : null}
+    </FlowHoverPopup>
+  );
+}
+
+function getFlowConnectionsForNode(edges: FlowEdge[], nodeId: string | null) {
+  if (!nodeId) {
+    return { edgeIds: new Set<string>(), nodeIds: new Set<string>() };
+  }
+
+  const edgeIds = new Set<string>();
+  const nodeIds = new Set<string>();
+
+  for (const edge of edges) {
+    if (edge.inputId === nodeId || edge.outputId === nodeId) {
+      edgeIds.add(edge.id);
+      nodeIds.add(edge.inputId === nodeId ? edge.outputId : edge.inputId);
+    }
+  }
+
+  return { edgeIds, nodeIds };
+}
+
+function getFlowNodeHighlightState(nodeId: string, activeNodeId: string | null, connectedNodeIds: Set<string>) {
+  if (!activeNodeId) {
+    return { highlighted: false, dimmed: false };
+  }
+  if (nodeId === activeNodeId || connectedNodeIds.has(nodeId)) {
+    return { highlighted: true, dimmed: false };
+  }
+  return { highlighted: false, dimmed: true };
+}
+
+function FlowNodeView({
+  node,
+  variant,
+  showFullData,
+  nodeRef,
+  nested,
+  hideHttpPath,
+  highlighted,
+  dimmed,
+  onHoverStart,
+  onClick,
+}: {
+  node: FlowNode;
+  variant: 'inbound' | 'outbound';
+  showFullData: boolean;
+  nodeRef: (element: HTMLDivElement | null) => void;
+  nested?: boolean;
+  hideHttpPath?: boolean;
+  highlighted?: boolean;
+  dimmed?: boolean;
+  onHoverStart: (event: React.MouseEvent<HTMLDivElement>) => void;
+  onClick: (event: React.MouseEvent<HTMLDivElement>) => void;
+}) {
+  return (
+    <FlowNodeCard
+      ref={nodeRef}
+      $variant={variant}
+      $nested={nested}
+      $highlighted={highlighted}
+      $dimmed={dimmed}
+      onMouseEnter={onHoverStart}
+      onClick={onClick}
+    >
+      <ScopeHeader attributes={node.attributes} direction={variant} showFullData={showFullData} />
+      <FlowNodeDetails>
+        <AttributeChips attributes={node.attributes} showFullData={showFullData} hideHttpPath={hideHttpPath} />
+      </FlowNodeDetails>
+    </FlowNodeCard>
+  );
+}
+
+function FlowNodeGroupView({
+  group,
+  variant,
+  showFullData,
+  onNodeRef,
+  activeNodeId,
+  connectedNodeIds,
+  onNodeHover,
+  onNodeClick,
+}: {
+  group: FlowNodeGroup;
+  variant: 'inbound' | 'outbound';
+  showFullData: boolean;
+  onNodeRef: (nodeId: string, element: HTMLDivElement | null) => void;
+  activeNodeId: string | null;
+  connectedNodeIds: Set<string>;
+  onNodeHover: (nodeId: string, event: React.MouseEvent<HTMLDivElement>, side: 'inbound' | 'outbound') => void;
+  onNodeClick: (nodeId: string, event: React.MouseEvent<HTMLDivElement>) => void;
+}) {
+  if (group.kind === 'default') {
+    const node = group.nodes[0];
+    const { highlighted, dimmed } = getFlowNodeHighlightState(node.id, activeNodeId, connectedNodeIds);
+    return (
+      <FlowNodeView
+        node={node}
+        variant={variant}
+        showFullData={showFullData}
+        highlighted={highlighted}
+        dimmed={dimmed}
+        onHoverStart={(event) => onNodeHover(node.id, event, variant)}
+        onClick={(event) => onNodeClick(node.id, event)}
+        nodeRef={(element) => onNodeRef(node.id, element)}
+      />
+    );
+  }
+
+  return (
+    <FlowHttpGroup $variant={variant}>
+      <FlowHttpGroupHeader>{group.title}</FlowHttpGroupHeader>
+      <FlowHttpGroupMeta>
+        {group.nodes.length} endpoint{group.nodes.length === 1 ? '' : 's'}
+      </FlowHttpGroupMeta>
+      {group.nodes.map((node) => {
+        const { highlighted, dimmed } = getFlowNodeHighlightState(node.id, activeNodeId, connectedNodeIds);
+        return (
+          <FlowNodeView
+            key={node.id}
+            node={node}
+            variant={variant}
+            showFullData={showFullData}
+            nested
+            hideHttpPath
+            highlighted={highlighted}
+            dimmed={dimmed}
+            onHoverStart={(event) => onNodeHover(node.id, event, variant)}
+            onClick={(event) => onNodeClick(node.id, event)}
+            nodeRef={(element) => onNodeRef(node.id, element)}
+          />
+        );
+      })}
+    </FlowHttpGroup>
+  );
+}
+
+function ServiceFlowDiagram({ workload, showFullData }: { workload: TraceCorrelationsWorkload; showFullData: boolean }) {
+  const graph = useMemo(() => buildWorkloadFlowGraph(workload), [workload]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [now, setNow] = useState(() => Date.now());
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [hoverPopupAnchor, setHoverPopupAnchor] = useState<FlowHoverPopupAnchor | null>(null);
+  const [layout, setLayout] = useState<{ width: number; height: number; edges: FlowEdgeLayout[] }>({
+    width: 0,
+    height: 0,
+    edges: [],
+  });
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const measureLayout = useCallback(() => {
+    const container = containerRef.current;
+    if (!container || !graph.edges.length) {
+      return { width: container?.offsetWidth ?? 0, height: container?.offsetHeight ?? 0, edges: [] as FlowEdgeLayout[] };
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const edges = graph.edges
+      .map((edge) => {
+        const fromNode = nodeRefs.current[edge.inputId];
+        const toNode = nodeRefs.current[edge.outputId];
+        if (!fromNode || !toNode) {
+          return null;
+        }
+
+        const fromRect = fromNode.getBoundingClientRect();
+        const toRect = toNode.getBoundingClientRect();
+        const x1 = fromRect.right - containerRect.left;
+        const y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
+        const x2 = toRect.left - containerRect.left;
+        const y2 = toRect.top + toRect.height / 2 - containerRect.top;
+        const controlX = (x1 + x2) / 2;
+
+        return {
+          ...edge,
+          path: `M ${x1} ${y1} C ${controlX} ${y1}, ${controlX} ${y2}, ${x2} ${y2}`,
+          labelX: controlX,
+          labelY: (y1 + y2) / 2,
+          ageLabel: formatTimeAgo(edge.firstDetectedAt, now) || 'unknown',
+          fresh: isFreshConnection(edge.firstDetectedAt, now),
+        };
+      })
+      .filter((edge): edge is FlowEdgeLayout => edge !== null);
+
+    return {
+      width: container.offsetWidth,
+      height: container.offsetHeight,
+      edges,
+    };
+  }, [graph.edges, now]);
+
+  const applyLayout = useCallback(() => {
+    setLayout(measureLayout());
+  }, [measureLayout]);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(applyLayout);
+    return () => cancelAnimationFrame(frame);
+  }, [now, applyLayout]);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return undefined;
+    }
+
+    let frame = requestAnimationFrame(applyLayout);
+
+    const scheduleLayout = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(applyLayout);
+    };
+
+    const resizeObserver = new ResizeObserver(scheduleLayout);
+    resizeObserver.observe(container);
+    window.addEventListener('resize', scheduleLayout);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', scheduleLayout);
+    };
+  }, [applyLayout, graph.inputs, graph.outputs]);
+
+  const inputSummaryById = useMemo(
+    () => new Map(graph.inputs.map((node) => [node.id, summarizeAttributes(node.attributes, showFullData)])),
+    [graph.inputs, showFullData],
+  );
+  const outputSummaryById = useMemo(
+    () => new Map(graph.outputs.map((node) => [node.id, summarizeAttributes(node.attributes, showFullData)])),
+    [graph.outputs, showFullData],
+  );
+
+  const activeNodeId = hoveredNodeId ?? selectedNodeId;
+
+  const { edgeIds: connectedEdgeIds, nodeIds: connectedNodeIds } = useMemo(
+    () => getFlowConnectionsForNode(graph.edges, activeNodeId),
+    [graph.edges, activeNodeId],
+  );
+
+  const highlightActive = activeNodeId !== null;
+
+  const hoveredNodeInfo = useMemo(() => {
+    if (!hoveredNodeId) {
+      return null;
+    }
+    return buildFlowNodeHoverInfo(hoveredNodeId, graph, showFullData, now);
+  }, [hoveredNodeId, graph, showFullData, now]);
+
+  const handleNodeHover = useCallback(
+    (nodeId: string, event: React.MouseEvent<HTMLDivElement>, side: 'inbound' | 'outbound') => {
+      setHoveredNodeId(nodeId);
+      const container = containerRef.current;
+      const target = event.currentTarget;
+      if (!container || !target) {
+        return;
+      }
+
+      const containerRect = container.getBoundingClientRect();
+      const nodeRect = target.getBoundingClientRect();
+      setHoverPopupAnchor({
+        x: side === 'inbound' ? nodeRect.right - containerRect.left : nodeRect.left - containerRect.left,
+        y: nodeRect.top + nodeRect.height / 2 - containerRect.top,
+        side,
+      });
+    },
+    [],
+  );
+
+  const handleNodeClick = useCallback((nodeId: string, event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    setSelectedNodeId((current) => (current === nodeId ? null : nodeId));
+  }, []);
+
+  const clearHover = useCallback(() => {
+    setHoveredNodeId(null);
+    setHoverPopupAnchor(null);
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedNodeId(null);
+  }, []);
+
+  if (!graph.inputs.length) {
+    return <HiddenAttributesNote>No connection patterns to visualize yet.</HiddenAttributesNote>;
+  }
+
+  return (
+    <FlowDiagramWrapper>
+      <FlowDiagramContainer ref={containerRef} onMouseLeave={clearHover} onClick={clearSelection}>
+        {hoveredNodeInfo && hoverPopupAnchor ? (
+          <FlowNodeHoverPopup info={hoveredNodeInfo} anchor={hoverPopupAnchor} now={now} showFullData={showFullData} />
+        ) : null}
+
+        {layout.width > 0 && layout.height > 0 ? (
+          <FlowSvg viewBox={`0 0 ${layout.width} ${layout.height}`} preserveAspectRatio='none'>
+            {layout.edges.map((edge) => {
+              const highlighted = !highlightActive || connectedEdgeIds.has(edge.id);
+              return (
+                <path
+                  key={edge.id}
+                  d={edge.path}
+                  fill='none'
+                  stroke={highlighted ? (edge.fresh ? 'rgba(34, 211, 238, 0.9)' : 'rgba(148, 163, 184, 0.65)') : 'rgba(148, 163, 184, 0.14)'}
+                  strokeWidth={highlighted ? (edge.fresh ? 3 : 2.5) : 1.25}
+                  strokeOpacity={highlighted ? 1 : 0.35}
+                />
+              );
+            })}
+          </FlowSvg>
+        ) : null}
+
+        {layout.edges.map((edge) => {
+          const highlighted = !highlightActive || connectedEdgeIds.has(edge.id);
+          return (
+            <FlowEdgeLabelBox
+              key={`label-${edge.id}`}
+              $fresh={edge.fresh}
+              $highlighted={highlighted}
+              $dimmed={highlightActive && !highlighted}
+              $x={edge.labelX}
+              $y={edge.labelY}
+            >
+              {edge.connectionCount.toLocaleString()} · {edge.ageLabel}
+            </FlowEdgeLabelBox>
+          );
+        })}
+
+        <FlowDiagramGrid>
+          <FlowColumn $side='inbound'>
+            <FlowColumnTitle $variant='inbound' $align='start'>
+              Inbound
+            </FlowColumnTitle>
+            {graph.inputGroups.map((group) => (
+              <FlowNodeGroupView
+                key={group.id}
+                group={group}
+                variant='inbound'
+                showFullData={showFullData}
+                activeNodeId={activeNodeId}
+                connectedNodeIds={connectedNodeIds}
+                onNodeHover={handleNodeHover}
+                onNodeClick={handleNodeClick}
+                onNodeRef={(nodeId, element) => {
+                  nodeRefs.current[nodeId] = element;
+                  if (element) {
+                    requestAnimationFrame(applyLayout);
+                  }
+                }}
+              />
+            ))}
+          </FlowColumn>
+
+          <FlowConnectionLane aria-hidden='true' />
+
+          <FlowMobileEdgeList aria-hidden='true'>
+            {graph.edges.map((edge) => {
+              const ageLabel = formatTimeAgo(edge.firstDetectedAt, now) || 'unknown';
+              const fresh = isFreshConnection(edge.firstDetectedAt, now);
+              return (
+                <FlowMobileEdge key={`mobile-${edge.id}`} $fresh={fresh}>
+                  {inputSummaryById.get(edge.inputId)} → {outputSummaryById.get(edge.outputId)}
+                  <br />
+                  {edge.connectionCount.toLocaleString()} · {ageLabel}
+                </FlowMobileEdge>
+              );
+            })}
+          </FlowMobileEdgeList>
+
+          <FlowColumn $side='outbound'>
+            <FlowColumnTitle $variant='outbound' $align='end'>
+              Outbound
+            </FlowColumnTitle>
+            {graph.outputGroups.map((group) => (
+              <FlowNodeGroupView
+                key={group.id}
+                group={group}
+                variant='outbound'
+                showFullData={showFullData}
+                activeNodeId={activeNodeId}
+                connectedNodeIds={connectedNodeIds}
+                onNodeHover={handleNodeHover}
+                onNodeClick={handleNodeClick}
+                onNodeRef={(nodeId, element) => {
+                  nodeRefs.current[nodeId] = element;
+                  if (element) {
+                    requestAnimationFrame(applyLayout);
+                  }
+                }}
+              />
+            ))}
+          </FlowColumn>
+        </FlowDiagramGrid>
+      </FlowDiagramContainer>
+    </FlowDiagramWrapper>
+  );
 }
 
 function ConnectionRow({
@@ -1243,10 +2259,10 @@ function ConnectionRow({
 }
 
 function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInputGroup; showFullData: boolean }) {
-  const [expanded, setExpanded] = useState(true);
-  const outboundScopeGroups = useMemo(() => groupOutputsByScope(group.outputs), [group.outputs]);
-  const inboundTitle = useMemo(() => getScopeGroupTitle(group.attributes), [group.attributes]);
-  const inboundScopeName = useMemo(() => getScopeName(group.attributes), [group.attributes]);
+  const [expanded, setExpanded] = useState(false);
+  const outboundScopeGroups = useMemo(() => groupOutputsByScope(group.outputs, showFullData), [group.outputs, showFullData]);
+  const inboundTitle = useMemo(() => getScopeGroupTitle(group.attributes, showFullData), [group.attributes, showFullData]);
+  const inboundScopeName = useMemo(() => getVisibleScopeName(group.attributes, showFullData), [group.attributes, showFullData]);
 
   return (
     <InputGroupCard>
@@ -1275,7 +2291,7 @@ function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInput
       {expanded ? (
         <FlowBody>
           <InboundPanel>
-            <ScopeHeader attributes={group.attributes} direction='inbound' />
+            <ScopeHeader attributes={group.attributes} direction='inbound' showFullData={showFullData} />
             <AttributeChips attributes={group.attributes} showFullData={showFullData} />
           </InboundPanel>
 
@@ -1288,7 +2304,7 @@ function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInput
           <ScopeGroupList>
             {outboundScopeGroups.map(([scopeName, outputs]) => (
               <ScopeSection key={scopeName}>
-                <ScopeHeader attributes={outputs[0].attributes} direction='outbound' />
+                <ScopeHeader attributes={outputs[0].attributes} direction='outbound' showFullData={showFullData} />
                 <OutputFlowList>
                   {outputs.map((output) => (
                     <ConnectionRow
@@ -1308,7 +2324,8 @@ function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInput
 }
 
 function WorkloadCardView({ workload, showFullData }: { workload: TraceCorrelationsWorkload; showFullData: boolean }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const [viewMode, setViewMode] = useState<'graph' | 'details'>('graph');
   const stats = workloadStats(workload);
 
   return (
@@ -1348,21 +2365,70 @@ function WorkloadCardView({ workload, showFullData }: { workload: TraceCorrelati
       </WorkloadHeader>
 
       {expanded ? (
-        <InputGroupList>
-          {workload.inputs.map((input) => (
-            <InputGroupView key={formatAttributes(input.attributes)} group={input} showFullData={showFullData} />
-          ))}
-        </InputGroupList>
+        <>
+          <ViewModeBar>
+            <ToggleButton
+              type='button'
+              $active={viewMode === 'graph'}
+              onClick={(event) => {
+                event.stopPropagation();
+                setViewMode('graph');
+              }}
+            >
+              Graph
+            </ToggleButton>
+            <ToggleButton
+              type='button'
+              $active={viewMode === 'details'}
+              onClick={(event) => {
+                event.stopPropagation();
+                setViewMode('details');
+              }}
+            >
+              Details
+            </ToggleButton>
+          </ViewModeBar>
+
+          {viewMode === 'graph' ? (
+            <ServiceFlowDiagram workload={workload} showFullData={showFullData} />
+          ) : (
+            <InputGroupList>
+              {workload.inputs.map((input) => (
+                <InputGroupView key={formatAttributes(input.attributes)} group={input} showFullData={showFullData} />
+              ))}
+            </InputGroupList>
+          )}
+        </>
       ) : null}
     </WorkloadCard>
   );
 }
 
+function createDefaultCustomRange(now = Date.now()) {
+  const end = new Date(now);
+  const start = new Date(now - 60 * 60 * 1000);
+  return {
+    start: toDatetimeLocalValue(start),
+    end: toDatetimeLocalValue(end),
+  };
+}
+
 export default function TraceCorrelationsPage() {
   const [namespaceFilter, setNamespaceFilter] = useState('');
   const [showFullData, setShowFullData] = useState(false);
+  const [timePreset, setTimePreset] = useState<TraceCorrelationsTimePreset>('1h');
+  const [customStart, setCustomStart] = useState(() => createDefaultCustomRange().start);
+  const [customEnd, setCustomEnd] = useState(() => createDefaultCustomRange().end);
+  const [queryAnchor, setQueryAnchor] = useState(() => Date.now());
   const filter = namespaceFilter.trim() ? { namespace: namespaceFilter.trim() } : undefined;
-  const { workloads, loading, error, refetch } = useTraceCorrelations(filter);
+  const timeRange = useMemo(
+    () => resolveTraceCorrelationsTimeRange({ preset: timePreset, customStart, customEnd, now: queryAnchor }),
+    [timePreset, customStart, customEnd, queryAnchor],
+  );
+  const { workloads, loading, error, refetch } = useTraceCorrelations(filter, timeRange);
+
+  const customRangeInvalid = timePreset === 'custom' && !timeRange;
+  const dataCoverageLabel = timeRange ? formatTraceCorrelationsTimeRangeLabel(timeRange) : null;
 
   const totals = useMemo(() => {
     const connections = workloads.reduce((sum, workload) => sum + workloadStats(workload).connections, 0);
@@ -1377,13 +2443,73 @@ export default function TraceCorrelationsPage() {
   return (
     <Page>
       <Shell>
+        <TimeRangeBar>
+          <TimeRangeLabel>Time range</TimeRangeLabel>
+          <TimeRangePresets>
+            {TRACE_CORRELATIONS_TIME_PRESETS.map((preset) => (
+              <ToggleButton
+                key={preset.id}
+                type='button'
+                $active={timePreset === preset.id}
+                onClick={() => {
+                  setQueryAnchor(Date.now());
+                  setTimePreset(preset.id);
+                }}
+              >
+                {preset.label}
+              </ToggleButton>
+            ))}
+            <ToggleButton
+              type='button'
+              $active={timePreset === 'custom'}
+              onClick={() => {
+                const defaults = createDefaultCustomRange();
+                setCustomStart(defaults.start);
+                setCustomEnd(defaults.end);
+                setTimePreset('custom');
+              }}
+            >
+              Custom
+            </ToggleButton>
+          </TimeRangePresets>
+          {timePreset === 'custom' ? (
+            <TimeRangeCustomFields>
+              <TimeRangeField>
+                From
+                <DateTimeInput
+                  type='datetime-local'
+                  value={customStart}
+                  onChange={(event) => setCustomStart(event.target.value)}
+                />
+              </TimeRangeField>
+              <TimeRangeField>
+                To
+                <DateTimeInput
+                  type='datetime-local'
+                  value={customEnd}
+                  onChange={(event) => setCustomEnd(event.target.value)}
+                />
+              </TimeRangeField>
+            </TimeRangeCustomFields>
+          ) : null}
+          <TimeRangeHint>Use Refresh to load the latest data for the selected range.</TimeRangeHint>
+          {customRangeInvalid ? <TimeRangeError>End time must be after start time.</TimeRangeError> : null}
+        </TimeRangeBar>
+
+        {dataCoverageLabel ? (
+          <DataCoverageBanner>
+            <DataCoverageLabel>{dataCoverageLabel}</DataCoverageLabel>
+          </DataCoverageBanner>
+        ) : null}
+
         <Hero>
           <div>
             <Eyebrow>Trace Correlations</Eyebrow>
             <Title>Service I/O Connections</Title>
             <Subtitle>
-              Live view of inbound-to-outbound span correlations emitted by the serviceio connector. Each card groups a
-              workload, its inbound attribute patterns, and the outbound patterns they connect to.
+              Inbound-to-outbound span correlations emitted by the serviceio connector for the selected time window.
+              Each service card shows a graph of input and output patterns with connection counts and age, or switch to
+              Details for the full breakdown.
             </Subtitle>
           </div>
 
@@ -1396,7 +2522,15 @@ export default function TraceCorrelationsPage() {
             <ToggleButton $active={showFullData} onClick={() => setShowFullData((current) => !current)}>
               {showFullData ? 'Hide metadata' : 'View full data'}
             </ToggleButton>
-            <Button onClick={() => refetch()} disabled={loading}>
+            <Button
+              onClick={() => {
+                if (timePreset !== 'custom') {
+                  setQueryAnchor(Date.now());
+                }
+                refetch();
+              }}
+              disabled={loading || customRangeInvalid}
+            >
               {loading ? 'Refreshing…' : 'Refresh'}
             </Button>
           </Toolbar>
@@ -1425,10 +2559,16 @@ export default function TraceCorrelationsPage() {
           </ErrorState>
         ) : null}
 
-        {loading && !workloads.length ? <LoadingState>Loading trace correlations…</LoadingState> : null}
+        {!customRangeInvalid && loading && !workloads.length && timeRange ? (
+          <LoadingState>Loading trace correlations…</LoadingState>
+        ) : null}
 
-        {!loading && !error && !workloads.length ? (
+        {!customRangeInvalid && !loading && !error && !workloads.length && timeRange ? (
           <EmptyState>No trace correlation data found yet. Make sure trace correlations are enabled and traffic is flowing.</EmptyState>
+        ) : null}
+
+        {customRangeInvalid ? (
+          <EmptyState>Select a valid custom time range to load trace correlations.</EmptyState>
         ) : null}
 
         <WorkloadGrid>

@@ -70,8 +70,8 @@ func TestAggregateSeriesAcrossCollectorInstances(t *testing.T) {
 	}
 
 	firstSeen := map[string]time.Time{
-		sharedLabels("a").String(): time.Date(2026, 6, 13, 10, 0, 0, 0, time.UTC),
-		sharedLabels("b").String(): time.Date(2026, 6, 13, 9, 30, 0, 0, time.UTC),
+		mustSeriesIdentityKey(t, sharedLabels("a")): time.Date(2026, 6, 13, 10, 0, 0, 0, time.UTC),
+		mustSeriesIdentityKey(t, sharedLabels("b")): time.Date(2026, 6, 13, 9, 30, 0, 0, time.UTC),
 	}
 
 	result := aggregateSeries(counts, firstSeen, nil)
@@ -144,4 +144,54 @@ func TestMatchesFilter(t *testing.T) {
 
 func strPtr(value string) *string {
 	return &value
+}
+
+func mustSeriesIdentityKey(t *testing.T, labels prommodel.Metric) string {
+	t.Helper()
+	key, ok := seriesIdentityKey(labels)
+	require.True(t, ok)
+	return key
+}
+
+func TestFirstSeenMatchesAcrossLabelFormats(t *testing.T) {
+	queryLabels := prommodel.Metric{
+		"__name__":            "traces_service_io_connection_total",
+		"k8s_namespace_name":  "default",
+		"k8s_container_name":  "app",
+		"k8s_deployment_name": "checkout",
+		"input_http_route":    "/login",
+		"output_db_system":    "postgresql",
+		"odigos_collector_instance_id": "a",
+	}
+
+	exportLabels := prommodel.Metric{
+		"__name__":                   "traces_service_io_connection_total",
+		"k8s.namespace.name":         "default",
+		"k8s.container.name":         "app",
+		"k8s.deployment.name":        "checkout",
+		"input.http.route":           "/login",
+		"output.db.system":           "postgresql",
+		"odigos.collector.instance.id": "b",
+	}
+
+	queryKey, ok := seriesIdentityKey(queryLabels)
+	require.True(t, ok)
+	exportKey, ok := seriesIdentityKey(exportLabels)
+	require.True(t, ok)
+	require.Equal(t, queryKey, exportKey)
+
+	firstSeen := map[string]time.Time{
+		exportKey: time.Date(2026, 6, 13, 9, 30, 0, 0, time.UTC),
+	}
+
+	result := aggregateSeries(prommodel.Vector{
+		&prommodel.Sample{Metric: queryLabels, Value: 4},
+	}, firstSeen, nil)
+
+	require.Len(t, result, 1)
+	for _, byOutput := range result {
+		for _, series := range byOutput {
+			require.Equal(t, time.Date(2026, 6, 13, 9, 30, 0, 0, time.UTC), series.firstDetected)
+		}
+	}
 }

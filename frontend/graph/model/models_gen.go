@@ -1659,6 +1659,11 @@ type TraceCorrelationsOutputSeries struct {
 	FirstDetectedAt string                     `json:"firstDetectedAt"`
 }
 
+type TraceCorrelationsTimeRangeInput struct {
+	Start string `json:"start"`
+	End   string `json:"end"`
+}
+
 type TraceCorrelationsWorkload struct {
 	Namespace     string                         `json:"namespace"`
 	Kind          K8sResourceKind                `json:"kind"`

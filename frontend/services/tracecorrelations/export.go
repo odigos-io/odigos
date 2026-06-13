@@ -27,8 +27,8 @@ type exportRow struct {
 // queryFirstSeenFromExport reads historical samples from VictoriaMetrics and returns
 // the earliest timestamp per time series. MetricsQL tfirst() is unavailable on the
 // correlations store, so export is used instead.
-func queryFirstSeenFromExport(ctx context.Context, baseURL string, start time.Time) (map[string]time.Time, error) {
-	exportURL, err := exportURL(baseURL, start)
+func queryFirstSeenFromExport(ctx context.Context, baseURL string, start, end time.Time) (map[string]time.Time, error) {
+	exportURL, err := exportURL(baseURL, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -53,15 +53,16 @@ func queryFirstSeenFromExport(ctx context.Context, baseURL string, start time.Ti
 	return parseExportFirstSeen(resp.Body)
 }
 
-func exportURL(baseURL string, start time.Time) (string, error) {
+func exportURL(baseURL string, start, end time.Time) (string, error) {
 	parsed, err := url.Parse(baseURL)
 	if err != nil {
 		return "", fmt.Errorf("parse metrics store URL: %w", err)
 	}
 
 	query := parsed.Query()
-	query.Set("match[]", metricNameConnectionTotal)
+	query.Set("match[]", metricSelector)
 	query.Set("start", start.UTC().Format(time.RFC3339))
+	query.Set("end", end.UTC().Format(time.RFC3339))
 	parsed.RawQuery = query.Encode()
 	parsed.Path = "/api/v1/export"
 	return parsed.String(), nil
@@ -83,8 +84,15 @@ func parseExportFirstSeen(r io.Reader) (map[string]time.Time, error) {
 		}
 
 		labels := metricLabelsToPromModel(row.Metric)
-		detectedAt := time.UnixMilli(row.Timestamps[0]).UTC()
-		key := labels.String()
+		key, ok := seriesIdentityKey(labels)
+		if !ok {
+			continue
+		}
+
+		detectedAt := earliestExportTimestamp(row.Timestamps)
+		if detectedAt.IsZero() {
+			continue
+		}
 
 		if existing, ok := firstSeen[key]; !ok || detectedAt.Before(existing) {
 			firstSeen[key] = detectedAt
@@ -96,6 +104,17 @@ func parseExportFirstSeen(r io.Reader) (map[string]time.Time, error) {
 	}
 
 	return firstSeen, nil
+}
+
+func earliestExportTimestamp(timestamps []int64) time.Time {
+	var earliest time.Time
+	for _, timestamp := range timestamps {
+		detectedAt := time.UnixMilli(timestamp).UTC()
+		if earliest.IsZero() || detectedAt.Before(earliest) {
+			earliest = detectedAt
+		}
+	}
+	return earliest
 }
 
 func metricLabelsToPromModel(labels map[string]string) prommodel.Metric {

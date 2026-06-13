@@ -1,6 +1,7 @@
 package tracecorrelations
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -125,6 +126,28 @@ func attributeSignature(attrs map[string]string) string {
 		parts = append(parts, key+"="+attrs[key])
 	}
 	return strings.Join(parts, "\x00")
+}
+
+// seriesIdentityKey returns a stable key for a connection series, ignoring volatile
+// labels such as collector instance id and normalizing dot/underscore label variants.
+func seriesIdentityKey(labels prommodel.Metric) (string, bool) {
+	workload, ok := workloadFromMetric(labels)
+	if !ok {
+		return "", false
+	}
+
+	input := attributeGroupFromMetric(labels, inputAttributePrefix)
+	output := attributeGroupFromMetric(labels, outputAttributePrefix)
+
+	return fmt.Sprintf(
+		"%s\x00%s\x00%s\x00%s\x00%s\x00%s",
+		workload.namespace,
+		workload.kind,
+		workload.name,
+		workload.container,
+		input.sig,
+		output.sig,
+	), true
 }
 
 func labelValue(labels prommodel.Metric, keys ...string) string {

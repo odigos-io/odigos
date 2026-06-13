@@ -1183,7 +1183,7 @@ type ComplexityRoot struct {
 		RemoteConfig                      func(childComplexity int) int
 		Sampling                          func(childComplexity int) int
 		SourceConditions                  func(childComplexity int) int
-		TraceCorrelations                 func(childComplexity int, filter *model.WorkloadFilter) int
+		TraceCorrelations                 func(childComplexity int, filter *model.WorkloadFilter, timeRange *model.TraceCorrelationsTimeRangeInput) int
 		Workloads                         func(childComplexity int, filter *model.WorkloadFilter) int
 		WorkloadsByIds                    func(childComplexity int, ids []*model.K8sWorkloadIDInput) int
 	}
@@ -1533,7 +1533,7 @@ type QueryResolver interface {
 	Pod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
 	ProfilingSlots(ctx context.Context) (*model.ProfilingSlots, error)
 	Sampling(ctx context.Context) (*model.Sampling, error)
-	TraceCorrelations(ctx context.Context, filter *model.WorkloadFilter) (*model.TraceCorrelations, error)
+	TraceCorrelations(ctx context.Context, filter *model.WorkloadFilter, timeRange *model.TraceCorrelationsTimeRangeInput) (*model.TraceCorrelations, error)
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
 	WorkloadsByIds(ctx context.Context, ids []*model.K8sWorkloadIDInput) ([]*model.K8sWorkload, error)
 	Namespaces(ctx context.Context) ([]*model.K8sNamespace, error)
@@ -6842,7 +6842,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TraceCorrelations(childComplexity, args["filter"].(*model.WorkloadFilter)), true
+		return e.complexity.Query.TraceCorrelations(childComplexity, args["filter"].(*model.WorkloadFilter), args["timeRange"].(*model.TraceCorrelationsTimeRangeInput)), true
 
 	case "Query.workloads":
 		if e.complexity.Query.Workloads == nil {
@@ -7760,6 +7760,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputTailSamplingKafkaMatcherInput,
 		ec.unmarshalInputTailSamplingOperationMatcherInput,
 		ec.unmarshalInputTemplatizationWorkloadFilterInput,
+		ec.unmarshalInputTraceCorrelationsTimeRangeInput,
 		ec.unmarshalInputURLTemplatizationRuleInput,
 		ec.unmarshalInputUrlTemplatizationRulesGroupInput,
 		ec.unmarshalInputWorkloadFilter,
@@ -9983,6 +9984,11 @@ func (ec *executionContext) field_Query_traceCorrelations_args(ctx context.Conte
 		return nil, err
 	}
 	args["filter"] = arg0
+	arg1, err := ec.field_Query_traceCorrelations_argsTimeRange(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["timeRange"] = arg1
 	return args, nil
 }
 func (ec *executionContext) field_Query_traceCorrelations_argsFilter(
@@ -10000,6 +10006,24 @@ func (ec *executionContext) field_Query_traceCorrelations_argsFilter(
 	}
 
 	var zeroVal *model.WorkloadFilter
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_traceCorrelations_argsTimeRange(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*model.TraceCorrelationsTimeRangeInput, error) {
+	if _, ok := rawArgs["timeRange"]; !ok {
+		var zeroVal *model.TraceCorrelationsTimeRangeInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("timeRange"))
+	if tmp, ok := rawArgs["timeRange"]; ok {
+		return ec.unmarshalOTraceCorrelationsTimeRangeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsTimeRangeInput(ctx, tmp)
+	}
+
+	var zeroVal *model.TraceCorrelationsTimeRangeInput
 	return zeroVal, nil
 }
 
@@ -44114,7 +44138,7 @@ func (ec *executionContext) _Query_traceCorrelations(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TraceCorrelations(rctx, fc.Args["filter"].(*model.WorkloadFilter))
+		return ec.resolvers.Query().TraceCorrelations(rctx, fc.Args["filter"].(*model.WorkloadFilter), fc.Args["timeRange"].(*model.TraceCorrelationsTimeRangeInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -54522,6 +54546,40 @@ func (ec *executionContext) unmarshalInputTemplatizationWorkloadFilterInput(ctx 
 				return it, err
 			}
 			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTraceCorrelationsTimeRangeInput(ctx context.Context, obj any) (model.TraceCorrelationsTimeRangeInput, error) {
+	var it model.TraceCorrelationsTimeRangeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"start", "end"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "start":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Start = data
+		case "end":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.End = data
 		}
 	}
 
@@ -72344,6 +72402,14 @@ func (ec *executionContext) unmarshalOTemplatizationWorkloadFilterInput2ᚕᚖgi
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) unmarshalOTraceCorrelationsTimeRangeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsTimeRangeInput(ctx context.Context, v any) (*model.TraceCorrelationsTimeRangeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputTraceCorrelationsTimeRangeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUIMode(ctx context.Context, v any) (*model.UIMode, error) {
