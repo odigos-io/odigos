@@ -2,6 +2,7 @@ package serviceioconnector
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -23,6 +24,7 @@ type serviceioConnector struct {
 	metricsFlushInterval time.Duration
 	logger               *zap.Logger
 	metricsConsumer      consumer.Metrics
+	collectorInstanceID  string
 
 	odigosConfig             odigoscollector.OdigosConfigExtension
 	workloadIdentityResolver completetrace.WorkloadIdentityResolver
@@ -45,6 +47,11 @@ func newConnector(set component.TelemetrySettings, cfg component.Config, next co
 		set.Logger.Warn("metrics_flush_interval is set to 0, metrics will be flushed on every received batch of traces")
 	}
 
+	collectorInstanceID := collectorInstanceIDFromResource(set.Resource)
+	if collectorInstanceID == "" {
+		return nil, errors.New("unable to determine collector instance ID of collector instance")
+	}
+
 	return &serviceioConnector{
 		config:               typedCfg,
 		inputSpanAttributes:  normalizeSpanAttributes(typedCfg.InputSpanAttributes),
@@ -52,6 +59,7 @@ func newConnector(set component.TelemetrySettings, cfg component.Config, next co
 		metricsFlushInterval: typedCfg.resolvedMetricsFlushInterval(),
 		logger:               set.Logger,
 		metricsConsumer:      next,
+		collectorInstanceID:  collectorInstanceID,
 		startTime:            time.Now(),
 		keyToMetric:          make(map[uint64]metricSeries),
 		shutdownCh:           make(chan struct{}),
@@ -59,6 +67,9 @@ func newConnector(set component.TelemetrySettings, cfg component.Config, next co
 }
 
 func (c *serviceioConnector) Start(ctx context.Context, host component.Host) error {
+	c.startTime = time.Now()
+	c.keyToMetric = make(map[uint64]metricSeries)
+
 	if c.config.OdigosConfigExtension == nil {
 		c.logger.Warn("odigos_config_extension unset; service I/O metrics will not be computed")
 		return nil
@@ -70,6 +81,7 @@ func (c *serviceioConnector) Start(ctx context.Context, host component.Host) err
 
 	go c.metricFlushLoop(c.metricsFlushInterval)
 	c.logger.Info("serviceio connector started",
+		zap.String("collector_instance", c.collectorInstanceID),
 		zap.Duration("metrics_flush_interval", c.metricsFlushInterval),
 		zap.Int("input_span_attributes_count", len(c.inputSpanAttributes)),
 		zap.Int("output_span_attributes_count", len(c.outputSpanAttributes)),

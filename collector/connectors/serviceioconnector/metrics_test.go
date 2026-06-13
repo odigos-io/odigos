@@ -14,9 +14,10 @@ import (
 
 func TestBuildMetrics(t *testing.T) {
 	connector := &serviceioConnector{
-		config:      &Config{},
-		startTime:   time.Unix(1700000000, 0),
-		keyToMetric: make(map[uint64]metricSeries),
+		config:              &Config{},
+		startTime:           time.Unix(1700000000, 0),
+		keyToMetric:         make(map[uint64]metricSeries),
+		collectorInstanceID: "odigos-gateway-test-pod",
 	}
 
 	inputAttrs := pcommon.NewMap()
@@ -47,6 +48,10 @@ func TestBuildMetrics(t *testing.T) {
 	serviceName, ok := dp.Attributes().Get(string(semconv.ServiceNameKey))
 	require.True(t, ok)
 	require.Equal(t, "svc-1", serviceName.Str())
+
+	instanceID, ok := dp.Attributes().Get(collectorInstanceAttributeId)
+	require.True(t, ok)
+	require.Equal(t, "odigos-gateway-test-pod", instanceID.Str())
 }
 
 func TestConnectionAttributes_IsDeterministic(t *testing.T) {

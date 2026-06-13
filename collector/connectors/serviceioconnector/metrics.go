@@ -69,6 +69,7 @@ func (c *serviceioConnector) buildMetrics() (pmetric.Metrics, error) {
 		dp.SetTimestamp(pcommon.NewTimestampFromTime(c.nowWithOffset()))
 		dp.SetIntValue(series.count)
 		series.dimensions.CopyTo(dp.Attributes())
+		dp.Attributes().PutStr(collectorInstanceAttributeId, c.collectorInstanceID)
 	}
 
 	return m, nil

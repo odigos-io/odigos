@@ -3,10 +3,9 @@ package serviceioconnector
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
-	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
-
 	"github.com/odigos-io/odigos/collector/connectors/serviceioconnector/internal/metadata"
 	"github.com/odigos-io/odigos/collector/pkg/completetrace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 )
 
 const (
@@ -14,6 +13,8 @@ const (
 	serviceNameAttribute      = string(semconv.ServiceNameKey)
 	inputAttributePrefix      = "input."
 	outputAttributePrefix     = "output."
+	// Identifies the collector pod/process that produced the metric (distinct from workload k8s.pod.name on spans).
+	collectorInstanceAttributeId = "odigos.collector.instance.id"
 )
 
 func buildServiceInstanceBaseAttributes(instance *completetrace.ServiceInstance, inputAttrs pcommon.Map) pcommon.Map {
@@ -26,9 +27,9 @@ func buildServiceInstanceBaseAttributes(instance *completetrace.ServiceInstance,
 	return attributes
 }
 
-func buildConnectionAttributes(inputAttributes, outputAttrs pcommon.Map) (uint64, pcommon.Map) {
+func buildConnectionAttributes(inputAnrResourceAttributes, outputAttrs pcommon.Map) (uint64, pcommon.Map) {
 	attributes := pcommon.NewMap()
-	inputAttributes.CopyTo(attributes)
+	inputAnrResourceAttributes.CopyTo(attributes)
 	mergeAttributes(outputAttrs, attributes)
 	return hashAttributes(attributes), attributes
 }
