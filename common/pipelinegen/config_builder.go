@@ -28,6 +28,12 @@ type GatewayConfigOptions struct {
 	TraceAggregationWaitDuration *string
 	SamplingDryRun               bool
 	SamplingSpanAttributes       *sampling.SpanSamplingAttributesConfiguration
+
+	// groupbytrace processor with sampling v2 so a trace is assembled at
+	// most once on the gateway, regardless of which consumers asked for it.
+	// Passed as the full config (not a bool) so future toggles on the same
+	// feature can be added without changing this surface.
+	Insights *common.InsightsConfiguration
 }
 
 func GetGatewayConfig(
@@ -85,14 +91,26 @@ func CalculateGatewayConfig(
 		currentConfig.Processors[processorKey] = processorCfg
 	}
 
-	// If sampling v2 is enabled, we need to add the groupbytrace processor to the traces processors.
-	if gatewayOptions.SamplingEnabled != nil && *gatewayOptions.SamplingEnabled && gatewayOptions.OdigosConfigExtensionName != nil {
-		processorsNames, processorsConfig := getTailSamplingProcessors(gatewayOptions)
-		for name, cfg := range processorsConfig {
-			currentConfig.Processors[name] = cfg
+	// groupbytrace is shared across consumers that need fully assembled traces
+	// on the root traces pipeline:
+	//   - sampling v2 (tail sampler can't decide on individual spans)
+	//   - the optional side-channel exporter tapped onto the root pipeline [odigos-insights]
+	// Tail sampling itself stays gated strictly on SamplingEnabled so that
+	// turning on the side-channel never starts dropping spans.
+	if gatewayOptions.OdigosConfigExtensionName != nil {
+		samplingOn := gatewayOptions.SamplingEnabled != nil && *gatewayOptions.SamplingEnabled
+		insightsOn := common.InsightsPipelineActive(gatewayOptions.Insights)
+		if samplingOn || insightsOn {
+			currentConfig.Processors[consts.GroupByTraceProcessorV2] = config.GenericMap{
+				"wait_duration": gatewayOptions.TraceAggregationWaitDuration,
+			}
+			sharedTraceProcessors := []string{consts.GroupByTraceProcessorV2}
+			if samplingOn {
+				currentConfig.Processors[consts.OdigosTailSamplingProcessorName] = getTailSamplingProcessorConfig(gatewayOptions)
+				sharedTraceProcessors = append(sharedTraceProcessors, consts.OdigosTailSamplingProcessorName)
+			}
+			processorsResults.TracesProcessors = append(sharedTraceProcessors, processorsResults.TracesProcessors...)
 		}
-		// apend processors to the front of the pipeline. this should be revisited.
-		processorsResults.TracesProcessors = append(processorsNames, processorsResults.TracesProcessors...)
 	}
 
 	allTracesProcessors := make([]string, 0, len(processorsResults.TracesProcessors)+len(processorsResults.TracesProcessorsPostSpanMetrics))
@@ -468,7 +486,7 @@ func insertClusterMetricsResources(currentConfig *config.Config, odigosNs string
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
 }
 
-func getTailSamplingProcessors(gatewayOptions *GatewayConfigOptions) ([]string, map[string]config.GenericMap) {
+func getTailSamplingProcessorConfig(gatewayOptions *GatewayConfigOptions) config.GenericMap {
 	tailSamplingProcessorCfg := config.GenericMap{
 		"odigos_config_extension": *gatewayOptions.OdigosConfigExtensionName,
 	}
@@ -491,16 +509,5 @@ func getTailSamplingProcessors(gatewayOptions *GatewayConfigOptions) ([]string, 
 		}
 		tailSamplingProcessorCfg["span_sampling_attributes"] = spanSamplingAttributesCfg
 	}
-
-	processors := map[string]config.GenericMap{
-		consts.GroupByTraceProcessorV2: {
-			"wait_duration": gatewayOptions.TraceAggregationWaitDuration,
-		},
-		consts.OdigosTailSamplingProcessorName: tailSamplingProcessorCfg,
-	}
-
-	// add the groupbytrace processor to the beginning of the traces processors
-	samplingProcessors := []string{consts.GroupByTraceProcessorV2, consts.OdigosTailSamplingProcessorName}
-
-	return samplingProcessors, processors
+	return tailSamplingProcessorCfg
 }

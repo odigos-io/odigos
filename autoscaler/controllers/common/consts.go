@@ -19,3 +19,12 @@ const (
 	// Cluster gateway profiles pipeline — OTLP in from nodes, export to UI (no extra processors).
 	ProfilingGatewayToUIExporter = "otlp_grpc/profiles-to-ui"
 )
+
+// OpenTelemetry component instance name for the side-channel exporter
+// appended to the root traces pipeline on the cluster gateway. Identifier
+// uses a neutral "Insights" stem; the string VALUE retains its established
+// form so the rendered collector configmap stays backwards-compatible.
+const (
+	// InsightsGatewayExporter forwards spans to the in-cluster sidecar service.
+	InsightsGatewayExporter = "otlp_grpc/security"
+)
