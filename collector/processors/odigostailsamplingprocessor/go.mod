@@ -3,7 +3,6 @@ module github.com/odigos-io/odigos/collector/processors/odigostailsamplingproces
 go 1.26.2
 
 require (
-	github.com/odigos-io/odigos/collector/pkg/completetrace v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.148.0
 	github.com/stretchr/testify v1.11.1
@@ -58,7 +57,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace (
-	github.com/odigos-io/odigos/collector/pkg/completetrace => ../../pkg/completetrace
-	github.com/odigos-io/odigos/common => ../../../common
-)
+replace github.com/odigos-io/odigos/common => ../../../common
