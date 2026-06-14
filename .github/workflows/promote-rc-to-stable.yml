@@ -117,7 +117,7 @@ jobs:
             # Define which images go to which registries
             # All non-RHEL component images (OSS + enterprise). Each is promoted in components
             # and mirrored to components-private.
-            GCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-cli" "odigos-victoria-metrics" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
+            GCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-cli" "odigos-victoria-metrics" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet" "odigos-enterprise-security")
 
             GHCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator")
 

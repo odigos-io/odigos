@@ -1,0 +1,15 @@
+{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: odigos-security
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+rules:
+  # The skeleton only needs to read its own configmap; future PRs that surface
+  # cluster context to the scoring engine will extend this list explicitly.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get"]
+{{- end }}

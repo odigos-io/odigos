@@ -1,0 +1,20 @@
+{{- if .Values.pdb.enabled }}
+{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: odigos-security
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-security
+    odigos.io/system-object: "true"
+spec:
+  # Single-replica, conditionally-deployed component (skeleton uses an
+  # emptyDir-backed SQLite DB). maxUnavailable: 1 so node drains and upgrades
+  # are never blocked.
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-security
+{{- end }}
+{{- end }}

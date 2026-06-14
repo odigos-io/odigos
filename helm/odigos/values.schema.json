@@ -611,7 +611,7 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,\n  odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,\n  odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-security",
       "required": [],
       "title": "images"
     },
@@ -2065,6 +2065,132 @@
       },
       "required": [],
       "title": "scheduler"
+    },
+    "security": {
+      "additionalProperties": false,
+      "description": "Configuration for the Odigos Security service (enterprise).\nWhen enabled, deploys a Go service that ingests OTLP traces, learns\nper-route baselines across multiple deviation classes (D1..D6), and\nserves anomaly queries to the UI. Requires an enterprise on-prem token\n(odigos-pro secret).",
+      "properties": {
+        "affinity": {
+          "additionalProperties": true,
+          "required": [],
+          "title": "affinity"
+        },
+        "enabled": {
+          "default": "false",
+          "description": "When true, deploys the security service. Default false (off).",
+          "required": [],
+          "title": "enabled"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "postgres": {
+          "additionalProperties": false,
+          "description": "Hand-rolled Postgres deployed alongside the security service. Skeleton\nonly — single replica, single PVC, no replication, no backups. Most\nknobs (image, user, db, resources) are hardcoded in the templates;\nonly the storage size and class are values-driven because those are\nthe ones that vary per cluster.",
+          "properties": {
+            "storage": {
+              "additionalProperties": false,
+              "properties": {
+                "size": {
+                  "default": "8Gi",
+                  "description": "PVC size for the Postgres data volume.",
+                  "required": [],
+                  "title": "size"
+                },
+                "storageClassName": {
+                  "default": "",
+                  "description": "StorageClass for the PVC. Empty string uses the cluster default.",
+                  "required": [],
+                  "title": "storageClassName"
+                }
+              },
+              "required": [],
+              "title": "storage",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "postgres"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "1000m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "1Gi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "128Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "tolerations": {
+          "items": {
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "required": [],
+          "title": "tolerations"
+        }
+      },
+      "required": [],
+      "title": "security"
     },
     "signals": {
       "description": "User should be specifying the signals they want to collect.",
