@@ -10,18 +10,36 @@ import (
 )
 
 const (
-	// Accepted spans as recorded by odigostrafficmetrics processor
-	metricAcceptedSpans = "otelcol_odigos_accepted_spans"
+	// Accepted spans, from two different receivers depending on the collector role.
+	// OTel built-in receiver self-telemetry (gateway pods / OTLP receiver).
+	metricOtelReceiverAcceptedSpans = "otelcol_receiver_accepted_spans"
+	// Odigos eBPF receiver (node collector / odiglet pods).
+	metricEBPFReceiverAcceptedSpans = "otelcol_odigos_ebpf_accepted_spans"
+
+	// Refused (we also call it dropped) spans, from two different receivers depending on the collector role.
 	// Receiver drop/refuse counters from collector self-telemetry
-	metricReceiverRefusedSpans = "otelcol_receiver_refused_spans"
-	metricReceiverDroppedSpans = "otelcol_receiver_dropped_spans"
-	// Exporter success/failure counters from collector self-telemetry
+	metricOtelReceiverRefusedSpans = "otelcol_receiver_refused_spans"
+	// Samples lost while reading the eBPF buffer.
+	metricEBPFReceiverLostSamples = "otelcol_odigos_ebpf_lost_samples"
+
+	// Exporter success/failure counters from collector self-telemetry.
 	metricExporterSentSpans       = "otelcol_exporter_sent_spans"
 	metricExporterSendFailedSpans = "otelcol_exporter_send_failed_spans"
+
+	// Python instrumentation metrics.
+	metricPythonSentSpans     = "odigos_python_ebpf_instrumentation_sent_events"
+	metricPythonFailedSpans   = "odigos_python_ebpf_instrumentation_output_failed_events"
+	metricPythonTooLargeSpans = "odigos_python_ebpf_instrumentation_events_too_larger"
+
+	// NodeJS instrumentation metrics
+	metricNodeJSSentSpans     = "odigos_nodejs_ebpf_instrumentation_sent_events"
+	metricNodeJSFailedSpans   = "odigos_nodejs_ebpf_instrumentation_output_failed_events"
+	metricNodeJSTooLargeSpans = "odigos_nodejs_ebpf_instrumentation_events_too_larger"
 )
 
 type PodRates struct {
 	MetricsAcceptedRps float64
+	// Spans lost/refused at the receiver itself (e.g. eBPF buffer overflow, memory limiter).
 	MetricsDroppedRps  float64
 	ExporterSuccessRps float64
 	ExporterFailedRps  float64
@@ -29,10 +47,10 @@ type PodRates struct {
 	LastScrape         time.Time
 }
 
-// GetDataCollectorContainerMetrics queries own-metrics (VictoriaMetrics via Prometheus-compatible API)
-// and aggregates per-pod rates for accepted/dropped metrics and exporter success/failures
-// for the data-collection (node) collector containers.
-func GetDataCollectorContainerMetrics(ctx context.Context, api v1.API, namespace string, podNames []string, window string) (map[string]PodRates, error) {
+// GetCollectorMetricsFromMetricsStore queries own-metrics (VictoriaMetrics via Prometheus-compatible API)
+// and aggregates per-pod rates for accepted/dropped spans and exporter success/failures.
+// Works for data collection and gateway pods.
+func GetCollectorMetricsFromMetricsStore(ctx context.Context, api v1.API, namespace string, podNames []string, window string) (map[string]PodRates, error) {
 	if api == nil {
 		return nil, fmt.Errorf("own-metrics API is nil")
 	}
@@ -49,38 +67,62 @@ func GetDataCollectorContainerMetrics(ctx context.Context, api v1.API, namespace
 	podRegex := buildPodRegex(podNames)
 	now := time.Now()
 
-	qAccepted := rateSumByPod(metricAcceptedSpans, namespace, podRegex, window)
-	qRefused := rateSumByPod(metricReceiverRefusedSpans, namespace, podRegex, window)
-	qDropped := rateSumByPod(metricReceiverDroppedSpans, namespace, podRegex, window)
-	qExpSent := rateSumByPod(metricExporterSentSpans, namespace, podRegex, window)
-	qExpFailed := rateSumByPod(metricExporterSendFailedSpans, namespace, podRegex, window)
+	// Metrics from the OTel receiver
+	queryOtelReceiverAccepted := rateSumByPod(metricOtelReceiverAcceptedSpans, podRegex, window)
+	queryOtelReceiverRefused := rateSumByPod(metricOtelReceiverRefusedSpans, podRegex, window)
+	// Metrics from the OTel exporter
+	queryExpSent := rateSumByPod(metricExporterSentSpans, podRegex, window)
+	queryExpFailed := rateSumByPod(metricExporterSendFailedSpans, podRegex, window)
+	// Metrics from the Odigos eBPF receiver
+	queryEBPFReceiverAccepted := rateSumByPod(metricEBPFReceiverAcceptedSpans, podRegex, window)
+	queryEBPFReceiverDropped := rateSumByPod(metricEBPFReceiverLostSamples, podRegex, window)
+	// Python metrics
+	queryPythonSent := rateSumByPod(metricPythonSentSpans, podRegex, window)
+	queryPythonDropped := rateSumByPod(fmt.Sprintf("(%s|%s)", metricPythonFailedSpans, metricPythonTooLargeSpans), podRegex, window)
+	// NodeJS metrics
+	queryNodeJSSent := rateSumByPod(metricNodeJSSentSpans, podRegex, window)
+	queryNodeJSDropped := rateSumByPod(fmt.Sprintf("(%s|%s)", metricNodeJSFailedSpans, metricNodeJSTooLargeSpans), podRegex, window)
 
-	accepted, tsAcc, err := queryVector(ctx, api, qAccepted, now)
+	otelReceiverAccepted, tsAcc, err := queryVector(ctx, api, queryOtelReceiverAccepted, now)
 	if err != nil {
 		return nil, err
 	}
-	refused, tsRef, err := queryVector(ctx, api, qRefused, now)
+	otelReceiverRefused, tsRef, err := queryVector(ctx, api, queryOtelReceiverRefused, now)
 	if err != nil {
 		return nil, err
 	}
-	dropped, tsDrop, err := queryVector(ctx, api, qDropped, now)
+	expSent, tsSent, err := queryVector(ctx, api, queryExpSent, now)
 	if err != nil {
 		return nil, err
 	}
-	expSent, tsSent, err := queryVector(ctx, api, qExpSent, now)
+	expFailed, tsFail, err := queryVector(ctx, api, queryExpFailed, now)
 	if err != nil {
 		return nil, err
 	}
-	expFailed, tsFail, err := queryVector(ctx, api, qExpFailed, now)
+	ebpfReceiverAccepted, tsEBPFAccept, err := queryVector(ctx, api, queryEBPFReceiverAccepted, now)
 	if err != nil {
 		return nil, err
 	}
-
-	receiverDropped := refused
-	if len(receiverDropped) == 0 {
-		receiverDropped = dropped
+	ebpfReceiverDropped, tsEBPFDrop, err := queryVector(ctx, api, queryEBPFReceiverDropped, now)
+	if err != nil {
+		return nil, err
 	}
-
+	pythonSent, tsPythonSent, err := queryVector(ctx, api, queryPythonSent, now)
+	if err != nil {
+		return nil, err
+	}
+	pythonDropped, tsPythonDropped, err := queryVector(ctx, api, queryPythonDropped, now)
+	if err != nil {
+		return nil, err
+	}
+	nodeJSSent, tsNodeJSSent, err := queryVector(ctx, api, queryNodeJSSent, now)
+	if err != nil {
+		return nil, err
+	}
+	nodeJSDropped, tsNodeJSDropped, err := queryVector(ctx, api, queryNodeJSDropped, now)
+	if err != nil {
+		return nil, err
+	}
 	result := make(map[string]PodRates, len(podNames))
 	for _, pod := range podNames {
 		result[pod] = PodRates{
@@ -88,16 +130,17 @@ func GetDataCollectorContainerMetrics(ctx context.Context, api v1.API, namespace
 		}
 	}
 
-	lastScrape := maxTime(tsAcc, tsRef, tsDrop, tsSent, tsFail)
+	lastScrape := maxTime(tsAcc, tsRef, tsSent, tsFail, tsEBPFAccept, tsEBPFDrop, tsPythonSent, tsPythonDropped, tsNodeJSSent, tsNodeJSDropped)
 
 	for pod := range result {
 		r := result[pod]
-		if v, ok := accepted[pod]; ok {
-			r.MetricsAcceptedRps = v
-		}
-		if v, ok := receiverDropped[pod]; ok {
-			r.MetricsDroppedRps = v
-		}
+
+		// A single pod can receive spans through both the eBPF receiver and the OTel built-in receiver, since not all instrumentations go through eBPF.
+		// Sum both receiver sources for accepted.
+		// refused/dropped spans are aggregated under dropped.
+		r.MetricsAcceptedRps = sumByPod(pod, otelReceiverAccepted, ebpfReceiverAccepted, pythonSent, nodeJSSent)
+		r.MetricsDroppedRps = sumByPod(pod, ebpfReceiverDropped, otelReceiverRefused, pythonDropped, nodeJSDropped)
+
 		if v, ok := expSent[pod]; ok {
 			r.ExporterSuccessRps = v
 		}

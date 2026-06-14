@@ -326,5 +326,5 @@ type OtelDistro struct {
 	Logs *Logs `yaml:"logs,omitempty"`
 
 	// document support by this distro for agent own logging features
-	OwnLogs *OwnDiagnostics `yaml:"ownLogs,omitempty"`
+	OwnDiagnostics *OwnDiagnostics `yaml:"ownDiagnostics,omitempty"`
 }

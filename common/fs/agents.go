@@ -19,13 +19,14 @@ import (
 )
 
 const (
-	chrootDir      = "/host"
-	semanagePath   = "/sbin/semanage"
-	restoreconPath = "/sbin/restorecon"
-	keeplistPath   = "/tmp/keeplist"
+	chrootDir        = "/host"
+	semanagePath     = "/sbin/semanage"
+	restoreconPath   = "/sbin/restorecon"
+	keeplistPath     = "/tmp/keeplist"
+	rsyncDefaultPath = "rsync"
 )
 
-func CopyAgentsDirectoryToHost(srcDir, dstDir string) error {
+func CopyAgentsDirectoryToHost(srcDir, dstDir string, optionalRsyncPath *string) error {
 	logger := commonlogger.LoggerCompat().With("subsystem", "agents")
 	startTime := time.Now()
 	empty, err := isDirEmptyOrNotExist(dstDir)
@@ -43,6 +44,7 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string) error {
 		}
 	} else {
 		logger.Info("Odigos agents directory is not empty, syncing files with rsync")
+		criticalFiles := getCriticalFiles(dstDir)
 		updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(criticalFiles, srcDir, dstDir)
 
 		if err != nil {
@@ -54,7 +56,7 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string) error {
 			return err
 		}
 
-		if err := runSingleRsyncSync(srcDir, dstDir, keeplistPath); err != nil {
+		if err := runSingleRsyncSync(srcDir, dstDir, keeplistPath, optionalRsyncPath); err != nil {
 			logger.Error("rsync failed", "err", err)
 			return err
 		}
@@ -173,18 +175,18 @@ func isDirEmptyOrNotExist(dir string) (bool, error) {
 	return false, err
 }
 
-func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, containerDir string, hostDir string) (map[string]struct{}, error) {
+func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, srcDir string, dstDir string) (map[string]struct{}, error) {
 	logger := commonlogger.LoggerCompat().With("subsystem", "agents")
 	updatedFilesToKeepMap := make(map[string]struct{})
 
-	for hostPath := range filesToKeepMap {
-		// Convert host path to container path
-		containerPath := strings.Replace(hostPath, hostDir, containerDir, 1)
+	for dstPath := range filesToKeepMap {
+		// Convert destination path to source path
+		srcPath := strings.Replace(dstPath, dstDir, srcDir, 1)
 
 		// Find and preserve existing hash version files for this base file
-		existingHashVersionFiles, err := findHashVersionFiles(hostPath)
+		existingHashVersionFiles, err := findHashVersionFiles(dstPath)
 		if err != nil {
-			logger.Error("Error finding existing hash version files", "err", err, "basePath", hostPath)
+			logger.Error("Error finding existing hash version files", "err", err, "basePath", dstPath)
 		} else {
 			// Add all existing hash version files to the keep map
 			for _, hashVersionFile := range existingHashVersionFiles {
@@ -194,39 +196,39 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 		}
 
 		// If either file doesn't exist, mark as changed and remove from filesToKeepMap
-		_, hostErr := os.Stat(hostPath)
-		_, containerErr := os.Stat(containerPath)
+		_, dstErr := os.Stat(dstPath)
+		_, srcErr := os.Stat(srcPath)
 
-		if hostErr != nil || containerErr != nil {
-			logger.Info("File marked for recreate (missing)", "file", hostPath)
+		if dstErr != nil || srcErr != nil {
+			logger.Info("File marked for recreate (missing)", "file", dstPath)
 			continue
 		}
 
 		// Compare file hashes
-		hostHash, err := fileHash(hostPath)
+		dstHash, err := fileHash(dstPath)
 		if err != nil {
-			return nil, fmt.Errorf("error calculating hash for host file %s: %v", hostPath, err)
+			return nil, fmt.Errorf("error calculating hash for destination file %s: %v", dstPath, err)
 		}
 
-		containerHash, err := fileHash(containerPath)
+		srcHash, err := fileHash(srcPath)
 		if err != nil {
-			return nil, fmt.Errorf("error calculating hash for container file %s: %v", containerPath, err)
+			return nil, fmt.Errorf("error calculating hash for source file %s: %v", srcPath, err)
 		}
 
-		// If the hashes are different, keep the old version of the file in the host with the new name <ORIGINAL_FILE_NAME_{12_CHARS_OF_HASH}>
+		// If the hashes are different, keep the old version of the file in the destination with the new name <ORIGINAL_FILE_NAME_{12_CHARS_OF_HASH}>
 		// and ensure the renamed file is added to filesToKeepMap to protect it from deletion.
-		if hostHash != containerHash {
-			newHostPath, err := renameWithHashSuffix(hostPath, hostHash)
+		if dstHash != srcHash {
+			newDstPath, err := renameWithHashSuffix(dstPath, dstHash)
 			if err != nil {
 				return nil, fmt.Errorf("error renaming file: %v", err)
 			}
 
-			updatedFilesToKeepMap[newHostPath] = struct{}{}
+			updatedFilesToKeepMap[newDstPath] = struct{}{}
 
-			continue // original file is renamed, recreate hostPath and keep NewHostPath
+			continue // original file is renamed, recreate dstPath and keep newDstPath
 		}
 
-		updatedFilesToKeepMap[hostPath] = struct{}{}
+		updatedFilesToKeepMap[dstPath] = struct{}{}
 	}
 
 	return updatedFilesToKeepMap, nil
@@ -265,7 +267,7 @@ func writeKeeplist(dstDir, file string, keeps map[string]struct{}) error {
 
 // runSingleRsyncSync performs a single-threaded rsync from srcDir to dstDir using the given exclude file.
 // This is used when the destination already contains files and we want to sync changes while keeping versioned files.
-func runSingleRsyncSync(srcDir, dstDir, excludeFile string) error {
+func runSingleRsyncSync(srcDir, dstDir, excludeFile string, optionalRsyncPath *string) error {
 	logger := commonlogger.LoggerCompat().With("subsystem", "agents")
 	// rsync flags:
 	// -a: archive mode (preserves permissions, symlinks, modification times, etc.)
@@ -274,13 +276,17 @@ func runSingleRsyncSync(srcDir, dstDir, excludeFile string) error {
 	// --whole-file: disables delta-transfer algorithm (lower CPU, better for local copying)
 	// --inplace: update files in-place without temp files (avoids disk pressure)
 	// --exclude-from: skip deleting or overwriting files listed in keeplist.txt
+	rsyncPath := rsyncDefaultPath
+	if optionalRsyncPath != nil {
+		rsyncPath = *optionalRsyncPath
+	}
 	args := []string{
 		"-av", "--delete", "--whole-file", "--inplace",
 		fmt.Sprintf("--exclude-from=%s", excludeFile),
 		srcDir + "/", dstDir + "/",
 	}
 
-	cmd := exec.CommandContext(context.Background(), "rsync", args...)
+	cmd := exec.CommandContext(context.Background(), rsyncPath, args...)
 	var _, stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
@@ -291,4 +297,38 @@ func runSingleRsyncSync(srcDir, dstDir, excludeFile string) error {
 
 	logger.Info("rsync completed")
 	return nil
+}
+
+// criticalFiles lists paths relative to the agents directory root that must be
+// preserved during upgrades because they may be memory-mapped by running processes.
+// The path is relative to the srcDir.
+func getCriticalFiles(bp string) map[string]struct{} {
+	cf := make(map[string]struct{})
+	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", "dtrace-injector-native.node")] = struct{}{}
+	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", "obj.target", "dtrace-injector-native.node")] = struct{}{}
+	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", ".deps", "Release", "dtrace-injector-native.node.d")] = struct{}{}
+	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", ".deps", "Release", "obj.target", "dtrace-injector-native.node.d")] = struct{}{}
+	cf[filepath.Join(bp, "java-ebpf", "tracing_probes.so")] = struct{}{}
+	cf[filepath.Join(bp, "java-ext-ebpf", "end_span_usdt.so")] = struct{}{}
+	cf[filepath.Join(bp, "java-ext-ebpf", "javaagent.jar")] = struct{}{}
+	cf[filepath.Join(bp, "java-ext-ebpf", "otel_agent_extension.jar")] = struct{}{}
+	cf[filepath.Join(bp, "python-ebpf", "pythonUSDT.abi3.so")] = struct{}{}
+	cf[filepath.Join(bp, "loader", "loader.so")] = struct{}{}
+	// Python dependency shared objects - special handling:
+	// These shared objects (.so files) are loaded by Python processes and mapped into process memory.
+	// They cannot be replaced while loaded, so we must keep them in the host filesystem to avoid removal.
+	// These files are versioned and renamed when their respective library versions change.
+	cf[filepath.Join(bp, "python", "google", "_upb", "_message.abi3.so")] = struct{}{}                     // Google protobuf library
+	cf[filepath.Join(bp, "python", "wrapt", "_wrappers.cpython-311-aarch64-linux-gnu.so")] = struct{}{}    // Wrapt library on arm64
+	cf[filepath.Join(bp, "python", "wrapt", "_wrappers.cpython-311-x86_64-linux-gnu.so")] = struct{}{}     // Wrapt library on x86_64
+	cf[filepath.Join(bp, "python3.8", "google", "_upb", "_message.abi3.so")] = struct{}{}                  // Google protobuf library [python 3.8 distro]
+	cf[filepath.Join(bp, "python3.8", "wrapt", "_wrappers.cpython-311-aarch64-linux-gnu.so")] = struct{}{} // Wrapt library on arm64 [python 3.8 distro]
+	cf[filepath.Join(bp, "python3.8", "wrapt", "_wrappers.cpython-311-x86_64-linux-gnu.so")] = struct{}{}  // Wrapt library on x86_64 [python 3.8 distro]
+	// PHP native extension loaded by the PHP runtime via dlopen().
+	// Must be preserved during upgrades to avoid crashing running PHP-FPM processes.
+	cf[filepath.Join(bp, "php", "8.1", "opentelemetry.so")] = struct{}{}
+	cf[filepath.Join(bp, "php", "8.2", "opentelemetry.so")] = struct{}{}
+	cf[filepath.Join(bp, "php", "8.3", "opentelemetry.so")] = struct{}{}
+	cf[filepath.Join(bp, "php", "8.4", "opentelemetry.so")] = struct{}{}
+	return cf
 }

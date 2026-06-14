@@ -113,6 +113,10 @@ spec:
                 resourceFieldRef:
                   containerName: init
                   resource: limits.cpu
+            {{- if .Values.gke.autopilot }}
+            - name: GKE_AUTOPILOT
+              value: "true"
+            {{- end }}
           resources:
 {{ toYaml .Values.odiglet.initContainerResources | indent 12 }}
       {{- end }}

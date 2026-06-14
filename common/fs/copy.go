@@ -14,37 +14,6 @@ import (
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
-// criticalFiles lists paths relative to the agents directory root that must be
-// preserved during upgrades because they may be memory-mapped by running processes.
-var criticalFiles = map[string]struct{}{
-	"/var/odigos/nodejs-ebpf/build/Release/dtrace-injector-native.node":                            {},
-	"/var/odigos/nodejs-ebpf/build/Release/obj.target/dtrace-injector-native.node":                 {},
-	"/var/odigos/nodejs-ebpf/build/Release/.deps/Release/dtrace-injector-native.node.d":            {},
-	"/var/odigos/nodejs-ebpf/build/Release/.deps/Release/obj.target/dtrace-injector-native.node.d": {},
-	"/var/odigos/java-ebpf/tracing_probes.so":                                                      {},
-	"/var/odigos/java-ext-ebpf/end_span_usdt.so":                                                   {},
-	"/var/odigos/java-ext-ebpf/javaagent.jar":                                                      {},
-	"/var/odigos/java-ext-ebpf/otel_agent_extension.jar":                                           {},
-	"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
-	"/var/odigos/loader/loader.so":                                                                 {},
-	// Python dependency shared objects - special handling:
-	// These shared objects (.so files) are loaded by Python processes and mapped into process memory.
-	// They cannot be replaced while loaded, so we must keep them in the host filesystem to avoid removal.
-	// These files are versioned and renamed when their respective library versions change.
-	"/var/odigos/python/google/_upb/_message.abi3.so":                        {}, // Google protobuf library
-	"/var/odigos/python/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so":    {}, // Wrapt library on arm64
-	"/var/odigos/python/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":     {}, // Wrapt library on x86_64
-	"/var/odigos/python3.8/google/_upb/_message.abi3.so":                     {}, // Google protobuf library [python 3.8 distro]
-	"/var/odigos/python3.8/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so": {}, // Wrapt library on arm64 [python 3.8 distro]
-	"/var/odigos/python3.8/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":  {}, // Wrapt library on x86_64 [python 3.8 distro]
-	// PHP native extension loaded by the PHP runtime via dlopen().
-	// Must be preserved during upgrades to avoid crashing running PHP-FPM processes.
-	"/var/odigos/php/8.1/opentelemetry.so": {},
-	"/var/odigos/php/8.2/opentelemetry.so": {},
-	"/var/odigos/php/8.3/opentelemetry.so": {},
-	"/var/odigos/php/8.4/opentelemetry.so": {},
-}
-
 func CopyDirectories(srcDir, dstDir string, excludes map[string]bool) error {
 	if err := os.MkdirAll(dstDir, 0o755); err != nil {
 		return fmt.Errorf("create destination dir: %w", err)
@@ -201,66 +170,6 @@ func copyFile(src, dst string, srcInfo os.FileInfo) error {
 	// size+mtime comparison, avoiding unnecessary I/O.
 	mtime := srcInfo.ModTime()
 	return os.Chtimes(dst, mtime, mtime)
-}
-
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
-
-func ProcessCriticalFiles(files map[string]struct{}, stagingDir, targetDir string) (map[string]bool, error) {
-	excludes := make(map[string]bool)
-
-	for relPath := range files {
-		targetPath := filepath.Join(targetDir, relPath)
-		stagingPath := filepath.Join(stagingDir, relPath)
-
-		// Preserve all existing hash-versioned files for this base file.
-		hvFiles, _ := findHashVersionFiles(targetPath)
-		for _, hvf := range hvFiles {
-			rel, err := filepath.Rel(targetDir, hvf)
-			if err == nil {
-				excludes[rel] = true
-			}
-		}
-
-		targetExists := fileExists(targetPath)
-		stagingExists := fileExists(stagingPath)
-
-		if !targetExists || !stagingExists {
-			continue
-		}
-
-		targetHash, err := fileHash(targetPath)
-		if err != nil {
-			return nil, fmt.Errorf("hash target %s: %w", relPath, err)
-		}
-		stagingHash, err := fileHash(stagingPath)
-		if err != nil {
-			return nil, fmt.Errorf("hash staging %s: %w", relPath, err)
-		}
-
-		if targetHash == stagingHash {
-			// Unchanged -- exclude from sync to avoid unnecessary I/O.
-			excludes[relPath] = true
-			continue
-		}
-
-		// Changed -- rename old version so running processes keep their
-		// memory-mapped file, then let sync copy the new version.
-		renamed, err := renameWithHashSuffix(targetPath, targetHash)
-		if err != nil {
-			return nil, fmt.Errorf("rename critical file %s: %w", relPath, err)
-		}
-		if renamed != "" {
-			rel, err := filepath.Rel(targetDir, renamed)
-			if err == nil {
-				excludes[rel] = true
-			}
-		}
-	}
-
-	return excludes, nil
 }
 
 func renameWithHashSuffix(filePath, hash string) (string, error) {

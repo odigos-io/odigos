@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -15,7 +13,6 @@ import (
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
-	"github.com/odigos-io/odigos/instrumentation/detector"
 	workload "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -39,7 +36,7 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, logger logr.Logger, 
 		OtelServiceName = kd.Pw.Name
 	}
 
-	resourceAttributes, err := getResourceAttributes(kd.Pw, kd.Pod, kd.ProcEvent)
+	resourceAttributes, err := getResourceAttributes(kd)
 	if err != nil {
 		commonlogger.LoggerCompat().With("subsystem", "settingsgetter").Warn("error getting resource attributes", "err", err)
 	}
@@ -124,8 +121,11 @@ func appendUniqueAttributes(existing []attribute.KeyValue, new []attribute.KeyVa
 	return existing
 }
 
-func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, pod *corev1.Pod, pe detector.ProcessEvent) ([]attribute.KeyValue, error) {
+func getResourceAttributes(kd *K8sProcessDetails) ([]attribute.KeyValue, error) {
 	var errs []error
+	podWorkload := kd.Pw
+	pod := kd.Pod
+	pe := kd.ProcEvent
 	// we should add all the resource attributes we want regardless of the OTEL_RESOURCE_ATTRIBUTE
 	// which might be added to the target pod by our webhook or present by the user.
 	// some pods might be instrumented without restart, so we can't fully rely on the webhook to put all the values
@@ -151,11 +151,17 @@ func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, pod *corev1.Pod, 
 		// pods and static pods workload already have the k8s.pod.name attribute
 	}
 
+	if kd.ContainerName != "" {
+		attrs = append(attrs, semconv.K8SContainerName(kd.ContainerName))
+	}
+
 	if pe.ExecDetails != nil {
 		envs := pe.ExecDetails.Environments
 
+		// if the process details didn't include container name,
+		// try to get it from the environment variables (injected by our webhook) as a fallback.
 		containerName, ok := envs[k8sconsts.OdigosEnvVarContainerName]
-		if ok && containerName != "" {
+		if ok && containerName != "" && kd.ContainerName == "" {
 			attrs = append(attrs, semconv.K8SContainerName(containerName))
 		}
 
