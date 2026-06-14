@@ -187,12 +187,16 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
 	var profilingCfg *odigoscommon.ProfilingConfiguration
+	var abnormalCfg *odigoscommon.AbnormalConfiguration
 	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
 		profilingCfg = odigosCfg.Profiling
+		abnormalCfg = odigosCfg.Abnormal
 		if odigosCfg.ComponentLogLevels != nil {
 			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
 		}
 	}
+	// When on, pipelinegen installs groupbytrace on traces/in so the exporter sees full traces.
+	gatewayOptions.AbnormalEnabled = odigoscommon.AbnormalPipelineActive(abnormalCfg)
 
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		common.ToExporterConfigurerArray(enabledDests),
@@ -203,6 +207,9 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				return err
 			}
 			if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
+				return err
+			}
+			if err := addAbnormalGatewayExporter(c, env.GetCurrentNamespace(), abnormalCfg); err != nil {
 				return err
 			}
 			c.Service.Telemetry.Logs = config.LogsConfig{Level: collectorLogLevel}

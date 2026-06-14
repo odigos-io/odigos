@@ -61,6 +61,10 @@ data:
       clientSecret: secretRef:odigos-oidc
       {{- end }}
     {{- end }}
+    {{- if .Values.security.enabled }}
+    security:
+      enabled: true
+    {{- end }}
     {{- if .Values.profiling.enabled }}
     {{- $pex := .Values.profiling.exporter | default dict }}
     {{- $pretry := $pex.retryOnFailure | default dict }}
