@@ -18,10 +18,18 @@ spec:
             content: |
               set -e
 
+              FRONTEND_DIR="$(cd ../../../../frontend && pwd)"
+
               # Self-contained Go install so this Test doesn't require a
-              # workflow-level setup-go step. Keeps the pinned toolchain in
-              # this file alongside the test itself.
-              GO_VERSION="1.26.2"
+              # workflow-level setup-go step. Source of truth for the version
+              # is the frontend's go.mod, so we never drift from the module.
+              GO_VERSION="$(awk '/^go [0-9]/ {print $2; exit}' "${FRONTEND_DIR}/go.mod")"
+              if [ -z "${GO_VERSION}" ]; then
+                echo "Failed to parse Go version from ${FRONTEND_DIR}/go.mod"
+                exit 1
+              fi
+              echo "Frontend go.mod pins Go ${GO_VERSION}"
+
               if ! command -v go >/dev/null 2>&1 \
                   || [ "$(go env GOVERSION 2>/dev/null)" != "go${GO_VERSION}" ]; then
                 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
@@ -39,5 +47,5 @@ spec:
               fi
               go version
 
-              cd ../../../../frontend
+              cd "${FRONTEND_DIR}"
               make test
