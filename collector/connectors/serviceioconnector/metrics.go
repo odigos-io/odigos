@@ -15,6 +15,7 @@ const attributeHashSeparator = byte(0)
 
 type metricSeries struct {
 	dimensions pcommon.Map
+	resource   pcommon.Map
 	count      int64
 }
 
@@ -52,24 +53,45 @@ func (c *serviceioConnector) buildMetrics() (pmetric.Metrics, error) {
 		return m, nil
 	}
 
-	sm := m.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty()
-	sm.Scope().SetName(metricScopeName())
-
-	mCount := sm.Metrics().AppendEmpty()
-	mCount.SetName(metricNameConnectionTotal)
-	mCount.SetEmptySum().SetIsMonotonic(true)
-	mCount.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	type resourceGroup struct {
+		resource   pcommon.Map
+		seriesList []metricSeries
+	}
 
 	c.seriesMutex.Lock()
 	defer c.seriesMutex.Unlock()
 
+	grouped := make(map[uint64]*resourceGroup)
 	for _, series := range c.keyToMetric {
-		dp := mCount.Sum().DataPoints().AppendEmpty()
-		dp.SetStartTimestamp(pcommon.NewTimestampFromTime(c.startTime))
-		dp.SetTimestamp(pcommon.NewTimestampFromTime(c.nowWithOffset()))
-		dp.SetIntValue(series.count)
-		series.dimensions.CopyTo(dp.Attributes())
-		dp.Attributes().PutStr(collectorInstanceAttributeId, c.collectorInstanceID)
+		resourceKey := hashAttributes(series.resource)
+		group, ok := grouped[resourceKey]
+		if !ok {
+			group = &resourceGroup{resource: series.resource}
+			grouped[resourceKey] = group
+		}
+		group.seriesList = append(group.seriesList, series)
+	}
+
+	for _, group := range grouped {
+		rm := m.ResourceMetrics().AppendEmpty()
+		group.resource.CopyTo(rm.Resource().Attributes())
+
+		sm := rm.ScopeMetrics().AppendEmpty()
+		sm.Scope().SetName(metricScopeName())
+
+		mCount := sm.Metrics().AppendEmpty()
+		mCount.SetName(metricNameConnectionTotal)
+		mCount.SetEmptySum().SetIsMonotonic(true)
+		mCount.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+
+		for _, series := range group.seriesList {
+			dp := mCount.Sum().DataPoints().AppendEmpty()
+			dp.SetStartTimestamp(pcommon.NewTimestampFromTime(c.startTime))
+			dp.SetTimestamp(pcommon.NewTimestampFromTime(c.nowWithOffset()))
+			dp.SetIntValue(series.count)
+			series.dimensions.CopyTo(dp.Attributes())
+			dp.Attributes().PutStr(collectorInstanceAttributeId, c.collectorInstanceID)
+		}
 	}
 
 	return m, nil

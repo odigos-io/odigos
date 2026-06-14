@@ -17,6 +17,8 @@ const (
 	collectorInstanceAttributeId = "odigos.collector.instance.id"
 )
 
+var metricResourceAttributeKeys = completetrace.ServiceInstanceRuntimeAttributeKeys
+
 func buildServiceInstanceBaseAttributes(instance *completetrace.ServiceInstance, inputAttrs pcommon.Map) pcommon.Map {
 	attributes := pcommon.NewMap()
 	if instance.ServiceName != "" {
@@ -25,6 +27,22 @@ func buildServiceInstanceBaseAttributes(instance *completetrace.ServiceInstance,
 	mergeAttributes(instance.ResourceAttributes, attributes)
 	mergeAttributes(inputAttrs, attributes)
 	return attributes
+}
+
+func buildMetricResourceAttributes(instance *completetrace.ServiceInstance) pcommon.Map {
+	resource := pcommon.NewMap()
+	for _, key := range metricResourceAttributeKeys {
+		copyStringAttributeIfPresent(instance.ResourceAttributes, resource, key)
+	}
+	return resource
+}
+
+func copyStringAttributeIfPresent(source, destination pcommon.Map, key string) {
+	value, ok := source.Get(key)
+	if !ok || value.Type() != pcommon.ValueTypeStr || value.Str() == "" {
+		return
+	}
+	destination.PutStr(key, value.Str())
 }
 
 func buildConnectionAttributes(inputAnrResourceAttributes, outputAttrs pcommon.Map) (uint64, pcommon.Map) {
@@ -63,6 +81,7 @@ func (c *serviceioConnector) aggregateConnectionsFromTree(tree *completetrace.Tr
 			series := c.keyToMetric[key]
 			if series.count == 0 {
 				series.dimensions = attributes
+				series.resource = buildMetricResourceAttributes(instance)
 			}
 			series.count++
 			c.keyToMetric[key] = series

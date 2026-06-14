@@ -10,6 +10,9 @@ type TraceCorrelationsWorkload {
   kind: K8sResourceKind!
   name: String!
   containerName: String!
+  telemetrySdkLanguage: String
+  processRuntimeName: String
+  processRuntimeVersion: String
   inputs: [TraceCorrelationsInputGroup!]!
 }
 

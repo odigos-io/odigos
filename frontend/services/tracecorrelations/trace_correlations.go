@@ -26,6 +26,12 @@ type workloadKey struct {
 	container string
 }
 
+type workloadRuntime struct {
+	telemetrySdkLanguage  string
+	processRuntimeName    string
+	processRuntimeVersion string
+}
+
 type attributeGroup struct {
 	attrs map[string]string
 	sig   string
@@ -70,8 +76,8 @@ func GetTraceCorrelations(
 		return nil, fmt.Errorf("query trace correlation first-seen timestamps: %w", err)
 	}
 
-	aggregated := aggregateSeries(counts, firstSeen, filter)
-	return buildResponse(aggregated), nil
+	aggregated, runtimes := aggregateSeries(counts, firstSeen, filter)
+	return buildResponse(aggregated, runtimes), nil
 }
 
 func resolveTimeRange(timeRange *model.TraceCorrelationsTimeRangeInput) (time.Time, time.Time, error) {
@@ -126,8 +132,9 @@ func queryInstantVector(ctx context.Context, api v1.API, query string, ts time.T
 	return vec, nil
 }
 
-func aggregateSeries(counts prommodel.Vector, firstSeenByLabels map[string]time.Time, filter *model.WorkloadFilter) map[workloadKey]map[string]*aggregatedSeries {
+func aggregateSeries(counts prommodel.Vector, firstSeenByLabels map[string]time.Time, filter *model.WorkloadFilter) (map[workloadKey]map[string]*aggregatedSeries, map[workloadKey]workloadRuntime) {
 	result := make(map[workloadKey]map[string]*aggregatedSeries)
+	runtimes := make(map[workloadKey]workloadRuntime)
 
 	for _, sample := range counts {
 		labels := sample.Metric
@@ -135,6 +142,8 @@ func aggregateSeries(counts prommodel.Vector, firstSeenByLabels map[string]time.
 		if !ok || !matchesFilter(workload, filter) {
 			continue
 		}
+
+		mergeWorkloadRuntime(runtimes, workload, labels)
 
 		input := attributeGroupFromMetric(labels, inputAttributePrefix)
 		output := attributeGroupFromMetric(labels, outputAttributePrefix)
@@ -172,10 +181,10 @@ func aggregateSeries(counts prommodel.Vector, firstSeenByLabels map[string]time.
 		}
 	}
 
-	return result
+	return result, runtimes
 }
 
-func buildResponse(aggregated map[workloadKey]map[string]*aggregatedSeries) *model.TraceCorrelations {
+func buildResponse(aggregated map[workloadKey]map[string]*aggregatedSeries, runtimes map[workloadKey]workloadRuntime) *model.TraceCorrelations {
 	workloads := make([]*model.TraceCorrelationsWorkload, 0, len(aggregated))
 
 	for workload, seriesByKey := range aggregated {
@@ -183,12 +192,16 @@ func buildResponse(aggregated map[workloadKey]map[string]*aggregatedSeries) *mod
 		if len(inputGroups) == 0 {
 			continue
 		}
+		runtime := runtimes[workload]
 		workloads = append(workloads, &model.TraceCorrelationsWorkload{
-			Namespace:     workload.namespace,
-			Kind:          kindToModel(workload.kind),
-			Name:          workload.name,
-			ContainerName: workload.container,
-			Inputs:        inputGroups,
+			Namespace:             workload.namespace,
+			Kind:                  kindToModel(workload.kind),
+			Name:                  workload.name,
+			ContainerName:         workload.container,
+			TelemetrySdkLanguage:  optionalString(runtime.telemetrySdkLanguage),
+			ProcessRuntimeName:    optionalString(runtime.processRuntimeName),
+			ProcessRuntimeVersion: optionalString(runtime.processRuntimeVersion),
+			Inputs:                inputGroups,
 		})
 	}
 
@@ -206,6 +219,13 @@ func buildResponse(aggregated map[workloadKey]map[string]*aggregatedSeries) *mod
 	})
 
 	return &model.TraceCorrelations{Workloads: workloads}
+}
+
+func optionalString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
 }
 
 func groupByInput(seriesByKey map[string]*aggregatedSeries) []*model.TraceCorrelationsInputGroup {

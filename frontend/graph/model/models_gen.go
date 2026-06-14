@@ -1665,11 +1665,14 @@ type TraceCorrelationsTimeRangeInput struct {
 }
 
 type TraceCorrelationsWorkload struct {
-	Namespace     string                         `json:"namespace"`
-	Kind          K8sResourceKind                `json:"kind"`
-	Name          string                         `json:"name"`
-	ContainerName string                         `json:"containerName"`
-	Inputs        []*TraceCorrelationsInputGroup `json:"inputs"`
+	Namespace             string                         `json:"namespace"`
+	Kind                  K8sResourceKind                `json:"kind"`
+	Name                  string                         `json:"name"`
+	ContainerName         string                         `json:"containerName"`
+	TelemetrySdkLanguage  *string                        `json:"telemetrySdkLanguage,omitempty"`
+	ProcessRuntimeName    *string                        `json:"processRuntimeName,omitempty"`
+	ProcessRuntimeVersion *string                        `json:"processRuntimeVersion,omitempty"`
+	Inputs                []*TraceCorrelationsInputGroup `json:"inputs"`
 }
 
 type URLTemplatizationRule struct {

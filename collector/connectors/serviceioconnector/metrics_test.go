@@ -30,7 +30,11 @@ func TestBuildMetrics(t *testing.T) {
 	}
 	inputAttributes := buildServiceInstanceBaseAttributes(instance, inputAttrs)
 	key, attributes := buildConnectionAttributes(inputAttributes, outputAttrs)
-	connector.keyToMetric[key] = metricSeries{dimensions: attributes, count: 3}
+	connector.keyToMetric[key] = metricSeries{
+		dimensions: attributes,
+		resource:   buildMetricResourceAttributes(instance),
+		count:      3,
+	}
 
 	md, err := connector.buildMetrics()
 	require.NoError(t, err)

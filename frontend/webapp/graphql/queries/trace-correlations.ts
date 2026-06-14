@@ -8,6 +8,9 @@ export const GET_TRACE_CORRELATIONS = gql`
         kind
         name
         containerName
+        telemetrySdkLanguage
+        processRuntimeName
+        processRuntimeVersion
         inputs {
           attributes {
             key

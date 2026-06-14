@@ -185,3 +185,28 @@ func isWorkloadIdentityLabel(key string) bool {
 		return false
 	}
 }
+
+func workloadRuntimeFromMetric(labels prommodel.Metric) workloadRuntime {
+	return workloadRuntime{
+		telemetrySdkLanguage:  labelValue(labels, "telemetry_sdk_language", "telemetry.sdk.language"),
+		processRuntimeName:    labelValue(labels, "process_runtime_name", "process.runtime.name"),
+		processRuntimeVersion: labelValue(labels, "process_runtime_version", "process.runtime.version"),
+	}
+}
+
+func mergeWorkloadRuntime(runtimes map[workloadKey]workloadRuntime, workload workloadKey, labels prommodel.Metric) {
+	incoming := workloadRuntimeFromMetric(labels)
+	current := runtimes[workload]
+
+	if current.telemetrySdkLanguage == "" && incoming.telemetrySdkLanguage != "" {
+		current.telemetrySdkLanguage = incoming.telemetrySdkLanguage
+	}
+	if current.processRuntimeName == "" && incoming.processRuntimeName != "" {
+		current.processRuntimeName = incoming.processRuntimeName
+	}
+	if current.processRuntimeVersion == "" && incoming.processRuntimeVersion != "" {
+		current.processRuntimeVersion = incoming.processRuntimeVersion
+	}
+
+	runtimes[workload] = current
+}

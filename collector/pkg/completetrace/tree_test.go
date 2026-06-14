@@ -298,6 +298,10 @@ func TestBuildTraceTree_ServiceInstances_WorkloadKey(t *testing.T) {
 	appendSpan("default", "checkout", "app", "checkout", "internal", childID, rootID)
 	appendSpan("default", "checkout", "sidecar", "checkout", "sidecar", otherWorkloadID, rootID)
 
+	td.ResourceSpans().At(0).Resource().Attributes().PutStr(TelemetrySDKLanguageAttribute, "java")
+	td.ResourceSpans().At(0).Resource().Attributes().PutStr(ProcessRuntimeNameAttribute, "OpenJDK Runtime Environment")
+	td.ResourceSpans().At(0).Resource().Attributes().PutStr(ProcessRuntimeVersionAttribute, "17.0.12")
+
 	resolver := func(resource pcommon.Resource) (string, pcommon.Map, bool) {
 		attrs := resource.Attributes()
 		namespace, ok := attrs.Get("k8s.namespace.name")
@@ -325,7 +329,16 @@ func TestBuildTraceTree_ServiceInstances_WorkloadKey(t *testing.T) {
 	require.Len(t, tree.ServiceInstances, 2)
 
 	require.Equal(t, "default/Deployment/checkout/app", tree.ServiceInstances[0].WorkloadKey)
-	require.Equal(t, 3, tree.ServiceInstances[0].ResourceAttributes.Len())
+	require.Equal(t, 6, tree.ServiceInstances[0].ResourceAttributes.Len())
+	language, ok := tree.ServiceInstances[0].ResourceAttributes.Get(TelemetrySDKLanguageAttribute)
+	require.True(t, ok)
+	require.Equal(t, "java", language.Str())
+	runtimeName, ok := tree.ServiceInstances[0].ResourceAttributes.Get(ProcessRuntimeNameAttribute)
+	require.True(t, ok)
+	require.Equal(t, "OpenJDK Runtime Environment", runtimeName.Str())
+	runtimeVersion, ok := tree.ServiceInstances[0].ResourceAttributes.Get(ProcessRuntimeVersionAttribute)
+	require.True(t, ok)
+	require.Equal(t, "17.0.12", runtimeVersion.Str())
 	require.ElementsMatch(t, []string{"root", "internal"}, spanNames(tree.ServiceInstances[0].Spans))
 
 	require.Equal(t, "default/Deployment/checkout/sidecar", tree.ServiceInstances[1].WorkloadKey)

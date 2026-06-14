@@ -1386,11 +1386,14 @@ type ComplexityRoot struct {
 	}
 
 	TraceCorrelationsWorkload struct {
-		ContainerName func(childComplexity int) int
-		Inputs        func(childComplexity int) int
-		Kind          func(childComplexity int) int
-		Name          func(childComplexity int) int
-		Namespace     func(childComplexity int) int
+		ContainerName         func(childComplexity int) int
+		Inputs                func(childComplexity int) int
+		Kind                  func(childComplexity int) int
+		Name                  func(childComplexity int) int
+		Namespace             func(childComplexity int) int
+		ProcessRuntimeName    func(childComplexity int) int
+		ProcessRuntimeVersion func(childComplexity int) int
+		TelemetrySdkLanguage  func(childComplexity int) int
 	}
 
 	URLTemplatizationRule struct {
@@ -7609,6 +7612,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TraceCorrelationsWorkload.Namespace(childComplexity), true
+
+	case "TraceCorrelationsWorkload.processRuntimeName":
+		if e.complexity.TraceCorrelationsWorkload.ProcessRuntimeName == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsWorkload.ProcessRuntimeName(childComplexity), true
+
+	case "TraceCorrelationsWorkload.processRuntimeVersion":
+		if e.complexity.TraceCorrelationsWorkload.ProcessRuntimeVersion == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsWorkload.ProcessRuntimeVersion(childComplexity), true
+
+	case "TraceCorrelationsWorkload.telemetrySdkLanguage":
+		if e.complexity.TraceCorrelationsWorkload.TelemetrySdkLanguage == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsWorkload.TelemetrySdkLanguage(childComplexity), true
 
 	case "URLTemplatizationRule.examples":
 		if e.complexity.URLTemplatizationRule.Examples == nil {
@@ -48980,6 +49004,12 @@ func (ec *executionContext) fieldContext_TraceCorrelations_workloads(_ context.C
 				return ec.fieldContext_TraceCorrelationsWorkload_name(ctx, field)
 			case "containerName":
 				return ec.fieldContext_TraceCorrelationsWorkload_containerName(ctx, field)
+			case "telemetrySdkLanguage":
+				return ec.fieldContext_TraceCorrelationsWorkload_telemetrySdkLanguage(ctx, field)
+			case "processRuntimeName":
+				return ec.fieldContext_TraceCorrelationsWorkload_processRuntimeName(ctx, field)
+			case "processRuntimeVersion":
+				return ec.fieldContext_TraceCorrelationsWorkload_processRuntimeVersion(ctx, field)
 			case "inputs":
 				return ec.fieldContext_TraceCorrelationsWorkload_inputs(ctx, field)
 			}
@@ -49393,6 +49423,129 @@ func (ec *executionContext) _TraceCorrelationsWorkload_containerName(ctx context
 }
 
 func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsWorkload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsWorkload_telemetrySdkLanguage(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsWorkload_telemetrySdkLanguage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TelemetrySdkLanguage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_telemetrySdkLanguage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsWorkload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsWorkload_processRuntimeName(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsWorkload_processRuntimeName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProcessRuntimeName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_processRuntimeName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsWorkload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsWorkload_processRuntimeVersion(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsWorkload_processRuntimeVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProcessRuntimeVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_processRuntimeVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TraceCorrelationsWorkload",
 		Field:      field,
@@ -65254,6 +65407,12 @@ func (ec *executionContext) _TraceCorrelationsWorkload(ctx context.Context, sel 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "telemetrySdkLanguage":
+			out.Values[i] = ec._TraceCorrelationsWorkload_telemetrySdkLanguage(ctx, field, obj)
+		case "processRuntimeName":
+			out.Values[i] = ec._TraceCorrelationsWorkload_processRuntimeName(ctx, field, obj)
+		case "processRuntimeVersion":
+			out.Values[i] = ec._TraceCorrelationsWorkload_processRuntimeVersion(ctx, field, obj)
 		case "inputs":
 			out.Values[i] = ec._TraceCorrelationsWorkload_inputs(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

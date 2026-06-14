@@ -74,8 +74,9 @@ func TestAggregateSeriesAcrossCollectorInstances(t *testing.T) {
 		mustSeriesIdentityKey(t, sharedLabels("b")): time.Date(2026, 6, 13, 9, 30, 0, 0, time.UTC),
 	}
 
-	result := aggregateSeries(counts, firstSeen, nil)
+	result, runtimes := aggregateSeries(counts, firstSeen, nil)
 	require.Len(t, result, 1)
+	require.Len(t, runtimes, 1)
 
 	var series *aggregatedSeries
 	for _, byOutput := range result {
@@ -88,6 +89,19 @@ func TestAggregateSeriesAcrossCollectorInstances(t *testing.T) {
 	require.NotNil(t, series)
 	require.Equal(t, int64(8), series.connectionCount)
 	require.Equal(t, time.Date(2026, 6, 13, 9, 30, 0, 0, time.UTC), series.firstDetected)
+}
+
+func TestWorkloadRuntimeFromMetric(t *testing.T) {
+	labels := prommodel.Metric{
+		"telemetry_sdk_language":   "nodejs",
+		"process_runtime_name":   "nodejs",
+		"process_runtime_version": "20.11.0",
+	}
+
+	runtime := workloadRuntimeFromMetric(labels)
+	require.Equal(t, "nodejs", runtime.telemetrySdkLanguage)
+	require.Equal(t, "nodejs", runtime.processRuntimeName)
+	require.Equal(t, "20.11.0", runtime.processRuntimeVersion)
 }
 
 func TestBuildResponse(t *testing.T) {
@@ -116,9 +130,17 @@ func TestBuildResponse(t *testing.T) {
 		},
 	}
 
-	resp := buildResponse(aggregated)
+	resp := buildResponse(aggregated, map[workloadKey]workloadRuntime{
+		workload: {
+			telemetrySdkLanguage:  "java",
+			processRuntimeName:    "OpenJDK Runtime Environment",
+			processRuntimeVersion: "17.0.12",
+		},
+	})
 	require.Len(t, resp.Workloads, 1)
 	require.Equal(t, model.K8sResourceKindDeployment, resp.Workloads[0].Kind)
+	require.NotNil(t, resp.Workloads[0].TelemetrySdkLanguage)
+	require.Equal(t, "java", *resp.Workloads[0].TelemetrySdkLanguage)
 	require.Len(t, resp.Workloads[0].Inputs, 1)
 	require.Len(t, resp.Workloads[0].Inputs[0].Outputs, 1)
 	require.Equal(t, 4, resp.Workloads[0].Inputs[0].Outputs[0].ConnectionCount)
@@ -184,10 +206,9 @@ func TestFirstSeenMatchesAcrossLabelFormats(t *testing.T) {
 		exportKey: time.Date(2026, 6, 13, 9, 30, 0, 0, time.UTC),
 	}
 
-	result := aggregateSeries(prommodel.Vector{
+	result, _ := aggregateSeries(prommodel.Vector{
 		&prommodel.Sample{Metric: queryLabels, Value: 4},
 	}, firstSeen, nil)
-
 	require.Len(t, result, 1)
 	for _, byOutput := range result {
 		for _, series := range byOutput {

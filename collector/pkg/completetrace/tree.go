@@ -10,6 +10,18 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 )
 
+const (
+	TelemetrySDKLanguageAttribute  = "telemetry.sdk.language"
+	ProcessRuntimeNameAttribute    = "process.runtime.name"
+	ProcessRuntimeVersionAttribute = "process.runtime.version"
+)
+
+var ServiceInstanceRuntimeAttributeKeys = []string{
+	TelemetrySDKLanguageAttribute,
+	ProcessRuntimeNameAttribute,
+	ProcessRuntimeVersionAttribute,
+}
+
 // WorkloadIdentityResolver derives workload identity from a span resource.
 // When it returns false, service instance grouping falls back to service.name.
 type WorkloadIdentityResolver func(resource pcommon.Resource) (cacheKey string, attrs pcommon.Map, ok bool)
@@ -180,9 +192,26 @@ func newServiceInstance(root *TraceTreeNode) *ServiceInstance {
 	return &ServiceInstance{
 		ServiceName:        root.ServiceName,
 		WorkloadKey:        root.ServiceKey,
-		ResourceAttributes: cloneAttributesMap(root.ServiceAttributes),
+		ResourceAttributes: buildServiceInstanceResourceAttributes(root),
 		Root:               root,
 	}
+}
+
+func buildServiceInstanceResourceAttributes(root *TraceTreeNode) pcommon.Map {
+	attrs := cloneAttributesMap(root.ServiceAttributes)
+	resourceAttrs := root.Resource.Attributes()
+	for _, key := range ServiceInstanceRuntimeAttributeKeys {
+		copyStringResourceAttributeIfPresent(resourceAttrs, attrs, key)
+	}
+	return attrs
+}
+
+func copyStringResourceAttributeIfPresent(source, destination pcommon.Map, key string) {
+	value, ok := source.Get(key)
+	if !ok || value.Type() != pcommon.ValueTypeStr || value.Str() == "" {
+		return
+	}
+	destination.PutStr(key, value.Str())
 }
 
 func belongsToServiceInstance(node *TraceTreeNode, instance *ServiceInstance) bool {

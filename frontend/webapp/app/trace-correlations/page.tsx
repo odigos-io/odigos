@@ -303,6 +303,55 @@ const Pill = styled.span`
   font-size: 12px;
 `;
 
+const MetaPillWrap = styled.span`
+  position: relative;
+  display: inline-flex;
+`;
+
+const MetaPillPopup = styled.div`
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+  min-width: 220px;
+  max-width: 300px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.98);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  display: grid;
+  gap: 4px;
+`;
+
+const MetaPillPopupTitle = styled.div`
+  font-size: 12px;
+  font-weight: 700;
+  color: #f8fafc;
+`;
+
+const MetaPillPopupDescription = styled.div`
+  font-size: 12px;
+  line-height: 1.45;
+  color: #94a3b8;
+`;
+
+const WorkloadTitleWrap = styled.span`
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+`;
+
+const WorkloadTitleButton = styled.span`
+  display: inline-block;
+  margin: 0;
+  font-size: 1.25rem;
+  color: #f8fafc;
+  font-weight: 700;
+  cursor: help;
+`;
+
 const WorkloadStats = styled.div`
   display: flex;
   gap: 18px;
@@ -835,6 +884,11 @@ const HeaderSummary = styled.div`
   line-height: 1.5;
 `;
 
+const HeaderHttpSummary = styled(HeaderSummary)`
+  font-family: 'SF Mono', 'JetBrains Mono', monospace;
+  color: #e2e8f0;
+`;
+
 const AttributeList = styled.ul`
   display: flex;
   flex-direction: column;
@@ -1245,6 +1299,60 @@ function getHttpRouteKey(attributes: { key: string; value: string }[]) {
   return map['url.template'] || map['http.route'] || null;
 }
 
+function getDbGroupKey(attributes: { key: string; value: string }[]) {
+  if (!isDbAttributes(attributes)) {
+    return null;
+  }
+
+  const map = attributesToMap(attributes);
+  const dbSystem = map['db.system'];
+  if (!dbSystem) {
+    return null;
+  }
+
+  const dbName = map['db.name'] ?? '';
+  return `${dbSystem}\x00${dbName}`;
+}
+
+function formatDbGroupTitle(groupKey: string) {
+  const [dbSystem, dbName] = groupKey.split('\x00');
+  if (dbName) {
+    return `${formatDbSystem(dbSystem)} · ${dbName}`;
+  }
+  return formatDbSystem(dbSystem);
+}
+
+function HttpSummaryParts({
+  summary,
+  hidePath,
+}: {
+  summary: NonNullable<ReturnType<typeof buildHttpSummary>>;
+  hidePath?: boolean;
+}) {
+  return (
+    <>
+      {summary.method ? (
+        <>
+          <HttpMethod $method={summary.method}>{summary.method.toUpperCase()}</HttpMethod>{' '}
+        </>
+      ) : null}
+      {!hidePath && summary.path ? <span>{summary.path}</span> : null}
+      {summary.status ? (
+        <>
+          {(!hidePath && summary.path) || summary.method ? ' ' : null}
+          <HttpStatus>{summary.status}</HttpStatus>
+        </>
+      ) : null}
+      {summary.target ? (
+        <>
+          {' '}
+          <HttpTarget>to {summary.target}</HttpTarget>
+        </>
+      ) : null}
+    </>
+  );
+}
+
 function HttpSummaryLine({
   summary,
   hidePath,
@@ -1257,30 +1365,35 @@ function HttpSummaryLine({
   return (
     <HttpSummary>
       <HttpSummaryContent>
-        {summary.method ? (
-          <>
-            <HttpMethod $method={summary.method}>{summary.method.toUpperCase()}</HttpMethod>{' '}
-          </>
-        ) : null}
-        {!hidePath && summary.path ? <span>{summary.path}</span> : null}
-        {summary.status ? (
-          <>
-            {(!hidePath && summary.path) || summary.method ? ' ' : null}
-            <HttpStatus>{summary.status}</HttpStatus>
-          </>
-        ) : null}
-        {summary.target ? (
-          <>
-            {' '}
-            <HttpTarget>
-              to {summary.target}
-            </HttpTarget>
-          </>
-        ) : null}
+        <HttpSummaryParts summary={summary} hidePath={hidePath} />
       </HttpSummaryContent>
       <CopyAttributeButton text={summaryText} label='Copy HTTP summary' />
     </HttpSummary>
   );
+}
+
+function CollapsedAttributeSummary({
+  attributes,
+  showFullData,
+}: {
+  attributes: { key: string; value: string }[];
+  showFullData: boolean;
+}) {
+  const visible = filterVisibleAttributes(attributes, showFullData);
+  if (!visible.length) {
+    return <HeaderSummary>Metadata hidden</HeaderSummary>;
+  }
+
+  const { summary } = partitionHttpAttributes(visible);
+  if (summary) {
+    return (
+      <HeaderHttpSummary>
+        <HttpSummaryParts summary={summary} />
+      </HeaderHttpSummary>
+    );
+  }
+
+  return <HeaderSummary>{summarizeAttributes(attributes, showFullData)}</HeaderSummary>;
 }
 
 function formatHttpSummaryText(summary: NonNullable<ReturnType<typeof buildHttpSummary>>, hidePath = false) {
@@ -1564,11 +1677,9 @@ function workloadStats(workload: TraceCorrelationsWorkload) {
 function AttributeChips({
   attributes,
   showFullData,
-  hideHttpPath,
 }: {
   attributes: { key: string; value: string }[];
   showFullData: boolean;
-  hideHttpPath?: boolean;
 }) {
   const visibleAttributes = filterVisibleAttributes(attributes, showFullData);
   const hiddenCount = attributes.length - visibleAttributes.length;
@@ -1584,7 +1695,7 @@ function AttributeChips({
 
   return (
     <AttributeList>
-      {summary ? <HttpSummaryLine summary={summary} hidePath={hideHttpPath} /> : null}
+      {summary ? <HttpSummaryLine summary={summary} /> : null}
       {remaining.map((attr) => (
         <AttributeItem key={`${attr.key}:${attr.value}`}>
           <AttributeContent>
@@ -1620,7 +1731,7 @@ type FlowNode = {
 
 type FlowNodeGroup = {
   id: string;
-  kind: 'http' | 'default';
+  kind: 'http' | 'database' | 'default';
   title?: string;
   nodes: FlowNode[];
 };
@@ -1643,6 +1754,7 @@ type FlowEdgeLayout = FlowEdge & {
 
 function groupFlowNodes(nodes: FlowNode[]): FlowNodeGroup[] {
   const httpGroups = new Map<string, FlowNode[]>();
+  const dbGroups = new Map<string, FlowNode[]>();
   const ungrouped: FlowNode[] = [];
 
   for (const node of nodes) {
@@ -1651,29 +1763,47 @@ function groupFlowNodes(nodes: FlowNode[]): FlowNodeGroup[] {
       const existing = httpGroups.get(routeKey) ?? [];
       existing.push(node);
       httpGroups.set(routeKey, existing);
-    } else {
-      ungrouped.push(node);
+      continue;
     }
+
+    const dbKey = getDbGroupKey(node.attributes);
+    if (dbKey) {
+      const existing = dbGroups.get(dbKey) ?? [];
+      existing.push(node);
+      dbGroups.set(dbKey, existing);
+      continue;
+    }
+
+    ungrouped.push(node);
   }
 
-  const groups: FlowNodeGroup[] = Array.from(httpGroups.entries())
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([routeKey, groupNodes]) => ({
-      id: `http:${routeKey}`,
-      kind: 'http' as const,
-      title: routeKey,
-      nodes: [...groupNodes].sort((left, right) => left.id.localeCompare(right.id)),
-    }));
+  const groups: FlowNodeGroup[] = [
+    ...Array.from(httpGroups.entries())
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([routeKey, groupNodes]) => ({
+        id: `http:${routeKey}`,
+        kind: 'http' as const,
+        title: routeKey,
+        nodes: [...groupNodes].sort((left, right) => left.id.localeCompare(right.id)),
+      })),
+    ...Array.from(dbGroups.entries())
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([dbKey, groupNodes]) => ({
+        id: `db:${dbKey}`,
+        kind: 'database' as const,
+        title: formatDbGroupTitle(dbKey),
+        nodes: [...groupNodes].sort((left, right) => left.id.localeCompare(right.id)),
+      })),
+    ...ungrouped
+      .sort((left, right) => left.id.localeCompare(right.id))
+      .map((node) => ({
+        id: node.id,
+        kind: 'default' as const,
+        nodes: [node],
+      })),
+  ];
 
-  for (const node of ungrouped.sort((left, right) => left.id.localeCompare(right.id))) {
-    groups.push({
-      id: node.id,
-      kind: 'default',
-      nodes: [node],
-    });
-  }
-
-  return groups;
+  return groups.sort((left, right) => (left.title ?? left.id).localeCompare(right.title ?? right.id));
 }
 
 function buildWorkloadFlowGraph(workload: TraceCorrelationsWorkload) {
@@ -1854,7 +1984,6 @@ function FlowNodeView({
   showFullData,
   nodeRef,
   nested,
-  hideHttpPath,
   highlighted,
   dimmed,
   onHoverStart,
@@ -1865,7 +1994,6 @@ function FlowNodeView({
   showFullData: boolean;
   nodeRef: (element: HTMLDivElement | null) => void;
   nested?: boolean;
-  hideHttpPath?: boolean;
   highlighted?: boolean;
   dimmed?: boolean;
   onHoverStart: (event: React.MouseEvent<HTMLDivElement>) => void;
@@ -1883,7 +2011,7 @@ function FlowNodeView({
     >
       <ScopeHeader attributes={node.attributes} direction={variant} showFullData={showFullData} />
       <FlowNodeDetails>
-        <AttributeChips attributes={node.attributes} showFullData={showFullData} hideHttpPath={hideHttpPath} />
+        <AttributeChips attributes={node.attributes} showFullData={showFullData} />
       </FlowNodeDetails>
     </FlowNodeCard>
   );
@@ -1925,11 +2053,14 @@ function FlowNodeGroupView({
     );
   }
 
+  const isHttpGroup = group.kind === 'http';
+
   return (
     <FlowHttpGroup $variant={variant}>
       <FlowHttpGroupHeader>{group.title}</FlowHttpGroupHeader>
       <FlowHttpGroupMeta>
-        {group.nodes.length} endpoint{group.nodes.length === 1 ? '' : 's'}
+        {group.nodes.length} {isHttpGroup ? 'endpoint' : 'pattern'}
+        {group.nodes.length === 1 ? '' : 's'}
       </FlowHttpGroupMeta>
       {group.nodes.map((node) => {
         const { highlighted, dimmed } = getFlowNodeHighlightState(node.id, activeNodeId, connectedNodeIds);
@@ -1940,7 +2071,6 @@ function FlowNodeGroupView({
             variant={variant}
             showFullData={showFullData}
             nested
-            hideHttpPath
             highlighted={highlighted}
             dimmed={dimmed}
             onHoverStart={(event) => onNodeHover(node.id, event, variant)}
@@ -2281,7 +2411,7 @@ function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInput
               <>
                 <ScopeGroupTitle>{inboundTitle}</ScopeGroupTitle>
                 {inboundScopeName ? <ScopeGroupSubtitle>{inboundScopeName}</ScopeGroupSubtitle> : null}
-                <HeaderSummary>{summarizeAttributes(group.attributes, showFullData)}</HeaderSummary>
+                <CollapsedAttributeSummary attributes={group.attributes} showFullData={showFullData} />
               </>
             )}
           </div>
@@ -2323,10 +2453,65 @@ function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInput
   );
 }
 
+function formatWorkloadRuntimeLabel(runtimeName?: string | null, runtimeVersion?: string | null) {
+  if (runtimeName && runtimeVersion) {
+    return `${runtimeName} ${runtimeVersion}`;
+  }
+  return runtimeName || runtimeVersion || null;
+}
+
+function WorkloadHeaderHint({
+  label,
+  title,
+  description,
+  variant = 'pill',
+}: {
+  label: string;
+  title: string;
+  description: string;
+  variant?: 'pill' | 'title';
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapProps = {
+    onMouseEnter: () => setOpen(true),
+    onMouseLeave: () => setOpen(false),
+    onClick: (event: React.MouseEvent) => event.stopPropagation(),
+    onFocus: () => setOpen(true),
+    onBlur: () => setOpen(false),
+  };
+
+  if (variant === 'title') {
+    return (
+      <WorkloadTitleWrap {...wrapProps} tabIndex={0}>
+        <WorkloadTitleButton>{label}</WorkloadTitleButton>
+        {open ? (
+          <MetaPillPopup>
+            <MetaPillPopupTitle>{title}</MetaPillPopupTitle>
+            <MetaPillPopupDescription>{description}</MetaPillPopupDescription>
+          </MetaPillPopup>
+        ) : null}
+      </WorkloadTitleWrap>
+    );
+  }
+
+  return (
+    <MetaPillWrap {...wrapProps} tabIndex={0}>
+      <Pill>{label}</Pill>
+      {open ? (
+        <MetaPillPopup>
+          <MetaPillPopupTitle>{title}</MetaPillPopupTitle>
+          <MetaPillPopupDescription>{description}</MetaPillPopupDescription>
+        </MetaPillPopup>
+      ) : null}
+    </MetaPillWrap>
+  );
+}
+
 function WorkloadCardView({ workload, showFullData }: { workload: TraceCorrelationsWorkload; showFullData: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<'graph' | 'details'>('graph');
   const stats = workloadStats(workload);
+  const runtimeLabel = formatWorkloadRuntimeLabel(workload.processRuntimeName, workload.processRuntimeVersion);
 
   return (
     <WorkloadCard>
@@ -2339,11 +2524,44 @@ function WorkloadCardView({ workload, showFullData }: { workload: TraceCorrelati
         <HeaderMain>
           <CollapseIcon $expanded={expanded}>›</CollapseIcon>
           <HeaderContent>
-            <WorkloadTitle>{workload.name}</WorkloadTitle>
+            <WorkloadTitle>
+              <WorkloadHeaderHint
+                variant='title'
+                label={workload.name}
+                title='Workload'
+                description='The Kubernetes workload resource name for this service.'
+              />
+            </WorkloadTitle>
             <WorkloadMeta>
-              <Pill>{workload.namespace}</Pill>
-              <Pill>{workload.kind}</Pill>
-              <Pill>{workload.containerName}</Pill>
+              <WorkloadHeaderHint
+                label={workload.namespace}
+                title='Namespace'
+                description='The Kubernetes namespace where this workload is deployed.'
+              />
+              <WorkloadHeaderHint
+                label={workload.kind}
+                title='Kind'
+                description='The Kubernetes workload resource kind, such as Deployment or StatefulSet.'
+              />
+              <WorkloadHeaderHint
+                label={workload.containerName}
+                title='Container'
+                description='The instrumented container name within the workload pods.'
+              />
+              {workload.telemetrySdkLanguage ? (
+                <WorkloadHeaderHint
+                  label={workload.telemetrySdkLanguage}
+                  title='SDK language'
+                  description='The OpenTelemetry SDK language detected from trace resource attributes.'
+                />
+              ) : null}
+              {runtimeLabel ? (
+                <WorkloadHeaderHint
+                  label={runtimeLabel}
+                  title='Runtime'
+                  description='The process runtime name and version reported by the instrumented application.'
+                />
+              ) : null}
             </WorkloadMeta>
           </HeaderContent>
         </HeaderMain>

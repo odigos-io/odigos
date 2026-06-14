@@ -23,6 +23,9 @@ export type TraceCorrelationsWorkload = {
   kind: string;
   name: string;
   containerName: string;
+  telemetrySdkLanguage?: string | null;
+  processRuntimeName?: string | null;
+  processRuntimeVersion?: string | null;
   inputs: TraceCorrelationsInputGroup[];
 };
 
