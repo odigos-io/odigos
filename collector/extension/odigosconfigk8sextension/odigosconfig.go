@@ -72,7 +72,17 @@ func (o *OdigosWorkloadConfig) IsActiveSource(res pcommon.Resource) bool {
 // Processors use this to look up their own caches without duplicating key logic.
 // Key format: "namespace/kind/name/containerName".
 func (o *OdigosWorkloadConfig) GetWorkloadCacheKey(res pcommon.Resource) (string, error) {
-	return workloadKeyFromResourceAttributes(res.Attributes())
+	cacheKey, _, err := workloadIdentityFromResourceAttributes(res.Attributes())
+	if err != nil {
+		return "", err
+	}
+	return cacheKey, nil
+}
+
+// GetWorkloadIdentityFromResource returns the cache key and identifying resource attributes
+// for the container on the given resource.
+func (o *OdigosWorkloadConfig) GetWorkloadIdentityFromResource(res pcommon.Resource) (string, pcommon.Map, error) {
+	return workloadIdentityFromResourceAttributes(res.Attributes())
 }
 
 // RegisterWorkloadConfigCacheCallback registers a callback that is invoked by the extension
