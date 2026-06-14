@@ -3,9 +3,10 @@ package serviceioconnector
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
+	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
+
 	"github.com/odigos-io/odigos/collector/connectors/serviceioconnector/internal/metadata"
 	"github.com/odigos-io/odigos/collector/pkg/completetrace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 )
 
 const (
