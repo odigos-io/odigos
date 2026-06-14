@@ -1227,28 +1227,12 @@ security:
   # @schema
   # description: |-
   #   Hand-rolled Postgres deployed alongside the security service. Skeleton
-  #   only — single replica, ephemeral or single PVC, no replication, no
-  #   backups. When real production Postgres support is needed (BYO via
-  #   connection-string secret), reintroduce a toggle here.
+  #   only — single replica, single PVC, no replication, no backups. Most
+  #   knobs (image, user, db, resources) are hardcoded in the templates;
+  #   only the storage size and class are values-driven because those are
+  #   the ones that vary per cluster.
   # @schema
   postgres:
-    image:
-      # @schema
-      # description: Postgres container image repository.
-      # @schema
-      repository: postgres
-      # @schema
-      # description: Postgres container image tag.
-      # @schema
-      tag: "16-alpine"
-
-    auth:
-      # @schema
-      # description: Database user and database name created on first boot.
-      # @schema
-      username: odigos_security
-      database: odigos_security
-
     storage:
       # @schema
       # description: PVC size for the Postgres data volume.
@@ -1259,14 +1243,6 @@ security:
       #   StorageClass for the PVC. Empty string uses the cluster default.
       # @schema
       storageClassName: ''
-
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 1000m
-        memory: 1Gi
 
 # @schema
 # description: Pod Security Policy

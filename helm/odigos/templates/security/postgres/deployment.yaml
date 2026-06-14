@@ -24,27 +24,25 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: "{{ .Values.security.postgres.image.repository }}:{{ .Values.security.postgres.image.tag }}"
+          # Image, user, and database name are intentionally hardcoded:
+          # this is a bundled skeleton DB, not a tunable production install.
+          # When BYO Postgres support is added, switch the security service
+          # to consume an external DSN secret and drop this Deployment.
+          image: "postgres:16-alpine"
           imagePullPolicy: IfNotPresent
           ports:
             - name: postgres
               containerPort: 5432
           env:
             - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: odigos-security-postgres
-                  key: username
+              value: odigos_security
+            - name: POSTGRES_DB
+              value: odigos_security
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: odigos-security-postgres
                   key: password
-            - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef:
-                  name: odigos-security-postgres
-                  key: database
             # The postgres image init refuses to use the volume's root as
             # PGDATA because it may not be empty (lost+found). Point it at a
             # subdirectory instead.
@@ -67,11 +65,11 @@ spec:
           # Deployment controller restarts the pod anyway.
           resources:
             requests:
-              cpu: {{ .Values.security.postgres.resources.requests.cpu }}
-              memory: {{ .Values.security.postgres.resources.requests.memory }}
+              cpu: 100m
+              memory: 256Mi
             limits:
-              cpu: {{ .Values.security.postgres.resources.limits.cpu }}
-              memory: {{ .Values.security.postgres.resources.limits.memory }}
+              cpu: 1000m
+              memory: 1Gi
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data

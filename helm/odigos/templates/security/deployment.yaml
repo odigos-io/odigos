@@ -50,9 +50,9 @@ spec:
                   key: odigos-onprem-token
             - name: GOMEMLIMIT
               value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.security.resources) }}
-            # Postgres password comes from the bundled secret; username and
-            # database are non-secret chart values, baked into the DSN below
-            # via Kubernetes env substitution ($(VAR) refs earlier env vars).
+            # Postgres password comes from the bundled secret; user and
+            # database name are hardcoded ("odigos_security") in the
+            # Postgres Deployment too, so we just bake them into the DSN.
             # randAlphaNum (used to mint the password) only produces
             # URL-safe chars, so no encoding gymnastics are needed here.
             - name: POSTGRES_PASSWORD
@@ -61,7 +61,7 @@ spec:
                   name: odigos-security-postgres
                   key: password
             - name: POSTGRES_DSN
-              value: "postgres://{{ .Values.security.postgres.auth.username }}:$(POSTGRES_PASSWORD)@odigos-security-postgres:5432/{{ .Values.security.postgres.auth.database }}?sslmode=disable"
+              value: "postgres://odigos_security:$(POSTGRES_PASSWORD)@odigos-security-postgres:5432/odigos_security?sslmode=disable"
           livenessProbe:
             httpGet:
               path: /healthz
