@@ -1,4 +1,4 @@
-package completetrace
+package serviceioconnector
 
 import (
 	"testing"

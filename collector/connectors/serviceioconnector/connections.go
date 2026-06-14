@@ -3,9 +3,9 @@ package serviceioconnector
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
-	"github.com/odigos-io/odigos/collector/connectors/serviceioconnector/internal/metadata"
-	"github.com/odigos-io/odigos/collector/pkg/completetrace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
+
+	"github.com/odigos-io/odigos/collector/connectors/serviceioconnector/internal/metadata"
 )
 
 const (
@@ -17,9 +17,9 @@ const (
 	collectorInstanceAttributeId = "odigos.collector.instance.id"
 )
 
-var metricResourceAttributeKeys = completetrace.ServiceInstanceRuntimeAttributeKeys
+var metricResourceAttributeKeys = ServiceInstanceRuntimeAttributeKeys
 
-func buildServiceInstanceBaseAttributes(instance *completetrace.ServiceInstance, inputAttrs pcommon.Map) pcommon.Map {
+func buildServiceInstanceBaseAttributes(instance *ServiceInstance, inputAttrs pcommon.Map) pcommon.Map {
 	attributes := pcommon.NewMap()
 	if instance.ServiceName != "" {
 		attributes.PutStr(serviceNameAttribute, instance.ServiceName)
@@ -29,7 +29,7 @@ func buildServiceInstanceBaseAttributes(instance *completetrace.ServiceInstance,
 	return attributes
 }
 
-func buildMetricResourceAttributes(instance *completetrace.ServiceInstance) pcommon.Map {
+func buildMetricResourceAttributes(instance *ServiceInstance) pcommon.Map {
 	resource := pcommon.NewMap()
 	for _, key := range metricResourceAttributeKeys {
 		copyStringAttributeIfPresent(instance.ResourceAttributes, resource, key)
@@ -62,7 +62,7 @@ func mergeAttributes(source, destination pcommon.Map) {
 	})
 }
 
-func (c *serviceioConnector) aggregateConnectionsFromTree(tree *completetrace.TraceTree) bool {
+func (c *serviceioConnector) aggregateConnectionsFromTree(tree *TraceTree) bool {
 	c.seriesMutex.Lock()
 	defer c.seriesMutex.Unlock()
 

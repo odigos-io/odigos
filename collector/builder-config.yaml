@@ -143,7 +143,6 @@ replaces:
   - go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
   - github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
   - github.com/odigos-io/odigos/collector/connectors/serviceioconnector => ../connectors/serviceioconnector
-  - github.com/odigos-io/odigos/collector/pkg/completetrace => ../pkg/completetrace
   - github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector => ../connectors/servicegraphconnector
   - github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
   - github.com/odigos-io/odigos/common => ../../common

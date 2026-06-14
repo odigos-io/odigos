@@ -5,31 +5,29 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"
-
-	"github.com/odigos-io/odigos/collector/pkg/completetrace"
 )
 
 func TestBuildMetricResourceAttributes(t *testing.T) {
 	resourceAttributes := pcommon.NewMap()
-	resourceAttributes.PutStr(completetrace.TelemetrySDKLanguageAttribute, "java")
-	resourceAttributes.PutStr(completetrace.ProcessRuntimeNameAttribute, "OpenJDK Runtime Environment")
-	resourceAttributes.PutStr(completetrace.ProcessRuntimeVersionAttribute, "17.0.12")
+	resourceAttributes.PutStr(TelemetrySDKLanguageAttribute, "java")
+	resourceAttributes.PutStr(ProcessRuntimeNameAttribute, "OpenJDK Runtime Environment")
+	resourceAttributes.PutStr(ProcessRuntimeVersionAttribute, "17.0.12")
 	resourceAttributes.PutStr("service.name", "checkout")
 
-	instance := &completetrace.ServiceInstance{
+	instance := &ServiceInstance{
 		ResourceAttributes: resourceAttributes,
 	}
 
 	resource := buildMetricResourceAttributes(instance)
-	language, ok := resource.Get(completetrace.TelemetrySDKLanguageAttribute)
+	language, ok := resource.Get(TelemetrySDKLanguageAttribute)
 	require.True(t, ok)
 	require.Equal(t, "java", language.Str())
 
-	runtimeName, ok := resource.Get(completetrace.ProcessRuntimeNameAttribute)
+	runtimeName, ok := resource.Get(ProcessRuntimeNameAttribute)
 	require.True(t, ok)
 	require.Equal(t, "OpenJDK Runtime Environment", runtimeName.Str())
 
-	runtimeVersion, ok := resource.Get(completetrace.ProcessRuntimeVersionAttribute)
+	runtimeVersion, ok := resource.Get(ProcessRuntimeVersionAttribute)
 	require.True(t, ok)
 	require.Equal(t, "17.0.12", runtimeVersion.Str())
 
@@ -46,11 +44,11 @@ func TestBuildMetricsSetsResourceAttributes(t *testing.T) {
 	}
 
 	resourceAttributes := pcommon.NewMap()
-	resourceAttributes.PutStr(completetrace.TelemetrySDKLanguageAttribute, "python")
-	resourceAttributes.PutStr(completetrace.ProcessRuntimeNameAttribute, "CPython")
-	resourceAttributes.PutStr(completetrace.ProcessRuntimeVersionAttribute, "3.12.1")
+	resourceAttributes.PutStr(TelemetrySDKLanguageAttribute, "python")
+	resourceAttributes.PutStr(ProcessRuntimeNameAttribute, "CPython")
+	resourceAttributes.PutStr(ProcessRuntimeVersionAttribute, "3.12.1")
 
-	instance := &completetrace.ServiceInstance{
+	instance := &ServiceInstance{
 		ServiceName:        "orders",
 		ResourceAttributes: resourceAttributes,
 	}
@@ -72,7 +70,7 @@ func TestBuildMetricsSetsResourceAttributes(t *testing.T) {
 	require.Equal(t, 1, md.ResourceMetrics().Len())
 
 	resource := md.ResourceMetrics().At(0).Resource().Attributes()
-	language, ok := resource.Get(completetrace.TelemetrySDKLanguageAttribute)
+	language, ok := resource.Get(TelemetrySDKLanguageAttribute)
 	require.True(t, ok)
 	require.Equal(t, "python", language.Str())
 }

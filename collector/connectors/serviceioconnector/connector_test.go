@@ -11,8 +11,6 @@ import (
 
 	commonapi "github.com/odigos-io/odigos/common/api"
 	odigoscollector "github.com/odigos-io/odigos/common/collector"
-
-	"github.com/odigos-io/odigos/collector/pkg/completetrace"
 )
 
 var odigosConfigExtensionID = component.MustNewID("odigos_config_k8s")
@@ -98,7 +96,7 @@ func (m *mockOdigosConfigExtension) Shutdown(context.Context) error {
 func TestAggregateConnectionsFromTree_FiltersInactiveSources(t *testing.T) {
 	td := buildServiceIOTestTrace(t)
 
-	tree, err := completetrace.BuildTraceTree(td, nil)
+	tree, err := BuildTraceTree(td, nil)
 	require.NoError(t, err)
 
 	connector := &serviceioConnector{
@@ -117,7 +115,7 @@ func TestAggregateConnectionsFromTree_FiltersInactiveSources(t *testing.T) {
 func TestAggregateConnectionsFromTree_SkipsInactiveSources(t *testing.T) {
 	td := buildServiceIOTestTrace(t)
 
-	tree, err := completetrace.BuildTraceTree(td, nil)
+	tree, err := BuildTraceTree(td, nil)
 	require.NoError(t, err)
 
 	connector := &serviceioConnector{

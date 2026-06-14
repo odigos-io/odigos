@@ -1,4 +1,4 @@
-package completetrace
+package serviceioconnector
 
 import (
 	"errors"
@@ -75,8 +75,7 @@ type TraceTree struct {
 }
 
 // BuildTraceTree indexes all spans in td, links each node to its parent, and returns the leaves.
-// The input is expected to be a complete trace batch (e.g. from groupbytrace), but this function
-// does not validate that; callers can use ValidateCompleteTrace first when needed.
+// The input is expected to be a complete trace batch (e.g. from groupbytrace).
 func BuildTraceTree(td ptrace.Traces, resolver WorkloadIdentityResolver) (*TraceTree, error) {
 	nodesBySpanID := make(map[pcommon.SpanID]*TraceTreeNode)
 
