@@ -1,0 +1,23 @@
+{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-security
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-security
+    odigos.io/system-object: "true"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: odigos-security
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+{{- end }}

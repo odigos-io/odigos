@@ -1,0 +1,82 @@
+{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-security-postgres
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-security-postgres
+    odigos.io/system-object: "true"
+spec:
+  replicas: 1
+  # Recreate (not RollingUpdate) because a single ReadWriteOnce PVC can
+  # only be attached to one pod at a time. A rolling update would deadlock
+  # waiting for the old pod's PVC to detach.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-security-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odigos-security-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.security.postgres.image.repository }}:{{ .Values.security.postgres.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-security-postgres
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-security-postgres
+                  key: password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-security-postgres
+                  key: database
+            # The postgres image init refuses to use the volume's root as
+            # PGDATA because it may not be empty (lost+found). Point it at a
+            # subdirectory instead.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          # TCP readiness only — postgres listens on 5432 the moment it's
+          # accepting connections, no auth round-trip, no env-var expansion
+          # to get wrong, no dependency on the unix-socket dir perms.
+          readinessProbe:
+            tcpSocket:
+              port: 5432
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          # No livenessProbe on purpose. Liveness probes on a single-
+          # replica postgres are an antipattern: a slow checkpoint or
+          # vacuum under load can trip the probe and kubelet will kill
+          # the process mid-transaction. If postgres really dies, the
+          # Deployment controller restarts the pod anyway.
+          resources:
+            requests:
+              cpu: {{ .Values.security.postgres.resources.requests.cpu }}
+              memory: {{ .Values.security.postgres.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.security.postgres.resources.limits.cpu }}
+              memory: {{ .Values.security.postgres.resources.limits.memory }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: odigos-security-postgres
+{{- end }}

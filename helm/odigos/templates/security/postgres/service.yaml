@@ -1,0 +1,18 @@
+{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-security-postgres
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-security-postgres
+    odigos.io/system-object: "true"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: odigos-security-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+{{- end }}

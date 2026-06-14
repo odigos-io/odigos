@@ -28,7 +28,7 @@ imagePrefix:
 #       autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
 #   Supported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,
-#     odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents
+#     odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-security
 # additionalProperties: true
 # @schema
 images: {}
@@ -1166,6 +1166,107 @@ centralProxy:
   # description: Priority class name. Set to use your existing cluster priority classes.
   # @schema
   # priorityClassName: ''
+
+# @schema
+# description: |-
+#   Configuration for the Odigos Security service (enterprise).
+#   When enabled, deploys a Go service that ingests OTLP traces, learns
+#   per-route baselines across multiple deviation classes (D1..D6), and
+#   serves anomaly queries to the UI. Requires an enterprise on-prem token
+#   (odigos-pro secret).
+# @schema
+security:
+
+  # @schema
+  # description: |-
+  #   When true, deploys the security service. Default false (off).
+  # @schema
+  enabled: false
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  # @schema
+  # description: Override the global nodeSelector (values.nodeSelector) for this component
+  # @schema
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
+  tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
+  affinity: {}
+
+  # @schema
+  # description: Priority class name. Set to use your existing cluster priority classes.
+  # @schema
+  # priorityClassName: ''
+
+  # @schema
+  # description: |-
+  #   Hand-rolled Postgres deployed alongside the security service. Skeleton
+  #   only — single replica, ephemeral or single PVC, no replication, no
+  #   backups. When real production Postgres support is needed (BYO via
+  #   connection-string secret), reintroduce a toggle here.
+  # @schema
+  postgres:
+    image:
+      # @schema
+      # description: Postgres container image repository.
+      # @schema
+      repository: postgres
+      # @schema
+      # description: Postgres container image tag.
+      # @schema
+      tag: "16-alpine"
+
+    auth:
+      # @schema
+      # description: Database user and database name created on first boot.
+      # @schema
+      username: odigos_security
+      database: odigos_security
+
+    storage:
+      # @schema
+      # description: PVC size for the Postgres data volume.
+      # @schema
+      size: 8Gi
+      # @schema
+      # description: |-
+      #   StorageClass for the PVC. Empty string uses the cluster default.
+      # @schema
+      storageClassName: ''
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
 
 # @schema
 # description: Pod Security Policy

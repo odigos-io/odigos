@@ -1,0 +1,23 @@
+{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: odigos-security-postgres
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-security-postgres
+    odigos.io/system-object: "true"
+  # Keep the PVC around even if someone helm-uninstalls the release.
+  # Postgres data is the one thing that should survive a wipe of every
+  # other resource in the chart.
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- if .Values.security.postgres.storage.storageClassName }}
+  storageClassName: {{ .Values.security.postgres.storage.storageClassName | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.security.postgres.storage.size }}
+{{- end }}
