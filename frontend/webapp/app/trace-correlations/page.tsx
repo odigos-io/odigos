@@ -2,12 +2,14 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { useTraceCorrelations, TRACE_CORRELATIONS_TIME_PRESETS, formatTraceCorrelationsTimeRangeLabel, resolveTraceCorrelationsTimeRange, toDatetimeLocalValue, type TraceCorrelationsInputGroup, type TraceCorrelationsOutputSeries, type TraceCorrelationsTimePreset, type TraceCorrelationsWorkload } from '@/hooks/metrics/useTraceCorrelations';
+import { useTraceCorrelations, TRACE_CORRELATIONS_TIME_PRESETS, formatTraceCorrelationsTimeRangeLabel, parseDatetimeLocalValue, resolveTraceCorrelationsTimeRange, toDatetimeLocalValue, type TraceCorrelationsInputGroup, type TraceCorrelationsOutputSeries, type TraceCorrelationsTimePreset, type TraceCorrelationsWorkload } from '@/hooks/metrics/useTraceCorrelations';
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 `;
+
+type RowClassification = 'none' | 'baseline' | 'suspicious';
 
 const Page = styled.div`
   min-height: 100vh;
@@ -70,6 +72,18 @@ const TimeRangeBar = styled.div`
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+`;
+
+const BaselineBar = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 20px;
   padding: 14px 16px;
   border-radius: 16px;
@@ -110,6 +124,75 @@ const DataCoverageBanner = styled.div`
 const DataCoverageLabel = styled.strong`
   color: #f8fafc;
   font-weight: 600;
+`;
+
+const SuspiciousSummaryBanner = styled.div<{ $empty?: boolean }>`
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid
+    ${({ $empty }) => ($empty ? 'rgba(52, 211, 153, 0.28)' : 'rgba(248, 113, 113, 0.35)')};
+  background: ${({ $empty }) => ($empty ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)')};
+  color: #e2e8f0;
+`;
+
+const SuspiciousSummaryHeader = styled.div<{ $empty?: boolean }>`
+  font-size: 15px;
+  line-height: 1.55;
+  color: #f8fafc;
+
+  strong {
+    color: ${({ $empty }) => ($empty ? '#6ee7b7' : '#fca5a5')};
+    font-weight: 700;
+  }
+`;
+
+const SuspiciousSummaryList = styled.div`
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+`;
+
+const SuspiciousSummaryItem = styled.div<{ $alerted?: boolean }>`
+  display: grid;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid
+    ${({ $alerted }) => ($alerted ? 'rgba(251, 191, 36, 0.45)' : 'rgba(248, 113, 113, 0.28)')};
+  background: ${({ $alerted }) => ($alerted ? 'rgba(251, 191, 36, 0.1)' : 'rgba(15, 23, 42, 0.55)')};
+`;
+
+const SuspiciousSummaryItemHeader = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+`;
+
+const SuspiciousSummaryConnectionFlow = styled.div`
+  display: grid;
+  gap: 0;
+`;
+
+const SuspiciousSummaryFooter = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+`;
+
+const SuspiciousSummaryWorkload = styled.div`
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
 `;
 
 const TimeRangeCustomFields = styled.div`
@@ -521,7 +604,14 @@ const FlowSvg = styled.svg`
   }
 `;
 
-const FlowEdgeLabelBox = styled.div<{ $fresh?: boolean; $highlighted?: boolean; $dimmed?: boolean; $x: number; $y: number }>`
+const FlowEdgeLabelBox = styled.div<{
+  $fresh?: boolean;
+  $classification?: Exclude<RowClassification, 'none'>;
+  $highlighted?: boolean;
+  $dimmed?: boolean;
+  $x: number;
+  $y: number;
+}>`
   position: absolute;
   left: ${({ $x }) => $x}px;
   top: ${({ $y }) => $y}px;
@@ -529,19 +619,37 @@ const FlowEdgeLabelBox = styled.div<{ $fresh?: boolean; $highlighted?: boolean; 
   padding: 5px 8px;
   border-radius: 999px;
   border: 1px solid
-    ${({ $fresh, $highlighted }) => {
+    ${({ $classification, $fresh, $highlighted }) => {
+      if ($classification === 'baseline') {
+        return $highlighted ? 'rgba(52, 211, 153, 0.85)' : 'rgba(52, 211, 153, 0.45)';
+      }
+      if ($classification === 'suspicious') {
+        return $highlighted ? 'rgba(248, 113, 113, 0.9)' : 'rgba(248, 113, 113, 0.45)';
+      }
       if ($highlighted) {
         return $fresh ? 'rgba(34, 211, 238, 0.85)' : 'rgba(148, 163, 184, 0.55)';
       }
       return $fresh ? 'rgba(34, 211, 238, 0.45)' : 'rgba(148, 163, 184, 0.22)';
     }};
-  background: ${({ $fresh, $highlighted }) => {
+  background: ${({ $classification, $fresh, $highlighted }) => {
+    if ($classification === 'baseline') {
+      return $highlighted ? 'rgba(16, 185, 129, 0.28)' : 'rgba(16, 185, 129, 0.16)';
+    }
+    if ($classification === 'suspicious') {
+      return $highlighted ? 'rgba(239, 68, 68, 0.28)' : 'rgba(239, 68, 68, 0.16)';
+    }
     if ($highlighted) {
       return $fresh ? 'rgba(34, 211, 238, 0.28)' : 'rgba(15, 23, 42, 0.96)';
     }
     return $fresh ? 'rgba(34, 211, 238, 0.16)' : 'rgba(15, 23, 42, 0.92)';
   }};
-  color: ${({ $fresh, $highlighted }) => {
+  color: ${({ $classification, $fresh, $highlighted }) => {
+    if ($classification === 'baseline') {
+      return $highlighted ? '#6ee7b7' : '#34d399';
+    }
+    if ($classification === 'suspicious') {
+      return $highlighted ? '#fca5a5' : '#f87171';
+    }
     if ($highlighted) {
       return $fresh ? '#a5f3fc' : '#f8fafc';
     }
@@ -554,7 +662,13 @@ const FlowEdgeLabelBox = styled.div<{ $fresh?: boolean; $highlighted?: boolean; 
   z-index: ${({ $highlighted }) => ($highlighted ? 3 : 2)};
   pointer-events: none;
   opacity: ${({ $dimmed }) => ($dimmed ? 0.2 : 1)};
-  box-shadow: ${({ $fresh, $highlighted }) => {
+  box-shadow: ${({ $classification, $fresh, $highlighted }) => {
+    if ($classification === 'baseline') {
+      return $highlighted ? '0 0 14px rgba(52, 211, 153, 0.45)' : '0 0 10px rgba(52, 211, 153, 0.2)';
+    }
+    if ($classification === 'suspicious') {
+      return $highlighted ? '0 0 14px rgba(248, 113, 113, 0.45)' : '0 0 10px rgba(248, 113, 113, 0.2)';
+    }
     if ($highlighted) {
       return $fresh ? '0 0 14px rgba(34, 211, 238, 0.45)' : '0 0 10px rgba(148, 163, 184, 0.25)';
     }
@@ -579,12 +693,25 @@ const FlowMobileEdgeList = styled.div`
   }
 `;
 
-const FlowMobileEdge = styled.div<{ $fresh?: boolean }>`
+const FlowMobileEdge = styled.div<{ $fresh?: boolean; $classification?: Exclude<RowClassification, 'none'> }>`
   padding: 8px 10px;
   border-radius: 10px;
-  border: 1px solid ${({ $fresh }) => ($fresh ? 'rgba(34, 211, 238, 0.35)' : 'rgba(148, 163, 184, 0.16)')};
-  background: rgba(15, 23, 42, 0.55);
-  color: ${({ $fresh }) => ($fresh ? '#67e8f9' : '#94a3b8')};
+  border: 1px solid
+    ${({ $classification, $fresh }) => {
+      if ($classification === 'baseline') return 'rgba(52, 211, 153, 0.35)';
+      if ($classification === 'suspicious') return 'rgba(248, 113, 113, 0.35)';
+      return $fresh ? 'rgba(34, 211, 238, 0.35)' : 'rgba(148, 163, 184, 0.16)';
+    }};
+  background: ${({ $classification }) => {
+    if ($classification === 'baseline') return 'rgba(16, 185, 129, 0.12)';
+    if ($classification === 'suspicious') return 'rgba(239, 68, 68, 0.12)';
+    return 'rgba(15, 23, 42, 0.55)';
+  }};
+  color: ${({ $classification, $fresh }) => {
+    if ($classification === 'baseline') return '#6ee7b7';
+    if ($classification === 'suspicious') return '#fca5a5';
+    return $fresh ? '#67e8f9' : '#94a3b8';
+  }};
   font-size: 11px;
   line-height: 1.45;
 `;
@@ -783,8 +910,6 @@ const FlowArrowBadge = styled.span`
   white-space: nowrap;
 `;
 
-type RowClassification = 'none' | 'baseline' | 'suspicious';
-
 const OutputFlowList = styled.div`
   position: relative;
   margin-left: 18px;
@@ -794,24 +919,28 @@ const OutputFlowList = styled.div`
   gap: 14px;
 `;
 
-const OutputFlowRow = styled.div<{ $classification?: RowClassification }>`
+const OutputFlowRow = styled.div<{ $classification?: RowClassification; $alerted?: boolean }>`
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(148px, auto);
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
   align-items: start;
   padding: 12px;
   border-radius: 14px;
   border: 1px solid transparent;
   transition: background 0.2s ease, border-color 0.2s ease;
-  background: ${({ $classification }) => {
+  background: ${({ $classification, $alerted }) => {
     if ($classification === 'baseline') return 'rgba(16, 185, 129, 0.14)';
-    if ($classification === 'suspicious') return 'rgba(239, 68, 68, 0.14)';
+    if ($classification === 'suspicious') {
+      return $alerted ? 'rgba(251, 191, 36, 0.14)' : 'rgba(239, 68, 68, 0.14)';
+    }
     return 'transparent';
   }};
-  border-color: ${({ $classification }) => {
+  border-color: ${({ $classification, $alerted }) => {
     if ($classification === 'baseline') return 'rgba(52, 211, 153, 0.28)';
-    if ($classification === 'suspicious') return 'rgba(248, 113, 113, 0.32)';
+    if ($classification === 'suspicious') {
+      return $alerted ? 'rgba(251, 191, 36, 0.38)' : 'rgba(248, 113, 113, 0.32)';
+    }
     return 'transparent';
   }};
 
@@ -841,9 +970,34 @@ const OutputFlowRow = styled.div<{ $classification?: RowClassification }>`
   }
 `;
 
+const ClassificationBadge = styled.div<{ $variant: Exclude<RowClassification, 'none'>; $alerted?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid
+    ${({ $variant, $alerted }) => {
+      if ($variant === 'baseline') return 'rgba(52, 211, 153, 0.45)';
+      return $alerted ? 'rgba(251, 191, 36, 0.55)' : 'rgba(248, 113, 113, 0.45)';
+    }};
+  background: ${({ $variant, $alerted }) => {
+    if ($variant === 'baseline') return 'rgba(16, 185, 129, 0.18)';
+    return $alerted ? 'rgba(251, 191, 36, 0.18)' : 'rgba(239, 68, 68, 0.18)';
+  }};
+  color: ${({ $variant, $alerted }) => {
+    if ($variant === 'baseline') return '#6ee7b7';
+    return $alerted ? '#fcd34d' : '#fca5a5';
+  }};
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+`;
+
 const RowActions = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 8px;
   align-self: start;
 `;
@@ -856,16 +1010,16 @@ const RowActionButton = styled.button<{ $active?: boolean; $variant: 'baseline' 
       $active
         ? $variant === 'baseline'
           ? 'rgba(52, 211, 153, 0.55)'
-          : 'rgba(248, 113, 113, 0.55)'
+          : 'rgba(251, 191, 36, 0.55)'
         : 'rgba(148, 163, 184, 0.18)'};
   background: ${({ $active, $variant }) =>
     $active
       ? $variant === 'baseline'
         ? 'rgba(16, 185, 129, 0.22)'
-        : 'rgba(239, 68, 68, 0.22)'
+        : 'rgba(251, 191, 36, 0.22)'
       : 'rgba(15, 23, 42, 0.72)'};
   color: ${({ $active, $variant }) =>
-    $active ? ($variant === 'baseline' ? '#6ee7b7' : '#fca5a5') : '#cbd5e1'};
+    $active ? ($variant === 'baseline' ? '#6ee7b7' : '#fcd34d') : '#cbd5e1'};
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -874,7 +1028,7 @@ const RowActionButton = styled.button<{ $active?: boolean; $variant: 'baseline' 
 
   &:hover {
     border-color: ${({ $variant }) =>
-      $variant === 'baseline' ? 'rgba(52, 211, 153, 0.45)' : 'rgba(248, 113, 113, 0.45)'};
+      $variant === 'baseline' ? 'rgba(52, 211, 153, 0.45)' : 'rgba(251, 191, 36, 0.45)'};
   }
 `;
 
@@ -1212,14 +1366,11 @@ function pathFromUrl(url: string) {
 }
 
 function isHttpAttributes(attributes: { key: string; value: string }[]) {
-  return attributes.some(
-    (attr) =>
-      attr.key.startsWith('http.') ||
-      attr.key.startsWith('url.') ||
-      attr.key === 'server.address' ||
-      attr.key === 'net.peer.name' ||
-      attr.key === 'peer.service',
-  );
+  return attributes.some((attr) => attr.key.startsWith('http.'));
+}
+
+function isDbAttributes(attributes: { key: string; value: string }[]) {
+  return attributes.some((attr) => attr.key.startsWith('db.'));
 }
 
 function buildHttpSummary(attributes: { key: string; value: string }[]) {
@@ -1504,10 +1655,6 @@ function getVisibleScopeName(attributes: { key: string; value: string }[], showF
   return getScopeName(attributes);
 }
 
-function isDbAttributes(attributes: { key: string; value: string }[]) {
-  return attributes.some((attr) => attr.key.startsWith('db.') || attr.key === 'db.system');
-}
-
 function formatDbSystem(value: string) {
   const normalized = value.trim().toLowerCase();
   const labels: Record<string, string> = {
@@ -1617,6 +1764,157 @@ function getFirstSeenAgeMs(value: string, now = Date.now()) {
 
 function isFreshConnection(value: string, now = Date.now()) {
   return getFirstSeenAgeMs(value, now) < FRESH_CONNECTION_MS;
+}
+
+function parseIsoTimestamp(value: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.getTime();
+}
+
+function classifyConnectionByBaseline(firstDetectedAt: string, baselineMs: number | null): RowClassification {
+  if (baselineMs === null) return 'none';
+  const firstSeenMs = parseIsoTimestamp(firstDetectedAt);
+  if (firstSeenMs === null) return 'none';
+  return firstSeenMs < baselineMs ? 'baseline' : 'suspicious';
+}
+
+type ConnectionReviewState = {
+  validatedKeys: Set<string>;
+  alertedKeys: Set<string>;
+};
+
+function resolveConnectionClassification(
+  connectionKey: string,
+  firstDetectedAt: string,
+  baselineMs: number | null,
+  review: ConnectionReviewState,
+): RowClassification {
+  if (review.validatedKeys.has(connectionKey)) {
+    return 'baseline';
+  }
+  return classifyConnectionByBaseline(firstDetectedAt, baselineMs);
+}
+
+function isConnectionAlerted(
+  connectionKey: string,
+  firstDetectedAt: string,
+  baselineMs: number | null,
+  review: ConnectionReviewState,
+) {
+  if (review.validatedKeys.has(connectionKey)) {
+    return false;
+  }
+  return review.alertedKeys.has(connectionKey) && classifyConnectionByBaseline(firstDetectedAt, baselineMs) === 'suspicious';
+}
+
+function isOpenSuspiciousConnection(
+  connectionKey: string,
+  firstDetectedAt: string,
+  baselineMs: number | null,
+  review: ConnectionReviewState,
+) {
+  return (
+    resolveConnectionClassification(connectionKey, firstDetectedAt, baselineMs, review) === 'suspicious'
+  );
+}
+
+type SuspiciousConnectionEntry = {
+  key: string;
+  workloadLabel: string;
+  inputAttributes: { key: string; value: string }[];
+  outputAttributes: { key: string; value: string }[];
+  firstDetectedAt: string;
+  connectionCount: number;
+  alerted: boolean;
+};
+
+function collectOpenSuspiciousConnections(
+  workloads: TraceCorrelationsWorkload[],
+  baselineMs: number | null,
+  review: ConnectionReviewState,
+): SuspiciousConnectionEntry[] {
+  const entries: SuspiciousConnectionEntry[] = [];
+
+  for (const workload of workloads) {
+    const workloadLabel = `${workload.namespace} · ${workload.kind} · ${workload.name}`;
+
+    for (const input of workload.inputs) {
+      for (const output of input.outputs) {
+        const key = connectionRowKey(input.attributes, output);
+        if (!isOpenSuspiciousConnection(key, output.firstDetectedAt, baselineMs, review)) {
+          continue;
+        }
+
+        entries.push({
+          key,
+          workloadLabel,
+          inputAttributes: input.attributes,
+          outputAttributes: output.attributes,
+          firstDetectedAt: output.firstDetectedAt,
+          connectionCount: output.connectionCount,
+          alerted: review.alertedKeys.has(key),
+        });
+      }
+    }
+  }
+
+  return entries.sort((left, right) => right.firstDetectedAt.localeCompare(left.firstDetectedAt));
+}
+
+function countConnectionClassifications(
+  workloads: TraceCorrelationsWorkload[],
+  baselineMs: number | null,
+  review: ConnectionReviewState,
+) {
+  let baseline = 0;
+  let suspicious = 0;
+  let alerted = 0;
+
+  for (const workload of workloads) {
+    for (const input of workload.inputs) {
+      for (const output of input.outputs) {
+        const key = connectionRowKey(input.attributes, output);
+        const classification = resolveConnectionClassification(key, output.firstDetectedAt, baselineMs, review);
+        if (classification === 'baseline') baseline += 1;
+        if (classification === 'suspicious') {
+          suspicious += 1;
+          if (review.alertedKeys.has(key)) alerted += 1;
+        }
+      }
+    }
+  }
+
+  return { baseline, suspicious, alerted };
+}
+
+function getFlowEdgeStroke(
+  edge: Pick<FlowEdgeLayout, 'classification' | 'fresh' | 'alerted'>,
+  highlighted: boolean,
+): { stroke: string; strokeWidth: number } {
+  if (edge.classification === 'baseline') {
+    return {
+      stroke: highlighted ? 'rgba(52, 211, 153, 0.9)' : 'rgba(52, 211, 153, 0.35)',
+      strokeWidth: highlighted ? 2.75 : 1.25,
+    };
+  }
+  if (edge.classification === 'suspicious') {
+    if (edge.alerted) {
+      return {
+        stroke: highlighted ? 'rgba(251, 191, 36, 0.95)' : 'rgba(251, 191, 36, 0.45)',
+        strokeWidth: highlighted ? 3.25 : 1.5,
+      };
+    }
+    return {
+      stroke: highlighted ? 'rgba(248, 113, 113, 0.95)' : 'rgba(248, 113, 113, 0.4)',
+      strokeWidth: highlighted ? 3 : 1.25,
+    };
+  }
+  return {
+    stroke: highlighted ? (edge.fresh ? 'rgba(34, 211, 238, 0.9)' : 'rgba(148, 163, 184, 0.65)') : 'rgba(148, 163, 184, 0.14)',
+    strokeWidth: highlighted ? (edge.fresh ? 3 : 2.5) : 1.25,
+  };
 }
 
 function formatTimeAgo(value: string, now = Date.now()) {
@@ -1750,6 +2048,8 @@ type FlowEdgeLayout = FlowEdge & {
   labelY: number;
   ageLabel: string;
   fresh: boolean;
+  classification: RowClassification;
+  alerted: boolean;
 };
 
 function groupFlowNodes(nodes: FlowNode[]): FlowNodeGroup[] {
@@ -2083,7 +2383,102 @@ function FlowNodeGroupView({
   );
 }
 
-function ServiceFlowDiagram({ workload, showFullData }: { workload: TraceCorrelationsWorkload; showFullData: boolean }) {
+function SuspiciousConnectionsSummary({
+  entries,
+  baselineLabel,
+  showFullData,
+  onValidate,
+  onToggleAlert,
+}: {
+  entries: SuspiciousConnectionEntry[];
+  baselineLabel: string;
+  showFullData: boolean;
+  onValidate: (connectionKey: string) => void;
+  onToggleAlert: (connectionKey: string) => void;
+}) {
+  const alertedCount = entries.filter((entry) => entry.alerted).length;
+
+  return (
+    <SuspiciousSummaryBanner $empty={entries.length === 0}>
+      <SuspiciousSummaryHeader $empty={entries.length === 0}>
+        {entries.length === 0 ? (
+          <>No suspicious connections found since baseline ({baselineLabel}).</>
+        ) : (
+          <>
+            <strong>{entries.length}</strong> suspicious connection{entries.length === 1 ? '' : 's'} found since baseline (
+            {baselineLabel}).
+            {alertedCount > 0 ? ` ${alertedCount} alerted.` : ''}
+          </>
+        )}
+      </SuspiciousSummaryHeader>
+
+      {entries.length > 0 ? (
+        <SuspiciousSummaryList>
+          {entries.map((entry) => (
+            <SuspiciousSummaryItem key={entry.key} $alerted={entry.alerted}>
+              <SuspiciousSummaryItemHeader>
+                <SuspiciousSummaryWorkload>{entry.workloadLabel}</SuspiciousSummaryWorkload>
+                <ClassificationBadge $variant='suspicious' $alerted={entry.alerted}>
+                  {entry.alerted ? 'Alerted' : 'Suspicious'}
+                </ClassificationBadge>
+              </SuspiciousSummaryItemHeader>
+
+              <SuspiciousSummaryConnectionFlow>
+                <InboundPanel>
+                  <ScopeHeader attributes={entry.inputAttributes} direction='inbound' showFullData={showFullData} />
+                  <AttributeChips attributes={entry.inputAttributes} showFullData={showFullData} />
+                </InboundPanel>
+
+                <FlowDivider>
+                  <FlowDividerLine />
+                  <FlowArrowBadge>→ triggers</FlowArrowBadge>
+                  <FlowDividerLine />
+                </FlowDivider>
+
+                <OutboundPanel>
+                  <ScopeHeader attributes={entry.outputAttributes} direction='outbound' showFullData={showFullData} />
+                  <AttributeChips attributes={entry.outputAttributes} showFullData={showFullData} />
+                </OutboundPanel>
+              </SuspiciousSummaryConnectionFlow>
+
+              <SuspiciousSummaryFooter>
+                <RowMeta>
+                  <CountBadge>{entry.connectionCount.toLocaleString()} connections</CountBadge>
+                  <FirstSeenTimestamp value={entry.firstDetectedAt} />
+                </RowMeta>
+                <RowActions>
+                  <RowActionButton type='button' $variant='baseline' onClick={() => onValidate(entry.key)}>
+                    Add to baseline
+                  </RowActionButton>
+                  <RowActionButton
+                    type='button'
+                    $variant='suspicious'
+                    $active={entry.alerted}
+                    onClick={() => onToggleAlert(entry.key)}
+                  >
+                    Alert
+                  </RowActionButton>
+                </RowActions>
+              </SuspiciousSummaryFooter>
+            </SuspiciousSummaryItem>
+          ))}
+        </SuspiciousSummaryList>
+      ) : null}
+    </SuspiciousSummaryBanner>
+  );
+}
+
+function ServiceFlowDiagram({
+  workload,
+  showFullData,
+  baselineMs,
+  review,
+}: {
+  workload: TraceCorrelationsWorkload;
+  showFullData: boolean;
+  baselineMs: number | null;
+  review: ConnectionReviewState;
+}) {
   const graph = useMemo(() => buildWorkloadFlowGraph(workload), [workload]);
   const containerRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -2132,6 +2527,8 @@ function ServiceFlowDiagram({ workload, showFullData }: { workload: TraceCorrela
           labelY: (y1 + y2) / 2,
           ageLabel: formatTimeAgo(edge.firstDetectedAt, now) || 'unknown',
           fresh: isFreshConnection(edge.firstDetectedAt, now),
+          classification: resolveConnectionClassification(edge.id, edge.firstDetectedAt, baselineMs, review),
+          alerted: isConnectionAlerted(edge.id, edge.firstDetectedAt, baselineMs, review),
         };
       })
       .filter((edge): edge is FlowEdgeLayout => edge !== null);
@@ -2141,7 +2538,7 @@ function ServiceFlowDiagram({ workload, showFullData }: { workload: TraceCorrela
       height: container.offsetHeight,
       edges,
     };
-  }, [graph.edges, now]);
+  }, [graph.edges, now, baselineMs, review]);
 
   const applyLayout = useCallback(() => {
     setLayout(measureLayout());
@@ -2250,13 +2647,14 @@ function ServiceFlowDiagram({ workload, showFullData }: { workload: TraceCorrela
           <FlowSvg viewBox={`0 0 ${layout.width} ${layout.height}`} preserveAspectRatio='none'>
             {layout.edges.map((edge) => {
               const highlighted = !highlightActive || connectedEdgeIds.has(edge.id);
+              const { stroke, strokeWidth } = getFlowEdgeStroke(edge, highlighted);
               return (
                 <path
                   key={edge.id}
                   d={edge.path}
                   fill='none'
-                  stroke={highlighted ? (edge.fresh ? 'rgba(34, 211, 238, 0.9)' : 'rgba(148, 163, 184, 0.65)') : 'rgba(148, 163, 184, 0.14)'}
-                  strokeWidth={highlighted ? (edge.fresh ? 3 : 2.5) : 1.25}
+                  stroke={stroke}
+                  strokeWidth={strokeWidth}
                   strokeOpacity={highlighted ? 1 : 0.35}
                 />
               );
@@ -2270,12 +2668,20 @@ function ServiceFlowDiagram({ workload, showFullData }: { workload: TraceCorrela
             <FlowEdgeLabelBox
               key={`label-${edge.id}`}
               $fresh={edge.fresh}
+              $classification={edge.classification === 'none' ? undefined : edge.classification}
               $highlighted={highlighted}
               $dimmed={highlightActive && !highlighted}
               $x={edge.labelX}
               $y={edge.labelY}
             >
               {edge.connectionCount.toLocaleString()} · {edge.ageLabel}
+              {edge.classification === 'baseline'
+                ? ' · baseline'
+                : edge.classification === 'suspicious'
+                  ? edge.alerted
+                    ? ' · alerted'
+                    : ' · suspicious'
+                  : ''}
             </FlowEdgeLabelBox>
           );
         })}
@@ -2311,11 +2717,24 @@ function ServiceFlowDiagram({ workload, showFullData }: { workload: TraceCorrela
             {graph.edges.map((edge) => {
               const ageLabel = formatTimeAgo(edge.firstDetectedAt, now) || 'unknown';
               const fresh = isFreshConnection(edge.firstDetectedAt, now);
+              const classification = resolveConnectionClassification(edge.id, edge.firstDetectedAt, baselineMs, review);
+              const alerted = isConnectionAlerted(edge.id, edge.firstDetectedAt, baselineMs, review);
               return (
-                <FlowMobileEdge key={`mobile-${edge.id}`} $fresh={fresh}>
+                <FlowMobileEdge
+                  key={`mobile-${edge.id}`}
+                  $fresh={fresh}
+                  $classification={classification === 'none' ? undefined : classification}
+                >
                   {inputSummaryById.get(edge.inputId)} → {outputSummaryById.get(edge.outputId)}
                   <br />
                   {edge.connectionCount.toLocaleString()} · {ageLabel}
+                  {classification === 'baseline'
+                    ? ' · baseline'
+                    : classification === 'suspicious'
+                      ? alerted
+                        ? ' · alerted'
+                        : ' · suspicious'
+                      : ''}
                 </FlowMobileEdge>
               );
             })}
@@ -2351,44 +2770,83 @@ function ServiceFlowDiagram({ workload, showFullData }: { workload: TraceCorrela
 }
 
 function ConnectionRow({
+  connectionKey,
   output,
   showFullData,
+  baselineMs,
+  review,
+  onValidate,
+  onToggleAlert,
 }: {
+  connectionKey: string;
   output: TraceCorrelationsOutputSeries;
   showFullData: boolean;
+  baselineMs: number | null;
+  review: ConnectionReviewState;
+  onValidate: (connectionKey: string) => void;
+  onToggleAlert: (connectionKey: string) => void;
 }) {
-  const [classification, setClassification] = useState<RowClassification>('none');
-
-  const setBaseline = () => {
-    setClassification((current) => (current === 'baseline' ? 'none' : 'baseline'));
-  };
-
-  const setSuspicious = () => {
-    setClassification((current) => (current === 'suspicious' ? 'none' : 'suspicious'));
-  };
+  const classification = resolveConnectionClassification(connectionKey, output.firstDetectedAt, baselineMs, review);
+  const alerted = isConnectionAlerted(connectionKey, output.firstDetectedAt, baselineMs, review);
+  const showActions = isOpenSuspiciousConnection(connectionKey, output.firstDetectedAt, baselineMs, review);
 
   return (
-    <OutputFlowRow $classification={classification === 'none' ? undefined : classification}>
+    <OutputFlowRow
+      $classification={classification === 'none' ? undefined : classification}
+      $alerted={alerted}
+    >
       <OutboundPanel>
         <AttributeChips attributes={output.attributes} showFullData={showFullData} />
       </OutboundPanel>
       <RowMeta>
         <CountBadge>{output.connectionCount.toLocaleString()} connections</CountBadge>
         <FirstSeenTimestamp value={output.firstDetectedAt} />
+        {classification !== 'none' ? (
+          <ClassificationBadge $variant={classification} $alerted={alerted}>
+            {classification === 'baseline'
+              ? review.validatedKeys.has(connectionKey)
+                ? 'Validated'
+                : 'In baseline'
+              : alerted
+                ? 'Alerted'
+                : 'Suspicious'}
+          </ClassificationBadge>
+        ) : null}
+        {showActions ? (
+          <RowActions>
+            <RowActionButton type='button' $variant='baseline' onClick={() => onValidate(connectionKey)}>
+              Add to baseline
+            </RowActionButton>
+            <RowActionButton
+              type='button'
+              $variant='suspicious'
+              $active={alerted}
+              onClick={() => onToggleAlert(connectionKey)}
+            >
+              Alert
+            </RowActionButton>
+          </RowActions>
+        ) : null}
       </RowMeta>
-      <RowActions>
-        <RowActionButton type='button' $variant='baseline' $active={classification === 'baseline'} onClick={setBaseline}>
-          Add to baseline
-        </RowActionButton>
-        <RowActionButton type='button' $variant='suspicious' $active={classification === 'suspicious'} onClick={setSuspicious}>
-          Suspicious
-        </RowActionButton>
-      </RowActions>
     </OutputFlowRow>
   );
 }
 
-function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInputGroup; showFullData: boolean }) {
+function InputGroupView({
+  group,
+  showFullData,
+  baselineMs,
+  review,
+  onValidate,
+  onToggleAlert,
+}: {
+  group: TraceCorrelationsInputGroup;
+  showFullData: boolean;
+  baselineMs: number | null;
+  review: ConnectionReviewState;
+  onValidate: (connectionKey: string) => void;
+  onToggleAlert: (connectionKey: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const outboundScopeGroups = useMemo(() => groupOutputsByScope(group.outputs, showFullData), [group.outputs, showFullData]);
   const inboundTitle = useMemo(() => getScopeGroupTitle(group.attributes, showFullData), [group.attributes, showFullData]);
@@ -2439,8 +2897,13 @@ function InputGroupView({ group, showFullData }: { group: TraceCorrelationsInput
                   {outputs.map((output) => (
                     <ConnectionRow
                       key={connectionRowKey(group.attributes, output)}
+                      connectionKey={connectionRowKey(group.attributes, output)}
                       output={output}
                       showFullData={showFullData}
+                      baselineMs={baselineMs}
+                      review={review}
+                      onValidate={onValidate}
+                      onToggleAlert={onToggleAlert}
                     />
                   ))}
                 </OutputFlowList>
@@ -2507,7 +2970,21 @@ function WorkloadHeaderHint({
   );
 }
 
-function WorkloadCardView({ workload, showFullData }: { workload: TraceCorrelationsWorkload; showFullData: boolean }) {
+function WorkloadCardView({
+  workload,
+  showFullData,
+  baselineMs,
+  review,
+  onValidate,
+  onToggleAlert,
+}: {
+  workload: TraceCorrelationsWorkload;
+  showFullData: boolean;
+  baselineMs: number | null;
+  review: ConnectionReviewState;
+  onValidate: (connectionKey: string) => void;
+  onToggleAlert: (connectionKey: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<'graph' | 'details'>('graph');
   const stats = workloadStats(workload);
@@ -2608,11 +3085,19 @@ function WorkloadCardView({ workload, showFullData }: { workload: TraceCorrelati
           </ViewModeBar>
 
           {viewMode === 'graph' ? (
-            <ServiceFlowDiagram workload={workload} showFullData={showFullData} />
+            <ServiceFlowDiagram workload={workload} showFullData={showFullData} baselineMs={baselineMs} review={review} />
           ) : (
             <InputGroupList>
               {workload.inputs.map((input) => (
-                <InputGroupView key={formatAttributes(input.attributes)} group={input} showFullData={showFullData} />
+                <InputGroupView
+                  key={formatAttributes(input.attributes)}
+                  group={input}
+                  showFullData={showFullData}
+                  baselineMs={baselineMs}
+                  review={review}
+                  onValidate={onValidate}
+                  onToggleAlert={onToggleAlert}
+                />
               ))}
             </InputGroupList>
           )}
@@ -2637,26 +3122,75 @@ export default function TraceCorrelationsPage() {
   const [timePreset, setTimePreset] = useState<TraceCorrelationsTimePreset>('1h');
   const [customStart, setCustomStart] = useState(() => createDefaultCustomRange().start);
   const [customEnd, setCustomEnd] = useState(() => createDefaultCustomRange().end);
+  const [baselineTime, setBaselineTime] = useState('');
+  const [validatedConnectionKeys, setValidatedConnectionKeys] = useState<Set<string>>(() => new Set());
+  const [alertedConnectionKeys, setAlertedConnectionKeys] = useState<Set<string>>(() => new Set());
   const [queryAnchor, setQueryAnchor] = useState(() => Date.now());
+
+  const updateBaselineTime = useCallback((value: string) => {
+    setBaselineTime(value);
+    setValidatedConnectionKeys(new Set());
+    setAlertedConnectionKeys(new Set());
+  }, []);
+
   const filter = namespaceFilter.trim() ? { namespace: namespaceFilter.trim() } : undefined;
   const timeRange = useMemo(
     () => resolveTraceCorrelationsTimeRange({ preset: timePreset, customStart, customEnd, now: queryAnchor }),
     [timePreset, customStart, customEnd, queryAnchor],
   );
+  const baselineMs = useMemo(() => {
+    const date = parseDatetimeLocalValue(baselineTime);
+    return date ? date.getTime() : null;
+  }, [baselineTime]);
+  const review = useMemo<ConnectionReviewState>(
+    () => ({
+      validatedKeys: validatedConnectionKeys,
+      alertedKeys: alertedConnectionKeys,
+    }),
+    [validatedConnectionKeys, alertedConnectionKeys],
+  );
   const { workloads, loading, error, refetch } = useTraceCorrelations(filter, timeRange);
+
+  const validateConnection = useCallback((connectionKey: string) => {
+    setValidatedConnectionKeys((current) => new Set(current).add(connectionKey));
+    setAlertedConnectionKeys((current) => {
+      const next = new Set(current);
+      next.delete(connectionKey);
+      return next;
+    });
+  }, []);
+
+  const toggleConnectionAlert = useCallback((connectionKey: string) => {
+    setAlertedConnectionKeys((current) => {
+      const next = new Set(current);
+      if (next.has(connectionKey)) {
+        next.delete(connectionKey);
+      } else {
+        next.add(connectionKey);
+      }
+      return next;
+    });
+  }, []);
 
   const customRangeInvalid = timePreset === 'custom' && !timeRange;
   const dataCoverageLabel = timeRange ? formatTraceCorrelationsTimeRangeLabel(timeRange) : null;
+  const baselineLabel = baselineMs ? formatTimestamp(new Date(baselineMs).toISOString()) : null;
+  const suspiciousConnections = useMemo(
+    () => collectOpenSuspiciousConnections(workloads, baselineMs, review),
+    [workloads, baselineMs, review],
+  );
 
   const totals = useMemo(() => {
     const connections = workloads.reduce((sum, workload) => sum + workloadStats(workload).connections, 0);
     const outputSeries = workloads.reduce((sum, workload) => sum + workloadStats(workload).outputSeries, 0);
+    const classifications = countConnectionClassifications(workloads, baselineMs, review);
     return {
       workloads: workloads.length,
       connections,
       outputSeries,
+      ...classifications,
     };
-  }, [workloads]);
+  }, [workloads, baselineMs, review]);
 
   return (
     <Page>
@@ -2714,10 +3248,49 @@ export default function TraceCorrelationsPage() {
           {customRangeInvalid ? <TimeRangeError>End time must be after start time.</TimeRangeError> : null}
         </TimeRangeBar>
 
+        <BaselineBar>
+          <TimeRangeLabel>Baseline</TimeRangeLabel>
+          <TimeRangeField>
+            Cutoff time
+            <DateTimeInput
+              type='datetime-local'
+              value={baselineTime}
+              onChange={(event) => updateBaselineTime(event.target.value)}
+            />
+          </TimeRangeField>
+          <ToggleButton
+            type='button'
+            $active={false}
+            onClick={() => updateBaselineTime(toDatetimeLocalValue(new Date()))}
+          >
+            Use Now
+          </ToggleButton>
+          {baselineTime ? (
+            <ToggleButton type='button' $active={false} onClick={() => updateBaselineTime('')}>
+              Clear
+            </ToggleButton>
+          ) : null}
+          <TimeRangeHint>
+            {baselineLabel
+              ? `Connections first seen before ${baselineLabel} are baseline (green); first seen at or after are suspicious (red).`
+              : 'Pick a baseline cutoff to auto-classify each connection by first-seen time.'}
+          </TimeRangeHint>
+        </BaselineBar>
+
         {dataCoverageLabel ? (
           <DataCoverageBanner>
             <DataCoverageLabel>{dataCoverageLabel}</DataCoverageLabel>
           </DataCoverageBanner>
+        ) : null}
+
+        {baselineLabel ? (
+          <SuspiciousConnectionsSummary
+            entries={suspiciousConnections}
+            baselineLabel={baselineLabel}
+            showFullData={showFullData}
+            onValidate={validateConnection}
+            onToggleAlert={toggleConnectionAlert}
+          />
         ) : null}
 
         <Hero>
@@ -2726,7 +3299,7 @@ export default function TraceCorrelationsPage() {
             <Title>Service I/O Connections</Title>
             <Subtitle>
               Inbound-to-outbound span correlations emitted by the serviceio connector for the selected time window.
-              Each service card shows a graph of input and output patterns with connection counts and age, or switch to
+              Set a baseline cutoff to auto-mark known connections (green) vs newly seen ones (red), or switch to
               Details for the full breakdown.
             </Subtitle>
           </div>
@@ -2767,6 +3340,24 @@ export default function TraceCorrelationsPage() {
             <StatLabel>Total connections</StatLabel>
             <StatValue>{totals.connections.toLocaleString()}</StatValue>
           </StatCard>
+          {baselineMs !== null ? (
+            <>
+              <StatCard>
+                <StatLabel>Baseline connections</StatLabel>
+                <StatValue>{totals.baseline}</StatValue>
+              </StatCard>
+              <StatCard>
+                <StatLabel>Suspicious connections</StatLabel>
+                <StatValue>{totals.suspicious}</StatValue>
+              </StatCard>
+              {totals.alerted > 0 ? (
+                <StatCard>
+                  <StatLabel>Alerted</StatLabel>
+                  <StatValue>{totals.alerted}</StatValue>
+                </StatCard>
+              ) : null}
+            </>
+          ) : null}
         </StatsGrid>
 
         {error ? (
@@ -2795,6 +3386,10 @@ export default function TraceCorrelationsPage() {
               key={`${workload.namespace}/${workload.kind}/${workload.name}/${workload.containerName}`}
               workload={workload}
               showFullData={showFullData}
+              baselineMs={baselineMs}
+              review={review}
+              onValidate={validateConnection}
+              onToggleAlert={toggleConnectionAlert}
             />
           ))}
         </WorkloadGrid>
