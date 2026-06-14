@@ -271,7 +271,10 @@ const operations: OdigosApiOperations = {
   },
   GET_COLLECTOR_POD_INFO: {
     document: GET_COLLECTOR_POD_INFO,
-    transformResult: (raw: unknown) => (raw as { extendedPodInfo?: ExtendedPodInfo } | null | undefined)?.extendedPodInfo,
+    // Wire field is `collectorPod`. The legacy `extendedPodInfo`
+    // fallback is kept for any older backend version that might still
+    // be in flight.
+    transformResult: (raw: unknown) => (raw as { collectorPod?: ExtendedPodInfo; extendedPodInfo?: ExtendedPodInfo } | null | undefined)?.collectorPod ?? (raw as { extendedPodInfo?: ExtendedPodInfo } | null | undefined)?.extendedPodInfo,
   },
 
   // sampling
