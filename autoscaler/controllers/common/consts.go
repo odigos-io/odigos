@@ -22,9 +22,9 @@ const (
 
 // OpenTelemetry component instance name for the side-channel exporter
 // appended to the root traces pipeline on the cluster gateway. Identifier
-// uses a neutral "Abnormal" stem; the string VALUE retains its established
+// uses a neutral "Insights" stem; the string VALUE retains its established
 // form so the rendered collector configmap stays backwards-compatible.
 const (
-	// AbnormalGatewayExporter forwards spans to the in-cluster sidecar service.
-	AbnormalGatewayExporter = "otlp_grpc/security"
+	// InsightsGatewayExporter forwards spans to the in-cluster sidecar service.
+	InsightsGatewayExporter = "otlp_grpc/security"
 )

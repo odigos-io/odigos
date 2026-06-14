@@ -547,12 +547,11 @@ type ProfilingConfiguration struct {
 }
 
 // +kubebuilder:object:generate=true
-// AbnormalConfiguration toggles an optional side-channel trace pipeline
-// on the cluster gateway. Disabled unless Enabled is set; when on, the
-// gateway grows an additional trace pipeline that taps the root traces
-// pipeline (so the side-channel sees post-processed spans) and forwards
-// to a sidecar service over OTLP gRPC inside the namespace.
-type AbnormalConfiguration struct {
+// InsightsConfiguration toggles an optional side-channel trace pipeline on
+// the cluster gateway. Disabled unless Enabled is set; when on, the gateway
+// taps the root traces pipeline (so the side-channel sees post-processed
+// spans) and forwards to a sidecar service over OTLP gRPC inside the namespace.
+type InsightsConfiguration struct {
 	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 }
 
@@ -623,7 +622,7 @@ type OdigosConfiguration struct {
 
 	// Tag value is intentionally distinct from the field name so the
 	// rendered configmap and values.yaml retain their stable on-disk key.
-	Abnormal *AbnormalConfiguration `json:"security,omitempty" yaml:"security,omitempty"`
+	Insights *InsightsConfiguration `json:"security,omitempty" yaml:"security,omitempty"`
 }
 
 // ProfilingPipelineActive reports whether profiling pipelines and related collector settings should be applied.
@@ -637,15 +636,15 @@ func (o *OdigosConfiguration) ProfilingEnabled() bool {
 	return o != nil && ProfilingPipelineActive(o.Profiling)
 }
 
-// AbnormalPipelineActive reports whether the optional side-channel trace
+// InsightsPipelineActive reports whether the optional side-channel trace
 // pipeline should be wired into the cluster-gateway collector. Opt-in:
 // Enabled must be explicitly true.
-func AbnormalPipelineActive(a *AbnormalConfiguration) bool {
+func InsightsPipelineActive(a *InsightsConfiguration) bool {
 	return a != nil && a.Enabled != nil && *a.Enabled
 }
 
-// AbnormalEnabled reports whether the side-channel trace pipeline is
+// InsightsEnabled reports whether the side-channel trace pipeline is
 // explicitly enabled on this configuration.
-func (o *OdigosConfiguration) AbnormalEnabled() bool {
-	return o != nil && AbnormalPipelineActive(o.Abnormal)
+func (o *OdigosConfiguration) InsightsEnabled() bool {
+	return o != nil && InsightsPipelineActive(o.Insights)
 }

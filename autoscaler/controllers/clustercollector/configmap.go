@@ -187,16 +187,23 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
 	var profilingCfg *odigoscommon.ProfilingConfiguration
-	var abnormalCfg *odigoscommon.AbnormalConfiguration
+	var insightsCfg *odigoscommon.InsightsConfiguration
 	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
 		profilingCfg = odigosCfg.Profiling
-		abnormalCfg = odigosCfg.Abnormal
+		insightsCfg = odigosCfg.Insights
 		if odigosCfg.ComponentLogLevels != nil {
 			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
 		}
 	}
 	// When on, pipelinegen installs groupbytrace on traces/in so the exporter sees full traces.
-	gatewayOptions.AbnormalEnabled = odigoscommon.AbnormalPipelineActive(abnormalCfg)
+	gatewayOptions.Insights = insightsCfg
+	// Insights can trigger groupbytrace without tail sampling on, in which case
+	// the scheduler hasn't resolved TraceAggregationWaitDuration. Fall back to the
+	// canonical default so we never feed groupbytrace a nil wait_duration.
+	if gatewayOptions.TraceAggregationWaitDuration == nil && odigoscommon.InsightsPipelineActive(insightsCfg) {
+		def := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
+		gatewayOptions.TraceAggregationWaitDuration = &def
+	}
 
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		common.ToExporterConfigurerArray(enabledDests),
@@ -209,7 +216,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 			if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
 				return err
 			}
-			if err := addAbnormalGatewayExporter(c, env.GetCurrentNamespace(), abnormalCfg); err != nil {
+			if err := addInsightsGatewayExporter(c, env.GetCurrentNamespace(), insightsCfg); err != nil {
 				return err
 			}
 			c.Service.Telemetry.Logs = config.LogsConfig{Level: collectorLogLevel}

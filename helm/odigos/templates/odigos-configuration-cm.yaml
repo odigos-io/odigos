@@ -63,7 +63,7 @@ data:
     {{- end }}
     {{- if .Values.security.enabled }}
     security:
-      enabled: true
+      enabled: {{ .Values.security.enabled }}
     {{- end }}
     {{- if .Values.profiling.enabled }}
     {{- $pex := .Values.profiling.exporter | default dict }}

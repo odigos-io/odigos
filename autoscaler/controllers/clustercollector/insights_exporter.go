@@ -8,12 +8,12 @@ import (
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
 )
 
-// addAbnormalGatewayExporter appends an OTLP gRPC exporter to the gateway's
+// addInsightsGatewayExporter appends an OTLP gRPC exporter to the gateway's
 // root traces pipeline so every processed span fans out to the in-cluster
 // sidecar alongside the destination router. Noop when disabled or when no
 // root traces pipeline exists.
-func addAbnormalGatewayExporter(c *config.Config, odigosNs string, abnormal *common.AbnormalConfiguration) error {
-	if !common.AbnormalPipelineActive(abnormal) {
+func addInsightsGatewayExporter(c *config.Config, odigosNs string, insights *common.InsightsConfiguration) error {
+	if !common.InsightsPipelineActive(insights) {
 		return nil
 	}
 
@@ -27,8 +27,8 @@ func addAbnormalGatewayExporter(c *config.Config, odigosNs string, abnormal *com
 		c.Exporters = config.GenericMap{}
 	}
 
-	c.Exporters[commonconf.AbnormalGatewayExporter] = config.GenericMap{
-		"endpoint":    k8sconsts.AbnormalOtlpGrpcEndpoint(odigosNs),
+	c.Exporters[commonconf.InsightsGatewayExporter] = config.GenericMap{
+		"endpoint":    k8sconsts.InsightsOtlpGrpcEndpoint(odigosNs),
 		"tls":         config.GenericMap{"insecure": true},
 		"compression": "none",
 		"retry_on_failure": config.GenericMap{
@@ -36,7 +36,7 @@ func addAbnormalGatewayExporter(c *config.Config, odigosNs string, abnormal *com
 		},
 	}
 
-	rootPipeline.Exporters = append(rootPipeline.Exporters, commonconf.AbnormalGatewayExporter)
+	rootPipeline.Exporters = append(rootPipeline.Exporters, commonconf.InsightsGatewayExporter)
 	c.Service.Pipelines[rootPipelineName] = rootPipeline
 
 	return nil

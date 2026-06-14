@@ -29,11 +29,11 @@ type GatewayConfigOptions struct {
 	SamplingDryRun               bool
 	SamplingSpanAttributes       *sampling.SpanSamplingAttributesConfiguration
 
-	// AbnormalEnabled is true when the optional side-channel exporter is
-	// wired onto the root traces pipeline. It shares the upstream
 	// groupbytrace processor with sampling v2 so a trace is assembled at
 	// most once on the gateway, regardless of which consumers asked for it.
-	AbnormalEnabled bool
+	// Passed as the full config (not a bool) so future toggles on the same
+	// feature can be added without changing this surface.
+	Insights *common.InsightsConfiguration
 }
 
 func GetGatewayConfig(
@@ -94,21 +94,22 @@ func CalculateGatewayConfig(
 	// groupbytrace is shared across consumers that need fully assembled traces
 	// on the root traces pipeline:
 	//   - sampling v2 (tail sampler can't decide on individual spans)
-	//   - the optional side-channel exporter tapped onto the root pipeline [odigos-abnormal]
+	//   - the optional side-channel exporter tapped onto the root pipeline [odigos-insights]
 	// Tail sampling itself stays gated strictly on SamplingEnabled so that
 	// turning on the side-channel never starts dropping spans.
 	if gatewayOptions.OdigosConfigExtensionName != nil {
 		samplingOn := gatewayOptions.SamplingEnabled != nil && *gatewayOptions.SamplingEnabled
-		if samplingOn || gatewayOptions.AbnormalEnabled {
+		insightsOn := common.InsightsPipelineActive(gatewayOptions.Insights)
+		if samplingOn || insightsOn {
 			currentConfig.Processors[consts.GroupByTraceProcessorV2] = config.GenericMap{
-				"wait_duration": resolveTraceAggregationWaitDuration(gatewayOptions.TraceAggregationWaitDuration),
+				"wait_duration": gatewayOptions.TraceAggregationWaitDuration,
 			}
-			prefix := []string{consts.GroupByTraceProcessorV2}
+			sharedTraceProcessors := []string{consts.GroupByTraceProcessorV2}
 			if samplingOn {
 				currentConfig.Processors[consts.OdigosTailSamplingProcessorName] = getTailSamplingProcessorConfig(gatewayOptions)
-				prefix = append(prefix, consts.OdigosTailSamplingProcessorName)
+				sharedTraceProcessors = append(sharedTraceProcessors, consts.OdigosTailSamplingProcessorName)
 			}
-			processorsResults.TracesProcessors = append(prefix, processorsResults.TracesProcessors...)
+			processorsResults.TracesProcessors = append(sharedTraceProcessors, processorsResults.TracesProcessors...)
 		}
 	}
 
@@ -483,20 +484,6 @@ func insertClusterMetricsResources(currentConfig *config.Config, odigosNs string
 
 	pipeline.Receivers = append(pipeline.Receivers, "k8s_cluster")
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
-}
-
-// defaultTraceAggregationWaitDuration is used when groupbytrace is installed
-// without sampling v2 being enabled (e.g. only the side-channel exporter is
-// the consumer that needs assembly). When sampling v2 is on, the scheduler
-// validates and defaults this value, so this fallback is only hit on the
-// side-channel-only path.
-const defaultTraceAggregationWaitDuration = "10s"
-
-func resolveTraceAggregationWaitDuration(opt *string) string {
-	if opt != nil && *opt != "" {
-		return *opt
-	}
-	return defaultTraceAggregationWaitDuration
 }
 
 func getTailSamplingProcessorConfig(gatewayOptions *GatewayConfigOptions) config.GenericMap {

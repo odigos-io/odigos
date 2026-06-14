@@ -12,11 +12,11 @@ func UiOtlpGrpcEndpoint(namespace string) string {
 	return fmt.Sprintf("ui.%s:%d", namespace, commonconsts.OTLPPort)
 }
 
-// AbnormalOtlpGrpcEndpoint returns the in-cluster OTLP gRPC host:port for
-// the sidecar service consumed by the side-channel trace pipeline on the
+// InsightsOtlpGrpcEndpoint returns the in-cluster OTLP gRPC host:port for the
+// sidecar service consumed by the optional side-channel trace pipeline on the
 // cluster gateway. Resolves via Kubernetes service DNS.
-func AbnormalOtlpGrpcEndpoint(namespace string) string {
-	return fmt.Sprintf("%s.%s:%d", OdigosAbnormalServiceName, namespace, OdigosAbnormalOTLPPort)
+func InsightsOtlpGrpcEndpoint(namespace string) string {
+	return fmt.Sprintf("%s.%s:%d", OdigosInsightsServiceName, namespace, OdigosInsightsOTLPPort)
 }
 
 // OtlpGrpcDNSEndpoint returns a gRPC client endpoint in dns:/// form for a Kubernetes Service
