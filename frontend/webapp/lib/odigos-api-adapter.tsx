@@ -21,8 +21,32 @@ import { useCSRF } from '@/hooks';
 import { API, IS_LOCAL } from '@/utils';
 import { PlatformType, Tier } from '@odigos/ui-kit/types';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
-import { OdigosApiProvider, type DiagnoseResult, type OdigosApiOperations, type OperationContext } from '@odigos/ui-kit/contexts/odigos-api';
-import type { EnableProfilingResult, ExtendedPodInfo, FetchedConfig, GatewayInfo, NodeCollectoInfo, PodInfo, ProfilingSlots, SourceProfilingResult, TokenPayload } from '@odigos/ui-kit/types';
+import {
+  OdigosApiProvider,
+  type DiagnoseResult,
+  type GetNamespacesWithWorkloadsData,
+  type GetSamplingRulesData,
+  type GetServiceMapData,
+  type OdigosApiOperations,
+  type OperationContext,
+} from '@odigos/ui-kit/contexts/odigos-api';
+import type {
+  EffectiveConfig,
+  EnableProfilingResult,
+  ExtendedPodInfo,
+  FetchedConfig,
+  GatewayInfo,
+  Namespace,
+  NodeCollectoInfo,
+  PodInfo,
+  ProfilingSlots,
+  SamplingRules,
+  SamplingRulesK8sHealthConfig,
+  ServiceMapSources,
+  SourceProfilingResult,
+  TestConnectionResponse,
+  TokenPayload,
+} from '@odigos/ui-kit/types';
 import {
   // queries
   GET_ACTIONS,
@@ -122,8 +146,7 @@ const operations: OdigosApiOperations = {
     document: TEST_CONNECTION_MUTATION,
     // The webapp's mutation returns `{ testConnectionForDestination: TestConnectionResponse }`;
     // unwrap so consumers get the bare response shape that the kit hook returns.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transformResult: (raw: any) => raw?.testConnectionForDestination,
+    transformResult: (raw) => (raw as { testConnectionForDestination?: TestConnectionResponse } | null | undefined)?.testConnectionForDestination,
   },
 
   // actions
@@ -152,8 +175,9 @@ const operations: OdigosApiOperations = {
   // keep the consumer's TS narrowing happy (slot data is bare).
   GET_NAMESPACES_WITH_WORKLOADS: {
     document: GET_NAMESPACES_WITH_WORKLOADS,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transformResult: (raw: any) => ({ namespaces: raw?.namespaces ?? [] }),
+    transformResult: (raw): GetNamespacesWithWorkloadsData => ({
+      namespaces: (raw as { namespaces?: Namespace[] } | null | undefined)?.namespaces ?? [],
+    }),
   },
   PERSIST_NAMESPACES: { document: PERSIST_NAMESPACES },
 
@@ -179,8 +203,10 @@ const operations: OdigosApiOperations = {
   },
   GET_EFFECTIVE_CONFIG: {
     document: GET_EFFECTIVE_CONFIG,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transformResult: (raw: any) => raw?.computePlatform?.effectiveConfig ?? raw?.effectiveConfig,
+    transformResult: (raw) => {
+      const env = raw as { computePlatform?: { effectiveConfig?: EffectiveConfig }; effectiveConfig?: EffectiveConfig } | null | undefined;
+      return env?.computePlatform?.effectiveConfig ?? env?.effectiveConfig;
+    },
   },
   GET_CONFIG_YAMLS: { document: GET_CONFIG_YAMLS },
   UPDATE_LOCAL_UI_CONFIG: { document: UPDATE_LOCAL_UI_CONFIG },
@@ -222,8 +248,10 @@ const operations: OdigosApiOperations = {
   // to that shape so the consumer stays envelope-agnostic.
   GET_SERVICE_MAP: {
     document: GET_SERVICE_MAP,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transformResult: (raw: any) => ({ serviceMap: raw?.getServiceMap?.services ?? raw?.serviceMap ?? [] }),
+    transformResult: (raw): GetServiceMapData => {
+      const env = raw as { getServiceMap?: { services?: ServiceMapSources }; serviceMap?: ServiceMapSources } | null | undefined;
+      return { serviceMap: env?.getServiceMap?.services ?? env?.serviceMap ?? [] };
+    },
   },
 
   // profiling — bare-shape slots; flatten the per-field envelope here.
@@ -274,7 +302,9 @@ const operations: OdigosApiOperations = {
     // Wire field is `collectorPod`. The legacy `extendedPodInfo`
     // fallback is kept for any older backend version that might still
     // be in flight.
-    transformResult: (raw: unknown) => (raw as { collectorPod?: ExtendedPodInfo; extendedPodInfo?: ExtendedPodInfo } | null | undefined)?.collectorPod ?? (raw as { extendedPodInfo?: ExtendedPodInfo } | null | undefined)?.extendedPodInfo,
+    transformResult: (raw: unknown) =>
+      (raw as { collectorPod?: ExtendedPodInfo; extendedPodInfo?: ExtendedPodInfo } | null | undefined)?.collectorPod ??
+      (raw as { extendedPodInfo?: ExtendedPodInfo } | null | undefined)?.extendedPodInfo,
   },
 
   // sampling
@@ -285,11 +315,21 @@ const operations: OdigosApiOperations = {
   // envelopes.
   GET_SAMPLING_RULES: {
     document: GET_SAMPLING_RULES,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transformResult: (raw: any) => ({
-      samplingRules: raw?.sampling?.rules ?? [],
-      k8sHealthProbesConfig: raw?.sampling?.configs?.effective?.k8sHealthProbesSampling ?? null,
-    }),
+    transformResult: (raw): GetSamplingRulesData => {
+      const env = raw as
+        | {
+            sampling?: {
+              rules?: SamplingRules[];
+              configs?: { effective?: { k8sHealthProbesSampling?: SamplingRulesK8sHealthConfig } };
+            };
+          }
+        | null
+        | undefined;
+      return {
+        samplingRules: env?.sampling?.rules ?? [],
+        k8sHealthProbesConfig: env?.sampling?.configs?.effective?.k8sHealthProbesSampling ?? undefined,
+      };
+    },
   },
   CREATE_NOISY_OPERATION_RULE: { document: CREATE_NOISY_OPERATION_RULE },
   UPDATE_NOISY_OPERATION_RULE: { document: UPDATE_NOISY_OPERATION_RULE },
