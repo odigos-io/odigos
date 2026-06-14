@@ -64,6 +64,15 @@ spec:
           {{- end }}
           - name: GOMEMLIMIT
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.ui.resources) }}
+          {{- if include "odigos.secretExists" . }}
+          # Consumed by the enterprise UI's odigosauth.AssertEnterpriseOdigosToken()
+          # at startup. The community UI image ignores this env var.
+          - name: ODIGOS_ONPREM_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: odigos-pro
+                key: odigos-onprem-token
+          {{- end }}
         ports:
           - containerPort: 3000
             name: ui
