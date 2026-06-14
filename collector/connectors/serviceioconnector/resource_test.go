@@ -6,8 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
-
-	"github.com/odigos-io/odigos/collector/pkg/completetrace"
 )
 
 func TestBuildMetricResourceAttributes(t *testing.T) {
@@ -17,7 +15,7 @@ func TestBuildMetricResourceAttributes(t *testing.T) {
 	resourceAttributes.PutStr(string(semconv.ProcessRuntimeVersionKey), "17.0.12")
 	resourceAttributes.PutStr("service.name", "checkout")
 
-	instance := &completetrace.ServiceInstance{
+	instance := &ServiceInstance{
 		ResourceAttributes: resourceAttributes,
 	}
 
@@ -51,7 +49,7 @@ func TestBuildMetricsSetsResourceAttributes(t *testing.T) {
 	resourceAttributes.PutStr(string(semconv.ProcessRuntimeNameKey), "CPython")
 	resourceAttributes.PutStr(string(semconv.ProcessRuntimeVersionKey), "3.12.1")
 
-	instance := &completetrace.ServiceInstance{
+	instance := &ServiceInstance{
 		ServiceName:        "orders",
 		ResourceAttributes: resourceAttributes,
 	}

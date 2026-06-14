@@ -3,8 +3,6 @@ package serviceioconnector
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
-
-	"github.com/odigos-io/odigos/collector/pkg/completetrace"
 )
 
 const spanKindAttribute = "span.kind"
@@ -12,7 +10,7 @@ const spanKindAttribute = "span.kind"
 // ExtractSpanAttributes reads configured OpenTelemetry span attribute names from a span node.
 // Span kind and instrumentation scope are always included. Each stored key is prefix + attribute name.
 // Missing configured attributes and unsupported value types are omitted.
-func ExtractSpanAttributes(node *completetrace.TraceTreeNode, prefix string, attributeNames []string) pcommon.Map {
+func ExtractSpanAttributes(node *TraceTreeNode, prefix string, attributeNames []string) pcommon.Map {
 	values := pcommon.NewMap()
 	span := node.Span
 	scope := node.Scope

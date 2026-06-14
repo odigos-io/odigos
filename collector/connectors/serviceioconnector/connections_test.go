@@ -12,13 +12,12 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	"github.com/odigos-io/odigos/collector/connectors/serviceioconnector/internal/metadata"
-	"github.com/odigos-io/odigos/collector/pkg/completetrace"
 )
 
 func TestAggregateConnectionsFromTree(t *testing.T) {
 	td := buildServiceIOTestTrace(t)
 
-	tree, err := completetrace.BuildTraceTree(td, nil)
+	tree, err := BuildTraceTree(td, nil)
 	require.NoError(t, err)
 
 	connector := &serviceioConnector{

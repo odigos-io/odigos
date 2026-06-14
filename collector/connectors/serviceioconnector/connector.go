@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/zap"
 
-	"github.com/odigos-io/odigos/collector/pkg/completetrace"
 	odigoscollector "github.com/odigos-io/odigos/common/collector"
 )
 
@@ -27,7 +26,7 @@ type serviceioConnector struct {
 	collectorInstanceID  string
 
 	odigosConfig             odigoscollector.OdigosConfigExtension
-	workloadIdentityResolver completetrace.WorkloadIdentityResolver
+	workloadIdentityResolver WorkloadIdentityResolver
 
 	startTime time.Time
 
@@ -147,16 +146,15 @@ func (c *serviceioConnector) Capabilities() consumer.Capabilities {
 
 // ConsumeTraces receives complete traces (e.g. from groupbytrace) and emits service I/O metrics.
 func (c *serviceioConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) error {
-	_, shouldProcess, _, err := completetrace.ValidateCompleteTrace(td)
-	if err != nil {
+	if err := validateCompleteTraceBatch(td); err != nil {
 		c.logger.Error("invalid complete trace batch", zap.Error(err))
 		return nil
 	}
-	if !shouldProcess || c.workloadIdentityResolver == nil {
+	if c.workloadIdentityResolver == nil {
 		return nil
 	}
 
-	tree, err := completetrace.BuildTraceTree(td, c.workloadIdentityResolver)
+	tree, err := BuildTraceTree(td, c.workloadIdentityResolver)
 	if err != nil {
 		c.logger.Error("failed to build trace tree", zap.Error(err))
 		return nil
@@ -175,6 +173,6 @@ func (c *serviceioConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces
 	return nil
 }
 
-func (c *serviceioConnector) isActiveSourceInstance(instance *completetrace.ServiceInstance) bool {
+func (c *serviceioConnector) isActiveSourceInstance(instance *ServiceInstance) bool {
 	return c.odigosConfig.IsActiveSource(instance.Root.Resource)
 }

@@ -8,8 +8,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
-
-	"github.com/odigos-io/odigos/collector/pkg/completetrace"
 )
 
 func TestBuildMetrics(t *testing.T) {
@@ -24,7 +22,7 @@ func TestBuildMetrics(t *testing.T) {
 	inputAttrs.PutStr(inputAttributePrefix+"http.route", "/users")
 	outputAttrs := pcommon.NewMap()
 	outputAttrs.PutStr(outputAttributePrefix+"rpc.service", "UserService")
-	instance := &completetrace.ServiceInstance{
+	instance := &ServiceInstance{
 		ServiceName:        "svc-1",
 		ResourceAttributes: pcommon.NewMap(),
 	}
@@ -65,8 +63,8 @@ func TestConnectionAttributes_IsDeterministic(t *testing.T) {
 	input2 := pcommon.NewMap()
 	input2.PutStr("input.a", "1")
 	input2.PutStr("input.b", "2")
-	key1, _ := buildConnectionAttributes(buildServiceInstanceBaseAttributes(&completetrace.ServiceInstance{ResourceAttributes: pcommon.NewMap()}, input1), pcommon.NewMap())
-	key2, _ := buildConnectionAttributes(buildServiceInstanceBaseAttributes(&completetrace.ServiceInstance{ResourceAttributes: pcommon.NewMap()}, input2), pcommon.NewMap())
+	key1, _ := buildConnectionAttributes(buildServiceInstanceBaseAttributes(&ServiceInstance{ResourceAttributes: pcommon.NewMap()}, input1), pcommon.NewMap())
+	key2, _ := buildConnectionAttributes(buildServiceInstanceBaseAttributes(&ServiceInstance{ResourceAttributes: pcommon.NewMap()}, input2), pcommon.NewMap())
 	require.Equal(t, key1, key2)
 }
 

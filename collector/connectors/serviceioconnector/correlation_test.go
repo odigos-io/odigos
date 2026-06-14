@@ -7,8 +7,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
-
-	"github.com/odigos-io/odigos/collector/pkg/completetrace"
 )
 
 func TestExtractSpanAttributes(t *testing.T) {
@@ -22,7 +20,7 @@ func TestExtractSpanAttributes(t *testing.T) {
 	scope.SetName("io.opentelemetry.http")
 	scope.SetVersion("1.2.3")
 
-	node := &completetrace.TraceTreeNode{
+	node := &TraceTreeNode{
 		Span:  span,
 		Scope: scope,
 	}
@@ -66,7 +64,7 @@ func TestExtractSpanAttributes_EmptyConfig(t *testing.T) {
 	span.SetKind(ptrace.SpanKindClient)
 	span.Attributes().PutStr("http.route", "/health")
 
-	node := &completetrace.TraceTreeNode{
+	node := &TraceTreeNode{
 		Span:  span,
 		Scope: pcommon.NewInstrumentationScope(),
 	}
