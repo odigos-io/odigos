@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 
-	"github.com/odigos-io/odigos/collector/pkg/completetrace"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/config"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category/costreduction"
@@ -40,7 +39,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		return td, nil // for auto generated tests, and not to crash in case it somehow happens
 	}
 
-	traceID, shouldProcess, spanCount, err := completetrace.ValidateCompleteTrace(td)
+	traceID, shouldProcess, spanCount, err := checkPrerequists(td)
 	if err != nil {
 		p.logger.Error("failed to check prerequists", zap.Error(err))
 		return td, nil
