@@ -1,7 +1,7 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: ui
+  name: frontend-cypress-tests
 spec:
   description: Run E2E tests against Odigos UI using Cypress
   skipDelete: true
@@ -9,42 +9,42 @@ spec:
     - name: Install - Jaeger
       try:
         - apply:
-            file: ../../common/apply/install-jaeger.yaml
+            file: ../../../common/apply/install-jaeger.yaml
 
     - name: Install - Simple Demo Apps
       try:
         - apply:
-            file: ../../common/apply/install-simple-demo.yaml
+            file: ../../../common/apply/install-simple-demo.yaml
 
     - name: Install Odigos CLI
       try:
         - script:
             timeout: 3m
             content: |
-              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
-              ../../common/verify_odigos_installation.sh odigos-test
+              ../../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
+              ../../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
             timeout: 3m
-            file: ../../common/assert/odigos-installed.yaml
+            file: ../../../common/assert/odigos-installed.yaml
 
     - name: Verify - Jaeger Installed
       try:
         - assert:
-            file: ../../common/assert/jaeger-installed.yaml
+            file: ../../../common/assert/jaeger-installed.yaml
 
     - name: Assert - Simple Demo Apps Installed
       try:
         - assert:
             timeout: 3m
-            file: ../../common/assert/simple-demo-installed.yaml
+            file: ../../../common/assert/simple-demo-installed.yaml
 
     - name: Start UI from CLI
       try:
         - script:
             timeout: 1m
             content: |
-              nohup ../../../cli/odigos ui > odigos-ui.log 2>&1 &
+              nohup ../../../../cli/odigos ui > odigos-ui.log 2>&1 &
               sleep 3
 
     - name: Wait for UI
@@ -61,6 +61,6 @@ spec:
         - script:
             timeout: 10m
             content: |
-              cd ../../../frontend/webapp
+              cd ../../../../frontend/webapp
               yarn install --no-cache
               yarn cy:run
