@@ -1,0 +1,51 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: frontend-go-tests
+spec:
+  # Runs in parallel with the sibling `ui` test (Cypress) because chainsaw
+  # discovers all chainsaw-test.yaml files under tests/e2e/ui and runs each
+  # discovered Test concurrently by default. This moves the frontend `make test`
+  # off the critical path of the `build-frontend` CI job — see PLAT-1214.
+  description: Run frontend Go tests (./frontend `make test`) in parallel with the UI Cypress test
+  concurrent: true
+  skipDelete: true
+  steps:
+    - name: Run frontend Go tests
+      try:
+        - script:
+            timeout: 15m
+            content: |
+              set -e
+
+              FRONTEND_DIR="$(cd ../../../../frontend && pwd)"
+
+              # Self-contained Go install so this Test doesn't require a
+              # workflow-level setup-go step. Source of truth for the version
+              # is the frontend's go.mod, so we never drift from the module.
+              GO_VERSION="$(awk '/^go [0-9]/ {print $2; exit}' "${FRONTEND_DIR}/go.mod")"
+              if [ -z "${GO_VERSION}" ]; then
+                echo "Failed to parse Go version from ${FRONTEND_DIR}/go.mod"
+                exit 1
+              fi
+              echo "Frontend go.mod pins Go ${GO_VERSION}"
+
+              if ! command -v go >/dev/null 2>&1 \
+                  || [ "$(go env GOVERSION 2>/dev/null)" != "go${GO_VERSION}" ]; then
+                OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+                ARCH="$(uname -m)"
+                case "${ARCH}" in
+                  x86_64)        ARCH=amd64 ;;
+                  aarch64|arm64) ARCH=arm64 ;;
+                esac
+                echo "Installing Go ${GO_VERSION} for ${OS}/${ARCH}..."
+                curl -fsSL "https://go.dev/dl/go${GO_VERSION}.${OS}-${ARCH}.tar.gz" \
+                  -o /tmp/go.tar.gz
+                rm -rf /tmp/go
+                tar -C /tmp -xzf /tmp/go.tar.gz
+                export PATH="/tmp/go/bin:${PATH}"
+              fi
+              go version
+
+              cd "${FRONTEND_DIR}"
+              make test
