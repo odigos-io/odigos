@@ -27,9 +27,9 @@ type GatewayConfigOptions struct {
 	TraceAggregationWaitDuration *string
 
 	// Tail sampling v2 processors when tail sampling is active.
-	TailSamplingEnabled          *bool
-	SamplingDryRun               bool
-	SamplingSpanAttributes       *sampling.SpanSamplingAttributesConfiguration
+	TailSamplingEnabled    *bool
+	SamplingDryRun         bool
+	SamplingSpanAttributes *sampling.SpanSamplingAttributesConfiguration
 
 	// Trace correlations configuration for the serviceio connector (service I/O metrics).
 	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
@@ -309,7 +309,7 @@ func splitTracesProcessorsForPipelines(tracesProcessors, tracesPostForwardProces
 	}
 
 	for _, processor := range tracesProcessors {
-		if processor == consts.GroupByTraceProcessorV2 {
+		if processor == consts.GroupByTraceProcessor {
 			tracesIn = append(tracesIn, processor)
 			continue
 		}
@@ -631,9 +631,14 @@ func traceAggregationNeeded(gatewayOptions *GatewayConfigOptions) bool {
 	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled {
 		return true
 	}
-	return common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
+
+	if common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
 		ServiceIO: gatewayOptions.TraceCorrelationsServiceIO,
-	})
+	}) {
+		return true
+	}
+
+	return false
 }
 
 func ensureGroupByTraceProcessor(
@@ -641,7 +646,7 @@ func ensureGroupByTraceProcessor(
 	processorsResults *config.CrdProcessorResults,
 	gatewayOptions *GatewayConfigOptions,
 ) {
-	if slices.Contains(processorsResults.TracesProcessors, consts.GroupByTraceProcessorV2) {
+	if slices.Contains(processorsResults.TracesProcessors, consts.GroupByTraceProcessor) {
 		return
 	}
 
@@ -650,11 +655,11 @@ func ensureGroupByTraceProcessor(
 		waitDuration = *gatewayOptions.TraceAggregationWaitDuration
 	}
 
-	currentConfig.Processors[consts.GroupByTraceProcessorV2] = config.GenericMap{
+	currentConfig.Processors[consts.GroupByTraceProcessor] = config.GenericMap{
 		"wait_duration": waitDuration,
 	}
 	processorsResults.TracesProcessors = append(
-		[]string{consts.GroupByTraceProcessorV2},
+		[]string{consts.GroupByTraceProcessor},
 		processorsResults.TracesProcessors...,
 	)
 }
