@@ -2098,6 +2098,61 @@
       "required": [],
       "title": "telemetry"
     },
+    "traceCorrelations": {
+      "additionalProperties": false,
+      "description": "Configuration for trace correlations (service I/O metrics derived from complete traces).\nWhen enabled, the node collector runs the serviceio connector to correlate inbound and outbound\nspans and emit connection metrics.",
+      "properties": {
+        "serviceIO": {
+          "additionalProperties": false,
+          "description": "Configuration for service I/O correlation metrics (serviceio connector).",
+          "properties": {
+            "enabled": {
+              "default": false,
+              "description": "set to true to enable service I/O correlation metrics. disabled by default.\nwhen enabled, odigos deploys a dedicated victoriametrics instance to store trace correlation metrics.",
+              "required": [],
+              "title": "enabled",
+              "type": "boolean"
+            },
+            "inputSpanAttributes": {
+              "description": "span attribute names read from inbound spans on the receiving side (e.g. server spans).\neach name should refer to a low-cardinality attribute (e.g. http.route, rpc.service).",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "inputSpanAttributes"
+            },
+            "metricsFlushInterval": {
+              "default": "60s",
+              "description": "interval at which service I/O metrics are flushed.\nformat is duration string (15s, 1m, etc). default is 60s.",
+              "required": [],
+              "title": "metricsFlushInterval"
+            },
+            "outputSpanAttributes": {
+              "description": "span attribute names read from outbound spans on the sending side (e.g. client/producer spans).\neach name should refer to a low-cardinality attribute.",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "outputSpanAttributes"
+            }
+          },
+          "required": [],
+          "title": "serviceIO"
+        }
+      },
+      "required": [],
+      "title": "traceCorrelations"
+    },
     "topologySpreadConstraints": {
       "description": "Refer to the official Kubernetes documentation for structure and field details:\nhttps://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/\nExample: Odigos components should be evenly spread across zones.\nNo need to set labelSelector manually — the Odigos Helm chart will apply it automatically.\ntopologySpreadConstraints:\n  - maxSkew: 1\n    topologyKey: \"topology.kubernetes.io/zone\"\n    whenUnsatisfiable: \"ScheduleAnyway\"",
       "items": {

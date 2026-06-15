@@ -72,6 +72,9 @@ type CollectorsGroupSpecApplyConfiguration struct {
 	// it allows for the collector group reconciler to be simplified,
 	// and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
 	Metrics *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
+	// TraceCorrelations holds trace correlations configuration derived from OdigosConfiguration.
+	// Currently only relevant for the node collector.
+	TraceCorrelations *CollectorsGroupTraceCorrelationsSettingsApplyConfiguration `json:"traceCorrelations,omitempty"`
 	// Node selector for the collectors group deployment.
 	// Use this to force the gateway to run only on nodes with specific labels.
 	// This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
@@ -197,6 +200,14 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithHttpsProxyAddress(value stri
 // If called multiple times, the Metrics field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithMetrics(value *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) *CollectorsGroupSpecApplyConfiguration {
 	b.Metrics = value
+	return b
+}
+
+// WithTraceCorrelations sets the TraceCorrelations field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TraceCorrelations field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithTraceCorrelations(value *CollectorsGroupTraceCorrelationsSettingsApplyConfiguration) *CollectorsGroupSpecApplyConfiguration {
+	b.TraceCorrelations = value
 	return b
 }
 
