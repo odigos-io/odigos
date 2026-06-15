@@ -178,7 +178,9 @@ jobs:
             done
 
             # Handle extended tag variants for agents and odiglet (e.g. v1.0.0-rc1-extended -> v1.0.0-extended).
-            EXTENDED_IMAGE_NAMES=("odigos-agents" "odigos-odiglet" "odigos-enterprise-agents" "odigos-enterprise-odiglet")
+            # Only the enterprise variants are built with an -extended tag; the OSS odigos-agents/odigos-odiglet
+            # images never get an -extended tag, so they must not be listed here.
+            EXTENDED_IMAGE_NAMES=("odigos-enterprise-agents" "odigos-enterprise-odiglet")
             ENTERPRISE_EXTENDED_IMAGE_NAMES=("odigos-enterprise-agents" "odigos-enterprise-odiglet")
             for IMAGE_NAME in "${EXTENDED_IMAGE_NAMES[@]}"; do
               echo "Copying ${GCR_REPO}/${IMAGE_NAME}:${{ env.RC_TAG }}-extended to ${GCR_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended"
