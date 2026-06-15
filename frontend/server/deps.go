@@ -21,6 +21,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/metrics"
 	"github.com/odigos-io/odigos/frontend/services/otlp"
 	"github.com/odigos-io/odigos/frontend/services/profiles"
+	"github.com/odigos-io/odigos/frontend/services/tracecorrelations"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
@@ -33,8 +34,10 @@ type Deps struct {
 	K8sCacheClient client.Client
 	K8sCache       cache.Cache
 
-	OdigosMetrics    *collectormetrics.OdigosMetricsConsumer
-	PromAPI          v1.API
+	OdigosMetrics               *collectormetrics.OdigosMetricsConsumer
+	PromAPI                     v1.API
+	CorrelationsPromAPI         v1.API
+	CorrelationsMetricsStoreURL string
 	ProfileStore     *profiles.ProfileStore
 	ProfilingGate    *profiles.IngestGate
 	ProfilesConsumer *profiles.OdigosProfilesConsumer
@@ -109,17 +112,27 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		promAPI = api
 	}
 
+	var correlationsPromAPI v1.API
+	correlationsURL := tracecorrelations.MetricsStoreURL(flags.Namespace)
+	if api, err := metrics.NewAPIFromURL(correlationsURL); err != nil {
+		log.Warn("failed to initialize trace correlations VictoriaMetrics API", "url", correlationsURL, "err", err)
+	} else {
+		correlationsPromAPI = api
+	}
+
 	return &Deps{
-		Flags:            flags,
-		Logger:           logger,
-		K8sCacheClient:   k8sCacheClient,
-		K8sCache:         k8sCache,
-		OdigosMetrics:    odigosMetrics,
-		PromAPI:          promAPI,
-		ProfileStore:     profileStore,
-		ProfilingGate:    profilingGate,
-		ProfilesConsumer: profilesConsumer,
-		OtlpReceiver:     otlpReceiver,
+		Flags:                       flags,
+		Logger:                      logger,
+		K8sCacheClient:              k8sCacheClient,
+		K8sCache:                    k8sCache,
+		OdigosMetrics:               odigosMetrics,
+		PromAPI:                     promAPI,
+		CorrelationsPromAPI:         correlationsPromAPI,
+		CorrelationsMetricsStoreURL: correlationsURL,
+		ProfileStore:                profileStore,
+		ProfilingGate:               profilingGate,
+		ProfilesConsumer:            profilesConsumer,
+		OtlpReceiver:                otlpReceiver,
 	}, nil
 }
 

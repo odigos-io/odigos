@@ -26,6 +26,8 @@ func kindToGql(kind string) model.K8sResourceKind {
 		return model.K8sResourceKindDaemonSet
 	case "cronjob":
 		return model.K8sResourceKindCronJob
+	case "job":
+		return model.K8sResourceKindJob
 	case "deploymentconfig":
 		return model.K8sResourceKindDeploymentConfig
 	case "rollout":
