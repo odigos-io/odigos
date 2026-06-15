@@ -77,6 +77,41 @@ func getTraceCorrelationsSettings(odigosConfiguration *common.OdigosConfiguratio
 	}
 }
 
+func normalizeCollectorGatewayConfig(odigosConfiguration *common.OdigosConfiguration) common.CollectorGatewayConfiguration {
+	if odigosConfiguration == nil || odigosConfiguration.CollectorGateway == nil {
+		return common.CollectorGatewayConfiguration{
+			ServiceGraph:          defaultServiceGraphOptions(),
+			ClusterMetricsEnabled: defaultBoolPtr(false),
+		}
+	}
+
+	gatewayConfig := *odigosConfiguration.CollectorGateway
+	if gatewayConfig.ServiceGraph == nil {
+		gatewayConfig.ServiceGraph = defaultServiceGraphOptions()
+	} else {
+		serviceGraph := *gatewayConfig.ServiceGraph
+		if serviceGraph.Disabled == nil {
+			serviceGraph.Disabled = defaultBoolPtr(false)
+		}
+		gatewayConfig.ServiceGraph = &serviceGraph
+	}
+	if gatewayConfig.ClusterMetricsEnabled == nil {
+		gatewayConfig.ClusterMetricsEnabled = defaultBoolPtr(false)
+	}
+
+	return gatewayConfig
+}
+
+func defaultServiceGraphOptions() *common.ServiceGraphOptions {
+	return &common.ServiceGraphOptions{
+		Disabled: defaultBoolPtr(false),
+	}
+}
+
+func defaultBoolPtr(value bool) *bool {
+	return &value
+}
+
 func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings,
 	serviceGraph common.ServiceGraphOptions, clusterMetricsEnabled *bool,
 	httpsProxyAddress *string, nodeSelector *map[string]string, deploymentName string,
@@ -122,22 +157,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	}
 	resourceSettings := getGatewayResourceSettings(&odigosConfiguration)
 
-	serviceGraph := odigosConfiguration.CollectorGateway.ServiceGraph
-	// Default Disabled to false (feature is enabled by default).
-	if serviceGraph.Disabled == nil {
-		disabled := false
-		serviceGraph.Disabled = &disabled
-	}
-
-	// default cluster metrics is disabled (clusterMetricsEnabled to false)
-	clusterMetricsEnabled := odigosConfiguration.CollectorGateway.ClusterMetricsEnabled
-	if clusterMetricsEnabled == nil {
-		result := false
-		clusterMetricsEnabled = &result
-	}
-
-	nodeSelector := odigosConfiguration.CollectorGateway.NodeSelector
-	deploymentName := odigosConfiguration.CollectorGateway.DeploymentName
+	gatewayConfig := normalizeCollectorGatewayConfig(&odigosConfiguration)
 	allDestinations := &odigosv1.DestinationList{}
 	if err := c.List(ctx, allDestinations); err != nil {
 		return err
@@ -163,8 +183,8 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	// in the future we might want to support a deployment of instrumentations only and allow user
 	// to setup their own collectors, then we would avoid adding the cluster collector by default.
 	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings,
-		*serviceGraph, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress,
-		nodeSelector, deploymentName, ownMetricsConfig, tailSampling, dryRun, spanSamplingAttributes,
+		*gatewayConfig.ServiceGraph, gatewayConfig.ClusterMetricsEnabled, gatewayConfig.HttpsProxyAddress,
+		gatewayConfig.NodeSelector, gatewayConfig.DeploymentName, ownMetricsConfig, tailSampling, dryRun, spanSamplingAttributes,
 		getTraceCorrelationsSettings(&odigosConfiguration))
 	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, clusterCollectorGroup, scheme)
 	if err != nil {
