@@ -186,3 +186,8 @@ imagePullSecrets:
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/* Returns true when trace correlations service I/O metrics are enabled. */}}
+{{- define "traceCorrelations.serviceIO.enabled" -}}
+{{- and .Values.traceCorrelations .Values.traceCorrelations.serviceIO .Values.traceCorrelations.serviceIO.enabled -}}
+{{- end }}

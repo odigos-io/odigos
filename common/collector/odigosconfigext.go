@@ -34,6 +34,11 @@ type OdigosConfigExtension interface {
 	// to look up their own caches without duplicating key logic.
 	GetWorkloadCacheKey(res pcommon.Resource) (string, error)
 
+	// GetWorkloadIdentityFromResource returns the workload cache key and the identifying resource attributes
+	// for the container on the given resource. Attribute keys match those on the source resource
+	// (e.g. k8s.namespace.name, a workload name attribute, k8s.container.name).
+	GetWorkloadIdentityFromResource(res pcommon.Resource) (cacheKey string, attrs pcommon.Map, err error)
+
 	// RegisterWorkloadConfigCacheCallback registers a callback that is invoked when the extension's workload cache is updated.
 	// Processors (e.g. URL templatization) use this to keep their caches in sync without polling.
 	RegisterWorkloadConfigCacheCallback(cb WorkloadConfigCacheCallback)
