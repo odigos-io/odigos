@@ -1548,6 +1548,9 @@ traceCorrelations:
     # enabled: true
 
     # @schema
+    # type: array
+    # items:
+    #   type: string
     # description: |-
     #   span attribute names read from inbound spans on the receiving side (e.g. server spans).
     #   each name should refer to a low-cardinality attribute (e.g. http.route, rpc.service).
@@ -1563,6 +1566,9 @@ traceCorrelations:
       - server.address
 
     # @schema
+    # type: array
+    # items:
+    #   type: string
     # description: |-
     #   span attribute names read from outbound spans on the sending side (e.g. client/producer spans).
     #   each name should refer to a low-cardinality attribute.

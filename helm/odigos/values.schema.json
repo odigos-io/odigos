@@ -2098,6 +2098,14 @@
       "required": [],
       "title": "telemetry"
     },
+    "topologySpreadConstraints": {
+      "description": "Refer to the official Kubernetes documentation for structure and field details:\nhttps://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/\nExample: Odigos components should be evenly spread across zones.\nNo need to set labelSelector manually — the Odigos Helm chart will apply it automatically.\ntopologySpreadConstraints:\n  - maxSkew: 1\n    topologyKey: \"topology.kubernetes.io/zone\"\n    whenUnsatisfiable: \"ScheduleAnyway\"",
+      "items": {
+        "required": []
+      },
+      "required": [],
+      "title": "topologySpreadConstraints"
+    },
     "traceCorrelations": {
       "additionalProperties": false,
       "description": "Configuration for trace correlations (service I/O metrics derived from complete traces).\nWhen enabled, the node collector runs the serviceio connector to correlate inbound and outbound\nspans and emit connection metrics.",
@@ -2107,24 +2115,18 @@
           "description": "Configuration for service I/O correlation metrics (serviceio connector).",
           "properties": {
             "enabled": {
-              "default": false,
+              "default": "true",
               "description": "set to true to enable service I/O correlation metrics. disabled by default.\nwhen enabled, odigos deploys a dedicated victoriametrics instance to store trace correlation metrics.",
               "required": [],
-              "title": "enabled",
-              "type": "boolean"
+              "title": "enabled"
             },
             "inputSpanAttributes": {
               "description": "span attribute names read from inbound spans on the receiving side (e.g. server spans).\neach name should refer to a low-cardinality attribute (e.g. http.route, rpc.service).",
               "items": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  }
-                ],
-                "required": []
+                "type": "string"
               },
-              "required": [],
-              "title": "inputSpanAttributes"
+              "title": "inputSpanAttributes",
+              "type": "array"
             },
             "metricsFlushInterval": {
               "default": "60s",
@@ -2135,15 +2137,10 @@
             "outputSpanAttributes": {
               "description": "span attribute names read from outbound spans on the sending side (e.g. client/producer spans).\neach name should refer to a low-cardinality attribute.",
               "items": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  }
-                ],
-                "required": []
+                "type": "string"
               },
-              "required": [],
-              "title": "outputSpanAttributes"
+              "title": "outputSpanAttributes",
+              "type": "array"
             }
           },
           "required": [],
@@ -2152,14 +2149,6 @@
       },
       "required": [],
       "title": "traceCorrelations"
-    },
-    "topologySpreadConstraints": {
-      "description": "Refer to the official Kubernetes documentation for structure and field details:\nhttps://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/\nExample: Odigos components should be evenly spread across zones.\nNo need to set labelSelector manually — the Odigos Helm chart will apply it automatically.\ntopologySpreadConstraints:\n  - maxSkew: 1\n    topologyKey: \"topology.kubernetes.io/zone\"\n    whenUnsatisfiable: \"ScheduleAnyway\"",
-      "items": {
-        "required": []
-      },
-      "required": [],
-      "title": "topologySpreadConstraints"
     },
     "ui": {
       "additionalProperties": false,
