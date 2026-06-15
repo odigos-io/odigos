@@ -104,8 +104,6 @@ func CalculateGatewayConfig(
 		processorsResults.TracesProcessors = append(processorsNames, processorsResults.TracesProcessors...)
 	}
 
-	tracesProcessors, smallBatchesEnabled := filterSmallBatchesProcessor(processorsResults.TracesProcessors)
-
 	unifiedDestinationPipelineNames := []string{}
 	for _, dest := range dests {
 		configer, exists := configers[dest.GetType()]
@@ -136,10 +134,6 @@ func CalculateGatewayConfig(
 			// track which signals are enabled based on the destination pipeline names
 			switch {
 			case strings.HasPrefix(pipelineName, "traces/"):
-				// relevant only for traces signal
-				if smallBatchesEnabled {
-					pipeline.Processors = append(pipeline.Processors, consts.SmallBatchesProcessor)
-				}
 				tracesEnabled = true
 			case strings.HasPrefix(pipelineName, "metrics/"):
 				metricsEnabled = true
@@ -200,7 +194,7 @@ func CalculateGatewayConfig(
 		tracesPostForwardProcessors = append(tracesPostForwardProcessors, consts.OdigosTraceStateProcessorName)
 	}
 	insertRootPipelinesToConfig(currentConfig,
-		tracesProcessors,
+		processorsResults.TracesProcessors,
 		tracesPostForwardProcessors,
 		processorsResults.MetricsProcessors,
 		processorsResults.LogsProcessors,
@@ -538,20 +532,6 @@ func GetBasicConfig() *config.Config {
 	}
 }
 
-func filterSmallBatchesProcessor(tracesProcessors []string) ([]string, bool) {
-	smallBatchesEnabled := false
-	filtered := make([]string, 0, len(tracesProcessors))
-
-	for _, processor := range tracesProcessors {
-		if processor == consts.SmallBatchesProcessor {
-			smallBatchesEnabled = true
-			continue // skip adding it to filtered slice
-		}
-		filtered = append(filtered, processor)
-	}
-
-	return filtered, smallBatchesEnabled
-}
 func AddServiceGraphScrapeConfig(c *config.Config) error {
 	servicegraphScrape := config.GenericMap{
 		"job_name":        consts.ServiceGraphConnectorName,
