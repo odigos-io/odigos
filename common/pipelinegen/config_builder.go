@@ -628,7 +628,6 @@ func insertClusterMetricsResources(currentConfig *config.Config, odigosNs string
 const defaultTraceAggregationWaitDuration = "30s"
 
 func traceAggregationNeeded(gatewayOptions *GatewayConfigOptions) bool {
-
 	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled {
 		return true
 	}

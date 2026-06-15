@@ -60,9 +60,9 @@ const (
 	ServiceGraphConnectorName = "servicegraph"
 	ServiceGraphEndpointPort  = 9090
 
-	ServiceIOConnectorName               = "serviceio"
-	TraceCorrelationsMetricsPipelineName = "metrics/tracecorrelations"
-	TraceCorrelationsMetricsServiceName  = "odigos-correlations-metrics"
+	ServiceIOConnectorName                       = "serviceio"
+	TraceCorrelationsMetricsPipelineName         = "metrics/tracecorrelations"
+	TraceCorrelationsMetricsServiceName          = "odigos-correlations-metrics"
 	TraceCorrelationsVictoriaMetricsExporterName = "otlp_http/odigos-correlations-metrics"
 
 	// Custom attribute to distinguish workload types that share the same semconv key (e.g., DeploymentConfig uses k8s.deployment.name)
@@ -144,15 +144,15 @@ const (
 
 // Processor related consts
 const (
-	GenericBatchProcessorConfigKey  = "batch/generic-batch-processor"
-	SmallBatchesProcessor           = "batch/small-batches"
-	GroupByTraceProcessorV2         = "groupbytrace/samplingv2"
+	GenericBatchProcessorConfigKey        = "batch/generic-batch-processor"
+	SmallBatchesProcessor                 = "batch/small-batches"
+	GroupByTraceProcessorV2               = "groupbytrace/samplingv2"
 	TracesPostGroupByForwardConnectorName = "forward/traces-post-groupby"
 	TracesExportingPipelineName           = "traces/exporting"
-	OdigosTailSamplingProcessorName = "odigostailsampling"
-	OdigosTraceStateProcessorName   = "odigostracestate"
-	URLTemplatizationProcessorName  = "odigos-url-templatization"
-	OdigosURLTemplateProcessorType  = "odigosurltemplate"
+	OdigosTailSamplingProcessorName       = "odigostailsampling"
+	OdigosTraceStateProcessorName         = "odigostracestate"
+	URLTemplatizationProcessorName        = "odigos-url-templatization"
+	OdigosURLTemplateProcessorType        = "odigosurltemplate"
 )
 
 // Auto rollback related consts
