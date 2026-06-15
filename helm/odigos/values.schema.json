@@ -2161,6 +2161,50 @@
       "required": [],
       "title": "topologySpreadConstraints"
     },
+    "traceCorrelations": {
+      "additionalProperties": false,
+      "description": "Configuration for trace correlations (service I/O metrics derived from complete traces).\nWhen enabled, the node collector runs the serviceio connector to correlate inbound and outbound\nspans and emit connection metrics.",
+      "properties": {
+        "serviceIO": {
+          "additionalProperties": false,
+          "description": "Configuration for service I/O correlation metrics (serviceio connector).",
+          "properties": {
+            "enabled": {
+              "default": "true",
+              "description": "set to true to enable service I/O correlation metrics. disabled by default.\nwhen enabled, odigos deploys a dedicated victoriametrics instance to store trace correlation metrics.",
+              "required": [],
+              "title": "enabled"
+            },
+            "inputSpanAttributes": {
+              "description": "span attribute names read from inbound spans on the receiving side (e.g. server spans).\neach name should refer to a low-cardinality attribute (e.g. http.route, rpc.service).",
+              "items": {
+                "type": "string"
+              },
+              "title": "inputSpanAttributes",
+              "type": "array"
+            },
+            "metricsFlushInterval": {
+              "default": "60s",
+              "description": "interval at which service I/O metrics are flushed.\nformat is duration string (15s, 1m, etc). default is 60s.",
+              "required": [],
+              "title": "metricsFlushInterval"
+            },
+            "outputSpanAttributes": {
+              "description": "span attribute names read from outbound spans on the sending side (e.g. client/producer spans).\neach name should refer to a low-cardinality attribute.",
+              "items": {
+                "type": "string"
+              },
+              "title": "outputSpanAttributes",
+              "type": "array"
+            }
+          },
+          "required": [],
+          "title": "serviceIO"
+        }
+      },
+      "required": [],
+      "title": "traceCorrelations"
+    },
     "ui": {
       "additionalProperties": false,
       "description": "Configuration for the UI component.",

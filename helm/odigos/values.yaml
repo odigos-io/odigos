@@ -1545,14 +1545,18 @@ traceCorrelations:
     #   set to true to enable service I/O correlation metrics. disabled by default.
     #   when enabled, odigos deploys a dedicated victoriametrics instance to store trace correlation metrics.
     # @schema
-    enabled: true
+    # enabled: true
 
     # @schema
+    # type: array
+    # items:
+    #   type: string
     # description: |-
     #   span attribute names read from inbound spans on the receiving side (e.g. server spans).
     #   each name should refer to a low-cardinality attribute (e.g. http.route, rpc.service).
     # @schema
     inputSpanAttributes:
+      - rpc.system
       - rpc.service
       - rpc.method
       - http.route
@@ -1563,16 +1567,23 @@ traceCorrelations:
       - server.address
 
     # @schema
+    # type: array
+    # items:
+    #   type: string
     # description: |-
     #   span attribute names read from outbound spans on the sending side (e.g. client/producer spans).
     #   each name should refer to a low-cardinality attribute.
     # @schema
     outputSpanAttributes:
+      - rpc.system
       - rpc.service
       - rpc.method
+      - db.system.name
       - db.system
       - db.statement
+      - db.query.text
       - db.operation
+      - db.operation.name
       - db.name
       - db.user
       - url.template
@@ -1582,16 +1593,13 @@ traceCorrelations:
       - http.request.method
       - net.peer.name
       - server.address
-      - http.user_agent
-      - 'http.request.headers.user-agent'
-      - user_agent.original
 
     # @schema
     # description: |-
     #   interval at which service I/O metrics are flushed.
     #   format is duration string (15s, 1m, etc). default is 60s.
     # @schema
-    metricsFlushInterval: '10s'
+    # metricsFlushInterval: '60s'
 
 # @schema
 # description: |-
