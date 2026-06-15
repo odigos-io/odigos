@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/connector/connectortest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -62,7 +61,7 @@ func TestConnectorConsumeTraces_EmitsConnectionMetrics(t *testing.T) {
 
 	connector, err := NewFactory().CreateTracesToMetrics(
 		t.Context(),
-		connectortest.NewNopSettings(metadata.Type),
+		newTestConnectorSettings(metadata.Type),
 		cfg,
 		sink,
 	)
@@ -93,7 +92,7 @@ func TestConnectorConsumeTraces_AggregatesBeforeFlush(t *testing.T) {
 
 	connector, err := NewFactory().CreateTracesToMetrics(
 		t.Context(),
-		connectortest.NewNopSettings(metadata.Type),
+		newTestConnectorSettings(metadata.Type),
 		cfg,
 		sink,
 	)
@@ -156,7 +155,7 @@ func TestConnectorConsumeTraces_InvalidTraceDoesNotEmitMetrics(t *testing.T) {
 	sink := &consumertest.MetricsSink{}
 	connector, err := NewFactory().CreateTracesToMetrics(
 		t.Context(),
-		connectortest.NewNopSettings(metadata.Type),
+		newTestConnectorSettings(metadata.Type),
 		&Config{},
 		sink,
 	)

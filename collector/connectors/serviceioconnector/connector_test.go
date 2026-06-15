@@ -7,11 +7,22 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/connector"
+	"go.opentelemetry.io/collector/connector/connectortest"
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 
 	commonapi "github.com/odigos-io/odigos/common/api"
 	odigoscollector "github.com/odigos-io/odigos/common/collector"
 )
+
+const testCollectorInstanceID = "0a732fb6-8ee3-4e02-9d87-fb5025f829a6"
+
+func newTestConnectorSettings(typ component.Type) connector.Settings {
+	set := connectortest.NewNopSettings(typ)
+	set.TelemetrySettings.Resource.Attributes().PutStr(string(semconv.ServiceInstanceIDKey), testCollectorInstanceID)
+	return set
+}
 
 var odigosConfigExtensionID = component.MustNewID("odigos_config_k8s")
 

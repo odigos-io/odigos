@@ -10,16 +10,10 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 )
 
-const (
-	TelemetrySDKLanguageAttribute  = "telemetry.sdk.language"
-	ProcessRuntimeNameAttribute    = "process.runtime.name"
-	ProcessRuntimeVersionAttribute = "process.runtime.version"
-)
-
 var ServiceInstanceRuntimeAttributeKeys = []string{
-	TelemetrySDKLanguageAttribute,
-	ProcessRuntimeNameAttribute,
-	ProcessRuntimeVersionAttribute,
+	string(semconv.TelemetrySDKLanguageKey),
+	string(semconv.ProcessRuntimeNameKey),
+	string(semconv.ProcessRuntimeVersionKey),
 }
 
 // WorkloadIdentityResolver derives workload identity from a span resource.

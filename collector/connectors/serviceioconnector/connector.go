@@ -2,7 +2,6 @@ package serviceioconnector
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -48,7 +47,7 @@ func newConnector(set component.TelemetrySettings, cfg component.Config, next co
 
 	collectorInstanceID := collectorInstanceIDFromResource(set.Resource)
 	if collectorInstanceID == "" {
-		return nil, errors.New("unable to determine collector instance ID of collector instance")
+		set.Logger.Warn("service.instance.id not found on collector telemetry resource; metrics will omit collector instance ID")
 	}
 
 	return &serviceioConnector{

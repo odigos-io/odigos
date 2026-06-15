@@ -5,13 +5,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 )
 
 func TestBuildMetricResourceAttributes(t *testing.T) {
 	resourceAttributes := pcommon.NewMap()
-	resourceAttributes.PutStr(TelemetrySDKLanguageAttribute, "java")
-	resourceAttributes.PutStr(ProcessRuntimeNameAttribute, "OpenJDK Runtime Environment")
-	resourceAttributes.PutStr(ProcessRuntimeVersionAttribute, "17.0.12")
+	resourceAttributes.PutStr(string(semconv.TelemetrySDKLanguageKey), "java")
+	resourceAttributes.PutStr(string(semconv.ProcessRuntimeNameKey), "OpenJDK Runtime Environment")
+	resourceAttributes.PutStr(string(semconv.ProcessRuntimeVersionKey), "17.0.12")
 	resourceAttributes.PutStr("service.name", "checkout")
 
 	instance := &ServiceInstance{
@@ -19,15 +20,15 @@ func TestBuildMetricResourceAttributes(t *testing.T) {
 	}
 
 	resource := buildMetricResourceAttributes(instance)
-	language, ok := resource.Get(TelemetrySDKLanguageAttribute)
+	language, ok := resource.Get(string(semconv.TelemetrySDKLanguageKey))
 	require.True(t, ok)
 	require.Equal(t, "java", language.Str())
 
-	runtimeName, ok := resource.Get(ProcessRuntimeNameAttribute)
+	runtimeName, ok := resource.Get(string(semconv.ProcessRuntimeNameKey))
 	require.True(t, ok)
 	require.Equal(t, "OpenJDK Runtime Environment", runtimeName.Str())
 
-	runtimeVersion, ok := resource.Get(ProcessRuntimeVersionAttribute)
+	runtimeVersion, ok := resource.Get(string(semconv.ProcessRuntimeVersionKey))
 	require.True(t, ok)
 	require.Equal(t, "17.0.12", runtimeVersion.Str())
 
@@ -44,9 +45,9 @@ func TestBuildMetricsSetsResourceAttributes(t *testing.T) {
 	}
 
 	resourceAttributes := pcommon.NewMap()
-	resourceAttributes.PutStr(TelemetrySDKLanguageAttribute, "python")
-	resourceAttributes.PutStr(ProcessRuntimeNameAttribute, "CPython")
-	resourceAttributes.PutStr(ProcessRuntimeVersionAttribute, "3.12.1")
+	resourceAttributes.PutStr(string(semconv.TelemetrySDKLanguageKey), "python")
+	resourceAttributes.PutStr(string(semconv.ProcessRuntimeNameKey), "CPython")
+	resourceAttributes.PutStr(string(semconv.ProcessRuntimeVersionKey), "3.12.1")
 
 	instance := &ServiceInstance{
 		ServiceName:        "orders",
@@ -70,7 +71,7 @@ func TestBuildMetricsSetsResourceAttributes(t *testing.T) {
 	require.Equal(t, 1, md.ResourceMetrics().Len())
 
 	resource := md.ResourceMetrics().At(0).Resource().Attributes()
-	language, ok := resource.Get(TelemetrySDKLanguageAttribute)
+	language, ok := resource.Get(string(semconv.TelemetrySDKLanguageKey))
 	require.True(t, ok)
 	require.Equal(t, "python", language.Str())
 }
