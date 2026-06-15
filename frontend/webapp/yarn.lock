@@ -634,22 +634,22 @@
   resolved "https://registry.npmjs.org/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@0.0.249":
-  version "0.0.249"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.249.tgz#a6de5c9c45c2064bef218527ac380d850ca28510"
-  integrity sha512-xeNOQrbBLKJ1uk9wkqmlyec94FST/+C4KJTxuJQG8VahRmUSV0LABBMooMXN2rlff9H2WsqpQNMeOwtySujUBg==
+"@odigos/ui-kit@0.0.250":
+  version "0.0.250"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.250.tgz#db757e3c590b9c010f9d8fdbc14c65d961e923a1"
+  integrity sha512-UgcJtZx0mU255CE945X295z0aF70eXgHjtYL+z+Ry+jeFSEpPTbzIiL3isdJrL/6CTFe08EKqH0lmWwA42gO2g==
   dependencies:
-    "@xyflow/react" "^12.10.2"
+    "@xyflow/react" "^12.11.0"
     elkjs "^0.11.1"
     javascript-time-ago "^2.6.4"
     lottie-react "^2.4.1"
     prism-react-renderer "^2.4.1"
-    react "19.2.5"
-    react-dom "19.2.5"
-    react-error-boundary "^6.1.1"
+    react "19.2.7"
+    react-dom "19.2.7"
+    react-error-boundary "^6.1.2"
     styled-components "6.3.12"
     virtua "^0.49.1"
-    zustand "^5.0.13"
+    zustand "^5.0.14"
 
 "@polka/url@^1.0.0-next.24":
   version "1.0.0-next.29"
@@ -994,19 +994,19 @@
   dependencies:
     tslib "^2.3.0"
 
-"@xyflow/react@^12.10.2":
-  version "12.10.2"
-  resolved "https://registry.yarnpkg.com/@xyflow/react/-/react-12.10.2.tgz#40f6d71944f674f0ffbb83c660f9473018adbe61"
-  integrity sha512-CgIi6HwlcHXwlkTpr0fxLv/0sRVNZ8IdwKLzzeCscaYBwpvfcH1QFOCeaTCuEn1FQEs/B8CjnTSjhs8udgmBgQ==
+"@xyflow/react@^12.11.0":
+  version "12.11.0"
+  resolved "https://registry.yarnpkg.com/@xyflow/react/-/react-12.11.0.tgz#7dca326d0e3e8def2988e6089d3c267fe8511242"
+  integrity sha512-na4IO33FSs2OS72hASgZDmTYwFAkef7Z74uBUVrong3ARmQQHfnRUVaCFn1kTt5LbS6pK03TbYjCPGLjLFfziA==
   dependencies:
-    "@xyflow/system" "0.0.76"
+    "@xyflow/system" "0.0.77"
     classcat "^5.0.3"
     zustand "^4.4.0"
 
-"@xyflow/system@0.0.76":
-  version "0.0.76"
-  resolved "https://registry.yarnpkg.com/@xyflow/system/-/system-0.0.76.tgz#57da5e4d230cdbec56548a6d5eec115f22858259"
-  integrity sha512-hvwvnRS1B3REwVDlWexsq7YQaPZeG3/mKo1jv38UmnpWmxihp14bW6VtEOuHEwJX2FvzFw8k77LyKSk/wiZVNA==
+"@xyflow/system@0.0.77":
+  version "0.0.77"
+  resolved "https://registry.yarnpkg.com/@xyflow/system/-/system-0.0.77.tgz#e6ebc3f3ee0af8cca8352b4a63b414d921435001"
+  integrity sha512-qCDCMCQAAgUu8yHnhloHG9F5mwPX5E+Wl8McpYIOPSSXfzFJJoZcwOcsDiAjitVKIg2de1WmJbCHfpcvxprsgg==
   dependencies:
     "@types/d3-drag" "^3.0.7"
     "@types/d3-interpolate" "^3.0.4"
@@ -3587,24 +3587,12 @@ queue-microtask@^1.2.2:
   resolved "https://registry.npmjs.org/queue-microtask/-/queue-microtask-1.2.3.tgz"
   integrity sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==
 
-react-dom@19.2.5:
-  version "19.2.5"
-  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-19.2.5.tgz#b8768b10837d0b8e9ca5b9e2d58dff3d880ea25e"
-  integrity sha512-J5bAZz+DXMMwW/wV3xzKke59Af6CHY7G4uYLN1OvBcKEsWOs4pQExj86BBKamxl/Ik5bx9whOrvBlSDfWzgSag==
-  dependencies:
-    scheduler "^0.27.0"
-
 react-dom@19.2.7:
   version "19.2.7"
   resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-19.2.7.tgz#0450dc9ae9ddbff76ef196401cd8b8c7fb466ccc"
   integrity sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==
   dependencies:
     scheduler "^0.27.0"
-
-react-error-boundary@^6.1.1:
-  version "6.1.1"
-  resolved "https://registry.npmjs.org/react-error-boundary/-/react-error-boundary-6.1.1.tgz"
-  integrity sha512-BrYwPOdXi5mqkk5lw+Uvt0ThHx32rCt3BkukS4X23A2AIWDPSGX6iaWTc0y9TU/mHDA/6qOSGel+B2ERkOvD1w==
 
 react-error-boundary@^6.1.2:
   version "6.1.2"
@@ -3615,11 +3603,6 @@ react-is@^16.13.1, react-is@^16.7.0:
   version "16.13.1"
   resolved "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
-
-react@19.2.5:
-  version "19.2.5"
-  resolved "https://registry.yarnpkg.com/react/-/react-19.2.5.tgz#c888ab8b8ef33e2597fae8bdb2d77edbdb42858b"
-  integrity sha512-llUJLzz1zTUBrskt2pwZgLq59AemifIftw4aB7JxOqf1HY2FDaGDxgwpAPVzHU1kdWabH7FauP4i1oEeer2WCA==
 
 react@19.2.7:
   version "19.2.7"
@@ -4604,11 +4587,6 @@ zustand@^4.4.0:
   integrity sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==
   dependencies:
     use-sync-external-store "^1.2.2"
-
-zustand@^5.0.13:
-  version "5.0.13"
-  resolved "https://registry.yarnpkg.com/zustand/-/zustand-5.0.13.tgz#06995c126e8903cd27100af04da91c36ae3051ed"
-  integrity sha512-efI2tVaVQPqtOh114loML/Z80Y4NP3yc+Ff0fYiZJPauNeWZeIp/bRFD7I9bfmCOYBh/PHxlglQ9+wvlwnPikQ==
 
 zustand@^5.0.14:
   version "5.0.14"
