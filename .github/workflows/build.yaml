@@ -11,12 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Login to Depot registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.ODIGOS_ORG_ID_IN_DEPOT }}.registry.depot.dev
-          username: x-token
-          password: ${{ secrets.ODIGOS_DEPOT_ORG_TOKEN }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build Autoscaler Image
@@ -64,12 +58,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Login to Depot registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.ODIGOS_ORG_ID_IN_DEPOT }}.registry.depot.dev
-          username: x-token
-          password: ${{ secrets.ODIGOS_DEPOT_ORG_TOKEN }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build Scheduler Image
@@ -113,12 +101,6 @@ jobs:
     runs-on: depot-ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Login to Depot registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.ODIGOS_ORG_ID_IN_DEPOT }}.registry.depot.dev
-          username: x-token
-          password: ${{ secrets.ODIGOS_DEPOT_ORG_TOKEN }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build Agents Image
@@ -163,12 +145,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Login to Depot registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.ODIGOS_ORG_ID_IN_DEPOT }}.registry.depot.dev
-          username: x-token
-          password: ${{ secrets.ODIGOS_DEPOT_ORG_TOKEN }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - uses: actions/setup-go@v6
@@ -219,12 +195,6 @@ jobs:
     runs-on: depot-ubuntu-24.04-8
     steps:
       - uses: actions/checkout@v5
-      - name: Login to Depot registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.ODIGOS_ORG_ID_IN_DEPOT }}.registry.depot.dev
-          username: x-token
-          password: ${{ secrets.ODIGOS_DEPOT_ORG_TOKEN }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: build Odigos Collector Image
@@ -271,12 +241,6 @@ jobs:
     runs-on: depot-ubuntu-24.04-2
     steps:
       - uses: actions/checkout@v5
-      - name: Login to Depot registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.ODIGOS_ORG_ID_IN_DEPOT }}.registry.depot.dev
-          username: x-token
-          password: ${{ secrets.ODIGOS_DEPOT_ORG_TOKEN }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
@@ -361,12 +325,6 @@ jobs:
           path: /tmp/scan-results/odigos-ui-webapp.json
           retention-days: 30
       # build the frontend image and scan the golang code.
-      - name: Login to Depot registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.ODIGOS_ORG_ID_IN_DEPOT }}.registry.depot.dev
-          username: x-token
-          password: ${{ secrets.ODIGOS_DEPOT_ORG_TOKEN }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build Frontend Image
@@ -417,12 +375,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Login to Depot registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.ODIGOS_ORG_ID_IN_DEPOT }}.registry.depot.dev
-          username: x-token
-          password: ${{ secrets.ODIGOS_DEPOT_ORG_TOKEN }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build Operator Image
