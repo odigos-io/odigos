@@ -423,7 +423,7 @@ func TestTracesPipelineSplitAfterGroupByTrace(t *testing.T) {
 	assert.Contains(t, out, consts.TracesPostGroupByForwardConnectorName+":")
 	assert.Contains(t, out, consts.TracesExportingPipelineName+":")
 	assert.Contains(t, out, "traces/in:\n")
-	assert.Contains(t, out, "- "+consts.GroupByTraceProcessorV2+"\n")
+	assert.Contains(t, out, "- "+consts.GroupByTraceProcessor+"\n")
 	assert.Contains(t, out, "- "+consts.TracesPostGroupByForwardConnectorName+"\n")
 	assert.Contains(t, out, "- "+consts.OdigosTailSamplingProcessorName+"\n")
 
@@ -432,7 +432,7 @@ func TestTracesPipelineSplitAfterGroupByTrace(t *testing.T) {
 
 	tracesIn, ok := cfg.Service.Pipelines["traces/in"]
 	require.True(t, ok)
-	assert.Equal(t, []string{"resource/odigos-version", consts.GroupByTraceProcessorV2}, tracesIn.Processors)
+	assert.Equal(t, []string{"resource/odigos-version", consts.GroupByTraceProcessor}, tracesIn.Processors)
 	assert.Contains(t, tracesIn.Exporters, consts.TracesPostGroupByForwardConnectorName)
 	assert.NotContains(t, tracesIn.Processors, consts.OdigosTailSamplingProcessorName)
 	assert.NotContains(t, tracesIn.Processors, consts.GenericBatchProcessorConfigKey)
@@ -478,7 +478,7 @@ func TestTracesPipelineSplitWithAdditionalProcessors(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, []string{
 		"resource/odigos-version",
-		consts.GroupByTraceProcessorV2,
+		consts.GroupByTraceProcessor,
 		"odigosurltemplate/odigos-url-templatization",
 	}, tracesIn.Processors)
 	assert.Contains(t, tracesIn.Exporters, consts.TracesPostGroupByForwardConnectorName)
@@ -534,7 +534,7 @@ func TestTraceCorrelationsServiceIOPipeline(t *testing.T) {
 	require.True(t, ok)
 	assert.Contains(t, tracesIn.Exporters, consts.TracesPostGroupByForwardConnectorName)
 	assert.Contains(t, tracesIn.Exporters, consts.ServiceIOConnectorName)
-	assert.Contains(t, tracesIn.Processors, consts.GroupByTraceProcessorV2)
+	assert.Contains(t, tracesIn.Processors, consts.GroupByTraceProcessor)
 	assert.NotContains(t, tracesIn.Processors, consts.GenericBatchProcessorConfigKey)
 
 	tracesExporting, ok := cfg.Service.Pipelines[consts.TracesExportingPipelineName]

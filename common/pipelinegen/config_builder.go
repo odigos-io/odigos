@@ -309,7 +309,7 @@ func splitTracesProcessorsForPipelines(tracesProcessors, tracesPostForwardProces
 	}
 
 	for _, processor := range tracesProcessors {
-		if processor == consts.GroupByTraceProcessorV2 {
+		if processor == consts.GroupByTraceProcessor {
 			tracesIn = append(tracesIn, processor)
 			continue
 		}
@@ -646,7 +646,7 @@ func ensureGroupByTraceProcessor(
 	processorsResults *config.CrdProcessorResults,
 	gatewayOptions *GatewayConfigOptions,
 ) {
-	if slices.Contains(processorsResults.TracesProcessors, consts.GroupByTraceProcessorV2) {
+	if slices.Contains(processorsResults.TracesProcessors, consts.GroupByTraceProcessor) {
 		return
 	}
 
@@ -655,11 +655,11 @@ func ensureGroupByTraceProcessor(
 		waitDuration = *gatewayOptions.TraceAggregationWaitDuration
 	}
 
-	currentConfig.Processors[consts.GroupByTraceProcessorV2] = config.GenericMap{
+	currentConfig.Processors[consts.GroupByTraceProcessor] = config.GenericMap{
 		"wait_duration": waitDuration,
 	}
 	processorsResults.TracesProcessors = append(
-		[]string{consts.GroupByTraceProcessorV2},
+		[]string{consts.GroupByTraceProcessor},
 		processorsResults.TracesProcessors...,
 	)
 }
