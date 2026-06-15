@@ -1,5 +1,5 @@
 {{- define "utils.imageName" -}}
-{{- $defaultRegistry := "p0xd21zf5r.registry.depot.dev" -}}
+{{- $defaultRegistry := "p0xd21zf5r.registry.depot.dev/odigos" -}}
 {{- $redHatRegistry := "registry.connect.redhat.com/odigos" -}}
 {{- if $.Values.imagePrefix -}}
     {{- $.Values.imagePrefix -}}/

@@ -1,10 +1,10 @@
 # (c) Copyright 2025-2026 Hewlett Packard Enterprise Development LP
 # Generated from odigos-values.tftpl - replace placeholders with your values.
 
-# By default, images are pulled from odigos registry at `p0xd21zf5r.registry.depot.dev`
+# By default, images are pulled from odigos registry at `p0xd21zf5r.registry.depot.dev/odigos`
 # If you use custom or internal registry to serve in your cluster, you can set the imagePrefix to your registry.
 # For example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-<component>:<tag>`
-imagePrefix: 657273346644.dkr.ecr.us-west-2.amazonaws.com/mirror/p0xd21zf5r.registry.depot.dev
+imagePrefix: 657273346644.dkr.ecr.us-west-2.amazonaws.com/mirror/p0xd21zf5r.registry.depot.dev/odigos
 
 # The onpremToken for Odigos installation (set via Terraform or replace with your token)
 onPremToken: ""  # e.g. your onprem_token value

@@ -1,4 +1,4 @@
-ARG ODIGLET_BASE_IMAGE=p0xd21zf5r.registry.depot.dev/odiglet-base:v1.16
+ARG ODIGLET_BASE_IMAGE=p0xd21zf5r.registry.depot.dev/odigos/odiglet-base:v1.16
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
