@@ -6,7 +6,7 @@ import (
 
 const (
 	RedHatImagePrefix = "registry.connect.redhat.com/odigos"
-	OdigosImagePrefix = "p0xd21zf5r.registry.depot.dev"
+	OdigosImagePrefix = "p0xd21zf5r.registry.depot.dev/odigos"
 )
 
 const (
