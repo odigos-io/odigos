@@ -170,20 +170,31 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		OdigosConfigExtensionName: &odigosConfigExtensionName,
 		SamplingSpanAttributes:    gateway.Spec.SpanSamplingAttributes,
 	}
+	traceCorrelationsEnabled := gateway.Spec.TraceCorrelations != nil
+	if traceCorrelationsEnabled {
+		gatewayOptions.TraceCorrelationsServiceIO = gateway.Spec.TraceCorrelations.ServiceIO
+	}
 
+	tailSamplingEnabled := false
+	waitDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
 	// TailSampling is nil when inactive, non-nil when the scheduler has resolved it as active.
 	// TraceAggregationWaitDuration is already validated and defaulted by the scheduler.
 	if gateway.Spec.TailSampling != nil {
-		if gateway.Spec.TailSampling.Disabled != nil {
-			disabled := *gateway.Spec.TailSampling.Disabled
-			enabled := !disabled
-			gatewayOptions.SamplingEnabled = &enabled
+		if gateway.Spec.TailSampling.Disabled != nil && !*gateway.Spec.TailSampling.Disabled {
+			tailSamplingEnabled = true
 			if gateway.Spec.SamplingDryRun != nil {
 				gatewayOptions.SamplingDryRun = *gateway.Spec.SamplingDryRun
 			}
 		}
-		gatewayOptions.TraceAggregationWaitDuration = gateway.Spec.TailSampling.TraceAggregationWaitDuration
+		if gateway.Spec.TailSampling.TraceAggregationWaitDuration != nil && *gateway.Spec.TailSampling.TraceAggregationWaitDuration != "" {
+			waitDuration = *gateway.Spec.TailSampling.TraceAggregationWaitDuration
+		}
 	}
+
+	if tailSamplingEnabled || traceCorrelationsEnabled {
+		gatewayOptions.TraceAggregationWaitDuration = &waitDuration
+	}
+	gatewayOptions.TailSamplingEnabled = &tailSamplingEnabled
 
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
 	var profilingCfg *odigoscommon.ProfilingConfiguration
