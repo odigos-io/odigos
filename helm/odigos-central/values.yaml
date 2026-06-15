@@ -107,7 +107,7 @@ auth:
   #   Production with ingress: 'https://central.example.com'
   # When empty, defaults to 'http://localhost:8081' (suitable for port-forward / local dev).
   externalUrl: ''
-  image: registry.odigos.io/keycloak:24.0.3
+  image: p0xd21zf5r.registry.depot.dev/keycloak:24.0.3
   adminUsername: admin
   # -- Keycloak admin password for internal API access.
   # On first install: uses this value, or auto-generates if empty.

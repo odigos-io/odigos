@@ -17,13 +17,13 @@ Replace `<YOUR-DESIRED-VERSION>` with the version of the Odigos images you want 
 Start by pulling the required images from the official Odigos registry onto your local machine or CI environment:
 
 ```bash
-docker pull registry.odigos.io/odigos-scheduler:$VERSION
-docker pull registry.odigos.io/odigos-instrumentor:$VERSION
-docker pull registry.odigos.io/odigos-ui:$VERSION
-docker pull registry.odigos.io/odigos-autoscaler:$VERSION
-docker pull registry.odigos.io/odigos-odiglet:$VERSION
-docker pull registry.odigos.io/odigos-collector:$VERSION
-docker pull registry.odigos.io/odigos-victoria-metrics:$VERSION
+docker pull p0xd21zf5r.registry.depot.dev/odigos-scheduler:$VERSION
+docker pull p0xd21zf5r.registry.depot.dev/odigos-instrumentor:$VERSION
+docker pull p0xd21zf5r.registry.depot.dev/odigos-ui:$VERSION
+docker pull p0xd21zf5r.registry.depot.dev/odigos-autoscaler:$VERSION
+docker pull p0xd21zf5r.registry.depot.dev/odigos-odiglet:$VERSION
+docker pull p0xd21zf5r.registry.depot.dev/odigos-collector:$VERSION
+docker pull p0xd21zf5r.registry.depot.dev/odigos-victoria-metrics:$VERSION
 ```
 
 If you are using the [k8s-init-container](../instrumentations/configuration/mount-method#3-InitContainer) mount method
@@ -31,13 +31,13 @@ make sure the odigos-agents image is also pulled, as it's required by the inject
 **This is not the default configuration**, if you're unsure what this means, you can safely ignore this step and continue with the standard setup.
 
 ```bash
-docker pull registry.odigos.io/odigos-agents:$VERSION
+docker pull p0xd21zf5r.registry.depot.dev/odigos-agents:$VERSION
 ```
 
 If you are using [image mirrored Go offsets updates](../instrumentations/golang/ebpf#about-go-offsets), also mirror the offsets image:
 
 ```
-docker pull registry.odigos.io/cli-offsets:latest
+docker pull p0xd21zf5r.registry.depot.dev/cli-offsets:latest
 ```
 
 Keeping this image regularly up-to-date is necessary to pull the latest offsets into your cluster.
@@ -47,26 +47,26 @@ Odigos component images are published in multi-arch for ARM64 and AMD64 architec
 </Warning>
 
 ```bash
-docker pull --platform $PLATFORM registry.odigos.io/odigos-scheduler:$VERSION
-docker pull --platform $PLATFORM registry.odigos.io/odigos-instrumentor:$VERSION
-docker pull --platform $PLATFORM registry.odigos.io/odigos-ui:$VERSION
-docker pull --platform $PLATFORM registry.odigos.io/odigos-autoscaler:$VERSION
-docker pull --platform $PLATFORM registry.odigos.io/odigos-odiglet:$VERSION
-docker pull --platform $PLATFORM registry.odigos.io/odigos-collector:$VERSION
-docker pull --platform $PLATFORM registry.odigos.io/odigos-victoria-metrics:$VERSION
+docker pull --platform $PLATFORM p0xd21zf5r.registry.depot.dev/odigos-scheduler:$VERSION
+docker pull --platform $PLATFORM p0xd21zf5r.registry.depot.dev/odigos-instrumentor:$VERSION
+docker pull --platform $PLATFORM p0xd21zf5r.registry.depot.dev/odigos-ui:$VERSION
+docker pull --platform $PLATFORM p0xd21zf5r.registry.depot.dev/odigos-autoscaler:$VERSION
+docker pull --platform $PLATFORM p0xd21zf5r.registry.depot.dev/odigos-odiglet:$VERSION
+docker pull --platform $PLATFORM p0xd21zf5r.registry.depot.dev/odigos-collector:$VERSION
+docker pull --platform $PLATFORM p0xd21zf5r.registry.depot.dev/odigos-victoria-metrics:$VERSION
 ```
 
 ### Step 3: Tag the Images
 Next, Tag each image with your custom Docker registry prefix:
 
 ```bash
-docker tag registry.odigos.io/odigos-scheduler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
-docker tag registry.odigos.io/odigos-instrumentor:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-instrumentor:$VERSION
-docker tag registry.odigos.io/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
-docker tag registry.odigos.io/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
-docker tag registry.odigos.io/odigos-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-odiglet:$VERSION
-docker tag registry.odigos.io/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
-docker tag registry.odigos.io/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-victoria-metrics:$VERSION
+docker tag p0xd21zf5r.registry.depot.dev/odigos-scheduler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
+docker tag p0xd21zf5r.registry.depot.dev/odigos-instrumentor:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-instrumentor:$VERSION
+docker tag p0xd21zf5r.registry.depot.dev/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
+docker tag p0xd21zf5r.registry.depot.dev/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
+docker tag p0xd21zf5r.registry.depot.dev/odigos-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-odiglet:$VERSION
+docker tag p0xd21zf5r.registry.depot.dev/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
+docker tag p0xd21zf5r.registry.depot.dev/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-victoria-metrics:$VERSION
 ```
 
 

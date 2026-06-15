@@ -66,7 +66,7 @@ import (
 
 var (
 	scheme                = runtime.NewScheme()
-	defaultCollectorImage = "registry.odigos.io/odigos-collector"
+	defaultCollectorImage = "p0xd21zf5r.registry.depot.dev/odigos-collector"
 )
 
 func init() {

@@ -65,7 +65,7 @@ jobs:
       - name: Build CLI Image
         run: |
           TAG=e2e-test make build-cli-image
-          docker save registry.odigos.io/odigos-cli:e2e-test -o cli-image.tar
+          docker save p0xd21zf5r.registry.depot.dev/odigos-cli:e2e-test -o cli-image.tar
 
       - name: Save Odigos images to cache
         uses: actions/cache/save@v4
