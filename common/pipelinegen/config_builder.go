@@ -42,22 +42,36 @@ func GetGatewayConfig(
 	dataStreamsDetails []DataStreams,
 	gatewayOptions *GatewayConfigOptions,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
-	currentConfig := GetBasicConfig()
-	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
+	cfg, err, status, signals := CalculateGatewayConfig(dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
+	if err != nil {
+		return "", err, status, signals
+	}
+
+	// yaml.Marshal sorts the maps for deterministic YAML output
+	// however, lists are kept in the order they were added, so we need to sort them manually,
+	// to avoid any unexpected changes in the YAML output.
+	slices.Sort(cfg.Service.Extensions)
+
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return "", err, status, signals
+	}
+	return string(data), nil, status, signals
 }
 
 //nolint:funlen,gocyclo // This function handles complex gateway configuration logic that is difficult to break down further
 func CalculateGatewayConfig(
-	currentConfig *config.Config,
 	dests []config.ExporterConfigurer,
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
 	gatewayOptions *GatewayConfigOptions,
-) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
+) (*config.Config, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
+	currentConfig := GetBasicConfig()
+
 	configers, err := config.LoadConfigers()
 	if err != nil {
-		return "", err, nil, nil
+		return nil, err, nil, nil
 	}
 
 	status := &config.ResourceStatuses{
@@ -66,7 +80,7 @@ func CalculateGatewayConfig(
 	}
 
 	if _, exists := currentConfig.Receivers["otlp"]; !exists {
-		return "", fmt.Errorf("missing required receiver 'otlp' on config"), status, nil
+		return nil, fmt.Errorf("missing required receiver 'otlp' on config"), status, nil
 	}
 
 	// map of destination ID to list of forward connectors
@@ -210,7 +224,7 @@ func CalculateGatewayConfig(
 	// Optional: Add collector self-observability
 	if applySelfTelemetry != nil {
 		if err := applySelfTelemetry(currentConfig, unifiedDestinationPipelineNames, GetSignalsRootPipelineNames()); err != nil {
-			return "", err, status, nil
+			return nil, err, status, nil
 		}
 	}
 
@@ -235,16 +249,7 @@ func CalculateGatewayConfig(
 		currentConfig.Extensions[*gatewayOptions.OdigosConfigExtensionName] = config.GenericMap{}
 	}
 
-	// Sort extensions for deterministic YAML output
-	slices.Sort(currentConfig.Service.Extensions)
-
-	// Final marshal to YAML
-	data, err := yaml.Marshal(currentConfig)
-	if err != nil {
-		return "", err, status, nil
-	}
-
-	return string(data), nil, status, enabledSignals
+	return currentConfig, nil, status, enabledSignals
 }
 
 func insertRootPipelinesToConfig(currentConfig *config.Config,

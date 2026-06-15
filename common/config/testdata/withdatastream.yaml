@@ -1,21 +1,40 @@
 receivers:
   otlp:
     protocols:
-      grpc: {}
-      http: {}
+      grpc:
+        endpoint: 0.0.0.0:4317
+        keepalive:
+          server_parameters:
+            max_connection_age: 15s
+            max_connection_age_grace: 2s
+        max_recv_msg_size_mib: 128
+      http:
+        endpoint: 0.0.0.0:4318
 exporters:
   debug/dummy:
     sampling_initial: 1
     sampling_thereafter: 1
     verbosity: basic
 processors:
+  batch/generic-batch-processor: {}
   resource/dummy-processor: {}
-extensions: {}
+  resource/odigos-version:
+    attributes:
+    - action: upsert
+      key: odigos.version
+      value: ${ODIGOS_VERSION}
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
 connectors:
   forward/logs/debug-dummy: {}
   odigosrouterconnector/logs: {}
 service:
-  extensions: []
+  extensions:
+  - health_check
+  - pprof
   pipelines:
     logs/debug-dummy:
       receivers:
