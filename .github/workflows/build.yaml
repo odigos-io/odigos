@@ -288,7 +288,7 @@ jobs:
         run: |
           make test
 
-  build-and-test-frontend:
+  build-frontend:
     name: build-frontend
     runs-on: ubuntu-latest
     steps:
@@ -365,10 +365,10 @@ jobs:
       - name: Build webapp
         run: yarn build
         working-directory: frontend/webapp
-      - name: run tests
-        working-directory: ./frontend
-        run: |
-          make test
+      # Note: frontend Go tests (`make test` in ./frontend) now run as a
+      # chainsaw Test under tests/e2e/ui/frontend-go-tests/ in parallel with the
+      # sibling tests/e2e/ui/frontend-cypress-tests/ Test, so they no longer
+      # block this build job. See PLAT-1214.
 
   build-operator:
     name: build-operator
@@ -424,7 +424,7 @@ jobs:
       - build-and-test-instrumentor
       - build-and-test-odigos-collector
       - build-and-test-odiglet
-      - build-and-test-frontend
+      - build-frontend
       - build-operator
     runs-on: ubuntu-latest
     if: always()
