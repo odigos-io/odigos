@@ -73,7 +73,7 @@ type CollectorsGroupSpecApplyConfiguration struct {
 	// and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
 	Metrics *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
 	// TraceCorrelations holds trace correlations configuration derived from OdigosConfiguration.
-	// Currently only relevant for the node collector.
+	// Currently only relevant for the cluster gateway collector.
 	TraceCorrelations *CollectorsGroupTraceCorrelationsSettingsApplyConfiguration `json:"traceCorrelations,omitempty"`
 	// Node selector for the collectors group deployment.
 	// Use this to force the gateway to run only on nodes with specific labels.

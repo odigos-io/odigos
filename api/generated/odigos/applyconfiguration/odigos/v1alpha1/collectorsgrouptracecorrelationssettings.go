@@ -25,7 +25,7 @@ import (
 // with apply.
 //
 // CollectorsGroupTraceCorrelationsSettings holds trace correlations configuration
-// derived from OdigosConfiguration. Currently only relevant for the node collector.
+// derived from OdigosConfiguration. Currently only relevant for the cluster gateway collector.
 type CollectorsGroupTraceCorrelationsSettingsApplyConfiguration struct {
 	ServiceIO *common.TraceCorrelationsServiceIOConfiguration `json:"serviceIO,omitempty"`
 }
