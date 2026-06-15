@@ -7,6 +7,10 @@ This page covers how to point an **existing** Istio mesh at Odigos. It is not a 
 ## Prerequisites
 
 <Steps>
+<Step title="Kubernetes 1.26 or newer">
+**Kubernetes 1.26+ is required** — the `odigos-data-collection-local-traffic` service depends on `internalTrafficPolicy: Local`, which became GA in 1.26.
+</Step>
+
 <Step title="A running Istio mesh">
 Istio's control plane (`istiod`) must be installed in your cluster. Follow the [Istio installation guide](https://istio.io/latest/docs/setup/install/helm/). You do not need to enroll any workloads in the mesh yet.
 </Step>
@@ -82,6 +86,10 @@ istioctl install -f istio-otel.yaml
 </Tabs>
 
 Defining the provider on its own does not start any tracing — it only tells Istio where Odigos is.
+
+<Note>
+Requires **Kubernetes 1.26+**. Below that, `odigos-data-collection-local-traffic` does not exist and Istio has no endpoint to reach.
+</Note>
 </Step>
 
 <Step title="Enable tracing with the Telemetry API">
