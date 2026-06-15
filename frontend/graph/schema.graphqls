@@ -8,7 +8,6 @@ enum K8sResourceKind {
   DaemonSet
   StatefulSet
   CronJob
-  Job
   ConfigMap
   Pod
   StaticPod
