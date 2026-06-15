@@ -101,6 +101,7 @@ import (
 	collector "go.opentelemetry.io/ebpf-profiler/collector"
 
 	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
+	serviceioconnector "github.com/odigos-io/odigos/collector/connectors/serviceioconnector"
 	odigosconfigk8sextension "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension"
 	odigosextractattributeprocessor "github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor"
 	odigoslogsresourceattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor"
@@ -356,6 +357,7 @@ func components() (otelcol.Factories, error) {
 		servicegraphconnector.NewFactory(),
 		spanmetricsconnector.NewFactory(),
 		odigosrouterconnector.NewFactory(),
+		serviceioconnector.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -369,6 +371,7 @@ func components() (otelcol.Factories, error) {
 		servicegraphconnector.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.148.0",
 		spanmetricsconnector.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.148.0",
 		odigosrouterconnector.NewFactory().Type(): "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.148.0",
+		serviceioconnector.NewFactory().Type():    "github.com/odigos-io/odigos/collector/connectors/serviceioconnector v0.148.0",
 	})
 
 	return factories, nil

@@ -41,11 +41,11 @@ ADD --chmod=644 https://github.com/open-telemetry/opentelemetry-java-instrumenta
 
 # python-community/python-community3.8
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8 /instrumentations/python3.8 /instrumentations/python3.8
-COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.87 /instrumentations/python /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.88 /instrumentations/python /instrumentations/python
 
 # nodejs-community
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.10.1 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.10.1 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.11.0 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.11.0 /instrumentations/nodejs-community /instrumentations/nodejs-community
 # nodejs-community-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.20 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.20 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14

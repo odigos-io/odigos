@@ -476,6 +476,38 @@ spec:
                       and broken traces due to sampling each trace in few pieces.
                     type: string
                 type: object
+              traceCorrelations:
+                description: |-
+                  TraceCorrelations holds trace correlations configuration derived from OdigosConfiguration.
+                  Currently only relevant for the cluster gateway collector.
+                properties:
+                  serviceIO:
+                    properties:
+                      enabled:
+                        description: |-
+                          enable/disable for service I/O correlation metrics (serviceio connector).
+                          disabled by default.
+                        type: boolean
+                      inputSpanAttributes:
+                        description: |-
+                          OpenTelemetry span attribute names read from inbound spans when correlating service I/O
+                          on the receiving side (e.g. server spans). Each name should refer to a low-cardinality attribute.
+                        items:
+                          type: string
+                        type: array
+                      metricsFlushInterval:
+                        description: 'interval at which service I/O metrics are flushed
+                          (format: 15s, 1m, etc). default is 60s.'
+                        type: string
+                      outputSpanAttributes:
+                        description: |-
+                          OpenTelemetry span attribute names read from outbound spans when correlating service I/O
+                          on the sending side (e.g. client/producer spans). Each name should refer to a low-cardinality attribute.
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                type: object
             required:
             - collectorOwnMetricsPort
             - resourcesSettings
