@@ -424,6 +424,7 @@ type ComplexityRoot struct {
 		Sampling                         func(childComplexity int) int
 		SkipWebhookIssuerCreation        func(childComplexity int) int
 		TelemetryEnabled                 func(childComplexity int) int
+		TraceCorrelations                func(childComplexity int) int
 		TraceIDSuffix                    func(childComplexity int) int
 		UIMode                           func(childComplexity int) int
 		UIPaginationLimit                func(childComplexity int) int
@@ -1183,6 +1184,7 @@ type ComplexityRoot struct {
 		RemoteConfig                      func(childComplexity int) int
 		Sampling                          func(childComplexity int) int
 		SourceConditions                  func(childComplexity int) int
+		TraceCorrelations                 func(childComplexity int, filter *model.WorkloadFilter, timeRange *model.TraceCorrelationsTimeRangeInput) int
 		Workloads                         func(childComplexity int, filter *model.WorkloadFilter) int
 		WorkloadsByIds                    func(childComplexity int, ids []*model.K8sWorkloadIDInput) int
 	}
@@ -1369,6 +1371,43 @@ type ComplexityRoot struct {
 		Succeeded       func(childComplexity int) int
 	}
 
+	TraceCorrelations struct {
+		Workloads func(childComplexity int) int
+	}
+
+	TraceCorrelationsConfig struct {
+		ServiceIo func(childComplexity int) int
+	}
+
+	TraceCorrelationsInputGroup struct {
+		Attributes func(childComplexity int) int
+		Outputs    func(childComplexity int) int
+	}
+
+	TraceCorrelationsOutputSeries struct {
+		Attributes      func(childComplexity int) int
+		ConnectionCount func(childComplexity int) int
+		FirstDetectedAt func(childComplexity int) int
+	}
+
+	TraceCorrelationsServiceIOConfig struct {
+		Enabled              func(childComplexity int) int
+		InputSpanAttributes  func(childComplexity int) int
+		MetricsFlushInterval func(childComplexity int) int
+		OutputSpanAttributes func(childComplexity int) int
+	}
+
+	TraceCorrelationsWorkload struct {
+		ContainerName         func(childComplexity int) int
+		Inputs                func(childComplexity int) int
+		Kind                  func(childComplexity int) int
+		Name                  func(childComplexity int) int
+		Namespace             func(childComplexity int) int
+		ProcessRuntimeName    func(childComplexity int) int
+		ProcessRuntimeVersion func(childComplexity int) int
+		TelemetrySdkLanguage  func(childComplexity int) int
+	}
+
 	URLTemplatizationRule struct {
 		Examples func(childComplexity int) int
 		Notes    func(childComplexity int) int
@@ -1509,6 +1548,7 @@ type QueryResolver interface {
 	Pod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
 	ProfilingSlots(ctx context.Context) (*model.ProfilingSlots, error)
 	Sampling(ctx context.Context) (*model.Sampling, error)
+	TraceCorrelations(ctx context.Context, filter *model.WorkloadFilter, timeRange *model.TraceCorrelationsTimeRangeInput) (*model.TraceCorrelations, error)
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
 	WorkloadsByIds(ctx context.Context, ids []*model.K8sWorkloadIDInput) ([]*model.K8sWorkload, error)
 	Namespaces(ctx context.Context) ([]*model.K8sNamespace, error)
@@ -3320,6 +3360,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EffectiveConfig.TelemetryEnabled(childComplexity), true
+
+	case "EffectiveConfig.traceCorrelations":
+		if e.complexity.EffectiveConfig.TraceCorrelations == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.TraceCorrelations(childComplexity), true
 
 	case "EffectiveConfig.traceIdSuffix":
 		if e.complexity.EffectiveConfig.TraceIDSuffix == nil {
@@ -6807,6 +6854,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.SourceConditions(childComplexity), true
 
+	case "Query.traceCorrelations":
+		if e.complexity.Query.TraceCorrelations == nil {
+			break
+		}
+
+		args, err := ec.field_Query_traceCorrelations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TraceCorrelations(childComplexity, args["filter"].(*model.WorkloadFilter), args["timeRange"].(*model.TraceCorrelationsTimeRangeInput)), true
+
 	case "Query.workloads":
 		if e.complexity.Query.Workloads == nil {
 			break
@@ -7496,6 +7555,139 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TestConnectionResponse.Succeeded(childComplexity), true
 
+	case "TraceCorrelations.workloads":
+		if e.complexity.TraceCorrelations.Workloads == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelations.Workloads(childComplexity), true
+
+	case "TraceCorrelationsConfig.serviceIO":
+		if e.complexity.TraceCorrelationsConfig.ServiceIo == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsConfig.ServiceIo(childComplexity), true
+
+	case "TraceCorrelationsInputGroup.attributes":
+		if e.complexity.TraceCorrelationsInputGroup.Attributes == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsInputGroup.Attributes(childComplexity), true
+
+	case "TraceCorrelationsInputGroup.outputs":
+		if e.complexity.TraceCorrelationsInputGroup.Outputs == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsInputGroup.Outputs(childComplexity), true
+
+	case "TraceCorrelationsOutputSeries.attributes":
+		if e.complexity.TraceCorrelationsOutputSeries.Attributes == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsOutputSeries.Attributes(childComplexity), true
+
+	case "TraceCorrelationsOutputSeries.connectionCount":
+		if e.complexity.TraceCorrelationsOutputSeries.ConnectionCount == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsOutputSeries.ConnectionCount(childComplexity), true
+
+	case "TraceCorrelationsOutputSeries.firstDetectedAt":
+		if e.complexity.TraceCorrelationsOutputSeries.FirstDetectedAt == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsOutputSeries.FirstDetectedAt(childComplexity), true
+
+	case "TraceCorrelationsServiceIOConfig.enabled":
+		if e.complexity.TraceCorrelationsServiceIOConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsServiceIOConfig.Enabled(childComplexity), true
+
+	case "TraceCorrelationsServiceIOConfig.inputSpanAttributes":
+		if e.complexity.TraceCorrelationsServiceIOConfig.InputSpanAttributes == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsServiceIOConfig.InputSpanAttributes(childComplexity), true
+
+	case "TraceCorrelationsServiceIOConfig.metricsFlushInterval":
+		if e.complexity.TraceCorrelationsServiceIOConfig.MetricsFlushInterval == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsServiceIOConfig.MetricsFlushInterval(childComplexity), true
+
+	case "TraceCorrelationsServiceIOConfig.outputSpanAttributes":
+		if e.complexity.TraceCorrelationsServiceIOConfig.OutputSpanAttributes == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsServiceIOConfig.OutputSpanAttributes(childComplexity), true
+
+	case "TraceCorrelationsWorkload.containerName":
+		if e.complexity.TraceCorrelationsWorkload.ContainerName == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsWorkload.ContainerName(childComplexity), true
+
+	case "TraceCorrelationsWorkload.inputs":
+		if e.complexity.TraceCorrelationsWorkload.Inputs == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsWorkload.Inputs(childComplexity), true
+
+	case "TraceCorrelationsWorkload.kind":
+		if e.complexity.TraceCorrelationsWorkload.Kind == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsWorkload.Kind(childComplexity), true
+
+	case "TraceCorrelationsWorkload.name":
+		if e.complexity.TraceCorrelationsWorkload.Name == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsWorkload.Name(childComplexity), true
+
+	case "TraceCorrelationsWorkload.namespace":
+		if e.complexity.TraceCorrelationsWorkload.Namespace == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsWorkload.Namespace(childComplexity), true
+
+	case "TraceCorrelationsWorkload.processRuntimeName":
+		if e.complexity.TraceCorrelationsWorkload.ProcessRuntimeName == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsWorkload.ProcessRuntimeName(childComplexity), true
+
+	case "TraceCorrelationsWorkload.processRuntimeVersion":
+		if e.complexity.TraceCorrelationsWorkload.ProcessRuntimeVersion == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsWorkload.ProcessRuntimeVersion(childComplexity), true
+
+	case "TraceCorrelationsWorkload.telemetrySdkLanguage":
+		if e.complexity.TraceCorrelationsWorkload.TelemetrySdkLanguage == nil {
+			break
+		}
+
+		return e.complexity.TraceCorrelationsWorkload.TelemetrySdkLanguage(childComplexity), true
+
 	case "URLTemplatizationRule.examples":
 		if e.complexity.URLTemplatizationRule.Examples == nil {
 			break
@@ -7629,6 +7821,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLocalUiConfigRolloutInput,
 		ec.unmarshalInputLocalUiConfigSamplingInput,
 		ec.unmarshalInputLocalUiConfigSpanSamplingAttributesInput,
+		ec.unmarshalInputLocalUiConfigTraceCorrelationsInput,
+		ec.unmarshalInputLocalUiConfigTraceCorrelationsServiceIOInput,
 		ec.unmarshalInputLocalUiConfigWaspInput,
 		ec.unmarshalInputMessagingPayloadCollectionInput,
 		ec.unmarshalInputNoisyOperationRuleInput,
@@ -7646,6 +7840,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputTailSamplingKafkaMatcherInput,
 		ec.unmarshalInputTailSamplingOperationMatcherInput,
 		ec.unmarshalInputTemplatizationWorkloadFilterInput,
+		ec.unmarshalInputTraceCorrelationsTimeRangeInput,
 		ec.unmarshalInputURLTemplatizationRuleInput,
 		ec.unmarshalInputUrlTemplatizationRulesGroupInput,
 		ec.unmarshalInputWorkloadFilter,
@@ -7745,7 +7940,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "collectors.graphqls" "configs.graphqls" "enum.graphqls" "pod.graphqls" "profiling.graphqls" "sampling.graphqls" "schema.graphqls" "workload.graphqls"
+//go:embed "collectors.graphqls" "configs.graphqls" "enum.graphqls" "pod.graphqls" "profiling.graphqls" "sampling.graphqls" "schema.graphqls" "tracecorrelations.graphqls" "workload.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -7764,6 +7959,7 @@ var sources = []*ast.Source{
 	{Name: "profiling.graphqls", Input: sourceData("profiling.graphqls"), BuiltIn: false},
 	{Name: "sampling.graphqls", Input: sourceData("sampling.graphqls"), BuiltIn: false},
 	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
+	{Name: "tracecorrelations.graphqls", Input: sourceData("tracecorrelations.graphqls"), BuiltIn: false},
 	{Name: "workload.graphqls", Input: sourceData("workload.graphqls"), BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -9857,6 +10053,57 @@ func (ec *executionContext) field_Query_pod_argsName(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_traceCorrelations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_traceCorrelations_argsFilter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg0
+	arg1, err := ec.field_Query_traceCorrelations_argsTimeRange(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["timeRange"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Query_traceCorrelations_argsFilter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*model.WorkloadFilter, error) {
+	if _, ok := rawArgs["filter"]; !ok {
+		var zeroVal *model.WorkloadFilter
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+	if tmp, ok := rawArgs["filter"]; ok {
+		return ec.unmarshalOWorkloadFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadFilter(ctx, tmp)
+	}
+
+	var zeroVal *model.WorkloadFilter
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_traceCorrelations_argsTimeRange(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*model.TraceCorrelationsTimeRangeInput, error) {
+	if _, ok := rawArgs["timeRange"]; !ok {
+		var zeroVal *model.TraceCorrelationsTimeRangeInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("timeRange"))
+	if tmp, ok := rawArgs["timeRange"]; ok {
+		return ec.unmarshalOTraceCorrelationsTimeRangeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsTimeRangeInput(ctx, tmp)
+	}
+
+	var zeroVal *model.TraceCorrelationsTimeRangeInput
 	return zeroVal, nil
 }
 
@@ -21658,6 +21905,51 @@ func (ec *executionContext) fieldContext_EffectiveConfig_profiling(_ context.Con
 				return ec.fieldContext_ProfilingConfig_enabled(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ProfilingConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_traceCorrelations(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_traceCorrelations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TraceCorrelations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.TraceCorrelationsConfig)
+	fc.Result = res
+	return ec.marshalOTraceCorrelationsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_traceCorrelations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "serviceIO":
+				return ec.fieldContext_TraceCorrelationsConfig_serviceIO(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelationsConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -43718,6 +44010,8 @@ func (ec *executionContext) fieldContext_Query_effectiveConfig(_ context.Context
 				return ec.fieldContext_EffectiveConfig_sampling(ctx, field)
 			case "profiling":
 				return ec.fieldContext_EffectiveConfig_profiling(ctx, field)
+			case "traceCorrelations":
+				return ec.fieldContext_EffectiveConfig_traceCorrelations(ctx, field)
 			case "provenance":
 				return ec.fieldContext_EffectiveConfig_provenance(ctx, field)
 			case "manifestYAML":
@@ -43953,6 +44247,65 @@ func (ec *executionContext) fieldContext_Query_sampling(_ context.Context, field
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Sampling", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_traceCorrelations(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_traceCorrelations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TraceCorrelations(rctx, fc.Args["filter"].(*model.WorkloadFilter), fc.Args["timeRange"].(*model.TraceCorrelationsTimeRangeInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.TraceCorrelations)
+	fc.Result = res
+	return ec.marshalNTraceCorrelations2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelations(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_traceCorrelations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "workloads":
+				return ec.fieldContext_TraceCorrelations_workloads(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelations", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_traceCorrelations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -48707,6 +49060,872 @@ func (ec *executionContext) fieldContext_TestConnectionResponse_reason(_ context
 	return fc, nil
 }
 
+func (ec *executionContext) _TraceCorrelations_workloads(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelations) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelations_workloads(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Workloads, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.TraceCorrelationsWorkload)
+	fc.Result = res
+	return ec.marshalNTraceCorrelationsWorkload2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsWorkloadᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelations_workloads(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelations",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "namespace":
+				return ec.fieldContext_TraceCorrelationsWorkload_namespace(ctx, field)
+			case "kind":
+				return ec.fieldContext_TraceCorrelationsWorkload_kind(ctx, field)
+			case "name":
+				return ec.fieldContext_TraceCorrelationsWorkload_name(ctx, field)
+			case "containerName":
+				return ec.fieldContext_TraceCorrelationsWorkload_containerName(ctx, field)
+			case "telemetrySdkLanguage":
+				return ec.fieldContext_TraceCorrelationsWorkload_telemetrySdkLanguage(ctx, field)
+			case "processRuntimeName":
+				return ec.fieldContext_TraceCorrelationsWorkload_processRuntimeName(ctx, field)
+			case "processRuntimeVersion":
+				return ec.fieldContext_TraceCorrelationsWorkload_processRuntimeVersion(ctx, field)
+			case "inputs":
+				return ec.fieldContext_TraceCorrelationsWorkload_inputs(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelationsWorkload", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsConfig_serviceIO(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsConfig_serviceIO(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServiceIo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.TraceCorrelationsServiceIOConfig)
+	fc.Result = res
+	return ec.marshalOTraceCorrelationsServiceIOConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsServiceIOConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsConfig_serviceIO(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_TraceCorrelationsServiceIOConfig_enabled(ctx, field)
+			case "inputSpanAttributes":
+				return ec.fieldContext_TraceCorrelationsServiceIOConfig_inputSpanAttributes(ctx, field)
+			case "outputSpanAttributes":
+				return ec.fieldContext_TraceCorrelationsServiceIOConfig_outputSpanAttributes(ctx, field)
+			case "metricsFlushInterval":
+				return ec.fieldContext_TraceCorrelationsServiceIOConfig_metricsFlushInterval(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelationsServiceIOConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsInputGroup_attributes(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsInputGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsInputGroup_attributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Attributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.NonIdentifyingAttribute)
+	fc.Result = res
+	return ec.marshalNNonIdentifyingAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNonIdentifyingAttributeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsInputGroup_attributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsInputGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_NonIdentifyingAttribute_key(ctx, field)
+			case "value":
+				return ec.fieldContext_NonIdentifyingAttribute_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NonIdentifyingAttribute", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsInputGroup_outputs(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsInputGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsInputGroup_outputs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Outputs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.TraceCorrelationsOutputSeries)
+	fc.Result = res
+	return ec.marshalNTraceCorrelationsOutputSeries2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsOutputSeriesᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsInputGroup_outputs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsInputGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "attributes":
+				return ec.fieldContext_TraceCorrelationsOutputSeries_attributes(ctx, field)
+			case "connectionCount":
+				return ec.fieldContext_TraceCorrelationsOutputSeries_connectionCount(ctx, field)
+			case "firstDetectedAt":
+				return ec.fieldContext_TraceCorrelationsOutputSeries_firstDetectedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelationsOutputSeries", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsOutputSeries_attributes(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsOutputSeries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsOutputSeries_attributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Attributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.NonIdentifyingAttribute)
+	fc.Result = res
+	return ec.marshalNNonIdentifyingAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNonIdentifyingAttributeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsOutputSeries_attributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsOutputSeries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_NonIdentifyingAttribute_key(ctx, field)
+			case "value":
+				return ec.fieldContext_NonIdentifyingAttribute_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NonIdentifyingAttribute", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsOutputSeries_connectionCount(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsOutputSeries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsOutputSeries_connectionCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConnectionCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsOutputSeries_connectionCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsOutputSeries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsOutputSeries_firstDetectedAt(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsOutputSeries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsOutputSeries_firstDetectedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FirstDetectedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsOutputSeries_firstDetectedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsOutputSeries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsServiceIOConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsServiceIOConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsServiceIOConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsServiceIOConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsServiceIOConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsServiceIOConfig_inputSpanAttributes(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsServiceIOConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsServiceIOConfig_inputSpanAttributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InputSpanAttributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsServiceIOConfig_inputSpanAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsServiceIOConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsServiceIOConfig_outputSpanAttributes(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsServiceIOConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsServiceIOConfig_outputSpanAttributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OutputSpanAttributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsServiceIOConfig_outputSpanAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsServiceIOConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsServiceIOConfig_metricsFlushInterval(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsServiceIOConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsServiceIOConfig_metricsFlushInterval(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricsFlushInterval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsServiceIOConfig_metricsFlushInterval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsServiceIOConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsWorkload_namespace(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsWorkload_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_namespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsWorkload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsWorkload_kind(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsWorkload_kind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Kind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.K8sResourceKind)
+	fc.Result = res
+	return ec.marshalNK8sResourceKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsWorkload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type K8sResourceKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsWorkload_name(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsWorkload_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsWorkload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsWorkload_containerName(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsWorkload_containerName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContainerName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_containerName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsWorkload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsWorkload_telemetrySdkLanguage(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsWorkload_telemetrySdkLanguage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TelemetrySdkLanguage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_telemetrySdkLanguage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsWorkload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsWorkload_processRuntimeName(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsWorkload_processRuntimeName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProcessRuntimeName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_processRuntimeName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsWorkload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsWorkload_processRuntimeVersion(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsWorkload_processRuntimeVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProcessRuntimeVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_processRuntimeVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsWorkload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TraceCorrelationsWorkload_inputs(ctx context.Context, field graphql.CollectedField, obj *model.TraceCorrelationsWorkload) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TraceCorrelationsWorkload_inputs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Inputs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.TraceCorrelationsInputGroup)
+	fc.Result = res
+	return ec.marshalNTraceCorrelationsInputGroup2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsInputGroupᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TraceCorrelationsWorkload_inputs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TraceCorrelationsWorkload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "attributes":
+				return ec.fieldContext_TraceCorrelationsInputGroup_attributes(ctx, field)
+			case "outputs":
+				return ec.fieldContext_TraceCorrelationsInputGroup_outputs(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TraceCorrelationsInputGroup", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _URLTemplatizationRule_template(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_URLTemplatizationRule_template(ctx, field)
 	if err != nil {
@@ -52853,7 +54072,7 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "wasp", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels"}
+	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "wasp", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels", "traceCorrelations"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -52958,6 +54177,13 @@ func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context
 				return it, err
 			}
 			it.ComponentLogLevels = data
+		case "traceCorrelations":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceCorrelations"))
+			data, err := ec.unmarshalOLocalUiConfigTraceCorrelationsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigTraceCorrelationsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceCorrelations = data
 		}
 	}
 
@@ -53122,6 +54348,81 @@ func (ec *executionContext) unmarshalInputLocalUiConfigSpanSamplingAttributesInp
 				return it, err
 			}
 			it.SpanDecisionAttributesDisabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigTraceCorrelationsInput(ctx context.Context, obj any) (model.LocalUIConfigTraceCorrelationsInput, error) {
+	var it model.LocalUIConfigTraceCorrelationsInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"serviceIO"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "serviceIO":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceIO"))
+			data, err := ec.unmarshalOLocalUiConfigTraceCorrelationsServiceIOInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigTraceCorrelationsServiceIOInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceIo = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigTraceCorrelationsServiceIOInput(ctx context.Context, obj any) (model.LocalUIConfigTraceCorrelationsServiceIOInput, error) {
+	var it model.LocalUIConfigTraceCorrelationsServiceIOInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"enabled", "inputSpanAttributes", "outputSpanAttributes", "metricsFlushInterval"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		case "inputSpanAttributes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inputSpanAttributes"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.InputSpanAttributes = data
+		case "outputSpanAttributes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("outputSpanAttributes"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OutputSpanAttributes = data
+		case "metricsFlushInterval":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metricsFlushInterval"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MetricsFlushInterval = data
 		}
 	}
 
@@ -53798,6 +55099,40 @@ func (ec *executionContext) unmarshalInputTemplatizationWorkloadFilterInput(ctx 
 				return it, err
 			}
 			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTraceCorrelationsTimeRangeInput(ctx context.Context, obj any) (model.TraceCorrelationsTimeRangeInput, error) {
+	var it model.TraceCorrelationsTimeRangeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"start", "end"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "start":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Start = data
+		case "end":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.End = data
 		}
 	}
 
@@ -56415,6 +57750,8 @@ func (ec *executionContext) _EffectiveConfig(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EffectiveConfig_sampling(ctx, field, obj)
 		case "profiling":
 			out.Values[i] = ec._EffectiveConfig_profiling(ctx, field, obj)
+		case "traceCorrelations":
+			out.Values[i] = ec._EffectiveConfig_traceCorrelations(ctx, field, obj)
 		case "provenance":
 			out.Values[i] = ec._EffectiveConfig_provenance(ctx, field, obj)
 		case "manifestYAML":
@@ -62610,6 +63947,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "traceCorrelations":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_traceCorrelations(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "workloads":
 			field := field
 
@@ -64264,6 +65623,281 @@ func (ec *executionContext) _TestConnectionResponse(ctx context.Context, sel ast
 			out.Values[i] = ec._TestConnectionResponse_message(ctx, field, obj)
 		case "reason":
 			out.Values[i] = ec._TestConnectionResponse_reason(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var traceCorrelationsImplementors = []string{"TraceCorrelations"}
+
+func (ec *executionContext) _TraceCorrelations(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelations) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TraceCorrelations")
+		case "workloads":
+			out.Values[i] = ec._TraceCorrelations_workloads(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var traceCorrelationsConfigImplementors = []string{"TraceCorrelationsConfig"}
+
+func (ec *executionContext) _TraceCorrelationsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelationsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TraceCorrelationsConfig")
+		case "serviceIO":
+			out.Values[i] = ec._TraceCorrelationsConfig_serviceIO(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var traceCorrelationsInputGroupImplementors = []string{"TraceCorrelationsInputGroup"}
+
+func (ec *executionContext) _TraceCorrelationsInputGroup(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelationsInputGroup) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsInputGroupImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TraceCorrelationsInputGroup")
+		case "attributes":
+			out.Values[i] = ec._TraceCorrelationsInputGroup_attributes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "outputs":
+			out.Values[i] = ec._TraceCorrelationsInputGroup_outputs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var traceCorrelationsOutputSeriesImplementors = []string{"TraceCorrelationsOutputSeries"}
+
+func (ec *executionContext) _TraceCorrelationsOutputSeries(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelationsOutputSeries) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsOutputSeriesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TraceCorrelationsOutputSeries")
+		case "attributes":
+			out.Values[i] = ec._TraceCorrelationsOutputSeries_attributes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "connectionCount":
+			out.Values[i] = ec._TraceCorrelationsOutputSeries_connectionCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "firstDetectedAt":
+			out.Values[i] = ec._TraceCorrelationsOutputSeries_firstDetectedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var traceCorrelationsServiceIOConfigImplementors = []string{"TraceCorrelationsServiceIOConfig"}
+
+func (ec *executionContext) _TraceCorrelationsServiceIOConfig(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelationsServiceIOConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsServiceIOConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TraceCorrelationsServiceIOConfig")
+		case "enabled":
+			out.Values[i] = ec._TraceCorrelationsServiceIOConfig_enabled(ctx, field, obj)
+		case "inputSpanAttributes":
+			out.Values[i] = ec._TraceCorrelationsServiceIOConfig_inputSpanAttributes(ctx, field, obj)
+		case "outputSpanAttributes":
+			out.Values[i] = ec._TraceCorrelationsServiceIOConfig_outputSpanAttributes(ctx, field, obj)
+		case "metricsFlushInterval":
+			out.Values[i] = ec._TraceCorrelationsServiceIOConfig_metricsFlushInterval(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var traceCorrelationsWorkloadImplementors = []string{"TraceCorrelationsWorkload"}
+
+func (ec *executionContext) _TraceCorrelationsWorkload(ctx context.Context, sel ast.SelectionSet, obj *model.TraceCorrelationsWorkload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, traceCorrelationsWorkloadImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TraceCorrelationsWorkload")
+		case "namespace":
+			out.Values[i] = ec._TraceCorrelationsWorkload_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "kind":
+			out.Values[i] = ec._TraceCorrelationsWorkload_kind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._TraceCorrelationsWorkload_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "containerName":
+			out.Values[i] = ec._TraceCorrelationsWorkload_containerName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "telemetrySdkLanguage":
+			out.Values[i] = ec._TraceCorrelationsWorkload_telemetrySdkLanguage(ctx, field, obj)
+		case "processRuntimeName":
+			out.Values[i] = ec._TraceCorrelationsWorkload_processRuntimeName(ctx, field, obj)
+		case "processRuntimeVersion":
+			out.Values[i] = ec._TraceCorrelationsWorkload_processRuntimeVersion(ctx, field, obj)
+		case "inputs":
+			out.Values[i] = ec._TraceCorrelationsWorkload_inputs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -68224,6 +69858,182 @@ func (ec *executionContext) marshalNTier2githubᚗcomᚋodigosᚑioᚋodigosᚋf
 	return v
 }
 
+func (ec *executionContext) marshalNTraceCorrelations2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelations(ctx context.Context, sel ast.SelectionSet, v model.TraceCorrelations) graphql.Marshaler {
+	return ec._TraceCorrelations(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTraceCorrelations2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelations(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelations) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TraceCorrelations(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTraceCorrelationsInputGroup2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsInputGroupᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TraceCorrelationsInputGroup) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTraceCorrelationsInputGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsInputGroup(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTraceCorrelationsInputGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsInputGroup(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelationsInputGroup) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TraceCorrelationsInputGroup(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTraceCorrelationsOutputSeries2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsOutputSeriesᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TraceCorrelationsOutputSeries) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTraceCorrelationsOutputSeries2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsOutputSeries(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTraceCorrelationsOutputSeries2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsOutputSeries(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelationsOutputSeries) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TraceCorrelationsOutputSeries(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTraceCorrelationsWorkload2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsWorkloadᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TraceCorrelationsWorkload) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTraceCorrelationsWorkload2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsWorkload(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTraceCorrelationsWorkload2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsWorkload(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelationsWorkload) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TraceCorrelationsWorkload(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNURLTemplatizationRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRuleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.URLTemplatizationRule) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -70395,6 +72205,22 @@ func (ec *executionContext) unmarshalOLocalUiConfigSpanSamplingAttributesInput2�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalOLocalUiConfigTraceCorrelationsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigTraceCorrelationsInput(ctx context.Context, v any) (*model.LocalUIConfigTraceCorrelationsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigTraceCorrelationsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigTraceCorrelationsServiceIOInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigTraceCorrelationsServiceIOInput(ctx context.Context, v any) (*model.LocalUIConfigTraceCorrelationsServiceIOInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigTraceCorrelationsServiceIOInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOLocalUiConfigWaspInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigWaspInput(ctx context.Context, v any) (*model.LocalUIConfigWaspInput, error) {
 	if v == nil {
 		return nil, nil
@@ -71231,6 +73057,28 @@ func (ec *executionContext) unmarshalOTemplatizationWorkloadFilterInput2ᚕᚖgi
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOTraceCorrelationsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsConfig(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelationsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TraceCorrelationsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTraceCorrelationsServiceIOConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsServiceIOConfig(ctx context.Context, sel ast.SelectionSet, v *model.TraceCorrelationsServiceIOConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TraceCorrelationsServiceIOConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOTraceCorrelationsTimeRangeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTraceCorrelationsTimeRangeInput(ctx context.Context, v any) (*model.TraceCorrelationsTimeRangeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputTraceCorrelationsTimeRangeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUIMode(ctx context.Context, v any) (*model.UIMode, error) {

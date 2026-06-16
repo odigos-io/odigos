@@ -149,6 +149,17 @@ type ProfilingConfig {
   enabled: Boolean
 }
 
+type TraceCorrelationsServiceIOConfig {
+  enabled: Boolean
+  inputSpanAttributes: [String!]
+  outputSpanAttributes: [String!]
+  metricsFlushInterval: String
+}
+
+type TraceCorrelationsConfig {
+  serviceIO: TraceCorrelationsServiceIOConfig
+}
+
 type KarpenterConfig {
   enabled: Boolean
 }
@@ -269,6 +280,7 @@ type EffectiveConfig {
   componentLogLevels: ComponentLogLevelsConfig
   sampling: SamplingConfig
   profiling: ProfilingConfig
+  traceCorrelations: TraceCorrelationsConfig
   provenance: [ProvenanceEntry!]
   manifestYAML: String
 }
@@ -339,6 +351,17 @@ input LocalUiConfigComponentLogLevelsInput {
   collector: OdigosLogLevel
 }
 
+input LocalUiConfigTraceCorrelationsServiceIOInput {
+  enabled: Boolean
+  inputSpanAttributes: [String!]
+  outputSpanAttributes: [String!]
+  metricsFlushInterval: String
+}
+
+input LocalUiConfigTraceCorrelationsInput {
+  serviceIO: LocalUiConfigTraceCorrelationsServiceIOInput
+}
+
 input LocalUiConfigInput {
   telemetryEnabled: Boolean
   ignoredNamespaces: [String!]
@@ -354,6 +377,7 @@ input LocalUiConfigInput {
   goAutoOffsetsMode: String
   sampling: LocalUiConfigSamplingInput
   componentLogLevels: LocalUiConfigComponentLogLevelsInput
+  traceCorrelations: LocalUiConfigTraceCorrelationsInput
 }
 
 type ConfigYamlField {

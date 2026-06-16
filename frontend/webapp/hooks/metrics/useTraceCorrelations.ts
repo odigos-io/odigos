@@ -137,7 +137,58 @@ type TraceCorrelationsResponse = {
   };
 };
 
-export const useTraceCorrelations = (filter?: WorkloadFilter, timeRange?: TraceCorrelationsTimeRange | null) => {
+export const TRACE_CORRELATIONS_HELM_VALUES_SNIPPET = `traceCorrelations:
+  serviceIO:
+    enabled: true`;
+
+export const TRACE_CORRELATIONS_CLI_COMMANDS_SNIPPET = `odigos install --set traceCorrelations.serviceIO.enabled=true
+odigos upgrade --set traceCorrelations.serviceIO.enabled=true`;
+
+type EffectiveConfigTraceCorrelations = {
+  traceCorrelations?: {
+    serviceIO?: {
+      enabled?: boolean | null;
+    } | null;
+  } | null;
+};
+
+export function isTraceCorrelationsEnabled(effectiveConfig: unknown) {
+  if (!effectiveConfig || typeof effectiveConfig !== 'object') {
+    return false;
+  }
+
+  const traceCorrelations = (effectiveConfig as EffectiveConfigTraceCorrelations).traceCorrelations;
+  return traceCorrelations?.serviceIO?.enabled === true;
+}
+
+export function isTraceCorrelationsDisabledError(error: { message?: string } | null | undefined) {
+  return Boolean(error?.message?.includes('trace correlations are not enabled'));
+}
+
+export function isTraceCorrelationsMetricsStoreUnavailableError(error: { message?: string } | null | undefined) {
+  const message = error?.message?.toLowerCase() ?? '';
+  if (!message) {
+    return false;
+  }
+  if (message.includes('trace correlations metrics store is unavailable')) {
+    return true;
+  }
+
+  return (
+    message.includes('odigos-correlations-metrics') &&
+    (message.includes('connection refused') ||
+      message.includes('no such host') ||
+      message.includes('dial tcp') ||
+      message.includes('connect: network is unreachable'))
+  );
+}
+
+export const useTraceCorrelations = (
+  filter?: WorkloadFilter,
+  timeRange?: TraceCorrelationsTimeRange | null,
+  options?: { enabled?: boolean },
+) => {
+  const queryEnabled = (options?.enabled ?? true) && !!timeRange;
   const variables = useMemo(
     () => ({
       filter: filter ?? null,
@@ -148,7 +199,7 @@ export const useTraceCorrelations = (filter?: WorkloadFilter, timeRange?: TraceC
 
   const { data, loading, error, refetch } = useQuery<TraceCorrelationsResponse>(GET_TRACE_CORRELATIONS, {
     variables,
-    skip: !timeRange,
+    skip: !queryEnabled,
   });
 
   return {

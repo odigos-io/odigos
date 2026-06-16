@@ -2,7 +2,10 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { useTraceCorrelations, TRACE_CORRELATIONS_TIME_PRESETS, formatTraceCorrelationsTimeRangeLabel, parseDatetimeLocalValue, resolveTraceCorrelationsTimeRange, toDatetimeLocalValue, type TraceCorrelationsInputGroup, type TraceCorrelationsOutputSeries, type TraceCorrelationsTimePreset, type TraceCorrelationsWorkload } from '@/hooks/metrics/useTraceCorrelations';
+import { useTraceCorrelations, TRACE_CORRELATIONS_TIME_PRESETS, TRACE_CORRELATIONS_CLI_COMMANDS_SNIPPET, TRACE_CORRELATIONS_HELM_VALUES_SNIPPET, formatTraceCorrelationsTimeRangeLabel, isTraceCorrelationsDisabledError, isTraceCorrelationsEnabled, isTraceCorrelationsMetricsStoreUnavailableError, parseDatetimeLocalValue, resolveTraceCorrelationsTimeRange, toDatetimeLocalValue, type TraceCorrelationsInputGroup, type TraceCorrelationsOutputSeries, type TraceCorrelationsTimePreset, type TraceCorrelationsWorkload } from '@/hooks/metrics/useTraceCorrelations';
+import { useTraceCorrelationsSettings } from '@/hooks/metrics/useTraceCorrelationsSettings';
+import { useEffectiveConfig } from '@/hooks/config';
+import { TraceCorrelationsSettingsPanel } from './SettingsPanel';
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(8px); }
@@ -248,26 +251,6 @@ const Input = styled.input`
   &:focus {
     border-color: rgba(34, 211, 238, 0.55);
     box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
-  }
-`;
-
-const Button = styled.button`
-  padding: 12px 16px;
-  border: none;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #06b6d4, #6366f1);
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: wait;
   }
 `;
 
@@ -1613,6 +1596,68 @@ const ErrorState = styled(EmptyState)`
 
 const LoadingState = styled(EmptyState)`
   color: #67e8f9;
+`;
+
+const DisabledState = styled(EmptyState)`
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 28px;
+  text-align: left;
+`;
+
+const UnavailableState = styled(DisabledState)`
+  border-color: rgba(251, 191, 36, 0.28);
+`;
+
+const DisabledTitle = styled.h2`
+  margin: 0 0 12px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f8fafc;
+  text-align: center;
+`;
+
+const UnavailableTitle = styled(DisabledTitle)`
+  color: #fde68a;
+`;
+
+const DisabledDescription = styled.p`
+  margin: 0 0 18px;
+  color: #94a3b8;
+  line-height: 1.6;
+  text-align: center;
+`;
+
+const DisabledHint = styled.p`
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+`;
+
+const DisabledSectionTitle = styled.h3`
+  margin: 22px 0 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #cbd5e1;
+
+  &:first-of-type {
+    margin-top: 0;
+  }
+`;
+
+const CodeSnippet = styled.pre`
+  margin: 10px 0 0;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  color: #e2e8f0;
+  font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-x: auto;
+  white-space: pre;
 `;
 
 const ToggleButton = styled.button<{ $active?: boolean }>`
@@ -3126,6 +3171,7 @@ export default function TraceCorrelationsPage() {
   const [validatedConnectionKeys, setValidatedConnectionKeys] = useState<Set<string>>(() => new Set());
   const [alertedConnectionKeys, setAlertedConnectionKeys] = useState<Set<string>>(() => new Set());
   const [queryAnchor, setQueryAnchor] = useState(() => Date.now());
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const updateBaselineTime = useCallback((value: string) => {
     setBaselineTime(value);
@@ -3149,7 +3195,23 @@ export default function TraceCorrelationsPage() {
     }),
     [validatedConnectionKeys, alertedConnectionKeys],
   );
-  const { workloads, loading, error, refetch } = useTraceCorrelations(filter, timeRange);
+  const { effectiveConfig, effectiveConfigLoading, refetchEffectiveConfig } = useEffectiveConfig();
+  const traceCorrelationsEnabled = isTraceCorrelationsEnabled(effectiveConfig);
+  const featureDisabled = !effectiveConfigLoading && !traceCorrelationsEnabled;
+  const {
+    draft: settingsDraft,
+    setDraft: setSettingsDraft,
+    isDirty: settingsDirty,
+    flushIntervalInvalid,
+    saveSettings,
+    resetDraft: resetSettingsDraft,
+    saving: settingsSaving,
+  } = useTraceCorrelationsSettings(effectiveConfig, refetchEffectiveConfig);
+  const { workloads, loading, error, refetch } = useTraceCorrelations(filter, timeRange, {
+    enabled: !effectiveConfigLoading && traceCorrelationsEnabled,
+  });
+  const showDisabledState = featureDisabled || isTraceCorrelationsDisabledError(error);
+  const metricsStoreUnavailable = !showDisabledState && isTraceCorrelationsMetricsStoreUnavailableError(error);
 
   const validateConnection = useCallback((connectionKey: string) => {
     setValidatedConnectionKeys((current) => new Set(current).add(connectionKey));
@@ -3195,104 +3257,6 @@ export default function TraceCorrelationsPage() {
   return (
     <Page>
       <Shell>
-        <TimeRangeBar>
-          <TimeRangeLabel>Time range</TimeRangeLabel>
-          <TimeRangePresets>
-            {TRACE_CORRELATIONS_TIME_PRESETS.map((preset) => (
-              <ToggleButton
-                key={preset.id}
-                type='button'
-                $active={timePreset === preset.id}
-                onClick={() => {
-                  setQueryAnchor(Date.now());
-                  setTimePreset(preset.id);
-                }}
-              >
-                {preset.label}
-              </ToggleButton>
-            ))}
-            <ToggleButton
-              type='button'
-              $active={timePreset === 'custom'}
-              onClick={() => {
-                const defaults = createDefaultCustomRange();
-                setCustomStart(defaults.start);
-                setCustomEnd(defaults.end);
-                setTimePreset('custom');
-              }}
-            >
-              Custom
-            </ToggleButton>
-          </TimeRangePresets>
-          {timePreset === 'custom' ? (
-            <TimeRangeCustomFields>
-              <TimeRangeField>
-                From
-                <DateTimeInput
-                  type='datetime-local'
-                  value={customStart}
-                  onChange={(event) => setCustomStart(event.target.value)}
-                />
-              </TimeRangeField>
-              <TimeRangeField>
-                To
-                <DateTimeInput
-                  type='datetime-local'
-                  value={customEnd}
-                  onChange={(event) => setCustomEnd(event.target.value)}
-                />
-              </TimeRangeField>
-            </TimeRangeCustomFields>
-          ) : null}
-          <TimeRangeHint>Use Refresh to load the latest data for the selected range.</TimeRangeHint>
-          {customRangeInvalid ? <TimeRangeError>End time must be after start time.</TimeRangeError> : null}
-        </TimeRangeBar>
-
-        <BaselineBar>
-          <TimeRangeLabel>Baseline</TimeRangeLabel>
-          <TimeRangeField>
-            Cutoff time
-            <DateTimeInput
-              type='datetime-local'
-              value={baselineTime}
-              onChange={(event) => updateBaselineTime(event.target.value)}
-            />
-          </TimeRangeField>
-          <ToggleButton
-            type='button'
-            $active={false}
-            onClick={() => updateBaselineTime(toDatetimeLocalValue(new Date()))}
-          >
-            Use Now
-          </ToggleButton>
-          {baselineTime ? (
-            <ToggleButton type='button' $active={false} onClick={() => updateBaselineTime('')}>
-              Clear
-            </ToggleButton>
-          ) : null}
-          <TimeRangeHint>
-            {baselineLabel
-              ? `Connections first seen before ${baselineLabel} are baseline (green); first seen at or after are suspicious (red).`
-              : 'Pick a baseline cutoff to auto-classify each connection by first-seen time.'}
-          </TimeRangeHint>
-        </BaselineBar>
-
-        {dataCoverageLabel ? (
-          <DataCoverageBanner>
-            <DataCoverageLabel>{dataCoverageLabel}</DataCoverageLabel>
-          </DataCoverageBanner>
-        ) : null}
-
-        {baselineLabel ? (
-          <SuspiciousConnectionsSummary
-            entries={suspiciousConnections}
-            baselineLabel={baselineLabel}
-            showFullData={showFullData}
-            onValidate={validateConnection}
-            onToggleAlert={toggleConnectionAlert}
-          />
-        ) : null}
-
         <Hero>
           <div>
             <Eyebrow>Trace Correlations</Eyebrow>
@@ -3304,95 +3268,241 @@ export default function TraceCorrelationsPage() {
             </Subtitle>
           </div>
 
-          <Toolbar>
-            <Input
-              placeholder='Filter by namespace'
-              value={namespaceFilter}
-              onChange={(event) => setNamespaceFilter(event.target.value)}
-            />
-            <ToggleButton $active={showFullData} onClick={() => setShowFullData((current) => !current)}>
-              {showFullData ? 'Hide metadata' : 'View full data'}
-            </ToggleButton>
-            <Button
-              onClick={() => {
-                if (timePreset !== 'custom') {
+          {!showDisabledState && !effectiveConfigLoading ? (
+            <Toolbar>
+              <Input
+                placeholder='Filter by namespace'
+                value={namespaceFilter}
+                onChange={(event) => setNamespaceFilter(event.target.value)}
+              />
+              <ToggleButton $active={showFullData} onClick={() => setShowFullData((current) => !current)}>
+                {showFullData ? 'Hide metadata' : 'View full data'}
+              </ToggleButton>
+              <ToggleButton $active={settingsOpen} onClick={() => setSettingsOpen((current) => !current)}>
+                Settings
+              </ToggleButton>
+              <ToggleButton
+                type='button'
+                $active={false}
+                onClick={() => {
                   setQueryAnchor(Date.now());
-                }
-                refetch();
-              }}
-              disabled={loading || customRangeInvalid}
-            >
-              {loading ? 'Refreshing…' : 'Refresh'}
-            </Button>
-          </Toolbar>
+                  void refetch();
+                }}
+              >
+                Refresh
+              </ToggleButton>
+            </Toolbar>
+          ) : null}
         </Hero>
 
-        <StatsGrid>
-          <StatCard>
-            <StatLabel>Workloads</StatLabel>
-            <StatValue>{totals.workloads}</StatValue>
-          </StatCard>
-          <StatCard>
-            <StatLabel>Output series</StatLabel>
-            <StatValue>{totals.outputSeries}</StatValue>
-          </StatCard>
-          <StatCard>
-            <StatLabel>Total connections</StatLabel>
-            <StatValue>{totals.connections.toLocaleString()}</StatValue>
-          </StatCard>
-          {baselineMs !== null ? (
-            <>
-              <StatCard>
-                <StatLabel>Baseline connections</StatLabel>
-                <StatValue>{totals.baseline}</StatValue>
-              </StatCard>
-              <StatCard>
-                <StatLabel>Suspicious connections</StatLabel>
-                <StatValue>{totals.suspicious}</StatValue>
-              </StatCard>
-              {totals.alerted > 0 ? (
-                <StatCard>
-                  <StatLabel>Alerted</StatLabel>
-                  <StatValue>{totals.alerted}</StatValue>
-                </StatCard>
-              ) : null}
-            </>
-          ) : null}
-        </StatsGrid>
+        {effectiveConfigLoading ? (
+          <LoadingState>Checking trace correlations configuration…</LoadingState>
+        ) : showDisabledState ? (
+          <DisabledState>
+            <DisabledTitle>Trace correlations are not enabled</DisabledTitle>
+            <DisabledDescription>
+              Service I/O correlation metrics are disabled in this cluster. Enable them to deploy the correlations
+              metrics store and start collecting inbound-to-outbound connection data.
+            </DisabledDescription>
 
-        {error ? (
-          <ErrorState>
-            Failed to load trace correlations.
-            <br />
-            {error.message}
-          </ErrorState>
-        ) : null}
+            <DisabledSectionTitle>Helm values</DisabledSectionTitle>
+            <DisabledHint>Add this to your Odigos Helm values file, then upgrade the release.</DisabledHint>
+            <CodeSnippet>{TRACE_CORRELATIONS_HELM_VALUES_SNIPPET}</CodeSnippet>
 
-        {!customRangeInvalid && loading && !workloads.length && timeRange ? (
-          <LoadingState>Loading trace correlations…</LoadingState>
-        ) : null}
-
-        {!customRangeInvalid && !loading && !error && !workloads.length && timeRange ? (
-          <EmptyState>No trace correlation data found yet. Make sure trace correlations are enabled and traffic is flowing.</EmptyState>
-        ) : null}
-
-        {customRangeInvalid ? (
-          <EmptyState>Select a valid custom time range to load trace correlations.</EmptyState>
-        ) : null}
-
-        <WorkloadGrid>
-          {workloads.map((workload) => (
-            <WorkloadCardView
-              key={`${workload.namespace}/${workload.kind}/${workload.name}/${workload.containerName}`}
-              workload={workload}
-              showFullData={showFullData}
-              baselineMs={baselineMs}
-              review={review}
-              onValidate={validateConnection}
-              onToggleAlert={toggleConnectionAlert}
+            <DisabledSectionTitle>Odigos CLI</DisabledSectionTitle>
+            <DisabledHint>Or pass the setting with --set on install or upgrade:</DisabledHint>
+            <CodeSnippet>{TRACE_CORRELATIONS_CLI_COMMANDS_SNIPPET}</CodeSnippet>
+          </DisabledState>
+        ) : (
+          <>
+            <TraceCorrelationsSettingsPanel
+              open={settingsOpen}
+              onToggle={() => setSettingsOpen((current) => !current)}
+              draft={settingsDraft}
+              onChange={setSettingsDraft}
+              isDirty={settingsDirty}
+              flushIntervalInvalid={flushIntervalInvalid}
+              saving={settingsSaving}
+              onSave={saveSettings}
+              onReset={resetSettingsDraft}
             />
-          ))}
-        </WorkloadGrid>
+
+            <TimeRangeBar>
+              <TimeRangeLabel>Time range</TimeRangeLabel>
+              <TimeRangePresets>
+                {TRACE_CORRELATIONS_TIME_PRESETS.map((preset) => (
+                  <ToggleButton
+                    key={preset.id}
+                    type='button'
+                    $active={timePreset === preset.id}
+                    onClick={() => {
+                      setQueryAnchor(Date.now());
+                      setTimePreset(preset.id);
+                    }}
+                  >
+                    {preset.label}
+                  </ToggleButton>
+                ))}
+                <ToggleButton
+                  type='button'
+                  $active={timePreset === 'custom'}
+                  onClick={() => {
+                    const defaults = createDefaultCustomRange();
+                    setCustomStart(defaults.start);
+                    setCustomEnd(defaults.end);
+                    setTimePreset('custom');
+                  }}
+                >
+                  Custom
+                </ToggleButton>
+              </TimeRangePresets>
+              {timePreset === 'custom' ? (
+                <TimeRangeCustomFields>
+                  <TimeRangeField>
+                    From
+                    <DateTimeInput
+                      type='datetime-local'
+                      value={customStart}
+                      onChange={(event) => setCustomStart(event.target.value)}
+                    />
+                  </TimeRangeField>
+                  <TimeRangeField>
+                    To
+                    <DateTimeInput
+                      type='datetime-local'
+                      value={customEnd}
+                      onChange={(event) => setCustomEnd(event.target.value)}
+                    />
+                  </TimeRangeField>
+                </TimeRangeCustomFields>
+              ) : null}
+              <TimeRangeHint>Use Refresh to load the latest data for the selected range.</TimeRangeHint>
+              {customRangeInvalid ? <TimeRangeError>End time must be after start time.</TimeRangeError> : null}
+            </TimeRangeBar>
+
+            <BaselineBar>
+              <TimeRangeLabel>Baseline</TimeRangeLabel>
+              <TimeRangeField>
+                Cutoff time
+                <DateTimeInput
+                  type='datetime-local'
+                  value={baselineTime}
+                  onChange={(event) => updateBaselineTime(event.target.value)}
+                />
+              </TimeRangeField>
+              <ToggleButton
+                type='button'
+                $active={false}
+                onClick={() => updateBaselineTime(toDatetimeLocalValue(new Date()))}
+              >
+                Use Now
+              </ToggleButton>
+              {baselineTime ? (
+                <ToggleButton type='button' $active={false} onClick={() => updateBaselineTime('')}>
+                  Clear
+                </ToggleButton>
+              ) : null}
+              <TimeRangeHint>
+                {baselineLabel
+                  ? `Connections first seen before ${baselineLabel} are baseline (green); first seen at or after are suspicious (red).`
+                  : 'Pick a baseline cutoff to auto-classify each connection by first-seen time.'}
+              </TimeRangeHint>
+            </BaselineBar>
+
+            {dataCoverageLabel ? (
+              <DataCoverageBanner>
+                <DataCoverageLabel>{dataCoverageLabel}</DataCoverageLabel>
+              </DataCoverageBanner>
+            ) : null}
+
+            {baselineLabel ? (
+              <SuspiciousConnectionsSummary
+                entries={suspiciousConnections}
+                baselineLabel={baselineLabel}
+                showFullData={showFullData}
+                onValidate={validateConnection}
+                onToggleAlert={toggleConnectionAlert}
+              />
+            ) : null}
+
+            <StatsGrid>
+              <StatCard>
+                <StatLabel>Workloads</StatLabel>
+                <StatValue>{totals.workloads}</StatValue>
+              </StatCard>
+              <StatCard>
+                <StatLabel>Output series</StatLabel>
+                <StatValue>{totals.outputSeries}</StatValue>
+              </StatCard>
+              <StatCard>
+                <StatLabel>Total connections</StatLabel>
+                <StatValue>{totals.connections.toLocaleString()}</StatValue>
+              </StatCard>
+              {baselineMs !== null ? (
+                <>
+                  <StatCard>
+                    <StatLabel>Baseline connections</StatLabel>
+                    <StatValue>{totals.baseline}</StatValue>
+                  </StatCard>
+                  <StatCard>
+                    <StatLabel>Suspicious connections</StatLabel>
+                    <StatValue>{totals.suspicious}</StatValue>
+                  </StatCard>
+                  {totals.alerted > 0 ? (
+                    <StatCard>
+                      <StatLabel>Alerted</StatLabel>
+                      <StatValue>{totals.alerted}</StatValue>
+                    </StatCard>
+                  ) : null}
+                </>
+              ) : null}
+            </StatsGrid>
+
+            {metricsStoreUnavailable ? (
+              <UnavailableState>
+                <UnavailableTitle>Correlations metrics store is unavailable</UnavailableTitle>
+                <DisabledDescription>
+                  Trace correlations are enabled, but the UI could not reach the odigos-correlations-metrics service.
+                  It may still be starting after a recent install or upgrade, or the VictoriaMetrics pod may be unhealthy.
+                </DisabledDescription>
+                <DisabledHint>Check the deployment status, then try Refresh.</DisabledHint>
+                <CodeSnippet>kubectl get pods -n odigos-system -l app.kubernetes.io/name=odigos-correlations-metrics</CodeSnippet>
+              </UnavailableState>
+            ) : error ? (
+              <ErrorState>
+                Failed to load trace correlations.
+                <br />
+                {error.message}
+              </ErrorState>
+            ) : null}
+
+            {!customRangeInvalid && loading && !workloads.length && timeRange ? (
+              <LoadingState>Loading trace correlations…</LoadingState>
+            ) : null}
+
+            {!customRangeInvalid && !loading && !error && !workloads.length && timeRange ? (
+              <EmptyState>No trace correlation data found yet. Traffic may still be warming up, or the selected time range has no samples yet.</EmptyState>
+            ) : null}
+
+            {customRangeInvalid ? (
+              <EmptyState>Select a valid custom time range to load trace correlations.</EmptyState>
+            ) : null}
+
+            <WorkloadGrid>
+              {workloads.map((workload) => (
+                <WorkloadCardView
+                  key={`${workload.namespace}/${workload.kind}/${workload.name}/${workload.containerName}`}
+                  workload={workload}
+                  showFullData={showFullData}
+                  baselineMs={baselineMs}
+                  review={review}
+                  onValidate={validateConnection}
+                  onToggleAlert={toggleConnectionAlert}
+                />
+              ))}
+            </WorkloadGrid>
+          </>
+        )}
       </Shell>
     </Page>
   );

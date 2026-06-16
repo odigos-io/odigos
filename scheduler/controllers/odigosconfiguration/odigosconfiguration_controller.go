@@ -359,6 +359,28 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 	}
 
+	if addtionalConfig.TraceCorrelations != nil && addtionalConfig.TraceCorrelations.ServiceIO != nil {
+		if baseConfig.TraceCorrelations == nil {
+			baseConfig.TraceCorrelations = &common.TraceCorrelationsConfiguration{}
+		}
+		if baseConfig.TraceCorrelations.ServiceIO == nil {
+			baseConfig.TraceCorrelations.ServiceIO = &common.TraceCorrelationsServiceIOConfiguration{}
+		}
+		overlay, dst := addtionalConfig.TraceCorrelations.ServiceIO, baseConfig.TraceCorrelations.ServiceIO
+		if overlay.Enabled != nil {
+			dst.Enabled = overlay.Enabled
+		}
+		if overlay.InputSpanAttributes != nil {
+			dst.InputSpanAttributes = overlay.InputSpanAttributes
+		}
+		if overlay.OutputSpanAttributes != nil {
+			dst.OutputSpanAttributes = overlay.OutputSpanAttributes
+		}
+		if overlay.MetricsFlushInterval != "" {
+			dst.MetricsFlushInterval = overlay.MetricsFlushInterval
+		}
+	}
+
 	// Future fields can be added here following the same pattern:
 	// - ignoredNamespaces, ignoredContainers
 	// - profiles

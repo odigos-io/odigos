@@ -1545,7 +1545,7 @@ traceCorrelations:
     #   set to true to enable service I/O correlation metrics. disabled by default.
     #   when enabled, odigos deploys a dedicated victoriametrics instance to store trace correlation metrics.
     # @schema
-    # enabled: true
+    enabled: true
 
     # @schema
     # type: array
@@ -1599,7 +1599,7 @@ traceCorrelations:
     #   interval at which service I/O metrics are flushed.
     #   format is duration string (15s, 1m, etc). default is 60s.
     # @schema
-    # metricsFlushInterval: '60s'
+    metricsFlushInterval: '10s'
 
 # @schema
 # description: |-
