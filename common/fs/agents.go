@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -60,20 +59,6 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string, optionalRsyncPath *string)
 			logger.Error("rsync failed", "err", err)
 			return err
 		}
-	}
-
-	// temporary workaround for dotnet.
-	// dotnet used to have directories containing the arch suffix (linux-glibc-arm64).
-	// this works will with virtual device that knows the arch it is running on.
-	// however, the webhook cannot know in advance which arch the pod is going to run on.
-	// thus, the directory names are renamed so they do not contain the arch suffix (linux-glibc)
-	// which can be used by the webhook.
-	// The following link is a temporary support for the deprecated dotnet virtual devices.
-	// TODO: remove this once we delete the virtual devices.
-	err = createDotnetDeprecatedDirectories(path.Join(dstDir, "dotnet"))
-	if err != nil {
-		logger.Error("Error creating dotnet deprecated directories", "err", err)
-		return err
 	}
 
 	logger.Info("Odigos agents directory copied to host", "elapsed", time.Since(startTime))
