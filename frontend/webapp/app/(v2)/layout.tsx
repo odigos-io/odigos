@@ -3,13 +3,13 @@
 import React, { type PropsWithChildren, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import styled from 'styled-components';
-import { getNavbarIcons } from '@/utils';
 import { OverviewHeader } from '@/components';
 import { Navbar } from '@odigos/ui-kit/components/v2';
 import { ToastList } from '@odigos/ui-kit/containers';
 import OdigosApiAdapter from '@/lib/odigos-api-adapter';
 import { OdigosProvider } from '@odigos/ui-kit/contexts';
 import { PlatformType, Tier } from '@odigos/ui-kit/types';
+import { getNavbarIcons, INITIAL_CONTEXT } from '@/utils';
 import { useConfig, useSSE, useTokenTracker } from '@/hooks';
 import type { OperationContext } from '@odigos/ui-kit/contexts/odigos-api';
 import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
@@ -23,12 +23,6 @@ const ContentRow = styled(FlexRow)`
   flex: 1;
   min-height: 0;
 `;
-
-const INITIAL_CONTEXT: OperationContext = {
-  platformType: PlatformType.K8s,
-  tier: Tier.Community,
-  version: 'v0.0.0',
-};
 
 /**
  * Reads `GET_CONFIG` (via Apollo, which is mounted by the parent

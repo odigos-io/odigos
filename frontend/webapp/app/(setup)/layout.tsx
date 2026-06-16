@@ -2,17 +2,12 @@
 
 import React, { type PropsWithChildren, useEffect, useMemo, useState } from 'react';
 import { useConfig } from '@/hooks';
+import { INITIAL_CONTEXT } from '@/utils';
 import OdigosApiAdapter from '@/lib/odigos-api-adapter';
 import { OdigosProvider } from '@odigos/ui-kit/contexts';
 import { ErrorBoundary } from '@odigos/ui-kit/components';
 import { PlatformType, Tier } from '@odigos/ui-kit/types';
 import type { OperationContext } from '@odigos/ui-kit/contexts/odigos-api';
-
-const INITIAL_CONTEXT: OperationContext = {
-  platformType: PlatformType.K8s,
-  tier: Tier.Community,
-  version: 'v0.0.0',
-};
 
 function ConfigSync({ onContext }: { onContext: (ctx: OperationContext) => void }) {
   const { config, isReadonly } = useConfig();

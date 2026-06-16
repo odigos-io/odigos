@@ -18,8 +18,7 @@
 
 import React, { type FC, type PropsWithChildren, useMemo } from 'react';
 import { useCSRF } from '@/hooks';
-import { API, IS_LOCAL } from '@/utils';
-import { PlatformType, Tier } from '@odigos/ui-kit/types';
+import { API, INITIAL_CONTEXT, IS_LOCAL } from '@/utils';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 import {
   OdigosApiProvider,
@@ -341,17 +340,6 @@ const operations: OdigosApiOperations = {
   UPDATE_COST_REDUCTION_RULE: { document: UPDATE_COST_REDUCTION_RULE },
   DELETE_COST_REDUCTION_RULE: { document: DELETE_COST_REDUCTION_RULE },
   UPDATE_LOCAL_UI_SAMPLING_CONFIG: { document: UPDATE_LOCAL_UI_SAMPLING_CONFIG },
-};
-
-/**
- * Initial operation context used while we bootstrap. The real context
- * (platformType/tier/version) is derived by the inner layout via
- * `useConfig` and propagated through React rerenders.
- */
-const INITIAL_CONTEXT: OperationContext = {
-  platformType: PlatformType.K8s,
-  tier: Tier.Community,
-  version: 'v0.0.0',
 };
 
 interface AdapterProps extends PropsWithChildren {
