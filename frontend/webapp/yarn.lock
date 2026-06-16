@@ -634,10 +634,10 @@
   resolved "https://registry.npmjs.org/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@0.0.251":
-  version "0.0.251"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.251.tgz#f7210cf48c33fd42f07d3361918789955ebbdf33"
-  integrity sha512-chkstoAuNhk6Yk+akxWZDmGRleUe1M1kZsc5YJixT/rl81CCR/GoOp+uylIwq9tGQBeqI0UiQvYVuJDtwUHLcA==
+"@odigos/ui-kit@0.0.252":
+  version "0.0.252"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.252.tgz#c40a81582c5aa4a0c21f495a7c68d0f97ed464a9"
+  integrity sha512-lbsDicaTz8gEThGaIeudRJInge28jwnRt+Y+OcwJFgktnSSib0CGyDmek95SniZVsttZInhgohqzHMdk3K+Pow==
   dependencies:
     "@xyflow/react" "^12.11.0"
     elkjs "^0.11.1"
