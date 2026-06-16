@@ -16,27 +16,27 @@
   "dependencies": {
     "@apollo/client": "^3.13.9",
     "@apollo/experimental-nextjs-app-support": "^0.12.3",
-    "@odigos/ui-kit": "0.0.249",
-    "graphql": "^16.13.2",
+    "@odigos/ui-kit": "0.0.251",
+    "graphql": "^16.14.2",
     "next": "15.5.14",
-    "react": "19.2.5",
-    "react-dom": "19.2.5",
-    "react-error-boundary": "^6.1.1",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-error-boundary": "^6.1.2",
     "styled-components": "6.3.12",
-    "zustand": "^5.0.13"
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.2.6",
-    "@types/node": "25.6.2",
-    "@types/react": "19.2.14",
+    "@next/bundle-analyzer": "^16.2.9",
+    "@types/node": "25.9.3",
+    "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "autoprefixer": "^10.5.0",
     "check-peer-dependencies": "^4.3.4",
     "cross-env": "^10.1.0",
-    "cypress": "^15.14.2",
+    "cypress": "^15.17.0",
     "eslint": "9.39.2",
-    "eslint-config-next": "16.2.6",
-    "postcss": "^8.5.14",
+    "eslint-config-next": "16.2.9",
+    "postcss": "^8.5.15",
     "typescript": "5.9.3"
   }
 }

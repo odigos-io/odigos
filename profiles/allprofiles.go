@@ -5,7 +5,6 @@ import (
 	"github.com/odigos-io/odigos/profiles/aggregators"
 	"github.com/odigos-io/odigos/profiles/attributes"
 	"github.com/odigos-io/odigos/profiles/instrumentation"
-	"github.com/odigos-io/odigos/profiles/pipeline"
 	"github.com/odigos-io/odigos/profiles/profile"
 )
 
@@ -43,8 +42,6 @@ var AllProfiles = []profile.Profile{
 	// nodejs
 	instrumentation.DisableNodejsExpressProfile,
 	instrumentation.NodejsVerbosityFullProfile,
-
-	pipeline.SmallBatchesProfile,
 }
 
 var ProfilesByName = map[common.ProfileName]profile.Profile{}

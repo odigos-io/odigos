@@ -42,22 +42,36 @@ func GetGatewayConfig(
 	dataStreamsDetails []DataStreams,
 	gatewayOptions *GatewayConfigOptions,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
-	currentConfig := GetBasicConfig()
-	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
+	cfg, err, status, signals := CalculateGatewayConfig(dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
+	if err != nil {
+		return "", err, status, signals
+	}
+
+	// yaml.Marshal sorts the maps for deterministic YAML output
+	// however, lists are kept in the order they were added, so we need to sort them manually,
+	// to avoid any unexpected changes in the YAML output.
+	slices.Sort(cfg.Service.Extensions)
+
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return "", err, status, signals
+	}
+	return string(data), nil, status, signals
 }
 
 //nolint:funlen,gocyclo // This function handles complex gateway configuration logic that is difficult to break down further
 func CalculateGatewayConfig(
-	currentConfig *config.Config,
 	dests []config.ExporterConfigurer,
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
 	gatewayOptions *GatewayConfigOptions,
-) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
+) (*config.Config, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
+	currentConfig := GetBasicConfig()
+
 	configers, err := config.LoadConfigers()
 	if err != nil {
-		return "", err, nil, nil
+		return nil, err, nil, nil
 	}
 
 	status := &config.ResourceStatuses{
@@ -66,7 +80,7 @@ func CalculateGatewayConfig(
 	}
 
 	if _, exists := currentConfig.Receivers["otlp"]; !exists {
-		return "", fmt.Errorf("missing required receiver 'otlp' on config"), status, nil
+		return nil, fmt.Errorf("missing required receiver 'otlp' on config"), status, nil
 	}
 
 	// map of destination ID to list of forward connectors
@@ -104,8 +118,6 @@ func CalculateGatewayConfig(
 		processorsResults.TracesProcessors = append(processorsNames, processorsResults.TracesProcessors...)
 	}
 
-	tracesProcessors, smallBatchesEnabled := filterSmallBatchesProcessor(processorsResults.TracesProcessors)
-
 	unifiedDestinationPipelineNames := []string{}
 	for _, dest := range dests {
 		configer, exists := configers[dest.GetType()]
@@ -136,10 +148,6 @@ func CalculateGatewayConfig(
 			// track which signals are enabled based on the destination pipeline names
 			switch {
 			case strings.HasPrefix(pipelineName, "traces/"):
-				// relevant only for traces signal
-				if smallBatchesEnabled {
-					pipeline.Processors = append(pipeline.Processors, consts.SmallBatchesProcessor)
-				}
 				tracesEnabled = true
 			case strings.HasPrefix(pipelineName, "metrics/"):
 				metricsEnabled = true
@@ -200,7 +208,7 @@ func CalculateGatewayConfig(
 		tracesPostForwardProcessors = append(tracesPostForwardProcessors, consts.OdigosTraceStateProcessorName)
 	}
 	insertRootPipelinesToConfig(currentConfig,
-		tracesProcessors,
+		processorsResults.TracesProcessors,
 		tracesPostForwardProcessors,
 		processorsResults.MetricsProcessors,
 		processorsResults.LogsProcessors,
@@ -210,7 +218,7 @@ func CalculateGatewayConfig(
 	// Optional: Add collector self-observability
 	if applySelfTelemetry != nil {
 		if err := applySelfTelemetry(currentConfig, unifiedDestinationPipelineNames, GetSignalsRootPipelineNames()); err != nil {
-			return "", err, status, nil
+			return nil, err, status, nil
 		}
 	}
 
@@ -235,16 +243,7 @@ func CalculateGatewayConfig(
 		currentConfig.Extensions[*gatewayOptions.OdigosConfigExtensionName] = config.GenericMap{}
 	}
 
-	// Sort extensions for deterministic YAML output
-	slices.Sort(currentConfig.Service.Extensions)
-
-	// Final marshal to YAML
-	data, err := yaml.Marshal(currentConfig)
-	if err != nil {
-		return "", err, status, nil
-	}
-
-	return string(data), nil, status, enabledSignals
+	return currentConfig, nil, status, enabledSignals
 }
 
 func insertRootPipelinesToConfig(currentConfig *config.Config,
@@ -538,20 +537,6 @@ func GetBasicConfig() *config.Config {
 	}
 }
 
-func filterSmallBatchesProcessor(tracesProcessors []string) ([]string, bool) {
-	smallBatchesEnabled := false
-	filtered := make([]string, 0, len(tracesProcessors))
-
-	for _, processor := range tracesProcessors {
-		if processor == consts.SmallBatchesProcessor {
-			smallBatchesEnabled = true
-			continue // skip adding it to filtered slice
-		}
-		filtered = append(filtered, processor)
-	}
-
-	return filtered, smallBatchesEnabled
-}
 func AddServiceGraphScrapeConfig(c *config.Config) error {
 	servicegraphScrape := config.GenericMap{
 		"job_name":        consts.ServiceGraphConnectorName,
