@@ -156,10 +156,10 @@ export const useSSE = () => {
               break;
           }
         } else if (isDestination) {
-          // only notify for: destination created/deleted
-          if (data.event === EventTypes.ADDED || data.event === EventTypes.DELETED) {
-            addNotification({ type: data.type, title: data.event, message: data.data, crdType: data.crdType });
-          }
+          // Destination create/delete success toasts are dispatched client-side
+          // by the kit's `useDestinationsApi` (consistent with how sources and
+          // every other entity notify). The SSE stream only drives the refetch
+          // here so the overview reflects the cluster-confirmed state.
           handleEvent(data.event, targets, () => {
             fetchDestinations();
           });
