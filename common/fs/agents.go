@@ -272,6 +272,8 @@ func runSingleRsyncSync(srcDir, dstDir, excludeFile string, optionalRsyncPath *s
 	// rsync flags:
 	// -a: archive mode (preserves permissions, symlinks, modification times, etc.)
 	// -v: verbose output (shows which files were copied)
+	// --numeric-ids: keep UID/GID numeric; avoids getpwuid/getgrgid NSS lookups
+	//   which crash the statically-linked bundled rsync (NSS dlopen on static glibc)
 	// --delete: removes files in dstDir that are not in srcDir (clean sync)
 	// --whole-file: disables delta-transfer algorithm (lower CPU, better for local copying)
 	// --inplace: update files in-place without temp files (avoids disk pressure)
@@ -281,7 +283,7 @@ func runSingleRsyncSync(srcDir, dstDir, excludeFile string, optionalRsyncPath *s
 		rsyncPath = *optionalRsyncPath
 	}
 	args := []string{
-		"-av", "--delete", "--whole-file", "--inplace",
+		"-av", "--numeric-ids", "--delete", "--whole-file", "--inplace",
 		fmt.Sprintf("--exclude-from=%s", excludeFile),
 		srcDir + "/", dstDir + "/",
 	}
