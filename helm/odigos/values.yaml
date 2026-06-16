@@ -1561,7 +1561,7 @@ traceCorrelations:
       - rpc.method
       - http.route
       - http.status_code
-      - http.response.status_code	
+      - http.response.status_code
       - http.method
       - http.request.method
       - server.address
