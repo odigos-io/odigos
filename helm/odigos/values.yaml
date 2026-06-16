@@ -1572,7 +1572,7 @@ traceCorrelations:
     #   type: string
     # description: |-
     #   span attribute names read from outbound spans on the sending side (e.g. client/producer spans).
-    #   each name should refer to a low-cardinality attribute.
+    #   each name should refer to a low-cardinality attribute. avoid raw SQL, user, or request-specific values.
     # @schema
     outputSpanAttributes:
       - rpc.system
@@ -1580,12 +1580,9 @@ traceCorrelations:
       - rpc.method
       - db.system.name
       - db.system
-      - db.statement
-      - db.query.text
       - db.operation
       - db.operation.name
       - db.name
-      - db.user
       - url.template
       - http.status_code
       - http.response.status_code

@@ -28,10 +28,13 @@ func TestBuildMetrics(t *testing.T) {
 	}
 	inputAttributes := buildServiceInstanceBaseAttributes(instance, inputAttrs)
 	key, attributes := buildConnectionAttributes(inputAttributes, outputAttrs)
+	now := time.Now()
 	connector.keyToMetric[key] = metricSeries{
-		dimensions: attributes,
-		resource:   buildMetricResourceAttributes(instance),
-		count:      3,
+		dimensions:  attributes,
+		resource:    buildMetricResourceAttributes(instance),
+		count:       3,
+		startTime:   connector.startTime,
+		lastUpdated: now,
 	}
 
 	md, err := connector.buildMetrics()
@@ -54,6 +57,48 @@ func TestBuildMetrics(t *testing.T) {
 	instanceID, ok := dp.Attributes().Get(collectorInstanceAttributeId)
 	require.True(t, ok)
 	require.Equal(t, "odigos-gateway-test-pod", instanceID.Str())
+}
+
+func TestBuildMetricsPrunesStaleSeries(t *testing.T) {
+	connector := &serviceioConnector{
+		config:      &Config{},
+		startTime:   time.Unix(1700000000, 0),
+		keyToMetric: make(map[uint64]metricSeries),
+	}
+
+	freshAttrs := pcommon.NewMap()
+	freshAttrs.PutStr("service.name", "checkout")
+	freshKey := hashAttributes(freshAttrs)
+	connector.keyToMetric[freshKey] = metricSeries{
+		dimensions:  freshAttrs,
+		resource:    pcommon.NewMap(),
+		count:       5,
+		startTime:   connector.startTime,
+		lastUpdated: time.Now(),
+	}
+
+	staleAttrs := pcommon.NewMap()
+	staleAttrs.PutStr("service.name", "orders")
+	staleKey := hashAttributes(staleAttrs)
+	connector.keyToMetric[staleKey] = metricSeries{
+		dimensions:  staleAttrs,
+		resource:    pcommon.NewMap(),
+		count:       7,
+		startTime:   connector.startTime,
+		lastUpdated: time.Now().Add(-(metricSeriesTTL + time.Minute)),
+	}
+
+	md, err := connector.buildMetrics()
+	require.NoError(t, err)
+	require.Equal(t, 1, md.MetricCount())
+	require.Contains(t, connector.keyToMetric, freshKey)
+	require.NotContains(t, connector.keyToMetric, staleKey)
+
+	dps := md.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics().At(0).Sum().DataPoints()
+	require.Equal(t, 1, dps.Len())
+	serviceName, ok := dps.At(0).Attributes().Get("service.name")
+	require.True(t, ok)
+	require.Equal(t, "checkout", serviceName.Str())
 }
 
 func TestConnectionAttributes_IsDeterministic(t *testing.T) {
