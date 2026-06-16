@@ -281,7 +281,7 @@ export const awaitToast = ({ message }: AwaitToastOptions, callback?: () => void
   cy.get('@toast-close').should('exist');
   cy.get('@toast-close').click({ force: true });
 
-  if (!!callback) callback();
+  callback?.();
 };
 
 // The sampling page in @odigos/ui-kit auto-opens an onboarding modal whenever
