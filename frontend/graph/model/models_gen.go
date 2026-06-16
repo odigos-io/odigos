@@ -459,6 +459,7 @@ type EffectiveConfig struct {
 	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
 	Sampling                         *SamplingConfig                     `json:"sampling,omitempty"`
 	Profiling                        *ProfilingConfig                    `json:"profiling,omitempty"`
+	TraceCorrelations                *TraceCorrelationsConfig            `json:"traceCorrelations,omitempty"`
 	Provenance                       []*ProvenanceEntry                  `json:"provenance,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
 }
@@ -1113,6 +1114,7 @@ type LocalUIConfigInput struct {
 	GoAutoOffsetsMode     *string                                  `json:"goAutoOffsetsMode,omitempty"`
 	Sampling              *LocalUIConfigSamplingInput              `json:"sampling,omitempty"`
 	ComponentLogLevels    *LocalUIConfigComponentLogLevelsInput    `json:"componentLogLevels,omitempty"`
+	TraceCorrelations     *LocalUIConfigTraceCorrelationsInput     `json:"traceCorrelations,omitempty"`
 }
 
 type LocalUIConfigInstrumentorInput struct {
@@ -1137,6 +1139,17 @@ type LocalUIConfigSpanSamplingAttributesInput struct {
 	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
 	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
 	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
+}
+
+type LocalUIConfigTraceCorrelationsInput struct {
+	ServiceIo *LocalUIConfigTraceCorrelationsServiceIOInput `json:"serviceIO,omitempty"`
+}
+
+type LocalUIConfigTraceCorrelationsServiceIOInput struct {
+	Enabled              *bool    `json:"enabled,omitempty"`
+	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
+	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
+	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
 }
 
 type LocalUIConfigWaspInput struct {
@@ -1642,6 +1655,48 @@ type TestConnectionResponse struct {
 	DestinationType *string `json:"destinationType,omitempty"`
 	Message         *string `json:"message,omitempty"`
 	Reason          *string `json:"reason,omitempty"`
+}
+
+type TraceCorrelations struct {
+	Workloads []*TraceCorrelationsWorkload `json:"workloads"`
+}
+
+type TraceCorrelationsConfig struct {
+	ServiceIo *TraceCorrelationsServiceIOConfig `json:"serviceIO,omitempty"`
+}
+
+type TraceCorrelationsInputGroup struct {
+	Attributes []*NonIdentifyingAttribute       `json:"attributes"`
+	Outputs    []*TraceCorrelationsOutputSeries `json:"outputs"`
+}
+
+type TraceCorrelationsOutputSeries struct {
+	Attributes      []*NonIdentifyingAttribute `json:"attributes"`
+	ConnectionCount int                        `json:"connectionCount"`
+	FirstDetectedAt string                     `json:"firstDetectedAt"`
+}
+
+type TraceCorrelationsServiceIOConfig struct {
+	Enabled              *bool    `json:"enabled,omitempty"`
+	InputSpanAttributes  []string `json:"inputSpanAttributes,omitempty"`
+	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty"`
+	MetricsFlushInterval *string  `json:"metricsFlushInterval,omitempty"`
+}
+
+type TraceCorrelationsTimeRangeInput struct {
+	Start string `json:"start"`
+	End   string `json:"end"`
+}
+
+type TraceCorrelationsWorkload struct {
+	Namespace             string                         `json:"namespace"`
+	Kind                  K8sResourceKind                `json:"kind"`
+	Name                  string                         `json:"name"`
+	ContainerName         string                         `json:"containerName"`
+	TelemetrySdkLanguage  *string                        `json:"telemetrySdkLanguage,omitempty"`
+	ProcessRuntimeName    *string                        `json:"processRuntimeName,omitempty"`
+	ProcessRuntimeVersion *string                        `json:"processRuntimeVersion,omitempty"`
+	Inputs                []*TraceCorrelationsInputGroup `json:"inputs"`
 }
 
 type URLTemplatizationRule struct {
@@ -2252,6 +2307,7 @@ const (
 	K8sResourceKindDaemonSet             K8sResourceKind = "DaemonSet"
 	K8sResourceKindStatefulSet           K8sResourceKind = "StatefulSet"
 	K8sResourceKindCronJob               K8sResourceKind = "CronJob"
+	K8sResourceKindJob                   K8sResourceKind = "Job"
 	K8sResourceKindConfigMap             K8sResourceKind = "ConfigMap"
 	K8sResourceKindPod                   K8sResourceKind = "Pod"
 	K8sResourceKindStaticPod             K8sResourceKind = "StaticPod"
@@ -2265,6 +2321,7 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindDaemonSet,
 	K8sResourceKindStatefulSet,
 	K8sResourceKindCronJob,
+	K8sResourceKindJob,
 	K8sResourceKindConfigMap,
 	K8sResourceKindPod,
 	K8sResourceKindStaticPod,
@@ -2275,7 +2332,7 @@ var AllK8sResourceKind = []K8sResourceKind{
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindStaticPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout, K8sResourceKindInstrumentationConfig:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindStaticPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout, K8sResourceKindInstrumentationConfig:
 		return true
 	}
 	return false
