@@ -278,3 +278,37 @@ func BenchmarkCopyDirectories(b *testing.B) {
 		}
 	}
 }
+
+// TestCreateDotnetDeprecatedDirectories_Idempotent reproduces the upgrade/reinstall
+// scenario: the dotnet directories already exist on the host with the arch symlinks
+// from a previous install. A second call must not fail with EEXIST.
+func TestCreateDotnetDeprecatedDirectories_Idempotent(t *testing.T) {
+	dotnetDir := filepath.Join(t.TempDir(), "dotnet")
+
+	// First call: fresh host, like the very first install.
+	if err := createDotnetDeprecatedDirectories(dotnetDir); err != nil {
+		t.Fatalf("first call failed: %v", err)
+	}
+
+	// Second call: simulates an upgrade/reinstall where the symlinks persist.
+	// Before the fix this returned "file exists" and aborted the agents sync,
+	// crash-looping the vm-agent at startup.
+	if err := createDotnetDeprecatedDirectories(dotnetDir); err != nil {
+		t.Fatalf("second call (upgrade) must be idempotent, got: %v", err)
+	}
+
+	arch := getArch()
+	soFile := "OpenTelemetry.AutoInstrumentation.Native.so"
+	for _, link := range []string{
+		filepath.Join(dotnetDir, "linux-glibc-"+arch, soFile),
+		filepath.Join(dotnetDir, "linux-musl-"+arch, soFile),
+	} {
+		fi, err := os.Lstat(link)
+		if err != nil {
+			t.Fatalf("expected symlink %s: %v", link, err)
+		}
+		if fi.Mode()&os.ModeSymlink == 0 {
+			t.Fatalf("expected %s to be a symlink", link)
+		}
+	}
+}

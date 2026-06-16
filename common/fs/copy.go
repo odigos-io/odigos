@@ -248,16 +248,30 @@ func createDotnetDeprecatedDirectories(destDir string) error {
 		return err
 	}
 
-	err = os.Symlink(filepath.Join(glibcDir, dotnetSoFile), filepath.Join(glibcDirWithArch, dotnetSoFile))
-	if err != nil {
+	if err := ensureSymlink(filepath.Join(glibcDir, dotnetSoFile), filepath.Join(glibcDirWithArch, dotnetSoFile)); err != nil {
 		return err
 	}
-	err = os.Symlink(filepath.Join(muslDir, dotnetSoFile), filepath.Join(muslDirWithArch, dotnetSoFile))
-	if err != nil {
+	if err := ensureSymlink(filepath.Join(muslDir, dotnetSoFile), filepath.Join(muslDirWithArch, dotnetSoFile)); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// ensureSymlink creates a symlink at linkPath pointing to target, replacing any
+// existing symlink. os.Symlink fails with EEXIST if the link is already present,
+// so on upgrades/reinstalls (where the dotnet directories persist on the host)
+// a plain os.Symlink would error and abort the whole agents sync. Removing the
+// existing link first makes this idempotent.
+func ensureSymlink(target, linkPath string) error {
+	if _, err := os.Lstat(linkPath); err == nil {
+		if err := os.Remove(linkPath); err != nil {
+			return fmt.Errorf("failed to remove existing symlink %s: %w", linkPath, err)
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("failed to stat %s: %w", linkPath, err)
+	}
+	return os.Symlink(target, linkPath)
 }
 
 func getArch() string {
