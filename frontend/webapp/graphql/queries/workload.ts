@@ -153,6 +153,96 @@ export const GET_WORKLOADS_BY_IDS = gql`
             runtimeVersion
           }
         }
+        agentConfig {
+          traces {
+            headSampling {
+              dryRun
+              spanMetricsMode
+              noisyOperations {
+                ruleId
+                name
+                disabled
+                operation {
+                  httpServer {
+                    route
+                    routePrefix
+                    method
+                  }
+                  httpClient {
+                    serverAddress
+                    templatedPath
+                    templatedPathPrefix
+                    method
+                  }
+                }
+                percentageAtMost
+              }
+            }
+          }
+        }
+        collectorConfig {
+          tailSampling {
+            noisyOperations {
+              ruleId
+              name
+              disabled
+              operation {
+                httpServer {
+                  route
+                  routePrefix
+                  method
+                }
+                httpClient {
+                  serverAddress
+                  templatedPath
+                  templatedPathPrefix
+                  method
+                }
+              }
+              percentageAtMost
+            }
+            highlyRelevantOperations {
+              ruleId
+              name
+              disabled
+              error
+              durationAtLeastMs
+              operation {
+                httpServer {
+                  route
+                  routePrefix
+                  method
+                }
+                kafkaConsumer {
+                  kafkaTopic
+                }
+                kafkaProducer {
+                  kafkaTopic
+                }
+              }
+              percentageAtLeast
+            }
+            costReductionRules {
+              ruleId
+              name
+              disabled
+              operation {
+                httpServer {
+                  route
+                  routePrefix
+                  method
+                }
+                kafkaConsumer {
+                  kafkaTopic
+                }
+                kafkaProducer {
+                  kafkaTopic
+                }
+              }
+              percentageAtMost
+            }
+          }
+        }
       }
       pods {
         podName
