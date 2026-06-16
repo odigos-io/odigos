@@ -260,6 +260,7 @@ interface AwaitToastOptions {
 
 export const awaitToast = ({ message }: AwaitToastOptions, callback?: () => void) => {
   // TODO: remove this once we released the toast fixes in ui-kit@0.0.252
+  cy.wait(2000);
   callback?.();
   return;
 
