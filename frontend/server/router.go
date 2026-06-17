@@ -22,9 +22,9 @@ import (
 )
 
 // RouterOpts is everything the caller supplies on top of Deps when building
-// the gin engine. The webapp bundle and the /workloads page are served from
-// the frontend Go module itself (the webapp and graph packages), so callers
-// — OSS and out-of-tree alike — don't supply any embeds.
+// the gin engine. The webapp bundle is served from the frontend Go module
+// itself (the webapp package), so callers — OSS and out-of-tree alike —
+// don't supply any embeds.
 //
 // ExtraMounts is the hook out-of-tree wrappers use to attach additional
 // handlers (e.g. the enterprise MCP server) AFTER all OSS routes have been
@@ -34,9 +34,9 @@ type RouterOpts struct {
 }
 
 // BuildRouter constructs the gin engine, registers every OSS HTTP route
-// (health, CSRF/OIDC, GraphQL, SSE, the workload describe endpoints, the
-// /workloads static page, and /diagnose/download), invokes any ExtraMounts,
-// and finally installs the React SPA NoRoute fallback.
+// (health, CSRF/OIDC, GraphQL, SSE, the workload describe endpoints, and
+// /diagnose/download), invokes any ExtraMounts, and finally installs the
+// React SPA NoRoute fallback.
 func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine, error) {
 	var r *gin.Engine
 	if deps.Flags.Debug {
@@ -127,11 +127,6 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 
 	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", services.CreateSourceWithAPI)
 	r.DELETE("/source/namespace/:namespace/kind/:kind/name/:name", services.DeleteSourceWithAPI)
-
-	// Workloads static HTML page (embedded in the graph package).
-	r.GET("/workloads", func(c *gin.Context) {
-		c.Data(http.StatusOK, "text/html; charset=utf-8", graph.WorkloadsHTML)
-	})
 
 	// Diagnose download endpoint (paired with the GraphQL diagnose mutation).
 	r.GET("/diagnose/download", services.DiagnoseDownload)
