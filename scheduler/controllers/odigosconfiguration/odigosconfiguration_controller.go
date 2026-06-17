@@ -218,6 +218,14 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		baseConfig.ClusterName = addtionalConfig.ClusterName
 	}
 
+	if addtionalConfig.McpAccessMode != "" {
+		baseConfig.McpAccessMode = addtionalConfig.McpAccessMode
+	}
+
+	if addtionalConfig.McpEnabled != nil {
+		baseConfig.McpEnabled = addtionalConfig.McpEnabled
+	}
+
 	if addtionalConfig.AgentEnvVarsInjectionMethod != nil {
 		baseConfig.AgentEnvVarsInjectionMethod = addtionalConfig.AgentEnvVarsInjectionMethod
 	}
