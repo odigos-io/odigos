@@ -91,6 +91,12 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		&odigosv1.Sampling{}: {
 			Field: nsSelector,
 		},
+		&odigosv1.Action{}: {
+			Field: nsSelector,
+		},
+		&odigosv1.InstrumentationRule{}: {
+			Field: nsSelector,
+		},
 	}
 
 	// if argo rollout is available, add it to the cache as well

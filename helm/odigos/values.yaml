@@ -607,6 +607,13 @@ scheduler:
 # @schema
 ui:
   # @schema
+  # description: Mount the embedded MCP server at /mcp on the enterprise UI. Enterprise-only — the gate is rendered only when an onPremToken/odigos-pro secret is present (the same condition that selects the enterprise UI image); it has no effect on the community image. Served on the UI port; reachable in-cluster via the ui Service.
+  # type: object
+  # @schema
+  mcp:
+    enabled: true
+
+  # @schema
   # description: Log level for UI. Defaults to info.
   # @schema
   logLevel: "info"
@@ -666,6 +673,15 @@ ui:
   #    - If not set, the UI will be in default mode.
   # @schema
   uiMode: 'default'
+
+  # @schema
+  # description: |-
+  #   mcpAccessMode: 'read-only' or 'read-write'
+  #    - Controls whether the MCP server may run write (mutating) tools.
+  #    - Defaults to 'read-only', so an agent cannot change the cluster until
+  #      an operator opts in to 'read-write'.
+  # @schema
+  mcpAccessMode: 'read-only'
 
   # @schema
   # description: |-
