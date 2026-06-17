@@ -95,6 +95,17 @@ const (
 	UiModeReadonly UiMode = "readonly"
 )
 
+// McpAccessMode controls whether the Odigos MCP server may run write (mutating)
+// tools. It is independent of UiMode: read-only is the default, and an operator
+// raises it to read-write to let an agent change the cluster.
+// +kubebuilder:validation:Enum=read-only;read-write
+type McpAccessMode string
+
+const (
+	McpAccessModeReadOnly  McpAccessMode = "read-only"
+	McpAccessModeReadWrite McpAccessMode = "read-write"
+)
+
 // +kubebuilder:object:generate=true
 // ResourceDetectorConfig holds the configuration for a single resource detector.
 type ResourceDetectorConfig struct {
@@ -596,6 +607,8 @@ type OdigosConfiguration struct {
 	UiMode                    UiMode                         `json:"uiMode,omitempty" yaml:"uiMode"`
 	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty" yaml:"uiPaginationLimit"`
 	UiRemoteUrl               string                         `json:"uiRemoteUrl,omitempty" yaml:"uiRemoteUrl"`
+	McpAccessMode             McpAccessMode                  `json:"mcpAccessMode,omitempty" yaml:"mcpAccessMode"`
+	McpEnabled                *bool                          `json:"mcpEnabled,omitempty" yaml:"mcpEnabled"`
 	CentralBackendURL         string                         `json:"centralBackendURL,omitempty" yaml:"centralBackendURL"`
 	ClusterName               string                         `json:"clusterName,omitempty" yaml:"clusterName"`
 	MountMethod               *MountMethod                   `json:"mountMethod,omitempty" yaml:"mountMethod"`

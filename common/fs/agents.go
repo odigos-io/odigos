@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -60,20 +59,6 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string, optionalRsyncPath *string)
 			logger.Error("rsync failed", "err", err)
 			return err
 		}
-	}
-
-	// temporary workaround for dotnet.
-	// dotnet used to have directories containing the arch suffix (linux-glibc-arm64).
-	// this works will with virtual device that knows the arch it is running on.
-	// however, the webhook cannot know in advance which arch the pod is going to run on.
-	// thus, the directory names are renamed so they do not contain the arch suffix (linux-glibc)
-	// which can be used by the webhook.
-	// The following link is a temporary support for the deprecated dotnet virtual devices.
-	// TODO: remove this once we delete the virtual devices.
-	err = createDotnetDeprecatedDirectories(path.Join(dstDir, "dotnet"))
-	if err != nil {
-		logger.Error("Error creating dotnet deprecated directories", "err", err)
-		return err
 	}
 
 	logger.Info("Odigos agents directory copied to host", "elapsed", time.Since(startTime))
@@ -272,6 +257,8 @@ func runSingleRsyncSync(srcDir, dstDir, excludeFile string, optionalRsyncPath *s
 	// rsync flags:
 	// -a: archive mode (preserves permissions, symlinks, modification times, etc.)
 	// -v: verbose output (shows which files were copied)
+	// --numeric-ids: keep UID/GID numeric; avoids getpwuid/getgrgid NSS lookups
+	//   which crash the statically-linked bundled rsync (NSS dlopen on static glibc)
 	// --delete: removes files in dstDir that are not in srcDir (clean sync)
 	// --whole-file: disables delta-transfer algorithm (lower CPU, better for local copying)
 	// --inplace: update files in-place without temp files (avoids disk pressure)
@@ -281,7 +268,7 @@ func runSingleRsyncSync(srcDir, dstDir, excludeFile string, optionalRsyncPath *s
 		rsyncPath = *optionalRsyncPath
 	}
 	args := []string{
-		"-av", "--delete", "--whole-file", "--inplace",
+		"-av", "--numeric-ids", "--delete", "--whole-file", "--inplace",
 		fmt.Sprintf("--exclude-from=%s", excludeFile),
 		srcDir + "/", dstDir + "/",
 	}
