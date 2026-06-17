@@ -235,10 +235,16 @@ interface DeleteV2EntityOptions {
 
 // v2 edit-drawer flow: open drawer → actions dropdown → "Delete" → confirm modal.
 export const deleteV2Entity = ({ nodeId, nodeContains, prefix, warnModalTitle, warnModalNote }: DeleteV2EntityOptions, callback?: () => void) => {
+  // Don't insert `.should('exist')` between the query and `.click()`: it
+  // settles the subject and disables Cypress's built-in query re-resolution,
+  // so a re-render of the overview (frequent here via the proxy round-trip +
+  // SSE-driven refetches) detaches the node mid-click ("the page updated
+  // while this command was executing"). Clicking straight off the query keeps
+  // the chain retryable, and `.click()` already asserts existence/visibility.
   if (!!nodeContains) {
-    cy.contains(nodeId, nodeContains).should('exist').click();
+    cy.contains(nodeId, nodeContains).click();
   } else {
-    cy.get(nodeId).should('exist').click();
+    cy.get(nodeId).click();
   }
 
   cy.get(DATA_IDS.DRAWER).should('exist');
