@@ -2,10 +2,10 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { useTraceCorrelations, TRACE_CORRELATIONS_TIME_PRESETS, TRACE_CORRELATIONS_CLI_COMMANDS_SNIPPET, TRACE_CORRELATIONS_HELM_VALUES_SNIPPET, formatTraceCorrelationsTimeRangeLabel, isTraceCorrelationsDisabledError, isTraceCorrelationsEnabled, isTraceCorrelationsMetricsStoreUnavailableError, parseDatetimeLocalValue, resolveTraceCorrelationsTimeRange, toDatetimeLocalValue, type TraceCorrelationsInputGroup, type TraceCorrelationsOutputSeries, type TraceCorrelationsTimePreset, type TraceCorrelationsWorkload } from '@/hooks/metrics/useTraceCorrelations';
-import { useTraceCorrelationsSettings } from '@/hooks/metrics/useTraceCorrelationsSettings';
-import { useEffectiveConfig } from '@/hooks/config';
 import { TraceCorrelationsSettingsPanel } from './SettingsPanel';
+import { useEffectiveConfig } from './temp-hooks/useEffectiveConfig';
+import { useTraceCorrelationsSettings } from './temp-hooks/useTraceCorrelationsSettings';
+import { useTraceCorrelations, TRACE_CORRELATIONS_TIME_PRESETS, TRACE_CORRELATIONS_CLI_COMMANDS_SNIPPET, TRACE_CORRELATIONS_HELM_VALUES_SNIPPET, formatTraceCorrelationsTimeRangeLabel, isTraceCorrelationsDisabledError, isTraceCorrelationsEnabled, isTraceCorrelationsMetricsStoreUnavailableError, parseDatetimeLocalValue, resolveTraceCorrelationsTimeRange, toDatetimeLocalValue, type TraceCorrelationsInputGroup, type TraceCorrelationsOutputSeries, type TraceCorrelationsTimePreset, type TraceCorrelationsWorkload } from './temp-hooks/useTraceCorrelations';
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(8px); }

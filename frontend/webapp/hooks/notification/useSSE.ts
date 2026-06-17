@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
-import { useSourceCRUD } from '../sources';
-import { useDestinationCRUD } from '../destinations';
-import { getIdFromSseTarget, safeJsonParse } from '@odigos/ui-kit/functions';
-import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
-import { useEntityStore, useNotificationStore, useProgressStore, ProgressKeys } from '@odigos/ui-kit/store';
+import { StatusType } from '@odigos/ui-kit/types';
+import { safeJsonParse } from '@odigos/ui-kit/functions';
+import { useOdigosApi } from '@odigos/ui-kit/contexts/odigos-api';
+import { useNotificationStore, useProgressStore, ProgressKeys } from '@odigos/ui-kit/store';
 
 enum EventTypes {
   CONNECTED = 'CONNECTED',
@@ -28,10 +27,11 @@ interface DebouncedEvent {
 const EVENT_DEBOUNCE_MS = 5000;
 
 export const useSSE = () => {
-  const { fetchSources, fetchSourcesByTargets } = useSourceCRUD();
   const { addNotification } = useNotificationStore();
-  const { fetchDestinations } = useDestinationCRUD();
-  const { removeEntities } = useEntityStore();
+  const { sourcesApi, destinationsApi } = useOdigosApi();
+  const fetchSources = sourcesApi.fetchAll;
+  const fetchSourcesByTargets = sourcesApi.fetchByTargets;
+  const fetchDestinations = destinationsApi.fetchAll;
 
   const maxRetries = 10;
   const retryCount = useRef(0);
@@ -135,16 +135,20 @@ export const useSSE = () => {
               const newDeleted = Number(data.data?.toString().replace(/[^\d]/g, '') || 0);
               useProgressStore.getState().addProgress(ProgressKeys.Uninstrumenting, newDeleted);
 
-              handleEvent(data.event, targets, (accumulatedTargets) => {
+              handleEvent(data.event, targets, () => {
                 const { resetProgress } = useProgressStore.getState();
                 resetProgress(ProgressKeys.Uninstrumenting);
 
-                if (accumulatedTargets.length > 0) {
-                  const ids = accumulatedTargets.map((t) => getIdFromSseTarget(t, EntityTypes.Source) as WorkloadId).filter((id) => id.namespace && id.name && id.kind);
-                  removeEntities(EntityTypes.Source, ids);
-                } else {
-                  fetchSources();
-                }
+                // Re-fetch the canonical list — Apollo's cache write
+                // broadcasts to every active `useApiQuery('GET_WORKLOADS')`
+                // subscriber and the deleted workloads disappear from
+                // the response. The previous "evict-by-ids without a
+                // refetch" path is gone now that the entity store
+                // lives entirely in Apollo's normalized cache (the kit
+                // doesn't expose a per-id eviction primitive because
+                // central-ui's `REMOTE_FETCH` envelope would require
+                // per-adapter cache plumbing to do it generically).
+                fetchSources();
               });
               break;
 
@@ -152,10 +156,10 @@ export const useSSE = () => {
               break;
           }
         } else if (isDestination) {
-          // only notify for: destination created/deleted
-          if (data.event === EventTypes.ADDED || data.event === EventTypes.DELETED) {
-            addNotification({ type: data.type, title: data.event, message: data.data, crdType: data.crdType });
-          }
+          // Destination create/delete success toasts are dispatched client-side
+          // by the kit's `useDestinationsApi` (consistent with how sources and
+          // every other entity notify). The SSE stream only drives the refetch
+          // here so the overview reflects the cluster-confirmed state.
           handleEvent(data.event, targets, () => {
             fetchDestinations();
           });

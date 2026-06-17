@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useUpdateLocalUiConfig } from '@/hooks/config';
+import { useUpdateLocalUiConfig } from './useUpdateLocalUiConfig';
+
+// TODO: move this to the ui-kit to work with OdigosApiContext
 
 export type TraceCorrelationsSettings = {
   inputSpanAttributes: string[];

@@ -1,33 +1,36 @@
 'use client';
 
 import { useEffect } from 'react';
-import { GET_CONFIG } from '@/graphql';
-import { useSuspenseQuery } from '@apollo/client';
 import { useNotificationStore } from '@odigos/ui-kit/store';
-import { Crud, StatusType, Tier } from '@odigos/ui-kit/types';
-import { InstallationStatus, type FetchedConfig } from '@/types';
+import { useApiQuery } from '@odigos/ui-kit/contexts/odigos-api';
+import { Crud, InstallationStatus, StatusType, Tier } from '@odigos/ui-kit/types';
 
+/**
+ * Reads the cluster's `FetchedConfig` via the kit's typed `GET_CONFIG`
+ * slot. Apollo handles the fetch + cache; the kit's slot is bare-typed
+ * so consumers don't have to narrow.
+ *
+ * Returns the same shape as before (`config` / `isReadonly` /
+ * `isEnterprise` / `installationStatus`) so existing call sites in the
+ * webapp's layouts and pages don't need to change.
+ */
 export const useConfig = () => {
   const { addNotification } = useNotificationStore();
-
-  const { data, error } = useSuspenseQuery<{ config?: FetchedConfig }>(GET_CONFIG, {
-    skip: typeof window === 'undefined',
-  });
+  const { data: config, error } = useApiQuery('GET_CONFIG');
 
   useEffect(() => {
     if (error) {
       addNotification({
         type: StatusType.Error,
         title: error.name || Crud.Read,
-        message: error.cause?.message || error.message,
+        message: error.cause instanceof Error ? error.cause.message : error.message,
       });
     }
-  }, [error]);
+  }, [error, addNotification]);
 
-  const config = data?.config;
-  const isReadonly = data?.config?.readonly || false;
+  const isReadonly = config?.readonly || false;
   const isEnterprise = (config?.tier && [Tier.Onprem].includes(config.tier)) || false;
-  const installationStatus = data?.config?.installationStatus || InstallationStatus.New;
+  const installationStatus = config?.installationStatus || InstallationStatus.New;
 
   return { config, isReadonly, isEnterprise, installationStatus };
 };

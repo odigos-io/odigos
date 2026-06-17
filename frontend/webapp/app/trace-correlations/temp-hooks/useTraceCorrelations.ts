@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_TRACE_CORRELATIONS } from '@/graphql';
 
+// TODO: move this to the ui-kit to work with OdigosApiContext
+
 export type TraceCorrelationsAttribute = {
   key: string;
   value: string;

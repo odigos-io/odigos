@@ -3,6 +3,8 @@ import { useNotificationStore } from '@odigos/ui-kit/store';
 import { Crud, StatusType, type LocalUiConfigInput } from '@odigos/ui-kit/types';
 import { UPDATE_LOCAL_UI_CONFIG, RESET_LOCAL_UI_CONFIG_TO_FACTORY_DEFAULTS } from '@/graphql/mutations';
 
+// TODO: delete this (already exists in the ui-kit to work with OdigosApiContext)
+
 export const useUpdateLocalUiConfig = () => {
   const { addNotification } = useNotificationStore();
 

@@ -206,9 +206,9 @@ export const TEXTS = {
 
   NOTIF_SOURCES_UPDATED: (name: string) => `Successfully updated "${name}" source`,
 
-  NOTIF_DESTINATION_CREATED: (amount: number) => `Successfully created ${amount} destinations`,
+  NOTIF_DESTINATION_CREATED: (type: string) => `Successfully created "${type}" destination`,
   NOTIF_DESTINATION_UPDATED: (type: string) => `Successfully updated "${type}" destination`,
-  NOTIF_DESTINATION_DELETED: (amount: number) => `Successfully deleted ${amount} destinations`,
+  NOTIF_DESTINATION_DELETED: (type: string) => `Successfully deleted "${type}" destination`,
 
   NOTIF_ACTION_CREATED: (actionType: string) => `Successfully created "${actionType}" action`,
   NOTIF_ACTION_UPDATED: (actionType: string) => `Successfully updated "${actionType}" action`,

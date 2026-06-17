@@ -2,8 +2,8 @@
 
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-import type { TraceCorrelationsSettings } from '@/hooks/metrics/useTraceCorrelationsSettings';
 import { groupAttributesByPrefix } from './attributeGroups';
+import type { TraceCorrelationsSettings } from './temp-hooks/useTraceCorrelationsSettings';
 
 const Panel = styled.section`
   margin-bottom: 24px;
