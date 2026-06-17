@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useNotificationStore } from '@odigos/ui-kit/store';
-import { useApiQuery } from '@odigos/ui-kit/contexts/odigos-api';
+import { useOdigosApi } from '@odigos/ui-kit/contexts/odigos-api';
 import { Crud, InstallationStatus, StatusType, Tier } from '@odigos/ui-kit/types';
 
 /**
@@ -16,7 +16,7 @@ import { Crud, InstallationStatus, StatusType, Tier } from '@odigos/ui-kit/types
  */
 export const useConfig = () => {
   const { addNotification } = useNotificationStore();
-  const { data: config, error } = useApiQuery('GET_CONFIG');
+  const { data: config, error } = useOdigosApi().configApi.useEffectiveConfig();
 
   useEffect(() => {
     if (error) {
