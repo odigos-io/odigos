@@ -6,6 +6,7 @@ import (
 )
 
 const spanKindAttribute = "span.kind"
+const spanNameAttribute = "span.name"
 
 // ExtractSpanAttributes reads configured OpenTelemetry span attribute names from a span node.
 // Span kind and instrumentation scope are always included. Each stored key is prefix + attribute name.
@@ -15,6 +16,7 @@ func ExtractSpanAttributes(node *TraceTreeNode, prefix string, attributeNames []
 	span := node.Span
 	scope := node.Scope
 
+	values.PutStr(prefix+spanNameAttribute, span.Name())
 	values.PutStr(prefix+spanKindAttribute, span.Kind().String())
 	if scopeName := scope.Name(); scopeName != "" {
 		values.PutStr(prefix+string(semconv.OTelScopeNameKey), scopeName)
