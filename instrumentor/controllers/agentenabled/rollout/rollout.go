@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
@@ -93,6 +94,17 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		}
 		if !hasAgents {
 			logger.Info("skipping rollout - workload already runs without odigos agents",
+				"workload", pw.Name, "namespace", pw.Namespace)
+			return RolloutResult{}, nil
+		}
+
+		stillInstrumented, instrumentedErr := workloadStillMarkedForInstrumentation(ctx, c, pw)
+		if instrumentedErr != nil {
+			logger.Error(instrumentedErr, "failed to check if workload is still marked for instrumentation")
+			return RolloutResult{}, instrumentedErr
+		}
+		if stillInstrumented {
+			logger.Info("skipping uninstrumentation rollout - workload is still covered by an active source",
 				"workload", pw.Name, "namespace", pw.Namespace)
 			return RolloutResult{}, nil
 		}
@@ -438,8 +450,19 @@ func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Ob
 		return false, fmt.Errorf("workloadHasOdigosAgents: listing pods failed: %w", err)
 	}
 
-	// any non-empty list means the workload still runs instrumented pods.
 	return len(pods.Items) > 0, nil
+}
+
+func workloadStillMarkedForInstrumentation(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (bool, error) {
+	sources, err := odigosv1alpha1.GetSources(ctx, c, pw)
+	if err != nil {
+		return false, err
+	}
+	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, err)
+	if err != nil {
+		return false, err
+	}
+	return enabled, nil
 }
 
 // shouldTriggerRollback checks if rollback should be triggered based on backoff state and timing.
