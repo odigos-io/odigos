@@ -395,12 +395,6 @@
                     ]
                   },
                   {
-                    "group": "MCP",
-                    "pages": [
-                      "enterprise/mcp/overview"
-                    ]
-                  },
-                  {
                     "group": "API Reference",
                     "pages": [
                       "enterprise/api-reference/odigos.io.v1alpha1",
@@ -663,6 +657,12 @@
                 "group": "Authentication",
                 "pages": [
                   "enterprise/features/oidc"
+                ]
+              },
+              {
+                "group": "MCP",
+                "pages": [
+                  "enterprise/mcp/overview"
                 ]
               },
               {
