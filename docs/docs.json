@@ -395,6 +395,12 @@
                     ]
                   },
                   {
+                    "group": "MCP",
+                    "pages": [
+                      "enterprise/mcp/overview"
+                    ]
+                  },
+                  {
                     "group": "API Reference",
                     "pages": [
                       "enterprise/api-reference/odigos.io.v1alpha1",

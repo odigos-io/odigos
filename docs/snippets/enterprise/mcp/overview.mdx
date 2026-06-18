@@ -1,0 +1,132 @@
+<Note>
+  Odigos MCP is an **Enterprise** feature. It is embedded in the enterprise UI
+  image and is not available in the community edition.
+</Note>
+
+The Odigos MCP (Model Context Protocol) server lets AI agents inspect and
+configure a live Odigos installation from tools like Cursor or Claude Desktop.
+It runs in-process with the Odigos UI, reuses the same Kubernetes client and
+services as the UI, and exposes a catalog of read and write tools for sources,
+destinations, sampling, profiling, and troubleshooting.
+
+The endpoint is mounted at `/mcp` on the UI service (port `3000`).
+
+## Requirements
+
+- Odigos Enterprise installed with a valid on-prem token
+- Network access to the Odigos UI service (typically via port-forward or an
+  in-cluster / load-balancer URL)
+- An MCP-compatible client (for example, Cursor)
+
+## Connect from Cursor
+
+The simplest way to connect locally is to port-forward the UI service, then
+point your MCP client at the `/mcp` endpoint.
+
+<Steps>
+  <Step title="Port-forward the UI">
+    ```bash
+    kubectl port-forward -n odigos-system svc/ui 3000:3000
+    ```
+  </Step>
+  <Step title="Add the MCP server in Cursor">
+    Open **Cursor Settings → MCP** and add a server with a streamable HTTP URL:
+
+    ```json
+    {
+      "mcpServers": {
+        "odigos": {
+          "url": "http://localhost:3000/mcp"
+        }
+      }
+    }
+    ```
+
+    For a remote UI (for example, behind a load balancer), use that base URL
+    instead: `https://<your-ui-host>/mcp`.
+  </Step>
+  <Step title="Verify the connection">
+    Ask the agent to call `describe_odigos` or `get_access_mode`. A successful
+    response confirms the MCP server is reachable.
+  </Step>
+</Steps>
+
+## Access modes
+
+By default, the MCP server starts in **read-only** mode. Read tools (list,
+describe, get) always work. Write tools (create, update, delete, instrument)
+are blocked until an operator opts in to **read-write** mode.
+
+| Mode | Behavior |
+| --- | --- |
+| `read-only` (default) | Safe inspection only. Write tool calls return guidance to enable write mode first. |
+| `read-write` | Mutating tools are allowed. Use only when you trust the agent to change the cluster. |
+
+An agent can check the current mode with `get_access_mode`. To allow writes,
+call `enable_write_mode` (confirm with a human first). Call
+`disable_write_mode` when finished.
+
+This access mode is **independent** of the UI's read-only mode (`ui.uiMode`).
+
+## Configuration
+
+Control MCP behavior during install or upgrade:
+
+<Tabs>
+  <Tab title="Helm">
+    ```yaml
+    ui:
+      mcp:
+        enabled: true
+      mcpAccessMode: read-only   # or read-write
+    ```
+
+    ```bash
+    helm upgrade odigos odigos/odigos \
+      --namespace odigos-system \
+      --reuse-values \
+      --set ui.mcpAccessMode=read-write
+    ```
+  </Tab>
+  <Tab title="CLI">
+    ```bash
+    odigos install --set ui.mcpAccessMode=read-write
+    ```
+  </Tab>
+</Tabs>
+
+Set `ui.mcp.enabled: false` to disable the `/mcp` endpoint entirely.
+
+## What you can do
+
+The MCP server exposes roughly 80 tools grouped by domain. Common starting
+points:
+
+| Goal | Tools to try |
+| --- | --- |
+| Is Odigos healthy? | `describe_odigos`, `get_gateway_info`, `get_odiglet_info` |
+| What is instrumented? | `list_sources`, `list_workloads_in_namespace` |
+| Why is a workload not sending data? | `describe_source`, `get_runtime_detection`, `get_instrumentation_health` |
+| How much data is flowing? | `get_overview_metrics`, `get_service_map` |
+| Configure a backend | `list_destination_types`, `get_destination_schema`, `create_destination` |
+| Tune sampling | `get_sampling`, `create_sampling_group`, `create_noisy_operation_rule` |
+| Profile a hot path | `enable_source_profiling`, `get_source_hot_functions`, `add_custom_instrumentation` |
+| Collect support bundle | `collect_diagnose_bundle` |
+
+Write tools support `dry_run: true` (the default) so agents can preview
+changes before applying them. When the server is in read-only mode, write tools
+are not executed even with `dry_run: false`.
+
+<Info>
+  Tool responses include `context` and `next_steps` hints to help agents chain
+  calls without manual guidance.
+</Info>
+
+## Security notes
+
+- The MCP endpoint is intended for **in-cluster or trusted network** use. There
+  is no built-in authentication on `/mcp` in the current release — protect
+  access at the network layer (port-forward, private ingress, VPN).
+- Prefer **read-only** mode for day-to-day agent use. Switch to read-write only
+  when an operator is actively supervising changes.
+- Every tool call is audit-logged by the UI (tool name, outcome, duration).
