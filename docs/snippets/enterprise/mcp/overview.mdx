@@ -3,13 +3,9 @@
   image and is not available in the community edition.
 </Note>
 
-The Odigos MCP (Model Context Protocol) server lets AI agents inspect and
-configure a live Odigos installation from tools like Cursor or Claude Desktop.
-It runs in-process with the Odigos UI, reuses the same Kubernetes client and
-services as the UI, and exposes a catalog of read and write tools for sources,
-destinations, sampling, profiling, and troubleshooting.
-
-The endpoint is mounted at `/mcp` on the UI service (port `3000`).
+Odigos MCP lets AI agents (Cursor, Claude Desktop, and others) inspect and
+configure a live Odigos cluster. The endpoint is mounted at `/mcp` on the UI
+service (port `3000`).
 
 ## Requirements
 
@@ -46,27 +42,27 @@ point your MCP client at the `/mcp` endpoint.
     instead: `https://<your-ui-host>/mcp`.
   </Step>
   <Step title="Verify the connection">
-    Ask the agent to call `describe_odigos` or `get_access_mode`. A successful
-    response confirms the MCP server is reachable.
+    In your AI agent's MCP tool registry, open the MCP server connections — the
+    Odigos server should be listed along with its MCP tools.
+  </Step>
+  <Step title="Ask your cluster a question">
+    Query Odigos directly through MCP, for example:
+    *"Which sources are unhealthy in the `default` namespace?"*
   </Step>
 </Steps>
 
 ## Access modes
 
-By default, the MCP server starts in **read-only** mode. Read tools (list,
-describe, get) always work. Write tools (create, update, delete, instrument)
-are blocked until an operator opts in to **read-write** mode.
+The MCP server starts in **read-only** mode by default. Read operations always
+work; write operations are blocked until an operator switches it to
+**read-write** (see [Configuration](#configuration)).
 
 | Mode | Behavior |
 | --- | --- |
-| `read-only` (default) | Safe inspection only. Write tool calls return guidance to enable write mode first. |
-| `read-write` | Mutating tools are allowed. Use only when you trust the agent to change the cluster. |
+| `read-only` (default) | Safe inspection only. Write requests are rejected. |
+| `read-write` | Mutating operations are allowed. Use only when you trust the agent to change the cluster. |
 
-An agent can check the current mode with `get_access_mode`. To allow writes,
-call `enable_write_mode` (confirm with a human first). Call
-`disable_write_mode` when finished.
-
-This access mode is **independent** of the UI's read-only mode (`ui.uiMode`).
+This setting is **independent** of the UI's read-only mode (`ui.uiMode`).
 
 ## Configuration
 
@@ -99,8 +95,9 @@ Set `ui.mcp.enabled: false` to disable the `/mcp` endpoint entirely.
 
 ## What you can do
 
-The MCP server exposes roughly 80 tools grouped by domain. Common starting
-points:
+Odigos supports a growing list of both low-level and high-level MCP tools to
+confidently and securely access your clusters. They are grouped by domain —
+common starting points:
 
 | Goal | Tools to try |
 | --- | --- |
@@ -122,6 +119,18 @@ are not executed even with `dry_run: false`.
   calls without manual guidance.
 </Info>
 
+## Audit logs
+
+Every MCP tool call is audit-logged by the Odigos UI, so you can see exactly what
+an agent did. Each entry records the tool name, the outcome, and the duration.
+
+For example:
+
+- `create_destination` — a write that added a backend, logged with the
+  initiating agent, success or failure, and how long it took.
+- `enable_source_profiling` — a write attempted while in read-only mode, recorded
+  as a rejected call.
+
 ## Security notes
 
 - The MCP endpoint is intended for **in-cluster or trusted network** use. There
@@ -129,4 +138,13 @@ are not executed even with `dry_run: false`.
   access at the network layer (port-forward, private ingress, VPN).
 - Prefer **read-only** mode for day-to-day agent use. Switch to read-write only
   when an operator is actively supervising changes.
-- Every tool call is audit-logged by the UI (tool name, outcome, duration).
+
+## What's coming
+
+- **Fine-grained access control via token** — scoped, per-token MCP permissions,
+  so you can grant each agent only the tools it needs instead of a single
+  cluster-wide access mode.
+
+Until then, the recommended approach is to issue a dedicated on-prem token per
+agent, keep the server in **read-only** mode for untrusted agents, and restrict
+who can reach `/mcp` at the network layer.
