@@ -29,10 +29,13 @@ type serviceioConnector struct {
 
 	startTime time.Time
 
-	seriesMutex sync.Mutex
-	keyToMetric map[uint64]metricSeries
+	seriesMutex     sync.Mutex
+	keyToMetric     map[uint64]metricSeries
+	maxMetricSeries int
+	seriesLimitOnce sync.Once
 
-	shutdownCh chan struct{}
+	shutdownCh   chan struct{}
+	shutdownOnce sync.Once
 }
 
 func newConnector(set component.TelemetrySettings, cfg component.Config, next consumer.Metrics) (*serviceioConnector, error) {
@@ -60,6 +63,7 @@ func newConnector(set component.TelemetrySettings, cfg component.Config, next co
 		collectorInstanceID:  collectorInstanceID,
 		startTime:            time.Now(),
 		keyToMetric:          make(map[uint64]metricSeries),
+		maxMetricSeries:      defaultMaxMetricSeries,
 		shutdownCh:           make(chan struct{}),
 	}, nil
 }
@@ -102,7 +106,7 @@ func (c *serviceioConnector) registerOdigosConfigExtension(ctx context.Context, 
 		c.logger.Warn("odigos config extension cache sync did not complete; active-source filtering may be incomplete briefly on startup")
 	}
 	c.workloadIdentityResolver = func(res pcommon.Resource) (string, pcommon.Map, bool) {
-		cacheKey, attrs, err := c.odigosConfig.GetWorkloadIdentityFromResource(res)
+		cacheKey, attrs, err := odigosExt.GetWorkloadIdentityFromResource(res)
 		if err != nil {
 			c.logger.Error("failed to get workload identity from resource", zap.Error(err))
 			return "", pcommon.NewMap(), false
@@ -133,9 +137,9 @@ func (c *serviceioConnector) metricFlushLoop(flushInterval time.Duration) {
 }
 
 func (c *serviceioConnector) Shutdown(_ context.Context) error {
-	c.odigosConfig = nil
-	c.workloadIdentityResolver = nil
-	close(c.shutdownCh)
+	c.shutdownOnce.Do(func() {
+		close(c.shutdownCh)
+	})
 	return nil
 }
 
@@ -173,5 +177,9 @@ func (c *serviceioConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces
 }
 
 func (c *serviceioConnector) isActiveSourceInstance(instance *ServiceInstance) bool {
-	return c.odigosConfig.IsActiveSource(instance.Root.Resource)
+	odigosConfig := c.odigosConfig
+	if odigosConfig == nil {
+		return false
+	}
+	return odigosConfig.IsActiveSource(instance.Root.Resource)
 }
