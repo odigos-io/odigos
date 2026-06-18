@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.uber.org/zap"
 
 	"github.com/odigos-io/odigos/collector/connectors/serviceioconnector/internal/metadata"
 )
@@ -46,6 +47,33 @@ func TestAggregateConnectionsFromTree(t *testing.T) {
 		outputServices = append(outputServices, outputService.Str())
 	}
 	require.ElementsMatch(t, []string{"Users", "Orders"}, outputServices)
+}
+
+func TestAggregateConnectionsFromTreeDropsOnlyNewSeriesAtLimit(t *testing.T) {
+	td := buildServiceIOTestTrace(t)
+
+	tree, err := BuildTraceTree(td, nil)
+	require.NoError(t, err)
+
+	connector := &serviceioConnector{
+		keyToMetric:          make(map[uint64]metricSeries),
+		maxMetricSeries:      1,
+		inputSpanAttributes:  []string{"http.route"},
+		outputSpanAttributes: []string{"rpc.service"},
+		logger:               zap.NewNop(),
+		odigosConfig: &mockOdigosConfigExtension{
+			activeSources: map[string]struct{}{"svc-1": {}},
+		},
+	}
+
+	require.True(t, connector.aggregateConnectionsFromTree(tree))
+	require.Len(t, connector.keyToMetric, 1)
+
+	require.True(t, connector.aggregateConnectionsFromTree(tree))
+	require.Len(t, connector.keyToMetric, 1)
+	for _, series := range connector.keyToMetric {
+		require.EqualValues(t, 2, series.count)
+	}
 }
 
 func TestConnectorConsumeTraces_EmitsConnectionMetrics(t *testing.T) {
@@ -114,6 +142,34 @@ func TestConnectorConsumeTraces_AggregatesBeforeFlush(t *testing.T) {
 		counts[lastMetric.Sum().DataPoints().At(i).IntValue()] = struct{}{}
 	}
 	require.Contains(t, counts, int64(2))
+}
+
+func TestConnectorConsumeTracesAfterShutdownDoesNotPanic(t *testing.T) {
+	sink := &consumertest.MetricsSink{}
+	flushImmediately := time.Duration(0)
+	cfg := &Config{
+		InputSpanAttributes:   []string{"http.route"},
+		OutputSpanAttributes:  []string{"rpc.service"},
+		MetricsFlushInterval:  &flushImmediately,
+		OdigosConfigExtension: &odigosConfigExtensionID,
+	}
+	require.NoError(t, cfg.Validate())
+
+	connector, err := NewFactory().CreateTracesToMetrics(
+		t.Context(),
+		newTestConnectorSettings(metadata.Type),
+		cfg,
+		sink,
+	)
+	require.NoError(t, err)
+	startConnectorWithMockExtension(t, connector, &mockOdigosConfigExtension{
+		activeSources: map[string]struct{}{"svc-1": {}},
+	})
+	require.NoError(t, connector.Shutdown(t.Context()))
+
+	require.NotPanics(t, func() {
+		require.NoError(t, connector.ConsumeTraces(t.Context(), buildServiceIOTestTrace(t)))
+	})
 }
 
 func buildServiceIOTestTrace(t *testing.T) ptrace.Traces {
