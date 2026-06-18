@@ -405,6 +405,12 @@
                 ]
               },
               {
+                "group": "Odigos AI",
+                "pages": [
+                  "enterprise/mcp/overview"
+                ]
+              },
+              {
                 "group": "Instrumentations",
                 "pages": [
                   "enterprise/instrumentations/overview",
@@ -657,12 +663,6 @@
                 "group": "Authentication",
                 "pages": [
                   "enterprise/features/oidc"
-                ]
-              },
-              {
-                "group": "Odigos AI",
-                "pages": [
-                  "enterprise/mcp/overview"
                 ]
               },
               {

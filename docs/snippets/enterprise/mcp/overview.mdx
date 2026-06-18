@@ -1,8 +1,3 @@
-<Note>
-  Odigos MCP is an **Enterprise** feature. It is embedded in the enterprise UI
-  image and is not available in the community edition.
-</Note>
-
 Odigos MCP lets AI agents (Cursor, Claude Desktop, and others) inspect and
 configure a live Odigos cluster. The endpoint is mounted at `/mcp` on the UI
 service (port `3000`).
@@ -121,15 +116,27 @@ are not executed even with `dry_run: false`.
 
 ## Audit logs
 
-Every MCP tool call is audit-logged by the Odigos UI, so you can see exactly what
-an agent did. Each entry records the tool name, the outcome, and the duration.
+Every MCP tool call is audit-logged by the Odigos UI pod. The audit middleware
+records the tool name, outcome, and duration on every `tools/call` — including
+calls blocked in read-only mode.
 
-For example:
+| Field | Description |
+| --- | --- |
+| `tool` | MCP tool name (for example `describe_odigos`, `create_destination`) |
+| `outcome` | `ok` — succeeded · `tool_error` — handler returned an error result (includes writes rejected in read-only mode) · `error` — unexpected failure |
+| `duration_ms` | Wall-clock time for the call, in milliseconds |
 
-- `create_destination` — a write that added a backend, logged with the
-  initiating agent, success or failure, and how long it took.
-- `enable_source_profiling` — a write attempted while in read-only mode, recorded
-  as a rejected call.
+Example log lines from the UI pod (`kubectl logs -n odigos-system deploy/odigos-ui`):
+
+```json
+{"level":"info","ts":"2026-06-18T11:42:03.512Z","caller":"audit/audit.go:37","msg":"mcp tool call","component":"mcp","tool":"describe_odigos","outcome":"ok","duration_ms":38}
+{"level":"info","ts":"2026-06-18T11:42:18.904Z","caller":"audit/audit.go:37","msg":"mcp tool call","component":"mcp","tool":"create_destination","outcome":"ok","duration_ms":214}
+{"level":"info","ts":"2026-06-18T11:43:01.271Z","caller":"audit/audit.go:37","msg":"mcp tool call","component":"mcp","tool":"enable_source_profiling","outcome":"tool_error","duration_ms":1}
+```
+
+In the third line, `enable_source_profiling` was rejected because the server was
+in read-only mode — the call is still logged, but with `outcome: tool_error`
+instead of `ok`.
 
 ## Security notes
 
