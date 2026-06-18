@@ -5,13 +5,13 @@ import { StatusKeys, useStatusStore } from '@/store';
 import { isOverTime } from '@odigos/ui-kit/functions';
 import { useNotificationStore } from '@odigos/ui-kit/store';
 import { TOKEN_ABOUT_TO_EXPIRE } from '@odigos/ui-kit/constants';
-import { useApiQuery } from '@odigos/ui-kit/contexts/odigos-api';
+import { useOdigosApi } from '@odigos/ui-kit/contexts/odigos-api';
 
 // This hook is responsible for tracking the tokens and their expiration times.
 // When a token is about to expire or has expired, a notification is added to
 // the notification store, and the connection status is updated accordingly.
 export const useTokenTracker = () => {
-  const { data: tokens = [] } = useApiQuery('GET_TOKENS');
+  const { items: tokens = [] } = useOdigosApi().tokensApi.useTokens();
 
   const { formatTimeAgo } = useTimeAgo();
   const { addNotification } = useNotificationStore();
