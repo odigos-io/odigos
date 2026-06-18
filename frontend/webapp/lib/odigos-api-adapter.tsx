@@ -16,8 +16,8 @@
  *   `export default function Page() { return <Overview metrics={…} />; }`
  */
 
-import React, { type FC, type PropsWithChildren, useMemo } from 'react';
-import { useCSRF } from '@/hooks';
+import React, { type FC, type PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
+import { useConfig, useCSRF } from '@/hooks';
 import { API, INITIAL_CONTEXT, IS_LOCAL } from '@/utils';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 import {
@@ -394,16 +394,35 @@ const operations: OdigosApiOperations = {
   UPDATE_LOCAL_UI_SAMPLING_CONFIG: { document: UPDATE_LOCAL_UI_SAMPLING_CONFIG },
 };
 
-interface AdapterProps extends PropsWithChildren {
-  /**
-   * Operation context override. Inner layout supplies the real values
-   * after fetching `GET_CONFIG`. Memoize at the call site to avoid
-   * re-creating the kit's internal context value on each render.
-   */
-  context?: OperationContext;
-}
+type AdapterProps = PropsWithChildren;
 
-const OdigosApiAdapter: FC<AdapterProps> = ({ children, context }) => {
+/**
+ * Lifts the effective config (`GET_CONFIG`) into the adapter's
+ * `OperationContext` — platform / tier / version for the kit's containers,
+ * and `isReadonly` so the kit's domain hooks can short-circuit mutations in
+ * readonly mode.
+ *
+ * It lives INSIDE `<OdigosApiProvider>` because `useConfig` reads `GET_CONFIG`
+ * through `useApiQuery`, which only works within the provider. Defining it
+ * here (rather than duplicating it in every layout) means every adapter
+ * mount — (v2), (setup), the root redirect — gets it for free.
+ */
+const ConfigSync: FC<{ onChange: (ctx: OperationContext) => void }> = ({ onChange }) => {
+  const { config, isReadonly } = useConfig();
+
+  useEffect(() => {
+    onChange({
+      platformType: config?.platformType ?? INITIAL_CONTEXT.platformType,
+      tier: config?.tier ?? INITIAL_CONTEXT.tier,
+      version: config?.odigosVersion || INITIAL_CONTEXT.version,
+      isReadonly,
+    });
+  }, [config?.platformType, config?.tier, config?.odigosVersion, isReadonly, onChange]);
+
+  return null;
+};
+
+const OdigosApiAdapter: FC<AdapterProps> = ({ children }) => {
   const { token, isLoading } = useCSRF();
 
   // In local dev, CSRF is disabled — proceed without a token.
@@ -412,7 +431,11 @@ const OdigosApiAdapter: FC<AdapterProps> = ({ children, context }) => {
   // header. This mirrors the previous `apollo-provider.tsx` behavior.
   const ready = IS_LOCAL || !isLoading;
 
-  const resolvedContext = context ?? INITIAL_CONTEXT;
+  // Context is synced from `GET_CONFIG` by <ConfigSync> (below, inside the
+  // provider). The `context` prop still overrides it when supplied.
+  const [syncedContext, setSyncedContext] = useState<OperationContext>(INITIAL_CONTEXT);
+  // Stable callback so <ConfigSync>'s effect doesn't re-fire each render.
+  const onContextChange = useCallback((ctx: OperationContext) => setSyncedContext(ctx), []);
 
   const apolloConfig = useMemo(
     () => ({
@@ -439,7 +462,8 @@ const OdigosApiAdapter: FC<AdapterProps> = ({ children, context }) => {
   }
 
   return (
-    <OdigosApiProvider apolloConfig={apolloConfig} operations={operations} context={resolvedContext}>
+    <OdigosApiProvider apolloConfig={apolloConfig} operations={operations} context={syncedContext}>
+      <ConfigSync onChange={onContextChange} />
       {children}
     </OdigosApiProvider>
   );
