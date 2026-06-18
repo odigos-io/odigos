@@ -31,7 +31,11 @@ func TestExtractSpanAttributes(t *testing.T) {
 		"rpc.service",
 		"missing.key",
 	})
-	require.Equal(t, 6, values.Len())
+	require.Equal(t, 7, values.Len())
+
+	spanName, ok := values.Get(inputAttributePrefix + spanNameAttribute)
+	require.True(t, ok)
+	require.Equal(t, "", spanName.Str())
 
 	kind, ok := values.Get(inputAttributePrefix + spanKindAttribute)
 	require.True(t, ok)
@@ -70,7 +74,11 @@ func TestExtractSpanAttributes_EmptyConfig(t *testing.T) {
 	}
 
 	values := ExtractSpanAttributes(node, inputAttributePrefix, nil)
-	require.Equal(t, 1, values.Len())
+	require.Equal(t, 2, values.Len())
+
+	spanName, ok := values.Get(inputAttributePrefix + spanNameAttribute)
+	require.True(t, ok)
+	require.Equal(t, "", spanName.Str())
 
 	kind, ok := values.Get(inputAttributePrefix + spanKindAttribute)
 	require.True(t, ok)
