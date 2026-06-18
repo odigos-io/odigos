@@ -157,7 +157,8 @@
                     "icon": "gear",
                     "pages": [
                       "oss/instrumentations/configuration/mount-method",
-                      "oss/instrumentations/advanced/Istio"
+                      "oss/instrumentations/advanced/Istio",
+                      "oss/instrumentations/advanced/Nginx"
                     ]
                   },
                   "oss/instrumentations/obi"
@@ -485,7 +486,8 @@
                     "icon": "gear",
                     "pages": [
                       "enterprise/instrumentations/configuration/mount-method",
-                      "enterprise/instrumentations/advanced/Istio"
+                      "enterprise/instrumentations/advanced/Istio",
+                      "enterprise/instrumentations/advanced/Nginx"
                     ]
                   }
                 ]

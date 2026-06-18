@@ -1,0 +1,191 @@
+Odigos can collect the distributed traces emitted by the [Ingress-NGINX Controller](https://kubernetes.github.io/ingress-nginx/) and route them through the same pipeline as your application traces. Once enabled, the controller reports a span for every request that enters the cluster through it — route, upstream, response code, and latency — over OTLP to the Odigos collector, where they are correlated with the spans Odigos already generates for your applications. The result is a single trace that begins at the edge and follows the request all the way through your services.
+
+<Note>
+This page covers how to point an **existing** Ingress-NGINX deployment at Odigos. It is not a guide to installing or operating the controller. For controller setup, see the [Ingress-NGINX installation guide](https://kubernetes.github.io/ingress-nginx/deploy/).
+</Note>
+
+<Note>
+Tracing happens at the **Ingress-NGINX Controller**, not in your application's nginx pods. Stock `nginx` images lack the OpenTelemetry module, but the controller bundles it and turns a few ConfigMap keys into the right OTel directives. Put the workloads you want traced behind an Ingress and enable OTel on the controller.
+</Note>
+
+## Prerequisites
+
+<Steps>
+<Step title="Kubernetes 1.26 or newer">
+The `odigos-data-collection-local-traffic` service depends on `internalTrafficPolicy: Local`, which became GA in 1.26.
+</Step>
+
+<Step title="A running Ingress-NGINX Controller">
+The Ingress-NGINX Controller must be installed in your cluster, with the OpenTelemetry module available. Follow the [Ingress-NGINX installation guide](https://kubernetes.github.io/ingress-nginx/deploy/).
+</Step>
+
+<Step title="Workloads exposed through an Ingress">
+The controller only emits spans for traffic that flows through it. Make sure the workloads you want traced are fronted by an `Ingress` resource that routes to their `Service`. For background on routing, see the [Ingress-NGINX user guide](https://kubernetes.github.io/ingress-nginx/user-guide/basic-usage/).
+</Step>
+</Steps>
+
+## Configuration
+
+<Steps>
+<Step title="Point the controller at the Odigos OTLP endpoint">
+Configure the Ingress-NGINX Controller to export OpenTelemetry traces to the Odigos node collector's OTLP/gRPC endpoint. For background on these keys, see the controller's [OpenTelemetry documentation](https://kubernetes.github.io/ingress-nginx/user-guide/third-party-addons/opentelemetry/).
+
+Apply it using whichever method you use to manage the controller. Prefer Helm values so a later `helm upgrade` does not overwrite your settings.
+
+<Tabs>
+<Tab title="Helm">
+Enable the OTel module and set the exporter through the `ingress-nginx` chart values:
+
+```bash
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx --create-namespace \
+  --set controller.opentelemetry.enabled=true \
+  --set controller.config.enable-opentelemetry="true" \
+  --set controller.config.otlp-collector-host="odigos-data-collection-local-traffic.odigos-system.svc.cluster.local" \
+  --set controller.config.otlp-collector-port="4317" \
+  --set controller.config.otel-service-name="nginx-ingress" \
+  --set controller.config.opentelemetry-trust-incoming-span="true" \
+  --set controller.config.opentelemetry-operation-name="HTTP \$request_method \$uri"
+```
+</Tab>
+<Tab title="ConfigMap">
+Add the exporter keys to the controller's ConfigMap (named `ingress-nginx-controller` in the `ingress-nginx` namespace by default — match whatever your controller reads via its `--configmap` flag):
+
+```yaml ingress-nginx-controller-cm.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+data:
+  enable-opentelemetry: "true"
+  otlp-collector-host: "odigos-data-collection-local-traffic.odigos-system.svc.cluster.local"
+  otlp-collector-port: "4317"
+  otel-service-name: "nginx-ingress"
+  opentelemetry-trust-incoming-span: "true"
+  opentelemetry-operation-name: "HTTP $request_method $uri"
+```
+
+After changing the ConfigMap, roll the controller so it reloads:
+
+```bash
+kubectl -n ingress-nginx rollout restart deployment ingress-nginx-controller
+```
+</Tab>
+</Tabs>
+
+<Warning>
+**OTLP/gRPC only.** The Ingress-NGINX OTel module speaks OTLP gRPC on port **4317**. There is no HTTP/protobuf (4318) option — pointing it at 4318 will silently fail to export. The `odigos-data-collection-local-traffic` service accepts OTLP/gRPC on 4317.
+</Warning>
+
+<Tip>
+By default the controller samples every request through the ingress, so no sampler settings are needed. If you need to reduce volume, do it with [Odigos tail sampling](../../pipeline/sampling/head-and-tail-sampling) rather than at the controller — that way the decision sees the full trace (errors, latency, and downstream spans) instead of being made blindly per request at the edge.
+</Tip>
+</Step>
+
+<Step title="Enable tracing per route">
+Enabling OTel on the controller does not trace every route by default. Activate tracing on a route with per-`Ingress` annotations. For the full set of options, see the controller's [OpenTelemetry documentation](https://kubernetes.github.io/ingress-nginx/user-guide/third-party-addons/opentelemetry/).
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/enable-opentelemetry: "true"
+    nginx.ingress.kubernetes.io/opentelemetry-trust-incoming-span: "true"
+spec:
+  rules:
+    - host: frontend.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+```
+</Step>
+
+<Step title="Confirm a destination on the default data stream">
+The Odigos collector only exports data when at least one destination is configured. Because the controller emits ingress spans on behalf of the edge rather than any specific Odigos-instrumented workload, the collector routes them through the **default data stream** — so make sure the destination you want the NGINX traces to reach is assigned to the default data stream.
+</Step>
+</Steps>
+
+## Validation
+
+After traffic flows through the ingress, look for the controller's spans in your tracing backend. They appear under the service name you set in `otel-service-name` (for example, `nginx-ingress`), distinct from the application service names Odigos reports.
+
+Confirm the path end to end. Neither the NGINX OTel module nor the Odigos collector logs anything per span, so **no OTel errors in the logs is the healthy state** — any OTel output is an error. To confirm spans are actually arriving, check your destination.
+
+- **Controller logs** — confirm there are no export errors:
+
+```bash
+kubectl -n ingress-nginx logs deployment/ingress-nginx-controller | grep -i otel
+```
+
+  If the collector is unreachable, the gRPC exporter logs an `UNAVAILABLE` error on every flush:
+
+```text
+[Error] File: .../otlp_grpc_exporter.cc:66 [OTLP TRACE GRPC Exporter] Export() failed with status_code: "UNAVAILABLE" error_message: "failed to connect to all addresses; last error: ... ipv4:<host>:4317: Connection refused"
+```
+
+  That almost always means a wrong `otlp-collector-host`/`otlp-collector-port`, port 4318 instead of 4317, or a NetworkPolicy blocking egress to `odigos-system`.
+
+- **Collector logs** — the collector is also quiet on success. Watch for export errors toward your destination:
+
+```bash
+kubectl -n odigos-system logs -l odigos.io/collector-role=DATA_COLLECTION --tail=50
+```
+
+  A misconfigured or unreachable destination shows up as repeated exporter errors. Depending on where the failure happens, you will see either `Exporting failed. Dropping data.` or `Exporting failed. Rejecting data.`:
+
+```text
+error   exporterhelper/queue_sender.go:50   Exporting failed. Dropping data.   {"otelcol.component.id": "otlp/<destination>", "otelcol.component.kind": "exporter", "otelcol.signal": "traces", "error": "...", "dropped_items": 5}
+```
+
+- **Your destination** — open your backend and look for a service named after `otel-service-name` (for example, `nginx-ingress`).
+
+### Example
+
+Real traces interleave the NGINX ingress span with the Odigos application spans — the ingress span wraps the upstream's application work, which itself can fan out into more application spans. A request through `ingress → frontend → checkout` lays out like this:
+
+Horizontal position is time; indentation shows parent/child nesting.
+
+```
+                                0ms      50       100      150      200ms
+                                 ├────────┼────────┼────────┼────────┤
+  nginx-ingress · GET /            ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    frontend · GET /                ███████████████████████████████████
+      frontend · GET /checkout            ████████████████████████
+        checkout · GET /checkout            ██████████████████
+          checkout · SELECT cart            ██████
+
+  Legend:  █ Odigos (app)   ┏━┓ NGINX (ingress)
+```
+
+The ingress span wraps all the application work behind it. The gap before the first application span is **time spent at the edge** (routing and connecting upstream); everything inside is application latency.
+
+<Note>
+NGINX ingress spans are additive — they do not replace the application spans Odigos generates. Each traced request yields an ingress span plus the application span(s), all sharing the same trace, as long as `opentelemetry-trust-incoming-span` is enabled so context propagates to your workloads.
+</Note>
+
+## Tuning
+
+| Key | Effect |
+|---|---|
+| `otel-service-name` | The service name spans show up under. Set per environment. |
+| `opentelemetry-operation-name` | Template for the span name. `HTTP $request_method $uri` produces names like `HTTP GET /checkout`; supports NGINX variables. |
+| `otel-sampler` | Leave at the default (`AlwaysOn`), which captures 100%, and configure sampling with [Odigos tail sampling](../../pipeline/sampling/head-and-tail-sampling) instead. |
+| `opentelemetry-trust-incoming-span` | Whether to continue trace context from inbound requests. Keep `true` so ingress spans link to upstream callers and downstream workloads. |
+| `nginx.ingress.kubernetes.io/enable-opentelemetry` (annotation) | Per-`Ingress` enablement. Remove to stop tracing a specific route. |
+
+## Troubleshooting
+
+- **No spans at all** — the most common cause is a wrong `otlp-collector-host`. The `odigos-data-collection-local-traffic` service must exist in `odigos-system` and accept OTLP/gRPC. Verify with `kubectl get svc -n odigos-system`.
+- **Set 4318 and nothing arrives** — the module is gRPC-only; use 4317.
+- **OTel keys added to an application nginx ConfigMap did nothing** — expected; that is the stock-nginx ConfigMap, not the controller's. OTel config belongs in the controller ConfigMap.
+- **Config changes ignored** — roll the controller: `kubectl -n ingress-nginx rollout restart deployment ingress-nginx-controller`.
