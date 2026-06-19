@@ -163,6 +163,42 @@ func TestRemoveChangedFilesFromKeepMap_RenamesChangedFile(t *testing.T) {
 	}
 }
 
+func TestCopyAgentsDirectoryToHost_StopsBeforeRsyncWhenKeeplistFails(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	relPath := filepath.Join("loader", "loader.so")
+	srcFile := filepath.Join(srcDir, relPath)
+	dstPath := filepath.Join(dstDir, relPath)
+
+	if err := os.MkdirAll(filepath.Dir(srcFile), 0755); err != nil {
+		t.Fatalf("mkdir source: %v", err)
+	}
+	if err := os.WriteFile(srcFile, []byte("new-version"), 0644); err != nil {
+		t.Fatalf("write source: %v", err)
+	}
+	if err := os.MkdirAll(dstPath, 0755); err != nil {
+		t.Fatalf("mkdir destination critical file path: %v", err)
+	}
+
+	scriptDir := t.TempDir()
+	rsyncMarker := filepath.Join(scriptDir, "rsync-called")
+	fakeRsync := filepath.Join(scriptDir, "rsync")
+	script := fmt.Sprintf("#!/bin/sh\nprintf called > %q\nexit 0\n", rsyncMarker)
+	if err := os.WriteFile(fakeRsync, []byte(script), 0755); err != nil {
+		t.Fatalf("write fake rsync: %v", err)
+	}
+
+	err := CopyAgentsDirectoryToHost(srcDir, dstDir, &fakeRsync)
+	if err == nil {
+		t.Fatalf("expected CopyAgentsDirectoryToHost to fail before rsync")
+	}
+
+	if _, err := os.Stat(rsyncMarker); !os.IsNotExist(err) {
+		t.Fatalf("rsync should not be invoked after keeplist calculation fails")
+	}
+}
+
 func TestCopyDirectories_SkipsUnchangedFiles(t *testing.T) {
 	src := t.TempDir()
 	dest := t.TempDir()
