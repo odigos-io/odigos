@@ -1,5 +1,9 @@
 Odigos can collect the distributed traces emitted by the [Ingress-NGINX Controller](https://kubernetes.github.io/ingress-nginx/) and route them through the same pipeline as your application traces. Once enabled, the controller reports a span for every request that enters the cluster through it — route, upstream, response code, and latency — over OTLP to the Odigos collector, where they are correlated with the spans Odigos already generates for your applications. The result is a single trace that begins at the edge and follows the request all the way through your services.
 
+<Warning>
+The community Ingress-NGINX project has been **retired** as of March 2026 — it no longer receives releases, bug fixes, or security patches, so running it carries growing security risk. See the [Kubernetes retirement announcement](https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/). For new deployments, migrate to the [Gateway API](https://gateway-api.sigs.k8s.io/) instead.
+</Warning>
+
 <Note>
 This page covers how to point an **existing** Ingress-NGINX deployment at Odigos. It is not a guide to installing or operating the controller. For controller setup, see the [Ingress-NGINX installation guide](https://kubernetes.github.io/ingress-nginx/deploy/).
 </Note>
@@ -30,7 +34,7 @@ The controller only emits spans for traffic that flows through it. Make sure the
 <Step title="Point the controller at the Odigos OTLP endpoint">
 Configure the Ingress-NGINX Controller to export OpenTelemetry traces to the Odigos node collector's OTLP/gRPC endpoint. For background on these keys, see the controller's [OpenTelemetry documentation](https://kubernetes.github.io/ingress-nginx/user-guide/third-party-addons/opentelemetry/).
 
-Apply it using whichever method you use to manage the controller. Prefer Helm values so a later `helm upgrade` does not overwrite your settings.
+Choose one of the methods below based on how you manage the controller. If you installed it with Helm, use Helm values so a later `helm upgrade` does not overwrite the settings; otherwise apply the ConfigMap directly.
 
 <Tabs>
 <Tab title="Helm">
