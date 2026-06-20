@@ -3,10 +3,11 @@ package feature
 import (
 	"sync"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/client"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/discovery"
+
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
 type maturityLevel string

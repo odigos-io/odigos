@@ -3,10 +3,11 @@ package utils
 import (
 	"fmt"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/client"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/discovery"
+
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
 // ClusterVersion returns the Kubernetes control-plane version as a *version.Version.
