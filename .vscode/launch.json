@@ -1,6 +1,7 @@
 {
   "version": "0.2.0",
   "configurations": [
+    
     {
       "name": "Remote Odiglet",
       "type": "go",
@@ -17,7 +18,15 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/instrumentor/cmd",
-      "cwd": "${workspaceFolder}/instrumentor"
+      "cwd": "${workspaceFolder}/instrumentor",
+      "args": [
+        "--metrics-bind-address=:18080",
+        "--health-probe-bind-address=:18081"
+      ],
+      "env": {
+        "CURRENT_NS": "odigos-system",
+        "LOCAL_MUTATING_WEBHOOK_CERT_DIR": "${workspaceFolder}/instrumentor/serving-certs"
+      }
     },
     {
       "name": "frontend",

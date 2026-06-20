@@ -3,16 +3,17 @@ package utils
 import (
 	"fmt"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/rest"
 )
 
 // ClusterVersion returns the Kubernetes control-plane version as a *version.Version.
 func ClusterVersion() (*version.Version, error) {
-	cfg, err := rest.InClusterConfig()
+	cfg, err := client.GetClientConfigWithContext(env.GetDefaultKubeConfigPath(), "")
 	if err != nil {
-		return nil, fmt.Errorf("build in-cluster config: %w", err)
+		return nil, fmt.Errorf("build kube config: %w", err)
 	}
 
 	disco, err := discovery.NewDiscoveryClientForConfig(cfg)
