@@ -3,12 +3,14 @@ package ebpf
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentation"
 	instance "github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	semconv "go.opentelemetry.io/otel/semconv/v1.38.0"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -111,5 +113,11 @@ func (r *k8sReporter) updateInstrumentationInstanceStatus(ctx context.Context, k
 	return instance.UpdateInstrumentationInstanceStatus(ctx, ke.Pod, ke.ContainerName, r.client, instrumentedAppName, pid, r.client.Scheme(),
 		instance.WithHealthy(&healthy, string(reason), &msg),
 		instance.WithComponents(components),
+		instance.WithAttributes([]odigosv1.Attribute{
+			{
+				Key:   string(semconv.ProcessPIDKey),
+				Value: strconv.FormatInt(int64(pid), 10),
+			},
+		}, nil),
 	)
 }
