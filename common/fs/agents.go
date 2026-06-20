@@ -48,6 +48,7 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string, optionalRsyncPath *string)
 
 		if err != nil {
 			logger.Error("Error getting changed files", "err", err)
+			return fmt.Errorf("failed to prepare critical files keeplist: %w", err)
 		}
 
 		if err := writeKeeplist(dstDir, keeplistPath, updatedFilesToKeepMap); err != nil {
@@ -172,6 +173,7 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, srcDir st
 		existingHashVersionFiles, err := findHashVersionFiles(dstPath)
 		if err != nil {
 			logger.Error("Error finding existing hash version files", "err", err, "basePath", dstPath)
+			return nil, fmt.Errorf("error finding existing hash version files for %s: %w", dstPath, err)
 		} else {
 			// Add all existing hash version files to the keep map
 			for _, hashVersionFile := range existingHashVersionFiles {
