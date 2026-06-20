@@ -24,8 +24,7 @@
         "--health-probe-bind-address=:18081"
       ],
       "env": {
-        "CURRENT_NS": "odigos-system",
-        "LOCAL_MUTATING_WEBHOOK_CERT_DIR": "${workspaceFolder}/instrumentor/serving-certs"
+        "CURRENT_NS": "odigos-system"
       }
     },
     {
