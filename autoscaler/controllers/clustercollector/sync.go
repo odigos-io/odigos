@@ -49,7 +49,13 @@ func reconcileClusterCollector(ctx context.Context, k8sClient client.Client, sch
 	// Add the generic batch processor to the list of processors
 	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
 
-	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, odigosVersion)
+	var receivers odigosv1.ReceiverList
+	err = k8sClient.List(ctx, &receivers)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = syncGateway(&dests, &processors, &receivers, &gatewayCollectorGroup, ctx, k8sClient, scheme, odigosVersion)
 	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err, gatewayCollectorGroup.Spec.Role)
 	statusErr := k8sClient.Status().Patch(ctx, &gatewayCollectorGroup, client.RawPatch(types.MergePatchType, []byte(statusPatchString)))
 	if statusErr != nil {
@@ -59,7 +65,7 @@ func reconcileClusterCollector(ctx context.Context, k8sClient client.Client, sch
 	return ctrl.Result{}, err
 }
 
-func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList,
+func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.ProcessorList, receivers *odigosv1.ReceiverList,
 	gateway *odigosv1.CollectorsGroup, ctx context.Context,
 	c client.Client, scheme *runtime.Scheme, odigosVersion string) error {
 	logger := commonlogger.FromContext(ctx)
@@ -79,7 +85,7 @@ func syncGateway(dests *odigosv1.DestinationList, processors *odigosv1.Processor
 		return strings.Compare(a.Name, b.Name)
 	})
 
-	signals, err := syncConfigMap(enabledDests, processors, gateway, ctx, c, scheme)
+	signals, err := syncConfigMap(enabledDests, processors, receivers, gateway, ctx, c, scheme)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err

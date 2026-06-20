@@ -1,0 +1,104 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  labels:
+    odigos.io/system-object: "true"
+  name: receivers.odigos.io
+spec:
+  group: odigos.io
+  names:
+    kind: Receiver
+    listKind: ReceiverList
+    plural: receivers
+    singular: receiver
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Receiver is the Schema for an OpenTelemetry Collector Receiver
+          that is added to the Odigos pipeline.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ReceiverSpec defines an OpenTelemetry Collector receiver in
+              the Odigos telemetry pipeline.
+            properties:
+              collectorRoles:
+                description: collectorRoles controls which collector roles in the Odigos
+                  pipeline this receiver is attached to.
+                items:
+                  enum:
+                  - CLUSTER_GATEWAY
+                  - NODE_COLLECTOR
+                  type: string
+                type: array
+              disabled:
+                description: |-
+                  disable is a flag to enable or disable the receiver.
+                  if the receiver is disabled, it will not be included in the collector configuration yaml.
+                  this allows the user to keep the receiver configuration in the CR, but disable it temporarily.
+                type: boolean
+              notes:
+                description: user can attach notes to the receiver, to document its
+                  purpose, usage, etc.
+                type: string
+              receiverConfig:
+                description: ReceiverConfig is the configuration of the OpenTelemetry
+                  collector receiver component.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              receiverName:
+                description: |-
+                  optional suffix appended after a slash to disambiguate multiple instances of the same receiver type.
+                  The key used in the generated collector config is "{type}/{receiverName}" when set, or just "{type}" when empty.
+                type: string
+              signals:
+                description: signals controls which observability signal pipelines this
+                  receiver is injected into.
+                items:
+                  enum:
+                  - LOGS
+                  - TRACES
+                  - METRICS
+                  - PROFILES
+                  type: string
+                type: array
+              type:
+                description: |-
+                  type of the receiver (hostmetrics, prometheus, filelog, etc).
+                  this field is only the type, not its instance name in the collector configuration yaml.
+                type: string
+            required:
+            - collectorRoles
+            - receiverConfig
+            - signals
+            - type
+            type: object
+          status:
+            description: ReceiverStatus defines the observed state of the Receiver.
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
