@@ -35,6 +35,10 @@ const (
 	metricNodeJSSentSpans     = "odigos_nodejs_ebpf_instrumentation_sent_events"
 	metricNodeJSFailedSpans   = "odigos_nodejs_ebpf_instrumentation_output_failed_events"
 	metricNodeJSTooLargeSpans = "odigos_nodejs_ebpf_instrumentation_events_too_larger"
+
+	// eBPF core metrics. rateSumByPod appends an optional `(_total)?`, so omit the suffix here.
+	metricEBPFCoreSentEvents   = "ebpf_events_sent"
+	metricEBPFCoreFailedEvents = "ebpf_events_send_failed"
 )
 
 type PodRates struct {
@@ -82,6 +86,9 @@ func GetCollectorMetricsFromMetricsStore(ctx context.Context, api v1.API, namesp
 	// NodeJS metrics
 	queryNodeJSSent := rateSumByPod(metricNodeJSSentSpans, podRegex, window)
 	queryNodeJSDropped := rateSumByPod(fmt.Sprintf("(%s|%s)", metricNodeJSFailedSpans, metricNodeJSTooLargeSpans), podRegex, window)
+	// eBPF core (go/c++ shared-buffer) metrics
+	queryEBPFCoreSent := rateSumByPod(metricEBPFCoreSentEvents, podRegex, window)
+	queryEBPFCoreFailed := rateSumByPod(metricEBPFCoreFailedEvents, podRegex, window)
 
 	otelReceiverAccepted, tsAcc, err := queryVector(ctx, api, queryOtelReceiverAccepted, now)
 	if err != nil {
@@ -123,6 +130,14 @@ func GetCollectorMetricsFromMetricsStore(ctx context.Context, api v1.API, namesp
 	if err != nil {
 		return nil, err
 	}
+	ebpfCoreSent, tsEBPFCoreSent, err := queryVector(ctx, api, queryEBPFCoreSent, now)
+	if err != nil {
+		return nil, err
+	}
+	ebpfCoreFailed, tsEBPFCoreFailed, err := queryVector(ctx, api, queryEBPFCoreFailed, now)
+	if err != nil {
+		return nil, err
+	}
 	result := make(map[string]PodRates, len(podNames))
 	for _, pod := range podNames {
 		result[pod] = PodRates{
@@ -130,7 +145,7 @@ func GetCollectorMetricsFromMetricsStore(ctx context.Context, api v1.API, namesp
 		}
 	}
 
-	lastScrape := maxTime(tsAcc, tsRef, tsSent, tsFail, tsEBPFAccept, tsEBPFDrop, tsPythonSent, tsPythonDropped, tsNodeJSSent, tsNodeJSDropped)
+	lastScrape := maxTime(tsAcc, tsRef, tsSent, tsFail, tsEBPFAccept, tsEBPFDrop, tsPythonSent, tsPythonDropped, tsNodeJSSent, tsNodeJSDropped, tsEBPFCoreSent, tsEBPFCoreFailed)
 
 	for pod := range result {
 		r := result[pod]
@@ -138,8 +153,8 @@ func GetCollectorMetricsFromMetricsStore(ctx context.Context, api v1.API, namesp
 		// A single pod can receive spans through both the eBPF receiver and the OTel built-in receiver, since not all instrumentations go through eBPF.
 		// Sum both receiver sources for accepted.
 		// refused/dropped spans are aggregated under dropped.
-		r.MetricsAcceptedRps = sumByPod(pod, otelReceiverAccepted, ebpfReceiverAccepted, pythonSent, nodeJSSent)
-		r.MetricsDroppedRps = sumByPod(pod, ebpfReceiverDropped, otelReceiverRefused, pythonDropped, nodeJSDropped)
+		r.MetricsAcceptedRps = sumByPod(pod, otelReceiverAccepted, ebpfReceiverAccepted, pythonSent, nodeJSSent, ebpfCoreSent)
+		r.MetricsDroppedRps = sumByPod(pod, ebpfReceiverDropped, otelReceiverRefused, pythonDropped, nodeJSDropped, ebpfCoreFailed)
 
 		if v, ok := expSent[pod]; ok {
 			r.ExporterSuccessRps = v
