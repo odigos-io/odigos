@@ -1577,7 +1577,7 @@ traceCorrelations:
       - rpc.method
       - http.route
       - http.status_code
-      - http.response.status_code	
+      - http.response.status_code
       - http.method
       - http.request.method
       - server.address
@@ -1596,12 +1596,9 @@ traceCorrelations:
       - rpc.method
       - db.system.name
       - db.system
-      - db.statement
-      - db.query.text
       - db.operation
       - db.operation.name
       - db.name
-      - db.user
       - url.template
       - http.status_code
       - http.response.status_code
