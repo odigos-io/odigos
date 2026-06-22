@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
+import OdigosApiAdapter from '@/lib/odigos-api-adapter';
 import { TraceCorrelationsSettingsPanel } from './SettingsPanel';
 import { useEffectiveConfig } from './temp-hooks/useEffectiveConfig';
 import { useTraceCorrelationsSettings } from './temp-hooks/useTraceCorrelationsSettings';
@@ -3161,7 +3162,7 @@ function createDefaultCustomRange(now = Date.now()) {
   };
 }
 
-export default function TraceCorrelationsPage() {
+function TraceCorrelationsContent() {
   const [namespaceFilter, setNamespaceFilter] = useState('');
   const [showFullData, setShowFullData] = useState(false);
   const [timePreset, setTimePreset] = useState<TraceCorrelationsTimePreset>('1h');
@@ -3505,5 +3506,13 @@ export default function TraceCorrelationsPage() {
         )}
       </Shell>
     </Page>
+  );
+}
+
+export default function TraceCorrelationsPage() {
+  return (
+    <OdigosApiAdapter>
+      <TraceCorrelationsContent />
+    </OdigosApiAdapter>
   );
 }

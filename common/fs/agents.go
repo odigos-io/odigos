@@ -48,6 +48,7 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string, optionalRsyncPath *string)
 
 		if err != nil {
 			logger.Error("Error getting changed files", "err", err)
+			return err
 		}
 
 		if err := writeKeeplist(dstDir, keeplistPath, updatedFilesToKeepMap); err != nil {
@@ -301,6 +302,9 @@ func getCriticalFiles(bp string) map[string]struct{} {
 	cf[filepath.Join(bp, "java-ext-ebpf", "otel_agent_extension.jar")] = struct{}{}
 	cf[filepath.Join(bp, "python-ebpf", "pythonUSDT.abi3.so")] = struct{}{}
 	cf[filepath.Join(bp, "loader", "loader.so")] = struct{}{}
+	// .NET native profilers are loaded into the CLR and must not be overwritten in place.
+	cf[filepath.Join(bp, "dotnet", "linux-glibc", "OpenTelemetry.AutoInstrumentation.Native.so")] = struct{}{}
+	cf[filepath.Join(bp, "dotnet", "linux-musl", "OpenTelemetry.AutoInstrumentation.Native.so")] = struct{}{}
 	// Python dependency shared objects - special handling:
 	// These shared objects (.so files) are loaded by Python processes and mapped into process memory.
 	// They cannot be replaced while loaded, so we must keep them in the host filesystem to avoid removal.

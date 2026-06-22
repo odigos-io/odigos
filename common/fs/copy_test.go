@@ -163,6 +163,53 @@ func TestRemoveChangedFilesFromKeepMap_RenamesChangedFile(t *testing.T) {
 	}
 }
 
+func TestCopyAgentsDirectoryToHostFailsClosedWhenKeepMapPreparationFails(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	relPath := filepath.Join("loader", "loader.so")
+	srcFile := filepath.Join(srcDir, relPath)
+	dstPath := filepath.Join(dstDir, relPath)
+	if err := os.MkdirAll(filepath.Dir(srcFile), 0755); err != nil {
+		t.Fatalf("mkdir source: %v", err)
+	}
+	if err := os.MkdirAll(dstPath, 0755); err != nil {
+		t.Fatalf("mkdir destination path as directory: %v", err)
+	}
+	if err := os.WriteFile(srcFile, []byte("new-version"), 0644); err != nil {
+		t.Fatalf("write source: %v", err)
+	}
+
+	rsyncMarker := filepath.Join(t.TempDir(), "rsync-was-called")
+	fakeRsync := filepath.Join(t.TempDir(), "rsync")
+	if err := os.WriteFile(fakeRsync, []byte(fmt.Sprintf("#!/bin/sh\ntouch %q\n", rsyncMarker)), 0755); err != nil {
+		t.Fatalf("write fake rsync: %v", err)
+	}
+
+	err := CopyAgentsDirectoryToHost(srcDir, dstDir, &fakeRsync)
+	if err == nil {
+		t.Fatalf("expected keep-map preparation error")
+	}
+	if _, statErr := os.Stat(rsyncMarker); !os.IsNotExist(statErr) {
+		t.Fatalf("rsync should not run after keep-map preparation failure")
+	}
+}
+
+func TestGetCriticalFilesIncludesDotnetNativeProfilers(t *testing.T) {
+	basePath := "/var/odigos"
+	criticalFiles := getCriticalFiles(basePath)
+
+	for _, relPath := range []string{
+		filepath.Join("dotnet", "linux-glibc", "OpenTelemetry.AutoInstrumentation.Native.so"),
+		filepath.Join("dotnet", "linux-musl", "OpenTelemetry.AutoInstrumentation.Native.so"),
+	} {
+		path := filepath.Join(basePath, relPath)
+		if _, ok := criticalFiles[path]; !ok {
+			t.Fatalf("expected %s to be preserved as a critical file", path)
+		}
+	}
+}
+
 func TestCopyDirectories_SkipsUnchangedFiles(t *testing.T) {
 	src := t.TempDir()
 	dest := t.TempDir()
