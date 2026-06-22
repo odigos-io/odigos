@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -160,6 +161,43 @@ func TestRemoveChangedFilesFromKeepMap_RenamesChangedFile(t *testing.T) {
 		if _, err := os.Stat(dstPath); err != nil {
 			t.Fatalf("renamed file %s does not exist: %v", dstPath, err)
 		}
+	}
+}
+
+func TestCopyAgentsDirectoryToHost_ReturnsBeforeRsyncWhenCriticalFileProtectionFails(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	relPath := filepath.Join("loader", "loader.so")
+	srcFile := filepath.Join(srcDir, relPath)
+	dstFile := filepath.Join(dstDir, relPath)
+
+	if err := os.MkdirAll(filepath.Dir(srcFile), 0755); err != nil {
+		t.Fatalf("mkdir source: %v", err)
+	}
+	if err := os.WriteFile(srcFile, []byte("new-version"), 0644); err != nil {
+		t.Fatalf("write source: %v", err)
+	}
+	if err := os.MkdirAll(dstFile, 0755); err != nil {
+		t.Fatalf("mkdir destination critical path as directory: %v", err)
+	}
+
+	markerFile := filepath.Join(t.TempDir(), "rsync-called")
+	rsyncPath := filepath.Join(t.TempDir(), "fake-rsync.sh")
+	script := fmt.Sprintf("#!/bin/sh\nprintf called > %q\nexit 0\n", markerFile)
+	if err := os.WriteFile(rsyncPath, []byte(script), 0755); err != nil {
+		t.Fatalf("write fake rsync: %v", err)
+	}
+
+	err := CopyAgentsDirectoryToHost(srcDir, dstDir, &rsyncPath)
+	if err == nil {
+		t.Fatalf("expected critical file protection error")
+	}
+	if !strings.Contains(err.Error(), "destination file") {
+		t.Fatalf("expected destination critical file error, got %v", err)
+	}
+	if _, statErr := os.Stat(markerFile); !os.IsNotExist(statErr) {
+		t.Fatalf("rsync should not run after critical file protection fails")
 	}
 }
 
