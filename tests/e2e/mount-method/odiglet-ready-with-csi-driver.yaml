@@ -13,13 +13,13 @@ metadata:
 spec:
   initContainers:
     - name: init
-      image: registry.odigos.io/odigos-odiglet:e2e-test
+      image: p0xd21zf5r.registry.depot.dev/odigos/odigos-odiglet:e2e-test
   containers:
     - name: odiglet
       resources: {}
       securityContext:
         privileged: true
-      image: registry.odigos.io/odigos-odiglet:e2e-test
+      image: p0xd21zf5r.registry.depot.dev/odigos/odigos-odiglet:e2e-test
     - name: data-collection
       securityContext:
         privileged: true
@@ -53,7 +53,7 @@ spec:
         limits:
           (memory != null): true
     - name: csi-driver
-      image: registry.odigos.io/odigos-odiglet:e2e-test
+      image: p0xd21zf5r.registry.depot.dev/odigos/odigos-odiglet:e2e-test
       securityContext:
         privileged: true
       resources:
@@ -98,13 +98,13 @@ metadata:
 spec:
   initContainers:
     - name: init
-      image: registry.odigos.io/odigos-odiglet:e2e-test
+      image: p0xd21zf5r.registry.depot.dev/odigos/odigos-odiglet:e2e-test
   containers:
     - name: odiglet
       resources: {}
       securityContext:
         privileged: true
-      image: registry.odigos.io/odigos-odiglet:e2e-test
+      image: p0xd21zf5r.registry.depot.dev/odigos/odigos-odiglet:e2e-test
     - name: data-collection
       securityContext:
         privileged: true
@@ -138,7 +138,7 @@ spec:
         limits:
           (memory != null): true
     - name: csi-driver
-      image: registry.odigos.io/odigos-odiglet:e2e-test
+      image: p0xd21zf5r.registry.depot.dev/odigos/odigos-odiglet:e2e-test
       securityContext:
         privileged: true
       resources:

@@ -2,7 +2,7 @@ TAG ?= $(shell odigos version --cluster 2>/dev/null || odigos version --cli 2>/d
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
-ORG ?= registry.odigos.io
+ORG ?= p0xd21zf5r.registry.depot.dev/odigos
 # Override ORG for staging pushes
 ifeq ($(STAGING_ORG),true)
     ORG = us-central1-docker.pkg.dev/odigos-cloud/staging-components

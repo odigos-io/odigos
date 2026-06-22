@@ -64,5 +64,5 @@ helm install odigos odigos-1.0.X-rcY.tgz
 - **cli image** - pull the cli image from the registry with the specific "-rcY" version tag.
 
 ```bash
-docker run --rm -it registry.odigos.io/odigos-cli:v1.0.X-rcY version
+docker run --rm -it p0xd21zf5r.registry.depot.dev/odigos/odigos-cli:v1.0.X-rcY version
 ```

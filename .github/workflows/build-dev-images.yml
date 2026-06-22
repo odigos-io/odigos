@@ -60,7 +60,7 @@ jobs:
       - name: Build and Tag Docker Images
         env:
           COMMIT_HASH: ${{ github.sha }}
-          DOCKER_REGISTRY: registry.odigos.io
+          DOCKER_REGISTRY: p0xd21zf5r.registry.depot.dev/odigos
         run: |
           # Build images
           make build-images TAG=${COMMIT_HASH}
@@ -81,7 +81,7 @@ jobs:
       - name: Build CLI Image
         env:
           COMMIT_HASH: ${{ github.sha }}
-          DOCKER_REGISTRY: registry.odigos.io
+          DOCKER_REGISTRY: p0xd21zf5r.registry.depot.dev/odigos
         run: |
           make build-cli-image TAG=${COMMIT_HASH}
           docker tag ${DOCKER_REGISTRY}/odigos-cli:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-cli:${COMMIT_HASH}
