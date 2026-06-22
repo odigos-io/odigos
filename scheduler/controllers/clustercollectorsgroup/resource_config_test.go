@@ -15,13 +15,13 @@ func TestCalculateMemoryLimiterHardLimitMiB_Gateway(t *testing.T) {
 		baseMiB  int
 		wantHard int
 	}{
-		{"64MiB", 64, 54},     // max(14, 54) = 54
-		{"128MiB", 128, 108},  // max(78, 108) = 108
-		{"256MiB", 256, 217},  // max(206, 217) = 217
+		{"64MiB", 64, 54},    // max(14, 54) = 54
+		{"128MiB", 128, 108}, // max(78, 108) = 108
+		{"256MiB", 256, 217}, // max(206, 217) = 217
 		{"333MiB (crossover)", 333, 283},
 		{"334MiB", 334, 284},
 		{"500MiB (default request)", 500, 450}, // max(450, 425) = 450 (unchanged)
-		{"1000MiB", 1000, 950}, // max(950, 850) = 950 (unchanged)
+		{"1000MiB", 1000, 950},                 // max(950, 850) = 950 (unchanged)
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -77,5 +77,90 @@ func TestGetGatewayResourceSettings_SmallOverride(t *testing.T) {
 	}
 	if got.GomemlimitMiB != 86 { // 108 * 0.80 = 86.4 → 86
 		t.Errorf("GomemlimitMiB = %d, want 86", got.GomemlimitMiB)
+	}
+}
+
+func TestNormalizeCollectorGatewayConfig_DefaultsMissingBlocks(t *testing.T) {
+	tests := []struct {
+		name string
+		cfg  *common.OdigosConfiguration
+	}{
+		{
+			name: "missing collectorGateway",
+			cfg:  &common.OdigosConfiguration{},
+		},
+		{
+			name: "legacy collectorGateway without serviceGraph",
+			cfg: &common.OdigosConfiguration{
+				CollectorGateway: &common.CollectorGatewayConfiguration{},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := normalizeCollectorGatewayConfig(tt.cfg)
+
+			if got.ServiceGraph == nil {
+				t.Fatal("ServiceGraph = nil, want default config")
+			}
+			if got.ServiceGraph.Disabled == nil {
+				t.Fatal("ServiceGraph.Disabled = nil, want false")
+			}
+			if *got.ServiceGraph.Disabled {
+				t.Fatal("ServiceGraph.Disabled = true, want false")
+			}
+			if got.ClusterMetricsEnabled == nil {
+				t.Fatal("ClusterMetricsEnabled = nil, want false")
+			}
+			if *got.ClusterMetricsEnabled {
+				t.Fatal("ClusterMetricsEnabled = true, want false")
+			}
+		})
+	}
+}
+
+func TestNormalizeCollectorGatewayConfig_PreservesConfiguredValues(t *testing.T) {
+	serviceGraphDisabled := true
+	clusterMetricsEnabled := true
+	httpsProxy := "http://proxy.example:8080"
+	nodeSelector := map[string]string{"pool": "telemetry"}
+
+	cfg := &common.OdigosConfiguration{
+		CollectorGateway: &common.CollectorGatewayConfiguration{
+			ServiceGraph: &common.ServiceGraphOptions{
+				Disabled:                  &serviceGraphDisabled,
+				ExtraDimensions:           []string{"tenant"},
+				VirtualNodePeerAttributes: []string{"peer.service"},
+			},
+			ClusterMetricsEnabled: &clusterMetricsEnabled,
+			HttpsProxyAddress:     &httpsProxy,
+			NodeSelector:          &nodeSelector,
+			DeploymentName:        "custom-gateway",
+		},
+	}
+
+	got := normalizeCollectorGatewayConfig(cfg)
+
+	if got.ServiceGraph == nil || got.ServiceGraph.Disabled == nil || !*got.ServiceGraph.Disabled {
+		t.Fatalf("ServiceGraph.Disabled = %#v, want true", got.ServiceGraph)
+	}
+	if len(got.ServiceGraph.ExtraDimensions) != 1 || got.ServiceGraph.ExtraDimensions[0] != "tenant" {
+		t.Fatalf("ExtraDimensions = %#v, want [tenant]", got.ServiceGraph.ExtraDimensions)
+	}
+	if len(got.ServiceGraph.VirtualNodePeerAttributes) != 1 || got.ServiceGraph.VirtualNodePeerAttributes[0] != "peer.service" {
+		t.Fatalf("VirtualNodePeerAttributes = %#v, want [peer.service]", got.ServiceGraph.VirtualNodePeerAttributes)
+	}
+	if got.ClusterMetricsEnabled == nil || !*got.ClusterMetricsEnabled {
+		t.Fatalf("ClusterMetricsEnabled = %#v, want true", got.ClusterMetricsEnabled)
+	}
+	if got.HttpsProxyAddress == nil || *got.HttpsProxyAddress != httpsProxy {
+		t.Fatalf("HttpsProxyAddress = %#v, want %q", got.HttpsProxyAddress, httpsProxy)
+	}
+	if got.NodeSelector == nil || (*got.NodeSelector)["pool"] != "telemetry" {
+		t.Fatalf("NodeSelector = %#v, want pool=telemetry", got.NodeSelector)
+	}
+	if got.DeploymentName != "custom-gateway" {
+		t.Fatalf("DeploymentName = %q, want custom-gateway", got.DeploymentName)
 	}
 }
