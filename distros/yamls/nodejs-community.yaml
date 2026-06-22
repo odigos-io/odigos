@@ -32,6 +32,6 @@ spec:
       supported: true
     traceVerbosity:
       supportDisablingOdigosAgentLibraries: true
-  ownDiagnostics:
+  ownLogs:
     odigosAgentOwnLogerSupported: true
     openTelemetryComponentsLoggerSupported: true
