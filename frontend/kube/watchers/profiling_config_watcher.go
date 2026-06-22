@@ -38,6 +38,9 @@ func StartProfilingConfigWatcher(
 			log.Error("effective-config parse failed; leaving profiling ingest state unchanged", "err", err)
 			return
 		}
+		// Store sizing (profiling.ui.*) is a static Helm value read once at startup; a change rolls
+		// the UI pod via the deployment's odigos-config checksum annotation. Here we only toggle the
+		// OTLP ingest gate, which must react without a restart.
 		profilingEnabledNew := services.ProfilingEnabledFromOdigosConfig(cfg)
 		profilingEnabledOld := gate.IsEnabled()
 		gate.Set(profilingEnabledNew)
