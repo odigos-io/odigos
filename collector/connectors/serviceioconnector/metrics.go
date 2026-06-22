@@ -12,11 +12,14 @@ import (
 )
 
 const attributeHashSeparator = byte(0)
+const metricSeriesTTL = 15 * time.Minute
 
 type metricSeries struct {
-	dimensions pcommon.Map
-	resource   pcommon.Map
-	count      int64
+	dimensions  pcommon.Map
+	resource    pcommon.Map
+	count       int64
+	startTime   time.Time
+	lastUpdated time.Time
 }
 
 // hashAttributes returns a deterministic hash of sorted metric attribute names and values.
@@ -49,9 +52,6 @@ func (c *serviceioConnector) nowWithOffset() time.Time {
 
 func (c *serviceioConnector) buildMetrics() (pmetric.Metrics, error) {
 	m := pmetric.NewMetrics()
-	if len(c.keyToMetric) == 0 {
-		return m, nil
-	}
 
 	type resourceGroup struct {
 		resource   pcommon.Map
@@ -60,6 +60,11 @@ func (c *serviceioConnector) buildMetrics() (pmetric.Metrics, error) {
 
 	c.seriesMutex.Lock()
 	defer c.seriesMutex.Unlock()
+
+	c.pruneStaleMetricSeriesLocked(time.Now())
+	if len(c.keyToMetric) == 0 {
+		return m, nil
+	}
 
 	grouped := make(map[uint64]*resourceGroup)
 	for _, series := range c.keyToMetric {
@@ -86,7 +91,7 @@ func (c *serviceioConnector) buildMetrics() (pmetric.Metrics, error) {
 
 		for _, series := range group.seriesList {
 			dp := mCount.Sum().DataPoints().AppendEmpty()
-			dp.SetStartTimestamp(pcommon.NewTimestampFromTime(c.startTime))
+			dp.SetStartTimestamp(pcommon.NewTimestampFromTime(series.startTime))
 			dp.SetTimestamp(pcommon.NewTimestampFromTime(c.nowWithOffset()))
 			dp.SetIntValue(series.count)
 			series.dimensions.CopyTo(dp.Attributes())
@@ -95,6 +100,15 @@ func (c *serviceioConnector) buildMetrics() (pmetric.Metrics, error) {
 	}
 
 	return m, nil
+}
+
+func (c *serviceioConnector) pruneStaleMetricSeriesLocked(now time.Time) {
+	staleBefore := now.Add(-metricSeriesTTL)
+	for key, series := range c.keyToMetric {
+		if series.lastUpdated.Before(staleBefore) {
+			delete(c.keyToMetric, key)
+		}
+	}
 }
 
 func (c *serviceioConnector) flushMetrics(ctx context.Context) error {

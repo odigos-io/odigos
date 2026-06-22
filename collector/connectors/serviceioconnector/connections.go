@@ -1,6 +1,8 @@
 package serviceioconnector
 
 import (
+	"time"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
@@ -66,6 +68,7 @@ func (c *serviceioConnector) aggregateConnectionsFromTree(tree *TraceTree) bool 
 	c.seriesMutex.Lock()
 	defer c.seriesMutex.Unlock()
 
+	now := time.Now()
 	added := false
 	for _, instance := range tree.ServiceInstances {
 		if !c.isActiveSourceInstance(instance) {
@@ -82,8 +85,10 @@ func (c *serviceioConnector) aggregateConnectionsFromTree(tree *TraceTree) bool 
 			if series.count == 0 {
 				series.dimensions = attributes
 				series.resource = buildMetricResourceAttributes(instance)
+				series.startTime = now
 			}
 			series.count++
+			series.lastUpdated = now
 			c.keyToMetric[key] = series
 			added = true
 		}
