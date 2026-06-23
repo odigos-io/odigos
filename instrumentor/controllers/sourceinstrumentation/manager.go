@@ -47,15 +47,14 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		return err
 	}
 
-	// Workload reconcilers catch workloads created after their Source, and updates while the
-	// workload's InstrumentationConfig is missing (for example after GitOps replace).
-	workloadEventFilter := odigospredicate.WorkloadCreateOrMissingInstrumentationConfig(mgr.GetClient())
-
+	// Workload and Namespace reconcilers exist to catch the case where one of these entities is created
+	// after the Source that instruments it (because Sources can exist independently of entities).
+	// For that reason, we only watch for Create events on these controllers.
 	err = builder.
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-deployment").
 		For(&appsv1.Deployment{}).
-		WithEventFilter(workloadEventFilter).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
 		Complete(&DeploymentReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -68,7 +67,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-daemonset").
 		For(&appsv1.DaemonSet{}).
-		WithEventFilter(workloadEventFilter).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
 		Complete(&DaemonSetReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -81,7 +80,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-statefulset").
 		For(&appsv1.StatefulSet{}).
-		WithEventFilter(workloadEventFilter).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
 		Complete(&StatefulSetReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -94,7 +93,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-cronjob").
 		For(&batchv1.CronJob{}).
-		WithEventFilter(workloadEventFilter).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
 		Complete(&CronJobReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -120,7 +119,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-instrumentationconfig").
 		For(&v1alpha1.InstrumentationConfig{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -136,7 +135,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 			ControllerManagedBy(mgr).
 			Named("sourceinstrumentation-deploymentconfig").
 			For(&openshiftappsv1.DeploymentConfig{}).
-			WithEventFilter(workloadEventFilter).
+			WithEventFilter(&odigospredicate.CreationPredicate{}).
 			Complete(&DeploymentConfigReconciler{
 				Client: mgr.GetClient(),
 				Scheme: mgr.GetScheme(),
@@ -152,7 +151,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 			ControllerManagedBy(mgr).
 			Named("sourceinstrumentation-rollout").
 			For(&argorolloutsv1alpha1.Rollout{}).
-			WithEventFilter(workloadEventFilter).
+			WithEventFilter(&odigospredicate.CreationPredicate{}).
 			Complete(&RolloutReconciler{
 				Client: mgr.GetClient(),
 				Scheme: mgr.GetScheme(),

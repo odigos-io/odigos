@@ -142,41 +142,6 @@ func ClientObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object {
 	}
 }
 
-// PodWorkloadFromObject returns the PodWorkload identity for a workload API object.
-func PodWorkloadFromObject(obj client.Object) (k8sconsts.PodWorkload, error) {
-	if obj == nil {
-		return k8sconsts.PodWorkload{}, ErrKindNotSupported
-	}
-	kind := workloadKindFromObject(obj)
-	if kind == "" {
-		return k8sconsts.PodWorkload{}, ErrKindNotSupported
-	}
-	return k8sconsts.PodWorkload{
-		Name:      obj.GetName(),
-		Namespace: obj.GetNamespace(),
-		Kind:      kind,
-	}, nil
-}
-
-func workloadKindFromObject(obj client.Object) k8sconsts.WorkloadKind {
-	switch obj.(type) {
-	case *v1.Deployment:
-		return k8sconsts.WorkloadKindDeployment
-	case *v1.DaemonSet:
-		return k8sconsts.WorkloadKindDaemonSet
-	case *v1.StatefulSet:
-		return k8sconsts.WorkloadKindStatefulSet
-	case *batchv1.CronJob:
-		return k8sconsts.WorkloadKindCronJob
-	case *openshiftappsv1.DeploymentConfig:
-		return k8sconsts.WorkloadKindDeploymentConfig
-	case *argorolloutsv1alpha1.Rollout:
-		return k8sconsts.WorkloadKindArgoRollout
-	default:
-		return ""
-	}
-}
-
 func ClientListObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.ObjectList {
 	switch kind {
 	case k8sconsts.WorkloadKindDeployment:

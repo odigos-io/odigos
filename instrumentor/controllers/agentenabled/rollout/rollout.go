@@ -98,6 +98,13 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			return RolloutResult{}, nil
 		}
 
+		// Just because an IC is nil, it doesn't mean the workload is not instrumented.
+		// The workload may be instrumented by a source (and the IC may just temporarily be missing)
+		// So we need to check if the workload is still marked for instrumentation.
+		// For example, in a racey scenario where a workload is deleted and quickly replaced (such as with ArgoCD),
+		// the new workload may exist before the IC is actually garbage collected by the deletion of the old workload.
+		// Without this check, it would look like the IC was intentionally deleted (ie, via sourceinstrumentation controller).
+		// This is a safety check: ic==nil is the signal, but the Source is the source of truth.
 		stillInstrumented, instrumentedErr := workloadStillMarkedForInstrumentation(ctx, c, pw)
 		if instrumentedErr != nil {
 			logger.Error(instrumentedErr, "failed to check if workload is still marked for instrumentation")
