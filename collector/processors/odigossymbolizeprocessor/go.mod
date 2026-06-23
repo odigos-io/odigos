@@ -3,7 +3,6 @@ module github.com/odigos-io/odigos/collector/processors/odigossymbolizeprocessor
 go 1.26.2
 
 require (
-	github.com/ianlancetaylor/demangle v0.0.0-20240312041847-bd984b5ce465
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.54.0
 	go.opentelemetry.io/collector/component/componenttest v0.148.0
