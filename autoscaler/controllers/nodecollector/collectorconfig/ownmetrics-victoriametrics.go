@@ -31,12 +31,9 @@ const (
 	clusterCollectorOwnMetricsOtlpHttpPort = 44318
 )
 
-func odigletMetricsReceiverConfig(odigosNamespace string) config.GenericMap {
-	odigletMetricsTarget := fmt.Sprintf("%s.%s:%d",
-		k8sconsts.OdigletLocalTrafficServiceName,
-		odigosNamespace,
-		k8sconsts.OdigletMetricsServerPort,
-	)
+func odigletMetricsReceiverConfig() config.GenericMap {
+	// The data collection collector runs as a container in the odiglet pod, so it can scrape the odiglet's metrics endpoint over localhost
+	odigletMetricsTarget := fmt.Sprintf("localhost:%d", k8sconsts.OdigletMetricsServerPort)
 
 	keepRegex := fmt.Sprintf("%s|%s", ebpfInstrumentationMetricsRegexPattern, ebpfCoreEventsRegexPattern)
 
@@ -112,7 +109,7 @@ func odigletMetricsPipeline() map[string]config.Pipeline {
 // Assembles a metrics config to be added to the node collector, which scrapes the odiglet for metrics
 func OdigletMetricsConfig(odigosNamespace string) config.Config {
 	return config.Config{
-		Receivers:  odigletMetricsReceiverConfig(odigosNamespace),
+		Receivers:  odigletMetricsReceiverConfig(),
 		Exporters:  odigletMetricsExporterConfig(odigosNamespace),
 		Processors: odigletMetricsProcessorConfig(),
 		Service: config.Service{
