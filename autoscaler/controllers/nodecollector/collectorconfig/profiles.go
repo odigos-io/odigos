@@ -21,30 +21,40 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 		"compression": "none",
 	}, profiling.Exporter)
 
+	processors := config.GenericMap{
+		commonconf.ProfilingNodeFilterProcessor:         commonconf.ProfilingFilterProcessorConfig(),
+		commonconf.ProfilingNodeK8sAttributesProcessor:  commonconf.K8sAttributesProfilesProcessorConfig(),
+		commonconf.ProfilingNodeOdigosProfilesProcessor: commonconf.OdigosProfilesProcessorConfig(),
+		commonconf.ProfilingNodeServiceNameProcessor:    commonconf.ProfilingServiceNameTransformConfig(),
+	}
+	pipelineProcessors := []string{
+		commonconf.ProfilingNodeFilterProcessor,
+		commonconf.ProfilingNodeK8sAttributesProcessor,
+		commonconf.ProfilingNodeOdigosProfilesProcessor,
+	}
+	// Native symbolization is opt-in (profiling.symbolization.native). When on, the
+	// symbolize processor runs after the keep-filter (only retained profiles are
+	// symbolized) and before service-name enrichment.
+	if profiling.NativeSymbolizationEnabled() {
+		processors[commonconf.ProfilingNodeSymbolizeProcessor] = commonconf.OdigosSymbolizeProcessorConfig()
+		pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeSymbolizeProcessor)
+	}
+	pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeServiceNameProcessor)
+
 	return config.Config{
 		Receivers: config.GenericMap{
 			commonconf.ProfilingReceiver: config.GenericMap{},
 		},
-		Processors: config.GenericMap{
-			commonconf.ProfilingNodeFilterProcessor:         commonconf.ProfilingFilterProcessorConfig(),
-			commonconf.ProfilingNodeK8sAttributesProcessor:  commonconf.K8sAttributesProfilesProcessorConfig(),
-			commonconf.ProfilingNodeOdigosProfilesProcessor: commonconf.OdigosProfilesProcessorConfig(),
-			commonconf.ProfilingNodeServiceNameProcessor:    commonconf.ProfilingServiceNameTransformConfig(),
-		},
+		Processors: processors,
 		Exporters: config.GenericMap{
 			commonconf.ProfilingNodeToGatewayExporter: exp,
 		},
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				"profiles": {
-					Receivers: []string{commonconf.ProfilingReceiver},
-					Processors: []string{
-						commonconf.ProfilingNodeFilterProcessor,
-						commonconf.ProfilingNodeK8sAttributesProcessor,
-						commonconf.ProfilingNodeOdigosProfilesProcessor,
-						commonconf.ProfilingNodeServiceNameProcessor,
-					},
-					Exporters: []string{commonconf.ProfilingNodeToGatewayExporter},
+					Receivers:  []string{commonconf.ProfilingReceiver},
+					Processors: pipelineProcessors,
+					Exporters:  []string{commonconf.ProfilingNodeToGatewayExporter},
 				},
 			},
 		},

@@ -114,6 +114,14 @@ func OdigosProfilesProcessorConfig() config.GenericMap {
 	}
 }
 
+// OdigosSymbolizeProcessorConfig is the odigossymbolizeprocessor block on the node
+// collector profiles pipeline. It needs no configuration: native frames are resolved
+// on-host from /proc/<pid>/maps + ELF symbols, and frames the profiler already named
+// (interpreted runtimes, Go) pass through. Defaults to bounded caches and async parsing.
+func OdigosSymbolizeProcessorConfig() config.GenericMap {
+	return config.GenericMap{}
+}
+
 // ProfilingServiceNameTransformConfig sets resource attribute service.name from K8s workload
 // metadata enriched by k8sattributes. Without this, Pyroscope derives labels from
 // process.executable.name and shows names like unknown_service:java.

@@ -36,10 +36,13 @@ func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 	pl, ok := got.Service.Pipelines["profiles"]
 	require.True(t, ok)
 	assert.Equal(t, []string{commonconf.ProfilingReceiver}, pl.Receivers)
+	// Native symbolization is ON by default when profiling is enabled.
+	require.Contains(t, got.Processors, commonconf.ProfilingNodeSymbolizeProcessor)
 	assert.Equal(t, []string{
 		commonconf.ProfilingNodeFilterProcessor,
 		commonconf.ProfilingNodeK8sAttributesProcessor,
 		commonconf.ProfilingNodeOdigosProfilesProcessor,
+		commonconf.ProfilingNodeSymbolizeProcessor,
 		commonconf.ProfilingNodeServiceNameProcessor,
 	}, pl.Processors)
 	assert.Equal(t, []string{commonconf.ProfilingNodeToGatewayExporter}, pl.Exporters)
@@ -52,4 +55,23 @@ func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 	odigosProfilesCfg, ok := got.Processors[commonconf.ProfilingNodeOdigosProfilesProcessor].(config.GenericMap)
 	require.True(t, ok)
 	assert.Equal(t, k8sconsts.OdigosConfigK8sExtensionType, odigosProfilesCfg["odigos_config_extension"])
+}
+
+// TestProfilingPipelineConfig_NativeSymbolizationDisabled drops the symbolize
+// processor when a user explicitly opts out (profiling.symbolization.native: false).
+func TestProfilingPipelineConfig_NativeSymbolizationDisabled(t *testing.T) {
+	on, off := true, false
+	got := ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{
+		Enabled:       &on,
+		Symbolization: &common.ProfilingSymbolizationConfiguration{Native: &off},
+	})
+	require.NotContains(t, got.Processors, commonconf.ProfilingNodeSymbolizeProcessor)
+
+	pl := got.Service.Pipelines["profiles"]
+	assert.Equal(t, []string{
+		commonconf.ProfilingNodeFilterProcessor,
+		commonconf.ProfilingNodeK8sAttributesProcessor,
+		commonconf.ProfilingNodeOdigosProfilesProcessor,
+		commonconf.ProfilingNodeServiceNameProcessor,
+	}, pl.Processors)
 }

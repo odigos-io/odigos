@@ -107,6 +107,7 @@ import (
 	odigoslogsresourceattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor"
 	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
 	odigosprofilesprocessor "github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor"
+	odigossymbolizeprocessor "github.com/odigos-io/odigos/collector/processors/odigossymbolizeprocessor"
 	odigostailsamplingprocessor "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor"
 	odigostracefilterprocessor "github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor"
 	odigostracestateprocessor "github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor"
@@ -310,6 +311,7 @@ func components() (otelcol.Factories, error) {
 		odigostracefilterprocessor.NewFactory(),
 		odigosprofilesprocessor.NewFactory(),
 		odigosvmprofileattrsprocessor.NewFactory(),
+		odigossymbolizeprocessor.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -346,6 +348,7 @@ func components() (otelcol.Factories, error) {
 		odigostracefilterprocessor.NewFactory().Type():       "github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.148.0",
 		odigosprofilesprocessor.NewFactory().Type():          "github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor v0.148.0",
 		odigosvmprofileattrsprocessor.NewFactory().Type():    "github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor v0.148.0",
+		odigossymbolizeprocessor.NewFactory().Type():         "github.com/odigos-io/odigos/collector/processors/odigossymbolizeprocessor v0.148.0",
 	})
 
 	factories.Connectors, err = otelcol.MakeFactoryMap[connector.Factory](
