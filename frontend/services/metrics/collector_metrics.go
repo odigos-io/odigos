@@ -36,9 +36,9 @@ const (
 	metricNodeJSFailedSpans   = "odigos_nodejs_ebpf_instrumentation_output_failed_events"
 	metricNodeJSTooLargeSpans = "odigos_nodejs_ebpf_instrumentation_events_too_larger"
 
-	// eBPF core metrics. rateSumByPod appends an optional `(_total)?`, so omit the suffix here.
-	metricEBPFCoreSentEvents   = "ebpf_events_sent"
-	metricEBPFCoreFailedEvents = "ebpf_events_send_failed"
+	// eBPF core metrics
+	metricEBPFCoreSentEvents   = "odigos_ebpf_events_sent"
+	metricEBPFCoreFailedEvents = "odigos_ebpf_events_send_failed"
 )
 
 type PodRates struct {
