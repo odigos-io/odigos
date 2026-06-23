@@ -43,3 +43,21 @@ telemetry:
         value_type: int
         monotonic: true
       stability: development
+    
+    odigos_ebpf_logs_with_context:
+      enabled: true
+      description: "Total number of captured log records emitted with trace context (trace_id/span_id) attached."
+      unit: "{logs}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+
+    odigos_ebpf_logs_without_context:
+      enabled: true
+      description: "Total number of captured log records emitted without trace context (no active span for the writing thread)."
+      unit: "{logs}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development

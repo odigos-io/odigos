@@ -37,3 +37,19 @@ Total number of bytes read from the eBPF buffer (perf or ring).
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |
 | bytes | Sum | Int | true | Development |
+
+### otelcol_odigos_ebpf_logs_with_context
+
+Total number of captured log records emitted with trace context (trace_id/span_id) attached.
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {logs} | Sum | Int | true | Development |
+
+### otelcol_odigos_ebpf_logs_without_context
+
+Total number of captured log records emitted without trace context (no active span for the writing thread).
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {logs} | Sum | Int | true | Development |
