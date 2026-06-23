@@ -14,10 +14,10 @@ import (
 type EncodingType string
 
 const (
-	// EncodingNone skips serialization entirely (the default, cheapest behavior).
-	EncodingNone EncodingType = "none"
-	// EncodingProto serializes telemetry to OTLP protobuf bytes, like most real destinations.
+	// EncodingProto serializes telemetry to OTLP protobuf bytes, like most real destinations. Default.
 	EncodingProto EncodingType = "proto"
+	// EncodingNone skips serialization entirely
+	EncodingNone EncodingType = "none"
 	// EncodingJSON serializes telemetry to OTLP JSON bytes.
 	EncodingJSON EncodingType = "json"
 )
