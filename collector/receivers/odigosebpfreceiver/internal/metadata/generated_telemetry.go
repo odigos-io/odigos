@@ -30,6 +30,8 @@ type TelemetryBuilder struct {
 	EbpfLostSamples                 metric.Int64Counter
 	EbpfMemoryPressureWaitTimeTotal metric.Int64Counter
 	EbpfTotalBytesRead              metric.Int64Counter
+	OdigosEbpfLogsWithContext       metric.Int64Counter
+	OdigosEbpfLogsWithoutContext    metric.Int64Counter
 }
 
 // TelemetryBuilderOption applies changes to default builder.
@@ -83,6 +85,18 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 		"otelcol_ebpf_total_bytes_read",
 		metric.WithDescription("Total number of bytes read from the eBPF buffer (perf or ring). [Development]"),
 		metric.WithUnit("bytes"),
+	)
+	errs = errors.Join(errs, err)
+	builder.OdigosEbpfLogsWithContext, err = builder.meter.Int64Counter(
+		"otelcol_odigos_ebpf_logs_with_context",
+		metric.WithDescription("Total number of captured log records emitted with trace context (trace_id/span_id) attached. [Development]"),
+		metric.WithUnit("{logs}"),
+	)
+	errs = errors.Join(errs, err)
+	builder.OdigosEbpfLogsWithoutContext, err = builder.meter.Int64Counter(
+		"otelcol_odigos_ebpf_logs_without_context",
+		metric.WithDescription("Total number of captured log records emitted without trace context (no active span for the writing thread). [Development]"),
+		metric.WithUnit("{logs}"),
 	)
 	errs = errors.Join(errs, err)
 	return &builder, errs
