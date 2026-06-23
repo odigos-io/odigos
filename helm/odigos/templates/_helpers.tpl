@@ -20,8 +20,6 @@
 {{- if $sec -}}
 {{- if index $sec.data "odigos-onprem-token" -}}
 {{- index $sec.data "odigos-onprem-token" | b64dec -}}
-{{- else if index $sec.data "ODIGOS_ONPREM_TOKEN" -}}
-{{- index $sec.data "ODIGOS_ONPREM_TOKEN" | b64dec -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
