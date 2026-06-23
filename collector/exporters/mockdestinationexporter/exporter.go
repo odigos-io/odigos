@@ -41,41 +41,56 @@ func (e *MockDestinationExporter) Capabilities() consumer.Capabilities {
 }
 
 func (e *MockDestinationExporter) ConsumeTraces(ctx context.Context, traces ptrace.Traces) error {
+	var encoded []byte
 	switch e.config.Encoding {
 	case EncodingProto:
-		e.discardEncoded((&ptrace.ProtoMarshaler{}).MarshalTraces(traces))
+		encoded = e.encode((&ptrace.ProtoMarshaler{}).MarshalTraces(traces))
 	case EncodingJSON:
-		e.discardEncoded((&ptrace.JSONMarshaler{}).MarshalTraces(traces))
+		encoded = e.encode((&ptrace.JSONMarshaler{}).MarshalTraces(traces))
 	}
-	return e.mockExport(ctx)
+	err := e.mockExport(ctx)
+	e.discardEncoded(encoded)
+	return err
 }
 
 func (e *MockDestinationExporter) ConsumeMetrics(ctx context.Context, metrics pmetric.Metrics) error {
+	var encoded []byte
 	switch e.config.Encoding {
 	case EncodingProto:
-		e.discardEncoded((&pmetric.ProtoMarshaler{}).MarshalMetrics(metrics))
+		encoded = e.encode((&pmetric.ProtoMarshaler{}).MarshalMetrics(metrics))
 	case EncodingJSON:
-		e.discardEncoded((&pmetric.JSONMarshaler{}).MarshalMetrics(metrics))
+		encoded = e.encode((&pmetric.JSONMarshaler{}).MarshalMetrics(metrics))
 	}
-	return e.mockExport(ctx)
+	err := e.mockExport(ctx)
+	e.discardEncoded(encoded)
+	return err
 }
 
 func (e *MockDestinationExporter) ConsumeLogs(ctx context.Context, logs plog.Logs) error {
+	var encoded []byte
 	switch e.config.Encoding {
 	case EncodingProto:
-		e.discardEncoded((&plog.ProtoMarshaler{}).MarshalLogs(logs))
+		encoded = e.encode((&plog.ProtoMarshaler{}).MarshalLogs(logs))
 	case EncodingJSON:
-		e.discardEncoded((&plog.JSONMarshaler{}).MarshalLogs(logs))
+		encoded = e.encode((&plog.JSONMarshaler{}).MarshalLogs(logs))
 	}
-	return e.mockExport(ctx)
+	err := e.mockExport(ctx)
+	e.discardEncoded(encoded)
+	return err
 }
 
-// discardEncoded throws away the serialized bytes. The marshaling work itself is the point:
-// it simulates the CPU a real destination spends encoding telemetry into a wire format.
-func (e *MockDestinationExporter) discardEncoded(encoded []byte, err error) {
+// encode returns the serialized bytes so they stay referenced for the duration of the
+// "send". Real exporters hold the encoded payload in memory until the export completes.
+func (e *MockDestinationExporter) encode(encoded []byte, err error) []byte {
 	if err != nil {
 		e.logger.Warn("mock destination failed to encode telemetry", zap.Error(err))
 	}
+	return encoded
+}
+
+// discardEncoded throws away the serialized bytes once the "send" is done, mirroring a real
+// exporter releasing the payload after the export response returns.
+func (e *MockDestinationExporter) discardEncoded(encoded []byte) {
 	_ = encoded
 }
 
