@@ -21,7 +21,7 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 	// which were created before this condition was introduced
 	// remove this: aug 2025
 	if len(ic.Status.RuntimeDetailsByContainer) > 0 {
-		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
+		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    v1alpha1.RuntimeDetectionStatusConditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
@@ -33,7 +33,7 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 	// if the workload has no available replicas, we can't detect the runtime
 	if workloadObj.AvailableReplicas() == 0 &&
 		workloadObj.GetObjectKind().GroupVersionKind().Kind != string(k8sconsts.WorkloadKindCronJob) {
-		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
+		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    v1alpha1.RuntimeDetectionStatusConditionType,
 			Status:  metav1.ConditionFalse,
 			Reason:  string(v1alpha1.RuntimeDetectionReasonNoRunningPods),
@@ -50,14 +50,14 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 		}
 	}
 	if isCronJob {
-		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
+		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    v1alpha1.RuntimeDetectionStatusConditionType,
 			Status:  metav1.ConditionUnknown,
 			Reason:  string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
 			Message: "Runtime detection pending Job to start",
 		})
 	} else {
-		ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
+		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    v1alpha1.RuntimeDetectionStatusConditionType,
 			Status:  metav1.ConditionUnknown,
 			Reason:  string(v1alpha1.RuntimeDetectionReasonWaitingForDetection),
@@ -84,7 +84,7 @@ func initiateAgentEnabledConditionIfMissing(ic *v1alpha1.InstrumentationConfig) 
 		message = "agent disabled while no running pods available to detect source runtime"
 	}
 
-	ic.Status.Conditions = append(ic.Status.Conditions, metav1.Condition{
+	meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 		Type:    v1alpha1.AgentEnabledStatusConditionType,
 		Status:  metav1.ConditionUnknown,
 		Reason:  reason,
