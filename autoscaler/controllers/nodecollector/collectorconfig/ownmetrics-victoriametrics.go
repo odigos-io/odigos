@@ -24,6 +24,9 @@ const (
 	// keep only the eBPF instrumentation counters (java, python, nodejs) exposed by the odiglet.
 	ebpfInstrumentationMetricsRegexPattern = "odigos_(java|python|nodejs)_ebpf_instrumentation_.*"
 
+	// keep the ebpf-core shared-buffer event counters (emitted by the go/java greatwall instrumentations for example)
+	ebpfCoreEventsRegexPattern = "odigos_ebpf_events_(sent|send_failed)_.*"
+
 	// the cluster collector's own-metrics OTLP http receiver listens on this port.
 	clusterCollectorOwnMetricsOtlpHttpPort = 44318
 )
@@ -34,6 +37,8 @@ func odigletMetricsReceiverConfig(odigosNamespace string) config.GenericMap {
 		odigosNamespace,
 		k8sconsts.OdigletMetricsServerPort,
 	)
+
+	keepRegex := fmt.Sprintf("%s|%s", ebpfInstrumentationMetricsRegexPattern, ebpfCoreEventsRegexPattern)
 
 	return config.GenericMap{
 		odigletMetricsReceiverName: config.GenericMap{
@@ -51,7 +56,7 @@ func odigletMetricsReceiverConfig(odigosNamespace string) config.GenericMap {
 						"metric_relabel_configs": []config.GenericMap{
 							{
 								"source_labels": []string{"__name__"},
-								"regex":         ebpfInstrumentationMetricsRegexPattern,
+								"regex":         keepRegex,
 								"action":        "keep",
 							},
 						},
