@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
@@ -93,6 +94,24 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		}
 		if !hasAgents {
 			logger.Info("skipping rollout - workload already runs without odigos agents",
+				"workload", pw.Name, "namespace", pw.Namespace)
+			return RolloutResult{}, nil
+		}
+
+		// Just because an IC is nil, it doesn't mean the workload is not instrumented.
+		// The workload may be instrumented by a source (and the IC may just temporarily be missing)
+		// So we need to check if the workload is still marked for instrumentation.
+		// For example, in a racey scenario where a workload is deleted and quickly replaced (such as with ArgoCD),
+		// the new workload may exist before the IC is actually garbage collected by the deletion of the old workload.
+		// Without this check, it would look like the IC was intentionally deleted (ie, via sourceinstrumentation controller).
+		// This is a safety check: ic==nil is the signal, but the Source is the source of truth.
+		stillInstrumented, instrumentedErr := workloadStillMarkedForInstrumentation(ctx, c, pw)
+		if instrumentedErr != nil {
+			logger.Error(instrumentedErr, "failed to check if workload is still marked for instrumentation")
+			return RolloutResult{}, instrumentedErr
+		}
+		if stillInstrumented {
+			logger.Info("skipping uninstrumentation rollout - workload is still covered by an active source",
 				"workload", pw.Name, "namespace", pw.Namespace)
 			return RolloutResult{}, nil
 		}
@@ -438,8 +457,19 @@ func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Ob
 		return false, fmt.Errorf("workloadHasOdigosAgents: listing pods failed: %w", err)
 	}
 
-	// any non-empty list means the workload still runs instrumented pods.
 	return len(pods.Items) > 0, nil
+}
+
+func workloadStillMarkedForInstrumentation(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (bool, error) {
+	sources, err := odigosv1alpha1.GetSources(ctx, c, pw)
+	if err != nil {
+		return false, err
+	}
+	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, err)
+	if err != nil {
+		return false, err
+	}
+	return enabled, nil
 }
 
 // shouldTriggerRollback checks if rollback should be triggered based on backoff state and timing.
