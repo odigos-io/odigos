@@ -10,6 +10,18 @@ import (
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 )
 
+// EncodingType controls how the exporter serializes telemetry before "sending" it.
+type EncodingType string
+
+const (
+	// EncodingNone skips serialization entirely (the default, cheapest behavior).
+	EncodingNone EncodingType = "none"
+	// EncodingProto serializes telemetry to OTLP protobuf bytes, like most real destinations.
+	EncodingProto EncodingType = "proto"
+	// EncodingJSON serializes telemetry to OTLP JSON bytes.
+	EncodingJSON EncodingType = "json"
+)
+
 // Config contains the main configuration options for the mockdestination exporter
 type Config struct {
 
@@ -21,6 +33,11 @@ type Config struct {
 	// Set to 0 to disable rejection, and to 1 to reject all exports.
 	// Can be used to simulate destinations that are back-pressuring the collector.
 	RejectFraction float64 `mapstructure:"reject_fraction"`
+
+	// Encoding controls whether the exporter serializes telemetry before discarding it.
+	// Real destinations marshal pdata into a wire format, which costs CPU proportional to
+	// the payload size. Use "proto" or "json" to simulate that cost, or "none" to skip it.
+	Encoding EncodingType `mapstructure:"encoding"`
 
 	// these configs controls configures the various export options.
 	// default values (when not set) are used just like the otlp exporter.
@@ -35,6 +52,11 @@ func (c *Config) Validate() error {
 	}
 	if c.RejectFraction < 0 || c.RejectFraction > 1 {
 		return fmt.Errorf("reject_fraction must be a fraction between 0 and 1")
+	}
+	switch c.Encoding {
+	case EncodingNone, EncodingProto, EncodingJSON:
+	default:
+		return fmt.Errorf("encoding must be one of %q, %q or %q", EncodingNone, EncodingProto, EncodingJSON)
 	}
 	return nil
 }

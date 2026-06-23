@@ -9,6 +9,7 @@ The following configuration options are available:
 
 - `response_duration` can be used to set the duration of time until the export response is returned. can be used to simulate slow receivers (due to errors, network issues, etc).
 - `reject_fraction` number from 0 to 1 that determines the fraction of exports that mocks a rejection of the export request.
+- `encoding` one of `none` (default), `proto` or `json`. When set to `proto` or `json`, the exporter serializes the telemetry into the OTLP wire format and discards the result. This simulates the CPU a real destination spends encoding data, which scales with the payload size.
 
 Example:
 
@@ -16,4 +17,5 @@ Example:
 │   mockdestination:
 │     reject_fraction: 0.5
 │     response_duration: 500ms
+│     encoding: proto
 ```

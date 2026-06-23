@@ -28,6 +28,7 @@ func createDefaultConfig() component.Config {
 	return &Config{
 		ResponseDuration: time.Millisecond * 100,
 		RejectFraction:   0,
+		Encoding:         EncodingNone,
 		TimeoutConfig:    exporterhelper.NewDefaultTimeoutConfig(),
 		RetryConfig:      configretry.NewDefaultBackOffConfig(),
 		QueueConfig:      configoptional.Some(exporterhelper.NewDefaultQueueConfig()),

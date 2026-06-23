@@ -41,15 +41,42 @@ func (e *MockDestinationExporter) Capabilities() consumer.Capabilities {
 }
 
 func (e *MockDestinationExporter) ConsumeTraces(ctx context.Context, traces ptrace.Traces) error {
+	switch e.config.Encoding {
+	case EncodingProto:
+		e.discardEncoded((&ptrace.ProtoMarshaler{}).MarshalTraces(traces))
+	case EncodingJSON:
+		e.discardEncoded((&ptrace.JSONMarshaler{}).MarshalTraces(traces))
+	}
 	return e.mockExport(ctx)
 }
 
 func (e *MockDestinationExporter) ConsumeMetrics(ctx context.Context, metrics pmetric.Metrics) error {
+	switch e.config.Encoding {
+	case EncodingProto:
+		e.discardEncoded((&pmetric.ProtoMarshaler{}).MarshalMetrics(metrics))
+	case EncodingJSON:
+		e.discardEncoded((&pmetric.JSONMarshaler{}).MarshalMetrics(metrics))
+	}
 	return e.mockExport(ctx)
 }
 
 func (e *MockDestinationExporter) ConsumeLogs(ctx context.Context, logs plog.Logs) error {
+	switch e.config.Encoding {
+	case EncodingProto:
+		e.discardEncoded((&plog.ProtoMarshaler{}).MarshalLogs(logs))
+	case EncodingJSON:
+		e.discardEncoded((&plog.JSONMarshaler{}).MarshalLogs(logs))
+	}
 	return e.mockExport(ctx)
+}
+
+// discardEncoded throws away the serialized bytes. The marshaling work itself is the point:
+// it simulates the CPU a real destination spends encoding telemetry into a wire format.
+func (e *MockDestinationExporter) discardEncoded(encoded []byte, err error) {
+	if err != nil {
+		e.logger.Warn("mock destination failed to encode telemetry", zap.Error(err))
+	}
+	_ = encoded
 }
 
 func (e *MockDestinationExporter) mockExport(context.Context) error {

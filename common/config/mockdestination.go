@@ -10,6 +10,7 @@ import (
 const (
 	mockResponseDurationMs = "MOCK_RESPONSE_DURATION_MS"
 	rejectFraction         = "MOCK_REJECT_FRACTION"
+	mockEncoding           = "MOCK_ENCODING"
 )
 
 type Mock struct{}
@@ -26,11 +27,16 @@ func (s *Mock) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 	rejectFractionStr := dest.GetConfig()[rejectFraction]
 	reject, _ := strconv.ParseFloat(rejectFractionStr, 64)
 
-	currentConfig.Exporters[exporterName] = GenericMap{
+	exporterConfig := GenericMap{
 		"response_duration": fmt.Sprintf("%sms", responseDuration),
 		// convert string to float
 		"reject_fraction": reject,
 	}
+	// encoding simulates the CPU a real destination spends serializing telemetry to a wire format.
+	if encoding := dest.GetConfig()[mockEncoding]; encoding != "" {
+		exporterConfig["encoding"] = encoding
+	}
+	currentConfig.Exporters[exporterName] = exporterConfig
 	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		tracesPipelineName := "traces/mockdestination-" + dest.GetID()
