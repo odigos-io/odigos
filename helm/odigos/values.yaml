@@ -1777,7 +1777,8 @@ sampling:
 # @schema
 # description: |-
 #   Set to true if you are providing the odigos-pro secret externally (not managed by this chart).
-#   When true, the chart will not create the secret but will still enable Pro features if the secret exists.
+#   When true, the chart will not create the odigos-pro secret but will still enable Pro features if the secret exists.
+#   The chart will read the token from the existing odigos-pro secret to create the enterprise registry pull secret.
 #   This is useful for GitOps workflows where secrets are managed separately.
 # @schema
 # externalOnpremTokenSecret: false
