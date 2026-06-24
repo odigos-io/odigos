@@ -17,21 +17,23 @@ type fakeResolver struct {
 	gotName string
 }
 
-func (f *fakeResolver) resolve(pid int64, m moduleRef, addr uint64) (name, source string, ok bool) {
-	f.gotPID = pid
-	if n, ok := f.names[addr]; ok {
-		f.gotName = m.Name
-		return n, "symtab", true
+func (f *fakeResolver) resolveBatch(reqs []frameRequest) []frameResult {
+	out := make([]frameResult, len(reqs))
+	for i, req := range reqs {
+		f.gotPID = req.pid
+		if n, ok := f.names[req.addr]; ok {
+			f.gotName = req.mod.Name
+			out[i] = frameResult{name: n, source: "symtab", ok: true}
+		}
 	}
-	return "", "", false
+	return out
 }
 
-func (f *fakeResolver) prewarm(int64) {}
-func (f *fakeResolver) close()        {}
+func (f *fakeResolver) close() {}
 
 // newTestProcessor wires a fake resolver into a processor for platform-neutral tests.
 func newTestProcessor(fr resolver) *symbolizeProcessor {
-	return &symbolizeProcessor{logger: zap.NewNop(), cfg: &Config{}, resolver: fr, seen: map[int64]struct{}{}}
+	return &symbolizeProcessor{logger: zap.NewNop(), cfg: &Config{}, resolver: fr}
 }
 
 // buildProfiles constructs a one-resource batch: pid 4242, module "libfix.so",
