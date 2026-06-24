@@ -180,6 +180,62 @@ auth:
   tolerations: []
   affinity: []
 
+# Cloud connectors (platformType = connector). Feature-gated; when disabled, none of the
+# connector-runtime controller, PostgreSQL, migration Job or CRD are installed.
+cloudConnectors:
+  # -- Master switch for the entire cloud-connectors subsystem.
+  enabled: false
+
+  # The connector-runtime controller that reconciles OdigosCloudConnector CRs into connector workloads.
+  connectorRuntime:
+    # -- Override the controller image (empty = built-in odigos-enterprise-connector-runtime).
+    image: ''
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    nodeSelector:
+      kubernetes.io/os: linux
+    tolerations: []
+    affinity: {}
+
+  # The AWS provider connector runtime image the controller stamps onto per-account connector Deployments.
+  aws:
+    # -- Override the AWS connector image (empty = built-in odigos-enterprise-connector-aws).
+    image: ''
+
+  # Bundled PostgreSQL (durable store for connector state) + Atlas migrations.
+  postgres:
+    # -- Override the postgres image (empty = built-in odigos-enterprise-connector-postgres).
+    image: ''
+    port: 5432
+    portName: postgres
+    database: odigos_central
+    username: odigos
+    # -- PostgreSQL password (dev default; override for non-dev installs or use an external secret).
+    password: odigos
+    persistence:
+      enabled: true
+      size: 20Gi
+      accessModes:
+        - ReadWriteOnce
+      # -- Storage class (empty = cluster default)
+      storageClassName: ''
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: '1'
+        memory: 1Gi
+    nodeSelector:
+      kubernetes.io/os: linux
+    tolerations: []
+    affinity: {}
+
 # OpenShift-specific toggles (RBAC/SELinux/images)
 openshift:
   enabled: false

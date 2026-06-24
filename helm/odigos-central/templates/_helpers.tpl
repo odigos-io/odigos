@@ -36,3 +36,15 @@ imagePullSecrets:
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/* Cloud connectors are installed only when the install secret exists AND the feature is enabled. */}}
+{{- define "connectors.enabled" -}}
+  {{- if and (include "odigos.secretExists" .) .Values.cloudConnectors.enabled -}}
+true
+  {{- end -}}
+{{- end -}}
+
+{{/* PostgreSQL DSN for the connector store, assembled from values. */}}
+{{- define "connectors.postgresDSN" -}}
+postgres://{{ .Values.cloudConnectors.postgres.username }}:{{ .Values.cloudConnectors.postgres.password }}@odigos-connector-postgres:{{ .Values.cloudConnectors.postgres.port }}/{{ .Values.cloudConnectors.postgres.database }}?sslmode=disable
+{{- end -}}
