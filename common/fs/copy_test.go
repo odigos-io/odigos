@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -160,6 +161,47 @@ func TestRemoveChangedFilesFromKeepMap_RenamesChangedFile(t *testing.T) {
 		if _, err := os.Stat(dstPath); err != nil {
 			t.Fatalf("renamed file %s does not exist: %v", dstPath, err)
 		}
+	}
+}
+
+func TestCopyAgentsDirectoryToHost_AbortsRsyncWhenCriticalFilePreparationFails(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("fake rsync shell script requires a Unix shell")
+	}
+
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	srcCriticalFile := filepath.Join(srcDir, "loader", "loader.so")
+	if err := os.MkdirAll(filepath.Dir(srcCriticalFile), 0755); err != nil {
+		t.Fatalf("mkdir source critical file dir: %v", err)
+	}
+	if err := os.WriteFile(srcCriticalFile, []byte("new-loader"), 0644); err != nil {
+		t.Fatalf("write source critical file: %v", err)
+	}
+
+	dstCriticalPathAsDir := filepath.Join(dstDir, "loader", "loader.so")
+	if err := os.MkdirAll(dstCriticalPathAsDir, 0755); err != nil {
+		t.Fatalf("mkdir destination critical path as dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dstDir, "unrelated"), []byte("forces non-empty destination"), 0644); err != nil {
+		t.Fatalf("write unrelated destination file: %v", err)
+	}
+
+	rsyncMarker := filepath.Join(t.TempDir(), "rsync-invoked")
+	fakeRsyncPath := filepath.Join(t.TempDir(), "fake-rsync")
+	fakeRsync := fmt.Sprintf("#!/bin/sh\ntouch %q\nexit 0\n", rsyncMarker)
+	if err := os.WriteFile(fakeRsyncPath, []byte(fakeRsync), 0755); err != nil {
+		t.Fatalf("write fake rsync: %v", err)
+	}
+
+	err := CopyAgentsDirectoryToHost(srcDir, dstDir, &fakeRsyncPath)
+	if err == nil {
+		t.Fatalf("CopyAgentsDirectoryToHost should fail before rsync when critical file preparation fails")
+	}
+
+	if _, statErr := os.Stat(rsyncMarker); !os.IsNotExist(statErr) {
+		t.Fatalf("rsync should not be invoked after critical file preparation failure")
 	}
 }
 
