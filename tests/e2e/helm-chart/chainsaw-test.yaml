@@ -31,7 +31,7 @@ spec:
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test \
                   --set image.tag="$COMMIT_HASH" \
-                  --set imagePrefix=public.ecr.aws/y2v0v6s7 \
+                  --set imagePrefix=public.ecr.aws/y7i2a5w6 \
                   --set nodeSelector."kubernetes\.io/os"=linux \
                   --set collectorNode.memoryLimit=560 \
                   --set collectorNode.limitCPUm=550
@@ -126,7 +126,6 @@ spec:
         - assert:
             timeout: 3m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
-
 
     - name: Odigos pipeline ready
       try:

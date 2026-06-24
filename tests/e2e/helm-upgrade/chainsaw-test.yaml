@@ -114,7 +114,7 @@ spec:
                 helm upgrade odigos $P/helm/odigos \
                   --namespace odigos-test \
                   --set image.tag="$COMMIT_HASH" \
-                  --set imagePrefix=public.ecr.aws/y2v0v6s7 \
+                  --set imagePrefix=public.ecr.aws/y7i2a5w6 \
                   --set nodeSelector."kubernetes\.io/os"=linux
               else
                 helm upgrade odigos $P/helm/odigos \

@@ -11,7 +11,7 @@ spec:
         - script:
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
+                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y7i2a5w6
               else
                 ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               fi
@@ -194,14 +194,14 @@ spec:
             check:
               ($error != null): true
               (contains($stderr, 'Invalid value')): true
-    - name: '[Migration] - Old startlangdetection finalizer is removed and migrated to new combined one'
+    - name: "[Migration] - Old startlangdetection finalizer is removed and migrated to new combined one"
       try:
         - apply:
             file: migration-01-source-with-old-finalizer.yaml
         - assert:
             timeout: 2m
             file: migration-01-assert-source-with-old-finalizer.yaml
-    - name: '[Migration] - Old deleteinstrumentationconfig finalizer is removed and migrated to new combined one'
+    - name: "[Migration] - Old deleteinstrumentationconfig finalizer is removed and migrated to new combined one"
       try:
         - apply:
             file: migration-02-source-with-old-finalizer.yaml

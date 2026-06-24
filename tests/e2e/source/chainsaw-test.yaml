@@ -6,23 +6,23 @@ spec:
   description: This e2e test runs a multi-apps scenario with Source instrumentation
   skipDelete: true
   steps:
-    - name: '[1 - Setup] Prepare destination'
+    - name: "[1 - Setup] Prepare destination"
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
 
-    - name: '[1 - Setup] Install - Simple Demo Apps'
+    - name: "[1 - Setup] Install - Simple Demo Apps"
       try:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
 
-    - name: '[1 - Setup] Install Odigos'
+    - name: "[1 - Setup] Install Odigos"
       try:
         - script:
             timeout: 4m
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
+                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y7i2a5w6
               else
                 ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               fi
@@ -33,49 +33,46 @@ spec:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
 
-    - name: '[1 - Setup] Verify Node Odiglet label has been added'
+    - name: "[1 - Setup] Verify Node Odiglet label has been added"
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
 
-    - name: '[1 - Setup]Assert Trace DB is up'
+    - name: "[1 - Setup]Assert Trace DB is up"
       try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
-    - name: '[1 - Setup] Assert - Simple Demo Apps Installed'
+    - name: "[1 - Setup] Assert - Simple Demo Apps Installed"
       try:
         - assert:
             timeout: 3m
             file: ../../common/assert/simple-demo-installed.yaml
 
-    - name: '[1 - Setup] Add Destination'
+    - name: "[1 - Setup] Add Destination"
       try:
         - apply:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
 
-
-    - name: '[2 - Workload Instrumentation] Instrument Deployments using Sources with otelServiceName field set'
+    - name: "[2 - Workload Instrumentation] Instrument Deployments using Sources with otelServiceName field set"
       try:
         - apply:
             file: 01-sources.yaml
 
-    - name: '[2 - Workload Instrumentation] Assert Runtime Detected'
+    - name: "[2 - Workload Instrumentation] Assert Runtime Detected"
       try:
         - assert:
             timeout: 2m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
-
-    - name: '[2 - Workload Instrumentation] Odigos pipeline ready'
+    - name: "[2 - Workload Instrumentation] Odigos pipeline ready"
       try:
         - assert:
             timeout: 1m
             file: ../../common/assert/pipeline-ready.yaml
 
-
-    - name: '[2 - Workload Instrumentation] Simple-demo instrumented after destination added'
+    - name: "[2 - Workload Instrumentation] Simple-demo instrumented after destination added"
       try:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
@@ -86,7 +83,7 @@ spec:
             timeout: 70s
             content: ../../common/wait_for_rollout.sh
 
-    - name: '[2 - Workload Instrumentation] Shipping (C++) instrumented with OBI container override'
+    - name: "[2 - Workload Instrumentation] Shipping (C++) instrumented with OBI container override"
       try:
         - assert:
             timeout: 4m
@@ -96,7 +93,7 @@ spec:
             name: odiglet
             namespace: odigos-test
 
-    - name: '[2 - Workload Instrumentation] Generate Traffic'
+    - name: "[2 - Workload Instrumentation] Generate Traffic"
       try:
         - apply:
             file: ../../common/apply/generate-traffic-job.yaml
@@ -107,7 +104,7 @@ spec:
         - delete:
             file: ../../common/apply/generate-traffic-job.yaml
 
-    - name: '[2 - Workload Instrumentation] Wait For Trace'
+    - name: "[2 - Workload Instrumentation] Wait For Trace"
       try:
         - script:
             timeout: 1m
@@ -125,7 +122,7 @@ spec:
               java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
               kubectl logs $java_pod_name -n default
 
-    - name: '[2 - Workload Instrumentation] Wait For Shipping Trace (OBI)'
+    - name: "[2 - Workload Instrumentation] Wait For Shipping Trace (OBI)"
       try:
         - script:
             timeout: 3m
@@ -146,7 +143,7 @@ spec:
             name: odiglet
             namespace: odigos-test
 
-    - name: '[2 - Workload Instrumentation] Verify Trace - Context Propagation'
+    - name: "[2 - Workload Instrumentation] Verify Trace - Context Propagation"
       try:
         - script:
             timeout: 3m
@@ -168,7 +165,7 @@ spec:
             name: odiglet
             namespace: odigos-test
 
-    - name: '[2 - Workload Instrumentation] Verify Trace - Span Attributes'
+    - name: "[2 - Workload Instrumentation] Verify Trace - Span Attributes"
       try:
         - script:
             timeout: 3m
@@ -179,7 +176,7 @@ spec:
             name: odiglet
             namespace: odigos-test
 
-    - name: '[2 - Workload Instrumentation] Verify collector metrics are collected by the UI'
+    - name: "[2 - Workload Instrumentation] Verify collector metrics are collected by the UI"
       try:
         - script:
             timeout: 5m
@@ -192,14 +189,14 @@ spec:
                 sleep 5
               done
 
-    - name: '[2 - Workload Instrumentation] Verify collector metrics survive UI pod restart'
+    - name: "[2 - Workload Instrumentation] Verify collector metrics survive UI pod restart"
       try:
         - script:
             timeout: 8m
             content: |
               ../../common/assert_collector_metrics_survive_ui_restart.sh odigos-test
 
-    - name: '[3 - Workload Uninstrumentation] Uninstrument individual deployments'
+    - name: "[3 - Workload Uninstrumentation] Uninstrument individual deployments"
       try:
         - script:
             timeout: 3m
@@ -213,14 +210,13 @@ spec:
                 sleep 5
               done
 
-    - name: '[3 - Workload Uninstrumentation] Assert workloads updated after uninstrumentation'
+    - name: "[3 - Workload Uninstrumentation] Assert workloads updated after uninstrumentation"
       try:
         - assert:
             timeout: 2m
             file: 02-workloads.yaml
 
-
-    - name: 'Uninstall Odigos'
+    - name: "Uninstall Odigos"
       try:
         - script:
             timeout: 2m

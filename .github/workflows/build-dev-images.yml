@@ -4,25 +4,25 @@ on:
   workflow_call: # Workflow trigger
     inputs:
       target_tag:
-        description: 'The tag to use when pushing the images to the registry'
+        description: "The tag to use when pushing the images to the registry"
         required: false
         type: string
       registry:
-        description: 'The registry to push images to'
+        description: "The registry to push images to"
         required: false
         type: string
-        default: public.ecr.aws/y2v0v6s7
+        default: public.ecr.aws/y7i2a5w6
   workflow_dispatch: # Manual trigger
     inputs:
       target_tag:
-        description: 'The tag to use when pushing the images to the registry'
+        description: "The tag to use when pushing the images to the registry"
         required: false
         type: string
       registry:
-        description: 'The registry to push images to'
+        description: "The registry to push images to"
         required: false
         type: string
-        default: public.ecr.aws/y2v0v6s7
+        default: public.ecr.aws/y7i2a5w6
 
 permissions:
   id-token: write
@@ -37,7 +37,7 @@ jobs:
       # If none is provided (as in pull_request), it defaults to github.sha for target_tag
       TARGET_TAG: ${{ (inputs.target_tag || github.event.inputs.target_tag) || github.sha }}
       # For REGISTRY, it falls back to the default value provided here if no input is available.
-      REGISTRY: ${{ (inputs.registry || github.event.inputs.registry) || 'public.ecr.aws/y2v0v6s7' }}
+      REGISTRY: ${{ (inputs.registry || github.event.inputs.registry) || 'public.ecr.aws/y7i2a5w6' }}
       # TF_REGION: us-east-1
 
     steps:
@@ -66,35 +66,33 @@ jobs:
           make build-images TAG=${COMMIT_HASH}
 
           # Tag images for public ECR
-          docker tag ${DOCKER_REGISTRY}/odigos-collector:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-collector:${COMMIT_HASH}
-          docker tag ${DOCKER_REGISTRY}/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-instrumentor:${COMMIT_HASH}
-          docker tag ${DOCKER_REGISTRY}/odigos-ui:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-ui:${COMMIT_HASH}
-          docker tag ${DOCKER_REGISTRY}/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-scheduler:${COMMIT_HASH}
-          docker tag ${DOCKER_REGISTRY}/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-autoscaler:${COMMIT_HASH}
-          docker tag ${DOCKER_REGISTRY}/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-odiglet:${COMMIT_HASH}
-
+          docker tag ${DOCKER_REGISTRY}/odigos-collector:${COMMIT_HASH} public.ecr.aws/y7i2a5w6/odigos-collector:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-instrumentor:${COMMIT_HASH} public.ecr.aws/y7i2a5w6/odigos-instrumentor:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-ui:${COMMIT_HASH} public.ecr.aws/y7i2a5w6/odigos-ui:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-scheduler:${COMMIT_HASH} public.ecr.aws/y7i2a5w6/odigos-scheduler:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-autoscaler:${COMMIT_HASH} public.ecr.aws/y7i2a5w6/odigos-autoscaler:${COMMIT_HASH}
+          docker tag ${DOCKER_REGISTRY}/odigos-odiglet:${COMMIT_HASH} public.ecr.aws/y7i2a5w6/odigos-odiglet:${COMMIT_HASH}
 
       - uses: ko-build/setup-ko@v0.9
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00
         with:
-          go-version: '1.26.2'
+          go-version: "1.26.2"
       - name: Build CLI Image
         env:
           COMMIT_HASH: ${{ github.sha }}
           DOCKER_REGISTRY: registry.odigos.io
         run: |
           make build-cli-image TAG=${COMMIT_HASH}
-          docker tag ${DOCKER_REGISTRY}/odigos-cli:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-cli:${COMMIT_HASH}
-
+          docker tag ${DOCKER_REGISTRY}/odigos-cli:${COMMIT_HASH} public.ecr.aws/y7i2a5w6/odigos-cli:${COMMIT_HASH}
 
       - name: Push Docker Images to ECR
         env:
           COMMIT_HASH: ${{ github.sha }}
         run: |
-          docker push public.ecr.aws/y2v0v6s7/odigos-collector:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/odigos-instrumentor:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/odigos-ui:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/odigos-scheduler:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/odigos-autoscaler:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/odigos-odiglet:${COMMIT_HASH}
-          docker push public.ecr.aws/y2v0v6s7/odigos-cli:${COMMIT_HASH}
+          docker push public.ecr.aws/y7i2a5w6/odigos-collector:${COMMIT_HASH}
+          docker push public.ecr.aws/y7i2a5w6/odigos-instrumentor:${COMMIT_HASH}
+          docker push public.ecr.aws/y7i2a5w6/odigos-ui:${COMMIT_HASH}
+          docker push public.ecr.aws/y7i2a5w6/odigos-scheduler:${COMMIT_HASH}
+          docker push public.ecr.aws/y7i2a5w6/odigos-autoscaler:${COMMIT_HASH}
+          docker push public.ecr.aws/y7i2a5w6/odigos-odiglet:${COMMIT_HASH}
+          docker push public.ecr.aws/y7i2a5w6/odigos-cli:${COMMIT_HASH}
