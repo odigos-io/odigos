@@ -144,9 +144,10 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, opts TracesConfigOptions) co
 		tracesMainPipelineExporterNames = append(opts.AdditionalTraceExporters, odigosTracesExportingForwardConnectorName)
 	}
 
+	tracesReceivers := append([]string{OTLPInReceiverName, odigosEbpfReceiverName}, opts.ManifestReceiverNames...)
 	tracePipeline := map[string]config.Pipeline{
 		odigosTracesPipelineName: {
-			Receivers:  []string{OTLPInReceiverName, odigosEbpfReceiverName},
+			Receivers:  tracesReceivers,
 			Processors: tracePipelineProcessors,
 			Exporters:  tracesMainPipelineExporterNames,
 		},

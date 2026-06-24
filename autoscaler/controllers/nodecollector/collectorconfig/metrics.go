@@ -92,6 +92,7 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) 
 	metricsPipelineProcessors = append(metricsPipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
 	receivers, pipelineReceiverNames := metricsReceivers(opts.MetricsConfigSettings)
+	pipelineReceiverNames = append(pipelineReceiverNames, opts.ManifestReceiverNames...)
 	if len(pipelineReceiverNames) == 0 {
 		// if all metrics sources are not enabled, skip the metrics pipeline generation as it has no receivers and will fail the collector
 		return config.Config{}

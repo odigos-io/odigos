@@ -21,12 +21,19 @@ type CommonSignalConfig struct {
 	Logger                   logr.Logger
 	OdigosNamespace          string
 	ManifestProcessorNames   []string
+	ManifestReceiverNames    []string
 	ResourceDetectionEnabled bool
 }
 
 // WithProcessors returns a copy of the config with the given manifest processor names set.
 func (c CommonSignalConfig) WithProcessors(names []string) CommonSignalConfig {
 	c.ManifestProcessorNames = names
+	return c
+}
+
+// WithReceivers returns a copy of the config with the given manifest receiver names set.
+func (c CommonSignalConfig) WithReceivers(names []string) CommonSignalConfig {
+	c.ManifestReceiverNames = names
 	return c
 }
 

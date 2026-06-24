@@ -62,7 +62,13 @@ func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context
 		return ctrl.Result{}, err
 	}
 
-	err = b.syncDataCollection(ctx, &ics, clusterCollectorCollectorGroup, &processors, dataCollectionCollectorGroup)
+	var receivers odigosv1.ReceiverList
+	if err := b.Client.List(ctx, &receivers); err != nil {
+		logger.Error(err, "Failed to list receivers")
+		return ctrl.Result{}, err
+	}
+
+	err = b.syncDataCollection(ctx, &ics, clusterCollectorCollectorGroup, &processors, &receivers, dataCollectionCollectorGroup)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -70,7 +76,7 @@ func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context
 	return ctrl.Result{}, nil
 }
 
-func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, processors *odigosv1.ProcessorList,
+func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, processors *odigosv1.ProcessorList, receivers *odigosv1.ReceiverList,
 	dataCollection *odigosv1.CollectorsGroup) error {
 	logger := commonlogger.FromContext(ctx)
 	logger.Info("Syncing data collection")
@@ -81,7 +87,7 @@ func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, so
 		return err
 	}
 
-	err = b.SyncConfigMap(ctx, sources, clusterCollectorGroup, processors, dataCollection)
+	err = b.SyncConfigMap(ctx, sources, clusterCollectorGroup, processors, receivers, dataCollection)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err

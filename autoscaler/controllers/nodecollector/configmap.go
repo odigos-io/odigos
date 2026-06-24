@@ -29,7 +29,7 @@ import (
 
 const DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL = 10 * time.Second
 
-func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, allProcessors *odigosv1.ProcessorList,
+func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, allProcessors *odigosv1.ProcessorList, allReceivers *odigosv1.ReceiverList,
 	datacollection *odigosv1.CollectorsGroup) error {
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
@@ -56,7 +56,8 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		profilingCfg = cfg.Profiling
 	}
 
-	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg)
+	nodeReceivers := commonconf.FilterReceivers(allReceivers, odigosv1.CollectorsGroupRoleNodeCollector)
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, nodeReceivers, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
@@ -175,6 +176,7 @@ func calculateCollectorConfigDomains(
 	sources *odigosv1.InstrumentationConfigList,
 	clusterCollectorSignals []odigoscommon.ObservabilitySignal,
 	processors []*odigosv1.Processor,
+	receivers []*odigosv1.Receiver,
 	onGKE bool,
 	loadBalancingNeeded bool,
 	profiling *odigoscommon.ProfilingConfiguration) (map[string]config.Config, string, error) {
@@ -212,6 +214,14 @@ func calculateCollectorConfigDomains(
 	}
 	configDomains["processors"] = processorsResults.ProcessorsConfig
 
+	// receivers from k8s "Receiver" custom resource
+	receiversResults := config.CrdReceiverToConfig(commonconf.ToReceiverConfigurerArray(receivers))
+	for name, err := range receiversResults.Errs {
+		logger.Error(err, "failed to convert receiver manifest to config", "receiver", name)
+		return nil, "", err
+	}
+	configDomains["crd_receivers"] = receiversResults.ReceiversConfig
+
 	if collectorconfig.NodeNeedsOdigosConfigK8sExtension(processors, profiling) {
 		configDomains["odigos_config_extension"] = collectorconfig.NodeOdigosExtDomain()
 	}
@@ -247,7 +257,7 @@ func calculateCollectorConfigDomains(
 		}
 
 		metricsConfig := collectorconfig.MetricsConfig(nodeCG, collectorconfig.MetricsConfigOptions{
-			CommonSignalConfig:    commonSignalConfig.WithProcessors(processorsResults.MetricsProcessors),
+			CommonSignalConfig:    commonSignalConfig.WithProcessors(processorsResults.MetricsProcessors).WithReceivers(receiversResults.MetricsReceivers),
 			MetricsConfigSettings: metricsConfigSettings,
 		})
 		configDomains["metrics"] = metricsConfig
@@ -274,7 +284,7 @@ func calculateCollectorConfigDomains(
 	// - there are additional trace exporters (e.g. spanmetrics connector)
 	if tracesEnabledInClusterCollector || len(additionalTraceExporters) > 0 {
 		tracesConfig := collectorconfig.TracesConfig(nodeCG, collectorconfig.TracesConfigOptions{
-			CommonSignalConfig:              commonSignalConfig.WithProcessors(processorsResults.TracesProcessors),
+			CommonSignalConfig:              commonSignalConfig.WithProcessors(processorsResults.TracesProcessors).WithReceivers(receiversResults.TracesReceivers),
 			PostSpanMetricsProcessorNames:   append(processorsResults.TracesProcessorsPostSpanMetrics, postSpanMetricsProcessorNames...),
 			AdditionalTraceExporters:        additionalTraceExporters,
 			TracesEnabledInClusterCollector: tracesEnabledInClusterCollector,
@@ -287,7 +297,7 @@ func calculateCollectorConfigDomains(
 	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
 		logsConfig := collectorconfig.LogsConfig(nodeCG, collectorconfig.LogsConfigOptions{
-			CommonSignalConfig: commonSignalConfig.WithProcessors(processorsResults.LogsProcessors),
+			CommonSignalConfig: commonSignalConfig.WithProcessors(processorsResults.LogsProcessors).WithReceivers(receiversResults.LogsReceivers),
 			Sources:            sources,
 		})
 		configDomains["logs"] = logsConfig
