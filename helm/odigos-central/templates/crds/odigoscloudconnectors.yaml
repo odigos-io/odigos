@@ -24,9 +24,6 @@ spec:
     - jsonPath: .spec.account.id
       name: Account
       type: string
-    - jsonPath: .spec.permissions.mode
-      name: Mode
-      type: string
     - jsonPath: .status.phase
       name: Phase
       type: string
@@ -74,6 +71,33 @@ spec:
                 required:
                 - id
                 type: object
+              capabilities:
+                description: |-
+                  Capabilities is the customer's per-type allow-list of what the connector may do (discovery and/or
+                  instrumentation per resource type, e.g. lambda/ecs). The connector scans every region enabled in
+                  the account; there is no per-connector region selection.
+                items:
+                  description: |-
+                    CloudConnectorCapability is the customer's allow-list entry for one provider resource type: whether
+                    the connector may discover and/or instrument that type. It records intent — instrumentation only runs
+                    once the provider's connector spec implements it; until then the connector simply knows it is allowed.
+                  properties:
+                    discovery:
+                      description: Discovery allows the connector to discover resources
+                        of this type.
+                      type: boolean
+                    instrumentation:
+                      description: Instrumentation allows the connector to instrument
+                        resources of this type.
+                      type: boolean
+                    type:
+                      description: Type is the provider connector spec type key (e.g.
+                        "lambda", "ecs").
+                      type: string
+                  required:
+                  - type
+                  type: object
+                type: array
               connectorType:
                 description: ConnectorType selects the specific connector implementation/image
                   family. Usually equals Provider.
@@ -111,32 +135,11 @@ spec:
                 description: DisplayName is the human-friendly connector name shown
                   in the UI.
                 type: string
-              permissions:
-                description: Permissions selects the permission mode for this connector.
-                properties:
-                  mode:
-                    description: Mode selects the provider permission set and enabled
-                      behaviors.
-                    enum:
-                    - discovery-only
-                    - discovery-instrumentation
-                    - discovery-instrumentation-gateway
-                    - custom
-                    type: string
-                required:
-                - mode
-                type: object
               provider:
                 description: |-
                   Provider family this connector targets (e.g. "aws", "azure", "gcp"). Kept as a free-form string
                   so new providers need no API change.
                 type: string
-              regions:
-                description: Regions the connector should discover/instrument within
-                  the account.
-                items:
-                  type: string
-                type: array
               runtime:
                 description: Runtime configures the connector workload (image/replicas/resources).
                 properties:
@@ -214,7 +217,6 @@ spec:
             required:
             - account
             - credentialsSecretRef
-            - permissions
             - provider
             type: object
           status:
