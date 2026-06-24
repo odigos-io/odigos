@@ -309,9 +309,14 @@ data:
     {{- end }}
     odigosOwnTelemetryStore:
       metricsStoreDisabled: {{ .Values.ownTelemetry.metricsStore.disabled }}
-    {{- if .Values.imagePullSecrets }}
+    {{- if or .Values.imagePullSecrets (include "odigos.hasEnterpriseRegistryPullSecret" .) }}
     imagePullSecrets:
-      {{- toYaml .Values.imagePullSecrets | nindent 6 }}
+      {{- range .Values.imagePullSecrets }}
+      - {{ . | quote }}
+      {{- end }}
+      {{- if include "odigos.hasEnterpriseRegistryPullSecret" . }}
+      - {{ include "odigos.enterpriseRegistryPullSecretName" . | quote }}
+      {{- end }}
     {{- end }}
     {{- if or .Values.sampling.dryRun .Values.sampling.spanSamplingAttributes .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
     sampling:

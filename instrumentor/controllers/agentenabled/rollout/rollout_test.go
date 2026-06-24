@@ -106,6 +106,33 @@ func Test_TriggeredRollout_WorkloadWithInstrumentedPods(t *testing.T) {
 	assertWorkloadRestarted(t, s.ctx, fakeClient, pw)
 }
 
+func Test_NoRollout_ICNil_StillCoveredByNamespaceSource(t *testing.T) {
+	// Arrange: IC deleted (e.g. cascade from GitOps replace) but namespace source still applies.
+	s := newTestSetup()
+	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
+	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
+	instrumentedPod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-pod",
+			Namespace: s.ns.Name,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":            deployment.Name,
+				k8sconsts.OdigosAgentsMetaHashLabel: "abc123",
+			},
+		},
+	}
+	namespaceSource := testutil.NewMockSource(s.ns, false)
+
+	fakeClient := s.newFakeClient(deployment, instrumentedPod, namespaceSource)
+	var ic *odigosv1alpha1.InstrumentationConfig
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
+
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+
+	assertNoStatusChange(t, rolloutResult, err)
+	assertWorkloadNotRestarted(t, s.ctx, fakeClient, pw)
+}
+
 func Test_TriggeredRollout_DistributionRequiresRollout(t *testing.T) {
 	// Arrange: IC with distribution that requires rollout (e.g. eBPF-based instrumentation)
 	s := newTestSetup()

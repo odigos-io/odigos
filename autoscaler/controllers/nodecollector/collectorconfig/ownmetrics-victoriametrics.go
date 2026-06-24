@@ -24,16 +24,18 @@ const (
 	// keep only the eBPF instrumentation counters (java, python, nodejs) exposed by the odiglet.
 	ebpfInstrumentationMetricsRegexPattern = "odigos_(java|python|nodejs)_ebpf_instrumentation_.*"
 
+	// keep the ebpf-core shared-buffer event counters (emitted by the go/java greatwall instrumentations for example)
+	ebpfCoreEventsRegexPattern = "odigos_ebpf_events_(sent|send_failed)_.*"
+
 	// the cluster collector's own-metrics OTLP http receiver listens on this port.
 	clusterCollectorOwnMetricsOtlpHttpPort = 44318
 )
 
-func odigletMetricsReceiverConfig(odigosNamespace string) config.GenericMap {
-	odigletMetricsTarget := fmt.Sprintf("%s.%s:%d",
-		k8sconsts.OdigletLocalTrafficServiceName,
-		odigosNamespace,
-		k8sconsts.OdigletMetricsServerPort,
-	)
+func odigletMetricsReceiverConfig() config.GenericMap {
+	// The data collection collector runs as a container in the odiglet pod, so it can scrape the odiglet's metrics endpoint over localhost
+	odigletMetricsTarget := fmt.Sprintf("localhost:%d", k8sconsts.OdigletMetricsServerPort)
+
+	keepRegex := fmt.Sprintf("%s|%s", ebpfInstrumentationMetricsRegexPattern, ebpfCoreEventsRegexPattern)
 
 	return config.GenericMap{
 		odigletMetricsReceiverName: config.GenericMap{
@@ -51,7 +53,7 @@ func odigletMetricsReceiverConfig(odigosNamespace string) config.GenericMap {
 						"metric_relabel_configs": []config.GenericMap{
 							{
 								"source_labels": []string{"__name__"},
-								"regex":         ebpfInstrumentationMetricsRegexPattern,
+								"regex":         keepRegex,
 								"action":        "keep",
 							},
 						},
@@ -107,7 +109,7 @@ func odigletMetricsPipeline() map[string]config.Pipeline {
 // Assembles a metrics config to be added to the node collector, which scrapes the odiglet for metrics
 func OdigletMetricsConfig(odigosNamespace string) config.Config {
 	return config.Config{
-		Receivers:  odigletMetricsReceiverConfig(odigosNamespace),
+		Receivers:  odigletMetricsReceiverConfig(),
 		Exporters:  odigletMetricsExporterConfig(odigosNamespace),
 		Processors: odigletMetricsProcessorConfig(),
 		Service: config.Service{
