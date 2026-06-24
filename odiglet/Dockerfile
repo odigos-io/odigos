@@ -41,7 +41,7 @@ ADD --chmod=644 https://github.com/open-telemetry/opentelemetry-java-instrumenta
 
 # python-community/python-community3.8
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8 /instrumentations/python3.8 /instrumentations/python3.8
-COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.88 /instrumentations/python /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.89 /instrumentations/python /instrumentations/python
 
 # nodejs-community
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.9.1 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
