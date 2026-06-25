@@ -32,7 +32,7 @@ var staticServerProcessNames = []string{
 }
 
 func (b *BrowserInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	baseExe := filepath.Base(pcx.Details.ExePath)
+	baseExe := filepath.Base(pcx.ExePath)
 	if slices.Contains(staticServerProcessNames, baseExe) {
 		return common.BrowserProgrammingLanguage, true
 	}
