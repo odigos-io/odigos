@@ -123,6 +123,7 @@ spec:
                       - RuntimeDetailsUnavailable
                       - CrashLoopBackOff
                       - ImagePullBackOff
+                      - BrowserPortMissing
                       type: string
                     containerName:
                       description: The name of the container to which this configuration
