@@ -137,6 +137,9 @@ jobs:
           name: vuln-scan-result-browser-proxy-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-browser-proxy.json
           retention-days: 30
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.2"
       - name: run tests
         working-directory: ./browser-proxy
         run: |
