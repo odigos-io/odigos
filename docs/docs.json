@@ -746,7 +746,8 @@
                     "group": "Instrumentation Rules",
                     "pages": [
                       "vmagent/setup/configuration/instrumentation-rules/overview",
-                      "vmagent/setup/configuration/instrumentation-rules/custom-instrumentation"
+                      "vmagent/setup/configuration/instrumentation-rules/custom-instrumentation",
+                      "vmagent/setup/configuration/instrumentation-rules/instrument-from-profiles"
                     ]
                   },
                   {
@@ -754,6 +755,7 @@
                     "pages": [
                       "vmagent/instrumentations/profiling/overview",
                       "vmagent/instrumentations/profiling/getting-started",
+                      "vmagent/instrumentations/profiling/view-in-odictl",
                       "vmagent/instrumentations/profiling/export-pyroscope"
                     ]
                   }
