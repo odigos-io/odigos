@@ -105,6 +105,7 @@ receivers:
   - gomod: github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.148.0
   - gomod: go.opentelemetry.io/ebpf-profiler v0.0.202614
     import: go.opentelemetry.io/ebpf-profiler/collector
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver v0.148.0
 
 # https://github.com/open-telemetry/opentelemetry-collector/issues/8127
 excludes:
