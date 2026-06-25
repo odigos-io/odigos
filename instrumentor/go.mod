@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/instrumentor
 
-go 1.26.2
+go 1.26.4
 
 require (
 	github.com/argoproj/argo-rollouts v1.8.3
