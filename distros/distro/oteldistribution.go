@@ -142,6 +142,23 @@ type Option struct {
 	Value string `yaml:"value"`
 }
 
+// BrowserSidecar marks a distribution whose telemetry SDK runs in the end-user's browser rather
+// than in a process inside the pod. Such a distribution is not delivered by mounting agent files
+// or setting runtime env vars on the application container. Instead, the instrumentor injects the
+// odigos-browser-proxy sidecar (and a traffic-redirect init container) in front of the web server.
+// The sidecar injects a <script> tag that loads the OpenTelemetry Web SDK bundle into served HTML
+// responses, and proxies the browser's OTLP/HTTP telemetry back to the node-local collector.
+type BrowserSidecar struct {
+	// The directory (under the agents dir) that contains the browser SDK bundle the sidecar serves.
+	// The special value {{ODIGOS_AGENTS_DIR}} is replaced with the actual agents directory at runtime
+	// (e.g. "{{ODIGOS_AGENTS_DIR}}/browser" -> "/var/odigos/browser" on k8s).
+	AgentDirectory string `yaml:"agentDirectory"`
+
+	// The file name (within AgentDirectory) of the browser SDK bundle that the sidecar serves to the
+	// browser and references from the injected <script> tag (e.g. "agent.js").
+	AgentFileName string `yaml:"agentFileName"`
+}
+
 type SpanMetrics struct {
 	// if true, the agent supports span metrics.
 	Supported bool `yaml:"supported,omitempty"`
@@ -306,6 +323,11 @@ type OtelDistro struct {
 	// Metadata and properties of the runtime agent that is used to enable the distribution.
 	// Can be nil in case no runtime agent is required.
 	RuntimeAgent *RuntimeAgent `yaml:"runtimeAgent,omitempty"`
+
+	// If set, this distribution targets the end-user's browser and is delivered by the
+	// odigos-browser-proxy sidecar (HTML <script> injection + same-origin OTLP proxy) instead of
+	// an in-pod runtime agent. When set, RuntimeAgent and runtime env-var injection are not used.
+	BrowserSidecar *BrowserSidecar `yaml:"browserSidecar,omitempty"`
 
 	// if true, the distro receives it's configuration as environment variables.
 	// it means the distro does not support opamp and not configurable via ebpf.

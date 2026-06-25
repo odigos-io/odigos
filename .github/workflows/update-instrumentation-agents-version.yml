@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       agents_category: 
-        description: "Category of the agents to update (supported values: nodejs, php, ruby, python)"
+        description: "Category of the agents to update (supported values: nodejs, php, ruby, python, browser)"
         required: true
         type: string
       new_agent_version:
@@ -56,12 +56,13 @@ jobs:
           AGENTS_CATEGORY_LOWER=$(echo "$AGENTS_CATEGORY" | tr '[:upper:]' '[:lower:]')
           
           case "$AGENTS_CATEGORY_LOWER" in
-            nodejs|nodejs-community) AGENT_TYPE="nodejs-community" ;;
-            php|php-community)       AGENT_TYPE="php-community" ;;
-            ruby|ruby-community)     AGENT_TYPE="ruby-community" ;;
-            python|python-community) AGENT_TYPE="python-community" ;;
+            nodejs|nodejs-community)   AGENT_TYPE="nodejs-community" ;;
+            php|php-community)         AGENT_TYPE="php-community" ;;
+            ruby|ruby-community)       AGENT_TYPE="ruby-community" ;;
+            python|python-community)   AGENT_TYPE="python-community" ;;
+            browser|browser-community) AGENT_TYPE="browser-community" ;;
             *)
-              echo "ERROR: Invalid agents_category '$AGENTS_CATEGORY'. Supported values: nodejs-community, nodejs, php-community, php, ruby-community, ruby, python-community, python"
+              echo "ERROR: Invalid agents_category '$AGENTS_CATEGORY'. Supported values: nodejs-community, nodejs, php-community, php, ruby-community, ruby, python-community, python, browser-community, browser"
               exit 1
               ;;
           esac

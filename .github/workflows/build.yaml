@@ -96,6 +96,52 @@ jobs:
           path: /tmp/scan-results/odigos-scheduler.json
           retention-days: 30
 
+  build-browser-proxy:
+    name: build-browser-proxy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Browser Proxy Image
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64
+          push: false
+          tags: browser-proxy:pr-${{ github.event.number || github.run_number }}
+          provenance: false
+          file: browser-proxy/Dockerfile
+          outputs: type=docker,dest=/tmp/browser-proxy.tar
+      - name: Load Docker image for scanning
+        run: docker load -i /tmp/browser-proxy.tar
+      - name: Scan image for vulnerabilities
+        id: scan-browser-proxy
+        uses: odigos-io/ci-core/vulnerabilities-scanner@main
+        with:
+          image: browser-proxy:pr-${{ github.event.number || github.run_number }}
+          severity-cutoff: "CRITICAL"
+        continue-on-error: true
+      - name: Save browser-proxy scan JSON
+        if: always()
+        run: |
+          mkdir -p /tmp/scan-results
+          cat > /tmp/scan-results/odigos-browser-proxy.json << 'EOF'
+          ${{ steps.scan-browser-proxy.outputs.results-json }}
+          EOF
+          jq --arg img "odigos-browser-proxy" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-browser-proxy.json > /tmp/scan-results/odigos-browser-proxy_enriched.json
+          mv /tmp/scan-results/odigos-browser-proxy_enriched.json /tmp/scan-results/odigos-browser-proxy.json
+      - name: Upload browser-proxy scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-scan-result-browser-proxy-${{ github.sha }}.json
+          path: /tmp/scan-results/odigos-browser-proxy.json
+          retention-days: 30
+      - name: run tests
+        working-directory: ./browser-proxy
+        run: |
+          make test
+
   build-agents:
     name: build-agents
     runs-on: depot-ubuntu-latest
@@ -420,6 +466,7 @@ jobs:
     needs:
       - build-and-test-autoscaler
       - build-scheduler
+      - build-browser-proxy
       - build-agents
       - build-and-test-instrumentor
       - build-and-test-odigos-collector

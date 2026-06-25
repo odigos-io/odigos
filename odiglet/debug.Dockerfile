@@ -81,6 +81,9 @@ COPY --from=public.ecr.aws/odigos/agents/php-community:v0.3.2 /instrumentations/
 # ruby-community
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations/ruby /instrumentations/ruby
 
+# browser-community
+COPY --from=public.ecr.aws/odigos/agents/browser-community:v0.1.0 /instrumentations/browser /instrumentations/browser
+
 # loader
 ARG ODIGOS_LOADER_VERSION=v0.0.8
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
