@@ -107,6 +107,53 @@ func TestResolveDistroForContainer_prereleaseRuntimeVersionAccepted(t *testing.T
 	require.Equal(t, "golang-community", d.Name)
 }
 
+func TestResolveDistroForContainer_browserOverrideAcceptsMismatchedContainerLanguage(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	overrideName := "browser-community"
+	config := &common.OdigosConfiguration{}
+	// A frontend served by a Node static server is detected as server-side javascript; the explicit
+	// browser override must still win since the frontend nature cannot be auto-detected.
+	rt := &odigosv1.RuntimeDetailsByContainer{Language: common.JavascriptProgrammingLanguage}
+	dpl := map[common.ProgrammingLanguage]string{common.JavascriptProgrammingLanguage: "nodejs-community"}
+	co := &odigosv1.ContainerOverride{OtelDistroName: &overrideName}
+
+	d, info := ResolveDistroForContainer(config, rt, dpl, g, co, "frontend")
+	require.Nil(t, info)
+	require.NotNil(t, d)
+	require.Equal(t, "browser-community", d.Name)
+	require.NotNil(t, d.BrowserSidecar, "browser-community must carry a browserSidecar marker")
+}
+
+func TestResolveDistroForContainer_browserOverrideAcceptsUnknownLanguage(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	overrideName := "browser-community"
+	config := &common.OdigosConfiguration{}
+	// A plain static-file server may not be detected at all; an explicit browser override must
+	// still be honored (the unknown-language early return is skipped when an override is present).
+	rt := &odigosv1.RuntimeDetailsByContainer{Language: common.UnknownProgrammingLanguage}
+	dpl := map[common.ProgrammingLanguage]string{}
+	co := &odigosv1.ContainerOverride{OtelDistroName: &overrideName}
+
+	d, info := ResolveDistroForContainer(config, rt, dpl, g, co, "frontend")
+	require.Nil(t, info)
+	require.NotNil(t, d)
+	require.Equal(t, "browser-community", d.Name)
+}
+
+func TestResolveDistroForContainer_browserByLanguageOverride(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	config := &common.OdigosConfiguration{}
+	// Opting in by setting the runtime language to browser (via containerOverride RuntimeInfo)
+	// resolves to the default browser distro without an explicit distro name.
+	rt := &odigosv1.RuntimeDetailsByContainer{Language: common.BrowserProgrammingLanguage}
+	dpl := map[common.ProgrammingLanguage]string{common.BrowserProgrammingLanguage: "browser-community"}
+
+	d, info := ResolveDistroForContainer(config, rt, dpl, g, nil, "frontend")
+	require.Nil(t, info)
+	require.NotNil(t, d)
+	require.Equal(t, "browser-community", d.Name)
+}
+
 func TestResolveDistroForContainer_nonWildcardEnforcesRuntimeSemver(t *testing.T) {
 	g := mustNewCommunityGetter(t)
 	config := &common.OdigosConfiguration{}

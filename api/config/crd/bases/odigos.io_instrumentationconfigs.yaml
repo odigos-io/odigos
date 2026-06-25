@@ -689,6 +689,7 @@ spec:
                                     - go
                                     - dotnet
                                     - javascript
+                                    - browser
                                     - php
                                     - ruby
                                     - rust
@@ -727,6 +728,7 @@ spec:
                                     - go
                                     - dotnet
                                     - javascript
+                                    - browser
                                     - php
                                     - ruby
                                     - rust
@@ -862,6 +864,7 @@ spec:
                           - go
                           - dotnet
                           - javascript
+                          - browser
                           - php
                           - ruby
                           - rust
@@ -1218,6 +1221,7 @@ spec:
                       - go
                       - dotnet
                       - javascript
+                      - browser
                       - php
                       - ruby
                       - rust
@@ -1838,6 +1842,7 @@ spec:
                       - go
                       - dotnet
                       - javascript
+                      - browser
                       - php
                       - ruby
                       - rust

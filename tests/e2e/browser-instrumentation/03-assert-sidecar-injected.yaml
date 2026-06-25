@@ -1,0 +1,24 @@
+# Asserts that the webhook injected the browser-proxy sidecar and the iptables redirect init
+# container into the frontend pod, and that the application container itself was left untouched
+# (no odigos agent env vars / device).
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: browser-demo
+  labels:
+    app: frontend
+spec:
+  initContainers:
+    - name: odigos-browser-proxy-init
+      args:
+        - init
+      securityContext:
+        capabilities:
+          add:
+            - NET_ADMIN
+  containers:
+    - name: odigos-browser-proxy
+      ports:
+        - containerPort: 15001
+      securityContext:
+        runAsUser: 1337
