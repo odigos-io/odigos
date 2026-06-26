@@ -804,6 +804,8 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/connector/serv
 
 replace github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
 
+replace github.com/odigos-io/go-rtml => ../internal/go-rtml
+
 replace github.com/odigos-io/odigos/common => ../../common
 
 replace go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
