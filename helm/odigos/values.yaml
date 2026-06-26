@@ -1778,7 +1778,14 @@ sampling:
 # description: |-
 #   Set to true if you are providing the odigos-pro secret externally (not managed by this chart).
 #   When true, the chart will not create the odigos-pro secret but will still enable Pro features if the secret exists.
-#   The chart will read the token from the existing odigos-pro secret to create the enterprise registry pull secret.
 #   This is useful for GitOps workflows where secrets are managed separately.
 # @schema
 # externalOnpremTokenSecret: false
+
+# @schema
+# description: |-
+#   Set to true if you are providing the odigos-enterprise-registry pull secret externally (not managed by this chart).
+#   When true, the chart will not create the pull secret but will still mount odigos-enterprise-registry on Odigos workloads
+#   when pulling from registry.odigos.io. Use with externalOnpremTokenSecret for GitOps installs where Helm cannot read secrets at template time.
+# @schema
+# externalOnpremPullSecret: false
