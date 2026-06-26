@@ -522,9 +522,15 @@
       "required": [],
       "title": "collectorNode"
     },
+    "externalOnpremPullSecret": {
+      "default": "false",
+      "description": "Set to true if you are providing the odigos-enterprise-registry pull secret externally (not managed by this chart).\nWhen true, the chart will not create the pull secret but will still mount odigos-enterprise-registry on Odigos workloads\nwhen pulling from registry.odigos.io. Use with externalOnpremTokenSecret for GitOps installs where Helm cannot read secrets at template time.",
+      "required": [],
+      "title": "externalOnpremPullSecret"
+    },
     "externalOnpremTokenSecret": {
       "default": "false",
-      "description": "Set to true if you are providing the odigos-pro secret externally (not managed by this chart).\nWhen true, the chart will not create the odigos-pro secret but will still enable Pro features if the secret exists.\nThe chart will read the token from the existing odigos-pro secret to create the enterprise registry pull secret.\nThis is useful for GitOps workflows where secrets are managed separately.",
+      "description": "Set to true if you are providing the odigos-pro secret externally (not managed by this chart).\nWhen true, the chart will not create the odigos-pro secret but will still enable Pro features if the secret exists.\nThis is useful for GitOps workflows where secrets are managed separately.",
       "required": [],
       "title": "externalOnpremTokenSecret"
     },
