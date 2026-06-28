@@ -30,7 +30,16 @@ odigos-enterprise-registry
 {{- end -}}
 
 {{- define "odigos.hasEnterpriseRegistryPullSecret" -}}
-{{- if and (include "odigos.onPremToken" .) (include "odigos.usesOdigosRegistry" .) -}}
+{{- if not (include "odigos.usesOdigosRegistry" .) -}}
+{{- else if and (.Values.externalOnpremPullSecret | default false) (include "odigos.secretExists" .) -}}
+true
+{{- else if include "odigos.onPremToken" . -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "odigos.createEnterpriseRegistryPullSecret" -}}
+{{- if and (include "odigos.usesOdigosRegistry" .) (include "odigos.onPremToken" .) (not (.Values.externalOnpremPullSecret | default false)) -}}
 true
 {{- end -}}
 {{- end -}}
@@ -46,8 +55,8 @@ true
 {{- end -}}
 
 {{- define "odigos.validateEnterpriseRegistryPullSecrets" -}}
-{{- if and (include "odigos.secretExists" .) (include "odigos.usesOdigosRegistry" .) (not (include "odigos.onPremToken" .)) -}}
-{{- fail "Odigos images pull from registry.odigos.io but no on-prem token is available to the chart. Set onPremToken or ensure the odigos-pro secret exists in the release namespace before install/upgrade." -}}
+{{- if and (include "odigos.secretExists" .) (include "odigos.usesOdigosRegistry" .) (not (include "odigos.onPremToken" .)) (not (.Values.externalOnpremPullSecret | default false)) -}}
+{{- fail "Odigos images pull from registry.odigos.io but no on-prem token is available to the chart. Set onPremToken, set externalOnpremPullSecret to true when providing odigos-enterprise-registry externally, or ensure the odigos-pro secret exists in the release namespace before install/upgrade." -}}
 {{- end -}}
 {{- end -}}
 

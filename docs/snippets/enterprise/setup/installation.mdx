@@ -95,6 +95,7 @@ helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-n
 ```
 
 The license token can also be provided by creating a secret in kubernetes before installing Odigos.
+
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -105,6 +106,56 @@ metadata:
     odigos.io/system-object: "true"
 stringData:
   odigos-onprem-token: <TOKEN>
+```
+
+When pulling enterprise images from `registry.odigos.io`, Odigos also needs a Docker registry pull secret named `odigos-enterprise-registry`. The Helm chart can create this automatically when `onPremToken` is set, or when it can read the token from an existing `odigos-pro` secret.
+
+For GitOps tools such as Argo CD that cannot read cluster secrets during `helm template`, manage both secrets externally and set:
+
+```yaml
+externalOnpremTokenSecret: true
+externalOnpremPullSecret: true
+```
+
+Create the registry pull secret before syncing Odigos. The username is always `odigos` and the password is your enterprise token:
+
+```shell
+kubectl create secret docker-registry odigos-enterprise-registry \
+  --namespace odigos-system \
+  --docker-server=registry.odigos.io \
+  --docker-username=odigos \
+  --docker-password="$ODIGOS_TOKEN"
+kubectl label secret odigos-enterprise-registry -n odigos-system odigos.io/system-object=true
+```
+
+Or apply it declaratively:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: odigos-enterprise-registry
+  namespace: odigos-system
+  labels:
+    odigos.io/system-object: "true"
+type: kubernetes.io/dockerconfigjson
+stringData:
+  .dockerconfigjson: |
+    {
+      "auths": {
+        "registry.odigos.io": {
+          "username": "odigos",
+          "password": "<TOKEN>",
+          "auth": "<BASE64_OF_odigos:TOKEN>"
+        }
+      }
+    }
+```
+
+Generate the `auth` value with:
+
+```shell
+echo -n "odigos:$ODIGOS_TOKEN" | base64
 ```
 
 Once the Odigos pods are online, simply run the following command to launch the Odigos UI.
