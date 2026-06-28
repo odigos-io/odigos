@@ -7,6 +7,7 @@
     "dev": "next dev --turbopack",
     "prebuild": "rm -rf out .next",
     "build": "cross-env NODE_ENV=production next build --turbopack",
+    "postbuild": "mkdir -p out && touch out/.keep",
     "back:build": "cd .. && go build -o odigos-backend",
     "back:start": "cd .. && ./odigos-backend --port 8085 --debug --address 0.0.0.0",
     "cy:run": "cypress run --e2e -q",
@@ -16,7 +17,7 @@
   "dependencies": {
     "@apollo/client": "^3.13.9",
     "@apollo/experimental-nextjs-app-support": "^0.12.3",
-    "@odigos/ui-kit": "0.0.257",
+    "@odigos/ui-kit": "0.0.258",
     "graphql": "^16.14.2",
     "next": "15.5.14",
     "react": "19.2.7",
