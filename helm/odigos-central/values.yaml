@@ -14,6 +14,10 @@ imagePullSecrets: []
 # the existing odigos-central secret to create the enterprise registry pull secret.
 # externalOnpremTokenSecret: false
 
+# Set to true when odigos-enterprise-registry is managed externally (GitOps).
+# The chart mounts the existing pull secret but does not create it.
+# externalOnpremPullSecret: false
+
 centralBackend:
   # Resources and scheduling for the Central backend
   # -- Maximum message size in bytes for gRPC messages (empty = use default)
