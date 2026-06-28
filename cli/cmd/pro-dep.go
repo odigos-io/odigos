@@ -128,7 +128,7 @@ var centralUninstallCmdDep = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if !cmd.Flag("yes").Changed {
+		if !mustGetBoolFlag(cmd, "yes") {
 			fmt.Printf("About to uninstall Odigos Central from namespace %s\n", ns)
 			confirmed, err := confirm.Ask("Are you sure?")
 			if err != nil || !confirmed {
@@ -191,7 +191,7 @@ var centralUpgradeCmdDep = &cobra.Command{
 			os.Exit(1)
 		}
 
-		if !cmd.Flag("yes").Changed {
+		if !mustGetBoolFlag(cmd, "yes") {
 			fmt.Printf("About to upgrade Odigos Central UI in namespace %s to version %s\n", ns, versionFlagDep)
 			confirmed, err := confirm.Ask("Are you sure?")
 			if err != nil || !confirmed {
