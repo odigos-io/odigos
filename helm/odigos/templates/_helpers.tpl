@@ -12,6 +12,61 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "odigos.onPremToken" -}}
+{{- if .Values.onPremToken -}}
+{{- .Values.onPremToken -}}
+{{- else -}}
+{{- $sec := lookup "v1" "Secret" .Release.Namespace "odigos-pro" -}}
+{{- if $sec -}}
+{{- if index $sec.data "odigos-onprem-token" -}}
+{{- index $sec.data "odigos-onprem-token" | b64dec -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "odigos.enterpriseRegistryPullSecretName" -}}
+odigos-enterprise-registry
+{{- end -}}
+
+{{- define "odigos.hasEnterpriseRegistryPullSecret" -}}
+{{- if not (include "odigos.usesOdigosRegistry" .) -}}
+{{- else if and (.Values.externalOnpremPullSecret | default false) (include "odigos.secretExists" .) -}}
+true
+{{- else if include "odigos.onPremToken" . -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "odigos.createEnterpriseRegistryPullSecret" -}}
+{{- if and (include "odigos.usesOdigosRegistry" .) (include "odigos.onPremToken" .) (not (.Values.externalOnpremPullSecret | default false)) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "odigos.usesOdigosRegistry" -}}
+{{- eq (include "utils.imagePrefix" (dict "Values" .Values)) "registry.odigos.io" -}}
+{{- end -}}
+
+{{- define "odigos.enterpriseRegistryPullSecretToMount" -}}
+{{- if include "odigos.hasEnterpriseRegistryPullSecret" . -}}
+{{- include "odigos.enterpriseRegistryPullSecretName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "odigos.validateEnterpriseRegistryPullSecrets" -}}
+{{- if and (include "odigos.secretExists" .) (include "odigos.usesOdigosRegistry" .) (not (include "odigos.onPremToken" .)) (not (.Values.externalOnpremPullSecret | default false)) -}}
+{{- fail "Odigos images pull from registry.odigos.io but no on-prem token is available to the chart. Set onPremToken, set externalOnpremPullSecret to true when providing odigos-enterprise-registry externally, or ensure the odigos-pro secret exists in the release namespace before install/upgrade." -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "odigos.enterpriseRegistryDockerConfigJson" -}}
+{{- $token := include "odigos.onPremToken" . -}}
+{{- $registry := include "utils.imagePrefix" (dict "Values" .Values) -}}
+{{- $auth := printf "odigos:%s" $token | b64enc -}}
+{{- dict "auths" (dict $registry (dict "username" "odigos" "password" $token "auth" $auth)) | toJson -}}
+{{- end -}}
+
 {{- define "utils.imageName" -}}
 {{- /* Check for component-specific image override in .Values.images.<component> */ -}}
 {{- $images := $.Values.images | default dict -}}
@@ -23,7 +78,8 @@
   {{- if hasKey $.Values.openshift "certifiedImageTags" }}
     {{- $certified = $.Values.openshift.certifiedImageTags }}
   {{- end }}
-  {{- printf "%s/odigos-%s%s:%s" (include "utils.imagePrefix" .) .Component (ternary "-rhel-certified" "" (and $.Values.openshift.enabled $certified)) .Tag }}
+  {{- $prefix := include "utils.imagePrefix" (dict "Values" $.Values) -}}
+  {{- printf "%s/odigos-%s%s:%s" $prefix .Component (ternary "-rhel-certified" "" (and $.Values.openshift.enabled $certified)) .Tag }}
 {{- end -}}
 {{- end -}}
 {{/*
@@ -177,12 +233,16 @@ true
 {{- end -}}
 {{- end }}
 
-{{/* Render imagePullSecrets in K8s shape from a list of strings */}}
+{{/* Render imagePullSecrets, including the on-prem registry pull secret when onPremToken is set. */}}
 {{- define "odigos.renderPullSecrets" -}}
-{{- if .Values.imagePullSecrets }}
+{{- $enterpriseSecret := include "odigos.enterpriseRegistryPullSecretToMount" . -}}
+{{- if or .Values.imagePullSecrets $enterpriseSecret }}
 imagePullSecrets:
 {{- range .Values.imagePullSecrets }}
   - name: {{ . | quote }}
+{{- end }}
+{{- if $enterpriseSecret }}
+  - name: {{ $enterpriseSecret | quote }}
 {{- end }}
 {{- end }}
 {{- end }}

@@ -164,6 +164,14 @@ func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map, attrCache 
 
 		ld := logEventToPdata(event)
 
+		// Track how many captured logs carry trace context vs none, so the
+		// log↔trace correlation rate is observable without querying the backend.
+		if event.HasContext == 1 {
+			r.telemetry.OdigosEbpfLogsWithContext.Add(ctx, 1)
+		} else {
+			r.telemetry.OdigosEbpfLogsWithoutContext.Add(ctx, 1)
+		}
+
 		// Add resource attributes from packed attrs if available
 		if packedAttrs != "" && ld.ResourceLogs().Len() > 0 {
 			resourceAttrs := ld.ResourceLogs().At(0).Resource().Attributes()

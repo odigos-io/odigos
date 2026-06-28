@@ -7,6 +7,17 @@ imagePrefix: ''
 # -- Image pull secrets for private registries (k8s secret names)
 imagePullSecrets: []
 
+# On-prem token for Odigos Enterprise (chart-managed odigos-central secret when set)
+# onPremToken: ''
+
+# Set to true when odigos-central is managed externally (GitOps). The chart reads the token from
+# the existing odigos-central secret to create the enterprise registry pull secret.
+# externalOnpremTokenSecret: false
+
+# Set to true when odigos-enterprise-registry is managed externally (GitOps).
+# The chart mounts the existing pull secret but does not create it.
+# externalOnpremPullSecret: false
+
 centralBackend:
   # Resources and scheduling for the Central backend
   # -- Maximum message size in bytes for gRPC messages (empty = use default)
