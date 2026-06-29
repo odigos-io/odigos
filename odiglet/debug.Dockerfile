@@ -1,4 +1,4 @@
-ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.16
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.17
 
 
 ######### python Native Community Agent #########
@@ -63,7 +63,7 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 
 # python-community/python-community3.8
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8 /instrumentations/python3.8 /instrumentations/python3.8
-COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.88 /instrumentations/python /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.89 /instrumentations/python /instrumentations/python
 
 # nodejs-community
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.11.0 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
@@ -76,7 +76,7 @@ COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.19 /instrument
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 # php-community
-COPY --from=public.ecr.aws/odigos/agents/php-community:v0.3.2 /instrumentations/php /instrumentations/php
+COPY --from=public.ecr.aws/odigos/agents/php-community:v0.3.3 /instrumentations/php /instrumentations/php
 
 # ruby-community
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations/ruby /instrumentations/ruby

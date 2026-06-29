@@ -76,6 +76,7 @@ import (
 	transformprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	filelogreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
 	hostmetricsreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
+	journaldreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver"
 	k8sclusterreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 	kubeletstatsreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
 	prometheusreceiver "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
@@ -173,6 +174,7 @@ func components() (otelcol.Factories, error) {
 		prometheusreceiver.NewFactory(),
 		odigosebpfreceiver.NewFactory(),
 		collector.NewFactory(),
+		journaldreceiver.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -187,6 +189,7 @@ func components() (otelcol.Factories, error) {
 		prometheusreceiver.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.148.0",
 		odigosebpfreceiver.NewFactory().Type():   "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.148.0",
 		collector.NewFactory().Type():            "go.opentelemetry.io/ebpf-profiler v0.0.202614",
+		journaldreceiver.NewFactory().Type():     "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver v0.148.0",
 	})
 
 	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](
