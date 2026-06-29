@@ -36,6 +36,12 @@ type CloudConnectorCapability struct {
 	// Instrumentation allows the connector to instrument resources of this type.
 	// +kubebuilder:validation:Optional
 	Instrumentation bool `json:"instrumentation,omitempty"`
+
+	// Services allows the connector to manage this type as a "service": discover the managed
+	// environment and assign instrumentation to a separate Odigos agent installed there (e.g. an
+	// EC2-backed ECS cluster running the Odigos ecs-agent).
+	// +kubebuilder:validation:Optional
+	Services bool `json:"services,omitempty"`
 }
 
 // CloudConnectorPhase is a coarse, cached lifecycle phase for the connector runtime. It is a cache of
