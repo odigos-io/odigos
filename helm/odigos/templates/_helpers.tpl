@@ -45,7 +45,9 @@ true
 {{- end -}}
 
 {{- define "odigos.usesOdigosRegistry" -}}
-{{- eq (include "utils.imagePrefix" (dict "Values" .Values)) "registry.odigos.io" -}}
+{{- if eq (include "utils.imagePrefix" (dict "Values" .Values)) "registry.odigos.io" -}}
+true
+{{- end -}}
 {{- end -}}
 
 {{- define "odigos.enterpriseRegistryPullSecretToMount" -}}
@@ -62,9 +64,8 @@ true
 
 {{- define "odigos.enterpriseRegistryDockerConfigJson" -}}
 {{- $token := include "odigos.onPremToken" . -}}
-{{- $registry := include "utils.imagePrefix" (dict "Values" .Values) -}}
 {{- $auth := printf "odigos:%s" $token | b64enc -}}
-{{- dict "auths" (dict $registry (dict "username" "odigos" "password" $token "auth" $auth)) | toJson -}}
+{{- dict "auths" (dict "registry.odigos.io" (dict "username" "odigos" "password" $token "auth" $auth)) | toJson -}}
 {{- end -}}
 
 {{- define "utils.imageName" -}}
