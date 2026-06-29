@@ -90,6 +90,11 @@ spec:
                       description: Instrumentation allows the connector to instrument
                         resources of this type.
                       type: boolean
+                    services:
+                      description: Services allows the connector to manage this type as a
+                        "service" — discover the managed environment and assign instrumentation
+                        to a separate Odigos agent installed there (e.g. an EC2-backed ECS cluster).
+                      type: boolean
                     type:
                       description: Type is the provider connector spec type key (e.g.
                         "lambda", "ecs").
