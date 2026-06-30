@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/metrics"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
+	obisdk "github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks/obi"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	ebpfMetrics "github.com/odigos-io/odigos/odiglet/pkg/metrics"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
@@ -51,6 +52,7 @@ type Odiglet struct {
 	// in the embedded instrumentation manager.
 	instrumentationRequests chan commonInstrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
 	criClient               *criwrapper.CriClient
+	obiManager              *obisdk.Manager
 	runnables               []Runnable
 }
 
@@ -164,13 +166,14 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		configUpdates:           configUpdates,
 		instrumentationRequests: instrumentationRequests,
 		criClient:               &criWrapper,
+		obiManager:              instrumentationMgrOpts.OBIManager,
 	}, nil
 }
 
 func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.OdigosLogger) []Runnable {
 	odigosNs := env.GetCurrentNamespace()
-	return []Runnable{
-		{
+	runnables := append([]Runnable{},
+		Runnable{
 			Name: "pprof server",
 			// if we fail to start the pprof server, don't return an error as it is not critical
 			PropagateErr: false,
@@ -178,7 +181,7 @@ func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.
 				return common.StartPprofServer(ctx, commonlogger.ToLogr(), int(k8sconsts.DefaultPprofEndpointPort))
 			},
 		},
-		{
+		Runnable{
 			Name:         "eBPF manager",
 			PropagateErr: true,
 			Run: func(ctx context.Context) error {
@@ -186,14 +189,14 @@ func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.
 				return o.ebpfManager.Run(ctx)
 			},
 		},
-		{
+		Runnable{
 			Name:         "OpAmp server",
 			PropagateErr: true,
 			Run: func(ctx context.Context) error {
 				return server.StartOpAmpServer(ctx, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
 			},
 		},
-		{
+		Runnable{
 			Name:         "kube manager",
 			PropagateErr: true,
 			Run: func(ctx context.Context) error {
@@ -224,7 +227,15 @@ func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.
 				return err
 			},
 		},
+	)
+	if o.obiManager != nil {
+		runnables = append(runnables, Runnable{
+			Name:         "OBI manager",
+			PropagateErr: false,
+			Run:          o.obiManager.Run,
+		})
 	}
+	return runnables
 }
 
 // Run starts the Odiglet components and blocks until the context is cancelled, or a critical error occurs.

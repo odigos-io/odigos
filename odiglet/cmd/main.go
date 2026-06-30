@@ -94,17 +94,21 @@ func main() {
 		}
 	}()
 
-	factories, err := ebpfInstrumentationFactories(otlpCommonConn)
+	obiManager := obi.NewManager()
+
+	instrumentationManagerOptions := ebpf.InstrumentationManagerOptions{
+		DistributionGetter:         dg,
+		OdigletHealthProbeBindPort: healthProbeBindPort,
+		OBIManager:                 obiManager,
+	}
+
+	factories, err := ebpfInstrumentationFactories(otlpCommonConn, obiManager)
 	if err != nil {
 		logger.Error("failed to create ebpf factories: %w", err)
 		os.Exit(1)
 	}
 
-	instrumentationManagerOptions := ebpf.InstrumentationManagerOptions{
-		Factories:                  factories,
-		DistributionGetter:         dg,
-		OdigletHealthProbeBindPort: healthProbeBindPort,
-	}
+	instrumentationManagerOptions.Factories = factories
 
 	o, err := odiglet.New(clientset, instrumentationManagerOptions)
 	if err != nil {
@@ -116,13 +120,13 @@ func main() {
 	logger.Info("odiglet exiting")
 }
 
-func ebpfInstrumentationFactories(otlpCommon *grpc.ClientConn) (map[string]commonInstrumentation.Factory, error) {
+func ebpfInstrumentationFactories(otlpCommon *grpc.ClientConn, obiManager *obi.Manager) (map[string]commonInstrumentation.Factory, error) {
 	goFactory, err := sdks.NewGoInstrumentationFactory(otlpCommon)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go instrumentation factory: %w", err)
 	}
 	return map[string]commonInstrumentation.Factory{
-		"golang-community":                   goFactory,
-		"opentelemetry-ebpf-instrumentation": obi.NewOBIInstrumentationFactory(),
+		"golang-community": goFactory,
+		obi.DistroName:     obiManager,
 	}, nil
 }

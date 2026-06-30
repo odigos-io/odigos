@@ -91,6 +91,108 @@ spec:
 In this case, `containerName` is the name of the container to instrument in this workload, and the required
 `otelDistroName` is **`opentelemetry-ebpf-instrumentation`**.
 
+## Telemetry signals
+
+Upstream OBI is split into several observability pipelines. In Odigos, each signal is wired independently so
+traces and metrics can be enabled without requiring the same distro or lifecycle on every process.
+
+| Signal | OBI pipeline | Enabled in Odigos when | Applies to |
+| ------ | ------------ | ---------------------- | ---------- |
+| **Traces** | [AppO11y](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/tree/main/pkg/appolly) (application protocol tracing) | The `opentelemetry-ebpf-instrumentation` distro is selected for the container | Processes instrumented with the OBI distro only |
+| **Network metrics** | [NetO11y](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/tree/main/pkg/netolly) (point-to-point flow bytes) | Metrics collection is enabled for the workload (`Metrics` configured on the container in the InstrumentationConfig) | Any successfully instrumented process on the node (Go, Java, OBI, etc.) |
+| **Stats metrics** | [StatsO11y](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/tree/main/pkg/statsolly) (host-level TCP statistics such as RTT and failed connections) | Same as network metrics | Same as network metrics |
+
+All OBI telemetry that Odigos collects is exported over OTLP to the odiglet node collector (`localhost:4317`), then
+follows the same Odigos pipeline as other workload telemetry.
+
+### Traces
+
+When OBI is the selected distro, odiglet attaches the process to OBI's trace selector when instrumentation loads and
+removes it when instrumentation stops. OBI captures distributed traces for supported protocols (HTTP, gRPC, databases,
+messaging, and more) without code changes.
+
+Learn more in the upstream docs:
+
+<CardGroup cols={2}>
+  <Card
+    title="Distributed traces"
+    icon="route"
+    href="https://opentelemetry.io/docs/zero-code/obi/distributed-traces/"
+  >
+    Context propagation, compatibility, and Kubernetes requirements.
+  </Card>
+  <Card
+    title="Supported protocols"
+    icon="list-check"
+    href="https://opentelemetry.io/docs/zero-code/obi/configure/export-data/"
+  >
+    Protocol, database, messaging, and Go library instrumentation coverage.
+  </Card>
+</CardGroup>
+
+Odigos configures OBI header-based context propagation (`context_propagation: headers`). For encrypted traffic and
+multi-service propagation limits, see the upstream distributed tracing guide linked above.
+
+### Network metrics
+
+Network metrics describe bytes sent and received between endpoints (pods, services, nodes, and related Kubernetes
+metadata). Odigos enables OBI's `network` metrics feature and attaches processes to the network-metrics selector when
+metrics are enabled for the workload.
+
+<CardGroup cols={2}>
+  <Card
+    title="Network metrics overview"
+    icon="chart-network"
+    href="https://opentelemetry.io/docs/zero-code/obi/network/"
+  >
+    Flow and inter-zone metric families, attributes, and aggregation behavior.
+  </Card>
+  <Card
+    title="Network metrics configuration"
+    icon="sliders"
+    href="https://opentelemetry.io/docs/zero-code/obi/network/config/"
+  >
+    YAML and environment variables for direction, CIDR breakdown, caching, and more.
+  </Card>
+  <Card
+    title="Network metrics quickstart"
+    icon="rocket"
+    href="https://opentelemetry.io/docs/zero-code/obi/network/quickstart/"
+  >
+    End-to-end setup example for generating network metrics.
+  </Card>
+  <Card
+    title="Exported metric names"
+    icon="table"
+    href="https://opentelemetry.io/docs/zero-code/obi/metrics/"
+  >
+    OpenTelemetry and Prometheus names for `obi.network.flow.bytes` and related series.
+  </Card>
+</CardGroup>
+
+### Stats metrics
+
+Stats metrics capture TCP-level statistics between endpoints, including round-trip time and failed connection
+attempts. Odigos enables OBI's `stats` metrics feature alongside network metrics when workload metrics collection is
+on.
+
+<CardGroup cols={2}>
+  <Card
+    title="Exported stats metrics"
+    icon="gauge"
+    href="https://opentelemetry.io/docs/zero-code/obi/metrics/"
+  >
+    Metric names and attributes for `obi.stat.tcp.rtt`, `obi.stat.tcp.failed.connections`, and related series.
+  </Card>
+  <Card
+    title="Metrics export features"
+    icon="toggle-on"
+    href="https://opentelemetry.io/docs/zero-code/obi/configure/export-data/"
+  >
+    How OBI groups metrics into `network`, `stats`, `stats_tcp_rtt`, and related feature flags.
+  </Card>
+</CardGroup>
+
 ### Limitations
 
 OBI's instrumentation is based on HTTP header propagation. For encrypted traffic, context propagation will not work unless both
