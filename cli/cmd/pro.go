@@ -189,7 +189,9 @@ var centralCmd = &cobra.Command{
 var centralInstallCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install Odigos Central backend and UI components",
-	RunE:  runCentralInstallOrUpgradeWithLegacyCheck,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runCentralInstallOrUpgrade()
+	},
 	Example: `
 # Install Odigos Central
 odigos pro central install
@@ -211,7 +213,9 @@ odigos pro central uninstall
 var centralUpgradeCmd = &cobra.Command{
 	Use:   "upgrade",
 	Short: "Upgrade Odigos Central UI in the central namespace",
-	RunE:  runCentralInstallOrUpgradeWithLegacyCheck,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runCentralInstallOrUpgrade()
+	},
 	Example: `
 # Upgrade Odigos
 odigos pro central upgrade
@@ -292,42 +296,6 @@ func runCentralInstallOrUpgrade() error {
 
 	fmt.Printf("\n✅ %s\n", helm.FormatInstallOrUpgradeMessage(result, ch.Metadata.Version))
 	return nil
-}
-
-func runCentralInstallOrUpgradeWithLegacyCheck(cmd *cobra.Command, args []string) error {
-	ctx := cmd.Context()
-	kubeClient := cmdcontext.KubeClientFromContextOrExit(ctx)
-
-	// NOTE: Central has its own install marker (odigos-central-deployment) and legacy flow (`odigos pro-dep central ...`).
-	// Using the OSS legacy check here is incorrect and can miss legacy Central installations.
-	targetNamespace := proNamespaceFlag
-	isLegacy, err := helm.IsLegacyCentralInstallation(ctx, kubeClient.Clientset.CoreV1(), targetNamespace)
-	if err != nil {
-		return err
-	}
-	if isLegacy {
-		msg := fmt.Sprintf(`
-⚠️  Detected that Odigos Central was originally installed using an older CLI-based method (without Helm) in namespace "%s".
-
-The current version of the Odigos CLI installs and upgrades Odigos Central using Helm under the hood,
-and cannot automatically upgrade installations created with the legacy method ('odigos pro-dep central ...').
-
-👉  To proceed, please do one of the following:
-   • Run 'odigos pro-dep central uninstall -n %s --yes' (or delete the namespace), then retry 'odigos pro central install'
-   • Or manually remove the legacy marker ConfigMap: kubectl -n %s delete configmap %s
-
-`, targetNamespace, targetNamespace, targetNamespace, k8sconsts.OdigosCentralDeploymentConfigMapName)
-
-		fmt.Printf("%s\n", msg)
-		os.Exit(1)
-	}
-
-	// Fail fast if the legacy flow left behind Central resources that Helm cannot adopt.
-	if err := helm.ValidateCentralHelmInstallPreconditions(ctx, kubeClient.Clientset.CoreV1(), kubeClient.Dynamic, targetNamespace, centralHelmReleaseName); err != nil {
-		return err
-	}
-
-	return runCentralInstallOrUpgrade()
 }
 
 var portForwardCentralCmd = &cobra.Command{
