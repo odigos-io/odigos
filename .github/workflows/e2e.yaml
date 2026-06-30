@@ -56,6 +56,12 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Build Odigos Images
+        # The collector image pulls the internal odigos-ebpf-profiler fork (memory
+        # profiling); GHTOKEN is forwarded into the Docker build as the ghtoken
+        # secret so go mod download can fetch it. Default GITHUB_TOKEN can't read
+        # sibling internal repos.
+        env:
+          GHTOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
         run: |
           TAG=e2e-test make build-images
           docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")

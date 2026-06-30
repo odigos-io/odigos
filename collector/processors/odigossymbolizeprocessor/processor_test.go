@@ -113,8 +113,14 @@ func TestProcessProfilesFillsNativeLines(t *testing.T) {
 	require.Equal(t, "odigos.symbol.source", dict.StringTable().At(int(attr.KeyStrindex())))
 	require.Equal(t, "symtab", attr.Value().Str())
 
-	// The unresolvable native location stays empty.
-	require.Equal(t, 0, lt.At(1).Lines().Len(), "unresolvable location must stay raw")
+	// The unresolvable native location is never dropped: it gets a synthetic
+	// "module+0xoffset" line (re-symbolizable later via debuginfod/DWARF) and no
+	// symbol-source tag, since no live symbol named it.
+	syn := lt.At(1)
+	require.Equal(t, 1, syn.Lines().Len(), "unresolvable native frame must get a synthetic module+offset line")
+	synName := dict.StringTable().At(int(dict.FunctionTable().At(int(syn.Lines().At(0).FunctionIndex())).NameStrindex()))
+	require.Equal(t, "libfix.so+0x2000", synName)
+	require.Equal(t, 0, syn.AttributeIndices().Len(), "synthetic fallback carries no symbol-source tag")
 
 	// The already-symbolized location is untouched (still its original Line).
 	require.Equal(t, 1, lt.At(namedLoc).Lines().Len())

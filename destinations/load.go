@@ -2,6 +2,8 @@ package destinations
 
 import (
 	"embed"
+	"fmt"
+	"os"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -56,7 +58,11 @@ func load(fs embed.FS) error {
 		var dest Destination
 		err = yaml.Unmarshal(bytesData, &dest)
 		if err != nil {
-			return err
+			// A single malformed destination catalog entry must not take down the
+			// whole UI bootstrap — skip it and continue so the rest of the catalog
+			// (and the app) still loads. Surfaced to stderr for diagnosis.
+			fmt.Fprintf(os.Stderr, "destinations: skipping %q: %v\n", fileName, err)
+			continue
 		}
 
 		destsByTypeMap[string(dest.Metadata.Type)] = dest

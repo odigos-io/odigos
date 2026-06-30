@@ -121,17 +121,125 @@ profiling:
   # @schema
   ui:
     # @schema
-    # description: Slot TTL in seconds.
+    # description: How long an EMPTY profile slot (a tab opened on a source that produced nothing) is kept after the last request, in seconds. Default 300 (5 minutes).
     # @schema
     slotTTLSeconds: 300
+    # @schema
+    # description: |-
+    #   Minimum time a slot that HAS received profile data is kept past the last chunk, even with no UI
+    #   polling — so a populated flamegraph stays visible instead of vanishing when the tab stops refreshing.
+    #   In seconds. Default 1800 (30 minutes).
+    # @schema
+    dataRetentionSeconds: 1800
     # @schema
     # description: Max in-memory profile slots.
     # @schema
     maxSlots: 32
     # @schema
-    # description: Max bytes per slot (default 8 MiB).
+    # description: Max bytes per slot (default 10 MiB). Note the UI cache ceiling is maxSlots*slotMaxBytes; keep it under the UI memory limit.
     # @schema
-    slotMaxBytes: 8388608
+    slotMaxBytes: 10485760
+  # @schema
+  # description: |-
+  #   Heap / allocation (memory) profiling, layered on top of the profiling pipeline above
+  #   (requires profiling.enabled). Default off. The two enablement mechanisms below are
+  #   independent fallbacks — both default off; turn on either, or both:
+  #     - inject:         no-restart live enablement via ptrace (Go heap sampling today),
+  #                       zero pod disruption.
+  #     - native.restart: LD_PRELOAD a prof-enabled allocator into C/C++/Rust workloads at
+  #                       process start (one-time pod roll).
+  # @schema
+  memory:
+    # @schema
+    # description: Turn on memory profiling for enabled Sources. Requires profiling.enabled.
+    # @schema
+    enabled: false
+    # @schema
+    # description: |-
+    #   Per-runtime toggles. go/java profile with no app change; dotnet/node attach at
+    #   runtime. C/C++/Rust ("native") is driven by native.restart below, not here.
+    # @schema
+    languages:
+      # @schema
+      # description: Go heap profiling (runtime.mbuckets, out-of-process, no restart). Default true.
+      # @schema
+      go: true
+      # @schema
+      # description: Java heap/leak profiling via JFR (startup flag, one-time restart). Default true.
+      # @schema
+      java: true
+      # @schema
+      # description: .NET allocation profiling via EventPipe (runtime attach). Default false.
+      # @schema
+      dotnet: false
+      # @schema
+      # description: Node.js heap sampling via the V8 Inspector (runtime attach). Default false.
+      # @schema
+      node: false
+      # @schema
+      # description: Native C/C++/Rust allocator profiling (jemalloc-prof / libmemsample). Requires native.restart. Default false.
+      # @schema
+      native: false
+      # @schema
+      # description: PHP allocation profiling (libmemsample + Zend call stacks). Rides native.restart; enabled by default when restart is on. Set false to disable PHP only.
+      # @schema
+      php: true
+      # @schema
+      # description: Python allocation profiling (libmemsample + CPython frames). Rides native.restart; enabled by default when restart is on. Set false to disable Python only.
+      # @schema
+      python: true
+      # @schema
+      # description: Ruby allocation profiling (libmemsample + rb_profile_frames). Rides native.restart; enabled by default when restart is on. Set false to disable Ruby only.
+      # @schema
+      ruby: true
+    # @schema
+    # description: No-restart enablement via ptrace (Go heap sampling). Zero pod disruption. Default off.
+    # @schema
+    inject: false
+    # @schema
+    # description: Native (C/C++/Rust) allocator enablement. Python/Ruby/PHP also ride the preload interposer when this is on.
+    # @schema
+    native:
+      # @schema
+      # description: LD_PRELOAD a prof-enabled allocator (glibc) or libmemsample (musl) at process start. One-time pod restart. Default off.
+      # @schema
+      restart: false
+    # @schema
+    # description: Java engine — "jfr" (built-in, no native agent) or "asprof" (async-profiler, deeper stacks, needs hostPID).
+    # @schema
+    java:
+      # @schema
+      # description: jfr | asprof. Default jfr.
+      # @schema
+      mode: jfr
+    # @schema
+    # description: Track live-heap (leak) signals inuse_space/inuse_objects alongside cumulative alloc_*. Default true.
+    # @schema
+    inuseTracking: true
+    # @schema
+    # description: Target average bytes between sampled allocations — 131072 (128KiB), 262144 (256KiB) or 524288 (512KiB). Lower = finer + more overhead. Default 262144.
+    # @schema
+    sampleSizeBytes: 262144
+    # @schema
+    # description: How often heap profiles are collected and reported, in seconds. Default 15.
+    # @schema
+    reportIntervalSeconds: 15
+    # @schema
+    # description: Turn on the profiler's internal performance counters (procs/samples/tick/errors/readers). Spike-free, batched; the scrape source for the memprof Grafana dashboard. Default false.
+    # @schema
+    metrics: false
+    # @schema
+    # description: Optional internal debuginfod base URL for resolving stripped native binaries. Empty = in-container/on-host symbols only.
+    # @schema
+    debuginfod: ""
+  # @schema
+  # description: Native (C/C++/Rust) frame symbolization in the node collector. On by default when profiling is enabled.
+  # @schema
+  symbolization:
+    # @schema
+    # description: Resolve native frames to function names on-host (odigossymbolizeprocessor). Set false to leave raw addresses. Default true.
+    # @schema
+    native: true
 
 # @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
