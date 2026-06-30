@@ -30,6 +30,11 @@ For role mappings to work, Azure must include the user's groups in the token it 
 <Steps>
   <Step title="Emit the groups claim">
     In the Azure portal, open your App Registration → **Token configuration** → **Add groups claim**. Choose the groups to emit (e.g. *Security groups*) for both the **ID** and **Access** tokens.
+
+    <img
+      src="/images/central/azure-groups-claim.png"
+      alt="Azure App Registration Token configuration with the Edit groups claim panel, Security groups selected for ID and Access tokens"
+    />
   </Step>
 
   <Step title="Note the group identifier">
@@ -57,6 +62,11 @@ For role mappings to work, Azure must include the user's groups in the token it 
     - **Role** — the Odigos role to grant: **Admin**, **Maintainer**, or **Viewer**.
     - **Claim Name** — the token claim that carries group membership. Defaults to `groups`.
     - **Display Name** *(optional)* — a friendly label shown in the table instead of the raw group value. This does **not** affect matching.
+
+    <img
+      src="/images/central/create-role-mapping.png"
+      alt="Create Role Mapping dialog in the Central UI with Group, Role, Claim Name, and Display Name fields"
+    />
   </Step>
 
   <Step title="Save and sign in">
