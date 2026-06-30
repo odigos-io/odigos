@@ -10,7 +10,6 @@ import (
 	"github.com/odigos-io/odigos/odiglet"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks"
-	"github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks/obi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"k8s.io/client-go/kubernetes"
@@ -100,6 +99,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	// OBI (traces distro + network-metrics generic) is wired centrally in odiglet.New, since
+	// it is identical for OSS and enterprise.
 	instrumentationManagerOptions := ebpf.InstrumentationManagerOptions{
 		Factories:                  factories,
 		DistributionGetter:         dg,
@@ -116,13 +117,19 @@ func main() {
 	logger.Info("odiglet exiting")
 }
 
+// ebpfInstrumentationFactories builds the distro -> factory map used by the instrumentation
+// manager. Only distros with a dedicated eBPF instrumentation are listed.
+//
+// OBI (the traces distro factory and the network-metrics generic factory) is not listed here;
+// it is wired centrally in odiglet.New since it is identical for OSS and enterprise. Natively-
+// instrumented distros have no factory of their own and are picked up by generic factories.
 func ebpfInstrumentationFactories(otlpCommon *grpc.ClientConn) (map[string]commonInstrumentation.Factory, error) {
 	goFactory, err := sdks.NewGoInstrumentationFactory(otlpCommon)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create go instrumentation factory: %w", err)
 	}
+
 	return map[string]commonInstrumentation.Factory{
-		"golang-community":                   goFactory,
-		"opentelemetry-ebpf-instrumentation": obi.NewOBIInstrumentationFactory(),
+		"golang-community": goFactory,
 	}, nil
 }

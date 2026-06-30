@@ -1,0 +1,111 @@
+The **Network Metrics** rule enables network flow metrics and TCP stats metrics for matching workloads. These metrics are collected in odiglet and exported over OTLP alongside other workload telemetry.
+
+Learn more about the underlying collectors and metric families in the [OBI instrumentation guide](/oss/instrumentations/obi).
+
+## Considerations
+
+<Warning>
+  Before enabling **network metrics**, please note the following:
+  - Enable the cluster infrastructure in Helm by setting `metricsSources.networkMetrics.enabled` to `true` (it defaults to disabled).
+</Warning>
+
+## Configuration Options
+
+<AccordionGroup>
+  <Accordion title="networkMetrics">
+    **networkMetrics** `object` : Enable network flow and TCP stats metrics for scoped workloads. Setting this field (even as an empty object `{}`) enables collection; omit it to leave metrics disabled.
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  Multiple rules merge with OR semantics: if any matching rule enables network metrics, they are enabled for that source/language.
+</Note>
+
+## Cluster infrastructure for network flow metrics
+
+Network flow metrics require odiglet to run with [`hostNetwork`](https://kubernetes.io/docs/reference/kubernetes-api/core/pod-v1/#:~:text=%60hostNetwork%60), which makes the pod share the host's network namespace instead of getting its own. Configure this once at the cluster level in Helm:
+
+```yaml
+metricsSources:
+  networkMetrics:
+    enabled: true
+```
+
+The InstrumentationRule alone is not enough for network flow metrics without that Helm setting.
+
+## Basic Example
+
+<Info>
+  Create `InstrumentationRule` resources in the Odigos installation namespace (typically `odigos-system`). Rules in other namespaces are not picked up by Odigos.
+</Info>
+
+The following example enables network metrics cluster-wide for all workloads.
+
+<Steps>
+  <Step title="Enable network metrics infrastructure">
+    Set `metricsSources.networkMetrics.enabled` to `true` in your Odigos Helm values and upgrade the release.
+  </Step>
+  <Step title="Create the InstrumentationRule">
+    Create a YAML file with the following content:
+
+    ```yaml network-metrics.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: InstrumentationRule
+    metadata:
+      name: network-metrics
+      namespace: odigos-system
+    spec:
+      ruleName: "Network metrics"
+      networkMetrics: {}
+    ```
+  </Step>
+  <Step title="Apply the rule">
+    ```shell
+    kubectl apply -f network-metrics.yaml
+    ```
+  </Step>
+</Steps>
+
+Network metrics collection will run on any new pod created after the rule is applied. Existing pods will not be affected and require a restart to initiate metrics collection.
+
+
+## Scoped Example
+
+To limit the rule to a single workload, add `scopes`. Omit `scopes` (or leave it empty) to apply the rule cluster-wide.
+
+```yaml network-metrics-scoped.yaml
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: network-metrics-my-app
+  namespace: odigos-system
+spec:
+  ruleName: "Network metrics for my-app"
+  scopes:
+    sources:
+      - name: my-app
+        namespace: default
+        kind: Deployment
+  networkMetrics: {}
+```
+
+Apply with:
+
+```shell
+kubectl apply -f network-metrics-scoped.yaml
+```
+
+## Exported Metrics
+
+When this rule is enabled, the following metrics are exported for matching workloads:
+
+| Name (OpenTelemetry) | Name (Prometheus) | Type | Unit | Description |
+| -------------------- | ----------------- | ---- | ---- | ----------- |
+| `odigos.network.flow.bytes` | `odigos_network_flow_bytes_total` | Counter | bytes | Bytes sent from a source network endpoint to a destination network endpoint |
+| `odigos.network.inter.zone.bytes` | `odigos_network_inter_zone_bytes_total` | Counter | bytes | Bytes flowing between cloud availability zones in your cluster (Kubernetes only) |
+| `odigos.stat.tcp.rtt` | `odigos_stat_tcp_rtt_seconds` | Histogram | seconds | TCP round-trip time (RTT) latency observed between network endpoints |
+| `odigos.stat.tcp.failed.connections` | `odigos_stat_tcp_failed_connections_total` | Counter | 1 | Failed TCP connection attempts between endpoints, labeled by failure reason |
+
+<Note>
+  These metrics are collected using [OBI](https://opentelemetry.io/docs/zero-code/obi). See the [OBI instrumentation guide](/oss/instrumentations/obi) to learn more about the collectors, metric families, and available attributes.
+</Note>

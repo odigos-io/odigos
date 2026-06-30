@@ -3,7 +3,7 @@
 # go.opentelemetry.io/obi (module path in go mod edit -replace; must match go.mod)
 OBI_MODULE := go.opentelemetry.io/obi
 # Upstream source-generated release (https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/pull/1378). Keep in sync with go.mod require go.opentelemetry.io/obi.
-OBI_VERSION ?= v0.8.0
+OBI_VERSION ?= v0.10.0
 OBI_LOCAL_DIR := $(abspath $(CURDIR)/.obi)
 OBI_EXTRACTED := $(OBI_LOCAL_DIR)/obi-$(OBI_VERSION)-source-generated
 OBI_ARCHIVE := obi-$(OBI_VERSION)-source-generated.tar.gz

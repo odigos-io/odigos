@@ -8,10 +8,16 @@
 {{- $collectLogs := has "logs" $signals -}}
 {{- $collectMetrics := has "metrics" $signals -}}
 {{- $hostMetricsDisabled := false -}}
+{{- $networkMetricsEnabled := false -}}
 {{- if .Values.metricsSources -}}
   {{- if .Values.metricsSources.hostMetrics -}}
     {{- if hasKey .Values.metricsSources.hostMetrics "disabled" -}}
       {{- $hostMetricsDisabled = .Values.metricsSources.hostMetrics.disabled -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if .Values.metricsSources.networkMetrics -}}
+    {{- if hasKey .Values.metricsSources.networkMetrics "enabled" -}}
+      {{- $networkMetricsEnabled = .Values.metricsSources.networkMetrics.enabled -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
@@ -476,8 +482,8 @@ spec:
                 - -rpc-timeout=10s
 {{- toYaml .Values.odiglet.csidriver.readinessProbe | nindent 12 }}
 {{- end }}
-      # set hostNetwork only for k8s versions prior to v1.26 unless noHostNetwork is true
-      {{- if and (semverCompare "<1.26.0" $k8sVersion) (not .Values.odiglet.noHostNetwork) }}
+      # set hostNetwork for k8s versions prior to v1.26 (unless noHostNetwork), or when OBI network metrics infrastructure is enabled
+      {{- if or (and (semverCompare "<1.26.0" $k8sVersion) (not .Values.odiglet.noHostNetwork)) $networkMetricsEnabled }}
       hostNetwork: true
       {{- end}}
       {{- if not .Values.odiglet.noHostPid }}
