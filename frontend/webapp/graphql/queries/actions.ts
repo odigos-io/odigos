@@ -1,5 +1,26 @@
 import { gql } from '@apollo/client';
 
+export const GET_ACTION_TYPES = gql`
+  query GetActionTypes {
+    actionTypes {
+      type
+      displayName
+      description
+      allowedSignals
+      docsEndpoint
+      docsDescription
+      fields {
+        name
+        displayName
+        componentType
+        componentProperties
+        initialValue
+        renderCondition
+      }
+    }
+  }
+`;
+
 export const GET_ACTIONS = gql`
   query GetActions {
     computePlatform {

@@ -1,0 +1,36 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Action
+metadata:
+  type: AddClusterInfo
+  displayName: Add Cluster Info
+spec:
+  description: Add static cluster-scoped attributes to your data.
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: true
+  docsEndpoint: /pipeline/actions/attributes/addclusterinfo
+  docsDescription: This action adds static resource attributes to spans, metrics data points and log records. It is useful to add cluster-wide attributes to all telemetry signals.
+  fields:
+    - name: clusterAttributes
+      displayName: Attributes to add
+      componentType: multiTabledInput
+      componentProps:
+        tooltip: Static resource attributes added to every telemetry signal.
+        columns:
+          - keyName: attributeName
+            label: Attribute name
+            placeholder: e.g. environment
+          - keyName: attributeStringValue
+            label: Value
+            placeholder: e.g. production
+    - name: overwriteExistingValues
+      displayName: Overwrite Existing Values
+      componentType: checkbox
+      componentProps:
+        tooltip: When enabled, existing attribute values are overwritten.

@@ -1,0 +1,24 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Action
+metadata:
+  type: DeleteAttribute
+  displayName: Delete Attribute
+spec:
+  description: Delete attributes from logs, metrics, and traces.
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: true
+  docsEndpoint: /pipeline/actions/attributes/deleteattribute
+  docsDescription: This action will delete the specified attributes from all telemetry signals that are specified in the signals field, regardless of the source, or any other condition.
+  fields:
+    - name: attributeNamesToDelete
+      displayName: Attributes to delete
+      componentType: multiInput
+      componentProps:
+        tooltip: List of attribute names to delete from the selected signals.

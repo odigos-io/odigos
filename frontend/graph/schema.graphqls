@@ -394,6 +394,31 @@ type GetDestinationCategories {
   categories: [DestinationsCategory!]!
 }
 
+# Dynamic, YAML-defined description of a single action form field. Mirrors
+# DestinationFieldYamlProperties so the UI can reuse the same dynamic field
+# renderer for actions.
+type ActionFieldYamlProperties {
+  name: String!
+  displayName: String!
+  componentType: String!
+  componentProperties: String! # Using String to store JSON data as a string
+  initialValue: String!
+  renderCondition: [String!]!
+}
+
+# A single action type as described by the embedded YAML action catalog. Allows
+# the UI to render the list of available actions (and, where provided, their
+# form fields) dynamically instead of from hard-coded options.
+type ActionTypeOption {
+  type: String!
+  displayName: String!
+  description: String!
+  allowedSignals: [SignalType!]!
+  docsEndpoint: String!
+  docsDescription: String!
+  fields: [ActionFieldYamlProperties!]!
+}
+
 type ExportedSignals {
   traces: Boolean!
   metrics: Boolean!
@@ -877,6 +902,11 @@ type Query {
 
   destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!
+
+  # Returns the dynamic, YAML-defined catalog of available action types. The UI
+  # uses this to render the action picker (and dynamic fields) instead of its
+  # hard-coded options. Nullable so older/unsupported backends can omit it.
+  actionTypes: [ActionTypeOption!]
 
   getOverviewMetrics: OverviewMetricsResponse!
   getServiceMap: ServiceMap!

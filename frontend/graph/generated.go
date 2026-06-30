@@ -68,6 +68,15 @@ type ComplexityRoot struct {
 		Type       func(childComplexity int) int
 	}
 
+	ActionFieldYamlProperties struct {
+		ComponentProperties func(childComplexity int) int
+		ComponentType       func(childComplexity int) int
+		DisplayName         func(childComplexity int) int
+		InitialValue        func(childComplexity int) int
+		Name                func(childComplexity int) int
+		RenderCondition     func(childComplexity int) int
+	}
+
 	ActionFields struct {
 		AnnotationsAttributes        func(childComplexity int) int
 		AttributeNamesToDelete       func(childComplexity int) int
@@ -82,6 +91,16 @@ type ComplexityRoot struct {
 		PiiCategories                func(childComplexity int) int
 		Renames                      func(childComplexity int) int
 		URLTemplatizationRulesGroups func(childComplexity int) int
+	}
+
+	ActionTypeOption struct {
+		AllowedSignals  func(childComplexity int) int
+		Description     func(childComplexity int) int
+		DisplayName     func(childComplexity int) int
+		DocsDescription func(childComplexity int) int
+		DocsEndpoint    func(childComplexity int) int
+		Fields          func(childComplexity int) int
+		Type            func(childComplexity int) int
 	}
 
 	AgentsInitContainerResourcesConfig struct {
@@ -1159,6 +1178,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		ActionTypes                       func(childComplexity int) int
 		CollectorPod                      func(childComplexity int, namespace string, name string) int
 		ComputePlatform                   func(childComplexity int) int
 		Config                            func(childComplexity int) int
@@ -1528,6 +1548,7 @@ type QueryResolver interface {
 	K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (string, error)
 	DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error)
 	PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error)
+	ActionTypes(ctx context.Context) ([]*model.ActionTypeOption, error)
 	GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error)
 	GetServiceMap(ctx context.Context) (*model.ServiceMap, error)
 	PeerSources(ctx context.Context, serviceName string) (*model.PeerSources, error)
@@ -1643,6 +1664,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Action.Type(childComplexity), true
 
+	case "ActionFieldYamlProperties.componentProperties":
+		if e.complexity.ActionFieldYamlProperties.ComponentProperties == nil {
+			break
+		}
+
+		return e.complexity.ActionFieldYamlProperties.ComponentProperties(childComplexity), true
+
+	case "ActionFieldYamlProperties.componentType":
+		if e.complexity.ActionFieldYamlProperties.ComponentType == nil {
+			break
+		}
+
+		return e.complexity.ActionFieldYamlProperties.ComponentType(childComplexity), true
+
+	case "ActionFieldYamlProperties.displayName":
+		if e.complexity.ActionFieldYamlProperties.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.ActionFieldYamlProperties.DisplayName(childComplexity), true
+
+	case "ActionFieldYamlProperties.initialValue":
+		if e.complexity.ActionFieldYamlProperties.InitialValue == nil {
+			break
+		}
+
+		return e.complexity.ActionFieldYamlProperties.InitialValue(childComplexity), true
+
+	case "ActionFieldYamlProperties.name":
+		if e.complexity.ActionFieldYamlProperties.Name == nil {
+			break
+		}
+
+		return e.complexity.ActionFieldYamlProperties.Name(childComplexity), true
+
+	case "ActionFieldYamlProperties.renderCondition":
+		if e.complexity.ActionFieldYamlProperties.RenderCondition == nil {
+			break
+		}
+
+		return e.complexity.ActionFieldYamlProperties.RenderCondition(childComplexity), true
+
 	case "ActionFields.annotationsAttributes":
 		if e.complexity.ActionFields.AnnotationsAttributes == nil {
 			break
@@ -1733,6 +1796,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ActionFields.URLTemplatizationRulesGroups(childComplexity), true
+
+	case "ActionTypeOption.allowedSignals":
+		if e.complexity.ActionTypeOption.AllowedSignals == nil {
+			break
+		}
+
+		return e.complexity.ActionTypeOption.AllowedSignals(childComplexity), true
+
+	case "ActionTypeOption.description":
+		if e.complexity.ActionTypeOption.Description == nil {
+			break
+		}
+
+		return e.complexity.ActionTypeOption.Description(childComplexity), true
+
+	case "ActionTypeOption.displayName":
+		if e.complexity.ActionTypeOption.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.ActionTypeOption.DisplayName(childComplexity), true
+
+	case "ActionTypeOption.docsDescription":
+		if e.complexity.ActionTypeOption.DocsDescription == nil {
+			break
+		}
+
+		return e.complexity.ActionTypeOption.DocsDescription(childComplexity), true
+
+	case "ActionTypeOption.docsEndpoint":
+		if e.complexity.ActionTypeOption.DocsEndpoint == nil {
+			break
+		}
+
+		return e.complexity.ActionTypeOption.DocsEndpoint(childComplexity), true
+
+	case "ActionTypeOption.fields":
+		if e.complexity.ActionTypeOption.Fields == nil {
+			break
+		}
+
+		return e.complexity.ActionTypeOption.Fields(childComplexity), true
+
+	case "ActionTypeOption.type":
+		if e.complexity.ActionTypeOption.Type == nil {
+			break
+		}
+
+		return e.complexity.ActionTypeOption.Type(childComplexity), true
 
 	case "AgentsInitContainerResourcesConfig.limitCPUm":
 		if e.complexity.AgentsInitContainerResourcesConfig.LimitCPUm == nil {
@@ -6644,6 +6756,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProvenanceEntry.ReconciledFrom(childComplexity), true
 
+	case "Query.actionTypes":
+		if e.complexity.Query.ActionTypes == nil {
+			break
+		}
+
+		return e.complexity.Query.ActionTypes(childComplexity), true
+
 	case "Query.collectorPod":
 		if e.complexity.Query.CollectorPod == nil {
 			break
@@ -10664,6 +10783,270 @@ func (ec *executionContext) fieldContext_Action_conditions(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _ActionFieldYamlProperties_name(ctx context.Context, field graphql.CollectedField, obj *model.ActionFieldYamlProperties) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFieldYamlProperties_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFieldYamlProperties_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFieldYamlProperties",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFieldYamlProperties_displayName(ctx context.Context, field graphql.CollectedField, obj *model.ActionFieldYamlProperties) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFieldYamlProperties_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFieldYamlProperties_displayName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFieldYamlProperties",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFieldYamlProperties_componentType(ctx context.Context, field graphql.CollectedField, obj *model.ActionFieldYamlProperties) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFieldYamlProperties_componentType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ComponentType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFieldYamlProperties_componentType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFieldYamlProperties",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFieldYamlProperties_componentProperties(ctx context.Context, field graphql.CollectedField, obj *model.ActionFieldYamlProperties) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFieldYamlProperties_componentProperties(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ComponentProperties, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFieldYamlProperties_componentProperties(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFieldYamlProperties",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFieldYamlProperties_initialValue(ctx context.Context, field graphql.CollectedField, obj *model.ActionFieldYamlProperties) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFieldYamlProperties_initialValue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InitialValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFieldYamlProperties_initialValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFieldYamlProperties",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFieldYamlProperties_renderCondition(ctx context.Context, field graphql.CollectedField, obj *model.ActionFieldYamlProperties) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFieldYamlProperties_renderCondition(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RenderCondition, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFieldYamlProperties_renderCondition(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFieldYamlProperties",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ActionFields_collectContainerAttributes(ctx context.Context, field graphql.CollectedField, obj *model.ActionFields) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ActionFields_collectContainerAttributes(ctx, field)
 	if err != nil {
@@ -11238,6 +11621,328 @@ func (ec *executionContext) fieldContext_ActionFields_extractAttribute(_ context
 				return ec.fieldContext_ExtractAttribute_extractions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ExtractAttribute", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionTypeOption_type(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionTypeOption_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionTypeOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionTypeOption_displayName(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionTypeOption_displayName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionTypeOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionTypeOption_description(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionTypeOption_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionTypeOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionTypeOption_allowedSignals(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_allowedSignals(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AllowedSignals, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.SignalType)
+	fc.Result = res
+	return ec.marshalNSignalType2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSignalTypeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionTypeOption_allowedSignals(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionTypeOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type SignalType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionTypeOption_docsEndpoint(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_docsEndpoint(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DocsEndpoint, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionTypeOption_docsEndpoint(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionTypeOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionTypeOption_docsDescription(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_docsDescription(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DocsDescription, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionTypeOption_docsDescription(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionTypeOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionTypeOption_fields(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_fields(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Fields, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ActionFieldYamlProperties)
+	fc.Result = res
+	return ec.marshalNActionFieldYamlProperties2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionFieldYamlPropertiesᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionTypeOption_fields(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionTypeOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_ActionFieldYamlProperties_name(ctx, field)
+			case "displayName":
+				return ec.fieldContext_ActionFieldYamlProperties_displayName(ctx, field)
+			case "componentType":
+				return ec.fieldContext_ActionFieldYamlProperties_componentType(ctx, field)
+			case "componentProperties":
+				return ec.fieldContext_ActionFieldYamlProperties_componentProperties(ctx, field)
+			case "initialValue":
+				return ec.fieldContext_ActionFieldYamlProperties_initialValue(ctx, field)
+			case "renderCondition":
+				return ec.fieldContext_ActionFieldYamlProperties_renderCondition(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ActionFieldYamlProperties", field.Name)
 		},
 	}
 	return fc, nil
@@ -42981,6 +43686,63 @@ func (ec *executionContext) fieldContext_Query_potentialDestinations(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_actionTypes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_actionTypes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ActionTypes(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ActionTypeOption)
+	fc.Result = res
+	return ec.marshalOActionTypeOption2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionTypeOptionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_actionTypes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "type":
+				return ec.fieldContext_ActionTypeOption_type(ctx, field)
+			case "displayName":
+				return ec.fieldContext_ActionTypeOption_displayName(ctx, field)
+			case "description":
+				return ec.fieldContext_ActionTypeOption_description(ctx, field)
+			case "allowedSignals":
+				return ec.fieldContext_ActionTypeOption_allowedSignals(ctx, field)
+			case "docsEndpoint":
+				return ec.fieldContext_ActionTypeOption_docsEndpoint(ctx, field)
+			case "docsDescription":
+				return ec.fieldContext_ActionTypeOption_docsDescription(ctx, field)
+			case "fields":
+				return ec.fieldContext_ActionTypeOption_fields(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ActionTypeOption", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_getOverviewMetrics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_getOverviewMetrics(ctx, field)
 	if err != nil {
@@ -55370,6 +56132,70 @@ func (ec *executionContext) _Action(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var actionFieldYamlPropertiesImplementors = []string{"ActionFieldYamlProperties"}
+
+func (ec *executionContext) _ActionFieldYamlProperties(ctx context.Context, sel ast.SelectionSet, obj *model.ActionFieldYamlProperties) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, actionFieldYamlPropertiesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ActionFieldYamlProperties")
+		case "name":
+			out.Values[i] = ec._ActionFieldYamlProperties_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "displayName":
+			out.Values[i] = ec._ActionFieldYamlProperties_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "componentType":
+			out.Values[i] = ec._ActionFieldYamlProperties_componentType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "componentProperties":
+			out.Values[i] = ec._ActionFieldYamlProperties_componentProperties(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "initialValue":
+			out.Values[i] = ec._ActionFieldYamlProperties_initialValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "renderCondition":
+			out.Values[i] = ec._ActionFieldYamlProperties_renderCondition(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var actionFieldsImplementors = []string{"ActionFields"}
 
 func (ec *executionContext) _ActionFields(ctx context.Context, sel ast.SelectionSet, obj *model.ActionFields) graphql.Marshaler {
@@ -55407,6 +56233,75 @@ func (ec *executionContext) _ActionFields(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._ActionFields_urlTemplatizationRulesGroups(ctx, field, obj)
 		case "extractAttribute":
 			out.Values[i] = ec._ActionFields_extractAttribute(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var actionTypeOptionImplementors = []string{"ActionTypeOption"}
+
+func (ec *executionContext) _ActionTypeOption(ctx context.Context, sel ast.SelectionSet, obj *model.ActionTypeOption) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, actionTypeOptionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ActionTypeOption")
+		case "type":
+			out.Values[i] = ec._ActionTypeOption_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "displayName":
+			out.Values[i] = ec._ActionTypeOption_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._ActionTypeOption_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "allowedSignals":
+			out.Values[i] = ec._ActionTypeOption_allowedSignals(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "docsEndpoint":
+			out.Values[i] = ec._ActionTypeOption_docsEndpoint(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "docsDescription":
+			out.Values[i] = ec._ActionTypeOption_docsDescription(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fields":
+			out.Values[i] = ec._ActionTypeOption_fields(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -63519,6 +64414,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "actionTypes":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_actionTypes(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "getOverviewMetrics":
 			field := field
 
@@ -66480,6 +67394,60 @@ func (ec *executionContext) marshalNAction2ᚖgithubᚗcomᚋodigosᚑioᚋodigo
 	return ec._Action(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNActionFieldYamlProperties2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionFieldYamlPropertiesᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ActionFieldYamlProperties) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNActionFieldYamlProperties2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionFieldYamlProperties(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNActionFieldYamlProperties2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionFieldYamlProperties(ctx context.Context, sel ast.SelectionSet, v *model.ActionFieldYamlProperties) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ActionFieldYamlProperties(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNActionFields2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionFields(ctx context.Context, sel ast.SelectionSet, v *model.ActionFields) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -66508,6 +67476,16 @@ func (ec *executionContext) unmarshalNActionType2githubᚗcomᚋodigosᚑioᚋod
 
 func (ec *executionContext) marshalNActionType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionType(ctx context.Context, sel ast.SelectionSet, v model.ActionType) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNActionTypeOption2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionTypeOption(ctx context.Context, sel ast.SelectionSet, v *model.ActionTypeOption) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ActionTypeOption(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNApiToken2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAPIToken(ctx context.Context, sel ast.SelectionSet, v []*model.APIToken) graphql.Marshaler {
@@ -70382,6 +71360,53 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalOActionTypeOption2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionTypeOptionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ActionTypeOption) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNActionTypeOption2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐActionTypeOption(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOAgentsInitContainerResourcesConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAgentsInitContainerResourcesConfig(ctx context.Context, sel ast.SelectionSet, v *model.AgentsInitContainerResourcesConfig) graphql.Marshaler {

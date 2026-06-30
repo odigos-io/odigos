@@ -1,0 +1,56 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Action
+metadata:
+  type: URLTemplatization
+  displayName: URL Templatization
+spec:
+  description: Replace dynamic URL path segments with named placeholders to reduce span cardinality.
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+    profiles:
+      supported: false
+  docsEndpoint: /pipeline/actions/attributes/urltemplatization
+  docsDescription: Normalizes HTTP URL paths by replacing dynamic segments (IDs, UUIDs, dates) with named placeholders (e.g. /user/1234 -> /user/{id}). Reduces cardinality of http.route and span names, improving usability in telemetry backends.
+  fields:
+    - name: urlTemplatizationRulesGroups
+      displayName: Rule groups
+      componentType: fieldGroup
+      componentProps:
+        addLabel: Add rule group
+        itemLabel: Rule Group
+        # Each group is one object; nested fields read/write keys on that object.
+        fields:
+          - name: filterK8sNamespace
+            displayName: Namespace
+            componentType: input
+            componentProps:
+              placeholder: All namespaces
+              tooltip: Filter rules to a specific Kubernetes namespace.
+          - name: workloadFilters
+            displayName: Workload filters
+            componentType: multiTabledInput
+            componentProps:
+              tooltip: Optionally scope templates to specific workloads.
+              columns:
+                - keyName: kind
+                  label: Kind
+                  componentType: dropdown
+                  options:
+                    - Deployment
+                    - StatefulSet
+                    - DaemonSet
+                - keyName: name
+                  label: Name
+                  placeholder: Any name
+          - name: templatizationRules
+            displayName: Templates
+            componentType: multiInput
+            componentProps:
+              placeholder: e.g. /user/{id}
+              # Persisted as `[{ template }]`; edited as a string list.
+              itemWrapperKey: template

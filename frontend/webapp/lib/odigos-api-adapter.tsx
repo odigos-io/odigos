@@ -53,6 +53,7 @@ import type {
 import {
   // queries
   GET_ACTIONS,
+  GET_ACTION_TYPES,
   GET_CONFIG,
   GET_CONFIG_YAMLS,
   GET_DATA_STREAMS,
@@ -194,6 +195,7 @@ const operations: OdigosApiOperations = {
 
   // actions. `renames` is a JSON-string on the wire; (de)serialize it so the
   // kit's object-shaped `renames` survives both directions (see helpers above).
+  GET_ACTION_TYPES: { document: GET_ACTION_TYPES },
   GET_ACTIONS: {
     document: GET_ACTIONS,
     transformResult: (raw): GetActionsData => {
