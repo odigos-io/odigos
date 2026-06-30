@@ -1,0 +1,4 @@
+
+
+readeElement allocates a lot of objects
+bulk allocator for stacktrace.frames

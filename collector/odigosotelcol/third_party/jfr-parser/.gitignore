@@ -1,0 +1,3 @@
+.idea/
+internal/cmd/fuzz/corpus
+internal/cmd/fuzz/fuzz

@@ -2,6 +2,8 @@ package config
 
 import (
 	"embed"
+	"fmt"
+	"os"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -42,7 +44,9 @@ func load(fs embed.FS) error {
 		var cfg Configuration
 		err = yaml.Unmarshal(bytesData, &cfg)
 		if err != nil {
-			return err
+			// Don't fail the whole UI bootstrap over one malformed config entry.
+			fmt.Fprintf(os.Stderr, "config: skipping %q: %v\n", fileName, err)
+			continue
 		}
 
 		configs = append(configs, cfg)

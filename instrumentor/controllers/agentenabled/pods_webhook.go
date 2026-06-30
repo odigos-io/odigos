@@ -132,14 +132,27 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		return fmt.Errorf("%w: %v", ErrMissingInstrumentationConfig, err)
 	}
 
-	if !ic.Spec.AgentInjectionEnabled {
-		// instrumentation config exists, but no agent should be injected by webhook
-		return ErrInjectionDisabled
-	}
-
 	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, p.Client)
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrMissingOdigosConfiguration, err)
+	}
+
+	// Memory profiling is DECOUPLED from tracing agent injection: a workload can
+	// be memory-profiled (node-wide agent + per-language env) without the tracing
+	// agent. Inject the memory env here, before the AgentInjectionEnabled gate, so
+	// it applies even when tracing is disabled for this Source.
+	memoryInjected := false
+	if odigosConfiguration.MemoryProfilingEnabled() {
+		memoryInjected = p.injectMemoryProfilingEnvs(pod, &ic, odigosConfiguration.MemoryNativeRestartEnabled(), odigosConfiguration.MemoryLanguages())
+	}
+
+	if !ic.Spec.AgentInjectionEnabled {
+		// No tracing agent for this Source. If we mutated the pod for memory
+		// profiling, return nil so Handle applies that patch; otherwise skip.
+		if memoryInjected {
+			return nil
+		}
+		return ErrInjectionDisabled
 	}
 
 	if odigosConfiguration.MountMethod == nil {
@@ -449,6 +462,88 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 
 	return volumeMounted, containerDirsToCopy, nil
+}
+
+// injectMemoryProfilingEnvs injects the per-language memory-profiling env into
+// each container with a detected language, independent of the tracing agent.
+// Java gets a JFR startup recording (built-in, no lib); C++/Rust get
+// allocator-integrated jemalloc (LD_PRELOAD + MALLOC_CONF). Go/Python/Ruby/PHP/
+// .NET/Node use node-wide or runtime mechanisms that need no per-pod env here.
+//
+// nativeRestart gates the C/C++/Rust LD_PRELOAD path: that env is the "restart"
+// enablement mechanism (it needs a one-time pod roll). When native mode is not
+// "restart" (e.g. only the no-restart inject path is enabled, or native is off),
+// we leave the pod's env untouched so no workload is forced to restart.
+func (p *PodsWebhook) injectMemoryProfilingEnvs(pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, nativeRestart bool, langs *common.ProfilingMemoryLanguages) bool {
+	// interpretedEnabled gates an interpreted runtime by its own toggle (defaulting
+	// to the native toggle when unset). nil langs => allow (back-compat: the native
+	// switch alone governed interpreted runtimes before per-language toggles).
+	interpretedEnabled := func(lang common.ProgrammingLanguage) bool {
+		if langs == nil {
+			return true
+		}
+		switch lang {
+		case common.PhpProgrammingLanguage:
+			return langs.PhpEnabled()
+		case common.PythonProgrammingLanguage:
+			return langs.PythonEnabled()
+		case common.RubyProgrammingLanguage:
+			return langs.RubyEnabled()
+		}
+		return true
+	}
+	injected := false
+	for i := range pod.Spec.Containers {
+		c := &pod.Spec.Containers[i]
+		rd := getRuntimeInfoForContainerName(ic, c.Name)
+		if rd == nil {
+			continue
+		}
+		existing := podswebhook.GetEnvVarNamesSet(c)
+		switch rd.Language {
+		case common.JavaProgrammingLanguage:
+			podswebhook.InjectJavaMemoryProfiling(existing, c)
+			injected = true
+		case common.CPlusPlusProgrammingLanguage, common.RustProgrammingLanguage:
+			if !nativeRestart {
+				// Native restart mechanism is off — do not LD_PRELOAD, do not
+				// force a pod restart. Native sampling stays disabled for this
+				// container until the operator opts into profiling.memory.native.restart.
+				continue
+			}
+			// Pick the preload by libc (crash-safety handled inside): glibc gets the
+			// prof-jemalloc lib, musl gets the musl-built libmemsample interposer
+			// (the glibc lib would abort a musl process), unknown libc gets no preload
+			// at all. When a lib IS preloaded, mount the delivered dir so it is present
+			// on the container rootfs (a missing preload is wasted at best, fatal at
+			// worst). This extends native coverage to musl-DYNAMIC Rust/C++; musl-static
+			// has no dynamic loader and is covered by the uprobe path instead.
+			podswebhook.InjectNativeMemoryProfiling(existing, c, rd.LibCType)
+			if podswebhook.NativeMemoryPreloads(rd.LibCType) {
+				podswebhook.MountDirectory(c, k8sconsts.OdigosAgentsDirectory+"/memprof")
+				podswebhook.MountPodVolumeToHostPath(pod)
+			}
+			injected = true
+		case common.PythonProgrammingLanguage, common.RubyProgrammingLanguage, common.PhpProgrammingLanguage:
+			if !nativeRestart {
+				// Interpreted runtimes are sampled by LD_PRELOAD'ing libmemsample,
+				// which (like the native path) needs a one-time pod restart — gated on
+				// the same profiling.memory.native.restart opt-in.
+				continue
+			}
+			if !interpretedEnabled(rd.Language) {
+				// This interpreter was explicitly disabled via its per-language toggle.
+				continue
+			}
+			podswebhook.InjectInterpretedMemoryProfiling(existing, c, rd.LibCType, rd.Language)
+			// Interpreted runtimes always get a preload (glibc by default), so always
+			// mount the delivered lib dir onto the container rootfs.
+			podswebhook.MountDirectory(c, k8sconsts.OdigosAgentsDirectory+"/memprof")
+			podswebhook.MountPodVolumeToHostPath(pod)
+			injected = true
+		}
+	}
+	return injected
 }
 
 func getRuntimeInfoForContainerName(ic *odigosv1.InstrumentationConfig, containerName string) *odigosv1.RuntimeDetailsByContainer {

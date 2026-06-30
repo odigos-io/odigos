@@ -66,6 +66,21 @@ spec:
           {{- end }}
           - name: GOMEMLIMIT
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.ui.resources) }}
+          {{- if .Values.profiling.enabled }}
+          {{- $pui := .Values.profiling.ui | default dict }}
+          # Profile-store cache tuning. The UI reads these env vars (frontend/services/profiles
+          # StoreLimitsFromEnv); without them it falls back to hardcoded code defaults and the
+          # profiling.ui helm values would be silently ignored. Keep maxSlots*slotMaxBytes below
+          # the UI memory limit (worst-case in-memory cache ceiling).
+          - name: PROFILES_MAX_SLOTS
+            value: {{ $pui.maxSlots | default 32 | int | quote }}
+          - name: PROFILES_SLOT_TTL_SECONDS
+            value: {{ $pui.slotTTLSeconds | default 300 | int | quote }}
+          - name: PROFILES_SLOT_DATA_RETENTION_SECONDS
+            value: {{ $pui.dataRetentionSeconds | default 1800 | int | quote }}
+          - name: PROFILES_SLOT_MAX_BYTES
+            value: {{ $pui.slotMaxBytes | default 10485760 | int | quote }}
+          {{- end }}
           {{- if $isEnterprise }}
           # Consumed by the enterprise UI at startup; ignored by the community image.
           - name: ODIGOS_ONPREM_TOKEN

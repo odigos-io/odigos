@@ -577,9 +577,16 @@ type SamplingConfiguration struct {
 // +kubebuilder:object:generate=true
 // ProfilingUiConfiguration holds optional UI resource limits and OTLP listen overrides for profiling.
 type ProfilingUiConfiguration struct {
+	// SlotTTLSeconds is how long an EMPTY slot (a tab opened on a source that never
+	// produced) is kept after the last request. Default 120.
 	SlotTTLSeconds int `json:"slotTTLSeconds,omitempty" yaml:"slotTTLSeconds,omitempty"`
-	MaxSlots       int `json:"maxSlots,omitempty" yaml:"maxSlots,omitempty"`
-	SlotMaxBytes   int `json:"slotMaxBytes,omitempty" yaml:"slotMaxBytes,omitempty"`
+	// DataRetentionSeconds is the minimum time a slot that HAS received profile data
+	// is kept past the last chunk, even with no UI polling — so a populated profile
+	// stays visible instead of vanishing when the tab stops refreshing. Default 600
+	// (10 minutes).
+	DataRetentionSeconds int `json:"dataRetentionSeconds,omitempty" yaml:"dataRetentionSeconds,omitempty"`
+	MaxSlots             int `json:"maxSlots,omitempty" yaml:"maxSlots,omitempty"`
+	SlotMaxBytes         int `json:"slotMaxBytes,omitempty" yaml:"slotMaxBytes,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -590,7 +597,98 @@ type ProfilingConfiguration struct {
 	// Symbolization controls how native (C/C++/Rust) frames are resolved to
 	// function names. Mirrors the VM agent's profiling.symbolization.native flag.
 	Symbolization *ProfilingSymbolizationConfiguration `json:"symbolization,omitempty" yaml:"symbolization,omitempty"`
+	// Memory is the heap/allocation profiling sub-vertical, layered on top of the
+	// (CPU) profiling pipeline: same node-wide agent, same Source enrollment (an
+	// enabled odigos Source = an InstrumentationConfig), same central-symbolize →
+	// Pyroscope path. Requires Profiling.Enabled (the pipeline must exist). Mirrors
+	// the agent-side collector/config.MemoryConfig knobs.
+	Memory *ProfilingMemoryConfiguration `json:"memory,omitempty" yaml:"memory,omitempty"`
+	// UI tunes the in-memory profile store in the UI pod (slot count, retention,
+	// per-slot size). Previously emitted to config by Helm but NOT parsed here, so
+	// the knobs were inert and the store fell back to built-in defaults — the cause
+	// of profiles aging out after ~2 minutes. Now read by the UI at startup.
+	UI *ProfilingUiConfiguration `json:"ui,omitempty" yaml:"ui,omitempty"`
 }
+
+// +kubebuilder:object:generate=true
+// ProfilingMemoryConfiguration is the control-plane mirror of the agent's
+// MemoryConfig. It is opt-in (Enabled) and only takes effect when the parent
+// Profiling pipeline is active. Go is profiled with no app restart (the node
+// agent reads runtime.mbuckets out-of-process); native and Java need a one-time
+// odigos-injected restart (LD_PRELOAD / JFR startup flag).
+type ProfilingMemoryConfiguration struct {
+	// Enabled turns on memory profiling for enabled Sources. Default false.
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	// SampleSizeBytes is the target average bytes between sampled allocations
+	// (one of 131072/262144/524288; default 262144 = 256KiB).
+	SampleSizeBytes int `json:"sampleSizeBytes,omitempty" yaml:"sampleSizeBytes,omitempty"`
+	// ReportIntervalSeconds is how often heap profiles are collected (default 15).
+	ReportIntervalSeconds int `json:"reportIntervalSeconds,omitempty" yaml:"reportIntervalSeconds,omitempty"`
+	// InuseTracking enables the live-heap (leak) signals inuse_space/inuse_objects
+	// in addition to the cumulative alloc_*. Default true.
+	InuseTracking *bool `json:"inuseTracking,omitempty" yaml:"inuseTracking,omitempty"`
+	// Languages selects which runtimes to profile. Defaults when memory is enabled:
+	// go=true, java=true, native/dotnet/node=false.
+	Languages *ProfilingMemoryLanguages `json:"languages,omitempty" yaml:"languages,omitempty"`
+	// Inject enables the no-restart enablement mechanism: the node agent attaches
+	// to a live process via ptrace and turns sampling on in place — zero pod
+	// disruption. Today this drives Go heap sampling (writes runtime.MemProfileRate
+	// into binaries that never imported runtime/pprof). Off by default (ptrace is
+	// invasive). This is the "live-attach" fallback, independent of NativeMode —
+	// either, both, or neither may be set.
+	Inject *bool `json:"inject,omitempty" yaml:"inject,omitempty"`
+	// NativeMode is how native (C/C++/Rust) allocators are enabled: off|inject|restart.
+	// "restart" LD_PRELOADs a prof-enabled allocator at process start (one-time pod
+	// roll). Default off. Independent of Inject.
+	NativeMode string `json:"nativeMode,omitempty" yaml:"nativeMode,omitempty"`
+	// JavaMode selects the Java engine: "jfr" (default; built-in, no-ptrace,
+	// startup-flag injected, OldObjectSample leak + off-heap, JDK8u262+) or "asprof"
+	// (async-profiler runtime attach; deeper alloc stacks, needs hostPID/writable-tmp).
+	JavaMode string `json:"javaMode,omitempty" yaml:"javaMode,omitempty"`
+	// Debuginfod is an optional internal/private debuginfod base URL for resolving
+	// stripped native binaries. Empty = in-container/on-host symbols only (never a
+	// hard dependency; unresolved frames degrade to module+offset).
+	Debuginfod string `json:"debuginfod,omitempty" yaml:"debuginfod,omitempty"`
+	// Metrics turns on the memory subsystem's internal performance counters
+	// (procs tracked/profiled, samples emitted, tick duration, read errors, cache
+	// size, per-language readers). Batched through the standard metrics pipeline,
+	// so it is spike-free; off by default and a no-op when off. Scrape target for
+	// the memprof Grafana dashboard. Default false.
+	Metrics *bool `json:"metrics,omitempty" yaml:"metrics,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ProfilingMemoryLanguages toggles per-runtime memory profiling.
+type ProfilingMemoryLanguages struct {
+	Go     *bool `json:"go,omitempty" yaml:"go,omitempty"`
+	Java   *bool `json:"java,omitempty" yaml:"java,omitempty"`
+	Native *bool `json:"native,omitempty" yaml:"native,omitempty"`
+	Dotnet *bool `json:"dotnet,omitempty" yaml:"dotnet,omitempty"`
+	Node   *bool `json:"node,omitempty" yaml:"node,omitempty"`
+	// Interpreted runtimes use the libmemsample interposer like Native. Each can be
+	// toggled independently; when unset they default to the Native toggle so the
+	// existing "native" switch keeps controlling them.
+	Php    *bool `json:"php,omitempty" yaml:"php,omitempty"`
+	Python *bool `json:"python,omitempty" yaml:"python,omitempty"`
+	Ruby   *bool `json:"ruby,omitempty" yaml:"ruby,omitempty"`
+}
+
+// interpretedEnabled reports whether an interpreted runtime (php/python/ruby) is
+// memory-profiled: its own per-language toggle when explicitly set, otherwise
+// ENABLED by default. Interpreted runtimes are gated upstream by
+// profiling.memory.native.restart (the one-time pod-roll opt-in); these toggles
+// are an opt-OUT to silence a specific interpreter, so unset means "on".
+func (l *ProfilingMemoryLanguages) interpretedEnabled(own *bool) bool {
+	if l == nil || own == nil {
+		return true
+	}
+	return *own
+}
+
+// PhpEnabled / PythonEnabled / RubyEnabled report the effective per-interpreter toggle.
+func (l *ProfilingMemoryLanguages) PhpEnabled() bool    { return l.interpretedEnabled(l.Php) }
+func (l *ProfilingMemoryLanguages) PythonEnabled() bool { return l.interpretedEnabled(l.Python) }
+func (l *ProfilingMemoryLanguages) RubyEnabled() bool   { return l.interpretedEnabled(l.Ruby) }
 
 // +kubebuilder:object:generate=true
 // ProfilingSymbolizationConfiguration controls native frame symbolization.
@@ -694,4 +792,39 @@ func ProfilingPipelineActive(p *ProfilingConfiguration) bool {
 // ProfilingEnabled reports whether profiling is explicitly enabled on this configuration.
 func (o *OdigosConfiguration) ProfilingEnabled() bool {
 	return o != nil && ProfilingPipelineActive(o.Profiling)
+}
+
+// MemoryProfilingActive reports whether heap/allocation profiling should run.
+// It requires the parent profiling pipeline to be active (memory rides the same
+// node-wide agent, Source gate, and Pyroscope pipeline as CPU) AND memory to be
+// explicitly enabled. nil/false at either level keeps memory profiling off.
+func MemoryProfilingActive(p *ProfilingConfiguration) bool {
+	return ProfilingPipelineActive(p) &&
+		p.Memory != nil && p.Memory.Enabled != nil && *p.Memory.Enabled
+}
+
+// MemoryProfilingEnabled reports whether memory profiling is active on this config.
+func (o *OdigosConfiguration) MemoryProfilingEnabled() bool {
+	return o != nil && MemoryProfilingActive(o.Profiling)
+}
+
+// MemoryNativeRestartEnabled reports whether native (C/C++/Rust) memory profiling
+// uses the restart mechanism — i.e. the instrumentor should LD_PRELOAD a
+// prof-enabled allocator (MALLOC_CONF) into the workload at admission, which
+// requires a one-time pod roll. This is gated independently of the no-restart
+// Inject path: when native mode is anything other than "restart" we never touch
+// the pod's env (no LD_PRELOAD, no forced restart).
+func (o *OdigosConfiguration) MemoryNativeRestartEnabled() bool {
+	if !o.MemoryProfilingEnabled() {
+		return false
+	}
+	return o.Profiling.Memory.NativeMode == "restart"
+}
+
+// MemoryLanguages returns the per-language memory toggles (nil-safe).
+func (o *OdigosConfiguration) MemoryLanguages() *ProfilingMemoryLanguages {
+	if o == nil || o.Profiling == nil || o.Profiling.Memory == nil {
+		return nil
+	}
+	return o.Profiling.Memory.Languages
 }
