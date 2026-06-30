@@ -4,7 +4,8 @@ metadata:
   type: DeleteAttribute
   displayName: Delete Attribute
 spec:
-  description: Delete attributes from logs, metrics, and traces.
+  docsUrl: https://docs.odigos.io/pipeline/actions/attributes/deleteattribute
+  description: This action will delete the specified attributes from all telemetry signals that are specified in the signals field, regardless of the source, or any other condition.
   signals:
     traces:
       supported: true
@@ -14,8 +15,6 @@ spec:
       supported: true
     profiles:
       supported: true
-  docsEndpoint: /pipeline/actions/attributes/deleteattribute
-  docsDescription: This action will delete the specified attributes from all telemetry signals that are specified in the signals field, regardless of the source, or any other condition.
   fields:
     - name: attributeNamesToDelete
       displayName: Attributes to delete

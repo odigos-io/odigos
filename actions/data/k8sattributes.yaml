@@ -4,7 +4,8 @@ metadata:
   type: K8sAttributesResolver
   displayName: Kubernetes Attributes
 spec:
-  description: Add dynamic k8s resource attributes to your data.
+  docsUrl: https://docs.odigos.io/pipeline/actions/attributes/k8sattributes
+  description: This action adds kubernetes related resource attributes to spans, metrics data points and log records.
   signals:
     traces:
       supported: true
@@ -14,8 +15,6 @@ spec:
       supported: true
     profiles:
       supported: true
-  docsEndpoint: /pipeline/actions/attributes/k8sattributes
-  docsDescription: This action adds kubernetes related resource attributes to spans, metrics data points and log records.
   fields:
     - name: collectContainerAttributes
       displayName: Collect Container Attributes

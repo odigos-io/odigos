@@ -39,8 +39,8 @@ type Spec struct {
 			Supported bool `yaml:"supported"`
 		}
 	} `yaml:"signals"`
-	DocsEndpoint    string `yaml:"docsEndpoint"`
-	DocsDescription string `yaml:"docsDescription"`
+	// DocsURL is the full documentation URL (e.g. https://docs.odigos.io/...).
+	DocsURL string `yaml:"docsUrl"`
 	// Fields is an optional dynamic-form description. Actions describe their form
 	// fields here so the UI can render them generically (including nested/tabular
 	// fields); complex actions may still ship a bespoke form in the UI.

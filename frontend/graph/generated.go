@@ -94,13 +94,12 @@ type ComplexityRoot struct {
 	}
 
 	ActionTypeOption struct {
-		AllowedSignals  func(childComplexity int) int
-		Description     func(childComplexity int) int
-		DisplayName     func(childComplexity int) int
-		DocsDescription func(childComplexity int) int
-		DocsEndpoint    func(childComplexity int) int
-		Fields          func(childComplexity int) int
-		Type            func(childComplexity int) int
+		AllowedSignals func(childComplexity int) int
+		Description    func(childComplexity int) int
+		DisplayName    func(childComplexity int) int
+		DocsURL        func(childComplexity int) int
+		Fields         func(childComplexity int) int
+		Type           func(childComplexity int) int
 	}
 
 	AgentsInitContainerResourcesConfig struct {
@@ -1818,19 +1817,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ActionTypeOption.DisplayName(childComplexity), true
 
-	case "ActionTypeOption.docsDescription":
-		if e.complexity.ActionTypeOption.DocsDescription == nil {
+	case "ActionTypeOption.docsUrl":
+		if e.complexity.ActionTypeOption.DocsURL == nil {
 			break
 		}
 
-		return e.complexity.ActionTypeOption.DocsDescription(childComplexity), true
-
-	case "ActionTypeOption.docsEndpoint":
-		if e.complexity.ActionTypeOption.DocsEndpoint == nil {
-			break
-		}
-
-		return e.complexity.ActionTypeOption.DocsEndpoint(childComplexity), true
+		return e.complexity.ActionTypeOption.DocsURL(childComplexity), true
 
 	case "ActionTypeOption.fields":
 		if e.complexity.ActionTypeOption.Fields == nil {
@@ -11802,8 +11794,8 @@ func (ec *executionContext) fieldContext_ActionTypeOption_allowedSignals(_ conte
 	return fc, nil
 }
 
-func (ec *executionContext) _ActionTypeOption_docsEndpoint(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ActionTypeOption_docsEndpoint(ctx, field)
+func (ec *executionContext) _ActionTypeOption_docsUrl(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_docsUrl(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -11816,7 +11808,7 @@ func (ec *executionContext) _ActionTypeOption_docsEndpoint(ctx context.Context, 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DocsEndpoint, nil
+		return obj.DocsURL, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11833,51 +11825,7 @@ func (ec *executionContext) _ActionTypeOption_docsEndpoint(ctx context.Context, 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ActionTypeOption_docsEndpoint(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ActionTypeOption",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ActionTypeOption_docsDescription(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ActionTypeOption_docsDescription(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DocsDescription, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ActionTypeOption_docsDescription(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ActionTypeOption_docsUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ActionTypeOption",
 		Field:      field,
@@ -43730,10 +43678,8 @@ func (ec *executionContext) fieldContext_Query_actionTypes(_ context.Context, fi
 				return ec.fieldContext_ActionTypeOption_description(ctx, field)
 			case "allowedSignals":
 				return ec.fieldContext_ActionTypeOption_allowedSignals(ctx, field)
-			case "docsEndpoint":
-				return ec.fieldContext_ActionTypeOption_docsEndpoint(ctx, field)
-			case "docsDescription":
-				return ec.fieldContext_ActionTypeOption_docsDescription(ctx, field)
+			case "docsUrl":
+				return ec.fieldContext_ActionTypeOption_docsUrl(ctx, field)
 			case "fields":
 				return ec.fieldContext_ActionTypeOption_fields(ctx, field)
 			}
@@ -56287,13 +56233,8 @@ func (ec *executionContext) _ActionTypeOption(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "docsEndpoint":
-			out.Values[i] = ec._ActionTypeOption_docsEndpoint(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "docsDescription":
-			out.Values[i] = ec._ActionTypeOption_docsDescription(ctx, field, obj)
+		case "docsUrl":
+			out.Values[i] = ec._ActionTypeOption_docsUrl(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

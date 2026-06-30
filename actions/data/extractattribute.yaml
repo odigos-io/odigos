@@ -4,7 +4,8 @@ metadata:
   type: ExtractAttribute
   displayName: Extract Attribute
 spec:
-  description: Extract values from existing attributes and save them as new attributes using JSON, SQL, resource-path, or custom regex extraction.
+  docsUrl: https://docs.odigos.io/pipeline/actions/attributes/extractattribute
+  description: Extracts a value from an existing span attribute into a new attribute on the same span. The value can be located by combining a lookup key with a pre-set data format (JSON, SQL, or resource path), or by supplying a custom regular expression that uses a single capture group.
   signals:
     traces:
       supported: true
@@ -14,8 +15,6 @@ spec:
       supported: false
     profiles:
       supported: false
-  docsEndpoint: /pipeline/actions/attributes/extractattribute
-  docsDescription: Extracts a value from an existing span attribute into a new attribute on the same span. The value can be located by combining a lookup key with a pre-set data format (JSON, SQL, or resource path), or by supplying a custom regular expression that uses a single capture group.
   fields:
     - name: extractAttribute
       displayName: Extractions

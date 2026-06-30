@@ -70,13 +70,12 @@ type ActionInput struct {
 }
 
 type ActionTypeOption struct {
-	Type            string                       `json:"type"`
-	DisplayName     string                       `json:"displayName"`
-	Description     string                       `json:"description"`
-	AllowedSignals  []SignalType                 `json:"allowedSignals"`
-	DocsEndpoint    string                       `json:"docsEndpoint"`
-	DocsDescription string                       `json:"docsDescription"`
-	Fields          []*ActionFieldYamlProperties `json:"fields"`
+	Type           string                       `json:"type"`
+	DisplayName    string                       `json:"displayName"`
+	Description    string                       `json:"description"`
+	AllowedSignals []SignalType                 `json:"allowedSignals"`
+	DocsURL        string                       `json:"docsUrl"`
+	Fields         []*ActionFieldYamlProperties `json:"fields"`
 }
 
 type AgentsInitContainerResourcesConfig struct {

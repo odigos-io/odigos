@@ -4,7 +4,8 @@ metadata:
   type: PiiMasking
   displayName: PII Masking
 spec:
-  description: Mask PII data in your traces.
+  docsUrl: https://docs.odigos.io/pipeline/actions/attributes/piimasking
+  description: This action processes a list of PII categories to be masked from the traces.
   signals:
     traces:
       supported: true
@@ -14,8 +15,6 @@ spec:
       supported: false
     profiles:
       supported: false
-  docsEndpoint: /pipeline/actions/attributes/piimasking
-  docsDescription: This action processes a list of PII categories to be masked from the traces.
   fields:
     - name: piiCategories
       displayName: Attributes to mask

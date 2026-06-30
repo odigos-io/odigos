@@ -4,7 +4,8 @@ metadata:
   type: AddClusterInfo
   displayName: Add Cluster Info
 spec:
-  description: Add static cluster-scoped attributes to your data.
+  docsUrl: https://docs.odigos.io/pipeline/actions/attributes/addclusterinfo
+  description: This action adds static resource attributes to spans, metrics data points and log records. It is useful to add cluster-wide attributes to all telemetry signals.
   signals:
     traces:
       supported: true
@@ -14,8 +15,6 @@ spec:
       supported: true
     profiles:
       supported: true
-  docsEndpoint: /pipeline/actions/attributes/addclusterinfo
-  docsDescription: This action adds static resource attributes to spans, metrics data points and log records. It is useful to add cluster-wide attributes to all telemetry signals.
   fields:
     - name: clusterAttributes
       displayName: Attributes to add

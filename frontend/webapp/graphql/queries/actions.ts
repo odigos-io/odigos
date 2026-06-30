@@ -7,8 +7,7 @@ export const GET_ACTION_TYPES = gql`
       displayName
       description
       allowedSignals
-      docsEndpoint
-      docsDescription
+      docsUrl
       fields {
         name
         displayName

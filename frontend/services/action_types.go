@@ -61,8 +61,7 @@ func ActionConfigToTypeOption(actionConfig actions.Action) model.ActionTypeOptio
 		DisplayName:     actionConfig.Metadata.DisplayName,
 		Description:     actionConfig.Spec.Description,
 		AllowedSignals:  allowedSignals,
-		DocsEndpoint:    actionConfig.Spec.DocsEndpoint,
-		DocsDescription: actionConfig.Spec.DocsDescription,
+		DocsURL:         actionConfig.Spec.DocsURL,
 		Fields:          fields,
 	}
 }
