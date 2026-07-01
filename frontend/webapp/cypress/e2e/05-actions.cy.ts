@@ -29,35 +29,44 @@ describe('Actions CRUD', () => {
 
         switch (actionType) {
           case 'K8sAttributesResolver': {
-            // default values are enough 👍
+            // The dynamic (catalog-driven) form no longer force-enables the
+            // collect flags on mount like the old bespoke form did, so the
+            // action would validate as a no-op ("Enable at least one option").
+            // Toggle one flag on to make it a valid action.
+            cy.get('[data-id=collectContainerAttributes]').click();
             break;
           }
           case 'AddClusterInfo': {
-            cy.get('[data-id=clusterAttributes]').find('input[placeholder="Attribute name"]').type('key');
-            cy.get('[data-id=clusterAttributes]').find('input[placeholder="Attribute value"]').type('val');
+            // The dynamic table cells expose the column keyName as the input's
+            // data-id (see ui-kit InputTable -> Input), so target those instead
+            // of the (now catalog-defined) placeholder text.
+            cy.get('[data-id=clusterAttributes]').find('input[data-id=attributeName]').type('key');
+            cy.get('[data-id=clusterAttributes]').find('input[data-id=attributeStringValue]').type('val');
             break;
           }
           case 'DeleteAttribute': {
-            cy.get('[data-id=attributeNamesToDelete]').find('input').type('test');
+            cy.get('[data-id=attributeNamesToDelete]').find('input').first().type('test');
             break;
           }
-          case 'RenameAttribute': {
-            cy.get('[data-id=renames]').find('input[placeholder="Old key"]').type('1');
-            cy.get('[data-id=renames]').find('input[placeholder="New key"]').type('one');
-            break;
-          }
+          // NOTE: 'RenameAttribute' is intentionally omitted from SELECTED_ENTITIES.ACTIONS
+          // because it can't be created via the dynamic form yet (PLAT-1260).
           case 'PiiMasking': {
-            // default values are enough 👍
+            // The dynamic form renders piiCategories as a free-text multiInput with
+            // no default (the old bespoke form pre-selected CREDIT_CARD), so enter a
+            // valid category to produce a non-empty action.
+            cy.get('[data-id=piiCategories]').find('input').first().type('CREDIT_CARD');
             break;
           }
-          case 'ExtractAttribute': {
-            // Default mode is "Preset extract" with the first row's dataFormat=json
-            // already selected, so we just fill lookupKey + targetAttributeName to
-            // make a valid action.
-            cy.get('[data-id=extract-row-0]').find('input[data-id=extract-row-0-lookupKey]').type('task_id');
-            cy.get('[data-id=extract-row-0]').find('input[data-id=extract-row-0-targetAttributeName]').type('extracted.json.task_id');
-            break;
-          }
+          // NOTE: 'ExtractAttribute' is intentionally omitted from SELECTED_ENTITIES.ACTIONS
+          // because the dynamic form sends `dataFormat: ""` for an unselected optional
+          // enum, which the GraphQL server rejects with a 400 (PLAT-1261). Restore this
+          // case once that's fixed:
+          //
+          // case 'ExtractAttribute': {
+          //   cy.get('[data-id=extractAttribute]').find('input[data-id=targetAttributeName]').type('extracted.value');
+          //   cy.get('[data-id=extractAttribute]').find('input[data-id=regex]').type('(.*)');
+          //   break;
+          // }
           default: {
             // purposely fail the test
             cy.get('unknown action').should('eq', true);

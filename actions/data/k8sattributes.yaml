@@ -1,0 +1,38 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Action
+metadata:
+  type: K8sAttributesResolver
+  displayName: Kubernetes Attributes
+spec:
+  docsUrl: https://docs.odigos.io/pipeline/actions/attributes/k8sattributes
+  description: This action adds kubernetes related resource attributes to spans, metrics data points and log records.
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: true
+  fields:
+    - name: collectContainerAttributes
+      displayName: Collect Container Attributes
+      componentType: checkbox
+      componentProps:
+        tooltip: Collect container related attributes (e.g. container name, image).
+    - name: collectReplicaSetAttributes
+      displayName: Collect ReplicaSet Attributes
+      componentType: checkbox
+      componentProps:
+        tooltip: Collect ReplicaSet related attributes.
+    - name: collectWorkloadId
+      displayName: Collect Workload UID
+      componentType: checkbox
+      componentProps:
+        tooltip: Collect the workload UID attribute.
+    - name: collectClusterId
+      displayName: Collect Cluster UID
+      componentType: checkbox
+      componentProps:
+        tooltip: Collect the cluster UID attribute.

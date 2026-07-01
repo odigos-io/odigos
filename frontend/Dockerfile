@@ -30,6 +30,7 @@ COPY api/go.mod api/go.sum ./api/
 COPY common/go.mod common/go.sum ./common/
 COPY config/go.mod config/go.sum ./config/
 COPY destinations/go.mod destinations/go.sum ./destinations/
+COPY actions/go.mod actions/go.sum ./actions/
 COPY k8sutils/go.mod k8sutils/go.sum ./k8sutils/
 COPY odigosauth/go.mod odigosauth/go.sum ./odigosauth/
 RUN --mount=type=cache,target=/go/pkg/mod cd frontend && go mod download
@@ -42,6 +43,7 @@ COPY api ./api
 COPY common ./common
 COPY config ./config
 COPY destinations ./destinations
+COPY actions ./actions
 COPY k8sutils ./k8sutils
 COPY odigosauth ./odigosauth
 COPY frontend ./frontend

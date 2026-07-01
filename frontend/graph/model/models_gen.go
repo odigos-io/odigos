@@ -19,6 +19,15 @@ type Action struct {
 	Conditions []*Condition  `json:"conditions,omitempty"`
 }
 
+type ActionFieldYamlProperties struct {
+	Name                string   `json:"name"`
+	DisplayName         string   `json:"displayName"`
+	ComponentType       string   `json:"componentType"`
+	ComponentProperties string   `json:"componentProperties"`
+	InitialValue        string   `json:"initialValue"`
+	RenderCondition     []string `json:"renderCondition"`
+}
+
 type ActionFields struct {
 	CollectContainerAttributes   *bool                          `json:"collectContainerAttributes,omitempty"`
 	CollectReplicaSetAttributes  *bool                          `json:"collectReplicaSetAttributes,omitempty"`
@@ -58,6 +67,15 @@ type ActionInput struct {
 	Disabled bool               `json:"disabled"`
 	Signals  []SignalType       `json:"signals"`
 	Fields   *ActionFieldsInput `json:"fields"`
+}
+
+type ActionTypeOption struct {
+	Type           string                       `json:"type"`
+	DisplayName    string                       `json:"displayName"`
+	Description    string                       `json:"description"`
+	AllowedSignals []SignalType                 `json:"allowedSignals"`
+	DocsURL        string                       `json:"docsUrl"`
+	Fields         []*ActionFieldYamlProperties `json:"fields"`
 }
 
 type AgentsInitContainerResourcesConfig struct {

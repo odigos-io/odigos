@@ -1,0 +1,23 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Action
+metadata:
+  type: PiiMasking
+  displayName: PII Masking
+spec:
+  docsUrl: https://docs.odigos.io/pipeline/actions/attributes/piimasking
+  description: This action processes a list of PII categories to be masked from the traces.
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+    profiles:
+      supported: false
+  fields:
+    - name: piiCategories
+      displayName: Attributes to mask
+      componentType: multiInput
+      componentProps:
+        tooltip: List of PII categories to mask (e.g. CREDIT_CARD).
