@@ -936,7 +936,7 @@ type Query {
   # types. The UI uses this to render the rule picker (and dynamic fields)
   # instead of its hard-coded options. Nullable so older/unsupported backends
   # can omit it.
-  ruleTypes: [InstrumentationRuleTypeOption!]
+  instrumentationRuleTypes: [InstrumentationRuleTypeOption!]
 
   getOverviewMetrics: OverviewMetricsResponse!
   getServiceMap: ServiceMap!

@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 
 export const GET_INSTRUMENTATION_RULE_TYPES = gql`
   query GetInstrumentationRuleTypes {
-    ruleTypes {
+    instrumentationRuleTypes {
       type
       displayName
       description

@@ -1210,6 +1210,7 @@ type ComplexityRoot struct {
 		GetOverviewMetrics                func(childComplexity int) int
 		GetServiceMap                     func(childComplexity int) int
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
+		InstrumentationRuleTypes          func(childComplexity int) int
 		K8sManifest                       func(childComplexity int, namespace string, kind model.K8sResourceKind, name string) int
 		Namespaces                        func(childComplexity int) int
 		OdigletDaemonSetInfo              func(childComplexity int) int
@@ -1219,7 +1220,6 @@ type ComplexityRoot struct {
 		PotentialDestinations             func(childComplexity int) int
 		ProfilingSlots                    func(childComplexity int) int
 		RemoteConfig                      func(childComplexity int) int
-		RuleTypes                         func(childComplexity int) int
 		Sampling                          func(childComplexity int) int
 		SourceConditions                  func(childComplexity int) int
 		TraceCorrelations                 func(childComplexity int, filter *model.WorkloadFilter, timeRange *model.TraceCorrelationsTimeRangeInput) int
@@ -1567,7 +1567,7 @@ type QueryResolver interface {
 	DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error)
 	PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error)
 	ActionTypes(ctx context.Context) ([]*model.ActionTypeOption, error)
-	RuleTypes(ctx context.Context) ([]*model.InstrumentationRuleTypeOption, error)
+	InstrumentationRuleTypes(ctx context.Context) ([]*model.InstrumentationRuleTypeOption, error)
 	GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error)
 	GetServiceMap(ctx context.Context) (*model.ServiceMap, error)
 	PeerSources(ctx context.Context, serviceName string) (*model.PeerSources, error)
@@ -6977,6 +6977,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.InstrumentationInstanceComponents(childComplexity, args["namespace"].(string), args["kind"].(string), args["name"].(string)), true
 
+	case "Query.instrumentationRuleTypes":
+		if e.complexity.Query.InstrumentationRuleTypes == nil {
+			break
+		}
+
+		return e.complexity.Query.InstrumentationRuleTypes(childComplexity), true
+
 	case "Query.k8sManifest":
 		if e.complexity.Query.K8sManifest == nil {
 			break
@@ -7054,13 +7061,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.RemoteConfig(childComplexity), true
-
-	case "Query.ruleTypes":
-		if e.complexity.Query.RuleTypes == nil {
-			break
-		}
-
-		return e.complexity.Query.RuleTypes(childComplexity), true
 
 	case "Query.sampling":
 		if e.complexity.Query.Sampling == nil {
@@ -44342,8 +44342,8 @@ func (ec *executionContext) fieldContext_Query_actionTypes(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_ruleTypes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_ruleTypes(ctx, field)
+func (ec *executionContext) _Query_instrumentationRuleTypes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_instrumentationRuleTypes(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -44356,7 +44356,7 @@ func (ec *executionContext) _Query_ruleTypes(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RuleTypes(rctx)
+		return ec.resolvers.Query().InstrumentationRuleTypes(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -44370,7 +44370,7 @@ func (ec *executionContext) _Query_ruleTypes(ctx context.Context, field graphql.
 	return ec.marshalOInstrumentationRuleTypeOption2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstrumentationRuleTypeOptionᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_ruleTypes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_instrumentationRuleTypes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -65210,7 +65210,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "ruleTypes":
+		case "instrumentationRuleTypes":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -65219,7 +65219,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_ruleTypes(ctx, field)
+				res = ec._Query_instrumentationRuleTypes(ctx, field)
 				return res
 			}
 

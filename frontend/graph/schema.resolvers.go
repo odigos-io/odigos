@@ -866,8 +866,8 @@ func (r *queryResolver) ActionTypes(ctx context.Context) ([]*model.ActionTypeOpt
 	return services.GetActionTypes(), nil
 }
 
-// RuleTypes is the resolver for the ruleTypes field.
-func (r *queryResolver) RuleTypes(ctx context.Context) ([]*model.InstrumentationRuleTypeOption, error) {
+// InstrumentationRuleTypes is the resolver for the instrumentationRuleTypes field.
+func (r *queryResolver) InstrumentationRuleTypes(ctx context.Context) ([]*model.InstrumentationRuleTypeOption, error) {
 	return services.GetInstrumentationRuleTypes(), nil
 }
 
