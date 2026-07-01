@@ -59,6 +59,14 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
           className
         }
       }
+      metricsConfig {
+        networkMetrics {
+          enabled
+        }
+        statsMetrics {
+          enabled
+        }
+      }
     }
   }
 `;
@@ -120,6 +128,14 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
         java {
           methodName
           className
+        }
+      }
+      metricsConfig {
+        networkMetrics {
+          enabled
+        }
+        statsMetrics {
+          enabled
         }
       }
     }

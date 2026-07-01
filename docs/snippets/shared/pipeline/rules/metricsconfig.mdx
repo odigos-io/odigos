@@ -1,0 +1,141 @@
+The **Metrics Config** rule enables network flow metrics and TCP stats metrics for instrumented workloads. These metrics are collected in odiglet and exported over OTLP alongside other workload telemetry.
+
+Learn more about the underlying collectors and metric families in the [OBI instrumentation guide](/oss/instrumentations/obi).
+
+## Considerations
+
+<Warning>
+  Before enabling **network metrics**, please note the following:
+  - Network flow collection requires odiglet to run with `hostNetwork`. Enable the cluster infrastructure in Helm by setting `metricsSources.networkMetrics.disabled` to `false` (it defaults to `true`).
+  - Network metrics apply to processes on a node that Odigos has successfully instrumented. The workload must have agent injection enabled.
+  - Network metrics add eBPF overhead on host interfaces. Scope rules to specific workloads when possible.
+</Warning>
+
+<Note>
+  **Stats metrics** do not require `hostNetwork`. They still require the workload to be instrumented so odiglet can attach the process to the stats metrics selector.
+</Note>
+
+<Info>
+  Create `InstrumentationRule` resources in the Odigos installation namespace (typically `odigos-system`). Rules in other namespaces are not picked up by Odigos.
+</Info>
+
+## Configuration Options
+
+<AccordionGroup>
+  <Accordion title="metricsConfig">
+    **metricsConfig** `object` : Enable network and/or stats metrics for scoped workloads.
+    - This field is *optional*
+    - At least one of `networkMetrics` or `statsMetrics` must be enabled for the rule to take effect.
+    <AccordionGroup>
+      <Accordion title="networkMetrics">
+        **networkMetrics** `object` : Enable network flow metrics (bytes sent/received between endpoints).
+        - This field is *optional*
+        <AccordionGroup>
+          <Accordion title="enabled">
+            **enabled** `boolean` : When `true`, network metrics collection is enabled for matching instrumented processes.
+            - This field is *required* when `networkMetrics` is set
+          </Accordion>
+        </AccordionGroup>
+      </Accordion>
+      <Accordion title="statsMetrics">
+        **statsMetrics** `object` : Enable TCP stats metrics (for example round-trip time and failed connections).
+        - This field is *optional*
+        <AccordionGroup>
+          <Accordion title="enabled">
+            **enabled** `boolean` : When `true`, stats metrics collection is enabled for matching instrumented processes.
+            - This field is *required* when `statsMetrics` is set
+          </Accordion>
+        </AccordionGroup>
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  Multiple rules merge with OR semantics: if any matching rule enables a signal, it is enabled for that workload.
+</Note>
+
+## Cluster infrastructure for network metrics
+
+Network metrics require odiglet `hostNetwork`. Configure this once at the cluster level in Helm:
+
+```yaml
+metricsSources:
+  networkMetrics:
+    disabled: false
+```
+
+Stats metrics and this InstrumentationRule alone are not enough for network metrics without that Helm setting.
+
+## Basic Example
+
+The following example enables network and stats metrics cluster-wide for all instrumented workloads.
+
+<Steps>
+  <Step title="Enable network metrics infrastructure (network metrics only)">
+    If you enable `networkMetrics`, set `metricsSources.networkMetrics.disabled` to `false` in your Odigos Helm values and upgrade the release. Skip this step if you only enable `statsMetrics`.
+  </Step>
+  <Step title="Create the InstrumentationRule">
+    Create a YAML file with the following content:
+
+    ```yaml metrics-config.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: InstrumentationRule
+    metadata:
+      name: network-and-stats-metrics
+      namespace: odigos-system
+    spec:
+      ruleName: "Network and stats metrics"
+      metricsConfig:
+        networkMetrics:
+          enabled: true
+        statsMetrics:
+          enabled: true
+    ```
+  </Step>
+  <Step title="Apply the rule">
+    ```shell
+    kubectl apply -f metrics-config.yaml
+    ```
+  </Step>
+  <Step title="Verify the rule merged into InstrumentationConfig">
+    After the instrumentor reconciles, matching workloads should show the enabled signals under `spec.containers[].metrics`:
+
+    ```shell
+    kubectl get instrumentationconfig -A
+    kubectl get instrumentationconfig <workload-ic-name> -n <namespace> -o yaml | grep -A10 'metrics:'
+    ```
+
+    If pods were running before the rule was applied, restart them so odiglet re-attaches metrics collection for their processes.
+  </Step>
+</Steps>
+
+## Scoped Example
+
+To limit the rule to a single workload, add `scopes`. Omit `scopes` (or leave it empty) to apply the rule cluster-wide.
+
+```yaml metrics-config-scoped.yaml
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: network-metrics-my-app
+  namespace: odigos-system
+spec:
+  ruleName: "Network metrics for my-app"
+  scopes:
+    sources:
+      - name: my-app
+        namespace: default
+        kind: Deployment
+  metricsConfig:
+    networkMetrics:
+      enabled: true
+    statsMetrics:
+      enabled: true
+```
+
+Apply with:
+
+```shell
+kubectl apply -f metrics-config-scoped.yaml
+```

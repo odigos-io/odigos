@@ -1397,6 +1397,17 @@ metricsSources:
     # interval: '10s'
 
   # @schema
+  # description: |-
+  #   Network flow metrics infrastructure. When not disabled, odiglet runs with hostNetwork.
+  #   Per-workload collection is enabled via InstrumentationRule metricsConfig.
+  # @schema
+  networkMetrics:
+    # @schema
+    # description: set disabled true to turn off network metrics infrastructure (hostNetwork on odiglet).
+    # @schema
+    disabled: true
+
+  # @schema
   # description: Configuration for kubelet stats collection.
   # @schema
   kubeletStats:

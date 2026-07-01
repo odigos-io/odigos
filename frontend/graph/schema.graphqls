@@ -85,6 +85,7 @@ enum InstrumentationRuleType {
   HeadersCollection
   PayloadCollection
   CustomInstrumentation
+  MetricsConfig
   UnknownType
 }
 
@@ -186,6 +187,7 @@ type InstrumentationRule {
   headersCollection: HeadersCollection
   payloadCollection: PayloadCollection
   customInstrumentations: CustomInstrumentations
+  metricsConfig: MetricsConfig
 }
 
 input InstrumentationRuleInput {
@@ -203,6 +205,7 @@ input InstrumentationRuleInput {
   headersCollection: HeadersCollectionInput
   payloadCollection: PayloadCollectionInput
   customInstrumentations: CustomInstrumentationsInput
+  metricsConfig: MetricsConfigInput
 }
 
 type InstrumentationLibraryGlobalId {
@@ -323,6 +326,24 @@ input PayloadCollectionInput {
   httpResponse: HttpPayloadCollectionInput
   dbQuery: DbQueryPayloadCollectionInput
   messaging: MessagingPayloadCollectionInput
+}
+
+type MetricSignal {
+  enabled: Boolean
+}
+
+input MetricSignalInput {
+  enabled: Boolean
+}
+
+type MetricsConfig {
+  networkMetrics: MetricSignal
+  statsMetrics: MetricSignal
+}
+
+input MetricsConfigInput {
+  networkMetrics: MetricSignalInput
+  statsMetrics: MetricSignalInput
 }
 
 type ApiToken {

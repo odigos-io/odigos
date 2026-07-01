@@ -167,6 +167,13 @@ spec:
                         all "metrics" related configuration for an agent running on any process in a specific container.
                         The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
                       properties:
+                        networkMetrics:
+                          description: NetworkMetrics enables network flow metrics
+                            for this container.
+                          properties:
+                            enabled:
+                              type: boolean
+                          type: object
                         runtimeMetrics:
                           description: |-
                             if not nil, it means agent should report runtime metrics,
@@ -225,6 +232,13 @@ spec:
                                 time interval in miliseconds for flushing the span metrics.
                                 defaults: 60000 (60 seconds, 1 minute)
                               type: integer
+                          type: object
+                        statsMetrics:
+                          description: StatsMetrics enables TCP stats metrics for
+                            this container.
+                          properties:
+                            enabled:
+                              type: boolean
                           type: object
                       type: object
                     otelDistroName:

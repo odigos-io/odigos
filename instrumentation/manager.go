@@ -118,6 +118,13 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 
 	// LogsAttrSubscribe streams per-process resource attributes over the logs unix socket.
 	LogsAttrSubscribe func() (updates <-chan string, snapshot []string)
+
+	// ProcessLifecycleCallback is invoked when a process is successfully instrumented (instrumented=true)
+	// or when instrumentation tracking for a process is cleaned up (instrumented=false).
+	ProcessLifecycleCallback func(ctx context.Context, pid int, pd processDetails, instrumented bool)
+
+	// ProcessConfigCallback is invoked when a configuration update is applied to a live instrumentation.
+	ProcessConfigCallback func(ctx context.Context, pid int, pd processDetails, config Config)
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -159,7 +166,9 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 	metricsMap           *cilumebpf.Map
 	metricsAttributesMap *cilumebpf.Map
 	logsMap              *cilumebpf.Map
-	logsAttrSubscribe    func() (updates <-chan string, snapshot []string)
+	logsAttrSubscribe          func() (updates <-chan string, snapshot []string)
+	processLifecycleCallback func(ctx context.Context, pid int, pd processDetails, instrumented bool)
+	processConfigCallback    func(ctx context.Context, pid int, pd processDetails, config Config)
 }
 
 func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]](options ManagerOptions[processGroup, configGroup, processDetails]) (Manager, error) {
@@ -215,7 +224,9 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		metricsMap:            options.MetricsMap,
 		metricsAttributesMap:  options.MetricsAttributesMap,
 		logsMap:               options.LogsMap,
-		logsAttrSubscribe:     options.LogsAttrSubscribe,
+		logsAttrSubscribe:          options.LogsAttrSubscribe,
+		processLifecycleCallback: options.ProcessLifecycleCallback,
+		processConfigCallback:    options.ProcessConfigCallback,
 	}, nil
 }
 
@@ -469,6 +480,10 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentatio
 
 	m.logger.Info("cleaning instrumentation resources", "pid", pid, "process group details", details.pd)
 
+	if m.processLifecycleCallback != nil && details.inst != nil {
+		m.processLifecycleCallback(ctx, pid, details.pd, false)
+	}
+
 	if details.inst != nil {
 		err := details.inst.Close(ctx)
 		if err != nil {
@@ -651,6 +666,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 		// "instrumented". failedInstrumentations is a monotonic counter so we don't decrement
 		// it; we just record the successful instrumentation.
 		m.metrics.instrumentedProcesses.Add(ctx, 1, metric.WithAttributeSet(metricAttributeSet))
+		if m.processLifecycleCallback != nil {
+			m.processLifecycleCallback(ctx, pid, processDetails, true)
+		}
 	}
 }
 
@@ -683,13 +701,16 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) applyInstrumentatio
 		return nil
 	}
 
-	for _, instDetails := range configGroupInstrumentations {
+	for pid, instDetails := range configGroupInstrumentations {
 		if instDetails.inst == nil {
 			continue
 		}
 		m.logger.Info("applying configuration to instrumentation", "process group details", instDetails.pd, "configGroup", configGroup)
 		applyErr := instDetails.inst.ApplyConfig(ctx, config)
 		err = errors.Join(err, applyErr)
+		if m.processConfigCallback != nil {
+			m.processConfigCallback(ctx, pid, instDetails.pd, config)
+		}
 	}
 	return err
 }

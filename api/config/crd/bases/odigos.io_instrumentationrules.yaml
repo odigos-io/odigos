@@ -254,6 +254,24 @@ spec:
                   - name
                   type: object
                 type: array
+              metricsConfig:
+                description: Configure network and stats metrics for scoped workloads.
+                properties:
+                  networkMetrics:
+                    description: NetworkMetrics enables network flow metrics for scoped
+                      workloads.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                  statsMetrics:
+                    description: StatsMetrics enables TCP stats metrics for scoped
+                      workloads.
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                type: object
               notes:
                 description: 'A free-form text field that allows you to attach notes
                   regarding the rule for convenience. For example: why it was added.

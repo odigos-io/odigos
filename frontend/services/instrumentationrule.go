@@ -38,6 +38,13 @@ func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRu
 		return model.InstrumentationRuleTypeCustomInstrumentation
 	}
 
+	if rule.MetricsConfig != nil {
+		if (rule.MetricsConfig.NetworkMetrics != nil && rule.MetricsConfig.NetworkMetrics.Enabled != nil && *rule.MetricsConfig.NetworkMetrics.Enabled) ||
+			(rule.MetricsConfig.StatsMetrics != nil && rule.MetricsConfig.StatsMetrics.Enabled != nil && *rule.MetricsConfig.StatsMetrics.Enabled) {
+			return model.InstrumentationRuleTypeMetricsConfig
+		}
+	}
+
 	return model.InstrumentationRuleTypeUnknownType
 }
 
@@ -70,6 +77,7 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 			HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 			CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
+			MetricsConfig:            convertMetricsConfig(r.Spec.MetricsConfig),
 		}
 		rule.Type = deriveTypeFromRule(rule)
 
@@ -103,10 +111,31 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
+		MetricsConfig:            convertMetricsConfig(r.Spec.MetricsConfig),
 	}
 	rule.Type = deriveTypeFromRule(rule)
 
 	return rule, nil
+}
+
+func getMetricsConfigInput(input model.InstrumentationRuleInput) *instrumentationrules.MetricsConfig {
+	if input.MetricsConfig == nil {
+		return nil
+	}
+
+	metricsConfig := &instrumentationrules.MetricsConfig{}
+	if input.MetricsConfig.NetworkMetrics != nil && input.MetricsConfig.NetworkMetrics.Enabled != nil && *input.MetricsConfig.NetworkMetrics.Enabled {
+		enabled := true
+		metricsConfig.NetworkMetrics = &instrumentationrules.MetricSignal{Enabled: &enabled}
+	}
+	if input.MetricsConfig.StatsMetrics != nil && input.MetricsConfig.StatsMetrics.Enabled != nil && *input.MetricsConfig.StatsMetrics.Enabled {
+		enabled := true
+		metricsConfig.StatsMetrics = &instrumentationrules.MetricSignal{Enabled: &enabled}
+	}
+	if metricsConfig.NetworkMetrics == nil && metricsConfig.StatsMetrics == nil {
+		return nil
+	}
+	return metricsConfig
 }
 
 func getPayloadCollectionInput(input model.InstrumentationRuleInput) *instrumentationrules.PayloadCollection {
@@ -310,6 +339,12 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	} else {
 		existingRule.Spec.CustomInstrumentations = nil
 	}
+
+	if input.MetricsConfig != nil {
+		existingRule.Spec.MetricsConfig = getMetricsConfigInput(input)
+	} else {
+		existingRule.Spec.MetricsConfig = nil
+	}
 	// Update rule in Kubernetes
 	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Update(ctx, existingRule, metav1.UpdateOptions{})
 	if err != nil {
@@ -332,6 +367,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		HeadersCollection:        convertHeadersCollection(updatedRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(updatedRule.Spec.CustomInstrumentations),
+		MetricsConfig:            convertMetricsConfig(updatedRule.Spec.MetricsConfig),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 	return &rule, nil
@@ -388,6 +424,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			HeadersCollection:        getHeadersCollectionInput(input),
 			PayloadCollection:        getPayloadCollectionInput(input),
 			CustomInstrumentations:   getCustomInstrumentationsInput(input),
+			MetricsConfig:            getMetricsConfigInput(input),
 		},
 	}
 	// Create the rule in Kubernetes
@@ -412,6 +449,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		HeadersCollection:        convertHeadersCollection(createdRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(createdRule.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(createdRule.Spec.CustomInstrumentations),
+		MetricsConfig:            convertMetricsConfig(createdRule.Spec.MetricsConfig),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 
@@ -562,6 +600,24 @@ func toMessagingPayload(payload *instrumentationrules.MessagingPayloadCollection
 		return nil
 	}
 	return &model.MessagingPayloadCollection{}
+}
+
+func convertMetricsConfig(metricsConfig *instrumentationrules.MetricsConfig) *model.MetricsConfig {
+	if metricsConfig == nil {
+		return nil
+	}
+
+	out := &model.MetricsConfig{}
+	if metricsConfig.NetworkMetrics != nil {
+		out.NetworkMetrics = &model.MetricSignal{Enabled: metricsConfig.NetworkMetrics.Enabled}
+	}
+	if metricsConfig.StatsMetrics != nil {
+		out.StatsMetrics = &model.MetricSignal{Enabled: metricsConfig.StatsMetrics.Enabled}
+	}
+	if out.NetworkMetrics == nil && out.StatsMetrics == nil {
+		return nil
+	}
+	return out
 }
 
 // Converts CustomInstrumentations to GraphQL-compatible format

@@ -892,6 +892,20 @@
           "required": [],
           "title": "kubeletStats"
         },
+        "networkMetrics": {
+          "additionalProperties": false,
+          "description": "Network flow metrics infrastructure. When not disabled, odiglet runs with hostNetwork.\nPer-workload collection is enabled via InstrumentationRule metricsConfig.",
+          "properties": {
+            "disabled": {
+              "default": "true",
+              "description": "set disabled true to turn off network metrics infrastructure (hostNetwork on odiglet).",
+              "required": [],
+              "title": "disabled"
+            }
+          },
+          "required": [],
+          "title": "networkMetrics"
+        },
         "odigosOwnMetrics": {
           "additionalProperties": false,
           "description": "Configuration for Odigos own metrics collection.",
