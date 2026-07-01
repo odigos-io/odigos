@@ -10,6 +10,8 @@ import (
 	"strings"
 	"strconv"
 	"sort"
+	"encoding/hex"
+	"crypto/sha256"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -406,7 +408,13 @@ func memoryProfilingRolloutFingerprint(rd map[string]*odigosv1.RuntimeDetailsByC
 		return false, ""
 	}
 	sort.Strings(parts)
-	return true, "memprof|nativeRestart=" + strconv.FormatBool(cfg.MemoryNativeRestartEnabled()) + "|" + strings.Join(parts, ",")
+	// The agents hash is propagated to a pod LABEL, so it MUST be a valid label
+	// value (alphanumeric plus -_. only). Hash the human-readable fingerprint to
+	// hex — a raw "memprof|nativeRestart=true|c:cplusplus:musl" string contains
+	// '|', '=' and ':' and would make every rolled pod invalid (FailedCreate).
+	raw := "nativeRestart=" + strconv.FormatBool(cfg.MemoryNativeRestartEnabled()) + "|" + strings.Join(parts, ",")
+	sum := sha256.Sum256([]byte(raw))
+	return true, "memprof-" + hex.EncodeToString(sum[:12])
 }
 
 // hasUninstrumentedPodsWithBackoff checks if the workload has pods in backoff state before instrumentation.
