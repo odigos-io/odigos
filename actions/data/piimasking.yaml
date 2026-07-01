@@ -18,6 +18,13 @@ spec:
   fields:
     - name: piiCategories
       displayName: Attributes to mask
-      componentType: multiInput
+      componentType: checkboxList
+      # Pre-select Credit card to match the previous bespoke form. `array` mode
+      # stores the checked option ids as a string[] (the persisted piiCategories shape).
+      initialValue: '["CREDIT_CARD"]'
       componentProps:
-        tooltip: List of PII categories to mask (e.g. CREDIT_CARD).
+        valueMode: array
+        tooltip: Select the PII categories to mask.
+        options:
+          - id: CREDIT_CARD
+            label: Credit card

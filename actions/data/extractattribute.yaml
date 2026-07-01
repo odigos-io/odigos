@@ -30,11 +30,14 @@ spec:
             placeholder: e.g. http.url
           - keyName: dataFormat
             label: Format
-            componentType: dropdown
+            componentType: radioGroup
             options:
-              - json
-              - sql
-              - resource_path
+              - id: json
+                label: JSON
+              - id: sql
+                label: SQL
+              - id: resource_path
+                label: Resource path
           - keyName: regex
             label: Regex
             placeholder: optional custom regex

@@ -16,23 +16,26 @@ spec:
     profiles:
       supported: true
   fields:
-    - name: collectContainerAttributes
-      displayName: Collect Container Attributes
-      componentType: checkbox
+    - name: k8sCollectAttributes
+      displayName: Attributes to collect
+      componentType: checkboxList
+      # Every collect flag defaults on, matching the previous bespoke form so the
+      # action isn't a no-op out of the box. `flatFields` writes each option id as
+      # its own top-level boolean field, keeping the persisted shape flat
+      # (collectContainerAttributes, collectReplicaSetAttributes, collectWorkloadId, collectClusterId).
+      initialValue: '{"collectContainerAttributes":true,"collectReplicaSetAttributes":true,"collectWorkloadId":true,"collectClusterId":true}'
       componentProps:
-        tooltip: Collect container related attributes (e.g. container name, image).
-    - name: collectReplicaSetAttributes
-      displayName: Collect ReplicaSet Attributes
-      componentType: checkbox
-      componentProps:
-        tooltip: Collect ReplicaSet related attributes.
-    - name: collectWorkloadId
-      displayName: Collect Workload UID
-      componentType: checkbox
-      componentProps:
-        tooltip: Collect the workload UID attribute.
-    - name: collectClusterId
-      displayName: Collect Cluster UID
-      componentType: checkbox
-      componentProps:
-        tooltip: Collect the cluster UID attribute.
+        valueMode: flatFields
+        options:
+          - id: collectContainerAttributes
+            label: Collect Container Attributes
+            tooltip: Collect container related attributes (e.g. container name, image).
+          - id: collectReplicaSetAttributes
+            label: Collect ReplicaSet Attributes
+            tooltip: Collect ReplicaSet related attributes.
+          - id: collectWorkloadId
+            label: Collect Workload UID
+            tooltip: Collect the workload UID attribute.
+          - id: collectClusterId
+            label: Collect Cluster UID
+            tooltip: Collect the cluster UID attribute.
