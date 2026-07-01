@@ -126,15 +126,14 @@ func InjectInterpretedMemoryProfiling(existingEnvNames EnvVarNamesMap, container
 	preloaded := false
 	switch {
 	case libc != nil && *libc == common.Musl:
-		// musl interpreted: SKIP the preload. The musl-built interposer loads cleanly
-		// (no loader abort), but is not yet memory-safe under a real Alpine interpreter
-		// that drives heavy C++-extension allocation (observed std::bad_alloc / SIGSEGV
-		// on Alpine CPython + gRPC C-extensions with PYTHONMALLOC=malloc). Until the
-		// musl interposer is hardened, we MUST NOT crash the app: a tagged-musl
-		// interpreter runs clean without memory profiling. (glibc interpreted is the
-		// common, validated path; musl interpreted is a rare edge.) Re-enable by
-		// restoring the libmemsampleMuslSoPath preload once the musl lib is solid.
-		_ = libmemsampleMuslSoPath
+		// musl interpreted: preload the musl-built interposer. Its frame-pointer walk
+		// is now fault-safe (every candidate %rbp is readability-probed via a
+		// write()-to-/dev/null test before deref), so the SIGSEGV/std::bad_alloc that
+		// used to hit Alpine CPython + gRPC C-extensions (omitted frame pointers) no
+		// longer occurs — a bad frame just truncates the stack. This unblocks memory
+		// profiling for the whole Alpine/musl class of interpreter images.
+		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, ldPreloadEnvVar, libmemsampleMuslSoPath)
+		preloaded = true
 	default:
 		// glibc OR unknown: use the glibc interposer. Unlike the native C/C++ path
 		// (where unknown libc gets no preload to avoid aborting a musl process), the
