@@ -16,7 +16,7 @@ func obiProcessLifecycleCallback(obiManager *obisdk.Manager, c client.Client) fu
 			return
 		}
 		if !instrumented {
-			obiManager.SyncMetrics(pid, false)
+			obiManager.SyncMetrics(pid, nil)
 			return
 		}
 
@@ -24,7 +24,7 @@ func obiProcessLifecycleCallback(obiManager *obisdk.Manager, c client.Client) fu
 		if err != nil || containerConfig == nil {
 			return
 		}
-		obiManager.SyncMetrics(pid, containerConfig.Metrics != nil)
+		obiManager.SyncMetrics(pid, containerConfig.Metrics)
 	}
 }
 
@@ -32,10 +32,10 @@ func obiProcessConfigCallback(obiManager *obisdk.Manager) func(context.Context, 
 	return func(_ context.Context, pid int, _ *K8sProcessDetails, config instrumentation.Config) {
 		containerConfig, ok := config.(*odigosv1.ContainerAgentConfig)
 		if !ok {
-			obiManager.SyncMetrics(pid, false)
+			obiManager.SyncMetrics(pid, nil)
 			return
 		}
-		obiManager.SyncMetrics(pid, containerConfig.Metrics != nil)
+		obiManager.SyncMetrics(pid, containerConfig.Metrics)
 	}
 }
 

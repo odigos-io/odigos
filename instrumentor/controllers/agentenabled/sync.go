@@ -20,6 +20,7 @@ import (
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/distroresolver"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig/metrics"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signals"
 	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
@@ -291,6 +292,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 			agentConfig.Metrics = dynamicContainerConfigs.AgentMetricsConfig
 			agentConfig.Logs = dynamicContainerConfigs.AgentLogsConfig
 			agentConfig.AgentDiagnostics = dynamicContainerConfigs.AgentDiagnostics
+			metrics.ApplyRuleMetricsConfig(&agentConfig.Metrics, &rulesForContainer)
 		}
 		containersConfig = append(containersConfig, agentConfig)
 

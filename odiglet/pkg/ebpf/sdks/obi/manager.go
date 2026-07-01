@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentation"
@@ -11,6 +13,7 @@ import (
 	"go.opentelemetry.io/obi/pkg/appolly/discover"
 	obiconfig "go.opentelemetry.io/obi/pkg/config"
 	"go.opentelemetry.io/obi/pkg/export"
+	"go.opentelemetry.io/obi/pkg/export/instrumentations"
 	"go.opentelemetry.io/obi/pkg/instrumenter"
 	obipkg "go.opentelemetry.io/obi/pkg/obi"
 )
@@ -22,7 +25,7 @@ var _ instrumentation.Factory = (*Manager)(nil)
 
 // Manager owns the shared OBI instrumenter and implements instrumentation.Factory for the OBI distro.
 // Run waits until ctx is canceled, then stops the instrumenter. CreateInstrumentation handles OBI traces for the OBI distro.
-// SyncMetrics attaches network/stats metrics for any instrumented process (via lifecycle callbacks).
+// SyncMetrics attaches network/stats metrics for any instrumented process when enabled via InstrumentationRule metricsConfig.
 //
 // PID selection updates are not synchronized here. They are invoked from the instrumentation manager
 // event loop (Load/Close and lifecycle callbacks), which processes one event at a time.
@@ -53,22 +56,34 @@ func (m *Manager) CreateInstrumentation(_ context.Context, pid int, _ instrument
 	}, nil
 }
 
-// SyncMetrics enables or disables OBI network/stats metrics for pid.
-func (m *Manager) SyncMetrics(pid int, enabled bool) {
-	if pid <= 0 {
+// SyncMetrics enables or disables network and stats metrics for pid based on per-workload metrics configuration.
+func (m *Manager) SyncMetrics(pid int, metrics *agentsignalconfig.AgentMetricsConfig) {
+	if pid <= 0 || metrics == nil {
+		m.removeMetricsPIDs(pid, true, true)
+		m.maybeStopInstrumenter()
 		return
 	}
 
-	if enabled {
-		m.ensureInstrumenterRunning()
+	networkMetricsEnabled := instrumentationrules.MetricSignalEnabled(metrics.NetworkMetrics)
+	statsMetricsEnabled := instrumentationrules.MetricSignalEnabled(metrics.StatsMetrics)
+
+	if !networkMetricsEnabled && !statsMetricsEnabled {
+		m.removeMetricsPIDs(pid, true, true)
+		m.maybeStopInstrumenter()
+		return
+	}
+
+	m.ensureInstrumenterRunning()
+	if networkMetricsEnabled {
 		m.selector.NetworkMetrics().AddPIDs(uint32(pid))
-		m.selector.StatsMetrics().AddPIDs(uint32(pid))
-		return
+	} else {
+		m.selector.NetworkMetrics().RemovePIDs(uint32(pid))
 	}
-
-	m.selector.NetworkMetrics().RemovePIDs(uint32(pid))
-	m.selector.StatsMetrics().RemovePIDs(uint32(pid))
-	m.maybeStopInstrumenter()
+	if statsMetricsEnabled {
+		m.selector.StatsMetrics().AddPIDs(uint32(pid))
+	} else {
+		m.selector.StatsMetrics().RemovePIDs(uint32(pid))
+	}
 }
 
 // Run waits until ctx is canceled, then stops the OBI instrumenter.
@@ -104,6 +119,15 @@ func (p *processInstrumentation) ApplyConfig(context.Context, instrumentation.Co
 	return nil
 }
 
+func (m *Manager) removeMetricsPIDs(pid int, networkMetricsEnabled, statsMetricsEnabled bool) {
+	if networkMetricsEnabled {
+		m.selector.NetworkMetrics().RemovePIDs(uint32(pid))
+	}
+	if statsMetricsEnabled {
+		m.selector.StatsMetrics().RemovePIDs(uint32(pid))
+	}
+}
+
 func obiConfigForOdigos() *obipkg.Config {
 	cfg := obipkg.DefaultConfig
 	cfg.EBPF.ContextPropagation = obiconfig.ContextPropagationHeaders
@@ -111,6 +135,8 @@ func obiConfigForOdigos() *obipkg.Config {
 	collectorEndpoint := fmt.Sprintf("http://localhost:%d", consts.OTLPPort)
 	cfg.Traces.TracesEndpoint = collectorEndpoint
 	cfg.OTELMetrics.MetricsEndpoint = collectorEndpoint
+
+	cfg.Traces.Instrumentations = append(cfg.Traces.Instrumentations, instrumentations.InstrumentationDNS)
 
 	cfg.Metrics.Features = export.FeatureNetwork | export.FeatureStats
 
@@ -123,11 +149,12 @@ func (m *Manager) ensureInstrumenterRunning() {
 	}
 
 	runCtx, runCancel := context.WithCancel(context.Background())
+	obiCfg := m.obiCfg
 	m.runCtx = runCtx
 	m.runCancel = runCancel
 
 	go func() {
-		err := instrumenter.Run(runCtx, m.obiCfg, instrumenter.WithDynamicPIDSelector(m.selector))
+		err := instrumenter.Run(runCtx, obiCfg, instrumenter.WithDynamicPIDSelector(m.selector))
 		if err != nil && runCtx.Err() == nil {
 			m.logger.Error("OBI instrumenter exited with error", "err", err)
 		}

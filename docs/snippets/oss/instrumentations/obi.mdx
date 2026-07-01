@@ -1,4 +1,4 @@
-Odigos can run **[OpenTelemetry eBPF Instrumentation (OBI)](https://opentelemetry.io/docs/zero-code/obi)** for workloads where the `opentelemetry-ebpf-instrumentation` distro is selected.
+Odigos can run **[OpenTelemetry eBPF Instrumentation (OBI)](https://opentelemetry.io/docs/zero-code/obi)** for workloads where the `opentelemetry-ebpf-instrumentation` distro is selected or a Metrics `InstrumentationRule` is configured.
 
 <CardGroup cols={2}>
   <Card
@@ -17,9 +17,9 @@ Odigos can run **[OpenTelemetry eBPF Instrumentation (OBI)](https://opentelemetr
   </Card>
 </CardGroup>
 
-## OBI Support
+## Traces
 
-OBI can be enabled by selecting it as a container override for specific workloads. This can be configured either
+OBI tracing can be enabled by selecting it as a container override for specific workloads. This can be configured either
 from the Odigos UI or directly on a [Source object](/oss/pipeline/sources/introduction).
 
 ### Enabling OBI from the UI
@@ -91,25 +91,11 @@ spec:
 In this case, `containerName` is the name of the container to instrument in this workload, and the required
 `otelDistroName` is **`opentelemetry-ebpf-instrumentation`**.
 
-## Telemetry signals
-
-Upstream OBI is split into several observability pipelines. In Odigos, each signal is wired independently so
-traces and metrics can be enabled without requiring the same distro or lifecycle on every process.
-
-| Signal | OBI pipeline | Enabled in Odigos when | Applies to |
-| ------ | ------------ | ---------------------- | ---------- |
-| **Traces** | [AppO11y](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/tree/main/pkg/appolly) (application protocol tracing) | The `opentelemetry-ebpf-instrumentation` distro is selected for the container | Processes instrumented with the OBI distro only |
-| **Network metrics** | [NetO11y](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/tree/main/pkg/netolly) (point-to-point flow bytes) | Metrics collection is enabled for the workload (`Metrics` configured on the container in the InstrumentationConfig) | Any successfully instrumented process on the node (Go, Java, OBI, etc.) |
-| **Stats metrics** | [StatsO11y](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/tree/main/pkg/statsolly) (host-level TCP statistics such as RTT and failed connections) | Same as network metrics | Same as network metrics |
-
-All OBI telemetry that Odigos collects is exported over OTLP to the odiglet node collector (`localhost:4317`), then
-follows the same Odigos pipeline as other workload telemetry.
-
-### Traces
+### Trace support
 
 When OBI is the selected distro, odiglet attaches the process to OBI's trace selector when instrumentation loads and
 removes it when instrumentation stops. OBI captures distributed traces for supported protocols (HTTP, gRPC, databases,
-messaging, and more) without code changes.
+messaging, and more) without code changes. DNS lookup traces are enabled by default when using the OBI distro.
 
 Learn more in the upstream docs:
 
@@ -133,11 +119,53 @@ Learn more in the upstream docs:
 Odigos configures OBI header-based context propagation (`context_propagation: headers`). For encrypted traffic and
 multi-service propagation limits, see the upstream distributed tracing guide linked above.
 
+When `metricsSources.networkMetrics.disabled` is `false`, the odiglet DaemonSet runs with `hostNetwork: true` (required for OBI
+network flow collection). Stats metrics do not require host networking.
+
+### Limitations
+
+OBI's instrumentation is based on HTTP header propagation. For encrypted traffic, context propagation will not work unless both
+workloads (client and server) are instrumented with OBI as explained in [the official OBI docs](https://opentelemetry.io/docs/zero-code/obi/distributed-traces/#context-propagation-at-network-level).
+
+## Metrics
+
+Upstream OBI is split into several observability pipelines. In Odigos, each signal is wired independently so
+traces and metrics can be enabled without requiring the same distro or lifecycle on every process.
+
+| Signal | OBI pipeline | Enabled in Odigos when | Applies to |
+| ------ | ------------ | ---------------------- | ---------- |
+| **Traces** | [AppO11y](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/tree/main/pkg/appolly) (application protocol tracing) | The `opentelemetry-ebpf-instrumentation` distro is selected for the container. DNS lookup traces are included by default for the OBI distro | Processes instrumented with the OBI distro only |
+| **Network metrics** | [NetO11y](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/tree/main/pkg/netolly) (point-to-point flow bytes) | An [InstrumentationRule](/oss/pipeline/rules/introduction) with `metricsConfig.networkMetrics.enabled: true` (optionally scoped via `scopes`) | Any successfully instrumented process on the node (Go, Java, OBI, etc.) |
+| **Stats metrics** | [StatsO11y](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/tree/main/pkg/statsolly) (host-level TCP statistics such as RTT and failed connections) | An InstrumentationRule with `metricsConfig.statsMetrics.enabled: true` (optionally scoped via `scopes`) | Same as network metrics |
+
+All OBI telemetry that Odigos collects is exported over OTLP to the odiglet node collector (`localhost:4317`), then
+follows the same Odigos pipeline as other workload telemetry.
+
+OBI does not need to be selected as the traces distro for an app to use OBI metrics, see below.
+
+### Configuration
+
+**Network metrics infrastructure (cluster-wide):** OBI network flow collection requires odiglet `hostNetwork`. Enable the
+infrastructure in Helm by setting `metricsSources.networkMetrics.disabled` to `false` (it defaults to `true`):
+
+```yaml
+metricsSources:
+  networkMetrics:
+    disabled: false
+```
+
+**Enabling network and stats metrics:** Create an `InstrumentationRule` in the Odigos installation namespace (typically
+`odigos-system`) with `metricsConfig`. See [Metrics Config](/oss/pipeline/rules/metricsconfig) for configuration options,
+examples, and verification steps.
+
+Multiple rules merge with OR semantics (if any rule enables a signal, it is enabled). Workload scoping via `scopes` is
+optional — omit it to apply cluster-wide.
+
 ### Network metrics
 
 Network metrics describe bytes sent and received between endpoints (pods, services, nodes, and related Kubernetes
-metadata). Odigos enables OBI's `network` metrics feature and attaches processes to the network-metrics selector when
-metrics are enabled for the workload.
+metadata). Enable cluster infrastructure with `metricsSources.networkMetrics.disabled: false`, then enable collection with an
+InstrumentationRule `metricsConfig.networkMetrics` toggle (cluster-wide or scoped via `scopes`).
 
 <CardGroup cols={2}>
   <Card
@@ -173,8 +201,7 @@ metrics are enabled for the workload.
 ### Stats metrics
 
 Stats metrics capture TCP-level statistics between endpoints, including round-trip time and failed connection
-attempts. Odigos enables OBI's `stats` metrics feature alongside network metrics when workload metrics collection is
-on.
+attempts. Enable with an InstrumentationRule `metricsConfig.statsMetrics` toggle (cluster-wide or scoped via `scopes`).
 
 <CardGroup cols={2}>
   <Card
@@ -192,8 +219,3 @@ on.
     How OBI groups metrics into `network`, `stats`, `stats_tcp_rtt`, and related feature flags.
   </Card>
 </CardGroup>
-
-### Limitations
-
-OBI's instrumentation is based on HTTP header propagation. For encrypted traffic, context propagation will not work unless both
-workloads (client and server) are instrumented with OBI as explained in [the official OBI docs](https://opentelemetry.io/docs/zero-code/obi/distributed-traces/#context-propagation-at-network-level).
