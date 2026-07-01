@@ -83,10 +83,13 @@ const (
 	// glibc/default C/C++/Rust we preload it so the allocator profiles itself
 	// (Poisson-sampled, real live-heap, out-of-band dumps) — the production model,
 	// not a home-grown malloc shim.
-	// Canonical name odiglet also stages the prof jemalloc under; the out-of-process
-	// native reader greps process maps for "/libjemalloc.so", so the LD_PRELOAD path
-	// must carry that name (not "-prof") for the allocator to be detected.
-	jemallocProfSoPath = "/var/odigos/memprof/libjemalloc.so"
+	// This MUST match the filename odiglet actually stages (odiglet/Dockerfile
+	// copies it as libjemalloc-prof.so). The out-of-process native reader greps
+	// process maps for the "/libjemalloc" substring, which matches libjemalloc.so,
+	// libjemalloc.so.2 and libjemalloc-prof.so alike, so the "-prof" name is
+	// detected correctly. (A prior value of libjemalloc.so pointed at a file that
+	// is not delivered, so the preload failed with "cannot open shared object".)
+	jemallocProfSoPath = "/var/odigos/memprof/libjemalloc-prof.so"
 	// jemallocProfConf enables jemalloc's heap profiler: Poisson sampling at
 	// 2^19=512KiB (lg_prof_sample), cumulative accounting, auto-dump every
 	// 2^24=16MiB allocated (lg_prof_interval) to a prefix the agent reads
