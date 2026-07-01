@@ -79,7 +79,7 @@ func (irc *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctr
 		logger.Info("Updated instrumentation config", "workload", ic.Name)
 	}
 
-	logger.Info("Payload Collection Rules changed, recalculating instrumentation configs", "number of instrumentation rules", len(instrumentationRules.Items), "number of instrumented workloads", len(instrumentationConfigs.Items))
+	logger.Info("Instrumentation rules changed, recalculating instrumentation configs", "number of instrumentation rules", len(instrumentationRules.Items), "number of instrumented workloads", len(instrumentationConfigs.Items))
 	return ctrl.Result{}, nil
 }
 
