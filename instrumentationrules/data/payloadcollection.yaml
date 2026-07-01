@@ -11,9 +11,10 @@ spec:
     - javascript
   fields:
     # Persisted as `payloadCollection: { httpRequest, httpResponse, dbQuery,
-    # messaging }` where each selected bucket is an (empty) config object and
-    # unselected buckets are null. `checkedValue: emptyObject` writes `{}` per
-    # checked option.
+    # messaging }`. `checkedValue: emptyObject` writes `{}` per checked option;
+    # each option's nested `fields` (mimeTypes / maxPayloadLength / …) merge onto
+    # that object, so an option with no advanced tuning stays `{}` (enabled with
+    # backend defaults) and unchecked options collapse to null.
     - name: payloadCollection
       displayName: Type of data to collect
       componentType: checkboxList
@@ -23,9 +24,60 @@ spec:
         options:
           - id: httpRequest
             label: Collect HTTP request
+            fields: &httpFields
+              # HttpPayloadCollection: mimeTypes / maxPayloadLength / dropPartialPayloads
+              - name: mimeTypes
+                displayName: MIME types
+                componentType: multiInput
+                componentProps:
+                  placeholder: e.g. application/json
+                  tooltip: Limit collection to specific content-type MIME types. Leave empty to collect all.
+              - name: maxPayloadLength
+                displayName: Max payload length
+                componentType: input
+                inputType: number
+                componentProps:
+                  placeholder: e.g. 1024
+                  tooltip: Maximum payload length to collect. Longer payloads are truncated or dropped based on "Drop partial payloads".
+              - name: dropPartialPayloads
+                displayName: Drop partial payloads
+                componentType: checkbox
+                componentProps:
+                  tooltip: When a payload exceeds the max length, drop it entirely instead of truncating.
           - id: httpResponse
             label: Collect HTTP response
+            fields: *httpFields
           - id: dbQuery
             label: Collect DB query
+            fields:
+              # DbQueryPayloadCollection: maxPayloadLength / dropPartialPayloads.
+              # (`sanitizationPolicy` exists on the Go struct but is not exposed in
+              # the frontend GraphQL PayloadCollection input, so it's omitted here.)
+              - name: maxPayloadLength
+                displayName: Max payload length
+                componentType: input
+                inputType: number
+                componentProps:
+                  placeholder: e.g. 1024
+                  tooltip: Maximum payload length to collect. Longer payloads are truncated or dropped based on "Drop partial payloads".
+              - name: dropPartialPayloads
+                displayName: Drop partial payloads
+                componentType: checkbox
+                componentProps:
+                  tooltip: When a payload exceeds the max length, drop it entirely instead of truncating.
           - id: messaging
             label: Collect messaging
+            fields:
+              # MessagingPayloadCollection: maxPayloadLength / dropPartialPayloads
+              - name: maxPayloadLength
+                displayName: Max payload length
+                componentType: input
+                inputType: number
+                componentProps:
+                  placeholder: e.g. 1024
+                  tooltip: Maximum payload length to collect. Longer payloads are truncated or dropped based on "Drop partial payloads".
+              - name: dropPartialPayloads
+                displayName: Drop partial payloads
+                componentType: checkbox
+                componentProps:
+                  tooltip: When a payload exceeds the max length, drop it entirely instead of truncating.

@@ -116,20 +116,62 @@ func getPayloadCollectionInput(input model.InstrumentationRuleInput) *instrument
 
 	payloadCollection := &instrumentationrules.PayloadCollection{}
 
-	if input.PayloadCollection.HTTPRequest != nil {
-		payloadCollection.HttpRequest = &instrumentationrules.HttpPayloadCollection{}
+	if in := input.PayloadCollection.HTTPRequest; in != nil {
+		payloadCollection.HttpRequest = fromHTTPPayloadInput(in)
 	}
-	if input.PayloadCollection.HTTPResponse != nil {
-		payloadCollection.HttpResponse = &instrumentationrules.HttpPayloadCollection{}
+	if in := input.PayloadCollection.HTTPResponse; in != nil {
+		payloadCollection.HttpResponse = fromHTTPPayloadInput(in)
 	}
-	if input.PayloadCollection.DbQuery != nil {
-		payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{}
+	if in := input.PayloadCollection.DbQuery; in != nil {
+		payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{
+			MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
+			DropPartialPayloads: in.DropPartialPayloads,
+		}
 	}
-	if input.PayloadCollection.Messaging != nil {
-		payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{}
+	if in := input.PayloadCollection.Messaging; in != nil {
+		payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{
+			MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
+			DropPartialPayloads: in.DropPartialPayloads,
+		}
 	}
 
 	return payloadCollection
+}
+
+// fromHTTPPayloadInput copies the advanced HTTP payload options (mime types,
+// max length, drop-partial) from the GraphQL input into the CRD config. The
+// GraphQL layer uses `[]*string` / `*int`, the CRD uses `*[]string` / `*int64`.
+func fromHTTPPayloadInput(in *model.HTTPPayloadCollectionInput) *instrumentationrules.HttpPayloadCollection {
+	cfg := &instrumentationrules.HttpPayloadCollection{
+		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
+		DropPartialPayloads: in.DropPartialPayloads,
+	}
+	if in.MimeTypes != nil {
+		mimeTypes := make([]string, 0, len(in.MimeTypes))
+		for _, m := range in.MimeTypes {
+			if m != nil {
+				mimeTypes = append(mimeTypes, *m)
+			}
+		}
+		cfg.MimeTypes = &mimeTypes
+	}
+	return cfg
+}
+
+func intToInt64Ptr(v *int) *int64 {
+	if v == nil {
+		return nil
+	}
+	i := int64(*v)
+	return &i
+}
+
+func int64ToIntPtr(v *int64) *int {
+	if v == nil {
+		return nil
+	}
+	i := int(*v)
+	return &i
 }
 
 func getHeadersCollectionInput(input model.InstrumentationRuleInput) *instrumentationrules.HttpHeadersCollection {
@@ -542,26 +584,46 @@ func convertPayloadCollection(payload *instrumentationrules.PayloadCollection) *
 	}
 }
 
-// Helpers to create empty payloads if they exist
+// Helpers to map the stored payload configs back to the GraphQL model, carrying
+// the advanced options (mime types / max length / drop-partial) so they survive
+// a round-trip and render in the UI.
 func toHTTPPayload(payload *instrumentationrules.HttpPayloadCollection) *model.HTTPPayloadCollection {
 	if payload == nil {
 		return nil
 	}
-	return &model.HTTPPayloadCollection{}
+	out := &model.HTTPPayloadCollection{
+		MaxPayloadLength:    int64ToIntPtr(payload.MaxPayloadLength),
+		DropPartialPayloads: payload.DropPartialPayloads,
+	}
+	if payload.MimeTypes != nil {
+		mimeTypes := make([]*string, 0, len(*payload.MimeTypes))
+		for i := range *payload.MimeTypes {
+			v := (*payload.MimeTypes)[i]
+			mimeTypes = append(mimeTypes, &v)
+		}
+		out.MimeTypes = mimeTypes
+	}
+	return out
 }
 
 func toDbQueryPayload(payload *instrumentationrules.DbQueryPayloadCollection) *model.DbQueryPayloadCollection {
 	if payload == nil {
 		return nil
 	}
-	return &model.DbQueryPayloadCollection{}
+	return &model.DbQueryPayloadCollection{
+		MaxPayloadLength:    int64ToIntPtr(payload.MaxPayloadLength),
+		DropPartialPayloads: payload.DropPartialPayloads,
+	}
 }
 
 func toMessagingPayload(payload *instrumentationrules.MessagingPayloadCollection) *model.MessagingPayloadCollection {
 	if payload == nil {
 		return nil
 	}
-	return &model.MessagingPayloadCollection{}
+	return &model.MessagingPayloadCollection{
+		MaxPayloadLength:    int64ToIntPtr(payload.MaxPayloadLength),
+		DropPartialPayloads: payload.DropPartialPayloads,
+	}
 }
 
 // Converts CustomInstrumentations to GraphQL-compatible format
