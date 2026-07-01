@@ -27,7 +27,7 @@ imagePrefix:
 #     images:
 #       autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
-#   Supported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,
+#   Supported component names: autoscaler, collector, ui, enterprise-ui, instrumentor, enterprise-instrumentor,
 #     odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents
 # additionalProperties: true
 # @schema

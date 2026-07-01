@@ -617,7 +617,7 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,\n  odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, ui, enterprise-ui, instrumentor, enterprise-instrumentor,\n  odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents",
       "required": [],
       "title": "images"
     },
