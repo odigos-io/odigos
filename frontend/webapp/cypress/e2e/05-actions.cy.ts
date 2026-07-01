@@ -37,29 +37,32 @@ describe('Actions CRUD', () => {
             break;
           }
           case 'AddClusterInfo': {
-            cy.get('[data-id=clusterAttributes]').find('input[placeholder="Attribute name"]').type('key');
-            cy.get('[data-id=clusterAttributes]').find('input[placeholder="Attribute value"]').type('val');
+            // The dynamic table cells expose the column keyName as the input's
+            // data-id (see ui-kit InputTable -> Input), so target those instead
+            // of the (now catalog-defined) placeholder text.
+            cy.get('[data-id=clusterAttributes]').find('input[data-id=attributeName]').type('key');
+            cy.get('[data-id=clusterAttributes]').find('input[data-id=attributeStringValue]').type('val');
             break;
           }
           case 'DeleteAttribute': {
-            cy.get('[data-id=attributeNamesToDelete]').find('input').type('test');
+            cy.get('[data-id=attributeNamesToDelete]').find('input').first().type('test');
             break;
           }
-          case 'RenameAttribute': {
-            cy.get('[data-id=renames]').find('input[placeholder="Old key"]').type('1');
-            cy.get('[data-id=renames]').find('input[placeholder="New key"]').type('one');
-            break;
-          }
+          // NOTE: 'RenameAttribute' is intentionally omitted from SELECTED_ENTITIES.ACTIONS
+          // because it can't be created via the dynamic form yet (PLAT-1260).
           case 'PiiMasking': {
-            // default values are enough 👍
+            // The dynamic form renders piiCategories as a free-text multiInput with
+            // no default (the old bespoke form pre-selected CREDIT_CARD), so enter a
+            // valid category to produce a non-empty action.
+            cy.get('[data-id=piiCategories]').find('input').first().type('CREDIT_CARD');
             break;
           }
           case 'ExtractAttribute': {
-            // Default mode is "Preset extract" with the first row's dataFormat=json
-            // already selected, so we just fill lookupKey + targetAttributeName to
-            // make a valid action.
-            cy.get('[data-id=extract-row-0]').find('input[data-id=extract-row-0-lookupKey]').type('task_id');
-            cy.get('[data-id=extract-row-0]').find('input[data-id=extract-row-0-targetAttributeName]').type('extracted.json.task_id');
+            // The dynamic form has no preset dataFormat, so use the regex path
+            // (targetAttributeName + a single-capture-group regex) to make a valid
+            // extraction without touching the dataFormat dropdown.
+            cy.get('[data-id=extractAttribute]').find('input[data-id=targetAttributeName]').type('extracted.value');
+            cy.get('[data-id=extractAttribute]').find('input[data-id=regex]').type('(.*)');
             break;
           }
           default: {

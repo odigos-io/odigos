@@ -71,7 +71,12 @@ export const SELECTED_ENTITIES = {
     AUTOFILL_FIELD: 'JAEGER_URL',
     AUTOFILL_VALUE: `jaeger.${NAMESPACES.DESTINATIONS}:4317`,
   },
-  ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'RenameAttribute', 'PiiMasking', 'ExtractAttribute'],
+  // NOTE: 'RenameAttribute' is temporarily excluded — the dynamic (catalog-driven)
+  // action form renders it via the generic `keyValuePairs` component, which emits an
+  // array of `{ key, value }` rows while the kit's form logic still treats `renames`
+  // as an object map. This crashes on save (see PLAT-1260), so it can't be created
+  // via the UI until the kit is fixed. Re-add it here once that ticket lands.
+  ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'PiiMasking', 'ExtractAttribute'],
   INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
 
