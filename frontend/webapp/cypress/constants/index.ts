@@ -71,12 +71,15 @@ export const SELECTED_ENTITIES = {
     AUTOFILL_FIELD: 'JAEGER_URL',
     AUTOFILL_VALUE: `jaeger.${NAMESPACES.DESTINATIONS}:4317`,
   },
-  // NOTE: 'RenameAttribute' is temporarily excluded — the dynamic (catalog-driven)
-  // action form renders it via the generic `keyValuePairs` component, which emits an
-  // array of `{ key, value }` rows while the kit's form logic still treats `renames`
-  // as an object map. This crashes on save (see PLAT-1260), so it can't be created
-  // via the UI until the kit is fixed. Re-add it here once that ticket lands.
-  ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'PiiMasking', 'ExtractAttribute'],
+  // NOTE: two action types are temporarily excluded because the dynamic
+  // (catalog-driven) action form can't create them yet:
+  //   - 'RenameAttribute': the generic `keyValuePairs` renderer emits an array of
+  //     `{ key, value }` rows while the kit still treats `renames` as an object map,
+  //     which crashes on save (PLAT-1260).
+  //   - 'ExtractAttribute': the dynamic table sends `dataFormat: ""` for an unselected
+  //     optional enum, which the GraphQL server rejects with a 400 (PLAT-1261).
+  // Re-add each here (and restore its case in 05-actions.cy.ts) once its ticket lands.
+  ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'PiiMasking'],
   INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
 
