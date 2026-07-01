@@ -1,0 +1,31 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: InstrumentationRule
+metadata:
+  type: PayloadCollection
+  displayName: Payload Collection
+spec:
+  docsUrl: https://docs.odigos.io/pipeline/rules/payloadcollection
+  description: The "Payload Collection" rule can be used to add span attributes containing payload data to traces.
+  supportedLanguages:
+    - go
+    - javascript
+  fields:
+    # Persisted as `payloadCollection: { httpRequest, httpResponse, dbQuery,
+    # messaging }` where each selected bucket is an (empty) config object and
+    # unselected buckets are null. `checkedValue: emptyObject` writes `{}` per
+    # checked option.
+    - name: payloadCollection
+      displayName: Type of data to collect
+      componentType: checkboxList
+      initialValue: '{"httpRequest":{},"httpResponse":{},"dbQuery":{},"messaging":{}}'
+      componentProps:
+        checkedValue: emptyObject
+        options:
+          - id: httpRequest
+            label: Collect HTTP request
+          - id: httpResponse
+            label: Collect HTTP response
+          - id: dbQuery
+            label: Collect DB query
+          - id: messaging
+            label: Collect messaging

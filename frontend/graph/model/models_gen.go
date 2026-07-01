@@ -703,6 +703,15 @@ type InstrumentationRule struct {
 	CustomInstrumentations   *CustomInstrumentations            `json:"customInstrumentations,omitempty"`
 }
 
+type InstrumentationRuleFieldYamlProperties struct {
+	Name                string   `json:"name"`
+	DisplayName         string   `json:"displayName"`
+	ComponentType       string   `json:"componentType"`
+	ComponentProperties string   `json:"componentProperties"`
+	InitialValue        string   `json:"initialValue"`
+	RenderCondition     []string `json:"renderCondition"`
+}
+
 type InstrumentationRuleInput struct {
 	RuleName                 *string                                 `json:"ruleName,omitempty"`
 	Notes                    *string                                 `json:"notes,omitempty"`
@@ -730,6 +739,15 @@ type InstrumentationRuleSourcesScopeInput struct {
 	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
 	ContainerName     *string                   `json:"containerName,omitempty"`
 	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
+}
+
+type InstrumentationRuleTypeOption struct {
+	Type               string                                    `json:"type"`
+	DisplayName        string                                    `json:"displayName"`
+	Description        string                                    `json:"description"`
+	SupportedLanguages []string                                  `json:"supportedLanguages"`
+	DocsURL            string                                    `json:"docsUrl"`
+	Fields             []*InstrumentationRuleFieldYamlProperties `json:"fields"`
 }
 
 type InstrumentationSourcesAnalyze struct {

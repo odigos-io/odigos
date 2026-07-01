@@ -1,0 +1,55 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: InstrumentationRule
+metadata:
+  type: CustomInstrumentation
+  displayName: Custom Instrumentation
+spec:
+  docsUrl: https://docs.odigos.io/pipeline/rules/custominstrumentation
+  description: The "Custom Instrumentation" rule can be used to instrument a specific symbol (i.e. for Golang), or a class and method combination (i.e. for Java) for detailed tracing.
+  supportedLanguages:
+    - go
+    - java
+  fields:
+    # Persisted as `customInstrumentations: { golang: [...], java: [...] }`. Two
+    # tables share the same `name`; each `wrapKey` targets its own sub-list and
+    # writes merge, so editing one language doesn't clobber the other.
+    - name: customInstrumentations
+      displayName: Golang custom probes
+      componentType: multiTabledInput
+      initialValue: '[{}]'
+      componentProps:
+        wrapKey: golang
+        limitFieldsPerRow: 2
+        columns:
+          - keyName: packageName
+            label: Package name
+            placeholder: e.g. github.com/my-org/my-package
+            tooltip: The full import path of the package containing the function or method to be instrumented.
+          - keyName: functionName
+            label: Function name
+            placeholder: e.g. myFunction
+            tooltip: The name of the function to be instrumented. Leave empty if instrumenting a receiver method.
+          - keyName: receiverName
+            label: Receiver name
+            placeholder: e.g. myReceiver
+            tooltip: The name of the receiver type if instrumenting a method. Leave empty if instrumenting a standalone function.
+          - keyName: receiverMethodName
+            label: Receiver method name
+            placeholder: e.g. myMethod
+            tooltip: The name of the method to be instrumented. Leave empty if instrumenting a standalone function.
+    - name: customInstrumentations
+      displayName: Java custom probes
+      componentType: multiTabledInput
+      initialValue: '[{}]'
+      componentProps:
+        wrapKey: java
+        limitFieldsPerRow: 2
+        columns:
+          - keyName: className
+            label: Class name
+            placeholder: e.g. com.example.MyClass
+            tooltip: The name of the class to be instrumented.
+          - keyName: methodName
+            label: Method name
+            placeholder: e.g. myMethod
+            tooltip: The name of the method to be instrumented.

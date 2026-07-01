@@ -866,6 +866,11 @@ func (r *queryResolver) ActionTypes(ctx context.Context) ([]*model.ActionTypeOpt
 	return services.GetActionTypes(), nil
 }
 
+// RuleTypes is the resolver for the ruleTypes field.
+func (r *queryResolver) RuleTypes(ctx context.Context) ([]*model.InstrumentationRuleTypeOption, error) {
+	return services.GetInstrumentationRuleTypes(), nil
+}
+
 // GetOverviewMetrics is the resolver for the getOverviewMetrics field.
 func (r *queryResolver) GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error) {
 	if r.MetricsConsumer == nil {
