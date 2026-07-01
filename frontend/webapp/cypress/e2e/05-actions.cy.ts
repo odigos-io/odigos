@@ -29,7 +29,11 @@ describe('Actions CRUD', () => {
 
         switch (actionType) {
           case 'K8sAttributesResolver': {
-            // default values are enough 👍
+            // The dynamic (catalog-driven) form no longer force-enables the
+            // collect flags on mount like the old bespoke form did, so the
+            // action would validate as a no-op ("Enable at least one option").
+            // Toggle one flag on to make it a valid action.
+            cy.get('[data-id=collectContainerAttributes]').click();
             break;
           }
           case 'AddClusterInfo': {
