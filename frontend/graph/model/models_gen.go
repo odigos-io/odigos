@@ -701,6 +701,7 @@ type InstrumentationRule struct {
 	HeadersCollection        *HeadersCollection                 `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollection                 `json:"payloadCollection,omitempty"`
 	CustomInstrumentations   *CustomInstrumentations            `json:"customInstrumentations,omitempty"`
+	MetricsConfig            *MetricsConfig                     `json:"metricsConfig,omitempty"`
 }
 
 type InstrumentationRuleInput struct {
@@ -714,6 +715,7 @@ type InstrumentationRuleInput struct {
 	HeadersCollection        *HeadersCollectionInput                 `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollectionInput                 `json:"payloadCollection,omitempty"`
 	CustomInstrumentations   *CustomInstrumentationsInput            `json:"customInstrumentations,omitempty"`
+	MetricsConfig            *MetricsConfigInput                     `json:"metricsConfig,omitempty"`
 }
 
 type InstrumentationRuleSourcesScope struct {
@@ -1182,6 +1184,24 @@ type MessagingPayloadCollection struct {
 type MessagingPayloadCollectionInput struct {
 	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
+}
+
+type MetricSignal struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type MetricSignalInput struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type MetricsConfig struct {
+	NetworkMetrics *MetricSignal `json:"networkMetrics,omitempty"`
+	StatsMetrics   *MetricSignal `json:"statsMetrics,omitempty"`
+}
+
+type MetricsConfigInput struct {
+	NetworkMetrics *MetricSignalInput `json:"networkMetrics,omitempty"`
+	StatsMetrics   *MetricSignalInput `json:"statsMetrics,omitempty"`
 }
 
 type MetricsSourceAgentJavaRuntimeMetricsConfig struct {
@@ -2192,6 +2212,7 @@ const (
 	InstrumentationRuleTypeHeadersCollection     InstrumentationRuleType = "HeadersCollection"
 	InstrumentationRuleTypePayloadCollection     InstrumentationRuleType = "PayloadCollection"
 	InstrumentationRuleTypeCustomInstrumentation InstrumentationRuleType = "CustomInstrumentation"
+	InstrumentationRuleTypeMetricsConfig         InstrumentationRuleType = "MetricsConfig"
 	InstrumentationRuleTypeUnknownType           InstrumentationRuleType = "UnknownType"
 )
 
@@ -2200,12 +2221,13 @@ var AllInstrumentationRuleType = []InstrumentationRuleType{
 	InstrumentationRuleTypeHeadersCollection,
 	InstrumentationRuleTypePayloadCollection,
 	InstrumentationRuleTypeCustomInstrumentation,
+	InstrumentationRuleTypeMetricsConfig,
 	InstrumentationRuleTypeUnknownType,
 }
 
 func (e InstrumentationRuleType) IsValid() bool {
 	switch e {
-	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCustomInstrumentation, InstrumentationRuleTypeUnknownType:
+	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCustomInstrumentation, InstrumentationRuleTypeMetricsConfig, InstrumentationRuleTypeUnknownType:
 		return true
 	}
 	return false

@@ -66,6 +66,14 @@ export const GET_INSTRUMENTATION_RULES = gql`
             className
           }
         }
+        metricsConfig {
+          networkMetrics {
+            enabled
+          }
+          statsMetrics {
+            enabled
+          }
+        }
       }
     }
   }

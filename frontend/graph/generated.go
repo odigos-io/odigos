@@ -586,6 +586,7 @@ type ComplexityRoot struct {
 		Disabled                 func(childComplexity int) int
 		HeadersCollection        func(childComplexity int) int
 		InstrumentationLibraries func(childComplexity int) int
+		MetricsConfig            func(childComplexity int) int
 		Mutable                  func(childComplexity int) int
 		Notes                    func(childComplexity int) int
 		PayloadCollection        func(childComplexity int) int
@@ -921,6 +922,15 @@ type ComplexityRoot struct {
 	MessagingPayloadCollection struct {
 		DropPartialPayloads func(childComplexity int) int
 		MaxPayloadLength    func(childComplexity int) int
+	}
+
+	MetricSignal struct {
+		Enabled func(childComplexity int) int
+	}
+
+	MetricsConfig struct {
+		NetworkMetrics func(childComplexity int) int
+		StatsMetrics   func(childComplexity int) int
 	}
 
 	MetricsSourceAgentJavaRuntimeMetricsConfig struct {
@@ -4053,6 +4063,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationRule.InstrumentationLibraries(childComplexity), true
 
+	case "InstrumentationRule.metricsConfig":
+		if e.complexity.InstrumentationRule.MetricsConfig == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.MetricsConfig(childComplexity), true
+
 	case "InstrumentationRule.mutable":
 		if e.complexity.InstrumentationRule.Mutable == nil {
 			break
@@ -5473,6 +5490,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MessagingPayloadCollection.MaxPayloadLength(childComplexity), true
+
+	case "MetricSignal.enabled":
+		if e.complexity.MetricSignal.Enabled == nil {
+			break
+		}
+
+		return e.complexity.MetricSignal.Enabled(childComplexity), true
+
+	case "MetricsConfig.networkMetrics":
+		if e.complexity.MetricsConfig.NetworkMetrics == nil {
+			break
+		}
+
+		return e.complexity.MetricsConfig.NetworkMetrics(childComplexity), true
+
+	case "MetricsConfig.statsMetrics":
+		if e.complexity.MetricsConfig.StatsMetrics == nil {
+			break
+		}
+
+		return e.complexity.MetricsConfig.StatsMetrics(childComplexity), true
 
 	case "MetricsSourceAgentJavaRuntimeMetricsConfig.disabled":
 		if e.complexity.MetricsSourceAgentJavaRuntimeMetricsConfig.Disabled == nil {
@@ -7936,6 +7974,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLocalUiConfigTraceCorrelationsServiceIOInput,
 		ec.unmarshalInputLocalUiConfigWaspInput,
 		ec.unmarshalInputMessagingPayloadCollectionInput,
+		ec.unmarshalInputMetricSignalInput,
+		ec.unmarshalInputMetricsConfigInput,
 		ec.unmarshalInputNoisyOperationRuleInput,
 		ec.unmarshalInputPatchSourceRequestInput,
 		ec.unmarshalInputPayloadCollectionInput,
@@ -15922,6 +15962,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "customInstrumentations":
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
+			case "metricsConfig":
+				return ec.fieldContext_InstrumentationRule_metricsConfig(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -26454,6 +26496,53 @@ func (ec *executionContext) fieldContext_InstrumentationRule_customInstrumentati
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationRule_metricsConfig(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_metricsConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricsConfig, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricsConfig)
+	fc.Result = res
+	return ec.marshalOMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_metricsConfig(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "networkMetrics":
+				return ec.fieldContext_MetricsConfig_networkMetrics(ctx, field)
+			case "statsMetrics":
+				return ec.fieldContext_MetricsConfig_statsMetrics(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricsConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationRuleSourcesScope_workloadName(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRuleSourcesScope) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRuleSourcesScope_workloadName(ctx, field)
 	if err != nil {
@@ -35514,6 +35603,137 @@ func (ec *executionContext) fieldContext_MessagingPayloadCollection_dropPartialP
 	return fc, nil
 }
 
+func (ec *executionContext) _MetricSignal_enabled(ctx context.Context, field graphql.CollectedField, obj *model.MetricSignal) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricSignal_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricSignal_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricSignal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsConfig_networkMetrics(ctx context.Context, field graphql.CollectedField, obj *model.MetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsConfig_networkMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NetworkMetrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricSignal)
+	fc.Result = res
+	return ec.marshalOMetricSignal2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricSignal(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsConfig_networkMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_MetricSignal_enabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricSignal", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsConfig_statsMetrics(ctx context.Context, field graphql.CollectedField, obj *model.MetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsConfig_statsMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StatsMetrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricSignal)
+	fc.Result = res
+	return ec.marshalOMetricSignal2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricSignal(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsConfig_statsMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_MetricSignal_enabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricSignal", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MetricsSourceAgentJavaRuntimeMetricsConfig_disabled(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceAgentJavaRuntimeMetricsConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MetricsSourceAgentJavaRuntimeMetricsConfig_disabled(ctx, field)
 	if err != nil {
@@ -37531,6 +37751,8 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "customInstrumentations":
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
+			case "metricsConfig":
+				return ec.fieldContext_InstrumentationRule_metricsConfig(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -37616,6 +37838,8 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "customInstrumentations":
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
+			case "metricsConfig":
+				return ec.fieldContext_InstrumentationRule_metricsConfig(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -54157,7 +54381,7 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "sourcesScopes", "instrumentationLibraries", "codeAttributes", "headersCollection", "payloadCollection", "customInstrumentations"}
+	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "sourcesScopes", "instrumentationLibraries", "codeAttributes", "headersCollection", "payloadCollection", "customInstrumentations", "metricsConfig"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -54234,6 +54458,13 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 				return it, err
 			}
 			it.CustomInstrumentations = data
+		case "metricsConfig":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metricsConfig"))
+			data, err := ec.unmarshalOMetricsConfigInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MetricsConfig = data
 		}
 	}
 
@@ -55192,6 +55423,67 @@ func (ec *executionContext) unmarshalInputMessagingPayloadCollectionInput(ctx co
 				return it, err
 			}
 			it.DropPartialPayloads = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMetricSignalInput(ctx context.Context, obj any) (model.MetricSignalInput, error) {
+	var it model.MetricSignalInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMetricsConfigInput(ctx context.Context, obj any) (model.MetricsConfigInput, error) {
+	var it model.MetricsConfigInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"networkMetrics", "statsMetrics"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "networkMetrics":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("networkMetrics"))
+			data, err := ec.unmarshalOMetricSignalInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricSignalInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NetworkMetrics = data
+		case "statsMetrics":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statsMetrics"))
+			data, err := ec.unmarshalOMetricSignalInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricSignalInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StatsMetrics = data
 		}
 	}
 
@@ -59535,6 +59827,8 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._InstrumentationRule_payloadCollection(ctx, field, obj)
 		case "customInstrumentations":
 			out.Values[i] = ec._InstrumentationRule_customInstrumentations(ctx, field, obj)
+		case "metricsConfig":
+			out.Values[i] = ec._InstrumentationRule_metricsConfig(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -62464,6 +62758,80 @@ func (ec *executionContext) _MessagingPayloadCollection(ctx context.Context, sel
 			out.Values[i] = ec._MessagingPayloadCollection_maxPayloadLength(ctx, field, obj)
 		case "dropPartialPayloads":
 			out.Values[i] = ec._MessagingPayloadCollection_dropPartialPayloads(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricSignalImplementors = []string{"MetricSignal"}
+
+func (ec *executionContext) _MetricSignal(ctx context.Context, sel ast.SelectionSet, obj *model.MetricSignal) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricSignalImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricSignal")
+		case "enabled":
+			out.Values[i] = ec._MetricSignal_enabled(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricsConfigImplementors = []string{"MetricsConfig"}
+
+func (ec *executionContext) _MetricsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.MetricsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricsConfig")
+		case "networkMetrics":
+			out.Values[i] = ec._MetricsConfig_networkMetrics(ctx, field, obj)
+		case "statsMetrics":
+			out.Values[i] = ec._MetricsConfig_statsMetrics(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -73207,6 +73575,36 @@ func (ec *executionContext) unmarshalOMessagingPayloadCollectionInput2ᚖgithub�
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputMessagingPayloadCollectionInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOMetricSignal2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricSignal(ctx context.Context, sel ast.SelectionSet, v *model.MetricSignal) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetricSignal(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMetricSignalInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricSignalInput(ctx context.Context, v any) (*model.MetricSignalInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputMetricSignalInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetricsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMetricsConfigInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsConfigInput(ctx context.Context, v any) (*model.MetricsConfigInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputMetricsConfigInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
