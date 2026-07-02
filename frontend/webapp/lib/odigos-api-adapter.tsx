@@ -174,11 +174,11 @@ const sanitizeExtractAttributeForWire = (fields: Record<string, unknown>): Recor
       extractions: extractAttribute.extractions.map((extraction) => {
         if (!extraction || typeof extraction !== 'object') return extraction;
 
-        const { method: _method, dataFormat, lookupKey, regex, ...rest } = extraction as Record<string, unknown>;
-        const next: Record<string, unknown> = { ...rest };
-        if (lookupKey) next.lookupKey = lookupKey;
-        if (regex) next.regex = regex;
-        if (dataFormat) next.dataFormat = dataFormat;
+        const next: Record<string, unknown> = { ...(extraction as Record<string, unknown>) };
+        delete next.method;
+        if (!next.lookupKey) delete next.lookupKey;
+        if (!next.regex) delete next.regex;
+        if (!next.dataFormat) delete next.dataFormat;
         return next;
       }),
     },
