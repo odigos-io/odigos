@@ -39,7 +39,7 @@ func TestCalculateMemoryLimiterHardLimitMiB(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := calculateMemoryLimiterHardLimitMiB(tt.containerMiB)
+			got := calculateMemoryLimiterHardLimitMiB(tt.containerMiB, defaultMemoryLimiterLimitDiffMib)
 			if got != tt.wantHardLimit {
 				t.Errorf("calculateMemoryLimiterHardLimitMiB(%d) = %d, want %d",
 					tt.containerMiB, got, tt.wantHardLimit)
@@ -195,6 +195,45 @@ func TestGetResourceSettings_NodeCollector_UserOverrides(t *testing.T) {
 	checkInt(t, "GomemlimitMiB", got.GomemlimitMiB, 400)
 	checkInt(t, "CpuRequestMillicores", got.CpuRequestMillicores, 111)
 	checkInt(t, "CpuLimitMillicores", got.CpuLimitMillicores, 222)
+}
+
+// When memory profiling is enabled the node collector's baseline should scale up
+// (heap-dump parse + symbolize is bursty), while trace-only installs stay lean.
+func TestGetResourceSettings_NodeCollector_MemoryProfilingDefaults(t *testing.T) {
+	enabled := true
+	cfg := common.OdigosConfiguration{
+		Profiling: &common.ProfilingConfiguration{
+			Enabled: &enabled,
+			Memory:  &common.ProfilingMemoryConfiguration{Enabled: &enabled},
+		},
+	}
+	got := getResourceSettings(cfg)
+
+	checkInt(t, "MemoryRequestMiB", got.MemoryRequestMiB, 384)
+	checkInt(t, "MemoryLimitMiB", got.MemoryLimitMiB, 1024)
+	// limiter hard = max(1024-128, 1024*85%) = max(896, 870) = 896 -> 128MiB under the k8s limit
+	checkInt(t, "MemoryLimiterLimitMiB", got.MemoryLimiterLimitMiB, 896)
+	// spike = 20% of 896; gomemlimit = 80% of 896
+	checkInt(t, "MemoryLimiterSpikeLimitMiB", got.MemoryLimiterSpikeLimitMiB, 179)
+	checkInt(t, "GomemlimitMiB", got.GomemlimitMiB, 716)
+	// hard limit must stay safely below the container limit
+	if got.MemoryLimiterLimitMiB >= got.MemoryLimitMiB {
+		t.Errorf("limiter %d must be < limit %d", got.MemoryLimiterLimitMiB, got.MemoryLimitMiB)
+	}
+}
+
+// Memory profiling merely being present but not enabled must NOT bump resources.
+func TestGetResourceSettings_NodeCollector_MemoryProfilingDisabledStaysLean(t *testing.T) {
+	on, off := true, false
+	cfg := common.OdigosConfiguration{
+		Profiling: &common.ProfilingConfiguration{
+			Enabled: &on,
+			Memory:  &common.ProfilingMemoryConfiguration{Enabled: &off},
+		},
+	}
+	got := getResourceSettings(cfg)
+	checkInt(t, "MemoryRequestMiB", got.MemoryRequestMiB, 256)
+	checkInt(t, "MemoryLimitMiB", got.MemoryLimitMiB, 512)
 }
 
 func checkInt(t *testing.T, field string, got, want int) {
