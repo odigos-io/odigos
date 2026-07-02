@@ -4,24 +4,24 @@ sidebarTitle: "Instrument from Profiles"
 description: "Create custom instrumentation rules from a function in the odictl continuous profiling view."
 ---
 
-The odictl [profiling view](../../../instrumentations/profiling/view-in-odictl) lets you turn a profiled function into a [custom instrumentation](./custom-instrumentation) rule with a single keystroke. Instead of typing a class, package, or method name by hand, you highlight a hot function in the profile and press `i`—`odictl` generates the matching `CustomInstrumentation` rule for you.
+The odictl [profiling view](/vmagent/instrumentations/profiling/view-in-odictl) lets you turn a profiled function into a [custom instrumentation](/vmagent/setup/configuration/instrumentation-rules/custom-instrumentation) rule with a single keystroke. Instead of typing a class, package, or method name by hand, you highlight a hot function in the profile and press `i`—`odictl` generates the matching `CustomInstrumentation` rule for you.
 
 This UI-driven flow supports **Java**, **Go**, and **C++**.
 
 <Note>
-This page covers the profile-driven, UI-only workflow. To define a rule manually (entering class/method or package/function yourself) or with YAML files, see [Custom Instrumentation](./custom-instrumentation).
+This page covers the profile-driven, UI-only workflow. To define a rule manually (entering class/method or package/function yourself) or with YAML files, see [Custom Instrumentation](/vmagent/setup/configuration/instrumentation-rules/custom-instrumentation).
 </Note>
 
 ## Before you start
 
-- Profiling must be enabled and collecting data. See [View profiles in odictl](../../../instrumentations/profiling/view-in-odictl).
-- A [source](../add-sources) must be enabled for the service you want to instrument.
+- Profiling must be enabled and collecting data. See [View profiles in odictl](/vmagent/instrumentations/profiling/view-in-odictl).
+- A [source](/vmagent/setup/configuration/add-sources) must be enabled for the service you want to instrument.
 
 ## Create a rule from a profile
 
 <Steps>
   <Step title="Open the profiling view and select a function">
-    From the main `odictl` dashboard, press <Badge color="blue">Shift+P</Badge> to open the [profiling view](../../../instrumentations/profiling/view-in-odictl). Use `Tab` to move between the three panes—**Services**, **Filter modules**, and **Functions**—and the arrow keys to move within the focused pane.
+    From the main `odictl` dashboard, press <Badge color="blue">Shift+P</Badge> to open the [profiling view](/vmagent/instrumentations/profiling/view-in-odictl). Use `Tab` to move between the three panes—**Services**, **Filter modules**, and **Functions**—and the arrow keys to move within the focused pane.
 
     1. In the **Services** pane, select a service. Its runtime (Java, Go, or C++) determines the modules shown.
     2. In the **Filter modules** pane, adjust the module or type filter if needed.
@@ -64,7 +64,7 @@ This page covers the profile-driven, UI-only workflow. To define a rule manually
     - **Go** — the package and function name, or the package, receiver type, and method name.
     - **C++** — the function signature.
 
-    For the underlying field reference, see [Custom Instrumentation](./custom-instrumentation).
+    For the underlying field reference, see [Custom Instrumentation](/vmagent/setup/configuration/instrumentation-rules/custom-instrumentation).
 
     <img
       src="../../../../images/vmagent/profiling/odictl_profiling_instrumentation_rule.png"
@@ -78,7 +78,7 @@ This page covers the profile-driven, UI-only workflow. To define a rule manually
     />
 
     <Note>
-    The rule name and config are generated automatically from the profile—you don't enter the class, package, or method by hand. To author a rule manually instead, see [Custom Instrumentation](./custom-instrumentation).
+    The rule name and config are generated automatically from the profile—you don't enter the class, package, or method by hand. To author a rule manually instead, see [Custom Instrumentation](/vmagent/setup/configuration/instrumentation-rules/custom-instrumentation).
     </Note>
   </Step>
   <Step title="Verify the new span">
@@ -92,6 +92,6 @@ To stop instrumenting a function, reopen the profiling view (`Shift+P`), highlig
 
 ## Related
 
-- [View profiles in odictl](../../../instrumentations/profiling/view-in-odictl) — open and navigate the profiling view.
-- [Custom Instrumentation](./custom-instrumentation) — define rules manually with `odictl` or YAML.
-- [Instrumentation rules overview](./overview) — all rule types and their benefits.
+- [View profiles in odictl](/vmagent/instrumentations/profiling/view-in-odictl) — open and navigate the profiling view.
+- [Custom Instrumentation](/vmagent/setup/configuration/instrumentation-rules/custom-instrumentation) — define rules manually with `odictl` or YAML.
+- [Instrumentation rules overview](/vmagent/setup/configuration/instrumentation-rules/overview) — all rule types and their benefits.
