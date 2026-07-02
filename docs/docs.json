@@ -153,6 +153,13 @@
                     ]
                   },
                   {
+                    "group": "Browser",
+                    "icon": "globe",
+                    "pages": [
+                      "oss/instrumentations/browser/native"
+                    ]
+                  },
+                  {
                     "group": "Advanced",
                     "icon": "gear",
                     "pages": [

@@ -48,6 +48,7 @@ func NewGetterFromFS(fs embed.FS) (*Getter, error) {
 func (c *communityDefaulter) GetDefaultDistroNames() map[common.ProgrammingLanguage]string {
 	return map[common.ProgrammingLanguage]string{
 		common.JavascriptProgrammingLanguage: "nodejs-community",
+		common.BrowserProgrammingLanguage:    "browser-community",
 		common.PythonProgrammingLanguage:     "python-community",
 		common.DotNetProgrammingLanguage:     "dotnet-community",
 		common.JavaProgrammingLanguage:       "java-community",

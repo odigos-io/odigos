@@ -25,6 +25,14 @@ func resolveDistroByOverride(overwriteDistroName string, distroGetter *distros.G
 		return distro, nil
 	}
 
+	// Browser (web) distros are delivered by a sidecar in front of whatever web server runs in the
+	// pod. The frontend nature of a workload cannot be reliably auto-detected from the in-pod
+	// process, so browser instrumentation is opt-in via this override and must work regardless of
+	// the detected in-pod language (nginx, javascript/node static server, unknown, ...).
+	if distro.BrowserSidecar != nil {
+		return distro, nil
+	}
+
 	// verify the distro matches the language, since it might be overridden by the container override.
 	if distro.Language != containerLanguage {
 		return nil, &odigosv1.AgentDisabledInfo{
@@ -127,7 +135,10 @@ func ResolveDistroForContainer(
 	}
 
 	// check unknown language first. if language is not supported, we can skip the rest of the checks.
-	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
+	// An explicit distro override is honored even when the language is unknown (e.g. opting a
+	// static-file web server into browser instrumentation); resolveDistroByOverride validates it.
+	hasDistroOverride := containerOverride != nil && containerOverride.OtelDistroName != nil
+	if runtimeDetails.Language == common.UnknownProgrammingLanguage && !hasDistroOverride {
 		return nil, &odigosv1.AgentDisabledInfo{
 			AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
 			AgentEnabledMessage: "unknown programming language",

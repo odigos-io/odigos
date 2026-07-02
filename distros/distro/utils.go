@@ -8,6 +8,11 @@ func IsRestartRequired(d *OtelDistro, config *common.OdigosConfiguration) bool {
 	if d == nil {
 		return false
 	}
+	// Browser distributions are delivered by the odigos-browser-proxy sidecar (plus its iptables init container), which is injected into the pod manifest by the instrumentor webhook at pod creation.
+	// Unlike in-pod runtime agents, this cannot be applied to already-running pods, so a restart/rollout is always required for the sidecar to be added.
+	if d.BrowserSidecar != nil {
+		return true
+	}
 	if d.RuntimeAgent == nil {
 		return false
 	}

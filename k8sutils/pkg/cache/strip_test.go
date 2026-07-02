@@ -112,7 +112,9 @@ func assertStrippedContainers(t *testing.T, containers []v1.Container) {
 		assert.Nil(t, c.Command)
 		assert.Nil(t, c.Args)
 		assert.Nil(t, c.Env)
-		assert.Nil(t, c.Ports)
+		// ports are intentionally preserved: the browser instrumentation port guard
+		// reads them from the cached workload to decide if the proxy sidecar can be wired.
+		assert.Equal(t, []v1.ContainerPort{{ContainerPort: 80}}, c.Ports)
 		assert.Empty(t, c.Resources.Limits)
 		assert.Empty(t, c.Resources.Requests)
 		assert.Nil(t, c.VolumeMounts)
