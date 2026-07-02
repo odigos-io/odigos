@@ -1,0 +1,26 @@
+name: verify status generate
+on:
+  pull_request:
+    paths:
+      - "status/**"
+
+jobs:
+  verify-status-generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.2"
+      - name: Generate status conditions
+        working-directory: ./status
+        run: make generate
+      - name: Verify Generate
+        working-directory: ./status
+        run: |
+          if [[ $(git diff --exit-code) ]]; then
+            git diff
+            echo "status generated code is not in sync with manifests. Please run 'make generate' in the 'status' directory and commit the changes."
+            exit 1
+          fi
