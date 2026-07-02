@@ -57,7 +57,8 @@
                           "oss/setup/installation-options",
                           "oss/setup/docker-registry",
                           "oss/setup/odigos-with-argocd",
-                          "oss/setup/odigos-with-karpenter"
+                          "oss/setup/odigos-with-karpenter",
+                          "oss/setup/eks-resource-detection"
                         ]
                       },
                       "oss/setup/upgrade",
@@ -372,7 +373,8 @@
                           "enterprise/setup/installation-options",
                           "enterprise/setup/docker-registry",
                           "enterprise/setup/odigos-with-argocd",
-                          "enterprise/setup/odigos-with-karpenter"
+                          "enterprise/setup/odigos-with-karpenter",
+                          "enterprise/setup/eks-resource-detection"
                         ]
                       },
                       "enterprise/setup/upgrade",
