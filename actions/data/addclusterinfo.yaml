@@ -16,6 +16,11 @@ spec:
     profiles:
       supported: true
   fields:
+    - name: overwriteExistingValues
+      displayName: Overwrite Existing Values
+      componentType: toggle
+      componentProps:
+        tooltip: When enabled, existing attribute values are overwritten.
     - name: clusterAttributes
       displayName: Attributes to add
       componentType: multiTabledInput
@@ -28,8 +33,3 @@ spec:
           - keyName: attributeStringValue
             label: Value
             placeholder: e.g. production
-    - name: overwriteExistingValues
-      displayName: Overwrite Existing Values
-      componentType: checkbox
-      componentProps:
-        tooltip: When enabled, existing attribute values are overwritten.

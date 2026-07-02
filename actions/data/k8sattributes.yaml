@@ -16,23 +16,76 @@ spec:
     profiles:
       supported: true
   fields:
-    - name: collectContainerAttributes
-      displayName: Collect Container Attributes
-      componentType: checkbox
+    - name: k8sCollectAttributes
+      displayName: Attributes to collect
+      componentType: checkboxList
+      # Every collect flag defaults on, matching the previous bespoke form so the
+      # action isn't a no-op out of the box. `flatFields` writes each option id as
+      # its own top-level boolean field, keeping the persisted shape flat
+      # (collectContainerAttributes, collectReplicaSetAttributes, collectWorkloadId, collectClusterId).
+      initialValue: '{"collectContainerAttributes":true,"collectReplicaSetAttributes":true,"collectWorkloadId":true,"collectClusterId":true}'
       componentProps:
-        tooltip: Collect container related attributes (e.g. container name, image).
-    - name: collectReplicaSetAttributes
-      displayName: Collect ReplicaSet Attributes
-      componentType: checkbox
+        valueMode: flatFields
+        options:
+          - id: collectContainerAttributes
+            label: Collect Container Attributes
+            tooltip: Collect container related attributes (e.g. container name, image).
+          - id: collectReplicaSetAttributes
+            label: Collect ReplicaSet Attributes
+            tooltip: Collect ReplicaSet related attributes.
+          - id: collectWorkloadId
+            label: Collect Workload UID
+            tooltip: Collect the workload UID attribute.
+          - id: collectClusterId
+            label: Collect Cluster UID
+            tooltip: Collect the cluster UID attribute.
+    - name: labelsAttributes
+      displayName: Label attributes
+      componentType: multiTabledInput
       componentProps:
-        tooltip: Collect ReplicaSet related attributes.
-    - name: collectWorkloadId
-      displayName: Collect Workload UID
-      componentType: checkbox
+        tooltip: Extract pod/namespace/node labels into resource attributes.
+        limitFieldsPerRow: 2
+        columns:
+          - keyName: labelKey
+            label: Label key
+            placeholder: app.kubernetes.io/name
+          - keyName: attributeKey
+            label: Attribute key
+            placeholder: app.kubernetes.name
+          - keyName: fromSources
+            label: From sources
+            placeholder: pod, namespace
+            componentType: multi-dropdown
+            tooltip: Select multiple sources. Higher precedence sources (pod > namespace > node) will override lower ones.
+            options:
+              - id: pod
+                label: pod
+              - id: namespace
+                label: namespace
+              - id: node
+                label: node
+    - name: annotationsAttributes
+      displayName: Annotation attributes
+      componentType: multiTabledInput
       componentProps:
-        tooltip: Collect the workload UID attribute.
-    - name: collectClusterId
-      displayName: Collect Cluster UID
-      componentType: checkbox
-      componentProps:
-        tooltip: Collect the cluster UID attribute.
+        tooltip: Extract pod/namespace/node annotations into resource attributes.
+        limitFieldsPerRow: 2
+        columns:
+          - keyName: annotationKey
+            label: Annotation key
+            placeholder: kubectl.kubernetes.io/restartedAt
+          - keyName: attributeKey
+            label: Attribute key
+            placeholder: kubectl.kubernetes.restartedAt
+          - keyName: fromSources
+            label: From sources
+            placeholder: pod, namespace
+            componentType: multi-dropdown
+            tooltip: Select multiple sources. Higher precedence sources (pod > namespace > node) will override lower ones.
+            options:
+              - id: pod
+                label: pod
+              - id: namespace
+                label: namespace
+              - id: node
+                label: node

@@ -1,5 +1,25 @@
 import { gql } from '@apollo/client';
 
+export const GET_INSTRUMENTATION_RULE_TYPES = gql`
+  query GetInstrumentationRuleTypes {
+    instrumentationRuleTypes {
+      type
+      displayName
+      description
+      supportedLanguages
+      docsUrl
+      fields {
+        name
+        displayName
+        componentType
+        componentProperties
+        initialValue
+        renderCondition
+      }
+    }
+  }
+`;
+
 export const GET_INSTRUMENTATION_RULES = gql`
   query GetInstrumentationRules {
     computePlatform {

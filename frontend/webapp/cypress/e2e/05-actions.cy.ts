@@ -29,11 +29,9 @@ describe('Actions CRUD', () => {
 
         switch (actionType) {
           case 'K8sAttributesResolver': {
-            // The dynamic (catalog-driven) form no longer force-enables the
-            // collect flags on mount like the old bespoke form did, so the
-            // action would validate as a no-op ("Enable at least one option").
-            // Toggle one flag on to make it a valid action.
-            cy.get('[data-id=collectContainerAttributes]').click();
+            // The dynamic form seeds every collect flag on by default (matching the
+            // old bespoke form), so it's already a valid, non-no-op action — nothing
+            // to fill in.
             break;
           }
           case 'AddClusterInfo': {
@@ -48,25 +46,24 @@ describe('Actions CRUD', () => {
             cy.get('[data-id=attributeNamesToDelete]').find('input').first().type('test');
             break;
           }
-          // NOTE: 'RenameAttribute' is intentionally omitted from SELECTED_ENTITIES.ACTIONS
-          // because it can't be created via the dynamic form yet (PLAT-1260).
-          case 'PiiMasking': {
-            // The dynamic form renders piiCategories as a free-text multiInput with
-            // no default (the old bespoke form pre-selected CREDIT_CARD), so enter a
-            // valid category to produce a non-empty action.
-            cy.get('[data-id=piiCategories]').find('input').first().type('CREDIT_CARD');
+          case 'RenameAttribute': {
+            // `renames` renders as a key/value table that persists as an object map.
+            cy.get('[data-id=renames]').find('input[data-id=key]').first().type('old.attr');
+            cy.get('[data-id=renames]').find('input[data-id=value]').first().type('new.attr');
             break;
           }
-          // NOTE: 'ExtractAttribute' is intentionally omitted from SELECTED_ENTITIES.ACTIONS
-          // because the dynamic form sends `dataFormat: ""` for an unselected optional
-          // enum, which the GraphQL server rejects with a 400 (PLAT-1261). Restore this
-          // case once that's fixed:
-          //
-          // case 'ExtractAttribute': {
-          //   cy.get('[data-id=extractAttribute]').find('input[data-id=targetAttributeName]').type('extracted.value');
-          //   cy.get('[data-id=extractAttribute]').find('input[data-id=regex]').type('(.*)');
-          //   break;
-          // }
+          case 'PiiMasking': {
+            // The dynamic form pre-selects the "Credit card" checkbox by default
+            // (matching the old bespoke form), so no interaction is required.
+            break;
+          }
+          case 'ExtractAttribute': {
+            // Use the regex extraction path (target + regex, no lookup key/format)
+            // so the row is valid without selecting the dataFormat radio group.
+            cy.get('[data-id=extractAttribute]').find('input[data-id=targetAttributeName]').type('extracted.value');
+            cy.get('[data-id=extractAttribute]').find('input[data-id=regex]').type('(.*)');
+            break;
+          }
           default: {
             // purposely fail the test
             cy.get('unknown action').should('eq', true);
