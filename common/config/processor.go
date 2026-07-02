@@ -10,7 +10,23 @@ type CrdProcessorResults struct {
 	TracesProcessorsPostSpanMetrics []string
 	MetricsProcessors               []string
 	LogsProcessors                  []string
+	ProfilesProcessors              []string
 	Errs                            map[string]error
+}
+
+// profilesCapableProcessorTypes are the OTel processor types proven to support the experimental
+// profiles signal in the pinned collector build. User Actions that select the PROFILES signal are
+// only wired into the profiles pipeline when they map to one of these types:
+//   - resource  (AddClusterInfo)
+//   - transform (RenameAttribute, DeleteAttribute)
+//
+// Types not listed here are intentionally excluded so a PROFILES selection can never produce an
+// invalid collector config: k8sattributes is already applied unconditionally on the node profiles
+// pipeline (see ProfilingPipelineConfig), redaction has no profiles consumer in this build, and
+// span-only processors (span renamer, URL templatization, sampling) have no profiles analog.
+var profilesCapableProcessorTypes = map[string]struct{}{
+	"resource":  {},
+	"transform": {},
 }
 
 func CrdProcessorToConfig(processors []ProcessorConfigurer) CrdProcessorResults {
@@ -21,6 +37,7 @@ func CrdProcessorToConfig(processors []ProcessorConfigurer) CrdProcessorResults 
 		TracesProcessorsPostSpanMetrics: []string{},
 		MetricsProcessors:               []string{},
 		LogsProcessors:                  []string{},
+		ProfilesProcessors:              []string{},
 		Errs:                            make(map[string]error),
 	}
 
@@ -54,6 +71,14 @@ func CrdProcessorToConfig(processors []ProcessorConfigurer) CrdProcessorResults 
 		}
 		if isLoggingEnabled(processor) {
 			results.LogsProcessors = append(results.LogsProcessors, processorKey)
+		}
+		// Profiles is an experimental signal: only a subset of processor types can consume it.
+		// Gate by type so selecting PROFILES on an unsupported action is a no-op rather than a
+		// pipeline that fails to start.
+		if isProfilingEnabled(processor) {
+			if _, ok := profilesCapableProcessorTypes[processor.GetType()]; ok {
+				results.ProfilesProcessors = append(results.ProfilesProcessors, processorKey)
+			}
 		}
 	}
 	if len(results.Errs) != 0 {

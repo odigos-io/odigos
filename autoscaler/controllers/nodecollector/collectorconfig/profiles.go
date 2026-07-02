@@ -9,7 +9,12 @@ import (
 )
 
 // ProfilingPipelineConfig builds the node collector profiles domain when profiling is enabled.
-func ProfilingPipelineConfig(odigosNamespace string, profiling *common.ProfilingConfiguration) config.Config {
+//
+// userProcessors are the profiles-capable processors derived from Actions selecting the PROFILES
+// signal (see config.CrdProcessorToConfig). They run after the built-in enrichment chain so resource
+// and k8s attributes are already populated before they act, and before export to the gateway. Their
+// configs are defined in the separate "processors" config domain and merged into the final config.
+func ProfilingPipelineConfig(odigosNamespace string, profiling *common.ProfilingConfiguration, userProcessors []string) config.Config {
 	if !common.ProfilingPipelineActive(profiling) {
 		return config.Config{}
 	}
@@ -40,6 +45,9 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 		pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeSymbolizeProcessor)
 	}
 	pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeServiceNameProcessor)
+	// User processors (from Actions selecting the PROFILES signal) run after the built-in
+	// enrichment chain and before export to the gateway.
+	pipelineProcessors = append(pipelineProcessors, userProcessors...)
 
 	return config.Config{
 		Receivers: config.GenericMap{
