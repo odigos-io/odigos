@@ -87,6 +87,8 @@ spec:
           value: registry.connect.redhat.com/odigos/odigos-instrumentor-rhel-certified:v1.25.0
         - name: RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR
           value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified:v1.25.0
+        - name: RELATED_IMAGE_ENTERPRISE_UI
+          value: registry.connect.redhat.com/odigos/odigos-enterprise-ui-rhel-certified:v1.25.0
         - name: RELATED_IMAGE_ODIGLET
           value: registry.connect.redhat.com/odigos/odigos-odiglet-rhel-certified:v1.25.0
         - name: RELATED_IMAGE_ENTERPRISE_ODIGLET

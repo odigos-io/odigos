@@ -14,10 +14,12 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/grafana/pyroscope v1.21.1
 	github.com/grafana/pyroscope/api v1.5.0
+	github.com/odigos-io/odigos/actions v0.0.0
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/config v0.0.0
 	github.com/odigos-io/odigos/destinations v0.0.0
+	github.com/odigos-io/odigos/instrumentationrules v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/odigos/odigosauth v0.0.0
 	github.com/openshift/api v3.9.0+incompatible
@@ -387,10 +389,12 @@ require (
 
 replace (
 	github.com/hashicorp/memberlist => github.com/grafana/memberlist v0.3.1-0.20251126142931-6f9f62ab6f86
+	github.com/odigos-io/odigos/actions => ../actions
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/config => ../config
 	github.com/odigos-io/odigos/destinations => ../destinations
+	github.com/odigos-io/odigos/instrumentationrules => ../instrumentationrules
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 	// Pyroscope (and Mimir) expect KnownFields YAML decoding; upstream v3.0.1 lacks DecodeWithOptions.

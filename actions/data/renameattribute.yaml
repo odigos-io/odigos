@@ -1,0 +1,26 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Action
+metadata:
+  type: RenameAttribute
+  displayName: Rename Attribute
+spec:
+  docsUrl: https://docs.odigos.io/pipeline/actions/attributes/renameattribute
+  description: This action will rename the specified attributes from all telemetry signals that are specified in the signals field, regardless of the source, or any other condition.
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+    profiles:
+      supported: true
+  fields:
+    - name: renames
+      displayName: Attributes to rename
+      componentType: keyValuePairs
+      componentProps:
+        titleKey: Old key
+        titleValue: New key
+        titleButton: Add rename
+        tooltip: Map of existing attribute names to their new names.

@@ -704,6 +704,7 @@
                 ]
               },
               "central/authentication",
+              "central/role-mappings",
               "central/upgrade",
               "central/uninstall"
             ]

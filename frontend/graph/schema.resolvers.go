@@ -861,6 +861,16 @@ func (r *queryResolver) PotentialDestinations(ctx context.Context) ([]*model.Des
 	return result, nil
 }
 
+// ActionTypes is the resolver for the actionTypes field.
+func (r *queryResolver) ActionTypes(ctx context.Context) ([]*model.ActionTypeOption, error) {
+	return services.GetActionTypes(), nil
+}
+
+// InstrumentationRuleTypes is the resolver for the instrumentationRuleTypes field.
+func (r *queryResolver) InstrumentationRuleTypes(ctx context.Context) ([]*model.InstrumentationRuleTypeOption, error) {
+	return services.GetInstrumentationRuleTypes(), nil
+}
+
 // GetOverviewMetrics is the resolver for the getOverviewMetrics field.
 func (r *queryResolver) GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error) {
 	if r.MetricsConsumer == nil {
