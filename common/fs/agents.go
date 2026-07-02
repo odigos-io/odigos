@@ -327,7 +327,7 @@ func EnsureMemprofAgentLibs(srcAgentsDir, dstAgentsDir string) error {
 		}
 		return os.Chmod(dp, 0o644)
 	}
-	for _, l := range []string{"libmemsample.so", "libmemsample-musl.so", "libjemalloc-prof.so"} {
+	for _, l := range []string{"libmemsample.so", "libmemsample-musl.so", "libjemalloc-prof.so", "libjemalloc-prof-musl.so"} {
 		if err := stage(l, l); err != nil {
 			return err
 		}

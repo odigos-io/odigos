@@ -104,6 +104,16 @@ const (
 	// dump is small and the agent reaps it after reading. The reader unbiases the
 	// sampled counts regardless of interval.
 	jemallocProfConf = "prof:true,prof_active:true,prof_accum:true,lg_prof_sample:18,lg_prof_interval:20,prof_prefix:/tmp/odigos-jeprof"
+	// jemallocProfMuslSoPath is jemalloc (--enable-prof) built against musl, delivered
+	// by the odiglet for NATIVE musl (Alpine) C/C++/Rust apps. It REPLACES the musl
+	// allocator wholesale (like the glibc jemalloc path) rather than interpose-and-
+	// forward. Proven on the build VM: heavy multithreaded C++/gRPC musl apps (e.g. the
+	// OTel-demo `currency` service) run clean under it AND emit the same
+	// /tmp/odigos-jeprof heap dumps, where the interpose-and-forward libmemsample-musl
+	// wrapper reliably aborted with std::bad_alloc. Uses the same jemallocProfConf and
+	// is picked up by the same native reader (maps grep for "/libjemalloc"). musl-STATIC
+	// binaries (no dynamic loader) remain uncovered here and fall to the eBPF uprobe path.
+	jemallocProfMuslSoPath = "/var/odigos/memprof/libjemalloc-prof-musl.so"
 	// libmemsampleMuslSoPath is the musl-built sampling interposer the odiglet
 	// delivers. We preload it into musl containers (Alpine/scratch) where the
 	// glibc jemalloc-prof lib cannot be loaded — it instruments the default
@@ -165,7 +175,8 @@ func InjectInterpretedMemoryProfiling(existingEnvNames EnvVarNamesMap, container
 
 // NativeMemoryPreloads reports whether InjectNativeMemoryProfiling will LD_PRELOAD
 // a lib (and therefore the caller must mount the /var/odigos/memprof dir). True for
-// both known glibc and known musl; false for unknown libc (where preload is unsafe).
+// known glibc (prof-jemalloc) and known musl (prof-jemalloc built for musl); false for
+// unknown libc, where preload is unsafe.
 func NativeMemoryPreloads(libc *common.LibCType) bool {
 	return libc != nil && (*libc == common.Glibc || *libc == common.Musl)
 }
@@ -191,8 +202,19 @@ func InjectNativeMemoryProfiling(existingEnvNames EnvVarNamesMap, container *cor
 		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, ldPreloadEnvVar, jemallocProfSoPath)
 		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, mallocConfEnvVar, jemallocProfConf)
 	case libc != nil && *libc == common.Musl:
-		// musl-safe interposer; MALLOC_CONF is jemalloc-specific so it is omitted here.
-		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, ldPreloadEnvVar, libmemsampleMuslSoPath)
+		// Native compiled (C/C++/Rust) apps on musl: REPLACE the allocator with
+		// prof-enabled jemalloc built for musl (same model as the glibc case), NOT the
+		// interpose-and-forward libmemsample-musl wrapper. The wrapper reliably aborts
+		// heavy multithreaded C++/gRPC musl apps with std::bad_alloc (proven on the
+		// build VM: reproduces even with a 20-line forward-only interposer — it is
+		// fundamental to malloc interposition on musl for this class of app, not a bug
+		// in our sampling code). Full-allocator replacement sidesteps that: currency
+		// (OTel-demo C++/musl gRPC) runs clean under jemalloc-prof-musl and emits the
+		// same /tmp/odigos-jeprof dumps the native reader consumes. MALLOC_CONF is the
+		// shared jemalloc conf. (musl-STATIC binaries have no dynamic loader and are not
+		// covered here — they fall to the eBPF uprobe path.)
+		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, ldPreloadEnvVar, jemallocProfMuslSoPath)
+		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, mallocConfEnvVar, jemallocProfConf)
 	default:
 		// Unknown libc: no preload. MALLOC_CONF alone is safe and a no-op unless the
 		// app already links a prof-enabled jemalloc.

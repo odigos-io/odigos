@@ -71,6 +71,7 @@ RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/
 # .so files 0644 — which the old standalone DaemonSet got wrong (0644 dir → a
 # non-root app container could not traverse it and dlopen the lib).
 COPY odiglet/memprof/libjemalloc-prof.so /instrumentations/memprof/libjemalloc-prof.so
+COPY odiglet/memprof/libjemalloc-prof-musl.so /instrumentations/memprof/libjemalloc-prof-musl.so
 COPY odiglet/memprof/libmemsample.so /instrumentations/memprof/libmemsample.so
 COPY odiglet/memprof/libmemsample-musl.so /instrumentations/memprof/libmemsample-musl.so
 # chmod AFTER the COPYs: a `COPY --chmod` would also stamp the parent dir, leaving
