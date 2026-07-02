@@ -21,6 +21,9 @@ images:
 - name: enterprise-odiglet
   newName: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-rhel-certified
   newTag: v1.25.0
+- name: enterprise-ui
+  newName: registry.connect.redhat.com/odigos/odigos-enterprise-ui-rhel-certified
+  newTag: v1.25.0
 - name: frontend
   newName: registry.connect.redhat.com/odigos/odigos-ui-rhel-certified
   newTag: v1.25.0

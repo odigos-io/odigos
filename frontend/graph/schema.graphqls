@@ -394,6 +394,55 @@ type GetDestinationCategories {
   categories: [DestinationsCategory!]!
 }
 
+# Dynamic, YAML-defined description of a single action form field. Mirrors
+# DestinationFieldYamlProperties so the UI can reuse the same dynamic field
+# renderer for actions.
+type ActionFieldYamlProperties {
+  name: String!
+  displayName: String!
+  componentType: String!
+  componentProperties: String! # Using String to store JSON data as a string
+  initialValue: String!
+  renderCondition: [String!]!
+}
+
+# A single action type as described by the embedded YAML action catalog. Allows
+# the UI to render the list of available actions (and, where provided, their
+# form fields) dynamically instead of from hard-coded options.
+type ActionTypeOption {
+  type: String!
+  displayName: String!
+  description: String!
+  allowedSignals: [SignalType!]!
+  docsUrl: String!
+  fields: [ActionFieldYamlProperties!]!
+}
+
+# Dynamic, YAML-defined description of a single instrumentation-rule form field.
+# Mirrors ActionFieldYamlProperties so the UI can reuse the same dynamic field
+# renderer for rules.
+type InstrumentationRuleFieldYamlProperties {
+  name: String!
+  displayName: String!
+  componentType: String!
+  componentProperties: String! # Using String to store JSON data as a string
+  initialValue: String!
+  renderCondition: [String!]!
+}
+
+# A single instrumentation-rule type as described by the embedded YAML rules
+# catalog. Allows the UI to render the list of available instrumentation rules
+# (and, where provided, their form fields) dynamically instead of from
+# hard-coded options. Rules gate on programming language rather than signals.
+type InstrumentationRuleTypeOption {
+  type: String!
+  displayName: String!
+  description: String!
+  supportedLanguages: [String!]!
+  docsUrl: String!
+  fields: [InstrumentationRuleFieldYamlProperties!]!
+}
+
 type ExportedSignals {
   traces: Boolean!
   metrics: Boolean!
@@ -877,6 +926,17 @@ type Query {
 
   destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!
+
+  # Returns the dynamic, YAML-defined catalog of available action types. The UI
+  # uses this to render the action picker (and dynamic fields) instead of its
+  # hard-coded options. Nullable so older/unsupported backends can omit it.
+  actionTypes: [ActionTypeOption!]
+
+  # Returns the dynamic, YAML-defined catalog of available instrumentation rule
+  # types. The UI uses this to render the rule picker (and dynamic fields)
+  # instead of its hard-coded options. Nullable so older/unsupported backends
+  # can omit it.
+  instrumentationRuleTypes: [InstrumentationRuleTypeOption!]
 
   getOverviewMetrics: OverviewMetricsResponse!
   getServiceMap: ServiceMap!

@@ -47,6 +47,7 @@ var relatedImageEnvVars = map[string]string{
 	"ui":                      "RELATED_IMAGE_FRONTEND",
 	"instrumentor":            "RELATED_IMAGE_INSTRUMENTOR",
 	"enterprise-instrumentor": "RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR",
+	"enterprise-ui":           "RELATED_IMAGE_ENTERPRISE_UI",
 	"odiglet":                 "RELATED_IMAGE_ODIGLET",
 	"enterprise-odiglet":      "RELATED_IMAGE_ENTERPRISE_ODIGLET",
 	"scheduler":               "RELATED_IMAGE_SCHEDULER",
