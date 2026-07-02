@@ -342,7 +342,21 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		if err != nil {
 			return nil, err
 		}
-		updateInstrumentationConfigAgentsMetaHash(ic, string(agentsDeploymentHash))
+		metaHash := string(agentsDeploymentHash)
+		// A tracing-instrumented workload's container-config hash does NOT change when
+		// only memory-profiling config changes (native.restart, languages, sampling),
+		// so enabling/toggling memory profiling would never re-roll it and the memory
+		// preload/JFR flag would never be applied. Observed: PHP/Java workloads (which
+		// have a tracing agent) stayed un-profiled for memory until manually restarted,
+		// while native C/C++/Rust (no tracing agent) rolled via the memory-fingerprint
+		// branch below. Fold the memory fingerprint into the rollout hash so a
+		// memory-config change re-rolls these workloads too. Only when memory profiling
+		// applies, so tracing-only installs see no extra churn.
+		if ok, memFp := memoryProfilingRolloutFingerprint(runtimeDetailsByContainer, effectiveConfig); ok {
+			sum := sha256.Sum256([]byte(metaHash + "|" + memFp))
+			metaHash = "mem-" + hex.EncodeToString(sum[:12])
+		}
+		updateInstrumentationConfigAgentsMetaHash(ic, metaHash)
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
