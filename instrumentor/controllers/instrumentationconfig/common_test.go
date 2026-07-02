@@ -8,6 +8,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/instrumentationrules"
+	"github.com/odigos-io/odigos/common/consts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -738,6 +739,75 @@ func TestMergeHttpPayloadCollectionRules_SecondNil(t *testing.T) {
 	}
 	if res.DropPartialPayloads != nil {
 		t.Errorf("Expected nil, got %v", res.DropPartialPayloads)
+	}
+}
+
+func TestMergeDbPayloadCollectionRules_PreservesSanitizationPolicy(t *testing.T) {
+	sanitized := consts.DbQuerySanitizationPolicySanitized
+
+	res := mergeDbPayloadCollectionRules(&instrumentationrules.DbQueryPayloadCollection{
+		SanitizationPolicy: &sanitized,
+	}, &instrumentationrules.DbQueryPayloadCollection{
+		MaxPayloadLength: Int64Ptr(1234),
+	})
+
+	if res.SanitizationPolicy == nil {
+		t.Fatal("Expected sanitization policy to be preserved, got nil")
+	}
+	if *res.SanitizationPolicy != consts.DbQuerySanitizationPolicySanitized {
+		t.Errorf("Expected sanitization policy %q, got %q", consts.DbQuerySanitizationPolicySanitized, *res.SanitizationPolicy)
+	}
+	if res.MaxPayloadLength == nil || *res.MaxPayloadLength != 1234 {
+		t.Errorf("Expected max payload length %d, got %v", 1234, res.MaxPayloadLength)
+	}
+}
+
+func TestMergeDbPayloadCollectionRules_ChoosesMostRestrictiveSanitizationPolicy(t *testing.T) {
+	full := consts.DbQuerySanitizationPolicyFull
+	sanitizedOrFull := consts.DbQuerySanitizationPolicySanitizedOrFull
+	sanitized := consts.DbQuerySanitizationPolicySanitized
+
+	tests := []struct {
+		name  string
+		rule1 *consts.DbQuerySanitizationPolicy
+		rule2 *consts.DbQuerySanitizationPolicy
+		want  consts.DbQuerySanitizationPolicy
+	}{
+		{
+			name:  "sanitized beats full",
+			rule1: &full,
+			rule2: &sanitized,
+			want:  sanitized,
+		},
+		{
+			name:  "sanitized-or-full beats full",
+			rule1: &sanitizedOrFull,
+			rule2: &full,
+			want:  sanitizedOrFull,
+		},
+		{
+			name:  "sanitized beats sanitized-or-full",
+			rule1: &sanitizedOrFull,
+			rule2: &sanitized,
+			want:  sanitized,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := mergeDbPayloadCollectionRules(&instrumentationrules.DbQueryPayloadCollection{
+				SanitizationPolicy: tt.rule1,
+			}, &instrumentationrules.DbQueryPayloadCollection{
+				SanitizationPolicy: tt.rule2,
+			})
+
+			if res.SanitizationPolicy == nil {
+				t.Fatal("Expected sanitization policy, got nil")
+			}
+			if *res.SanitizationPolicy != tt.want {
+				t.Errorf("Expected sanitization policy %q, got %q", tt.want, *res.SanitizationPolicy)
+			}
+		})
 	}
 }
 
