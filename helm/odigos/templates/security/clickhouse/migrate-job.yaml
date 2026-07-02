@@ -1,0 +1,64 @@
+{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+# Runs schema migrations exactly once per release, so the security replicas
+# never migrate at startup and can scale without racing on DDL. It's a Helm
+# hook so it runs on its own:
+#   - post-install: first install, AFTER ClickHouse has been created.
+#   - pre-upgrade:  before the new replicas roll out (ClickHouse already exists),
+#                   so new code never serves against an old schema.
+# The `migrate` entrypoint retries until ClickHouse is reachable, so it tolerates
+# the bundled DB still starting up.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: odigos-security-migrate
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-security-migrate
+    odigos.io/system-object: "true"
+  annotations:
+    "helm.sh/hook": post-install,pre-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  # The process retries connecting internally; this bounds a genuinely stuck run
+  # (e.g. a broken migration) instead of retrying forever.
+  activeDeadlineSeconds: 600
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odigos-security-migrate
+    spec:
+      restartPolicy: Never
+      {{- if .Values.security.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.security.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      containers:
+        - name: migrate
+          {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-security" "Tag" $imageTag) }}
+          args: ["migrate"]
+          env:
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-security-clickhouse
+                  key: password
+            - name: CLICKHOUSE_DSN
+              value: "clickhouse://odigos_security:$(CLICKHOUSE_PASSWORD)@odigos-security-clickhouse:9000/odigos_security"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      {{- with .Values.security.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

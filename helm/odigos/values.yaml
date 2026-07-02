@@ -1183,6 +1183,16 @@ security:
   # @schema
   enabled: false
 
+  # @schema
+  # description: |-
+  #   Number of security service replicas. Safe to scale above 1: schema
+  #   migrations run once via a separate Job (not per-replica), and baseline
+  #   writes are additive/idempotent in ClickHouse, so replicas converge without
+  #   coordination.
+  # minimum: 1
+  # @schema
+  replicas: 2
+
   resources:
     requests:
       cpu: 100m
@@ -1226,16 +1236,16 @@ security:
 
   # @schema
   # description: |-
-  #   Hand-rolled Postgres deployed alongside the security service. Skeleton
+  #   Hand-rolled ClickHouse deployed alongside the security service. Skeleton
   #   only — single replica, single PVC, no replication, no backups. Most
   #   knobs (image, user, db, resources) are hardcoded in the templates;
   #   only the storage size and class are values-driven because those are
   #   the ones that vary per cluster.
   # @schema
-  postgres:
+  clickhouse:
     storage:
       # @schema
-      # description: PVC size for the Postgres data volume.
+      # description: PVC size for the ClickHouse data volume.
       # @schema
       size: 8Gi
       # @schema
