@@ -10,7 +10,7 @@ helm repo add odigos https://odigos-io.github.io/odigos --force-update
 
 ## Migration
 
-If you have been previously using chart repository at [odigos-charts](https://github.com/odigos-io/odigos-charts) you will get an error "Error: repository name (odigos) already exists, please specify a different name".
+If you have been previously using the `odigos-charts` chart repository you will get an error "Error: repository name (odigos) already exists, please specify a different name".
 To update to new repository location run:
 
 ```sh
