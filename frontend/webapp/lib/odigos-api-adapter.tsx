@@ -17,12 +17,12 @@
  */
 
 import React, { type FC, type PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
+import { normalizeActionForWire, parseRenamesString } from './action-form-normalization';
 import { useConfig, useCSRF } from '@/hooks';
 import { API, INITIAL_CONTEXT, IS_LOCAL } from '@/utils';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 import {
   OdigosApiProvider,
-  type CreateActionVars,
   type DiagnoseResult,
   type GetActionsData,
   type GetNamespacesWithWorkloadsData,
@@ -30,7 +30,6 @@ import {
   type GetServiceMapData,
   type OdigosApiOperations,
   type OperationContext,
-  type UpdateActionVars,
 } from '@odigos/ui-kit/contexts/odigos-api';
 import type {
   Action,
@@ -123,86 +122,6 @@ import {
 // The CREATE_DATA_STREAM op is intentionally absent: the standalone backend
 // doesn't expose a dedicated mutation; the kit's `dataStreams.create` falls
 // back to local-store-only behavior when the operation slot is undefined.
-
-// The backend's `ActionFieldsInput.renames` is a JSON-stringified `String`
-// (it `json.Unmarshal`s the value server-side), while the kit models
-// `renames` as an object map. The catalog-driven `keyValuePairs` renderer emits
-// an array of `{ key, value }` rows, so normalize both shapes on the way out
-// and parse on the way back (list) so RenameAttribute survives round-trips.
-const parseRenamesString = (value: string): Record<string, string> => {
-  try {
-    const parsed = JSON.parse(value);
-    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {};
-  } catch {
-    return {};
-  }
-};
-
-const normalizeRenamesForWire = (renames: unknown): string | null => {
-  if (!renames) return null;
-  if (typeof renames === 'string') return renames.trim() ? renames : null;
-
-  const normalized: Record<string, string> = {};
-
-  if (Array.isArray(renames)) {
-    renames.forEach((row) => {
-      if (!row || typeof row !== 'object') return;
-      const { key, value } = row as { key?: unknown; value?: unknown };
-      if (typeof key === 'string' && key && typeof value === 'string') {
-        normalized[key] = value;
-      }
-    });
-  } else if (typeof renames === 'object') {
-    Object.entries(renames as Record<string, unknown>).forEach(([key, value]) => {
-      if (key && typeof value === 'string') {
-        normalized[key] = value;
-      }
-    });
-  }
-
-  return Object.keys(normalized).length ? JSON.stringify(normalized) : null;
-};
-
-const sanitizeExtractAttributeForWire = (fields: Record<string, unknown>): Record<string, unknown> => {
-  const extractAttribute = fields.extractAttribute as { extractions?: unknown[] } | null | undefined;
-  if (!extractAttribute || !Array.isArray(extractAttribute.extractions)) return fields;
-
-  return {
-    ...fields,
-    extractAttribute: {
-      ...extractAttribute,
-      extractions: extractAttribute.extractions.map((extraction) => {
-        if (!extraction || typeof extraction !== 'object') return extraction;
-
-        const next: Record<string, unknown> = { ...(extraction as Record<string, unknown>) };
-        delete next.method;
-        if (!next.lookupKey) delete next.lookupKey;
-        if (!next.regex) delete next.regex;
-        if (!next.dataFormat) delete next.dataFormat;
-        return next;
-      }),
-    },
-  };
-};
-
-const normalizeActionForWire = (vars: CreateActionVars | UpdateActionVars): Record<string, unknown> => {
-  const { action } = vars;
-  const fields = (action?.fields ?? {}) as Record<string, unknown>;
-  const normalizedFields = sanitizeExtractAttributeForWire({
-    ...fields,
-    // Mirror the legacy hook: an empty/missing map is sent as null so the
-    // controller skips the RenameAttribute config entirely.
-    renames: normalizeRenamesForWire(fields.renames),
-  });
-
-  return {
-    ...vars,
-    action: {
-      ...action,
-      fields: normalizedFields,
-    },
-  };
-};
 
 const parseActionRenames = (action: Action): Action => {
   const renames = action?.fields?.renames as unknown;
