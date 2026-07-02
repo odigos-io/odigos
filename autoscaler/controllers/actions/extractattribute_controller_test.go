@@ -40,9 +40,9 @@ type extractAttributeRawConfig struct {
 
 type extractAttributeRawRule struct {
 	TargetAttributeName string `json:"target_attribute_name"`
-	LookupKey        string `json:"lookup_key,omitempty"`
-	DataFormat       string `json:"data_format,omitempty"`
-	Regex            string `json:"regex,omitempty"`
+	LookupKey           string `json:"lookup_key,omitempty"`
+	DataFormat          string `json:"data_format,omitempty"`
+	Regex               string `json:"regex,omitempty"`
 }
 
 var _ = Describe("ExtractAttribute Controller", func() {
@@ -72,8 +72,8 @@ var _ = Describe("ExtractAttribute Controller", func() {
 						Extractions: []odigosactions.Extraction{
 							{
 								TargetAttributeName: "study.id",
-								LookupKey:        "study_id",
-								DataFormat:       odigosactions.FormatJSON,
+								LookupKey:           "study_id",
+								DataFormat:          odigosactions.FormatJSON,
 							},
 						},
 					},
@@ -131,7 +131,7 @@ var _ = Describe("ExtractAttribute Controller", func() {
 						Extractions: []odigosactions.Extraction{
 							{
 								TargetAttributeName: "request.id",
-								Regex:            `request_id=([A-Za-z0-9-]+)`,
+								Regex:               `request_id=([A-Za-z0-9-]+)`,
 							},
 						},
 					},
@@ -174,17 +174,17 @@ var _ = Describe("ExtractAttribute Controller", func() {
 						Extractions: []odigosactions.Extraction{
 							{
 								TargetAttributeName: "extracted_study.id",
-								LookupKey:        "studies",
-								DataFormat:       odigosactions.FormatResourcePath,
+								LookupKey:           "studies",
+								DataFormat:          odigosactions.FormatResourcePath,
 							},
 							{
 								TargetAttributeName: "extracted_project.id",
-								LookupKey:        "projects",
-								DataFormat:       odigosactions.FormatResourcePath,
+								LookupKey:           "projects",
+								DataFormat:          odigosactions.FormatResourcePath,
 							},
 							{
 								TargetAttributeName: "trace.id",
-								Regex:            `traceId=([0-9a-f]+)`,
+								Regex:               `traceId=([0-9a-f]+)`,
 							},
 						},
 					},
@@ -238,8 +238,8 @@ var _ = Describe("ExtractAttribute Controller", func() {
 						Extractions: []odigosactions.Extraction{
 							{
 								TargetAttributeName: "user.id",
-								LookupKey:        "user_id",
-								DataFormat:       odigosactions.FormatJSON,
+								LookupKey:           "user_id",
+								DataFormat:          odigosactions.FormatJSON,
 							},
 						},
 					},
@@ -280,9 +280,9 @@ var _ = Describe("ExtractAttribute Controller", func() {
 						Extractions: []odigosactions.Extraction{
 							{
 								TargetAttributeName: "x",
-								LookupKey:        "user_id",
-								DataFormat:       odigosactions.FormatJSON,
-								Regex:            `user_id=(\d+)`,
+								LookupKey:           "user_id",
+								DataFormat:          odigosactions.FormatJSON,
+								Regex:               `user_id=(\d+)`,
 							},
 						},
 					},
@@ -316,7 +316,7 @@ var _ = Describe("ExtractAttribute Controller", func() {
 						Extractions: []odigosactions.Extraction{
 							{
 								TargetAttributeName: "x",
-								LookupKey:        "user_id",
+								LookupKey:           "user_id",
 							},
 						},
 					},
@@ -330,6 +330,40 @@ var _ = Describe("ExtractAttribute Controller", func() {
 			Consistently(func() bool {
 				err := k8sClient.Get(testCtx, types.NamespacedName{
 					Name:      ActionName + "-invalid-format",
+					Namespace: ActionNamespace,
+				}, processor)
+				return err != nil
+			}, timeout, interval).Should(BeTrue())
+		})
+
+		It("Should not create a Processor when regex is invalid", func() {
+			By("Creating an Action with an invalid regex")
+			action := &odigosv1.Action{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      ActionName + "-invalid-regex",
+					Namespace: ActionNamespace,
+				},
+				Spec: odigosv1.ActionSpec{
+					ActionName: "invalid - malformed regex",
+					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
+					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
+						Extractions: []odigosactions.Extraction{
+							{
+								TargetAttributeName: "x",
+								Regex:               "[invalid",
+							},
+						},
+					},
+				},
+			}
+
+			Expect(k8sClient.Create(testCtx, action)).Should(Succeed())
+
+			By("Checking that no Processor is created")
+			processor := &odigosv1.Processor{}
+			Consistently(func() bool {
+				err := k8sClient.Get(testCtx, types.NamespacedName{
+					Name:      ActionName + "-invalid-regex",
 					Namespace: ActionNamespace,
 				}, processor)
 				return err != nil
