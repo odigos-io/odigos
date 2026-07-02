@@ -729,12 +729,12 @@
   resolved "https://registry.npmjs.org/@types/json5/-/json5-0.0.29.tgz"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
 
-"@types/node@25.9.3":
-  version "25.9.3"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-25.9.3.tgz#11dfe7a33e68fa5c560f0aa76cc5595621ef26b9"
-  integrity sha512-603BddQMv3pUcr4U2dhujk83N2tTDVr/34wII2B6bJy6g+8WD6yUb11jszNs0gdi4PesVWl7ABt8nYMVpnLUcg==
+"@types/node@26.1.0":
+  version "26.1.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-26.1.0.tgz#aa85f0727fc5611347091c478341c63650903439"
+  integrity sha512-O0A1G3xPGy4w7AgQdAQYUlQ+BKk2Oovw8eRpofyp5KdBZULnbe+WqaOVNrm705SHphCiG4XHsACrSmPu1f+Kgw==
   dependencies:
-    undici-types ">=7.24.0 <7.24.7"
+    undici-types "~8.3.0"
 
 "@types/prismjs@^1.26.0":
   version "1.26.6"
@@ -4331,10 +4331,10 @@ unbox-primitive@^1.1.0:
     has-symbols "^1.1.0"
     which-boxed-primitive "^1.1.1"
 
-"undici-types@>=7.24.0 <7.24.7":
-  version "7.24.6"
-  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.24.6.tgz#61275b485d7fd4e9d269c7cf04ec2873c9cc0f91"
-  integrity sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg==
+undici-types@~8.3.0:
+  version "8.3.0"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-8.3.0.tgz#44e9fc9f3244648cdea35e4f9bb2d681e9410809"
+  integrity sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==
 
 universalify@^2.0.0:
   version "2.0.1"
