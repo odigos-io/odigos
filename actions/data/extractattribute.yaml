@@ -25,12 +25,12 @@ spec:
         wrapKey: extractions
         tooltip: Extract a value from an existing attribute into a new attribute.
         columns:
-          - keyName: lookupKey
-            label: Lookup key
-            placeholder: e.g. http.url
+          # `fullRow` lays the radio group on its own row above the inputs — a
+          # horizontal radio group wedged between text inputs reads poorly.
           - keyName: dataFormat
             label: Format
             componentType: radioGroup
+            fullRow: true
             options:
               - id: json
                 label: JSON
@@ -38,9 +38,12 @@ spec:
                 label: SQL
               - id: resource_path
                 label: Resource path
-          - keyName: regex
-            label: Regex
-            placeholder: optional custom regex
           - keyName: targetAttributeName
             label: Target attribute
             placeholder: new attribute name
+          - keyName: lookupKey
+            label: Lookup key
+            placeholder: e.g. http.url
+          - keyName: regex
+            label: Regex
+            placeholder: optional custom regex
