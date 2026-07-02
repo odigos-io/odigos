@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/instrumentationrules"
@@ -313,6 +314,145 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 	}
 	if len(*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes) != 1 {
 		t.Errorf("Expected 1 mime type, got %d", len(*ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest.MimeTypes))
+	}
+}
+
+func TestUpdateInstrumentationConfigForWorkload_NotInSourceScope(t *testing.T) {
+	ic := odigosv1.InstrumentationConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "deployment-test",
+			Namespace: "testns",
+		},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "test-container",
+				},
+			},
+		},
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
+				{
+					ContainerName: "test-container",
+					Language:      common.JavascriptProgrammingLanguage,
+				},
+			},
+		},
+	}
+
+	rules := &odigosv1.InstrumentationRuleList{
+		Items: []odigosv1.InstrumentationRule{
+			{
+				Spec: odigosv1.InstrumentationRuleSpec{
+					SourcesScopes: &k8sconsts.SourcesScopes{
+						Sources: []k8sconsts.PodWorkload{
+							{
+								Name:      "other-app",
+								Namespace: "testns",
+								Kind:      k8sconsts.WorkloadKindDeployment,
+							},
+						},
+					},
+					PayloadCollection: &instrumentationrules.PayloadCollection{
+						HttpRequest: &instrumentationrules.HttpPayloadCollection{
+							MimeTypes: &[]string{"application/json"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+	if len(ic.Spec.SdkConfigs) != 1 {
+		t.Errorf("Expected 1 sdk config, got %d", len(ic.Spec.SdkConfigs))
+	}
+	if ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest != nil {
+		t.Errorf("Expected nil, got %v", ic.Spec.SdkConfigs[0].DefaultPayloadCollection.HttpRequest)
+	}
+}
+
+func TestUpdateInstrumentationConfigForWorkload_LanguageScopeAppliesOnlyToMatchingSdkConfig(t *testing.T) {
+	ic := odigosv1.InstrumentationConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "deployment-test",
+			Namespace: "testns",
+		},
+		Spec: odigosv1.InstrumentationConfigSpec{
+			ContainersOverrides: []odigosv1.ContainerOverride{
+				{
+					ContainerName: "js-container",
+				},
+				{
+					ContainerName: "python-container",
+				},
+			},
+		},
+		Status: odigosv1.InstrumentationConfigStatus{
+			RuntimeDetailsByContainer: []odigosv1.RuntimeDetailsByContainer{
+				{
+					ContainerName: "js-container",
+					Language:      common.JavascriptProgrammingLanguage,
+				},
+				{
+					ContainerName: "python-container",
+					Language:      common.PythonProgrammingLanguage,
+				},
+			},
+		},
+	}
+
+	rules := &odigosv1.InstrumentationRuleList{
+		Items: []odigosv1.InstrumentationRule{
+			{
+				Spec: odigosv1.InstrumentationRuleSpec{
+					SourcesScopes: &k8sconsts.SourcesScopes{
+						Languages: []common.ProgrammingLanguage{common.PythonProgrammingLanguage},
+					},
+					PayloadCollection: &instrumentationrules.PayloadCollection{
+						HttpRequest: &instrumentationrules.HttpPayloadCollection{
+							MimeTypes: &[]string{"application/json"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+	if len(ic.Spec.SdkConfigs) != 2 {
+		t.Errorf("Expected 2 sdk configs, got %d", len(ic.Spec.SdkConfigs))
+	}
+
+	var jsSdk, pythonSdk *odigosv1.SdkConfig
+	for i := range ic.Spec.SdkConfigs {
+		switch ic.Spec.SdkConfigs[i].Language {
+		case common.JavascriptProgrammingLanguage:
+			jsSdk = &ic.Spec.SdkConfigs[i]
+		case common.PythonProgrammingLanguage:
+			pythonSdk = &ic.Spec.SdkConfigs[i]
+		}
+	}
+	if jsSdk == nil {
+		t.Fatal("Expected Javascript sdk config")
+	}
+	if pythonSdk == nil {
+		t.Fatal("Expected Python sdk config")
+	}
+	if jsSdk.DefaultPayloadCollection.HttpRequest != nil {
+		t.Errorf("Expected Javascript SDK config to be unmodified, got %v", jsSdk.DefaultPayloadCollection.HttpRequest)
+	}
+	if pythonSdk.DefaultPayloadCollection.HttpRequest == nil {
+		t.Fatal("Expected Python SDK config to receive payload collection")
+	}
+	if len(*pythonSdk.DefaultPayloadCollection.HttpRequest.MimeTypes) != 1 {
+		t.Errorf("Expected 1 mime type, got %d", len(*pythonSdk.DefaultPayloadCollection.HttpRequest.MimeTypes))
 	}
 }
 
