@@ -18,6 +18,9 @@ spec:
   fields:
     - name: extractAttribute
       displayName: Extractions
+      # Seed one preset row (JSON) so the form is never visually empty and the
+      # paired lookupKey+dataFormat method is selected by default.
+      initialValue: '[{"method":"preset","dataFormat":"json"}]'
       componentType: multiTabledInput
       componentProps:
         # The persisted config wraps the rows under `extractions`, so the dynamic
@@ -25,12 +28,27 @@ spec:
         wrapKey: extractions
         tooltip: Extract a value from an existing attribute into a new attribute.
         columns:
-          # `fullRow` lays the radio group on its own row above the inputs — a
-          # horizontal radio group wedged between text inputs reads poorly.
+          # UI-only per-row selector (stripped before submit) that picks between
+          # the two mutually-exclusive extraction methods the backend accepts:
+          # a preset lookupKey+dataFormat, or a custom regex. `fullRow` gives the
+          # radio group its own row above the inputs.
+          - keyName: method
+            label: Extraction method
+            componentType: radioGroup
+            fullRow: true
+            defaultValue: preset
+            options:
+              - id: preset
+                label: Preset extract
+              - id: regex
+                label: Custom regex
+          # Preset method: pick a data format, then the lookup key to read from.
           - keyName: dataFormat
             label: Format
             componentType: radioGroup
             fullRow: true
+            defaultValue: json
+            renderCondition: ["method", "=", "preset"]
             options:
               - id: json
                 label: JSON
@@ -38,12 +56,18 @@ spec:
                 label: SQL
               - id: resource_path
                 label: Resource path
-          - keyName: targetAttributeName
-            label: Target attribute
-            placeholder: new attribute name
           - keyName: lookupKey
             label: Lookup key
             placeholder: e.g. http.url
+            renderCondition: ["method", "=", "preset"]
+          # Regex method: a single-capture-group pattern, with a tester button.
           - keyName: regex
             label: Regex
-            placeholder: optional custom regex
+            placeholder: 'e.g. id=([^&]+)'
+            helpMessage: A regex with a single capture group; the captured value becomes the new attribute.
+            withRegexTester: true
+            renderCondition: ["method", "=", "regex"]
+          - keyName: targetAttributeName
+            label: New span attribute name
+            placeholder: e.g. customerId
+            helpMessage: The name of the new extracted attribute.
