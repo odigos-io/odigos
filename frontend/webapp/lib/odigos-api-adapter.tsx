@@ -126,12 +126,9 @@ import {
 
 // The backend's `ActionFieldsInput.renames` is a JSON-stringified `String`
 // (it `json.Unmarshal`s the value server-side), while the kit models
-// `renames` as an object map. Serialize on the way out (create/update) and
-// parse on the way back (list) so the kit's RenameAttribute form always sees
-// the object shape. This (de)serialization previously lived in the webapp's
-// `useActionCRUD` hook, retired in favor of the kit's `useActionsApi`; without
-// it the raw object is sent to a `String` scalar and the mutation is rejected
-// (no CRD is created).
+// `renames` as an object map. The catalog-driven `keyValuePairs` renderer emits
+// an array of `{ key, value }` rows, so normalize both shapes on the way out
+// and parse on the way back (list) so RenameAttribute survives round-trips.
 const parseRenamesString = (value: string): Record<string, string> => {
   try {
     const parsed = JSON.parse(value);
@@ -141,19 +138,68 @@ const parseRenamesString = (value: string): Record<string, string> => {
   }
 };
 
-const serializeActionRenames = (vars: CreateActionVars | UpdateActionVars): Record<string, unknown> => {
+const normalizeRenamesForWire = (renames: unknown): string | null => {
+  if (!renames) return null;
+  if (typeof renames === 'string') return renames.trim() ? renames : null;
+
+  const normalized: Record<string, string> = {};
+
+  if (Array.isArray(renames)) {
+    renames.forEach((row) => {
+      if (!row || typeof row !== 'object') return;
+      const { key, value } = row as { key?: unknown; value?: unknown };
+      if (typeof key === 'string' && key && typeof value === 'string') {
+        normalized[key] = value;
+      }
+    });
+  } else if (typeof renames === 'object') {
+    Object.entries(renames as Record<string, unknown>).forEach(([key, value]) => {
+      if (key && typeof value === 'string') {
+        normalized[key] = value;
+      }
+    });
+  }
+
+  return Object.keys(normalized).length ? JSON.stringify(normalized) : null;
+};
+
+const sanitizeExtractAttributeForWire = (fields: Record<string, unknown>): Record<string, unknown> => {
+  const extractAttribute = fields.extractAttribute as { extractions?: unknown[] } | null | undefined;
+  if (!extractAttribute || !Array.isArray(extractAttribute.extractions)) return fields;
+
+  return {
+    ...fields,
+    extractAttribute: {
+      ...extractAttribute,
+      extractions: extractAttribute.extractions.map((extraction) => {
+        if (!extraction || typeof extraction !== 'object') return extraction;
+
+        const { method: _method, dataFormat, lookupKey, regex, ...rest } = extraction as Record<string, unknown>;
+        const next: Record<string, unknown> = { ...rest };
+        if (lookupKey) next.lookupKey = lookupKey;
+        if (regex) next.regex = regex;
+        if (dataFormat) next.dataFormat = dataFormat;
+        return next;
+      }),
+    },
+  };
+};
+
+const normalizeActionForWire = (vars: CreateActionVars | UpdateActionVars): Record<string, unknown> => {
   const { action } = vars;
-  const renames = action?.fields?.renames;
+  const fields = (action?.fields ?? {}) as Record<string, unknown>;
+  const normalizedFields = sanitizeExtractAttributeForWire({
+    ...fields,
+    // Mirror the legacy hook: an empty/missing map is sent as null so the
+    // controller skips the RenameAttribute config entirely.
+    renames: normalizeRenamesForWire(fields.renames),
+  });
+
   return {
     ...vars,
     action: {
       ...action,
-      fields: {
-        ...action?.fields,
-        // Mirror the legacy hook: an empty/missing map is sent as null so the
-        // controller skips the RenameAttribute config entirely.
-        renames: renames && Object.keys(renames).length ? JSON.stringify(renames) : null,
-      },
+      fields: normalizedFields,
     },
   };
 };
@@ -205,8 +251,8 @@ const operations: OdigosApiOperations = {
       return { computePlatform: { actions: actions.map(parseActionRenames) } };
     },
   },
-  CREATE_ACTION: { document: CREATE_ACTION, transformVariables: (vars) => serializeActionRenames(vars) },
-  UPDATE_ACTION: { document: UPDATE_ACTION, transformVariables: (vars) => serializeActionRenames(vars) },
+  CREATE_ACTION: { document: CREATE_ACTION, transformVariables: (vars) => normalizeActionForWire(vars) },
+  UPDATE_ACTION: { document: UPDATE_ACTION, transformVariables: (vars) => normalizeActionForWire(vars) },
   DELETE_ACTION: { document: DELETE_ACTION },
 
   // instrumentation rules
