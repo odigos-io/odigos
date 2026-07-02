@@ -32,6 +32,7 @@ import (
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
@@ -135,6 +136,15 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 	if action.Spec.ExtractAttribute != nil {
 		path := field.NewPath("spec").Child("extractAttribute")
 		fields[path] = action.Spec.ExtractAttribute
+		for i, signal := range action.Spec.Signals {
+			if signal != common.TracesObservabilitySignal {
+				allErrs = append(allErrs, field.NotSupported(
+					field.NewPath("spec").Child("signals").Index(i),
+					signal,
+					[]string{string(common.TracesObservabilitySignal)},
+				))
+			}
+		}
 	}
 
 	if len(fields) == 0 {

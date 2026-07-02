@@ -53,9 +53,7 @@ func (c *OdigosProfilesConsumer) consume(ctx context.Context, incomingBatch ppro
 		if !ok {
 			continue
 		}
-		if !c.store.IsActive(sourceKey) {
-			continue
-		}
+		c.store.EnsureSlot(sourceKey)
 		appendResourceProfileChunk(c.store, sourceKey, incomingBatch, resourceProfiles, idx)
 	}
 	return nil
