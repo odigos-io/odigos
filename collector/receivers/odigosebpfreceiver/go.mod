@@ -69,4 +69,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
+replace github.com/odigos-io/go-rtml => ../../internal/go-rtml
+
 replace github.com/odigos-io/odigos/common => ../../../common
