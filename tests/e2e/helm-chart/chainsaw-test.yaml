@@ -24,7 +24,7 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            timeout: 3m
+            timeout: 1m10s
             content: |
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
@@ -46,7 +46,7 @@ spec:
     - name: Verify Odigos Installation
       try:
         - script:
-            timeout: 6m
+            timeout: 2m
             content: |
               echo "Starting Odigos version check..."
               export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
@@ -69,19 +69,19 @@ spec:
               ../../common/verify_odigos_installation.sh odigos-test
 
         - assert:
-            timeout: 10s
+            timeout: 1m10s
             file: ../../common/assert/odigos-installed.yaml
 
     - name: Verify Backward Compatibility in helm chart fields - Legacy Fields & Mirroring
       try:
         - assert:
-            timeout: 30s
+            timeout: 1m10s
             file: verify-datacollection-resources.yaml
 
     - name: Verify Backward Compatibility in helm chart fields - New Fields & Mirroring
       try:
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               echo "🚀 Running resource verification script..."
               P="../../.."
@@ -102,7 +102,7 @@ spec:
     - name: Assert Trace DB is up
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/simple-trace-db-running.yaml
 
     - name: Add Destination
@@ -113,7 +113,7 @@ spec:
     - name: Assert - Simple Demo Apps Installed
       try:
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: ../../common/assert/simple-demo-installed.yaml
 
     - name: Instrument Namespace
@@ -124,20 +124,20 @@ spec:
     - name: Assert Runtime Detected
       try:
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
 
     - name: Odigos pipeline ready
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/pipeline-ready.yaml
 
     - name: Simple-demo instrumented after destination added
       try:
         - assert:
-            timeout: 3m
+            timeout: 1m30s
             file: ../../common/assert/simple-demo-instrumented-full.yaml
 
     - name: Generate Traffic
@@ -145,7 +145,7 @@ spec:
         - apply:
             file: ../../common/apply/generate-traffic-job.yaml
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
         - delete:
@@ -154,7 +154,7 @@ spec:
     - name: Wait For Trace
       try:
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               while true; do
                 ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
@@ -202,7 +202,7 @@ spec:
     - name: Verify collector metrics are collected by the UI
       try:
         - script:
-            timeout: 5m
+            timeout: 2m
             content: |
               while true; do
                 ../../common/assert_collector_metrics_from_ui.sh odigos-test
@@ -215,21 +215,21 @@ spec:
     - name: Verify collector metrics survive UI pod restart
       try:
         - script:
-            timeout: 8m
+            timeout: 1m40s
             content: |
               ../../common/assert_collector_metrics_survive_ui_restart.sh odigos-test
 
     - name: Uninstall Odigos
       try:
         - script:
-            timeout: 3m
+            timeout: 1m40s
             content: |
               helm uninstall odigos -n odigos-test
 
     - name: Verify Odigos Uninstallation
       try:
         - script:
-            timeout: 1m
+            timeout: 1m20s
             content: |
               for i in $(seq 1 10); do
                 if ../../common/assert_odigos_uninstalled.sh; then
