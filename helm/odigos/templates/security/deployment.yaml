@@ -38,6 +38,8 @@ spec:
               containerPort: 8080
             - name: otlp-grpc
               containerPort: 4317
+            - name: pprof
+              containerPort: 6060
           env:
             - name: CURRENT_NS
               valueFrom:
