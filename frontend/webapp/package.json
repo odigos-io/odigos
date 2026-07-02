@@ -34,7 +34,7 @@
     "autoprefixer": "^10.5.0",
     "check-peer-dependencies": "^4.3.4",
     "cross-env": "^10.1.0",
-    "cypress": "^15.17.0",
+    "cypress": "^15.18.0",
     "eslint": "9.39.2",
     "eslint-config-next": "16.2.9",
     "postcss": "^8.5.15",
