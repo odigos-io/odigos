@@ -71,13 +71,7 @@ export const SELECTED_ENTITIES = {
     AUTOFILL_FIELD: 'JAEGER_URL',
     AUTOFILL_VALUE: `jaeger.${NAMESPACES.DESTINATIONS}:4317`,
   },
-  // NOTE: one action type is temporarily excluded because the dynamic
-  // (catalog-driven) action form can't create it yet:
-  //   - 'RenameAttribute': the generic `keyValuePairs` renderer emits an array of
-  //     `{ key, value }` rows while the kit still treats `renames` as an object map,
-  //     which crashes on save (PLAT-1260).
-  // Re-add it here (and restore its case in 05-actions.cy.ts) once its ticket lands.
-  ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'PiiMasking', 'ExtractAttribute'],
+  ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'PiiMasking', 'ExtractAttribute', 'RenameAttribute'],
   INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
 
