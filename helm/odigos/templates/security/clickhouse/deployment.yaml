@@ -1,0 +1,81 @@
+{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-security-clickhouse
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-security-clickhouse
+    odigos.io/system-object: "true"
+spec:
+  replicas: 1
+  # Recreate (not RollingUpdate) because a single ReadWriteOnce PVC can
+  # only be attached to one pod at a time. A rolling update would deadlock
+  # waiting for the old pod's PVC to detach.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-security-clickhouse
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odigos-security-clickhouse
+    spec:
+      containers:
+        - name: clickhouse
+          # Image, user, and database name are intentionally hardcoded:
+          # this is a bundled skeleton DB, not a tunable production install.
+          # When BYO ClickHouse support is added, switch the security service
+          # to consume an external DSN secret and drop this Deployment.
+          image: "clickhouse/clickhouse-server:24.8-alpine"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: native
+              containerPort: 9000
+            - name: http
+              containerPort: 8123
+          env:
+            - name: CLICKHOUSE_USER
+              value: odigos_security
+            - name: CLICKHOUSE_DB
+              value: odigos_security
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-security-clickhouse
+                  key: password
+            # Let the bootstrap user manage its own grants; without this the
+            # image creates the user with no privileges and every query fails.
+            - name: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT
+              value: "1"
+          # ClickHouse exposes an unauthenticated /ping on the HTTP port that
+          # returns 200 once it's accepting queries — cheaper and less brittle
+          # than an auth'd native-protocol probe.
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          # No livenessProbe on purpose. Liveness probes on a single-replica
+          # datastore are an antipattern: a slow merge under load can trip the
+          # probe and kubelet will kill the process mid-write. If ClickHouse
+          # really dies, the Deployment controller restarts the pod anyway.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: odigos-security-clickhouse
+{{- end }}

@@ -2075,28 +2075,16 @@
           "required": [],
           "title": "affinity"
         },
-        "enabled": {
-          "default": "false",
-          "description": "When true, deploys the security service. Default false (off).",
-          "required": [],
-          "title": "enabled"
-        },
-        "nodeSelector": {
-          "default": "",
-          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
-          "required": [],
-          "title": "nodeSelector"
-        },
-        "postgres": {
+        "clickhouse": {
           "additionalProperties": false,
-          "description": "Hand-rolled Postgres deployed alongside the security service. Skeleton\nonly — single replica, single PVC, no replication, no backups. Most\nknobs (image, user, db, resources) are hardcoded in the templates;\nonly the storage size and class are values-driven because those are\nthe ones that vary per cluster.",
+          "description": "Hand-rolled ClickHouse deployed alongside the security service. Skeleton\nonly — single replica, single PVC, no replication, no backups. Most\nknobs (image, user, db, resources) are hardcoded in the templates;\nonly the storage size and class are values-driven because those are\nthe ones that vary per cluster.",
           "properties": {
             "storage": {
               "additionalProperties": false,
               "properties": {
                 "size": {
                   "default": "8Gi",
-                  "description": "PVC size for the Postgres data volume.",
+                  "description": "PVC size for the ClickHouse data volume.",
                   "required": [],
                   "title": "size"
                 },
@@ -2113,13 +2101,32 @@
             }
           },
           "required": [],
-          "title": "postgres"
+          "title": "clickhouse"
+        },
+        "enabled": {
+          "default": "false",
+          "description": "When true, deploys the security service. Default false (off).",
+          "required": [],
+          "title": "enabled"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
         },
         "priorityClassName": {
           "default": "",
           "description": "Priority class name. Set to use your existing cluster priority classes.",
           "required": [],
           "title": "priorityClassName"
+        },
+        "replicas": {
+          "default": "2",
+          "description": "Number of security service replicas. Safe to scale above 1: schema\nmigrations run once via a separate Job (not per-replica), and baseline\nwrites are additive/idempotent in ClickHouse, so replicas converge without\ncoordination.",
+          "minimum": 1,
+          "required": [],
+          "title": "replicas"
         },
         "resources": {
           "additionalProperties": false,
