@@ -4,9 +4,18 @@ COPY ./collector/ /go/src/collector
 COPY ./common/ /go/src/common
 WORKDIR /go/src/collector
 
+# The memory-profiler build (ebpf-profiler replace) transitively pulls the private
+# github.com/odigos-io/ebpf-core module (no-restart inject). Authenticate module
+# fetches with the ghtoken build secret. GOPRIVATE applies to every RUN below.
+ENV GOPRIVATE=github.com/odigos-io
+
 # download dependencies before branching out to cross-compile for better caching
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=secret,id=ghtoken \
+    if [ -f /run/secrets/ghtoken ]; then \
+      git config --global url."https://$(cat /run/secrets/ghtoken)@github.com/".insteadOf "https://github.com/" ; \
+    fi && \
     cd odigosotelcol && go mod download
 
 ARG TARGETARCH

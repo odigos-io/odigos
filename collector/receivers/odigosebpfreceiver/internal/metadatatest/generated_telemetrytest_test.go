@@ -24,6 +24,8 @@ func TestSetupTelemetry(t *testing.T) {
 	tb.EbpfMemoryPressureWaitTimeTotal.Add(context.Background(), 1)
 	tb.EbpfTotalBytesRead.Add(context.Background(), 1)
 	tb.OdigosEbpfAcceptedSpans.Add(context.Background(), 1)
+	tb.OdigosEbpfLogsWithContext.Add(context.Background(), 1)
+	tb.OdigosEbpfLogsWithoutContext.Add(context.Background(), 1)
 	tb.OdigosEbpfLostSamples.Add(context.Background(), 1)
 	AssertEqualEbpfLogsAttrCacheSize(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
@@ -35,6 +37,12 @@ func TestSetupTelemetry(t *testing.T) {
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
 	AssertEqualOdigosEbpfAcceptedSpans(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosEbpfLogsWithContext(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosEbpfLogsWithoutContext(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
 	AssertEqualOdigosEbpfLostSamples(t, testTel,

@@ -6,12 +6,19 @@ on:
 jobs:
   go-mod-tidy:
     runs-on: ubuntu-latest
+    # The collector module depends on the internal odigos-ebpf-profiler fork
+    # (memory profiling). GOPRIVATE + the org bot token let `go mod tidy` resolve
+    # it; the default GITHUB_TOKEN cannot read sibling internal repos.
+    env:
+      GOPRIVATE: github.com/odigos-io
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
           go-version: "1.26.4"
+      - name: Authenticate to internal odigos modules
+        run: git config --global url."https://${{ secrets.RELEASE_BOT_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - name: run make go-mod-tidy
         run: make go-mod-tidy
       - name: Check clean repository

@@ -205,6 +205,11 @@ jobs:
           tags: odigos-collector:pr-${{ github.event.number || github.run_number }}
           provenance: false
           file: collector/Dockerfile
+          # memprof: collector pulls the internal odigos-ebpf-profiler fork via
+          # GOPRIVATE; the org-scoped bot token lets the build fetch it (the
+          # default GITHUB_TOKEN cannot read sibling internal repos).
+          secrets: |
+            ghtoken=${{ secrets.RELEASE_BOT_TOKEN }}
           outputs: type=docker,dest=/tmp/odigos-collector.tar
       - name: Load Docker image for scanning
         run: docker load -i /tmp/odigos-collector.tar
@@ -231,8 +236,15 @@ jobs:
           name: vuln-scan-result-collector-${{ github.sha }}.json
           path: /tmp/scan-results/odigos-collector.json
           retention-days: 30
+      # `make test` compiles the collector module natively (outside Docker), so it
+      # also needs auth for the internal odigos-ebpf-profiler fork that the image
+      # build gets via the ghtoken secret.
+      - name: Authenticate to internal odigos modules
+        run: git config --global url."https://${{ secrets.RELEASE_BOT_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - name: run tests
         working-directory: ./collector
+        env:
+          GOPRIVATE: github.com/odigos-io
         run: |
           make test
 

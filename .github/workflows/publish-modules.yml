@@ -250,6 +250,12 @@ jobs:
         with:
           push: true
           provenance: false
+          # memprof: the collector pulls the internal odigos-ebpf-profiler fork via
+          # GOPRIVATE; the org-scoped bot token lets the build fetch it (the default
+          # GITHUB_TOKEN cannot read sibling internal repos). Only passed for the
+          # collector; harmless/empty for the other services.
+          secrets: |
+            ${{ matrix.service == 'collector' && format('ghtoken={0}', secrets.RELEASE_BOT_TOKEN) || '' }}
           tags: |
             us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}:${{ env.ODIGOS_TAG }}
             us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-${{ matrix.service }}:${{ env.ODIGOS_TAG }}

@@ -289,6 +289,79 @@ func runSingleRsyncSync(srcDir, dstDir, excludeFile string, optionalRsyncPath *s
 // criticalFiles lists paths relative to the agents directory root that must be
 // preserved during upgrades because they may be memory-mapped by running processes.
 // The path is relative to the srcDir.
+// EnsureMemprofAgentLibs deterministically stages the native memprof agent libs
+// (prof-enabled jemalloc + the glibc/musl libmemsample interposers) from the
+// odiglet image's agent dir into the host agent dir. It guarantees:
+//   - the memprof directory is traversable (0755) so a NON-root application
+//     container can enter it and dlopen the lib (a 0644 dir silently breaks
+//     LD_PRELOAD with "cannot open shared object file"),
+//   - the .so files are world-readable (0644),
+//   - the prof jemalloc is ALSO exposed as the canonical "libjemalloc.so" name,
+//     which is what the out-of-process native reader greps for in /proc/<pid>/maps.
+//
+// We copy these explicitly instead of relying on the generic rsync sync because
+// (a) they are LD_PRELOAD'd by running apps and must be present + traversable on
+// first install, and (b) the rsync keeplist can skip already-listed critical
+// files. Idempotent and cheap; safe to run on every odiglet startup.
+func EnsureMemprofAgentLibs(srcAgentsDir, dstAgentsDir string) error {
+	src := filepath.Join(srcAgentsDir, "memprof")
+	dst := filepath.Join(dstAgentsDir, "memprof")
+	if _, err := os.Stat(src); err != nil {
+		return nil //nolint:nilerr // image built without memprof libs; nothing to stage
+	}
+	if err := os.MkdirAll(dst, 0o755); err != nil {
+		return err
+	}
+	if err := os.Chmod(dst, 0o755); err != nil {
+		return err
+	}
+	stage := func(srcName, dstName string) error {
+		sp := filepath.Join(src, srcName)
+		si, err := os.Stat(sp)
+		if err != nil {
+			return nil //nolint:nilerr // optional lib absent in this build
+		}
+		dp := filepath.Join(dst, dstName)
+		if err := copyFile(sp, dp, si); err != nil {
+			return fmt.Errorf("stage memprof lib %s: %w", dstName, err)
+		}
+		return os.Chmod(dp, 0o644)
+	}
+	for _, l := range []string{"libmemsample.so", "libmemsample-musl.so", "libjemalloc-prof.so"} {
+		if err := stage(l, l); err != nil {
+			return err
+		}
+	}
+	// Expose the prof jemalloc under the canonical name the native reader detects.
+	if err := stage("libjemalloc-prof.so", "libjemalloc.so"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// EnsureAgentDirsTraversable makes every directory under the host agent dir
+// world-traversable (adds r-x for group+other), so a NON-root application
+// container can enter the agent dirs and read the agents we mount into it.
+//
+// Agent dirs delivered at 0644 (drw-r--r--) silently break non-root workloads —
+// the classic symptom is a JVM crashing with "Error opening zip file or JAR
+// manifest missing: /var/odigos/java/javaagent.jar", or an LD_PRELOAD'd .so
+// failing with "cannot open shared object file" — even though the file is
+// present and valid, because the *directory* is not traversable. Root apps mask
+// this (CAP_DAC_OVERRIDE), so it only shows on security-hardened (runAsNonRoot)
+// workloads. The agents are not secret, so opening the dirs is safe.
+func EnsureAgentDirsTraversable(dstDir string) error {
+	return filepath.Walk(dstDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil //nolint:nilerr // best-effort: a vanished/locked entry must not abort delivery
+		}
+		if info.IsDir() && info.Mode().Perm()&0o055 != 0o055 {
+			_ = os.Chmod(path, info.Mode()|0o755)
+		}
+		return nil
+	})
+}
+
 func getCriticalFiles(bp string) map[string]struct{} {
 	cf := make(map[string]struct{})
 	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", "dtrace-injector-native.node")] = struct{}{}
@@ -301,6 +374,13 @@ func getCriticalFiles(bp string) map[string]struct{} {
 	cf[filepath.Join(bp, "java-ext-ebpf", "otel_agent_extension.jar")] = struct{}{}
 	cf[filepath.Join(bp, "python-ebpf", "pythonUSDT.abi3.so")] = struct{}{}
 	cf[filepath.Join(bp, "loader", "loader.so")] = struct{}{}
+	// memprof native agent libs are dlopen'd / LD_PRELOAD'd by running C/C++/Rust
+	// (and interpreted) processes; like loader.so they cannot be removed while
+	// mapped, so keep them across syncs.
+	cf[filepath.Join(bp, "memprof", "libjemalloc-prof.so")] = struct{}{}
+	cf[filepath.Join(bp, "memprof", "libjemalloc.so")] = struct{}{}
+	cf[filepath.Join(bp, "memprof", "libmemsample.so")] = struct{}{}
+	cf[filepath.Join(bp, "memprof", "libmemsample-musl.so")] = struct{}{}
 	// Python dependency shared objects - special handling:
 	// These shared objects (.so files) are loaded by Python processes and mapped into process memory.
 	// They cannot be replaced while loaded, so we must keep them in the host filesystem to avoid removal.

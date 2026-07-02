@@ -76,6 +76,19 @@ func loadELFSymbols(path string, lim parseLimits) (*elfSymbols, error) {
 	}
 
 	functions, source := readFunctionSymbols(f)
+	if len(functions) == 0 {
+		// Stripped binary: walk the symbol-source ladder before giving up, so
+		// production C++/Rust (which ship stripped) still resolve to real names.
+		// MiniDebugInfo is embedded in the binary; split-debug is a separate file
+		// resolved within the same container root.
+		if syms := symbolsFromMiniDebug(f); len(syms) > 0 {
+			functions, source = syms, "minidebug"
+		} else if dbg := localDebugInfoPath(f, path, es.buildID); dbg != "" {
+			if syms := symbolsFromDebugFile(dbg, lim); len(syms) > 0 {
+				functions, source = syms, "debuginfo"
+			}
+		}
+	}
 	if lim.maxSymbols > 0 && len(functions) > lim.maxSymbols {
 		return nil, limitExceededError{fmt.Sprintf("symbolize: %s has %d symbols (> %d)", path, len(functions), lim.maxSymbols)}
 	}
