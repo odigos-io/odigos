@@ -421,6 +421,50 @@ spec:
     - protocol: TCP
       port: 3000
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-http-client
+  namespace: default
+  labels:
+    app: java-http-client
+spec:
+  selector:
+    matchLabels:
+      app: java-http-client
+  template:
+    metadata:
+      labels:
+        app: java-http-client
+    spec:
+      containers:
+        - name: java-http-client
+          image: public.ecr.aws/odigos/java-http-client:v0.0.1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TARGET_URL
+              value: "http://java-supported-version:3000"
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 5
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: java-http-client
+  namespace: default
+spec:
+  selector:
+    app: java-http-client
+  ports:
+    - protocol: TCP
+      port: 3000
+---
 kind: Deployment
 apiVersion: apps/v1
 metadata:

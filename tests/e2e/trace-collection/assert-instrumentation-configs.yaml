@@ -180,6 +180,22 @@ status:
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
+  name: deployment-java-http-client
+  namespace: default
+status:
+  conditions:
+    - type: MarkedForInstrumentation
+      status: "True"
+    - type: RuntimeDetection
+      status: "True"
+    - type: AgentEnabled
+      status: "True"
+    - type: WorkloadRollout
+      status: "True"
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
   name: deployment-python-latest-version
   namespace: default
 status:
