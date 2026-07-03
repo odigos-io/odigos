@@ -1,16 +1,15 @@
 // Package odigossymbolizeprocessor is a profiles processor that names native
-// (C/C++/Rust) frames the eBPF profiler left as module+offset, by resolving them
-// on-host from /proc/<pid>/maps and the binary's ELF symbols. Frames the profiler
-// already named (interpreted runtimes, Go) pass through untouched. See README.md.
-//
-// processor.go is the pipeline entry point: for each ResourceProfiles it reads
-// the process.pid, pre-warms the symbol cache for newly-seen processes, and fills
-// each native Location's Lines with the resolved function name.
+// (C/C++/Rust) frames the eBPF profiler left as module+offset. It does NOT analyze
+// binaries itself: it batches each profile's native frames and asks the node-local
+// symbolize server (run by vm-agent / odiglet, which has /proc access) to resolve
+// them, then fills the OTLP Lines + tags them odigos.symbol.source. The heavy ELF
+// work — and its memory/CPU peaks — lives in that separate process, keeping the
+// collector's data path light. Frames the profiler already named (interpreted
+// runtimes, Go) pass through untouched. See README.md.
 package odigossymbolizeprocessor
 
 import (
 	"context"
-	"sync"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pprofile"
@@ -36,9 +35,6 @@ type symbolizeProcessor struct {
 	logger   *zap.Logger
 	cfg      *Config
 	resolver resolver
-
-	mu   sync.Mutex
-	seen map[int64]struct{} // pids we've pre-warmed
 }
 
 func newProcessor(logger *zap.Logger, cfg *Config) *symbolizeProcessor {
@@ -46,7 +42,6 @@ func newProcessor(logger *zap.Logger, cfg *Config) *symbolizeProcessor {
 		logger:   logger,
 		cfg:      cfg,
 		resolver: newResolver(cfg, logger),
-		seen:     make(map[int64]struct{}),
 	}
 }
 
@@ -109,6 +104,11 @@ func (p *symbolizeProcessor) processProfiles(_ context.Context, pd pprofile.Prof
 		return idx
 	}
 
+	// Phase 1: collect every unresolved native frame across the batch (deduped by
+	// location — the dictionary is shared, so a location is symbolized once).
+	var pendingLocs []pprofile.Location
+	var reqs []frameRequest
+	seenLoc := make(map[int32]struct{})
 	rps := pd.ResourceProfiles()
 	for ri := 0; ri < rps.Len(); ri++ {
 		rp := rps.At(ri)
@@ -116,9 +116,10 @@ func (p *symbolizeProcessor) processProfiles(_ context.Context, pd pprofile.Prof
 		if pid <= 0 {
 			continue
 		}
-		p.prewarmOnce(pid)
-
 		for locIdx := range reachableLocations(rp, stackTable) {
+			if _, dup := seenLoc[locIdx]; dup {
+				continue
+			}
 			if locIdx < 0 || int(locIdx) >= locTable.Len() {
 				continue
 			}
@@ -130,33 +131,31 @@ func (p *symbolizeProcessor) processProfiles(_ context.Context, pd pprofile.Prof
 			if !ok {
 				continue
 			}
-			name, source, ok := p.resolver.resolve(pid, m, loc.Address())
-			if !ok {
-				continue
-			}
-			loc.Lines().AppendEmpty().SetFunctionIndex(internFunc(name))
-			if source != "" {
-				// mark this as a native symbol from the live binary (instrumentable)
-				loc.AttributeIndices().Append(internSourceAttr(source))
-			}
+			seenLoc[locIdx] = struct{}{}
+			pendingLocs = append(pendingLocs, loc)
+			reqs = append(reqs, frameRequest{pid: pid, mod: m, addr: loc.Address()})
+		}
+	}
+	if len(reqs) == 0 {
+		return pd, nil
+	}
+
+	// Phase 2: one RPC to the symbolize server for the whole batch.
+	results := p.resolver.resolveBatch(reqs)
+
+	// Phase 3: fill the resolved names + tag native symbols (instrumentable).
+	for i, res := range results {
+		if !res.ok {
+			continue
+		}
+		loc := pendingLocs[i]
+		loc.Lines().AppendEmpty().SetFunctionIndex(internFunc(res.name))
+		if res.source != "" {
+			loc.AttributeIndices().Append(internSourceAttr(res.source))
 		}
 	}
 
 	return pd, nil
-}
-
-// prewarmOnce asynchronously parses a newly-seen process's mapped binaries so
-// subsequent batches hit a warm symbol cache (no hot-path parse).
-func (p *symbolizeProcessor) prewarmOnce(pid int64) {
-	p.mu.Lock()
-	_, ok := p.seen[pid]
-	if !ok {
-		p.seen[pid] = struct{}{}
-	}
-	p.mu.Unlock()
-	if !ok {
-		p.resolver.prewarm(pid)
-	}
 }
 
 func reachableLocations(rp pprofile.ResourceProfiles, stackTable pprofile.StackSlice) map[int32]struct{} {
