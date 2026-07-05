@@ -15,6 +15,10 @@ import (
 func TestParseHTTPGetPath(t *testing.T) {
 	t.Parallel()
 
+	readiness := "readiness"
+	one := "1"
+	two := "2"
+
 	tests := []struct {
 		name        string
 		rawPath     string
@@ -31,7 +35,7 @@ func TestParseHTTPGetPath(t *testing.T) {
 			rawPath:   "/health?type=readiness",
 			wantRoute: "/health",
 			wantQueries: []commonapisampling.QueryParamMatcher{
-				{Name: "type", ValueExact: "readiness"},
+				{Name: "type", ValueExact: &readiness},
 			},
 		},
 		{
@@ -39,8 +43,8 @@ func TestParseHTTPGetPath(t *testing.T) {
 			rawPath:   "/health?b=2&a=1",
 			wantRoute: "/health",
 			wantQueries: []commonapisampling.QueryParamMatcher{
-				{Name: "a", ValueExact: "1"},
-				{Name: "b", ValueExact: "2"},
+				{Name: "a", ValueExact: &one},
+				{Name: "b", ValueExact: &two},
 			},
 		},
 	}
@@ -56,6 +60,9 @@ func TestParseHTTPGetPath(t *testing.T) {
 }
 
 func TestCalculateKubeletHttpGetProbePaths_splitsQueryParams(t *testing.T) {
+	liveness := "liveness"
+	readiness := "readiness"
+
 	enabled := true
 	keepPercentage := 0.0
 	effectiveConfig := &common.OdigosConfiguration{
@@ -101,10 +108,10 @@ func TestCalculateKubeletHttpGetProbePaths_splitsQueryParams(t *testing.T) {
 	require.Len(t, rules, 2)
 	require.Equal(t, "/health", rules[0].Operation.HttpServer.Route)
 	require.Equal(t, []commonapisampling.QueryParamMatcher{
-		{Name: "type", ValueExact: "liveness"},
+		{Name: "type", ValueExact: &liveness},
 	}, rules[0].Operation.HttpServer.QueryParams)
 	require.Equal(t, []commonapisampling.QueryParamMatcher{
-		{Name: "type", ValueExact: "readiness"},
+		{Name: "type", ValueExact: &readiness},
 	}, rules[1].Operation.HttpServer.QueryParams)
 }
 
