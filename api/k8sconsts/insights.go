@@ -1,6 +1,6 @@
 package k8sconsts
 
 const (
-	OdigosInsightsServiceName = "odigos-security"
+	OdigosInsightsServiceName = "odigos-insights"
 	OdigosInsightsOTLPPort    = 4317
 )

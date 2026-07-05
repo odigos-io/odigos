@@ -28,7 +28,7 @@ imagePrefix:
 #       autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
 #   Supported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,
-#     odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-security
+#     odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-insights
 # additionalProperties: true
 # @schema
 images: {}
@@ -1169,23 +1169,23 @@ centralProxy:
 
 # @schema
 # description: |-
-#   Configuration for the Odigos Security service (enterprise).
+#   Configuration for the Odigos Insights service (enterprise).
 #   When enabled, deploys a Go service that ingests OTLP traces, learns
 #   per-route baselines across multiple deviation classes (D1..D6), and
 #   serves anomaly queries to the UI. Requires an enterprise on-prem token
 #   (odigos-pro secret).
 # @schema
-security:
+insights:
 
   # @schema
   # description: |-
-  #   When true, deploys the security service. Default false (off).
+  #   When true, deploys the insights service. Default false (off).
   # @schema
   enabled: false
 
   # @schema
   # description: |-
-  #   Number of security service replicas. Safe to scale above 1: schema
+  #   Number of insights service replicas. Safe to scale above 1: schema
   #   migrations run once via a separate Job (not per-replica), and baseline
   #   writes are additive/idempotent in ClickHouse, so replicas converge without
   #   coordination.
@@ -1236,7 +1236,7 @@ security:
 
   # @schema
   # description: |-
-  #   Hand-rolled ClickHouse deployed alongside the security service. Skeleton
+  #   Hand-rolled ClickHouse deployed alongside the insights service. Skeleton
   #   only — single replica, single PVC, no replication, no backups. Most
   #   knobs (image, user, db, resources) are hardcoded in the templates;
   #   only the storage size and class are values-driven because those are

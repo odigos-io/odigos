@@ -1,41 +1,41 @@
-{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: odigos-security
+  name: odigos-insights
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: odigos-security
+    app.kubernetes.io/name: odigos-insights
     odigos.io/system-object: "true"
 spec:
   # Replicas can scale freely: the schema is applied once by the migration Job
   # (not per-replica), and baseline writes are additive/idempotent in ClickHouse,
   # so multiple replicas converge without coordination.
-  replicas: {{ .Values.security.replicas }}
+  replicas: {{ .Values.insights.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: odigos-security
+      app.kubernetes.io/name: odigos-insights
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: odigos-security
+        app.kubernetes.io/name: odigos-insights
     spec:
-      serviceAccountName: odigos-security
-      {{- if .Values.security.nodeSelector }}
+      serviceAccountName: odigos-insights
+      {{- if .Values.insights.nodeSelector }}
       nodeSelector:
-        {{- toYaml .Values.security.nodeSelector | nindent 8 }}
+        {{- toYaml .Values.insights.nodeSelector | nindent 8 }}
       {{- else if .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- if .Values.security.priorityClassName }}
-      priorityClassName: {{ .Values.security.priorityClassName }}
+      {{- if .Values.insights.priorityClassName }}
+      priorityClassName: {{ .Values.insights.priorityClassName }}
       {{- end }}
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       containers:
-        - name: odigos-security
+        - name: odigos-insights
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-security" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-insights" "Tag" $imageTag) }}
           ports:
             - name: http
               containerPort: 8080
@@ -54,9 +54,9 @@ spec:
                   name: odigos-pro
                   key: odigos-onprem-token
             - name: GOMEMLIMIT
-              value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.security.resources) }}
+              value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.insights.resources) }}
             # ClickHouse password comes from the bundled secret; user and
-            # database name are hardcoded ("odigos_security") in the
+            # database name are hardcoded ("odigos_insights") in the
             # ClickHouse Deployment too, so we just bake them into the DSN.
             # randAlphaNum (used to mint the password) only produces
             # URL-safe chars, so no encoding gymnastics are needed here.
@@ -65,10 +65,10 @@ spec:
             - name: CLICKHOUSE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: odigos-security-clickhouse
+                  name: odigos-insights-clickhouse
                   key: password
             - name: CLICKHOUSE_DSN
-              value: "clickhouse://odigos_security:$(CLICKHOUSE_PASSWORD)@odigos-security-clickhouse:9000/odigos_security"
+              value: "clickhouse://odigos_insights:$(CLICKHOUSE_PASSWORD)@odigos-insights-clickhouse:9000/odigos_insights"
           livenessProbe:
             httpGet:
               path: /healthz
@@ -83,15 +83,15 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              cpu: {{ .Values.security.resources.requests.cpu }}
-              memory: {{ .Values.security.resources.requests.memory }}
+              cpu: {{ .Values.insights.resources.requests.cpu }}
+              memory: {{ .Values.insights.resources.requests.memory }}
             limits:
-              cpu: {{ .Values.security.resources.limits.cpu }}
-              memory: {{ .Values.security.resources.limits.memory }}
-      {{- with .Values.security.tolerations }}
+              cpu: {{ .Values.insights.resources.limits.cpu }}
+              memory: {{ .Values.insights.resources.limits.memory }}
+      {{- with .Values.insights.tolerations }}
       tolerations: {{ toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.security.affinity }}
+      {{- with .Values.insights.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
 {{- end }}

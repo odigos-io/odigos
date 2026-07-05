@@ -611,7 +611,7 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,\n  odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-security",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,\n  odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-insights",
       "required": [],
       "title": "images"
     },
@@ -2066,9 +2066,9 @@
       "required": [],
       "title": "scheduler"
     },
-    "security": {
+    "insights": {
       "additionalProperties": false,
-      "description": "Configuration for the Odigos Security service (enterprise).\nWhen enabled, deploys a Go service that ingests OTLP traces, learns\nper-route baselines across multiple deviation classes (D1..D6), and\nserves anomaly queries to the UI. Requires an enterprise on-prem token\n(odigos-pro secret).",
+      "description": "Configuration for the Odigos Insights service (enterprise).\nWhen enabled, deploys a Go service that ingests OTLP traces, learns\nper-route baselines across multiple deviation classes (D1..D6), and\nserves anomaly queries to the UI. Requires an enterprise on-prem token\n(odigos-pro secret).",
       "properties": {
         "affinity": {
           "additionalProperties": true,
@@ -2077,7 +2077,7 @@
         },
         "clickhouse": {
           "additionalProperties": false,
-          "description": "Hand-rolled ClickHouse deployed alongside the security service. Skeleton\nonly — single replica, single PVC, no replication, no backups. Most\nknobs (image, user, db, resources) are hardcoded in the templates;\nonly the storage size and class are values-driven because those are\nthe ones that vary per cluster.",
+          "description": "Hand-rolled ClickHouse deployed alongside the insights service. Skeleton\nonly — single replica, single PVC, no replication, no backups. Most\nknobs (image, user, db, resources) are hardcoded in the templates;\nonly the storage size and class are values-driven because those are\nthe ones that vary per cluster.",
           "properties": {
             "storage": {
               "additionalProperties": false,
@@ -2105,7 +2105,7 @@
         },
         "enabled": {
           "default": "false",
-          "description": "When true, deploys the security service. Default false (off).",
+          "description": "When true, deploys the insights service. Default false (off).",
           "required": [],
           "title": "enabled"
         },
@@ -2123,7 +2123,7 @@
         },
         "replicas": {
           "default": "2",
-          "description": "Number of security service replicas. Safe to scale above 1: schema\nmigrations run once via a separate Job (not per-replica), and baseline\nwrites are additive/idempotent in ClickHouse, so replicas converge without\ncoordination.",
+          "description": "Number of insights service replicas. Safe to scale above 1: schema\nmigrations run once via a separate Job (not per-replica), and baseline\nwrites are additive/idempotent in ClickHouse, so replicas converge without\ncoordination.",
           "minimum": 1,
           "required": [],
           "title": "replicas"
@@ -2197,7 +2197,7 @@
         }
       },
       "required": [],
-      "title": "security"
+      "title": "insights"
     },
     "signals": {
       "description": "User should be specifying the signals they want to collect.",

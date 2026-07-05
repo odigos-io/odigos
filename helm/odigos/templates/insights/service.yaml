@@ -1,16 +1,16 @@
-{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: odigos-security
+  name: odigos-insights
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: odigos-security
+    app.kubernetes.io/name: odigos-insights
     odigos.io/system-object: "true"
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: odigos-security
+    app.kubernetes.io/name: odigos-insights
   ports:
     - name: http
       port: 8080

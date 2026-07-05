@@ -1,12 +1,12 @@
 {{- if .Values.pdb.enabled }}
-{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: odigos-security
+  name: odigos-insights
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: odigos-security
+    app.kubernetes.io/name: odigos-insights
     odigos.io/system-object: "true"
 spec:
   # Single-replica, conditionally-deployed component (skeleton uses an
@@ -15,6 +15,6 @@ spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: odigos-security
+      app.kubernetes.io/name: odigos-insights
 {{- end }}
 {{- end }}

@@ -1,17 +1,17 @@
-{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: odigos-security
+  name: odigos-insights
   namespace: {{ .Release.Namespace }}
   labels:
     odigos.io/system-object: "true"
 subjects:
   - kind: ServiceAccount
-    name: odigos-security
+    name: odigos-insights
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
-  name: odigos-security
+  name: odigos-insights
   apiGroup: rbac.authorization.k8s.io
 {{- end }}
