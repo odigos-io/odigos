@@ -1,6 +1,7 @@
 package traces
 
 import (
+	"net/url"
 	"slices"
 	"strings"
 
@@ -21,8 +22,9 @@ func DistroSupportsHeadSampling(distro *distro.OtelDistro) bool {
 
 // used to return the result of computing the paths and rule names for kubelet health probes auto-rule.
 type kubeletProbePathAndName struct {
-	Path     string
-	RuleName string
+	Path        string
+	QueryParams []commonapisampling.QueryParamMatcher
+	RuleName    string
 }
 
 func isK8sHealthProbesSamplingEnabled(effectiveConfig *common.OdigosConfiguration) bool {
@@ -30,13 +32,66 @@ func isK8sHealthProbesSamplingEnabled(effectiveConfig *common.OdigosConfiguratio
 	return effectiveConfig.Sampling != nil && effectiveConfig.Sampling.K8sHealthProbesSampling != nil && effectiveConfig.Sampling.K8sHealthProbesSampling.Enabled != nil && *effectiveConfig.Sampling.K8sHealthProbesSampling.Enabled
 }
 
+func queryParamsMatch(a, b []commonapisampling.QueryParamMatcher) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i].Name != b[i].Name || a[i].ValueExact != b[i].ValueExact {
+			return false
+		}
+	}
+	return true
+}
+
+// parseHTTPGetPath splits a k8s HTTPGet probe path into path and query param matchers.
+// probe paths are relative (e.g. "/healthz" or "/health?type=readiness").
+func parseHTTPGetPath(rawPath string) (string, []commonapisampling.QueryParamMatcher) {
+	if rawPath == "" {
+		return "", nil
+	}
+
+	parsed, err := url.Parse(rawPath)
+	if err != nil {
+		return rawPath, nil
+	}
+
+	path := parsed.Path
+	if path == "" {
+		path = rawPath
+	}
+
+	if parsed.RawQuery == "" {
+		return path, nil
+	}
+
+	queryParams := make([]commonapisampling.QueryParamMatcher, 0, len(parsed.Query()))
+	for name, values := range parsed.Query() {
+		for _, value := range values {
+			queryParams = append(queryParams, commonapisampling.QueryParamMatcher{
+				Name:       name,
+				ValueExact: value,
+			})
+		}
+	}
+
+	slices.SortFunc(queryParams, func(a, b commonapisampling.QueryParamMatcher) int {
+		if cmp := strings.Compare(a.Name, b.Name); cmp != 0 {
+			return cmp
+		}
+		return strings.Compare(a.ValueExact, b.ValueExact)
+	})
+
+	return path, queryParams
+}
+
 // for kubelet health probes auto-rule, while iterating over the probes,
-// add the path and name to the list, and update the rule name if the path already exists.
-func addProbePathAndName(pathsAndNames []kubeletProbePathAndName, path string, name string) []kubeletProbePathAndName {
+// add the path and name to the list, and update the rule name if the path and query params already exist.
+func addProbePathAndName(pathsAndNames []kubeletProbePathAndName, path string, queryParams []commonapisampling.QueryParamMatcher, name string) []kubeletProbePathAndName {
 
 	// update existing entry if found.
 	for i, pathAndName := range pathsAndNames {
-		if pathAndName.Path == path {
+		if pathAndName.Path == path && queryParamsMatch(pathAndName.QueryParams, queryParams) {
 			pathsAndNames[i].RuleName += "," + name
 			return pathsAndNames
 		}
@@ -44,8 +99,9 @@ func addProbePathAndName(pathsAndNames []kubeletProbePathAndName, path string, n
 
 	// add new entry if not found.
 	pathsAndNames = append(pathsAndNames, kubeletProbePathAndName{
-		Path:     path,
-		RuleName: name,
+		Path:        path,
+		QueryParams: queryParams,
+		RuleName:    name,
 	})
 
 	return pathsAndNames
@@ -74,13 +130,16 @@ func calculateKubeletHttpGetProbePaths(workloadObj workload.Workload, containerN
 	}
 
 	if c.StartupProbe != nil && c.StartupProbe.HTTPGet != nil {
-		pathsAndNames = addProbePathAndName(pathsAndNames, c.StartupProbe.HTTPGet.Path, "StartupProbe")
+		path, queryParams := parseHTTPGetPath(c.StartupProbe.HTTPGet.Path)
+		pathsAndNames = addProbePathAndName(pathsAndNames, path, queryParams, "StartupProbe")
 	}
 	if c.LivenessProbe != nil && c.LivenessProbe.HTTPGet != nil {
-		pathsAndNames = addProbePathAndName(pathsAndNames, c.LivenessProbe.HTTPGet.Path, "LivenessProbe")
+		path, queryParams := parseHTTPGetPath(c.LivenessProbe.HTTPGet.Path)
+		pathsAndNames = addProbePathAndName(pathsAndNames, path, queryParams, "LivenessProbe")
 	}
 	if c.ReadinessProbe != nil && c.ReadinessProbe.HTTPGet != nil {
-		pathsAndNames = addProbePathAndName(pathsAndNames, c.ReadinessProbe.HTTPGet.Path, "ReadinessProbe")
+		path, queryParams := parseHTTPGetPath(c.ReadinessProbe.HTTPGet.Path)
+		pathsAndNames = addProbePathAndName(pathsAndNames, path, queryParams, "ReadinessProbe")
 	}
 	return pathsAndNames
 }
@@ -126,8 +185,9 @@ func calculateKubeletHealthProbesSamplingRules(effectiveConfig *common.OdigosCon
 
 		operation := &commonapisampling.HeadSamplingOperationMatcher{
 			HttpServer: &commonapisampling.HeadSamplingHttpServerOperationMatcher{
-				Route:  pathAndName.Path,
-				Method: "GET",
+				Route:       pathAndName.Path,
+				Method:      "GET",
+				QueryParams: pathAndName.QueryParams,
 			},
 		}
 
