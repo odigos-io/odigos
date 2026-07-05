@@ -620,9 +620,7 @@ type OdigosConfiguration struct {
 
 	Profiling *ProfilingConfiguration `json:"profiling,omitempty" yaml:"profiling,omitempty"`
 
-	// Tag value is intentionally distinct from the field name so the
-	// rendered configmap and values.yaml retain their stable on-disk key.
-	Insights *InsightsConfiguration `json:"security,omitempty" yaml:"security,omitempty"`
+	Insights *InsightsConfiguration `json:"insights,omitempty" yaml:"insights,omitempty"`
 }
 
 // ProfilingPipelineActive reports whether profiling pipelines and related collector settings should be applied.

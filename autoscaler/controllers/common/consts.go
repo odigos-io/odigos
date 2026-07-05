@@ -26,5 +26,5 @@ const (
 // form so the rendered collector configmap stays backwards-compatible.
 const (
 	// InsightsGatewayExporter forwards spans to the in-cluster sidecar service.
-	InsightsGatewayExporter = "otlp_grpc/security"
+	InsightsGatewayExporter = "otlp_grpc/insights"
 )

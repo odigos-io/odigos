@@ -1,16 +1,16 @@
-{{- if and .Values.security.enabled (include "odigos.secretExists" .) }}
+{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: odigos-security-clickhouse
+  name: odigos-insights-clickhouse
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: odigos-security-clickhouse
+    app.kubernetes.io/name: odigos-insights-clickhouse
     odigos.io/system-object: "true"
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: odigos-security-clickhouse
+    app.kubernetes.io/name: odigos-insights-clickhouse
   ports:
     - name: native
       port: 9000
