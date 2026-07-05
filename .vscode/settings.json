@@ -6,10 +6,10 @@
         "odigos",
         "Otel"
     ],
-
     "go.buildTags": "embed_manifests",
     "go.toolsEnvVars": {
         "GOOS": "linux",
-        "GOARCH": "arm64"
+        "GOARCH": "arm64",
+        "GOTOOLCHAIN": "go1.26.4"
     }
 }
