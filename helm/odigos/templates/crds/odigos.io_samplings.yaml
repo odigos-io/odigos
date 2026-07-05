@@ -440,11 +440,10 @@ spec:
                                     type: string
                                   valueExact:
                                     description: value of the query parameter, that
-                                      should be matched exactly
+                                      should be matched exactly.
                                     type: string
                                 required:
                                 - name
-                                - valueExact
                                 type: object
                               type: array
                             route:

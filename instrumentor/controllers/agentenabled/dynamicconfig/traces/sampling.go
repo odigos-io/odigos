@@ -37,7 +37,22 @@ func queryParamsMatch(a, b []commonapisampling.QueryParamMatcher) bool {
 		return false
 	}
 	for i := range a {
-		if a[i].Name != b[i].Name || a[i].ValueExact != b[i].ValueExact {
+		if a[i].Name != b[i].Name {
+			return false
+		}
+
+		// Both pointers nil: treat as equal
+		if a[i].ValueExact == nil && b[i].ValueExact == nil {
+			continue
+		}
+
+		// One is nil, other not: not equal
+		if (a[i].ValueExact == nil && b[i].ValueExact != nil) || (a[i].ValueExact != nil && b[i].ValueExact == nil) {
+			return false
+		}
+
+		// Both not nil: compare value
+		if *a[i].ValueExact != *b[i].ValueExact {
 			return false
 		}
 	}
@@ -70,7 +85,7 @@ func parseHTTPGetPath(rawPath string) (string, []commonapisampling.QueryParamMat
 		for _, value := range values {
 			queryParams = append(queryParams, commonapisampling.QueryParamMatcher{
 				Name:       name,
-				ValueExact: value,
+				ValueExact: &value,
 			})
 		}
 	}
@@ -79,7 +94,17 @@ func parseHTTPGetPath(rawPath string) (string, []commonapisampling.QueryParamMat
 		if cmp := strings.Compare(a.Name, b.Name); cmp != 0 {
 			return cmp
 		}
-		return strings.Compare(a.ValueExact, b.ValueExact)
+		// Handle nil ValueExact pointers. Assume nil < non-nil.
+		switch {
+		case a.ValueExact == nil && b.ValueExact == nil:
+			return 0
+		case a.ValueExact == nil:
+			return -1
+		case b.ValueExact == nil:
+			return 1
+		default:
+			return strings.Compare(*a.ValueExact, *b.ValueExact)
+		}
 	})
 
 	return path, queryParams
