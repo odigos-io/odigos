@@ -8,7 +8,10 @@ metadata:
     app.kubernetes.io/name: odigos-security
     odigos.io/system-object: "true"
 spec:
-  replicas: 1
+  # Replicas can scale freely: the schema is applied once by the migration Job
+  # (not per-replica), and baseline writes are additive/idempotent in ClickHouse,
+  # so multiple replicas converge without coordination.
+  replicas: {{ .Values.security.replicas }}
   selector:
     matchLabels:
       app.kubernetes.io/name: odigos-security
@@ -52,18 +55,20 @@ spec:
                   key: odigos-onprem-token
             - name: GOMEMLIMIT
               value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.security.resources) }}
-            # Postgres password comes from the bundled secret; user and
+            # ClickHouse password comes from the bundled secret; user and
             # database name are hardcoded ("odigos_security") in the
-            # Postgres Deployment too, so we just bake them into the DSN.
+            # ClickHouse Deployment too, so we just bake them into the DSN.
             # randAlphaNum (used to mint the password) only produces
             # URL-safe chars, so no encoding gymnastics are needed here.
-            - name: POSTGRES_PASSWORD
+            # Port 9000 is ClickHouse's native protocol (what clickhouse-go
+            # speaks); 8123 is HTTP and is not used by the service.
+            - name: CLICKHOUSE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: odigos-security-postgres
+                  name: odigos-security-clickhouse
                   key: password
-            - name: POSTGRES_DSN
-              value: "postgres://odigos_security:$(POSTGRES_PASSWORD)@odigos-security-postgres:5432/odigos_security?sslmode=disable"
+            - name: CLICKHOUSE_DSN
+              value: "clickhouse://odigos_security:$(CLICKHOUSE_PASSWORD)@odigos-security-clickhouse:9000/odigos_security"
           livenessProbe:
             httpGet:
               path: /healthz
