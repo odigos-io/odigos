@@ -232,6 +232,10 @@ func calculateKubeletHealthProbesSamplingRules(effectiveConfig *common.OdigosCon
 	return noisyOperations
 }
 
+func noisyOperationContainsHttpQueryParams(noisyOperation *commonapisampling.NoisyOperation) bool {
+	return noisyOperation != nil && noisyOperation.Operation != nil && noisyOperation.Operation.HttpServer != nil && len(noisyOperation.Operation.HttpServer.QueryParams) > 0
+}
+
 func CalculateSamplingCategoryRulesForContainer(samplingRules *[]odigosv1.Sampling, language common.ProgrammingLanguage,
 	pw k8sconsts.PodWorkload, containerName string, distro *distro.OtelDistro, workloadObj workload.Workload, effectiveConfig *common.OdigosConfiguration) ([]apisampling.NoisyOperation, []apisampling.HighlyRelevantOperation, []apisampling.CostReductionRule) {
 
@@ -239,9 +243,21 @@ func CalculateSamplingCategoryRulesForContainer(samplingRules *[]odigosv1.Sampli
 	var filteredRelevantOps []apisampling.HighlyRelevantOperation
 	var filteredCostRules []apisampling.CostReductionRule
 
+	distroSupportsHttpQueryParams := distro.Traces != nil && distro.Traces.HeadSampling != nil && distro.Traces.HeadSampling.HttpQueryParamsSupported
+
 	// compute auto sampling rules
 	if isK8sHealthProbesSamplingEnabled(effectiveConfig) {
-		filteredNoisyOps = append(filteredNoisyOps, calculateKubeletHealthProbesSamplingRules(effectiveConfig, workloadObj, containerName)...)
+		kubeletHealthProbesSamplingRules := calculateKubeletHealthProbesSamplingRules(effectiveConfig, workloadObj, containerName)
+		for _, rule := range kubeletHealthProbesSamplingRules {
+			ruleContainsHttpQueryParams := noisyOperationContainsHttpQueryParams(&rule)
+			if ruleContainsHttpQueryParams && !distroSupportsHttpQueryParams {
+				// filter out rule which are not supported by the distro.
+				// in the future, we should somehow communicate this to the user, and not just silently ignore it.
+				// for now, we just silently ignore it.
+				continue
+			}
+			filteredNoisyOps = append(filteredNoisyOps, rule)
+		}
 	}
 
 	for _, samplingRule := range *samplingRules {
@@ -250,13 +266,24 @@ func CalculateSamplingCategoryRulesForContainer(samplingRules *[]odigosv1.Sampli
 
 		for _, noisyOp := range samplingRule.Spec.NoisyOperations {
 			if scope.SourceScopeMatchesContainer(noisyOp.SourceScopes, pw, language) {
-				filteredNoisyOps = append(filteredNoisyOps, apisampling.NoisyOperation{
+
+				noisyOperationCommonApi := apisampling.NoisyOperation{
 					Id:               odigosv1.ComputeNoisyOperationHash(&noisyOp),
 					Name:             noisyOp.Name,
 					Disabled:         noisyOp.Disabled,
 					Operation:        noisyOp.Operation,
 					PercentageAtMost: noisyOp.PercentageAtMost,
-				})
+				}
+
+				ruleContainsHttpQueryParams := noisyOperationContainsHttpQueryParams(&noisyOperationCommonApi)
+				if ruleContainsHttpQueryParams && !distroSupportsHttpQueryParams {
+					// filter out rule which are not supported by the distro.
+					// in the future, we should somehow communicate this to the user, and not just silently ignore it.
+					// for now, we just silently ignore it.
+					continue
+				}
+
+				filteredNoisyOps = append(filteredNoisyOps, noisyOperationCommonApi)
 			}
 		}
 
