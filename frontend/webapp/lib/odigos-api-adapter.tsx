@@ -19,6 +19,7 @@
 import React, { type FC, type PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
 import { useConfig, useCSRF } from '@/hooks';
 import { API, INITIAL_CONTEXT, IS_LOCAL } from '@/utils';
+import { normalizeActionRenames, type RenamesValue } from '@/lib/action-form-normalization';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 import {
   OdigosApiProvider,
@@ -125,25 +126,12 @@ import {
 // back to local-store-only behavior when the operation slot is undefined.
 
 // The backend's `ActionFieldsInput.renames` is a JSON-stringified `String`
-// (it `json.Unmarshal`s the value server-side), while the kit models
-// `renames` as an object map. Serialize on the way out (create/update) and
-// parse on the way back (list) so the kit's RenameAttribute form always sees
-// the object shape. This (de)serialization previously lived in the webapp's
-// `useActionCRUD` hook, retired in favor of the kit's `useActionsApi`; without
-// it the raw object is sent to a `String` scalar and the mutation is rejected
-// (no CRD is created).
-const parseRenamesString = (value: string): Record<string, string> => {
-  try {
-    const parsed = JSON.parse(value);
-    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {};
-  } catch {
-    return {};
-  }
-};
-
+// (it `json.Unmarshal`s the value server-side), while catalog-driven kit forms
+// can emit either an object map or key/value table rows. Normalize before
+// serializing so the backend always receives the map shape it accepts.
 const serializeActionRenames = (vars: CreateActionVars | UpdateActionVars): Record<string, unknown> => {
   const { action } = vars;
-  const renames = action?.fields?.renames;
+  const renames = normalizeActionRenames(action?.fields?.renames as RenamesValue);
   return {
     ...vars,
     action: {
@@ -160,8 +148,8 @@ const serializeActionRenames = (vars: CreateActionVars | UpdateActionVars): Reco
 
 const parseActionRenames = (action: Action): Action => {
   const renames = action?.fields?.renames as unknown;
-  if (typeof renames !== 'string') return action;
-  return { ...action, fields: { ...action.fields, renames: parseRenamesString(renames) } };
+  if (!renames) return action;
+  return { ...action, fields: { ...action.fields, renames: normalizeActionRenames(renames as RenamesValue) } };
 };
 
 // Stable operations map — referentially constant so the kit's runner doesn't
