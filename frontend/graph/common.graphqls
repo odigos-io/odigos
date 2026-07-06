@@ -1,0 +1,80 @@
+# =====================
+# Common
+# Shared scalars, enums and types referenced across multiple domains, plus the
+# base root types (Query, Mutation, ComputePlatform) that every domain file
+# extends via `extend type ...`.
+# =====================
+
+enum ComputePlatformType {
+  K8S
+  VM
+}
+
+enum K8sResourceKind {
+  Deployment
+  DaemonSet
+  StatefulSet
+  CronJob
+  Job
+  ConfigMap
+  Pod
+  StaticPod
+  DeploymentConfig
+  Rollout
+  InstrumentationConfig
+}
+
+enum ConditionStatus {
+  success
+  error
+  disabled
+  loading
+}
+
+enum ProgrammingLanguage {
+  Unspecified
+  Java
+  Go
+  JavaScript
+  Python
+  DotNet
+}
+
+enum SignalType {
+  TRACES
+  METRICS
+  LOGS
+  PROFILES
+}
+
+enum Tier {
+  community
+  cloud
+  onprem
+}
+
+type Condition {
+  status: ConditionStatus!
+  type: String!
+  reason: String
+  message: String
+}
+
+type NonIdentifyingAttribute {
+  key: String!
+  value: String!
+}
+
+# Base root types. Each domain file adds its fields via `extend type ...`.
+type ComputePlatform {
+  computePlatformType: ComputePlatformType!
+}
+
+type Query {
+  computePlatform: ComputePlatform
+}
+
+type Mutation {
+  uninstrumentCluster: Boolean!
+  pauseOdigos: Boolean!
+}

@@ -1,5 +1,11 @@
 # Config contains key information about the cluster and the installation
 
+enum InstallationStatus {
+  NEW
+  APPS_SELECTED
+  FINISHED
+}
+
 type Config {
   readonly: Boolean!
   platformType: ComputePlatformType!
