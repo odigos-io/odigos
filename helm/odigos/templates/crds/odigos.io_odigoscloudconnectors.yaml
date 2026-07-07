@@ -70,28 +70,30 @@ spec:
                 required:
                 - id
                 type: object
-              capabilities:
+              computePlatforms:
                 description: |-
-                  Capabilities is the customer's per-type allow-list of what the connector may do (discovery and/or
-                  instrumentation per resource type, e.g. lambda/ecs). The connector scans every region enabled in
-                  the account; there is no per-connector region selection.
+                  ComputePlatforms is the customer's per-type allow-list for managed environments: what the connector
+                  may do (discovery and/or installation) per compute-platform type (e.g. aws.ecs-cluster, aws.eks,
+                  aws.ec2).
                 items:
                   description: |-
-                    CloudConnectorCapability is the customer's allow-list entry for one provider resource type: whether
-                    the connector may discover and/or instrument that type. It records intent — instrumentation only runs
-                    once the provider's connector spec implements it; until then the connector simply knows it is allowed.
+                    CloudConnectorComputePlatformCapability is the customer's allow-list entry for one managed-environment
+                    type (a compute platform, e.g. "aws.ecs-cluster", "aws.eks", "aws.ec2"): whether the connector may
+                    discover the environment and/or install a separate Odigos agent onto it. Installation records intent —
+                    it only runs once the provider's connector spec implements it.
                   properties:
                     discovery:
-                      description: Discovery allows the connector to discover resources
-                        of this type.
+                      description: Discovery allows the connector to discover compute
+                        platforms of this type.
                       type: boolean
-                    instrumentation:
-                      description: Instrumentation allows the connector to instrument
-                        resources of this type.
+                    installation:
+                      description: |-
+                        Installation allows the connector to install a separate Odigos agent onto a discovered compute
+                        platform of this type (e.g. the Odigos ecs-agent onto an EC2-backed ECS cluster).
                       type: boolean
                     type:
                       description: Type is the provider connector spec type key (e.g.
-                        "lambda", "ecs").
+                        "aws.eks").
                       type: string
                   required:
                   - type
@@ -213,6 +215,35 @@ spec:
                         type: object
                     type: object
                 type: object
+              workloads:
+                description: |-
+                  Workloads is the customer's per-type allow-list for directly-instrumentable resources: what the
+                  connector may do (discovery and/or instrumentation) per workload type (e.g. aws.lambda,
+                  aws.fargate-task). The connector scans every region enabled in the account; there is no per-connector
+                  region selection.
+                items:
+                  description: |-
+                    CloudConnectorWorkloadCapability is the customer's allow-list entry for one directly-instrumentable
+                    resource type (a workload, e.g. "aws.lambda", "aws.fargate-task"): whether the connector may discover
+                    and/or instrument that type. It records intent — instrumentation only runs once the provider's connector
+                    spec implements it; until then the connector simply knows it is allowed.
+                  properties:
+                    discovery:
+                      description: Discovery allows the connector to discover workloads
+                        of this type.
+                      type: boolean
+                    instrumentation:
+                      description: Instrumentation allows the connector to instrument
+                        workloads of this type directly.
+                      type: boolean
+                    type:
+                      description: Type is the provider connector spec type key (e.g.
+                        "aws.lambda").
+                      type: string
+                  required:
+                  - type
+                  type: object
+                type: array
             required:
             - account
             - credentialsSecretRef

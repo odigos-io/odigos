@@ -21,27 +21,41 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// CloudConnectorCapability is the customer's allow-list entry for one provider resource type: whether
-// the connector may discover and/or instrument that type. It records intent — instrumentation only runs
-// once the provider's connector spec implements it; until then the connector simply knows it is allowed.
-type CloudConnectorCapability struct {
-	// Type is the provider connector spec type key (e.g. "lambda", "ecs").
+// CloudConnectorWorkloadCapability is the customer's allow-list entry for one directly-instrumentable
+// resource type (a workload, e.g. "aws.lambda", "aws.fargate-task"): whether the connector may discover
+// and/or instrument that type. It records intent — instrumentation only runs once the provider's connector
+// spec implements it; until then the connector simply knows it is allowed.
+type CloudConnectorWorkloadCapability struct {
+	// Type is the provider connector spec type key (e.g. "aws.lambda").
 	// +kubebuilder:validation:Required
 	Type string `json:"type"`
 
-	// Discovery allows the connector to discover resources of this type.
+	// Discovery allows the connector to discover workloads of this type.
 	// +kubebuilder:validation:Optional
 	Discovery bool `json:"discovery,omitempty"`
 
-	// Instrumentation allows the connector to instrument resources of this type.
+	// Instrumentation allows the connector to instrument workloads of this type directly.
 	// +kubebuilder:validation:Optional
 	Instrumentation bool `json:"instrumentation,omitempty"`
+}
 
-	// Services allows the connector to manage this type as a "service": discover the managed
-	// environment and assign instrumentation to a separate Odigos agent installed there (e.g. an
-	// EC2-backed ECS cluster running the Odigos ecs-agent).
+// CloudConnectorComputePlatformCapability is the customer's allow-list entry for one managed-environment
+// type (a compute platform, e.g. "aws.ecs-cluster", "aws.eks", "aws.ec2"): whether the connector may
+// discover the environment and/or install a separate Odigos agent onto it. Installation records intent —
+// it only runs once the provider's connector spec implements it.
+type CloudConnectorComputePlatformCapability struct {
+	// Type is the provider connector spec type key (e.g. "aws.eks").
+	// +kubebuilder:validation:Required
+	Type string `json:"type"`
+
+	// Discovery allows the connector to discover compute platforms of this type.
 	// +kubebuilder:validation:Optional
-	Services bool `json:"services,omitempty"`
+	Discovery bool `json:"discovery,omitempty"`
+
+	// Installation allows the connector to install a separate Odigos agent onto a discovered compute
+	// platform of this type (e.g. the Odigos ecs-agent onto an EC2-backed ECS cluster).
+	// +kubebuilder:validation:Optional
+	Installation bool `json:"installation,omitempty"`
 }
 
 // CloudConnectorPhase is a coarse, cached lifecycle phase for the connector runtime. It is a cache of
@@ -136,11 +150,18 @@ type OdigosCloudConnectorSpec struct {
 	// +kubebuilder:validation:Required
 	CredentialsSecretRef CloudConnectorCredentialsSecretRef `json:"credentialsSecretRef"`
 
-	// Capabilities is the customer's per-type allow-list of what the connector may do (discovery and/or
-	// instrumentation per resource type, e.g. lambda/ecs). The connector scans every region enabled in
-	// the account; there is no per-connector region selection.
+	// Workloads is the customer's per-type allow-list for directly-instrumentable resources: what the
+	// connector may do (discovery and/or instrumentation) per workload type (e.g. aws.lambda,
+	// aws.fargate-task). The connector scans every region enabled in the account; there is no per-connector
+	// region selection.
 	// +kubebuilder:validation:Optional
-	Capabilities []CloudConnectorCapability `json:"capabilities,omitempty"`
+	Workloads []CloudConnectorWorkloadCapability `json:"workloads,omitempty"`
+
+	// ComputePlatforms is the customer's per-type allow-list for managed environments: what the connector
+	// may do (discovery and/or installation) per compute-platform type (e.g. aws.ecs-cluster, aws.eks,
+	// aws.ec2).
+	// +kubebuilder:validation:Optional
+	ComputePlatforms []CloudConnectorComputePlatformCapability `json:"computePlatforms,omitempty"`
 
 	// Runtime configures the connector workload (image/replicas/resources).
 	// +kubebuilder:validation:Optional
