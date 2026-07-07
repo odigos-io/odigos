@@ -859,6 +859,7 @@ func headSamplingOperationMatcherToModel(matcher *sampling.HeadSamplingOperation
 			Route:       services.StringPtrIfNotEmpty(matcher.HttpServer.Route),
 			RoutePrefix: services.StringPtrIfNotEmpty(matcher.HttpServer.RoutePrefix),
 			Method:      services.StringPtrIfNotEmpty(matcher.HttpServer.Method),
+			QueryParams: queryParamMatcherToModel(matcher.HttpServer.QueryParams),
 		}
 	}
 	if matcher.HttpClient != nil {
@@ -870,6 +871,20 @@ func headSamplingOperationMatcherToModel(matcher *sampling.HeadSamplingOperation
 		}
 	}
 	return result
+}
+
+func queryParamMatcherToModel(in []sampling.QueryParamMatcher) []*model.QueryParamMatcher {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]*model.QueryParamMatcher, 0, len(in))
+	for _, param := range in {
+		out = append(out, &model.QueryParamMatcher{
+			Name:       param.Name,
+			ValueExact: param.ValueExact,
+		})
+	}
+	return out
 }
 
 // containerCollectorConfigToModel converts InstrumentationConfig workload collector config (tail sampling) to the GraphQL model.

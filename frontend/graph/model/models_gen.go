@@ -587,15 +587,17 @@ type HeadSamplingHTTPClientMatcherInput struct {
 }
 
 type HeadSamplingHTTPServerMatcher struct {
-	Route       *string `json:"route,omitempty"`
-	RoutePrefix *string `json:"routePrefix,omitempty"`
-	Method      *string `json:"method,omitempty"`
+	Route       *string              `json:"route,omitempty"`
+	RoutePrefix *string              `json:"routePrefix,omitempty"`
+	Method      *string              `json:"method,omitempty"`
+	QueryParams []*QueryParamMatcher `json:"queryParams,omitempty"`
 }
 
 type HeadSamplingHTTPServerMatcherInput struct {
-	Route       *string `json:"route,omitempty"`
-	RoutePrefix *string `json:"routePrefix,omitempty"`
-	Method      *string `json:"method,omitempty"`
+	Route       *string                   `json:"route,omitempty"`
+	RoutePrefix *string                   `json:"routePrefix,omitempty"`
+	Method      *string                   `json:"method,omitempty"`
+	QueryParams []*QueryParamMatcherInput `json:"queryParams,omitempty"`
 }
 
 type HeadSamplingOperationMatcher struct {
@@ -1463,6 +1465,16 @@ type ProvenanceEntry struct {
 }
 
 type Query struct {
+}
+
+type QueryParamMatcher struct {
+	Name       string  `json:"name"`
+	ValueExact *string `json:"valueExact,omitempty"`
+}
+
+type QueryParamMatcherInput struct {
+	Name       string  `json:"name"`
+	ValueExact *string `json:"valueExact,omitempty"`
 }
 
 type RemoteConfig struct {

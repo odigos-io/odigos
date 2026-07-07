@@ -18,10 +18,16 @@ export interface SourcesScopesInput {
   languages?: string[] | null;
 }
 
+export interface QueryParamMatcher {
+  name: string;
+  valueExact?: string | null;
+}
+
 export interface HeadSamplingHttpServerMatcher {
   route?: string | null;
   routePrefix?: string | null;
   method?: string | null;
+  queryParams?: QueryParamMatcher[] | null;
 }
 
 export interface HeadSamplingHttpClientMatcher {
