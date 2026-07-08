@@ -360,10 +360,9 @@ check-clean-work-tree:
 cli-install:
 	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
 	cd ./cli ; go run -tags=embed_manifests . install \
-		--version $(ODIGOS_CLI_VERSION) \
-		--nowait \
-		$(if $(CLUSTER_NAME),--cluster-name $(CLUSTER_NAME)) \
-		$(if $(CENTRAL_BACKEND_URL),--central-backend-url $(CENTRAL_BACKEND_URL)) \
+		$(if $(ODIGOS_CLI_VERSION),--chart-version $(ODIGOS_CLI_VERSION)) \
+		$(if $(CLUSTER_NAME),--set clusterName=$(CLUSTER_NAME)) \
+		$(if $(CENTRAL_BACKEND_URL),--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL)) \
 		$(FLAGS)
 
 
