@@ -37,7 +37,8 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, container
 	if *injectionMethod == common.LoaderEnvInjectionMethod || *injectionMethod == common.LoaderFallbackToPodManifestInjectionMethod {
 		odigosLoaderPath := filepath.Join(k8sconsts.OdigosAgentsDirectory, commonconsts.OdigosLoaderDirName, commonconsts.OdigosLoaderName)
 
-		manifestValExits := getContainerEnvVarPointer(&container.Env, commonconsts.LdPreloadEnvVarName) != nil
+		ldPreloadPtr := getContainerEnvVarPointer(&container.Env, commonconsts.LdPreloadEnvVarName)
+		manifestValExits := ldPreloadPtr != nil
 		runtimeDetailsVal, foundInInspection := getEnvVarFromRuntimeDetails(runtimeDetails, commonconsts.LdPreloadEnvVarName)
 		ldPreloadUnsetOrExpected := !foundInInspection || strings.Contains(runtimeDetailsVal, odigosLoaderPath)
 		secureExecution := runtimeDetails.SecureExecutionMode == nil || *runtimeDetails.SecureExecutionMode
@@ -50,6 +51,21 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, container
 				Name:  commonconsts.LdPreloadEnvVarName,
 				Value: odigosLoaderPath,
 			})
+			return nil
+		}
+
+		// The LD_PRELOAD env var may already be present because memory profiling injected an
+		// odigos-owned interposer (e.g. /var/odigos/memprof/libmemsample.so) earlier in this
+		// same webhook, before the tracing agent env is added. Do NOT bail out or drop the
+		// tracing loader in that case: compose the two by prepending the loader so the eBPF
+		// loader runs first and the memory interposer stays appended
+		// (LD_PRELOAD=<loader>:<libmemsample>). Gated on the existing value being odigos-owned
+		// so a user-defined LD_PRELOAD is never modified — that still falls through to the
+		// protective logic below.
+		if manifestValExits && !secureExecution &&
+			strings.Contains(ldPreloadPtr.Value, k8sconsts.OdigosAgentsDirectory) &&
+			!strings.Contains(ldPreloadPtr.Value, odigosLoaderPath) {
+			ldPreloadPtr.Value = odigosLoaderPath + ":" + ldPreloadPtr.Value
 			return nil
 		}
 

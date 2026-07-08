@@ -53,6 +53,19 @@ const (
 	// the default CPU limit in millicores
 	defaultLimitCPUm = 500
 
+	// When continuous memory profiling is enabled, the node collector additionally
+	// parses per-process heap dumps and symbolizes them — a bursty, allocation-heavy
+	// workload compared to plain trace/metric batching, where a single dump-parse can
+	// spike the working set well above the trace-only steady state. The trace-only
+	// defaults (256MiB req / 512MiB limit / 50MiB limiter headroom) OOM under it.
+	// So when memory profiling is on (and the operator has not set explicit
+	// collectorNode overrides) we raise the guaranteed floor, raise the burst ceiling
+	// to ~1GiB, and widen the memory_limiter→k8s-limit gap so a spike self-throttles
+	// (forced GC + refuse-data) before the OOM killer fires.
+	profilingRequestMemoryMiB          = 384
+	profilingMemoryLimitAboveReqFactor = 2.6667 // ~1024MiB limit from a 384MiB request
+	profilingMemoryLimiterLimitDiffMib = 128    // vs the 50MiB trace default: larger burst buffer below the k8s limit
+
 	DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL = "10s"
 )
 
@@ -61,13 +74,24 @@ const (
 // small containers (where a fixed 50MiB offset would eat most of the budget) get a
 // percentage-based floor, while larger containers keep the fixed 50MiB headroom that
 // the OTel memory_limiter docs recommend.
-func calculateMemoryLimiterHardLimitMiB(memoryLimitMiB int) int {
-	fixed := memoryLimitMiB - defaultMemoryLimiterLimitDiffMib
+func calculateMemoryLimiterHardLimitMiB(memoryLimitMiB int, diffMiB int) int {
+	fixed := memoryLimitMiB - diffMiB
 	ratio := int(float64(memoryLimitMiB) * defaultMemoryLimiterLimitMinPercentage / 100.0)
 	if ratio > fixed {
 		return ratio
 	}
 	return fixed
+}
+
+// memoryProfilingEnabled reports whether cluster-wide continuous memory profiling is
+// on, which materially raises the node collector's working set (out-of-band heap-dump
+// parse + central symbolize). Requires both the parent profiling pipeline and the
+// memory sub-vertical to be explicitly enabled.
+func memoryProfilingEnabled(cfg common.OdigosConfiguration) bool {
+	return cfg.Profiling != nil &&
+		cfg.Profiling.Enabled != nil && *cfg.Profiling.Enabled &&
+		cfg.Profiling.Memory != nil &&
+		cfg.Profiling.Memory.Enabled != nil && *cfg.Profiling.Memory.Enabled
 }
 
 func getResourceSettings(odigosConfiguration common.OdigosConfiguration) odigosv1.CollectorsGroupResourcesSettings {
@@ -89,16 +113,28 @@ func getResourceSettings(odigosConfiguration common.OdigosConfiguration) odigosv
 
 	nodeCollectorConfig := odigosConfiguration.CollectorNode
 
-	memoryRequestMiB := defaultRequestMemoryMiB
+	// Baselines depend on whether memory profiling is enabled — its heap-dump parse +
+	// symbolize workload needs a heavier floor/ceiling than trace-only batching.
+	// Explicit collectorNode overrides below still win over either baseline.
+	requestBaseMiB := defaultRequestMemoryMiB
+	limitFactor := memoryLimitAboveRequestFactor
+	limiterDiffMiB := defaultMemoryLimiterLimitDiffMib
+	if memoryProfilingEnabled(odigosConfiguration) {
+		requestBaseMiB = profilingRequestMemoryMiB
+		limitFactor = profilingMemoryLimitAboveReqFactor
+		limiterDiffMiB = profilingMemoryLimiterLimitDiffMib
+	}
+
+	memoryRequestMiB := requestBaseMiB
 	if nodeCollectorConfig != nil && nodeCollectorConfig.RequestMemoryMiB > 0 {
 		memoryRequestMiB = nodeCollectorConfig.RequestMemoryMiB
 	}
-	memoryLimitMiB := int(float64(memoryRequestMiB) * memoryLimitAboveRequestFactor)
+	memoryLimitMiB := int(float64(memoryRequestMiB) * limitFactor)
 	if nodeCollectorConfig != nil && nodeCollectorConfig.LimitMemoryMiB > 0 {
 		memoryLimitMiB = nodeCollectorConfig.LimitMemoryMiB
 	}
 
-	memoryLimiterLimitMiB := calculateMemoryLimiterHardLimitMiB(memoryLimitMiB)
+	memoryLimiterLimitMiB := calculateMemoryLimiterHardLimitMiB(memoryLimitMiB, limiterDiffMiB)
 	if nodeCollectorConfig != nil && nodeCollectorConfig.MemoryLimiterLimitMiB > 0 {
 		memoryLimiterLimitMiB = nodeCollectorConfig.MemoryLimiterLimitMiB
 	}

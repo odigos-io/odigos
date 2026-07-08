@@ -108,8 +108,13 @@ helm-schema-clean:
 	rm -f $(HELM_SCHEMA_BIN)
 
 # Pass DOCKER_BUILD_OPTS=--no-cache to force a clean build (e.g. when go.mod replace changes and cache is stale).
+# When GHTOKEN is set, forward it as the BuildKit `ghtoken` secret so the collector
+# image can fetch the internal odigos-ebpf-profiler fork (memory profiling). Builds
+# without GHTOKEN (local dev, non-collector images) are unaffected.
+COMMA := ,
 build-image/%:
 	docker build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) \
+	$(if $(GHTOKEN),--secret id=ghtoken$(COMMA)env=GHTOKEN) \
 	-t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg ODIGOS_VERSION=$(TAG) \

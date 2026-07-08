@@ -64,6 +64,21 @@ ARG TARGETARCH
 ARG ODIGOS_LOADER_VERSION=v0.0.8
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
+# memprof native agent libs — prof-enabled jemalloc + the glibc/musl libmemsample
+# interposers. Baked into the agents image so they are delivered to
+# /var/odigos/memprof by the SAME rsync path as every other agent. rsync -av
+# preserves the source perms, so the directory stays 0755 (traversable) and the
+# .so files 0644 — which the old standalone DaemonSet got wrong (0644 dir → a
+# non-root app container could not traverse it and dlopen the lib).
+COPY odiglet/memprof/libjemalloc-prof.so /instrumentations/memprof/libjemalloc-prof.so
+COPY odiglet/memprof/libjemalloc-prof-musl.so /instrumentations/memprof/libjemalloc-prof-musl.so
+COPY odiglet/memprof/libmemsample.so /instrumentations/memprof/libmemsample.so
+COPY odiglet/memprof/libmemsample-musl.so /instrumentations/memprof/libmemsample-musl.so
+# chmod AFTER the COPYs: a `COPY --chmod` would also stamp the parent dir, leaving
+# /instrumentations/memprof at 0644 — which rsync then faithfully delivers, so a
+# non-root app cannot traverse it to dlopen the lib. Force dir 0755 / files 0644 here.
+RUN chmod 755 /instrumentations/memprof && chmod 644 /instrumentations/memprof/*.so
+
 ######### Device Plugin builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS deviceplugin-builder
 ENV GOTOOLCHAIN=auto

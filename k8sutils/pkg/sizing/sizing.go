@@ -96,6 +96,49 @@ func GetResourceSizePreset(sizing string) ResourceSizePreset {
 	return configs[Sizing(sizing)]
 }
 
+// memoryProfilingNodeFloor is the minimum node-collector sizing applied when
+// continuous memory profiling is enabled. Heap-dump parse + central symbolize is a
+// bursty, allocation-heavy workload on the node collector, so the trace-only presets
+// (e.g. medium's 250/500) OOM under it. This floor keeps the k8s container limit and
+// the OTel memory_limiter config in sync with the Helm chart's profiling floor
+// (collector.node.memory* in _sizing-helpers.tpl). Larger presets keep their larger
+// values (applied field-wise via max); explicit collectorNode overrides still win.
+var memoryProfilingNodeFloor = common.CollectorNodeConfiguration{
+	RequestMemoryMiB:           384,
+	LimitMemoryMiB:             1024,
+	MemoryLimiterLimitMiB:      896, // ~128MiB under the container limit for burst headroom
+	MemoryLimiterSpikeLimitMiB: 179, // 20% of the hard limit
+	GoMemLimitMib:              716, // 80% of the hard limit
+}
+
+// memoryProfilingEnabled reports whether cluster-wide continuous memory profiling is
+// on, which materially raises the node collector's working set.
+func memoryProfilingEnabled(c *common.OdigosConfiguration) bool {
+	return c.Profiling != nil &&
+		c.Profiling.Enabled != nil && *c.Profiling.Enabled &&
+		c.Profiling.Memory != nil &&
+		c.Profiling.Memory.Enabled != nil && *c.Profiling.Memory.Enabled
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// applyMemoryProfilingNodeFloor raises each node memory field to at least the
+// profiling floor, leaving larger preset values (e.g. size_l/xl) untouched.
+func applyMemoryProfilingNodeFloor(n common.CollectorNodeConfiguration) common.CollectorNodeConfiguration {
+	f := memoryProfilingNodeFloor
+	n.RequestMemoryMiB = maxInt(n.RequestMemoryMiB, f.RequestMemoryMiB)
+	n.LimitMemoryMiB = maxInt(n.LimitMemoryMiB, f.LimitMemoryMiB)
+	n.MemoryLimiterLimitMiB = maxInt(n.MemoryLimiterLimitMiB, f.MemoryLimiterLimitMiB)
+	n.MemoryLimiterSpikeLimitMiB = maxInt(n.MemoryLimiterSpikeLimitMiB, f.MemoryLimiterSpikeLimitMiB)
+	n.GoMemLimitMib = maxInt(n.GoMemLimitMib, f.GoMemLimitMib)
+	return n
+}
+
 // ComputeResourceSizePreset computes the resource size preset for the given Odigos configuration.
 func ComputeResourceSizePreset(c *common.OdigosConfiguration) ResourceSizePreset {
 	// pick preset (default to medium if invalid/missing)
@@ -106,6 +149,11 @@ func ComputeResourceSizePreset(c *common.OdigosConfiguration) ResourceSizePreset
 	// start from preset
 	base := configs[Sizing(c.ResourceSizePreset)]
 	node := base.CollectorNodeConfig
+
+	// memory profiling raises the node-collector floor (before user overrides, which still win)
+	if memoryProfilingEnabled(c) {
+		node = applyMemoryProfilingNodeFloor(node)
+	}
 
 	// overlay user overrides (non-zero only)
 	gw := copyNonZeroGateway(&base.CollectorGatewayConfig, c.CollectorGateway)

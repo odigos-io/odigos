@@ -171,6 +171,15 @@
        3) Node: effective CPU/Memory with mirroring rules
   ------------------------------------------------------------------ */}}
 
+  {{/* Emits "true" only when cluster-wide continuous memory profiling is enabled.
+       Used to raise the node collector's default memory floor (heap-dump parse +
+       symbolize is bursty/heavy). Empty (falsy) otherwise. */}}
+  {{- define "collector.node.memoryProfilingEnabled" -}}
+  {{- if and .Values.profiling .Values.profiling.enabled .Values.profiling.memory .Values.profiling.memory.enabled -}}
+  true
+  {{- end -}}
+  {{- end -}}
+
   {{- define "collector.node.memoryRequest" -}}
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
   {{- if hasKey .Values.collectorNode "requestMemoryMiB" -}}
@@ -183,6 +192,9 @@
   {{- else if hasKey .Values.collectorNode "memoryLimit" -}}
   {{/* Backward compatibility: support legacy field name "memoryLimit" for mirroring */}}
   {{- .Values.collectorNode.memoryLimit -}}
+  {{- else if (include "collector.node.memoryProfilingEnabled" .) -}}
+  {{/* Memory profiling makes the node collector parse+symbolize heap dumps (bursty, heavy). Floor the request so it doesn't sit at the trace-only default. User overrides above still win. */}}
+  {{- max ($d.nodeMemoryRequest | int) 384 -}}
   {{- else -}}
   {{- $d.nodeMemoryRequest -}}
   {{- end -}}
@@ -200,6 +212,9 @@
   {{- else if hasKey .Values.collectorNode "memoryRequest" -}}
   {{/* Backward compatibility: support legacy field name "memoryRequest" for mirroring */}}
   {{- .Values.collectorNode.memoryRequest -}}
+  {{- else if (include "collector.node.memoryProfilingEnabled" .) -}}
+  {{/* Memory profiling: raise the node collector burst ceiling to ~1GiB so heap-dump parse/symbolize spikes don't hit the OOM killer. User overrides above still win. */}}
+  {{- max ($d.nodeMemoryLimit | int) 1024 -}}
   {{- else -}}
   {{- $d.nodeMemoryLimit -}}
   {{- end -}}

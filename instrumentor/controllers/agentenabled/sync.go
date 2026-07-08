@@ -8,6 +8,10 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"strconv"
+	"sort"
+	"encoding/hex"
+	"crypto/sha256"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -338,12 +342,40 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		if err != nil {
 			return nil, err
 		}
-		updateInstrumentationConfigAgentsMetaHash(ic, string(agentsDeploymentHash))
+		metaHash := string(agentsDeploymentHash)
+		// A tracing-instrumented workload's container-config hash does NOT change when
+		// only memory-profiling config changes (native.restart, languages, sampling),
+		// so enabling/toggling memory profiling would never re-roll it and the memory
+		// preload/JFR flag would never be applied. Observed: PHP/Java workloads (which
+		// have a tracing agent) stayed un-profiled for memory until manually restarted,
+		// while native C/C++/Rust (no tracing agent) rolled via the memory-fingerprint
+		// branch below. Fold the memory fingerprint into the rollout hash so a
+		// memory-config change re-rolls these workloads too. Only when memory profiling
+		// applies, so tracing-only installs see no extra churn.
+		if ok, memFp := memoryProfilingRolloutFingerprint(runtimeDetailsByContainer, effectiveConfig); ok {
+			sum := sha256.Sum256([]byte(metaHash + "|" + memFp))
+			metaHash = "mem-" + hex.EncodeToString(sum[:12])
+		}
+		updateInstrumentationConfigAgentsMetaHash(ic, metaHash)
 		return &agentInjectedStatusCondition{
 			Status:  metav1.ConditionTrue,
 			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
 			Message: fmt.Sprintf("agent enabled in %d containers: %v", len(instrumentedContainerNames), instrumentedContainerNames),
 		}, nil
+	} else if ok, memFp := memoryProfilingRolloutFingerprint(runtimeDetailsByContainer, effectiveConfig); ok {
+		// No tracing agent for any container, BUT memory profiling applies (a
+		// supported language + memory profiling enabled). Memory profiling is
+		// decoupled from tracing (the pods webhook injects the interposer/JFR/env
+		// before the tracing gate), so we must (1) enable pod-webhook processing and
+		// (2) publish a non-empty, memory-derived agents hash so the workload is
+		// rolled out once — exactly like a tracing agent. Without this, native
+		// C/C++/Rust and any "no tracing distro" workload was only profiled if
+		// someone manually restarted its pods. The tracing status stays whatever it
+		// aggregated to (e.g. NoAvailableAgent) — this only turns on the memory path.
+		ic.Spec.AgentInjectionEnabled = !rollbackOccurred
+		ic.Spec.PodManifestInjectionOptional = false // the interposer preload needs a restart
+		updateInstrumentationConfigAgentsMetaHash(ic, memFp)
+		return aggregatedCondition, nil
 	} else {
 		// if none of the containers are instrumented, we can set the status to false
 		// to signal to the webhook that those pods should not be processed.
@@ -352,6 +384,51 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		return aggregatedCondition, nil
 	}
+}
+
+// memoryProfilingRolloutFingerprint reports whether memory profiling applies to
+// this workload (memory profiling enabled AND at least one container runs a
+// language the memory profiler supports) and, if so, a stable fingerprint of the
+// memory-relevant state (per-container language+libc plus the native-restart
+// mode). The fingerprint is published as the agents hash so enabling memory
+// profiling rolls the workload once, and toggling the config re-rolls it.
+func memoryProfilingRolloutFingerprint(rd map[string]*odigosv1.RuntimeDetailsByContainer, cfg *common.OdigosConfiguration) (bool, string) {
+	if cfg == nil || !cfg.MemoryProfilingEnabled() {
+		return false, ""
+	}
+	supported := map[common.ProgrammingLanguage]bool{
+		common.GoProgrammingLanguage:         true,
+		common.JavaProgrammingLanguage:       true,
+		common.DotNetProgrammingLanguage:     true,
+		common.JavascriptProgrammingLanguage: true,
+		common.PythonProgrammingLanguage:     true,
+		common.RubyProgrammingLanguage:       true,
+		common.PhpProgrammingLanguage:        true,
+		common.CPlusPlusProgrammingLanguage:  true,
+		common.RustProgrammingLanguage:       true,
+	}
+	parts := make([]string, 0, len(rd))
+	for name, d := range rd {
+		if d == nil || !supported[d.Language] {
+			continue
+		}
+		libc := ""
+		if d.LibCType != nil {
+			libc = string(*d.LibCType)
+		}
+		parts = append(parts, name+":"+string(d.Language)+":"+libc)
+	}
+	if len(parts) == 0 {
+		return false, ""
+	}
+	sort.Strings(parts)
+	// The agents hash is propagated to a pod LABEL, so it MUST be a valid label
+	// value (alphanumeric plus -_. only). Hash the human-readable fingerprint to
+	// hex — a raw "memprof|nativeRestart=true|c:cplusplus:musl" string contains
+	// '|', '=' and ':' and would make every rolled pod invalid (FailedCreate).
+	raw := "nativeRestart=" + strconv.FormatBool(cfg.MemoryNativeRestartEnabled()) + "|" + strings.Join(parts, ",")
+	sum := sha256.Sum256([]byte(raw))
+	return true, "memprof-" + hex.EncodeToString(sum[:12])
 }
 
 // hasUninstrumentedPodsWithBackoff checks if the workload has pods in backoff state before instrumentation.

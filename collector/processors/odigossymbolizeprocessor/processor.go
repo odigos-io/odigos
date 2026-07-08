@@ -10,6 +10,8 @@ package odigossymbolizeprocessor
 
 import (
 	"context"
+	"fmt"
+	"path/filepath"
 	"sync"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -132,7 +134,19 @@ func (p *symbolizeProcessor) processProfiles(_ context.Context, pd pprofile.Prof
 			}
 			name, source, ok := p.resolver.resolve(pid, m, loc.Address())
 			if !ok {
-				continue
+				// Never drop a native frame. When no symbol resolves (stripped
+				// binary, debug info not reachable, not-yet-parsed, build-id
+				// mismatch) fall back to "module+0xoffset" so the sample
+				// survives and renders meaningfully instead of as "?"/being
+				// dropped by the backend's unsymbolized-native filter. The
+				// Mapping still carries the GNU build-id, so a later
+				// debuginfod/DWARF pass can replace this synthetic name with the
+				// real one (the "+0x" shape marks it as re-symbolizable).
+				name = syntheticName(m, loc.Address())
+				if name == "" {
+					continue
+				}
+				source = ""
 			}
 			loc.Lines().AppendEmpty().SetFunctionIndex(internFunc(name))
 			if source != "" {
@@ -179,6 +193,23 @@ func reachableLocations(rp pprofile.ResourceProfiles, stackTable pprofile.StackS
 		}
 	}
 	return out
+}
+
+// syntheticName is the never-drop fallback for a native frame no symbol could
+// name: "<module>+0x<file-offset>" (e.g. "libssl.so+0x3f12c"). The offset is the
+// address normalized to a file offset (so it is stable across PIE load bias),
+// matching how perf/pprof render unsymbolized native frames. Returns "" only when
+// there is no usable module name, in which case the caller drops the frame.
+func syntheticName(m moduleRef, addr uint64) string {
+	base := filepath.Base(m.Name)
+	if base == "" || base == "." || base == "/" {
+		return ""
+	}
+	off := addr
+	if m.MemoryStart != 0 && addr >= m.MemoryStart {
+		off = addr - m.MemoryStart + m.FileOffset
+	}
+	return fmt.Sprintf("%s+0x%x", base, off)
 }
 
 // mappingRef builds the moduleRef for a Location, including the GNU build-id

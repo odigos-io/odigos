@@ -103,7 +103,7 @@ receivers:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.148.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.148.0
   - gomod: github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.148.0
-  - gomod: go.opentelemetry.io/ebpf-profiler v0.0.202614
+  - gomod: go.opentelemetry.io/ebpf-profiler v0.0.202631
     import: go.opentelemetry.io/ebpf-profiler/collector
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver v0.148.0
 
@@ -151,3 +151,8 @@ replaces:
   - github.com/odigos-io/odigos/common => ../../common
   - go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
   - github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension => ../extension/odigosconfigk8sextension
+  # memprof: resolve the ebpf-profiler import to the internal cat2 fork, and the
+  # custom jfr-parser (OldObjectSample) to its in-tree vendored copy, so OCB
+  # regeneration reproduces the committed go.mod instead of the upstream vanity.
+  - go.opentelemetry.io/ebpf-profiler => github.com/odigos-io/odigos-ebpf-profiler v0.0.202631
+  - github.com/grafana/jfr-parser => ./third_party/jfr-parser

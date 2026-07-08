@@ -7,12 +7,19 @@ on:
 jobs:
   verify-collector-ocb:
     runs-on: ubuntu-latest
+    # OCB regeneration runs `go mod tidy`, which must resolve the internal
+    # odigos-ebpf-profiler fork (memory profiling). GOPRIVATE + the org bot token
+    # provide access; the default GITHUB_TOKEN cannot read sibling internal repos.
+    env:
+      GOPRIVATE: github.com/odigos-io
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
           go-version: "1.26.4"
+      - name: Authenticate to internal odigos modules
+        run: git config --global url."https://${{ secrets.RELEASE_BOT_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - name: Generate collector with ocb
         working-directory: ./collector
         run: "make genodigoscol generate"

@@ -31,4 +31,4 @@ yalc.lock
 # CLI embedded Helm charts (generated during build)
 cli/pkg/helm/embedded/*.tgz
 
-kubeconfig
+kubeconfigcollector/memprof/

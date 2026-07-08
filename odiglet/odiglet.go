@@ -262,6 +262,20 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		os.Exit(-1)
 	}
 
+	// Deterministically stage the native memprof agent libs (traversable 0755 dir +
+	// canonical libjemalloc.so name) so non-root C/C++/Rust apps can LD_PRELOAD them.
+	// Non-fatal: memory profiling degrades, the rest of odiglet must still come up.
+	if err := fs.EnsureMemprofAgentLibs(k8sconsts.OdigletContainerAgentDirectory, k8sconsts.OdigosAgentsDirectory); err != nil {
+		logger.Error("Failed to stage memprof agent libs", "err", err)
+	}
+
+	// Make every agent dir traversable so security-hardened (runAsNonRoot) workloads
+	// can read the agents we mount in — a 0644 agent dir crashes a non-root JVM
+	// ("JAR manifest missing") or breaks LD_PRELOAD even with the file present.
+	if err := fs.EnsureAgentDirsTraversable(k8sconsts.OdigosAgentsDirectory); err != nil {
+		logger.Error("Failed to make agent dirs traversable", "err", err)
+	}
+
 	nn, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
 	if !ok {
 		logger.Error("Failed to load env", "err", fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar))
