@@ -1518,8 +1518,8 @@ metricsSources:
     #   span metrics collector settings.
     #   agents have different capabilities and support different configuration options.
     # @schema
-    spanMetrics:
-      enabled: true
+    # spanMetrics:
+    #   enabled: true
 
     # @schema
     # description: Configuration for runtime metrics collection.
