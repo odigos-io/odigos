@@ -16,6 +16,7 @@ auto_generated: true
 - [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)
 - [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
 - [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
+- [OdigosCloudConnector](#odigos-io-v1alpha1-OdigosCloudConnector)
 - [Processor](#odigos-io-v1alpha1-Processor)
 - [Sampling](#odigos-io-v1alpha1-Sampling)
 - [Source](#odigos-io-v1alpha1-Source)
@@ -303,6 +304,57 @@ auto_generated: true
 </td>
 <td>
 <a href="#odigos-io-v1alpha1-InstrumentationRuleStatus"><code>InstrumentationRuleStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `OdigosCloudConnector` <a id="odigos-io-v1alpha1-OdigosCloudConnector"></a>
+
+<p>OdigosCloudConnector is the generic installation desired-state for a cloud/SaaS connector runtime
+(platformType = connector). One OdigosCloudConnector maps to one connector Deployment that owns one
+provider account boundary.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>OdigosCloudConnector</code></td></tr>
+
+
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-OdigosCloudConnectorSpec"><code>OdigosCloudConnectorSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-OdigosCloudConnectorStatus"><code>OdigosCloudConnectorStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -687,6 +739,434 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <td>
    <span class="text-muted">No description provided.</span>
    </td>
+</tr>
+</tbody>
+</table>
+
+## `CloudConnectorAccount` <a id="odigos-io-v1alpha1-CloudConnectorAccount"></a>
+
+
+**Appears in:**
+
+- [OdigosCloudConnectorSpec](#odigos-io-v1alpha1-OdigosCloudConnectorSpec)
+
+<p>CloudConnectorAccount identifies the external provider account boundary a connector runtime owns:
+one AWS account / Azure subscription / GCP project / SaaS tenant.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>id</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Provider account/subscription/project/tenant identifier (e.g. an AWS account id).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>displayName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Human-friendly account name shown in the UI.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CloudConnectorComputePlatformCapability` <a id="odigos-io-v1alpha1-CloudConnectorComputePlatformCapability"></a>
+
+
+**Appears in:**
+
+- [OdigosCloudConnectorSpec](#odigos-io-v1alpha1-OdigosCloudConnectorSpec)
+
+<p>CloudConnectorComputePlatformCapability is the customer's allow-list entry for one managed-environment
+type (a compute platform, e.g. &quot;aws.ecs-cluster&quot;, &quot;aws.eks&quot;, &quot;aws.ec2&quot;): whether the connector may
+discover the environment and/or install a separate Odigos agent onto it. Installation records intent —
+it only runs once the provider's connector spec implements it.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>type</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Type is the provider connector spec type key (e.g. &quot;aws.eks&quot;).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>discovery</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Discovery allows the connector to discover compute platforms of this type.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>installation</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Installation allows the connector to install a separate Odigos agent onto a discovered compute
+platform of this type (e.g. the Odigos ecs-agent onto an EC2-backed ECS cluster).</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CloudConnectorCredentialsSecretRef` <a id="odigos-io-v1alpha1-CloudConnectorCredentialsSecretRef"></a>
+
+
+**Appears in:**
+
+- [OdigosCloudConnectorSpec](#odigos-io-v1alpha1-OdigosCloudConnectorSpec)
+
+<p>CloudConnectorCredentialsSecretRef references the Kubernetes Secret holding provider credentials.
+Credentials are never stored in the CRD itself (see the security model).</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>name</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Name of the Secret in the connector's namespace.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CloudConnectorDiscovery` <a id="odigos-io-v1alpha1-CloudConnectorDiscovery"></a>
+
+
+**Appears in:**
+
+- [OdigosCloudConnectorSpec](#odigos-io-v1alpha1-OdigosCloudConnectorSpec)
+
+<p>CloudConnectorDiscovery configures how the runtime discovers provider resources.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>refreshInterval</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Duration"><code>meta/v1.Duration</code></a>
+</td>
+<td>
+   <p>How often the runtime re-scans the provider for inventory changes (e.g. &quot;10m&quot;).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>selectors</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CloudConnectorDiscoverySelectors"><code>CloudConnectorDiscoverySelectors</code></a>
+</td>
+<td>
+   <p>Selectors narrows discovery (e.g. only resources carrying specific tags).</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CloudConnectorDiscoverySelectors` <a id="odigos-io-v1alpha1-CloudConnectorDiscoverySelectors"></a>
+
+
+**Appears in:**
+
+- [CloudConnectorDiscovery](#odigos-io-v1alpha1-CloudConnectorDiscovery)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>tags</code> <B>[Required]</B>
+</td>
+<td>
+<code>map[string]string</code>
+</td>
+<td>
+   <p>Tags restricts discovery to provider resources carrying all of these tag key/values.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CloudConnectorPhase` <a id="odigos-io-v1alpha1-CloudConnectorPhase"></a>
+
+(Alias of `string`)
+
+**Appears in:**
+
+- [OdigosCloudConnectorStatus](#odigos-io-v1alpha1-OdigosCloudConnectorStatus)
+
+<p>CloudConnectorPhase is a coarse, cached lifecycle phase for the connector runtime. It is a cache of
+runtime-authoritative state computed by the connector-runtime controller; the connector's Postgres
+schema and runtime API remain authoritative.</p>
+
+
+
+## `CloudConnectorProviderIdentity` <a id="odigos-io-v1alpha1-CloudConnectorProviderIdentity"></a>
+
+
+**Appears in:**
+
+- [OdigosCloudConnectorStatus](#odigos-io-v1alpha1-OdigosCloudConnectorStatus)
+
+<p>CloudConnectorProviderIdentity records the verified provider identity for the account.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>accountId</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>displayName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `CloudConnectorRuntime` <a id="odigos-io-v1alpha1-CloudConnectorRuntime"></a>
+
+
+**Appears in:**
+
+- [OdigosCloudConnectorSpec](#odigos-io-v1alpha1-OdigosCloudConnectorSpec)
+
+<p>CloudConnectorRuntime describes the connector workload the connector-runtime controller manages.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>image</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Container image for the provider connector runtime. When empty, the controller resolves a
+default from its configured catalog for the provider/connectorType.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicas</code> <B>[Required]</B>
+</td>
+<td>
+<code>int32</code>
+</td>
+<td>
+   <p>Number of runtime replicas. One runtime owns one account boundary; defaults to 1.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resources</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#resourcerequirements-v1-core"><code>core/v1.ResourceRequirements</code></a>
+</td>
+<td>
+   <p>Resource requirements for the runtime container.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CloudConnectorRuntimeStatus` <a id="odigos-io-v1alpha1-CloudConnectorRuntimeStatus"></a>
+
+
+**Appears in:**
+
+- [OdigosCloudConnectorStatus](#odigos-io-v1alpha1-OdigosCloudConnectorStatus)
+
+<p>CloudConnectorRuntimeStatus mirrors runtime-authoritative liveness into the CRD status cache.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>workloadName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>WorkloadName is the connector Deployment name created by the controller.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>namespace</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Namespace the connector workload runs in.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>image</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Image currently running.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>version</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Version reported by the runtime at registration.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastSeenAt</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>LastSeenAt is the last heartbeat time mirrored from the platform heartbeat table.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>message</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Message is a human-readable runtime status detail.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CloudConnectorWorkloadCapability` <a id="odigos-io-v1alpha1-CloudConnectorWorkloadCapability"></a>
+
+
+**Appears in:**
+
+- [OdigosCloudConnectorSpec](#odigos-io-v1alpha1-OdigosCloudConnectorSpec)
+
+<p>CloudConnectorWorkloadCapability is the customer's allow-list entry for one directly-instrumentable
+resource type (a workload, e.g. &quot;aws.lambda&quot;, &quot;aws.fargate-task&quot;): whether the connector may discover
+and/or instrument that type. It records intent — instrumentation only runs once the provider's connector
+spec implements it; until then the connector simply knows it is allowed.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>type</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Type is the provider connector spec type key (e.g. &quot;aws.lambda&quot;).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>discovery</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Discovery allows the connector to discover workloads of this type.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>instrumentation</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Instrumentation allows the connector to instrument workloads of this type directly.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -2885,6 +3365,209 @@ will be the highest possible, but at most this value.</p>
    <p>optional free-form text field that allows you to attach notes
 for future context and maintenance.
 users can write why this rule was added, observations, document considerations, etc.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `OdigosCloudConnectorSpec` <a id="odigos-io-v1alpha1-OdigosCloudConnectorSpec"></a>
+
+
+**Appears in:**
+
+- [OdigosCloudConnector](#odigos-io-v1alpha1-OdigosCloudConnector)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>provider</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Provider family this connector targets (e.g. &quot;aws&quot;, &quot;azure&quot;, &quot;gcp&quot;). Kept as a free-form string
+so new providers need no API change.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>connectorType</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>ConnectorType selects the specific connector implementation/image family. Usually equals Provider.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>displayName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>DisplayName is the human-friendly connector name shown in the UI.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>account</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CloudConnectorAccount"><code>CloudConnectorAccount</code></a>
+</td>
+<td>
+   <p>Account is the provider account boundary this connector owns.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>credentialsSecretRef</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CloudConnectorCredentialsSecretRef"><code>CloudConnectorCredentialsSecretRef</code></a>
+</td>
+<td>
+   <p>CredentialsSecretRef references the Secret holding provider credentials.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>workloads</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CloudConnectorWorkloadCapability"><code>[]CloudConnectorWorkloadCapability</code></a>
+</td>
+<td>
+   <p>Workloads is the customer's per-type allow-list for directly-instrumentable resources: what the
+connector may do (discovery and/or instrumentation) per workload type (e.g. aws.lambda,
+aws.fargate-task). The connector scans every region enabled in the account; there is no per-connector
+region selection.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>computePlatforms</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CloudConnectorComputePlatformCapability"><code>[]CloudConnectorComputePlatformCapability</code></a>
+</td>
+<td>
+   <p>ComputePlatforms is the customer's per-type allow-list for managed environments: what the connector
+may do (discovery and/or installation) per compute-platform type (e.g. aws.ecs-cluster, aws.eks,
+aws.ec2).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runtime</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CloudConnectorRuntime"><code>CloudConnectorRuntime</code></a>
+</td>
+<td>
+   <p>Runtime configures the connector workload (image/replicas/resources).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>discovery</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CloudConnectorDiscovery"><code>CloudConnectorDiscovery</code></a>
+</td>
+<td>
+   <p>Discovery configures provider resource discovery behavior.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `OdigosCloudConnectorStatus` <a id="odigos-io-v1alpha1-OdigosCloudConnectorStatus"></a>
+
+
+**Appears in:**
+
+- [OdigosCloudConnector](#odigos-io-v1alpha1-OdigosCloudConnector)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>phase</code>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CloudConnectorPhase"><code>CloudConnectorPhase</code></a>
+</td>
+<td>
+   <p>Phase is a coarse cached lifecycle phase.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastSyncedAt</code>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>LastSyncedAt marks the freshness of this status cache.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>observedGeneration</code>
+</td>
+<td>
+<code>int64</code>
+</td>
+<td>
+   <p>ObservedGeneration is the spec generation the controller last reconciled.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runtime</code>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CloudConnectorRuntimeStatus"><code>CloudConnectorRuntimeStatus</code></a>
+</td>
+<td>
+   <p>Runtime mirrors runtime-authoritative liveness.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>providerIdentity</code>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CloudConnectorProviderIdentity"><code>CloudConnectorProviderIdentity</code></a>
+</td>
+<td>
+   <p>ProviderIdentity records the verified provider identity.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>conditions</code>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Conditions represent the latest available observations of the connector's state.
+Known condition types: RuntimeDeploymentReady, SchemaReady, RuntimeRegistered, Authenticated,
+DiscoveryReady, CleanupFailed.</p>
 </td>
 </tr>
 </tbody>
