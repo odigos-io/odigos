@@ -125,3 +125,5 @@ sync-helm-crd:
 	@echo "Syncing CRD yamls to Helm repo"
 	@rm ../helm/odigos/templates/crds/* # remove existing files so we don't get leftovers
 	@cp -r config/crd/bases/* ../helm/odigos/templates/crds/
+	@echo "Syncing cloud connector CRD to the odigos-central chart (guarded by connectors.enabled)"
+	@{ echo '{{- if (include "connectors.enabled" .) }}'; cat config/crd/bases/odigos.io_odigoscloudconnectors.yaml; echo '{{- end }}'; } > ../helm/odigos-central/templates/crds/odigoscloudconnectors.yaml
