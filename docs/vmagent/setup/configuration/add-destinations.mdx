@@ -47,12 +47,18 @@ There are two ways to add [destinations](/vmagent/overview#key-concepts) to the 
       Set each field according to your destination type. See [Destinations](/enterprise/backends-overview) 
       for field details and requirements.
 
-      <Frame caption="Example of an [OTLP http](/enterprise/backends-overview) destination">
+      <Frame
+        caption="Example of an [OTLP http](/enterprise/backends-overview) destination"
+        style={{
+          width: "450px",
+          margin: "0 auto"
+        }}
+      >
         <img 
           src="../../../images/vmagent/destination/odictl-destination-configure.png" 
           alt="Configure Destination"
           style={{    
-            width: "700px",
+            width: "450px",
             height: "auto",
             display: "block",
             margin: "0 auto"
@@ -60,23 +66,10 @@ There are two ways to add [destinations](/vmagent/overview#key-concepts) to the 
         />
       </Frame>
 
-      Fill in the required fields. Press `Tab` to navigate to `Apply`, then press `Enter` to save your destination.
+      Fill in the required fields, then press `Ctrl+S` to save your destination.
 
     </Step>
-    <Step title="Finish adding the destination">
-
-      Select `OK`.
-
-      <img 
-        src="../../../images/vmagent/destination/odictl-destination-finish.png" 
-        alt="Complete Adding Destination"
-        style={{    
-          width: "500px",
-          height: "auto",
-          display: "block",
-          margin: "0 auto"
-        }}
-      />
+    <Step title="Verify the destination">
 
       Your destination appears in the `Destinations` section in `odictl`.
 
