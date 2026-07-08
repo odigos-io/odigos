@@ -312,7 +312,7 @@ func splitPathToSegments(path string) ([]string, bool) {
 // calculateTemplatedUrlFromAttrWithRules calculates a templated URL using the given rules.
 // returns the templated path and a method indicating how it was produced.
 // a nil method means templatization was skipped and the route attribute should not be set.
-func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcommon.Map, config workloadUrlTemplatizationConfig, spanKind ptrace.SpanKind) (string, *odigosattributes.UrlTemplatizationMethod) {
+func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcommon.Map, config workloadUrlTemplatizationConfig, spanKind ptrace.SpanKind) (string, *odigosattributes.UrlTemplatizationResult) {
 	urlPath, urlPathFound := resolveUrlPath(attr)
 	if !urlPathFound {
 		p.logger.Debug("calculateTemplatedUrlFromAttrWithRules: no url/path in attributes, skip templatization")
@@ -322,20 +322,20 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 	// normalize paths that are all slashes (e.g. "//", "///") to "/"
 	if strings.Trim(urlPath, "/") == "" {
 		p.logger.Debug("applyTemplatizationOnPath: all-slashes normalized to /", zap.String("path", urlPath))
-		return "/", odigosattributes.UrlTemplatizationMethodPathNormalization.Ptr()
+		return "/", odigosattributes.UrlTemplatizationResultPathNormalization.Ptr()
 	}
 
 	inputPathSegments, hadLeadingSlash := splitPathToSegments(urlPath)
 	if len(inputPathSegments) == 1 && inputPathSegments[0] == "" {
 		// if the path is empty, we can't generate a templated url
-		return "/", odigosattributes.UrlTemplatizationMethodPathNormalization.Ptr()
+		return "/", odigosattributes.UrlTemplatizationResultPathNormalization.Ptr()
 	}
 
 	// attempt the rules if we have any
 	if len(config.parsedRules) > 0 {
 		templatedUrl, matched := applyCustomRulesForTemplatization(inputPathSegments, config.parsedRules, hadLeadingSlash)
 		if matched {
-			return templatedUrl, odigosattributes.UrlTemplatizationMethodCustomRule.Ptr()
+			return templatedUrl, odigosattributes.UrlTemplatizationResultCustomRule.Ptr()
 		}
 	}
 
@@ -375,11 +375,11 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 			// if the path has a leading slash, we need to add it back
 			templatedPath = "/" + templatedPath
 		}
-		return templatedPath, odigosattributes.UrlTemplatizationMethodDefaultHeuristic.Ptr()
+		return templatedPath, odigosattributes.UrlTemplatizationResultDefaultHeuristic.Ptr()
 	}
 
 	p.logger.Debug("applyTemplatizationOnPath: no match, path unchanged", zap.String("path", urlPath))
-	return urlPath, odigosattributes.UrlTemplatizationMethodUnchanged.Ptr()
+	return urlPath, odigosattributes.UrlTemplatizationResultStaticPath.Ptr()
 }
 
 func updateHttpSpanName(span ptrace.Span, httpMethod string, templatedUrl string) {
@@ -420,14 +420,14 @@ func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod
 		return
 	}
 
-	templatedUrl, templatizationMethod := p.calculateTemplatedUrlFromAttrWithRules(attr, config, span.Kind())
-	if templatizationMethod == nil {
+	templatedUrl, templatizationResult := p.calculateTemplatedUrlFromAttrWithRules(attr, config, span.Kind())
+	if templatizationResult == nil {
 		return
 	}
 
 	// set the templated url in the target attribute and update the span name if needed
 	attr.PutStr(targetAttribute, templatedUrl)
-	attr.PutStr(odigosattributes.UrlTemplatizationMethodAttribute, string(*templatizationMethod))
+	attr.PutStr(odigosattributes.UrlTemplatizationResultAttribute, string(*templatizationResult))
 	updateHttpSpanName(span, httpMethod, templatedUrl)
 }
 
