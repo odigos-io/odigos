@@ -107,10 +107,21 @@ input SourcesScopesInput {
 
 # ---- Head sampling operation matchers (used by noisy operations) ----
 
+type QueryParamMatcher {
+  name: String!
+  valueExact: String
+}
+
+input QueryParamMatcherInput {
+  name: String!
+  valueExact: String
+}
+
 type HeadSamplingHttpServerMatcher {
   route: String
   routePrefix: String
   method: String
+  queryParams: [QueryParamMatcher!]
 }
 
 type HeadSamplingHttpClientMatcher {
@@ -129,6 +140,7 @@ input HeadSamplingHttpServerMatcherInput {
   route: String
   routePrefix: String
   method: String
+  queryParams: [QueryParamMatcherInput!]
 }
 
 input HeadSamplingHttpClientMatcherInput {
