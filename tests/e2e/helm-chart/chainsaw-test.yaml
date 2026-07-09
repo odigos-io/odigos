@@ -11,6 +11,14 @@ spec:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
 
+    - name: Verify Central enterprise registry pull secret rendering
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              P="../../.."
+              ./check-central-registry-pull-secret.sh "$P"
+
     - name: Install - Simple Demo Apps
       try:
         - apply:
