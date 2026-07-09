@@ -84,6 +84,20 @@ func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
+		Named("clustercollector-receivers").
+		For(&odigosv1.Receiver{}).
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		Complete(&ReceiverReconciler{
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
 		Named("clustercollector-secret").
 		For(&corev1.Secret{}).
 		// we need to handle secrets only when they are updated.

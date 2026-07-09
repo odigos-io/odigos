@@ -28,6 +28,17 @@ type ProcessorConfigurer interface {
 	GetOrderHint() int
 }
 
+type ReceiverConfigurer interface {
+	SignalSpecific
+	GetType() string
+	// optional suffix to form a named instance key "{type}/{receiverName}"
+	GetReceiverName() string
+	// expected to be unique across all instances used in collector config, [a-zA-Z0-9-_]+
+	GetID() string
+	GetConfig() (GenericMap, error)
+	IsDisabled() bool
+}
+
 type GenericMap map[string]interface{}
 
 type Config struct {

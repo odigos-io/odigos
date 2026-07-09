@@ -121,6 +121,7 @@ func LogsConfig(nodeCG *odigosv1.CollectorsGroup, opts LogsConfigOptions) config
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
 
 	receivers, pipelineReceivers := getReceivers(opts.Logger, opts.Sources, opts.OdigosNamespace)
+	pipelineReceivers = append(pipelineReceivers, opts.ManifestReceiverNames...)
 
 	return config.Config{
 		Receivers: receivers,

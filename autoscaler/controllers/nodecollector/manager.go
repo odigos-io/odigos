@@ -101,5 +101,21 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("nodecollector-receiver").
+		For(&odigosv1.Receiver{}).
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		Complete(&ReceiverReconciler{
+			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
+				Client:          mgr.GetClient(),
+				scheme:          mgr.GetScheme(),
+				odigosNamespace: odigosNamespace,
+			},
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

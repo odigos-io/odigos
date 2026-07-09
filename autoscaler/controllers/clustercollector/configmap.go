@@ -147,7 +147,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 	return nil
 }
 
-func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) ([]odigoscommon.ObservabilitySignal, error) {
+func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, allReceivers *odigosv1.ReceiverList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) ([]odigoscommon.ObservabilitySignal, error) {
 	logger := commonlogger.FromContext(ctx)
 
 	dataStreams, err := calculateDataStreams(enabledDests)
@@ -157,6 +157,12 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	}
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
+
+	gatewayReceivers := common.FilterReceivers(allReceivers, odigosv1.CollectorsGroupRoleClusterGateway)
+	receiversResults := config.CrdReceiverToConfig(common.ToReceiverConfigurerArray(gatewayReceivers))
+	for name, err := range receiversResults.Errs {
+		logger.Error(err, "failed to convert receiver manifest to config", "receiver", name)
+	}
 
 	odigosConfigExtensionName := k8sconsts.OdigosConfigK8sExtensionType
 	gatewayOptions := pipelinegen.GatewayConfigOptions{
@@ -209,6 +215,32 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		common.ToExporterConfigurerArray(enabledDests),
 		common.ToProcessorConfigurerArray(processors),
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
+			// inject additional receivers from Receiver CRDs into the gateway's root signal pipelines
+			if len(receiversResults.ReceiversConfig.Receivers) > 0 {
+				if c.Receivers == nil {
+					c.Receivers = config.GenericMap{}
+				}
+				for k, v := range receiversResults.ReceiversConfig.Receivers {
+					c.Receivers[k] = v
+				}
+				for _, pipelineName := range signalsRootPipelines {
+					pipeline, ok := c.Service.Pipelines[pipelineName]
+					if !ok {
+						continue
+					}
+					var extra []string
+					switch {
+					case strings.HasPrefix(pipelineName, "metrics"):
+						extra = receiversResults.MetricsReceivers
+					case strings.HasPrefix(pipelineName, "traces"):
+						extra = receiversResults.TracesReceivers
+					case strings.HasPrefix(pipelineName, "logs"):
+						extra = receiversResults.LogsReceivers
+					}
+					pipeline.Receivers = append(pipeline.Receivers, extra...)
+					c.Service.Pipelines[pipelineName] = pipeline
+				}
+			}
 			// Creating a metric pipeline (throughput metrics) for the gateway to be sent to the UI
 			if err := addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines); err != nil {
 				return err
