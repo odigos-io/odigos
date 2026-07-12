@@ -1,5 +1,5 @@
 // Most CRUD/data hooks have been removed in favor of `useOdigosApi()` from
-// `@odigos/ui-kit/contexts/odigos-api`. The hooks that remain in webapp are
+// `@odigos/ui-kit/contexts`. The hooks that remain in webapp are
 // host-only concerns that don't fit the kit's API context model:
 //   - auth/CSRF (`useCSRF`) — bootstraps the kit's Apollo client.
 //   - long-lived listeners (`useSSE`, `useTokenTracker`) — drive multiple

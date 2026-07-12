@@ -31,7 +31,7 @@ import {
   type OdigosApiOperations,
   type OperationContext,
   type UpdateActionVars,
-} from '@odigos/ui-kit/contexts/odigos-api';
+} from '@odigos/ui-kit/contexts';
 import type {
   Action,
   EffectiveConfig,
