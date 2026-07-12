@@ -173,7 +173,17 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 			}
 
 			for _, instrumentationInstance := range podIIs {
-				if instrumentationInstance.Status.Healthy == nil {
+				hasUnhealthyComponent := false
+				for _, c := range instrumentationInstance.Status.Components {
+					if c.Healthy != nil && !*c.Healthy {
+						hasUnhealthyComponent = true
+						break
+					}
+				}
+
+				if hasUnhealthyComponent {
+					numUnhealthyProcesses++
+				} else if instrumentationInstance.Status.Healthy == nil {
 					numStartingProcesses++
 				} else if *instrumentationInstance.Status.Healthy {
 					numHealthyProcesses++
@@ -186,7 +196,7 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 
 	// check for any unhealthy first, regardless of any other conditions
 	if numUnhealthyProcesses > 0 {
-		reasonStr := string(status.ProcessesHealthStatusReasonSomeUnhealthy)
+		reasonStr := string(status.ProcessesHealthStatusReasonOdigosUnhealthyInSomeProcesses)
 		return &model.DesiredConditionStatus{
 			Name:       status.ProcessesHealthStatusName,
 			Status:     model.DesiredStateProgressFailure,
