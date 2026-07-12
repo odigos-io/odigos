@@ -5,7 +5,7 @@
  * webapp's GraphQL backend.
  *
  * Owns:
- *   1. CSRF token bootstrap (renders a `<FadeLoader />` until ready, then
+ *   1. CSRF token bootstrap (renders a `<Loader />` until ready, then
  *      injects the token via `apolloConfig.csrfHeader`).
  *   2. GraphQL operation map — every kit operation maps to a `gql` document
  *      from `@/graphql`. No `transformVariables` / `transformResult` needed
@@ -19,7 +19,7 @@
 import React, { type FC, type PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
 import { useConfig, useCSRF } from '@/hooks';
 import { API, INITIAL_CONTEXT, IS_LOCAL } from '@/utils';
-import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
+import { CenterThis, Loader } from '@odigos/ui-kit/components';
 import {
   OdigosApiProvider,
   type CreateActionVars,
@@ -460,7 +460,7 @@ const OdigosApiAdapter: FC<AdapterProps> = ({ children }) => {
   if (!ready) {
     return (
       <CenterThis style={{ height: '100%' }}>
-        <FadeLoader scale={2} />
+        <Loader withSpinnerOld scaleSpinnerOld={2} />
       </CenterThis>
     );
   }
