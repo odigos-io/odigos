@@ -51,11 +51,11 @@ We've modeled our benchmark tests against a "typical" cluster, which has:
 
 - 120 nodes
 - 500 sources (=span emitters)
+- 2 different service 
 - Span is ~1,918B, contains: 
     - 9 HTTP semconv attributes
-    - 2 different service names
     - 24 random attributes
-- Each span has a server span
+- Each trace has a server span and a client span
 - 100 spans per request
 - A mock destination with a 200ms response time
 

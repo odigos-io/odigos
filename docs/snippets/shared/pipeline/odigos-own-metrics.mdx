@@ -21,21 +21,23 @@ Separately from the metrics store, collectors always export traffic-size metrics
 
 The metrics store is disabled by default to keep the Odigos footprint minimal on small clusters.
 
-```yaml
-# values.yaml
-ownTelemetry:
-  metricsStore:
-    disabled: false
-```
-
-For Helm installs or upgrades:
-
-```bash
-helm upgrade --install odigos odigos/odigos \
-  --namespace odigos-system \
-  --reuse-values \
-  --set ownTelemetry.metricsStore.disabled=false
-```
+<Tabs>
+  <Tab title="Helm yaml">
+    ```yaml
+    ownTelemetry:
+      metricsStore:
+        disabled: false
+    ```
+  </Tab>
+  <Tab title="Helm command">
+    ```bash
+    helm upgrade --install odigos odigos/odigos \
+      --namespace odigos-system \
+      --reuse-values \
+      --set ownTelemetry.metricsStore.disabled=false
+    ```
+  </Tab>
+</Tabs>
 
 ## Configuration options
 
@@ -47,7 +49,7 @@ See [Odigos own metrics settings](/api-reference/odigos.io.v1alpha1#odigos-io-v1
 
 ## Resource footprint
 
-The bundled VictoriaMetrics instance uses roughly:
+The bundled VictoriaMetrics instance requests roughly:
 
 | Resource | Request | Limit |
 |----------|---------|-------|
