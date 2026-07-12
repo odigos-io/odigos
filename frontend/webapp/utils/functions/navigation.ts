@@ -1,6 +1,6 @@
 import { ROUTES } from '../constants';
 import { SVG } from '@odigos/ui-kit/types';
-import { NavbarProps } from '@odigos/ui-kit/components/v2';
+import { NavbarProps } from '@odigos/ui-kit/components';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { OverviewIcon, PipelineCollectorIcon, SamplingIcon, ServiceMapIcon, SettingsIcon } from '@odigos/ui-kit/icons';
 
