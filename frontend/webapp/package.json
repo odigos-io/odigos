@@ -36,7 +36,7 @@
     "cross-env": "^10.1.0",
     "cypress": "^15.17.0",
     "eslint": "9.39.2",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "16.2.10",
     "postcss": "^8.5.15",
     "typescript": "5.9.3"
   }
