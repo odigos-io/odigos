@@ -19,6 +19,7 @@ import (
 	commonapi "github.com/odigos-io/odigos/common/api"
 	commonactionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/common/collector"
+	"github.com/odigos-io/odigos/common/odigosattributes"
 )
 
 // Ensure urlTemplateProcessor implements the callback interface used by the extension.
@@ -309,37 +310,38 @@ func splitPathToSegments(path string) ([]string, bool) {
 }
 
 // calculateTemplatedUrlFromAttrWithRules calculates a templated URL using the given rules.
-// returns the templated path, an boolean to indicate if templatization was applied.
-func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcommon.Map, config workloadUrlTemplatizationConfig, spanKind ptrace.SpanKind) (string, bool) {
+// returns the templated path and a method indicating how it was produced.
+// a nil method means templatization was skipped and the route attribute should not be set.
+func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcommon.Map, config workloadUrlTemplatizationConfig, spanKind ptrace.SpanKind) (string, *odigosattributes.UrlTemplatizationResult) {
 	urlPath, urlPathFound := resolveUrlPath(attr)
 	if !urlPathFound {
 		p.logger.Debug("calculateTemplatedUrlFromAttrWithRules: no url/path in attributes, skip templatization")
-		return "", false
+		return "", nil
 	}
 
-	// M7: normalize paths that are all slashes (e.g. "//", "///") to "/"
+	// normalize paths that are all slashes (e.g. "//", "///") to "/"
 	if strings.Trim(urlPath, "/") == "" {
 		p.logger.Debug("applyTemplatizationOnPath: all-slashes normalized to /", zap.String("path", urlPath))
-		return "/", true
+		return "/", odigosattributes.UrlTemplatizationResultPathNormalization.Ptr()
 	}
 
 	inputPathSegments, hadLeadingSlash := splitPathToSegments(urlPath)
 	if len(inputPathSegments) == 1 && inputPathSegments[0] == "" {
 		// if the path is empty, we can't generate a templated url
-		return "/", true // always set a leading slash even if missing
+		return "/", odigosattributes.UrlTemplatizationResultPathNormalization.Ptr()
 	}
 
 	// attempt the rules if we have any
 	if len(config.parsedRules) > 0 {
 		templatedUrl, matched := applyCustomRulesForTemplatization(inputPathSegments, config.parsedRules, hadLeadingSlash)
 		if matched {
-			return templatedUrl, true
+			return templatedUrl, odigosattributes.UrlTemplatizationResultCustomRule.Ptr()
 		}
 	}
 
 	// skip default templatization if the config is unset or disabled.
 	if config.defaultTemplatizationConfig == nil || config.defaultTemplatizationConfig.Disabled {
-		return "", false
+		return "", nil
 	}
 
 	// check for malicious bots routes so not to templatize them.
@@ -352,14 +354,14 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 			if skipPolicyConfig.SkipForNonSuccessCodes {
 				if statusCode < 200 || statusCode >= 300 {
 					p.logger.Debug("applyTemplatizationOnPath: non-success http status code on span, skip default templatization", zap.Int("status_code", statusCode))
-					return "", false
+					return "", nil
 				}
 			}
 
 			if len(skipPolicyConfig.SkipHttpStatusCodes) > 0 {
 				if slices.Contains(skipPolicyConfig.SkipHttpStatusCodes, statusCode) {
 					p.logger.Debug("applyTemplatizationOnPath: http status code on span is in skip list, skip default templatization", zap.Int("status_code", statusCode))
-					return "", false
+					return "", nil
 				}
 			}
 		}
@@ -373,11 +375,11 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 			// if the path has a leading slash, we need to add it back
 			templatedPath = "/" + templatedPath
 		}
-		return templatedPath, true
+		return templatedPath, odigosattributes.UrlTemplatizationResultDefaultHeuristic.Ptr()
 	}
 
 	p.logger.Debug("applyTemplatizationOnPath: no match, path unchanged", zap.String("path", urlPath))
-	return urlPath, true
+	return urlPath, odigosattributes.UrlTemplatizationResultStaticPath.Ptr()
 }
 
 func updateHttpSpanName(span ptrace.Span, httpMethod string, templatedUrl string) {
@@ -418,13 +420,14 @@ func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod
 		return
 	}
 
-	templatedUrl, templatizationApplied := p.calculateTemplatedUrlFromAttrWithRules(attr, config, span.Kind())
-	if !templatizationApplied {
+	templatedUrl, templatizationResult := p.calculateTemplatedUrlFromAttrWithRules(attr, config, span.Kind())
+	if templatizationResult == nil {
 		return
 	}
 
 	// set the templated url in the target attribute and update the span name if needed
 	attr.PutStr(targetAttribute, templatedUrl)
+	attr.PutStr(odigosattributes.UrlTemplatizationResultAttribute, string(*templatizationResult))
 	updateHttpSpanName(span, httpMethod, templatedUrl)
 }
 

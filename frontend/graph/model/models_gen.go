@@ -214,15 +214,15 @@ type ComponentLogLevelsConfig struct {
 
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
-	APITokens            []*APIToken            `json:"apiTokens"`
+	Actions              []*Action              `json:"actions"`
+	DataStreams          []*DataStream          `json:"dataStreams"`
+	Destinations         []*Destination         `json:"destinations"`
+	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
 	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
 	Sources              []*K8sActualSource     `json:"sources"`
 	Source               *K8sActualSource       `json:"source"`
-	Destinations         []*Destination         `json:"destinations"`
-	Actions              []*Action              `json:"actions"`
-	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
-	DataStreams          []*DataStream          `json:"dataStreams"`
+	APITokens            []*APIToken            `json:"apiTokens"`
 }
 
 type Condition struct {

@@ -4,7 +4,7 @@ sidebarTitle: "Destinations"
 description: "Add destinations to the Odigos VM Agent so telemetry can be sent to your backends."
 ---
 
-There are two ways to add [destinations](../../../overview#key-concepts) to the Odigos VM Agent: use `odictl` or use YAML files.
+There are two ways to add [destinations](/vmagent/overview#key-concepts) to the Odigos VM Agent: use `odictl` or use YAML files.
 
 <Tabs>
   <Tab title="odictl">
@@ -44,10 +44,10 @@ There are two ways to add [destinations](../../../overview#key-concepts) to the 
       />
     </Step>
     <Step title="Configure destination">
-      Set each field according to your destination type. See [Destinations](../../../../enterprise/backends-overview) 
+      Set each field according to your destination type. See [Destinations](/enterprise/backends-overview) 
       for field details and requirements.
 
-      <Frame caption="Example of an [OTLP http](../../../../enterprise/backends-overview) destination">
+      <Frame caption="Example of an [OTLP http](/enterprise/backends-overview) destination">
         <img 
           src="../../../images/vmagent/destination/odictl-destination-configure.png" 
           alt="Configure Destination"
@@ -114,7 +114,7 @@ There are two ways to add [destinations](../../../overview#key-concepts) to the 
       </Step>
       <Step title="Add the destination configuration">
 
-        Set each field according to your destination type. See [Destinations](../../../../enterprise/backends-overview) for field details and requirements.
+        Set each field according to your destination type. See [Destinations](/enterprise/backends-overview) for field details and requirements.
 
 
         For example:
@@ -130,9 +130,9 @@ There are two ways to add [destinations](../../../overview#key-concepts) to the 
           signals:
             - TRACES
         ```
-        <Info>The above is an example of an [OTLP http](../../../../enterprise/backends-overview) destination.</Info>
+        <Info>The above is an example of an [OTLP http](/enterprise/backends-overview) destination.</Info>
 
-        For continuous CPU profiling, add a [Pyroscope](../../../../enterprise/backends/pyroscope) destination with `signals: [PROFILES]`. See [Export to Pyroscope](../../instrumentations/profiling/export-pyroscope).
+        For continuous CPU profiling, add a [Pyroscope](/enterprise/backends/pyroscope) destination with `signals: [PROFILES]`. See [Export to Pyroscope](/vmagent/instrumentations/profiling/export-pyroscope).
 
         <Note>You can define multiple destinations in a single YAML file, and you can organize destinations across multiple YAML files.</Note>
 
