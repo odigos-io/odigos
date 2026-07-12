@@ -425,11 +425,32 @@ spec:
                               description: match method exactly, can be empty to match
                                 any method
                               type: string
+                            queryParams:
+                              description: |-
+                                match url query parameters.
+                                ignored if empty.
+                                if set, all the specified query parameters matchers must match for the operation to be matched.
+                                any query param in the request url that is not specified in the matchers will not be considered for the matching.
+                              items:
+                                description: QueryParamMatcher is a matcher for a
+                                  query parameter in a url.
+                                properties:
+                                  name:
+                                    description: name of the query parameter
+                                    type: string
+                                  valueExact:
+                                    description: value of the query parameter, that
+                                      should be matched exactly.
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              type: array
                             route:
                               description: match route exactly
                               type: string
                             routePrefix:
-                              description: match preffix of route
+                              description: match prefix of route
                               type: string
                           type: object
                       type: object

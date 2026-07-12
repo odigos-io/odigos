@@ -1,0 +1,379 @@
+{{- if (include "connectors.enabled" .) }}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  labels:
+    odigos.io/system-object: "true"
+  name: odigoscloudconnectors.odigos.io
+spec:
+  group: odigos.io
+  names:
+    kind: OdigosCloudConnector
+    listKind: OdigosCloudConnectorList
+    plural: odigoscloudconnectors
+    singular: odigoscloudconnector
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.provider
+      name: Provider
+      type: string
+    - jsonPath: .spec.account.id
+      name: Account
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          OdigosCloudConnector is the generic installation desired-state for a cloud/SaaS connector runtime
+          (platformType = connector). One OdigosCloudConnector maps to one connector Deployment that owns one
+          provider account boundary.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              account:
+                description: Account is the provider account boundary this connector
+                  owns.
+                properties:
+                  displayName:
+                    description: Human-friendly account name shown in the UI.
+                    type: string
+                  id:
+                    description: Provider account/subscription/project/tenant identifier
+                      (e.g. an AWS account id).
+                    type: string
+                required:
+                - id
+                type: object
+              computePlatforms:
+                description: |-
+                  ComputePlatforms is the customer's per-type allow-list for managed environments: what the connector
+                  may do (discovery and/or installation) per compute-platform type (e.g. aws.ecs-cluster, aws.eks,
+                  aws.ec2).
+                items:
+                  description: |-
+                    CloudConnectorComputePlatformCapability is the customer's allow-list entry for one managed-environment
+                    type (a compute platform, e.g. "aws.ecs-cluster", "aws.eks", "aws.ec2"): whether the connector may
+                    discover the environment and/or install a separate Odigos agent onto it. Installation records intent —
+                    it only runs once the provider's connector spec implements it.
+                  properties:
+                    discovery:
+                      description: Discovery allows the connector to discover compute
+                        platforms of this type.
+                      type: boolean
+                    installation:
+                      description: |-
+                        Installation allows the connector to install a separate Odigos agent onto a discovered compute
+                        platform of this type (e.g. the Odigos ecs-agent onto an EC2-backed ECS cluster).
+                      type: boolean
+                    type:
+                      description: Type is the provider connector spec type key (e.g.
+                        "aws.eks").
+                      type: string
+                  required:
+                  - type
+                  type: object
+                type: array
+              connectorType:
+                description: ConnectorType selects the specific connector implementation/image
+                  family. Usually equals Provider.
+                type: string
+              credentialsSecretRef:
+                description: CredentialsSecretRef references the Secret holding provider
+                  credentials.
+                properties:
+                  name:
+                    description: Name of the Secret in the connector's namespace.
+                    type: string
+                required:
+                - name
+                type: object
+              discovery:
+                description: Discovery configures provider resource discovery behavior.
+                properties:
+                  refreshInterval:
+                    description: How often the runtime re-scans the provider for inventory
+                      changes (e.g. "10m").
+                    type: string
+                  selectors:
+                    description: Selectors narrows discovery (e.g. only resources
+                      carrying specific tags).
+                    properties:
+                      tags:
+                        additionalProperties:
+                          type: string
+                        description: Tags restricts discovery to provider resources
+                          carrying all of these tag key/values.
+                        type: object
+                    type: object
+                type: object
+              displayName:
+                description: DisplayName is the human-friendly connector name shown
+                  in the UI.
+                type: string
+              provider:
+                description: |-
+                  Provider family this connector targets (e.g. "aws", "azure", "gcp"). Kept as a free-form string
+                  so new providers need no API change.
+                type: string
+              runtime:
+                description: Runtime configures the connector workload (image/replicas/resources).
+                properties:
+                  image:
+                    description: |-
+                      Container image for the provider connector runtime. When empty, the controller resolves a
+                      default from its configured catalog for the provider/connectorType.
+                    type: string
+                  replicas:
+                    default: 1
+                    description: Number of runtime replicas. One runtime owns one
+                      account boundary; defaults to 1.
+                    format: int32
+                    type: integer
+                  resources:
+                    description: Resource requirements for the runtime container.
+                    properties:
+                      claims:
+                        description: |-
+                          Claims lists the names of resources, defined in spec.resourceClaims,
+                          that are used by this container.
+
+                          This field depends on the
+                          DynamicResourceAllocation feature gate.
+
+                          This field is immutable. It can only be set for containers.
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: |-
+                                Name must match the name of one entry in pod.spec.resourceClaims of
+                                the Pod where this field is used. It makes that resource available
+                                inside a container.
+                              type: string
+                            request:
+                              description: |-
+                                Request is the name chosen for a request in the referenced claim.
+                                If empty, everything from the claim is made available, otherwise
+                                only the result of this request.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: |-
+                          Limits describes the maximum amount of compute resources allowed.
+                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: |-
+                          Requests describes the minimum amount of compute resources required.
+                          If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                          otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                        type: object
+                    type: object
+                type: object
+              workloads:
+                description: |-
+                  Workloads is the customer's per-type allow-list for directly-instrumentable resources: what the
+                  connector may do (discovery and/or instrumentation) per workload type (e.g. aws.lambda,
+                  aws.fargate-task). The connector scans every region enabled in the account; there is no per-connector
+                  region selection.
+                items:
+                  description: |-
+                    CloudConnectorWorkloadCapability is the customer's allow-list entry for one directly-instrumentable
+                    resource type (a workload, e.g. "aws.lambda", "aws.fargate-task"): whether the connector may discover
+                    and/or instrument that type. It records intent — instrumentation only runs once the provider's connector
+                    spec implements it; until then the connector simply knows it is allowed.
+                  properties:
+                    discovery:
+                      description: Discovery allows the connector to discover workloads
+                        of this type.
+                      type: boolean
+                    instrumentation:
+                      description: Instrumentation allows the connector to instrument
+                        workloads of this type directly.
+                      type: boolean
+                    type:
+                      description: Type is the provider connector spec type key (e.g.
+                        "aws.lambda").
+                      type: string
+                  required:
+                  - type
+                  type: object
+                type: array
+            required:
+            - account
+            - credentialsSecretRef
+            - provider
+            type: object
+          status:
+            properties:
+              conditions:
+                description: |-
+                  Conditions represent the latest available observations of the connector's state.
+                  Known condition types: RuntimeDeploymentReady, SchemaReady, RuntimeRegistered, Authenticated,
+                  DiscoveryReady, CleanupFailed.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              lastSyncedAt:
+                description: LastSyncedAt marks the freshness of this status cache.
+                format: date-time
+                type: string
+              observedGeneration:
+                description: ObservedGeneration is the spec generation the controller
+                  last reconciled.
+                format: int64
+                type: integer
+              phase:
+                description: Phase is a coarse cached lifecycle phase.
+                enum:
+                - Pending
+                - Starting
+                - Connected
+                - Degraded
+                - Error
+                - Disabled
+                - Deleting
+                type: string
+              providerIdentity:
+                description: ProviderIdentity records the verified provider identity.
+                properties:
+                  accountId:
+                    type: string
+                  displayName:
+                    type: string
+                type: object
+              runtime:
+                description: Runtime mirrors runtime-authoritative liveness.
+                properties:
+                  image:
+                    description: Image currently running.
+                    type: string
+                  lastSeenAt:
+                    description: LastSeenAt is the last heartbeat time mirrored from
+                      the platform heartbeat table.
+                    format: date-time
+                    type: string
+                  message:
+                    description: Message is a human-readable runtime status detail.
+                    type: string
+                  namespace:
+                    description: Namespace the connector workload runs in.
+                    type: string
+                  version:
+                    description: Version reported by the runtime at registration.
+                    type: string
+                  workloadName:
+                    description: WorkloadName is the connector Deployment name created
+                      by the controller.
+                    type: string
+                type: object
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+{{- end }}
