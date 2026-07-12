@@ -169,6 +169,7 @@
                 "pages": [
                   "oss/pipeline/overview",
                   "oss/pipeline/configuration",
+                  "oss/pipeline/benchmarks",
                   "oss/pipeline/datastreams",
                   {
                     "group": "Sources",
@@ -239,7 +240,8 @@
                     "group": "Advanced",
                     "icon": "sliders",
                     "pages": [
-                      "oss/pipeline/service-graph"
+                      "oss/pipeline/service-graph",
+                      "oss/pipeline/odigos-own-metrics"
                     ]
                   }
                 ]
@@ -497,6 +499,7 @@
                 "pages": [
                   "enterprise/pipeline/overview",
                   "enterprise/pipeline/configuration",
+                  "enterprise/pipeline/benchmarks",
                   "enterprise/pipeline/datastreams",
                   {
                     "group": "Sources",
@@ -567,7 +570,8 @@
                     "group": "Advanced",
                     "icon": "sliders",
                     "pages": [
-                      "enterprise/pipeline/service-graph"
+                      "enterprise/pipeline/service-graph",
+                      "enterprise/pipeline/odigos-own-metrics"
                     ]
                   }
                 ]

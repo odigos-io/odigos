@@ -14,7 +14,7 @@ spec:
     - name: Run frontend Go tests
       try:
         - script:
-            timeout: 15m
+            timeout: 3m
             content: |
               set -e
 

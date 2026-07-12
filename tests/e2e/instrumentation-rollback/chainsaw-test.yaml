@@ -14,7 +14,7 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            timeout: 3m
+            timeout: 1m10s
             content: |
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
@@ -28,7 +28,7 @@ spec:
     - name: Verify Odigos Installation
       try:
         - script:
-            timeout: 6m
+            timeout: 1m50s
             content: |
               echo "Starting Odigos version check..."
               export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
@@ -50,7 +50,7 @@ spec:
 
               ../../common/verify_odigos_installation.sh odigos-test
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: ../../common/assert/odigos-installed.yaml
       catch:
         - script:
@@ -69,7 +69,7 @@ spec:
     - name: Assert Trace DB is up
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/simple-trace-db-running.yaml
 
     - name: Install - crash demo app
@@ -77,7 +77,7 @@ spec:
         - apply:
             file: ../../common/apply/install-crash-demo.yaml
         - script:
-            timeout: 3m
+            timeout: 1m10s
             content: |
               echo "Waiting for 5 seconds before checking deployment status..."
               sleep 5
@@ -135,19 +135,19 @@ spec:
     - name: Odigos pipeline ready
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/pipeline-ready.yaml
 
     - name: Assert rollback grace time configured
       try:
         - script:
-            timeout: 30s
+            timeout: 1m10s
             content: ../../common/assert_config_value.sh -k rollbackGraceTime -v 90s
 
     - name: Test crash demo in crashloop
       try:
         - assert:
-            timeout: 2m
+            timeout: 1m20s
             file: ../../common/assert/crash-demo/crash-demo-in-crashloop.yml
 
     - name: Test crash demo uninstrumented
