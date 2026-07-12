@@ -4,12 +4,12 @@ sidebarTitle: "Custom Instrumentation"
 description: "Define custom eBPF-based instrumentations for arbitrary functions in your Java, Go, or C++ application or its dependencies using the VM Agent."
 ---
 
-[Custom instrumentation](./overview#custom-instrumentation) lets you define custom eBPF-based instrumentations for specific functions or methods in your application or its dependencies. Unlike automatic instrumentation, which covers common frameworks and libraries, custom instrumentation targets the exact code you choose—for example, a business-critical function or an internal helper that you want to see as a span in your traces. The VM Agent supports **Java**, **Go**, and **C++**. For Go, you can instrument either a **function** (by package and function name) or a **receiver method** (by package, receiver type, and method name); you must use one form or the other, not both. For C++, you target a function by its **signature**. 
+[Custom instrumentation](/vmagent/setup/configuration/instrumentation-rules/overview#custom-instrumentation) lets you define custom eBPF-based instrumentations for specific functions or methods in your application or its dependencies. Unlike automatic instrumentation, which covers common frameworks and libraries, custom instrumentation targets the exact code you choose—for example, a business-critical function or an internal helper that you want to see as a span in your traces. The VM Agent supports **Java**, **Go**, and **C++**. For Go, you can instrument either a **function** (by package and function name) or a **receiver method** (by package, receiver type, and method name); you must use one form or the other, not both. For C++, you target a function by its **signature**. 
 
 There are two ways to add a custom instrumentation rule: using `odictl` or using YAML files.
 
 <Tip>
-Prefer to find hot functions visually instead of typing class and method names? Use the odictl profiling view to instrument a function straight from a CPU profile. See [Instrument from Profiles](./instrument-from-profiles).
+Prefer to find hot functions visually instead of typing class and method names? Use the odictl profiling view to instrument a function straight from a CPU profile. See [Instrument from Profiles](/vmagent/setup/configuration/instrumentation-rules/instrument-from-profiles).
 </Tip>
 
 <Tabs>
