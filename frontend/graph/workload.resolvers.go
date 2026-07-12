@@ -374,9 +374,6 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 	if obj == nil || obj.ID == nil {
 		return nil, nil
 	}
-	if obj.Containers != nil {
-		return obj.Containers, nil
-	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
 	if err != nil || ic == nil {
