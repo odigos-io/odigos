@@ -168,6 +168,9 @@ type AgentMetrics struct {
 type HeadSampling struct {
 	// if true, the distro supports head sampling for health checks.
 	Supported bool `yaml:"supported,omitempty"`
+
+	// if true, the distro supports HTTP query params sampling.
+	HttpQueryParamsSupported bool `yaml:"httpQueryParamsSupported,omitempty"`
 }
 
 type HeadersCollection struct {
