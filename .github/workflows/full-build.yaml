@@ -56,8 +56,8 @@ jobs:
             SERVICE_NAME=${{ matrix.service }}
             ODIGOS_VERSION=v0.0.0-pr${{ github.event.number }}
           target: ${{ matrix.service == 'agents' && 'agents' || '' }}
-          cache-from: ${{ matrix.service == 'odigos-collector' && 'type=gha,scope=odigos-collector' || '' }}
-          cache-to: ${{ matrix.service == 'odigos-collector' && 'type=gha,mode=max,scope=odigos-collector' || '' }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
   build-cli:
     runs-on: depot-ubuntu-24.04-8

@@ -274,8 +274,8 @@ jobs:
                 'Dockerfile' }}
           target: >-
             ${{ matrix.service == 'agents' && 'agents' || '' }}
-          cache-from: ${{ matrix.service == 'collector' && 'type=gha,scope=odigos-collector' || '' }}
-          cache-to: ${{ matrix.service == 'collector' && 'type=gha,mode=max,scope=odigos-collector' || '' }}
+          cache-from: type=gha,scope=odigos-${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=odigos-${{ matrix.service }}
 
       - name: Notify Slack
         if: always()
