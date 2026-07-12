@@ -24,17 +24,17 @@ spec:
             content: |
               ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
-            timeout: 4m
+            timeout: 1m10s
 
     - name: Assert Odigos Installed
       try:
         - assert:
-            timeout: 3m
+            timeout: 2m
             file: ../../common/assert/odigos-installed.yaml
         - script:
             content: |
               ../../common/verify_odigos_installation.sh odigos-test
-            timeout: 1m
+            timeout: 1m10s
 
     - name: Verify Node Odiglet label has been added
       try:
@@ -44,13 +44,13 @@ spec:
     - name: Assert Trace DB is up
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/simple-trace-db-running.yaml
 
     - name: Assert Apps installed
       try:
         - assert:
-            timeout: 5m
+            timeout: 1m30s
             file: assert-apps-ready.yaml
 
     - name: Instrument Namespaces
@@ -66,11 +66,11 @@ spec:
     - name: Assert Pipeline
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/pipeline-ready.yaml
 
     - name: Assert Runtime Detection
       try:
         - assert:
             file: assert-runtime-detected.yaml
-            timeout: 2m
+            timeout: 1m10s

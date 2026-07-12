@@ -19,13 +19,13 @@ spec:
     - name: Install Odigos CLI
       try:
         - script:
-            timeout: 3m
+            timeout: 2m40s
             content: |
               ../../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               ../../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: ../../../common/assert/odigos-installed.yaml
 
     - name: Verify - Jaeger Installed
@@ -36,13 +36,13 @@ spec:
     - name: Assert - Simple Demo Apps Installed
       try:
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: ../../../common/assert/simple-demo-installed.yaml
 
     - name: Start UI from CLI
       try:
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               nohup ../../../../cli/odigos ui > odigos-ui.log 2>&1 &
               sleep 3
@@ -50,7 +50,7 @@ spec:
     - name: Wait for UI
       try:
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               for i in {1..10}; do
                 curl -s http://localhost:3000 && break || sleep 2
@@ -59,7 +59,7 @@ spec:
     - name: Run Cypress tests
       try:
         - script:
-            timeout: 10m
+            timeout: 5m10s
             content: |
               cd ../../../../frontend/webapp
               yarn install --no-cache

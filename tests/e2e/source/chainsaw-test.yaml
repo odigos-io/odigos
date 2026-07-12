@@ -19,7 +19,7 @@ spec:
     - name: '[1 - Setup] Install Odigos'
       try:
         - script:
-            timeout: 4m
+            timeout: 2m
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
@@ -30,7 +30,7 @@ spec:
 
               ../../common/verify_odigos_installation.sh odigos-test
         - assert:
-            timeout: 3m
+            timeout: 1m40s
             file: ../../common/assert/odigos-installed.yaml
 
     - name: '[1 - Setup] Verify Node Odiglet label has been added'
@@ -41,13 +41,13 @@ spec:
     - name: '[1 - Setup]Assert Trace DB is up'
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/simple-trace-db-running.yaml
 
     - name: '[1 - Setup] Assert - Simple Demo Apps Installed'
       try:
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: ../../common/assert/simple-demo-installed.yaml
 
     - name: '[1 - Setup] Add Destination'
@@ -64,14 +64,14 @@ spec:
     - name: '[2 - Workload Instrumentation] Assert Runtime Detected'
       try:
         - assert:
-            timeout: 2m
+            timeout: 1m10s
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
 
     - name: '[2 - Workload Instrumentation] Odigos pipeline ready'
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/pipeline-ready.yaml
 
 
@@ -80,16 +80,16 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
         - assert:
-            timeout: 4m
+            timeout: 1m30s
             file: 01-workloads.yaml
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: ../../common/wait_for_rollout.sh
 
     - name: '[2 - Workload Instrumentation] Shipping (C++) instrumented with OBI container override'
       try:
         - assert:
-            timeout: 4m
+            timeout: 1m10s
             file: 01-shipping-instrumented.yaml
       catch:
         - podLogs:
@@ -101,7 +101,7 @@ spec:
         - apply:
             file: ../../common/apply/generate-traffic-job.yaml
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
         - delete:
@@ -110,7 +110,7 @@ spec:
     - name: '[2 - Workload Instrumentation] Wait For Trace'
       try:
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               while true; do
                 ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-reported.yaml
@@ -128,7 +128,7 @@ spec:
     - name: '[2 - Workload Instrumentation] Wait For Shipping Trace (OBI)'
       try:
         - script:
-            timeout: 3m
+            timeout: 1m20s
             content: |
               while true; do
                 ../../common/simple_trace_db_query_runner.sh wait-for-shipping-trace.yaml
@@ -149,7 +149,7 @@ spec:
     - name: '[2 - Workload Instrumentation] Verify Trace - Context Propagation'
       try:
         - script:
-            timeout: 3m
+            timeout: 1m10s
             content: |
               ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation-reported.yaml
       catch:
@@ -160,7 +160,7 @@ spec:
     - name: "[2 - Workload Instrumentation] Verify Trace - Resource Attributes"
       try:
         - script:
-            timeout: 3m
+            timeout: 1m10s
             content: |
               ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
       catch:
@@ -171,7 +171,7 @@ spec:
     - name: '[2 - Workload Instrumentation] Verify Trace - Span Attributes'
       try:
         - script:
-            timeout: 3m
+            timeout: 1m10s
             content: |
               ../../common/simple_trace_db_query_runner.sh ../../common/queries/span-attributes-reported.yaml
       catch:
@@ -182,7 +182,7 @@ spec:
     - name: '[2 - Workload Instrumentation] Verify collector metrics are collected by the UI'
       try:
         - script:
-            timeout: 5m
+            timeout: 1m40s
             content: |
               while true; do
                 ../../common/assert_collector_metrics_from_ui.sh odigos-test
@@ -195,14 +195,14 @@ spec:
     - name: '[2 - Workload Instrumentation] Verify collector metrics survive UI pod restart'
       try:
         - script:
-            timeout: 8m
+            timeout: 1m40s
             content: |
               ../../common/assert_collector_metrics_survive_ui_restart.sh odigos-test
 
     - name: '[3 - Workload Uninstrumentation] Uninstrument individual deployments'
       try:
         - script:
-            timeout: 3m
+            timeout: 1m10s
             content: |
               kubectl delete sources --all
               while true; do
@@ -216,17 +216,17 @@ spec:
     - name: '[3 - Workload Uninstrumentation] Assert workloads updated after uninstrumentation'
       try:
         - assert:
-            timeout: 2m
+            timeout: 1m10s
             file: 02-workloads.yaml
 
 
     - name: 'Uninstall Odigos'
       try:
         - script:
-            timeout: 2m
+            timeout: 1m40s
             content: ../../../cli/odigos uninstall --ns odigos-test
         - script:
-            timeout: 1m
+            timeout: 1m30s
             content: |
               for i in $(seq 1 10); do
                 if ../../common/assert_odigos_uninstalled.sh; then
