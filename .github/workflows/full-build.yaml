@@ -40,6 +40,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Set up QEMU
+        # Collector Dockerfile cross-compiles with CGO_ENABLED=0 (no QEMU).
+        if: matrix.service != 'odigos-collector'
         uses: docker/setup-qemu-action@v3
       - name: Build ${{ matrix.service }} Image
         uses: docker/build-push-action@v6
@@ -54,6 +56,8 @@ jobs:
             SERVICE_NAME=${{ matrix.service }}
             ODIGOS_VERSION=v0.0.0-pr${{ github.event.number }}
           target: ${{ matrix.service == 'agents' && 'agents' || '' }}
+          cache-from: ${{ matrix.service == 'odigos-collector' && 'type=gha,scope=odigos-collector' || '' }}
+          cache-to: ${{ matrix.service == 'odigos-collector' && 'type=gha,mode=max,scope=odigos-collector' || '' }}
 
   build-cli:
     runs-on: depot-ubuntu-24.04-8

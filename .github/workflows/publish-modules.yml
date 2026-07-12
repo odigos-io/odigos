@@ -211,7 +211,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # QEMU is not needed for the collector: its Dockerfile builds on $BUILDPLATFORM
+      # and cross-compiles with CGO_ENABLED=0 / GOARCH=$TARGETARCH. Other images
+      # (notably odiglet) still need QEMU for multi-arch.
       - name: Set up QEMU
+        if: matrix.service != 'collector'
         uses: docker/setup-qemu-action@v3
 
       - id: gcp-auth
@@ -270,6 +274,8 @@ jobs:
                 'Dockerfile' }}
           target: >-
             ${{ matrix.service == 'agents' && 'agents' || '' }}
+          cache-from: ${{ matrix.service == 'collector' && 'type=gha,scope=odigos-collector' || '' }}
+          cache-to: ${{ matrix.service == 'collector' && 'type=gha,mode=max,scope=odigos-collector' || '' }}
 
       - name: Notify Slack
         if: always()

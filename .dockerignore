@@ -8,3 +8,11 @@ tests # not needed in context for odigos components builds
 go.work
 go.work.sum
 gha-creds-*.json
+
+# Collector local tooling and build artifacts (can be hundreds of MB locally)
+collector/.tools
+collector/odigosotelcol/odigosotelcol
+collector/odigosotelcol/licenses
+collector/dist
+collector/examples
+docs

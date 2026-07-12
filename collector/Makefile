@@ -1,5 +1,6 @@
 
-SRC_ROOT := $(shell git rev-parse --show-toplevel)/collector
+# Prefer CURDIR so Docker builds (no .git in context) resolve the tools dir correctly.
+SRC_ROOT := $(CURDIR)
 
 TOOLS_BIN_DIR    := $(SRC_ROOT)/.tools
 
@@ -19,6 +20,9 @@ BUILDER_URL = https://github.com/open-telemetry/opentelemetry-collector-releases
 
 GOCMD?= go
 MDATAGENCMD?= mdatagen
+
+# Keep Docker/image builds CGO-free so GOARCH cross-compiles stay native (no QEMU).
+CGO_ENABLED ?= 0
 
 TAILSAMPLING_PROCESSOR_DIR := processors/odigostailsamplingprocessor
 
@@ -40,13 +44,18 @@ test-odigostailsamplingprocessor:
 	@echo "Running tests for odigostailsamplingprocessor at $(TAILSAMPLING_PROCESSOR_DIR)"
 	cd $(TAILSAMPLING_PROCESSOR_DIR) && GOOS=$(HOST_GOOS) GOARCH=$(HOST_GOARCH) $(GOCMD) test ./...
 
-.PHONY: build-odigoscol
-build-odigoscol: download_builder test-odigostailsamplingprocessor
-	GOWORK=off $(BUILDER) \
+# Docker/image compile path — intentionally skips unit tests (run separately in CI via `make test`).
+.PHONY: build-odigoscol-docker
+build-odigoscol-docker: download_builder
+	CGO_ENABLED=$(CGO_ENABLED) GOWORK=off $(BUILDER) \
 	--ldflags="-s -w -checklinkname=0" \
 	--config builder-config.yaml \
 	--skip-generate \
 	--skip-get-modules
+
+# Local/dev convenience target still runs the tailsampling unit tests before compile.
+.PHONY: build-odigoscol
+build-odigoscol: test-odigostailsamplingprocessor build-odigoscol-docker
 
 .PHONY: install-tools
 install-tools:

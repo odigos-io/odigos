@@ -57,6 +57,8 @@ jobs:
               ref: ${{ inputs.tag }}
 
           - name: Set up QEMU
+            # Collector cross-compiles with CGO_ENABLED=0 on $BUILDPLATFORM (no QEMU).
+            if: matrix.service != 'collector'
             uses: docker/setup-qemu-action@v4
       
           - name: Set up Docker Buildx
@@ -146,6 +148,8 @@ jobs:
                     'Dockerfile' }}
               target: >-
                 ${{ matrix.service == 'agents' && 'agents-rhel' || 'rhel' }}
+              cache-from: ${{ matrix.service == 'collector' && 'type=gha,scope=odigos-collector' || '' }}
+              cache-to: ${{ matrix.service == 'collector' && 'type=gha,mode=max,scope=odigos-collector' || '' }}
 
     publish-cli-rhel:
         needs: publish-images-rhel

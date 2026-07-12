@@ -205,6 +205,9 @@ jobs:
           tags: odigos-collector:pr-${{ github.event.number || github.run_number }}
           provenance: false
           file: collector/Dockerfile
+          # Persist BuildKit layers across CI runs (Go module / compile layers).
+          cache-from: type=gha,scope=odigos-collector
+          cache-to: type=gha,mode=max,scope=odigos-collector
           outputs: type=docker,dest=/tmp/odigos-collector.tar
       - name: Load Docker image for scanning
         run: docker load -i /tmp/odigos-collector.tar
