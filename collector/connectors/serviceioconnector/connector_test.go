@@ -110,16 +110,16 @@ func TestAggregateConnectionsFromTree_FiltersInactiveSources(t *testing.T) {
 	tree, err := BuildTraceTree(td, nil)
 	require.NoError(t, err)
 
+	odigosConfig := &mockOdigosConfigExtension{
+		activeSources: map[string]struct{}{"svc-1": {}},
+	}
 	connector := &serviceioConnector{
 		keyToMetric:          make(map[uint64]metricSeries),
 		inputSpanAttributes:  []string{"http.route"},
 		outputSpanAttributes: []string{"rpc.service"},
-		odigosConfig: &mockOdigosConfigExtension{
-			activeSources: map[string]struct{}{"svc-1": {}},
-		},
 	}
 
-	require.True(t, connector.aggregateConnectionsFromTree(tree))
+	require.True(t, connector.aggregateConnectionsFromTree(tree, odigosConfig))
 	require.Len(t, connector.keyToMetric, 2)
 }
 
@@ -129,15 +129,15 @@ func TestAggregateConnectionsFromTree_SkipsInactiveSources(t *testing.T) {
 	tree, err := BuildTraceTree(td, nil)
 	require.NoError(t, err)
 
+	odigosConfig := &mockOdigosConfigExtension{
+		activeSources: map[string]struct{}{},
+	}
 	connector := &serviceioConnector{
 		keyToMetric:          make(map[uint64]metricSeries),
 		inputSpanAttributes:  []string{"http.route"},
 		outputSpanAttributes: []string{"rpc.service"},
-		odigosConfig: &mockOdigosConfigExtension{
-			activeSources: map[string]struct{}{},
-		},
 	}
 
-	require.False(t, connector.aggregateConnectionsFromTree(tree))
+	require.False(t, connector.aggregateConnectionsFromTree(tree, odigosConfig))
 	require.Empty(t, connector.keyToMetric)
 }
