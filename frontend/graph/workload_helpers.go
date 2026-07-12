@@ -70,6 +70,28 @@ func collectEffectiveDetectedLanguages(ic *odigosv1.InstrumentationConfig, ignor
 // resolver expose the same fields (type, healthy, message, lastStatusTime,
 // nonIdentifyingAttributes) the legacy `instrumentationInstanceComponents`
 // query used to surface.
+// instrumentationHealthRank orders instrumentation health from least to most
+// healthy, so aggregation across multiple instances can surface the "worst"
+// state: unhealthy (0) < unknown/nil (1) < healthy (2).
+func instrumentationHealthRank(healthy *bool) int {
+	switch {
+	case healthy == nil:
+		return 1
+	case *healthy:
+		return 2
+	default:
+		return 0
+	}
+}
+
+// shouldReplaceInstrumentationForAggregation reports whether the current health
+// state should replace the existing aggregated one. Since we aggregate towards
+// the least healthy value, current replaces existing only when it is strictly
+// less healthy (unhealthy over nil over healthy).
+func shouldReplaceInstrumentationForAggregation(existing, current *bool) bool {
+	return instrumentationHealthRank(current) < instrumentationHealthRank(existing)
+}
+
 func componentToInstrumentation(component odigosv1.InstrumentationLibraryStatus) *model.K8sWorkloadPodContainerProcessInstrumentation {
 	var typeStr *string
 	if component.Type != "" {
