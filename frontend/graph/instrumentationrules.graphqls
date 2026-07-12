@@ -1,0 +1,249 @@
+# =====================
+# Instrumentation Rules
+# Rules that shape how workloads are instrumented (code attributes, headers,
+# payload collection, custom probes) plus their dynamic YAML-defined catalog.
+# =====================
+
+enum SpanKind {
+  Internal
+  Server
+  Client
+  Producer
+  Consumer
+}
+
+enum InstrumentationRuleType {
+  CodeAttributes
+  HeadersCollection
+  PayloadCollection
+  CustomInstrumentation
+  UnknownType
+}
+
+# Deprecated. Kept only so that InstrumentationRuleInput.workloads (also deprecated) can be parsed
+# from older @odigos/ui-kit clients. Server ignores the value.
+# TODO: remove together with InstrumentationRuleInput.workloads.
+input PodWorkloadInput {
+  namespace: String!
+  kind: K8sResourceKind!
+  name: String!
+}
+
+# Mirrors k8sconsts.SourcesScope for InstrumentationRule only (sampling uses SourcesScope in sampling.graphqls).
+type InstrumentationRuleSourcesScope {
+  workloadName: String
+  workloadKind: K8sResourceKind
+  workloadNamespace: String
+  containerName: String
+  workloadLanguage: SamplingWorkloadLanguage
+}
+
+input InstrumentationRuleSourcesScopeInput {
+  workloadName: String
+  workloadKind: K8sResourceKind
+  workloadNamespace: String
+  containerName: String
+  workloadLanguage: SamplingWorkloadLanguage
+}
+
+type InstrumentationRule {
+  type: InstrumentationRuleType!
+  ruleId: ID!
+  ruleName: String
+  notes: String
+  disabled: Boolean
+  mutable: Boolean!
+  profileName: String!
+  sourcesScopes: [InstrumentationRuleSourcesScope!]
+  instrumentationLibraries: [InstrumentationLibraryGlobalId!]
+  conditions: [Condition!]
+  codeAttributes: CodeAttributes
+  headersCollection: HeadersCollection
+  payloadCollection: PayloadCollection
+  customInstrumentations: CustomInstrumentations
+}
+
+input InstrumentationRuleInput {
+  ruleName: String
+  notes: String
+  disabled: Boolean
+  # Deprecated. Accepted but ignored by the resolver to keep older @odigos/ui-kit clients working
+  # after the CRD/back-end dropped `workloads`. Use `sourcesScopes` instead.
+  # TODO: remove once @odigos/ui-kit no longer sends `workloads` in the rule form payload.
+  workloads: [PodWorkloadInput!]
+    @deprecated(reason: "use sourcesScopes; field is ignored by the server")
+  sourcesScopes: [InstrumentationRuleSourcesScopeInput!]
+  instrumentationLibraries: [InstrumentationLibraryGlobalIdInput!]
+  codeAttributes: CodeAttributesInput
+  headersCollection: HeadersCollectionInput
+  payloadCollection: PayloadCollectionInput
+  customInstrumentations: CustomInstrumentationsInput
+}
+
+type InstrumentationLibraryGlobalId {
+  name: String!
+  spanKind: SpanKind
+  language: ProgrammingLanguage
+}
+
+input InstrumentationLibraryGlobalIdInput {
+  name: String!
+  spanKind: SpanKind
+  language: ProgrammingLanguage
+}
+
+type HeadersCollection {
+  headerKeys: [String]
+}
+
+#### CUSTOM PROBES ####
+type CustomInstrumentations {
+  golang: [GolangCustomProbe]
+  java: [JavaCustomProbe]
+}
+
+type GolangCustomProbe {
+  packageName: String
+  functionName: String
+  receiverName: String
+  receiverMethodName: String
+}
+
+type JavaCustomProbe {
+  className: String
+  methodName: String
+}
+
+input CustomInstrumentationsInput {
+  golang: [GolangCustomProbeInput]
+  java: [JavaCustomProbeInput]
+}
+
+input GolangCustomProbeInput {
+  packageName: String
+  functionName: String
+  receiverName: String
+  receiverMethodName: String
+}
+
+input JavaCustomProbeInput {
+  className: String
+  methodName: String
+}
+#### END CUSTOM PROBES ####
+
+input HeadersCollectionInput {
+  headerKeys: [String]
+}
+
+type HttpPayloadCollection {
+  mimeTypes: [String]
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
+}
+
+input HttpPayloadCollectionInput {
+  mimeTypes: [String]
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
+}
+
+type DbQueryPayloadCollection {
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
+}
+
+input DbQueryPayloadCollectionInput {
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
+}
+
+type MessagingPayloadCollection {
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
+}
+
+input MessagingPayloadCollectionInput {
+  maxPayloadLength: Int
+  dropPartialPayloads: Boolean
+}
+
+type CodeAttributes {
+  column: Boolean
+  filePath: Boolean
+  function: Boolean
+  lineNumber: Boolean
+  namespace: Boolean
+  stacktrace: Boolean
+}
+
+input CodeAttributesInput {
+  column: Boolean
+  filePath: Boolean
+  function: Boolean
+  lineNumber: Boolean
+  namespace: Boolean
+  stacktrace: Boolean
+}
+
+type PayloadCollection {
+  httpRequest: HttpPayloadCollection
+  httpResponse: HttpPayloadCollection
+  dbQuery: DbQueryPayloadCollection
+  messaging: MessagingPayloadCollection
+}
+
+input PayloadCollectionInput {
+  httpRequest: HttpPayloadCollectionInput
+  httpResponse: HttpPayloadCollectionInput
+  dbQuery: DbQueryPayloadCollectionInput
+  messaging: MessagingPayloadCollectionInput
+}
+
+# Dynamic, YAML-defined description of a single instrumentation-rule form field.
+# Mirrors ActionFieldYamlProperties so the UI can reuse the same dynamic field
+# renderer for rules.
+type InstrumentationRuleFieldYamlProperties {
+  name: String!
+  displayName: String!
+  componentType: String!
+  componentProperties: String! # Using String to store JSON data as a string
+  initialValue: String!
+  renderCondition: [String!]!
+}
+
+# A single instrumentation-rule type as described by the embedded YAML rules
+# catalog. Allows the UI to render the list of available instrumentation rules
+# (and, where provided, their form fields) dynamically instead of from
+# hard-coded options. Rules gate on programming language rather than signals.
+type InstrumentationRuleTypeOption {
+  type: String!
+  displayName: String!
+  description: String!
+  supportedLanguages: [String!]!
+  docsUrl: String!
+  fields: [InstrumentationRuleFieldYamlProperties!]!
+}
+
+extend type ComputePlatform {
+  instrumentationRules: [InstrumentationRule!]!
+}
+
+extend type Query {
+  # Returns the dynamic, YAML-defined catalog of available instrumentation rule
+  # types. The UI uses this to render the rule picker (and dynamic fields)
+  # instead of its hard-coded options. Nullable so older/unsupported backends
+  # can omit it.
+  instrumentationRuleTypes: [InstrumentationRuleTypeOption!]
+}
+
+extend type Mutation {
+  createInstrumentationRule(
+    instrumentationRule: InstrumentationRuleInput!
+  ): InstrumentationRule!
+  updateInstrumentationRule(
+    ruleId: ID!
+    instrumentationRule: InstrumentationRuleInput!
+  ): InstrumentationRule!
+  deleteInstrumentationRule(ruleId: ID!): Boolean!
+}
