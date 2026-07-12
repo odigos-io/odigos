@@ -167,6 +167,10 @@ export const GET_WORKLOADS_BY_IDS = gql`
                     route
                     routePrefix
                     method
+                    queryParams {
+                      name
+                      valueExact
+                    }
                   }
                   httpClient {
                     serverAddress
@@ -191,6 +195,10 @@ export const GET_WORKLOADS_BY_IDS = gql`
                   route
                   routePrefix
                   method
+                  queryParams {
+                    name
+                    valueExact
+                  }
                 }
                 httpClient {
                   serverAddress
