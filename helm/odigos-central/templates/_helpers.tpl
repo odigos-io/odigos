@@ -1,21 +1,20 @@
-{{- define "utils.imageName" -}}
+{{- define "utils.imagePrefix" -}}
 {{- $defaultRegistry := "registry.odigos.io" -}}
 {{- $redHatRegistry := "registry.connect.redhat.com/odigos" -}}
 {{- if $.Values.imagePrefix -}}
-    {{- $.Values.imagePrefix -}}/
+    {{- $.Values.imagePrefix -}}
 {{- else -}}
     {{- if $.Values.openshift.enabled -}}
-        {{- $redHatRegistry -}}/
+        {{- $redHatRegistry -}}
     {{- else -}}
-        {{- $defaultRegistry -}}/
+        {{- $defaultRegistry -}}
     {{- end -}}
 {{- end -}}
-odigos-enterprise-{{- .Component -}}
-{{- if $.Values.openshift.enabled -}}
--rhel-certified
 {{- end -}}
-:
-{{- .Tag -}}
+
+{{- define "utils.imageName" -}}
+{{- $prefix := include "utils.imagePrefix" (dict "Values" $.Values) -}}
+{{- printf "%s/odigos-enterprise-%s%s:%s" $prefix .Component (ternary "-rhel-certified" "" $.Values.openshift.enabled) .Tag -}}
 {{- end -}}
 
 {{- define "odigos.onPremToken" -}}
@@ -53,8 +52,7 @@ true
 {{- end -}}
 
 {{- define "odigos.usesOdigosRegistry" -}}
-{{- if or $.Values.imagePrefix $.Values.openshift.enabled -}}
-{{- else -}}
+{{- if eq (include "utils.imagePrefix" (dict "Values" .Values)) "registry.odigos.io" -}}
 true
 {{- end -}}
 {{- end -}}
@@ -107,7 +105,12 @@ true
   {{- end -}}
 {{- end -}}
 
+{{/* URL-encode connector PostgreSQL DSN components before embedding them in the connection URL. */}}
+{{- define "connectors.urlEncode" -}}
+{{- . | toString | urlquery | replace "+" "%20" -}}
+{{- end -}}
+
 {{/* PostgreSQL DSN for the connector store, assembled from values. */}}
 {{- define "connectors.postgresDSN" -}}
-postgres://{{ .Values.cloudConnectors.postgres.username }}:{{ .Values.cloudConnectors.postgres.password }}@odigos-connector-postgres:{{ .Values.cloudConnectors.postgres.port }}/{{ .Values.cloudConnectors.postgres.database }}?sslmode=disable
+postgres://{{ include "connectors.urlEncode" .Values.cloudConnectors.postgres.username }}:{{ include "connectors.urlEncode" .Values.cloudConnectors.postgres.password }}@odigos-connector-postgres:{{ .Values.cloudConnectors.postgres.port }}/{{ include "connectors.urlEncode" .Values.cloudConnectors.postgres.database }}?sslmode=disable
 {{- end -}}
