@@ -20,8 +20,9 @@ type Spec struct {
 }
 
 type Reason struct {
-	Name               string                 `yaml:"name"`
-	Message            string                 `yaml:"message"`
-	K8sConditionStatus metav1.ConditionStatus `yaml:"k8sConditionStatus,omitempty"`
-	OdigosSeverity     OdigosSeverity         `yaml:"odigosSeverity"`
+	Name                 string                 `yaml:"name"`
+	Message              string                 `yaml:"message"`
+	TechnicalDescription string                 `yaml:"technicalDescription,omitempty"`
+	K8sConditionStatus   metav1.ConditionStatus `yaml:"k8sConditionStatus,omitempty"`
+	OdigosSeverity       OdigosSeverity         `yaml:"odigosSeverity"`
 }

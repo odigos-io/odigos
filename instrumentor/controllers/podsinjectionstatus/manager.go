@@ -2,11 +2,12 @@ package podsinjectionstatus
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/k8sutils/pkg/predicate"
+	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
@@ -29,7 +30,25 @@ func (o InstrumentationConfigPodsInjectionPredicate) Update(e event.UpdateEvent)
 	}
 
 	// pods injection count uses the agents meta hash, and when it changes, we need to re-compute the couters to have them correct.
-	return old.Spec.AgentsMetaHash != new.Spec.AgentsMetaHash
+	if old.Spec.AgentsMetaHash != new.Spec.AgentsMetaHash {
+		return true
+	}
+
+	// rollout progress / queue state affects which PodsInjection reason we report
+	if old.Status.WorkloadRolloutHash != new.Status.WorkloadRolloutHash {
+		return true
+	}
+	oldRollout := meta.FindStatusCondition(old.Status.Conditions, odigosv1.WorkloadRolloutStatusConditionType)
+	newRollout := meta.FindStatusCondition(new.Status.Conditions, odigosv1.WorkloadRolloutStatusConditionType)
+	if (oldRollout == nil) != (newRollout == nil) {
+		return true
+	}
+	if oldRollout != nil && newRollout != nil &&
+		(oldRollout.Reason != newRollout.Reason || oldRollout.Status != newRollout.Status) {
+		return true
+	}
+
+	return false
 }
 
 func (o InstrumentationConfigPodsInjectionPredicate) Delete(e event.DeleteEvent) bool {
@@ -49,7 +68,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("podsinjection-pods").
 		For(&corev1.Pod{}).
-		WithEventFilter(predicate.ExistencePredicate{}).
+		WithEventFilter(odigospredicate.ExistencePredicate{}).
 		Complete(
 			&PodsController{
 				Client:      mgr.GetClient(),
@@ -68,6 +87,18 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Complete(&InstrumentationConfigController{
 			Client:      mgr.GetClient(),
 			PodsTracker: podsTracker,
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("podsinjection-effectiveconfig").
+		For(&corev1.ConfigMap{}).
+		WithEventFilter(odigospredicate.OdigosEffectiveConfigMapPredicate).
+		Complete(&EffectiveConfigReconciler{
+			Client: mgr.GetClient(),
 		})
 	if err != nil {
 		return err

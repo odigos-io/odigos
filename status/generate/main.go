@@ -44,6 +44,9 @@ var (
 	{{ $.TypeName }}{{ .Name }} = status.Reason{
 		Name:           string({{ $.TypeName }}Reason{{ .Name }}),
 		Message:        "{{ .Message }}",
+{{- if .TechnicalDescription }}
+		TechnicalDescription: "{{ .TechnicalDescription }}",
+{{- end }}
 {{- if .K8sConditionStatusConst }}
 		K8sConditionStatus: {{ .K8sConditionStatusConst }},
 {{- end }}
@@ -56,6 +59,7 @@ var (
 type reasonData struct {
 	Name                    string
 	Message                 string
+	TechnicalDescription    string
 	K8sConditionStatusConst string
 	OdigosSeverityConst     string
 }
@@ -111,9 +115,10 @@ func generateFile(yamlPath string) error {
 
 	for _, reason := range s.Spec.Reasons {
 		rd := reasonData{
-			Name:                reason.Name,
-			Message:             escapeString(reason.Message),
-			OdigosSeverityConst: odigosSeverityConst(reason.OdigosSeverity),
+			Name:                 reason.Name,
+			Message:              escapeString(reason.Message),
+			TechnicalDescription: escapeString(reason.TechnicalDescription),
+			OdigosSeverityConst:  odigosSeverityConst(reason.OdigosSeverity),
 		}
 		if reason.K8sConditionStatus != "" {
 			rd.K8sConditionStatusConst = k8sConditionStatusConst(reason.K8sConditionStatus)
