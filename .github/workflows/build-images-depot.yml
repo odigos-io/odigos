@@ -17,7 +17,7 @@ jobs:
       - uses: depot/build-push-action@v1
         id: build
         with:
-          push: false
+          push: true
           context: .
           file: Dockerfile
           build-args: SERVICE_NAME=instrumentor
