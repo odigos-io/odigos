@@ -166,6 +166,19 @@ func headSamplingOperationMatcherInputToCRD(input *model.HeadSamplingOperationMa
 			Method:              services.DerefString(input.HTTPClient.Method),
 		}
 	}
+	if input.GrpcServer != nil {
+		matcher.GrpcServer = &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
+			Method:  services.DerefString(input.GrpcServer.Method),
+			Service: services.DerefString(input.GrpcServer.Service),
+		}
+	}
+	if input.GrpcClient != nil {
+		matcher.GrpcClient = &commonapisampling.HeadSamplingGrpcClientOperationMatcher{
+			Method:        services.DerefString(input.GrpcClient.Method),
+			Service:       services.DerefString(input.GrpcClient.Service),
+			ServerAddress: services.DerefString(input.GrpcClient.ServerAddress),
+		}
+	}
 	return matcher
 }
 
@@ -188,6 +201,19 @@ func headSamplingOperationMatcherCRDToModel(matcher *commonapisampling.HeadSampl
 			TemplatedPath:       services.StringPtrIfNotEmpty(matcher.HttpClient.TemplatedPath),
 			TemplatedPathPrefix: services.StringPtrIfNotEmpty(matcher.HttpClient.TemplatedPathPrefix),
 			Method:              services.StringPtrIfNotEmpty(matcher.HttpClient.Method),
+		}
+	}
+	if matcher.GrpcServer != nil {
+		result.GrpcServer = &model.HeadSamplingGrpcServerMatcher{
+			Method:  services.StringPtrIfNotEmpty(matcher.GrpcServer.Method),
+			Service: services.StringPtrIfNotEmpty(matcher.GrpcServer.Service),
+		}
+	}
+	if matcher.GrpcClient != nil {
+		result.GrpcClient = &model.HeadSamplingGrpcClientMatcher{
+			Method:        services.StringPtrIfNotEmpty(matcher.GrpcClient.Method),
+			Service:       services.StringPtrIfNotEmpty(matcher.GrpcClient.Service),
+			ServerAddress: services.StringPtrIfNotEmpty(matcher.GrpcClient.ServerAddress),
 		}
 	}
 	return result

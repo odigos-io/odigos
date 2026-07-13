@@ -2,7 +2,7 @@
 
 module odigos.io/opentelemetry-collector/cmd/odigosotelcol
 
-go 1.26.2
+go 1.26.4
 
 require (
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.151.0
@@ -804,6 +804,8 @@ replace github.com/odigos-io/odigos/collector/connectors/serviceioconnector => .
 replace github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector => ../connectors/servicegraphconnector
 
 replace github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
+
+replace github.com/odigos-io/go-rtml => ../internal/go-rtml
 
 replace github.com/odigos-io/odigos/common => ../../common
 
