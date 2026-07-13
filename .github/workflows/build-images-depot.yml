@@ -20,8 +20,9 @@ jobs:
           push: true
           context: .
           file: Dockerfile
+          tags: odigos-instrumentor:${{ github.sha }}
           build-args: SERVICE_NAME=instrumentor
-          
+
       - name: Show build outputs
         run: |
           echo "Image ID: ${{ steps.build.outputs.imageid }}"
