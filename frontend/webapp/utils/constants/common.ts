@@ -1,5 +1,5 @@
 import { PlatformType, Tier } from '@odigos/ui-kit/types';
-import type { OperationContext } from '@odigos/ui-kit/contexts/odigos-api';
+import type { OperationContext } from '@odigos/ui-kit/contexts';
 
 export const IS_DEV = process.env.NODE_ENV === 'development';
 
