@@ -23,8 +23,10 @@ import { API, INITIAL_CONTEXT, IS_LOCAL } from '@/utils';
 import { CenterThis, Loader } from '@odigos/ui-kit/components';
 import {
   OdigosApiProvider,
+  type CreateDestinationResult,
   type DiagnoseResult,
   type GetActionsData,
+  type GetDestinationsData,
   type GetNamespacesWithWorkloadsData,
   type GetSamplingRulesData,
   type GetServiceMapData,
@@ -33,6 +35,7 @@ import {
 } from '@odigos/ui-kit/contexts';
 import type {
   Action,
+  Destination,
   EffectiveConfig,
   EnableProfilingResult,
   ExtendedPodInfo,
@@ -129,6 +132,29 @@ const parseActionRenames = (action: Action): Action => {
   return { ...action, fields: { ...action.fields, renames: parseRenamesString(renames) } };
 };
 
+// Apollo Client injects `__typename` on every selection-set object. The kit's
+// `mapExportedSignals` does `Object.keys(exportedSignals).filter(truthy)`, so
+// a truthy `__typename` string survives and maps to `undefined`, which then
+// crashes `signal.toLowerCase()` when the edit-destination drawer opens
+// (error boundary → Cypress can't find `[data-id=drawer]`). Rebuild the
+// known keys only — same shape Central's VM mapper produces.
+const sanitizeExportedSignals = (signals: Destination['exportedSignals'] | null | undefined): Destination['exportedSignals'] => ({
+  logs: !!signals?.logs,
+  metrics: !!signals?.metrics,
+  traces: !!signals?.traces,
+  profiles: !!signals?.profiles,
+});
+
+const sanitizeDestination = (destination: Destination): Destination => ({
+  ...destination,
+  exportedSignals: sanitizeExportedSignals(destination.exportedSignals),
+});
+
+const sanitizeDestinationsResult = (raw: GetDestinationsData | null | undefined): GetDestinationsData => {
+  const destinations = (raw?.computePlatform?.destinations ?? raw?.destinations ?? []).map(sanitizeDestination);
+  return { computePlatform: { destinations } };
+};
+
 // Stable operations map — referentially constant so the kit's runner doesn't
 // rebuild memoized callbacks on every render.
 const operations: OdigosApiOperations = {
@@ -146,10 +172,22 @@ const operations: OdigosApiOperations = {
   RECOVER_FROM_ROLLBACK: { document: RECOVER_FROM_ROLLBACK },
 
   // destinations
-  GET_DESTINATIONS: { document: GET_DESTINATIONS },
+  GET_DESTINATIONS: {
+    document: GET_DESTINATIONS,
+    transformResult: (raw) => sanitizeDestinationsResult(raw as GetDestinationsData | null | undefined),
+  },
   GET_DESTINATION_CATEGORIES: { document: GET_DESTINATION_CATEGORIES },
   GET_POTENTIAL_DESTINATIONS: { document: GET_POTENTIAL_DESTINATIONS },
-  CREATE_DESTINATION: { document: CREATE_DESTINATION },
+  CREATE_DESTINATION: {
+    document: CREATE_DESTINATION,
+    transformResult: (raw): CreateDestinationResult => {
+      const env = raw as CreateDestinationResult | null | undefined;
+      if (!env?.createNewDestination) {
+        return env as CreateDestinationResult;
+      }
+      return { createNewDestination: sanitizeDestination(env.createNewDestination) };
+    },
+  },
   UPDATE_DESTINATION: { document: UPDATE_DESTINATION },
   DELETE_DESTINATION: { document: DELETE_DESTINATION },
   TEST_DESTINATION_CONNECTION: {
