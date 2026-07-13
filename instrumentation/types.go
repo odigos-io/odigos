@@ -83,6 +83,16 @@ type Reporter[processGroup ProcessGroup, configGroup ConfigGroup, processDetails
 	OnExit(ctx context.Context, pid int, pg processDetails) error
 }
 
+// StatusReporter is an optional extension of Reporter for instrumentations that
+// support asynchronous status updates (e.g., lazy-loaded libraries).
+// Implementations of Reporter can optionally implement this interface to receive
+// status updates that occur after the initial Load phase.
+type StatusReporter[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] interface {
+	// OnStatusUpdate is called when the instrumentation status changes after the initial load.
+	// For example, when lazily-loaded libraries become active.
+	OnStatusUpdate(ctx context.Context, pid int, pg processDetails, status Status) error
+}
+
 // SettingsGetter is used to fetch the initial settings of an instrumentation.
 type SettingsGetter[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] interface {
 	// GetSettings will fetch the initial settings of an instrumentation.

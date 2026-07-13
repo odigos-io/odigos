@@ -21,6 +21,7 @@ type k8sReporter struct {
 }
 
 var _ instrumentation.Reporter[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails] = &k8sReporter{}
+var _ instrumentation.StatusReporter[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails] = &k8sReporter{}
 
 type errRequiredEnvVarNotFound struct {
 	envVarName string
@@ -45,6 +46,7 @@ const (
 	FailedToInitialize InstrumentationStatusReason = "FailedToInitialize"
 	LoadedSuccessfully InstrumentationStatusReason = "LoadedSuccessfully"
 	FailedToRun        InstrumentationStatusReason = "FailedToRun"
+	LibraryActivated   InstrumentationStatusReason = "LibraryActivated"
 )
 
 type InstrumentationHealth bool
@@ -91,6 +93,11 @@ func (r *k8sReporter) OnExit(ctx context.Context, pid int, e *K8sProcessDetails)
 		return fmt.Errorf("error deleting instrumentation instance for pod %s pid %d: %w", e.Pod.Name, pid, err)
 	}
 	return nil
+}
+
+func (r *k8sReporter) OnStatusUpdate(ctx context.Context, pid int, e *K8sProcessDetails, status instrumentation.Status) error {
+	msg := fmt.Sprintf("Instrumentation libraries updated for pod: %s container: %s", e.Pod.Name, e.ContainerName)
+	return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationHealthy, LibraryActivated, msg, status)
 }
 
 func (r *k8sReporter) updateInstrumentationInstanceStatus(ctx context.Context, ke *K8sProcessDetails, pid int, health InstrumentationHealth, reason InstrumentationStatusReason, msg string, status instrumentation.Status) error {
