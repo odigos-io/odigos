@@ -51,10 +51,17 @@ func syncWorkload(ctx context.Context, client ctrl.Client, pw k8sconsts.PodWorkl
 		// TODO: handle this case
 		return nil
 	}
+	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
+	if err != nil {
+		return err
+	}
 
 	// get the pods that match the label selector
 	pods := &corev1.PodList{}
-	err = client.List(ctx, pods, ctrl.MatchingLabels(labelSelector.MatchLabels))
+	err = client.List(ctx, pods,
+		ctrl.InNamespace(pw.Namespace),
+		ctrl.MatchingLabelsSelector{Selector: selector},
+	)
 	if err != nil {
 		return err
 	}
