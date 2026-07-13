@@ -587,15 +587,17 @@ type HeadSamplingHTTPClientMatcherInput struct {
 }
 
 type HeadSamplingHTTPServerMatcher struct {
-	Route       *string `json:"route,omitempty"`
-	RoutePrefix *string `json:"routePrefix,omitempty"`
-	Method      *string `json:"method,omitempty"`
+	Route       *string                          `json:"route,omitempty"`
+	RoutePrefix *string                          `json:"routePrefix,omitempty"`
+	Method      *string                          `json:"method,omitempty"`
+	QueryParams []*HeadSamplingQueryParamMatcher `json:"queryParams,omitempty"`
 }
 
 type HeadSamplingHTTPServerMatcherInput struct {
-	Route       *string `json:"route,omitempty"`
-	RoutePrefix *string `json:"routePrefix,omitempty"`
-	Method      *string `json:"method,omitempty"`
+	Route       *string                               `json:"route,omitempty"`
+	RoutePrefix *string                               `json:"routePrefix,omitempty"`
+	Method      *string                               `json:"method,omitempty"`
+	QueryParams []*HeadSamplingQueryParamMatcherInput `json:"queryParams,omitempty"`
 }
 
 type HeadSamplingOperationMatcher struct {
@@ -606,6 +608,16 @@ type HeadSamplingOperationMatcher struct {
 type HeadSamplingOperationMatcherInput struct {
 	HTTPServer *HeadSamplingHTTPServerMatcherInput `json:"httpServer,omitempty"`
 	HTTPClient *HeadSamplingHTTPClientMatcherInput `json:"httpClient,omitempty"`
+}
+
+type HeadSamplingQueryParamMatcher struct {
+	Name       string  `json:"name"`
+	ValueExact *string `json:"valueExact,omitempty"`
+}
+
+type HeadSamplingQueryParamMatcherInput struct {
+	Name       string  `json:"name"`
+	ValueExact *string `json:"valueExact,omitempty"`
 }
 
 type HeadersCollection struct {

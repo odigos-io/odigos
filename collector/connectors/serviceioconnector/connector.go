@@ -24,6 +24,7 @@ type serviceioConnector struct {
 	metricsConsumer      consumer.Metrics
 	collectorInstanceID  string
 
+	configMutex              sync.RWMutex
 	odigosConfig             odigoscollector.OdigosConfigExtension
 	workloadIdentityResolver WorkloadIdentityResolver
 
@@ -97,12 +98,14 @@ func (c *serviceioConnector) registerOdigosConfigExtension(ctx context.Context, 
 	if !ok {
 		return fmt.Errorf("extension %q is not an OdigosConfigExtension (got %T)", extID.String(), ext)
 	}
-	c.odigosConfig = odigosExt
-	if !c.odigosConfig.WaitForCacheSync(ctx) {
+	if !odigosExt.WaitForCacheSync(ctx) {
 		c.logger.Warn("odigos config extension cache sync did not complete; active-source filtering may be incomplete briefly on startup")
 	}
+	c.configMutex.Lock()
+	defer c.configMutex.Unlock()
+	c.odigosConfig = odigosExt
 	c.workloadIdentityResolver = func(res pcommon.Resource) (string, pcommon.Map, bool) {
-		cacheKey, attrs, err := c.odigosConfig.GetWorkloadIdentityFromResource(res)
+		cacheKey, attrs, err := odigosExt.GetWorkloadIdentityFromResource(res)
 		if err != nil {
 			c.logger.Error("failed to get workload identity from resource", zap.Error(err))
 			return "", pcommon.NewMap(), false
@@ -133,8 +136,10 @@ func (c *serviceioConnector) metricFlushLoop(flushInterval time.Duration) {
 }
 
 func (c *serviceioConnector) Shutdown(_ context.Context) error {
+	c.configMutex.Lock()
 	c.odigosConfig = nil
 	c.workloadIdentityResolver = nil
+	c.configMutex.Unlock()
 	close(c.shutdownCh)
 	return nil
 }
@@ -149,17 +154,21 @@ func (c *serviceioConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces
 		c.logger.Error("invalid complete trace batch", zap.Error(err))
 		return nil
 	}
-	if c.workloadIdentityResolver == nil {
+	c.configMutex.RLock()
+	odigosConfig := c.odigosConfig
+	workloadIdentityResolver := c.workloadIdentityResolver
+	c.configMutex.RUnlock()
+	if odigosConfig == nil || workloadIdentityResolver == nil {
 		return nil
 	}
 
-	tree, err := BuildTraceTree(td, c.workloadIdentityResolver)
+	tree, err := BuildTraceTree(td, workloadIdentityResolver)
 	if err != nil {
 		c.logger.Error("failed to build trace tree", zap.Error(err))
 		return nil
 	}
 
-	if !c.aggregateConnectionsFromTree(tree) {
+	if !c.aggregateConnectionsFromTree(tree, odigosConfig) {
 		return nil
 	}
 
@@ -172,6 +181,6 @@ func (c *serviceioConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces
 	return nil
 }
 
-func (c *serviceioConnector) isActiveSourceInstance(instance *ServiceInstance) bool {
-	return c.odigosConfig.IsActiveSource(instance.Root.Resource)
+func (c *serviceioConnector) isActiveSourceInstance(instance *ServiceInstance, odigosConfig odigoscollector.OdigosConfigExtension) bool {
+	return odigosConfig.IsActiveSource(instance.Root.Resource)
 }

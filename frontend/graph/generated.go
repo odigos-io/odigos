@@ -519,6 +519,7 @@ type ComplexityRoot struct {
 
 	HeadSamplingHttpServerMatcher struct {
 		Method      func(childComplexity int) int
+		QueryParams func(childComplexity int) int
 		Route       func(childComplexity int) int
 		RoutePrefix func(childComplexity int) int
 	}
@@ -526,6 +527,11 @@ type ComplexityRoot struct {
 	HeadSamplingOperationMatcher struct {
 		HTTPClient func(childComplexity int) int
 		HTTPServer func(childComplexity int) int
+	}
+
+	HeadSamplingQueryParamMatcher struct {
+		Name       func(childComplexity int) int
+		ValueExact func(childComplexity int) int
 	}
 
 	HeadersCollection struct {
@@ -3791,6 +3797,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.HeadSamplingHttpServerMatcher.Method(childComplexity), true
 
+	case "HeadSamplingHttpServerMatcher.queryParams":
+		if e.complexity.HeadSamplingHttpServerMatcher.QueryParams == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingHttpServerMatcher.QueryParams(childComplexity), true
+
 	case "HeadSamplingHttpServerMatcher.route":
 		if e.complexity.HeadSamplingHttpServerMatcher.Route == nil {
 			break
@@ -3818,6 +3831,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HeadSamplingOperationMatcher.HTTPServer(childComplexity), true
+
+	case "HeadSamplingQueryParamMatcher.name":
+		if e.complexity.HeadSamplingQueryParamMatcher.Name == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingQueryParamMatcher.Name(childComplexity), true
+
+	case "HeadSamplingQueryParamMatcher.valueExact":
+		if e.complexity.HeadSamplingQueryParamMatcher.ValueExact == nil {
+			break
+		}
+
+		return e.complexity.HeadSamplingQueryParamMatcher.ValueExact(childComplexity), true
 
 	case "HeadersCollection.headerKeys":
 		if e.complexity.HeadersCollection.HeaderKeys == nil {
@@ -8011,6 +8038,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputHeadSamplingHttpClientMatcherInput,
 		ec.unmarshalInputHeadSamplingHttpServerMatcherInput,
 		ec.unmarshalInputHeadSamplingOperationMatcherInput,
+		ec.unmarshalInputHeadSamplingQueryParamMatcherInput,
 		ec.unmarshalInputHeadersCollectionInput,
 		ec.unmarshalInputHighlyRelevantOperationRuleInput,
 		ec.unmarshalInputHttpPayloadCollectionInput,
@@ -24500,6 +24528,53 @@ func (ec *executionContext) fieldContext_HeadSamplingHttpServerMatcher_method(_ 
 	return fc, nil
 }
 
+func (ec *executionContext) _HeadSamplingHttpServerMatcher_queryParams(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingHTTPServerMatcher) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingHttpServerMatcher_queryParams(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QueryParams, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.HeadSamplingQueryParamMatcher)
+	fc.Result = res
+	return ec.marshalOHeadSamplingQueryParamMatcher2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingQueryParamMatcherᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingHttpServerMatcher_queryParams(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingHttpServerMatcher",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_HeadSamplingQueryParamMatcher_name(ctx, field)
+			case "valueExact":
+				return ec.fieldContext_HeadSamplingQueryParamMatcher_valueExact(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type HeadSamplingQueryParamMatcher", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _HeadSamplingOperationMatcher_httpServer(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingOperationMatcher) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_HeadSamplingOperationMatcher_httpServer(ctx, field)
 	if err != nil {
@@ -24542,6 +24617,8 @@ func (ec *executionContext) fieldContext_HeadSamplingOperationMatcher_httpServer
 				return ec.fieldContext_HeadSamplingHttpServerMatcher_routePrefix(ctx, field)
 			case "method":
 				return ec.fieldContext_HeadSamplingHttpServerMatcher_method(ctx, field)
+			case "queryParams":
+				return ec.fieldContext_HeadSamplingHttpServerMatcher_queryParams(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HeadSamplingHttpServerMatcher", field.Name)
 		},
@@ -24595,6 +24672,91 @@ func (ec *executionContext) fieldContext_HeadSamplingOperationMatcher_httpClient
 				return ec.fieldContext_HeadSamplingHttpClientMatcher_method(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HeadSamplingHttpClientMatcher", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingQueryParamMatcher_name(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingQueryParamMatcher) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingQueryParamMatcher_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingQueryParamMatcher_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingQueryParamMatcher",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HeadSamplingQueryParamMatcher_valueExact(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingQueryParamMatcher) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HeadSamplingQueryParamMatcher_valueExact(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ValueExact, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HeadSamplingQueryParamMatcher_valueExact(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HeadSamplingQueryParamMatcher",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -54562,7 +54724,7 @@ func (ec *executionContext) unmarshalInputHeadSamplingHttpServerMatcherInput(ctx
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"route", "routePrefix", "method"}
+	fieldsInOrder := [...]string{"route", "routePrefix", "method", "queryParams"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -54590,6 +54752,13 @@ func (ec *executionContext) unmarshalInputHeadSamplingHttpServerMatcherInput(ctx
 				return it, err
 			}
 			it.Method = data
+		case "queryParams":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("queryParams"))
+			data, err := ec.unmarshalOHeadSamplingQueryParamMatcherInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingQueryParamMatcherInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.QueryParams = data
 		}
 	}
 
@@ -54624,6 +54793,40 @@ func (ec *executionContext) unmarshalInputHeadSamplingOperationMatcherInput(ctx 
 				return it, err
 			}
 			it.HTTPClient = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputHeadSamplingQueryParamMatcherInput(ctx context.Context, obj any) (model.HeadSamplingQueryParamMatcherInput, error) {
+	var it model.HeadSamplingQueryParamMatcherInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "valueExact"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "valueExact":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("valueExact"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ValueExact = data
 		}
 	}
 
@@ -59766,6 +59969,8 @@ func (ec *executionContext) _HeadSamplingHttpServerMatcher(ctx context.Context, 
 			out.Values[i] = ec._HeadSamplingHttpServerMatcher_routePrefix(ctx, field, obj)
 		case "method":
 			out.Values[i] = ec._HeadSamplingHttpServerMatcher_method(ctx, field, obj)
+		case "queryParams":
+			out.Values[i] = ec._HeadSamplingHttpServerMatcher_queryParams(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -59804,6 +60009,47 @@ func (ec *executionContext) _HeadSamplingOperationMatcher(ctx context.Context, s
 			out.Values[i] = ec._HeadSamplingOperationMatcher_httpServer(ctx, field, obj)
 		case "httpClient":
 			out.Values[i] = ec._HeadSamplingOperationMatcher_httpClient(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var headSamplingQueryParamMatcherImplementors = []string{"HeadSamplingQueryParamMatcher"}
+
+func (ec *executionContext) _HeadSamplingQueryParamMatcher(ctx context.Context, sel ast.SelectionSet, obj *model.HeadSamplingQueryParamMatcher) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, headSamplingQueryParamMatcherImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HeadSamplingQueryParamMatcher")
+		case "name":
+			out.Values[i] = ec._HeadSamplingQueryParamMatcher_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "valueExact":
+			out.Values[i] = ec._HeadSamplingQueryParamMatcher_valueExact(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -69495,6 +69741,21 @@ func (ec *executionContext) marshalNGatewayDeploymentInfo2ᚖgithubᚗcomᚋodig
 	return ec._GatewayDeploymentInfo(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNHeadSamplingQueryParamMatcher2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingQueryParamMatcher(ctx context.Context, sel ast.SelectionSet, v *model.HeadSamplingQueryParamMatcher) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._HeadSamplingQueryParamMatcher(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNHeadSamplingQueryParamMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingQueryParamMatcherInput(ctx context.Context, v any) (*model.HeadSamplingQueryParamMatcherInput, error) {
+	res, err := ec.unmarshalInputHeadSamplingQueryParamMatcherInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNHighlyRelevantOperationRule2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHighlyRelevantOperationRule(ctx context.Context, sel ast.SelectionSet, v model.HighlyRelevantOperationRule) graphql.Marshaler {
 	return ec._HighlyRelevantOperationRule(ctx, sel, &v)
 }
@@ -72830,6 +73091,71 @@ func (ec *executionContext) unmarshalOHeadSamplingOperationMatcherInput2ᚖgithu
 	}
 	res, err := ec.unmarshalInputHeadSamplingOperationMatcherInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOHeadSamplingQueryParamMatcher2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingQueryParamMatcherᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.HeadSamplingQueryParamMatcher) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNHeadSamplingQueryParamMatcher2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingQueryParamMatcher(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOHeadSamplingQueryParamMatcherInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingQueryParamMatcherInputᚄ(ctx context.Context, v any) ([]*model.HeadSamplingQueryParamMatcherInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.HeadSamplingQueryParamMatcherInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNHeadSamplingQueryParamMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingQueryParamMatcherInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) marshalOHeadersCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadersCollection(ctx context.Context, sel ast.SelectionSet, v *model.HeadersCollection) graphql.Marshaler {

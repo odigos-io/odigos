@@ -6,6 +6,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 
 	"github.com/odigos-io/odigos/collector/connectors/serviceioconnector/internal/metadata"
+	odigoscollector "github.com/odigos-io/odigos/common/collector"
 )
 
 const (
@@ -62,13 +63,13 @@ func mergeAttributes(source, destination pcommon.Map) {
 	})
 }
 
-func (c *serviceioConnector) aggregateConnectionsFromTree(tree *TraceTree) bool {
+func (c *serviceioConnector) aggregateConnectionsFromTree(tree *TraceTree, odigosConfig odigoscollector.OdigosConfigExtension) bool {
 	c.seriesMutex.Lock()
 	defer c.seriesMutex.Unlock()
 
 	added := false
 	for _, instance := range tree.ServiceInstances {
-		if !c.isActiveSourceInstance(instance) {
+		if !c.isActiveSourceInstance(instance, odigosConfig) {
 			continue
 		}
 

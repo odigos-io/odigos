@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.uber.org/zap"
 
 	"github.com/odigos-io/odigos/collector/connectors/serviceioconnector/internal/metadata"
 )
@@ -24,12 +25,12 @@ func TestAggregateConnectionsFromTree(t *testing.T) {
 		keyToMetric:          make(map[uint64]metricSeries),
 		inputSpanAttributes:  []string{"http.route"},
 		outputSpanAttributes: []string{"rpc.service"},
-		odigosConfig: &mockOdigosConfigExtension{
-			activeSources: map[string]struct{}{"svc-1": {}},
-		},
+	}
+	odigosConfig := &mockOdigosConfigExtension{
+		activeSources: map[string]struct{}{"svc-1": {}},
 	}
 
-	require.True(t, connector.aggregateConnectionsFromTree(tree))
+	require.True(t, connector.aggregateConnectionsFromTree(tree, odigosConfig))
 	require.Len(t, connector.keyToMetric, 2)
 
 	outputServices := make([]string, 0, 2)
@@ -77,6 +78,39 @@ func TestConnectorConsumeTraces_EmitsConnectionMetrics(t *testing.T) {
 	require.Equal(t, metricNameConnectionTotal, metric.Name())
 	require.Equal(t, pmetric.AggregationTemporalityCumulative, metric.Sum().AggregationTemporality())
 	require.Equal(t, 2, metric.Sum().DataPoints().Len())
+}
+
+func TestConnectorConsumeTraces_UsesConfigSnapshotDuringShutdown(t *testing.T) {
+	sink := &consumertest.MetricsSink{}
+	flushImmediately := time.Duration(0)
+	odigosConfig := &mockOdigosConfigExtension{
+		activeSources: map[string]struct{}{"svc-1": {}},
+	}
+	connector := &serviceioConnector{
+		config:               &Config{},
+		inputSpanAttributes:  []string{"http.route"},
+		outputSpanAttributes: []string{"rpc.service"},
+		metricsFlushInterval: flushImmediately,
+		logger:               zap.NewNop(),
+		metricsConsumer:      sink,
+		startTime:            time.Now(),
+		keyToMetric:          make(map[uint64]metricSeries),
+		odigosConfig:         odigosConfig,
+	}
+	connector.workloadIdentityResolver = func(res pcommon.Resource) (string, pcommon.Map, bool) {
+		connector.configMutex.Lock()
+		connector.odigosConfig = nil
+		connector.configMutex.Unlock()
+
+		cacheKey, attrs, err := odigosConfig.GetWorkloadIdentityFromResource(res)
+		require.NoError(t, err)
+		return cacheKey, attrs, true
+	}
+
+	require.NotPanics(t, func() {
+		require.NoError(t, connector.ConsumeTraces(t.Context(), buildServiceIOTestTrace(t)))
+	})
+	require.Len(t, sink.AllMetrics(), 1)
 }
 
 func TestConnectorConsumeTraces_AggregatesBeforeFlush(t *testing.T) {
