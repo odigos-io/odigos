@@ -27,8 +27,14 @@ import (
 )
 
 const (
-	gatewayRejectionMetricName = "odigos_collector_memory_limiter_batch_rejections_total"
+	gatewayRejectionMetricName       = "odigos_collector_memory_limiter_batch_rejections_total"
+	legacyGatewayRejectionMetricName = "odigos_gateway_memory_limiter_rejections_total"
 )
+
+var gatewayRejectionMetricNames = []string{
+	gatewayRejectionMetricName,
+	legacyGatewayRejectionMetricName,
+}
 
 type MetricValueList struct {
 	APIVersion string        `json:"apiVersion"`
@@ -275,27 +281,35 @@ func scrapeGatewayMetric(podIP string) (float64, error) {
 		return 0, fmt.Errorf("failed to read response body: %w", err)
 	}
 
+	return parseGatewayRejectionMetric(body)
+}
+
+func parseGatewayRejectionMetric(body []byte) (float64, error) {
 	parser := expfmt.NewTextParser(model.UTF8Validation)
 	metricFamilies, err := parser.TextToMetricFamilies(bytes.NewReader(body))
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse metrics: %w", err)
 	}
 
-	mf, ok := metricFamilies[gatewayRejectionMetricName]
-	if !ok {
-		// metric not found → treat as 0 rejections
-		// This can happen if the gateway is not running or the metric is not available yet.
-		return 0, nil
-	}
-
-	var total float64
-	for _, m := range mf.Metric {
-		if m.Counter != nil && m.Counter.Value != nil {
-			total += *m.Counter.Value
+	for _, metricName := range gatewayRejectionMetricNames {
+		mf, ok := metricFamilies[metricName]
+		if !ok {
+			continue
 		}
+
+		var total float64
+		for _, m := range mf.Metric {
+			if m.Counter != nil && m.Counter.Value != nil {
+				total += *m.Counter.Value
+			}
+		}
+
+		return total, nil
 	}
 
-	return total, nil
+	// Metric not found: treat as 0 rejections. This can happen while the gateway
+	// is starting up or if metrics are temporarily unavailable.
+	return 0, nil
 }
 
 // isPodOOMKilled checks if the pod is in CrashLoopBackOff due to OOM or currently OOMKilled

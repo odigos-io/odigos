@@ -11,12 +11,17 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-const attributeHashSeparator = byte(0)
+const (
+	attributeHashSeparator = byte(0)
+	defaultMetricSeriesTTL = 15 * time.Minute
+	defaultMaxMetricSeries = 10000
+)
 
 type metricSeries struct {
 	dimensions pcommon.Map
 	resource   pcommon.Map
 	count      int64
+	updatedAt  time.Time
 }
 
 // hashAttributes returns a deterministic hash of sorted metric attribute names and values.
@@ -49,6 +54,11 @@ func (c *serviceioConnector) nowWithOffset() time.Time {
 
 func (c *serviceioConnector) buildMetrics() (pmetric.Metrics, error) {
 	m := pmetric.NewMetrics()
+
+	c.seriesMutex.Lock()
+	defer c.seriesMutex.Unlock()
+
+	c.pruneStaleSeriesLocked(time.Now())
 	if len(c.keyToMetric) == 0 {
 		return m, nil
 	}
@@ -57,9 +67,6 @@ func (c *serviceioConnector) buildMetrics() (pmetric.Metrics, error) {
 		resource   pcommon.Map
 		seriesList []metricSeries
 	}
-
-	c.seriesMutex.Lock()
-	defer c.seriesMutex.Unlock()
 
 	grouped := make(map[uint64]*resourceGroup)
 	for _, series := range c.keyToMetric {
@@ -95,6 +102,17 @@ func (c *serviceioConnector) buildMetrics() (pmetric.Metrics, error) {
 	}
 
 	return m, nil
+}
+
+func (c *serviceioConnector) pruneStaleSeriesLocked(now time.Time) {
+	for key, series := range c.keyToMetric {
+		if series.updatedAt.IsZero() {
+			continue
+		}
+		if series.updatedAt.Add(defaultMetricSeriesTTL).Before(now) {
+			delete(c.keyToMetric, key)
+		}
+	}
 }
 
 func (c *serviceioConnector) flushMetrics(ctx context.Context) error {

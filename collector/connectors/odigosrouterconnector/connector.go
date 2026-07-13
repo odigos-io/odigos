@@ -177,12 +177,14 @@ func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) e
 			continue
 		}
 
+		matchedPipeline := false
 		for _, pipeline := range pipelines {
 			pipelineID := collectorpipeline.NewIDWithName(collectorpipeline.SignalTraces, pipeline)
 			consumer, err := cfg.consumers.Consumer(pipelineID)
 			if err != nil {
 				continue
 			}
+			matchedPipeline = true
 
 			batch, ok := tracesByConsumer[consumer]
 			if !ok {
@@ -190,6 +192,9 @@ func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) e
 			}
 			rs.CopyTo(batch.ResourceSpans().AppendEmpty())
 			tracesByConsumer[consumer] = batch
+		}
+		if !matchedPipeline {
+			rs.CopyTo(defaultTraces.ResourceSpans().AppendEmpty())
 		}
 	}
 
@@ -231,12 +236,13 @@ func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics
 			continue
 		}
 
+		matchedPipeline := false
 		for _, pipeline := range pipelines {
 			consumer, err := cfg.consumers.Consumer(collectorpipeline.NewIDWithName(collectorpipeline.SignalMetrics, pipeline))
 			if err != nil {
-				errs = errors.Join(errs, fmt.Errorf("failed to get metrics consumer for pipeline %s: %w", pipeline, err))
 				continue
 			}
+			matchedPipeline = true
 
 			batch, ok := metricsByConsumer[consumer]
 			if !ok {
@@ -244,6 +250,10 @@ func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics
 			}
 			rm.CopyTo(batch.ResourceMetrics().AppendEmpty())
 			metricsByConsumer[consumer] = batch
+		}
+		if !matchedPipeline {
+			cfg.logger.Debug("no signal-specific pipelines matched for resource metrics", zap.Any("resource", rm.Resource().Attributes()))
+			rm.CopyTo(defaultMetrics.ResourceMetrics().AppendEmpty())
 		}
 	}
 
@@ -286,6 +296,7 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 			continue
 		}
 
+		matchedPipeline := false
 		for _, pipeline := range pipelines {
 			consumer, err := cfg.consumers.Consumer(
 				collectorpipeline.NewIDWithName(collectorpipeline.SignalLogs, pipeline),
@@ -293,6 +304,7 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 			if err != nil {
 				continue
 			}
+			matchedPipeline = true
 
 			batch, ok := logsByConsumer[consumer]
 			if !ok {
@@ -300,6 +312,9 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 			}
 			rl.CopyTo(batch.ResourceLogs().AppendEmpty())
 			logsByConsumer[consumer] = batch
+		}
+		if !matchedPipeline {
+			rl.CopyTo(defaultLogs.ResourceLogs().AppendEmpty())
 		}
 	}
 

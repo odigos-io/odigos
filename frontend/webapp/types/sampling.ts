@@ -37,9 +37,22 @@ export interface HeadSamplingHttpClientMatcher {
   method?: string | null;
 }
 
+export interface HeadSamplingGrpcServerMatcher {
+  method?: string | null;
+  service?: string | null;
+}
+
+export interface HeadSamplingGrpcClientMatcher {
+  method?: string | null;
+  service?: string | null;
+  serverAddress?: string | null;
+}
+
 export interface HeadSamplingOperationMatcher {
   httpServer?: HeadSamplingHttpServerMatcher | null;
   httpClient?: HeadSamplingHttpClientMatcher | null;
+  grpcServer?: HeadSamplingGrpcServerMatcher | null;
+  grpcClient?: HeadSamplingGrpcClientMatcher | null;
 }
 
 export interface TailSamplingHttpServerMatcher {

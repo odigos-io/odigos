@@ -73,6 +73,22 @@ func TestResolveDistroForContainer_wildcardOverrideAcceptsMismatchedContainerLan
 	require.True(t, common.IsProgrammingLanguageWildcard(d.Language), "OBI should report wildcard language in spec")
 }
 
+func TestResolveDistroForContainer_wildcardOverrideAcceptsUnknownContainerLanguage(t *testing.T) {
+	g := mustNewCommunityGetter(t)
+	overrideName := obiDistroName
+	config := &common.OdigosConfiguration{}
+	rt := &odigosv1.RuntimeDetailsByContainer{
+		Language: common.UnknownProgrammingLanguage,
+	}
+	co := &odigosv1.ContainerOverride{OtelDistroName: &overrideName}
+
+	d, info := ResolveDistroForContainer(config, rt, nil, g, co, "c1")
+	require.Nil(t, info)
+	require.NotNil(t, d)
+	require.Equal(t, obiDistroName, d.Name)
+	require.True(t, common.IsProgrammingLanguageWildcard(d.Language), "manual OBI override should work when auto-detection reports unknown")
+}
+
 func TestResolveDistroForContainer_wildcardDistroSkipsRuntimeSemver(t *testing.T) {
 	g := mustNewCommunityGetter(t)
 	config := &common.OdigosConfiguration{}
