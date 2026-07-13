@@ -62,5 +62,8 @@ spec:
             timeout: 5m10s
             content: |
               cd ../../../../frontend/webapp
-              yarn install --no-cache
-              yarn cy:run
+              yarn install
+              yarn add -D cypress@latest
+              # Ensure yarn's global bin dir is on PATH (not always default in CI).
+              export PATH="$(yarn global bin):$PATH"
+              ./node_modules/.bin/cypress run --e2e -q
