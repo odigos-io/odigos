@@ -55,7 +55,6 @@ jobs:
       - uses: actions/checkout@v7
       - uses: depot/setup-action@v1
       - uses: depot/build-push-action@v1
-        id: build-instrumentor
         with:
           save: true
           context: .
@@ -70,7 +69,6 @@ jobs:
       - uses: actions/checkout@v7
       - uses: depot/setup-action@v1
       - uses: depot/build-push-action@v1
-        id: build-odiglet
         with:
           save: true
           context: .
