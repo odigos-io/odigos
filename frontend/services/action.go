@@ -609,9 +609,16 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 		rules = append(rules, group)
 	}
 
-	return &urlactions.URLTemplatizationConfig{
+	config := &urlactions.URLTemplatizationConfig{
 		Rules: rules,
 	}
+	// The GraphQL/UI shape only exposes the rule groups, not the default templatization groups.
+	// Preserve any YAML-managed default templatization from the existing Action so that updating
+	// rules through the UI does not silently drop it.
+	if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
+		config.Default = existingAction.Spec.URLTemplatization.Default
+	}
+	return config
 }
 
 func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []*model.URLTemplatizationRulesGroup {
