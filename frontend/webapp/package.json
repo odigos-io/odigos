@@ -15,14 +15,13 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@apollo/client": "^4.2.6",
+    "@apollo/client": "^3.13.9",
     "@odigos/ui-kit": "0.0.263",
     "graphql": "^16.14.2",
     "next": "15.5.18",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-error-boundary": "^6.1.2",
-    "rxjs": "^7.8.1",
     "styled-components": "6.3.12",
     "zustand": "^5.0.14"
   },
