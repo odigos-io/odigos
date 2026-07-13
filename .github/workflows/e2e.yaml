@@ -231,18 +231,18 @@ jobs:
         run: |
           kind load image-archive odigos-images.tar
           kind load image-archive cli-image.tar
-          docker pull p0xd21zf5r.registry.depot.dev/odigos-instrumentor:${{ github.sha }}
-          docker pull p0xd21zf5r.registry.depot.dev/odigos-autoscaler:${{ github.sha }}
-          docker pull p0xd21zf5r.registry.depot.dev/odigos-scheduler:${{ github.sha }}
-          docker pull p0xd21zf5r.registry.depot.dev/odigos-ui:${{ github.sha }}
-          docker pull p0xd21zf5r.registry.depot.dev/odigos-collector:${{ github.sha }}
-          docker pull p0xd21zf5r.registry.depot.dev/odigos-odiglet:${{ github.sha }}
-          docker tag p0xd21zf5r.registry.depot.dev/odigos-instrumentor:${{ github.sha }} registry.odigos.io/odigos-instrumentor:e2e-test
-          docker tag p0xd21zf5r.registry.depot.dev/odigos-autoscaler:${{ github.sha }} registry.odigos.io/odigos-autoscaler:e2e-test
-          docker tag p0xd21zf5r.registry.depot.dev/odigos-scheduler:${{ github.sha }} registry.odigos.io/odigos-scheduler:e2e-test
-          docker tag p0xd21zf5r.registry.depot.dev/odigos-ui:${{ github.sha }} registry.odigos.io/odigos-ui:e2e-test
-          docker tag p0xd21zf5r.registry.depot.dev/odigos-collector:${{ github.sha }} registry.odigos.io/odigos-collector:e2e-test
-          docker tag p0xd21zf5r.registry.depot.dev/odigos-odiglet:${{ github.sha }} registry.odigos.io/odigos-odiglet:e2e-test
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-instrumentor-${{ github.sha }}
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-autoscaler-${{ github.sha }}
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-scheduler-${{ github.sha }}
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-ui-${{ github.sha }}
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-collector-${{ github.sha }}
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-odiglet-${{ github.sha }}
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-instrumentor-${{ github.sha }} registry.odigos.io/odigos-instrumentor:e2e-test
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-autoscaler-${{ github.sha }} registry.odigos.io/odigos-autoscaler:e2e-test
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-scheduler-${{ github.sha }} registry.odigos.io/odigos-scheduler:e2e-test
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-ui-${{ github.sha }} registry.odigos.io/odigos-ui:e2e-test
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-collector-${{ github.sha }} registry.odigos.io/odigos-collector:e2e-test
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-odiglet-${{ github.sha }} registry.odigos.io/odigos-odiglet:e2e-test
           kind load docker-image registry.odigos.io/odigos-instrumentor:e2e-test
           kind load docker-image registry.odigos.io/odigos-autoscaler:e2e-test
           kind load docker-image registry.odigos.io/odigos-scheduler:e2e-test
