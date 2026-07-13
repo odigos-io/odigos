@@ -17,11 +17,12 @@ jobs:
       - uses: depot/build-push-action@v1
         id: build
         with:
-          push: true
+          push: false
           context: .
           file: Dockerfile
           tags: odigos-instrumentor:${{ github.sha }}
           build-args: SERVICE_NAME=instrumentor
+          outputs: type=docker,dest=/tmp/instrumentor.tar
 
       - name: Show build outputs
         run: |
