@@ -48,6 +48,26 @@ jobs:
           path: cli/odigos
           key: ${{ github.run_id }}-odigos-cli
 
+  depot-build-images:
+    runs-on: depot-ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: depot/setup-action@v1
+      - uses: depot/build-push-action@v1
+        id: build
+        with:
+          push: false
+          context: .
+          file: Dockerfile
+          tags: e2e-test
+          build-args: SERVICE_NAME=instrumentor
+          outputs: type=docker,dest=/tmp/instrumentor.tar
+
+      - name: Save image to cache
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/instrumentor.tar
+          key: ${{ github.sha }}-odigos-instrumentor
 
   build-odigos-images:
     runs-on: depot-ubuntu-24.04-8
