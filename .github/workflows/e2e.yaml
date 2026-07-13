@@ -59,7 +59,7 @@ jobs:
           save: true
           context: .
           file: Dockerfile
-          tags: odigos-instrumentor-${{ github.sha }}
+          save-tag: odigos-instrumentor-${{ github.sha }}
           build-args: SERVICE_NAME=instrumentor
 
   build-odigos-images:
