@@ -3,7 +3,6 @@ package podsinjectionstatus
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,9 +20,5 @@ func (r *InstrumentationConfigController) Reconcile(ctx context.Context, req ctr
 	}
 
 	err = syncWorkload(ctx, r.Client, pw)
-	if err != nil {
-		return utils.K8SUpdateErrorHandler(err)
-	}
-
-	return ctrl.Result{}, nil
+	return handleSyncError(err)
 }

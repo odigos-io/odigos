@@ -4,19 +4,22 @@ metadata:
   name: deployment-nodejs-dockerfile-env
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
     - message: "runtime detection completed successfully"
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
     - message: "agent enabled in 1 containers: [nodejs-dockerfile-env]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
     - message: workload rollout triggered successfully
       reason: RolloutTriggeredSuccessfully
       status: "True"
@@ -28,19 +31,22 @@ metadata:
   name: deployment-nodejs-manifest-env
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
     - message: "runtime detection completed successfully"
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
     - message: "agent enabled in 1 containers: [nodejs-manifest-env]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
     - message: workload rollout triggered successfully
       reason: RolloutTriggeredSuccessfully
       status: "True"
@@ -52,19 +58,22 @@ metadata:
   name: deployment-java-supported-docker-env
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
     - message: "runtime detection completed successfully"
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
     - message: "agent enabled in 1 containers: [java-supported-docker-env]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
     - message: workload rollout triggered successfully
       reason: RolloutTriggeredSuccessfully
       status: "True"
@@ -76,19 +85,22 @@ metadata:
   name: deployment-java-supported-manifest-env
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
     - message: "runtime detection completed successfully"
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
     - message: "agent enabled in 1 containers: [java-supported-manifest-env]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
     - message: workload rollout triggered successfully
       reason: RolloutTriggeredSuccessfully
       status: "True"
@@ -100,19 +112,22 @@ metadata:
   name: deployment-python-alpine
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
     - message: "runtime detection completed successfully"
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
     - message: "agent enabled in 1 containers: [python-alpine]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
     - message: workload rollout triggered successfully
       reason: RolloutTriggeredSuccessfully
       status: "True"
