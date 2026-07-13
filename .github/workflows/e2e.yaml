@@ -50,7 +50,6 @@ jobs:
 
   depot-build-instrumentor:
     runs-on: depot-ubuntu-latest
-    id: build-instrumentor
     steps:
       - uses: actions/checkout@v7
       - uses: depot/setup-action@v1
@@ -64,7 +63,6 @@ jobs:
     
   depot-build-odiglet:
     runs-on: depot-ubuntu-latest
-    id: build-odiglet
     steps:
       - uses: actions/checkout@v7
       - uses: depot/setup-action@v1
