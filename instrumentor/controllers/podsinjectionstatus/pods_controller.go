@@ -24,7 +24,7 @@ func (r *PodsController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			err := r.handleDeletedPod(ctx, req)
-			return utils.K8SUpdateErrorHandler(err)
+			return handleSyncError(err)
 		}
 		return ctrl.Result{}, err
 	}
@@ -47,11 +47,7 @@ func (r *PodsController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	err = syncWorkload(ctx, r.Client, *pw)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{}, nil
+	return handleSyncError(err)
 }
 
 func (r *PodsController) handleDeletedPod(ctx context.Context, req ctrl.Request) error {
@@ -67,4 +63,11 @@ func (r *PodsController) handleDeletedPod(ctx context.Context, req ctrl.Request)
 
 	r.PodsTracker.DeletePodWorkload(req)
 	return nil
+}
+
+func handleSyncError(err error) (ctrl.Result, error) {
+	if result, handledErr := utils.K8SNoEffectiveConfigErrorHandler(err); handledErr == nil {
+		return result, nil
+	}
+	return utils.K8SUpdateErrorHandler(err)
 }
