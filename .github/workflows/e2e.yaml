@@ -48,6 +48,82 @@ jobs:
           path: cli/odigos
           key: ${{ github.run_id }}-odigos-cli
 
+  depot-build-instrumentor:
+    runs-on: depot-ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: depot/setup-action@v1
+      - uses: depot/build-push-action@v1
+        with:
+          save: true
+          context: .
+          file: Dockerfile
+          save-tag: odigos-instrumentor-${{ github.sha }}
+          build-args: SERVICE_NAME=instrumentor
+
+  depot-build-autoscaler:
+    runs-on: depot-ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: depot/setup-action@v1
+      - uses: depot/build-push-action@v1
+        with:
+          save: true
+          context: .
+          file: Dockerfile
+          save-tag: odigos-autoscaler-${{ github.sha }}
+          build-args: SERVICE_NAME=autoscaler
+
+  depot-build-scheduler:
+    runs-on: depot-ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: depot/setup-action@v1
+      - uses: depot/build-push-action@v1
+        with:
+          save: true
+          context: .
+          file: Dockerfile
+          save-tag: odigos-scheduler-${{ github.sha }}
+          build-args: SERVICE_NAME=scheduler
+
+  depot-build-ui:
+    runs-on: depot-ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: depot/setup-action@v1
+      - uses: depot/build-push-action@v1
+        with:
+          save: true
+          context: .
+          file: frontend/Dockerfile
+          save-tag: odigos-ui-${{ github.sha }}
+          build-args: SERVICE_NAME=ui
+
+  depot-build-collector:
+    runs-on: depot-ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: depot/setup-action@v1
+      - uses: depot/build-push-action@v1
+        with:
+          save: true
+          context: .
+          file: collector/Dockerfile
+          save-tag: odigos-collector-${{ github.sha }}
+          build-args: SERVICE_NAME=collector
+
+  depot-build-odiglet:
+    runs-on: depot-ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: depot/setup-action@v1
+      - uses: depot/build-push-action@v1
+        with:
+          save: true
+          context: .
+          file: odiglet/Dockerfile
+          save-tag: odigos-odiglet-${{ github.sha }}
 
   build-odigos-images:
     runs-on: depot-ubuntu-24.04-8
@@ -55,10 +131,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Build Odigos Images
-        run: |
-          TAG=e2e-test make build-images
-          docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
+      # - name: Build Odigos Images
+      #   run: |
+      #     TAG=e2e-test make build-images
+      #     docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
 
       - uses: ko-build/setup-ko@v0.9
 
@@ -71,12 +147,11 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            odigos-images.tar
             cli-image.tar
           key: ${{ github.run_id }}-odigos-images
 
   kubernetes-test:
-    needs: [ build-odigos-images, build-cli ]
+    needs: [ build-odigos-images, build-cli, depot-build-instrumentor, depot-build-autoscaler, depot-build-scheduler, depot-build-ui, depot-build-collector, depot-build-odiglet ]
     runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
@@ -139,7 +214,6 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            odigos-images.tar
             cli-image.tar
           fail-on-cache-miss: true
           key: ${{ github.run_id }}-odigos-images
@@ -153,8 +227,25 @@ jobs:
 
       - name: Load Odigos Images to Kind Cluster
         run: |
-          kind load image-archive odigos-images.tar
           kind load image-archive cli-image.tar
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-instrumentor-${{ github.sha }}
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-autoscaler-${{ github.sha }}
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-scheduler-${{ github.sha }}
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-ui-${{ github.sha }}
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-collector-${{ github.sha }}
+          docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-odiglet-${{ github.sha }}
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-instrumentor-${{ github.sha }} registry.odigos.io/odigos-instrumentor:e2e-test
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-autoscaler-${{ github.sha }} registry.odigos.io/odigos-autoscaler:e2e-test
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-scheduler-${{ github.sha }} registry.odigos.io/odigos-scheduler:e2e-test
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-ui-${{ github.sha }} registry.odigos.io/odigos-ui:e2e-test
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-collector-${{ github.sha }} registry.odigos.io/odigos-collector:e2e-test
+          docker tag p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-odiglet-${{ github.sha }} registry.odigos.io/odigos-odiglet:e2e-test
+          kind load docker-image registry.odigos.io/odigos-instrumentor:e2e-test
+          kind load docker-image registry.odigos.io/odigos-autoscaler:e2e-test
+          kind load docker-image registry.odigos.io/odigos-scheduler:e2e-test
+          kind load docker-image registry.odigos.io/odigos-ui:e2e-test
+          kind load docker-image registry.odigos.io/odigos-collector:e2e-test
+          kind load docker-image registry.odigos.io/odigos-odiglet:e2e-test
 
       - name: Restore cached CLI binary
         id: restore-cli-cache
