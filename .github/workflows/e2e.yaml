@@ -48,8 +48,9 @@ jobs:
           path: cli/odigos
           key: ${{ github.run_id }}-odigos-cli
 
-  depot-build-images:
+  depot-build-instrumentor:
     runs-on: depot-ubuntu-latest
+    id: build-instrumentor
     steps:
       - uses: actions/checkout@v7
       - uses: depot/setup-action@v1
@@ -61,6 +62,20 @@ jobs:
           file: Dockerfile
           save-tag: odigos-instrumentor-${{ github.sha }}
           build-args: SERVICE_NAME=instrumentor
+    
+  depot-build-odiglet:
+    runs-on: depot-ubuntu-latest
+    id: build-odiglet
+    steps:
+      - uses: actions/checkout@v7
+      - uses: depot/setup-action@v1
+      - uses: depot/build-push-action@v1
+        id: build
+        with:
+          save: true
+          context: .
+          file: odiglet/Dockerfile
+          save-tag: odigos-odiglet-${{ github.sha }}
 
   build-odigos-images:
     runs-on: depot-ubuntu-24.04-8
