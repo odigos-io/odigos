@@ -11,6 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// need to react to the auto rollout disabled setting,
+// and update the condition when it changes.
 type EffectiveConfigReconciler struct {
 	client.Client
 }

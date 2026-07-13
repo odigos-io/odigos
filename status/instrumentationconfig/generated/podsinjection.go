@@ -93,7 +93,7 @@ var (
 	}
 	PodsInjectionRestartRequiredWebhookMissed = status.Reason{
 		Name:                 string(PodsInjectionReasonRestartRequiredWebhookMissed),
-		Message:              "some pods missed agent injection after rollout; restart the workload manually",
+		Message:              "some pods missed odigos agent injection to pod manifest after rollout; restart the workload manually",
 		TechnicalDescription: "automatic rollout already completed, but some pods still lack odigos pod manifest injection. this can happen if a pod was created without going through the odigos pods webhook. manually restart the workload so new pods are created and injected via the webhook",
 		K8sConditionStatus:   metav1.ConditionFalse,
 		OdigosSeverity:       status.OdigosSeverityNotice,
