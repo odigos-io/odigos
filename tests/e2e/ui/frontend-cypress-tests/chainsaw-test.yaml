@@ -63,4 +63,4 @@ spec:
             content: |
               cd ../../../../frontend/webapp
               yarn install --no-cache
-              yarn cy:run
+              yarn dlx cypress run --e2e -q
