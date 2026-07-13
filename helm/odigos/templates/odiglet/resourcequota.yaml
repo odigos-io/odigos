@@ -1,4 +1,4 @@
-{{ if .Values.gke.enabled }}
+{{ if or .Values.gke.enabled .Values.gke.autopilot }}
 apiVersion: v1
 kind: ResourceQuota
 metadata:

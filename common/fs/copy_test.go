@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -160,6 +161,45 @@ func TestRemoveChangedFilesFromKeepMap_RenamesChangedFile(t *testing.T) {
 		if _, err := os.Stat(dstPath); err != nil {
 			t.Fatalf("renamed file %s does not exist: %v", dstPath, err)
 		}
+	}
+}
+
+func TestCopyAgentsDirectoryToHost_AbortsWhenCriticalFileInspectionFails(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("fake rsync script uses POSIX shell")
+	}
+
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+	fakeBinDir := t.TempDir()
+
+	criticalRelPath := filepath.Join("loader", "loader.so")
+	if err := os.MkdirAll(filepath.Join(srcDir, "loader"), 0755); err != nil {
+		t.Fatalf("mkdir source loader dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(srcDir, criticalRelPath), []byte("new-loader"), 0644); err != nil {
+		t.Fatalf("write source critical file: %v", err)
+	}
+
+	// A directory at a critical-file path makes hashing fail. The copy must
+	// abort before rsync, otherwise rsync would run without a safe keep list.
+	if err := os.MkdirAll(filepath.Join(dstDir, criticalRelPath), 0755); err != nil {
+		t.Fatalf("mkdir invalid destination critical path: %v", err)
+	}
+
+	rsyncMarker := filepath.Join(dstDir, "rsync-was-called")
+	fakeRsync := filepath.Join(fakeBinDir, "rsync")
+	fakeRsyncScript := fmt.Sprintf("#!/bin/sh\nprintf called > %q\nexit 0\n", rsyncMarker)
+	if err := os.WriteFile(fakeRsync, []byte(fakeRsyncScript), 0755); err != nil {
+		t.Fatalf("write fake rsync: %v", err)
+	}
+
+	err := CopyAgentsDirectoryToHost(srcDir, dstDir, &fakeRsync)
+	if err == nil {
+		t.Fatalf("expected critical-file inspection failure")
+	}
+	if _, statErr := os.Stat(rsyncMarker); !os.IsNotExist(statErr) {
+		t.Fatalf("rsync should not have been called; marker stat err: %v", statErr)
 	}
 }
 

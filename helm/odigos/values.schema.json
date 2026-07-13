@@ -2141,7 +2141,7 @@
               "title": "metricsFlushInterval"
             },
             "outputSpanAttributes": {
-              "description": "span attribute names read from outbound spans on the sending side (e.g. client/producer spans).\neach name should refer to a low-cardinality attribute.",
+              "description": "span attribute names read from outbound spans on the sending side (e.g. client/producer spans).\neach name should refer to a low-cardinality attribute. avoid raw SQL, user, or request-specific values.",
               "items": {
                 "type": "string"
               },
