@@ -17,12 +17,12 @@
  */
 
 import React, { type FC, type PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
+import { normalizeActionForWire, parseRenamesString } from './action-form-normalization';
 import { useConfig, useCSRF } from '@/hooks';
 import { API, INITIAL_CONTEXT, IS_LOCAL } from '@/utils';
 import { CenterThis, Loader } from '@odigos/ui-kit/components';
 import {
   OdigosApiProvider,
-  type CreateActionVars,
   type DiagnoseResult,
   type GetActionsData,
   type GetNamespacesWithWorkloadsData,
@@ -30,7 +30,6 @@ import {
   type GetServiceMapData,
   type OdigosApiOperations,
   type OperationContext,
-  type UpdateActionVars,
 } from '@odigos/ui-kit/contexts';
 import type {
   Action,
@@ -124,40 +123,6 @@ import {
 // doesn't expose a dedicated mutation; the kit's `dataStreams.create` falls
 // back to local-store-only behavior when the operation slot is undefined.
 
-// The backend's `ActionFieldsInput.renames` is a JSON-stringified `String`
-// (it `json.Unmarshal`s the value server-side), while the kit models
-// `renames` as an object map. Serialize on the way out (create/update) and
-// parse on the way back (list) so the kit's RenameAttribute form always sees
-// the object shape. This (de)serialization previously lived in the webapp's
-// `useActionCRUD` hook, retired in favor of the kit's `useActionsApi`; without
-// it the raw object is sent to a `String` scalar and the mutation is rejected
-// (no CRD is created).
-const parseRenamesString = (value: string): Record<string, string> => {
-  try {
-    const parsed = JSON.parse(value);
-    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {};
-  } catch {
-    return {};
-  }
-};
-
-const serializeActionRenames = (vars: CreateActionVars | UpdateActionVars): Record<string, unknown> => {
-  const { action } = vars;
-  const renames = action?.fields?.renames;
-  return {
-    ...vars,
-    action: {
-      ...action,
-      fields: {
-        ...action?.fields,
-        // Mirror the legacy hook: an empty/missing map is sent as null so the
-        // controller skips the RenameAttribute config entirely.
-        renames: renames && Object.keys(renames).length ? JSON.stringify(renames) : null,
-      },
-    },
-  };
-};
-
 const parseActionRenames = (action: Action): Action => {
   const renames = action?.fields?.renames as unknown;
   if (typeof renames !== 'string') return action;
@@ -205,8 +170,8 @@ const operations: OdigosApiOperations = {
       return { computePlatform: { actions: actions.map(parseActionRenames) } };
     },
   },
-  CREATE_ACTION: { document: CREATE_ACTION, transformVariables: (vars) => serializeActionRenames(vars) },
-  UPDATE_ACTION: { document: UPDATE_ACTION, transformVariables: (vars) => serializeActionRenames(vars) },
+  CREATE_ACTION: { document: CREATE_ACTION, transformVariables: (vars) => normalizeActionForWire(vars) },
+  UPDATE_ACTION: { document: UPDATE_ACTION, transformVariables: (vars) => normalizeActionForWire(vars) },
   DELETE_ACTION: { document: DELETE_ACTION },
 
   // instrumentation rules
