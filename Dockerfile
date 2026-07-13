@@ -1,16 +1,17 @@
 FROM --platform=$BUILDPLATFORM golang:1.26.4 AS builder
 ARG SERVICE_NAME
 
-# Copy local modules required by the build
 WORKDIR /workspace
-COPY api/ api/
-COPY common/ common/
-COPY k8sutils/ k8sutils/
-COPY profiles/ profiles/
-COPY distros/ distros/
-COPY destinations/ destinations/
-COPY config/ config/
-COPY status/ status/
+# Copy only go.mod/go.sum of local modules so replace directives resolve
+# without invalidating the download cache on source-only changes
+COPY api/go.mod api/go.sum api/
+COPY common/go.mod common/go.sum common/
+COPY k8sutils/go.mod k8sutils/go.sum k8sutils/
+COPY profiles/go.mod profiles/go.sum profiles/
+COPY distros/go.mod distros/go.sum distros/
+COPY destinations/go.mod destinations/go.sum destinations/
+COPY config/go.mod config/go.sum config/
+COPY status/go.mod status/go.sum status/
 
 WORKDIR /workspace/$SERVICE_NAME
 RUN mkdir -p /workspace/build
@@ -18,7 +19,17 @@ RUN mkdir -p /workspace/build
 COPY $SERVICE_NAME/go.mod $SERVICE_NAME/go.sum ./
 RUN --mount=type=cache,target=/go/pkg \
     go mod download && go mod verify
-# Copy rest of source code
+
+# Copy local module sources (absolute dest so they stay at /workspace/..)
+COPY api/ /workspace/api/
+COPY common/ /workspace/common/
+COPY k8sutils/ /workspace/k8sutils/
+COPY profiles/ /workspace/profiles/
+COPY distros/ /workspace/distros/
+COPY destinations/ /workspace/destinations/
+COPY config/ /workspace/config/
+COPY status/ /workspace/status/
+# Copy rest of service source code
 COPY $SERVICE_NAME/ .
 # Build for target architecture
 ARG TARGETARCH
