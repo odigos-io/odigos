@@ -6,7 +6,7 @@ import { useConfig } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import OdigosApiAdapter from '@/lib/odigos-api-adapter';
 import { InstallationStatus } from '@odigos/ui-kit/types';
-import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
+import { CenterThis, Loader } from '@odigos/ui-kit/components';
 
 /**
  * The root `/` page reads `config.installationStatus` and redirects
@@ -33,7 +33,7 @@ function Redirect() {
 
   return (
     <CenterThis style={{ height: '100%' }}>
-      <FadeLoader scale={2} />
+      <Loader withSpinnerOld scaleSpinnerOld={2} />
     </CenterThis>
   );
 }

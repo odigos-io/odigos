@@ -4,7 +4,7 @@ import React, { type PropsWithChildren } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { OverviewHeader } from '@/components';
-import { Navbar } from '@odigos/ui-kit/components/v2';
+import { Navbar } from '@odigos/ui-kit/components';
 import { ToastList } from '@odigos/ui-kit/containers';
 import OdigosApiAdapter from '@/lib/odigos-api-adapter';
 import { OdigosProvider } from '@odigos/ui-kit/contexts';
