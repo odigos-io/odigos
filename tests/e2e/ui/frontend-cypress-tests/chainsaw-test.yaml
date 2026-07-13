@@ -63,7 +63,7 @@ spec:
             content: |
               cd ../../../../frontend/webapp
               yarn install
-              yarn global add cypress@latest
+              yarn add -D cypress@latest
               # Ensure yarn's global bin dir is on PATH (not always default in CI).
               export PATH="$(yarn global bin):$PATH"
               cypress run --e2e -q
