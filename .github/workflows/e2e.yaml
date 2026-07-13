@@ -100,7 +100,7 @@ jobs:
           key: ${{ github.run_id }}-odigos-images
 
   kubernetes-test:
-    needs: [ build-odigos-images, build-cli ]
+    needs: [ build-odigos-images, build-cli, depot-build-instrumentor, depot-build-odiglet ]
     runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
@@ -179,6 +179,12 @@ jobs:
         run: |
           kind load image-archive odigos-images.tar
           kind load image-archive cli-image.tar
+          docker pull p0xd21zf5r.registry.depot.dev/odigos-instrumentor:${{ github.sha }}
+          docker pull p0xd21zf5r.registry.depot.dev/odigos-odiglet:${{ github.sha }}
+          docker tag p0xd21zf5r.registry.depot.dev/odigos-instrumentor:${{ github.sha }} registry.odigos.io/odigos-instrumentor:e2e-test
+          docker tag p0xd21zf5r.registry.depot.dev/odigos-odiglet:${{ github.sha }} registry.odigos.io/odigos-odiglet:e2e-test
+          kind load docker-image registry.odigos.io/odigos-instrumentor:e2e-test
+          kind load docker-image registry.odigos.io/odigos-odiglet:e2e-test
 
       - name: Restore cached CLI binary
         id: restore-cli-cache
