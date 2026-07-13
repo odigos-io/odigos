@@ -56,10 +56,10 @@ jobs:
       - uses: depot/build-push-action@v1
         id: build
         with:
-          push: false
+          save: true
           context: .
           file: Dockerfile
-          tags: e2e-test
+          tags: ${{ github.sha }}
           build-args: SERVICE_NAME=instrumentor
           outputs: type=docker,dest=/tmp/instrumentor.tar
 
