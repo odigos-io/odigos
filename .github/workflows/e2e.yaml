@@ -61,13 +61,6 @@ jobs:
           file: Dockerfile
           tags: ${{ github.sha }}
           build-args: SERVICE_NAME=instrumentor
-          outputs: type=docker,dest=/tmp/instrumentor.tar
-
-      - name: Save image to cache
-        uses: actions/cache/save@v4
-        with:
-          path: /tmp/instrumentor.tar
-          key: ${{ github.sha }}-odigos-instrumentor
 
   build-odigos-images:
     runs-on: depot-ubuntu-24.04-8
