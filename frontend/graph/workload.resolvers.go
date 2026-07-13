@@ -478,8 +478,11 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 		return nil, err
 	}
 
+	// Fetch the InstrumentationConfig if present, but do not require it: workloads without an
+	// InstrumentationConfig still have Kubernetes pods we want to surface. getContainerConfigByName
+	// is nil-safe, so a nil ic simply yields empty odigos instrumentation config per container.
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
-	if err != nil || ic == nil {
+	if err != nil {
 		return nil, err
 	}
 
