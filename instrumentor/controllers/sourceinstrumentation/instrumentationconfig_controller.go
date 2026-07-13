@@ -24,6 +24,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,8 +41,23 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	var instrumentationConfig odigosv1.InstrumentationConfig
 	err := r.Client.Get(ctx, req.NamespacedName, &instrumentationConfig)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+
+		// It's possible for an IC to be deleted by accident
+		// This catches that case and syncs the workload to re-create the IC if necessary
+		// The IC is essentially an operand of the instrumentor, so it should reconcile accidental deletions to recreate it.
+		pw, pwErr := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name, req.Namespace)
+		if pwErr != nil {
+			return ctrl.Result{}, nil
+		}
+
+		logger.Debug("instrumentation config deleted, syncing workload",
+			"workload", pw.Name, "namespace", pw.Namespace, "kind", pw.Kind)
+		return syncWorkload(ctx, r.Client, r.Scheme, pw)
 	}
+
 	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name, req.Namespace)
 	if err != nil {
 		return ctrl.Result{}, err

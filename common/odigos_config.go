@@ -587,6 +587,31 @@ type ProfilingUiConfiguration struct {
 type ProfilingConfiguration struct {
 	Enabled  *bool                      `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 	Exporter *OtlpExporterConfiguration `json:"exporter,omitempty" yaml:"exporter,omitempty"`
+	// Symbolization controls how native (C/C++/Rust) frames are resolved to
+	// function names. Mirrors the VM agent's profiling.symbolization.native flag.
+	Symbolization *ProfilingSymbolizationConfiguration `json:"symbolization,omitempty" yaml:"symbolization,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ProfilingSymbolizationConfiguration controls native frame symbolization.
+type ProfilingSymbolizationConfiguration struct {
+	// Native enables on-host symbolization of native (C/C++/Rust) frames in the node
+	// collector (odigossymbolizeprocessor). On by default when profiling is enabled;
+	// set to false to leave native frames as raw addresses.
+	Native *bool `json:"native,omitempty" yaml:"native,omitempty"`
+}
+
+// NativeSymbolizationEnabled reports whether native on-host symbolization should
+// run. It is ON by default whenever profiling is enabled; a user can explicitly
+// opt out by setting symbolization.native: false.
+func (p *ProfilingConfiguration) NativeSymbolizationEnabled() bool {
+	if p == nil || p.Enabled == nil || !*p.Enabled {
+		return false // profiling itself is off
+	}
+	if p.Symbolization != nil && p.Symbolization.Native != nil {
+		return *p.Symbolization.Native // explicit opt-out/opt-in
+	}
+	return true // default ON
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration

@@ -29,33 +29,44 @@ describe('Actions CRUD', () => {
 
         switch (actionType) {
           case 'K8sAttributesResolver': {
-            // default values are enough 👍
+            // The dynamic form seeds every collect flag on by default (matching the
+            // old bespoke form), so it's already a valid, non-no-op action — nothing
+            // to fill in.
             break;
           }
           case 'AddClusterInfo': {
-            cy.get('[data-id=clusterAttributes]').find('input[placeholder="Attribute name"]').type('key');
-            cy.get('[data-id=clusterAttributes]').find('input[placeholder="Attribute value"]').type('val');
+            // The dynamic table cells expose the column keyName as the input's
+            // data-id (see ui-kit InputTable -> Input), so target those instead
+            // of the (now catalog-defined) placeholder text.
+            cy.get('[data-id=clusterAttributes]').find('input[data-id=attributeName]').type('key');
+            cy.get('[data-id=clusterAttributes]').find('input[data-id=attributeStringValue]').type('val');
             break;
           }
           case 'DeleteAttribute': {
-            cy.get('[data-id=attributeNamesToDelete]').find('input').type('test');
+            cy.get('[data-id=attributeNamesToDelete]').find('input').first().type('test');
             break;
           }
           case 'RenameAttribute': {
-            cy.get('[data-id=renames]').find('input[placeholder="Old key"]').type('1');
-            cy.get('[data-id=renames]').find('input[placeholder="New key"]').type('one');
+            // `renames` renders as a key/value table that persists as an object map.
+            cy.get('[data-id=renames]').find('input[data-id=key]').first().type('old.attr');
+            cy.get('[data-id=renames]').find('input[data-id=value]').first().type('new.attr');
             break;
           }
           case 'PiiMasking': {
-            // default values are enough 👍
+            // The dynamic form pre-selects the "Credit card" checkbox by default
+            // (matching the old bespoke form), so no interaction is required.
             break;
           }
           case 'ExtractAttribute': {
-            // Default mode is "Preset extract" with the first row's dataFormat=json
-            // already selected, so we just fill lookupKey + targetAttributeName to
-            // make a valid action.
-            cy.get('[data-id=extract-row-0]').find('input[data-id=extract-row-0-lookupKey]').type('task_id');
-            cy.get('[data-id=extract-row-0]').find('input[data-id=extract-row-0-targetAttributeName]').type('extracted.json.task_id');
+            // The catalog form uses InputCardTable (`variant: cards`), which:
+            //   1. Defaults to the "preset" method (lookupKey + dataFormat).
+            //   2. Names each input `${field}-card-${row}-${keyName}` (not bare keyName).
+            // Switch to Custom Regex so we can fill target + regex without the
+            // lookupKey/dataFormat pair — also the path that used to 400 on an
+            // empty dataFormat enum before sanitizeExtractAttributeForWire.
+            cy.get('[data-id=extractAttribute-mode]').contains('Custom Regex').click();
+            cy.get('[data-id=extractAttribute]').find('input[data-id=extractAttribute-card-0-targetAttributeName]').type('extracted.value');
+            cy.get('[data-id=extractAttribute]').find('input[data-id=extractAttribute-card-0-regex]').type('(.*)');
             break;
           }
           default: {

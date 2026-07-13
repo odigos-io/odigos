@@ -157,7 +157,8 @@
                     "icon": "gear",
                     "pages": [
                       "oss/instrumentations/configuration/mount-method",
-                      "oss/instrumentations/advanced/Istio"
+                      "oss/instrumentations/advanced/Istio",
+                      "oss/instrumentations/advanced/Nginx"
                     ]
                   },
                   "oss/instrumentations/obi"
@@ -168,6 +169,7 @@
                 "pages": [
                   "oss/pipeline/overview",
                   "oss/pipeline/configuration",
+                  "oss/pipeline/benchmarks",
                   "oss/pipeline/datastreams",
                   {
                     "group": "Sources",
@@ -238,7 +240,8 @@
                     "group": "Advanced",
                     "icon": "sliders",
                     "pages": [
-                      "oss/pipeline/service-graph"
+                      "oss/pipeline/service-graph",
+                      "oss/pipeline/odigos-own-metrics"
                     ]
                   }
                 ]
@@ -485,7 +488,8 @@
                     "icon": "gear",
                     "pages": [
                       "enterprise/instrumentations/configuration/mount-method",
-                      "enterprise/instrumentations/advanced/Istio"
+                      "enterprise/instrumentations/advanced/Istio",
+                      "enterprise/instrumentations/advanced/Nginx"
                     ]
                   }
                 ]
@@ -495,6 +499,7 @@
                 "pages": [
                   "enterprise/pipeline/overview",
                   "enterprise/pipeline/configuration",
+                  "enterprise/pipeline/benchmarks",
                   "enterprise/pipeline/datastreams",
                   {
                     "group": "Sources",
@@ -565,7 +570,8 @@
                     "group": "Advanced",
                     "icon": "sliders",
                     "pages": [
-                      "enterprise/pipeline/service-graph"
+                      "enterprise/pipeline/service-graph",
+                      "enterprise/pipeline/odigos-own-metrics"
                     ]
                   }
                 ]
@@ -695,6 +701,7 @@
                 ]
               },
               "central/authentication",
+              "central/role-mappings",
               "central/upgrade",
               "central/uninstall"
             ]
@@ -737,7 +744,8 @@
                     "group": "Instrumentation Rules",
                     "pages": [
                       "vmagent/setup/configuration/instrumentation-rules/overview",
-                      "vmagent/setup/configuration/instrumentation-rules/custom-instrumentation"
+                      "vmagent/setup/configuration/instrumentation-rules/custom-instrumentation",
+                      "vmagent/setup/configuration/instrumentation-rules/instrument-from-profiles"
                     ]
                   },
                   {
@@ -745,6 +753,7 @@
                     "pages": [
                       "vmagent/instrumentations/profiling/overview",
                       "vmagent/instrumentations/profiling/getting-started",
+                      "vmagent/instrumentations/profiling/view-in-odictl",
                       "vmagent/instrumentations/profiling/export-pyroscope"
                     ]
                   }

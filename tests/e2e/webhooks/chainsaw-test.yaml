@@ -17,23 +17,23 @@ spec:
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
               ../../common/verify_odigos_installation.sh odigos-test
-            timeout: 4m
+            timeout: 1m50s
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: ../../common/assert/odigos-installed.yaml
     - name: "[Defaulting] - Source without labels has labels added"
       try:
         - apply:
             file: defaulting-01-source-without-labels.yaml
         - assert:
-            timeout: 2m
+            timeout: 1m10s
             file: defaulting-01-assert-source-without-labels.yaml
     - name: "[Defaulting] - Source with correct labels is unaffected"
       try:
         - apply:
             file: defaulting-02-source-with-labels.yaml
         - assert:
-            timeout: 2m
+            timeout: 1m10s
             file: defaulting-02-source-with-labels.yaml
     - name: "[Defaulting/Validating] - Source with incorrect labels is rejected (not modified to be correct)"
       try:
@@ -47,20 +47,20 @@ spec:
         - apply:
             file: defaulting-04-finalizer.yaml
         - assert:
-            timeout: 2m
+            timeout: 1m10s
             file: defaulting-04-assert-finalizer.yaml
     - name: "[Defaulting] - Normal Source updated to disableInstrumentation=true still has finalizer"
       try:
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: kubectl patch source/04-finalizer --type=merge -p '{"spec":{"disableInstrumentation":true}}'
         - assert:
-            timeout: 2m
+            timeout: 1m10s
             file: defaulting-04-assert-finalizer.yaml
     - name: "[Defaulting] - Finalizer does not block normal Source from being deleted"
       try:
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: kubectl delete source 04-finalizer
             check:
               ($error == null): true
@@ -69,20 +69,20 @@ spec:
         - apply:
             file: defaulting-05-disabled-finalizer.yaml
         - assert:
-            timeout: 2m
+            timeout: 1m10s
             file: defaulting-05-assert-disabled-finalizer.yaml
     - name: "[Defaulting] - Workload excluded Source updated to disableInstrumentation=false still has finalizer"
       try:
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: kubectl patch source/05-disabled-finalizer --type=merge -p '{"spec":{"disableInstrumentation":false}}'
         - assert:
-            timeout: 2m
+            timeout: 1m10s
             file: defaulting-05-assert-enabled-finalizer.yaml
     - name: "[Defaulting] - Finalizer does not block exclusion Source from being deleted"
       try:
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: kubectl delete source 05-disabled-finalizer
             check:
               ($error == null): true
@@ -134,7 +134,7 @@ spec:
     - name: "[Validating] - Source workload-kind label is immutable"
       try:
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: kubectl label --overwrite source/06-normal-source odigos.io/workload-kind="Namespace"
             check:
               ($error != null): true
@@ -142,7 +142,7 @@ spec:
     - name: "[Validating] - Source workload-name label is immutable"
       try:
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: kubectl label --overwrite source/06-normal-source odigos.io/workload-name="06-normal-source-patched"
             check:
               ($error != null): true
@@ -150,7 +150,7 @@ spec:
     - name: "[Validating] - Source workload-namespace label is immutable"
       try:
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: kubectl label --overwrite source/06-normal-source odigos.io/workload-namespace="kube-system"
             check:
               ($error != null): true
@@ -158,7 +158,7 @@ spec:
     - name: "[Validating] - Source workload.name is immutable"
       try:
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: kubectl patch source/06-normal-source --type=merge -p '{"spec":{"workload":{"name":"06-normal-source-patched"}}}'
             check:
               ($error != null): true
@@ -166,7 +166,7 @@ spec:
     - name: "[Validating] - Source workload.namespace is immutable"
       try:
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: kubectl patch source/06-normal-source --type=merge -p '{"spec":{"workload":{"namespace":"kube-system"}}}'
             check:
               ($error != null): true
@@ -174,7 +174,7 @@ spec:
     - name: "[Validating] - Source workload.kind is immutable"
       try:
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: kubectl patch source/06-normal-source --type=merge -p '{"spec":{"workload":{"kind":"DaemonSet"}}}'
             check:
               ($error != null): true
@@ -189,7 +189,7 @@ spec:
     - name: "[Validating] - Source namespace can't include a non empty spec.otelServiceName"
       try:
         - script:
-            timeout: 70s
+            timeout: 1m10s
             content: kubectl patch source/08-namespace-source --type=merge -p '{"spec":{"otelServiceName":"this-should-not-be-set"}}'
             check:
               ($error != null): true
@@ -199,14 +199,14 @@ spec:
         - apply:
             file: migration-01-source-with-old-finalizer.yaml
         - assert:
-            timeout: 2m
+            timeout: 1m10s
             file: migration-01-assert-source-with-old-finalizer.yaml
     - name: '[Migration] - Old deleteinstrumentationconfig finalizer is removed and migrated to new combined one'
       try:
         - apply:
             file: migration-02-source-with-old-finalizer.yaml
         - assert:
-            timeout: 2m
+            timeout: 1m10s
             file: migration-02-assert-source-with-old-finalizer.yaml
 
     - name: "[Validating] - Action with no config is invalid"

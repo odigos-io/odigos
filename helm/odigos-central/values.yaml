@@ -7,6 +7,17 @@ imagePrefix: ''
 # -- Image pull secrets for private registries (k8s secret names)
 imagePullSecrets: []
 
+# On-prem token for Odigos Enterprise (chart-managed odigos-central secret when set)
+# onPremToken: ''
+
+# Set to true when odigos-central is managed externally (GitOps). The chart reads the token from
+# the existing odigos-central secret to create the enterprise registry pull secret.
+# externalOnpremTokenSecret: false
+
+# Set to true when odigos-enterprise-registry is managed externally (GitOps).
+# The chart mounts the existing pull secret but does not create it.
+# externalOnpremPullSecret: false
+
 centralBackend:
   # Resources and scheduling for the Central backend
   # -- Maximum message size in bytes for gRPC messages (empty = use default)
@@ -179,6 +190,62 @@ auth:
     kubernetes.io/os: linux
   tolerations: []
   affinity: []
+
+# Cloud connectors (platformType = connector). Feature-gated; when disabled, none of the
+# connector-runtime controller, PostgreSQL, migration Job or CRD are installed.
+cloudConnectors:
+  # -- Master switch for the entire cloud-connectors subsystem.
+  enabled: false
+
+  # The connector-runtime controller that reconciles OdigosCloudConnector CRs into connector workloads.
+  connectorRuntime:
+    # -- Override the controller image (empty = built-in odigos-enterprise-connector-runtime).
+    image: ''
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    nodeSelector:
+      kubernetes.io/os: linux
+    tolerations: []
+    affinity: {}
+
+  # The AWS provider connector runtime image the controller stamps onto per-account connector Deployments.
+  aws:
+    # -- Override the AWS connector image (empty = built-in odigos-enterprise-connector-aws).
+    image: ''
+
+  # Bundled PostgreSQL (durable store for connector state) + Atlas migrations.
+  postgres:
+    # -- Override the postgres image (empty = built-in odigos-enterprise-connector-postgres).
+    image: ''
+    port: 5432
+    portName: postgres
+    database: odigos_central
+    username: odigos
+    # -- PostgreSQL password (dev default; override for non-dev installs or use an external secret).
+    password: odigos
+    persistence:
+      enabled: true
+      size: 20Gi
+      accessModes:
+        - ReadWriteOnce
+      # -- Storage class (empty = cluster default)
+      storageClassName: ''
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: '1'
+        memory: 1Gi
+    nodeSelector:
+      kubernetes.io/os: linux
+    tolerations: []
+    affinity: {}
 
 # OpenShift-specific toggles (RBAC/SELinux/images)
 openshift:

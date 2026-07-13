@@ -1,0 +1,98 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Action
+metadata:
+  type: ExtractAttribute
+  displayName: Extract Attribute
+spec:
+  docsUrl: https://docs.odigos.io/pipeline/actions/attributes/extractattribute
+  description: Extracts a value from an existing span attribute into a new attribute on the same span. The value can be located by combining a lookup key with a pre-set data format (JSON, SQL, or resource path), or by supplying a custom regular expression that uses a single capture group.
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: false
+    logs:
+      supported: false
+    profiles:
+      supported: false
+  fields:
+    - name: extractAttribute
+      displayName: Extractions
+      # Seed one preset row (JSON) so the form is never visually empty and the
+      # paired lookupKey+dataFormat method is selected by default.
+      initialValue: '[{"method":"preset","dataFormat":"json"}]'
+      componentType: multiTabledInput
+      componentProps:
+        # `cards` renders each row as a flex card (matching the old bespoke form):
+        # the segment picks the method, preset lays source→target side-by-side with
+        # an arrow, regex stacks the inputs with the tester button in the header.
+        variant: cards
+        # The persisted config wraps the rows under `extractions`, so the dynamic
+        # renderer serializes the table rows as `{ extractions: [...] }`.
+        wrapKey: extractions
+        tooltip: Extract a value from an existing attribute into a new attribute.
+        columns:
+          # Field-level method selector (UI-only, stripped before submit) picking
+          # between the two mutually-exclusive extraction methods the backend
+          # accepts: a preset lookupKey+dataFormat, or a custom regex. Rendered as a
+          # full-width segment above the row cards; `rowTitle` titles each card.
+          - keyName: method
+            componentType: segment
+            defaultValue: preset
+            options:
+              - id: preset
+                label: Preset extract
+                rowTitle: Data format
+                tooltip: Extract a value from an existing attribute using a pre-set pattern (JSON, SQL, or Resource path).
+              - id: regex
+                label: Custom Regex
+                rowTitle: Custom Regex
+                tooltip: Extract a value using your own regular expression with a single capture group.
+          # Preset method: format radios (card header) + a lookup key whose copy
+          # tracks the selected format, laid beside the target with an arrow.
+          - keyName: dataFormat
+            componentType: radioGroup
+            defaultValue: json
+            renderCondition: ["method", "=", "preset"]
+            options:
+              - id: json
+                label: JSON
+              - id: sql
+                label: SQL
+              - id: resource_path
+                label: Resource path
+          - keyName: lookupKey
+            label: Lookup key
+            placeholder: e.g. customer_id
+            renderCondition: ["method", "=", "preset"]
+            copyByColumn:
+              column: dataFormat
+              map:
+                json:
+                  label: JSON key
+                  placeholder: e.g. customer_id
+                  helpMessage: Type the JSON key containing the value to extract.
+                sql:
+                  label: SQL key
+                  placeholder: e.g. invoice_id
+                  helpMessage: Type the SQL key containing the value to extract.
+                resource_path:
+                  label: Resource path key
+                  placeholder: e.g. tenants
+                  helpMessage: Type the resource name containing the value to extract.
+          # Regex method: a single-capture-group pattern (stacked above the target
+          # via `fullRow`), with a tester button surfaced in the card header.
+          - keyName: regex
+            label: Regex
+            placeholder: 'e.g. id=([^&]+)'
+            helpMessage: A regex with a single capture group; the captured value becomes the new attribute.
+            fullRow: true
+            withRegexTester: true
+            renderCondition: ["method", "=", "regex"]
+          # Shared target. `separator: arrow` draws an arrow before it only when it
+          # shares a row with the lookup key (preset); in regex mode it stacks alone.
+          - keyName: targetAttributeName
+            label: New span attribute name
+            placeholder: e.g. customerId
+            helpMessage: The name of the new extracted attribute.
+            separator: arrow

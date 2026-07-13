@@ -1,0 +1,79 @@
+{{- if (include "connectors.enabled" .) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connector-runtime
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: connector-runtime
+    odigos.io/system-object: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connector-runtime
+  template:
+    metadata:
+      labels:
+        app: connector-runtime
+    spec:
+      serviceAccountName: connector-runtime
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      {{- with .Values.cloudConnectors.connectorRuntime.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cloudConnectors.connectorRuntime.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cloudConnectors.connectorRuntime.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: connector-runtime
+          {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ .Values.cloudConnectors.connectorRuntime.image | default (include "utils.imageName" (dict "Values" .Values "Component" "connector-runtime" "Tag" $imageTag)) | quote }}
+          args:
+            - "--leader-elect=false"
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-connector-postgres
+                  key: dsn
+            - name: CONNECTOR_DB_SECRET_NAME
+              value: odigos-connector-postgres
+            - name: CONNECTOR_DB_SECRET_KEY
+              value: dsn
+            - name: CONNECTOR_CENTRAL_BACKEND_URL
+              value: "http://central-backend:8081"
+            - name: CONNECTOR_AWS_IMAGE
+              value: {{ .Values.cloudConnectors.aws.image | default (include "utils.imageName" (dict "Values" .Values "Component" "connector-aws" "Tag" $imageTag)) | quote }}
+          ports:
+            - containerPort: 8081
+              name: health
+            - containerPort: 8080
+              name: metrics
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          {{- with .Values.cloudConnectors.connectorRuntime.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

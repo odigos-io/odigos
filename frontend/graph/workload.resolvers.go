@@ -374,9 +374,6 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 	if obj == nil || obj.ID == nil {
 		return nil, nil
 	}
-	if obj.Containers != nil {
-		return obj.Containers, nil
-	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
 	if err != nil || ic == nil {
@@ -442,10 +439,18 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 				if component.Type != odigosv1.InstrumentationLibraryTypeInstrumentation {
 					continue
 				}
-				if _, ok := instrumentations[component.Name]; ok {
-					continue
+
+				// if there are multiple instrumentation instances for the same component,
+				// show (for the aggregation) the one that is less healthy.
+				// prefer #1 unhealthy over #2 nil healthy, over #3 healthy
+
+				existing, found := instrumentations[component.Name]
+
+				// keep the least healthy instance for the aggregated view:
+				// prefer unhealthy over unknown/nil over healthy.
+				if !found || shouldReplaceInstrumentationForAggregation(existing.Healthy, component.Healthy) {
+					instrumentations[component.Name] = componentToInstrumentation(component)
 				}
-				instrumentations[component.Name] = componentToInstrumentation(component)
 			}
 		}
 		container.Instrumentations = make([]*model.K8sWorkloadPodContainerProcessInstrumentation, 0, len(instrumentations))
@@ -473,8 +478,11 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 		return nil, err
 	}
 
+	// Fetch the InstrumentationConfig if present, but do not require it: workloads without an
+	// InstrumentationConfig still have Kubernetes pods we want to surface. getContainerConfigByName
+	// is nil-safe, so a nil ic simply yields empty odigos instrumentation config per container.
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
-	if err != nil || ic == nil {
+	if err != nil {
 		return nil, err
 	}
 

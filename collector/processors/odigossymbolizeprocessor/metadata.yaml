@@ -1,0 +1,13 @@
+type: odigossymbolizeprocessor
+status:
+  class: processor
+  stability:
+    alpha: [profiles]
+  distributions: [odigos]
+  codeowners:
+    active: [odigos]
+
+tests:
+  # Symbolization reads /proc/<pid>/maps and on-disk ELF; the lifecycle test's
+  # NopHost has no real process context to symbolize against.
+  skip_lifecycle: true

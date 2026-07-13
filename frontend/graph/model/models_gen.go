@@ -19,6 +19,15 @@ type Action struct {
 	Conditions []*Condition  `json:"conditions,omitempty"`
 }
 
+type ActionFieldYamlProperties struct {
+	Name                string   `json:"name"`
+	DisplayName         string   `json:"displayName"`
+	ComponentType       string   `json:"componentType"`
+	ComponentProperties string   `json:"componentProperties"`
+	InitialValue        string   `json:"initialValue"`
+	RenderCondition     []string `json:"renderCondition"`
+}
+
 type ActionFields struct {
 	CollectContainerAttributes   *bool                          `json:"collectContainerAttributes,omitempty"`
 	CollectReplicaSetAttributes  *bool                          `json:"collectReplicaSetAttributes,omitempty"`
@@ -58,6 +67,15 @@ type ActionInput struct {
 	Disabled bool               `json:"disabled"`
 	Signals  []SignalType       `json:"signals"`
 	Fields   *ActionFieldsInput `json:"fields"`
+}
+
+type ActionTypeOption struct {
+	Type           string                       `json:"type"`
+	DisplayName    string                       `json:"displayName"`
+	Description    string                       `json:"description"`
+	AllowedSignals []SignalType                 `json:"allowedSignals"`
+	DocsURL        string                       `json:"docsUrl"`
+	Fields         []*ActionFieldYamlProperties `json:"fields"`
 }
 
 type AgentsInitContainerResourcesConfig struct {
@@ -196,15 +214,15 @@ type ComponentLogLevelsConfig struct {
 
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
-	APITokens            []*APIToken            `json:"apiTokens"`
+	Actions              []*Action              `json:"actions"`
+	DataStreams          []*DataStream          `json:"dataStreams"`
+	Destinations         []*Destination         `json:"destinations"`
+	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
 	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
 	Sources              []*K8sActualSource     `json:"sources"`
 	Source               *K8sActualSource       `json:"source"`
-	Destinations         []*Destination         `json:"destinations"`
-	Actions              []*Action              `json:"actions"`
-	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
-	DataStreams          []*DataStream          `json:"dataStreams"`
+	APITokens            []*APIToken            `json:"apiTokens"`
 }
 
 type Condition struct {
@@ -569,15 +587,17 @@ type HeadSamplingHTTPClientMatcherInput struct {
 }
 
 type HeadSamplingHTTPServerMatcher struct {
-	Route       *string `json:"route,omitempty"`
-	RoutePrefix *string `json:"routePrefix,omitempty"`
-	Method      *string `json:"method,omitempty"`
+	Route       *string                          `json:"route,omitempty"`
+	RoutePrefix *string                          `json:"routePrefix,omitempty"`
+	Method      *string                          `json:"method,omitempty"`
+	QueryParams []*HeadSamplingQueryParamMatcher `json:"queryParams,omitempty"`
 }
 
 type HeadSamplingHTTPServerMatcherInput struct {
-	Route       *string `json:"route,omitempty"`
-	RoutePrefix *string `json:"routePrefix,omitempty"`
-	Method      *string `json:"method,omitempty"`
+	Route       *string                               `json:"route,omitempty"`
+	RoutePrefix *string                               `json:"routePrefix,omitempty"`
+	Method      *string                               `json:"method,omitempty"`
+	QueryParams []*HeadSamplingQueryParamMatcherInput `json:"queryParams,omitempty"`
 }
 
 type HeadSamplingOperationMatcher struct {
@@ -588,6 +608,16 @@ type HeadSamplingOperationMatcher struct {
 type HeadSamplingOperationMatcherInput struct {
 	HTTPServer *HeadSamplingHTTPServerMatcherInput `json:"httpServer,omitempty"`
 	HTTPClient *HeadSamplingHTTPClientMatcherInput `json:"httpClient,omitempty"`
+}
+
+type HeadSamplingQueryParamMatcher struct {
+	Name       string  `json:"name"`
+	ValueExact *string `json:"valueExact,omitempty"`
+}
+
+type HeadSamplingQueryParamMatcherInput struct {
+	Name       string  `json:"name"`
+	ValueExact *string `json:"valueExact,omitempty"`
 }
 
 type HeadersCollection struct {
@@ -685,6 +715,15 @@ type InstrumentationRule struct {
 	CustomInstrumentations   *CustomInstrumentations            `json:"customInstrumentations,omitempty"`
 }
 
+type InstrumentationRuleFieldYamlProperties struct {
+	Name                string   `json:"name"`
+	DisplayName         string   `json:"displayName"`
+	ComponentType       string   `json:"componentType"`
+	ComponentProperties string   `json:"componentProperties"`
+	InitialValue        string   `json:"initialValue"`
+	RenderCondition     []string `json:"renderCondition"`
+}
+
 type InstrumentationRuleInput struct {
 	RuleName                 *string                                 `json:"ruleName,omitempty"`
 	Notes                    *string                                 `json:"notes,omitempty"`
@@ -712,6 +751,15 @@ type InstrumentationRuleSourcesScopeInput struct {
 	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
 	ContainerName     *string                   `json:"containerName,omitempty"`
 	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
+}
+
+type InstrumentationRuleTypeOption struct {
+	Type               string                                    `json:"type"`
+	DisplayName        string                                    `json:"displayName"`
+	Description        string                                    `json:"description"`
+	SupportedLanguages []string                                  `json:"supportedLanguages"`
+	DocsURL            string                                    `json:"docsUrl"`
+	Fields             []*InstrumentationRuleFieldYamlProperties `json:"fields"`
 }
 
 type InstrumentationSourcesAnalyze struct {

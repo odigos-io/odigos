@@ -309,7 +309,7 @@
           "title": "deploymentName"
         },
         "goMemLimitMiB": {
-          "default": "460",
+          "default": "440",
           "description": "the GOMEMLIMIT environment variable value for the collector gateway deployment.\nthis is when go runtime will start garbage collection.\nif not specified, it will be set to 80% of the hard limit of the memory limiter.",
           "required": [],
           "title": "goMemLimitMiB"
@@ -327,19 +327,19 @@
           "title": "limitCPUm"
         },
         "limitMemoryMiB": {
-          "default": "625",
-          "description": "the memory limit for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource limit\nof the form \"memory: \u003cvalue\u003eMi\".\ndefault value is 625Mi\nIf you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.",
+          "default": "600",
+          "description": "the memory limit for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource limit\nof the form \"memory: \u003cvalue\u003eMi\".\ndefault value is 600Mi\nIf you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.",
           "required": [],
           "title": "limitMemoryMiB"
         },
         "maxReplicas": {
-          "default": "10",
+          "default": "8",
           "description": "The maxReplicas in the HPA config.",
           "required": [],
           "title": "maxReplicas"
         },
         "memoryLimiterLimitMiB": {
-          "default": "575",
+          "default": "550",
           "description": "sets the \"limit_mib\" parameter in the memory limiter configuration for the collector gateway.\nit is the hard limit after which a force garbage collection will be performed.\nif not set, it will be 50Mi below the memory limit.",
           "required": [],
           "title": "memoryLimiterLimitMiB"
@@ -351,7 +351,7 @@
           "title": "memoryLimiterSpikeLimitMiB"
         },
         "minReplicas": {
-          "default": "1",
+          "default": "2",
           "description": "The number of replicas for the cluster gateway collector deployment.\nAlso uses in MinReplicas the HPA config.",
           "required": [],
           "title": "minReplicas"
@@ -363,14 +363,14 @@
           "title": "nodeSelector"
         },
         "requestCPUm": {
-          "default": "500",
-          "description": "the CPU request for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource request\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 500m\nIf you set only requestCPUm, the limitCPUm will be set to the same value.",
+          "default": "1000",
+          "description": "the CPU request for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource request\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 1000m\nIf you set only requestCPUm, the limitCPUm will be set to the same value.",
           "required": [],
           "title": "requestCPUm"
         },
         "requestMemoryMiB": {
-          "default": "625",
-          "description": "the memory request for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource request\nof the form \"memory: \u003cvalue\u003eMi\".\ndefault value is 500Mi\nIf you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.",
+          "default": "600",
+          "description": "the memory request for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource request\nof the form \"memory: \u003cvalue\u003eMi\".\ndefault value is 600Mi\nIf you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.",
           "required": [],
           "title": "requestMemoryMiB"
         },
@@ -522,9 +522,15 @@
       "required": [],
       "title": "collectorNode"
     },
+    "externalOnpremPullSecret": {
+      "default": "false",
+      "description": "Set to true if you are providing the odigos-enterprise-registry pull secret externally (not managed by this chart).\nWhen true, the chart will not create the pull secret but will still mount odigos-enterprise-registry on Odigos workloads\nwhen pulling from registry.odigos.io. Use with externalOnpremTokenSecret for GitOps installs where Helm cannot read secrets at template time.",
+      "required": [],
+      "title": "externalOnpremPullSecret"
+    },
     "externalOnpremTokenSecret": {
       "default": "false",
-      "description": "Set to true if you are providing the odigos-pro secret externally (not managed by this chart).\nWhen true, the chart will not create the secret but will still enable Pro features if the secret exists.\nThis is useful for GitOps workflows where secrets are managed separately.",
+      "description": "Set to true if you are providing the odigos-pro secret externally (not managed by this chart).\nWhen true, the chart will not create the odigos-pro secret but will still enable Pro features if the secret exists.\nThis is useful for GitOps workflows where secrets are managed separately.",
       "required": [],
       "title": "externalOnpremTokenSecret"
     },
@@ -611,7 +617,7 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,\n  odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, ui, enterprise-ui, instrumentor, enterprise-instrumentor,\n  odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents",
       "required": [],
       "title": "images"
     },

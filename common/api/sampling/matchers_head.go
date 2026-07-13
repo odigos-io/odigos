@@ -22,12 +22,21 @@ type HeadSamplingOperationMatcher struct {
 // match http server operations for noisy operations matching (only attributes available at span start time)
 // +kubebuilder:object:generate=true
 type HeadSamplingHttpServerOperationMatcher struct {
+
 	// match route exactly
 	Route string `json:"route,omitempty"`
-	// match preffix of route
+
+	// match prefix of route
 	RoutePrefix string `json:"routePrefix,omitempty"`
+
 	// match method exactly, can be empty to match any method
 	Method string `json:"method,omitempty"`
+
+	// match url query parameters.
+	// ignored if empty.
+	// if set, all the specified query parameters matchers must match for the operation to be matched.
+	// any query param in the request url that is not specified in the matchers will not be considered for the matching.
+	QueryParams []QueryParamMatcher `json:"queryParams,omitempty"`
 }
 
 // match http client operations for noisy operations matching (only attributes available at span start time)

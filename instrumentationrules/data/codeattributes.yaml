@@ -1,0 +1,47 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: InstrumentationRule
+metadata:
+  type: CodeAttributes
+  displayName: Code Attributes
+spec:
+  docsUrl: https://docs.odigos.io/pipeline/rules/codeattributes
+  description: The "Code Attributes" rule can be used to add code attributes containing payload data to traces.
+  supportedLanguages:
+    - go
+    - python
+    - javascript
+  fields:
+    # Persisted as a single object of boolean flags under `codeAttributes`. Two
+    # checkboxList fields share the same `name` (their writes merge) so the
+    # recommended/verbose grouping is preserved without splitting the value.
+    - name: codeAttributes
+      displayName: Recommended data to collect
+      componentType: checkboxList
+      initialValue: '{"filePath":true,"function":true,"lineNumber":true}'
+      componentProps:
+        checkedValue: "true"
+        options:
+          - id: filePath
+            label: Collect file path
+            tooltip: Indicates whether to record the `code.filepath` attribute.
+          - id: function
+            label: Collect function
+            tooltip: Indicates whether to record the `code.function` attribute.
+          - id: lineNumber
+            label: Collect line number
+            tooltip: Indicates whether to record the `code.lineno` attribute.
+    - name: codeAttributes
+      displayName: Verbose data to collect
+      componentType: checkboxList
+      componentProps:
+        checkedValue: "true"
+        options:
+          - id: column
+            label: Collect column
+            tooltip: Indicates whether to record the `code.column` attribute.
+          - id: namespace
+            label: Collect namespace
+            tooltip: Indicates whether to record the `code.namespace` attribute.
+          - id: stacktrace
+            label: Collect stacktrace
+            tooltip: Indicates whether to record the `code.stacktrace` attribute.

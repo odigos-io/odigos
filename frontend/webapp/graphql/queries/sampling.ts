@@ -12,7 +12,7 @@ const NOISY_OPERATION_FIELDS = `
   disabled
   sourceScopes { ${SOURCES_SCOPE_FIELDS} }
   operation {
-    httpServer { route routePrefix method }
+    httpServer { route routePrefix method queryParams { name valueExact } }
     httpClient { serverAddress templatedPath templatedPathPrefix method }
   }
   percentageAtMost

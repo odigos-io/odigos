@@ -4,7 +4,7 @@ sidebarTitle: "Overview"
 description: "What Odigos VM Agent instrumentation rules are, their benefits, and rule types: code attributes, headers collection, payload collection, and custom instrumentation."
 ---
 
-Instrumentation rules control how telemetry is recorded from your [sources](../../../overview#key-concepts). You can apply rules to specific sources and instrumentation libraries to control which attributes, headers, and payloads are collected and how custom instrumentations behave.
+Instrumentation rules control how telemetry is recorded from your [sources](/vmagent/overview#key-concepts). You can apply rules to specific sources and instrumentation libraries to control which attributes, headers, and payloads are collected and how custom instrumentations behave.
 
 ## Benefits
 
@@ -15,11 +15,11 @@ Instrumentation rules control how telemetry is recorded from your [sources](../.
 
 ## Rule types
 
-You can manage instrumentation rules via [odictl](../odictl) or YAML.
+You can manage instrumentation rules via [odictl](/vmagent/setup/configuration/odictl) or YAML.
 
 ### Custom instrumentation
 
-Define custom eBPF-based instrumentations for arbitrary functions in your application or its dependencies. Use custom instrumentation with Java and Go applications to instrument application-specific code. See [Custom Instrumentation](./custom-instrumentation) for configuration.
+Define custom eBPF-based instrumentations for arbitrary functions in your application or its dependencies. Use custom instrumentation with Java, Go, and C++ applications to instrument application-specific code. See [Custom Instrumentation](/vmagent/setup/configuration/instrumentation-rules/custom-instrumentation) for configuration, or [Instrument from Profiles](/vmagent/setup/configuration/instrumentation-rules/instrument-from-profiles) to create a rule directly from a function in the odictl profiling view.
 
 ### Code attributes
 

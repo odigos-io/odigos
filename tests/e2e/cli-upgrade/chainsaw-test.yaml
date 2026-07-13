@@ -19,7 +19,7 @@ spec:
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
-            timeout: 5m
+            timeout: 1m10s
             content: |
               #!/bin/bash
 
@@ -76,19 +76,19 @@ spec:
               ./odigos install --ns odigos-test --set imagePrefix=ghcr.io/odigos-io || true
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 5m
+            timeout: 2m10s
             file: ../../common/assert/latest-odigos-version-installed.yaml
 
     - name: Assert Trace DB is up
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/simple-trace-db-running.yaml
 
     - name: Assert - Simple Demo Apps Installed
       try:
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: ../../common/assert/simple-demo-installed.yaml
 
     - name: Instrument Namespace
@@ -99,7 +99,7 @@ spec:
     - name: Assert Runtime Detected
       try:
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
     - name: Add Destination
@@ -115,7 +115,7 @@ spec:
       try:
         - script:
             content: ../../common/assert_pipeline_pods_ready.sh
-            timeout: 5m
+            timeout: 1m20s
 
     - name: Simple-demo instrumented after destination added
       try:
@@ -126,10 +126,10 @@ spec:
       try:
         - script:
             content: ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set imagePrefix=registry.odigos.io
-            timeout: 3m
+            timeout: 1m10s
         - assert:
             file: ../../common/assert/odigos-upgraded.yaml
-            timeout: 3m
+            timeout: 2m30s
       catch:
         - get:
             apiVersion: v1
@@ -138,7 +138,7 @@ spec:
     - name: Odigos pipeline ready after upgrade
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/pipeline-ready.yaml
 
     - name: Simple-demo instrumented after upgrade
@@ -151,7 +151,7 @@ spec:
         - apply:
             file: ../../common/apply/generate-traffic-job.yaml
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
         - delete:
@@ -160,7 +160,7 @@ spec:
     - name: Wait For Trace
       try:
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               while true; do
                 ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml

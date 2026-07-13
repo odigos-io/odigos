@@ -1,0 +1,125 @@
+# =====================
+# Destinations
+# Backends that telemetry is exported to, their dynamic YAML-defined type
+# catalog, and test-connection support.
+# =====================
+
+type SupportedSignals {
+  traces: ObservabilitySignalSupport!
+  metrics: ObservabilitySignalSupport!
+  logs: ObservabilitySignalSupport!
+  profiles: ObservabilitySignalSupport!
+}
+
+type ObservabilitySignalSupport {
+  supported: Boolean!
+}
+
+type CustomReadDataLabel {
+  condition: String!
+  title: String!
+  value: String!
+}
+
+type DestinationFieldYamlProperties {
+  name: String!
+  displayName: String!
+  componentType: String!
+  componentProperties: String! # Using String to store JSON data as a string
+  secret: Boolean!
+  initialValue: String!
+  renderCondition: [String!]!
+  hideFromReadData: [String!]!
+  customReadDataLabels: [CustomReadDataLabel!]!
+}
+
+type DestinationTypesCategoryItem {
+  type: String!
+  displayName: String!
+  imageUrl: String!
+  supportedSignals: SupportedSignals!
+  testConnectionSupported: Boolean!
+  fields: [DestinationFieldYamlProperties!]!
+}
+
+type DestinationsCategory {
+  name: String!
+  description: String!
+  items: [DestinationTypesCategoryItem!]!
+}
+
+type GetDestinationCategories {
+  categories: [DestinationsCategory!]!
+}
+
+type ExportedSignals {
+  traces: Boolean!
+  metrics: Boolean!
+  logs: Boolean!
+  profiles: Boolean!
+}
+
+type Destination {
+  id: ID!
+  type: String!
+  name: String!
+  disabled: Boolean!
+  dataStreamNames: [String]!
+  exportedSignals: ExportedSignals!
+  fields: String!
+  destinationType: DestinationTypesCategoryItem!
+  conditions: [Condition!]
+}
+
+input DestinationInput {
+  name: String!
+  type: String!
+  currentStreamName: String!
+  exportedSignals: ExportedSignalsInput!
+  fields: [FieldInput!]!
+  disabled: Boolean
+}
+
+input FieldInput {
+  key: String!
+  value: String!
+}
+
+input ExportedSignalsInput {
+  traces: Boolean!
+  metrics: Boolean!
+  logs: Boolean!
+  profiles: Boolean! = false
+}
+
+type TestConnectionResponse {
+  succeeded: Boolean!
+  statusCode: Int!
+  destinationType: String
+  message: String
+  reason: String
+}
+
+type DestinationDetails {
+  type: String!
+  urlString: String!
+  fields: String!
+}
+
+extend type ComputePlatform {
+  destinations: [Destination!]!
+}
+
+extend type Query {
+  destinationCategories: GetDestinationCategories
+  potentialDestinations: [DestinationDetails!]!
+}
+
+extend type Mutation {
+  createNewDestination(destination: DestinationInput!): Destination!
+  updateDestination(id: ID!, destination: DestinationInput!): Destination!
+  deleteDestination(id: ID!, currentStreamName: String!): Boolean!
+  testConnectionForDestination(
+    destination: DestinationInput!
+  ): TestConnectionResponse!
+}

@@ -28,6 +28,7 @@ spec:
   traces:
     headSampling:
       supported: true
+      httpQueryParamsSupported: true
     headersCollection:
       supported: true
     traceVerbosity:
