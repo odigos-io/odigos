@@ -154,6 +154,7 @@ func ResolveDistroForContainer(
 			return nil, disabledInfo
 		}
 		distroToUse = d
+	}
 
 	// check if the runtime version is in supported range if it is provided.
 	// Wildcard-language distros (e.g. OBI) skip semver checks; supportedVersions may be '*'.
