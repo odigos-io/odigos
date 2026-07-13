@@ -155,6 +155,7 @@ func headSamplingOperationMatcherInputToCRD(input *model.HeadSamplingOperationMa
 			Route:       services.DerefString(input.HTTPServer.Route),
 			RoutePrefix: services.DerefString(input.HTTPServer.RoutePrefix),
 			Method:      services.DerefString(input.HTTPServer.Method),
+			QueryParams: headSamplingQueryParamsInputToCRD(input.HTTPServer.QueryParams),
 		}
 	}
 	if input.HTTPClient != nil {
@@ -178,6 +179,7 @@ func headSamplingOperationMatcherCRDToModel(matcher *commonapisampling.HeadSampl
 			Route:       services.StringPtrIfNotEmpty(matcher.HttpServer.Route),
 			RoutePrefix: services.StringPtrIfNotEmpty(matcher.HttpServer.RoutePrefix),
 			Method:      services.StringPtrIfNotEmpty(matcher.HttpServer.Method),
+			QueryParams: headSamplingQueryParamsCRDToModel(matcher.HttpServer.QueryParams),
 		}
 	}
 	if matcher.HttpClient != nil {
@@ -189,6 +191,37 @@ func headSamplingOperationMatcherCRDToModel(matcher *commonapisampling.HeadSampl
 		}
 	}
 	return result
+}
+
+func headSamplingQueryParamsInputToCRD(in []*model.HeadSamplingQueryParamMatcherInput) []commonapisampling.QueryParamMatcher {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]commonapisampling.QueryParamMatcher, 0, len(in))
+	for _, param := range in {
+		if param == nil {
+			continue
+		}
+		out = append(out, commonapisampling.QueryParamMatcher{
+			Name:       param.Name,
+			ValueExact: param.ValueExact,
+		})
+	}
+	return out
+}
+
+func headSamplingQueryParamsCRDToModel(in []commonapisampling.QueryParamMatcher) []*model.HeadSamplingQueryParamMatcher {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]*model.HeadSamplingQueryParamMatcher, 0, len(in))
+	for i := range in {
+		out = append(out, &model.HeadSamplingQueryParamMatcher{
+			Name:       in[i].Name,
+			ValueExact: in[i].ValueExact,
+		})
+	}
+	return out
 }
 
 func tailSamplingOperationMatcherInputToCRD(input *model.TailSamplingOperationMatcherInput) *commonapisampling.TailSamplingOperationMatcher {

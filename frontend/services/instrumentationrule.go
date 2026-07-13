@@ -123,19 +123,34 @@ func getPayloadCollectionInput(input model.InstrumentationRuleInput) *instrument
 		payloadCollection.HttpResponse = fromHTTPPayloadInput(in)
 	}
 	if in := input.PayloadCollection.DbQuery; in != nil {
-		payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{
-			MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
-			DropPartialPayloads: in.DropPartialPayloads,
-		}
+		payloadCollection.DbQuery = fromDbQueryPayloadInput(in)
 	}
 	if in := input.PayloadCollection.Messaging; in != nil {
-		payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{
-			MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
-			DropPartialPayloads: in.DropPartialPayloads,
-		}
+		payloadCollection.Messaging = fromMessagingPayloadInput(in)
 	}
 
 	return payloadCollection
+}
+
+func mergePayloadCollectionUpdate(existing *instrumentationrules.PayloadCollection, input *model.PayloadCollectionInput) *instrumentationrules.PayloadCollection {
+	if input == nil {
+		return nil
+	}
+
+	out := &instrumentationrules.PayloadCollection{}
+	if input.HTTPRequest != nil {
+		out.HttpRequest = mergeHTTPPayloadUpdate(existingHTTPPayload(existing, payloadKindHTTPRequest), input.HTTPRequest)
+	}
+	if input.HTTPResponse != nil {
+		out.HttpResponse = mergeHTTPPayloadUpdate(existingHTTPPayload(existing, payloadKindHTTPResponse), input.HTTPResponse)
+	}
+	if input.DbQuery != nil {
+		out.DbQuery = mergeDbQueryPayloadUpdate(existingDbQueryPayload(existing), input.DbQuery)
+	}
+	if input.Messaging != nil {
+		out.Messaging = mergeMessagingPayloadUpdate(existingMessagingPayload(existing), input.Messaging)
+	}
+	return out
 }
 
 // fromHTTPPayloadInput copies the advanced HTTP payload options (mime types,
@@ -156,6 +171,128 @@ func fromHTTPPayloadInput(in *model.HTTPPayloadCollectionInput) *instrumentation
 		cfg.MimeTypes = &mimeTypes
 	}
 	return cfg
+}
+
+func fromDbQueryPayloadInput(in *model.DbQueryPayloadCollectionInput) *instrumentationrules.DbQueryPayloadCollection {
+	return &instrumentationrules.DbQueryPayloadCollection{
+		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
+		DropPartialPayloads: in.DropPartialPayloads,
+	}
+}
+
+func fromMessagingPayloadInput(in *model.MessagingPayloadCollectionInput) *instrumentationrules.MessagingPayloadCollection {
+	return &instrumentationrules.MessagingPayloadCollection{
+		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
+		DropPartialPayloads: in.DropPartialPayloads,
+	}
+}
+
+func mergeHTTPPayloadUpdate(existing *instrumentationrules.HttpPayloadCollection, in *model.HTTPPayloadCollectionInput) *instrumentationrules.HttpPayloadCollection {
+	cfg := fromHTTPPayloadInput(in)
+	if existing == nil {
+		return cfg
+	}
+
+	// Older UI payload editors send `{}` for an enabled section. Treat omitted
+	// advanced fields as "unchanged" during update so limits/filters are not
+	// silently erased when a rule is opened and saved through that path.
+	if in.MimeTypes == nil {
+		cfg.MimeTypes = cloneStringSlicePtr(existing.MimeTypes)
+	}
+	if in.MaxPayloadLength == nil {
+		cfg.MaxPayloadLength = cloneInt64Ptr(existing.MaxPayloadLength)
+	}
+	if in.DropPartialPayloads == nil {
+		cfg.DropPartialPayloads = cloneBoolPtr(existing.DropPartialPayloads)
+	}
+	return cfg
+}
+
+func mergeDbQueryPayloadUpdate(existing *instrumentationrules.DbQueryPayloadCollection, in *model.DbQueryPayloadCollectionInput) *instrumentationrules.DbQueryPayloadCollection {
+	cfg := fromDbQueryPayloadInput(in)
+	if existing == nil {
+		return cfg
+	}
+	if in.MaxPayloadLength == nil {
+		cfg.MaxPayloadLength = cloneInt64Ptr(existing.MaxPayloadLength)
+	}
+	if in.DropPartialPayloads == nil {
+		cfg.DropPartialPayloads = cloneBoolPtr(existing.DropPartialPayloads)
+	}
+	return cfg
+}
+
+func mergeMessagingPayloadUpdate(existing *instrumentationrules.MessagingPayloadCollection, in *model.MessagingPayloadCollectionInput) *instrumentationrules.MessagingPayloadCollection {
+	cfg := fromMessagingPayloadInput(in)
+	if existing == nil {
+		return cfg
+	}
+	if in.MaxPayloadLength == nil {
+		cfg.MaxPayloadLength = cloneInt64Ptr(existing.MaxPayloadLength)
+	}
+	if in.DropPartialPayloads == nil {
+		cfg.DropPartialPayloads = cloneBoolPtr(existing.DropPartialPayloads)
+	}
+	return cfg
+}
+
+type payloadKind string
+
+const (
+	payloadKindHTTPRequest  payloadKind = "httpRequest"
+	payloadKindHTTPResponse payloadKind = "httpResponse"
+)
+
+func existingHTTPPayload(existing *instrumentationrules.PayloadCollection, kind payloadKind) *instrumentationrules.HttpPayloadCollection {
+	if existing == nil {
+		return nil
+	}
+	switch kind {
+	case payloadKindHTTPRequest:
+		return existing.HttpRequest
+	case payloadKindHTTPResponse:
+		return existing.HttpResponse
+	default:
+		return nil
+	}
+}
+
+func existingDbQueryPayload(existing *instrumentationrules.PayloadCollection) *instrumentationrules.DbQueryPayloadCollection {
+	if existing == nil {
+		return nil
+	}
+	return existing.DbQuery
+}
+
+func existingMessagingPayload(existing *instrumentationrules.PayloadCollection) *instrumentationrules.MessagingPayloadCollection {
+	if existing == nil {
+		return nil
+	}
+	return existing.Messaging
+}
+
+func cloneStringSlicePtr(in *[]string) *[]string {
+	if in == nil {
+		return nil
+	}
+	out := append([]string(nil), (*in)...)
+	return &out
+}
+
+func cloneInt64Ptr(in *int64) *int64 {
+	if in == nil {
+		return nil
+	}
+	out := *in
+	return &out
+}
+
+func cloneBoolPtr(in *bool) *bool {
+	if in == nil {
+		return nil
+	}
+	out := *in
+	return &out
 }
 
 func intToInt64Ptr(v *int) *int64 {
@@ -330,7 +467,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	}
 
 	if input.PayloadCollection != nil {
-		existingRule.Spec.PayloadCollection = getPayloadCollectionInput(input)
+		existingRule.Spec.PayloadCollection = mergePayloadCollectionUpdate(existingRule.Spec.PayloadCollection, input.PayloadCollection)
 	} else {
 		existingRule.Spec.PayloadCollection = nil
 	}
