@@ -155,6 +155,45 @@ func TestEmptyResourceSpansRemoved(t *testing.T) {
 	assert.Equal(t, "svc2", svcName.Str())
 }
 
+func TestMultipleEmptyScopesAndResourcesDoNotPanic(t *testing.T) {
+	proc := &traceFilterProcessor{
+		logger:     zap.NewNop(),
+		evaluators: []SpanFilterEvaluator{&unsampledBitEvaluator{}},
+	}
+
+	td := ptrace.NewTraces()
+
+	emptyResource := td.ResourceSpans().AppendEmpty()
+	emptyResource.Resource().Attributes().PutStr("service.name", "empty-resource")
+
+	keptResource := td.ResourceSpans().AppendEmpty()
+	keptResource.Resource().Attributes().PutStr("service.name", "kept-resource")
+	keptResource.ScopeSpans().AppendEmpty().Spans().AppendEmpty().SetFlags(1)
+
+	mixedResource := td.ResourceSpans().AppendEmpty()
+	mixedResource.Resource().Attributes().PutStr("service.name", "mixed-resource")
+
+	keptScope := mixedResource.ScopeSpans().AppendEmpty()
+	sampledSpan := keptScope.Spans().AppendEmpty()
+	sampledSpan.SetName("sampled")
+	sampledSpan.SetFlags(1)
+
+	mixedResource.ScopeSpans().AppendEmpty()
+
+	drainedScope := mixedResource.ScopeSpans().AppendEmpty()
+	unsampledSpan := drainedScope.Spans().AppendEmpty()
+	unsampledSpan.SetName("unsampled")
+	unsampledSpan.SetFlags(0)
+
+	result, err := proc.processTraces(context.Background(), td)
+	require.NoError(t, err)
+	require.Equal(t, 2, result.ResourceSpans().Len())
+	require.Equal(t, 1, result.ResourceSpans().At(1).ScopeSpans().Len())
+	spans := result.ResourceSpans().At(1).ScopeSpans().At(0).Spans()
+	require.Equal(t, 1, spans.Len())
+	assert.Equal(t, "sampled", spans.At(0).Name())
+}
+
 func createTestTraces(flags uint32) ptrace.Traces {
 	td := ptrace.NewTraces()
 	rs := td.ResourceSpans().AppendEmpty()

@@ -86,6 +86,19 @@ func buildProfiles() (pprofile.Profiles, int /*nativeLoc*/, int /*namedLoc*/) {
 	return pd, 0, 2
 }
 
+func putSamplePID(pd pprofile.Profiles, pid int64) {
+	dict := pd.Dictionary()
+	keyIdx := int32(dict.StringTable().Len())
+	dict.StringTable().Append("process.pid")
+	attr := dict.AttributeTable().AppendEmpty()
+	attr.SetKeyStrindex(keyIdx)
+	attr.Value().SetInt(pid)
+	attrIdx := int32(dict.AttributeTable().Len() - 1)
+
+	sample := pd.ResourceProfiles().At(0).ScopeProfiles().At(0).Profiles().At(0).Samples().At(0)
+	sample.AttributeIndices().Append(attrIdx)
+}
+
 func TestProcessProfilesFillsNativeLines(t *testing.T) {
 	pd, nativeLoc, namedLoc := buildProfiles()
 
@@ -123,6 +136,22 @@ func TestProcessProfilesFillsNativeLines(t *testing.T) {
 	// Correct pid was used.
 	require.Equal(t, int64(4242), fr.gotPID)
 	require.Equal(t, "libfix.so", fr.gotName)
+}
+
+func TestProcessProfilesUsesSamplePID(t *testing.T) {
+	pd, nativeLoc, _ := buildProfiles()
+	pd.ResourceProfiles().At(0).Resource().Attributes().Clear()
+	putSamplePID(pd, 4242)
+
+	fr := &fakeResolver{names: map[uint64]string{0x1000: "sample_pid_symbol"}}
+	p := newTestProcessor(fr)
+
+	out, err := p.processProfiles(context.Background(), pd)
+	require.NoError(t, err)
+
+	resolved := out.Dictionary().LocationTable().At(nativeLoc)
+	require.Equal(t, 1, resolved.Lines().Len(), "sample process.pid should drive symbolization")
+	require.Equal(t, int64(4242), fr.gotPID)
 }
 
 func TestProcessProfilesNoPIDSkips(t *testing.T) {

@@ -16,36 +16,46 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func validateURLForTestConnection(ctx context.Context, testURL string) error {
-	cfg, err := getOdigosConfiguration(ctx)
-	if err != nil {
+var testConnectionEndpointFields = map[string]struct{}{
+	"OTLP_HTTP_ENDPOINT":          {},
+	"OTLP_HTTP_TRACES_ENDPOINT":   {},
+	"OTLP_HTTP_METRICS_ENDPOINT":  {},
+	"OTLP_HTTP_LOGS_ENDPOINT":     {},
+	"OTLP_HTTP_PROFILES_ENDPOINT": {},
+	"OTLP_GRPC_ENDPOINT":          {},
+}
+
+type testConnectionDomain struct {
+	scheme string
+	host   string
+}
+
+func validateURLAgainstAllowedHosts(testURL string, allowedHosts []string) error {
+	if len(allowedHosts) == 0 {
 		return nil
 	}
 
-	if len(cfg.AllowedTestConnectionHosts) == 0 {
+	if slices.Contains(allowedHosts, "*") {
 		return nil
 	}
 
-	if slices.Contains(cfg.AllowedTestConnectionHosts, "*") {
-		return nil
-	}
-
-	parsedURL, err := url.Parse(testURL)
+	urlDomain, err := parseTestConnectionDomain(testURL)
 	if err != nil {
 		return fmt.Errorf("invalid URL format: %w", err)
 	}
 
-	urlDomain := fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
-
-	for _, allowedDomain := range cfg.AllowedTestConnectionHosts {
-		normalizedAllowedDomain := normalizeDomain(allowedDomain)
+	for _, allowedDomain := range allowedHosts {
+		normalizedAllowedDomain, err := parseTestConnectionDomain(allowedDomain)
+		if err != nil {
+			continue
+		}
 
 		if urlDomain == normalizedAllowedDomain {
 			return nil
 		}
 
-		if domainWithoutWildcard, ok := strings.CutPrefix(normalizedAllowedDomain, "*."); ok {
-			if strings.HasSuffix(parsedURL.Host, "."+domainWithoutWildcard) {
+		if domainWithoutWildcard, ok := strings.CutPrefix(normalizedAllowedDomain.host, "*."); ok {
+			if urlDomain.scheme == normalizedAllowedDomain.scheme && strings.HasSuffix(urlDomain.host, "."+domainWithoutWildcard) {
 				return nil
 			}
 		}
@@ -71,30 +81,42 @@ func getOdigosConfiguration(ctx context.Context) (*common.OdigosConfiguration, e
 	return &cfg, nil
 }
 
-func normalizeDomain(domain string) string {
-	domain = strings.TrimSpace(domain)
+func parseTestConnectionDomain(domain string) (testConnectionDomain, error) {
+	normalizedDomain := strings.TrimSpace(domain)
 
-	if !strings.Contains(domain, "://") {
-		domain = "https://" + domain
+	if !strings.Contains(normalizedDomain, "://") {
+		normalizedDomain = "https://" + normalizedDomain
 	}
 
-	return domain
+	parsedURL, err := url.Parse(normalizedDomain)
+	if err != nil {
+		return testConnectionDomain{}, err
+	}
+	if parsedURL.Scheme == "" || parsedURL.Host == "" {
+		return testConnectionDomain{}, fmt.Errorf("missing scheme or host")
+	}
+
+	return testConnectionDomain{
+		scheme: parsedURL.Scheme,
+		host:   parsedURL.Host,
+	}, nil
 }
 
 func ValidateDestinationURLs(ctx context.Context, destination model.DestinationInput) error {
-
-	endpointFields := []string{
-		"OTLP_HTTP_ENDPOINT",
+	cfg, err := getOdigosConfiguration(ctx)
+	if err != nil {
+		return nil
 	}
 
+	return validateDestinationURLsAgainstAllowedHosts(destination, cfg.AllowedTestConnectionHosts)
+}
+
+func validateDestinationURLsAgainstAllowedHosts(destination model.DestinationInput, allowedHosts []string) error {
 	for _, field := range destination.Fields {
-		for _, endpointField := range endpointFields {
-			if field.Key == endpointField && field.Value != "" {
-				err := validateURLForTestConnection(ctx, field.Value)
-				if err != nil {
-					return err
-				}
-				break
+		if _, ok := testConnectionEndpointFields[field.Key]; ok && field.Value != "" {
+			err := validateURLAgainstAllowedHosts(field.Value, allowedHosts)
+			if err != nil {
+				return err
 			}
 		}
 	}

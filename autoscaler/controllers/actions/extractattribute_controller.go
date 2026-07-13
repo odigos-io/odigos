@@ -18,9 +18,15 @@ package actions
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
+	"github.com/odigos-io/odigos/common"
 )
+
+var supportedExtractAttributeSignals = map[common.ObservabilitySignal]struct{}{
+	common.TracesObservabilitySignal: {},
+}
 
 type extractAttributeProcessorConfig struct {
 	Extractions []extractAttributeRule `json:"extractions"`
@@ -28,9 +34,9 @@ type extractAttributeProcessorConfig struct {
 
 type extractAttributeRule struct {
 	TargetAttributeName string `json:"target_attribute_name"`
-	LookupKey        string `json:"lookup_key,omitempty"`
-	DataFormat       string `json:"data_format,omitempty"`
-	Regex            string `json:"regex,omitempty"`
+	LookupKey           string `json:"lookup_key,omitempty"`
+	DataFormat          string `json:"data_format,omitempty"`
+	Regex               string `json:"regex,omitempty"`
 }
 
 // extractAttributeConfig translates the API-level ExtractAttributeConfig into the processor-level config and validates cross-field invariants
@@ -72,12 +78,17 @@ func extractAttributeConfig(cfg *actions.ExtractAttributeConfig) (extractAttribu
 		if hasRegex && extraction.LookupKey != "" {
 			return config, fmt.Errorf("extractions[%d]: lookupKey must be empty when regex is set", i)
 		}
+		if hasRegex {
+			if _, err := regexp.Compile(extraction.Regex); err != nil {
+				return config, fmt.Errorf("extractions[%d]: invalid regex: %w", i, err)
+			}
+		}
 
 		config.Extractions = append(config.Extractions, extractAttributeRule{
 			TargetAttributeName: extraction.TargetAttributeName,
-			LookupKey:        extraction.LookupKey,
-			DataFormat:       string(extraction.DataFormat),
-			Regex:            extraction.Regex,
+			LookupKey:           extraction.LookupKey,
+			DataFormat:          string(extraction.DataFormat),
+			Regex:               extraction.Regex,
 		})
 	}
 	return config, nil
