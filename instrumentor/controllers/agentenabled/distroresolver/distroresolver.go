@@ -139,20 +139,31 @@ func ResolveDistroForContainer(
 		}
 	}
 
-	// use the default distro and detected language to resolve the distro to use.
-	d, disabledInfo := resolveDistroByLanguage(runtimeDetails.Language, distroPerLanguage, distroGetter, runtimeDetails.RuntimeVersion)
-	if disabledInfo != nil {
-		return nil, disabledInfo
+	var distroToUse *distro.OtelDistro
+	// if the user specifically overwritten the distro to use for this container, use it.
+	if containerOverride != nil && containerOverride.OtelDistroName != nil {
+		d, disabledInfo := resolveDistroByOverride(*containerOverride.OtelDistroName, distroGetter, runtimeDetails.Language)
+		if disabledInfo != nil {
+			return nil, disabledInfo
+		}
+		distroToUse = d
+	} else {
+		// use the default distro and detected language to resolve the distro to use.
+		d, disabledInfo := resolveDistroByLanguage(runtimeDetails.Language, distroPerLanguage, distroGetter, runtimeDetails.RuntimeVersion)
+		if disabledInfo != nil {
+			return nil, disabledInfo
+		}
+		distroToUse = d
 	}
 
 	// check if the runtime version is in supported range if it is provided.
 	// Wildcard-language distros (e.g. OBI) skip semver checks; supportedVersions may be '*'.
-	if runtimeDetails.RuntimeVersion != "" && len(d.RuntimeEnvironments) == 1 && !common.IsProgrammingLanguageWildcard(d.Language) {
-		constraint, err := version.NewConstraint(d.RuntimeEnvironments[0].SupportedVersions)
+	if runtimeDetails.RuntimeVersion != "" && len(distroToUse.RuntimeEnvironments) == 1 && !common.IsProgrammingLanguageWildcard(distroToUse.Language) {
+		constraint, err := version.NewConstraint(distroToUse.RuntimeEnvironments[0].SupportedVersions)
 		if err != nil {
 			return nil, &odigosv1.AgentDisabledInfo{
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-				AgentEnabledMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", d.RuntimeEnvironments[0].SupportedVersions),
+				AgentEnabledMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", distroToUse.RuntimeEnvironments[0].SupportedVersions),
 			}
 		}
 		detectedVersion := common.ParseRuntimeVersion(runtimeDetails.RuntimeVersion)
@@ -165,10 +176,10 @@ func ResolveDistroForContainer(
 		if !constraint.Check(detectedVersion) {
 			return nil, &odigosv1.AgentDisabledInfo{
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", d.RuntimeEnvironments[0].Name, constraint, detectedVersion),
+				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", distroToUse.RuntimeEnvironments[0].Name, constraint, detectedVersion),
 			}
 		}
 	}
 
-	return d, nil
+	return distroToUse, nil
 }
