@@ -131,10 +131,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Build Odigos Images
-        run: |
-          TAG=e2e-test make build-images
-          docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
+      # - name: Build Odigos Images
+      #   run: |
+      #     TAG=e2e-test make build-images
+      #     docker save -o odigos-images.tar $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "odigos")
 
       - uses: ko-build/setup-ko@v0.9
 
@@ -147,7 +147,6 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            odigos-images.tar
             cli-image.tar
           key: ${{ github.run_id }}-odigos-images
 
@@ -215,7 +214,6 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            odigos-images.tar
             cli-image.tar
           fail-on-cache-miss: true
           key: ${{ github.run_id }}-odigos-images
@@ -229,7 +227,6 @@ jobs:
 
       - name: Load Odigos Images to Kind Cluster
         run: |
-          kind load image-archive odigos-images.tar
           kind load image-archive cli-image.tar
           docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-instrumentor-${{ github.sha }}
           docker pull p0xd21zf5r.registry.depot.dev/570xmd9kld:odigos-autoscaler-${{ github.sha }}
