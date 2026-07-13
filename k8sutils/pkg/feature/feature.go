@@ -5,7 +5,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/rest"
+
+	"github.com/odigos-io/odigos/k8sutils/pkg/client"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
 type maturityLevel string
@@ -103,13 +105,12 @@ func K8sVersion() *version.Version {
 
 // Setup initializes the feature support based on the Kubernetes version.
 // It should be called once before using any feature support.
-// It must be called only for clients running inside a Kubernetes cluster.
 func Setup() error {
 	if k8sVersion != nil {
 		return nil
 	}
 
-	cfg, err := rest.InClusterConfig()
+	cfg, err := client.GetClientConfigWithContext(env.GetDefaultKubeConfigPath(), "")
 	if err != nil {
 		return err
 	}
