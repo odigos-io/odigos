@@ -17,22 +17,26 @@ func (p *traceFilterProcessor) processTraces(_ context.Context, td ptrace.Traces
 		return td, nil
 	}
 
-	for i := 0; i < td.ResourceSpans().Len(); i++ {
+	for i := td.ResourceSpans().Len() - 1; i >= 0; i-- {
 		rs := td.ResourceSpans().At(i)
 
-		for j := 0; j < rs.ScopeSpans().Len(); j++ {
+		for j := rs.ScopeSpans().Len() - 1; j >= 0; j-- {
 			ss := rs.ScopeSpans().At(j)
 			p.filterSpans(ss.Spans())
+
+			if ss.Spans().Len() == 0 {
+				rs.ScopeSpans().RemoveIf(func(s ptrace.ScopeSpans) bool {
+					return s.Spans().Len() == 0
+				})
+			}
 		}
 
-		rs.ScopeSpans().RemoveIf(func(s ptrace.ScopeSpans) bool {
-			return s.Spans().Len() == 0
-		})
+		if rs.ScopeSpans().Len() == 0 {
+			td.ResourceSpans().RemoveIf(func(r ptrace.ResourceSpans) bool {
+				return r.ScopeSpans().Len() == 0
+			})
+		}
 	}
-
-	td.ResourceSpans().RemoveIf(func(r ptrace.ResourceSpans) bool {
-		return r.ScopeSpans().Len() == 0
-	})
 
 	return td, nil
 }

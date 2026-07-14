@@ -148,7 +148,6 @@ replaces:
   - github.com/odigos-io/odigos/collector/connectors/serviceioconnector => ../connectors/serviceioconnector
   - github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector => ../connectors/servicegraphconnector
   - github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
-  - github.com/odigos-io/go-rtml => ../internal/go-rtml
   - github.com/odigos-io/odigos/common => ../../common
   - go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
   - github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension => ../extension/odigosconfigk8sextension

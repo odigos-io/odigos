@@ -39,8 +39,6 @@ func mergeCustomInstrumentations(existing *instrumentationrules.CustomInstrument
 		existing.Golang = append(existing.Golang, incoming.Golang...)
 	case common.JavaProgrammingLanguage:
 		existing.Java = append(existing.Java, incoming.Java...)
-	case common.CPlusPlusProgrammingLanguage:
-		existing.Cpp = append(existing.Cpp, incoming.Cpp...)
 	}
 
 	return existing
