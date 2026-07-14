@@ -26,10 +26,6 @@ func (l OdigosLogLevel) EnvVarValue() string {
 
 // Compare returns a negative integer, zero, or a positive integer as l is less than, equal to, or greater than other.
 func (l OdigosLogLevel) Compare(other OdigosLogLevel) int {
-	return odigosLogLevelRank(l) - odigosLogLevelRank(other)
-}
-
-func odigosLogLevelRank(l OdigosLogLevel) int {
 	switch l {
 	case LogLevelError:
 		return 10

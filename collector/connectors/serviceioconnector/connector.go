@@ -30,10 +30,8 @@ type serviceioConnector struct {
 
 	startTime time.Time
 
-	seriesMutex     sync.Mutex
-	keyToMetric     map[uint64]metricSeries
-	maxMetricSeries int
-	seriesLimitOnce sync.Once
+	seriesMutex sync.Mutex
+	keyToMetric map[uint64]metricSeries
 
 	shutdownCh chan struct{}
 }
@@ -63,7 +61,6 @@ func newConnector(set component.TelemetrySettings, cfg component.Config, next co
 		collectorInstanceID:  collectorInstanceID,
 		startTime:            time.Now(),
 		keyToMetric:          make(map[uint64]metricSeries),
-		maxMetricSeries:      defaultMaxMetricSeries,
 		shutdownCh:           make(chan struct{}),
 	}, nil
 }

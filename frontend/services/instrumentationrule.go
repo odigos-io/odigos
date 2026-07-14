@@ -448,6 +448,8 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 
 	if input.SourcesScopes != nil {
 		existingRule.Spec.Scopes = convertSourcesScopeInput(input.SourcesScopes)
+	} else {
+		existingRule.Spec.Scopes = nil
 	}
 
 	if input.InstrumentationLibraries != nil {
@@ -460,6 +462,8 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 			}
 		}
 		existingRule.Spec.InstrumentationLibraries = &convertedLibraries
+	} else {
+		existingRule.Spec.InstrumentationLibraries = nil
 	}
 
 	if input.PayloadCollection != nil {

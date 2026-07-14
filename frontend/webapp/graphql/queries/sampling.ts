@@ -14,8 +14,6 @@ const NOISY_OPERATION_FIELDS = `
   operation {
     httpServer { route routePrefix method queryParams { name valueExact } }
     httpClient { serverAddress templatedPath templatedPathPrefix method }
-    grpcServer { method service }
-    grpcClient { method service serverAddress }
   }
   percentageAtMost
   notes

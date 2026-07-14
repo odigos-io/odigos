@@ -72,56 +72,6 @@ func TestHeadSamplingOperationMatcherCRDToModelPreservesQueryParams(t *testing.T
 	require.Nil(t, got.HTTPServer.QueryParams[1].ValueExact)
 }
 
-func TestHeadSamplingOperationMatcherCRDToModelPreservesGrpc(t *testing.T) {
-	matcher := &commonapisampling.HeadSamplingOperationMatcher{
-		GrpcServer: &commonapisampling.HeadSamplingGrpcServerOperationMatcher{
-			Method:  "Check",
-			Service: "grpc.health.v1.Health",
-		},
-		GrpcClient: &commonapisampling.HeadSamplingGrpcClientOperationMatcher{
-			Method:        "Export",
-			Service:       "opentelemetry.proto.collector.trace.v1.TraceService",
-			ServerAddress: "collector.odigos-system.svc",
-		},
-	}
-
-	got := headSamplingOperationMatcherCRDToModel(matcher)
-
-	require.NotNil(t, got)
-	require.NotNil(t, got.GrpcServer)
-	require.Equal(t, "Check", *got.GrpcServer.Method)
-	require.Equal(t, "grpc.health.v1.Health", *got.GrpcServer.Service)
-	require.NotNil(t, got.GrpcClient)
-	require.Equal(t, "Export", *got.GrpcClient.Method)
-	require.Equal(t, "opentelemetry.proto.collector.trace.v1.TraceService", *got.GrpcClient.Service)
-	require.Equal(t, "collector.odigos-system.svc", *got.GrpcClient.ServerAddress)
-}
-
-func TestHeadSamplingOperationMatcherInputToCRDPreservesGrpc(t *testing.T) {
-	input := &model.HeadSamplingOperationMatcherInput{
-		GrpcServer: &model.HeadSamplingGrpcServerMatcherInput{
-			Method:  stringPtr("Check"),
-			Service: stringPtr("grpc.health.v1.Health"),
-		},
-		GrpcClient: &model.HeadSamplingGrpcClientMatcherInput{
-			Method:        stringPtr("Export"),
-			Service:       stringPtr("opentelemetry.proto.collector.trace.v1.TraceService"),
-			ServerAddress: stringPtr("collector.odigos-system.svc"),
-		},
-	}
-
-	got := headSamplingOperationMatcherInputToCRD(input)
-
-	require.NotNil(t, got)
-	require.NotNil(t, got.GrpcServer)
-	require.Equal(t, "Check", got.GrpcServer.Method)
-	require.Equal(t, "grpc.health.v1.Health", got.GrpcServer.Service)
-	require.NotNil(t, got.GrpcClient)
-	require.Equal(t, "Export", got.GrpcClient.Method)
-	require.Equal(t, "opentelemetry.proto.collector.trace.v1.TraceService", got.GrpcClient.Service)
-	require.Equal(t, "collector.odigos-system.svc", got.GrpcClient.ServerAddress)
-}
-
 func stringPtr(value string) *string {
 	return &value
 }

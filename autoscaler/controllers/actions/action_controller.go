@@ -68,11 +68,6 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	}
 
 	if action.Spec.ExtractAttribute != nil {
-		for _, signal := range action.Spec.Signals {
-			if _, ok := supportedExtractAttributeSignals[signal]; !ok {
-				return nil, fmt.Errorf("unsupported signal in ExtractAttribute action: %s", signal)
-			}
-		}
 		config, err := extractAttributeConfig(action.Spec.ExtractAttribute)
 		if err != nil {
 			return nil, err

@@ -17,7 +17,6 @@ spec:
       labels:
         app: keycloak
     spec:
-      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       {{- if .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- range .Values.topologySpreadConstraints }}
