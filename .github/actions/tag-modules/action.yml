@@ -24,4 +24,5 @@ runs:
         git tag distros/${{ inputs.tag }}
         git tag destinations/${{ inputs.tag }}
         git tag instrumentor/${{ inputs.tag }}
+        git tag status/${{ inputs.tag }}
         git push origin --tags
