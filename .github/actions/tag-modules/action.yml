@@ -12,6 +12,7 @@ runs:
     - name: Tag Modules
       shell: bash
       run: |
+        git tag actions/${{ inputs.tag }}
         git tag api/${{ inputs.tag }}
         git tag common/${{ inputs.tag }}
         git tag instrumentation/${{ inputs.tag }}
