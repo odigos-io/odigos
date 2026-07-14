@@ -249,7 +249,6 @@ func calculateCollectorConfigDomains(
 		metricsConfig := collectorconfig.MetricsConfig(nodeCG, collectorconfig.MetricsConfigOptions{
 			CommonSignalConfig:    commonSignalConfig.WithProcessors(processorsResults.MetricsProcessors),
 			MetricsConfigSettings: metricsConfigSettings,
-			NetworkMetricsEnabled: collectorconfig.AnyNetworkMetricsEnabled(sources),
 		})
 		configDomains["metrics"] = metricsConfig
 	}
