@@ -8,8 +8,9 @@ import (
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	urlactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
+	apiactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
+	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -346,16 +347,16 @@ func convertRenameAttributeFromInput(details *model.ActionFieldsInput, existingA
 	return config, nil
 }
 
-func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *actionsv1.PiiMaskingConfig {
+func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.PiiMaskingConfig {
 	withPiiMasking := false
-	var config *actionsv1.PiiMaskingConfig
+	var config *apiactions.PiiMaskingConfig
 
 	if details.PiiCategories != nil {
-		config = &actionsv1.PiiMaskingConfig{}
+		config = &apiactions.PiiMaskingConfig{}
 
-		piiCategories := make([]actionsv1.PiiCategory, len(details.PiiCategories))
+		piiCategories := make([]actionsapi.PiiCategory, len(details.PiiCategories))
 		for i, cat := range details.PiiCategories {
-			piiCategories[i] = actionsv1.PiiCategory(cat)
+			piiCategories[i] = actionsapi.PiiCategory(cat)
 		}
 		config.PiiCategories = piiCategories
 		withPiiMasking = true
@@ -529,7 +530,7 @@ func convertClusterAttributesToModel(clusterAttributes []actionsv1.OtelAttribute
 	return result
 }
 
-func convertPiiCategoriesToModel(piiCategories []actionsv1.PiiCategory) []string {
+func convertPiiCategoriesToModel(piiCategories []actionsapi.PiiCategory) []string {
 	var result []string
 
 	for _, category := range piiCategories {
@@ -547,7 +548,7 @@ func stringifyMap(m map[string]string) (string, error) {
 	return string(json), nil
 }
 
-func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *urlactions.URLTemplatizationConfig {
+func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.URLTemplatizationConfig {
 	if details.URLTemplatizationRulesGroups == nil {
 		if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
 			return existingAction.Spec.URLTemplatization
@@ -555,9 +556,9 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 		return nil
 	}
 
-	rules := make([]urlactions.UrlTemplatizationRule, 0, len(details.URLTemplatizationRulesGroups))
+	rules := make([]apiactions.UrlTemplatizationRule, 0, len(details.URLTemplatizationRulesGroups))
 	for _, g := range details.URLTemplatizationRulesGroups {
-		group := urlactions.UrlTemplatizationRule{}
+		group := apiactions.UrlTemplatizationRule{}
 
 		// Fold the URL-templatization filter form into the tri-list SourcesScopes shape:
 		//   * Each WorkloadFilter row → one PodWorkload appended to Sources (with namespace baked in).
@@ -609,7 +610,7 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 		rules = append(rules, group)
 	}
 
-	config := &urlactions.URLTemplatizationConfig{
+	config := &apiactions.URLTemplatizationConfig{
 		Rules: rules,
 	}
 	// The GraphQL/UI shape only exposes the rule groups, not the default templatization groups.
@@ -621,7 +622,7 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 	return config
 }
 
-func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []*model.URLTemplatizationRulesGroup {
+func convertUrlTemplatizationToModel(cfg *apiactions.URLTemplatizationConfig) []*model.URLTemplatizationRulesGroup {
 	if cfg == nil {
 		return nil
 	}
@@ -673,7 +674,7 @@ func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []
 	return result
 }
 
-func convertExtractAttributeFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *urlactions.ExtractAttributeConfig {
+func convertExtractAttributeFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.ExtractAttributeConfig {
 	if details.ExtractAttribute == nil {
 		if existingAction != nil && existingAction.Spec.ExtractAttribute != nil {
 			return existingAction.Spec.ExtractAttribute
@@ -681,25 +682,25 @@ func convertExtractAttributeFromInput(details *model.ActionFieldsInput, existing
 		return nil
 	}
 
-	extractions := make([]urlactions.Extraction, 0, len(details.ExtractAttribute.Extractions))
+	extractions := make([]apiactions.Extraction, 0, len(details.ExtractAttribute.Extractions))
 	for _, e := range details.ExtractAttribute.Extractions {
-		row := urlactions.Extraction{
+		row := apiactions.Extraction{
 			TargetAttributeName: e.TargetAttributeName,
 			LookupKey:           DerefString(e.LookupKey),
 			Regex:               DerefString(e.Regex),
 		}
 		if e.DataFormat != nil {
-			row.DataFormat = urlactions.DataFormat(*e.DataFormat)
+			row.DataFormat = apiactions.DataFormat(*e.DataFormat)
 		}
 		extractions = append(extractions, row)
 	}
 
-	return &urlactions.ExtractAttributeConfig{
+	return &apiactions.ExtractAttributeConfig{
 		Extractions: extractions,
 	}
 }
 
-func convertExtractAttributeToModel(cfg *urlactions.ExtractAttributeConfig) *model.ExtractAttribute {
+func convertExtractAttributeToModel(cfg *apiactions.ExtractAttributeConfig) *model.ExtractAttribute {
 	if cfg == nil {
 		return nil
 	}

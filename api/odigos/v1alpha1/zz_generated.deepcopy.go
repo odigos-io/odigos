@@ -118,7 +118,7 @@ func (in *ActionSpec) DeepCopyInto(out *ActionSpec) {
 	}
 	if in.PiiMasking != nil {
 		in, out := &in.PiiMasking, &out.PiiMasking
-		*out = new(actionsv1alpha1.PiiMaskingConfig)
+		*out = new(actions.PiiMaskingConfig)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.K8sAttributes != nil {

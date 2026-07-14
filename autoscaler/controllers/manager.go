@@ -128,9 +128,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&apiactions.DeleteAttribute{}: {
 					Field: nsSelector,
 				},
-				&apiactions.PiiMasking{}: {
-					Field: nsSelector,
-				},
 				&apiactions.RenameAttribute{}: {
 					Field: nsSelector,
 				},

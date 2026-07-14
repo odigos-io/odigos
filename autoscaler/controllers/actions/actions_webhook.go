@@ -39,7 +39,7 @@ var validActionConfigNames = []string{
 	actionsv1alpha1.ActionNameAddClusterInfo,
 	actionsv1alpha1.ActionNameDeleteAttribute,
 	actionsv1alpha1.ActionNameRenameAttribute,
-	actionsv1alpha1.ActionNamePiiMasking,
+	actions.ActionNamePiiMasking,
 	actionsv1alpha1.ActionNameK8sAttributes,
 	actions.ActionNameURLTemplatization,
 	actions.ActionSpanRenamer,
