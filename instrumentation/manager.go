@@ -536,13 +536,17 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) isInstrumentedByDis
 	if details.distroInst != nil {
 		return true
 	}
-	// No loaded distro instrumentation. A process whose distro has a factory is a retry candidate
-	// (not yet instrumented); a process with no distro factory of its own is only ever handled by
-	// generic factories (which are not retried), so treat it as instrumented and leave it alone.
+	// No loaded distro instrumentation for this tracked pid.
 	distribution, err := details.pd.Distribution(ctx)
 	if err != nil || distribution == nil {
+		// Tracked but we can no longer resolve its distribution (e.g. the process is exiting or a
+		// transient lookup error). We can't meaningfully (re)instrument it, so treat it as
+		// instrumented and leave it alone rather than retry blindly.
 		return true
 	}
+	// A distro that has a factory is a retry candidate (its factory failed to load); a distro with no
+	// factory of its own is only ever handled by generic factories (which are not retried), so treat
+	// it as instrumented and leave it alone.
 	_, hasFactory := m.distroFactories[distribution.Name]
 	return !hasFactory
 }
@@ -583,8 +587,10 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 
 	factory, hasDistroFactory := m.distroFactories[otelDistro.Name]
 	if !hasDistroFactory && len(m.genericFactories) == 0 {
-		// No factory for this distro and no generic factories. Expected for some language/sdk
-		// combinations without eBPF support.
+		// Nothing can instrument this process: its distro has no factory (expected for some
+		// language/sdk combinations without eBPF support) and no generic factories are registered to
+		// apply regardless of distro. When the manager has at least one generic factory this branch is
+		// not reached.
 		return errNoInstrumentationFactory
 	}
 
@@ -809,8 +815,8 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) applyInstrumentatio
 	}
 
 	for _, instDetails := range configGroupInstrumentations {
-		m.logger.Info("applying configuration to instrumentation", "process group details", instDetails.pd, "configGroup", configGroup)
 		if instDetails.distroInst != nil {
+			m.logger.Info("applying configuration to instrumentation", "process group details", instDetails.pd, "configGroup", configGroup)
 			err = errors.Join(err, instDetails.distroInst.ApplyConfig(ctx, config))
 		}
 		for _, inst := range instDetails.genericInsts {

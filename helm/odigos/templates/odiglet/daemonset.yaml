@@ -26,6 +26,9 @@
 {{- if and $privilegedRequired .Values.odiglet.unPrivileged }}
 {{ fail "privileged mode is required when collecting logs or metrics, this is currently not supported in unprivileged mode" }}
 {{- end }}
+{{- if and $networkMetricsEnabled .Values.odiglet.noHostNetwork }}
+{{ fail "odiglet.noHostNetwork cannot be true when metricsSources.networkMetrics.enabled is true, since OBI network metrics require hostNetwork" }}
+{{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

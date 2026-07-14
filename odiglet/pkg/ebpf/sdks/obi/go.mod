@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks/obi
 go 1.26.2
 
 require (
-	github.com/odigos-io/odigos/api v1.30.2
+	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/instrumentation v0.0.0
 	go.opentelemetry.io/obi v0.10.0
@@ -223,6 +223,7 @@ require (
 )
 
 replace (
+	github.com/odigos-io/odigos/api => ../../../../../api
 	github.com/odigos-io/odigos/common => ../../../../../common
 	github.com/odigos-io/odigos/distros => ../../../../../distros
 	github.com/odigos-io/odigos/instrumentation => ../../../../../instrumentation
