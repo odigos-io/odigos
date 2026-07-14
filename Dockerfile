@@ -18,6 +18,7 @@ WORKDIR /workspace/$SERVICE_NAME
 RUN mkdir -p /workspace/build
 RUN --mount=type=cache,target=/go/pkg \
     go mod download && go mod verify
+
 # Copy full local modules and service source
 WORKDIR /workspace
 COPY api/ api/
@@ -34,7 +35,6 @@ WORKDIR /workspace/$SERVICE_NAME
 ARG TARGETARCH
 ARG LD_FLAGS
 ARG RHEL=false
-RUN go mod tidy
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     CGO_ENABLED=0 GOARCH=$TARGETARCH \
