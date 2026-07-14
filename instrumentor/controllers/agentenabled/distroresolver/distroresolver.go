@@ -126,11 +126,6 @@ func ResolveDistroForContainer(
 		}
 	}
 
-	// if the user specifically overwritten the distro to use for this container, use it.
-	if containerOverride != nil && containerOverride.OtelDistroName != nil {
-		return resolveDistroByOverride(*containerOverride.OtelDistroName, distroGetter, runtimeDetails.Language)
-	}
-
 	// check unknown language before automatic distro resolution.
 	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
 		return nil, &odigosv1.AgentDisabledInfo{
