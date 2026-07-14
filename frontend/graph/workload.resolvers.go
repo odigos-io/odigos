@@ -123,7 +123,7 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 		conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
 		conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
 		conditions = append(conditions, status.CalculateRolloutStatus(ic))
-		conditions = append(conditions, status.CalculatePodsInjectionStatus(ic))
+		conditions = append(conditions, status.CalculatePodsManifestInjectionStatus(ic))
 		conditions = append(conditions, status.CalculateAutoRollbackStatus(ic, autoRollbackConfig))
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
@@ -204,7 +204,7 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 	runtimeDetection := status.CalculateRuntimeInspectionStatus(ic)
 	agentInjectionEnabled := status.CalculateAgentInjectionEnabledStatus(ic)
 	rollout := status.CalculateRolloutStatus(ic)
-	podsInjection := status.CalculatePodsInjectionStatus(ic)
+	podsManifestInjection := status.CalculatePodsManifestInjectionStatus(ic)
 	autoRollback := status.CalculateAutoRollbackStatus(ic, autoRollbackConfig)
 	agentInjected := status.CalculateAgentInjectedStatus(ic, pods)
 	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
@@ -228,7 +228,7 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 		RuntimeDetection:      runtimeDetection,
 		AgentInjectionEnabled: agentInjectionEnabled,
 		Rollout:               rollout,
-		PodsInjection:         podsInjection,
+		PodsManifestInjection: podsManifestInjection,
 		AutoRollback:          autoRollback,
 		AgentInjected:         agentInjected,
 		ProcessesAgentHealth:  processesAgentHealth,
@@ -343,14 +343,14 @@ func (r *k8sWorkloadResolver) Rollout(ctx context.Context, obj *model.K8sWorkloa
 	}
 
 	rolloutStatus := status.CalculateRolloutStatus(ic)
-	podsInjectionStatus := status.CalculatePodsInjectionStatus(ic)
-	if rolloutStatus == nil && podsInjectionStatus == nil {
+	podsManifestInjectionStatus := status.CalculatePodsManifestInjectionStatus(ic)
+	if rolloutStatus == nil && podsManifestInjectionStatus == nil {
 		return nil, nil
 	}
 
 	return &model.K8sWorkloadRollout{
-		RolloutStatus:       rolloutStatus,
-		PodsInjectionStatus: podsInjectionStatus,
+		RolloutStatus:               rolloutStatus,
+		PodsManifestInjectionStatus: podsManifestInjectionStatus,
 	}, nil
 }
 

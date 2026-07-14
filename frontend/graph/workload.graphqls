@@ -217,13 +217,13 @@ type K8sWorkloadAgentEnabled {
 # describes the odigos instrumentation related rollout status for a workload.
 type K8sWorkloadRollout {
   # the status of the rollout. that is being tracked by odigos.
-  # optional when only the PodsInjection condition is present.
+  # optional when only the PodsManifestInjection condition is present.
   rolloutStatus: DesiredConditionStatus
 
   # status of odigos agent injection into running pods of this workload.
-  # sourced from the InstrumentationConfig PodsInjection condition.
+  # sourced from the InstrumentationConfig PodsManifestInjection condition.
   # covers whether pods are injected as desired, and any rollout/restart progress required to get there.
-  podsInjectionStatus: DesiredConditionStatus
+  podsManifestInjectionStatus: DesiredConditionStatus
 }
 
 type K8sWorkloadAutoRollback {
@@ -524,7 +524,7 @@ type K8sWorkloadConditions {
   runtimeDetection: DesiredConditionStatus
   agentInjectionEnabled: DesiredConditionStatus
   rollout: DesiredConditionStatus
-  podsInjection: DesiredConditionStatus
+  podsManifestInjection: DesiredConditionStatus
   autoRollback: DesiredConditionStatus
   agentInjected: DesiredConditionStatus
   processesAgentHealth: DesiredConditionStatus

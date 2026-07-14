@@ -1,4 +1,4 @@
-package podsinjectionstatus
+package podsmanifestinjectionstatus
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package podsinjectionstatus
+package podsmanifestinjectionstatus
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/status"
-	podsInjectionStatus "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
+	podsManifestInjection "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,7 +78,7 @@ func syncWorkload(ctx context.Context, client ctrl.Client, pw k8sconsts.PodWorkl
 		ic.Status.PodsManifestInjectionStatus = &podsManifestInjectionStatus
 	}
 
-	reason := calculatePodsInjectionReason(
+	reason := calculatePodsManifestInjectionReason(
 		podsManifestInjectionStatus,
 		&ic,
 		&effectiveConfig,
@@ -87,7 +87,7 @@ func syncWorkload(ctx context.Context, client ctrl.Client, pw k8sconsts.PodWorkl
 	conditionChanged := false
 	if reason.Name != "" {
 		conditionChanged = meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-			Type:    podsInjectionStatus.PodsInjectionType,
+			Type:    podsManifestInjection.PodsManifestInjectionType,
 			Status:  reason.K8sConditionStatus,
 			Reason:  reason.Name,
 			Message: reason.Message,
@@ -112,26 +112,26 @@ func podsManifestInjectionStatusNeedsUpdate(current *odigosv1.PodsManifestInject
 		current.HasUninjectedPods != desired.HasUninjectedPods
 }
 
-// calculatePodsInjectionReason selects the PodsInjection status reason for the observed
+// calculatePodsManifestInjectionReason selects the PodsManifestInjection status reason for the observed
 // pod manifest injection state.
-func calculatePodsInjectionReason(
+func calculatePodsManifestInjectionReason(
 	injectionStatus odigosv1.PodsManifestInjectionStatus,
 	ic *odigosv1.InstrumentationConfig,
 	effectiveConfig *common.OdigosConfiguration,
 	workloadKind k8sconsts.WorkloadKind,
 ) status.Reason {
 	if !injectionStatus.HasInjectedUpToDatePods && !injectionStatus.HasInjectedOutOfDatePods && !injectionStatus.HasUninjectedPods {
-		return podsInjectionStatus.PodsInjectionNoRunningPods
+		return podsManifestInjection.PodsManifestInjectionNoRunningPods
 	}
 
 	// first - if all is well, then report it and that's it.
 	if injectionStatus.HasInjectedUpToDatePods && !injectionStatus.HasInjectedOutOfDatePods && !injectionStatus.HasUninjectedPods {
-		return podsInjectionStatus.PodsInjectionPodsInjectedSuccessfully
+		return podsManifestInjection.PodsManifestInjectionPodsInjectedSuccessfully
 	}
 
 	// check for "no restart" distros
 	if ic.Spec.PodManifestInjectionOptional {
-		return podsInjectionStatus.PodsInjectionPodsInjectionNotRequired
+		return podsManifestInjection.PodsManifestInjectionPodsManifestInjectionNotRequired
 	}
 
 	// at this point, we know that there are some pods with pods injection not aligned with the desired state.
@@ -139,18 +139,18 @@ func calculatePodsInjectionReason(
 	// which is useful, informative and actionable for the user.
 
 	if workloadKind == k8sconsts.WorkloadKindStaticPod {
-		return podsInjectionStatus.PodsInjectionRolloutNotSupportedForStaticPods
+		return podsManifestInjection.PodsManifestInjectionRolloutNotSupportedForStaticPods
 	}
 
 	if workloadKind == k8sconsts.WorkloadKindJob || workloadKind == k8sconsts.WorkloadKindCronJob {
-		return podsInjectionStatus.PodsInjectionWaitingForNextJobRun
+		return podsManifestInjection.PodsManifestInjectionWaitingForNextJobRun
 	}
 
 	automaticRolloutDisabledInConfig := effectiveConfig.Rollout != nil &&
 		effectiveConfig.Rollout.AutomaticRolloutDisabled != nil &&
 		*effectiveConfig.Rollout.AutomaticRolloutDisabled
 	if automaticRolloutDisabledInConfig {
-		return podsInjectionStatus.PodsInjectionRestartRequiredAutoRolloutDisabled
+		return podsManifestInjection.PodsManifestInjectionRestartRequiredAutoRolloutDisabled
 	}
 
 	var workloadRolloutReason odigosv1.WorkloadRolloutReason
@@ -162,19 +162,19 @@ func calculatePodsInjectionReason(
 	// In the future, it is better no to rely on the condition, and compute the rollout status from instrumentation config itself.
 	switch workloadRolloutReason {
 	case odigosv1.WorkloadRolloutReasonWaitingInQueue:
-		return podsInjectionStatus.PodsInjectionWaitingInRolloutQueue
+		return podsManifestInjection.PodsManifestInjectionWaitingInRolloutQueue
 	case odigosv1.WorkloadRolloutReasonPreviousRolloutOngoing,
 		odigosv1.WorkloadRolloutReasonTriggeredSuccessfully:
-		return podsInjectionStatus.PodsInjectionRolloutInProgress
+		return podsManifestInjection.PodsManifestInjectionRolloutInProgress
 	case odigosv1.WorkloadRolloutReasonFailedToPatch:
-		return podsInjectionStatus.PodsInjectionRestartRequiredAutoRolloutFailed
+		return podsManifestInjection.PodsManifestInjectionRestartRequiredAutoRolloutFailed
 	}
 
 	// Odigos already recorded a rollout for the current agents hash, but some pods are still
 	// missing / outdated injection — typically pods that bypassed the webhook.
 	if ic.Status.WorkloadRolloutHash != "" && ic.Status.WorkloadRolloutHash == ic.Spec.AgentsMetaHash {
-		return podsInjectionStatus.PodsInjectionRestartRequiredWebhookMissed
+		return podsManifestInjection.PodsManifestInjectionRestartRequiredWebhookMissed
 	}
 
-	return podsInjectionStatus.PodsInjectionWaitingForAutomaticRollout
+	return podsManifestInjection.PodsManifestInjectionWaitingForAutomaticRollout
 }
