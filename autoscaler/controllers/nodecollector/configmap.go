@@ -391,9 +391,7 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 }
 
 func isTracingLoadBalancingNeeded(_ context.Context, _ client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
-	// Tracing load balancing is required whenever gateway processors need complete traces.
+	// Tracing load balancing is required only when service graph is enabled.
 	serviceGraphEnabled := clusterCollectorGroup.Spec.ServiceGraphDisabled == nil || !*clusterCollectorGroup.Spec.ServiceGraphDisabled
-	tailSamplingEnabled := clusterCollectorGroup.Spec.TailSampling != nil &&
-		(clusterCollectorGroup.Spec.TailSampling.Disabled == nil || !*clusterCollectorGroup.Spec.TailSampling.Disabled)
-	return serviceGraphEnabled || tailSamplingEnabled, nil
+	return serviceGraphEnabled, nil
 }

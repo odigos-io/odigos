@@ -2,7 +2,6 @@ package serviceioconnector
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -61,12 +60,10 @@ func TestBuildMetricsSetsResourceAttributes(t *testing.T) {
 
 	inputAttributes := buildServiceInstanceBaseAttributes(instance, inputAttrs)
 	key, attributes := buildConnectionAttributes(inputAttributes, outputAttrs)
-	now := time.Now()
 	connector.keyToMetric[key] = metricSeries{
 		dimensions: attributes,
 		resource:   buildMetricResourceAttributes(instance),
 		count:      2,
-		updatedAt:  now,
 	}
 
 	md, err := connector.buildMetrics()

@@ -12,8 +12,6 @@ export const CREATE_NOISY_OPERATION_RULE = gql`
       operation {
         httpServer { route routePrefix method queryParams { name valueExact } }
         httpClient { serverAddress templatedPath templatedPathPrefix method }
-        grpcServer { method service }
-        grpcClient { method service serverAddress }
       }
       percentageAtMost
       notes
@@ -31,8 +29,6 @@ export const UPDATE_NOISY_OPERATION_RULE = gql`
       operation {
         httpServer { route routePrefix method queryParams { name valueExact } }
         httpClient { serverAddress templatedPath templatedPathPrefix method }
-        grpcServer { method service }
-        grpcClient { method service serverAddress }
       }
       percentageAtMost
       notes

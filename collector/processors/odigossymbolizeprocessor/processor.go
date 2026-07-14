@@ -4,9 +4,8 @@
 // already named (interpreted runtimes, Go) pass through untouched. See README.md.
 //
 // processor.go is the pipeline entry point: for each ResourceProfiles it reads
-// process.pid from the resource or profile samples, pre-warms the symbol cache
-// for newly-seen processes, and fills each native Location's Lines with the
-// resolved function name.
+// the process.pid, pre-warms the symbol cache for newly-seen processes, and fills
+// each native Location's Lines with the resolved function name.
 package odigossymbolizeprocessor
 
 import (
@@ -113,7 +112,7 @@ func (p *symbolizeProcessor) processProfiles(_ context.Context, pd pprofile.Prof
 	rps := pd.ResourceProfiles()
 	for ri := 0; ri < rps.Len(); ri++ {
 		rp := rps.At(ri)
-		pid := pidFromResourceProfiles(dict, rp, p.cfg.pidAttribute())
+		pid := pidFromResource(rp.Resource().Attributes(), p.cfg.pidAttribute())
 		if pid <= 0 {
 			continue
 		}
@@ -144,42 +143,6 @@ func (p *symbolizeProcessor) processProfiles(_ context.Context, pd pprofile.Prof
 	}
 
 	return pd, nil
-}
-
-func pidFromResourceProfiles(dict pprofile.ProfilesDictionary, rp pprofile.ResourceProfiles, key string) int64 {
-	if pid := pidFromResource(rp.Resource().Attributes(), key); pid > 0 {
-		return pid
-	}
-
-	keyIdx := stringTableIndex(dict.StringTable(), key)
-	if keyIdx < 0 {
-		return 0
-	}
-	attrTable := dict.AttributeTable()
-
-	sps := rp.ScopeProfiles()
-	for si := 0; si < sps.Len(); si++ {
-		profs := sps.At(si).Profiles()
-		for pi := 0; pi < profs.Len(); pi++ {
-			samples := profs.At(pi).Samples()
-			for sampleIdx := 0; sampleIdx < samples.Len(); sampleIdx++ {
-				attrs := samples.At(sampleIdx).AttributeIndices()
-				for ai := 0; ai < attrs.Len(); ai++ {
-					attrIdx := int(attrs.At(ai))
-					if attrIdx < 0 || attrIdx >= attrTable.Len() {
-						continue
-					}
-					kv := attrTable.At(attrIdx)
-					if kv.KeyStrindex() == keyIdx {
-						if pid := pidFromValue(kv.Value()); pid > 0 {
-							return pid
-						}
-					}
-				}
-			}
-		}
-	}
-	return 0
 }
 
 // prewarmOnce asynchronously parses a newly-seen process's mapped binaries so
@@ -261,10 +224,6 @@ func pidFromResource(attrs pcommon.Map, key string) int64 {
 	if !ok {
 		return 0
 	}
-	return pidFromValue(v)
-}
-
-func pidFromValue(v pcommon.Value) int64 {
 	switch v.Type() {
 	case pcommon.ValueTypeInt:
 		return v.Int()
@@ -280,13 +239,4 @@ func pidFromValue(v pcommon.Value) int64 {
 	default:
 		return 0
 	}
-}
-
-func stringTableIndex(st pcommon.StringSlice, want string) int32 {
-	for i := 0; i < st.Len(); i++ {
-		if st.At(i) == want {
-			return int32(i)
-		}
-	}
-	return -1
 }

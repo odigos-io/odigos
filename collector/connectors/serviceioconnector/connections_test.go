@@ -49,33 +49,6 @@ func TestAggregateConnectionsFromTree(t *testing.T) {
 	require.ElementsMatch(t, []string{"Users", "Orders"}, outputServices)
 }
 
-func TestAggregateConnectionsFromTreeDropsOnlyNewSeriesAtLimit(t *testing.T) {
-	td := buildServiceIOTestTrace(t)
-
-	tree, err := BuildTraceTree(td, nil)
-	require.NoError(t, err)
-
-	connector := &serviceioConnector{
-		keyToMetric:          make(map[uint64]metricSeries),
-		maxMetricSeries:      1,
-		inputSpanAttributes:  []string{"http.route"},
-		outputSpanAttributes: []string{"rpc.service"},
-		logger:               zap.NewNop(),
-	}
-	odigosConfig := &mockOdigosConfigExtension{
-		activeSources: map[string]struct{}{"svc-1": {}},
-	}
-
-	require.True(t, connector.aggregateConnectionsFromTree(tree, odigosConfig))
-	require.Len(t, connector.keyToMetric, 1)
-
-	require.True(t, connector.aggregateConnectionsFromTree(tree, odigosConfig))
-	require.Len(t, connector.keyToMetric, 1)
-	for _, series := range connector.keyToMetric {
-		require.EqualValues(t, 2, series.count)
-	}
-}
-
 func TestConnectorConsumeTraces_EmitsConnectionMetrics(t *testing.T) {
 	sink := &consumertest.MetricsSink{}
 	flushImmediately := time.Duration(0)
