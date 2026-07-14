@@ -198,12 +198,13 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 	// CachedPods are loaded once and shared across all workloads via the Loaders cache.
 	pods, _ := l.GetWorkloadPods(ctx, id)
 
-	var runtimeDetection, agentInjectionEnabled, rolloutStatus, agentInjected, processesHealth, expectingTelemetry *model.DesiredConditionStatus
+	var runtimeDetection, agentInjectionEnabled, rolloutStatus, podsManifestInjectionStatus, agentInjected, processesHealth, expectingTelemetry *model.DesiredConditionStatus
 
 	if ic != nil {
 		runtimeDetection = status.CalculateRuntimeInspectionStatus(ic)
 		agentInjectionEnabled = status.CalculateAgentInjectionEnabledStatus(ic)
 		rolloutStatus = status.CalculateRolloutStatus(ic)
+		podsManifestInjectionStatus = status.CalculatePodsManifestInjectionStatus(ic)
 	}
 	agentInjected = status.CalculateAgentInjectedStatus(ic, pods)
 	containerNames := getContainerNamesWithOptionalPodManifestInjection(ic)
@@ -226,6 +227,7 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 			RuntimeDetection:      runtimeDetection,
 			AgentInjectionEnabled: agentInjectionEnabled,
 			Rollout:               rolloutStatus,
+			PodsManifestInjection: podsManifestInjectionStatus,
 			AgentInjected:         agentInjected,
 			ProcessesAgentHealth:  processesHealth,
 			ExpectingTelemetry:    expectingTelemetry,
@@ -234,9 +236,9 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 
 	w.PodsAgentInjectionStatus = agentInjected
 
-	healthConditions := make([]*model.DesiredConditionStatus, 0, 6)
+	healthConditions := make([]*model.DesiredConditionStatus, 0, 7)
 	if ic != nil {
-		healthConditions = append(healthConditions, runtimeDetection, agentInjectionEnabled, rolloutStatus)
+		healthConditions = append(healthConditions, runtimeDetection, agentInjectionEnabled, rolloutStatus, podsManifestInjectionStatus)
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
 		healthConditions = append(healthConditions, &model.DesiredConditionStatus{
