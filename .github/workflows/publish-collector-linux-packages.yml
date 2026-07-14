@@ -44,11 +44,11 @@ jobs:
           fetch-depth: 0
           ref: ${{ steps.extract_tag.outputs.tag }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - id: gcp-auth
         name: Authenticate with Google Cloud
