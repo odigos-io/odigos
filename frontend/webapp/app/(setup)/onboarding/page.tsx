@@ -3,7 +3,7 @@
 import React from 'react';
 import { ROUTES } from '@/utils';
 import { useRouter } from 'next/navigation';
-import { Onboarding } from '@odigos/ui-kit/containers/v2';
+import { Onboarding } from '@odigos/ui-kit/containers';
 
 export default function Page() {
   const router = useRouter();

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { GET_TRACE_CORRELATIONS } from '@/graphql';
 
 // TODO: move this to the ui-kit to work with OdigosApiContext
@@ -99,12 +99,7 @@ export function buildCustomTraceCorrelationsTimeRange(startValue: string, endVal
   };
 }
 
-export function resolveTraceCorrelationsTimeRange(options: {
-  preset: TraceCorrelationsTimePreset;
-  customStart: string;
-  customEnd: string;
-  now?: number;
-}): TraceCorrelationsTimeRange | null {
+export function resolveTraceCorrelationsTimeRange(options: { preset: TraceCorrelationsTimePreset; customStart: string; customEnd: string; now?: number }): TraceCorrelationsTimeRange | null {
   if (options.preset === 'custom') {
     return buildCustomTraceCorrelationsTimeRange(options.customStart, options.customEnd);
   }
@@ -178,18 +173,11 @@ export function isTraceCorrelationsMetricsStoreUnavailableError(error: { message
 
   return (
     message.includes('odigos-correlations-metrics') &&
-    (message.includes('connection refused') ||
-      message.includes('no such host') ||
-      message.includes('dial tcp') ||
-      message.includes('connect: network is unreachable'))
+    (message.includes('connection refused') || message.includes('no such host') || message.includes('dial tcp') || message.includes('connect: network is unreachable'))
   );
 }
 
-export const useTraceCorrelations = (
-  filter?: WorkloadFilter,
-  timeRange?: TraceCorrelationsTimeRange | null,
-  options?: { enabled?: boolean },
-) => {
+export const useTraceCorrelations = (filter?: WorkloadFilter, timeRange?: TraceCorrelationsTimeRange | null, options?: { enabled?: boolean }) => {
   const queryEnabled = (options?.enabled ?? true) && !!timeRange;
   const variables = useMemo(
     () => ({

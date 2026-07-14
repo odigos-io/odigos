@@ -1,6 +1,8 @@
 package status
 
 import (
+	"fmt"
+
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/computed"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -52,11 +54,19 @@ func CalculatePodContainerHealthOdigosStatus(container *computed.ComputedPodCont
 	// first check if any process is unhealthy
 	for _, ii := range iis {
 		if ii.Status.Healthy != nil && !*ii.Status.Healthy {
-			return createPodContainerHealthOdigosStatus(PodHealthOdigosStatusReasonInstrumentatedProcessUnhealthy, "instrumented process in the container is unhealthy", model.DesiredStateProgressFailure)
+			message := "instrumented process in the container is unhealthy"
+			if ii.Status.Message != "" {
+				message = fmt.Sprintf("%s: %s", message, ii.Status.Message)
+			}
+			return createPodContainerHealthOdigosStatus(PodHealthOdigosStatusReasonInstrumentatedProcessUnhealthy, message, model.DesiredStateProgressFailure)
 		}
 		for _, c := range ii.Status.Components {
 			if c.Healthy != nil && !*c.Healthy {
-				return createPodContainerHealthOdigosStatus(PodHealthOdigosStatusReasonInstrumentatedProcessUnhealthy, "unhealthy instrumentation library in instrumented process", model.DesiredStateProgressFailure)
+				message := "unhealthy instrumentation library in instrumented process"
+				if c.Message != "" {
+					message = fmt.Sprintf("%s: %s", message, c.Message)
+				}
+				return createPodContainerHealthOdigosStatus(PodHealthOdigosStatusReasonInstrumentatedProcessUnhealthy, message, model.DesiredStateProgressFailure)
 			}
 		}
 	}

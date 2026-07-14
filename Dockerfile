@@ -10,6 +10,7 @@ COPY profiles/ profiles/
 COPY distros/ distros/
 COPY destinations/ destinations/
 COPY config/ config/
+COPY status/ status/
 
 WORKDIR /workspace/$SERVICE_NAME
 RUN mkdir -p /workspace/build

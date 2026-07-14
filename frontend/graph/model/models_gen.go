@@ -587,15 +587,17 @@ type HeadSamplingHTTPClientMatcherInput struct {
 }
 
 type HeadSamplingHTTPServerMatcher struct {
-	Route       *string `json:"route,omitempty"`
-	RoutePrefix *string `json:"routePrefix,omitempty"`
-	Method      *string `json:"method,omitempty"`
+	Route       *string                          `json:"route,omitempty"`
+	RoutePrefix *string                          `json:"routePrefix,omitempty"`
+	Method      *string                          `json:"method,omitempty"`
+	QueryParams []*HeadSamplingQueryParamMatcher `json:"queryParams,omitempty"`
 }
 
 type HeadSamplingHTTPServerMatcherInput struct {
-	Route       *string `json:"route,omitempty"`
-	RoutePrefix *string `json:"routePrefix,omitempty"`
-	Method      *string `json:"method,omitempty"`
+	Route       *string                               `json:"route,omitempty"`
+	RoutePrefix *string                               `json:"routePrefix,omitempty"`
+	Method      *string                               `json:"method,omitempty"`
+	QueryParams []*HeadSamplingQueryParamMatcherInput `json:"queryParams,omitempty"`
 }
 
 type HeadSamplingOperationMatcher struct {
@@ -606,6 +608,16 @@ type HeadSamplingOperationMatcher struct {
 type HeadSamplingOperationMatcherInput struct {
 	HTTPServer *HeadSamplingHTTPServerMatcherInput `json:"httpServer,omitempty"`
 	HTTPClient *HeadSamplingHTTPClientMatcherInput `json:"httpClient,omitempty"`
+}
+
+type HeadSamplingQueryParamMatcher struct {
+	Name       string  `json:"name"`
+	ValueExact *string `json:"valueExact,omitempty"`
+}
+
+type HeadSamplingQueryParamMatcherInput struct {
+	Name       string  `json:"name"`
+	ValueExact *string `json:"valueExact,omitempty"`
 }
 
 type HeadersCollection struct {
@@ -922,6 +934,7 @@ type K8sWorkloadConditions struct {
 	RuntimeDetection      *DesiredConditionStatus `json:"runtimeDetection,omitempty"`
 	AgentInjectionEnabled *DesiredConditionStatus `json:"agentInjectionEnabled,omitempty"`
 	Rollout               *DesiredConditionStatus `json:"rollout,omitempty"`
+	PodsManifestInjection *DesiredConditionStatus `json:"podsManifestInjection,omitempty"`
 	AutoRollback          *DesiredConditionStatus `json:"autoRollback,omitempty"`
 	AgentInjected         *DesiredConditionStatus `json:"agentInjected,omitempty"`
 	ProcessesAgentHealth  *DesiredConditionStatus `json:"processesAgentHealth,omitempty"`
@@ -1072,7 +1085,8 @@ type K8sWorkloadPodContainerProcessInstrumentation struct {
 }
 
 type K8sWorkloadRollout struct {
-	RolloutStatus *DesiredConditionStatus `json:"rolloutStatus"`
+	RolloutStatus               *DesiredConditionStatus `json:"rolloutStatus,omitempty"`
+	PodsManifestInjectionStatus *DesiredConditionStatus `json:"podsManifestInjectionStatus,omitempty"`
 }
 
 type K8sWorkloadRuntimeInfo struct {

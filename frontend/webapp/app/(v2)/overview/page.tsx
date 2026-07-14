@@ -3,7 +3,7 @@
 import React, { useCallback } from 'react';
 import { ROUTES } from '@/utils';
 import { useRouter } from 'next/navigation';
-import { Overview } from '@odigos/ui-kit/containers/v2';
+import { Overview } from '@odigos/ui-kit/containers';
 
 // All data fetching (metrics polling, effective config for the Profiling
 // tab, drawer-fed entity refreshes) lives inside the kit's `<Overview>`

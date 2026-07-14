@@ -18,7 +18,7 @@ spec:
     - name: '[1 - Setup] Install Odigos'
       try:
         - script:
-            timeout: 4m
+            timeout: 1m50s
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
@@ -39,13 +39,13 @@ spec:
     - name: '[1 - Setup] Assert Trace DB 1 is up'
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/simple-trace-db-running.yaml
 
     - name: '[1 - Setup] Assert Trace DB 2 is up'
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/simple-trace-db-running-2.yaml
 
     - name: '[1 - Setup] Install - Simple Demo Apps'
@@ -53,7 +53,7 @@ spec:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
         - assert:
-            timeout: 3m
+            timeout: 1m30s
             file: ../../common/assert/simple-demo-installed.yaml
 
     - name: '[2 - Workload Instrumentation] Instrument Deployments using Sources'
@@ -64,7 +64,7 @@ spec:
     - name: '[2 - Workload Instrumentation] Assert Runtime Detected'
       try:
         - assert:
-            timeout: 2m
+            timeout: 1m10s
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
     - name: '[2 - Workload Instrumentation] Add Destinations for data streams'
@@ -77,7 +77,7 @@ spec:
     - name: '[2 - Workload Instrumentation] Odigos pipeline ready'
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/pipeline-ready.yaml
 
     - name: '[2 - Workload Instrumentation] Simple-demo instrumented after destination added'
@@ -85,10 +85,10 @@ spec:
         - assert:
             file: ../../common/assert/simple-demo-instrumented.yaml
         - script:
-            timeout: 2m
+            timeout: 1m10s
             content: ../../common/wait_for_rollout.sh
         - script:
-            timeout: 60s
+            timeout: 1m10s
             content: |
               echo "===== FETCHING ACTUAL CONNECTOR CONFIG ====="
               kubectl get cm odigos-gateway -n odigos-test -o jsonpath='{.data.collector-conf}' \
@@ -114,7 +114,7 @@ spec:
         - apply:
             file: ../../common/apply/generate-traffic-job.yaml
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
         - delete:
@@ -123,7 +123,7 @@ spec:
     - name: Wait For Trace Stream 1
       try:
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               while true; do
                 ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-stream-1.yaml
@@ -136,7 +136,7 @@ spec:
     - name: Wait For Trace Stream 2
       try:
         - script:
-            timeout: 1m
+            timeout: 1m10s
             content: |
               while true; do
                 ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-stream-2.yaml false traces-2 simple-trace-db-2

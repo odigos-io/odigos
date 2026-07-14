@@ -123,6 +123,7 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 		conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
 		conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
 		conditions = append(conditions, status.CalculateRolloutStatus(ic))
+		conditions = append(conditions, status.CalculatePodsManifestInjectionStatus(ic))
 		conditions = append(conditions, status.CalculateAutoRollbackStatus(ic, autoRollbackConfig))
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
@@ -203,6 +204,7 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 	runtimeDetection := status.CalculateRuntimeInspectionStatus(ic)
 	agentInjectionEnabled := status.CalculateAgentInjectionEnabledStatus(ic)
 	rollout := status.CalculateRolloutStatus(ic)
+	podsManifestInjection := status.CalculatePodsManifestInjectionStatus(ic)
 	autoRollback := status.CalculateAutoRollbackStatus(ic, autoRollbackConfig)
 	agentInjected := status.CalculateAgentInjectedStatus(ic, pods)
 	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
@@ -226,6 +228,7 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 		RuntimeDetection:      runtimeDetection,
 		AgentInjectionEnabled: agentInjectionEnabled,
 		Rollout:               rollout,
+		PodsManifestInjection: podsManifestInjection,
 		AutoRollback:          autoRollback,
 		AgentInjected:         agentInjected,
 		ProcessesAgentHealth:  processesAgentHealth,
@@ -340,12 +343,14 @@ func (r *k8sWorkloadResolver) Rollout(ctx context.Context, obj *model.K8sWorkloa
 	}
 
 	rolloutStatus := status.CalculateRolloutStatus(ic)
-	if rolloutStatus == nil {
+	podsManifestInjectionStatus := status.CalculatePodsManifestInjectionStatus(ic)
+	if rolloutStatus == nil && podsManifestInjectionStatus == nil {
 		return nil, nil
 	}
 
 	return &model.K8sWorkloadRollout{
-		RolloutStatus: rolloutStatus,
+		RolloutStatus:               rolloutStatus,
+		PodsManifestInjectionStatus: podsManifestInjectionStatus,
 	}, nil
 }
 
@@ -373,9 +378,6 @@ func (r *k8sWorkloadResolver) AutoRollback(ctx context.Context, obj *model.K8sWo
 func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWorkload) ([]*model.K8sWorkloadContainer, error) {
 	if obj == nil || obj.ID == nil {
 		return nil, nil
-	}
-	if obj.Containers != nil {
-		return obj.Containers, nil
 	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
@@ -442,10 +444,18 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 				if component.Type != odigosv1.InstrumentationLibraryTypeInstrumentation {
 					continue
 				}
-				if _, ok := instrumentations[component.Name]; ok {
-					continue
+
+				// if there are multiple instrumentation instances for the same component,
+				// show (for the aggregation) the one that is less healthy.
+				// prefer #1 unhealthy over #2 nil healthy, over #3 healthy
+
+				existing, found := instrumentations[component.Name]
+
+				// keep the least healthy instance for the aggregated view:
+				// prefer unhealthy over unknown/nil over healthy.
+				if !found || shouldReplaceInstrumentationForAggregation(existing.Healthy, component.Healthy) {
+					instrumentations[component.Name] = componentToInstrumentation(component)
 				}
-				instrumentations[component.Name] = componentToInstrumentation(component)
 			}
 		}
 		container.Instrumentations = make([]*model.K8sWorkloadPodContainerProcessInstrumentation, 0, len(instrumentations))
@@ -473,8 +483,11 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 		return nil, err
 	}
 
+	// Fetch the InstrumentationConfig if present, but do not require it: workloads without an
+	// InstrumentationConfig still have Kubernetes pods we want to surface. getContainerConfigByName
+	// is nil-safe, so a nil ic simply yields empty odigos instrumentation config per container.
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
-	if err != nil || ic == nil {
+	if err != nil {
 		return nil, err
 	}
 
