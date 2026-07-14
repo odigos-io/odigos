@@ -20,9 +20,11 @@ runs:
         git tag distros/${{ inputs.tag }}
         git tag frontend/${{ inputs.tag }}
         git tag instrumentation/${{ inputs.tag }}
+        git tag instrumentationrules/${{ inputs.tag }}
         git tag instrumentor/${{ inputs.tag }}
         git tag k8sutils/${{ inputs.tag }}
         git tag odiglet/${{ inputs.tag }}
+        git tag odigosauth/${{ inputs.tag }}
         git tag opampserver/${{ inputs.tag }}
         git tag procdiscovery/${{ inputs.tag }}
         git tag profiles/${{ inputs.tag }}
