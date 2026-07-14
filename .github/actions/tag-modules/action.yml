@@ -25,4 +25,6 @@ runs:
         git tag destinations/${{ inputs.tag }}
         git tag instrumentor/${{ inputs.tag }}
         git tag status/${{ inputs.tag }}
+        git tag config/${{ inputs.tag }}
+        git tag frontend/${{ inputs.tag }}
         git push origin --tags
