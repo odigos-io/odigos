@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	urlactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
+	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -346,16 +347,16 @@ func convertRenameAttributeFromInput(details *model.ActionFieldsInput, existingA
 	return config, nil
 }
 
-func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *actionsv1.PiiMaskingConfig {
+func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *urlactions.PiiMaskingConfig {
 	withPiiMasking := false
-	var config *actionsv1.PiiMaskingConfig
+	var config *urlactions.PiiMaskingConfig
 
 	if details.PiiCategories != nil {
-		config = &actionsv1.PiiMaskingConfig{}
+		config = &urlactions.PiiMaskingConfig{}
 
-		piiCategories := make([]actionsv1.PiiCategory, len(details.PiiCategories))
+		piiCategories := make([]actionsapi.PiiCategory, len(details.PiiCategories))
 		for i, cat := range details.PiiCategories {
-			piiCategories[i] = actionsv1.PiiCategory(cat)
+			piiCategories[i] = actionsapi.PiiCategory(cat)
 		}
 		config.PiiCategories = piiCategories
 		withPiiMasking = true
@@ -529,7 +530,7 @@ func convertClusterAttributesToModel(clusterAttributes []actionsv1.OtelAttribute
 	return result
 }
 
-func convertPiiCategoriesToModel(piiCategories []actionsv1.PiiCategory) []string {
+func convertPiiCategoriesToModel(piiCategories []actionsapi.PiiCategory) []string {
 	var result []string
 
 	for _, category := range piiCategories {
