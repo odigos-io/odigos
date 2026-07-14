@@ -960,6 +960,7 @@ type K8sWorkloadConditions struct {
 	RuntimeDetection      *DesiredConditionStatus `json:"runtimeDetection,omitempty"`
 	AgentInjectionEnabled *DesiredConditionStatus `json:"agentInjectionEnabled,omitempty"`
 	Rollout               *DesiredConditionStatus `json:"rollout,omitempty"`
+	PodsInjection         *DesiredConditionStatus `json:"podsInjection,omitempty"`
 	AutoRollback          *DesiredConditionStatus `json:"autoRollback,omitempty"`
 	AgentInjected         *DesiredConditionStatus `json:"agentInjected,omitempty"`
 	ProcessesAgentHealth  *DesiredConditionStatus `json:"processesAgentHealth,omitempty"`
@@ -1110,7 +1111,8 @@ type K8sWorkloadPodContainerProcessInstrumentation struct {
 }
 
 type K8sWorkloadRollout struct {
-	RolloutStatus *DesiredConditionStatus `json:"rolloutStatus"`
+	RolloutStatus       *DesiredConditionStatus `json:"rolloutStatus,omitempty"`
+	PodsInjectionStatus *DesiredConditionStatus `json:"podsInjectionStatus,omitempty"`
 }
 
 type K8sWorkloadRuntimeInfo struct {

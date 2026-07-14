@@ -770,6 +770,7 @@ type ComplexityRoot struct {
 		AgentInjectionEnabled func(childComplexity int) int
 		AutoRollback          func(childComplexity int) int
 		ExpectingTelemetry    func(childComplexity int) int
+		PodsInjection         func(childComplexity int) int
 		ProcessesAgentHealth  func(childComplexity int) int
 		Rollout               func(childComplexity int) int
 		RuntimeDetection      func(childComplexity int) int
@@ -913,7 +914,8 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadRollout struct {
-		RolloutStatus func(childComplexity int) int
+		PodsInjectionStatus func(childComplexity int) int
+		RolloutStatus       func(childComplexity int) int
 	}
 
 	K8sWorkloadRuntimeInfo struct {
@@ -4895,6 +4897,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadConditions.ExpectingTelemetry(childComplexity), true
 
+	case "K8sWorkloadConditions.podsInjection":
+		if e.complexity.K8sWorkloadConditions.PodsInjection == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadConditions.PodsInjection(childComplexity), true
+
 	case "K8sWorkloadConditions.processesAgentHealth":
 		if e.complexity.K8sWorkloadConditions.ProcessesAgentHealth == nil {
 			break
@@ -5496,6 +5505,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadPodContainerProcessInstrumentation.Type(childComplexity), true
+
+	case "K8sWorkloadRollout.podsInjectionStatus":
+		if e.complexity.K8sWorkloadRollout.PodsInjectionStatus == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadRollout.PodsInjectionStatus(childComplexity), true
 
 	case "K8sWorkloadRollout.rolloutStatus":
 		if e.complexity.K8sWorkloadRollout.RolloutStatus == nil {
@@ -29820,6 +29836,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_conditions(_ context.Contex
 				return ec.fieldContext_K8sWorkloadConditions_agentInjectionEnabled(ctx, field)
 			case "rollout":
 				return ec.fieldContext_K8sWorkloadConditions_rollout(ctx, field)
+			case "podsInjection":
+				return ec.fieldContext_K8sWorkloadConditions_podsInjection(ctx, field)
 			case "autoRollback":
 				return ec.fieldContext_K8sWorkloadConditions_autoRollback(ctx, field)
 			case "agentInjected":
@@ -30025,6 +30043,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_rollout(_ context.Context, 
 			switch field.Name {
 			case "rolloutStatus":
 				return ec.fieldContext_K8sWorkloadRollout_rolloutStatus(ctx, field)
+			case "podsInjectionStatus":
+				return ec.fieldContext_K8sWorkloadRollout_podsInjectionStatus(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRollout", field.Name)
 		},
@@ -31570,6 +31590,57 @@ func (ec *executionContext) _K8sWorkloadConditions_rollout(ctx context.Context, 
 }
 
 func (ec *executionContext) fieldContext_K8sWorkloadConditions_rollout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadConditions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadConditions_podsInjection(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadConditions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadConditions_podsInjection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PodsInjection, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadConditions_podsInjection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadConditions",
 		Field:      field,
@@ -35645,17 +35716,65 @@ func (ec *executionContext) _K8sWorkloadRollout_rolloutStatus(ctx context.Contex
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.DesiredConditionStatus)
 	fc.Result = res
-	return ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_K8sWorkloadRollout_rolloutStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadRollout",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadRollout_podsInjectionStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRollout) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadRollout_podsInjectionStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PodsInjectionStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadRollout_podsInjectionStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadRollout",
 		Field:      field,
@@ -62757,6 +62876,8 @@ func (ec *executionContext) _K8sWorkloadConditions(ctx context.Context, sel ast.
 			out.Values[i] = ec._K8sWorkloadConditions_agentInjectionEnabled(ctx, field, obj)
 		case "rollout":
 			out.Values[i] = ec._K8sWorkloadConditions_rollout(ctx, field, obj)
+		case "podsInjection":
+			out.Values[i] = ec._K8sWorkloadConditions_podsInjection(ctx, field, obj)
 		case "autoRollback":
 			out.Values[i] = ec._K8sWorkloadConditions_autoRollback(ctx, field, obj)
 		case "agentInjected":
@@ -63709,9 +63830,8 @@ func (ec *executionContext) _K8sWorkloadRollout(ctx context.Context, sel ast.Sel
 			out.Values[i] = graphql.MarshalString("K8sWorkloadRollout")
 		case "rolloutStatus":
 			out.Values[i] = ec._K8sWorkloadRollout_rolloutStatus(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
+		case "podsInjectionStatus":
+			out.Values[i] = ec._K8sWorkloadRollout_podsInjectionStatus(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

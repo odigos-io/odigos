@@ -105,4 +105,24 @@ var (
 		K8sConditionStatus:   metav1.ConditionFalse,
 		OdigosSeverity:       status.OdigosSeverityFailure,
 	}
+
+	PodsInjectionByReason = map[string]status.Reason{
+		string(PodsInjectionReasonNoRunningPods):                      PodsInjectionNoRunningPods,
+		string(PodsInjectionReasonPodsInjectionNotRequired):           PodsInjectionPodsInjectionNotRequired,
+		string(PodsInjectionReasonPodsInjectedSuccessfully):           PodsInjectionPodsInjectedSuccessfully,
+		string(PodsInjectionReasonRolloutNotSupportedForStaticPods):   PodsInjectionRolloutNotSupportedForStaticPods,
+		string(PodsInjectionReasonWaitingForNextJobRun):               PodsInjectionWaitingForNextJobRun,
+		string(PodsInjectionReasonRolloutInProgress):                  PodsInjectionRolloutInProgress,
+		string(PodsInjectionReasonWaitingForAutomaticRollout):         PodsInjectionWaitingForAutomaticRollout,
+		string(PodsInjectionReasonWaitingInRolloutQueue):              PodsInjectionWaitingInRolloutQueue,
+		string(PodsInjectionReasonRestartRequiredAutoRolloutDisabled): PodsInjectionRestartRequiredAutoRolloutDisabled,
+		string(PodsInjectionReasonRestartRequiredWebhookMissed):       PodsInjectionRestartRequiredWebhookMissed,
+		string(PodsInjectionReasonRestartRequiredAutoRolloutFailed):   PodsInjectionRestartRequiredAutoRolloutFailed,
+	}
 )
+
+// PodsInjectionReasonByName returns the status.Reason for a reason string, or false if unknown.
+func PodsInjectionReasonByName(reason string) (status.Reason, bool) {
+	r, ok := PodsInjectionByReason[reason]
+	return r, ok
+}
