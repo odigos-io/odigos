@@ -98,6 +98,9 @@ func (n *RustInspector) GetRuntimeVersion(pcx *process.ProcessContext) string {
 		}
 
 		if hash := extractRustcCommitHash(data); hash != "" {
+			if version, ok := rustcHashToVersion[hash]; ok {
+				return version
+			}
 			return hash
 		}
 	}
