@@ -16,7 +16,7 @@ jobs:
       contents: read
       id-token: write
       packages: write
-    runs-on: depot-ubuntu-24.04-16
+    runs-on: depot-ubuntu-24.04-8
     steps:
       - name: Extract Tag
         id: extract_tag
