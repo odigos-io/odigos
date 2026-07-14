@@ -1,7 +1,24 @@
 FROM --platform=$BUILDPLATFORM golang:1.26.4 AS builder
 ARG SERVICE_NAME
 
-# Copy local modules required by the build
+# Copy only go.mod/go.sum for local modules to cache dependency downloads
+WORKDIR /workspace
+COPY api/go.mod api/go.sum api/
+COPY common/go.mod common/go.sum common/
+COPY k8sutils/go.mod k8sutils/go.sum k8sutils/
+COPY profiles/go.mod profiles/go.sum profiles/
+COPY distros/go.mod distros/go.sum distros/
+COPY destinations/go.mod destinations/go.sum destinations/
+COPY config/go.mod config/go.sum config/
+COPY status/go.mod status/go.sum status/
+COPY $SERVICE_NAME/go.mod $SERVICE_NAME/go.sum $SERVICE_NAME/
+
+# go mod download must run from the service module so it resolves that go.mod
+WORKDIR /workspace/$SERVICE_NAME
+RUN mkdir -p /workspace/build
+RUN --mount=type=cache,target=/go/pkg \
+    go mod download && go mod verify
+# Copy full local modules and service source
 WORKDIR /workspace
 COPY api/ api/
 COPY common/ common/
@@ -11,15 +28,8 @@ COPY distros/ distros/
 COPY destinations/ destinations/
 COPY config/ config/
 COPY status/ status/
-
+COPY $SERVICE_NAME/ $SERVICE_NAME/
 WORKDIR /workspace/$SERVICE_NAME
-RUN mkdir -p /workspace/build
-# Pre-copy/cache go.mod for pre-downloading dependencies and only redownloading
-COPY $SERVICE_NAME/go.mod $SERVICE_NAME/go.sum ./
-RUN --mount=type=cache,target=/go/pkg \
-    go mod download && go mod verify
-# Copy rest of source code
-COPY $SERVICE_NAME/ .
 # Build for target architecture
 ARG TARGETARCH
 ARG LD_FLAGS
