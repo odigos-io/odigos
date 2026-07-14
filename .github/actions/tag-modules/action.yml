@@ -15,16 +15,16 @@ runs:
         git tag actions/${{ inputs.tag }}
         git tag api/${{ inputs.tag }}
         git tag common/${{ inputs.tag }}
+        git tag config/${{ inputs.tag }}
+        git tag destinations/${{ inputs.tag }}
+        git tag distros/${{ inputs.tag }}
+        git tag frontend/${{ inputs.tag }}
         git tag instrumentation/${{ inputs.tag }}
+        git tag instrumentor/${{ inputs.tag }}
         git tag k8sutils/${{ inputs.tag }}
         git tag odiglet/${{ inputs.tag }}
         git tag opampserver/${{ inputs.tag }}
         git tag procdiscovery/${{ inputs.tag }}
         git tag profiles/${{ inputs.tag }}
-        git tag distros/${{ inputs.tag }}
-        git tag destinations/${{ inputs.tag }}
-        git tag instrumentor/${{ inputs.tag }}
         git tag status/${{ inputs.tag }}
-        git tag config/${{ inputs.tag }}
-        git tag frontend/${{ inputs.tag }}
         git push origin --tags
