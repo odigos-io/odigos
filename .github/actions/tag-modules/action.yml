@@ -12,6 +12,7 @@ runs:
     - name: Tag Modules
       shell: bash
       run: |
+        git tag actions/${{ inputs.tag }}
         git tag api/${{ inputs.tag }}
         git tag common/${{ inputs.tag }}
         git tag instrumentation/${{ inputs.tag }}
@@ -23,4 +24,5 @@ runs:
         git tag distros/${{ inputs.tag }}
         git tag destinations/${{ inputs.tag }}
         git tag instrumentor/${{ inputs.tag }}
+        git tag status/${{ inputs.tag }}
         git push origin --tags
