@@ -892,6 +892,20 @@
           "required": [],
           "title": "kubeletStats"
         },
+        "networkMetrics": {
+          "additionalProperties": false,
+          "description": "Configuration for network flow and TCP stats metrics collection.",
+          "properties": {
+            "enabled": {
+              "default": "false",
+              "description": "When enabled, network flow and TCP stats metrics can be collected per workload by applying a\nnetworkMetrics InstrumentationRule. Enabling this requires odiglet to run with host network\naccess (hostNetwork) so it can observe traffic on the node's network interfaces; enable it\nonly if running odiglet on the host network is acceptable in your environment. Defaults to disabled.",
+              "required": [],
+              "title": "enabled"
+            }
+          },
+          "required": [],
+          "title": "networkMetrics"
+        },
         "odigosOwnMetrics": {
           "additionalProperties": false,
           "description": "Configuration for Odigos own metrics collection.",

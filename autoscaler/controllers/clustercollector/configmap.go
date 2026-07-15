@@ -209,6 +209,9 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		common.ToExporterConfigurerArray(enabledDests),
 		common.ToProcessorConfigurerArray(processors),
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
+			// Normalize OBI metric names (obi.* -> odigos.*) once at the gateway, before metrics are
+			// routed to destinations. No-op when metrics are disabled or no obi.* metrics are present.
+			addObiMetricsRenamePipeline(c)
 			// Creating a metric pipeline (throughput metrics) for the gateway to be sent to the UI
 			if err := addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines); err != nil {
 				return err

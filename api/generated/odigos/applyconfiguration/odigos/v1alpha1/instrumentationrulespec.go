@@ -59,6 +59,8 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	// will use only the eBPF receiver instead of the filelog receiver, and odiglet will
 	// register instrumented processes for eBPF log capture.
 	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
+	// Configure network flow and TCP stats metrics for scoped workloads.
+	NetworkMetrics *instrumentationrules.NetworkMetricsConfig `json:"networkMetrics,omitempty"`
 	// Configure the verbosity of the traces for the library.
 	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
 	// Configure the agent own logging configuration.
@@ -184,6 +186,14 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithHeadSamplingFallbackFrac
 // If called multiple times, the EbpfLogCapture field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithEbpfLogCapture(value instrumentationrules.EbpfLogCapture) *InstrumentationRuleSpecApplyConfiguration {
 	b.EbpfLogCapture = &value
+	return b
+}
+
+// WithNetworkMetrics sets the NetworkMetrics field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the NetworkMetrics field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithNetworkMetrics(value instrumentationrules.NetworkMetricsConfig) *InstrumentationRuleSpecApplyConfiguration {
+	b.NetworkMetrics = &value
 	return b
 }
 
