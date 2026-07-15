@@ -48,7 +48,6 @@ func CopyAgentsDirectoryToHost(srcDir, dstDir string, optionalRsyncPath *string)
 
 		if err != nil {
 			logger.Error("Error getting changed files", "err", err)
-			return err
 		}
 
 		if err := writeKeeplist(dstDir, keeplistPath, updatedFilesToKeepMap); err != nil {

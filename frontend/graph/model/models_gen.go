@@ -572,28 +572,6 @@ type GolangCustomProbeInput struct {
 	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
 }
 
-type HeadSamplingGrpcClientMatcher struct {
-	Method        *string `json:"method,omitempty"`
-	Service       *string `json:"service,omitempty"`
-	ServerAddress *string `json:"serverAddress,omitempty"`
-}
-
-type HeadSamplingGrpcClientMatcherInput struct {
-	Method        *string `json:"method,omitempty"`
-	Service       *string `json:"service,omitempty"`
-	ServerAddress *string `json:"serverAddress,omitempty"`
-}
-
-type HeadSamplingGrpcServerMatcher struct {
-	Method  *string `json:"method,omitempty"`
-	Service *string `json:"service,omitempty"`
-}
-
-type HeadSamplingGrpcServerMatcherInput struct {
-	Method  *string `json:"method,omitempty"`
-	Service *string `json:"service,omitempty"`
-}
-
 type HeadSamplingHTTPClientMatcher struct {
 	ServerAddress       *string `json:"serverAddress,omitempty"`
 	TemplatedPath       *string `json:"templatedPath,omitempty"`
@@ -625,15 +603,11 @@ type HeadSamplingHTTPServerMatcherInput struct {
 type HeadSamplingOperationMatcher struct {
 	HTTPServer *HeadSamplingHTTPServerMatcher `json:"httpServer,omitempty"`
 	HTTPClient *HeadSamplingHTTPClientMatcher `json:"httpClient,omitempty"`
-	GrpcServer *HeadSamplingGrpcServerMatcher `json:"grpcServer,omitempty"`
-	GrpcClient *HeadSamplingGrpcClientMatcher `json:"grpcClient,omitempty"`
 }
 
 type HeadSamplingOperationMatcherInput struct {
 	HTTPServer *HeadSamplingHTTPServerMatcherInput `json:"httpServer,omitempty"`
 	HTTPClient *HeadSamplingHTTPClientMatcherInput `json:"httpClient,omitempty"`
-	GrpcServer *HeadSamplingGrpcServerMatcherInput `json:"grpcServer,omitempty"`
-	GrpcClient *HeadSamplingGrpcClientMatcherInput `json:"grpcClient,omitempty"`
 }
 
 type HeadSamplingQueryParamMatcher struct {
@@ -960,6 +934,7 @@ type K8sWorkloadConditions struct {
 	RuntimeDetection      *DesiredConditionStatus `json:"runtimeDetection,omitempty"`
 	AgentInjectionEnabled *DesiredConditionStatus `json:"agentInjectionEnabled,omitempty"`
 	Rollout               *DesiredConditionStatus `json:"rollout,omitempty"`
+	PodsManifestInjection *DesiredConditionStatus `json:"podsManifestInjection,omitempty"`
 	AutoRollback          *DesiredConditionStatus `json:"autoRollback,omitempty"`
 	AgentInjected         *DesiredConditionStatus `json:"agentInjected,omitempty"`
 	ProcessesAgentHealth  *DesiredConditionStatus `json:"processesAgentHealth,omitempty"`
@@ -1110,7 +1085,8 @@ type K8sWorkloadPodContainerProcessInstrumentation struct {
 }
 
 type K8sWorkloadRollout struct {
-	RolloutStatus *DesiredConditionStatus `json:"rolloutStatus"`
+	RolloutStatus               *DesiredConditionStatus `json:"rolloutStatus,omitempty"`
+	PodsManifestInjectionStatus *DesiredConditionStatus `json:"podsManifestInjectionStatus,omitempty"`
 }
 
 type K8sWorkloadRuntimeInfo struct {

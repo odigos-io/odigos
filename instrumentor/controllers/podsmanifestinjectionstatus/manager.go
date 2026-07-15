@@ -1,4 +1,4 @@
-package podsinjectionstatus
+package podsmanifestinjectionstatus
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -11,9 +11,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-type InstrumentationConfigPodsInjectionPredicate struct{}
+type InstrumentationConfigPodsManifestInjectionPredicate struct{}
 
-func (o InstrumentationConfigPodsInjectionPredicate) Create(e event.CreateEvent) bool {
+func (o InstrumentationConfigPodsManifestInjectionPredicate) Create(e event.CreateEvent) bool {
 
 	// at creation time, we need to fill the current pods injection status in the ic.
 	// if instrumentor was down or restarting, we also need to sync the pods injection number
@@ -21,7 +21,7 @@ func (o InstrumentationConfigPodsInjectionPredicate) Create(e event.CreateEvent)
 	return true
 }
 
-func (o InstrumentationConfigPodsInjectionPredicate) Update(e event.UpdateEvent) bool {
+func (o InstrumentationConfigPodsManifestInjectionPredicate) Update(e event.UpdateEvent) bool {
 	old, oldOk := e.ObjectOld.(*odigosv1.InstrumentationConfig)
 	new, newOk := e.ObjectNew.(*odigosv1.InstrumentationConfig)
 
@@ -34,7 +34,7 @@ func (o InstrumentationConfigPodsInjectionPredicate) Update(e event.UpdateEvent)
 		return true
 	}
 
-	// rollout progress / queue state affects which PodsInjection reason we report
+	// rollout progress / queue state affects which PodsManifestInjection reason we report
 	if old.Status.WorkloadRolloutHash != new.Status.WorkloadRolloutHash {
 		return true
 	}
@@ -51,12 +51,12 @@ func (o InstrumentationConfigPodsInjectionPredicate) Update(e event.UpdateEvent)
 	return false
 }
 
-func (o InstrumentationConfigPodsInjectionPredicate) Delete(e event.DeleteEvent) bool {
+func (o InstrumentationConfigPodsManifestInjectionPredicate) Delete(e event.DeleteEvent) bool {
 	// the status is written to the ic, so if it's deleted, we have nothing to do.
 	return false
 }
 
-func (o InstrumentationConfigPodsInjectionPredicate) Generic(e event.GenericEvent) bool {
+func (o InstrumentationConfigPodsManifestInjectionPredicate) Generic(e event.GenericEvent) bool {
 	return true
 }
 
@@ -66,7 +66,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err := builder.
 		ControllerManagedBy(mgr).
-		Named("podsinjection-pods").
+		Named("podsmanifestinjection-pods").
 		For(&corev1.Pod{}).
 		WithEventFilter(odigospredicate.ExistencePredicate{}).
 		Complete(
@@ -81,9 +81,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("podsinjection-instrumentationconfig").
+		Named("podsmanifestinjection-instrumentationconfig").
 		For(&odigosv1.InstrumentationConfig{}).
-		WithEventFilter(&InstrumentationConfigPodsInjectionPredicate{}).
+		WithEventFilter(&InstrumentationConfigPodsManifestInjectionPredicate{}).
 		Complete(&InstrumentationConfigController{
 			Client:      mgr.GetClient(),
 			PodsTracker: podsTracker,
@@ -94,7 +94,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = builder.
 		ControllerManagedBy(mgr).
-		Named("podsinjection-effectiveconfig").
+		Named("podsmanifestinjection-effectiveconfig").
 		For(&corev1.ConfigMap{}).
 		WithEventFilter(odigospredicate.OdigosEffectiveConfigMapPredicate).
 		Complete(&EffectiveConfigReconciler{

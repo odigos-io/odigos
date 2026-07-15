@@ -20,9 +20,6 @@
 {{- if and $privilegedRequired .Values.odiglet.unPrivileged }}
 {{ fail "privileged mode is required when collecting logs or metrics, this is currently not supported in unprivileged mode" }}
 {{- end }}
-{{- if and .Values.gke.autopilot (or (eq .Values.instrumentor.mountMethod "k8s-host-path") (eq .Values.instrumentor.mountMethod "k8s-csi-driver")) }}
-{{ fail "GKE Autopilot requires instrumentor.mountMethod to be k8s-virtual-device or k8s-init-container" }}
-{{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

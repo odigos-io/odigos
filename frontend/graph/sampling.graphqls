@@ -131,22 +131,9 @@ type HeadSamplingHttpClientMatcher {
   method: String
 }
 
-type HeadSamplingGrpcServerMatcher {
-  method: String
-  service: String
-}
-
-type HeadSamplingGrpcClientMatcher {
-  method: String
-  service: String
-  serverAddress: String
-}
-
 type HeadSamplingOperationMatcher {
   httpServer: HeadSamplingHttpServerMatcher
   httpClient: HeadSamplingHttpClientMatcher
-  grpcServer: HeadSamplingGrpcServerMatcher
-  grpcClient: HeadSamplingGrpcClientMatcher
 }
 
 input HeadSamplingHttpServerMatcherInput {
@@ -163,22 +150,9 @@ input HeadSamplingHttpClientMatcherInput {
   method: String
 }
 
-input HeadSamplingGrpcServerMatcherInput {
-  method: String
-  service: String
-}
-
-input HeadSamplingGrpcClientMatcherInput {
-  method: String
-  service: String
-  serverAddress: String
-}
-
 input HeadSamplingOperationMatcherInput {
   httpServer: HeadSamplingHttpServerMatcherInput
   httpClient: HeadSamplingHttpClientMatcherInput
-  grpcServer: HeadSamplingGrpcServerMatcherInput
-  grpcClient: HeadSamplingGrpcClientMatcherInput
 }
 
 # ---- Tail sampling operation matchers (used by highly relevant + cost reduction) ----

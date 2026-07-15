@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver
 
-go 1.26.4
+go 1.26.2
 
 require (
 	github.com/cilium/ebpf v0.20.0
@@ -66,7 +66,5 @@ require (
 	google.golang.org/grpc v1.81.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/odigos-io/go-rtml => ../../internal/go-rtml
 
 replace github.com/odigos-io/odigos/common => ../../../common

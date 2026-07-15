@@ -1,6 +1,6 @@
 module go.opentelemetry.io/collector/config/configgrpc
 
-go 1.26.4
+go 1.26.2
 
 require (
 	github.com/mostynb/go-grpc-compression v1.2.3
@@ -28,8 +28,6 @@ require (
 	go.uber.org/goleak v1.3.0
 	google.golang.org/grpc v1.81.1
 )
-
-replace github.com/odigos-io/go-rtml => ../../internal/go-rtml
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect

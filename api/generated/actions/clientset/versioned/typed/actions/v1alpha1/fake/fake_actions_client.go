@@ -39,10 +39,6 @@ func (c *FakeActionsV1alpha1) K8sAttributesResolvers(namespace string) v1alpha1.
 	return newFakeK8sAttributesResolvers(c, namespace)
 }
 
-func (c *FakeActionsV1alpha1) PiiMaskings(namespace string) v1alpha1.PiiMaskingInterface {
-	return newFakePiiMaskings(c, namespace)
-}
-
 func (c *FakeActionsV1alpha1) RenameAttributes(namespace string) v1alpha1.RenameAttributeInterface {
 	return newFakeRenameAttributes(c, namespace)
 }

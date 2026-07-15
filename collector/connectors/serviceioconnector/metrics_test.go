@@ -11,7 +11,6 @@ import (
 )
 
 func TestBuildMetrics(t *testing.T) {
-	now := time.Now()
 	connector := &serviceioConnector{
 		config:              &Config{},
 		startTime:           time.Unix(1700000000, 0),
@@ -33,7 +32,6 @@ func TestBuildMetrics(t *testing.T) {
 		dimensions: attributes,
 		resource:   buildMetricResourceAttributes(instance),
 		count:      3,
-		updatedAt:  now,
 	}
 
 	md, err := connector.buildMetrics()
@@ -56,43 +54,6 @@ func TestBuildMetrics(t *testing.T) {
 	instanceID, ok := dp.Attributes().Get(collectorInstanceAttributeId)
 	require.True(t, ok)
 	require.Equal(t, "odigos-gateway-test-pod", instanceID.Str())
-}
-
-func TestBuildMetricsPrunesStaleSeries(t *testing.T) {
-	now := time.Now()
-	connector := &serviceioConnector{
-		config:              &Config{},
-		startTime:           time.Unix(1700000000, 0),
-		keyToMetric:         make(map[uint64]metricSeries),
-		collectorInstanceID: "odigos-gateway-test-pod",
-	}
-
-	activeAttrs := pcommon.NewMap()
-	activeAttrs.PutStr(serviceNameAttribute, "active")
-	staleAttrs := pcommon.NewMap()
-	staleAttrs.PutStr(serviceNameAttribute, "stale")
-	resource := pcommon.NewMap()
-
-	activeKey := hashAttributes(activeAttrs)
-	staleKey := hashAttributes(staleAttrs)
-	connector.keyToMetric[activeKey] = metricSeries{
-		dimensions: activeAttrs,
-		resource:   resource,
-		count:      2,
-		updatedAt:  now,
-	}
-	connector.keyToMetric[staleKey] = metricSeries{
-		dimensions: staleAttrs,
-		resource:   resource,
-		count:      5,
-		updatedAt:  now.Add(-defaultMetricSeriesTTL - time.Second),
-	}
-
-	md, err := connector.buildMetrics()
-	require.NoError(t, err)
-	require.Equal(t, 1, md.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics().At(0).Sum().DataPoints().Len())
-	require.Contains(t, connector.keyToMetric, activeKey)
-	require.NotContains(t, connector.keyToMetric, staleKey)
 }
 
 func TestConnectionAttributes_IsDeterministic(t *testing.T) {

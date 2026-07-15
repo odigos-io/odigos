@@ -2,12 +2,9 @@ package sourceinstrumentation_test
 
 import (
 	"context"
-	"os"
 
 	k8sconsts "github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 
 	. "github.com/onsi/ginkgo"
@@ -25,14 +22,12 @@ var _ = Describe("Namespace controller", func() {
 	var deployment *appsv1.Deployment
 	var daemonSet *appsv1.DaemonSet
 	var statefulSet *appsv1.StatefulSet
-	var staticPod *corev1.Pod
 
 	var sourceNamespace, sourceDeployment, sourceDaemonSet, sourceStatefulSet *odigosv1.Source
 
 	var instrumentationConfigDeployment *odigosv1.InstrumentationConfig
 	var instrumentationConfigDaemonSet *odigosv1.InstrumentationConfig
 	var instrumentationConfigStatefulSet *odigosv1.InstrumentationConfig
-	var instrumentationConfigStaticPod *odigosv1.InstrumentationConfig
 
 	When("namespace instrumentation is disabled", func() {
 
@@ -104,48 +99,6 @@ var _ = Describe("Namespace controller", func() {
 				testutil.AssertInstrumentationConfigRetained(ctx, k8sClient, instrumentationConfigDaemonSet)
 				testutil.AssertInstrumentationConfigRetained(ctx, k8sClient, instrumentationConfigStatefulSet)
 			})
-		})
-	})
-
-	When("static pod instrumentation is tier gated", func() {
-		var originalTier string
-		var hadOriginalTier bool
-
-		BeforeEach(func() {
-			originalTier, hadOriginalTier = os.LookupEnv(consts.OdigosTierEnvVarName)
-			Expect(os.Setenv(consts.OdigosTierEnvVarName, string(common.CommunityOdigosTier))).Should(Succeed())
-
-			namespace = testutil.NewMockNamespace()
-			Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
-
-			staticPod = testutil.NewMockTestStaticPod(namespace, "test-static-pod")
-			Expect(k8sClient.Create(ctx, staticPod)).Should(Succeed())
-			instrumentationConfigStaticPod = testutil.NewMockInstrumentationConfig(staticPod)
-		})
-
-		AfterEach(func() {
-			if hadOriginalTier {
-				Expect(os.Setenv(consts.OdigosTierEnvVarName, originalTier)).Should(Succeed())
-			} else {
-				Expect(os.Unsetenv(consts.OdigosTierEnvVarName)).Should(Succeed())
-			}
-		})
-
-		It("should not create InstrumentationConfig for static pods on community tier", func() {
-			sourceNamespace = testutil.NewMockSource(namespace, false)
-			sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
-			Expect(k8sClient.Create(ctx, sourceNamespace)).Should(Succeed())
-
-			testutil.AssertInstrumentationConfigNotCreated(ctx, k8sClient, instrumentationConfigStaticPod)
-		})
-
-		It("should delete existing InstrumentationConfig for static pods on community tier", func() {
-			Expect(k8sClient.Create(ctx, instrumentationConfigStaticPod)).Should(Succeed())
-			sourceNamespace = testutil.NewMockSource(namespace, false)
-			sourceNamespace.Finalizers = []string{k8sconsts.SourceInstrumentationFinalizer}
-			Expect(k8sClient.Create(ctx, sourceNamespace)).Should(Succeed())
-
-			testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfigStaticPod)
 		})
 	})
 })

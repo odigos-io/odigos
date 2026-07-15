@@ -35,4 +35,16 @@ var (
 		OdigosSeverity: {{ odigosSeverityConst .OdigosSeverity }},
 	}
 {{- end }}
+
+	{{ .TypeName }}ByReason = map[string]status.Reason{
+{{- range .Reasons }}
+		string({{ $.TypeName }}Reason{{ .Name }}): {{ $.TypeName }}{{ .Name }},
+{{- end }}
+	}
 )
+
+// {{ .TypeName }}ReasonByName returns the status.Reason for a reason string, or false if unknown.
+func {{ .TypeName }}ReasonByName(reason string) (status.Reason, bool) {
+	r, ok := {{ .TypeName }}ByReason[reason]
+	return r, ok
+}

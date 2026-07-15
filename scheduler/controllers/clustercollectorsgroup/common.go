@@ -112,18 +112,6 @@ func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.Coll
 	}
 }
 
-func resolveServiceGraphOptions(gatewayConfig *common.CollectorGatewayConfiguration) common.ServiceGraphOptions {
-	serviceGraph := common.ServiceGraphOptions{}
-	if gatewayConfig != nil && gatewayConfig.ServiceGraph != nil {
-		serviceGraph = *gatewayConfig.ServiceGraph
-	}
-	if serviceGraph.Disabled == nil {
-		disabled := false
-		serviceGraph.Disabled = &disabled
-	}
-	return serviceGraph
-}
-
 func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 
 	namespace := env.GetCurrentNamespace()
@@ -134,21 +122,22 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	}
 	resourceSettings := getGatewayResourceSettings(&odigosConfiguration)
 
-	gatewayConfig := odigosConfiguration.CollectorGateway
-	if gatewayConfig == nil {
-		gatewayConfig = &common.CollectorGatewayConfiguration{}
+	serviceGraph := odigosConfiguration.CollectorGateway.ServiceGraph
+	// Default Disabled to false (feature is enabled by default).
+	if serviceGraph.Disabled == nil {
+		disabled := false
+		serviceGraph.Disabled = &disabled
 	}
-	serviceGraph := resolveServiceGraphOptions(gatewayConfig)
 
 	// default cluster metrics is disabled (clusterMetricsEnabled to false)
-	clusterMetricsEnabled := gatewayConfig.ClusterMetricsEnabled
+	clusterMetricsEnabled := odigosConfiguration.CollectorGateway.ClusterMetricsEnabled
 	if clusterMetricsEnabled == nil {
 		result := false
 		clusterMetricsEnabled = &result
 	}
 
-	nodeSelector := gatewayConfig.NodeSelector
-	deploymentName := gatewayConfig.DeploymentName
+	nodeSelector := odigosConfiguration.CollectorGateway.NodeSelector
+	deploymentName := odigosConfiguration.CollectorGateway.DeploymentName
 	allDestinations := &odigosv1.DestinationList{}
 	if err := c.List(ctx, allDestinations); err != nil {
 		return err
@@ -174,7 +163,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	// in the future we might want to support a deployment of instrumentations only and allow user
 	// to setup their own collectors, then we would avoid adding the cluster collector by default.
 	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings,
-		serviceGraph, clusterMetricsEnabled, gatewayConfig.HttpsProxyAddress,
+		*serviceGraph, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress,
 		nodeSelector, deploymentName, ownMetricsConfig, tailSampling, dryRun, spanSamplingAttributes,
 		getTraceCorrelationsSettings(&odigosConfiguration))
 	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, clusterCollectorGroup, scheme)

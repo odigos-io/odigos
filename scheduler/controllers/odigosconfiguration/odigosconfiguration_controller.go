@@ -63,20 +63,20 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 
 	// Read and merge remote config (from central-backend) if it exists
 	// Remote config takes precedence over helm-managed config
-	remoteConfig, remoteTelemetryExplicit, err := r.getAdditionalConfig(ctx, consts.OdigosRemoteConfigName)
+	remoteConfig, err := r.getAdditionalConfig(ctx, consts.OdigosRemoteConfigName)
 	if err != nil {
 		logger.Error(err, "Failed to get remote config, using only helm-managed config")
 	} else if remoteConfig != nil {
-		mergeConfigs(&odigosConfiguration, remoteConfig, remoteTelemetryExplicit)
+		mergeConfigs(&odigosConfiguration, remoteConfig)
 		logger.Debug("Merged remote config into effective config")
 	}
 
 	// Read and merge local UI config (log level, sampling) if it exists.
-	localUiConfig, localTelemetryExplicit, err := r.getAdditionalConfig(ctx, consts.OdigosLocalUiConfigName)
+	localUiConfig, err := r.getAdditionalConfig(ctx, consts.OdigosLocalUiConfigName)
 	if err != nil {
 		logger.Error(err, "Failed to get local UI config, using only helm-managed config")
 	} else if localUiConfig != nil {
-		mergeConfigs(&odigosConfiguration, localUiConfig, localTelemetryExplicit)
+		mergeConfigs(&odigosConfiguration, localUiConfig)
 		logger.Debug("Merged local UI config into effective config")
 	}
 
@@ -164,7 +164,7 @@ func (r *odigosConfigurationController) getOdigosConfigMap(ctx context.Context) 
 // getAdditionalConfig reads the odigos-remote-config ConfigMap which contains
 // configuration managed by the central-backend. This config takes precedence
 // over helm-managed configuration for supported fields.
-func (r *odigosConfigurationController) getAdditionalConfig(ctx context.Context, configMapName string) (*common.OdigosConfiguration, bool, error) {
+func (r *odigosConfigurationController) getAdditionalConfig(ctx context.Context, configMapName string) (*common.OdigosConfiguration, error) {
 	var configMap corev1.ConfigMap
 	odigosNs := env.GetCurrentNamespace()
 
@@ -172,36 +172,35 @@ func (r *odigosConfigurationController) getAdditionalConfig(ctx context.Context,
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// Remote config doesn't exist - this is expected for most deployments
-			return nil, false, nil
+			return nil, nil
 		}
-		return nil, false, fmt.Errorf("failed to get remote config ConfigMap: %w", err)
+		return nil, fmt.Errorf("failed to get remote config ConfigMap: %w", err)
 	}
 
 	if configMap.Data == nil || configMap.Data[consts.OdigosConfigurationFileName] == "" {
 		// ConfigMap exists but is empty - treat as no remote config
-		return nil, false, nil
+		return nil, nil
 	}
 
-	configBytes := []byte(configMap.Data[consts.OdigosConfigurationFileName])
 	additionalConfig := &common.OdigosConfiguration{}
-	err = yaml.Unmarshal(configBytes, additionalConfig)
+	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), additionalConfig)
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to parse additional config: %w", err)
+		return nil, fmt.Errorf("failed to parse additional config: %w", err)
 	}
 
-	return additionalConfig, hasTopLevelField(configBytes, "telemetryEnabled"), nil
+	return additionalConfig, nil
 }
 
 // mergeConfigs merges an "additional" configuration into the base configuration.
 // for supported fields, the additional config values, if set, take precedence over the base configuration values.
 // can be called multiple times with different additional configs to merge them into the base configuration,
 // in which case, most important config should be merged last.
-func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *common.OdigosConfiguration, telemetryEnabledExplicit bool) {
+func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *common.OdigosConfiguration) {
 	if addtionalConfig == nil {
 		return
 	}
 
-	if telemetryEnabledExplicit || addtionalConfig.TelemetryEnabled {
+	if addtionalConfig.TelemetryEnabled {
 		baseConfig.TelemetryEnabled = addtionalConfig.TelemetryEnabled
 	}
 
@@ -394,15 +393,6 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 	// - ignoredNamespaces, ignoredContainers
 	// - profiles
 	// - ...
-}
-
-func hasTopLevelField(configBytes []byte, fieldName string) bool {
-	var rawConfig map[string]any
-	if err := yaml.Unmarshal(configBytes, &rawConfig); err != nil {
-		return false
-	}
-	_, ok := rawConfig[fieldName]
-	return ok
 }
 
 func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Context, effectiveConfig *common.OdigosConfiguration, owner *corev1.ConfigMap) error {

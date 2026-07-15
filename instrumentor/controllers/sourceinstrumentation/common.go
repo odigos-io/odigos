@@ -26,9 +26,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -278,10 +276,6 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		// instrumentation config has the workload as owner, so it will be deleted automatically by k8s,
 		// thus NotFound is expected and we can return without error.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	if pw.Kind == k8sconsts.WorkloadKindStaticPod && env.GetOdigosTierFromEnv() != common.OnPremOdigosTier {
-		return ctrl.Result{}, deleteWorkloadInstrumentationConfig(ctx, k8sClient, pw)
 	}
 
 	sources, err := odigosv1.GetSources(ctx, k8sClient, pw)

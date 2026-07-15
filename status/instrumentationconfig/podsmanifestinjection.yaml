@@ -1,16 +1,16 @@
 apiVersion: internal.odigos.io/v1beta1
 kind: Status
 metadata:
-  name: pods-injection
+  name: pods-manifest-injection
 spec:
-  type: 'PodsInjection'
+  type: 'PodsManifestInjection'
   reasons:
   - name: "NoRunningPods"
     message: "source has no running pods"
     k8sConditionStatus: "Unknown"
     odigosSeverity: "Irrelevant"
     technicalDescription: "source has no running pods, thus it is irrelevant if odigos agent is successfully injected into them or not"
-  - name: "PodsInjectionNotRequired"
+  - name: "PodsManifestInjectionNotRequired"
     message: "agent is injected to running pods automatically, restart of pods is not required"
     k8sConditionStatus: "True"
     odigosSeverity: "Success"

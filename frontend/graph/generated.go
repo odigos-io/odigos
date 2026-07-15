@@ -510,17 +510,6 @@ type ComplexityRoot struct {
 		ReceiverName       func(childComplexity int) int
 	}
 
-	HeadSamplingGrpcClientMatcher struct {
-		Method        func(childComplexity int) int
-		ServerAddress func(childComplexity int) int
-		Service       func(childComplexity int) int
-	}
-
-	HeadSamplingGrpcServerMatcher struct {
-		Method  func(childComplexity int) int
-		Service func(childComplexity int) int
-	}
-
 	HeadSamplingHttpClientMatcher struct {
 		Method              func(childComplexity int) int
 		ServerAddress       func(childComplexity int) int
@@ -536,8 +525,6 @@ type ComplexityRoot struct {
 	}
 
 	HeadSamplingOperationMatcher struct {
-		GrpcClient func(childComplexity int) int
-		GrpcServer func(childComplexity int) int
 		HTTPClient func(childComplexity int) int
 		HTTPServer func(childComplexity int) int
 	}
@@ -770,6 +757,7 @@ type ComplexityRoot struct {
 		AgentInjectionEnabled func(childComplexity int) int
 		AutoRollback          func(childComplexity int) int
 		ExpectingTelemetry    func(childComplexity int) int
+		PodsManifestInjection func(childComplexity int) int
 		ProcessesAgentHealth  func(childComplexity int) int
 		Rollout               func(childComplexity int) int
 		RuntimeDetection      func(childComplexity int) int
@@ -913,7 +901,8 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadRollout struct {
-		RolloutStatus func(childComplexity int) int
+		PodsManifestInjectionStatus func(childComplexity int) int
+		RolloutStatus               func(childComplexity int) int
 	}
 
 	K8sWorkloadRuntimeInfo struct {
@@ -3775,41 +3764,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GolangCustomProbe.ReceiverName(childComplexity), true
 
-	case "HeadSamplingGrpcClientMatcher.method":
-		if e.complexity.HeadSamplingGrpcClientMatcher.Method == nil {
-			break
-		}
-
-		return e.complexity.HeadSamplingGrpcClientMatcher.Method(childComplexity), true
-
-	case "HeadSamplingGrpcClientMatcher.serverAddress":
-		if e.complexity.HeadSamplingGrpcClientMatcher.ServerAddress == nil {
-			break
-		}
-
-		return e.complexity.HeadSamplingGrpcClientMatcher.ServerAddress(childComplexity), true
-
-	case "HeadSamplingGrpcClientMatcher.service":
-		if e.complexity.HeadSamplingGrpcClientMatcher.Service == nil {
-			break
-		}
-
-		return e.complexity.HeadSamplingGrpcClientMatcher.Service(childComplexity), true
-
-	case "HeadSamplingGrpcServerMatcher.method":
-		if e.complexity.HeadSamplingGrpcServerMatcher.Method == nil {
-			break
-		}
-
-		return e.complexity.HeadSamplingGrpcServerMatcher.Method(childComplexity), true
-
-	case "HeadSamplingGrpcServerMatcher.service":
-		if e.complexity.HeadSamplingGrpcServerMatcher.Service == nil {
-			break
-		}
-
-		return e.complexity.HeadSamplingGrpcServerMatcher.Service(childComplexity), true
-
 	case "HeadSamplingHttpClientMatcher.method":
 		if e.complexity.HeadSamplingHttpClientMatcher.Method == nil {
 			break
@@ -3865,20 +3819,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HeadSamplingHttpServerMatcher.RoutePrefix(childComplexity), true
-
-	case "HeadSamplingOperationMatcher.grpcClient":
-		if e.complexity.HeadSamplingOperationMatcher.GrpcClient == nil {
-			break
-		}
-
-		return e.complexity.HeadSamplingOperationMatcher.GrpcClient(childComplexity), true
-
-	case "HeadSamplingOperationMatcher.grpcServer":
-		if e.complexity.HeadSamplingOperationMatcher.GrpcServer == nil {
-			break
-		}
-
-		return e.complexity.HeadSamplingOperationMatcher.GrpcServer(childComplexity), true
 
 	case "HeadSamplingOperationMatcher.httpClient":
 		if e.complexity.HeadSamplingOperationMatcher.HTTPClient == nil {
@@ -4895,6 +4835,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadConditions.ExpectingTelemetry(childComplexity), true
 
+	case "K8sWorkloadConditions.podsManifestInjection":
+		if e.complexity.K8sWorkloadConditions.PodsManifestInjection == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadConditions.PodsManifestInjection(childComplexity), true
+
 	case "K8sWorkloadConditions.processesAgentHealth":
 		if e.complexity.K8sWorkloadConditions.ProcessesAgentHealth == nil {
 			break
@@ -5496,6 +5443,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadPodContainerProcessInstrumentation.Type(childComplexity), true
+
+	case "K8sWorkloadRollout.podsManifestInjectionStatus":
+		if e.complexity.K8sWorkloadRollout.PodsManifestInjectionStatus == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadRollout.PodsManifestInjectionStatus(childComplexity), true
 
 	case "K8sWorkloadRollout.rolloutStatus":
 		if e.complexity.K8sWorkloadRollout.RolloutStatus == nil {
@@ -8097,8 +8051,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputExtractionInput,
 		ec.unmarshalInputFieldInput,
 		ec.unmarshalInputGolangCustomProbeInput,
-		ec.unmarshalInputHeadSamplingGrpcClientMatcherInput,
-		ec.unmarshalInputHeadSamplingGrpcServerMatcherInput,
 		ec.unmarshalInputHeadSamplingHttpClientMatcherInput,
 		ec.unmarshalInputHeadSamplingHttpServerMatcherInput,
 		ec.unmarshalInputHeadSamplingOperationMatcherInput,
@@ -24305,211 +24257,6 @@ func (ec *executionContext) fieldContext_GolangCustomProbe_receiverMethodName(_ 
 	return fc, nil
 }
 
-func (ec *executionContext) _HeadSamplingGrpcClientMatcher_method(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingGrpcClientMatcher) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HeadSamplingGrpcClientMatcher_method(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Method, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_HeadSamplingGrpcClientMatcher_method(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "HeadSamplingGrpcClientMatcher",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _HeadSamplingGrpcClientMatcher_service(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingGrpcClientMatcher) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HeadSamplingGrpcClientMatcher_service(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Service, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_HeadSamplingGrpcClientMatcher_service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "HeadSamplingGrpcClientMatcher",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _HeadSamplingGrpcClientMatcher_serverAddress(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingGrpcClientMatcher) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HeadSamplingGrpcClientMatcher_serverAddress(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ServerAddress, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_HeadSamplingGrpcClientMatcher_serverAddress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "HeadSamplingGrpcClientMatcher",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _HeadSamplingGrpcServerMatcher_method(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingGrpcServerMatcher) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HeadSamplingGrpcServerMatcher_method(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Method, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_HeadSamplingGrpcServerMatcher_method(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "HeadSamplingGrpcServerMatcher",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _HeadSamplingGrpcServerMatcher_service(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingGrpcServerMatcher) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HeadSamplingGrpcServerMatcher_service(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Service, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_HeadSamplingGrpcServerMatcher_service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "HeadSamplingGrpcServerMatcher",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _HeadSamplingHttpClientMatcher_serverAddress(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingHTTPClientMatcher) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_HeadSamplingHttpClientMatcher_serverAddress(ctx, field)
 	if err != nil {
@@ -24941,102 +24688,6 @@ func (ec *executionContext) fieldContext_HeadSamplingOperationMatcher_httpClient
 				return ec.fieldContext_HeadSamplingHttpClientMatcher_method(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HeadSamplingHttpClientMatcher", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _HeadSamplingOperationMatcher_grpcServer(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingOperationMatcher) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HeadSamplingOperationMatcher_grpcServer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.GrpcServer, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.HeadSamplingGrpcServerMatcher)
-	fc.Result = res
-	return ec.marshalOHeadSamplingGrpcServerMatcher2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingGrpcServerMatcher(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_HeadSamplingOperationMatcher_grpcServer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "HeadSamplingOperationMatcher",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "method":
-				return ec.fieldContext_HeadSamplingGrpcServerMatcher_method(ctx, field)
-			case "service":
-				return ec.fieldContext_HeadSamplingGrpcServerMatcher_service(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type HeadSamplingGrpcServerMatcher", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _HeadSamplingOperationMatcher_grpcClient(ctx context.Context, field graphql.CollectedField, obj *model.HeadSamplingOperationMatcher) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_HeadSamplingOperationMatcher_grpcClient(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.GrpcClient, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.HeadSamplingGrpcClientMatcher)
-	fc.Result = res
-	return ec.marshalOHeadSamplingGrpcClientMatcher2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingGrpcClientMatcher(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_HeadSamplingOperationMatcher_grpcClient(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "HeadSamplingOperationMatcher",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "method":
-				return ec.fieldContext_HeadSamplingGrpcClientMatcher_method(ctx, field)
-			case "service":
-				return ec.fieldContext_HeadSamplingGrpcClientMatcher_service(ctx, field)
-			case "serverAddress":
-				return ec.fieldContext_HeadSamplingGrpcClientMatcher_serverAddress(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type HeadSamplingGrpcClientMatcher", field.Name)
 		},
 	}
 	return fc, nil
@@ -29820,6 +29471,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_conditions(_ context.Contex
 				return ec.fieldContext_K8sWorkloadConditions_agentInjectionEnabled(ctx, field)
 			case "rollout":
 				return ec.fieldContext_K8sWorkloadConditions_rollout(ctx, field)
+			case "podsManifestInjection":
+				return ec.fieldContext_K8sWorkloadConditions_podsManifestInjection(ctx, field)
 			case "autoRollback":
 				return ec.fieldContext_K8sWorkloadConditions_autoRollback(ctx, field)
 			case "agentInjected":
@@ -30025,6 +29678,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_rollout(_ context.Context, 
 			switch field.Name {
 			case "rolloutStatus":
 				return ec.fieldContext_K8sWorkloadRollout_rolloutStatus(ctx, field)
+			case "podsManifestInjectionStatus":
+				return ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionStatus(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRollout", field.Name)
 		},
@@ -31592,6 +31247,57 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_rollout(_ context
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkloadConditions_podsManifestInjection(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadConditions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadConditions_podsManifestInjection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PodsManifestInjection, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadConditions_podsManifestInjection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadConditions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadConditions_autoRollback(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadConditions) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadConditions_autoRollback(ctx, field)
 	if err != nil {
@@ -32556,10 +32262,6 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainerAgentConfigTracesHe
 				return ec.fieldContext_HeadSamplingOperationMatcher_httpServer(ctx, field)
 			case "httpClient":
 				return ec.fieldContext_HeadSamplingOperationMatcher_httpClient(ctx, field)
-			case "grpcServer":
-				return ec.fieldContext_HeadSamplingOperationMatcher_grpcServer(ctx, field)
-			case "grpcClient":
-				return ec.fieldContext_HeadSamplingOperationMatcher_grpcClient(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HeadSamplingOperationMatcher", field.Name)
 		},
@@ -33515,10 +33217,6 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainerCollectorConfigTail
 				return ec.fieldContext_HeadSamplingOperationMatcher_httpServer(ctx, field)
 			case "httpClient":
 				return ec.fieldContext_HeadSamplingOperationMatcher_httpClient(ctx, field)
-			case "grpcServer":
-				return ec.fieldContext_HeadSamplingOperationMatcher_grpcServer(ctx, field)
-			case "grpcClient":
-				return ec.fieldContext_HeadSamplingOperationMatcher_grpcClient(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HeadSamplingOperationMatcher", field.Name)
 		},
@@ -35645,17 +35343,65 @@ func (ec *executionContext) _K8sWorkloadRollout_rolloutStatus(ctx context.Contex
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.DesiredConditionStatus)
 	fc.Result = res
-	return ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_K8sWorkloadRollout_rolloutStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadRollout",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadRollout_podsManifestInjectionStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRollout) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PodsManifestInjectionStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadRollout_podsManifestInjectionStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadRollout",
 		Field:      field,
@@ -41036,10 +40782,6 @@ func (ec *executionContext) fieldContext_NoisyOperationRule_operation(_ context.
 				return ec.fieldContext_HeadSamplingOperationMatcher_httpServer(ctx, field)
 			case "httpClient":
 				return ec.fieldContext_HeadSamplingOperationMatcher_httpClient(ctx, field)
-			case "grpcServer":
-				return ec.fieldContext_HeadSamplingOperationMatcher_grpcServer(ctx, field)
-			case "grpcClient":
-				return ec.fieldContext_HeadSamplingOperationMatcher_grpcClient(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HeadSamplingOperationMatcher", field.Name)
 		},
@@ -55046,81 +54788,6 @@ func (ec *executionContext) unmarshalInputGolangCustomProbeInput(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputHeadSamplingGrpcClientMatcherInput(ctx context.Context, obj any) (model.HeadSamplingGrpcClientMatcherInput, error) {
-	var it model.HeadSamplingGrpcClientMatcherInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"method", "service", "serverAddress"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "method":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("method"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Method = data
-		case "service":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("service"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Service = data
-		case "serverAddress":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serverAddress"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ServerAddress = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputHeadSamplingGrpcServerMatcherInput(ctx context.Context, obj any) (model.HeadSamplingGrpcServerMatcherInput, error) {
-	var it model.HeadSamplingGrpcServerMatcherInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"method", "service"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "method":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("method"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Method = data
-		case "service":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("service"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Service = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputHeadSamplingHttpClientMatcherInput(ctx context.Context, obj any) (model.HeadSamplingHTTPClientMatcherInput, error) {
 	var it model.HeadSamplingHTTPClientMatcherInput
 	asMap := map[string]any{}
@@ -55224,7 +54891,7 @@ func (ec *executionContext) unmarshalInputHeadSamplingOperationMatcherInput(ctx 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"httpServer", "httpClient", "grpcServer", "grpcClient"}
+	fieldsInOrder := [...]string{"httpServer", "httpClient"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -55245,20 +54912,6 @@ func (ec *executionContext) unmarshalInputHeadSamplingOperationMatcherInput(ctx 
 				return it, err
 			}
 			it.HTTPClient = data
-		case "grpcServer":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("grpcServer"))
-			data, err := ec.unmarshalOHeadSamplingGrpcServerMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingGrpcServerMatcherInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.GrpcServer = data
-		case "grpcClient":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("grpcClient"))
-			data, err := ec.unmarshalOHeadSamplingGrpcClientMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingGrpcClientMatcherInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.GrpcClient = data
 		}
 	}
 
@@ -60376,84 +60029,6 @@ func (ec *executionContext) _GolangCustomProbe(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var headSamplingGrpcClientMatcherImplementors = []string{"HeadSamplingGrpcClientMatcher"}
-
-func (ec *executionContext) _HeadSamplingGrpcClientMatcher(ctx context.Context, sel ast.SelectionSet, obj *model.HeadSamplingGrpcClientMatcher) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, headSamplingGrpcClientMatcherImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("HeadSamplingGrpcClientMatcher")
-		case "method":
-			out.Values[i] = ec._HeadSamplingGrpcClientMatcher_method(ctx, field, obj)
-		case "service":
-			out.Values[i] = ec._HeadSamplingGrpcClientMatcher_service(ctx, field, obj)
-		case "serverAddress":
-			out.Values[i] = ec._HeadSamplingGrpcClientMatcher_serverAddress(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var headSamplingGrpcServerMatcherImplementors = []string{"HeadSamplingGrpcServerMatcher"}
-
-func (ec *executionContext) _HeadSamplingGrpcServerMatcher(ctx context.Context, sel ast.SelectionSet, obj *model.HeadSamplingGrpcServerMatcher) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, headSamplingGrpcServerMatcherImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("HeadSamplingGrpcServerMatcher")
-		case "method":
-			out.Values[i] = ec._HeadSamplingGrpcServerMatcher_method(ctx, field, obj)
-		case "service":
-			out.Values[i] = ec._HeadSamplingGrpcServerMatcher_service(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var headSamplingHttpClientMatcherImplementors = []string{"HeadSamplingHttpClientMatcher"}
 
 func (ec *executionContext) _HeadSamplingHttpClientMatcher(ctx context.Context, sel ast.SelectionSet, obj *model.HeadSamplingHTTPClientMatcher) graphql.Marshaler {
@@ -60553,10 +60128,6 @@ func (ec *executionContext) _HeadSamplingOperationMatcher(ctx context.Context, s
 			out.Values[i] = ec._HeadSamplingOperationMatcher_httpServer(ctx, field, obj)
 		case "httpClient":
 			out.Values[i] = ec._HeadSamplingOperationMatcher_httpClient(ctx, field, obj)
-		case "grpcServer":
-			out.Values[i] = ec._HeadSamplingOperationMatcher_grpcServer(ctx, field, obj)
-		case "grpcClient":
-			out.Values[i] = ec._HeadSamplingOperationMatcher_grpcClient(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -62757,6 +62328,8 @@ func (ec *executionContext) _K8sWorkloadConditions(ctx context.Context, sel ast.
 			out.Values[i] = ec._K8sWorkloadConditions_agentInjectionEnabled(ctx, field, obj)
 		case "rollout":
 			out.Values[i] = ec._K8sWorkloadConditions_rollout(ctx, field, obj)
+		case "podsManifestInjection":
+			out.Values[i] = ec._K8sWorkloadConditions_podsManifestInjection(ctx, field, obj)
 		case "autoRollback":
 			out.Values[i] = ec._K8sWorkloadConditions_autoRollback(ctx, field, obj)
 		case "agentInjected":
@@ -63709,9 +63282,8 @@ func (ec *executionContext) _K8sWorkloadRollout(ctx context.Context, sel ast.Sel
 			out.Values[i] = graphql.MarshalString("K8sWorkloadRollout")
 		case "rolloutStatus":
 			out.Values[i] = ec._K8sWorkloadRollout_rolloutStatus(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
+		case "podsManifestInjectionStatus":
+			out.Values[i] = ec._K8sWorkloadRollout_podsManifestInjectionStatus(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -73593,36 +73165,6 @@ func (ec *executionContext) unmarshalOGolangCustomProbeInput2ᚖgithubᚗcomᚋo
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputGolangCustomProbeInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOHeadSamplingGrpcClientMatcher2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingGrpcClientMatcher(ctx context.Context, sel ast.SelectionSet, v *model.HeadSamplingGrpcClientMatcher) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._HeadSamplingGrpcClientMatcher(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOHeadSamplingGrpcClientMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingGrpcClientMatcherInput(ctx context.Context, v any) (*model.HeadSamplingGrpcClientMatcherInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputHeadSamplingGrpcClientMatcherInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOHeadSamplingGrpcServerMatcher2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingGrpcServerMatcher(ctx context.Context, sel ast.SelectionSet, v *model.HeadSamplingGrpcServerMatcher) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._HeadSamplingGrpcServerMatcher(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOHeadSamplingGrpcServerMatcherInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadSamplingGrpcServerMatcherInput(ctx context.Context, v any) (*model.HeadSamplingGrpcServerMatcherInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputHeadSamplingGrpcServerMatcherInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

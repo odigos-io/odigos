@@ -144,23 +144,11 @@ func NewMockTestStaticPod(ns *corev1.Namespace, name string) *corev1.Pod {
 			Namespace: ns.GetName(),
 			Annotations: map[string]string{
 				"kubernetes.io/config.source": "file",
-				"kubernetes.io/config.hash":   "test-static-pod-uid",
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: "v1",
-					Kind:       "Node",
-					Name:       "test-node",
-					UID:        "test-node-uid",
-				},
-			},
-		},
-		Spec: corev1.PodSpec{
-			NodeName: "test-node",
-			Containers: []corev1.Container{
-				{
-					Name:  "test",
-					Image: "test",
+					Kind: "Node",
+					Name: "test-node",
 				},
 			},
 		},
@@ -284,15 +272,9 @@ func NewMockRegexSource(workloadObject client.Object, pattern string, disabled b
 // with a single container with the GoProgrammingLanguage
 func NewMockInstrumentationConfig(workloadObject client.Object) *odigosv1.InstrumentationConfig {
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
-	workloadKind := gvk.Kind
-	// Static pods are represented as core Pods in the API, but InstrumentationConfig
-	// objects are named with WorkloadKindStaticPod so controller lookups match.
-	if pod, ok := workloadObject.(*corev1.Pod); ok && workload.IsStaticPod(pod) {
-		workloadKind = string(k8sconsts.WorkloadKindStaticPod)
-	}
 	return &odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), workloadKind),
+			Name:      workload.CalculateWorkloadRuntimeObjectName(workloadObject.GetName(), gvk.Kind),
 			Namespace: workloadObject.GetNamespace(),
 			OwnerReferences: []metav1.OwnerReference{
 				{
