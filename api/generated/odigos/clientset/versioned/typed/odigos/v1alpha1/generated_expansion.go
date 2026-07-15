@@ -29,8 +29,6 @@ type InstrumentationInstanceExpansion interface{}
 
 type InstrumentationRuleExpansion interface{}
 
-type OdigosCloudConnectorExpansion interface{}
-
 type ProcessorExpansion interface{}
 
 type SamplingExpansion interface{}

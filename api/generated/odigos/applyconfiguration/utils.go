@@ -39,24 +39,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.ActionStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Attribute"):
 		return &odigosv1alpha1.AttributeApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CloudConnectorAccount"):
-		return &odigosv1alpha1.CloudConnectorAccountApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CloudConnectorComputePlatformCapability"):
-		return &odigosv1alpha1.CloudConnectorComputePlatformCapabilityApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CloudConnectorCredentialsSecretRef"):
-		return &odigosv1alpha1.CloudConnectorCredentialsSecretRefApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CloudConnectorDiscovery"):
-		return &odigosv1alpha1.CloudConnectorDiscoveryApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CloudConnectorDiscoverySelectors"):
-		return &odigosv1alpha1.CloudConnectorDiscoverySelectorsApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CloudConnectorProviderIdentity"):
-		return &odigosv1alpha1.CloudConnectorProviderIdentityApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CloudConnectorRuntime"):
-		return &odigosv1alpha1.CloudConnectorRuntimeApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CloudConnectorRuntimeStatus"):
-		return &odigosv1alpha1.CloudConnectorRuntimeStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CloudConnectorWorkloadCapability"):
-		return &odigosv1alpha1.CloudConnectorWorkloadCapabilityApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroup"):
 		return &odigosv1alpha1.CollectorsGroupApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CollectorsGroupMetricsCollectionSettings"):
@@ -117,12 +99,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationRuleStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("NoisyOperation"):
 		return &odigosv1alpha1.NoisyOperationApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("OdigosCloudConnector"):
-		return &odigosv1alpha1.OdigosCloudConnectorApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("OdigosCloudConnectorSpec"):
-		return &odigosv1alpha1.OdigosCloudConnectorSpecApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("OdigosCloudConnectorStatus"):
-		return &odigosv1alpha1.OdigosCloudConnectorStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OdigosOwnMetricsSettings"):
 		return &odigosv1alpha1.OdigosOwnMetricsSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtherAgent"):
