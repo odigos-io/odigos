@@ -11,9 +11,12 @@
   "author": "Odigos",
   "license": "Apache-2.0",
   "dependencies": {
-    "mintlify": "^4.2.521"
+    "mintlify": "^4.2.696"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
+  },
+  "resolutions": {
+    "tar": "^7.5.16"
   }
 }
