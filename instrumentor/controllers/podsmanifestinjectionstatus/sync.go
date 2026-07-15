@@ -120,9 +120,24 @@ func calculatePodsManifestInjectionReason(
 	effectiveConfig *common.OdigosConfiguration,
 	workloadKind k8sconsts.WorkloadKind,
 ) status.Reason {
+
 	if !injectionStatus.HasInjectedUpToDatePods && !injectionStatus.HasInjectedOutOfDatePods && !injectionStatus.HasUninjectedPods {
 		return podsManifestInjection.PodsManifestInjectionNoRunningPods
 	}
+
+	if ic.Spec.AgentInjectionEnabled {
+		return calculateEnabledWorkloadPodsManifestInjectionReason(injectionStatus, ic, effectiveConfig, workloadKind)
+	} else {
+		return calculateDisabledWorkloadPodsManifestInjectionReason(injectionStatus, ic, effectiveConfig, workloadKind)
+	}
+}
+
+func calculateEnabledWorkloadPodsManifestInjectionReason(
+	injectionStatus odigosv1.PodsManifestInjectionStatus,
+	ic *odigosv1.InstrumentationConfig,
+	effectiveConfig *common.OdigosConfiguration,
+	workloadKind k8sconsts.WorkloadKind,
+) status.Reason {
 
 	// first - if all is well, then report it and that's it.
 	if injectionStatus.HasInjectedUpToDatePods && !injectionStatus.HasInjectedOutOfDatePods && !injectionStatus.HasUninjectedPods {
@@ -177,4 +192,52 @@ func calculatePodsManifestInjectionReason(
 	}
 
 	return podsManifestInjection.PodsManifestInjectionWaitingForAutomaticRollout
+}
+
+func calculateDisabledWorkloadPodsManifestInjectionReason(
+	injectionStatus odigosv1.PodsManifestInjectionStatus,
+	ic *odigosv1.InstrumentationConfig,
+	effectiveConfig *common.OdigosConfiguration,
+	workloadKind k8sconsts.WorkloadKind,
+) status.Reason {
+
+	if !injectionStatus.HasInjectedUpToDatePods && !injectionStatus.HasInjectedOutOfDatePods && injectionStatus.HasUninjectedPods {
+		return podsManifestInjection.PodsManifestInjectionAgentDisabled
+	}
+
+	// Agents that do not require pod manifest injection are disabled without restarting the workload.
+	if workloadKind == k8sconsts.WorkloadKindStaticPod {
+		return podsManifestInjection.PodsManifestInjectionRolloutNotSupportedForStaticPods
+	}
+
+	if workloadKind == k8sconsts.WorkloadKindJob || workloadKind == k8sconsts.WorkloadKindCronJob {
+		return podsManifestInjection.PodsManifestInjectionWaitingForNextJobRunDisabledWorkloads
+	}
+
+	automaticRolloutDisabledInConfig := effectiveConfig.Rollout != nil &&
+		effectiveConfig.Rollout.AutomaticRolloutDisabled != nil &&
+		*effectiveConfig.Rollout.AutomaticRolloutDisabled
+	if automaticRolloutDisabledInConfig {
+		return podsManifestInjection.PodsManifestInjectionRestartRequiredAutoRolloutDisabledDisabledWorkloads
+	}
+
+	var workloadRolloutReason odigosv1.WorkloadRolloutReason
+	if cond := meta.FindStatusCondition(ic.Status.Conditions, odigosv1.WorkloadRolloutStatusConditionType); cond != nil {
+		workloadRolloutReason = odigosv1.WorkloadRolloutReason(cond.Reason)
+	}
+
+	switch workloadRolloutReason {
+	case odigosv1.WorkloadRolloutReasonWaitingInQueue:
+		return podsManifestInjection.PodsManifestInjectionWaitingInAutoRolloutQueueDisabledWorkloads
+	case odigosv1.WorkloadRolloutReasonPreviousRolloutOngoing,
+		odigosv1.WorkloadRolloutReasonTriggeredSuccessfully:
+		return podsManifestInjection.PodsManifestInjectionRolloutInProgressDisabledWorkloads
+	case odigosv1.WorkloadRolloutReasonFailedToPatch:
+		return podsManifestInjection.PodsManifestInjectionRestartRequiredAutoRolloutFailedDisabledWorkloads
+	case odigosv1.WorkloadRolloutReasonRolloutFinished:
+		// The rollout completed, but injected pods remain. A fresh rollout is required.
+		return podsManifestInjection.PodsManifestInjectionRestartRequiredDisabledWorkloads
+	}
+
+	return podsManifestInjection.PodsManifestInjectionWaitingForAutomaticRolloutDisabledWorkloads
 }

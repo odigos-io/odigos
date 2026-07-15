@@ -5,11 +5,13 @@ metadata:
 spec:
   type: 'PodsManifestInjection'
   reasons:
+
   - name: "NoRunningPods"
     message: "source has no running pods"
     k8sConditionStatus: "Unknown"
     odigosSeverity: "Irrelevant"
     technicalDescription: "source has no running pods, thus it is irrelevant if odigos agent is successfully injected into them or not"
+
   - name: "PodsManifestInjectionNotRequired"
     message: "agent is injected to running pods automatically, restart of pods is not required"
     k8sConditionStatus: "True"
@@ -75,3 +77,59 @@ spec:
     actionItems:
     - type: "RolloutWorkload"
       userFacingText: "rollout manually to start new pods with odigos pod manifest injection"
+
+  - name: "AgentDisabled"
+    message: "instrumentation is not enabled for this source; its pods are running without the Odigos agent as expected"
+    k8sConditionStatus: "True"
+    odigosSeverity: "Success"
+    technicalDescription: "agent injection is disabled for this source, so pods without odigos agent injection are in the expected state"
+  - name: "WaitingForNextJobRunDisabledWorkloads"
+    message: "some job pods are still running with odigos agent; next job pods will be created without it"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Waiting"
+    technicalDescription: "source is disabled for instrumentation, but some pods of this job are still running with odigos agent and cannot be rolled out to start fresh pods without it"
+  - name: "RolloutInProgressDisabledWorkloads"
+    message: "this workload is actively being rolled out to start fresh pods without odigos agent"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Waiting"
+    technicalDescription: "source is disabled for instrumentation, and some pods still have odigos pod manifest injection. they are expected to be replaced with new pods running without odigos agent"
+  - name: "WaitingForAutomaticRolloutDisabledWorkloads"
+    message: "source is disabled but some pods are still running with odigos agent; on next rollout they will be replaced with new pods running without odigos agent"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Waiting"
+    technicalDescription: "some pods are still running with odigos agent fofr disabled pods. since odigos auto-rollout is disabled, they are not replaced automatically and require to wait for next organic rollout to happen, or a user can trigger it manually"
+    actionItems:
+    - type: "RolloutWorkload"
+      userFacingText: "trigger manual rollout to start fresh pods without odigos agent"
+  - name: "WaitingInAutoRolloutQueueDisabledWorkloads"
+    message: "source is disabled for instrumentation, and waiting in auto rollout queue to restart pods with no odigos agent"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Pending"
+    technicalDescription: "source is disabled for instrumentation, auto rollout will kick in once a slot for rollout is available"
+    actionItems:
+    - type: "RolloutWorkload"
+      userFacingText: "trigger manual rollout now (skip waiting in auto rollout queue)"
+  - name: "RestartRequiredAutoRolloutDisabledDisabledWorkloads"
+    message: "automatic rollout by odigos is disabled for this source, on next rollout they will be replaced with new pods running without odigos agent"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Notice"
+    technicalDescription: "not all pods of this source are injected with odigos agent, but automatic rollout is disabled. so user need to intiate rollout manually or wait for next rollout to happen"
+    actionItems:
+    - type: "RolloutWorkload"
+      userFacingText: "trigger manual rollout now to restart pods without odigos agent"
+  - name: "RestartRequiredAutoRolloutFailedDisabledWorkloads"
+    message: "automatic rollout by odigos failed for this source, restart the workload manually to start fresh pods without odigos agent"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Failure"
+    technicalDescription: "automatic rollout by odigos failed for this source, so user need to intiate rollout manually or wait for next rollout to happen"
+    actionItems:
+    - type: "RolloutWorkload"
+      userFacingText: "trigger manual rollout now to restart pods without odigos agent"
+  - name: "RestartRequiredDisabledWorkloads"
+    message: "source is disabled for instrumentation, but some pods are still running with odigos agent; restart the workload manually to start fresh pods without odigos agent"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Notice"
+    technicalDescription: "this should not happen, all cases of disabled pods should be covered by other status reasons. here just as safety net"
+    actionItems:
+    - type: "RolloutWorkload"
+      userFacingText: "rollout manually to start fresh pods with odigos pod manifest injection"

@@ -14,17 +14,25 @@ const (
 type PodsManifestInjectionReason string
 
 const (
-	PodsManifestInjectionReasonNoRunningPods                      PodsManifestInjectionReason = "NoRunningPods"
-	PodsManifestInjectionReasonPodsManifestInjectionNotRequired   PodsManifestInjectionReason = "PodsManifestInjectionNotRequired"
-	PodsManifestInjectionReasonPodsInjectedSuccessfully           PodsManifestInjectionReason = "PodsInjectedSuccessfully"
-	PodsManifestInjectionReasonRolloutNotSupportedForStaticPods   PodsManifestInjectionReason = "RolloutNotSupportedForStaticPods"
-	PodsManifestInjectionReasonWaitingForNextJobRun               PodsManifestInjectionReason = "WaitingForNextJobRun"
-	PodsManifestInjectionReasonRolloutInProgress                  PodsManifestInjectionReason = "RolloutInProgress"
-	PodsManifestInjectionReasonWaitingForAutomaticRollout         PodsManifestInjectionReason = "WaitingForAutomaticRollout"
-	PodsManifestInjectionReasonWaitingInRolloutQueue              PodsManifestInjectionReason = "WaitingInRolloutQueue"
-	PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled PodsManifestInjectionReason = "RestartRequiredAutoRolloutDisabled"
-	PodsManifestInjectionReasonRestartRequiredWebhookMissed       PodsManifestInjectionReason = "RestartRequiredWebhookMissed"
-	PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed   PodsManifestInjectionReason = "RestartRequiredAutoRolloutFailed"
+	PodsManifestInjectionReasonNoRunningPods                                       PodsManifestInjectionReason = "NoRunningPods"
+	PodsManifestInjectionReasonPodsManifestInjectionNotRequired                    PodsManifestInjectionReason = "PodsManifestInjectionNotRequired"
+	PodsManifestInjectionReasonPodsInjectedSuccessfully                            PodsManifestInjectionReason = "PodsInjectedSuccessfully"
+	PodsManifestInjectionReasonRolloutNotSupportedForStaticPods                    PodsManifestInjectionReason = "RolloutNotSupportedForStaticPods"
+	PodsManifestInjectionReasonWaitingForNextJobRun                                PodsManifestInjectionReason = "WaitingForNextJobRun"
+	PodsManifestInjectionReasonRolloutInProgress                                   PodsManifestInjectionReason = "RolloutInProgress"
+	PodsManifestInjectionReasonWaitingForAutomaticRollout                          PodsManifestInjectionReason = "WaitingForAutomaticRollout"
+	PodsManifestInjectionReasonWaitingInRolloutQueue                               PodsManifestInjectionReason = "WaitingInRolloutQueue"
+	PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled                  PodsManifestInjectionReason = "RestartRequiredAutoRolloutDisabled"
+	PodsManifestInjectionReasonRestartRequiredWebhookMissed                        PodsManifestInjectionReason = "RestartRequiredWebhookMissed"
+	PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed                    PodsManifestInjectionReason = "RestartRequiredAutoRolloutFailed"
+	PodsManifestInjectionReasonAgentDisabled                                       PodsManifestInjectionReason = "AgentDisabled"
+	PodsManifestInjectionReasonWaitingForNextJobRunDisabledWorkloads               PodsManifestInjectionReason = "WaitingForNextJobRunDisabledWorkloads"
+	PodsManifestInjectionReasonRolloutInProgressDisabledWorkloads                  PodsManifestInjectionReason = "RolloutInProgressDisabledWorkloads"
+	PodsManifestInjectionReasonWaitingForAutomaticRolloutDisabledWorkloads         PodsManifestInjectionReason = "WaitingForAutomaticRolloutDisabledWorkloads"
+	PodsManifestInjectionReasonWaitingInAutoRolloutQueueDisabledWorkloads          PodsManifestInjectionReason = "WaitingInAutoRolloutQueueDisabledWorkloads"
+	PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabledDisabledWorkloads PodsManifestInjectionReason = "RestartRequiredAutoRolloutDisabledDisabledWorkloads"
+	PodsManifestInjectionReasonRestartRequiredAutoRolloutFailedDisabledWorkloads   PodsManifestInjectionReason = "RestartRequiredAutoRolloutFailedDisabledWorkloads"
+	PodsManifestInjectionReasonRestartRequiredDisabledWorkloads                    PodsManifestInjectionReason = "RestartRequiredDisabledWorkloads"
 )
 
 var (
@@ -135,19 +143,113 @@ var (
 			},
 		},
 	}
+	PodsManifestInjectionAgentDisabled = status.Reason{
+		Name:                 string(PodsManifestInjectionReasonAgentDisabled),
+		Message:              "instrumentation is not enabled for this source; its pods are running without the Odigos agent as expected",
+		TechnicalDescription: "agent injection is disabled for this source, so pods without odigos agent injection are in the expected state",
+		K8sConditionStatus:   metav1.ConditionTrue,
+		OdigosSeverity:       status.OdigosSeveritySuccess,
+	}
+	PodsManifestInjectionWaitingForNextJobRunDisabledWorkloads = status.Reason{
+		Name:                 string(PodsManifestInjectionReasonWaitingForNextJobRunDisabledWorkloads),
+		Message:              "some job pods are still running with odigos agent; next job pods will be created without it",
+		TechnicalDescription: "source is disabled for instrumentation, but some pods of this job are still running with odigos agent and cannot be rolled out to start fresh pods without it",
+		K8sConditionStatus:   metav1.ConditionFalse,
+		OdigosSeverity:       status.OdigosSeverityWaiting,
+	}
+	PodsManifestInjectionRolloutInProgressDisabledWorkloads = status.Reason{
+		Name:                 string(PodsManifestInjectionReasonRolloutInProgressDisabledWorkloads),
+		Message:              "this workload is actively being rolled out to start fresh pods without odigos agent",
+		TechnicalDescription: "source is disabled for instrumentation, and some pods still have odigos pod manifest injection. they are expected to be replaced with new pods running without odigos agent",
+		K8sConditionStatus:   metav1.ConditionFalse,
+		OdigosSeverity:       status.OdigosSeverityWaiting,
+	}
+	PodsManifestInjectionWaitingForAutomaticRolloutDisabledWorkloads = status.Reason{
+		Name:                 string(PodsManifestInjectionReasonWaitingForAutomaticRolloutDisabledWorkloads),
+		Message:              "source is disabled but some pods are still running with odigos agent; on next rollout they will be replaced with new pods running without odigos agent",
+		TechnicalDescription: "some pods are still running with odigos agent fofr disabled pods. since odigos auto-rollout is disabled, they are not replaced automatically and require to wait for next organic rollout to happen, or a user can trigger it manually",
+		K8sConditionStatus:   metav1.ConditionFalse,
+		OdigosSeverity:       status.OdigosSeverityWaiting,
+		ActionItems: []status.ActionItem{
+			{
+				Type:           status.ActionItemTypeRolloutWorkload,
+				UserFacingText: "trigger manual rollout to start fresh pods without odigos agent",
+			},
+		},
+	}
+	PodsManifestInjectionWaitingInAutoRolloutQueueDisabledWorkloads = status.Reason{
+		Name:                 string(PodsManifestInjectionReasonWaitingInAutoRolloutQueueDisabledWorkloads),
+		Message:              "source is disabled for instrumentation, and waiting in auto rollout queue to restart pods with no odigos agent",
+		TechnicalDescription: "source is disabled for instrumentation, auto rollout will kick in once a slot for rollout is available",
+		K8sConditionStatus:   metav1.ConditionFalse,
+		OdigosSeverity:       status.OdigosSeverityPending,
+		ActionItems: []status.ActionItem{
+			{
+				Type:           status.ActionItemTypeRolloutWorkload,
+				UserFacingText: "trigger manual rollout now (skip waiting in auto rollout queue)",
+			},
+		},
+	}
+	PodsManifestInjectionRestartRequiredAutoRolloutDisabledDisabledWorkloads = status.Reason{
+		Name:                 string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabledDisabledWorkloads),
+		Message:              "automatic rollout by odigos is disabled for this source, on next rollout they will be replaced with new pods running without odigos agent",
+		TechnicalDescription: "not all pods of this source are injected with odigos agent, but automatic rollout is disabled. so user need to intiate rollout manually or wait for next rollout to happen",
+		K8sConditionStatus:   metav1.ConditionFalse,
+		OdigosSeverity:       status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:           status.ActionItemTypeRolloutWorkload,
+				UserFacingText: "trigger manual rollout now to restart pods without odigos agent",
+			},
+		},
+	}
+	PodsManifestInjectionRestartRequiredAutoRolloutFailedDisabledWorkloads = status.Reason{
+		Name:                 string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailedDisabledWorkloads),
+		Message:              "automatic rollout by odigos failed for this source, restart the workload manually to start fresh pods without odigos agent",
+		TechnicalDescription: "automatic rollout by odigos failed for this source, so user need to intiate rollout manually or wait for next rollout to happen",
+		K8sConditionStatus:   metav1.ConditionFalse,
+		OdigosSeverity:       status.OdigosSeverityFailure,
+		ActionItems: []status.ActionItem{
+			{
+				Type:           status.ActionItemTypeRolloutWorkload,
+				UserFacingText: "trigger manual rollout now to restart pods without odigos agent",
+			},
+		},
+	}
+	PodsManifestInjectionRestartRequiredDisabledWorkloads = status.Reason{
+		Name:                 string(PodsManifestInjectionReasonRestartRequiredDisabledWorkloads),
+		Message:              "source is disabled for instrumentation, but some pods are still running with odigos agent; restart the workload manually to start fresh pods without odigos agent",
+		TechnicalDescription: "this should not happen, all cases of disabled pods should be covered by other status reasons. here just as safety net",
+		K8sConditionStatus:   metav1.ConditionFalse,
+		OdigosSeverity:       status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:           status.ActionItemTypeRolloutWorkload,
+				UserFacingText: "rollout manually to start fresh pods with odigos pod manifest injection",
+			},
+		},
+	}
 
 	PodsManifestInjectionByReason = map[string]status.Reason{
-		string(PodsManifestInjectionReasonNoRunningPods):                      PodsManifestInjectionNoRunningPods,
-		string(PodsManifestInjectionReasonPodsManifestInjectionNotRequired):   PodsManifestInjectionPodsManifestInjectionNotRequired,
-		string(PodsManifestInjectionReasonPodsInjectedSuccessfully):           PodsManifestInjectionPodsInjectedSuccessfully,
-		string(PodsManifestInjectionReasonRolloutNotSupportedForStaticPods):   PodsManifestInjectionRolloutNotSupportedForStaticPods,
-		string(PodsManifestInjectionReasonWaitingForNextJobRun):               PodsManifestInjectionWaitingForNextJobRun,
-		string(PodsManifestInjectionReasonRolloutInProgress):                  PodsManifestInjectionRolloutInProgress,
-		string(PodsManifestInjectionReasonWaitingForAutomaticRollout):         PodsManifestInjectionWaitingForAutomaticRollout,
-		string(PodsManifestInjectionReasonWaitingInRolloutQueue):              PodsManifestInjectionWaitingInRolloutQueue,
-		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled): PodsManifestInjectionRestartRequiredAutoRolloutDisabled,
-		string(PodsManifestInjectionReasonRestartRequiredWebhookMissed):       PodsManifestInjectionRestartRequiredWebhookMissed,
-		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed):   PodsManifestInjectionRestartRequiredAutoRolloutFailed,
+		string(PodsManifestInjectionReasonNoRunningPods):                                       PodsManifestInjectionNoRunningPods,
+		string(PodsManifestInjectionReasonPodsManifestInjectionNotRequired):                    PodsManifestInjectionPodsManifestInjectionNotRequired,
+		string(PodsManifestInjectionReasonPodsInjectedSuccessfully):                            PodsManifestInjectionPodsInjectedSuccessfully,
+		string(PodsManifestInjectionReasonRolloutNotSupportedForStaticPods):                    PodsManifestInjectionRolloutNotSupportedForStaticPods,
+		string(PodsManifestInjectionReasonWaitingForNextJobRun):                                PodsManifestInjectionWaitingForNextJobRun,
+		string(PodsManifestInjectionReasonRolloutInProgress):                                   PodsManifestInjectionRolloutInProgress,
+		string(PodsManifestInjectionReasonWaitingForAutomaticRollout):                          PodsManifestInjectionWaitingForAutomaticRollout,
+		string(PodsManifestInjectionReasonWaitingInRolloutQueue):                               PodsManifestInjectionWaitingInRolloutQueue,
+		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled):                  PodsManifestInjectionRestartRequiredAutoRolloutDisabled,
+		string(PodsManifestInjectionReasonRestartRequiredWebhookMissed):                        PodsManifestInjectionRestartRequiredWebhookMissed,
+		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed):                    PodsManifestInjectionRestartRequiredAutoRolloutFailed,
+		string(PodsManifestInjectionReasonAgentDisabled):                                       PodsManifestInjectionAgentDisabled,
+		string(PodsManifestInjectionReasonWaitingForNextJobRunDisabledWorkloads):               PodsManifestInjectionWaitingForNextJobRunDisabledWorkloads,
+		string(PodsManifestInjectionReasonRolloutInProgressDisabledWorkloads):                  PodsManifestInjectionRolloutInProgressDisabledWorkloads,
+		string(PodsManifestInjectionReasonWaitingForAutomaticRolloutDisabledWorkloads):         PodsManifestInjectionWaitingForAutomaticRolloutDisabledWorkloads,
+		string(PodsManifestInjectionReasonWaitingInAutoRolloutQueueDisabledWorkloads):          PodsManifestInjectionWaitingInAutoRolloutQueueDisabledWorkloads,
+		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabledDisabledWorkloads): PodsManifestInjectionRestartRequiredAutoRolloutDisabledDisabledWorkloads,
+		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailedDisabledWorkloads):   PodsManifestInjectionRestartRequiredAutoRolloutFailedDisabledWorkloads,
+		string(PodsManifestInjectionReasonRestartRequiredDisabledWorkloads):                    PodsManifestInjectionRestartRequiredDisabledWorkloads,
 	}
 )
 
