@@ -76,6 +76,12 @@ var (
 		TechnicalDescription: "waiting for automatic rollout to happen, when it ends, all the pods should have been restarted and run with odigos agent",
 		K8sConditionStatus:   metav1.ConditionUnknown,
 		OdigosSeverity:       status.OdigosSeverityWaiting,
+		ActionItems: []status.ActionItem{
+			{
+				Type:           status.ActionItemTypeRolloutWorkload,
+				UserFacingText: "if odigos auto rollout is not triggered in short while, trigger it manually",
+			},
+		},
 	}
 	PodsManifestInjectionWaitingInRolloutQueue = status.Reason{
 		Name:                 string(PodsManifestInjectionReasonWaitingInRolloutQueue),
@@ -83,6 +89,12 @@ var (
 		TechnicalDescription: "maxConcurrentRollouts limits how many workloads odigos rolls out at once. this source is queued and will be rolled out when a slot is available. trigger a manual rollout if you do not want to wait",
 		K8sConditionStatus:   metav1.ConditionUnknown,
 		OdigosSeverity:       status.OdigosSeverityPending,
+		ActionItems: []status.ActionItem{
+			{
+				Type:           status.ActionItemTypeRolloutWorkload,
+				UserFacingText: "rollout manually without waiting in automatic rollout queue",
+			},
+		},
 	}
 	PodsManifestInjectionRestartRequiredAutoRolloutDisabled = status.Reason{
 		Name:                 string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled),
@@ -90,6 +102,12 @@ var (
 		TechnicalDescription: "not all pods of this source are injected with odigos agent, but automatic rollout is disabled. so user need to intiate rollout manually or wait for next rollout to happen",
 		K8sConditionStatus:   metav1.ConditionFalse,
 		OdigosSeverity:       status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:           status.ActionItemTypeRolloutWorkload,
+				UserFacingText: "trigger manual rollout now to inject odigos agent to all pods",
+			},
+		},
 	}
 	PodsManifestInjectionRestartRequiredWebhookMissed = status.Reason{
 		Name:                 string(PodsManifestInjectionReasonRestartRequiredWebhookMissed),
@@ -97,6 +115,12 @@ var (
 		TechnicalDescription: "automatic rollout already completed, but some pods still lack odigos pod manifest injection. this can happen if a pod was created without going through the odigos pods webhook. manually restart the workload so new pods are created and injected via the webhook",
 		K8sConditionStatus:   metav1.ConditionFalse,
 		OdigosSeverity:       status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:           status.ActionItemTypeRolloutWorkload,
+				UserFacingText: "rollout manually to start fresh pods with odigos pod manifest injection",
+			},
+		},
 	}
 	PodsManifestInjectionRestartRequiredAutoRolloutFailed = status.Reason{
 		Name:                 string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed),
@@ -104,6 +128,12 @@ var (
 		TechnicalDescription: "odigos attempted automatic rollout but failed to patch/restart the workload. pods remain without up-to-date odigos agent injection until the user restarts the workload manually",
 		K8sConditionStatus:   metav1.ConditionFalse,
 		OdigosSeverity:       status.OdigosSeverityFailure,
+		ActionItems: []status.ActionItem{
+			{
+				Type:           status.ActionItemTypeRolloutWorkload,
+				UserFacingText: "rollout manually to start new pods with odigos pod manifest injection",
+			},
+		},
 	}
 
 	PodsManifestInjectionByReason = map[string]status.Reason{

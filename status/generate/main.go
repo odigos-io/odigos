@@ -24,6 +24,12 @@ type reasonData struct {
 	TechnicalDescription string
 	K8sConditionStatus   metav1.ConditionStatus
 	OdigosSeverity       status.OdigosSeverity
+	ActionItems          []actionItemData
+}
+
+type actionItemData struct {
+	Type           status.ActionItemType
+	UserFacingText string
 }
 
 type fileData struct {
@@ -82,6 +88,12 @@ func generateFile(yamlPath string) error {
 			TechnicalDescription: escapeString(reason.TechnicalDescription),
 			OdigosSeverity:       reason.OdigosSeverity,
 		}
+		for _, actionItem := range reason.ActionItems {
+			rd.ActionItems = append(rd.ActionItems, actionItemData{
+				Type:           actionItem.Type,
+				UserFacingText: escapeString(actionItem.UserFacingText),
+			})
+		}
 		if reason.K8sConditionStatus != "" {
 			rd.K8sConditionStatus = reason.K8sConditionStatus
 			data.HasK8sConditionStatus = true
@@ -92,6 +104,7 @@ func generateFile(yamlPath string) error {
 	tmpl, err := template.New("status").Funcs(template.FuncMap{
 		"k8sConditionStatusConst": k8sConditionStatusConst,
 		"odigosSeverityConst":     odigosSeverityConst,
+		"actionItemTypeConst":     actionItemTypeConst,
 	}).Parse(fileTemplate)
 	if err != nil {
 		return err
@@ -159,6 +172,16 @@ func k8sConditionStatusConst(condStatus metav1.ConditionStatus) string {
 		return "metav1.ConditionUnknown"
 	default:
 		fatal(fmt.Errorf("unknown k8sConditionStatus %q", condStatus))
+		return ""
+	}
+}
+
+func actionItemTypeConst(actionType status.ActionItemType) string {
+	switch actionType {
+	case status.ActionItemTypeRolloutWorkload:
+		return "status.ActionItemTypeRolloutWorkload"
+	default:
+		fatal(fmt.Errorf("unknown action item type %q", actionType))
 		return ""
 	}
 }

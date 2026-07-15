@@ -341,11 +341,17 @@ type DbQueryPayloadCollectionInput struct {
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
 
+type DesiredConditionActionItem struct {
+	Type           DesiredConditionActionItemType `json:"type"`
+	UserFacingText string                         `json:"userFacingText"`
+}
+
 type DesiredConditionStatus struct {
-	Name       string               `json:"name"`
-	Status     DesiredStateProgress `json:"status"`
-	ReasonEnum *string              `json:"reasonEnum,omitempty"`
-	Message    string               `json:"message"`
+	Name        string                        `json:"name"`
+	Status      DesiredStateProgress          `json:"status"`
+	ReasonEnum  *string                       `json:"reasonEnum,omitempty"`
+	Message     string                        `json:"message"`
+	ActionItems []*DesiredConditionActionItem `json:"actionItems,omitempty"`
 }
 
 type Destination struct {
@@ -1975,6 +1981,45 @@ func (e *ContainerLifecycleStatus) UnmarshalGQL(v any) error {
 }
 
 func (e ContainerLifecycleStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type DesiredConditionActionItemType string
+
+const (
+	DesiredConditionActionItemTypeRolloutWorkload DesiredConditionActionItemType = "RolloutWorkload"
+)
+
+var AllDesiredConditionActionItemType = []DesiredConditionActionItemType{
+	DesiredConditionActionItemTypeRolloutWorkload,
+}
+
+func (e DesiredConditionActionItemType) IsValid() bool {
+	switch e {
+	case DesiredConditionActionItemTypeRolloutWorkload:
+		return true
+	}
+	return false
+}
+
+func (e DesiredConditionActionItemType) String() string {
+	return string(e)
+}
+
+func (e *DesiredConditionActionItemType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DesiredConditionActionItemType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DesiredConditionActionItemType", str)
+	}
+	return nil
+}
+
+func (e DesiredConditionActionItemType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
