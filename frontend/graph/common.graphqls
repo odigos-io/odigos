@@ -6,8 +6,9 @@
 # =====================
 
 enum ComputePlatformType {
-  K8S
-  VM
+  k8s
+  vm
+  connector
 }
 
 enum K8sResourceKind {
