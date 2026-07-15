@@ -69,7 +69,13 @@ docgen: genref
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	# remove the existing CRD files directory before recreating, so removed files will not be left over
 	@rm -rf config/crd/bases
-	$(CONTROLLER_GEN) crd:allowDangerousTypes=true webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	# Regular Odigos CRDs (odigos.io + actions.odigos.io). The cloud connector CRD is intentionally
+	# excluded here and generated separately below, so it is not bundled with the rest of the CRDs and
+	# can be shipped only by the odigos-central Helm chart.
+	$(CONTROLLER_GEN) crd:allowDangerousTypes=true webhook paths="./odigos/..." paths="./actions/..." output:crd:artifacts:config=config/crd/bases
+	# Cloud connector CRD, kept out of config/crd/bases so sync-helm-crd only ships it to odigos-central.
+	@rm -rf cloud-connectors/config/crd/bases
+	$(CONTROLLER_GEN) crd:allowDangerousTypes=true paths="./cloud-connectors/..." output:crd:artifacts:config=cloud-connectors/config/crd/bases
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -122,8 +128,8 @@ generate-client:
 
 .PHONY: sync-helm
 sync-helm-crd:
-	@echo "Syncing CRD yamls to Helm repo"
+	@echo "Syncing regular CRD yamls to the odigos Helm chart"
 	@rm ../helm/odigos/templates/crds/* # remove existing files so we don't get leftovers
 	@cp -r config/crd/bases/* ../helm/odigos/templates/crds/
-	@echo "Syncing cloud connector CRD to the odigos-central chart (guarded by connectors.enabled)"
-	@{ echo '{{- if (include "connectors.enabled" .) }}'; cat config/crd/bases/odigos.io_odigoscloudconnectors.yaml; echo '{{- end }}'; } > ../helm/odigos-central/templates/crds/odigoscloudconnectors.yaml
+	@echo "Syncing cloud connector CRD only to the odigos-central chart (guarded by connectors.enabled)"
+	@{ echo '{{- if (include "connectors.enabled" .) }}'; cat cloud-connectors/config/crd/bases/odigos.io_odigoscloudconnectors.yaml; echo '{{- end }}'; } > ../helm/odigos-central/templates/crds/odigoscloudconnectors.yaml
