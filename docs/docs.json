@@ -731,6 +731,7 @@
                   "vmagent/setup/configuration/odictl",
                   "vmagent/setup/configuration/add-destinations",
                   "vmagent/setup/configuration/add-sources",
+                  "vmagent/setup/configuration/services-mem-limits-configuration",
                   {
                     "group": "Actions",
                     "pages": [
