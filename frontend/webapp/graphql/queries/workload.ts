@@ -279,6 +279,12 @@ export const GET_WORKLOADS_BY_IDS = gql`
             }
           }
         }
+        instrumentations {
+          name
+          healthy
+          message
+          isStandardLibrary
+        }
       }
       pods {
         podName
