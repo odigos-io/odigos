@@ -1,0 +1,40 @@
+name: Update Rust Versions Mapping
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  update_rust_versions:
+    permissions:
+      contents: write # required for pushing changes
+      pull-requests: write # required for creating PRs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          check-latest: true
+
+      - name: Run generation script
+        run: |
+          cd procdiscovery/pkg/inspectors/rust
+          go generate ./...
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'Update Rust versions mapping'
+          branch: automated/update-rust-versions
+          delete-branch: true
+          title: '[auto] Update Rust versions mapping'
+          body: "This pull request updates the Rust compiler hashes to version mapping. It was created automatically by a GitHub Action."
