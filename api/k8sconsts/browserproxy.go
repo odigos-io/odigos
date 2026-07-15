@@ -30,6 +30,8 @@ const (
 	BrowserProxyPathPrefix = "/__odigos/"
 	// Path (under the prefix) where the sidecar serves the browser SDK bundle.
 	BrowserProxyAgentJsPath = "/__odigos/agent.js"
+	// Path used by Kubernetes liveness/readiness probes on the sidecar.
+	BrowserProxyHealthPath = "/__odigos/healthz"
 	// Path (under the prefix) where the sidecar receives OTLP/HTTP traces from the browser and
 	// forwards them to the node-local collector.
 	BrowserProxyTracesPath = "/__odigos/v1/traces"

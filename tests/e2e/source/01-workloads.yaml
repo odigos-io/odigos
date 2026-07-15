@@ -55,3 +55,10 @@ metadata:
   generation: 1
   name: shipping
   namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  generation: 2
+  name: browser-frontend
+  namespace: default

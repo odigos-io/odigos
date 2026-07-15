@@ -47,7 +47,7 @@ func TestProxyInjectsHTML(t *testing.T) {
 		t.Fatalf("expected injected agent script, got: %s", body)
 	}
 	if rec.Header().Get("Content-Encoding") != "" {
-		t.Fatalf("expected content-encoding to be stripped after injection")
+		t.Fatalf("expected content-encoding to be stripped after injection of identity response")
 	}
 }
 
@@ -67,12 +67,36 @@ func TestProxyInjectsGzippedHTML(t *testing.T) {
 	rec := httptest.NewRecorder()
 	s.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
 
-	body := rec.Body.String()
+	if rec.Header().Get("Content-Encoding") != "gzip" {
+		t.Fatalf("expected gzip content-encoding after recompression, got %q", rec.Header().Get("Content-Encoding"))
+	}
+	gr, err := gzip.NewReader(rec.Body)
+	if err != nil {
+		t.Fatalf("response is not valid gzip: %v", err)
+	}
+	defer gr.Close()
+	decoded, err := io.ReadAll(gr)
+	if err != nil {
+		t.Fatalf("failed to read gzipped body: %v", err)
+	}
+	body := string(decoded)
 	if !strings.Contains(body, "window.__ODIGOS__=") {
 		t.Fatalf("expected injected config in gzipped html, got: %s", body)
 	}
 	if !strings.Contains(body, "app") {
 		t.Fatalf("expected original content preserved, got: %s", body)
+	}
+}
+
+func TestHealthz(t *testing.T) {
+	s := newTestServer(t, "http://unused.local")
+	rec := httptest.NewRecorder()
+	s.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, config.HealthPath, nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	if rec.Body.String() != "ok" {
+		t.Fatalf("expected ok body, got %q", rec.Body.String())
 	}
 }
 

@@ -62,7 +62,7 @@ COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations
 # browser-community
 # The browser SDK bundle (agent.js) is served to end-user browsers by the odigos-browser-proxy
 # sidecar, which reads it from /var/odigos/browser on the node.
-COPY --from=public.ecr.aws/odigos/agents/browser-community:v0.1.0 /instrumentations/browser /instrumentations/browser
+COPY --from=public.ecr.aws/odigos/agents/browser-community:v0.2.0 /instrumentations/browser /instrumentations/browser
 
 # loader
 ARG TARGETARCH

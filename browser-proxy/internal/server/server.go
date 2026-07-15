@@ -78,11 +78,17 @@ func New(cfg *config.Config) (*Server, error) {
 // reverse proxy fallthrough.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc(config.HealthPath, s.handleHealth)
 	mux.HandleFunc(config.AgentJsPath, s.handleAgentJS)
 	// All OTLP signals (traces/metrics/logs) under the reserved prefix.
 	mux.HandleFunc(config.OtlpPathPrefix, s.handleOTLP)
 	mux.HandleFunc("/", s.handleProxy)
 	return mux
+}
+
+func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("ok"))
 }
 
 // Run starts the HTTP server and blocks.
@@ -166,12 +172,34 @@ func (s *Server) injectResponse(resp *http.Response) error {
 
 	injected := injectIntoHTML(decoded, s.snippet)
 
-	// Re-emit as identity to keep things simple; we drop the gzip encoding and let the response be
-	// served uncompressed. This is correct and avoids a recompression dependency.
-	resp.Header.Del("Content-Encoding")
-	resp.Body = io.NopCloser(bytes.NewReader(injected))
-	resp.ContentLength = int64(len(injected))
-	resp.Header.Set("Content-Length", strconv.Itoa(len(injected)))
+	out := injected
+	if encoding == "gzip" {
+		var buf bytes.Buffer
+		gw := gzip.NewWriter(&buf)
+		if _, err := gw.Write(injected); err != nil {
+			_ = gw.Close()
+			resp.Header.Del("Content-Encoding")
+			resp.Body = io.NopCloser(bytes.NewReader(injected))
+			resp.ContentLength = int64(len(injected))
+			resp.Header.Set("Content-Length", strconv.Itoa(len(injected)))
+			return nil
+		}
+		if err := gw.Close(); err != nil {
+			resp.Header.Del("Content-Encoding")
+			resp.Body = io.NopCloser(bytes.NewReader(injected))
+			resp.ContentLength = int64(len(injected))
+			resp.Header.Set("Content-Length", strconv.Itoa(len(injected)))
+			return nil
+		}
+		out = buf.Bytes()
+		resp.Header.Set("Content-Encoding", "gzip")
+	} else {
+		resp.Header.Del("Content-Encoding")
+	}
+
+	resp.Body = io.NopCloser(bytes.NewReader(out))
+	resp.ContentLength = int64(len(out))
+	resp.Header.Set("Content-Length", strconv.Itoa(len(out)))
 	return nil
 }
 

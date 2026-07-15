@@ -1,13 +1,10 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: browser-demo
----
+# Minimal nginx front-end used to exercise browser-community sidecar injection
+# alongside the existing simple-demo workloads in this e2e scenario.
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: frontend-html
-  namespace: browser-demo
+  name: browser-frontend-html
+  namespace: default
 data:
   index.html: |
     <!doctype html>
@@ -24,20 +21,20 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
-  namespace: browser-demo
+  name: browser-frontend
+  namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: frontend
+      app: browser-frontend
   template:
     metadata:
       labels:
-        app: frontend
+        app: browser-frontend
     spec:
       containers:
-        - name: frontend
+        - name: browser-frontend
           image: nginx:1.27-alpine
           ports:
             - containerPort: 80
@@ -47,16 +44,16 @@ spec:
       volumes:
         - name: html
           configMap:
-            name: frontend-html
+            name: browser-frontend-html
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend
-  namespace: browser-demo
+  name: browser-frontend
+  namespace: default
 spec:
   selector:
-    app: frontend
+    app: browser-frontend
   ports:
     - port: 80
       targetPort: 80

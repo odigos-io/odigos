@@ -80,3 +80,9 @@ arrive at your configured destination.
 - The redirect init container requires the `NET_ADMIN` capability. Namespaces enforcing a restrictive
   Pod Security Standard may need an exception for the instrumented workload.
 - Only `text/html` responses are rewritten; all other responses (assets, APIs) pass through unchanged.
+- **One distro per container:** selecting `browser-community` replaces any server-side language
+  agent on that container. To instrument both a Node.js API and browser HTML, split them into
+  separate containers (or workloads) and override only the HTML-serving one.
+- **Service meshes:** browser instrumentation is **not supported** alongside sidecar meshes such as
+  Istio or Linkerd. Both use iptables redirects; co-injecting them would collide. Odigos skips
+  browser-proxy injection when an `istio-proxy` / `linkerd-proxy` container is already present.

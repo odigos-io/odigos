@@ -50,6 +50,11 @@ spec:
             timeout: 1m10s
             file: ../../common/assert/simple-demo-installed.yaml
 
+    - name: '[1 - Setup] Install browser front-end workload'
+      try:
+        - apply:
+            file: 01-browser-frontend.yaml
+
     - name: '[1 - Setup] Add Destination'
       try:
         - apply:
@@ -94,6 +99,16 @@ spec:
       catch:
         - podLogs:
             name: odiglet
+            namespace: odigos-test
+
+    - name: '[2 - Workload Instrumentation] Browser front-end injects browser-proxy sidecar'
+      try:
+        - assert:
+            timeout: 1m30s
+            file: 01-browser-sidecar-injected.yaml
+      catch:
+        - podLogs:
+            name: instrumentor
             namespace: odigos-test
 
     - name: '[2 - Workload Instrumentation] Generate Traffic'

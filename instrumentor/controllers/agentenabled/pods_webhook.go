@@ -207,7 +207,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		// container is not modified (no env vars, no agent mount).
 		if distroMetadata.BrowserSidecar != nil {
 			sidecar, initContainer, browserDirsToCopy, browserVolumeMounted, berr := p.injectBrowserProxy(
-				logger.Logr(), podContainerSpec, pw.Namespace, serviceName, odigosConfiguration, distroMetadata)
+				logger.Logr(), pod, podContainerSpec, pw.Namespace, serviceName, odigosConfiguration, distroMetadata)
 			if berr != nil {
 				return berr
 			}

@@ -82,7 +82,7 @@ COPY --from=public.ecr.aws/odigos/agents/php-community:v0.3.3 /instrumentations/
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations/ruby /instrumentations/ruby
 
 # browser-community
-COPY --from=public.ecr.aws/odigos/agents/browser-community:v0.1.0 /instrumentations/browser /instrumentations/browser
+COPY --from=public.ecr.aws/odigos/agents/browser-community:v0.2.0 /instrumentations/browser /instrumentations/browser
 
 # loader
 ARG ODIGOS_LOADER_VERSION=v0.0.8

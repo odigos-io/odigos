@@ -34,6 +34,7 @@ const (
 	// Same-origin paths the sidecar reserves for itself.
 	PathPrefix     = "/__odigos/"
 	AgentJsPath    = "/__odigos/agent.js"
+	HealthPath     = "/__odigos/healthz"
 	TracesPath     = "/__odigos/v1/traces"
 	OtlpPathPrefix = "/__odigos/v1/"
 )

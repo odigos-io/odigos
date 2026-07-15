@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
@@ -16,6 +17,13 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 )
+
+// Mesh sidecar container names that install their own iptables redirect. Co-injecting
+// odigos-browser-proxy would race on the same NAT rules and break traffic.
+var meshSidecarContainerNames = map[string]struct{}{
+	"istio-proxy":   {},
+	"linkerd-proxy": {},
+}
 
 // injectBrowserProxy builds the odigos-browser-proxy sidecar and the iptables init container for a
 // browser-instrumented web server container. Browser instrumentation does not run inside the pod,
@@ -30,12 +38,19 @@ import (
 // nothing to redirect.
 func (p *PodsWebhook) injectBrowserProxy(
 	logger logr.Logger,
+	pod *corev1.Pod,
 	appContainer *corev1.Container,
 	namespace string,
 	serviceName string,
 	config common.OdigosConfiguration,
 	distroMetadata *distro.OtelDistro,
 ) (*corev1.Container, *corev1.Container, map[string]struct{}, bool, error) {
+	if mesh := meshSidecarInPod(pod); mesh != "" {
+		logger.Info("browser instrumentation: skipping browser-proxy injection because a service-mesh sidecar is present (iptables redirect would collide)",
+			"container", appContainer.Name, "meshSidecar", mesh)
+		return nil, nil, nil, false, nil
+	}
+
 	appPort := firstTCPContainerPort(appContainer)
 	if appPort == 0 {
 		logger.Info("browser instrumentation: container has no TCP containerPort, skipping browser-proxy injection",
@@ -56,9 +71,24 @@ func (p *PodsWebhook) injectBrowserProxy(
 	runAsProxy := k8sconsts.BrowserProxyRunAsUser
 	runAsRoot := int64(0)
 
-	// The browser SDK exports to the sidecar over the application's own origin; the sidecar then
-	// forwards to the node-local collector reachable at $(NODE_IP):4318.
+	// Same helper used by in-pod agents: on k8s >= 1.26 this resolves to the
+	// odigos-data-collection-local-traffic ClusterIP service (InternalTrafficPolicy=Local).
+	// On older clusters it falls back to http://$(NODE_IP):4318 — NODE_IP is injected below
+	// only so that fallback can expand. User pods do not need hostNetwork.
 	otlpEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)")
+
+	probe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: k8sconsts.BrowserProxyHealthPath,
+				Port: intstr.FromInt32(int32(k8sconsts.BrowserProxyListenPort)),
+			},
+		},
+		InitialDelaySeconds: 1,
+		PeriodSeconds:       10,
+		TimeoutSeconds:      2,
+		FailureThreshold:    3,
+	}
 
 	sidecar := corev1.Container{
 		Name:            k8sconsts.BrowserProxyContainerName,
@@ -68,7 +98,8 @@ func (p *PodsWebhook) injectBrowserProxy(
 			{ContainerPort: int32(k8sconsts.BrowserProxyListenPort)},
 		},
 		Env: []corev1.EnvVar{
-			// NODE_IP must come first so the OTLP endpoint env var can reference $(NODE_IP).
+			// NODE_IP must come first so the OTLP endpoint env var can reference $(NODE_IP)
+			// when the LocalTraffic helper falls back to the node-IP form (k8s < 1.26).
 			{
 				Name:      "NODE_IP",
 				ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.hostIP"}},
@@ -81,6 +112,8 @@ func (p *PodsWebhook) injectBrowserProxy(
 			{Name: k8sconsts.BrowserProxyServiceNameEnvVar, Value: serviceName},
 			{Name: k8sconsts.BrowserProxyResourceAttributesEnvVar, Value: fmt.Sprintf("k8s.namespace.name=%s", namespace)},
 		},
+		LivenessProbe:  probe,
+		ReadinessProbe: probe.DeepCopy(),
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser:                &runAsProxy,
 			AllowPrivilegeEscalation: &falsePtr,
@@ -132,6 +165,20 @@ func firstTCPContainerPort(container *corev1.Container) int32 {
 		}
 	}
 	return 0
+}
+
+func meshSidecarInPod(pod *corev1.Pod) string {
+	for _, c := range pod.Spec.Containers {
+		if _, ok := meshSidecarContainerNames[c.Name]; ok {
+			return c.Name
+		}
+	}
+	for _, c := range pod.Spec.InitContainers {
+		if _, ok := meshSidecarContainerNames[c.Name]; ok {
+			return c.Name
+		}
+	}
+	return ""
 }
 
 func getBrowserProxyImage(config common.OdigosConfiguration) string {

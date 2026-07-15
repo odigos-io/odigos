@@ -16,7 +16,7 @@ jobs:
     name: build-all-services
     strategy:
       matrix:
-        service: [autoscaler, scheduler, instrumentor, odigos-collector, odiglet, agents, frontend, operator]
+        service: [autoscaler, scheduler, instrumentor, odigos-collector, odiglet, agents, frontend, operator, browser-proxy]
         include:
           - service: autoscaler
             dockerfile_path: .
@@ -34,6 +34,8 @@ jobs:
             dockerfile_path: frontend
           - service: operator
             dockerfile_path: operator
+          - service: browser-proxy
+            dockerfile_path: browser-proxy
     runs-on: depot-ubuntu-24.04-8
     steps:
       - uses: actions/checkout@v5
