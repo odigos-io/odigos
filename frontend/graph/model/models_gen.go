@@ -1852,18 +1852,20 @@ func (e ActionType) MarshalGQL(w io.Writer) {
 type ComputePlatformType string
 
 const (
-	ComputePlatformTypeK8s ComputePlatformType = "K8S"
-	ComputePlatformTypeVM  ComputePlatformType = "VM"
+	ComputePlatformTypeK8s       ComputePlatformType = "k8s"
+	ComputePlatformTypeVM        ComputePlatformType = "vm"
+	ComputePlatformTypeConnector ComputePlatformType = "connector"
 )
 
 var AllComputePlatformType = []ComputePlatformType{
 	ComputePlatformTypeK8s,
 	ComputePlatformTypeVM,
+	ComputePlatformTypeConnector,
 }
 
 func (e ComputePlatformType) IsValid() bool {
 	switch e {
-	case ComputePlatformTypeK8s, ComputePlatformTypeVM:
+	case ComputePlatformTypeK8s, ComputePlatformTypeVM, ComputePlatformTypeConnector:
 		return true
 	}
 	return false
