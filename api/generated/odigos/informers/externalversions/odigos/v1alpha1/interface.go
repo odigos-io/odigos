@@ -35,8 +35,6 @@ type Interface interface {
 	InstrumentationInstances() InstrumentationInstanceInformer
 	// InstrumentationRules returns a InstrumentationRuleInformer.
 	InstrumentationRules() InstrumentationRuleInformer
-	// OdigosCloudConnectors returns a OdigosCloudConnectorInformer.
-	OdigosCloudConnectors() OdigosCloudConnectorInformer
 	// Processors returns a ProcessorInformer.
 	Processors() ProcessorInformer
 	// Samplings returns a SamplingInformer.
@@ -84,11 +82,6 @@ func (v *version) InstrumentationInstances() InstrumentationInstanceInformer {
 // InstrumentationRules returns a InstrumentationRuleInformer.
 func (v *version) InstrumentationRules() InstrumentationRuleInformer {
 	return &instrumentationRuleInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// OdigosCloudConnectors returns a OdigosCloudConnectorInformer.
-func (v *version) OdigosCloudConnectors() OdigosCloudConnectorInformer {
-	return &odigosCloudConnectorInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Processors returns a ProcessorInformer.

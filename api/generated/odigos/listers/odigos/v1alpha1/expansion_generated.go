@@ -65,14 +65,6 @@ type InstrumentationRuleListerExpansion interface{}
 // InstrumentationRuleNamespaceLister.
 type InstrumentationRuleNamespaceListerExpansion interface{}
 
-// OdigosCloudConnectorListerExpansion allows custom methods to be added to
-// OdigosCloudConnectorLister.
-type OdigosCloudConnectorListerExpansion interface{}
-
-// OdigosCloudConnectorNamespaceListerExpansion allows custom methods to be added to
-// OdigosCloudConnectorNamespaceLister.
-type OdigosCloudConnectorNamespaceListerExpansion interface{}
-
 // ProcessorListerExpansion allows custom methods to be added to
 // ProcessorLister.
 type ProcessorListerExpansion interface{}
