@@ -93,6 +93,16 @@ export const GET_WORKLOADS_BY_IDS = gql`
           reasonEnum
           message
         }
+        podsManifestInjection {
+          name
+          status
+          reasonEnum
+          message
+          actionItems {
+            type
+            userFacingText
+          }
+        }
         autoRollback {
           name
           status
@@ -116,6 +126,24 @@ export const GET_WORKLOADS_BY_IDS = gql`
           status
           reasonEnum
           message
+        }
+      }
+      rollout {
+        rolloutStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        podsManifestInjectionStatus {
+          name
+          status
+          reasonEnum
+          message
+          actionItems {
+            type
+            userFacingText
+          }
         }
       }
       autoRollback {

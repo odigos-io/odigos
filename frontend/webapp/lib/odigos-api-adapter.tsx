@@ -19,7 +19,7 @@
 import React, { type FC, type PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
 import { normalizeActionForWire, parseRenamesString } from './action-form-normalization';
 import { useConfig, useCSRF } from '@/hooks';
-import { API, INITIAL_CONTEXT, IS_LOCAL } from '@/utils';
+import { API, INITIAL_CONTEXT, IS_LOCAL, toPlatformType } from '@/utils';
 import { CenterThis, Loader } from '@odigos/ui-kit/components';
 import {
   OdigosApiProvider,
@@ -419,7 +419,7 @@ const ConfigSync: FC<{ onChange: (ctx: OperationContext) => void }> = ({ onChang
 
   useEffect(() => {
     onChange({
-      platformType: config?.platformType ?? INITIAL_CONTEXT.platformType,
+      platformType: toPlatformType(config?.platformType),
       tier: config?.tier ?? INITIAL_CONTEXT.tier,
       version: config?.odigosVersion || INITIAL_CONTEXT.version,
       isReadonly,
