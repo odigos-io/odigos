@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { GET_EFFECTIVE_CONFIG } from '@/graphql';
 import { useNotificationStore } from '@odigos/ui-kit/store';
 import { Crud, type EffectiveConfig, StatusType } from '@odigos/ui-kit/types';
@@ -19,7 +19,7 @@ export const useEffectiveConfig = () => {
       addNotification({
         type: StatusType.Error,
         title: error.name || Crud.Read,
-        message: error.cause?.message || error.message,
+        message: error.message,
       });
     }
   }, [error]);

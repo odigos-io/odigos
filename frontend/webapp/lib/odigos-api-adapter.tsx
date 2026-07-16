@@ -5,7 +5,7 @@
  * webapp's GraphQL backend.
  *
  * Owns:
- *   1. CSRF token bootstrap (renders a `<FadeLoader />` until ready, then
+ *   1. CSRF token bootstrap (renders a `<Loader />` until ready, then
  *      injects the token via `apolloConfig.csrfHeader`).
  *   2. GraphQL operation map — every kit operation maps to a `gql` document
  *      from `@/graphql`. No `transformVariables` / `transformResult` needed
@@ -17,23 +17,25 @@
  */
 
 import React, { type FC, type PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
+import { normalizeActionForWire, parseRenamesString } from './action-form-normalization';
 import { useConfig, useCSRF } from '@/hooks';
 import { API, INITIAL_CONTEXT, IS_LOCAL } from '@/utils';
-import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
+import { CenterThis, Loader } from '@odigos/ui-kit/components';
 import {
   OdigosApiProvider,
-  type CreateActionVars,
+  type CreateDestinationResult,
   type DiagnoseResult,
   type GetActionsData,
+  type GetDestinationsData,
   type GetNamespacesWithWorkloadsData,
   type GetSamplingRulesData,
   type GetServiceMapData,
   type OdigosApiOperations,
   type OperationContext,
-  type UpdateActionVars,
-} from '@odigos/ui-kit/contexts/odigos-api';
+} from '@odigos/ui-kit/contexts';
 import type {
   Action,
+  Destination,
   EffectiveConfig,
   EnableProfilingResult,
   ExtendedPodInfo,
@@ -124,44 +126,33 @@ import {
 // doesn't expose a dedicated mutation; the kit's `dataStreams.create` falls
 // back to local-store-only behavior when the operation slot is undefined.
 
-// The backend's `ActionFieldsInput.renames` is a JSON-stringified `String`
-// (it `json.Unmarshal`s the value server-side), while the kit models
-// `renames` as an object map. Serialize on the way out (create/update) and
-// parse on the way back (list) so the kit's RenameAttribute form always sees
-// the object shape. This (de)serialization previously lived in the webapp's
-// `useActionCRUD` hook, retired in favor of the kit's `useActionsApi`; without
-// it the raw object is sent to a `String` scalar and the mutation is rejected
-// (no CRD is created).
-const parseRenamesString = (value: string): Record<string, string> => {
-  try {
-    const parsed = JSON.parse(value);
-    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {};
-  } catch {
-    return {};
-  }
-};
-
-const serializeActionRenames = (vars: CreateActionVars | UpdateActionVars): Record<string, unknown> => {
-  const { action } = vars;
-  const renames = action?.fields?.renames;
-  return {
-    ...vars,
-    action: {
-      ...action,
-      fields: {
-        ...action?.fields,
-        // Mirror the legacy hook: an empty/missing map is sent as null so the
-        // controller skips the RenameAttribute config entirely.
-        renames: renames && Object.keys(renames).length ? JSON.stringify(renames) : null,
-      },
-    },
-  };
-};
-
 const parseActionRenames = (action: Action): Action => {
   const renames = action?.fields?.renames as unknown;
   if (typeof renames !== 'string') return action;
   return { ...action, fields: { ...action.fields, renames: parseRenamesString(renames) } };
+};
+
+// Apollo Client injects `__typename` on every selection-set object. The kit's
+// `mapExportedSignals` does `Object.keys(exportedSignals).filter(truthy)`, so
+// a truthy `__typename` string survives and maps to `undefined`, which then
+// crashes `signal.toLowerCase()` when the edit-destination drawer opens
+// (error boundary → Cypress can't find `[data-id=drawer]`). Rebuild the
+// known keys only — same shape Central's VM mapper produces.
+const sanitizeExportedSignals = (signals: Destination['exportedSignals'] | null | undefined): Destination['exportedSignals'] => ({
+  logs: !!signals?.logs,
+  metrics: !!signals?.metrics,
+  traces: !!signals?.traces,
+  profiles: !!signals?.profiles,
+});
+
+const sanitizeDestination = (destination: Destination): Destination => ({
+  ...destination,
+  exportedSignals: sanitizeExportedSignals(destination.exportedSignals),
+});
+
+const sanitizeDestinationsResult = (raw: GetDestinationsData | null | undefined): GetDestinationsData => {
+  const destinations = (raw?.computePlatform?.destinations ?? raw?.destinations ?? []).map(sanitizeDestination);
+  return { computePlatform: { destinations } };
 };
 
 // Stable operations map — referentially constant so the kit's runner doesn't
@@ -181,10 +172,22 @@ const operations: OdigosApiOperations = {
   RECOVER_FROM_ROLLBACK: { document: RECOVER_FROM_ROLLBACK },
 
   // destinations
-  GET_DESTINATIONS: { document: GET_DESTINATIONS },
+  GET_DESTINATIONS: {
+    document: GET_DESTINATIONS,
+    transformResult: (raw) => sanitizeDestinationsResult(raw as GetDestinationsData | null | undefined),
+  },
   GET_DESTINATION_CATEGORIES: { document: GET_DESTINATION_CATEGORIES },
   GET_POTENTIAL_DESTINATIONS: { document: GET_POTENTIAL_DESTINATIONS },
-  CREATE_DESTINATION: { document: CREATE_DESTINATION },
+  CREATE_DESTINATION: {
+    document: CREATE_DESTINATION,
+    transformResult: (raw): CreateDestinationResult => {
+      const env = raw as CreateDestinationResult | null | undefined;
+      if (!env?.createNewDestination) {
+        return env as CreateDestinationResult;
+      }
+      return { createNewDestination: sanitizeDestination(env.createNewDestination) };
+    },
+  },
   UPDATE_DESTINATION: { document: UPDATE_DESTINATION },
   DELETE_DESTINATION: { document: DELETE_DESTINATION },
   TEST_DESTINATION_CONNECTION: {
@@ -205,8 +208,8 @@ const operations: OdigosApiOperations = {
       return { computePlatform: { actions: actions.map(parseActionRenames) } };
     },
   },
-  CREATE_ACTION: { document: CREATE_ACTION, transformVariables: (vars) => serializeActionRenames(vars) },
-  UPDATE_ACTION: { document: UPDATE_ACTION, transformVariables: (vars) => serializeActionRenames(vars) },
+  CREATE_ACTION: { document: CREATE_ACTION, transformVariables: (vars) => normalizeActionForWire(vars) },
+  UPDATE_ACTION: { document: UPDATE_ACTION, transformVariables: (vars) => normalizeActionForWire(vars) },
   DELETE_ACTION: { document: DELETE_ACTION },
 
   // instrumentation rules
@@ -460,7 +463,7 @@ const OdigosApiAdapter: FC<AdapterProps> = ({ children }) => {
   if (!ready) {
     return (
       <CenterThis style={{ height: '100%' }}>
-        <FadeLoader scale={2} />
+        <Loader withSpinnerOld scaleSpinnerOld={2} />
       </CenterThis>
     );
   }

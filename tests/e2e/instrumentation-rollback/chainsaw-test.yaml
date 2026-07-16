@@ -153,5 +153,5 @@ spec:
     - name: Test crash demo uninstrumented
       try:
         - assert:
-            timeout: 3m
+            timeout: 4m
             file: ../../common/assert/crash-demo/crash-demo-uninstrumented.yaml

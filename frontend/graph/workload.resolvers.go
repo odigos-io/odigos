@@ -123,6 +123,7 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 		conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
 		conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
 		conditions = append(conditions, status.CalculateRolloutStatus(ic))
+		conditions = append(conditions, status.CalculatePodsManifestInjectionStatus(ic))
 		conditions = append(conditions, status.CalculateAutoRollbackStatus(ic, autoRollbackConfig))
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
@@ -203,6 +204,7 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 	runtimeDetection := status.CalculateRuntimeInspectionStatus(ic)
 	agentInjectionEnabled := status.CalculateAgentInjectionEnabledStatus(ic)
 	rollout := status.CalculateRolloutStatus(ic)
+	podsManifestInjection := status.CalculatePodsManifestInjectionStatus(ic)
 	autoRollback := status.CalculateAutoRollbackStatus(ic, autoRollbackConfig)
 	agentInjected := status.CalculateAgentInjectedStatus(ic, pods)
 	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
@@ -226,6 +228,7 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 		RuntimeDetection:      runtimeDetection,
 		AgentInjectionEnabled: agentInjectionEnabled,
 		Rollout:               rollout,
+		PodsManifestInjection: podsManifestInjection,
 		AutoRollback:          autoRollback,
 		AgentInjected:         agentInjected,
 		ProcessesAgentHealth:  processesAgentHealth,
@@ -340,12 +343,14 @@ func (r *k8sWorkloadResolver) Rollout(ctx context.Context, obj *model.K8sWorkloa
 	}
 
 	rolloutStatus := status.CalculateRolloutStatus(ic)
-	if rolloutStatus == nil {
+	podsManifestInjectionStatus := status.CalculatePodsManifestInjectionStatus(ic)
+	if rolloutStatus == nil && podsManifestInjectionStatus == nil {
 		return nil, nil
 	}
 
 	return &model.K8sWorkloadRollout{
-		RolloutStatus: rolloutStatus,
+		RolloutStatus:               rolloutStatus,
+		PodsManifestInjectionStatus: podsManifestInjectionStatus,
 	}, nil
 }
 
@@ -478,8 +483,11 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 		return nil, err
 	}
 
+	// Fetch the InstrumentationConfig if present, but do not require it: workloads without an
+	// InstrumentationConfig still have Kubernetes pods we want to surface. getContainerConfigByName
+	// is nil-safe, so a nil ic simply yields empty odigos instrumentation config per container.
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
-	if err != nil || ic == nil {
+	if err != nil {
 		return nil, err
 	}
 

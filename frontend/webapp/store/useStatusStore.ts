@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { BadgeProps } from '@odigos/ui-kit/components/v2';
+import { BadgeProps } from '@odigos/ui-kit/components';
 
 export enum StatusKeys {
   Token = 'token',

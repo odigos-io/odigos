@@ -27,6 +27,7 @@ yalc.lock
 
 *.log
 *.logs
+**/__debug_bin*
 
 # CLI embedded Helm charts (generated during build)
 cli/pkg/helm/embedded/*.tgz

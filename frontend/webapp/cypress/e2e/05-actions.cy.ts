@@ -58,10 +58,15 @@ describe('Actions CRUD', () => {
             break;
           }
           case 'ExtractAttribute': {
-            // Use the regex extraction path (target + regex, no lookup key/format)
-            // so the row is valid without selecting the dataFormat radio group.
-            cy.get('[data-id=extractAttribute]').find('input[data-id=targetAttributeName]').type('extracted.value');
-            cy.get('[data-id=extractAttribute]').find('input[data-id=regex]').type('(.*)');
+            // The catalog form uses InputCardTable (`variant: cards`), which:
+            //   1. Defaults to the "preset" method (lookupKey + dataFormat).
+            //   2. Names each input `${field}-card-${row}-${keyName}` (not bare keyName).
+            // Switch to Custom Regex so we can fill target + regex without the
+            // lookupKey/dataFormat pair — also the path that used to 400 on an
+            // empty dataFormat enum before sanitizeExtractAttributeForWire.
+            cy.get('[data-id=extractAttribute-mode]').contains('Custom Regex').click();
+            cy.get('[data-id=extractAttribute]').find('input[data-id=extractAttribute-card-0-targetAttributeName]').type('extracted.value');
+            cy.get('[data-id=extractAttribute]').find('input[data-id=extractAttribute-card-0-regex]').type('(.*)');
             break;
           }
           default: {

@@ -8,10 +8,16 @@
 {{- $collectLogs := has "logs" $signals -}}
 {{- $collectMetrics := has "metrics" $signals -}}
 {{- $hostMetricsDisabled := false -}}
+{{- $networkMetricsEnabled := false -}}
 {{- if .Values.metricsSources -}}
   {{- if .Values.metricsSources.hostMetrics -}}
     {{- if hasKey .Values.metricsSources.hostMetrics "disabled" -}}
       {{- $hostMetricsDisabled = .Values.metricsSources.hostMetrics.disabled -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if .Values.metricsSources.networkMetrics -}}
+    {{- if hasKey .Values.metricsSources.networkMetrics "enabled" -}}
+      {{- $networkMetricsEnabled = .Values.metricsSources.networkMetrics.enabled -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
@@ -19,6 +25,9 @@
 {{- $k8sVersion := include "utils.cleanKubeVersion" . }}
 {{- if and $privilegedRequired .Values.odiglet.unPrivileged }}
 {{ fail "privileged mode is required when collecting logs or metrics, this is currently not supported in unprivileged mode" }}
+{{- end }}
+{{- if and $networkMetricsEnabled .Values.odiglet.noHostNetwork }}
+{{ fail "odiglet.noHostNetwork cannot be true when metricsSources.networkMetrics.enabled is true, since OBI network metrics require hostNetwork" }}
 {{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
@@ -476,8 +485,8 @@ spec:
                 - -rpc-timeout=10s
 {{- toYaml .Values.odiglet.csidriver.readinessProbe | nindent 12 }}
 {{- end }}
-      # set hostNetwork only for k8s versions prior to v1.26 unless noHostNetwork is true
-      {{- if and (semverCompare "<1.26.0" $k8sVersion) (not .Values.odiglet.noHostNetwork) }}
+      # set hostNetwork for k8s versions prior to v1.26 (unless noHostNetwork), or when OBI network metrics infrastructure is enabled
+      {{- if or (and (semverCompare "<1.26.0" $k8sVersion) (not .Values.odiglet.noHostNetwork)) $networkMetricsEnabled }}
       hostNetwork: true
       {{- end}}
       {{- if not .Values.odiglet.noHostPid }}

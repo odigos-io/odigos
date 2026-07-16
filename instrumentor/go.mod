@@ -10,7 +10,8 @@ require (
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/distros v0.0.0
-	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/k8sutils v0.0.0
+	github.com/odigos-io/odigos/status v0.0.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.38.2
 	github.com/openshift/api v3.9.0+incompatible
@@ -104,4 +105,5 @@ replace (
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/distros => ../distros
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
+	github.com/odigos-io/odigos/status => ../status
 )

@@ -58,8 +58,6 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().DeleteAttributes().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("k8sattributesresolvers"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().K8sAttributesResolvers().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("piimaskings"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().PiiMaskings().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("renameattributes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Actions().V1alpha1().RenameAttributes().Informer()}, nil
 

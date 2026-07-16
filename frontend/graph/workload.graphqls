@@ -49,6 +49,21 @@ type DesiredConditionStatus {
   # that describes the status for this condition.
   # it is used to provide additional context relevant to the human reading it.
   message: String!
+
+  # actions the user can take to resolve or advance this condition.
+  actionItems: [DesiredConditionActionItem!]
+}
+
+type DesiredConditionActionItem {
+  # identifies the action that the client should invoke.
+  type: DesiredConditionActionItemType!
+
+  # human-readable label describing the action.
+  userFacingText: String!
+}
+
+enum DesiredConditionActionItemType {
+  RolloutWorkload
 }
 
 # Indicates if a workload in the cluster is marked for instrumentation and why.
@@ -217,7 +232,13 @@ type K8sWorkloadAgentEnabled {
 # describes the odigos instrumentation related rollout status for a workload.
 type K8sWorkloadRollout {
   # the status of the rollout. that is being tracked by odigos.
-  rolloutStatus: DesiredConditionStatus!
+  # optional when only the PodsManifestInjection condition is present.
+  rolloutStatus: DesiredConditionStatus
+
+  # status of odigos agent injection into running pods of this workload.
+  # sourced from the InstrumentationConfig PodsManifestInjection condition.
+  # covers whether pods are injected as desired, and any rollout/restart progress required to get there.
+  podsManifestInjectionStatus: DesiredConditionStatus
 }
 
 type K8sWorkloadAutoRollback {
@@ -518,6 +539,7 @@ type K8sWorkloadConditions {
   runtimeDetection: DesiredConditionStatus
   agentInjectionEnabled: DesiredConditionStatus
   rollout: DesiredConditionStatus
+  podsManifestInjection: DesiredConditionStatus
   autoRollback: DesiredConditionStatus
   agentInjected: DesiredConditionStatus
   processesAgentHealth: DesiredConditionStatus

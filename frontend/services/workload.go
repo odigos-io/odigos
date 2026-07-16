@@ -322,7 +322,7 @@ const verboseQuery = `
 					message
 				}
 				runningLatestWorkloadRevision
-				podHealthStatus {
+				podHealthStatus: k8sHealthStatus {
 					name
 					status
 					reasonEnum
@@ -339,7 +339,7 @@ const verboseQuery = `
 					runningStartedTime
 					waitingReasonEnum
 					waitingMessage
-					healthStatus {
+					healthStatus: k8sHealthStatus {
 						name
 						status
 						reasonEnum
@@ -473,7 +473,7 @@ const podsQuery = `
 					message
 				}
 				runningLatestWorkloadRevision
-				podHealthStatus {
+				podHealthStatus: k8sHealthStatus {
 					name
 					status
 					reasonEnum
@@ -490,7 +490,7 @@ const podsQuery = `
 					runningStartedTime
 					waitingReasonEnum
 					waitingMessage
-					healthStatus {
+					healthStatus: k8sHealthStatus {
 						name
 						status
 						reasonEnum

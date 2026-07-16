@@ -30,7 +30,6 @@ type ActionsV1alpha1Interface interface {
 	AddClusterInfosGetter
 	DeleteAttributesGetter
 	K8sAttributesResolversGetter
-	PiiMaskingsGetter
 	RenameAttributesGetter
 }
 
@@ -49,10 +48,6 @@ func (c *ActionsV1alpha1Client) DeleteAttributes(namespace string) DeleteAttribu
 
 func (c *ActionsV1alpha1Client) K8sAttributesResolvers(namespace string) K8sAttributesResolverInterface {
 	return newK8sAttributesResolvers(c, namespace)
-}
-
-func (c *ActionsV1alpha1Client) PiiMaskings(namespace string) PiiMaskingInterface {
-	return newPiiMaskings(c, namespace)
 }
 
 func (c *ActionsV1alpha1Client) RenameAttributes(namespace string) RenameAttributeInterface {

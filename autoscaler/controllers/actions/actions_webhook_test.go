@@ -27,7 +27,9 @@ import (
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
+	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 )
 
 func TestActionsValidator_ValidateCreate(t *testing.T) {
@@ -112,8 +114,10 @@ func TestActionsValidator_ValidateCreate(t *testing.T) {
 				Spec: odigosv1.ActionSpec{
 					ActionName: "test-pii-masking",
 					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
-					PiiMasking: &actionv1.PiiMaskingConfig{
-						PiiCategories: []actionv1.PiiCategory{actionv1.CreditCardMasking},
+					PiiMasking: &odigosactions.PiiMaskingConfig{
+						PiiMaskingConfig: actionsapi.PiiMaskingConfig{
+							PiiCategories: []actionsapi.PiiCategory{actionsapi.CreditCardMasking},
+						},
 					},
 				},
 			},
@@ -558,8 +562,10 @@ func TestActionsValidator_ValidateAction_AllActionTypes(t *testing.T) {
 				Spec: odigosv1.ActionSpec{
 					ActionName: "test-action-4",
 					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
-					PiiMasking: &actionv1.PiiMaskingConfig{
-						PiiCategories: []actionv1.PiiCategory{actionv1.CreditCardMasking},
+					PiiMasking: &odigosactions.PiiMaskingConfig{
+						PiiMaskingConfig: actionsapi.PiiMaskingConfig{
+							PiiCategories: []actionsapi.PiiCategory{actionsapi.CreditCardMasking},
+						},
 					},
 				},
 			},
