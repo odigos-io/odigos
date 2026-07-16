@@ -16,6 +16,20 @@ const (
 	promBasicAuthPasswordKey = "PROMETHEUS_BASIC_AUTH_PASSWORD"
 )
 
+// remoteWriteEndpoint returns the remote write endpoint to configure.
+// If the url already ends with a known remote write path (Prometheus/Thanos
+// use /api/v1/write, Mimir uses /api/v1/push) it is used as-is, allowing users
+// to specify the full endpoint. Otherwise the standard /api/v1/write suffix is
+// appended for backwards compatibility with hosts provided without a path.
+func remoteWriteEndpoint(url string) string {
+	for _, suffix := range []string{"/api/v1/write", "/api/v1/push"} {
+		if strings.HasSuffix(url, suffix) {
+			return url
+		}
+	}
+	return fmt.Sprintf("%s/api/v1/write", url)
+}
+
 type Prometheus struct{}
 
 func (p *Prometheus) DestType() common.DestinationType {
@@ -36,11 +50,11 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 
 	url = addProtocol(url)
-	url = strings.TrimSuffix(url, "/api/v1/write")
+	endpoint := remoteWriteEndpoint(url)
 	rwExporterName := "prometheusremotewrite/" + uniqueUri
 
 	exporterConfig := GenericMap{
-		"endpoint": fmt.Sprintf("%s/api/v1/write", url),
+		"endpoint": endpoint,
 		"resource_to_telemetry_conversion": GenericMap{
 			"enabled": true,
 		},
