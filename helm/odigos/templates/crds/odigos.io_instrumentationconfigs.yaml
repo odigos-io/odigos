@@ -167,6 +167,10 @@ spec:
                         all "metrics" related configuration for an agent running on any process in a specific container.
                         The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
                       properties:
+                        networkMetrics:
+                          description: NetworkMetrics enables network flow and TCP
+                            stats metrics for this container.
+                          type: object
                         runtimeMetrics:
                           description: |-
                             if not nil, it means agent should report runtime metrics,
