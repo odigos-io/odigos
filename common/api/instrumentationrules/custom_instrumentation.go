@@ -11,6 +11,7 @@ type CustomInstrumentations struct {
 	Golang []GolangCustomProbe `json:"golang,omitempty" yaml:"golang,omitempty"`
 	Java   []JavaCustomProbe   `json:"java,omitempty" yaml:"java,omitempty"`
 	Cpp    []CppCustomProbe    `json:"cpp,omitempty" yaml:"cpp,omitempty"`
+	Php    []PhpCustomProbe    `json:"php,omitempty" yaml:"php,omitempty"`
 }
 
 // Verify iterates all custom instrumentations' probes and validates them.
@@ -29,6 +30,18 @@ func (ci *CustomInstrumentations) Verify() error {
 	for _, p := range ci.Java {
 		if err := p.Verify(); err != nil {
 			return fmt.Errorf("invalid configuration for java custom instrumentation: %w", err)
+		}
+	}
+	// Validate C++ probes
+	for _, p := range ci.Cpp {
+		if err := p.Verify(); err != nil {
+			return fmt.Errorf("invalid configuration for cpp custom instrumentation: %w", err)
+		}
+	}
+	// Validate PHP probes
+	for _, p := range ci.Php {
+		if err := p.Verify(); err != nil {
+			return fmt.Errorf("invalid configuration for php custom instrumentation: %w", err)
 		}
 	}
 	return nil
@@ -110,4 +123,27 @@ func (c *CppCustomProbe) Verify() error {
 	}
 
 	return nil
+}
+
+// PhpCustomProbe contains the details for a custom probe for PHP applications.
+// className is optional; when empty, functionName refers to a global function.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type PhpCustomProbe struct {
+	ClassName    string `json:"className,omitempty" yaml:"className,omitempty"`
+	FunctionName string `json:"functionName" yaml:"functionName"`
+}
+
+func (pcp *PhpCustomProbe) Verify() error {
+	if pcp.FunctionName == "" {
+		return errors.New("function name is required")
+	}
+	return nil
+}
+
+func (pcp *PhpCustomProbe) String() string {
+	if pcp.ClassName == "" {
+		return pcp.FunctionName
+	}
+	return fmt.Sprintf("%s::%s", pcp.ClassName, pcp.FunctionName)
 }
