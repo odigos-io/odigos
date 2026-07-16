@@ -55,11 +55,19 @@ spec:
           ports:
             - containerPort: 8081
               name: http
-          readinessProbe:
+          # /healthz is served as soon as the process binds the port (before Keycloak init).
+          # /readyz returns 200 only after Keycloak+Redis init completes.
+          startupProbe:
             httpGet:
               path: /healthz
               port: 8081
-            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
             periodSeconds: 5
             failureThreshold: 60
             timeoutSeconds: 3
@@ -67,7 +75,6 @@ spec:
             httpGet:
               path: /healthz
               port: 8081
-            initialDelaySeconds: 120
             periodSeconds: 10
             failureThreshold: 3
             timeoutSeconds: 3
