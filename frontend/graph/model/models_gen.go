@@ -719,6 +719,7 @@ type InstrumentationRule struct {
 	HeadersCollection        *HeadersCollection                 `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollection                 `json:"payloadCollection,omitempty"`
 	CustomInstrumentations   *CustomInstrumentations            `json:"customInstrumentations,omitempty"`
+	NetworkMetrics           *bool                              `json:"networkMetrics,omitempty"`
 }
 
 type InstrumentationRuleFieldYamlProperties struct {
@@ -741,6 +742,7 @@ type InstrumentationRuleInput struct {
 	HeadersCollection        *HeadersCollectionInput                 `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollectionInput                 `json:"payloadCollection,omitempty"`
 	CustomInstrumentations   *CustomInstrumentationsInput            `json:"customInstrumentations,omitempty"`
+	NetworkMetrics           *bool                                   `json:"networkMetrics,omitempty"`
 }
 
 type InstrumentationRuleSourcesScope struct {
@@ -2271,6 +2273,7 @@ const (
 	InstrumentationRuleTypeHeadersCollection     InstrumentationRuleType = "HeadersCollection"
 	InstrumentationRuleTypePayloadCollection     InstrumentationRuleType = "PayloadCollection"
 	InstrumentationRuleTypeCustomInstrumentation InstrumentationRuleType = "CustomInstrumentation"
+	InstrumentationRuleTypeNetworkMetrics        InstrumentationRuleType = "NetworkMetrics"
 	InstrumentationRuleTypeUnknownType           InstrumentationRuleType = "UnknownType"
 )
 
@@ -2279,12 +2282,13 @@ var AllInstrumentationRuleType = []InstrumentationRuleType{
 	InstrumentationRuleTypeHeadersCollection,
 	InstrumentationRuleTypePayloadCollection,
 	InstrumentationRuleTypeCustomInstrumentation,
+	InstrumentationRuleTypeNetworkMetrics,
 	InstrumentationRuleTypeUnknownType,
 }
 
 func (e InstrumentationRuleType) IsValid() bool {
 	switch e {
-	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCustomInstrumentation, InstrumentationRuleTypeUnknownType:
+	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCustomInstrumentation, InstrumentationRuleTypeNetworkMetrics, InstrumentationRuleTypeUnknownType:
 		return true
 	}
 	return false

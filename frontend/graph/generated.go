@@ -599,6 +599,7 @@ type ComplexityRoot struct {
 		HeadersCollection        func(childComplexity int) int
 		InstrumentationLibraries func(childComplexity int) int
 		Mutable                  func(childComplexity int) int
+		NetworkMetrics           func(childComplexity int) int
 		Notes                    func(childComplexity int) int
 		PayloadCollection        func(childComplexity int) int
 		ProfileName              func(childComplexity int) int
@@ -4133,6 +4134,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationRule.Mutable(childComplexity), true
+
+	case "InstrumentationRule.networkMetrics":
+		if e.complexity.InstrumentationRule.NetworkMetrics == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.NetworkMetrics(childComplexity), true
 
 	case "InstrumentationRule.notes":
 		if e.complexity.InstrumentationRule.Notes == nil {
@@ -15830,6 +15838,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "customInstrumentations":
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
+			case "networkMetrics":
+				return ec.fieldContext_InstrumentationRule_networkMetrics(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -26901,6 +26911,47 @@ func (ec *executionContext) fieldContext_InstrumentationRule_customInstrumentati
 				return ec.fieldContext_CustomInstrumentations_java(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CustomInstrumentations", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRule_networkMetrics(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_networkMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NetworkMetrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_networkMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -38785,6 +38836,8 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "customInstrumentations":
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
+			case "networkMetrics":
+				return ec.fieldContext_InstrumentationRule_networkMetrics(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -38870,6 +38923,8 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "customInstrumentations":
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
+			case "networkMetrics":
+				return ec.fieldContext_InstrumentationRule_networkMetrics(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -55360,7 +55415,7 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "sourcesScopes", "instrumentationLibraries", "codeAttributes", "headersCollection", "payloadCollection", "customInstrumentations"}
+	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "sourcesScopes", "instrumentationLibraries", "codeAttributes", "headersCollection", "payloadCollection", "customInstrumentations", "networkMetrics"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -55437,6 +55492,13 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 				return it, err
 			}
 			it.CustomInstrumentations = data
+		case "networkMetrics":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("networkMetrics"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NetworkMetrics = data
 		}
 	}
 
@@ -60827,6 +60889,8 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._InstrumentationRule_payloadCollection(ctx, field, obj)
 		case "customInstrumentations":
 			out.Values[i] = ec._InstrumentationRule_customInstrumentations(ctx, field, obj)
+		case "networkMetrics":
+			out.Values[i] = ec._InstrumentationRule_networkMetrics(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
