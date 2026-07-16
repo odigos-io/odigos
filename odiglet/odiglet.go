@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/metrics"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
+	obisdk "github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks/obi"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	ebpfMetrics "github.com/odigos-io/odigos/odiglet/pkg/metrics"
 	"github.com/odigos-io/odigos/odiglet/pkg/process"
@@ -51,6 +52,7 @@ type Odiglet struct {
 	// in the embedded instrumentation manager.
 	instrumentationRequests chan commonInstrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
 	criClient               *criwrapper.CriClient
+	obiManager              *obisdk.Manager
 	runnables               []Runnable
 }
 
@@ -95,6 +97,28 @@ const (
 	instrumentationRequestsBufferSize = 200
 )
 
+// setupOBI creates the shared OBI manager and registers its factories on the instrumentation
+// manager options. OBI is wired identically for OSS and enterprise, so it lives here rather than
+// being duplicated in each odiglet main:
+//   - the OBI traces factory, registered as an explicit distribution (obisdk.DistroName), and
+//   - the OBI network-metrics generic factory (obisdk.MetricsFactoryName), which applies to
+//     every process, is enabled per-workload via the networkMetrics InstrumentationRule, and is run
+//     off the main path so it is never reported.
+//
+// The returned manager is run as a Runnable by Odiglet (see builtInRunnables).
+func setupOBI(opts *ebpf.InstrumentationManagerOptions) *obisdk.Manager {
+	obiManager := obisdk.NewManager()
+	if opts.Factories == nil {
+		opts.Factories = map[string]commonInstrumentation.Factory{}
+	}
+	opts.Factories[obisdk.DistroName] = obiManager.TracesFactory()
+	if opts.GenericFactories == nil {
+		opts.GenericFactories = map[string]commonInstrumentation.Factory{}
+	}
+	opts.GenericFactories[obisdk.MetricsFactoryName] = obiManager.MetricsFactory()
+	return obiManager
+}
+
 // New creates a new Odiglet instance.
 func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (*Odiglet, error) {
 	err := feature.Setup()
@@ -103,6 +127,8 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	}
 
 	process.DiscoverCgroupLayout()
+
+	obiManager := setupOBI(&instrumentationMgrOpts)
 
 	mgr, err := kube.CreateManager(instrumentationMgrOpts)
 	if err != nil {
@@ -164,13 +190,14 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		configUpdates:           configUpdates,
 		instrumentationRequests: instrumentationRequests,
 		criClient:               &criWrapper,
+		obiManager:              obiManager,
 	}, nil
 }
 
 func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.OdigosLogger) []Runnable {
 	odigosNs := env.GetCurrentNamespace()
-	return []Runnable{
-		{
+	runnables := []Runnable{
+		Runnable{
 			Name: "pprof server",
 			// if we fail to start the pprof server, don't return an error as it is not critical
 			PropagateErr: false,
@@ -178,7 +205,7 @@ func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.
 				return common.StartPprofServer(ctx, commonlogger.ToLogr(), int(k8sconsts.DefaultPprofEndpointPort))
 			},
 		},
-		{
+		Runnable{
 			Name:         "eBPF manager",
 			PropagateErr: true,
 			Run: func(ctx context.Context) error {
@@ -186,14 +213,14 @@ func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.
 				return o.ebpfManager.Run(ctx)
 			},
 		},
-		{
+		Runnable{
 			Name:         "OpAmp server",
 			PropagateErr: true,
 			Run: func(ctx context.Context) error {
 				return server.StartOpAmpServer(ctx, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
 			},
 		},
-		{
+		Runnable{
 			Name:         "kube manager",
 			PropagateErr: true,
 			Run: func(ctx context.Context) error {
@@ -225,6 +252,14 @@ func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.
 			},
 		},
 	}
+	if o.obiManager != nil {
+		runnables = append(runnables, Runnable{
+			Name:         "OBI manager",
+			PropagateErr: false,
+			Run:          o.obiManager.Run,
+		})
+	}
+	return runnables
 }
 
 // Run starts the Odiglet components and blocks until the context is cancelled, or a critical error occurs.

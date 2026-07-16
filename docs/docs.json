@@ -197,7 +197,8 @@
                       "oss/pipeline/rules/codeattributes",
                       "oss/pipeline/rules/headerscollection",
                       "oss/pipeline/rules/payloadcollection",
-                      "oss/pipeline/rules/custominstrumentation"
+                      "oss/pipeline/rules/custominstrumentation",
+                      "oss/pipeline/rules/networkmetrics"
                     ]
                   },
                   {
@@ -527,7 +528,8 @@
                       "enterprise/pipeline/rules/codeattributes",
                       "enterprise/pipeline/rules/headerscollection",
                       "enterprise/pipeline/rules/payloadcollection",
-                      "enterprise/pipeline/rules/custominstrumentation"
+                      "enterprise/pipeline/rules/custominstrumentation",
+                      "enterprise/pipeline/rules/networkmetrics"
                     ]
                   },
                   {

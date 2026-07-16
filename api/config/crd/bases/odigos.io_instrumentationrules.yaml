@@ -255,6 +255,10 @@ spec:
                   - name
                   type: object
                 type: array
+              networkMetrics:
+                description: Configure network flow and TCP stats metrics for scoped
+                  workloads.
+                type: object
               notes:
                 description: 'A free-form text field that allows you to attach notes
                   regarding the rule for convenience. For example: why it was added.
