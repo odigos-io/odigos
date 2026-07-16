@@ -149,6 +149,7 @@ func calculateTracesConfig(
 func calculateMetricsConfig(
 	effectiveConfig *common.OdigosConfiguration,
 	d *distro.OtelDistro,
+	irls *[]odigosv1.InstrumentationRule,
 ) (*agentsignalconfig.AgentMetricsConfig, *odigosv1.AgentDisabledInfo) {
 	metricsConfig := &agentsignalconfig.AgentMetricsConfig{}
 
@@ -165,6 +166,9 @@ func calculateMetricsConfig(
 
 	// Runtime Metrics for supported distros
 	metricsConfig.RuntimeMetrics = metrics.CalculateAgentRuntimeMetricsConfig(d, effectiveConfig)
+
+	// Network flow / TCP stats metrics, enabled per-workload via InstrumentationRules.
+	metricsConfig.NetworkMetrics = metrics.CalculateNetworkMetricsConfig(irls)
 
 	return metricsConfig, nil
 }
@@ -205,7 +209,7 @@ func CalculateDynamicContainerConfig(
 
 	var metricsConfig *agentsignalconfig.AgentMetricsConfig
 	if enabledSignals.MetricsEnabled {
-		agentMetricsConfig, err := calculateMetricsConfig(effectiveConfig, d)
+		agentMetricsConfig, err := calculateMetricsConfig(effectiveConfig, d, irls)
 		if err != nil {
 			return nil, err
 		}

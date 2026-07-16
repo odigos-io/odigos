@@ -88,7 +88,8 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) 
 	if opts.ResourceDetectionEnabled {
 		baseProcessors = append(baseProcessors, resourceDetectionProcessorName)
 	}
-	metricsPipelineProcessors := append(baseProcessors, opts.ManifestProcessorNames...)
+	metricsPipelineProcessors := baseProcessors
+	metricsPipelineProcessors = append(metricsPipelineProcessors, opts.ManifestProcessorNames...)
 	metricsPipelineProcessors = append(metricsPipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
 	receivers, pipelineReceiverNames := metricsReceivers(opts.MetricsConfigSettings)
