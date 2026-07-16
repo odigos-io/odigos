@@ -98,7 +98,13 @@ func DetectLanguage(proc process.Details) (common.ProgramLanguageDetails, error)
 			logger.Error("Error closing files", "err", err)
 		}
 	}()
+	return detectLanguageInContext(procContext, logger)
+}
 
+// detectLanguageInContext runs language detection against an already-built
+// ProcessContext. Kept separate so callers (e.g. Inspect) can share a single
+// context for both language and other-agent detection without reopening files.
+func detectLanguageInContext(procContext *process.ProcessContext, logger *commonlogger.OdigosLogger) (common.ProgramLanguageDetails, error) {
 	// Try Quick Scan first
 	if detectedLanguage, err := runInspectionStage(procContext, func(inspector Inspector) InspectFunc {
 		return inspector.QuickScan

@@ -21,6 +21,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/otheragent"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -220,23 +221,16 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 			envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
 		}
 
-		for envName := range inspectProc.Environments.DetailedEnvs {
-			if otherAgentName, exists := procdiscovery.OtherAgentEnvs[envName]; exists {
-				detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
-			}
+		// Detect a foreign instrumentation agent (Datadog, New Relic, Dynatrace,
+		// an OpenTelemetry distribution, ...) already running in this process,
+		// using the shared detector so odiglet and vm-agent stay in sync.
+		agentCtx := procdiscovery.NewProcessContext(*inspectProc)
+		if agent := otheragent.Detect(agentCtx, langDetails.Language); agent != nil {
+			detectedAgent = &odigosv1.OtherAgent{Name: agent.Name}
 		}
-
-		// Languages that can be detected using command line Substrings, e.g. Java<>newrelic
-		for otherAgentCmdSubstring, otherAgentName := range procdiscovery.OtherAgentCmdSubString {
-			if strings.Contains(inspectProc.CmdLine, otherAgentCmdSubstring) {
-				detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
-			}
-		}
-
-		// Agent that can be detected using environment variables
-		val, ok := inspectProc.Environments.OverwriteEnvs[consts.LdPreloadEnvVarName]
-		if ok && strings.Contains(val, procdiscovery.DynatraceFullStackEnvValuePrefix) {
-			detectedAgent = &odigosv1.OtherAgent{Name: procdiscovery.DynatraceAgentName}
+		if err := agentCtx.CloseFiles(); err != nil {
+			logger.Error("error closing process files after other-agent detection",
+				"err", err, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 		}
 
 		// Inspecting libc type is expensive and not relevant for all languages

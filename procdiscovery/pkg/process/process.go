@@ -48,28 +48,25 @@ var LangsVersionEnvs = map[string]struct{}{
 	RubyVersionConst:   {},
 }
 
-const (
-	NewRelicAgentName  = "New Relic Agent"
-	DynatraceAgentName = "Dynatrace Agent"
-	DataDogAgentName   = "Datadog Agent"
-)
+// DynatraceDynamizerExeSubString is the wrapper exe name used by the Dynatrace
+// agent for Go processes; the Go language inspector matches on it.
+const DynatraceDynamizerExeSubString = "oneagentdynamizer"
 
-const (
-	NewRelicAgentEnv                 = "NEW_RELIC_CONFIG_FILE"
-	DynatraceDynamizerEnv            = "DT_DYNAMIZER_TARGET_EXE"
-	DynatraceDynamizerExeSubString   = "oneagentdynamizer"
-	DynatraceFullStackEnvValuePrefix = "/dynatrace/"
-	DataDogAgentEnv                  = "DD_TRACE_AGENT_URL"
-)
+// agentDetectionEnvKeys is the set of environment variable names that the
+// other-agent detector needs collected into DetailedEnvs. Because environ is
+// read through a whitelist (secrets must not be captured wholesale), a env-based
+// detection rule can only fire if its key is registered here. The otheragent
+// package registers its keys in an init() via RegisterAgentDetectionEnvKeys, so
+// the rule table stays the single source of truth without an import cycle
+// (otheragent imports process, not the other way around).
+var agentDetectionEnvKeys = map[string]struct{}{}
 
-var OtherAgentEnvs = map[string]string{
-	NewRelicAgentEnv:      NewRelicAgentName,
-	DynatraceDynamizerEnv: DynatraceAgentName,
-	DataDogAgentEnv:       DataDogAgentName,
-}
-
-var OtherAgentCmdSubString = map[string]string{
-	"newrelic.jar": NewRelicAgentName,
+// RegisterAgentDetectionEnvKeys adds environment variable names that must be
+// collected for foreign-agent detection. Safe to call from package init().
+func RegisterAgentDetectionEnvKeys(keys map[string]struct{}) {
+	for k := range keys {
+		agentDetectionEnvKeys[k] = struct{}{}
+	}
 }
 
 type Details struct {
@@ -333,7 +330,9 @@ func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) Proce
 			detailedEnvsResult[envName] = envDetectionValue
 		}
 
-		if _, ok := OtherAgentEnvs[envName]; ok {
+		// Environment variables referenced by the shared other-agent detection
+		// (registered by the otheragent package).
+		if _, ok := agentDetectionEnvKeys[envName]; ok {
 			detailedEnvsResult[envName] = envDetectionValue
 		}
 	}
