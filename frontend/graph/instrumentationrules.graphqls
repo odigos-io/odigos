@@ -107,6 +107,7 @@ type HeadersCollection {
 type CustomInstrumentations {
   golang: [GolangCustomProbe]
   java: [JavaCustomProbe]
+  php: [PhpCustomProbe]
 }
 
 type GolangCustomProbe {
@@ -121,9 +122,15 @@ type JavaCustomProbe {
   methodName: String
 }
 
+type PhpCustomProbe {
+  className: String
+  functionName: String
+}
+
 input CustomInstrumentationsInput {
   golang: [GolangCustomProbeInput]
   java: [JavaCustomProbeInput]
+  php: [PhpCustomProbeInput]
 }
 
 input GolangCustomProbeInput {
@@ -136,6 +143,11 @@ input GolangCustomProbeInput {
 input JavaCustomProbeInput {
   className: String
   methodName: String
+}
+
+input PhpCustomProbeInput {
+  className: String
+  functionName: String
 }
 #### END CUSTOM PROBES ####
 

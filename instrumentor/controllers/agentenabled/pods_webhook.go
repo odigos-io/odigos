@@ -416,6 +416,17 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_SPAN_RENAMER", string(spanRenamerConfigJson))
 	}
 
+	// Custom Instrumentation configuration (native agents that receive config via env vars)
+	customInstrumentationsEnabled := containerConfig.Traces != nil && containerConfig.Traces.CustomInstrumentations != nil
+	supportsCustomInstrumentations := distroMetadata.Traces != nil && distroMetadata.Traces.CustomInstrumentations != nil && distroMetadata.Traces.CustomInstrumentations.Supported
+	if customInstrumentationsEnabled && supportsCustomInstrumentations && distroMetadata.ConfigAsEnvVars {
+		customInstrumentationsConfigJson, err := json.Marshal(containerConfig.Traces.CustomInstrumentations)
+		if err != nil {
+			return false, nil, fmt.Errorf("failed to marshal custom instrumentations config: %w", err)
+		}
+		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_CUSTOM_INSTRUMENTATIONS", string(customInstrumentationsConfigJson))
+	}
+
 	volumeMounted := false
 	containerDirsToCopy := make(map[string]struct{})
 	if distroMetadata.RuntimeAgent != nil {
