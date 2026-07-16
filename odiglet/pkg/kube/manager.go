@@ -9,8 +9,8 @@ import (
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
-	"github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/loglevel"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
 	ctrl "sigs.k8s.io/controller-runtime"
 
