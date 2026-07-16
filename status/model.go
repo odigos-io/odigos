@@ -25,4 +25,16 @@ type Reason struct {
 	TechnicalDescription string                 `yaml:"technicalDescription,omitempty"`
 	K8sConditionStatus   metav1.ConditionStatus `yaml:"k8sConditionStatus,omitempty"`
 	OdigosSeverity       OdigosSeverity         `yaml:"odigosSeverity"`
+	ActionItems          []ActionItem           `yaml:"actionItems,omitempty"`
 }
+
+type ActionItem struct {
+	Type           ActionItemType `yaml:"type"`
+	UserFacingText string         `yaml:"userFacingText"`
+}
+
+type ActionItemType string
+
+const (
+	ActionItemTypeRolloutWorkload ActionItemType = "RolloutWorkload"
+)

@@ -33,6 +33,16 @@ var (
 		K8sConditionStatus: {{ k8sConditionStatusConst .K8sConditionStatus }},
 {{- end }}
 		OdigosSeverity: {{ odigosSeverityConst .OdigosSeverity }},
+{{- if .ActionItems }}
+		ActionItems: []status.ActionItem{
+{{- range .ActionItems }}
+			{
+				Type:           {{ actionItemTypeConst .Type }},
+				UserFacingText: "{{ .UserFacingText }}",
+			},
+{{- end }}
+		},
+{{- end }}
 	}
 {{- end }}
 

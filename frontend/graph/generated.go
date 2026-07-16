@@ -327,11 +327,17 @@ type ComplexityRoot struct {
 		MaxPayloadLength    func(childComplexity int) int
 	}
 
+	DesiredConditionActionItem struct {
+		Type           func(childComplexity int) int
+		UserFacingText func(childComplexity int) int
+	}
+
 	DesiredConditionStatus struct {
-		Message    func(childComplexity int) int
-		Name       func(childComplexity int) int
-		ReasonEnum func(childComplexity int) int
-		Status     func(childComplexity int) int
+		ActionItems func(childComplexity int) int
+		Message     func(childComplexity int) int
+		Name        func(childComplexity int) int
+		ReasonEnum  func(childComplexity int) int
+		Status      func(childComplexity int) int
 	}
 
 	Destination struct {
@@ -2902,6 +2908,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DbQueryPayloadCollection.MaxPayloadLength(childComplexity), true
+
+	case "DesiredConditionActionItem.type":
+		if e.complexity.DesiredConditionActionItem.Type == nil {
+			break
+		}
+
+		return e.complexity.DesiredConditionActionItem.Type(childComplexity), true
+
+	case "DesiredConditionActionItem.userFacingText":
+		if e.complexity.DesiredConditionActionItem.UserFacingText == nil {
+			break
+		}
+
+		return e.complexity.DesiredConditionActionItem.UserFacingText(childComplexity), true
+
+	case "DesiredConditionStatus.actionItems":
+		if e.complexity.DesiredConditionStatus.ActionItems == nil {
+			break
+		}
+
+		return e.complexity.DesiredConditionStatus.ActionItems(childComplexity), true
 
 	case "DesiredConditionStatus.message":
 		if e.complexity.DesiredConditionStatus.Message == nil {
@@ -18723,6 +18750,94 @@ func (ec *executionContext) fieldContext_DbQueryPayloadCollection_dropPartialPay
 	return fc, nil
 }
 
+func (ec *executionContext) _DesiredConditionActionItem_type(ctx context.Context, field graphql.CollectedField, obj *model.DesiredConditionActionItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DesiredConditionActionItem_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.DesiredConditionActionItemType)
+	fc.Result = res
+	return ec.marshalNDesiredConditionActionItemType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItemType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DesiredConditionActionItem_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DesiredConditionActionItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type DesiredConditionActionItemType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DesiredConditionActionItem_userFacingText(ctx context.Context, field graphql.CollectedField, obj *model.DesiredConditionActionItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DesiredConditionActionItem_userFacingText(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserFacingText, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DesiredConditionActionItem_userFacingText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DesiredConditionActionItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DesiredConditionStatus_name(ctx context.Context, field graphql.CollectedField, obj *model.DesiredConditionStatus) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DesiredConditionStatus_name(ctx, field)
 	if err != nil {
@@ -18891,6 +19006,53 @@ func (ec *executionContext) fieldContext_DesiredConditionStatus_message(_ contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DesiredConditionStatus_actionItems(ctx context.Context, field graphql.CollectedField, obj *model.DesiredConditionStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActionItems, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.DesiredConditionActionItem)
+	fc.Result = res
+	return ec.marshalODesiredConditionActionItem2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItemᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DesiredConditionStatus_actionItems(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DesiredConditionStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "type":
+				return ec.fieldContext_DesiredConditionActionItem_type(ctx, field)
+			case "userFacingText":
+				return ec.fieldContext_DesiredConditionActionItem_userFacingText(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionActionItem", field.Name)
 		},
 	}
 	return fc, nil
@@ -29419,6 +29581,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_workloadOdigosHealthStatus(
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -29901,6 +30065,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_podsAgentInjectionStatus(_ 
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -29955,6 +30121,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_podsHealthStatus(_ context.
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -30006,6 +30174,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_podsOdigosHealthStatus(_ co
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -30057,6 +30227,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_workloadHealthStatus(_ cont
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -30111,6 +30283,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_processesHealthStatus(_ con
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -30390,6 +30564,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadAgentEnabled_enabledStatus(_
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -30593,6 +30769,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadAgentEnabledContainer_agentE
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31043,6 +31221,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadAutoRollback_autoRollbackSta
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31138,6 +31318,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_runtimeDetection(
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31189,6 +31371,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_agentInjectionEna
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31240,6 +31424,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_rollout(_ context
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31291,6 +31477,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_podsManifestInjec
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31342,6 +31530,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_autoRollback(_ co
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31393,6 +31583,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_agentInjected(_ c
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31444,6 +31636,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_processesAgentHea
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31495,6 +31689,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_expectingTelemetr
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -33936,6 +34132,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPod_agentInjectedStatus(_ co
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -34031,6 +34229,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPod_k8sHealthStatus(_ contex
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -34082,6 +34282,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPod_odigosHealthStatus(_ con
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -34621,6 +34823,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_k8sHealthStatus
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -34672,6 +34876,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_odigosHealthSta
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -34821,6 +35027,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcess_healthSt
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -35366,6 +35574,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadRollout_rolloutStatus(_ cont
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -35417,6 +35627,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadRollout_podsManifestInjectio
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -35515,6 +35727,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfo_completedStatus(
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -36234,6 +36448,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetricsExpectingTel
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -58908,6 +59124,50 @@ func (ec *executionContext) _DbQueryPayloadCollection(ctx context.Context, sel a
 	return out
 }
 
+var desiredConditionActionItemImplementors = []string{"DesiredConditionActionItem"}
+
+func (ec *executionContext) _DesiredConditionActionItem(ctx context.Context, sel ast.SelectionSet, obj *model.DesiredConditionActionItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, desiredConditionActionItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DesiredConditionActionItem")
+		case "type":
+			out.Values[i] = ec._DesiredConditionActionItem_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userFacingText":
+			out.Values[i] = ec._DesiredConditionActionItem_userFacingText(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var desiredConditionStatusImplementors = []string{"DesiredConditionStatus"}
 
 func (ec *executionContext) _DesiredConditionStatus(ctx context.Context, sel ast.SelectionSet, obj *model.DesiredConditionStatus) graphql.Marshaler {
@@ -58936,6 +59196,8 @@ func (ec *executionContext) _DesiredConditionStatus(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "actionItems":
+			out.Values[i] = ec._DesiredConditionStatus_actionItems(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -69240,6 +69502,26 @@ func (ec *executionContext) unmarshalNDataStreamInput2githubᚗcomᚋodigosᚑio
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNDesiredConditionActionItem2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItem(ctx context.Context, sel ast.SelectionSet, v *model.DesiredConditionActionItem) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DesiredConditionActionItem(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNDesiredConditionActionItemType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItemType(ctx context.Context, v any) (model.DesiredConditionActionItemType, error) {
+	var res model.DesiredConditionActionItemType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDesiredConditionActionItemType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItemType(ctx context.Context, sel ast.SelectionSet, v model.DesiredConditionActionItemType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNDesiredConditionStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx context.Context, sel ast.SelectionSet, v model.DesiredConditionStatus) graphql.Marshaler {
 	return ec._DesiredConditionStatus(ctx, sel, &v)
 }
@@ -72899,6 +73181,53 @@ func (ec *executionContext) unmarshalODbQueryPayloadCollectionInput2ᚖgithubᚗ
 	}
 	res, err := ec.unmarshalInputDbQueryPayloadCollectionInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalODesiredConditionActionItem2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.DesiredConditionActionItem) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDesiredConditionActionItem2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItem(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx context.Context, sel ast.SelectionSet, v *model.DesiredConditionStatus) graphql.Marshaler {

@@ -49,6 +49,21 @@ type DesiredConditionStatus {
   # that describes the status for this condition.
   # it is used to provide additional context relevant to the human reading it.
   message: String!
+
+  # actions the user can take to resolve or advance this condition.
+  actionItems: [DesiredConditionActionItem!]
+}
+
+type DesiredConditionActionItem {
+  # identifies the action that the client should invoke.
+  type: DesiredConditionActionItemType!
+
+  # human-readable label describing the action.
+  userFacingText: String!
+}
+
+enum DesiredConditionActionItemType {
+  RolloutWorkload
 }
 
 # Indicates if a workload in the cluster is marked for instrumentation and why.
