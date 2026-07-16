@@ -13,10 +13,10 @@ spec:
     technicalDescription: "source has no running pods, thus it is irrelevant if odigos agent is successfully injected into them or not"
 
   - name: "PodsManifestInjectionNotRequired"
-    message: "agent is injected to running pods automatically, restart of pods is not required"
+    message: "odigos agent is automatically applied to running pods"
     k8sConditionStatus: "True"
     odigosSeverity: "Success"
-    technicalDescription: "some agents supports automatic injected into running pods. this status indicates that the agent was injected to relevant pods without requiring user action or restarts of the pods"
+    technicalDescription: "when all the agents of the source supports optional pod manifest injection, odigos will automatically apply the agent to running pods without requiring user action or restarts of the pods"
   - name: "PodsInjectedSuccessfully"
     message: "all pods of this source are successfully injected with odigos agent"
     k8sConditionStatus: "True"
