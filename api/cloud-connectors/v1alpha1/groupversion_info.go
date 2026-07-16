@@ -16,8 +16,8 @@ limitations under the License.
 
 // Package v1alpha1 contains the API Schema definitions for the cloud connector
 // types. These live in their own package (separate from the regular
-// api/odigos/v1alpha1 types) so the CRD is shipped only by the odigos-central
-// Helm chart and is not bundled with the rest of the Odigos CRDs. The Kubernetes
+// api/odigos/v1alpha1 types) so the CRD can be generated and synchronized
+// independently while its Helm chart ownership is migrated. The Kubernetes
 // group/version is intentionally kept as odigos.io/v1alpha1 so the CRD identity
 // (odigoscloudconnectors.odigos.io) is unchanged.
 // +kubebuilder:object:generate=true
