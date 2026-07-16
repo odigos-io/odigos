@@ -274,7 +274,16 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
 
-	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, ic.Spec.AgentsMetaHashChangedTime.Time)
+	// use the AgentsMetaHashChangedTime if it exists,
+	// so we are idempotent if the reconciler requeue for any reason.
+	var t time.Time
+	if ic.Spec.AgentsMetaHashChangedTime != nil {
+		t = ic.Spec.AgentsMetaHashChangedTime.Time
+	} else {
+		t = time.Now()
+	}
+
+	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, t)
 	if rolloutErr != nil {
 		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
 	}
