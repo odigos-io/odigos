@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -57,9 +56,9 @@ func main() {
 
 	log.Printf("Found %d rust versions.", len(finalMap))
 
-	// The script will be run from `procdiscovery/pkg/inspectors/rust/generate/`
-	// so the JSON should go to `procdiscovery/pkg/inspectors/rust/rust_versions.json`
-	jsonPath := filepath.Join("..", "rust_versions.json")
+	// The script will be run from `procdiscovery/pkg/inspectors/rust/` by go generate,
+	// so the JSON should go to `procdiscovery/pkg/inspectors/rust/rust_versions.json` (current directory)
+	jsonPath := "rust_versions.json"
 	
 	file, err := os.Create(jsonPath)
 	if err != nil {
