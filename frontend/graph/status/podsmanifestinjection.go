@@ -17,11 +17,21 @@ func CalculatePodsManifestInjectionStatus(ic *v1alpha1.InstrumentationConfig) *m
 			if !ok {
 				return nil
 			}
+
+			actionItems := make([]*model.DesiredConditionActionItem, 0, len(r.ActionItems))
+			for _, actionItem := range r.ActionItems {
+				actionItems = append(actionItems, &model.DesiredConditionActionItem{
+					Type:           model.DesiredConditionActionItemType(actionItem.Type),
+					UserFacingText: actionItem.UserFacingText,
+				})
+			}
+
 			return &model.DesiredConditionStatus{
-				Name:       c.Type,
-				Status:     model.DesiredStateProgress(r.OdigosSeverity),
-				ReasonEnum: &c.Reason,
-				Message:    c.Message,
+				Name:        c.Type,
+				Status:      model.DesiredStateProgress(r.OdigosSeverity),
+				ReasonEnum:  &c.Reason,
+				Message:     c.Message,
+				ActionItems: actionItems,
 			}
 		}
 	}

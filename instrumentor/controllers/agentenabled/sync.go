@@ -69,7 +69,9 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider, ro
 			allErrs = errors.Join(allErrs, workloadErr)
 		}
 		if !res.IsZero() {
-			if aggregatedResult.RequeueAfter == 0 {
+			if res.Requeue {
+				aggregatedResult.Requeue = res.Requeue
+			} else if aggregatedResult.RequeueAfter == 0 {
 				aggregatedResult.RequeueAfter = res.RequeueAfter
 			} else if res.RequeueAfter < aggregatedResult.RequeueAfter {
 				aggregatedResult.RequeueAfter = res.RequeueAfter
