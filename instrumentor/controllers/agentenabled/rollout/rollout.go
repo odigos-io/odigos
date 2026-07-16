@@ -274,7 +274,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
 
-	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
+	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, ic.Spec.AgentsMetaHashChangedTime.Time)
 	if rolloutErr != nil {
 		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
 	}
@@ -298,20 +298,28 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 // this is bases on the kubectl implementation of restarting a workload
 // https://github.com/kubernetes/kubectl/blob/master/pkg/polymorphichelpers/objectrestarter.go#L32
 func rolloutRestartWorkload(ctx context.Context, workloadObj client.Object, c client.Client, ts time.Time) error {
+
+	logger := commonlogger.FromContext(ctx)
+
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, ts.Format(time.RFC3339)))
 	switch obj := workloadObj.(type) {
 	case *appsv1.Deployment:
 		if obj.Spec.Paused {
 			return errors.New("can't restart paused deployment")
 		}
+		logger.Info("auto rollout - restarting deployment", "name", obj.Name, "namespace", obj.Namespace)
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *appsv1.StatefulSet:
+		logger.Info("auto rollout - restarting stateful set", "name", obj.Name, "namespace", obj.Namespace)
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *appsv1.DaemonSet:
+		logger.Info("auto rollout - restarting daemon set", "name", obj.Name, "namespace", obj.Namespace)
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *openshiftappsv1.DeploymentConfig:
+		logger.Info("auto rollout - restarting deployment config", "name", obj.Name, "namespace", obj.Namespace)
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *argorolloutsv1alpha1.Rollout:
+		logger.Info("auto rollout - restarting argo rollout", "name", obj.Name, "namespace", obj.Namespace)
 		// Rollouts use a different field (spec.restartAt) for restarting, so we need to patch it differently
 		// https://github.com/argoproj/argo-rollouts/blob/cb1c33df7a2c2b1c2ed31b1ee0aa22621ef5577c/utils/replicaset/replicaset.go#L223-L232
 		rolloutPatch := []byte(fmt.Sprintf(`{"spec":{"restartAt":"%s"}}`, ts.Format(time.RFC3339)))
@@ -320,6 +328,7 @@ func rolloutRestartWorkload(ctx context.Context, workloadObj client.Object, c cl
 		if workload.IsStaticPod(obj) {
 			return errors.New("can't restart static pods")
 		}
+		logger.Info("auto rollout - restarting standalone pod", "name", obj.Name, "namespace", obj.Namespace)
 		return errors.New("currently not supporting standalone pods as workloads for rollout")
 	default:
 		return errors.New("unknown kind")
