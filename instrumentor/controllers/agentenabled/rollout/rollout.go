@@ -585,13 +585,7 @@ func triggerRollback(
 	rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(workloadKey)
 
 	// Restart the workload to remove instrumentation
-	var t time.Time
-	if ic.Status.InstrumentationTime != nil {
-		t = ic.Status.InstrumentationTime.Time
-	} else {
-		t = time.Now()
-	}
-	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, t)
+	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
 	if rolloutErr != nil {
 		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
 		return RolloutResult{}, rolloutErr
