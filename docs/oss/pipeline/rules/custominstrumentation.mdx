@@ -1,10 +1,64 @@
 ---
 title: "Custom Instrumentation"
-description: "The \"Custom Instrumentation\" rule can be used to define custom eBPF-based instrumentations for arbitrary functions in your application code or its dependencies."
+description: "The \"Custom Instrumentation\" rule can be used to instrument specific functions in PHP applications, or (with Odigos Enterprise) arbitrary Go/Java functions via eBPF."
 sidebarTitle: "Custom Instrumentation"
 icon: "terminal"
 ---
 
-import EnterpriseCallout from "/snippets/oss/enterprise-only-rule.mdx";
+## Considerations
 
-<EnterpriseCallout />
+In Odigos open source, Custom Instrumentation is supported for **PHP** applications using the community native OpenTelemetry distro.
+
+Custom eBPF-based instrumentations for Go and Java require [Odigos Enterprise](/pricing).
+
+PHP probes are delivered as environment variables and require a pod restart to take effect.
+
+## Configuration Options
+
+<AccordionGroup>
+    <Accordion title="PHP">
+        <AccordionGroup>
+                    <Accordion title="className">
+                        **className** `string` - The fully qualified class name to instrument. Leave empty for a global function.
+                        - This field is *optional*
+                    </Accordion>
+                    <Accordion title="functionName">
+                        **functionName** `string` - The name of the function or method to instrument.
+                        - This field is *required*
+                    </Accordion>
+        </AccordionGroup>
+    </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+The following example instruments the `processOrder` method on `App\Service\OrderService`.
+
+<Steps>
+    <Step>
+        Create a YAML file named `custom-instrumentation.yaml` with the following content:
+        ```yaml
+        apiVersion: odigos.io/v1alpha1
+        kind: InstrumentationRule
+        metadata:
+            name: custom-instrumentation-rule
+            namespace: odigos-system
+        spec:
+            ruleName: "Custom Instrumentation for processOrder"
+            customInstrumentations:
+                php:
+                  - className: "App\\Service\\OrderService"
+                    functionName: "processOrder"
+        ```
+    </Step>
+    <Step>
+    Apply the rule to the cluster:
+
+    ```shell
+    kubectl apply -f custom-instrumentation.yaml
+    ```
+    </Step>
+    <Step>
+    Restart the PHP workload so the new `ODIGOS_AGENT_CUSTOM_INSTRUMENTATIONS` environment variable is picked up.
+    </Step>
+</Steps>
