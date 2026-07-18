@@ -1104,6 +1104,7 @@ type K8sWorkloadRollout struct {
 	RolloutStatus                 *DesiredConditionStatus                   `json:"rolloutStatus,omitempty"`
 	PodsManifestInjectionStatus   *DesiredConditionStatus                   `json:"podsManifestInjectionStatus"`
 	PodsManifestInjectionOverview *K8sWorkloadPodsManifestInjectionOverview `json:"podsManifestInjectionOverview"`
+	AgentsMetaHashChangedTime     *string                                   `json:"agentsMetaHashChangedTime,omitempty"`
 }
 
 type K8sWorkloadRuntimeInfo struct {

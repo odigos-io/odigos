@@ -918,6 +918,7 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadRollout struct {
+		AgentsMetaHashChangedTime     func(childComplexity int) int
 		PodsManifestInjectionOverview func(childComplexity int) int
 		PodsManifestInjectionStatus   func(childComplexity int) int
 		RolloutStatus                 func(childComplexity int) int
@@ -5534,6 +5535,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadPodsManifestInjectionOverview.TotalPods(childComplexity), true
+
+	case "K8sWorkloadRollout.agentsMetaHashChangedTime":
+		if e.complexity.K8sWorkloadRollout.AgentsMetaHashChangedTime == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadRollout.AgentsMetaHashChangedTime(childComplexity), true
 
 	case "K8sWorkloadRollout.podsManifestInjectionOverview":
 		if e.complexity.K8sWorkloadRollout.PodsManifestInjectionOverview == nil {
@@ -29920,6 +29928,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_rollout(_ context.Context, 
 				return ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionStatus(ctx, field)
 			case "podsManifestInjectionOverview":
 				return ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionOverview(ctx, field)
+			case "agentsMetaHashChangedTime":
+				return ec.fieldContext_K8sWorkloadRollout_agentsMetaHashChangedTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRollout", field.Name)
 		},
@@ -36078,6 +36088,47 @@ func (ec *executionContext) fieldContext_K8sWorkloadRollout_podsManifestInjectio
 				return ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_agentOutOfDateOk(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadPodsManifestInjectionOverview", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadRollout_agentsMetaHashChangedTime(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRollout) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadRollout_agentsMetaHashChangedTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentsMetaHashChangedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadRollout_agentsMetaHashChangedTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadRollout",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -64104,6 +64155,8 @@ func (ec *executionContext) _K8sWorkloadRollout(ctx context.Context, sel ast.Sel
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "agentsMetaHashChangedTime":
+			out.Values[i] = ec._K8sWorkloadRollout_agentsMetaHashChangedTime(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

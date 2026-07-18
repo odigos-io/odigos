@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -347,13 +348,19 @@ func (r *k8sWorkloadResolver) Rollout(ctx context.Context, obj *model.K8sWorkloa
 	}
 
 	var rolloutStatus *model.DesiredConditionStatus
+	var agentsMetaHashChangedTime *string
 	if ic != nil {
 		rolloutStatus = status.CalculateRolloutStatus(ic)
+		if ic.Spec.AgentsMetaHashChangedTime != nil {
+			t := ic.Spec.AgentsMetaHashChangedTime.Format(time.RFC3339)
+			agentsMetaHashChangedTime = &t
+		}
 	}
 
 	return &model.K8sWorkloadRollout{
 		RolloutStatus:               rolloutStatus,
 		PodsManifestInjectionStatus: status.CalculatePodsManifestInjectionStatus(ic, pods),
+		AgentsMetaHashChangedTime:   agentsMetaHashChangedTime,
 	}, nil
 }
 

@@ -274,6 +274,15 @@ type K8sWorkloadRollout {
 
   # overview counts of pods by agent injection state.
   podsManifestInjectionOverview: K8sWorkloadPodsManifestInjectionOverview!
+
+  # last time the agents meta hash value changed.
+  # sourced from InstrumentationConfig spec.agentsMetaHashChangedTime.
+  # pods created before this time may not be in alignment with the current agents meta hash.
+  # null when the source is unmarked for instrumentation.
+  # the meta hash includes things like which agent name to use for each container, critical version bumps, etc.
+  # after this time, odigos should react with auto-rollout if enabled, and reconcile relevant status with action items for users.
+  # RFC3339 format.
+  agentsMetaHashChangedTime: String
 }
 
 type K8sWorkloadAutoRollback {
@@ -612,7 +621,9 @@ type K8sWorkload {
 
   agentEnabled: K8sWorkloadAgentEnabled
 
-  # always present so podsManifestInjectionOverview can be observed for every workload.
+  # indicate if a rollout is needed, or being auto-managed by odigos.
+  # includes an overview of the actual state of the pods in the cluster,
+  # and relevant action items for handling manual cases.
   rollout: K8sWorkloadRollout!
 
   # status for the auto rollback feature.
