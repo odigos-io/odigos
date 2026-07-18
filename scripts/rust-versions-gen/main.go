@@ -1,18 +1,3 @@
-// Command rust-versions-gen keeps
-// procdiscovery/pkg/inspectors/rust/rust_versions.yaml up to date with the
-// rustc commit hash -> release version mapping published as tags on
-// rust-lang/rust.
-//
-// This lives outside procdiscovery on purpose: procdiscovery is meant to be
-// a package consumed by other parts of the codebase, not a home for
-// generator tooling. It is invoked either via `go generate` (see the
-// directive in procdiscovery/pkg/inspectors/rust/rust_versions.go) or
-// directly from CI (see .github/workflows/update-rust-versions.yml).
-//
-// Rather than re-encoding the whole mapping on every run, this only appends
-// newly discovered hash/version pairs to the end of the file. That keeps
-// the diff on each automated PR limited to the handful of new lines added,
-// instead of reformatting/reordering entries that didn't change.
 package main
 
 import (
@@ -28,11 +13,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// outputPath is relative to this directory (scripts/rust-versions-gen),
-// which is where this program is expected to be run from - either via
-// `go run main.go` after `cd`-ing here (matching the convention used by the
-// other scripts/* generators), or via `go generate` in
-// procdiscovery/pkg/inspectors/rust, which shells out with `cd` first.
 const outputPath = "../../procdiscovery/pkg/inspectors/rust/rust_versions.yaml"
 
 func main() {
@@ -56,8 +36,6 @@ func main() {
 	log.Printf("Appended %d new rust version(s) to %s (%d total).", added, outputPath, len(existing)+added)
 }
 
-// fetchVersionsFromTags queries rust-lang/rust's tags via `git ls-remote` and
-// returns a map of rustc commit hash -> semantic release version.
 func fetchVersionsFromTags() (map[string]string, error) {
 	cmd := exec.Command("git", "ls-remote", "--tags", "https://github.com/rust-lang/rust.git")
 	var out bytes.Buffer
@@ -93,9 +71,7 @@ func fetchVersionsFromTags() (map[string]string, error) {
 		}
 
 		version := match[1]
-		// git ls-remote sorts refs alphabetically, so 'refs/tags/1.0.0'
-		// comes before 'refs/tags/1.0.0^{}'. Overwriting versionToHash[version]
-		// lets the ^{} commit hash naturally replace the tag object hash.
+
 		versionToHash[version] = hash
 	}
 
@@ -106,8 +82,6 @@ func fetchVersionsFromTags() (map[string]string, error) {
 	return discovered, nil
 }
 
-// loadExisting reads the current hash -> version mapping from path. A
-// missing file is treated as an empty mapping (e.g. first run).
 func loadExisting(path string) (map[string]string, error) {
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
@@ -124,10 +98,6 @@ func loadExisting(path string) (map[string]string, error) {
 	return existing, nil
 }
 
-// appendNewEntries writes only the hashes from discovered that are not
-// already present in existing to the end of the file at path, one
-// "hash: \"version\"" line at a time, leaving every existing line untouched.
-// It returns the number of entries appended.
 func appendNewEntries(path string, existing, discovered map[string]string) (int, error) {
 	newHashes := make([]string, 0, len(discovered))
 	for hash := range discovered {
@@ -139,7 +109,6 @@ func appendNewEntries(path string, existing, discovered map[string]string) (int,
 	if len(newHashes) == 0 {
 		return 0, nil
 	}
-	// Sort for a deterministic, reviewable diff across runs.
 	sort.Strings(newHashes)
 
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
