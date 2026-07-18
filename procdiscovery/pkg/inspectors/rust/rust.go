@@ -2,6 +2,7 @@ package rust
 
 import (
 	"debug/elf"
+	"io"
 	"regexp"
 	"strings"
 
@@ -25,6 +26,17 @@ type RustInspector struct{}
 // making an external call to resolve hash -> release version.
 var rustcCommitHashRe = regexp.MustCompile(`/rustc/([0-9a-f]{40})/`)
 
+// rustcHashPattern is the longest possible literal matched by
+// rustcCommitHashRe: "/rustc/" + 40 hex chars + "/".
+const rustcHashPatternLen = len("/rustc/") + 40 + len("/")
+
+// scanChunkSize bounds how much of a section is held in memory at once while
+// scanning for an embedded rustc commit hash. ELF .rodata/.data.rel.ro
+// sections can be very large (many MBs), and reading them in full via
+// elf.Section.Data() causes memory spikes; scanning in bounded chunks keeps
+// peak memory roughly constant regardless of section size.
+const scanChunkSize = 64 * 1024
+
 // extractRustcCommitHash searches raw section data for an embedded rustc
 // commit hash. Returns "" if none is found.
 func extractRustcCommitHash(data []byte) string {
@@ -33,6 +45,44 @@ func extractRustcCommitHash(data []byte) string {
 		return ""
 	}
 	return string(match[1])
+}
+
+// scanForRustcCommitHash streams r in bounded chunks looking for an embedded
+// rustc commit hash, instead of reading the entire underlying section into
+// memory. A small overlap is carried between chunks so a match that
+// straddles a chunk boundary is not missed.
+func scanForRustcCommitHash(r io.Reader) string {
+	return scanForRustcCommitHashChunked(r, scanChunkSize)
+}
+
+// scanForRustcCommitHashChunked is the same as scanForRustcCommitHash but
+// takes an explicit chunk size, so tests can exercise boundary-straddling
+// matches with a small buffer.
+func scanForRustcCommitHashChunked(r io.Reader, chunkSize int) string {
+	overlap := rustcHashPatternLen - 1
+	buf := make([]byte, overlap+chunkSize)
+	carry := 0
+
+	for {
+		n, err := r.Read(buf[carry : carry+chunkSize])
+		if n > 0 {
+			window := buf[:carry+n]
+			if hash := extractRustcCommitHash(window); hash != "" {
+				return hash
+			}
+
+			// Keep the trailing bytes in case a match straddles this chunk
+			// boundary and the next one.
+			if len(window) > overlap {
+				carry = copy(buf, window[len(window)-overlap:])
+			} else {
+				carry = copy(buf, window)
+			}
+		}
+		if err != nil {
+			return ""
+		}
+	}
 }
 
 func (n *RustInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
@@ -92,17 +142,15 @@ func (n *RustInspector) GetRuntimeVersion(pcx *process.ProcessContext) string {
 			continue
 		}
 
-		data, err := section.Data()
-		if err != nil {
+		hash := scanForRustcCommitHash(section.Open())
+		if hash == "" {
 			continue
 		}
 
-		if hash := extractRustcCommitHash(data); hash != "" {
-			if version, ok := rustcHashToVersion[hash]; ok {
-				return version
-			}
-			return hash
+		if version, ok := rustcHashToVersion[hash]; ok {
+			return version
 		}
+		return hash
 	}
 
 	return ""

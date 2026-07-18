@@ -27,8 +27,8 @@ jobs:
 
       - name: Run generation script
         run: |
-          cd procdiscovery/pkg/inspectors/rust
-          go generate ./...
+          cd scripts/rust-versions-gen
+          go run main.go
 
       - name: Create pull request
         uses: peter-evans/create-pull-request@v7
