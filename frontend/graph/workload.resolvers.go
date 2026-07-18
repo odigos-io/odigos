@@ -332,18 +332,18 @@ func (r *k8sWorkloadResolver) AgentEnabled(ctx context.Context, obj *model.K8sWo
 // Rollout is the resolver for the rollout field.
 func (r *k8sWorkloadResolver) Rollout(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadRollout, error) {
 	if obj == nil || obj.ID == nil {
-		return nil, nil
+		return &model.K8sWorkloadRollout{}, nil
 	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
-	if err != nil || ic == nil {
+	if err != nil {
 		return nil, err
 	}
 
-	rolloutStatus := status.CalculateRolloutStatus(ic)
-	podsManifestInjectionStatus := status.CalculatePodsManifestInjectionStatus(ic)
-	if rolloutStatus == nil && podsManifestInjectionStatus == nil {
-		return nil, nil
+	var rolloutStatus, podsManifestInjectionStatus *model.DesiredConditionStatus
+	if ic != nil {
+		rolloutStatus = status.CalculateRolloutStatus(ic)
+		podsManifestInjectionStatus = status.CalculatePodsManifestInjectionStatus(ic)
 	}
 
 	return &model.K8sWorkloadRollout{
@@ -848,6 +848,36 @@ func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *mo
 	return processes, nil
 }
 
+// PodsManifestInjectionOverview is the resolver for the podsManifestInjectionOverview field.
+func (r *k8sWorkloadRolloutResolver) PodsManifestInjectionOverview(ctx context.Context, obj *model.K8sWorkloadRollout) (*model.K8sWorkloadPodsManifestInjectionOverview, error) {
+	if obj != nil && obj.PodsManifestInjectionOverview != nil {
+		return obj.PodsManifestInjectionOverview, nil
+	}
+
+	fc := graphql.GetFieldContext(ctx)
+	// current field -> *model.K8sWorkloadRollout -> *model.K8sWorkload
+	if fc == nil || fc.Parent == nil || fc.Parent.Parent == nil {
+		return nil, fmt.Errorf("missing parent resolver context")
+	}
+	w, ok := fc.Parent.Parent.Result.(**model.K8sWorkload)
+	if !ok || w == nil || (*w).ID == nil {
+		return nil, fmt.Errorf("parent is not a workload")
+	}
+	workloadId := *(*w).ID
+
+	l := loaders.For(ctx)
+	pods, err := l.GetWorkloadPods(ctx, workloadId)
+	if err != nil {
+		return nil, err
+	}
+	ic, err := l.GetInstrumentationConfig(ctx, workloadId)
+	if err != nil {
+		return nil, err
+	}
+
+	return status.CalculatePodsManifestInjectionOverview(ic, pods), nil
+}
+
 // ExpectingTelemetry is the resolver for the expectingTelemetry field.
 func (r *k8sWorkloadTelemetryMetricsResolver) ExpectingTelemetry(ctx context.Context, obj *model.K8sWorkloadTelemetryMetrics) (*model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus, error) {
 	// Safely derive the parent workload ID from the GraphQL field context
@@ -968,6 +998,11 @@ func (r *Resolver) K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver {
 	return &k8sWorkloadPodContainerResolver{r}
 }
 
+// K8sWorkloadRollout returns K8sWorkloadRolloutResolver implementation.
+func (r *Resolver) K8sWorkloadRollout() K8sWorkloadRolloutResolver {
+	return &k8sWorkloadRolloutResolver{r}
+}
+
 // K8sWorkloadTelemetryMetrics returns K8sWorkloadTelemetryMetricsResolver implementation.
 func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsResolver {
 	return &k8sWorkloadTelemetryMetricsResolver{r}
@@ -976,4 +1011,5 @@ func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsReso
 type k8sNamespaceResolver struct{ *Resolver }
 type k8sWorkloadResolver struct{ *Resolver }
 type k8sWorkloadPodContainerResolver struct{ *Resolver }
+type k8sWorkloadRolloutResolver struct{ *Resolver }
 type k8sWorkloadTelemetryMetricsResolver struct{ *Resolver }

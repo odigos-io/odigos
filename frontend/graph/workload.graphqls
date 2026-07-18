@@ -229,16 +229,50 @@ type K8sWorkloadAgentEnabled {
   containers: [K8sWorkloadAgentEnabledContainer!]
 }
 
+# overview counts of pods by instrumentation agent injection state for a workload.
+type K8sWorkloadPodsManifestInjectionOverview {
+  # total number of pods in the workload.
+  totalPods: Int!
+
+  # total number of pods that have the agent not applied
+  # if agent is disabled for workload, this will be the total number of pods in the workload.
+  totalAgentNotAppliedPods: Int!
+  # indicates if the total number of pods that have the agent not applied is as expected.
+  agentNotAppliedOk: Boolean!
+
+  # total number of pods that have the agent applied and is up to date with latest agent meta hash.
+  # if agent is disabled for workload, this should be 0,
+  # unless there are pods that are still running after uninstrumented or disabled.
+  # if agent is enabled for workload, this should be the total number of pods in the workload,
+  # unless there are pods running previous to instrumentation,
+  # or that the pods mutation webhook in instrumentor failed to apply on them.
+  totalAgentAppliedPods: Int!
+  # indicates if the total number of pods that have the agent applied is as expected.
+  agentAppliedOk: Boolean!
+
+  # total number of pods that have the agent applied but are out of date.
+  # if agent is disabled for workload, this will be 0.
+  totalAgentOutOfDatePods: Int!
+  # indicates if the total number of pods that have the agent applied but are out of date is as expected.
+  agentOutOfDateOk: Boolean!
+}
+
 # describes the odigos instrumentation related rollout status for a workload.
 type K8sWorkloadRollout {
+  # DEPRECATED: replaced by podsManifestInjectionStatus. will be removed in the future.
+  # TODO: remove after 6 months - 2027-01-18
   # the status of the rollout. that is being tracked by odigos.
   # optional when only the PodsManifestInjection condition is present.
+  # available only if the source is marked for instrumentation (has instrumentation config).
   rolloutStatus: DesiredConditionStatus
 
   # status of odigos agent injection into running pods of this workload.
   # sourced from the InstrumentationConfig PodsManifestInjection condition.
   # covers whether pods are injected as desired, and any rollout/restart progress required to get there.
   podsManifestInjectionStatus: DesiredConditionStatus
+
+  # overview counts of pods by agent injection state.
+  podsManifestInjectionOverview: K8sWorkloadPodsManifestInjectionOverview!
 }
 
 type K8sWorkloadAutoRollback {
@@ -577,7 +611,8 @@ type K8sWorkload {
 
   agentEnabled: K8sWorkloadAgentEnabled
 
-  rollout: K8sWorkloadRollout
+  # always present so podsManifestInjectionOverview can be observed for every workload.
+  rollout: K8sWorkloadRollout!
 
   # status for the auto rollback feature.
   # used to monitor freshly instrumented sources and roll them back in case of any suspicious status.

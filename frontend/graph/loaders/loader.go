@@ -244,6 +244,7 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		for _, pod := range pods {
 			ic := l.instrumentationConfigs[sourceId]
 			agentInjected, agentInjectedStatus := status.CalculatePodAgentInjectedStatus(pod, ic, automaticRolloutEnabled)
+			agentsMetaHash := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]
 			var startedPostAgentMetaHashChange *bool
 			if ic != nil && ic.Spec.AgentsMetaHashChangedTime != nil {
 				posStartTimeAfterAgentMetaHashChange := pod.CreationTimestamp.After(ic.Spec.AgentsMetaHashChangedTime.Time)
@@ -299,6 +300,7 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 				StartedPostAgentMetaHashChange: startedPostAgentMetaHashChange,
 				AgentInjected:                  agentInjected,
 				AgentInjectedStatus:            agentInjectedStatus,
+				AgentsMetaHash:                 agentsMetaHash,
 				Containers:                     containers,
 			}
 
