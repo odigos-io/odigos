@@ -15,7 +15,7 @@ func TestCalculatePodsManifestInjectionStatusIncludesActionItems(t *testing.T) {
 			Conditions: []metav1.Condition{
 				{
 					Type:    podsManifestInjectionStatus.PodsManifestInjectionType,
-					Reason:  string(podsManifestInjectionStatus.PodsManifestInjectionReasonWaitingInRolloutQueue),
+					Reason:  string(podsManifestInjectionStatus.PodsManifestInjectionReasonWaitingInRolloutQueue_Enabled),
 					Message: "waiting for rollout",
 				},
 			},

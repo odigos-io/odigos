@@ -10,24 +10,81 @@ import (
 )
 
 const (
-	{{ .TypeName }}Type = "{{ .TypeName }}"
+	{{ .TypeName }}Type = {{ printf "%q" .TypeName }}
+{{- if .OwnerResource }}
+	{{ .TypeName }}OwnerResource = {{ printf "%q" .OwnerResource }}
+{{- end }}
+{{- if .Scope }}
+	{{ .TypeName }}Scope = {{ printf "%q" .Scope }}
+{{- end }}
+{{- if .Component }}
+	{{ .TypeName }}Component = {{ printf "%q" .Component }}
+{{- end }}
 )
+
+{{- if .Parameters }}
+
+// {{ .TypeName }}MessageParams holds values for templated reason messages.
+// Fields match the parameters section in the status YAML.
+type {{ .TypeName }}MessageParams struct {
+{{- range .Parameters }}
+{{- if .Description }}
+{{- range splitLines .Description }}
+	// {{ . }}
+{{- end }}
+{{- end }}
+	{{ .Name }} string
+{{- end }}
+}
+{{- end }}
+
+{{- if .HasDocs }}
+
+var {{ .TypeName }}Docs = status.Docs{
+	Title:   {{ printf "%q" .Docs.Title }},
+	Summary: {{ printf "%q" .Docs.Summary }},
+{{- if .Docs.Description }}
+	Description: {{ printf "%q" .Docs.Description }},
+{{- end }}
+{{- if .Docs.States }}
+	States: []status.StateDoc{
+{{- range .Docs.States }}
+		{
+			State:   {{ printf "%q" .State }},
+			Summary: {{ printf "%q" .Summary }},
+		},
+{{- end }}
+	},
+{{- end }}
+}
+{{- end }}
 
 type {{ .TypeName }}Reason string
 
 const (
 {{- range .Reasons }}
-	{{ $.TypeName }}Reason{{ .Name }} {{ $.TypeName }}Reason = "{{ .Name }}"
+	{{ $.TypeName }}Reason{{ .Name }} {{ $.TypeName }}Reason = {{ printf "%q" .Name }}
 {{- end }}
 )
 
 var (
 {{- range .Reasons }}
-	{{ $.TypeName }}{{ .Name }} = status.Reason{
-		Name:           string({{ $.TypeName }}Reason{{ .Name }}),
-		Message:        "{{ .Message }}",
-{{- if .TechnicalDescription }}
-		TechnicalDescription: "{{ .TechnicalDescription }}",
+	{{ $.TypeName }}{{ .Name }} = status.WithMessageTemplate(status.Reason{
+		Name: string({{ $.TypeName }}Reason{{ .Name }}),
+{{- if .Title }}
+		Title: {{ printf "%q" .Title }},
+{{- end }}
+{{- if .Summary }}
+		Summary: {{ printf "%q" .Summary }},
+{{- end }}
+{{- if .Description }}
+		Description: {{ printf "%q" .Description }},
+{{- end }}
+{{- if .Message }}
+		Message: {{ printf "%q" .Message }},
+{{- end }}
+{{- if .State }}
+		State: {{ printf "%q" .State }},
 {{- end }}
 {{- if .K8sConditionStatus }}
 		K8sConditionStatus: {{ k8sConditionStatusConst .K8sConditionStatus }},
@@ -37,13 +94,13 @@ var (
 		ActionItems: []status.ActionItem{
 {{- range .ActionItems }}
 			{
-				Type:           {{ actionItemTypeConst .Type }},
-				UserFacingText: "{{ .UserFacingText }}",
+				Type:       {{ actionItemTypeConst .Type }},
+				ButtonText: {{ printf "%q" .ButtonText }},
 			},
 {{- end }}
 		},
 {{- end }}
-	}
+	})
 {{- end }}
 
 	{{ .TypeName }}ByReason = map[string]status.Reason{

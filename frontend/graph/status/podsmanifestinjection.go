@@ -22,14 +22,14 @@ func CalculatePodsManifestInjectionStatus(ic *v1alpha1.InstrumentationConfig) *m
 			for _, actionItem := range r.ActionItems {
 				actionItems = append(actionItems, &model.DesiredConditionActionItem{
 					Type:           model.DesiredConditionActionItemType(actionItem.Type),
-					UserFacingText: actionItem.UserFacingText,
+					UserFacingText: actionItem.ButtonText,
 				})
 			}
 
 			return &model.DesiredConditionStatus{
 				Name:        c.Type,
 				Status:      model.DesiredStateProgress(r.OdigosSeverity),
-				ReasonEnum:  &c.Reason,
+				ReasonEnum:  &r.Title,
 				Message:     c.Message,
 				ActionItems: actionItems,
 			}

@@ -122,8 +122,6 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 		conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
 		conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
-		conditions = append(conditions, status.CalculateRolloutStatus(ic))
-		conditions = append(conditions, status.CalculatePodsManifestInjectionStatus(ic))
 		conditions = append(conditions, status.CalculateAutoRollbackStatus(ic, autoRollbackConfig))
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
@@ -139,7 +137,7 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 	// always report if agent is injected or not, even if the workload is not marked for instrumentation.
 	// this is to detect if uninstrumented pods have agent injected when it should not.
-	conditions = append(conditions, status.CalculateAgentInjectedStatus(ic, pods))
+	conditions = append(conditions, status.CalculatePodsManifestInjectionStatus(ic))
 	aggregateContainerProcessesHealth, err := aggregateProcessesHealthForWorkload(ctx, obj.ID, containerNamesWithOptionalPodManifestInjection)
 	if err != nil {
 		return nil, err
