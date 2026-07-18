@@ -4,40 +4,68 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/computed"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/status"
 	podsManifestInjectionStatus "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 )
 
-func CalculatePodsManifestInjectionStatus(ic *v1alpha1.InstrumentationConfig) *model.DesiredConditionStatus {
+func CalculatePodsManifestInjectionStatus(ic *v1alpha1.InstrumentationConfig, pods []computed.CachedPod) *model.DesiredConditionStatus {
 	if ic == nil {
-		return nil
+		return calculateUnmarkedPodsManifestInjectionStatus(pods)
 	}
 
 	for _, c := range ic.Status.Conditions {
 		if c.Type == podsManifestInjectionStatus.PodsManifestInjectionType {
 			r, ok := podsManifestInjectionStatus.PodsManifestInjectionReasonByName(c.Reason)
 			if !ok {
-				return nil
+				return &model.DesiredConditionStatus{
+					Name:    podsManifestInjectionStatus.PodsManifestInjectionType,
+					Status:  model.DesiredStateProgressUnknown,
+					Message: c.Message,
+				}
 			}
 
-			actionItems := make([]*model.DesiredConditionActionItem, 0, len(r.ActionItems))
-			for _, actionItem := range r.ActionItems {
-				actionItems = append(actionItems, &model.DesiredConditionActionItem{
-					Type:           model.DesiredConditionActionItemType(actionItem.Type),
-					UserFacingText: actionItem.ButtonText,
-				})
-			}
-
-			return &model.DesiredConditionStatus{
-				Name:        c.Type,
-				Status:      model.DesiredStateProgress(r.OdigosSeverity),
-				ReasonEnum:  &r.Title,
-				Message:     c.Message,
-				ActionItems: actionItems,
-			}
+			return podsManifestInjectionReasonToStatus(r, c.Message)
 		}
 	}
 
-	return nil
+	return podsManifestInjectionReasonToStatus(podsManifestInjectionStatus.PodsManifestInjectionNotYetReconciled, "")
+}
+
+func calculateUnmarkedPodsManifestInjectionStatus(pods []computed.CachedPod) *model.DesiredConditionStatus {
+	if len(pods) == 0 {
+		return podsManifestInjectionReasonToStatus(podsManifestInjectionStatus.PodsManifestInjectionNoPods, "")
+	}
+	for _, pod := range pods {
+		if pod.AgentInjected {
+			return podsManifestInjectionReasonToStatus(podsManifestInjectionStatus.PodsManifestInjectionUnmarkedFromOdigos_Disabled, "")
+		}
+	}
+	return podsManifestInjectionReasonToStatus(podsManifestInjectionStatus.PodsManifestInjectionPodsAppliedSuccessfully_Disabled, "")
+}
+
+func podsManifestInjectionReasonToStatus(r status.Reason, message string) *model.DesiredConditionStatus {
+	if message == "" {
+		message = r.Message
+	}
+	if message == "" {
+		message = r.Summary
+	}
+
+	actionItems := make([]*model.DesiredConditionActionItem, 0, len(r.ActionItems))
+	for _, actionItem := range r.ActionItems {
+		actionItems = append(actionItems, &model.DesiredConditionActionItem{
+			Type:           model.DesiredConditionActionItemType(actionItem.Type),
+			UserFacingText: actionItem.ButtonText,
+		})
+	}
+
+	return &model.DesiredConditionStatus{
+		Name:        podsManifestInjectionStatus.PodsManifestInjectionType,
+		Status:      model.DesiredStateProgress(r.OdigosSeverity),
+		ReasonEnum:  &r.Title,
+		Message:     message,
+		ActionItems: actionItems,
+	}
 }
 
 func CalculatePodsManifestInjectionOverview(ic *v1alpha1.InstrumentationConfig, pods []computed.CachedPod) *model.K8sWorkloadPodsManifestInjectionOverview {

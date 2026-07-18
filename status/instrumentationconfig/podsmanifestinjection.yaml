@@ -64,7 +64,7 @@ spec:
       title: "Agent Applied to All Pods"
       summary: "All pods have the instrumentation agent applied."
     - state: "disabled"
-      title: "Agent Detached from All Pods"
+      title: "Agent Removed from All Pods"
       summary: "All pods are running with no instrumentation agent."
 
   - name: "PodsManifestInjectionNotRequired"
@@ -254,3 +254,34 @@ spec:
       message: "Some pods have an out-of-date agent; odigos failed to automatically rollout {{ .WorkloadKind }} — rollout manually to apply the updated configuration"
       summary: "Manual rollout is required so new pods start with the current desired agent configuration."
 
+  - name: "UnmarkedFromOdigos"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Notice"
+    summary: "This source is not marked for instrumentation by Odigos and is not being tracked or automated to cleanup existing pods still running with an agent."
+    description: |
+      This source is not marked for instrumentation by Odigos and is not being tracked.
+      Any pods with agent already applied will remain as is and replaced by next rollout.
+      Odigos will not trigger auto rollout to cleanup any existing pods without an agent.
+      Since this state is for the case that source is untracked (instrumentation config is missing),
+      it will never be written to a status condition, but can be augmented in gql endpoint 
+      to provide more details in a generic way for all sources (marked or unmarked).
+    actionItems:
+    - type: "RolloutWorkload"
+      buttonText: "Rollout to Remove Agent"
+    states:
+    - state: "disabled"
+      title: "Rollout: Untracked by Odigos"
+      summary: "observed pods with agent injected that will be replaced by next rollout."
+      message: "Any pods with agent injected will remain as is and replaced by next rollout."
+
+  - name: "NotYetReconciled"
+    title: "Rollout: Status Not Yet Available"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "The pods manifest injection status has not been reconciled yet for this source."
+    message: "Checking agent status on pods; should update shortly"
+    description: |
+      Set as the default PodsManifestInjection condition when an InstrumentationConfig is created,
+      before the reconciler evaluates whether pods have the agent applied as desired.
+      This is typically a short-lived state shortly after a source is marked for instrumentation.
+      Once reconciliation completes, it is replaced with the observed agent injection status.

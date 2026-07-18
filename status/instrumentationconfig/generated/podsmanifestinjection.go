@@ -70,6 +70,8 @@ const (
 	PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_Enabled    PodsManifestInjectionReason = "RestartRequiredAutoRolloutFailed_Enabled"
 	PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_Disabled   PodsManifestInjectionReason = "RestartRequiredAutoRolloutFailed_Disabled"
 	PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_UpToDate   PodsManifestInjectionReason = "RestartRequiredAutoRolloutFailed_UpToDate"
+	PodsManifestInjectionReasonUnmarkedFromOdigos_Disabled                 PodsManifestInjectionReason = "UnmarkedFromOdigos_Disabled"
+	PodsManifestInjectionReasonNotYetReconciled                            PodsManifestInjectionReason = "NotYetReconciled"
 )
 
 var (
@@ -92,7 +94,7 @@ var (
 	})
 	PodsManifestInjectionPodsAppliedSuccessfully_Disabled = status.WithMessageTemplate(status.Reason{
 		Name:               string(PodsManifestInjectionReasonPodsAppliedSuccessfully_Disabled),
-		Title:              "Agent Detached from All Pods",
+		Title:              "Agent Removed from All Pods",
 		Summary:            "All pods are running with no instrumentation agent.",
 		Description:        "The instrumentation agent status on every pod for this source matches what it should be.\nNo further rollout is required right now.\nIf instrumentation is later enabled or disabled, Odigos will re-evaluate whether a new rollout is needed.\n",
 		State:              "disabled",
@@ -402,6 +404,31 @@ var (
 			},
 		},
 	})
+	PodsManifestInjectionUnmarkedFromOdigos_Disabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonUnmarkedFromOdigos_Disabled),
+		Title:              "Rollout: Untracked by Odigos",
+		Summary:            "observed pods with agent injected that will be replaced by next rollout.",
+		Description:        "This source is not marked for instrumentation by Odigos and is not being tracked.\nAny pods with agent already applied will remain as is and replaced by next rollout.\nOdigos will not trigger auto rollout to cleanup any existing pods without an agent.\nSince this state is for the case that source is untracked (instrumentation config is missing),\nit will never be written to a status condition, but can be augmented in gql endpoint \nto provide more details in a generic way for all sources (marked or unmarked).\n",
+		Message:            "Any pods with agent injected will remain as is and replaced by next rollout.",
+		State:              "disabled",
+		K8sConditionStatus: metav1.ConditionFalse,
+		OdigosSeverity:     status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout to Remove Agent",
+			},
+		},
+	})
+	PodsManifestInjectionNotYetReconciled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonNotYetReconciled),
+		Title:              "Rollout: Status Not Yet Available",
+		Summary:            "The pods manifest injection status has not been reconciled yet for this source.",
+		Description:        "Set as the default PodsManifestInjection condition when an InstrumentationConfig is created,\nbefore the reconciler evaluates whether pods have the agent applied as desired.\nThis is typically a short-lived state shortly after a source is marked for instrumentation.\nOnce reconciliation completes, it is replaced with the observed agent injection status.\n",
+		Message:            "Checking agent status on pods; should update shortly",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityWaiting,
+	})
 
 	PodsManifestInjectionByReason = map[string]status.Reason{
 		string(PodsManifestInjectionReasonNoPods):                                      PodsManifestInjectionNoPods,
@@ -429,6 +456,8 @@ var (
 		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_Enabled):    PodsManifestInjectionRestartRequiredAutoRolloutFailed_Enabled,
 		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_Disabled):   PodsManifestInjectionRestartRequiredAutoRolloutFailed_Disabled,
 		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_UpToDate):   PodsManifestInjectionRestartRequiredAutoRolloutFailed_UpToDate,
+		string(PodsManifestInjectionReasonUnmarkedFromOdigos_Disabled):                 PodsManifestInjectionUnmarkedFromOdigos_Disabled,
+		string(PodsManifestInjectionReasonNotYetReconciled):                            PodsManifestInjectionNotYetReconciled,
 	}
 )
 

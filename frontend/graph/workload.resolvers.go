@@ -137,7 +137,7 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 	// always report if agent is injected or not, even if the workload is not marked for instrumentation.
 	// this is to detect if uninstrumented pods have agent injected when it should not.
-	conditions = append(conditions, status.CalculatePodsManifestInjectionStatus(ic))
+	conditions = append(conditions, status.CalculatePodsManifestInjectionStatus(ic, pods))
 	aggregateContainerProcessesHealth, err := aggregateProcessesHealthForWorkload(ctx, obj.ID, containerNamesWithOptionalPodManifestInjection)
 	if err != nil {
 		return nil, err
@@ -202,7 +202,7 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 	runtimeDetection := status.CalculateRuntimeInspectionStatus(ic)
 	agentInjectionEnabled := status.CalculateAgentInjectionEnabledStatus(ic)
 	rollout := status.CalculateRolloutStatus(ic)
-	podsManifestInjection := status.CalculatePodsManifestInjectionStatus(ic)
+	podsManifestInjection := status.CalculatePodsManifestInjectionStatus(ic, pods)
 	autoRollback := status.CalculateAutoRollbackStatus(ic, autoRollbackConfig)
 	agentInjected := status.CalculateAgentInjectedStatus(ic, pods)
 	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
@@ -332,23 +332,28 @@ func (r *k8sWorkloadResolver) AgentEnabled(ctx context.Context, obj *model.K8sWo
 // Rollout is the resolver for the rollout field.
 func (r *k8sWorkloadResolver) Rollout(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadRollout, error) {
 	if obj == nil || obj.ID == nil {
-		return &model.K8sWorkloadRollout{}, nil
+		return &model.K8sWorkloadRollout{
+			PodsManifestInjectionStatus: status.CalculatePodsManifestInjectionStatus(nil, nil),
+		}, nil
 	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
 	if err != nil {
 		return nil, err
 	}
+	pods, err := l.GetWorkloadPods(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
 
-	var rolloutStatus, podsManifestInjectionStatus *model.DesiredConditionStatus
+	var rolloutStatus *model.DesiredConditionStatus
 	if ic != nil {
 		rolloutStatus = status.CalculateRolloutStatus(ic)
-		podsManifestInjectionStatus = status.CalculatePodsManifestInjectionStatus(ic)
 	}
 
 	return &model.K8sWorkloadRollout{
 		RolloutStatus:               rolloutStatus,
-		PodsManifestInjectionStatus: podsManifestInjectionStatus,
+		PodsManifestInjectionStatus: status.CalculatePodsManifestInjectionStatus(ic, pods),
 	}, nil
 }
 

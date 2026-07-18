@@ -29916,10 +29916,10 @@ func (ec *executionContext) fieldContext_K8sWorkload_rollout(_ context.Context, 
 			switch field.Name {
 			case "rolloutStatus":
 				return ec.fieldContext_K8sWorkloadRollout_rolloutStatus(ctx, field)
-			case "podsManifestInjectionOverview":
-				return ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionOverview(ctx, field)
 			case "podsManifestInjectionStatus":
 				return ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionStatus(ctx, field)
+			case "podsManifestInjectionOverview":
+				return ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionOverview(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRollout", field.Name)
 		},
@@ -35967,6 +35967,62 @@ func (ec *executionContext) fieldContext_K8sWorkloadRollout_rolloutStatus(_ cont
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkloadRollout_podsManifestInjectionStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRollout) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PodsManifestInjectionStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadRollout_podsManifestInjectionStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadRollout",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadRollout_podsManifestInjectionOverview(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRollout) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionOverview(ctx, field)
 	if err != nil {
@@ -36022,59 +36078,6 @@ func (ec *executionContext) fieldContext_K8sWorkloadRollout_podsManifestInjectio
 				return ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_agentOutOfDateOk(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadPodsManifestInjectionOverview", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _K8sWorkloadRollout_podsManifestInjectionStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRollout) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionStatus(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PodsManifestInjectionStatus, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.DesiredConditionStatus)
-	fc.Result = res
-	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_K8sWorkloadRollout_podsManifestInjectionStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "K8sWorkloadRollout",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
-			case "status":
-				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
-			case "reasonEnum":
-				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
-			case "message":
-				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
-			case "actionItems":
-				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
 	}
 	return fc, nil
@@ -64060,6 +64063,11 @@ func (ec *executionContext) _K8sWorkloadRollout(ctx context.Context, sel ast.Sel
 			out.Values[i] = graphql.MarshalString("K8sWorkloadRollout")
 		case "rolloutStatus":
 			out.Values[i] = ec._K8sWorkloadRollout_rolloutStatus(ctx, field, obj)
+		case "podsManifestInjectionStatus":
+			out.Values[i] = ec._K8sWorkloadRollout_podsManifestInjectionStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "podsManifestInjectionOverview":
 			field := field
 
@@ -64096,8 +64104,6 @@ func (ec *executionContext) _K8sWorkloadRollout(ctx context.Context, sel ast.Sel
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "podsManifestInjectionStatus":
-			out.Values[i] = ec._K8sWorkloadRollout_podsManifestInjectionStatus(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

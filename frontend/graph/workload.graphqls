@@ -267,9 +267,10 @@ type K8sWorkloadRollout {
   rolloutStatus: DesiredConditionStatus
 
   # status of odigos agent injection into running pods of this workload.
-  # sourced from the InstrumentationConfig PodsManifestInjection condition.
+  # sourced from the InstrumentationConfig PodsManifestInjection condition when present.
+  # when the source is unmarked (no instrumentation config), derived from whether pods still have the agent meta hash label.
   # covers whether pods are injected as desired, and any rollout/restart progress required to get there.
-  podsManifestInjectionStatus: DesiredConditionStatus
+  podsManifestInjectionStatus: DesiredConditionStatus!
 
   # overview counts of pods by agent injection state.
   podsManifestInjectionOverview: K8sWorkloadPodsManifestInjectionOverview!
