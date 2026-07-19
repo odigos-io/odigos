@@ -188,7 +188,7 @@
                   "type": "string"
                 },
                 "memory": {
-                  "default": "256Mi",
+                  "default": "512Mi",
                   "title": "memory",
                   "type": "string"
                 }
@@ -206,7 +206,7 @@
                   "type": "string"
                 },
                 "memory": {
-                  "default": "64Mi",
+                  "default": "256Mi",
                   "title": "memory",
                   "type": "string"
                 }
