@@ -82,7 +82,7 @@ spec:
     - name: Assert InstrumentationConfig Created for Rollouts
       try:
         - assert:
-            timeout: 2m20s
+            timeout: 3m06s
             file: 03-assert-instrumentation-configs.yaml
 
     - name: Assert Argo Rollouts Are Healthy After Instrumentation

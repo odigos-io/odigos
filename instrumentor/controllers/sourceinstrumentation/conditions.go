@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	podsManifestInjection "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 )
 
 func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig, workloadObj workload.Workload) bool {
@@ -89,6 +90,22 @@ func initiateAgentEnabledConditionIfMissing(ic *v1alpha1.InstrumentationConfig) 
 		Status:  metav1.ConditionUnknown,
 		Reason:  reason,
 		Message: message,
+	})
+
+	return true
+}
+
+func initiatePodsManifestInjectionConditionIfMissing(ic *v1alpha1.InstrumentationConfig) bool {
+	if meta.FindStatusCondition(ic.Status.Conditions, podsManifestInjection.PodsManifestInjectionType) != nil {
+		return false
+	}
+
+	reason := podsManifestInjection.PodsManifestInjectionNotYetReconciled
+	meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+		Type:    podsManifestInjection.PodsManifestInjectionType,
+		Status:  reason.K8sConditionStatus,
+		Reason:  reason.Name,
+		Message: reason.Message,
 	})
 
 	return true

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { StatusType } from '@odigos/ui-kit/types';
 import { safeJsonParse } from '@odigos/ui-kit/functions';
-import { useOdigosApi } from '@odigos/ui-kit/contexts/odigos-api';
+import { useOdigosApi } from '@odigos/ui-kit/contexts';
 import { useNotificationStore, useProgressStore, ProgressKeys } from '@odigos/ui-kit/store';
 
 enum EventTypes {

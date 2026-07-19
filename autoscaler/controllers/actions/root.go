@@ -81,16 +81,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	err = ctrl.NewControllerManagedBy(mgr).
-		For(&v1.PiiMasking{}).
-		Complete(&PiiMaskingReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = ctrl.NewControllerManagedBy(mgr).
 		For(&v1.K8sAttributesResolver{}).
 		Complete(&K8sAttributesResolverReconciler{
 			Client: mgr.GetClient(),

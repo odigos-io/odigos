@@ -120,6 +120,15 @@ declare module 'styled-components' {
           '600': string;
         };
       };
+      zIndex: {
+        base: number;
+        island: number;
+        drawer: number;
+        modal: number;
+        dropdown: number;
+        popover: number;
+        tooltip: number;
+      };
     };
     darkMode: boolean;
     colors: {

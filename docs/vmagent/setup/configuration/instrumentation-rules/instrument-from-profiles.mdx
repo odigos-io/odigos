@@ -27,11 +27,11 @@ This page covers the profile-driven, UI-only workflow. To define a rule manually
     2. In the **Filter modules** pane, adjust the module or type filter if needed.
     3. In the **Functions** pane, highlight the function you want to instrument.
 
-    In this example, the `odigos-demo-frontend` service is selected and the highlighted function is the Java method `com.fasterxml.jackson.core.json.UTF8StreamJsonParser._parseName`.
+    In this example, the `odigos-demo-frontend` service is selected and the highlighted function is the Java method `sun.net.www.protocol.http.HttpURLConnection.getHeaderField`.
 
     <img
       src="../../../../images/vmagent/profiling/odictl_profiling_before_instrumenting.png"
-      alt="odictl profiling view with the _parseName function selected, before instrumenting"
+      alt="odictl profiling view with the getHeaderField function selected, before instrumenting"
       style={{
         width: "700px",
         height: "auto",
@@ -41,11 +41,11 @@ This page covers the profile-driven, UI-only workflow. To define a rule manually
     />
   </Step>
   <Step title="Instrument the function">
-    Press <Badge color="blue">i</Badge>. The bottom-right panel updates to show the function is **Instrumented**. In this example, `_parseName` is now instrumented under the `odigos-profiling-odigos-demo-frontend` rule.
+    Press <Badge color="blue">i</Badge>. The bottom-right panel updates to show the function is **Instrumented**. In this example, `getHeaderField` is now instrumented under the `odigos-profiling-odigos-demo-frontend` rule.
 
     <img
       src="../../../../images/vmagent/profiling/odictl_profiling_after_instrumenting.png"
-      alt="odictl profiling view showing the _parseName function marked as Instrumented"
+      alt="odictl profiling view showing the getHeaderField function marked as Instrumented"
       style={{
         width: "700px",
         height: "auto",
@@ -82,7 +82,7 @@ This page covers the profile-driven, UI-only workflow. To define a rule manually
     </Note>
   </Step>
   <Step title="Verify the new span">
-    Once the rule is applied, new traces include a span for the instrumented function. Open your trace backend and search for the function name (for example, `_parseName`) to confirm the span is being recorded.
+    Once the rule is applied, new traces include a span for the instrumented function. Open your trace backend and search for the function name (for example, `getHeaderField`) to confirm the span is being recorded.
   </Step>
 </Steps>
 

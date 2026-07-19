@@ -93,6 +93,16 @@ export const GET_WORKLOADS_BY_IDS = gql`
           reasonEnum
           message
         }
+        podsManifestInjection {
+          name
+          status
+          reasonEnum
+          message
+          actionItems {
+            type
+            buttonText
+          }
+        }
         autoRollback {
           name
           status
@@ -116,6 +126,24 @@ export const GET_WORKLOADS_BY_IDS = gql`
           status
           reasonEnum
           message
+        }
+      }
+      rollout {
+        rolloutStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        podsManifestInjectionStatus {
+          name
+          status
+          reasonEnum
+          message
+          actionItems {
+            type
+            buttonText
+          }
         }
       }
       autoRollback {
@@ -167,6 +195,10 @@ export const GET_WORKLOADS_BY_IDS = gql`
                     route
                     routePrefix
                     method
+                    queryParams {
+                      name
+                      valueExact
+                    }
                   }
                   httpClient {
                     serverAddress
@@ -191,6 +223,10 @@ export const GET_WORKLOADS_BY_IDS = gql`
                   route
                   routePrefix
                   method
+                  queryParams {
+                    name
+                    valueExact
+                  }
                 }
                 httpClient {
                   serverAddress
@@ -242,6 +278,12 @@ export const GET_WORKLOADS_BY_IDS = gql`
               percentageAtMost
             }
           }
+        }
+        instrumentations {
+          name
+          healthy
+          message
+          isStandardLibrary
         }
       }
       pods {

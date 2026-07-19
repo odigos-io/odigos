@@ -369,8 +369,9 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	markedForInstChanged := meta.SetStatusCondition(&ic.Status.Conditions, markedForInstrumentationCondition)
 	runtimeDetailsChanged := initiateRuntimeDetailsConditionIfMissing(ic, workloadObj)
 	agentEnabledChanged := initiateAgentEnabledConditionIfMissing(ic)
+	podsManifestInjectionChanged := initiatePodsManifestInjectionConditionIfMissing(ic)
 
-	if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged {
+	if markedForInstChanged || runtimeDetailsChanged || agentEnabledChanged || podsManifestInjectionChanged {
 		ic.Status.Conditions = sortIcConditionsByLogicalOrder(ic.Status.Conditions)
 
 		err = k8sClient.Status().Update(ctx, ic)

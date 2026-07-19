@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -122,7 +123,6 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 		conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
 		conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
-		conditions = append(conditions, status.CalculateRolloutStatus(ic))
 		conditions = append(conditions, status.CalculateAutoRollbackStatus(ic, autoRollbackConfig))
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
@@ -138,7 +138,7 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 	// always report if agent is injected or not, even if the workload is not marked for instrumentation.
 	// this is to detect if uninstrumented pods have agent injected when it should not.
-	conditions = append(conditions, status.CalculateAgentInjectedStatus(ic, pods))
+	conditions = append(conditions, status.CalculatePodsManifestInjectionStatus(ic, pods))
 	aggregateContainerProcessesHealth, err := aggregateProcessesHealthForWorkload(ctx, obj.ID, containerNamesWithOptionalPodManifestInjection)
 	if err != nil {
 		return nil, err
@@ -203,6 +203,7 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 	runtimeDetection := status.CalculateRuntimeInspectionStatus(ic)
 	agentInjectionEnabled := status.CalculateAgentInjectionEnabledStatus(ic)
 	rollout := status.CalculateRolloutStatus(ic)
+	podsManifestInjection := status.CalculatePodsManifestInjectionStatus(ic, pods)
 	autoRollback := status.CalculateAutoRollbackStatus(ic, autoRollbackConfig)
 	agentInjected := status.CalculateAgentInjectedStatus(ic, pods)
 	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
@@ -226,6 +227,7 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 		RuntimeDetection:      runtimeDetection,
 		AgentInjectionEnabled: agentInjectionEnabled,
 		Rollout:               rollout,
+		PodsManifestInjection: podsManifestInjection,
 		AutoRollback:          autoRollback,
 		AgentInjected:         agentInjected,
 		ProcessesAgentHealth:  processesAgentHealth,
@@ -331,21 +333,34 @@ func (r *k8sWorkloadResolver) AgentEnabled(ctx context.Context, obj *model.K8sWo
 // Rollout is the resolver for the rollout field.
 func (r *k8sWorkloadResolver) Rollout(ctx context.Context, obj *model.K8sWorkload) (*model.K8sWorkloadRollout, error) {
 	if obj == nil || obj.ID == nil {
-		return nil, nil
+		return &model.K8sWorkloadRollout{
+			PodsManifestInjectionStatus: status.CalculatePodsManifestInjectionStatus(nil, nil),
+		}, nil
 	}
 	l := loaders.For(ctx)
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
-	if err != nil || ic == nil {
+	if err != nil {
+		return nil, err
+	}
+	pods, err := l.GetWorkloadPods(ctx, *obj.ID)
+	if err != nil {
 		return nil, err
 	}
 
-	rolloutStatus := status.CalculateRolloutStatus(ic)
-	if rolloutStatus == nil {
-		return nil, nil
+	var rolloutStatus *model.DesiredConditionStatus
+	var agentsMetaHashChangedTime *string
+	if ic != nil {
+		rolloutStatus = status.CalculateRolloutStatus(ic)
+		if ic.Spec.AgentsMetaHashChangedTime != nil {
+			t := ic.Spec.AgentsMetaHashChangedTime.Format(time.RFC3339)
+			agentsMetaHashChangedTime = &t
+		}
 	}
 
 	return &model.K8sWorkloadRollout{
-		RolloutStatus: rolloutStatus,
+		RolloutStatus:               rolloutStatus,
+		PodsManifestInjectionStatus: status.CalculatePodsManifestInjectionStatus(ic, pods),
+		AgentsMetaHashChangedTime:   agentsMetaHashChangedTime,
 	}, nil
 }
 
@@ -478,8 +493,11 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 		return nil, err
 	}
 
+	// Fetch the InstrumentationConfig if present, but do not require it: workloads without an
+	// InstrumentationConfig still have Kubernetes pods we want to surface. getContainerConfigByName
+	// is nil-safe, so a nil ic simply yields empty odigos instrumentation config per container.
 	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
-	if err != nil || ic == nil {
+	if err != nil {
 		return nil, err
 	}
 
@@ -842,6 +860,36 @@ func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *mo
 	return processes, nil
 }
 
+// PodsManifestInjectionOverview is the resolver for the podsManifestInjectionOverview field.
+func (r *k8sWorkloadRolloutResolver) PodsManifestInjectionOverview(ctx context.Context, obj *model.K8sWorkloadRollout) (*model.K8sWorkloadPodsManifestInjectionOverview, error) {
+	if obj != nil && obj.PodsManifestInjectionOverview != nil {
+		return obj.PodsManifestInjectionOverview, nil
+	}
+
+	fc := graphql.GetFieldContext(ctx)
+	// current field -> *model.K8sWorkloadRollout -> *model.K8sWorkload
+	if fc == nil || fc.Parent == nil || fc.Parent.Parent == nil {
+		return nil, fmt.Errorf("missing parent resolver context")
+	}
+	w, ok := fc.Parent.Parent.Result.(**model.K8sWorkload)
+	if !ok || w == nil || (*w).ID == nil {
+		return nil, fmt.Errorf("parent is not a workload")
+	}
+	workloadId := *(*w).ID
+
+	l := loaders.For(ctx)
+	pods, err := l.GetWorkloadPods(ctx, workloadId)
+	if err != nil {
+		return nil, err
+	}
+	ic, err := l.GetInstrumentationConfig(ctx, workloadId)
+	if err != nil {
+		return nil, err
+	}
+
+	return status.CalculatePodsManifestInjectionOverview(ic, pods), nil
+}
+
 // ExpectingTelemetry is the resolver for the expectingTelemetry field.
 func (r *k8sWorkloadTelemetryMetricsResolver) ExpectingTelemetry(ctx context.Context, obj *model.K8sWorkloadTelemetryMetrics) (*model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus, error) {
 	// Safely derive the parent workload ID from the GraphQL field context
@@ -962,6 +1010,11 @@ func (r *Resolver) K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver {
 	return &k8sWorkloadPodContainerResolver{r}
 }
 
+// K8sWorkloadRollout returns K8sWorkloadRolloutResolver implementation.
+func (r *Resolver) K8sWorkloadRollout() K8sWorkloadRolloutResolver {
+	return &k8sWorkloadRolloutResolver{r}
+}
+
 // K8sWorkloadTelemetryMetrics returns K8sWorkloadTelemetryMetricsResolver implementation.
 func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsResolver {
 	return &k8sWorkloadTelemetryMetricsResolver{r}
@@ -970,4 +1023,5 @@ func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsReso
 type k8sNamespaceResolver struct{ *Resolver }
 type k8sWorkloadResolver struct{ *Resolver }
 type k8sWorkloadPodContainerResolver struct{ *Resolver }
+type k8sWorkloadRolloutResolver struct{ *Resolver }
 type k8sWorkloadTelemetryMetricsResolver struct{ *Resolver }
