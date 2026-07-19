@@ -108,6 +108,11 @@ models:
       rollbackOccurred:
         resolver: true
 
+  K8sWorkloadRollout:
+    fields:
+      podsManifestInjectionOverview:
+        resolver: true
+
   K8sWorkloadTelemetryMetrics:
     fields:
       expectingTelemetry:

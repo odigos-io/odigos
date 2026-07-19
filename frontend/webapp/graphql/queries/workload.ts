@@ -100,7 +100,7 @@ export const GET_WORKLOADS_BY_IDS = gql`
           message
           actionItems {
             type
-            userFacingText
+            buttonText
           }
         }
         autoRollback {
@@ -142,7 +142,7 @@ export const GET_WORKLOADS_BY_IDS = gql`
           message
           actionItems {
             type
-            userFacingText
+            buttonText
           }
         }
       }
