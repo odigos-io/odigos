@@ -35,6 +35,8 @@ const (
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
 	// the rollout is needed to update the instrumentation done by the Pods webhook.
 	WorkloadRolloutStatusConditionType = "WorkloadRollout"
+	// reports whether running pods have the instrumentation agent applied as desired.
+	PodsManifestInjectionStatusConditionType = "PodsManifestInjection"
 )
 
 func StatusConditionTypeLogicalOrder(condType string) int {
@@ -47,8 +49,10 @@ func StatusConditionTypeLogicalOrder(condType string) int {
 		return 3
 	case WorkloadRolloutStatusConditionType:
 		return 4
-	default:
+	case PodsManifestInjectionStatusConditionType:
 		return 5
+	default:
+		return 6
 	}
 }
 
