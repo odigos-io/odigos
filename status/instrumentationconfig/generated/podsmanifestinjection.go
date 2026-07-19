@@ -8,116 +8,456 @@ import (
 )
 
 const (
-	PodsManifestInjectionType = "PodsManifestInjection"
+	PodsManifestInjectionType          = "PodsManifestInjection"
+	PodsManifestInjectionOwnerResource = "instrumentationconfig"
+	PodsManifestInjectionScope         = "source"
+	PodsManifestInjectionComponent     = "instrumentor"
 )
+
+// PodsManifestInjectionMessageParams holds values for templated reason messages.
+// Fields match the parameters section in the status YAML.
+type PodsManifestInjectionMessageParams struct {
+	// The Kubernetes kind of the source workload.
+	// Typical values: Deployment, DaemonSet, StatefulSet, DeploymentConfig, CronJob, StaticPod, Rollout
+	WorkloadKind string
+}
+
+var PodsManifestInjectionDocs = status.Docs{
+	Title:       "Instrumentation Agent Applied to Pods",
+	Summary:     "Reports whether running pods for a source already have the instrumentation agent status they should.",
+	Description: "For each source, Odigos observes whether an instrumentation agent should be applied or not, and tracks the actual state of pods in the cluster.\nThis condition reports progress toward that outcome: all pods have the agent applied, or all pods do not have the agent applied.\n\nSome agents can be applied without restarting existing pods.\nOthers require a rollout so that new pods start with the correct agent status.\n\nOdigos can manage that restart automatically, or automatic rollout can be disabled so a manual or organic restart is required.\nAutomatic rollouts are not rate-limited by default, but a rate limit can be configured so a source may remain queued for a long time before its rollout starts.\nThe condition reports when a rollout is needed, in progress, queued, unsupported, or failed.\n",
+	States: []status.StateDoc{
+		{
+			State:   "enabled",
+			Summary: "Instrumentation is expected to be applied. Status text describes progress toward, or completion of, applying the agent to pods.",
+		},
+		{
+			State:   "disabled",
+			Summary: "Instrumentation is expected to be removed. Status text describes progress toward, or completion of, removing the agent from pods.",
+		},
+		{
+			State:   "upToDate",
+			Summary: "Instrumentation is expected to match the current desired configuration. Evaluated per container: some containers may already be up to date, while others may still need a restart to pick up the correct agent version, enablement, or selected agent type.",
+		},
+	},
+}
 
 type PodsManifestInjectionReason string
 
 const (
-	PodsManifestInjectionReasonNoRunningPods                      PodsManifestInjectionReason = "NoRunningPods"
-	PodsManifestInjectionReasonPodsManifestInjectionNotRequired   PodsManifestInjectionReason = "PodsManifestInjectionNotRequired"
-	PodsManifestInjectionReasonPodsInjectedSuccessfully           PodsManifestInjectionReason = "PodsInjectedSuccessfully"
-	PodsManifestInjectionReasonRolloutNotSupportedForStaticPods   PodsManifestInjectionReason = "RolloutNotSupportedForStaticPods"
-	PodsManifestInjectionReasonWaitingForNextJobRun               PodsManifestInjectionReason = "WaitingForNextJobRun"
-	PodsManifestInjectionReasonRolloutInProgress                  PodsManifestInjectionReason = "RolloutInProgress"
-	PodsManifestInjectionReasonWaitingForAutomaticRollout         PodsManifestInjectionReason = "WaitingForAutomaticRollout"
-	PodsManifestInjectionReasonWaitingInRolloutQueue              PodsManifestInjectionReason = "WaitingInRolloutQueue"
-	PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled PodsManifestInjectionReason = "RestartRequiredAutoRolloutDisabled"
-	PodsManifestInjectionReasonRestartRequiredWebhookMissed       PodsManifestInjectionReason = "RestartRequiredWebhookMissed"
-	PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed   PodsManifestInjectionReason = "RestartRequiredAutoRolloutFailed"
+	PodsManifestInjectionReasonNoPods                                      PodsManifestInjectionReason = "NoPods"
+	PodsManifestInjectionReasonPodsAppliedSuccessfully_Enabled             PodsManifestInjectionReason = "PodsAppliedSuccessfully_Enabled"
+	PodsManifestInjectionReasonPodsAppliedSuccessfully_Disabled            PodsManifestInjectionReason = "PodsAppliedSuccessfully_Disabled"
+	PodsManifestInjectionReasonPodsManifestInjectionNotRequired_Enabled    PodsManifestInjectionReason = "PodsManifestInjectionNotRequired_Enabled"
+	PodsManifestInjectionReasonRolloutNotSupportedForStaticPods_Enabled    PodsManifestInjectionReason = "RolloutNotSupportedForStaticPods_Enabled"
+	PodsManifestInjectionReasonWaitingForNextJobRun_Enabled                PodsManifestInjectionReason = "WaitingForNextJobRun_Enabled"
+	PodsManifestInjectionReasonWaitingForNextJobRun_Disabled               PodsManifestInjectionReason = "WaitingForNextJobRun_Disabled"
+	PodsManifestInjectionReasonWaitingForNextJobRun_UpToDate               PodsManifestInjectionReason = "WaitingForNextJobRun_UpToDate"
+	PodsManifestInjectionReasonRolloutInProgress_Enabled                   PodsManifestInjectionReason = "RolloutInProgress_Enabled"
+	PodsManifestInjectionReasonRolloutInProgress_Disabled                  PodsManifestInjectionReason = "RolloutInProgress_Disabled"
+	PodsManifestInjectionReasonRolloutInProgress_UpToDate                  PodsManifestInjectionReason = "RolloutInProgress_UpToDate"
+	PodsManifestInjectionReasonWaitingForAutomaticRollout_Enabled          PodsManifestInjectionReason = "WaitingForAutomaticRollout_Enabled"
+	PodsManifestInjectionReasonWaitingForAutomaticRollout_Disabled         PodsManifestInjectionReason = "WaitingForAutomaticRollout_Disabled"
+	PodsManifestInjectionReasonWaitingForAutomaticRollout_UpToDate         PodsManifestInjectionReason = "WaitingForAutomaticRollout_UpToDate"
+	PodsManifestInjectionReasonWaitingInRolloutQueue_Enabled               PodsManifestInjectionReason = "WaitingInRolloutQueue_Enabled"
+	PodsManifestInjectionReasonWaitingInRolloutQueue_Disabled              PodsManifestInjectionReason = "WaitingInRolloutQueue_Disabled"
+	PodsManifestInjectionReasonWaitingInRolloutQueue_UpToDate              PodsManifestInjectionReason = "WaitingInRolloutQueue_UpToDate"
+	PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled_Enabled  PodsManifestInjectionReason = "RestartRequiredAutoRolloutDisabled_Enabled"
+	PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled_Disabled PodsManifestInjectionReason = "RestartRequiredAutoRolloutDisabled_Disabled"
+	PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled_UpToDate PodsManifestInjectionReason = "RestartRequiredAutoRolloutDisabled_UpToDate"
+	PodsManifestInjectionReasonRestartRequiredWebhookMissed_Enabled        PodsManifestInjectionReason = "RestartRequiredWebhookMissed_Enabled"
+	PodsManifestInjectionReasonRestartRequiredWebhookMissed_UpToDate       PodsManifestInjectionReason = "RestartRequiredWebhookMissed_UpToDate"
+	PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_Enabled    PodsManifestInjectionReason = "RestartRequiredAutoRolloutFailed_Enabled"
+	PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_Disabled   PodsManifestInjectionReason = "RestartRequiredAutoRolloutFailed_Disabled"
+	PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_UpToDate   PodsManifestInjectionReason = "RestartRequiredAutoRolloutFailed_UpToDate"
+	PodsManifestInjectionReasonUnmarkedFromOdigos_Disabled                 PodsManifestInjectionReason = "UnmarkedFromOdigos_Disabled"
+	PodsManifestInjectionReasonNotYetReconciled                            PodsManifestInjectionReason = "NotYetReconciled"
 )
 
 var (
-	PodsManifestInjectionNoRunningPods = status.Reason{
-		Name:                 string(PodsManifestInjectionReasonNoRunningPods),
-		Message:              "source has no running pods",
-		TechnicalDescription: "source has no running pods, thus it is irrelevant if odigos agent is successfully injected into them or not",
-		K8sConditionStatus:   metav1.ConditionUnknown,
-		OdigosSeverity:       status.OdigosSeverityIrrelevant,
-	}
-	PodsManifestInjectionPodsManifestInjectionNotRequired = status.Reason{
-		Name:                 string(PodsManifestInjectionReasonPodsManifestInjectionNotRequired),
-		Message:              "agent is injected to running pods automatically, restart of pods is not required",
-		TechnicalDescription: "some agents supports automatic injected into running pods. this status indicates that the agent was injected to relevant pods without requiring user action or restarts of the pods",
-		K8sConditionStatus:   metav1.ConditionTrue,
-		OdigosSeverity:       status.OdigosSeveritySuccess,
-	}
-	PodsManifestInjectionPodsInjectedSuccessfully = status.Reason{
-		Name:                 string(PodsManifestInjectionReasonPodsInjectedSuccessfully),
-		Message:              "all pods of this source are successfully injected with odigos agent",
-		TechnicalDescription: "all pods of this source are successfully injected with odigos agent",
-		K8sConditionStatus:   metav1.ConditionTrue,
-		OdigosSeverity:       status.OdigosSeveritySuccess,
-	}
-	PodsManifestInjectionRolloutNotSupportedForStaticPods = status.Reason{
-		Name:                 string(PodsManifestInjectionReasonRolloutNotSupportedForStaticPods),
-		Message:              "selected odigos agent requires workload restart, not supported for static pods",
-		TechnicalDescription: "this source is a static pod, which means it is not supported to be rolled out. so cannot restart to make pod manifest injection",
-		K8sConditionStatus:   metav1.ConditionFalse,
-		OdigosSeverity:       status.OdigosSeverityUnsupported,
-	}
-	PodsManifestInjectionWaitingForNextJobRun = status.Reason{
-		Name:                 string(PodsManifestInjectionReasonWaitingForNextJobRun),
-		Message:              "jobs and cronjobs cannot be rolled out; odigos agent will be injected into the next pod created by this job",
-		TechnicalDescription: "this source is a job or cronjob, which cannot be force-restarted by odigos. the next time a fresh pod is created for this job, it will receive odigos pod manifest injection",
-		K8sConditionStatus:   metav1.ConditionUnknown,
-		OdigosSeverity:       status.OdigosSeverityPending,
-	}
-	PodsManifestInjectionRolloutInProgress = status.Reason{
-		Name:                 string(PodsManifestInjectionReasonRolloutInProgress),
-		Message:              "this source is actively being rolled out, wait for it to finish",
-		TechnicalDescription: "a rollout is in progress for this source. it may be an odigos automatic rollout, a manual rollout triggered from odigos, or an unrelated rollout that happened to run. when it ends, pods should be restarted and run with the odigos agent",
-		K8sConditionStatus:   metav1.ConditionUnknown,
-		OdigosSeverity:       status.OdigosSeverityWaiting,
-	}
-	PodsManifestInjectionWaitingForAutomaticRollout = status.Reason{
-		Name:                 string(PodsManifestInjectionReasonWaitingForAutomaticRollout),
-		Message:              "waiting for automatic rollout to happen",
-		TechnicalDescription: "waiting for automatic rollout to happen, when it ends, all the pods should have been restarted and run with odigos agent",
-		K8sConditionStatus:   metav1.ConditionUnknown,
-		OdigosSeverity:       status.OdigosSeverityWaiting,
-	}
-	PodsManifestInjectionWaitingInRolloutQueue = status.Reason{
-		Name:                 string(PodsManifestInjectionReasonWaitingInRolloutQueue),
-		Message:              "automatic rollout will pick up this workload once a slot is ready; use manual rollout if you need it right away",
-		TechnicalDescription: "maxConcurrentRollouts limits how many workloads odigos rolls out at once. this source is queued and will be rolled out when a slot is available. trigger a manual rollout if you do not want to wait",
-		K8sConditionStatus:   metav1.ConditionUnknown,
-		OdigosSeverity:       status.OdigosSeverityPending,
-	}
-	PodsManifestInjectionRestartRequiredAutoRolloutDisabled = status.Reason{
-		Name:                 string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled),
-		Message:              "automatic rollout by odigos is disabled, restart the workload to inject odigos agent to all pods",
-		TechnicalDescription: "not all pods of this source are injected with odigos agent, but automatic rollout is disabled. so user need to intiate rollout manually or wait for next rollout to happen",
-		K8sConditionStatus:   metav1.ConditionFalse,
-		OdigosSeverity:       status.OdigosSeverityNotice,
-	}
-	PodsManifestInjectionRestartRequiredWebhookMissed = status.Reason{
-		Name:                 string(PodsManifestInjectionReasonRestartRequiredWebhookMissed),
-		Message:              "some pods missed odigos agent injection to pod manifest after rollout; restart the workload manually",
-		TechnicalDescription: "automatic rollout already completed, but some pods still lack odigos pod manifest injection. this can happen if a pod was created without going through the odigos pods webhook. manually restart the workload so new pods are created and injected via the webhook",
-		K8sConditionStatus:   metav1.ConditionFalse,
-		OdigosSeverity:       status.OdigosSeverityNotice,
-	}
-	PodsManifestInjectionRestartRequiredAutoRolloutFailed = status.Reason{
-		Name:                 string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed),
-		Message:              "automatic rollout by odigos failed; restart the workload manually to inject odigos agent to all pods",
-		TechnicalDescription: "odigos attempted automatic rollout but failed to patch/restart the workload. pods remain without up-to-date odigos agent injection until the user restarts the workload manually",
-		K8sConditionStatus:   metav1.ConditionFalse,
-		OdigosSeverity:       status.OdigosSeverityFailure,
-	}
+	PodsManifestInjectionNoPods = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonNoPods),
+		Title:              "Rollout: No Pods",
+		Summary:            "There are no pods for this {{ .WorkloadKind }}, so the instrumentation agent status cannot be evaluated yet.",
+		Description:        "Odigos reports this reason when the source has no pods.\nUntil at least one pod exists, it is not meaningful to evaluate the instrumentation agent status.\nOnce pods are created, this condition will update to show whether the agent status matches what it should be.\n",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityIrrelevant,
+	})
+	PodsManifestInjectionPodsAppliedSuccessfully_Enabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonPodsAppliedSuccessfully_Enabled),
+		Title:              "Agent Applied to All Pods",
+		Summary:            "Instrumentation enabled, and all pods have the instrumentation agent applied.",
+		Description:        "The instrumentation agent status on every pod for this source matches what it should be.\nNo further rollout is required right now.\nIf instrumentation is later enabled or disabled, Odigos will re-evaluate whether a new rollout is needed.\n",
+		State:              "enabled",
+		K8sConditionStatus: metav1.ConditionTrue,
+		OdigosSeverity:     status.OdigosSeveritySuccess,
+	})
+	PodsManifestInjectionPodsAppliedSuccessfully_Disabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonPodsAppliedSuccessfully_Disabled),
+		Title:              "Agent Removed from All Pods",
+		Summary:            "Instrumentation disabled, and all pods are running with no instrumentation agent.",
+		Description:        "The instrumentation agent status on every pod for this source matches what it should be.\nNo further rollout is required right now.\nIf instrumentation is later enabled or disabled, Odigos will re-evaluate whether a new rollout is needed.\n",
+		State:              "disabled",
+		K8sConditionStatus: metav1.ConditionTrue,
+		OdigosSeverity:     status.OdigosSeveritySuccess,
+	})
+	PodsManifestInjectionPodsManifestInjectionNotRequired_Enabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonPodsManifestInjectionNotRequired_Enabled),
+		Title:              "Agent Applied to All Pods (no Rollout Needed)",
+		Summary:            "A rollout is not required to apply the instrumentation agent for this source.",
+		Description:        "When every agent used by the source can be applied without a restart, Odigos can enable instrumentation on running pods without requiring a user-triggered restart or automatic rollout.\nAgent can be applied without waiting for a rollout.\n",
+		State:              "enabled",
+		K8sConditionStatus: metav1.ConditionTrue,
+		OdigosSeverity:     status.OdigosSeveritySuccess,
+	})
+	PodsManifestInjectionRolloutNotSupportedForStaticPods_Enabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRolloutNotSupportedForStaticPods_Enabled),
+		Title:              "Rollout: Not Supported for Static Pods",
+		Summary:            "This source is backed by a static pod, which cannot be rolled out to apply the instrumentation agent.",
+		Description:        "Static pods are managed directly by the kubelet and are not rolled out like Deployments, DaemonSets, or StatefulSets.\nIf the agents for this source require a rollout to apply instrumentation agent, Odigos cannot complete that step automatically or via a normal workload restart.\nInstrumentation that depends on a rollout may not be achievable for this workload type.\n",
+		Message:            "Instrumentation Enabled; Static pods cannot be restarted to apply the instrumentation agent",
+		State:              "enabled",
+		K8sConditionStatus: metav1.ConditionFalse,
+		OdigosSeverity:     status.OdigosSeverityUnsupported,
+	})
+	PodsManifestInjectionWaitingForNextJobRun_Enabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonWaitingForNextJobRun_Enabled),
+		Title:              "Rollout: Waiting for Next Job Run",
+		Summary:            "Current job pods may have no agent; newly created pods will have the instrumentation agent applied.",
+		Description:        "Jobs and CronJobs cannot be rolled out by Odigos.\nPods that are already running keep going as they are until they complete.\nWhen the next run creates new pods, those pods will start with the correct agent status.\n",
+		Message:            "Instrumentation Enabled; Agent will be applied on new pods created by this CronJob",
+		State:              "enabled",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityPending,
+	})
+	PodsManifestInjectionWaitingForNextJobRun_Disabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonWaitingForNextJobRun_Disabled),
+		Title:              "Rollout: Waiting for Next Job Run",
+		Summary:            "Current job pods may still have the agent; newly created pods will start with no agent.",
+		Description:        "Jobs and CronJobs cannot be rolled out by Odigos.\nPods that are already running keep going as they are until they complete.\nWhen the next run creates new pods, those pods will start with the correct agent status.\n",
+		Message:            "Instrumentation Disabled; Current CronJob pods still have agent, next pods will be created without it",
+		State:              "disabled",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityPending,
+	})
+	PodsManifestInjectionWaitingForNextJobRun_UpToDate = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonWaitingForNextJobRun_UpToDate),
+		Title:              "Rollout: Waiting for Next Job Run",
+		Summary:            "Current job pods may have an out-of-date agent; newly created pods will start with the current desired agent configuration.",
+		Description:        "Jobs and CronJobs cannot be rolled out by Odigos.\nPods that are already running keep going as they are until they complete.\nWhen the next run creates new pods, those pods will start with the correct agent status.\n",
+		Message:            "Instrumentation Enabled; Current CronJob pods have an out-of-date agent, next pods will start with the updated configuration",
+		State:              "upToDate",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityPending,
+	})
+	PodsManifestInjectionRolloutInProgress_Enabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRolloutInProgress_Enabled),
+		Title:              "Rollout: In Progress",
+		Summary:            "After the rollout completes, new pods should start with the instrumentation agent applied.",
+		Description:        "A rollout is underway for this source.\nIt may be an Odigos automatic rollout, a manual rollout triggered from Odigos, or an unrelated rollout that happens to be running.\nUntil the rollout finishes, some pods may still be out of date; afterward, all running pods should match.\n",
+		Message:            "Instrumentation Enabled; Agent will be applied to all pods once {{ .WorkloadKind }} rollout is completed",
+		State:              "enabled",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityWaiting,
+	})
+	PodsManifestInjectionRolloutInProgress_Disabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRolloutInProgress_Disabled),
+		Title:              "Rollout: In Progress",
+		Summary:            "After the rollout completes, new pods should start with no agent.",
+		Description:        "A rollout is underway for this source.\nIt may be an Odigos automatic rollout, a manual rollout triggered from Odigos, or an unrelated rollout that happens to be running.\nUntil the rollout finishes, some pods may still be out of date; afterward, all running pods should match.\n",
+		Message:            "Instrumentation Disabled; Some pods have agent applied, new pods after {{ .WorkloadKind }} rollout will start without it",
+		State:              "disabled",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityWaiting,
+	})
+	PodsManifestInjectionRolloutInProgress_UpToDate = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRolloutInProgress_UpToDate),
+		Title:              "Rollout: In Progress",
+		Summary:            "After the rollout completes, new pods should start with the current desired agent configuration.",
+		Description:        "A rollout is underway for this source.\nIt may be an Odigos automatic rollout, a manual rollout triggered from Odigos, or an unrelated rollout that happens to be running.\nUntil the rollout finishes, some pods may still be out of date; afterward, all running pods should match.\n",
+		Message:            "Instrumentation Enabled; Some pods have an out-of-date agent, new pods after {{ .WorkloadKind }} rollout will start with the updated configuration",
+		State:              "upToDate",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityWaiting,
+	})
+	PodsManifestInjectionWaitingForAutomaticRollout_Enabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonWaitingForAutomaticRollout_Enabled),
+		Title:              "Waiting for Automatic Rollout",
+		Summary:            "Automatic rollout should apply the instrumentation agent to all pods once new pods are created.",
+		Description:        "Automatic rollout is enabled and Odigos intends to restart the workload shortly so new pods start with the correct agent status.\nIf the automatic rollout does not start within a short time, you can trigger a manual rollout as a fallback.\n",
+		Message:            "Instrumentation Enabled; Automatic {{ .WorkloadKind }} rollout should be triggered soon; agent will be applied to all pods after it completes",
+		State:              "enabled",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityWaiting,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout Now",
+			},
+		},
+	})
+	PodsManifestInjectionWaitingForAutomaticRollout_Disabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonWaitingForAutomaticRollout_Disabled),
+		Title:              "Waiting for Automatic Rollout",
+		Summary:            "Automatic rollout should start new pods with no agent.",
+		Description:        "Automatic rollout is enabled and Odigos intends to restart the workload shortly so new pods start with the correct agent status.\nIf the automatic rollout does not start within a short time, you can trigger a manual rollout as a fallback.\n",
+		Message:            "Instrumentation Disabled; Some pods have agent applied; automatic {{ .WorkloadKind }} rollout should remove it soon",
+		State:              "disabled",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityWaiting,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout Now",
+			},
+		},
+	})
+	PodsManifestInjectionWaitingForAutomaticRollout_UpToDate = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonWaitingForAutomaticRollout_UpToDate),
+		Title:              "Waiting for Automatic Rollout",
+		Summary:            "Automatic rollout should start new pods with the updated agent configuration.",
+		Description:        "Automatic rollout is enabled and Odigos intends to restart the workload shortly so new pods start with the correct agent status.\nIf the automatic rollout does not start within a short time, you can trigger a manual rollout as a fallback.\n",
+		Message:            "Instrumentation Enabled; Some pods have an out-of-date agent; automatic {{ .WorkloadKind }} rollout should update them soon",
+		State:              "upToDate",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityWaiting,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout Now",
+			},
+		},
+	})
+	PodsManifestInjectionWaitingInRolloutQueue_Enabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonWaitingInRolloutQueue_Enabled),
+		Title:              "Waiting in Auto-Rollout Queue",
+		Summary:            "Queued for automatic rollout to apply the agent; manual rollout skips the wait.",
+		Description:        "The `maxConcurrentRollouts` setting limits how many workloads Odigos rolls out at once.\nThis source is queued and will be rolled out when a slot becomes available.\nIf you do not want to wait, trigger a manual rollout to skip the queue and immediately start pods with the correct agent status.\n",
+		Message:            "Instrumentation Enabled; Waiting in rate-limit queue for {{ .WorkloadKind }} rollout to apply agent",
+		State:              "enabled",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityPending,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout Now (Skip Queue)",
+			},
+		},
+	})
+	PodsManifestInjectionWaitingInRolloutQueue_Disabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonWaitingInRolloutQueue_Disabled),
+		Title:              "Waiting in Auto-Rollout Queue",
+		Summary:            "Queued for automatic rollout to remove the agent; manual rollout skips the wait.",
+		Description:        "The `maxConcurrentRollouts` setting limits how many workloads Odigos rolls out at once.\nThis source is queued and will be rolled out when a slot becomes available.\nIf you do not want to wait, trigger a manual rollout to skip the queue and immediately start pods with the correct agent status.\n",
+		Message:            "Instrumentation Disabled; Waiting in rate-limit queue for {{ .WorkloadKind }} rollout to remove agent",
+		State:              "disabled",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityPending,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout Now (Skip Queue)",
+			},
+		},
+	})
+	PodsManifestInjectionWaitingInRolloutQueue_UpToDate = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonWaitingInRolloutQueue_UpToDate),
+		Title:              "Waiting in Auto-Rollout Queue",
+		Summary:            "Queued for automatic rollout to update the agent; manual rollout skips the wait.",
+		Description:        "The `maxConcurrentRollouts` setting limits how many workloads Odigos rolls out at once.\nThis source is queued and will be rolled out when a slot becomes available.\nIf you do not want to wait, trigger a manual rollout to skip the queue and immediately start pods with the correct agent status.\n",
+		Message:            "Instrumentation Enabled; Waiting in rate-limit queue for {{ .WorkloadKind }} rollout to update agent",
+		State:              "upToDate",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityPending,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout Now (Skip Queue)",
+			},
+		},
+	})
+	PodsManifestInjectionRestartRequiredAutoRolloutDisabled_Enabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled_Enabled),
+		Title:              "Rollout Required to Apply Instrumentation",
+		Summary:            "Roll out the workload (or wait for an organic restart) so new pods get the instrumentation agent applied.",
+		Description:        "Odigos will not restart this workload automatically.\nExisting pods keep running as they are until something else recreates them—either a manual rollout you trigger, or an organic restart from the application or platform.\nUntil that happens, some running pods may still have an out-of-date agent status.\n",
+		Message:            "Instrumentation Enabled; Some pods lack agent until next {{ .WorkloadKind }} rollout",
+		State:              "enabled",
+		K8sConditionStatus: metav1.ConditionFalse,
+		OdigosSeverity:     status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout",
+			},
+		},
+	})
+	PodsManifestInjectionRestartRequiredAutoRolloutDisabled_Disabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled_Disabled),
+		Title:              "Rollout Required to Remove Instrumentation",
+		Summary:            "Roll out the workload (or wait for an organic restart) so new pods start with no agent.",
+		Description:        "Odigos will not restart this workload automatically.\nExisting pods keep running as they are until something else recreates them—either a manual rollout you trigger, or an organic restart from the application or platform.\nUntil that happens, some running pods may still have an out-of-date agent status.\n",
+		Message:            "Instrumentation Disabled; Some pods have agent applied; rollout {{ .WorkloadKind }} manually or wait for next organic rollout",
+		State:              "disabled",
+		K8sConditionStatus: metav1.ConditionFalse,
+		OdigosSeverity:     status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout",
+			},
+		},
+	})
+	PodsManifestInjectionRestartRequiredAutoRolloutDisabled_UpToDate = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled_UpToDate),
+		Title:              "Rollout Required to Update Instrumentation",
+		Summary:            "Roll out the workload (or wait for an organic restart) so existing out-of-date pods will be replaced by new pods start with the current desired agent configuration.",
+		Description:        "Odigos will not restart this workload automatically.\nExisting pods keep running as they are until something else recreates them—either a manual rollout you trigger, or an organic restart from the application or platform.\nUntil that happens, some running pods may still have an out-of-date agent status.\n",
+		Message:            "Instrumentation Enabled; Some pods have an out-of-date agent until next {{ .WorkloadKind }} rollout",
+		State:              "upToDate",
+		K8sConditionStatus: metav1.ConditionFalse,
+		OdigosSeverity:     status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout",
+			},
+		},
+	})
+	PodsManifestInjectionRestartRequiredWebhookMissed_Enabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRestartRequiredWebhookMissed_Enabled),
+		Title:              "Rollout Required to Apply Instrumentation",
+		Summary:            "A rollout already completed, but some pods still do not have the expected agent status.",
+		Description:        "Automatic rollout finished, yet one or more pods does not have the agent applied.\nThis can happen if a pod was created without Odigos applying the agent.\nTrigger another restart so fresh pods start with the correct agent status.\n",
+		Message:            "Instrumentation Enabled; Some pods got created without odigos required changes, apply to new pods via {{ .WorkloadKind }} rollout",
+		State:              "enabled",
+		K8sConditionStatus: metav1.ConditionFalse,
+		OdigosSeverity:     status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout",
+			},
+		},
+	})
+	PodsManifestInjectionRestartRequiredWebhookMissed_UpToDate = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRestartRequiredWebhookMissed_UpToDate),
+		Title:              "Rollout Required to Update Instrumentation",
+		Summary:            "Some pods have an out-of-date agent. This can happen if a pod is created and the pods mutation webhook did not run or failed. Roll out again so new pods start with the current desired configuration.",
+		Description:        "Automatic rollout finished, yet one or more pods does not have the agent applied.\nThis can happen if a pod was created without Odigos applying the agent.\nTrigger another restart so fresh pods start with the correct agent status.\n",
+		Message:            "Instrumentation Enabled; Some pods have an out-of-date agent, apply to new pods via {{ .WorkloadKind }} rollout",
+		State:              "upToDate",
+		K8sConditionStatus: metav1.ConditionFalse,
+		OdigosSeverity:     status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout",
+			},
+		},
+	})
+	PodsManifestInjectionRestartRequiredAutoRolloutFailed_Enabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_Enabled),
+		Title:              "Automatic Rollout Failed",
+		Summary:            "Manual rollout is required so new pods get the instrumentation agent applied.",
+		Description:        "Odigos attempted an automatic rollout (for example by patching the workload) and that attempt failed.\nRunning pods keep their current agent status until you restart the workload manually.\nAfter a successful manual rollout, new pods should have the correct agent status.\n",
+		Message:            "InstrumentationEnabled; Odigos failed to automatically rollout {{ .WorkloadKind }} - rollout manually to apply agent",
+		State:              "enabled",
+		K8sConditionStatus: metav1.ConditionFalse,
+		OdigosSeverity:     status.OdigosSeverityFailure,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Manual Rollout",
+			},
+		},
+	})
+	PodsManifestInjectionRestartRequiredAutoRolloutFailed_Disabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_Disabled),
+		Title:              "Automatic Rollout Failed",
+		Summary:            "Manual rollout is required so new pods start with no agent.",
+		Description:        "Odigos attempted an automatic rollout (for example by patching the workload) and that attempt failed.\nRunning pods keep their current agent status until you restart the workload manually.\nAfter a successful manual rollout, new pods should have the correct agent status.\n",
+		Message:            "Instrumentation Disabled; Some pods have agent applied; odigos failed to automatically rollout {{ .WorkloadKind }} — rollout manually to start pods without it",
+		State:              "disabled",
+		K8sConditionStatus: metav1.ConditionFalse,
+		OdigosSeverity:     status.OdigosSeverityFailure,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Manual Rollout",
+			},
+		},
+	})
+	PodsManifestInjectionRestartRequiredAutoRolloutFailed_UpToDate = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_UpToDate),
+		Title:              "Automatic Rollout Failed",
+		Summary:            "Manual rollout is required so new pods start with the current desired agent configuration.",
+		Description:        "Odigos attempted an automatic rollout (for example by patching the workload) and that attempt failed.\nRunning pods keep their current agent status until you restart the workload manually.\nAfter a successful manual rollout, new pods should have the correct agent status.\n",
+		Message:            "Instrumentation Enabled; Some pods have an out-of-date agent; odigos failed to automatically rollout {{ .WorkloadKind }} - rollout manually to apply the updated configuration",
+		State:              "upToDate",
+		K8sConditionStatus: metav1.ConditionFalse,
+		OdigosSeverity:     status.OdigosSeverityFailure,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Manual Rollout",
+			},
+		},
+	})
+	PodsManifestInjectionUnmarkedFromOdigos_Disabled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonUnmarkedFromOdigos_Disabled),
+		Title:              "Rollout: Untracked by Odigos",
+		Summary:            "Some pods still have the agent applied; Odigos will not roll them out because this source is no longer tracked.",
+		Description:        "This source is not marked for instrumentation by Odigos and is not being tracked.\nAny pods with agent already applied will remain as is and replaced by next rollout.\nOdigos will not trigger auto rollout to cleanup any existing pods without an agent.\nSince this state is for the case that source is untracked (instrumentation config is missing),\nit will never be written to a status condition, but can be augmented in gql endpoint \nto provide more details in a generic way for all sources (marked or unmarked).\n",
+		Message:            "Instrumentation Disabled; Some pods have agent applied; Odigos will not roll out because this source is no longer tracked — rollout manually to remove it",
+		State:              "disabled",
+		K8sConditionStatus: metav1.ConditionFalse,
+		OdigosSeverity:     status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeRolloutWorkload,
+				ButtonText: "Rollout to Remove Agent",
+			},
+		},
+	})
+	PodsManifestInjectionNotYetReconciled = status.WithMessageTemplate(status.Reason{
+		Name:               string(PodsManifestInjectionReasonNotYetReconciled),
+		Title:              "Rollout: Status Not Yet Available",
+		Summary:            "The pods manifest injection status has not been reconciled yet for this source.",
+		Description:        "Set as the default PodsManifestInjection condition when an InstrumentationConfig is created,\nbefore the reconciler evaluates whether pods have the agent applied as desired.\nThis is typically a short-lived state shortly after a source is marked for instrumentation.\nOnce reconciliation completes, it is replaced with the observed agent injection status.\n",
+		Message:            "Checking agent status on pods; should update shortly",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityWaiting,
+	})
 
 	PodsManifestInjectionByReason = map[string]status.Reason{
-		string(PodsManifestInjectionReasonNoRunningPods):                      PodsManifestInjectionNoRunningPods,
-		string(PodsManifestInjectionReasonPodsManifestInjectionNotRequired):   PodsManifestInjectionPodsManifestInjectionNotRequired,
-		string(PodsManifestInjectionReasonPodsInjectedSuccessfully):           PodsManifestInjectionPodsInjectedSuccessfully,
-		string(PodsManifestInjectionReasonRolloutNotSupportedForStaticPods):   PodsManifestInjectionRolloutNotSupportedForStaticPods,
-		string(PodsManifestInjectionReasonWaitingForNextJobRun):               PodsManifestInjectionWaitingForNextJobRun,
-		string(PodsManifestInjectionReasonRolloutInProgress):                  PodsManifestInjectionRolloutInProgress,
-		string(PodsManifestInjectionReasonWaitingForAutomaticRollout):         PodsManifestInjectionWaitingForAutomaticRollout,
-		string(PodsManifestInjectionReasonWaitingInRolloutQueue):              PodsManifestInjectionWaitingInRolloutQueue,
-		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled): PodsManifestInjectionRestartRequiredAutoRolloutDisabled,
-		string(PodsManifestInjectionReasonRestartRequiredWebhookMissed):       PodsManifestInjectionRestartRequiredWebhookMissed,
-		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed):   PodsManifestInjectionRestartRequiredAutoRolloutFailed,
+		string(PodsManifestInjectionReasonNoPods):                                      PodsManifestInjectionNoPods,
+		string(PodsManifestInjectionReasonPodsAppliedSuccessfully_Enabled):             PodsManifestInjectionPodsAppliedSuccessfully_Enabled,
+		string(PodsManifestInjectionReasonPodsAppliedSuccessfully_Disabled):            PodsManifestInjectionPodsAppliedSuccessfully_Disabled,
+		string(PodsManifestInjectionReasonPodsManifestInjectionNotRequired_Enabled):    PodsManifestInjectionPodsManifestInjectionNotRequired_Enabled,
+		string(PodsManifestInjectionReasonRolloutNotSupportedForStaticPods_Enabled):    PodsManifestInjectionRolloutNotSupportedForStaticPods_Enabled,
+		string(PodsManifestInjectionReasonWaitingForNextJobRun_Enabled):                PodsManifestInjectionWaitingForNextJobRun_Enabled,
+		string(PodsManifestInjectionReasonWaitingForNextJobRun_Disabled):               PodsManifestInjectionWaitingForNextJobRun_Disabled,
+		string(PodsManifestInjectionReasonWaitingForNextJobRun_UpToDate):               PodsManifestInjectionWaitingForNextJobRun_UpToDate,
+		string(PodsManifestInjectionReasonRolloutInProgress_Enabled):                   PodsManifestInjectionRolloutInProgress_Enabled,
+		string(PodsManifestInjectionReasonRolloutInProgress_Disabled):                  PodsManifestInjectionRolloutInProgress_Disabled,
+		string(PodsManifestInjectionReasonRolloutInProgress_UpToDate):                  PodsManifestInjectionRolloutInProgress_UpToDate,
+		string(PodsManifestInjectionReasonWaitingForAutomaticRollout_Enabled):          PodsManifestInjectionWaitingForAutomaticRollout_Enabled,
+		string(PodsManifestInjectionReasonWaitingForAutomaticRollout_Disabled):         PodsManifestInjectionWaitingForAutomaticRollout_Disabled,
+		string(PodsManifestInjectionReasonWaitingForAutomaticRollout_UpToDate):         PodsManifestInjectionWaitingForAutomaticRollout_UpToDate,
+		string(PodsManifestInjectionReasonWaitingInRolloutQueue_Enabled):               PodsManifestInjectionWaitingInRolloutQueue_Enabled,
+		string(PodsManifestInjectionReasonWaitingInRolloutQueue_Disabled):              PodsManifestInjectionWaitingInRolloutQueue_Disabled,
+		string(PodsManifestInjectionReasonWaitingInRolloutQueue_UpToDate):              PodsManifestInjectionWaitingInRolloutQueue_UpToDate,
+		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled_Enabled):  PodsManifestInjectionRestartRequiredAutoRolloutDisabled_Enabled,
+		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled_Disabled): PodsManifestInjectionRestartRequiredAutoRolloutDisabled_Disabled,
+		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutDisabled_UpToDate): PodsManifestInjectionRestartRequiredAutoRolloutDisabled_UpToDate,
+		string(PodsManifestInjectionReasonRestartRequiredWebhookMissed_Enabled):        PodsManifestInjectionRestartRequiredWebhookMissed_Enabled,
+		string(PodsManifestInjectionReasonRestartRequiredWebhookMissed_UpToDate):       PodsManifestInjectionRestartRequiredWebhookMissed_UpToDate,
+		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_Enabled):    PodsManifestInjectionRestartRequiredAutoRolloutFailed_Enabled,
+		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_Disabled):   PodsManifestInjectionRestartRequiredAutoRolloutFailed_Disabled,
+		string(PodsManifestInjectionReasonRestartRequiredAutoRolloutFailed_UpToDate):   PodsManifestInjectionRestartRequiredAutoRolloutFailed_UpToDate,
+		string(PodsManifestInjectionReasonUnmarkedFromOdigos_Disabled):                 PodsManifestInjectionUnmarkedFromOdigos_Disabled,
+		string(PodsManifestInjectionReasonNotYetReconciled):                            PodsManifestInjectionNotYetReconciled,
 	}
 )
 

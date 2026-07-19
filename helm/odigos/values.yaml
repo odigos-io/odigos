@@ -1397,6 +1397,19 @@ metricsSources:
     # interval: '10s'
 
   # @schema
+  # description: Configuration for network flow and TCP stats metrics collection.
+  # @schema
+  networkMetrics:
+    # @schema
+    # description: |-
+    #   When enabled, network flow and TCP stats metrics can be collected per workload by applying a
+    #   networkMetrics InstrumentationRule. Enabling this requires odiglet to run with host network
+    #   access (hostNetwork) so it can observe traffic on the node's network interfaces; enable it
+    #   only if running odiglet on the host network is acceptable in your environment. Defaults to disabled.
+    # @schema
+    # enabled: false
+
+  # @schema
   # description: Configuration for kubelet stats collection.
   # @schema
   kubeletStats:

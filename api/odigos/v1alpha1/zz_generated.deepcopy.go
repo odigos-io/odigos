@@ -1297,6 +1297,11 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 		*out = new(instrumentationrules.EbpfLogCapture)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.NetworkMetrics != nil {
+		in, out := &in.NetworkMetrics, &out.NetworkMetrics
+		*out = new(instrumentationrules.NetworkMetricsConfig)
+		**out = **in
+	}
 	if in.TraceVerbosity != nil {
 		in, out := &in.TraceVerbosity, &out.TraceVerbosity
 		*out = new(instrumentationrules.TraceVerbosity)

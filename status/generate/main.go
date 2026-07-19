@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"unicode"
 
 	"github.com/odigos-io/odigos/status"
 	"gopkg.in/yaml.v3"
@@ -19,16 +20,48 @@ import (
 var fileTemplate string
 
 type reasonData struct {
-	Name                 string
-	Message              string
-	TechnicalDescription string
-	K8sConditionStatus   metav1.ConditionStatus
-	OdigosSeverity       status.OdigosSeverity
+	Name               string
+	Title              string
+	Summary            string
+	Description        string
+	Message            string
+	State              string
+	K8sConditionStatus metav1.ConditionStatus
+	OdigosSeverity     status.OdigosSeverity
+	ActionItems        []actionItemData
+}
+
+type actionItemData struct {
+	Type       status.ActionItemType
+	ButtonText string
+}
+
+type docsData struct {
+	Title       string
+	Summary     string
+	Description string
+	States      []stateDocData
+}
+
+type stateDocData struct {
+	State   string
+	Summary string
+}
+
+type parameterData struct {
+	Name        string
+	Description string
 }
 
 type fileData struct {
 	Package               string
 	TypeName              string
+	OwnerResource         string
+	Scope                 string
+	Component             string
+	HasDocs               bool
+	Docs                  docsData
+	Parameters            []parameterData
 	Reasons               []reasonData
 	HasK8sConditionStatus bool
 }
@@ -59,6 +92,17 @@ func main() {
 	}
 }
 
+// messageParamsYAML is generator-local: parameters are documentation for code
+// generation only and are not part of the runtime status model.
+type messageParamsYAML struct {
+	Spec struct {
+		Parameters []struct {
+			Name        string `yaml:"name"`
+			Description string `yaml:"description"`
+		} `yaml:"parameters"`
+	} `yaml:"spec"`
+}
+
 func generateFile(yamlPath string) error {
 	bytesData, err := os.ReadFile(yamlPath)
 	if err != nil {
@@ -70,28 +114,60 @@ func generateFile(yamlPath string) error {
 		return fmt.Errorf("unmarshal %s: %w", yamlPath, err)
 	}
 
+	var messageParams messageParamsYAML
+	if err := yaml.Unmarshal(bytesData, &messageParams); err != nil {
+		return fmt.Errorf("unmarshal parameters from %s: %w", yamlPath, err)
+	}
+
 	data := fileData{
-		Package:  "generated",
-		TypeName: s.Spec.Type,
+		Package:       "generated",
+		TypeName:      s.Spec.Type,
+		OwnerResource: s.Metadata.OwnerResource,
+		Scope:         s.Metadata.Scope,
+		Component:     s.Metadata.Component,
+	}
+
+	if s.Spec.Docs.Title != "" || s.Spec.Docs.Summary != "" || s.Spec.Docs.Description != "" || len(s.Spec.Docs.States) > 0 {
+		data.HasDocs = true
+		docs := docsData{
+			Title:       s.Spec.Docs.Title,
+			Summary:     s.Spec.Docs.Summary,
+			Description: s.Spec.Docs.Description,
+		}
+		for _, state := range s.Spec.Docs.States {
+			docs.States = append(docs.States, stateDocData{
+				State:   state.State,
+				Summary: state.Summary,
+			})
+		}
+		data.Docs = docs
+	}
+
+	for _, param := range messageParams.Spec.Parameters {
+		if param.Name == "" {
+			return fmt.Errorf("%s: parameter with empty name", yamlPath)
+		}
+		data.Parameters = append(data.Parameters, parameterData{
+			Name:        param.Name,
+			Description: strings.TrimSpace(param.Description),
+		})
 	}
 
 	for _, reason := range s.Spec.Reasons {
-		rd := reasonData{
-			Name:                 reason.Name,
-			Message:              escapeString(reason.Message),
-			TechnicalDescription: escapeString(reason.TechnicalDescription),
-			OdigosSeverity:       reason.OdigosSeverity,
+		expanded := expandReasonStates(reason)
+		for _, rd := range expanded {
+			if rd.K8sConditionStatus != "" {
+				data.HasK8sConditionStatus = true
+			}
+			data.Reasons = append(data.Reasons, rd)
 		}
-		if reason.K8sConditionStatus != "" {
-			rd.K8sConditionStatus = reason.K8sConditionStatus
-			data.HasK8sConditionStatus = true
-		}
-		data.Reasons = append(data.Reasons, rd)
 	}
 
 	tmpl, err := template.New("status").Funcs(template.FuncMap{
 		"k8sConditionStatusConst": k8sConditionStatusConst,
 		"odigosSeverityConst":     odigosSeverityConst,
+		"actionItemTypeConst":     actionItemTypeConst,
+		"splitLines":              splitLines,
 	}).Parse(fileTemplate)
 	if err != nil {
 		return err
@@ -119,6 +195,76 @@ func generateFile(yamlPath string) error {
 
 	fmt.Printf("generated %s\n", outPath)
 	return nil
+}
+
+// expandReasonStates turns a YAML reason into one generated reason per state.
+// Reasons without states produce a single reason using the reason-level fields.
+func expandReasonStates(reason status.Reason) []reasonData {
+	actionItems := make([]actionItemData, 0, len(reason.ActionItems))
+	for _, actionItem := range reason.ActionItems {
+		actionItems = append(actionItems, actionItemData{
+			Type:       actionItem.Type,
+			ButtonText: actionItem.ButtonText,
+		})
+	}
+
+	if len(reason.States) == 0 {
+		return []reasonData{{
+			Name:               reason.Name,
+			Title:              reason.Title,
+			Summary:            reason.Summary,
+			Description:        reason.Description,
+			Message:            reason.Message,
+			K8sConditionStatus: reason.K8sConditionStatus,
+			OdigosSeverity:     reason.OdigosSeverity,
+			ActionItems:        actionItems,
+		}}
+	}
+
+	out := make([]reasonData, 0, len(reason.States))
+	for _, state := range reason.States {
+		title := state.Title
+		if title == "" {
+			title = reason.Title
+		}
+		summary := state.Summary
+		if summary == "" {
+			summary = reason.Summary
+		}
+		message := state.Message
+		if message == "" {
+			message = reason.Message
+		}
+
+		out = append(out, reasonData{
+			Name:               reason.Name + "_" + capitalize(state.State),
+			Title:              title,
+			Summary:            summary,
+			Description:        reason.Description,
+			Message:            message,
+			State:              state.State,
+			K8sConditionStatus: reason.K8sConditionStatus,
+			OdigosSeverity:     reason.OdigosSeverity,
+			ActionItems:        actionItems,
+		})
+	}
+	return out
+}
+
+func capitalize(s string) string {
+	if s == "" {
+		return s
+	}
+	runes := []rune(s)
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
+}
+
+func splitLines(s string) []string {
+	if s == "" {
+		return nil
+	}
+	return strings.Split(s, "\n")
 }
 
 func odigosSeverityConst(severity status.OdigosSeverity) string {
@@ -163,8 +309,14 @@ func k8sConditionStatusConst(condStatus metav1.ConditionStatus) string {
 	}
 }
 
-func escapeString(s string) string {
-	return strings.ReplaceAll(s, `"`, `\"`)
+func actionItemTypeConst(actionType status.ActionItemType) string {
+	switch actionType {
+	case status.ActionItemTypeRolloutWorkload:
+		return "status.ActionItemTypeRolloutWorkload"
+	default:
+		fatal(fmt.Errorf("unknown action item type %q", actionType))
+		return ""
+	}
 }
 
 func fatal(err error) {
