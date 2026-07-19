@@ -33,8 +33,8 @@ func TestCalculatePodsManifestInjectionStatusIncludesActionItems(t *testing.T) {
 	if got.ActionItems[0].Type != model.DesiredConditionActionItemTypeRolloutWorkload {
 		t.Fatalf("expected action type %q, got %q", model.DesiredConditionActionItemTypeRolloutWorkload, got.ActionItems[0].Type)
 	}
-	if got.ActionItems[0].UserFacingText == "" {
-		t.Fatal("expected action item user-facing text")
+	if got.ActionItems[0].ButtonText == "" {
+		t.Fatal("expected action item button text")
 	}
 }
 

@@ -54,8 +54,8 @@ func podsManifestInjectionReasonToStatus(r status.Reason, message string) *model
 	actionItems := make([]*model.DesiredConditionActionItem, 0, len(r.ActionItems))
 	for _, actionItem := range r.ActionItems {
 		actionItems = append(actionItems, &model.DesiredConditionActionItem{
-			Type:           model.DesiredConditionActionItemType(actionItem.Type),
-			UserFacingText: actionItem.ButtonText,
+			Type:       model.DesiredConditionActionItemType(actionItem.Type),
+			ButtonText: actionItem.ButtonText,
 		})
 	}
 

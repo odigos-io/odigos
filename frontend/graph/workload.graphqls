@@ -59,7 +59,7 @@ type DesiredConditionActionItem {
   type: DesiredConditionActionItemType!
 
   # human-readable label describing the action.
-  userFacingText: String!
+  buttonText: String!
 }
 
 enum DesiredConditionActionItemType {

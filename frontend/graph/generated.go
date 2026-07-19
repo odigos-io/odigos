@@ -329,8 +329,8 @@ type ComplexityRoot struct {
 	}
 
 	DesiredConditionActionItem struct {
-		Type           func(childComplexity int) int
-		UserFacingText func(childComplexity int) int
+		ButtonText func(childComplexity int) int
+		Type       func(childComplexity int) int
 	}
 
 	DesiredConditionStatus struct {
@@ -2925,19 +2925,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DbQueryPayloadCollection.MaxPayloadLength(childComplexity), true
 
+	case "DesiredConditionActionItem.buttonText":
+		if e.complexity.DesiredConditionActionItem.ButtonText == nil {
+			break
+		}
+
+		return e.complexity.DesiredConditionActionItem.ButtonText(childComplexity), true
+
 	case "DesiredConditionActionItem.type":
 		if e.complexity.DesiredConditionActionItem.Type == nil {
 			break
 		}
 
 		return e.complexity.DesiredConditionActionItem.Type(childComplexity), true
-
-	case "DesiredConditionActionItem.userFacingText":
-		if e.complexity.DesiredConditionActionItem.UserFacingText == nil {
-			break
-		}
-
-		return e.complexity.DesiredConditionActionItem.UserFacingText(childComplexity), true
 
 	case "DesiredConditionStatus.actionItems":
 		if e.complexity.DesiredConditionStatus.ActionItems == nil {
@@ -18873,8 +18873,8 @@ func (ec *executionContext) fieldContext_DesiredConditionActionItem_type(_ conte
 	return fc, nil
 }
 
-func (ec *executionContext) _DesiredConditionActionItem_userFacingText(ctx context.Context, field graphql.CollectedField, obj *model.DesiredConditionActionItem) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DesiredConditionActionItem_userFacingText(ctx, field)
+func (ec *executionContext) _DesiredConditionActionItem_buttonText(ctx context.Context, field graphql.CollectedField, obj *model.DesiredConditionActionItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DesiredConditionActionItem_buttonText(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -18887,7 +18887,7 @@ func (ec *executionContext) _DesiredConditionActionItem_userFacingText(ctx conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UserFacingText, nil
+		return obj.ButtonText, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -18904,7 +18904,7 @@ func (ec *executionContext) _DesiredConditionActionItem_userFacingText(ctx conte
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DesiredConditionActionItem_userFacingText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_DesiredConditionActionItem_buttonText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "DesiredConditionActionItem",
 		Field:      field,
@@ -19128,8 +19128,8 @@ func (ec *executionContext) fieldContext_DesiredConditionStatus_actionItems(_ co
 			switch field.Name {
 			case "type":
 				return ec.fieldContext_DesiredConditionActionItem_type(ctx, field)
-			case "userFacingText":
-				return ec.fieldContext_DesiredConditionActionItem_userFacingText(ctx, field)
+			case "buttonText":
+				return ec.fieldContext_DesiredConditionActionItem_buttonText(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionActionItem", field.Name)
 		},
@@ -59638,8 +59638,8 @@ func (ec *executionContext) _DesiredConditionActionItem(ctx context.Context, sel
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "userFacingText":
-			out.Values[i] = ec._DesiredConditionActionItem_userFacingText(ctx, field, obj)
+		case "buttonText":
+			out.Values[i] = ec._DesiredConditionActionItem_buttonText(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

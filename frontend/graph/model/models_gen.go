@@ -342,8 +342,8 @@ type DbQueryPayloadCollectionInput struct {
 }
 
 type DesiredConditionActionItem struct {
-	Type           DesiredConditionActionItemType `json:"type"`
-	UserFacingText string                         `json:"userFacingText"`
+	Type       DesiredConditionActionItemType `json:"type"`
+	ButtonText string                         `json:"buttonText"`
 }
 
 type DesiredConditionStatus struct {
