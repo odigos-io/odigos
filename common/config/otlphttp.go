@@ -195,7 +195,7 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	if isProfilingEnabled(dest) {
-		addProfilesPipeline(currentConfig, "otlphttp", dest.GetID(), otlpHttpExporterName)
+		pipelineNames = append(pipelineNames, addProfilesPipeline(currentConfig, "otlphttp", dest.GetID(), otlpHttpExporterName))
 	}
 
 	return pipelineNames, nil

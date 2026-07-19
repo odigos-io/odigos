@@ -9,7 +9,7 @@ import (
 )
 
 // ProfilingPipelineConfig builds the node collector profiles domain when profiling is enabled.
-func ProfilingPipelineConfig(odigosNamespace string, profiling *common.ProfilingConfiguration) config.Config {
+func ProfilingPipelineConfig(odigosNamespace string, profiling *common.ProfilingConfiguration, manifestProcessorNames []string) config.Config {
 	if !common.ProfilingPipelineActive(profiling) {
 		return config.Config{}
 	}
@@ -40,6 +40,7 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 		pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeSymbolizeProcessor)
 	}
 	pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeServiceNameProcessor)
+	pipelineProcessors = append(pipelineProcessors, manifestProcessorNames...)
 
 	return config.Config{
 		Receivers: config.GenericMap{
