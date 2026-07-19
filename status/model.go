@@ -67,12 +67,6 @@ type ReasonState struct {
 	Summary string `yaml:"summary,omitempty"`
 }
 
-const (
-	ReasonStateEnabled  = "enabled"
-	ReasonStateDisabled = "disabled"
-	ReasonStateUpToDate = "upToDate"
-)
-
 type ActionItem struct {
 	Type       ActionItemType `yaml:"type"`
 	ButtonText string         `yaml:"buttonText"`
