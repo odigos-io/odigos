@@ -1122,6 +1122,14 @@ centralProxy:
   # description: Central backend URL where this proxy will forward data
   # @schema
   centralBackendURL: ''
+
+  # @schema
+  # description: |-
+  #   Maximum WebSocket message size in bytes for the central-proxy ↔ central-backend
+  #   link (default 33554432 = 32Mi). Must match central-backend maxMessageSize.
+  # @schema
+  maxMessageSize: '33554432'
+
   resources:
     requests:
       cpu: 100m

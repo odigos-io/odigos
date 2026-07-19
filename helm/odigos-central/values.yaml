@@ -20,8 +20,9 @@ imagePullSecrets: []
 
 centralBackend:
   # Resources and scheduling for the Central backend
-  # -- Maximum message size in bytes for gRPC messages (empty = use default)
-  # maxMessageSize: ''
+  # -- Maximum WebSocket message size in bytes between central-backend and proxies
+  #    (default 33554432 = 32Mi). Raise for very large RemoteFetch payloads.
+  maxMessageSize: '33554432'
   resources:
     requests:
       cpu: 100m
