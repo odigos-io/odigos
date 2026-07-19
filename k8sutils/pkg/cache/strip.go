@@ -61,13 +61,16 @@ func StripWorkloadSpecTemplate(o client.Object) {
 	if len(currentContainers) > 0 {
 		minimalContainers := make([]v1.Container, len(currentContainers))
 		for i := range currentContainers {
-			// for each container keep only its name and probes
-			// probes are used for auto-head-sampling feature
+			// for each container keep only its name, probes and ports.
+			// probes are used for auto-head-sampling feature.
+			// ports are used to decide whether browser instrumentation can be wired
+			// (the odigos-browser-proxy sidecar requires a TCP containerPort on the app container).
 			minimalContainers[i] = v1.Container{
 				Name:           currentContainers[i].Name,
 				StartupProbe:   currentContainers[i].StartupProbe,
 				LivenessProbe:  currentContainers[i].LivenessProbe,
 				ReadinessProbe: currentContainers[i].ReadinessProbe,
+				Ports:          currentContainers[i].Ports,
 			}
 		}
 		template.Spec = v1.PodSpec{

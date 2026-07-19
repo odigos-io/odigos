@@ -7,7 +7,8 @@ It has the following phases:
 1. **Setup** - Install Odigos, simple-trace-db, and the Demo app
    ([simple-demo](https://github.com/odigos-io/simple-demo) `v0.1.36`). The demo app now
    includes the C++ `shipping` service, which is instrumented in this test via the OBI
-   container override.
+   container override. A small nginx `browser-frontend` workload is also installed for
+   browser-community sidecar injection.
 
 2. **Workload instrumentation** - Create a Source for each individual workload, include a reported for each source. Add simple-trace-db as a destination. Verify:
     1. InstrumentationConfigs are created for each deployment
@@ -20,13 +21,16 @@ It has the following phases:
        not require a pod restart, `shipping`'s generation remains at `1` and its
        `InstrumentationConfig` is asserted to report `otelDistroName:
        opentelemetry-ebpf-instrumentation` together with `language: cplusplus`.
-    6. Generated traffic to the frontend's `/buy` endpoint fans out to the C++ `shipping`
+    6. The `browser-frontend` Source uses a `containerOverrides` entry that selects
+       `browser-community`, which injects the `odigos-browser-proxy` sidecar and iptables
+       redirect init container (verified via `01-browser-sidecar-injected.yaml`)
+    7. Generated traffic to the frontend's `/buy` endpoint fans out to the C++ `shipping`
        service (via `SHIPPING_SERVICE_HOST`) and produces server spans observable through
        OBI (verified via `wait-for-shipping-trace.yaml`)
-    7. Context propagation works across deployments (service name is identical to the one configured by the Source)
-    8. Resource attributes are present
-    9. Span attributes are present
-    10. Collector metrics are collected by UI
+    8. Context propagation works across deployments (service name is identical to the one configured by the Source)
+    9. Resource attributes are present
+    10. Span attributes are present
+    11. Collector metrics are collected by UI
 
 3. **Workload uninstrumentation** - Delete all Source objects for deployments. Verify:
     1. Workloads roll out a new (uninstrumented) revision (except `shipping`, which stays at

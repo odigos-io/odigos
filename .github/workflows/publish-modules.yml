@@ -156,7 +156,7 @@ jobs:
 
     strategy:
       matrix:
-        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
+        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents', 'browser-proxy']
         include:
           - service: autoscaler
             runner: depot-ubuntu-latest
@@ -190,6 +190,10 @@ jobs:
             runner: depot-ubuntu-latest
             summary: 'Odigos Agents'
             description: 'The Odigos Agents used to copy Odigos agent relevant files into the user workloads.'
+          - service: browser-proxy
+            runner: depot-ubuntu-latest
+            summary: 'Browser proxy for Odigos'
+            description: 'Sidecar that injects the OpenTelemetry browser SDK into served HTML and proxies browser telemetry to the Odigos collector.'
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
@@ -267,6 +271,7 @@ jobs:
                 matrix.service == 'ui' && 'frontend/Dockerfile' ||
                 matrix.service == 'operator' && 'operator/Dockerfile' ||
                 matrix.service == 'agents' && 'odiglet/Dockerfile' ||
+                matrix.service == 'browser-proxy' && 'browser-proxy/Dockerfile' ||
                 'Dockerfile' }}
           target: >-
             ${{ matrix.service == 'agents' && 'agents' || '' }}

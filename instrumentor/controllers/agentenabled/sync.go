@@ -262,6 +262,21 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 			continue
 		}
 
+		// Browser instrumentation is delivered by the odigos-browser-proxy sidecar, which transparently
+		// redirects inbound traffic to the app container's TCP port. If the app container declares no TCP
+		// containerPort, the sidecar cannot be wired (the webhook silently skips injection), so surface a
+		// clear disabled reason instead of leaving the user wondering why nothing happened.
+		if containerDistro.BrowserSidecar != nil && !containerHasTCPPort(workloadObj, containerName) {
+			containersConfig = append(containersConfig, odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonBrowserPortMissing,
+				AgentEnabledMessage: "browser instrumentation requires a TCP containerPort on the app container so the odigos-browser-proxy sidecar can be wired; add a containerPort and rollout restart the workload",
+				OtelDistroName:      containerDistro.Name,
+			})
+			continue
+		}
+
 		// calculate and verify there are enabled signals for this container.
 		enabledSignals, disabledInfo := signals.GetEnabledSignalsForContainer(nodeCollectorsGroup, &rulesForContainer)
 		if disabledInfo != nil {
@@ -496,6 +511,27 @@ func getEnvInjectionDecision(
 
 	envInjectionDecision := common.EnvInjectionDecisionPodManifest
 	return &envInjectionDecision, nil
+}
+
+// containerHasTCPPort reports whether the named container in the workload's pod template declares a
+// usable TCP containerPort. It is used to guard browser instrumentation, whose sidecar can only be
+// wired when the app container exposes a TCP port. When the pod template or container cannot be
+// resolved, it returns true so we don't block instrumentation here (the webhook still skips
+// injection defensively if no port is present).
+func containerHasTCPPort(workloadObj workload.Workload, containerName string) bool {
+	if workloadObj == nil {
+		return true
+	}
+	podSpec := workloadObj.PodSpec()
+	if podSpec == nil {
+		return true
+	}
+	for i := range podSpec.Containers {
+		if podSpec.Containers[i].Name == containerName {
+			return firstTCPContainerPort(&podSpec.Containers[i]) != 0
+		}
+	}
+	return true
 }
 
 func calculateContainerAgentConfig(containerName string,

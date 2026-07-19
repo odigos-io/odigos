@@ -178,6 +178,12 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	volumeMounted := false
 	waspSupported := false
 
+	// Browser-instrumented containers get a sidecar (+iptables init container) injected instead of
+	// in-container env/agent mounts. We collect them here and append after the loop to avoid
+	// mutating pod.Spec.Containers while ranging over it.
+	var browserSidecars []corev1.Container
+	var browserInitContainers []corev1.Container
+
 	dirsToCopy := make(map[string]struct{})
 	for i := range pod.Spec.Containers {
 		podContainerSpec := &pod.Spec.Containers[i]
@@ -197,6 +203,25 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 			return ErrUnknownDistroName
 		}
 
+		// Browser distros are delivered by the odigos-browser-proxy sidecar; the application
+		// container is not modified (no env vars, no agent mount).
+		if distroMetadata.BrowserSidecar != nil {
+			sidecar, initContainer, browserDirsToCopy, browserVolumeMounted, berr := p.injectBrowserProxy(
+				logger.Logr(), pod, podContainerSpec, pw.Namespace, serviceName, odigosConfiguration, distroMetadata)
+			if berr != nil {
+				return berr
+			}
+			if sidecar != nil {
+				browserSidecars = append(browserSidecars, *sidecar)
+				if initContainer != nil {
+					browserInitContainers = append(browserInitContainers, *initContainer)
+				}
+				volumeMounted = volumeMounted || browserVolumeMounted
+				dirsToCopy = mergeMaps(dirsToCopy, browserDirsToCopy)
+			}
+			continue
+		}
+
 		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(
 			containerConfig, podContainerSpec, &ic, *pw, serviceName, odigosConfiguration, distroMetadata, pod.OwnerReferences)
 		if err != nil {
@@ -209,6 +234,18 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 
 		volumeMounted = volumeMounted || containerVolumeMounted
 		dirsToCopy = mergeMaps(dirsToCopy, containerDirsToCopy)
+	}
+
+	// Append the collected browser-proxy sidecar(s) and iptables init container(s).
+	for i := range browserInitContainers {
+		if !containerNameExists(pod.Spec.InitContainers, browserInitContainers[i].Name) {
+			pod.Spec.InitContainers = append(pod.Spec.InitContainers, browserInitContainers[i])
+		}
+	}
+	for i := range browserSidecars {
+		if !containerNameExists(pod.Spec.Containers, browserSidecars[i].Name) {
+			pod.Spec.Containers = append(pod.Spec.Containers, browserSidecars[i])
+		}
 	}
 
 	if mountMethod == common.K8sHostPathMountMethod && volumeMounted {
@@ -261,6 +298,15 @@ func mergeMaps[T any](a, b map[string]T) map[string]T {
 	return a
 }
 
+func containerNameExists(containers []corev1.Container, name string) bool {
+	for i := range containers {
+		if containers[i].Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *PodsWebhook) podWorkload(pod *corev1.Pod, req admission.Request) (*k8sconsts.PodWorkload, error) {
 	pw, err := workload.PodWorkloadObject(pod)
 	if err != nil {
@@ -305,6 +351,12 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 
 		otelDistro := p.DistrosGetter.GetDistroByName(containerConfig.OtelDistroName)
 		if otelDistro == nil {
+			continue
+		}
+
+		// Browser distros do not run an in-pod agent, so there are no agent env vars to inject into
+		// the application container; the odigos-browser-proxy sidecar handles delivery instead.
+		if otelDistro.BrowserSidecar != nil {
 			continue
 		}
 
