@@ -144,6 +144,23 @@ func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (
 					Statements: ottlDeleteKeyStatements,
 				},
 			}
+
+		case common.ProfilesObservabilitySignal:
+			// resource, scope and profile are the only OTTL contexts the transformprocessor accepts for profiles.
+			config.ProfileStatements = []OttlStatementConfig{
+				{
+					Context:    "resource",
+					Statements: ottlDeleteKeyStatements,
+				},
+				{
+					Context:    "scope",
+					Statements: ottlDeleteKeyStatements,
+				},
+				{
+					Context:    "profile",
+					Statements: ottlDeleteKeyStatements,
+				},
+			}
 		}
 	}
 	return config, nil

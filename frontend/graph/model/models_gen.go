@@ -342,8 +342,8 @@ type DbQueryPayloadCollectionInput struct {
 }
 
 type DesiredConditionActionItem struct {
-	Type           DesiredConditionActionItemType `json:"type"`
-	UserFacingText string                         `json:"userFacingText"`
+	Type       DesiredConditionActionItemType `json:"type"`
+	ButtonText string                         `json:"buttonText"`
 }
 
 type DesiredConditionStatus struct {
@@ -888,7 +888,7 @@ type K8sWorkload struct {
 	MarkedForInstrumentation   *K8sWorkloadMarkedForInstrumentation `json:"markedForInstrumentation"`
 	RuntimeInfo                *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
 	AgentEnabled               *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
-	Rollout                    *K8sWorkloadRollout                  `json:"rollout,omitempty"`
+	Rollout                    *K8sWorkloadRollout                  `json:"rollout"`
 	AutoRollback               *K8sWorkloadAutoRollback             `json:"autoRollback,omitempty"`
 	Containers                 []*K8sWorkloadContainer              `json:"containers,omitempty"`
 	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
@@ -1092,9 +1092,21 @@ type K8sWorkloadPodContainerProcessInstrumentation struct {
 	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
 }
 
+type K8sWorkloadPodsManifestInjectionOverview struct {
+	TotalPods                int  `json:"totalPods"`
+	TotalAgentNotAppliedPods int  `json:"totalAgentNotAppliedPods"`
+	AgentNotAppliedOk        bool `json:"agentNotAppliedOk"`
+	TotalAgentAppliedPods    int  `json:"totalAgentAppliedPods"`
+	AgentAppliedOk           bool `json:"agentAppliedOk"`
+	TotalAgentOutOfDatePods  int  `json:"totalAgentOutOfDatePods"`
+	AgentOutOfDateOk         bool `json:"agentOutOfDateOk"`
+}
+
 type K8sWorkloadRollout struct {
-	RolloutStatus               *DesiredConditionStatus `json:"rolloutStatus,omitempty"`
-	PodsManifestInjectionStatus *DesiredConditionStatus `json:"podsManifestInjectionStatus,omitempty"`
+	RolloutStatus                 *DesiredConditionStatus                   `json:"rolloutStatus,omitempty"`
+	PodsManifestInjectionStatus   *DesiredConditionStatus                   `json:"podsManifestInjectionStatus"`
+	PodsManifestInjectionOverview *K8sWorkloadPodsManifestInjectionOverview `json:"podsManifestInjectionOverview"`
+	AgentsMetaHashChangedTime     *string                                   `json:"agentsMetaHashChangedTime,omitempty"`
 }
 
 type K8sWorkloadRuntimeInfo struct {

@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@apollo/client": "^4.2.6",
-    "@odigos/ui-kit": "0.0.266",
+    "@odigos/ui-kit": "0.0.268",
     "graphql": "^16.14.2",
     "next": "15.5.18",
     "react": "19.2.7",
