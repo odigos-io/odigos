@@ -204,8 +204,8 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 		runtimeDetection = status.CalculateRuntimeInspectionStatus(ic)
 		agentInjectionEnabled = status.CalculateAgentInjectionEnabledStatus(ic)
 		rolloutStatus = status.CalculateRolloutStatus(ic)
-		podsManifestInjectionStatus = status.CalculatePodsManifestInjectionStatus(ic)
 	}
+	podsManifestInjectionStatus = status.CalculatePodsManifestInjectionStatus(ic, pods)
 	agentInjected = status.CalculateAgentInjectedStatus(ic, pods)
 	containerNames := getContainerNamesWithOptionalPodManifestInjection(ic)
 	processesHealth, _ = aggregateProcessesHealthForWorkload(ctx, &id, containerNames)
@@ -238,7 +238,7 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 
 	healthConditions := make([]*model.DesiredConditionStatus, 0, 7)
 	if ic != nil {
-		healthConditions = append(healthConditions, runtimeDetection, agentInjectionEnabled, rolloutStatus, podsManifestInjectionStatus)
+		healthConditions = append(healthConditions, runtimeDetection, agentInjectionEnabled, rolloutStatus)
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
 		healthConditions = append(healthConditions, &model.DesiredConditionStatus{
@@ -246,7 +246,7 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 			ReasonEnum: &reasonStr, Message: "workload is not marked for instrumentation",
 		})
 	}
-	healthConditions = append(healthConditions, agentInjected, processesHealth, expectingTelemetry)
+	healthConditions = append(healthConditions, podsManifestInjectionStatus, agentInjected, processesHealth, expectingTelemetry)
 
 	if override := status.StaticPodEnterpriseFeatureHealthStatus(id.Kind, tier); override != nil {
 		w.WorkloadOdigosHealthStatus = override
