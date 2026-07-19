@@ -164,6 +164,12 @@
           "required": [],
           "title": "centralBackendURL"
         },
+        "maxMessageSize": {
+          "default": "33554432",
+          "description": "Maximum WebSocket message size in bytes for the central-proxy ↔ central-backend\nlink (default 33554432 = 32Mi). Must match central-backend maxMessageSize.",
+          "required": [],
+          "title": "maxMessageSize"
+        },
         "nodeSelector": {
           "default": "",
           "description": "Override the global nodeSelector (values.nodeSelector) for this component",
