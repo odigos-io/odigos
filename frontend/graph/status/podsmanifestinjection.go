@@ -47,9 +47,6 @@ func podsManifestInjectionReasonToStatus(r status.Reason, message string) *model
 	if message == "" {
 		message = r.Message
 	}
-	if message == "" {
-		message = r.Summary
-	}
 
 	actionItems := make([]*model.DesiredConditionActionItem, 0, len(r.ActionItems))
 	for _, actionItem := range r.ActionItems {
