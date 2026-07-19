@@ -45,7 +45,7 @@ spec:
     title: "Rollout: No Pods"
     k8sConditionStatus: "Unknown"
     odigosSeverity: "Irrelevant"
-    summary: "There are no pods for this {{ .WorkloadKind }}, so the instrumentation agent status cannot be evaluated yet."
+    summary: "There are no pods for this source, so the instrumentation agent status cannot be evaluated yet."
     description: |
       Odigos reports this reason when the source has no pods.
       Until at least one pod exists, it is not meaningful to evaluate the instrumentation agent status.
@@ -128,11 +128,11 @@ spec:
       summary: "After the rollout completes, new pods should start with the instrumentation agent applied."
     - state: "disabled"
       title: "Rollout: In Progress"
-      message: "Instrumentation Disabled; Some pods have agent applied, new pods after {{ .WorkloadKind }} rollout will start without it"
+      message: "Instrumentation Disabled; Some pods have agent applied, which will be removed after {{ .WorkloadKind }} rollout is completed"
       summary: "After the rollout completes, new pods should start with no agent."
     - state: "upToDate"
       title: "Rollout: In Progress"
-      message: "Instrumentation Enabled; Some pods have an out-of-date agent, new pods after {{ .WorkloadKind }} rollout will start with the updated configuration"
+      message: "Instrumentation Enabled; Some pods have an out-of-date agent, which will be updated after {{ .WorkloadKind }} rollout is completed"
       summary: "After the rollout completes, new pods should start with the current desired agent configuration."
 
   - name: "WaitingForAutomaticRollout"
