@@ -1,0 +1,240 @@
+---
+title: "Deploy as a Docker Container"
+sidebarTitle: "Docker Deployment"
+description: "Run the Odigos VM Agent as a privileged Docker container — the containerized alternative to the Linux package."
+---
+
+import EnterpriseVMAgent from '../../../snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
+import KernelVersion from '../../../snippets/shared/ebpf-kernel-version-note.mdx'
+
+<EnterpriseVMAgent />
+
+The Docker deployment is the same Odigos VM Agent packaged as a privileged
+container instead of an RPM/deb system package. It is meant for hosts where
+installing a system package is not an option — immutable hosts, or fleets that
+are managed entirely with Docker Compose.
+
+## How it works
+
+One agent container runs per host. Through the host's PID namespace and the
+Docker socket, it discovers and instruments the host's **Docker containers**,
+**systemd services**, and **regular Linux processes** with eBPF, and runs the
+`odigos-otelcol` collector as a supervised child process.
+
+The collector runs as a child process of the agent rather than a `systemd` unit
+(there is no `systemd` inside the container). Host `systemd` services are still
+first-class targets: languages that attach directly (Go, C++, Java, OBI) need no
+`systemctl`, while env-injection languages (Python, Node.js, .NET, PHP, Ruby) get
+a unit drop-in written to the host's `/etc/systemd/system` and are restarted with
+the host's `systemctl`, which the agent runs by entering the host's namespaces
+with `nsenter`.
+
+## Requirements
+
+<KernelVersion />
+
+- An Odigos Pro license token for the VM Agent.
+- A **Linux** host — the agent instruments the host it runs on.
+- Docker installed and running, with permission to start privileged containers.
+- The Odigos VM Agent container image. <Note>Obtain the image from your Odigos support team.</Note>
+
+## Step 1: One-time host setup
+
+Create the agent's config directory on the host before starting the container.
+It persists the agent's identity and configuration across container upgrades:
+
+```shell
+sudo mkdir -p /etc/odigos-vmagent
+```
+
+## Step 2: Run the agent
+
+<Tabs>
+  <Tab title="Docker Compose">
+    After [Step 1](#step-1-one-time-host-setup), start the agent with the
+    `compose.yml` bundled with the distribution:
+
+    ```shell
+    ODIGOS_ONPREM_TOKEN='<TOKEN>' ODIGOS_CENTRAL_ENDPOINT='<HOST>:<PORT>' docker compose up -d
+    ```
+
+    <Accordion title="compose.yml">
+      ```yaml
+      services:
+        odigos-vmagent:
+          image: ${ODIGOS_VMAGENT_IMAGE:-odigos-vmagent:latest}
+          container_name: odigos-vmagent
+          restart: unless-stopped
+          # Privileged + host PID: eBPF attach and /proc/<pid> access to host processes.
+          privileged: true
+          pid: host
+          # Host cgroup namespace: docker-container classification reads /proc/<pid>/cgroup
+          # to map a PID to its container id. Without this, container processes are
+          # misclassified as regular processes.
+          cgroup: host
+          # Host networking: the collector/OpAMP listen on the host's interfaces and
+          # the default agent name is the host's hostname.
+          network_mode: host
+          init: true
+          environment:
+            # License token; required unless license.jwt is pre-provisioned in the
+            # config dir mount.
+            ODIGOS_ONPREM_TOKEN: ${ODIGOS_ONPREM_TOKEN:-}
+            # Optional: enables the Odigos Central connection (host:port or URL).
+            ODIGOS_CENTRAL_ENDPOINT: ${ODIGOS_CENTRAL_ENDPOINT:-}
+            # Optional: agent name reported to Central (defaults to the hostname).
+            ODIGOS_AGENT_NAME: ${ODIGOS_AGENT_NAME:-}
+          volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - /var/lib/docker:/var/lib/docker:ro
+            - /var/odigos:/var/odigos
+            # Config and identity, persisted across upgrades (same path as the
+            # package install — this is the same product in a different runtime).
+            - /etc/odigos-vmagent:/etc/odigos-vmagent
+            # Host systemd unit dir: instrumentation drop-ins for env-injection
+            # systemd services land here. Omit on hosts that do not use systemd.
+            - /etc/systemd/system:/etc/systemd/system
+            - /sys/kernel/debug:/sys/kernel/debug
+          ulimits:
+            # eBPF maps on kernels that account them against RLIMIT_MEMLOCK.
+            memlock: -1
+            nofile:
+              soft: 65536
+              hard: 65536
+      ```
+    </Accordion>
+  </Tab>
+  <Tab title="docker run">
+    After [Step 1](#step-1-one-time-host-setup), run the container directly:
+
+    ```shell
+    docker run -d --name odigos-vmagent \
+      --restart unless-stopped \
+      --privileged --pid host --network host --cgroupns host --init \
+      --ulimit memlock=-1 --ulimit nofile=65536:65536 \
+      -e ODIGOS_ONPREM_TOKEN='<TOKEN>' \
+      -e ODIGOS_CENTRAL_ENDPOINT='<HOST>:<PORT>' \
+      -v /var/run/docker.sock:/var/run/docker.sock:ro \
+      -v /var/lib/docker:/var/lib/docker:ro \
+      -v /var/odigos:/var/odigos \
+      -v /etc/odigos-vmagent:/etc/odigos-vmagent \
+      -v /etc/systemd/system:/etc/systemd/system \
+      -v /sys/kernel/debug:/sys/kernel/debug \
+      odigos-vmagent:latest
+    ```
+
+    The `/etc/systemd/system` mount is only needed on a systemd host, for
+    env-injection systemd instrumentation; omit it otherwise.
+  </Tab>
+</Tabs>
+
+Once the container is running, confirm the agent and collector are healthy:
+
+```shell
+docker logs -f odigos-vmagent
+```
+
+## Configuration
+
+The agent is configured entirely through environment variables at startup:
+
+| Variable | Required | Effect |
+|---|---|---|
+| `ODIGOS_ONPREM_TOKEN` | Yes, unless `license.jwt` is pre-provisioned in the config directory | Written to `/etc/odigos-vmagent/license.jwt` at startup. |
+| `ODIGOS_CENTRAL_ENDPOINT` | No | Enables the Odigos Central connection and sets its endpoint (`host:port` or URL). Omit to run without Central. |
+| `ODIGOS_AGENT_NAME` | No | Agent name reported to Central. Defaults to the host's hostname. |
+
+Everything else — [sources](/vmagent/setup/configuration/add-sources),
+[destinations](/vmagent/setup/configuration/add-destinations), actions, and
+instrumentation rules — is managed from Odigos Central or with `odictl`, exactly
+as in the package deployment:
+
+```shell
+docker exec -it odigos-vmagent odictl
+```
+
+The config tree is persisted on the host at `/etc/odigos-vmagent`, so the
+agent keeps its deployment identity and configuration across container upgrades.
+Values written to `config.yaml` take precedence over the environment-derived
+defaults on later boots.
+
+<Note>
+  Pre-provisioning `license.jwt` in `/etc/odigos-vmagent` is an alternative
+  to `ODIGOS_ONPREM_TOKEN`. When the token variable is set, it is the source of
+  truth and overwrites an out-of-date license file.
+</Note>
+
+## Connecting to Odigos Central
+
+Unlike the package install (which connects through `odictl`/`config.yaml` and a
+`systemctl` restart), the container connects to Central via the
+`ODIGOS_CENTRAL_ENDPOINT` environment variable set at startup — the endpoint
+must be reachable from the host. To learn more about Central, see
+[Connecting VM Agent](/central/adding-connections/vmagent).
+
+## Required permissions
+
+The agent runs as a privileged container with host namespaces and several host
+mounts. Each is required for a specific capability:
+
+| Setting | Reason |
+|---|---|
+| `--privileged` | eBPF program loading, perf events, writing instrumentation files into target containers, and writing to `/var/odigos`. |
+| `--pid host` | Classifying and attaching to host processes via `/proc/<pid>`. |
+| `--cgroupns host` | Mapping a PID to its container id via `/proc/<pid>/cgroup`. Without it, every container process is misclassified as a regular process. |
+| `--network host` | The collector and OpAMP server listen on the host's network namespace, reachable by instrumented workloads on `localhost`. |
+| `--init` | Reaps child processes left by attach tooling. |
+| `--ulimit memlock=-1` | eBPF maps on kernels that account them against `RLIMIT_MEMLOCK`. |
+| `/var/run/docker.sock` (ro) | Container metadata: mapping PIDs to containers, service names, restart-based instrumentation. |
+| `/var/lib/docker` (ro) | Executable path resolution through overlay2, and container JSON logs for the logs pipeline. |
+| `/var/odigos` (rw) | Instrumentation files must live on the host so host processes can load them. |
+| `/etc/odigos-vmagent` (rw) | Agent configuration and identity, persisted across container upgrades. |
+| `/etc/systemd/system` (rw) | Env-injection systemd instrumentation writes unit drop-ins here so the host's `systemd` picks them up. Omit on non-systemd hosts (direct-attach systemd services still work without it). |
+| `/sys/kernel/debug` | kprobes/tracepoints used by the eBPF instrumentations. |
+
+## Upgrade
+
+Pull the new image and recreate the container. The persisted
+`/etc/odigos-vmagent` directory preserves the agent's identity and
+configuration across the upgrade.
+
+<Tabs>
+  <Tab title="Docker Compose">
+    ```shell
+    docker compose pull
+    docker compose up -d
+    ```
+  </Tab>
+  <Tab title="docker run">
+    ```shell
+    docker pull odigos-vmagent:latest
+    docker stop odigos-vmagent && docker rm odigos-vmagent
+    ```
+
+    Then re-run the `docker run` command from [Step 2](#step-2-run-the-agent)
+    with the new image.
+  </Tab>
+</Tabs>
+
+## Uninstall
+
+```shell
+docker stop odigos-vmagent
+docker rm odigos-vmagent
+```
+
+To fully remove the deployment, also drop the persisted identity and configuration:
+
+```shell
+sudo rm -rf /etc/odigos-vmagent
+```
+
+## Troubleshooting
+
+- **Logs** — the agent and collector share stdout (console format, same as the
+  package install). Use `docker logs odigos-vmagent`.
+- **Inspect / configure a running agent** — `docker exec -it odigos-vmagent odictl`.
+- **Container processes show up as regular processes** — the container is
+  missing `--cgroupns host` (or `cgroup: host` in Compose).
+- **systemd services in env-injection languages are not instrumented** — the
+  host uses `systemd` but `/etc/systemd/system` is not mounted into the container.
