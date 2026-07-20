@@ -142,8 +142,11 @@ func CalculateGatewayConfig(
 			pipeline := currentConfig.Service.Pipelines[pipelineName]
 			// add the forward connector as a receiver to the pipeline
 			pipeline.Receivers = append(pipeline.Receivers, connectorName)
-			// every destination pipeline should have a generic batch processor
-			pipeline.Processors = append(pipeline.Processors, consts.GenericBatchProcessorConfigKey)
+			// every destination pipeline should have a generic batch processor, except profiles:
+			// the batch processor does not support the profiles signal in the pinned collector build.
+			if !strings.HasPrefix(pipelineName, "profiles/") {
+				pipeline.Processors = append(pipeline.Processors, consts.GenericBatchProcessorConfigKey)
+			}
 
 			// track which signals are enabled based on the destination pipeline names
 			switch {
@@ -162,18 +165,6 @@ func CalculateGatewayConfig(
 		}
 
 		status.Destination[dest.GetID()] = nil // mark this destination as success
-	}
-	// Profile destinations (e.g. Pyroscope) register their pipelines directly under
-	// "profiles/<id>" and intentionally return no destination pipeline names from
-	// ModifyConfig — so they bypass the forward-connector loop above. Detect them
-	// by scanning registered pipelines so PROFILES is reflected in enabledSignals.
-	if !profilesEnabled {
-		for pipelineName := range currentConfig.Service.Pipelines {
-			if strings.HasPrefix(pipelineName, "profiles/") {
-				profilesEnabled = true
-				break
-			}
-		}
 	}
 
 	// track which signals are enabled
@@ -212,6 +203,7 @@ func CalculateGatewayConfig(
 		tracesPostForwardProcessors,
 		processorsResults.MetricsProcessors,
 		processorsResults.LogsProcessors,
+		processorsResults.ProfilesProcessors,
 		enabledSignals,
 		gatewayOptions)
 
@@ -247,7 +239,7 @@ func CalculateGatewayConfig(
 }
 
 func insertRootPipelinesToConfig(currentConfig *config.Config,
-	tracesProcessors, tracesPostForwardProcessors, metricsProcessors, logsProcessors []string,
+	tracesProcessors, tracesPostForwardProcessors, metricsProcessors, logsProcessors, profilesProcessors []string,
 	signals []common.ObservabilitySignal, gatewayOptions *GatewayConfigOptions) {
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
 		if traceAggregationNeeded(gatewayOptions) {
@@ -264,6 +256,10 @@ func insertRootPipelinesToConfig(currentConfig *config.Config,
 
 	if slices.Contains(signals, common.LogsObservabilitySignal) {
 		applyRootPipelineForSignal(currentConfig, common.LogsObservabilitySignal, logsProcessors, gatewayOptions.OdigosConfigExtensionName)
+	}
+
+	if slices.Contains(signals, common.ProfilesObservabilitySignal) {
+		applyRootPipelineForSignal(currentConfig, common.ProfilesObservabilitySignal, profilesProcessors, gatewayOptions.OdigosConfigExtensionName)
 	}
 }
 

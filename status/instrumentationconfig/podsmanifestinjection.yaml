@@ -2,134 +2,286 @@ apiVersion: internal.odigos.io/v1beta1
 kind: Status
 metadata:
   name: pods-manifest-injection
+  ownerResource: instrumentationconfig
+  scope: source
+  component: instrumentor
 spec:
   type: 'PodsManifestInjection'
+
+  # Parameters available when rendering reason state messages.
+  # Messages may use Go text/template syntax (e.g. {{ .WorkloadKind }}).
+  # Callers are expected to supply these values at runtime when presenting the message.
+  parameters:
+  - name: WorkloadKind
+    description: |
+      The Kubernetes kind of the source workload.
+      Typical values: Deployment, DaemonSet, StatefulSet, DeploymentConfig, CronJob, StaticPod, Rollout
+
+  docs:
+    title: "Instrumentation Agent Applied to Pods"
+    summary: "Reports whether running pods for a source already have the instrumentation agent status they should."
+    description: |
+      For each source, Odigos observes whether an instrumentation agent should be applied or not, and tracks the actual state of pods in the cluster.
+      This condition reports progress toward that outcome: all pods have the agent applied, or all pods do not have the agent applied.
+
+      Some agents can be applied without restarting existing pods.
+      Others require a rollout so that new pods start with the correct agent status.
+
+      Odigos can manage that restart automatically, or automatic rollout can be disabled so a manual or organic restart is required.
+      Automatic rollouts are not rate-limited by default, but a rate limit can be configured so a source may remain queued for a long time before its rollout starts.
+      The condition reports when a rollout is needed, in progress, queued, unsupported, or failed.
+
+    states:
+    - state: "enabled"
+      summary: "Instrumentation is expected to be applied. Status text describes progress toward, or completion of, applying the agent to pods."
+    - state: "disabled"
+      summary: "Instrumentation is expected to be removed. Status text describes progress toward, or completion of, removing the agent from pods."
+    - state: "upToDate"
+      summary: "Instrumentation is expected to match the current desired configuration. Evaluated per container: some containers may already be up to date, while others may still need a restart to pick up the correct agent version, enablement, or selected agent type."
+
   reasons:
 
-  - name: "NoRunningPods"
-    message: "source has no running pods"
+  - name: "NoPods"
+    title: "Rollout: No Pods"
     k8sConditionStatus: "Unknown"
     odigosSeverity: "Irrelevant"
-    technicalDescription: "source has no running pods, thus it is irrelevant if odigos agent is successfully injected into them or not"
+    summary: "There are no pods for this source, so the instrumentation agent status cannot be evaluated yet."
+    description: |
+      Odigos reports this reason when the source has no pods.
+      Until at least one pod exists, it is not meaningful to evaluate the instrumentation agent status.
+      Once pods are created, this condition will update to show whether the agent status matches what it should be.
+
+  - name: "PodsAppliedSuccessfully"
+    k8sConditionStatus: "True"
+    odigosSeverity: "Success"
+    summary: "The instrumentation agent status on all pods matches what it should be."
+    description: |
+      The instrumentation agent status on every pod for this source matches what it should be.
+      No further rollout is required right now.
+      If instrumentation is later enabled or disabled, Odigos will re-evaluate whether a new rollout is needed.
+    states:
+    - state: "enabled"
+      title: "Agent Applied to All Pods"
+      summary: "Instrumentation enabled, and all pods have the instrumentation agent applied."
+    - state: "disabled"
+      title: "Agent Removed from All Pods"
+      summary: "Instrumentation disabled, and all pods are running with no instrumentation agent."
 
   - name: "PodsManifestInjectionNotRequired"
-    message: "odigos agent is automatically applied to running pods"
     k8sConditionStatus: "True"
     odigosSeverity: "Success"
-    technicalDescription: "when all the agents of the source supports optional pod manifest injection, odigos will automatically apply the agent to running pods without requiring user action or restarts of the pods"
-  - name: "PodsInjectedSuccessfully"
-    message: "all pods of this source are successfully injected with odigos agent"
-    k8sConditionStatus: "True"
-    odigosSeverity: "Success"
-    technicalDescription: "all pods of this source are successfully injected with odigos agent"
+    summary: "A rollout is not required to apply the instrumentation agent for this source."
+    description: |
+      When every agent used by the source can be applied without a restart, Odigos can enable instrumentation on running pods without requiring a user-triggered restart or automatic rollout.
+      Agent can be applied without waiting for a rollout.
+    states:
+    - state: "enabled"
+      title: "Agent Applied to All Pods (no Rollout Needed)"
+
   - name: "RolloutNotSupportedForStaticPods"
-    message: "selected odigos agent requires workload restart, not supported for static pods"
     k8sConditionStatus: "False"
     odigosSeverity: "Unsupported"
-    technicalDescription: "this source is a static pod, which means it is not supported to be rolled out. so cannot restart to make pod manifest injection"
-  - name: "WaitingForNextJobRun"
-    message: "jobs and cronjobs cannot be rolled out; odigos agent will be injected into the next pod created by this job"
-    k8sConditionStatus: "Unknown"
-    odigosSeverity: "Pending"
-    technicalDescription: "this source is a job or cronjob, which cannot be force-restarted by odigos. the next time a fresh pod is created for this job, it will receive odigos pod manifest injection"
-  - name: "RolloutInProgress"
-    message: "this source is actively being rolled out, wait for it to finish"
-    k8sConditionStatus: "Unknown"
-    odigosSeverity: "Waiting"
-    technicalDescription: "a rollout is in progress for this source. it may be an odigos automatic rollout, a manual rollout triggered from odigos, or an unrelated rollout that happened to run. when it ends, pods should be restarted and run with the odigos agent"
-  - name: "WaitingForAutomaticRollout"
-    message: "waiting for automatic rollout to happen"
-    k8sConditionStatus: "Unknown"
-    odigosSeverity: "Waiting"
-    technicalDescription: "waiting for automatic rollout to happen, when it ends, all the pods should have been restarted and run with odigos agent"
-    actionItems:
-    - type: "RolloutWorkload"
-      userFacingText: "if odigos auto rollout is not triggered in short while, trigger it manually"
-  - name: "WaitingInRolloutQueue"
-    message: "automatic rollout will pick up this workload once a slot is ready; use manual rollout if you need it right away"
-    k8sConditionStatus: "Unknown"
-    odigosSeverity: "Pending"
-    technicalDescription: "maxConcurrentRollouts limits how many workloads odigos rolls out at once. this source is queued and will be rolled out when a slot is available. trigger a manual rollout if you do not want to wait"
-    actionItems:
-    - type: "RolloutWorkload"
-      userFacingText: "rollout manually without waiting in automatic rollout queue"
-  - name: "RestartRequiredAutoRolloutDisabled"
-    message: "automatic rollout by odigos is disabled, restart the workload to inject odigos agent to all pods"
-    k8sConditionStatus: "False"
-    odigosSeverity: "Notice"
-    technicalDescription: "not all pods of this source are injected with odigos agent, but automatic rollout is disabled. so user need to intiate rollout manually or wait for next rollout to happen"
-    actionItems:
-    - type: "RolloutWorkload"
-      userFacingText: "trigger manual rollout now to inject odigos agent to all pods"
-  - name: "RestartRequiredWebhookMissed"
-    message: "some pods missed odigos agent injection to pod manifest after rollout; restart the workload manually"
-    k8sConditionStatus: "False"
-    odigosSeverity: "Notice"
-    technicalDescription: "automatic rollout already completed, but some pods still lack odigos pod manifest injection. this can happen if a pod was created without going through the odigos pods webhook. manually restart the workload so new pods are created and injected via the webhook"
-    actionItems:
-    - type: "RolloutWorkload"
-      userFacingText: "rollout manually to start fresh pods with odigos pod manifest injection"
-  - name: "RestartRequiredAutoRolloutFailed"
-    message: "automatic rollout by odigos failed; restart the workload manually to inject odigos agent to all pods"
-    k8sConditionStatus: "False"
-    odigosSeverity: "Failure"
-    technicalDescription: "odigos attempted automatic rollout but failed to patch/restart the workload. pods remain without up-to-date odigos agent injection until the user restarts the workload manually"
-    actionItems:
-    - type: "RolloutWorkload"
-      userFacingText: "rollout manually to start new pods with odigos pod manifest injection"
+    summary: "This source is backed by a static pod, which cannot be rolled out to apply the instrumentation agent."
+    description: |
+      Static pods are managed directly by the kubelet and are not rolled out like Deployments, DaemonSets, or StatefulSets.
+      If the agents for this source require a rollout to apply instrumentation agent, Odigos cannot complete that step automatically or via a normal workload restart.
+      Instrumentation that depends on a rollout may not be achievable for this workload type.
+    states:
+    - state: "enabled"
+      title: "Rollout: Not Supported for Static Pods"
+      message: "Instrumentation Enabled; Static pods cannot be restarted to apply the instrumentation agent"
 
-  - name: "AgentDisabled"
-    message: "instrumentation is not enabled for this source; its pods are running without the Odigos agent as expected"
-    k8sConditionStatus: "True"
-    odigosSeverity: "Success"
-    technicalDescription: "agent injection is disabled for this source, so pods without odigos agent injection are in the expected state"
-  - name: "WaitingForNextJobRunDisabledWorkloads"
-    message: "some job pods are still running with odigos agent; next job pods will be created without it"
-    k8sConditionStatus: "False"
-    odigosSeverity: "Waiting"
-    technicalDescription: "source is disabled for instrumentation, but some pods of this job are still running with odigos agent and cannot be rolled out to start fresh pods without it"
-  - name: "RolloutInProgressDisabledWorkloads"
-    message: "this workload is actively being rolled out to start fresh pods without odigos agent"
-    k8sConditionStatus: "False"
-    odigosSeverity: "Waiting"
-    technicalDescription: "source is disabled for instrumentation, and some pods still have odigos pod manifest injection. they are expected to be replaced with new pods running without odigos agent"
-  - name: "WaitingForAutomaticRolloutDisabledWorkloads"
-    message: "source is disabled but some pods are still running with odigos agent; on next rollout they will be replaced with new pods running without odigos agent"
-    k8sConditionStatus: "False"
-    odigosSeverity: "Waiting"
-    technicalDescription: "some pods are still running with odigos agent fofr disabled pods. since odigos auto-rollout is disabled, they are not replaced automatically and require to wait for next organic rollout to happen, or a user can trigger it manually"
-    actionItems:
-    - type: "RolloutWorkload"
-      userFacingText: "trigger manual rollout to start fresh pods without odigos agent"
-  - name: "WaitingInAutoRolloutQueueDisabledWorkloads"
-    message: "source is disabled for instrumentation, and waiting in auto rollout queue to restart pods with no odigos agent"
-    k8sConditionStatus: "False"
+  - name: "WaitingForNextJobRun"
+    k8sConditionStatus: "Unknown"
     odigosSeverity: "Pending"
-    technicalDescription: "source is disabled for instrumentation, auto rollout will kick in once a slot for rollout is available"
+    summary: "Jobs and CronJobs cannot be rolled out; already running pods must finish, and new pods will be created correctly."
+    description: |
+      Jobs and CronJobs cannot be rolled out by Odigos.
+      Pods that are already running keep going as they are until they complete.
+      When the next run creates new pods, those pods will start with the correct agent status.
+    states:
+    - state: "enabled"
+      title: "Rollout: Waiting for Next Job Run"
+      message: "Instrumentation Enabled; Agent will be applied on new pods created by this CronJob"
+      summary: "Current job pods may have no agent; newly created pods will have the instrumentation agent applied."
+    - state: "disabled"
+      title: "Rollout: Waiting for Next Job Run"
+      message: "Instrumentation Disabled; Current CronJob pods still have agent, next pods will be created without it"
+      summary: "Current job pods may still have the agent; newly created pods will start with no agent."
+    - state: "upToDate"
+      title: "Rollout: Waiting for Next Job Run"
+      message: "Instrumentation Enabled; Current CronJob pods have an out-of-date agent, next pods will start with the updated configuration"
+      summary: "Current job pods may have an out-of-date agent; newly created pods will start with the current desired agent configuration."
+
+  - name: "RolloutInProgress"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "A rollout is in progress; when it completes, the agent status on pods should match what it should be."
+    description: |
+      A rollout is underway for this source.
+      It may be an Odigos automatic rollout, a manual rollout triggered from Odigos, or an unrelated rollout that happens to be running.
+      Until the rollout finishes, some pods may still be out of date; afterward, all running pods should match.
+    states:
+    - state: "enabled"
+      title: "Rollout: In Progress"
+      message: "Instrumentation Enabled; Agent will be applied to all pods once {{ .WorkloadKind }} rollout is completed"
+      summary: "After the rollout completes, new pods should start with the instrumentation agent applied."
+    - state: "disabled"
+      title: "Rollout: In Progress"
+      message: "Instrumentation Disabled; Some pods have agent applied, which will be removed after {{ .WorkloadKind }} rollout is completed"
+      summary: "After the rollout completes, new pods should start with no agent."
+    - state: "upToDate"
+      title: "Rollout: In Progress"
+      message: "Instrumentation Enabled; Some pods have an out-of-date agent, which will be updated after {{ .WorkloadKind }} rollout is completed"
+      summary: "After the rollout completes, new pods should start with the current desired agent configuration."
+
+  - name: "WaitingForAutomaticRollout"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "Odigos expects an automatic rollout soon so pods can pick up the correct agent status."
+    description: |
+      Automatic rollout is enabled and Odigos intends to restart the workload shortly so new pods start with the correct agent status.
+      If the automatic rollout does not start within a short time, you can trigger a manual rollout as a fallback.
     actionItems:
     - type: "RolloutWorkload"
-      userFacingText: "trigger manual rollout now (skip waiting in auto rollout queue)"
-  - name: "RestartRequiredAutoRolloutDisabledDisabledWorkloads"
-    message: "automatic rollout by odigos is disabled for this source, on next rollout they will be replaced with new pods running without odigos agent"
+      buttonText: "Rollout Now"
+    states:
+    - state: "enabled"
+      title: "Waiting for Automatic Rollout"
+      message: "Instrumentation Enabled; Automatic {{ .WorkloadKind }} rollout should be triggered soon; agent will be applied to all pods after it completes"
+      summary: "Automatic rollout should apply the instrumentation agent to all pods once new pods are created."
+    - state: "disabled"
+      title: "Waiting for Automatic Rollout"
+      message: "Instrumentation Disabled; Some pods have agent applied; automatic {{ .WorkloadKind }} rollout should remove it soon"
+      summary: "Automatic rollout should start new pods with no agent."
+    - state: "upToDate"
+      title: "Waiting for Automatic Rollout"
+      message: "Instrumentation Enabled; Some pods have an out-of-date agent; automatic {{ .WorkloadKind }} rollout should update them soon"
+      summary: "Automatic rollout should start new pods with the updated agent configuration."
+
+  - name: "WaitingInRolloutQueue"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Pending"
+    summary: "This source is waiting in the automatic rollout queue because of concurrent rollout limits."
+    description: |
+      The `maxConcurrentRollouts` setting limits how many workloads Odigos rolls out at once.
+      This source is queued and will be rolled out when a slot becomes available.
+      If you do not want to wait, trigger a manual rollout to skip the queue and immediately start pods with the correct agent status.
+    actionItems:
+    - type: "RolloutWorkload"
+      buttonText: "Rollout Now (Skip Queue)"
+    states:
+    - state: "enabled"
+      title: "Waiting in Auto-Rollout Queue"
+      message: "Instrumentation Enabled; Waiting in rate-limit queue for {{ .WorkloadKind }} rollout to apply agent"
+      summary: "Queued for automatic rollout to apply the agent; manual rollout skips the wait."
+    - state: "disabled"
+      title: "Waiting in Auto-Rollout Queue"
+      message: "Instrumentation Disabled; Waiting in rate-limit queue for {{ .WorkloadKind }} rollout to remove agent"
+      summary: "Queued for automatic rollout to remove the agent; manual rollout skips the wait."
+    - state: "upToDate"
+      title: "Waiting in Auto-Rollout Queue"
+      message: "Instrumentation Enabled; Waiting in rate-limit queue for {{ .WorkloadKind }} rollout to update agent"
+      summary: "Queued for automatic rollout to update the agent; manual rollout skips the wait."
+
+  - name: "RestartRequiredAutoRolloutDisabled"
     k8sConditionStatus: "False"
     odigosSeverity: "Notice"
-    technicalDescription: "not all pods of this source are injected with odigos agent, but automatic rollout is disabled. so user need to intiate rollout manually or wait for next rollout to happen"
+    summary: "Automatic rollout is disabled; pods get the correct agent status only after a manual or organic restart."
+    description: |
+      Odigos will not restart this workload automatically.
+      Existing pods keep running as they are until something else recreates them—either a manual rollout you trigger, or an organic restart from the application or platform.
+      Until that happens, some running pods may still have an out-of-date agent status.
     actionItems:
     - type: "RolloutWorkload"
-      userFacingText: "trigger manual rollout now to restart pods without odigos agent"
-  - name: "RestartRequiredAutoRolloutFailedDisabledWorkloads"
-    message: "automatic rollout by odigos failed for this source, restart the workload manually to start fresh pods without odigos agent"
+      buttonText: "Rollout"
+    states:
+    - state: "enabled"
+      title: "Rollout Required to Apply Instrumentation"
+      message: "Instrumentation Enabled; Some pods lack agent until next {{ .WorkloadKind }} rollout"
+      summary: "Roll out the workload (or wait for an organic restart) so new pods get the instrumentation agent applied."
+    - state: "disabled"
+      title: "Rollout Required to Remove Instrumentation"
+      message: "Instrumentation Disabled; Some pods have agent applied; rollout {{ .WorkloadKind }} manually or wait for next organic rollout"
+      summary: "Roll out the workload (or wait for an organic restart) so new pods start with no agent."
+    - state: "upToDate"
+      title: "Rollout Required to Update Instrumentation"
+      message: "Instrumentation Enabled; Some pods have an out-of-date agent until next {{ .WorkloadKind }} rollout"
+      summary: "Roll out the workload (or wait for an organic restart) so existing out-of-date pods will be replaced by new pods start with the current desired agent configuration."
+
+  - name: "RestartRequiredWebhookMissed"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Notice"
+    summary: "A rollout already completed, but some pods still do not have the expected agent status."
+    description: |
+      Automatic rollout finished, yet one or more pods does not have the agent applied.
+      This can happen if a pod was created without Odigos applying the agent.
+      Trigger another restart so fresh pods start with the correct agent status.
+    actionItems:
+    - type: "RolloutWorkload"
+      buttonText: "Rollout"
+    states:
+    - state: "enabled"
+      title: "Rollout Required to Apply Instrumentation"
+      message: "Instrumentation Enabled; Some pods got created without odigos required changes, apply to new pods via {{ .WorkloadKind }} rollout"
+    - state: "upToDate"
+      title: "Rollout Required to Update Instrumentation"
+      message: "Instrumentation Enabled; Some pods have an out-of-date agent, apply to new pods via {{ .WorkloadKind }} rollout"
+      summary: "Some pods have an out-of-date agent. This can happen if a pod is created and the pods mutation webhook did not run or failed. Roll out again so new pods start with the current desired configuration."
+
+  - name: "RestartRequiredAutoRolloutFailed"
     k8sConditionStatus: "False"
     odigosSeverity: "Failure"
-    technicalDescription: "automatic rollout by odigos failed for this source, so user need to intiate rollout manually or wait for next rollout to happen"
+    summary: "Odigos tried to roll out the workload automatically but failed; a manual restart is required."
+    description: |
+      Odigos attempted an automatic rollout (for example by patching the workload) and that attempt failed.
+      Running pods keep their current agent status until you restart the workload manually.
+      After a successful manual rollout, new pods should have the correct agent status.
     actionItems:
     - type: "RolloutWorkload"
-      userFacingText: "trigger manual rollout now to restart pods without odigos agent"
-  - name: "RestartRequiredDisabledWorkloads"
-    message: "source is disabled for instrumentation, but some pods are still running with odigos agent; restart the workload manually to start fresh pods without odigos agent"
+      buttonText: "Manual Rollout"
+    states:
+    - state: "enabled"
+      title: "Automatic Rollout Failed"
+      message: "InstrumentationEnabled; Odigos failed to automatically rollout {{ .WorkloadKind }} - rollout manually to apply agent"
+      summary: "Manual rollout is required so new pods get the instrumentation agent applied."
+    - state: "disabled"
+      title: "Automatic Rollout Failed"
+      message: "Instrumentation Disabled; Some pods have agent applied; odigos failed to automatically rollout {{ .WorkloadKind }} — rollout manually to start pods without it"
+      summary: "Manual rollout is required so new pods start with no agent."
+    - state: "upToDate"
+      title: "Automatic Rollout Failed"
+      message: "Instrumentation Enabled; Some pods have an out-of-date agent; odigos failed to automatically rollout {{ .WorkloadKind }} - rollout manually to apply the updated configuration"
+      summary: "Manual rollout is required so new pods start with the current desired agent configuration."
+
+  - name: "UnmarkedFromOdigos"
     k8sConditionStatus: "False"
     odigosSeverity: "Notice"
-    technicalDescription: "this should not happen, all cases of disabled pods should be covered by other status reasons. here just as safety net"
+    summary: "This source is not marked for instrumentation by Odigos and is not being tracked or automated to cleanup existing pods still running with an agent."
+    description: |
+      This source is not marked for instrumentation by Odigos and is not being tracked.
+      Any pods with agent already applied will remain as is and replaced by next rollout.
+      Odigos will not trigger auto rollout to cleanup any existing pods without an agent.
+      Since this state is for the case that source is untracked (instrumentation config is missing),
+      it will never be written to a status condition, but can be augmented in gql endpoint 
+      to provide more details in a generic way for all sources (marked or unmarked).
     actionItems:
     - type: "RolloutWorkload"
-      userFacingText: "rollout manually to start fresh pods with odigos pod manifest injection"
+      buttonText: "Rollout to Remove Agent"
+    states:
+    - state: "disabled"
+      title: "Rollout: Untracked by Odigos"
+      summary: "Some pods still have the agent applied; Odigos will not roll them out because this source is no longer tracked."
+      message: "Instrumentation Disabled; Some pods have agent applied; Odigos will not roll out because this source is no longer tracked — rollout manually to remove it"
+
+  - name: "NotYetReconciled"
+    title: "Rollout: Status Not Yet Available"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "The pods manifest injection status has not been reconciled yet for this source."
+    message: "Checking agent status on pods; should update shortly"
+    description: |
+      Set as the default PodsManifestInjection condition when an InstrumentationConfig is created,
+      before the reconciler evaluates whether pods have the agent applied as desired.
+      This is typically a short-lived state shortly after a source is marked for instrumentation.
+      Once reconciliation completes, it is replaced with the observed agent injection status.

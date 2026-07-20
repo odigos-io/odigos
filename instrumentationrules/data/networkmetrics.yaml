@@ -1,0 +1,21 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: InstrumentationRule
+metadata:
+  type: NetworkMetrics
+  displayName: Network Metrics
+spec:
+  docsUrl: https://docs.odigos.io/pipeline/rules/networkmetrics
+  description: The "Network Metrics" rule enables network flow and TCP stats metrics for matching workloads. The metrics are collected in odiglet via OBI and exported over OTLP alongside other workload telemetry.
+  # Network metrics are collected at the eBPF/network level and apply regardless of the workload's
+  # programming language.
+  supportedLanguages:
+    - "*"
+  fields:
+    # Enablement is presence-based: a non-nil `networkMetrics` object enables collection. The toggle
+    # writes a boolean that the backend maps to an empty `networkMetrics: {}` config when enabled.
+    - name: networkMetrics
+      displayName: Enable network metrics
+      componentType: toggle
+      initialValue: "true"
+      componentProps:
+        tooltip: Collect network flow and TCP stats metrics for the scoped workloads. Network flow metrics also require metricsSources.networkMetrics.enabled in the Odigos Helm values.

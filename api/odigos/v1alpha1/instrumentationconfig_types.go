@@ -35,6 +35,8 @@ const (
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
 	// the rollout is needed to update the instrumentation done by the Pods webhook.
 	WorkloadRolloutStatusConditionType = "WorkloadRollout"
+	// reports whether running pods have the instrumentation agent applied as desired.
+	PodsManifestInjectionStatusConditionType = "PodsManifestInjection"
 )
 
 func StatusConditionTypeLogicalOrder(condType string) int {
@@ -47,8 +49,10 @@ func StatusConditionTypeLogicalOrder(condType string) int {
 		return 3
 	case WorkloadRolloutStatusConditionType:
 		return 4
-	default:
+	case PodsManifestInjectionStatusConditionType:
 		return 5
+	default:
+		return 6
 	}
 }
 
@@ -378,11 +382,6 @@ type InstrumentationConfigSpec struct {
 	// Pods created before this time may not be in alignment with the AgentsMetaHash.
 	// e.g. can lack the odigos label, or have a different value.
 	AgentsMetaHashChangedTime *metav1.Time `json:"agentsMetaHashChangedTime,omitempty"`
-
-	// Configuration for the OpenTelemetry SDKs that this workload should use.
-	// The SDKs are identified by the programming language they are written in.
-	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
-	SdkConfigs []SdkConfig `json:"sdkConfigs,omitempty"`
 }
 
 func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName string) *ContainerAgentConfig {
@@ -392,37 +391,6 @@ func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName strin
 		}
 	}
 	return nil
-}
-
-type SdkConfig struct {
-
-	// The language of the SDK being configured
-	Language common.ProgrammingLanguage `json:"language"`
-
-	// configurations for the instrumentation libraries the the SDK should use
-	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs,omitempty"`
-
-	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
-
-	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
-	DefaultCodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
-
-	// default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.
-	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
-
-	// default configuration for library tracing.
-	DefaultTraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
-
-	// list of the custom instrumentation probes the SDK should use.
-	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
-
-	// configuration for runtime metrics that the SDK should generate.
-	// these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.
-	RuntimeMetrics *common.MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
-
-	// Whether eBPF-based log capture is enabled for this SDK.
-	// Set by the instrumentor based on InstrumentationRule ebpfLogCapture config.
-	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
 }
 
 type InstrumentationLibraryConfig struct {
