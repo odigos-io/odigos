@@ -4,10 +4,12 @@ go 1.26.2
 
 require (
 	github.com/DataDog/go-sqllexer v0.2.4
+	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.57.0
 	go.opentelemetry.io/collector/component/componenttest v0.151.0
 	go.opentelemetry.io/collector/confmap v1.57.0
+	go.opentelemetry.io/collector/confmap/xconfmap v0.151.0
 	go.opentelemetry.io/collector/consumer v1.57.0
 	go.opentelemetry.io/collector/consumer/consumertest v0.151.0
 	go.opentelemetry.io/collector/pdata v1.57.0
@@ -55,3 +57,5 @@ require (
 	golang.org/x/sys v0.45.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/odigos-io/odigos/common => ../../../common

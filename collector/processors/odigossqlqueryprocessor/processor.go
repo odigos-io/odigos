@@ -2,14 +2,20 @@ package odigossqlqueryprocessor
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/DataDog/go-sqllexer"
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
+
+	commonapi "github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/common/api/actions"
+	"github.com/odigos-io/odigos/common/collector"
 )
 
 const dbStatementKey = "db.statement"
@@ -19,51 +25,100 @@ type sqlQueryProcessor struct {
 	config     *Config
 	normalizer *sqllexer.Normalizer
 	obfuscator *sqllexer.Obfuscator
+
+	// provider is set in Start() when odigos_config_extension is present.
+	provider collector.OdigosConfigExtension
 }
 
 func newSqlQueryProcessor(set processor.Settings, cfg *Config) *sqlQueryProcessor {
-	p := &sqlQueryProcessor{
+	return &sqlQueryProcessor{
 		logger: set.Logger,
 		config: cfg,
-	}
-	if cfg.InferAttributes {
-		p.normalizer = sqllexer.NewNormalizer(
+		// Always available: per-source config from the extension may enable either option.
+		normalizer: sqllexer.NewNormalizer(
 			sqllexer.WithCollectCommands(true),
 			sqllexer.WithCollectTables(true),
-		)
+		),
+		obfuscator: sqllexer.NewObfuscator(),
 	}
-	if cfg.RedactLiterals {
-		p.obfuscator = sqllexer.NewObfuscator()
+}
+
+// Start resolves odigos_config_extension for per-source config lookups.
+func (p *sqlQueryProcessor) Start(ctx context.Context, host component.Host) error {
+	if p.config.OdigosConfigExtension == nil {
+		p.logger.Warn("odigos_config_extension unset, using static infer_attributes / redact_literals")
+		return nil
 	}
-	return p
+	extID := p.config.OdigosConfigExtension
+	ext, ok := host.GetExtensions()[*extID]
+	if !ok {
+		return fmt.Errorf("odigos config extension %q not found", extID.String())
+	}
+	odigosExt, ok := ext.(collector.OdigosConfigExtension)
+	if !ok {
+		return fmt.Errorf("extension %q is not an OdigosConfigExtension (got %T)", extID.String(), ext)
+	}
+	p.provider = odigosExt
+	if !p.provider.WaitForCacheSync(ctx) {
+		p.logger.Warn("odigos config extension cache sync did not complete; some spans may be missed on startup")
+	}
+	return nil
+}
+
+func (p *sqlQueryProcessor) Shutdown(context.Context) error {
+	p.provider = nil
+	return nil
 }
 
 func (p *sqlQueryProcessor) processTraces(_ context.Context, traces ptrace.Traces) (ptrace.Traces, error) {
-	if !p.config.InferAttributes && !p.config.RedactLiterals {
-		return traces, nil
-	}
-
 	resourceSpans := traces.ResourceSpans()
 	for i := 0; i < resourceSpans.Len(); i++ {
-		scopeSpans := resourceSpans.At(i).ScopeSpans()
+		rs := resourceSpans.At(i)
+		srcCfg, ok := p.resolveSourceConfig(rs.Resource())
+		if !ok {
+			continue
+		}
+		inferAttributes := srcCfg.InferDbAttributes != nil
+		redactLiterals := srcCfg.DbQueryTemplatization != nil && srcCfg.DbQueryTemplatization.TemplatizeLiterals
+		if !inferAttributes && !redactLiterals {
+			continue
+		}
+
+		scopeSpans := rs.ScopeSpans()
 		for j := 0; j < scopeSpans.Len(); j++ {
 			spans := scopeSpans.At(j).Spans()
 			for k := 0; k < spans.Len(); k++ {
-				p.processSpan(spans.At(k))
+				p.processSpan(spans.At(k), inferAttributes, redactLiterals)
 			}
 		}
 	}
 	return traces, nil
 }
 
-func (p *sqlQueryProcessor) processSpan(span ptrace.Span) {
+// resolveSourceConfig returns per-source collector config from the extension when attached,
+// otherwise a config derived from the legacy static Config fields.
+func (p *sqlQueryProcessor) resolveSourceConfig(resource pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool) {
+	if p.provider == nil {
+		cfg := &commonapi.ContainerCollectorConfig{}
+		if p.config.InferAttributes {
+			cfg.InferDbAttributes = &actions.InferDbAttributesConfig{}
+		}
+		if p.config.RedactLiterals {
+			cfg.DbQueryTemplatization = &actions.DbQueryTemplatizationConfig{TemplatizeLiterals: true}
+		}
+		return cfg, true
+	}
+	return p.provider.GetFromResource(resource)
+}
+
+func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redactLiterals bool) {
 	attrs := span.Attributes()
 
 	opAttr, hasOperation := attrs.Get(string(semconv.DBOperationNameKey))
 	collAttr, hasCollection := attrs.Get(string(semconv.DBCollectionNameKey))
-	inferNeeded := p.config.InferAttributes && !(hasOperation && hasCollection)
+	inferNeeded := inferAttributes && !(hasOperation && hasCollection)
 
-	if !inferNeeded && !p.config.RedactLiterals {
+	if !inferNeeded && !redactLiterals {
 		return
 	}
 
@@ -78,7 +133,7 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span) {
 	}
 
 	switch {
-	case p.config.RedactLiterals && inferNeeded:
+	case redactLiterals && inferNeeded:
 		normalized, meta, err := p.obfuscateAndNormalize(query, dbms)
 		if err != nil {
 			// this can be ok, for example if the attribute is not sql syntax
@@ -87,7 +142,7 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span) {
 		}
 		attrs.PutStr(queryKey, normalized)
 		p.enhanceFromMetadata(span, opAttr, hasOperation, collAttr, hasCollection, meta)
-	case p.config.RedactLiterals:
+	case redactLiterals:
 		attrs.PutStr(queryKey, p.obfuscate(query, dbms))
 	case inferNeeded:
 		meta, err := p.normalize(query, dbms)

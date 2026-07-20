@@ -153,6 +153,7 @@ const (
 	OdigosTraceStateProcessorName         = "odigostracestate"
 	URLTemplatizationProcessorName        = "odigos-url-templatization"
 	OdigosURLTemplateProcessorType        = "odigosurltemplate"
+	SQLQueryProcessorName                 = "odigos-sql-query"
 	OdigosSQLQueryProcessorType           = "odigossqlquery"
 )
 

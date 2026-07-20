@@ -25,10 +25,7 @@ func NewFactory() processor.Factory {
 }
 
 func createDefaultConfig() component.Config {
-	return &Config{
-		InferAttributes: false,
-		RedactLiterals:  false,
-	}
+	return &Config{}
 }
 
 func createTracesProcessor(
@@ -47,5 +44,7 @@ func createTracesProcessor(
 		nextConsumer,
 		proc.processTraces,
 		processorhelper.WithCapabilities(consumerCapabilities),
+		processorhelper.WithStart(proc.Start),
+		processorhelper.WithShutdown(proc.Shutdown),
 	)
 }

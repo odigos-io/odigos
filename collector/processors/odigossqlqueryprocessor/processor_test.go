@@ -5,9 +5,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor/processortest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+
+	commonapi "github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/common/api/actions"
+	"github.com/odigos-io/odigos/common/collector"
 )
 
 func newTestProcessor(t *testing.T, cfg *Config) *sqlQueryProcessor {
@@ -357,4 +362,83 @@ func TestSkipNonSQL_MongoDB(t *testing.T) {
 	_, hasOp := span.Attributes().Get(string(semconv.DBOperationNameKey))
 	require.False(t, hasOp)
 	require.Equal(t, "db", span.Name())
+}
+
+type stubOdigosConfigExtension struct {
+	cfg *commonapi.ContainerCollectorConfig
+}
+
+func (s *stubOdigosConfigExtension) GetFromResource(pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool) {
+	if s.cfg == nil {
+		return nil, false
+	}
+	return s.cfg, true
+}
+
+func (s *stubOdigosConfigExtension) IsActiveSource(pcommon.Resource) bool { return true }
+
+func (s *stubOdigosConfigExtension) GetWorkloadCacheKey(pcommon.Resource) (string, error) {
+	return "", nil
+}
+
+func (s *stubOdigosConfigExtension) GetWorkloadIdentityFromResource(pcommon.Resource) (string, pcommon.Map, error) {
+	return "", pcommon.NewMap(), nil
+}
+
+func (s *stubOdigosConfigExtension) RegisterWorkloadConfigCacheCallback(collector.WorkloadConfigCacheCallback) {
+}
+
+func (s *stubOdigosConfigExtension) UnregisterWorkloadConfigCacheCallback(collector.WorkloadConfigCacheCallback) {
+}
+
+func (s *stubOdigosConfigExtension) WaitForCacheSync(context.Context) bool { return true }
+
+func (s *stubOdigosConfigExtension) GetDataStreamsForWorkload(pcommon.Resource) ([]string, bool) {
+	return nil, false
+}
+
+func TestExtension_PerSourceConfig(t *testing.T) {
+	proc := newTestProcessor(t, &Config{})
+	proc.provider = &stubOdigosConfigExtension{
+		cfg: &commonapi.ContainerCollectorConfig{
+			InferDbAttributes:     &actions.InferDbAttributesConfig{},
+			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{TemplatizeLiterals: true},
+		},
+	}
+
+	traces := generateTestTrace(map[string]string{
+		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 1 AND name = 'alice'",
+	})
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	query, ok := span.Attributes().Get(string(semconv.DBQueryTextKey))
+	require.True(t, ok)
+	require.Equal(t, "SELECT * FROM users WHERE id = ? AND name = ?", query.Str())
+	op, ok := span.Attributes().Get(string(semconv.DBOperationNameKey))
+	require.True(t, ok)
+	require.Equal(t, "SELECT", op.Str())
+	table, ok := span.Attributes().Get(string(semconv.DBCollectionNameKey))
+	require.True(t, ok)
+	require.Equal(t, "users", table.Str())
+}
+
+func TestExtension_SkipsWhenNoConfig(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true, RedactLiterals: true})
+	proc.provider = &stubOdigosConfigExtension{}
+
+	traces := generateTestTrace(map[string]string{
+		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 1",
+	})
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	query, _ := span.Attributes().Get(string(semconv.DBQueryTextKey))
+	require.Equal(t, "SELECT * FROM users WHERE id = 1", query.Str())
+	_, hasOp := span.Attributes().Get(string(semconv.DBOperationNameKey))
+	require.False(t, hasOp)
 }

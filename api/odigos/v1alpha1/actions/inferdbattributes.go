@@ -26,12 +26,25 @@ func (InferDbAttributesConfig) ProcessorType() string {
 	return consts.OdigosSQLQueryProcessorType
 }
 
+// OrderHint is 1 so SQL query processing runs before spans reach the spanmetrics connector on the data-collector.
 func (InferDbAttributesConfig) OrderHint() int {
 	return 1
 }
 
+// CollectorRoles satisfies ActionConfig for generic action-backed Processor CRs.
+// The shared SQL-query Processor uses SharedProcessorCollectorRoles(spanMetricsEnabled) instead.
 func (InferDbAttributesConfig) CollectorRoles() []k8sconsts.CollectorRole {
 	return []k8sconsts.CollectorRole{
 		k8sconsts.CollectorsRoleClusterGateway,
 	}
+}
+
+// SharedProcessorCollectorRoles returns where the shared SQL-query Processor should run.
+// When span metrics are enabled on the node collectors group, the processor must run on the node
+// collector so inferred attributes / span names are set before span metrics record them.
+func (InferDbAttributesConfig) SharedProcessorCollectorRoles(spanMetricsEnabled bool) []k8sconsts.CollectorRole {
+	if spanMetricsEnabled {
+		return []k8sconsts.CollectorRole{k8sconsts.CollectorsRoleNodeCollector}
+	}
+	return []k8sconsts.CollectorRole{k8sconsts.CollectorsRoleClusterGateway}
 }

@@ -9,6 +9,17 @@ Parsing uses [DataDog/go-sqllexer](https://github.com/DataDog/go-sqllexer), with
 
 ## Configuration
 
+In Odigos-managed deployments, the processor uses `odigos_config_extension` to resolve
+per-source options via `GetFromResource` (`inferDbAttributes` / `dbQueryTemplatization`).
+
+```yaml
+processors:
+  odigossqlquery:
+    odigos_config_extension: odigosconfigk8s
+```
+
+Legacy static options (used when `odigos_config_extension` is unset):
+
 ```yaml
 processors:
   odigossqlquery:
@@ -18,10 +29,11 @@ processors:
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `infer_attributes` | bool | `false` | Infer operation/collection attributes from the query and update the span name when new attributes are added. |
-| `redact_literals` | bool | `false` | Replace literals in `db.query.text` / `db.statement` with placeholders. |
+| `odigos_config_extension` | component ID | unset | Extension implementing `OdigosConfigExtension`; per-source config is read from its cache. |
+| `infer_attributes` | bool | `false` | Legacy: infer operation/collection attributes when the extension is unset. |
+| `redact_literals` | bool | `false` | Legacy: replace literals when the extension is unset. |
 
-When both are enabled, literal redaction and attribute inference run in a single pass (`ObfuscateAndNormalize`).
+When both infer and redact are enabled for a source, they run in a single pass (`ObfuscateAndNormalize`).
 
 ## Behavior
 
