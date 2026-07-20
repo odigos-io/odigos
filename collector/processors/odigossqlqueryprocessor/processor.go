@@ -15,17 +15,27 @@ import (
 const dbStatementKey = "db.statement"
 
 type sqlQueryProcessor struct {
-	logger  *zap.Logger
-	config  *Config
-	engines map[sqllexer.DBMSType]*dialectEngines
+	logger     *zap.Logger
+	config     *Config
+	normalizer *sqllexer.Normalizer
+	obfuscator *sqllexer.Obfuscator
 }
 
 func newSqlQueryProcessor(set processor.Settings, cfg *Config) *sqlQueryProcessor {
-	return &sqlQueryProcessor{
-		logger:  set.Logger,
-		config:  cfg,
-		engines: newDialectEngines(cfg),
+	p := &sqlQueryProcessor{
+		logger: set.Logger,
+		config: cfg,
 	}
+	if cfg.EnhanceAttributes {
+		p.normalizer = sqllexer.NewNormalizer(
+			sqllexer.WithCollectCommands(true),
+			sqllexer.WithCollectTables(true),
+		)
+	}
+	if cfg.Obfuscate {
+		p.obfuscator = sqllexer.NewObfuscator()
+	}
+	return p
 }
 
 func (p *sqlQueryProcessor) processTraces(_ context.Context, traces ptrace.Traces) (ptrace.Traces, error) {
@@ -58,7 +68,8 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, resourceAttrs pcommon.
 		return
 	}
 
-	if shouldSkipNoSQL(attrs, resourceAttrs) {
+	dbms, skip := resolveDBMS(attrs)
+	if skip {
 		return
 	}
 
@@ -67,11 +78,9 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, resourceAttrs pcommon.
 		return
 	}
 
-	eng, dbms := p.enginesFor(attrs, resourceAttrs)
-
 	switch {
 	case p.config.Obfuscate && enhanceNeeded:
-		normalized, meta, err := obfuscateAndNormalize(eng, query, dbms)
+		normalized, meta, err := p.obfuscateAndNormalize(query, dbms)
 		if err != nil {
 			// this can be ok, for example if the attribute is not sql syntax
 			p.logger.Debug("failed to obfuscate and normalize SQL query", zap.Error(err))
@@ -80,9 +89,9 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, resourceAttrs pcommon.
 		attrs.PutStr(queryKey, normalized)
 		p.enhanceFromMetadata(span, opAttr, hasOperation, collAttr, hasCollection, meta)
 	case p.config.Obfuscate:
-		attrs.PutStr(queryKey, obfuscate(eng, query, dbms))
+		attrs.PutStr(queryKey, p.obfuscate(query, dbms))
 	case enhanceNeeded:
-		meta, err := normalize(eng, query, dbms)
+		meta, err := p.normalize(query, dbms)
 		if err != nil {
 			p.logger.Debug("failed to normalize SQL query", zap.Error(err))
 			return
@@ -91,26 +100,26 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, resourceAttrs pcommon.
 	}
 }
 
-func obfuscateAndNormalize(eng *dialectEngines, query string, dbms sqllexer.DBMSType) (string, *sqllexer.StatementMetadata, error) {
+func (p *sqlQueryProcessor) obfuscateAndNormalize(query string, dbms sqllexer.DBMSType) (string, *sqllexer.StatementMetadata, error) {
 	if dbms == defaultDBMS {
-		return sqllexer.ObfuscateAndNormalize(query, eng.obfuscator, eng.normalizer)
+		return sqllexer.ObfuscateAndNormalize(query, p.obfuscator, p.normalizer)
 	}
-	return sqllexer.ObfuscateAndNormalize(query, eng.obfuscator, eng.normalizer, sqllexer.WithDBMS(dbms))
+	return sqllexer.ObfuscateAndNormalize(query, p.obfuscator, p.normalizer, sqllexer.WithDBMS(dbms))
 }
 
-func obfuscate(eng *dialectEngines, query string, dbms sqllexer.DBMSType) string {
+func (p *sqlQueryProcessor) obfuscate(query string, dbms sqllexer.DBMSType) string {
 	if dbms == defaultDBMS {
-		return eng.obfuscator.Obfuscate(query)
+		return p.obfuscator.Obfuscate(query)
 	}
-	return eng.obfuscator.Obfuscate(query, sqllexer.WithDBMS(dbms))
+	return p.obfuscator.Obfuscate(query, sqllexer.WithDBMS(dbms))
 }
 
-func normalize(eng *dialectEngines, query string, dbms sqllexer.DBMSType) (*sqllexer.StatementMetadata, error) {
+func (p *sqlQueryProcessor) normalize(query string, dbms sqllexer.DBMSType) (*sqllexer.StatementMetadata, error) {
 	if dbms == defaultDBMS {
-		_, meta, err := eng.normalizer.Normalize(query)
+		_, meta, err := p.normalizer.Normalize(query)
 		return meta, err
 	}
-	_, meta, err := eng.normalizer.Normalize(query, sqllexer.WithDBMS(dbms))
+	_, meta, err := p.normalizer.Normalize(query, sqllexer.WithDBMS(dbms))
 	return meta, err
 }
 

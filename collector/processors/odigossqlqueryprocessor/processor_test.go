@@ -357,7 +357,7 @@ func TestEnhanceAttributes_UpdatesSpanNameWhenMissingCollection(t *testing.T) {
 	require.Equal(t, "SELECT users", outSpan.Name())
 }
 
-func TestSkipNoSQL_MongoDB(t *testing.T) {
+func TestSkipNonSQL_MongoDB(t *testing.T) {
 	proc := newTestProcessor(t, &Config{EnhanceAttributes: true, Obfuscate: true})
 	originalQuery := `{"find": "users", "filter": {"id": 1}}`
 	traces := generateTestTrace(map[string]string{
