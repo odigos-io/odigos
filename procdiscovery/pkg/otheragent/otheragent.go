@@ -10,7 +10,6 @@ import (
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
-// OtherAgent is the detection result; consumers map Name to their own type.
 type OtherAgent struct {
 	Name string
 }
@@ -35,23 +34,62 @@ type KnownAgent struct {
 	Match    string
 }
 
-// Detect returns the first known agent found in the process, or nil. Entries
-// with a Language are only checked when it matches lang; the rest always run.
-func Detect(pcx *process.ProcessContext, lang common.ProgrammingLanguage) *OtherAgent {
+// knownAgentsByLanguage buckets KnownAgents by Language ("" = language-agnostic),
+// so detection scans only the entries relevant to the process's language plus the
+// agnostic ones, instead of iterating the whole table for every process.
+var knownAgentsByLanguage = indexKnownAgentsByLanguage()
+
+func indexKnownAgentsByLanguage() map[common.ProgrammingLanguage][]*KnownAgent {
+	m := make(map[common.ProgrammingLanguage][]*KnownAgent)
 	for i := range KnownAgents {
-		a := &KnownAgents[i]
-		if a.Language != "" && a.Language != lang {
-			continue
+		agent := &KnownAgents[i]
+		m[agent.Language] = append(m[agent.Language], agent)
+	}
+	return m
+}
+
+// DetectAll returns every distinct agent detected in the process (deduplicated by
+// Name). Entries scoped to a language are only checked when it matches lang; the
+// language-agnostic entries always run.
+func DetectAll(pcx *process.ProcessContext, lang common.ProgrammingLanguage) []OtherAgent {
+	var detected []OtherAgent
+	seen := make(map[string]struct{})
+	scan := func(candidates []*KnownAgent) {
+		for _, agent := range candidates {
+			if _, done := seen[agent.Name]; done {
+				continue
+			}
+			if agentMatchesProcess(pcx, agent) {
+				seen[agent.Name] = struct{}{}
+				detected = append(detected, OtherAgent{Name: agent.Name})
+			}
 		}
-		if matches(pcx, a) {
-			return &OtherAgent{Name: a.Name}
-		}
+	}
+	scan(knownAgentsByLanguage[lang])
+	if lang != "" {
+		scan(knownAgentsByLanguage[""]) // language-agnostic entries
+	}
+	return detected
+}
+
+// Detect returns the first agent detected in the process, or nil. Kept for
+// callers that model a single agent (e.g. odiglet's RuntimeDetails CRD).
+func Detect(pcx *process.ProcessContext, lang common.ProgrammingLanguage) *OtherAgent {
+	if all := DetectAll(pcx, lang); len(all) > 0 {
+		return &all[0]
 	}
 	return nil
 }
 
-// EnvKeysOfInterest returns the env var names referenced by env-based entries,
-// so odiglet can add them to its env-collection whitelist.
+// Blocks reports whether detected agents should stop Odigos from instrumenting:
+// at least one foreign agent is present and running concurrent agents is off.
+func Blocks(detected []OtherAgent, allowConcurrentAgents bool) bool {
+	return len(detected) > 0 && !allowConcurrentAgents
+}
+
+// EnvKeysOfInterest returns the env var names referenced by env-based entries, so
+// callers can add them to their env-collection whitelist (passed in explicitly,
+// not via a hidden global).
 func EnvKeysOfInterest() map[string]struct{} {
 	keys := make(map[string]struct{})
 	for i := range KnownAgents {
@@ -62,29 +100,28 @@ func EnvKeysOfInterest() map[string]struct{} {
 	return keys
 }
 
-func matches(pcx *process.ProcessContext, a *KnownAgent) bool {
-	switch a.Signal {
+func agentMatchesProcess(pcx *process.ProcessContext, agent *KnownAgent) bool {
+	switch agent.Signal {
 	case EnvPresent:
-		_, ok := envValue(pcx, a.Key)
+		_, ok := lookupEnv(pcx, agent.Key)
 		return ok
 	case EnvValueContains:
-		v, ok := envValue(pcx, a.Key)
-		return ok && strings.Contains(v, a.Match)
+		v, ok := lookupEnv(pcx, agent.Key)
+		return ok && strings.Contains(v, agent.Match)
 	case CmdlineContains:
-		return strings.Contains(pcx.CmdLine, a.Match)
+		return strings.Contains(pcx.CmdLine, agent.Match)
 	case LibLoaded:
 		f, err := pcx.GetMapsFile()
-		return err == nil && utils.IsMapsFileContainsBinary(f, []string{a.Match})
+		return err == nil && utils.IsMapsFileContainsBinary(f, []string{agent.Match})
 	}
 	return false
 }
 
-// envValue reads an env var from the detailed set, then the overwrite set (where
-// Odigos keeps values like LD_PRELOAD).
-func envValue(pcx *process.ProcessContext, key string) (string, bool) {
-	if v, ok := pcx.Environments.DetailedEnvs[key]; ok {
+// lookupEnv reads an env var via the process getters, preferring the detailed set
+// then the overwrite set (where Odigos keeps values like LD_PRELOAD).
+func lookupEnv(pcx *process.ProcessContext, key string) (string, bool) {
+	if v, ok := pcx.GetDetailedEnvsValue(key); ok {
 		return v, true
 	}
-	v, ok := pcx.Environments.OverwriteEnvs[key]
-	return v, ok
+	return pcx.GetOverwriteEnvsValue(key)
 }

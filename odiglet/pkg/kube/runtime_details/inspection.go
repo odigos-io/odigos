@@ -28,6 +28,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// agentDetectionEnvs are the env var names the shared other-agent detector needs
+// collected into DetailedEnvs. Passed explicitly to GetPidDetails (no hidden
+// global): if otheragent stops being imported this fails to compile rather than
+// silently disabling detection.
+var agentDetectionEnvs = otheragent.EnvKeysOfInterest()
+
 type InspectionResults struct {
 	containerNameToNewRuntimeDetails map[string]odigosv1.RuntimeDetailsByContainer
 	containerDetectedLanguages       map[string][]common.ProgramLanguageDetails
@@ -162,7 +168,7 @@ func runtimeInspectionFromGroupedPIDs(ctx context.Context, pods []corev1.Pod, gr
 			pidSet := groupedPIDs[pc]
 			processes := make([]procdiscovery.Details, 0, len(pidSet))
 			for pid := range pidSet {
-				procDetails := procdiscovery.GetPidDetails(pid, runtimeDetectionEnvs)
+				procDetails := procdiscovery.GetPidDetails(pid, runtimeDetectionEnvs, agentDetectionEnvs)
 				processes = append(processes, procDetails)
 			}
 
@@ -221,9 +227,9 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 			envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
 		}
 
-		// Detect a foreign instrumentation agent (Datadog, New Relic, Dynatrace,
-		// an OpenTelemetry distribution, ...) already running in this process,
-		// using the shared detector so odiglet and vm-agent stay in sync.
+		// Detect other instrumentation agent (Datadog, New Relic, Dynatrace, ...)
+		// already running in this process, via the shared detector so odiglet and
+		// vm-agent stay in sync.
 		agentCtx := procdiscovery.NewProcessContext(*inspectProc)
 		if agent := otheragent.Detect(agentCtx, langDetails.Language); agent != nil {
 			detectedAgent = &odigosv1.OtherAgent{Name: agent.Name}

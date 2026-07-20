@@ -8,10 +8,10 @@ import (
 )
 
 // InspectionResult is what one pass over a process yields: its language and any
-// foreign instrumentation agent detected in it.
+// foreign instrumentation agents detected in it (a process can carry more than one).
 type InspectionResult struct {
-	Language   common.ProgramLanguageDetails
-	OtherAgent *otheragent.OtherAgent
+	Language    common.ProgramLanguageDetails
+	OtherAgents []otheragent.OtherAgent
 }
 
 // Inspect runs language and foreign-agent detection against a process using one
@@ -28,7 +28,7 @@ func Inspect(proc process.Details) (InspectionResult, error) {
 
 	lang, err := detectLanguageInContext(pcx, logger)
 	// Detect regardless of language outcome; lang only scopes language-specific entries.
-	agent := otheragent.Detect(pcx, lang.Language)
+	agents := otheragent.DetectAll(pcx, lang.Language)
 
-	return InspectionResult{Language: lang, OtherAgent: agent}, err
+	return InspectionResult{Language: lang, OtherAgents: agents}, err
 }

@@ -48,27 +48,6 @@ var LangsVersionEnvs = map[string]struct{}{
 	RubyVersionConst:   {},
 }
 
-// DynatraceDynamizerExeSubString is the wrapper exe name used by the Dynatrace
-// agent for Go processes; the Go language inspector matches on it.
-const DynatraceDynamizerExeSubString = "oneagentdynamizer"
-
-// agentDetectionEnvKeys is the set of environment variable names that the
-// other-agent detector needs collected into DetailedEnvs. Because environ is
-// read through a whitelist (secrets must not be captured wholesale), a env-based
-// detection rule can only fire if its key is registered here. The otheragent
-// package registers its keys in an init() via RegisterAgentDetectionEnvKeys, so
-// the rule table stays the single source of truth without an import cycle
-// (otheragent imports process, not the other way around).
-var agentDetectionEnvKeys = map[string]struct{}{}
-
-// RegisterAgentDetectionEnvKeys adds environment variable names that must be
-// collected for foreign-agent detection. Safe to call from package init().
-func RegisterAgentDetectionEnvKeys(keys map[string]struct{}) {
-	for k := range keys {
-		agentDetectionEnvKeys[k] = struct{}{}
-	}
-}
-
 type Details struct {
 	ProcessID           int
 	ExePath             string
@@ -240,10 +219,10 @@ func Group[K comparable](predicate func(int) (K, bool)) (map[K]map[int]struct{},
 	return result, nil
 }
 
-func GetPidDetails(pid int, runtimeDetectionEnvs map[string]struct{}) Details {
+func GetPidDetails(pid int, runtimeDetectionEnvs, agentDetectionEnvs map[string]struct{}) Details {
 	exePath := getExePath(pid)
 	cmdLine := getCommandLine(pid)
-	envVars := getRelevantEnvVars(pid, runtimeDetectionEnvs)
+	envVars := getRelevantEnvVars(pid, runtimeDetectionEnvs, agentDetectionEnvs)
 	secureExecutionMode, err := isSecureExecutionMode(pid)
 	secureExecutionModePtr := &secureExecutionMode
 	if err != nil {
@@ -287,7 +266,7 @@ func getCommandLine(pid int) string {
 	}
 }
 
-func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) ProcessEnvs {
+func getRelevantEnvVars(pid int, runtimeDetectionEnvs, agentDetectionEnvs map[string]struct{}) ProcessEnvs {
 	envFileName := ProcFilePath(pid, "environ")
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
@@ -330,9 +309,9 @@ func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) Proce
 			detailedEnvsResult[envName] = envDetectionValue
 		}
 
-		// Environment variables referenced by the shared other-agent detection
-		// (registered by the otheragent package).
-		if _, ok := agentDetectionEnvKeys[envName]; ok {
+		// Environment variables referenced by the shared other-agent detection,
+		// passed in explicitly by the caller (otheragent.EnvKeysOfInterest()).
+		if _, ok := agentDetectionEnvs[envName]; ok {
 			detailedEnvsResult[envName] = envDetectionValue
 		}
 	}

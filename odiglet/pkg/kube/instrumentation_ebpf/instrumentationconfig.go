@@ -235,7 +235,7 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 			continue
 		}
 		for pid := range pidSet {
-			details := procdiscovery.GetPidDetails(pid, nil)
+			details := procdiscovery.GetPidDetails(pid, nil, nil)
 			ir.ProcessDetailsByPid[pid] = &ebpf.K8sProcessDetails{
 				ContainerName: podContainer.ContainerName,
 				Distro:        distribution,
