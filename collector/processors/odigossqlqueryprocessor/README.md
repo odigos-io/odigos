@@ -9,8 +9,15 @@ Parsing uses [DataDog/go-sqllexer](https://github.com/DataDog/go-sqllexer), with
 
 ## Configuration
 
-In Odigos-managed deployments, the processor uses `odigos_config_extension` to resolve
-per-source options via `GetFromResource` (`inferDbAttributes` / `dbQueryTemplatization`).
+The processor resolves per-source options from an `OdigosConfigExtension` (typically `odigosconfigk8s`).
+On each resource, it calls `GetFromResource` and applies the workload's collector config:
+
+| Field on `ContainerCollectorConfig` | Effect |
+| --- | --- |
+| `inferDbAttributes` (non-nil) | Infer `db.operation.name` / `db.collection.name` and update the span name when attributes are added. |
+| `dbQueryTemplatization.templatizeLiterals: true` | Replace literals in `db.query.text` / `db.statement` with `?` placeholders. |
+
+Sources without those fields set are skipped. When both are enabled for a source, infer and redact run in a single pass (`ObfuscateAndNormalize`).
 
 ```yaml
 processors:
@@ -18,22 +25,11 @@ processors:
     odigos_config_extension: odigosconfigk8s
 ```
 
-Legacy static options (used when `odigos_config_extension` is unset):
+| Option | Type | Description |
+| --- | --- | --- |
+| `odigos_config_extension` | component ID | Extension implementing `OdigosConfigExtension`. Required in Odigos-managed configs. |
 
-```yaml
-processors:
-  odigossqlquery:
-    infer_attributes: true
-    redact_literals: true
-```
-
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `odigos_config_extension` | component ID | unset | Extension implementing `OdigosConfigExtension`; per-source config is read from its cache. |
-| `infer_attributes` | bool | `false` | Legacy: infer operation/collection attributes when the extension is unset. |
-| `redact_literals` | bool | `false` | Legacy: replace literals when the extension is unset. |
-
-When both infer and redact are enabled for a source, they run in a single pass (`ObfuscateAndNormalize`).
+In Odigos, the shared Processor CR is created when an enabled `DbQueryTemplatization` or `InferDbAttributes` Action exists. Per-source options are written into InstrumentationConfig / the extension cache by the instrumentor; the processor does not take static per-feature flags in that mode.
 
 ## Behavior
 
@@ -44,7 +40,7 @@ The processor reads the query from, in order:
 1. `db.query.text`
 2. `db.statement`
 
-The same attribute that was read is updated when `redact_literals` is enabled.
+The same attribute that was read is updated when literal redaction is enabled for the source.
 
 ### Dialect selection
 
@@ -66,7 +62,7 @@ Spans whose `db.system` / `db.system.name` identifies a known non-SQL database a
 
 ### Attribute inference
 
-When `infer_attributes` is enabled and attributes are missing:
+When `inferDbAttributes` is set for the source and attributes are missing:
 
 - `db.operation.name` is set only when exactly one SQL operation is detected (JOIN is ignored as a clause).
 - `db.collection.name` is set only when exactly one table is detected.
@@ -92,7 +88,7 @@ db.query.text: SELECT * FROM users WHERE id = 1 AND name = 'alice'
 db.system: postgresql
 ```
 
-**With `infer_attributes: true` and `redact_literals: true`**
+**With `inferDbAttributes` and `dbQueryTemplatization.templatizeLiterals: true` for the source**
 
 ```
 span name: SELECT users
