@@ -266,6 +266,9 @@ spec:
                     items:
                       enum:
                       - CREDIT_CARD
+                      - EMAIL
+                      - JWT
+                      - UUID
                       type: string
                     type: array
                 required:
