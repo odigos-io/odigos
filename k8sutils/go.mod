@@ -10,7 +10,7 @@ require (
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/stretchr/testify v1.11.1
 	github.com/tj/assert v0.0.3
-	go.opentelemetry.io/otel/exporters/prometheus v0.65.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.66.0
 	go.opentelemetry.io/otel/metric v1.44.0
 	go.opentelemetry.io/otel/sdk v1.44.0
 	go.opentelemetry.io/otel/sdk/metric v1.44.0
