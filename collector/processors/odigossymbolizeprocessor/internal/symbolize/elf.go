@@ -41,8 +41,9 @@ type elfSymbols struct {
 // memory or a parse worker. They are deliberately generous — real binaries
 // (including Oracle's ~50 MB libclntsh) pass; only absurd inputs are rejected.
 type parseLimits struct {
-	maxFileBytes int64 // skip ELF files larger than this
-	maxSymbols   int   // skip binaries with more than this many function symbols
+	maxFileBytes   int64 // skip ELF files larger than this
+	maxSymbols     int   // skip binaries with more than this many function symbols
+	maxSymtabBytes int64 // skip decoding a symbol table (+ its string table) larger than this
 }
 
 // limitExceededError is returned when a binary trips a parseLimit; the caller
@@ -75,7 +76,7 @@ func loadELFSymbols(path string, lim parseLimits) (*elfSymbols, error) {
 		}
 	}
 
-	functions, source := readFunctionSymbols(f)
+	functions, source := readFunctionSymbols(f, lim)
 	if lim.maxSymbols > 0 && len(functions) > lim.maxSymbols {
 		return nil, limitExceededError{fmt.Sprintf("symbolize: %s has %d symbols (> %d)", path, len(functions), lim.maxSymbols)}
 	}
@@ -101,14 +102,45 @@ func estimateHeapBytes(es *elfSymbols) int64 {
 
 // readFunctionSymbols returns the STT_FUNC symbols, preferring .symtab then
 // falling back to .dynsym, with a tag naming the source table.
-func readFunctionSymbols(f *elf.File) ([]functionSymbol, string) {
-	if syms := functionSymbolsFrom(f.Symbols); len(syms) > 0 {
-		return syms, "symtab"
+//
+// A symbol table larger than lim.maxSymtabBytes is skipped WITHOUT decoding:
+// Go's elf.File.Symbols() materialises the whole table (every symbol + the full
+// string table) transiently before we filter to STT_FUNC, so on a huge unstripped
+// binary that transient — not the retained cache — is what spikes RSS. Gating on
+// section size caps it before the allocation happens; the frames stay
+// module+offset, which the pipeline handles gracefully.
+func readFunctionSymbols(f *elf.File, lim parseLimits) ([]functionSymbol, string) {
+	if symtabWithinLimit(f, ".symtab", lim.maxSymtabBytes) {
+		if syms := functionSymbolsFrom(f.Symbols); len(syms) > 0 {
+			return syms, "symtab"
+		}
 	}
-	if syms := functionSymbolsFrom(f.DynamicSymbols); len(syms) > 0 {
-		return syms, "dynsym"
+	if symtabWithinLimit(f, ".dynsym", lim.maxSymtabBytes) {
+		if syms := functionSymbolsFrom(f.DynamicSymbols); len(syms) > 0 {
+			return syms, "dynsym"
+		}
 	}
 	return nil, ""
+}
+
+// symtabWithinLimit reports whether the named symbol table (plus its linked
+// string table) is small enough to decode. An absent table, or limit<=0,
+// returns true — there is either nothing to decode or no gate configured.
+func symtabWithinLimit(f *elf.File, name string, limit int64) bool {
+	if limit <= 0 {
+		return true
+	}
+	sec := f.Section(name)
+	if sec == nil {
+		return true
+	}
+	total := int64(sec.Size)
+	// elf.File.Symbols() also reads the linked string table (Link → .strtab/.dynstr);
+	// account for it so the gate reflects the real transient allocation.
+	if int(sec.Link) < len(f.Sections) {
+		total += int64(f.Sections[sec.Link].Size)
+	}
+	return total <= limit
 }
 
 // functionSymbolsFrom keeps only the named, addressed STT_FUNC entries from one
