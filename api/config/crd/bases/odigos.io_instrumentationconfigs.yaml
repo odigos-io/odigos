@@ -1375,9 +1375,6 @@ spec:
                         applies.
                       type: string
                     dbQueryTemplatization:
-                      description: |-
-                        DbQueryTemplatizationConfig is the per-container collector config for
-                        templatizing database query text.
                       properties:
                         templatizeLiterals:
                           description: |-
