@@ -145,21 +145,14 @@ func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
 	return value, exists
 }
 
-// The following methods make *ProcessContext satisfy otheragent.Process, so the
-// shared (process-source-agnostic) detector can run against it.
-
 // Cmdline returns the process command line.
 func (pcx *ProcessContext) Cmdline() string { return pcx.CmdLine }
 
-// LookupEnv returns an env var value from the collected sets, preferring the
-// detailed set then the overwrite set (where Odigos keeps values like LD_PRELOAD).
-// The other-agent detection keys are collected up front (see getRelevantEnvVars),
+// LookupEnv returns an env var value from the collected DetailedEnvs. The
+// other-agent detection keys are collected up front (see getRelevantEnvVars),
 // so env-based detection reads them from here without touching /proc again.
 func (pcx *ProcessContext) LookupEnv(key string) (string, bool) {
-	if v, ok := pcx.GetDetailedEnvsValue(key); ok {
-		return v, true
-	}
-	return pcx.GetOverwriteEnvsValue(key)
+	return pcx.GetDetailedEnvsValue(key)
 }
 
 // MapsReader returns a reader over the process memory maps for library-load detection.

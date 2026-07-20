@@ -1,8 +1,6 @@
 // Package otheragent detects another instrumentation agent already running in a
 // process, so Odigos avoids double-instrumenting it. It is process-source
-// agnostic: callers pass a Process implementation, so the package has no /proc
-// or procdiscovery dependency and can be consumed anywhere (odiglet on k8s,
-// vm-agent on VMs).
+// agnostic: callers pass a Process implementation.
 package otheragent
 
 import (
