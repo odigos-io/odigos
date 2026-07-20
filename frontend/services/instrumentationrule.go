@@ -38,7 +38,30 @@ func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRu
 		return model.InstrumentationRuleTypeCustomInstrumentation
 	}
 
+	if rule.NetworkMetrics != nil && *rule.NetworkMetrics {
+		return model.InstrumentationRuleTypeNetworkMetrics
+	}
+
 	return model.InstrumentationRuleTypeUnknownType
+}
+
+// getNetworkMetricsInput maps the presence-based GraphQL boolean to the CRD config: `true` becomes an
+// empty `NetworkMetricsConfig{}` (enabled), while nil/false clears it (disabled).
+func getNetworkMetricsInput(input model.InstrumentationRuleInput) *instrumentationrules.NetworkMetricsConfig {
+	if input.NetworkMetrics == nil || !*input.NetworkMetrics {
+		return nil
+	}
+	return &instrumentationrules.NetworkMetricsConfig{}
+}
+
+// networkMetricsEnabledPtr reports enablement back to the UI: a non-nil config becomes `true`, a nil
+// config becomes nil (field omitted) so it doesn't spuriously mark other rule types.
+func networkMetricsEnabledPtr(cfg *instrumentationrules.NetworkMetricsConfig) *bool {
+	if cfg == nil {
+		return nil
+	}
+	enabled := true
+	return &enabled
 }
 
 // GetInstrumentationRules fetches all instrumentation rules
@@ -70,6 +93,7 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 			HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 			CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
+			NetworkMetrics:           networkMetricsEnabledPtr(r.Spec.NetworkMetrics),
 		}
 		rule.Type = deriveTypeFromRule(rule)
 
@@ -103,6 +127,7 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
+		NetworkMetrics:           networkMetricsEnabledPtr(r.Spec.NetworkMetrics),
 	}
 	rule.Type = deriveTypeFromRule(rule)
 
@@ -489,6 +514,8 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	} else {
 		existingRule.Spec.CustomInstrumentations = nil
 	}
+
+	existingRule.Spec.NetworkMetrics = getNetworkMetricsInput(input)
 	// Update rule in Kubernetes
 	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Update(ctx, existingRule, metav1.UpdateOptions{})
 	if err != nil {
@@ -511,6 +538,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		HeadersCollection:        convertHeadersCollection(updatedRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(updatedRule.Spec.CustomInstrumentations),
+		NetworkMetrics:           networkMetricsEnabledPtr(updatedRule.Spec.NetworkMetrics),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 	return &rule, nil
@@ -567,6 +595,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			HeadersCollection:        getHeadersCollectionInput(input),
 			PayloadCollection:        getPayloadCollectionInput(input),
 			CustomInstrumentations:   getCustomInstrumentationsInput(input),
+			NetworkMetrics:           getNetworkMetricsInput(input),
 		},
 	}
 	// Create the rule in Kubernetes
@@ -591,6 +620,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		HeadersCollection:        convertHeadersCollection(createdRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(createdRule.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(createdRule.Spec.CustomInstrumentations),
+		NetworkMetrics:           networkMetricsEnabledPtr(createdRule.Spec.NetworkMetrics),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 
