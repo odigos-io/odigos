@@ -36,7 +36,7 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 	// symbolize processor runs after the keep-filter (only retained profiles are
 	// symbolized) and before service-name enrichment.
 	if profiling.NativeSymbolizationEnabled() {
-		processors[commonconf.ProfilingNodeSymbolizeProcessor] = commonconf.OdigosSymbolizeProcessorConfig()
+		processors[commonconf.ProfilingNodeSymbolizeProcessor] = commonconf.OdigosSymbolizeProcessorConfig(profiling.Symbolization)
 		pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeSymbolizeProcessor)
 	}
 	pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeServiceNameProcessor)

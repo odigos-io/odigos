@@ -118,8 +118,14 @@ func OdigosProfilesProcessorConfig() config.GenericMap {
 // collector profiles pipeline. It needs no configuration: native frames are resolved
 // on-host from /proc/<pid>/maps + ELF symbols, and frames the profiler already named
 // (interpreted runtimes, Go) pass through. Defaults to bounded caches and async parsing.
-func OdigosSymbolizeProcessorConfig() config.GenericMap {
-	return config.GenericMap{}
+func OdigosSymbolizeProcessorConfig(symbolization *odigoscommon.ProfilingSymbolizationConfiguration) config.GenericMap {
+	cfg := config.GenericMap{}
+	// Operator-configurable byte budget for the processor's LRU symbol cache.
+	// Unset → the processor's built-in default (256 MiB) applies.
+	if symbolization != nil && symbolization.MaxMemoryMiB != nil && *symbolization.MaxMemoryMiB > 0 {
+		cfg["max_symbol_bytes"] = int64(*symbolization.MaxMemoryMiB) << 20
+	}
+	return cfg
 }
 
 // ProfilingServiceNameTransformConfig sets resource attribute service.name from K8s workload
