@@ -294,7 +294,7 @@ func calculateCollectorConfigDomains(
 	}
 
 	if odigoscommon.ProfilingPipelineActive(profiling) {
-		configDomains["profiling"] = collectorconfig.ProfilingPipelineConfig(odigosNamespace, profiling, processorsResults.ProfilesProcessors)
+		configDomains["profiling"] = collectorconfig.ProfilingPipelineConfig(odigosNamespace, profiling, processorsResults.ProfilesProcessors, nodeCG.Spec.ResourcesSettings)
 	}
 
 	mergedConfig, err := config.MergeConfigs(configDomains)
