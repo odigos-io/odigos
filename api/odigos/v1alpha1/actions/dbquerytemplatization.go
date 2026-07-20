@@ -3,6 +3,7 @@ package actions
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	actionsapi "github.com/odigos-io/odigos/common/api/actions"
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 const ActionNameDbQueryTemplatization = "DbQueryTemplatization"
@@ -21,7 +22,7 @@ type DbQueryTemplatizationConfig struct {
 }
 
 func (DbQueryTemplatizationConfig) ProcessorType() string {
-	return "odigossqlquery"
+	return consts.OdigosSQLQueryProcessorType
 }
 
 func (DbQueryTemplatizationConfig) OrderHint() int {

@@ -1,8 +1,5 @@
 package actions
 
-// DbQueryTemplatizationConfig is the per-container collector config for
-// templatizing database query text.
-//
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type DbQueryTemplatizationConfig struct {

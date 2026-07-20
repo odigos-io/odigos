@@ -3,6 +3,7 @@ package actions
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	actionsapi "github.com/odigos-io/odigos/common/api/actions"
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 const ActionNameInferDbAttributes = "InferDbAttributes"
@@ -22,7 +23,7 @@ type InferDbAttributesConfig struct {
 }
 
 func (InferDbAttributesConfig) ProcessorType() string {
-	return "odigossqlquery"
+	return consts.OdigosSQLQueryProcessorType
 }
 
 func (InferDbAttributesConfig) OrderHint() int {
