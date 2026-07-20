@@ -1,17 +1,33 @@
 // Package otheragent detects another instrumentation agent already running in a
-// process, so Odigos avoids double-instrumenting it. Shared by odiglet and vm-agent.
+// process, so Odigos avoids double-instrumenting it. It is process-source
+// agnostic: callers pass a Process implementation, so the package has no /proc
+// or procdiscovery dependency and can be consumed anywhere (odiglet on k8s,
+// vm-agent on VMs).
 package otheragent
 
 import (
+	"bufio"
+	"io"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
 type OtherAgent struct {
 	Name string
+}
+
+// Process is the minimal view of a running process the detector needs.
+// procdiscovery's process.ProcessContext and vm-agent's process types both
+// satisfy it, keeping this package free of any /proc coupling.
+type Process interface {
+	// Cmdline returns the process command line.
+	Cmdline() string
+	// LookupEnv returns the value of an environment variable of the process.
+	LookupEnv(key string) (string, bool)
+	// MapsReader returns a reader over the process memory maps
+	// (/proc/<pid>/maps on Linux). Only used for library-load detection.
+	MapsReader() (io.Reader, error)
 }
 
 // SignalType is the kind of evidence that identifies an agent in a process.
@@ -51,7 +67,7 @@ func indexKnownAgentsByLanguage() map[common.ProgrammingLanguage][]*KnownAgent {
 // DetectAll returns every distinct agent detected in the process (deduplicated by
 // Name). Entries scoped to a language are only checked when it matches lang; the
 // language-agnostic entries always run.
-func DetectAll(pcx *process.ProcessContext, lang common.ProgrammingLanguage) []OtherAgent {
+func DetectAll(p Process, lang common.ProgrammingLanguage) []OtherAgent {
 	var detected []OtherAgent
 	seen := make(map[string]struct{})
 	scan := func(candidates []*KnownAgent) {
@@ -59,7 +75,7 @@ func DetectAll(pcx *process.ProcessContext, lang common.ProgrammingLanguage) []O
 			if _, done := seen[agent.Name]; done {
 				continue
 			}
-			if agentMatchesProcess(pcx, agent) {
+			if agentMatchesProcess(p, agent) {
 				seen[agent.Name] = struct{}{}
 				detected = append(detected, OtherAgent{Name: agent.Name})
 			}
@@ -74,8 +90,8 @@ func DetectAll(pcx *process.ProcessContext, lang common.ProgrammingLanguage) []O
 
 // Detect returns the first agent detected in the process, or nil. Kept for
 // callers that model a single agent (e.g. odiglet's RuntimeDetails CRD).
-func Detect(pcx *process.ProcessContext, lang common.ProgrammingLanguage) *OtherAgent {
-	if all := DetectAll(pcx, lang); len(all) > 0 {
+func Detect(p Process, lang common.ProgrammingLanguage) *OtherAgent {
+	if all := DetectAll(p, lang); len(all) > 0 {
 		return &all[0]
 	}
 	return nil
@@ -87,41 +103,30 @@ func Blocks(detected []OtherAgent, allowConcurrentAgents bool) bool {
 	return len(detected) > 0 && !allowConcurrentAgents
 }
 
-// EnvKeysOfInterest returns the env var names referenced by env-based entries, so
-// callers can add them to their env-collection whitelist (passed in explicitly,
-// not via a hidden global).
-func EnvKeysOfInterest() map[string]struct{} {
-	keys := make(map[string]struct{})
-	for i := range KnownAgents {
-		if a := &KnownAgents[i]; a.Signal == EnvPresent || a.Signal == EnvValueContains {
-			keys[a.Key] = struct{}{}
-		}
-	}
-	return keys
-}
-
-func agentMatchesProcess(pcx *process.ProcessContext, agent *KnownAgent) bool {
+func agentMatchesProcess(p Process, agent *KnownAgent) bool {
 	switch agent.Signal {
 	case EnvPresent:
-		_, ok := lookupEnv(pcx, agent.Key)
+		_, ok := p.LookupEnv(agent.Key)
 		return ok
 	case EnvValueContains:
-		v, ok := lookupEnv(pcx, agent.Key)
+		v, ok := p.LookupEnv(agent.Key)
 		return ok && strings.Contains(v, agent.Match)
 	case CmdlineContains:
-		return strings.Contains(pcx.CmdLine, agent.Match)
+		return strings.Contains(p.Cmdline(), agent.Match)
 	case LibLoaded:
-		f, err := pcx.GetMapsFile()
-		return err == nil && utils.IsMapsFileContainsBinary(f, []string{agent.Match})
+		r, err := p.MapsReader()
+		return err == nil && mapsContains(r, agent.Match)
 	}
 	return false
 }
 
-// lookupEnv reads an env var via the process getters, preferring the detailed set
-// then the overwrite set (where Odigos keeps values like LD_PRELOAD).
-func lookupEnv(pcx *process.ProcessContext, key string) (string, bool) {
-	if v, ok := pcx.GetDetailedEnvsValue(key); ok {
-		return v, true
+// mapsContains reports whether any line of a process maps reader contains name.
+func mapsContains(r io.Reader, name string) bool {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), name) {
+			return true
+		}
 	}
-	return pcx.GetOverwriteEnvsValue(key)
+	return false
 }

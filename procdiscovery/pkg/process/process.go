@@ -8,6 +8,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/odigos-io/odigos/common/otheragent"
 )
 
 const (
@@ -143,6 +145,28 @@ func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
 	return value, exists
 }
 
+// The following methods make *ProcessContext satisfy otheragent.Process, so the
+// shared (process-source-agnostic) detector can run against it.
+
+// Cmdline returns the process command line.
+func (pcx *ProcessContext) Cmdline() string { return pcx.CmdLine }
+
+// LookupEnv returns an env var value from the collected sets, preferring the
+// detailed set then the overwrite set (where Odigos keeps values like LD_PRELOAD).
+// The other-agent detection keys are collected up front (see getRelevantEnvVars),
+// so env-based detection reads them from here without touching /proc again.
+func (pcx *ProcessContext) LookupEnv(key string) (string, bool) {
+	if v, ok := pcx.GetDetailedEnvsValue(key); ok {
+		return v, true
+	}
+	return pcx.GetOverwriteEnvsValue(key)
+}
+
+// MapsReader returns a reader over the process memory maps for library-load detection.
+func (pcx *ProcessContext) MapsReader() (io.Reader, error) {
+	return pcx.GetMapsFile()
+}
+
 // Find all processes in the system.
 // The function accepts a predicate function that can be used to filter the results.
 func FindAllProcesses(predicate func(int) bool) ([]int, error) {
@@ -219,10 +243,10 @@ func Group[K comparable](predicate func(int) (K, bool)) (map[K]map[int]struct{},
 	return result, nil
 }
 
-func GetPidDetails(pid int, runtimeDetectionEnvs, agentDetectionEnvs map[string]struct{}) Details {
+func GetPidDetails(pid int, runtimeDetectionEnvs map[string]struct{}) Details {
 	exePath := getExePath(pid)
 	cmdLine := getCommandLine(pid)
-	envVars := getRelevantEnvVars(pid, runtimeDetectionEnvs, agentDetectionEnvs)
+	envVars := getRelevantEnvVars(pid, runtimeDetectionEnvs)
 	secureExecutionMode, err := isSecureExecutionMode(pid)
 	secureExecutionModePtr := &secureExecutionMode
 	if err != nil {
@@ -266,7 +290,7 @@ func getCommandLine(pid int) string {
 	}
 }
 
-func getRelevantEnvVars(pid int, runtimeDetectionEnvs, agentDetectionEnvs map[string]struct{}) ProcessEnvs {
+func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) ProcessEnvs {
 	envFileName := ProcFilePath(pid, "environ")
 	fileContent, err := os.ReadFile(envFileName)
 	if err != nil {
@@ -309,9 +333,9 @@ func getRelevantEnvVars(pid int, runtimeDetectionEnvs, agentDetectionEnvs map[st
 			detailedEnvsResult[envName] = envDetectionValue
 		}
 
-		// Environment variables referenced by the shared other-agent detection,
-		// passed in explicitly by the caller (otheragent.EnvKeysOfInterest()).
-		if _, ok := agentDetectionEnvs[envName]; ok {
+		// Collect the keys the shared other-agent detector inspects, so detection
+		// can read them off the process env without any caller wiring.
+		if _, ok := otheragent.AgentDetectionEnvKeys[envName]; ok {
 			detailedEnvsResult[envName] = envDetectionValue
 		}
 	}

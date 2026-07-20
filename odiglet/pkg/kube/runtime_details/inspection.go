@@ -21,18 +21,12 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/otheragent"
+	"github.com/odigos-io/odigos/common/otheragent"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// agentDetectionEnvs are the env var names the shared other-agent detector needs
-// collected into DetailedEnvs. Passed explicitly to GetPidDetails (no hidden
-// global): if otheragent stops being imported this fails to compile rather than
-// silently disabling detection.
-var agentDetectionEnvs = otheragent.EnvKeysOfInterest()
 
 type InspectionResults struct {
 	containerNameToNewRuntimeDetails map[string]odigosv1.RuntimeDetailsByContainer
@@ -168,7 +162,7 @@ func runtimeInspectionFromGroupedPIDs(ctx context.Context, pods []corev1.Pod, gr
 			pidSet := groupedPIDs[pc]
 			processes := make([]procdiscovery.Details, 0, len(pidSet))
 			for pid := range pidSet {
-				procDetails := procdiscovery.GetPidDetails(pid, runtimeDetectionEnvs, agentDetectionEnvs)
+				procDetails := procdiscovery.GetPidDetails(pid, runtimeDetectionEnvs)
 				processes = append(processes, procDetails)
 			}
 

@@ -3,7 +3,7 @@ package inspectors
 import (
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/otheragent"
+	"github.com/odigos-io/odigos/common/otheragent"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 

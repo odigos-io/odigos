@@ -1,34 +1,49 @@
 package otheragent
 
 import (
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
-func ctx(cmdline string, detailed, overwrite map[string]string) *process.ProcessContext {
-	if detailed == nil {
-		detailed = map[string]string{}
+// fakeProcess is a test Process implementation with no /proc dependency.
+type fakeProcess struct {
+	cmdline string
+	envs    map[string]string
+	maps    string
+}
+
+func (f fakeProcess) Cmdline() string { return f.cmdline }
+
+func (f fakeProcess) LookupEnv(key string) (string, bool) {
+	v, ok := f.envs[key]
+	return v, ok
+}
+
+func (f fakeProcess) MapsReader() (io.Reader, error) {
+	return strings.NewReader(f.maps), nil
+}
+
+// ctx merges the detailed and overwrite env sets into one lookup (LookupEnv does
+// not distinguish them), matching how the real Process implementations behave.
+func ctx(cmdline string, detailed, overwrite map[string]string) fakeProcess {
+	envs := map[string]string{}
+	for k, v := range detailed {
+		envs[k] = v
 	}
-	if overwrite == nil {
-		overwrite = map[string]string{}
+	for k, v := range overwrite {
+		envs[k] = v
 	}
-	return process.NewProcessContext(process.Details{
-		ProcessID: -1, // no such pid; maps reads are expected to fail gracefully
-		CmdLine:   cmdline,
-		Environments: process.ProcessEnvs{
-			DetailedEnvs:  detailed,
-			OverwriteEnvs: overwrite,
-		},
-	})
+	return fakeProcess{cmdline: cmdline, envs: envs}
 }
 
 func TestDetect(t *testing.T) {
 	const unknown = common.UnknownProgrammingLanguage
 	tests := []struct {
 		name      string
-		pcx       *process.ProcessContext
+		pcx       Process
 		lang      common.ProgrammingLanguage
 		wantAgent string // "" means no detection
 	}{
@@ -129,14 +144,13 @@ func TestDetectAll_DedupSameAgent(t *testing.T) {
 	}
 }
 
-func TestEnvKeysOfInterest(t *testing.T) {
-	keys := EnvKeysOfInterest()
-	for _, want := range []string{
-		"NEW_RELIC_CONFIG_FILE", "DD_TRACE_AGENT_URL", "DT_DYNAMIZER_TARGET_EXE",
-		"NODE_OPTIONS", "JAVA_TOOL_OPTIONS", "CORECLR_PROFILER", "RUBYOPT", "LD_PRELOAD",
-	} {
-		if _, ok := keys[want]; !ok {
-			t.Errorf("EnvKeysOfInterest missing %q", want)
-		}
+func TestLibLoadedDetection(t *testing.T) {
+	// Dynatrace liboneagent present in the process maps.
+	p := fakeProcess{
+		maps: "7f0000000000-7f0000001000 r-xp 00000000 00:00 0 /opt/dynatrace/oneagent/agent/lib64/liboneagentproc.so\n",
+	}
+	got := Detect(p, common.UnknownProgrammingLanguage)
+	if got == nil || got.Name != DynatraceAgentName {
+		t.Fatalf("expected %q from maps, got %v", DynatraceAgentName, got)
 	}
 }
