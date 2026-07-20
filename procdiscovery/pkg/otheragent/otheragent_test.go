@@ -90,6 +90,45 @@ func TestDetect(t *testing.T) {
 	}
 }
 
+func TestDetectAll_MultiAgent(t *testing.T) {
+	// A process carrying BOTH Datadog and New Relic (language-agnostic) signals.
+	pcx := ctx("", map[string]string{
+		"DD_TRACE_AGENT_URL":    "http://localhost:8126",
+		"NEW_RELIC_CONFIG_FILE": "/nr.yml",
+	}, nil)
+
+	got := DetectAll(pcx, common.UnknownProgrammingLanguage)
+	names := map[string]bool{}
+	for _, a := range got {
+		names[a.Name] = true
+	}
+	if len(got) != 2 || !names[DatadogAgentName] || !names[NewRelicAgentName] {
+		t.Fatalf("DetectAll = %v, want both Datadog + New Relic", got)
+	}
+
+	if !Blocks(got, false) {
+		t.Error("Blocks(2 agents, allow=false) = false, want true")
+	}
+	if Blocks(got, true) {
+		t.Error("Blocks(2 agents, allow=true) = true, want false")
+	}
+	if Blocks(nil, false) {
+		t.Error("Blocks(nil, allow=false) = true, want false")
+	}
+}
+
+func TestDetectAll_DedupSameAgent(t *testing.T) {
+	// Datadog matched via TWO signals must be reported once.
+	pcx := ctx("", map[string]string{
+		"DD_TRACE_AGENT_URL":   "http://localhost:8126",
+		"DD_INJECTION_ENABLED": "true",
+	}, nil)
+	got := DetectAll(pcx, common.UnknownProgrammingLanguage)
+	if len(got) != 1 || got[0].Name != DatadogAgentName {
+		t.Fatalf("DetectAll dedup = %v, want single Datadog", got)
+	}
+}
+
 func TestEnvKeysOfInterest(t *testing.T) {
 	keys := EnvKeysOfInterest()
 	for _, want := range []string{
