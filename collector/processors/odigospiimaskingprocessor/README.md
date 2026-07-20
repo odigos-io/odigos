@@ -2,6 +2,8 @@
 
 The `odigospiimasking` processor masks personally identifiable information (PII) in span attributes.
 
+It is similar to the [redact processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/redactprocessor) from OpenTelemetry Collector Contrib, but supports additional PII cases and omits features that are not needed for Odigos.
+
 ## Configuration
 
 ```yaml
