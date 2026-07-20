@@ -13,7 +13,7 @@ import (
 // versionSuffixRe matches a trailing runtime version suffix such as "3.3", "3.4.4" or "8.2",
 // so a versioned interpreter binary like "ruby3.3" or "python3.11" can be matched to its
 // base process name ("ruby", "python").
-var versionSuffixRe = regexp.MustCompile(`^[0-9]+(\.[0-9]+)*$`)
+var versionSuffixRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
 
 func IsProcessEqualProcessNames(pcx *process.ProcessContext, processNames []string) bool {
 	baseExe := filepath.Base(pcx.ExePath)
