@@ -291,24 +291,6 @@ func TestObfuscate_UsesDbSystemDialect(t *testing.T) {
 	require.Equal(t, "SELECT users", span.Name())
 }
 
-func TestObfuscate_UsesResourceDbSystemWhenSpanMissing(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true, Obfuscate: true})
-	td := ptrace.NewTraces()
-	rs := td.ResourceSpans().AppendEmpty()
-	rs.Resource().Attributes().PutStr(string(semconv.DBSystemKey), semconv.DBSystemMySQL.Value.AsString())
-	span := rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
-	span.SetName("db")
-	span.Attributes().PutStr(string(semconv.DBQueryTextKey), "SELECT * FROM users WHERE id = 1 # secret")
-
-	out, err := proc.processTraces(context.Background(), td)
-	require.NoError(t, err)
-
-	outSpan := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
-	query, ok := outSpan.Attributes().Get(string(semconv.DBQueryTextKey))
-	require.True(t, ok)
-	require.Equal(t, "SELECT * FROM users WHERE id = ?", query.Str())
-}
-
 func TestObfuscate_UnsupportedDbSystemUsesDefault(t *testing.T) {
 	proc := newTestProcessor(t, &Config{EnhanceAttributes: true, Obfuscate: true})
 	traces := generateTestTrace(map[string]string{

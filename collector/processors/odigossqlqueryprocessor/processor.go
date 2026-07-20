@@ -45,19 +45,18 @@ func (p *sqlQueryProcessor) processTraces(_ context.Context, traces ptrace.Trace
 
 	resourceSpans := traces.ResourceSpans()
 	for i := 0; i < resourceSpans.Len(); i++ {
-		resourceAttrs := resourceSpans.At(i).Resource().Attributes()
 		scopeSpans := resourceSpans.At(i).ScopeSpans()
 		for j := 0; j < scopeSpans.Len(); j++ {
 			spans := scopeSpans.At(j).Spans()
 			for k := 0; k < spans.Len(); k++ {
-				p.processSpan(spans.At(k), resourceAttrs)
+				p.processSpan(spans.At(k))
 			}
 		}
 	}
 	return traces, nil
 }
 
-func (p *sqlQueryProcessor) processSpan(span ptrace.Span, resourceAttrs pcommon.Map) {
+func (p *sqlQueryProcessor) processSpan(span ptrace.Span) {
 	attrs := span.Attributes()
 
 	opAttr, hasOperation := attrs.Get(string(semconv.DBOperationNameKey))

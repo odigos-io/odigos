@@ -83,9 +83,9 @@ func dbSystemValue(attrs pcommon.Map) (string, bool) {
 	return "", false
 }
 
-// resolveDBMS reads db.system.name / db.system once (span first, then resource)
-// and returns the sqllexer dialect and whether processing should be skipped for
-// a known non-SQL system.
+// resolveDBMS reads db.system.name / db.system from span attributes and returns
+// the sqllexer dialect and whether processing should be skipped for a known
+// non-SQL system.
 func resolveDBMS(spanAttrs pcommon.Map) (dbms sqllexer.DBMSType, skip bool) {
 	system, found := dbSystemValue(spanAttrs)
 	if !found {
