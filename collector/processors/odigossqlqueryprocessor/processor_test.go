@@ -2,6 +2,7 @@ package odigossqlqueryprocessor
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -271,6 +272,32 @@ func TestRedactLiterals_DbStatement(t *testing.T) {
 	query, ok := span.Attributes().Get(dbStatementKey)
 	require.True(t, ok)
 	require.Equal(t, "INSERT INTO orders VALUES (?, ?)", query.Str())
+}
+
+func TestRedactLiterals_AllQueryAttributes(t *testing.T) {
+	for _, inferAttributes := range []bool{false, true} {
+		t.Run(fmt.Sprintf("infer_attributes=%t", inferAttributes), func(t *testing.T) {
+			proc := newTestProcessor(t, &Config{
+				InferAttributes: inferAttributes,
+				RedactLiterals:  true,
+			})
+			traces := generateTestTrace(map[string]string{
+				string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE email = 'alice@example.com'",
+				dbStatementKey:                 "DELETE FROM users WHERE token = 'secret'",
+			})
+
+			out, err := proc.processTraces(context.Background(), traces)
+			require.NoError(t, err)
+
+			attrs := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).Attributes()
+			queryText, ok := attrs.Get(string(semconv.DBQueryTextKey))
+			require.True(t, ok)
+			require.Equal(t, "SELECT * FROM users WHERE email = ?", queryText.Str())
+			statement, ok := attrs.Get(dbStatementKey)
+			require.True(t, ok)
+			require.Equal(t, "DELETE FROM users WHERE token = ?", statement.Str())
+		})
+	}
 }
 
 func TestRedactLiterals_UsesDbSystemDialect(t *testing.T) {

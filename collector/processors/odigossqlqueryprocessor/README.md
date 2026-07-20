@@ -32,7 +32,8 @@ The processor reads the query from, in order:
 1. `db.query.text`
 2. `db.statement`
 
-The same attribute that was read is updated when `redact_literals` is enabled.
+When `redact_literals` is enabled, every present query attribute is redacted. Attribute inference
+still uses the first one found in the order above.
 
 ### Dialect selection
 

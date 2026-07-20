@@ -14,6 +14,8 @@ import (
 
 const dbStatementKey = "db.statement"
 
+var sqlQueryAttributeKeys = [...]string{string(semconv.DBQueryTextKey), dbStatementKey}
+
 type sqlQueryProcessor struct {
 	logger     *zap.Logger
 	config     *Config
@@ -97,6 +99,10 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span) {
 		}
 		p.enhanceFromMetadata(span, opAttr, hasOperation, collAttr, hasCollection, meta)
 	}
+
+	if p.config.RedactLiterals {
+		p.redactOtherQueryAttributes(attrs, queryKey, dbms)
+	}
 }
 
 func (p *sqlQueryProcessor) obfuscateAndNormalize(query string, dbms sqllexer.DBMSType) (string, *sqllexer.StatementMetadata, error) {
@@ -111,6 +117,19 @@ func (p *sqlQueryProcessor) obfuscate(query string, dbms sqllexer.DBMSType) stri
 		return p.obfuscator.Obfuscate(query)
 	}
 	return p.obfuscator.Obfuscate(query, sqllexer.WithDBMS(dbms))
+}
+
+func (p *sqlQueryProcessor) redactOtherQueryAttributes(attrs pcommon.Map, selectedKey string, dbms sqllexer.DBMSType) {
+	for _, attrKey := range sqlQueryAttributeKeys {
+		if attrKey == selectedKey {
+			continue
+		}
+		val, found := attrs.Get(attrKey)
+		if !found || val.Type() != pcommon.ValueTypeStr || val.Str() == "" {
+			continue
+		}
+		attrs.PutStr(attrKey, p.obfuscate(val.Str(), dbms))
+	}
 }
 
 func (p *sqlQueryProcessor) normalize(query string, dbms sqllexer.DBMSType) (*sqllexer.StatementMetadata, error) {
@@ -180,7 +199,7 @@ func spanNameAlreadyHas(name, operation, collection string) bool {
 }
 
 func sqlQueryFromAttributes(attrs pcommon.Map) (query string, key string, ok bool) {
-	for _, attrKey := range []string{string(semconv.DBQueryTextKey), dbStatementKey} {
+	for _, attrKey := range sqlQueryAttributeKeys {
 		val, found := attrs.Get(attrKey)
 		if !found || val.Type() != pcommon.ValueTypeStr {
 			continue
