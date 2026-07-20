@@ -81,14 +81,15 @@ func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigo
 		return nil, err
 	}
 
-	// Filter only actions that have URLTemplatization config
+	// Filter only actions that affect agent/collector per-container config.
 	agentLevelActions := []odigosv1.Action{}
 	for _, action := range actionList.Items {
 		if action.Spec.Disabled {
 			continue
 		}
 		if action.Spec.URLTemplatization != nil ||
-			action.Spec.SpanRenamer != nil {
+			action.Spec.SpanRenamer != nil ||
+			action.Spec.DbQueryTemplatization != nil {
 			agentLevelActions = append(agentLevelActions, action)
 		}
 	}

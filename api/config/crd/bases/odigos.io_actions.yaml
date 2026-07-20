@@ -68,6 +68,83 @@ spec:
                 required:
                 - clusterAttributes
                 type: object
+              dbQueryTemplatization:
+                description: DbQueryTemplatization is the config for the DbQueryTemplatization
+                  Action.
+                properties:
+                  scopes:
+                    description: |-
+                      the scope of services for which this templatization config will be applied.
+                      if empty, the provided config will be applied to all sources.
+                    properties:
+                      languages:
+                        items:
+                          enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                          - php
+                          - ruby
+                          - rust
+                          - cplusplus
+                          - mysql
+                          - nginx
+                          - redis
+                          - postgres
+                          - unknown
+                          - ignored
+                          - '*'
+                          type: string
+                        type: array
+                      namespaces:
+                        items:
+                          type: string
+                        type: array
+                      sources:
+                        items:
+                          description: |-
+                            PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                            It contains essential details about the controller such as its Name, Namespace, and Kind.
+                            'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                            This struct is useful for identifying and interacting with the overarching entity
+                            that governs the lifecycle and behavior of a Pod, especially in contexts where
+                            understanding the relationship between a Pod and its controlling workload is crucial.
+                          properties:
+                            kind:
+                              description: |-
+                                1. the pascal case representation of the workload kind
+                                it is used in k8s api objects as the `Kind` field.
+                              type: string
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          required:
+                          - kind
+                          - name
+                          - namespace
+                          type: object
+                        type: array
+                    type: object
+                  templatizeLiterals:
+                    description: |-
+                      TemplatizeLiterals replaces number and string literals in SQL queries with placeholders
+                      (e.g. "SELECT * FROM users WHERE id = 1" -> "SELECT * FROM users WHERE id = ?").
+
+                      what is templatized:
+                      - number literals
+                      - string literals
+                      what is not templatized:
+                      - identifiers (e.g. table names, column names, etc.)
+                      - positional parameters (e.g. "SELECT * FROM users WHERE id = $1")
+                      - bind parameters (e.g. "SELECT * FROM users WHERE id = :name")
+                      - boolean literals
+                      - NULL
+                      - keywords, operators, punctuation, whitespace, comments, etc.
+                    type: boolean
+                type: object
               deleteAttribute:
                 description: DeleteAttribute is the config for the DeleteAttribute
                   Action.

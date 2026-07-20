@@ -16,6 +16,5 @@ type ContainerCollectorConfig struct {
 
 	UrlTemplatization *actions.UrlTemplatizationConfig `json:"urlTemplatization,omitempty"`
 
-	// Later we can add here any relevant collector configuration in the scope of the container.
-	// e.g url-templatization
+	DbQueryTemplatization *actions.DbQueryTemplatizationConfig `json:"dbQueryTemplatization,omitempty"`
 }

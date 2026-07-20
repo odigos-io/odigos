@@ -84,6 +84,9 @@ type ActionSpec struct {
 
 	// ExtractAttribute is the config for the ExtractAttribute Action.
 	ExtractAttribute *actions.ExtractAttributeConfig `json:"extractAttribute,omitempty"`
+
+	// DbQueryTemplatization is the config for the DbQueryTemplatization Action.
+	DbQueryTemplatization *actions.DbQueryTemplatizationConfig `json:"dbQueryTemplatization,omitempty"`
 }
 
 type ActionStatus struct {
