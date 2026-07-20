@@ -57,7 +57,7 @@ func (p *Pyroscope) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 		},
 	}
 
-	addProfilesPipeline(currentConfig, "pyroscope", dest.GetID(), exporterName)
+	profilesPipelineName := addProfilesPipeline(currentConfig, "pyroscope", dest.GetID(), exporterName)
 
-	return nil, nil
+	return []string{profilesPipelineName}, nil
 }

@@ -50,6 +50,19 @@ func piiMaskingConfig(cfg []actionsapi.PiiCategory) (PiiMaskingConfig, error) {
 				"4[0-9]{12}(?:[0-9]{3})?", // Visa credit card number
 				"(5[1-5][0-9]{14})",       // MasterCard number
 			}...)
+		case actionsapi.EmailMasking:
+			config.BlockedValues = append(config.BlockedValues,
+				`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`,
+			)
+		case actionsapi.JwtMasking:
+			// JWTs encode a JSON header, so the first two segments typically start with "eyJ".
+			config.BlockedValues = append(config.BlockedValues,
+				`eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+`,
+			)
+		case actionsapi.UuidMasking:
+			config.BlockedValues = append(config.BlockedValues,
+				`[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`,
+			)
 		}
 	}
 

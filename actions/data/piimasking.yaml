@@ -28,3 +28,9 @@ spec:
         options:
           - id: CREDIT_CARD
             label: Credit card
+          - id: EMAIL
+            label: Email
+          - id: JWT
+            label: JWT
+          - id: UUID
+            label: UUID
