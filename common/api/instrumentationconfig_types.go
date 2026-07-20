@@ -17,4 +17,6 @@ type ContainerCollectorConfig struct {
 	UrlTemplatization *actions.UrlTemplatizationConfig `json:"urlTemplatization,omitempty"`
 
 	DbQueryTemplatization *actions.DbQueryTemplatizationConfig `json:"dbQueryTemplatization,omitempty"`
+
+	InferDbAttributes *actions.InferDbAttributesConfig `json:"inferDbAttributes,omitempty"`
 }

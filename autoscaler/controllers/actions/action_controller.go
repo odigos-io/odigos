@@ -248,8 +248,8 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		err = r.reportReconciledToProcessor(ctx, action)
 		return utils.K8SUpdateErrorHandler(err)
 	}
-	// DbQueryTemplatization is declared on Action but not yet converted to a Processor.
-	if action.Spec.DbQueryTemplatization != nil {
+	// DbQueryTemplatization / InferDbAttributes are declared on Action but not yet converted to a Processor.
+	if action.Spec.DbQueryTemplatization != nil || action.Spec.InferDbAttributes != nil {
 		err = r.reportProcessorNotRequired(ctx, action)
 		return utils.K8SUpdateErrorHandler(err)
 	}

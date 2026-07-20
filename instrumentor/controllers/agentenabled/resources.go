@@ -89,7 +89,8 @@ func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigo
 		}
 		if action.Spec.URLTemplatization != nil ||
 			action.Spec.SpanRenamer != nil ||
-			action.Spec.DbQueryTemplatization != nil {
+			action.Spec.DbQueryTemplatization != nil ||
+			action.Spec.InferDbAttributes != nil {
 			agentLevelActions = append(agentLevelActions, action)
 		}
 	}

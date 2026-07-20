@@ -14,7 +14,8 @@ func (u AgentInjectionEnabledActionsPredicate) Create(e event.CreateEvent) bool 
 	}
 
 	return !action.Spec.Disabled &&
-		(action.Spec.URLTemplatization != nil || action.Spec.SpanRenamer != nil || action.Spec.DbQueryTemplatization != nil)
+		(action.Spec.URLTemplatization != nil || action.Spec.SpanRenamer != nil ||
+			action.Spec.DbQueryTemplatization != nil || action.Spec.InferDbAttributes != nil)
 }
 
 func (u AgentInjectionEnabledActionsPredicate) Update(e event.UpdateEvent) bool {
@@ -27,7 +28,8 @@ func (u AgentInjectionEnabledActionsPredicate) Update(e event.UpdateEvent) bool 
 	return (!old.Spec.Disabled || !new.Spec.Disabled) &&
 		(old.Spec.URLTemplatization != nil || new.Spec.URLTemplatization != nil ||
 			old.Spec.SpanRenamer != nil || new.Spec.SpanRenamer != nil ||
-			old.Spec.DbQueryTemplatization != nil || new.Spec.DbQueryTemplatization != nil)
+			old.Spec.DbQueryTemplatization != nil || new.Spec.DbQueryTemplatization != nil ||
+			old.Spec.InferDbAttributes != nil || new.Spec.InferDbAttributes != nil)
 }
 
 func (u AgentInjectionEnabledActionsPredicate) Delete(e event.DeleteEvent) bool {
@@ -36,7 +38,8 @@ func (u AgentInjectionEnabledActionsPredicate) Delete(e event.DeleteEvent) bool 
 		return false
 	}
 	return !action.Spec.Disabled &&
-		(action.Spec.URLTemplatization != nil || action.Spec.SpanRenamer != nil || action.Spec.DbQueryTemplatization != nil)
+		(action.Spec.URLTemplatization != nil || action.Spec.SpanRenamer != nil ||
+			action.Spec.DbQueryTemplatization != nil || action.Spec.InferDbAttributes != nil)
 }
 
 func (u AgentInjectionEnabledActionsPredicate) Generic(e event.GenericEvent) bool {

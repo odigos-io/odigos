@@ -45,6 +45,7 @@ var validActionConfigNames = []string{
 	actions.ActionSpanRenamer,
 	actions.ActionNameExtractAttribute,
 	actions.ActionNameDbQueryTemplatization,
+	actions.ActionNameInferDbAttributes,
 }
 
 type ActionsValidator struct {
@@ -140,6 +141,10 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 	if action.Spec.DbQueryTemplatization != nil {
 		path := field.NewPath("spec").Child("dbQueryTemplatization")
 		fields[path] = action.Spec.DbQueryTemplatization
+	}
+	if action.Spec.InferDbAttributes != nil {
+		path := field.NewPath("spec").Child("inferDbAttributes")
+		fields[path] = action.Spec.InferDbAttributes
 	}
 
 	if len(fields) == 0 {

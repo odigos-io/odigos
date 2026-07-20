@@ -52,6 +52,8 @@ type ActionSpecApplyConfiguration struct {
 	ExtractAttribute *actions.ExtractAttributeConfig `json:"extractAttribute,omitempty"`
 	// DbQueryTemplatization is the config for the DbQueryTemplatization Action.
 	DbQueryTemplatization *actions.DbQueryTemplatizationConfig `json:"dbQueryTemplatization,omitempty"`
+	// InferDbAttributes is the config for the InferDbAttributes Action.
+	InferDbAttributes *actions.InferDbAttributesConfig `json:"inferDbAttributes,omitempty"`
 }
 
 // ActionSpecApplyConfiguration constructs a declarative configuration of the ActionSpec type for use with
@@ -163,5 +165,13 @@ func (b *ActionSpecApplyConfiguration) WithExtractAttribute(value actions.Extrac
 // If called multiple times, the DbQueryTemplatization field is set to the value of the last call.
 func (b *ActionSpecApplyConfiguration) WithDbQueryTemplatization(value actions.DbQueryTemplatizationConfig) *ActionSpecApplyConfiguration {
 	b.DbQueryTemplatization = &value
+	return b
+}
+
+// WithInferDbAttributes sets the InferDbAttributes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the InferDbAttributes field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithInferDbAttributes(value actions.InferDbAttributesConfig) *ActionSpecApplyConfiguration {
+	b.InferDbAttributes = &value
 	return b
 }

@@ -1396,6 +1396,12 @@ spec:
                             - keywords, operators, punctuation, whitespace, comments, etc.
                           type: boolean
                       type: object
+                    inferDbAttributes:
+                      description: |-
+                        InferDbAttributesConfig is the per-container collector config for inferring
+                        additional attributes from database query text (e.g. db.operation.name,
+                        db.collection.name). Configuration options will be added later.
+                      type: object
                     samplingCollectorConfig:
                       description: The sampling configuration that relevant for the
                         collector (tailsampling).
