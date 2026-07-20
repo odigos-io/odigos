@@ -35,7 +35,7 @@ var dbmsBySystem = map[string]sqllexer.DBMSType{
 }
 
 // nonSQLSystems are db.system / db.system.name values that are known not to be SQL
-// and should skip obfuscation and attribute enhancement.
+// and should skip literal redaction and attribute inference.
 var nonSQLSystems = map[string]struct{}{
 	// db.system (semconv v1.26)
 	semconv.DBSystemCassandra.Value.AsString():     {},

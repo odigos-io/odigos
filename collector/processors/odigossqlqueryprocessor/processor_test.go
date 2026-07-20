@@ -25,8 +25,8 @@ func generateTestTrace(attrs map[string]string) ptrace.Traces {
 	return td
 }
 
-func TestEnhanceAttributes_FromDbQueryText(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true})
+func TestInferAttributes_FromDbQueryText(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 1",
 	})
@@ -48,8 +48,8 @@ func TestEnhanceAttributes_FromDbQueryText(t *testing.T) {
 	require.Equal(t, "SELECT * FROM users WHERE id = 1", query.Str())
 }
 
-func TestEnhanceAttributes_FromDbStatement(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true})
+func TestInferAttributes_FromDbStatement(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
 		dbStatementKey: "INSERT INTO orders VALUES (1)",
 	})
@@ -68,8 +68,8 @@ func TestEnhanceAttributes_FromDbStatement(t *testing.T) {
 	require.Equal(t, "INSERT orders", span.Name())
 }
 
-func TestEnhanceAttributes_PrefersDbQueryTextOverDbStatement(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true})
+func TestInferAttributes_PrefersDbQueryTextOverDbStatement(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey): "SELECT * FROM users",
 		dbStatementKey:                 "DELETE FROM orders",
@@ -86,8 +86,8 @@ func TestEnhanceAttributes_PrefersDbQueryTextOverDbStatement(t *testing.T) {
 	require.Equal(t, "SELECT users", span.Name())
 }
 
-func TestEnhanceAttributes_DoesNotOverwriteExisting(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true})
+func TestInferAttributes_DoesNotOverwriteExisting(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey):      "SELECT * FROM users",
 		string(semconv.DBOperationNameKey):  "EXISTING_OP",
@@ -105,8 +105,8 @@ func TestEnhanceAttributes_DoesNotOverwriteExisting(t *testing.T) {
 	require.Equal(t, "db", span.Name())
 }
 
-func TestEnhanceAttributes_FillsMissingOnly(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true})
+func TestInferAttributes_FillsMissingOnly(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey):     "UPDATE users SET name = 'x'",
 		string(semconv.DBOperationNameKey): "EXISTING_OP",
@@ -124,7 +124,7 @@ func TestEnhanceAttributes_FillsMissingOnly(t *testing.T) {
 	require.Equal(t, "EXISTING_OP users", span.Name())
 }
 
-func TestEnhanceAttributes_Disabled(t *testing.T) {
+func TestInferAttributes_Disabled(t *testing.T) {
 	proc := newTestProcessor(t, &Config{})
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey): "SELECT * FROM users",
@@ -141,8 +141,8 @@ func TestEnhanceAttributes_Disabled(t *testing.T) {
 	require.Equal(t, "db", span.Name())
 }
 
-func TestEnhanceAttributes_IgnoresNonStringQuery(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true})
+func TestInferAttributes_IgnoresNonStringQuery(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	td := ptrace.NewTraces()
 	span := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans().AppendEmpty()
 	span.SetName("db")
@@ -157,8 +157,8 @@ func TestEnhanceAttributes_IgnoresNonStringQuery(t *testing.T) {
 	require.Equal(t, "db", outSpan.Name())
 }
 
-func TestEnhanceAttributes_MultipleTables(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true})
+func TestInferAttributes_MultipleTables(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey): "SELECT * FROM users JOIN orders ON users.id = orders.user_id",
 	})
@@ -176,8 +176,8 @@ func TestEnhanceAttributes_MultipleTables(t *testing.T) {
 	require.Equal(t, "SELECT", span.Name())
 }
 
-func TestEnhanceAttributes_OperationOnlySpanName(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true})
+func TestInferAttributes_OperationOnlySpanName(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey): "SELECT 1",
 	})
@@ -192,8 +192,8 @@ func TestEnhanceAttributes_OperationOnlySpanName(t *testing.T) {
 	require.Equal(t, "SELECT", span.Name())
 }
 
-func TestObfuscate_Only(t *testing.T) {
-	proc := newTestProcessor(t, &Config{Obfuscate: true})
+func TestRedactLiterals_Only(t *testing.T) {
+	proc := newTestProcessor(t, &Config{RedactLiterals: true})
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 1 AND name = 'alice'",
 	})
@@ -211,8 +211,8 @@ func TestObfuscate_Only(t *testing.T) {
 	require.Equal(t, "db", span.Name())
 }
 
-func TestObfuscate_WithEnhanceAttributes(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true, Obfuscate: true})
+func TestRedactLiterals_WithInferAttributes(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true, RedactLiterals: true})
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 1 AND name = 'alice'",
 	})
@@ -235,8 +235,8 @@ func TestObfuscate_WithEnhanceAttributes(t *testing.T) {
 	require.Equal(t, "SELECT users", span.Name())
 }
 
-func TestObfuscate_WhenAttributesAlreadyPresent(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true, Obfuscate: true})
+func TestRedactLiterals_WhenAttributesAlreadyPresent(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true, RedactLiterals: true})
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey):      "SELECT * FROM users WHERE id = 1",
 		string(semconv.DBOperationNameKey):  "EXISTING_OP",
@@ -258,8 +258,8 @@ func TestObfuscate_WhenAttributesAlreadyPresent(t *testing.T) {
 	require.Equal(t, "db", span.Name())
 }
 
-func TestObfuscate_DbStatement(t *testing.T) {
-	proc := newTestProcessor(t, &Config{Obfuscate: true})
+func TestRedactLiterals_DbStatement(t *testing.T) {
+	proc := newTestProcessor(t, &Config{RedactLiterals: true})
 	traces := generateTestTrace(map[string]string{
 		dbStatementKey: "INSERT INTO orders VALUES (1, 'x')",
 	})
@@ -273,8 +273,8 @@ func TestObfuscate_DbStatement(t *testing.T) {
 	require.Equal(t, "INSERT INTO orders VALUES (?, ?)", query.Str())
 }
 
-func TestObfuscate_UsesDbSystemDialect(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true, Obfuscate: true})
+func TestRedactLiterals_UsesDbSystemDialect(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true, RedactLiterals: true})
 	// MySQL hash comments are stripped only when DBMSMySQL is selected.
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 1 # secret",
@@ -291,8 +291,8 @@ func TestObfuscate_UsesDbSystemDialect(t *testing.T) {
 	require.Equal(t, "SELECT users", span.Name())
 }
 
-func TestObfuscate_UnsupportedDbSystemUsesDefault(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true, Obfuscate: true})
+func TestRedactLiterals_UnsupportedDbSystemUsesDefault(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true, RedactLiterals: true})
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 1 # secret",
 		string(semconv.DBSystemKey):    semconv.DBSystemHive.Value.AsString(),
@@ -308,8 +308,8 @@ func TestObfuscate_UnsupportedDbSystemUsesDefault(t *testing.T) {
 	require.Equal(t, "SELECT * FROM users WHERE id = ? # secret", query.Str())
 }
 
-func TestEnhanceAttributes_KeepsSpanNameWhenAlreadyPresent(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true})
+func TestInferAttributes_KeepsSpanNameWhenAlreadyPresent(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	td := ptrace.NewTraces()
 	span := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans().AppendEmpty()
 	span.SetName("SELECT users")
@@ -325,8 +325,8 @@ func TestEnhanceAttributes_KeepsSpanNameWhenAlreadyPresent(t *testing.T) {
 	require.Equal(t, "SELECT", op.Str())
 }
 
-func TestEnhanceAttributes_UpdatesSpanNameWhenMissingCollection(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true})
+func TestInferAttributes_UpdatesSpanNameWhenMissingCollection(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	td := ptrace.NewTraces()
 	span := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans().AppendEmpty()
 	span.SetName("SELECT")
@@ -340,7 +340,7 @@ func TestEnhanceAttributes_UpdatesSpanNameWhenMissingCollection(t *testing.T) {
 }
 
 func TestSkipNonSQL_MongoDB(t *testing.T) {
-	proc := newTestProcessor(t, &Config{EnhanceAttributes: true, Obfuscate: true})
+	proc := newTestProcessor(t, &Config{InferAttributes: true, RedactLiterals: true})
 	originalQuery := `{"find": "users", "filter": {"id": 1}}`
 	traces := generateTestTrace(map[string]string{
 		string(semconv.DBQueryTextKey): originalQuery,

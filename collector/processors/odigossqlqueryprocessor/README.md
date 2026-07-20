@@ -2,8 +2,8 @@
 
 The `odigossqlquery` processor enhances database spans by parsing SQL from `db.query.text` or the legacy `db.statement` attribute. It can:
 
-1. **Enhance attributes** — extract `db.operation.name` and `db.collection.name` when missing, and align the span name.
-2. **Obfuscate** — replace literal values in the query with `?` placeholders.
+1. **Infer attributes** — extract `db.operation.name` and `db.collection.name` when missing, and align the span name.
+2. **Redact literals** — replace literal values in the query with `?` placeholders.
 
 Parsing uses [DataDog/go-sqllexer](https://github.com/DataDog/go-sqllexer), with dialect selection based on `db.system.name` / `db.system`.
 
@@ -12,16 +12,16 @@ Parsing uses [DataDog/go-sqllexer](https://github.com/DataDog/go-sqllexer), with
 ```yaml
 processors:
   odigossqlquery:
-    enhance_attributes: true
-    obfuscate: true
+    infer_attributes: true
+    redact_literals: true
 ```
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `enhance_attributes` | bool | `false` | Extract operation/collection attributes and update the span name when new attributes are added. |
-| `obfuscate` | bool | `false` | Replace literals in `db.query.text` / `db.statement` with placeholders. |
+| `infer_attributes` | bool | `false` | Infer operation/collection attributes from the query and update the span name when new attributes are added. |
+| `redact_literals` | bool | `false` | Replace literals in `db.query.text` / `db.statement` with placeholders. |
 
-When both are enabled, obfuscation and attribute extraction run in a single pass (`ObfuscateAndNormalize`).
+When both are enabled, literal redaction and attribute inference run in a single pass (`ObfuscateAndNormalize`).
 
 ## Behavior
 
@@ -32,7 +32,7 @@ The processor reads the query from, in order:
 1. `db.query.text`
 2. `db.statement`
 
-The same attribute that was read is updated when obfuscation is enabled.
+The same attribute that was read is updated when `redact_literals` is enabled.
 
 ### Dialect selection
 
@@ -50,11 +50,11 @@ Unmapped systems use the default sqllexer behavior (no `WithDBMS`).
 
 ### Non-SQL systems
 
-Spans whose `db.system` / `db.system.name` identifies a known non-SQL database are skipped entirely (no obfuscation, no attribute enhancement). Examples include MongoDB, Redis, Cassandra, DynamoDB, Elasticsearch/OpenSearch, CouchDB/Couchbase, Cosmos DB, HBase, Memcached, Neo4j, Geode, and InfluxDB.
+Spans whose `db.system` / `db.system.name` identifies a known non-SQL database are skipped entirely (no literal redaction, no attribute inference). Examples include MongoDB, Redis, Cassandra, DynamoDB, Elasticsearch/OpenSearch, CouchDB/Couchbase, Cosmos DB, HBase, Memcached, Neo4j, Geode, and InfluxDB.
 
-### Attribute enhancement
+### Attribute inference
 
-When `enhance_attributes` is enabled and attributes are missing:
+When `infer_attributes` is enabled and attributes are missing:
 
 - `db.operation.name` is set only when exactly one SQL operation is detected (JOIN is ignored as a clause).
 - `db.collection.name` is set only when exactly one table is detected.
@@ -80,7 +80,7 @@ db.query.text: SELECT * FROM users WHERE id = 1 AND name = 'alice'
 db.system: postgresql
 ```
 
-**With `enhance_attributes: true` and `obfuscate: true`**
+**With `infer_attributes: true` and `redact_literals: true`**
 
 ```
 span name: SELECT users

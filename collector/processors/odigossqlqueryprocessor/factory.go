@@ -26,8 +26,8 @@ func NewFactory() processor.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		EnhanceAttributes: false,
-		Obfuscate:         false,
+		InferAttributes: false,
+		RedactLiterals:  false,
 	}
 }
 

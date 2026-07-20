@@ -26,20 +26,20 @@ func newSqlQueryProcessor(set processor.Settings, cfg *Config) *sqlQueryProcesso
 		logger: set.Logger,
 		config: cfg,
 	}
-	if cfg.EnhanceAttributes {
+	if cfg.InferAttributes {
 		p.normalizer = sqllexer.NewNormalizer(
 			sqllexer.WithCollectCommands(true),
 			sqllexer.WithCollectTables(true),
 		)
 	}
-	if cfg.Obfuscate {
+	if cfg.RedactLiterals {
 		p.obfuscator = sqllexer.NewObfuscator()
 	}
 	return p
 }
 
 func (p *sqlQueryProcessor) processTraces(_ context.Context, traces ptrace.Traces) (ptrace.Traces, error) {
-	if !p.config.EnhanceAttributes && !p.config.Obfuscate {
+	if !p.config.InferAttributes && !p.config.RedactLiterals {
 		return traces, nil
 	}
 
@@ -61,9 +61,9 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span) {
 
 	opAttr, hasOperation := attrs.Get(string(semconv.DBOperationNameKey))
 	collAttr, hasCollection := attrs.Get(string(semconv.DBCollectionNameKey))
-	enhanceNeeded := p.config.EnhanceAttributes && !(hasOperation && hasCollection)
+	inferNeeded := p.config.InferAttributes && !(hasOperation && hasCollection)
 
-	if !enhanceNeeded && !p.config.Obfuscate {
+	if !inferNeeded && !p.config.RedactLiterals {
 		return
 	}
 
@@ -78,7 +78,7 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span) {
 	}
 
 	switch {
-	case p.config.Obfuscate && enhanceNeeded:
+	case p.config.RedactLiterals && inferNeeded:
 		normalized, meta, err := p.obfuscateAndNormalize(query, dbms)
 		if err != nil {
 			// this can be ok, for example if the attribute is not sql syntax
@@ -87,9 +87,9 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span) {
 		}
 		attrs.PutStr(queryKey, normalized)
 		p.enhanceFromMetadata(span, opAttr, hasOperation, collAttr, hasCollection, meta)
-	case p.config.Obfuscate:
+	case p.config.RedactLiterals:
 		attrs.PutStr(queryKey, p.obfuscate(query, dbms))
-	case enhanceNeeded:
+	case inferNeeded:
 		meta, err := p.normalize(query, dbms)
 		if err != nil {
 			p.logger.Debug("failed to normalize SQL query", zap.Error(err))
