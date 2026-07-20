@@ -31,9 +31,6 @@ spec:
   - agentEnabled: true
     containerName: api
     otelDistroName: nodejs-community
-  sdkConfigs:
-  - language: javascript
-    payloadCollection: {}
   serviceName: otel-crash-demo
 status:
   (status.rollbackOccurred || `false`): false
