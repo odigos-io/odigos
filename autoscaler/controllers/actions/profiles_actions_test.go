@@ -117,10 +117,11 @@ func TestE2E_ProfilesActions_ActionToRenderedConfig(t *testing.T) {
 	require.Empty(t, nodeResults.ProfilesProcessors)
 	nodeCfg, err := config.MergeConfigs(map[string]config.Config{
 		"processors": nodeResults.ProcessorsConfig,
-		"profiling":  collectorconfig.ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nodeResults.ProfilesProcessors),
+		"profiling":  collectorconfig.ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nodeResults.ProfilesProcessors, odigosv1.CollectorsGroupResourcesSettings{}),
 	})
 	require.NoError(t, err)
 	assert.Equal(t, []string{
+		"memory_limiter",
 		commonconf.ProfilingNodeFilterProcessor,
 		commonconf.ProfilingNodeK8sAttributesProcessor,
 		commonconf.ProfilingNodeOdigosProfilesProcessor,
