@@ -3,6 +3,7 @@ package actions
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	actionsapi "github.com/odigos-io/odigos/common/api/actions"
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 const ActionNamePiiMasking = "PiiMasking"
@@ -14,7 +15,7 @@ type PiiMaskingConfig struct {
 }
 
 func (PiiMaskingConfig) ProcessorType() string {
-	return "redaction"
+	return consts.OdigosPiiMaskingProcessorType
 }
 
 func (PiiMaskingConfig) OrderHint() int {

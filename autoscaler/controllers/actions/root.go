@@ -36,6 +36,20 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	err = ctrl.NewControllerManagedBy(mgr).
+		Named("shared-pii-masking-processor").
+		For(&odigosv1.Processor{}).
+		WithEventFilter(predicate.And(
+			&predicate.GenerationChangedPredicate{},
+			&odigospredicate.OdigosPiiMaskingProcessorPredicate,
+		)).
+		Complete(&SharedPiiMaskingProcessorReconciler{
+			Client: mgr.GetClient(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = ctrl.NewControllerManagedBy(mgr).
 		Named("urltemplate-node-cg").
 		For(&odigosv1.CollectorsGroup{}).
 		WithEventFilter(predicate.And(

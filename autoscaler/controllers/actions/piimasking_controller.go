@@ -17,8 +17,6 @@ limitations under the License.
 package actions
 
 import (
-	"fmt"
-
 	"github.com/odigos-io/odigos/common"
 	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 )
@@ -27,44 +25,15 @@ var piiMaskingSupportedSignals = map[common.ObservabilitySignal]struct{}{
 	common.TracesObservabilitySignal: {},
 }
 
-type PiiMaskingConfig struct {
-	AllowAllKeys  bool     `json:"allow_all_keys"`
-	BlockedValues []string `json:"blocked_values"`
+type piiMaskingProcessorConfig struct {
+	PiiCategories []actionsapi.PiiCategory `json:"pii_categories"`
 }
 
-func piiMaskingConfig(cfg []actionsapi.PiiCategory) (PiiMaskingConfig, error) {
-	PiiCategories := cfg
-	if len(PiiCategories) == 0 {
-		return PiiMaskingConfig{}, fmt.Errorf("no PII categories are configured, so this processor is not needed")
-	}
-
-	// Allow all attributes to be traced. If set to false it removes all attributes not in allowed_keys which is all attributes
-	config := PiiMaskingConfig{
-		AllowAllKeys: true,
-	}
-
-	for _, piiCategory := range PiiCategories {
-		switch piiCategory {
-		case actionsapi.CreditCardMasking:
-			config.BlockedValues = append(config.BlockedValues, []string{
-				"4[0-9]{12}(?:[0-9]{3})?", // Visa credit card number
-				"(5[1-5][0-9]{14})",       // MasterCard number
-			}...)
-		case actionsapi.EmailMasking:
-			config.BlockedValues = append(config.BlockedValues,
-				`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`,
-			)
-		case actionsapi.JwtMasking:
-			// JWTs encode a JSON header, so the first two segments typically start with "eyJ".
-			config.BlockedValues = append(config.BlockedValues,
-				`eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+`,
-			)
-		case actionsapi.UuidMasking:
-			config.BlockedValues = append(config.BlockedValues,
-				`[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`,
-			)
+func piiMaskingActionSignalsSupported(signals []common.ObservabilitySignal) bool {
+	for _, signal := range signals {
+		if _, ok := piiMaskingSupportedSignals[signal]; !ok {
+			return false
 		}
 	}
-
-	return config, nil
+	return true
 }

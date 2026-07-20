@@ -27,3 +27,19 @@ func (r *SharedURLTemplatizationProcessorReconciler) Reconcile(ctx context.Conte
 	}
 	return ctrl.Result{}, nil
 }
+
+// SharedPiiMaskingProcessorReconciler watches the single shared PII-masking Processor CR
+// (name from consts.PiiMaskingProcessorName). When that object is created, updated, or deleted,
+// it runs SyncPiiMaskingProcessor so desired state is recomputed from all Actions.
+type SharedPiiMaskingProcessorReconciler struct {
+	client.Client
+}
+
+func (r *SharedPiiMaskingProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := commonlogger.FromContext(ctx)
+	if err := SyncPiiMaskingProcessor(ctx, r.Client); err != nil {
+		logger.Error(err, "Sync shared PII-masking processor failed")
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
+}

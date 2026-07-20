@@ -46,19 +46,6 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 		return convertToDefaultProcessor(action, action.Spec.DeleteAttribute, config)
 	}
 
-	if action.Spec.PiiMasking != nil {
-		for _, signal := range action.Spec.Signals {
-			if _, ok := piiMaskingSupportedSignals[signal]; !ok {
-				return nil, fmt.Errorf("unsupported signal in PiiMasking action: %s", signal)
-			}
-		}
-		config, err := piiMaskingConfig(action.Spec.PiiMasking.PiiCategories)
-		if err != nil {
-			return nil, err
-		}
-		return convertToDefaultProcessor(action, action.Spec.PiiMasking, config)
-	}
-
 	if action.Spec.RenameAttribute != nil {
 		config, err := renameAttributeConfig(action.Spec.RenameAttribute.Renames, action.Spec.Signals)
 		if err != nil {
@@ -228,9 +215,13 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			// Reconcile after delete: sync so the shared URL-templatization Processor is removed when no URL actions remain.
+			// Reconcile after delete: sync shared processors so they are removed when no matching actions remain.
 			if syncErr := SyncUrlTemplatizationProcessor(ctx, r.Client, URLTemplatizationSyncApplyFull); syncErr != nil {
 				logger.Error(syncErr, "sync URL templatization processor after action delete failed")
+				return ctrl.Result{}, syncErr
+			}
+			if syncErr := SyncPiiMaskingProcessor(ctx, r.Client); syncErr != nil {
+				logger.Error(syncErr, "sync PII masking processor after action delete failed")
 				return ctrl.Result{}, syncErr
 			}
 			return ctrl.Result{}, nil
@@ -244,7 +235,25 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		logger.Error(err, "sync URL templatization processor failed")
 		return ctrl.Result{}, err
 	}
+	if err := SyncPiiMaskingProcessor(ctx, r.Client); err != nil {
+		logger.Error(err, "sync PII masking processor failed")
+		return ctrl.Result{}, err
+	}
 	if action.Spec.URLTemplatization != nil {
+		err = r.reportReconciledToProcessor(ctx, action)
+		return utils.K8SUpdateErrorHandler(err)
+	}
+	if action.Spec.PiiMasking != nil {
+		for _, signal := range action.Spec.Signals {
+			if _, ok := piiMaskingSupportedSignals[signal]; !ok {
+				err = fmt.Errorf("unsupported signal in PiiMasking action: %s", signal)
+				statusErr := r.reportReconciledToProcessorFailed(ctx, action, odigosv1.ActionTransformedToProcessorReasonFailedToTransformToProcessorReason, err)
+				if statusErr != nil {
+					return utils.K8SUpdateErrorHandler(statusErr)
+				}
+				return utils.K8SUpdateErrorHandler(err)
+			}
+		}
 		err = r.reportReconciledToProcessor(ctx, action)
 		return utils.K8SUpdateErrorHandler(err)
 	}
