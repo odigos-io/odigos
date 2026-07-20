@@ -23,14 +23,27 @@ var (
 )
 
 func (n *RubyInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	if utils.IsProcessEqualProcessNames(pcx, processNames) {
+	if utils.IsProcessEqualProcessNamesWithVersion(pcx, processNames) {
 		return common.RubyProgrammingLanguage, true
 	}
 
 	return "", false
 }
 
+// DeepScan falls back to the process maps when the executable name does not match a known
+// Ruby process name — e.g. servers such as puma/unicorn that rewrite their process title, or
+// interpreters launched via an unrecognized wrapper. Presence of the Ruby shared library or a
+// versioned Ruby lib path is a reliable signal.
 func (n *RubyInspector) DeepScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	mapsFile, err := pcx.GetMapsFile()
+	if err != nil {
+		return "", false
+	}
+
+	if utils.IsMapsFileContainsBinary(mapsFile, []string{"libruby.so", "/ruby/"}) {
+		return common.RubyProgrammingLanguage, true
+	}
+
 	return "", false
 }
 
