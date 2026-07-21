@@ -19,15 +19,37 @@ are managed entirely with Docker Compose.
 One agent container runs per host. Through the host's PID namespace and the
 Docker socket, it discovers and instruments the host's **Docker containers**,
 **systemd services**, and **regular Linux processes** with eBPF, and runs the
-`odigos-otelcol` collector as a supervised child process.
+`odigos-otelcol` collector as a supervised child process (see
+[How the collector runs](#how-the-collector-runs)).
 
-The collector runs as a child process of the agent rather than a `systemd` unit
-(there is no `systemd` inside the container). Host `systemd` services are still
-first-class targets: languages that attach directly (Go, C++, Java, OBI) need no
-`systemctl`, while env-injection languages (Python, Node.js, .NET, PHP, Ruby) get
-a unit drop-in written to the host's `/etc/systemd/system` and are restarted with
-the host's `systemctl`, which the agent runs by entering the host's namespaces
-with `nsenter`.
+Host `systemd` services are still first-class targets: languages that attach
+directly (Go, C++, Java, OBI) need no `systemctl`, while env-injection languages
+(Python, Node.js, .NET, PHP, Ruby) get a unit drop-in written to the host's
+`/etc/systemd/system` and are restarted with the host's `systemctl`, which the
+agent runs by entering the host's namespaces with `nsenter`.
+
+## How the collector runs
+
+In the [package installation](/vmagent/setup/installation), the agent and
+collector are separate `systemd` units (`odigos-vmagent.service` and
+`odigos-otelcol.service`). In the Docker deployment there is no `systemd`
+inside the container, so the model is different:
+
+- The agent process starts `odigos-otelcol` as a **supervised child process**
+  when the container starts.
+- The collector's lifecycle is tied to the container: stopping or restarting
+  `odigos-vmagent` stops or restarts the collector with it. There is no
+  `systemctl start/stop odigos-otelcol` equivalent.
+- Agent and collector **share the container's stdout** (console format, same as
+  the package install). Use `docker logs odigos-vmagent` to view both.
+- With `--network host`, the collector listens on the host's network namespace,
+  so instrumented workloads on the same host can reach it on `localhost`.
+
+Collector configuration (receivers, exporters, processors, profiling, and so on)
+is still managed through Odigos Central or `odictl`, the same as the package
+install. [systemd memory limits](/vmagent/setup/configuration/services-mem-limits-configuration)
+do not apply here — use Docker resource limits (for example Compose
+`deploy.resources` or `docker run --memory`) if you need to cap the container.
 
 ## Requirements
 
@@ -36,6 +58,9 @@ with `nsenter`.
 - An Odigos Pro license token for the VM Agent.
 - A **Linux** host — the agent instruments the host it runs on.
 - Docker installed and running, with permission to start privileged containers.
+- Ability to grant the [required permissions](#required-permissions) (privileged
+  container, host namespaces, and host mounts). Review that section before
+  deploying — these are hard requirements and cannot be relaxed.
 - The Odigos VM Agent container image. <Note>Obtain the image from your Odigos support team.</Note>
 
 ## Step 1: One-time host setup
@@ -231,10 +256,47 @@ sudo rm -rf /etc/odigos-vmagent
 
 ## Troubleshooting
 
-- **Logs** — the agent and collector share stdout (console format, same as the
-  package install). Use `docker logs odigos-vmagent`.
-- **Inspect / configure a running agent** — `docker exec -it odigos-vmagent odictl`.
-- **Container processes show up as regular processes** — the container is
-  missing `--cgroupns host` (or `cgroup: host` in Compose).
-- **systemd services in env-injection languages are not instrumented** — the
-  host uses `systemd` but `/etc/systemd/system` is not mounted into the container.
+### How to view the logs
+
+The agent and the `odigos-otelcol` collector share the container's stdout in
+console format (same as the package install). Follow the live log stream:
+
+```shell
+docker logs -f odigos-vmagent
+```
+
+### How to inspect or configure a running agent
+
+Use `odictl` inside the container the same way you would on a package install —
+list sources, add destinations, inspect instrumentation status, and so on:
+
+```shell
+docker exec -it odigos-vmagent odictl
+```
+
+Config changes are written under `/etc/odigos-vmagent` on the host and persist
+across container restarts.
+
+### Why do container processes show up as regular processes?
+
+The agent classifies a process as a Docker container by reading
+`/proc/<pid>/cgroup` and mapping it to a container id. That mapping only works
+when the agent shares the host's cgroup namespace.
+
+If you started the container without `--cgroupns host` (`cgroup: host` in
+Compose), every container process is misclassified as a regular process.
+Recreate the container with the setting from [Step 2](#step-2-run-the-agent)
+(see also [Required permissions](#required-permissions)).
+
+### Why are systemd services in env-injection languages not instrumented?
+
+Direct-attach languages (Go, C++, Java, OBI) do not need `systemd` drop-ins and
+still work without the mount. Env-injection languages (Python, Node.js, .NET,
+PHP, Ruby) need a unit drop-in written to the host's `/etc/systemd/system` so
+the host's `systemd` picks up the instrumentation environment and restarts the
+service.
+
+If those services are not instrumented on a systemd host, the container is
+almost certainly missing the `/etc/systemd/system` volume mount. Recreate the
+container with the mount from [Step 2](#step-2-run-the-agent). Omit the mount
+only on hosts that do not use `systemd`.
