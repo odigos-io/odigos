@@ -42,6 +42,8 @@ type ActionFields struct {
 	PiiCategories                []string                       `json:"piiCategories,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroup `json:"urlTemplatizationRulesGroups,omitempty"`
 	ExtractAttribute             *ExtractAttribute              `json:"extractAttribute,omitempty"`
+	Scopes                       *SourcesScopes                 `json:"scopes,omitempty"`
+	TemplatizeLiterals           *bool                          `json:"templatizeLiterals,omitempty"`
 }
 
 type ActionFieldsInput struct {
@@ -58,6 +60,8 @@ type ActionFieldsInput struct {
 	PiiCategories                []string                            `json:"piiCategories,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroupInput `json:"urlTemplatizationRulesGroups,omitempty"`
 	ExtractAttribute             *ExtractAttributeInput              `json:"extractAttribute,omitempty"`
+	Scopes                       *SourcesScopesInput                 `json:"scopes,omitempty"`
+	TemplatizeLiterals           *bool                               `json:"templatizeLiterals,omitempty"`
 }
 
 type ActionInput struct {
@@ -1826,6 +1830,8 @@ const (
 	ActionTypePiiMasking            ActionType = "PiiMasking"
 	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
 	ActionTypeExtractAttribute      ActionType = "ExtractAttribute"
+	ActionTypeDbQueryTemplatization ActionType = "DbQueryTemplatization"
+	ActionTypeInferDbAttributes     ActionType = "InferDbAttributes"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
 
@@ -1837,12 +1843,14 @@ var AllActionType = []ActionType{
 	ActionTypePiiMasking,
 	ActionTypeURLTemplatization,
 	ActionTypeExtractAttribute,
+	ActionTypeDbQueryTemplatization,
+	ActionTypeInferDbAttributes,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeURLTemplatization, ActionTypeExtractAttribute, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeURLTemplatization, ActionTypeExtractAttribute, ActionTypeDbQueryTemplatization, ActionTypeInferDbAttributes, ActionTypeUnknownType:
 		return true
 	}
 	return false
