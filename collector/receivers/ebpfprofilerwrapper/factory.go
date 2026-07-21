@@ -7,7 +7,6 @@ package ebpfprofilerwrapper
 import (
 	"context"
 
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer/xconsumer"
 	"go.opentelemetry.io/collector/receiver"
@@ -15,6 +14,8 @@ import (
 	profilercollector "go.opentelemetry.io/ebpf-profiler/collector"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
 func NewFactory() receiver.Factory {

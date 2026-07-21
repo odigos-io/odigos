@@ -51,38 +51,48 @@ func NewDowngradeCore(inner zapcore.Core, rules []DowngradeRule) zapcore.Core {
 	if len(rules) == 0 {
 		return inner
 	}
-	return &downgradeCore{Core: inner, rules: rules}
+	return &downgradeCore{inner: inner, rules: rules}
 }
 
 type downgradeCore struct {
-	zapcore.Core
+	inner zapcore.Core
 	rules []DowngradeRule
 }
 
-func (c *downgradeCore) target(ent zapcore.Entry) zapcore.Level {
-	if ent.Level < zapcore.ErrorLevel {
-		return ent.Level
+func (c *downgradeCore) target(level zapcore.Level, msg string) zapcore.Level {
+	if level < zapcore.ErrorLevel {
+		return level
 	}
 	for _, r := range c.rules {
-		if r.matches(ent.Message) {
+		if r.matches(msg) {
 			return r.To
 		}
 	}
-	return ent.Level
+	return level
 }
 
+func (c *downgradeCore) Enabled(level zapcore.Level) bool {
+	return c.inner.Enabled(level)
+}
+
+func (c *downgradeCore) With(fields []zapcore.Field) zapcore.Core {
+	return &downgradeCore{inner: c.inner.With(fields), rules: c.rules}
+}
+
+//nolint:gocritic // zapcore.Core requires Entry by value.
 func (c *downgradeCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
-	ent.Level = c.target(ent)
-	if c.Core.Enabled(ent.Level) {
+	ent.Level = c.target(ent.Level, ent.Message)
+	if c.inner.Enabled(ent.Level) {
 		return ce.AddCore(ent, c)
 	}
 	return ce
 }
 
+//nolint:gocritic // zapcore.Core requires Entry by value.
 func (c *downgradeCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
-	return c.Core.Write(ent, fields)
+	return c.inner.Write(ent, fields)
 }
 
-func (c *downgradeCore) With(fields []zapcore.Field) zapcore.Core {
-	return &downgradeCore{Core: c.Core.With(fields), rules: c.rules}
+func (c *downgradeCore) Sync() error {
+	return c.inner.Sync()
 }
