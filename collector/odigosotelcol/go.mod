@@ -10,6 +10,7 @@ require (
 	github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.151.0
 	github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor v0.151.0
 	github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.151.0
+	github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor v0.151.0
 	github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor v0.151.0
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.151.0
 	github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor v0.151.0
@@ -771,6 +772,8 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/process
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor => ../processors/odigossqldboperationprocessor
 
 replace github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor => ../processors/odigossqlqueryprocessor
+
+replace github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor => ../processors/odigospiimaskingprocessor
 
 replace github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor => ../processors/odigostracestateprocessor
 
