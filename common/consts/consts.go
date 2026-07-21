@@ -154,7 +154,7 @@ const (
 	URLTemplatizationProcessorName        = "odigos-url-templatization"
 	OdigosURLTemplateProcessorType        = "odigosurltemplate"
 	PiiMaskingProcessorName               = "odigospiimasking"
-	OdigosPiiMaskingProcessorType         = "odigospiimasking"
+	OdigosPiiMaskingProcessorType         = "odigos-pii-masking"
 	OdigosSQLQueryProcessorType           = "odigossqlquery"
 )
 
