@@ -22,7 +22,7 @@ define depot-build
 		--build-arg RELEASE="$(IMAGE_TAG)" \
 		--tag "$(ORG)/odigos-$(2):$(IMAGE_TAG)" \
 		--output type=docker,dest=$(OUTPUT_DIR)/odigos-$(2).tar \
-		$(if $(strip $(GITHUB_RUN_ID)),--save --save-tag $(2)-$(GITHUB_RUN_ID)) \
+		$(if $(strip $(GITHUB_RUN_ID)),--save --save-tag odigos-$(2)-$(GITHUB_RUN_ID)) \
 		$(BUILD_DIR)
 endef
 
