@@ -1,12 +1,11 @@
 DEPOT_PROJECT ?= 570xmd9kld
-ORG ?= registry.odigos.io
 PLATFORM ?= linux/amd64
-OUTPUT_DIR ?=
 DOCKERFILE ?= Dockerfile
+BUILD_DIR ?= .
 
 # if OUTPUT_DIR is set, the image will be downloaded as a tarball to the directory
 # example: make $@ IMAGE_TAG=v0.0.0-pr1234 OUTPUT_DIR=/tmp will download the image to /tmp/odigos-<component>.tar
-BUILD_DIR ?= .
+OUTPUT_DIR ?=
 
 # if both GITHUB_RUN_ID and GITHUB_REPOSITORY_NAME are set, save the image to the
 # Depot registry.
@@ -68,7 +67,6 @@ define depot-build
 		--build-arg ODIGOS_VERSION="$(IMAGE_TAG)" \
 		--build-arg VERSION="$(IMAGE_TAG)" \
 		--build-arg RELEASE="$(IMAGE_TAG)" \
-		--tag "$(ORG)/odigos-$(2):$(IMAGE_TAG)" \
 		$(OUTPUT_FLAG) \
 		$(if $(SAVE_TAG),--save --save-tag $(SAVE_TAG)) \
 		$(BUILD_DIR)
