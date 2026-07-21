@@ -120,13 +120,18 @@ func OdigosProfilesProcessorConfig() config.GenericMap {
 // (interpreted runtimes, Go) pass through. Defaults to bounded caches and async parsing.
 func OdigosSymbolizeProcessorConfig(symbolization *odigoscommon.ProfilingSymbolizationConfiguration) config.GenericMap {
 	cfg := config.GenericMap{}
-	// Operator-configurable byte budget for the processor's LRU symbol cache.
-	// Unset → the processor's built-in default (256 MiB) applies.
+	// One budget bounds both caps; unset → the processor defaults apply.
 	if symbolization != nil && symbolization.MaxMemoryMiB != nil && *symbolization.MaxMemoryMiB > 0 {
-		cfg["max_symbol_bytes"] = int64(*symbolization.MaxMemoryMiB) << 20
+		budget := int64(*symbolization.MaxMemoryMiB) << 20
+		cfg["max_symbol_bytes"] = budget                          // retained symbol cache
+		cfg["max_symtab_bytes"] = budget / symtabDecodeCostFactor // transient decode ≈ 5x on-disk
 	}
 	return cfg
 }
+
+// symtabDecodeCostFactor is how much a symbol table costs to decode vs its on-disk
+// size, so gating on-disk at budget/factor keeps one decode within the budget.
+const symtabDecodeCostFactor = 5
 
 // ProfilingServiceNameTransformConfig sets resource attribute service.name from K8s workload
 // metadata enriched by k8sattributes. Without this, Pyroscope derives labels from
