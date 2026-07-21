@@ -43,3 +43,19 @@ func (r *SharedPiiMaskingProcessorReconciler) Reconcile(ctx context.Context, req
 	}
 	return ctrl.Result{}, nil
 }
+
+// SharedSQLQueryProcessorReconciler watches the single shared SQL-query Processor CR
+// (name from consts.SQLQueryProcessorName). Same lifecycle semantics as
+// SharedURLTemplatizationProcessorReconciler.
+type SharedSQLQueryProcessorReconciler struct {
+	client.Client
+}
+
+func (r *SharedSQLQueryProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := commonlogger.FromContext(ctx)
+	if err := SyncSQLQueryProcessor(ctx, r.Client, SQLQuerySyncApplyFull); err != nil {
+		logger.Error(err, "Sync shared SQL-query processor failed")
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
+}

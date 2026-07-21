@@ -215,28 +215,40 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
+
 			// Reconcile after delete: sync shared processors so they are removed when no matching actions remain.
 			if syncErr := SyncUrlTemplatizationProcessor(ctx, r.Client, URLTemplatizationSyncApplyFull); syncErr != nil {
 				logger.Error(syncErr, "sync URL templatization processor after action delete failed")
 				return ctrl.Result{}, syncErr
 			}
+
 			if syncErr := SyncPiiMaskingProcessor(ctx, r.Client); syncErr != nil {
 				logger.Error(syncErr, "sync PII masking processor after action delete failed")
 				return ctrl.Result{}, syncErr
 			}
+
+			if syncErr := SyncSQLQueryProcessor(ctx, r.Client, SQLQuerySyncApplyFull); syncErr != nil {
+				logger.Error(syncErr, "sync SQL query processor after action delete failed")
+				return ctrl.Result{}, syncErr
+			}
+
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
 	}
-	// ToDo: once we add a mutating webhook to actions, we will inject the labels for URL templatization
-	// and then we can filter out actions where we need to run SyncUrlTemplatizationProcessor
-	// Right now running for every Action so shared processor lifecycle is correctly managed
+	// ToDo: once we add a mutating webhook to actions, we will inject labels for shared-processor
+	// actions and then filter which syncs to run. Right now running for every Action so shared
+	// processor lifecycle is correctly managed.
 	if err := SyncUrlTemplatizationProcessor(ctx, r.Client, URLTemplatizationSyncCreateIfMissing); err != nil {
 		logger.Error(err, "sync URL templatization processor failed")
 		return ctrl.Result{}, err
 	}
 	if err := SyncPiiMaskingProcessor(ctx, r.Client); err != nil {
 		logger.Error(err, "sync PII masking processor failed")
+		return ctrl.Result{}, err
+	}
+	if err := SyncSQLQueryProcessor(ctx, r.Client, SQLQuerySyncCreateIfMissing); err != nil {
+		logger.Error(err, "sync SQL query processor failed")
 		return ctrl.Result{}, err
 	}
 	if action.Spec.URLTemplatization != nil {
@@ -256,9 +268,8 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		err = r.reportReconciledToProcessor(ctx, action)
 	}
-	// DbQueryTemplatization / InferDbAttributes are declared on Action but not yet converted to a Processor.
 	if action.Spec.DbQueryTemplatization != nil || action.Spec.InferDbAttributes != nil {
-		err = r.reportProcessorNotRequired(ctx, action)
+		err = r.reportReconciledToProcessor(ctx, action)
 		return utils.K8SUpdateErrorHandler(err)
 	}
 

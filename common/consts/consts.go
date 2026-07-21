@@ -155,6 +155,7 @@ const (
 	OdigosURLTemplateProcessorType        = "odigosurltemplate"
 	PiiMaskingProcessorName               = "odigospiimasking"
 	OdigosPiiMaskingProcessorType         = "odigos-pii-masking"
+	SQLQueryProcessorName                 = "odigos-sql-query"
 	OdigosSQLQueryProcessorType           = "odigossqlquery"
 )
 
