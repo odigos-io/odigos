@@ -153,8 +153,8 @@ const (
 	OdigosTraceStateProcessorName         = "odigostracestate"
 	URLTemplatizationProcessorName        = "odigos-url-templatization"
 	OdigosURLTemplateProcessorType        = "odigosurltemplate"
-	PiiMaskingProcessorName               = "odigospiimasking"
-	OdigosPiiMaskingProcessorType         = "odigos-pii-masking"
+	PiiMaskingProcessorName               = "odigos-pii-masking"
+	OdigosPiiMaskingProcessorType         = "odigospiimasking"
 	SQLQueryProcessorName                 = "odigos-sql-query"
 	OdigosSQLQueryProcessorType           = "odigossqlquery"
 )
