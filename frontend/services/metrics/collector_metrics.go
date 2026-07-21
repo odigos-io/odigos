@@ -7,6 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/common/model"
 )
 
 const (
@@ -39,6 +40,16 @@ const (
 	// eBPF core metrics
 	metricEBPFCoreSentEvents   = "odigos_ebpf_events_sent"
 	metricEBPFCoreFailedEvents = "odigos_ebpf_events_send_failed"
+
+	// Throughput metrics from odigostrafficmetrics
+	// Node collector: OTLP push keeps the collector meter name
+	// Cluster gateway: Prometheus scrape adds unit+counter suffixes (_bytes_total)
+	MetricNodeCollectorTraceDataSize   = "otelcol_odigos_trace_data_size"
+	MetricNodeCollectorMetricDataSize  = "otelcol_odigos_metric_data_size"
+	MetricNodeCollectorLogDataSize     = "otelcol_odigos_log_data_size"
+	MetricClusterGatewayTraceDataSize  = "otelcol_odigos_trace_data_size_bytes_total"
+	MetricClusterGatewayMetricDataSize = "otelcol_odigos_metric_data_size_bytes_total"
+	MetricClusterGatewayLogDataSize    = "otelcol_odigos_log_data_size_bytes_total"
 )
 
 type PodRates struct {
@@ -167,4 +178,23 @@ func GetCollectorMetricsFromMetricsStore(ctx context.Context, api v1.API, namesp
 	}
 
 	return result, nil
+}
+
+func GetThroughputBytesPerSec(ctx context.Context, api v1.API, metricName, window string) (float64, error) {
+	if api == nil {
+		return 0, fmt.Errorf("own-metrics API is nil")
+	}
+	if window == "" {
+		window = DefaultMetricsWindow
+	}
+	query := fmt.Sprintf("sum(rate(%s[%s]))", metricName, window)
+	val, _, err := api.Query(ctx, query, time.Now())
+	if err != nil {
+		return 0, err
+	}
+	vec, ok := val.(model.Vector)
+	if !ok || len(vec) == 0 {
+		return 0, nil
+	}
+	return float64(vec[0].Value), nil
 }

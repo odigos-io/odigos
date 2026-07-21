@@ -156,14 +156,17 @@ type CodeAttributesInput struct {
 }
 
 type CollectorDaemonSetInfo struct {
-	Status            WorkloadRolloutStatus `json:"status"`
-	Nodes             *NodesSummary         `json:"nodes"`
-	Resources         *Resources            `json:"resources,omitempty"`
-	ImageVersion      *string               `json:"imageVersion,omitempty"`
-	LastRolloutAt     *string               `json:"lastRolloutAt,omitempty"`
-	RolloutInProgress bool                  `json:"rolloutInProgress"`
-	ManifestYaml      string                `json:"manifestYAML"`
-	ConfigMapYaml     string                `json:"configMapYAML"`
+	Status                       WorkloadRolloutStatus `json:"status"`
+	Nodes                        *NodesSummary         `json:"nodes"`
+	ThroughputTracesBytesPerSec  *float64              `json:"throughputTracesBytesPerSec,omitempty"`
+	ThroughputMetricsBytesPerSec *float64              `json:"throughputMetricsBytesPerSec,omitempty"`
+	ThroughputLogsBytesPerSec    *float64              `json:"throughputLogsBytesPerSec,omitempty"`
+	Resources                    *Resources            `json:"resources,omitempty"`
+	ImageVersion                 *string               `json:"imageVersion,omitempty"`
+	LastRolloutAt                *string               `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress            bool                  `json:"rolloutInProgress"`
+	ManifestYaml                 string                `json:"manifestYAML"`
+	ConfigMapYaml                string                `json:"configMapYAML"`
 }
 
 type CollectorGatewayConfig struct {
@@ -554,14 +557,17 @@ type FieldInput struct {
 }
 
 type GatewayDeploymentInfo struct {
-	Status            WorkloadRolloutStatus        `json:"status"`
-	Hpa               *HorizontalPodAutoscalerInfo `json:"hpa,omitempty"`
-	Resources         *Resources                   `json:"resources,omitempty"`
-	ImageVersion      *string                      `json:"imageVersion,omitempty"`
-	LastRolloutAt     *string                      `json:"lastRolloutAt,omitempty"`
-	RolloutInProgress bool                         `json:"rolloutInProgress"`
-	ManifestYaml      string                       `json:"manifestYAML"`
-	ConfigMapYaml     string                       `json:"configMapYAML"`
+	Status                       WorkloadRolloutStatus        `json:"status"`
+	Hpa                          *HorizontalPodAutoscalerInfo `json:"hpa,omitempty"`
+	ThroughputTracesBytesPerSec  *float64                     `json:"throughputTracesBytesPerSec,omitempty"`
+	ThroughputMetricsBytesPerSec *float64                     `json:"throughputMetricsBytesPerSec,omitempty"`
+	ThroughputLogsBytesPerSec    *float64                     `json:"throughputLogsBytesPerSec,omitempty"`
+	Resources                    *Resources                   `json:"resources,omitempty"`
+	ImageVersion                 *string                      `json:"imageVersion,omitempty"`
+	LastRolloutAt                *string                      `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress            bool                         `json:"rolloutInProgress"`
+	ManifestYaml                 string                       `json:"manifestYAML"`
+	ConfigMapYaml                string                       `json:"configMapYAML"`
 }
 
 type GetDestinationCategories struct {
