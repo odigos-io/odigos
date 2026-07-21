@@ -1,0 +1,40 @@
+DEPOT_PROJECT ?= 570xmd9kld
+ORG ?= registry.odigos.io
+PLATFORM ?= linux/amd64
+OUTPUT_DIR ?= /tmp
+DOCKERFILE ?= Dockerfile
+BUILD_DIR ?= .
+
+define depot-build
+	@if [ -z "$(strip $(IMAGE_TAG))" ]; then \
+		echo "Error: IMAGE_TAG is required. Usage: make $@ IMAGE_TAG=<tag>"; \
+		exit 1; \
+	fi
+	depot build \
+		--project $(DEPOT_PROJECT) \
+		--platform $(PLATFORM) \
+		--provenance false \
+		--file $(1) \
+		--build-arg SERVICE_NAME=$(2) \
+		--build-arg ODIGOS_VERSION="$(IMAGE_TAG)" \
+		--build-arg VERSION="$(IMAGE_TAG)" \
+		--build-arg RELEASE="$(IMAGE_TAG)" \
+		--tag "$(ORG)/odigos-$(2):$(IMAGE_TAG)" \
+		--output type=docker,dest=$(OUTPUT_DIR)/odigos-$(2).tar \
+		$(BUILD_DIR)
+endef
+
+.PHONY: depot-build-autoscaler
+depot-build-autoscaler:
+	$(call depot-build,$(DOCKERFILE),autoscaler)
+
+.PHONY: depot-build-scheduler
+depot-build-scheduler:
+	$(call depot-build,$(DOCKERFILE),scheduler)
+
+.PHONY: depot-build-collector
+depot-build-collector:
+	$(call depot-build,collector/Dockerfile,collector)
+
+.PHONY: depot-build-all
+depot-build-all: depot-build-autoscaler depot-build-scheduler depot-build-collector
