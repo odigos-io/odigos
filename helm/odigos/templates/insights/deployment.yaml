@@ -75,6 +75,13 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 20
+          # /readyz stays 503 until the DB is reachable AND the migration Job
+          # has applied the schema (waitForSchemaReady in insights/cmd/main.go),
+          # so a replica is kept out of the Service until its schema is ready.
+          # This is what guarantees no pod serves a stale/absent schema in the
+          # bootstrap case (fresh install / first enable, where migration runs
+          # post-install/post-upgrade) -- no wait-for-migration init container
+          # needed.
           readinessProbe:
             httpGet:
               path: /readyz

@@ -1,12 +1,32 @@
 {{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
-# Runs schema migrations exactly once per release, so the insights replicas
-# never migrate at startup and can scale without racing on DDL. It's a Helm
-# hook so it runs on its own:
-#   - post-install: first install, AFTER ClickHouse has been created.
-#   - pre-upgrade:  before the new replicas roll out (ClickHouse already exists),
-#                   so new code never serves against an old schema.
-# The `migrate` entrypoint retries until ClickHouse is reachable, so it tolerates
-# the bundled DB still starting up.
+{{- /*
+Schema migrations run exactly once per release from this Job (never from the
+serving replicas), so replicas scale without racing on DDL. The `migrate`
+entrypoint retries until ClickHouse is reachable, so it tolerates the bundled
+DB still starting up.
+
+The hook phase is chosen adaptively, because ClickHouse (its Secret, Service,
+Deployment and PVC) are ordinary resources that Helm applies only during the
+main release phase -- AFTER pre-* hooks and BEFORE post-* hooks:
+  - ClickHouse already exists (steady-state upgrade): run pre-upgrade, so the
+    schema is migrated BEFORE the new odigos-insights replicas roll out in the
+    main phase and new code never serves against an old schema.
+  - ClickHouse does NOT exist yet (fresh install, or the first upgrade that
+    enables insights): a pre-upgrade migration would run before the main phase
+    that creates ClickHouse, so it would have no Secret to mount and no DB to
+    reach -- this is the "secret odigos-insights-clickhouse not found"
+    CreateContainerConfigError. Fall back to post-install/post-upgrade so the
+    migration runs AFTER ClickHouse has been created.
+We deliberately keep ClickHouse as ordinary (non-hook) resources: turning the
+PVC into a hook would delete it via Helm's default before-hook-creation policy
+on every upgrade, wiping all insights data.
+
+Either way the insights pods gate their own readiness on the schema
+(waitForSchemaReady in insights/cmd/main.go keeps /readyz at 503 until this Job
+has applied the schema), so no replica serves a missing/stale schema regardless
+of the phase chosen here.
+*/}}
+{{- $clickhouseExists := lookup "v1" "Secret" .Release.Namespace "odigos-insights-clickhouse" }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -16,7 +36,11 @@ metadata:
     app.kubernetes.io/name: odigos-insights-migrate
     odigos.io/system-object: "true"
   annotations:
-    "helm.sh/hook": post-install,pre-upgrade
+    {{- if $clickhouseExists }}
+    "helm.sh/hook": pre-upgrade,post-install
+    {{- else }}
+    "helm.sh/hook": post-install,post-upgrade
+    {{- end }}
     "helm.sh/hook-weight": "0"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
