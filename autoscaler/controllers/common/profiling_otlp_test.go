@@ -70,8 +70,9 @@ func TestOdigosSymbolizeProcessorConfig(t *testing.T) {
 	assert.Empty(t, OdigosSymbolizeProcessorConfig(nil))
 	assert.Empty(t, OdigosSymbolizeProcessorConfig(&odigoscommon.ProfilingSymbolizationConfiguration{}))
 
-	// Configured → max_symbol_bytes in bytes.
+	// Configured → both caps derived from the one budget.
 	n := 200
 	got := OdigosSymbolizeProcessorConfig(&odigoscommon.ProfilingSymbolizationConfiguration{MaxMemoryMiB: &n})
 	assert.Equal(t, int64(200)<<20, got["max_symbol_bytes"])
+	assert.Equal(t, (int64(200)<<20)/symtabDecodeCostFactor, got["max_symtab_bytes"])
 }
