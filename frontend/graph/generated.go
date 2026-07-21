@@ -1028,6 +1028,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		ClearSourceProfilingBuffer          func(childComplexity int, namespace string, kind string, name string) int
+		ConfigureProfilingCache             func(childComplexity int, maxSlots *int, slotMaxBytes *int, slotTTLSeconds *int) int
 		CreateAction                        func(childComplexity int, action model.ActionInput) int
 		CreateCostReductionRule             func(childComplexity int, samplingID string, rule model.CostReductionRuleInput) int
 		CreateHighlyRelevantOperationRule   func(childComplexity int, samplingID string, rule model.HighlyRelevantOperationRuleInput) int
@@ -1573,6 +1574,7 @@ type MutationResolver interface {
 	EnableSourceProfiling(ctx context.Context, namespace string, kind string, name string) (*model.EnableProfilingResult, error)
 	DisableSourceProfiling(ctx context.Context, namespace string, kind string, name string) (*model.DisableProfilingResult, error)
 	ClearSourceProfilingBuffer(ctx context.Context, namespace string, kind string, name string) (*model.ClearProfilingBufferResult, error)
+	ConfigureProfilingCache(ctx context.Context, maxSlots *int, slotMaxBytes *int, slotTTLSeconds *int) (*model.ProfilingSlots, error)
 	UpdateLocalUISamplingConfig(ctx context.Context, config *model.SamplingConfigInput) (bool, error)
 	CreateNoisyOperationRule(ctx context.Context, samplingID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
 	UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
@@ -5934,6 +5936,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ClearSourceProfilingBuffer(childComplexity, args["namespace"].(string), args["kind"].(string), args["name"].(string)), true
 
+	case "Mutation.configureProfilingCache":
+		if e.complexity.Mutation.ConfigureProfilingCache == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_configureProfilingCache_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ConfigureProfilingCache(childComplexity, args["maxSlots"].(*int), args["slotMaxBytes"].(*int), args["slotTTLSeconds"].(*int)), true
+
 	case "Mutation.createAction":
 		if e.complexity.Mutation.CreateAction == nil {
 			break
@@ -8476,6 +8490,80 @@ func (ec *executionContext) field_Mutation_clearSourceProfilingBuffer_argsName(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_configureProfilingCache_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_configureProfilingCache_argsMaxSlots(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["maxSlots"] = arg0
+	arg1, err := ec.field_Mutation_configureProfilingCache_argsSlotMaxBytes(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["slotMaxBytes"] = arg1
+	arg2, err := ec.field_Mutation_configureProfilingCache_argsSlotTTLSeconds(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["slotTTLSeconds"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_configureProfilingCache_argsMaxSlots(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["maxSlots"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("maxSlots"))
+	if tmp, ok := rawArgs["maxSlots"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_configureProfilingCache_argsSlotMaxBytes(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["slotMaxBytes"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("slotMaxBytes"))
+	if tmp, ok := rawArgs["slotMaxBytes"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_configureProfilingCache_argsSlotTTLSeconds(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["slotTTLSeconds"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("slotTTLSeconds"))
+	if tmp, ok := rawArgs["slotTTLSeconds"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
 	return zeroVal, nil
 }
 
@@ -39742,6 +39830,77 @@ func (ec *executionContext) fieldContext_Mutation_clearSourceProfilingBuffer(ctx
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_configureProfilingCache(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_configureProfilingCache(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ConfigureProfilingCache(rctx, fc.Args["maxSlots"].(*int), fc.Args["slotMaxBytes"].(*int), fc.Args["slotTTLSeconds"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ProfilingSlots)
+	fc.Result = res
+	return ec.marshalNProfilingSlots2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProfilingSlots(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_configureProfilingCache(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "activeKeys":
+				return ec.fieldContext_ProfilingSlots_activeKeys(ctx, field)
+			case "keysWithData":
+				return ec.fieldContext_ProfilingSlots_keysWithData(ctx, field)
+			case "totalBytesUsed":
+				return ec.fieldContext_ProfilingSlots_totalBytesUsed(ctx, field)
+			case "slotMaxBytes":
+				return ec.fieldContext_ProfilingSlots_slotMaxBytes(ctx, field)
+			case "maxSlots":
+				return ec.fieldContext_ProfilingSlots_maxSlots(ctx, field)
+			case "maxTotalBytesBudget":
+				return ec.fieldContext_ProfilingSlots_maxTotalBytesBudget(ctx, field)
+			case "slotTtlSeconds":
+				return ec.fieldContext_ProfilingSlots_slotTtlSeconds(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProfilingSlots", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_configureProfilingCache_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_updateLocalUiSamplingConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_updateLocalUiSamplingConfig(ctx, field)
 	if err != nil {
@@ -65150,6 +65309,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "configureProfilingCache":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_configureProfilingCache(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "updateLocalUiSamplingConfig":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateLocalUiSamplingConfig(ctx, field)
@@ -72392,6 +72558,20 @@ func (ec *executionContext) marshalNPodInfo2ᚖgithubᚗcomᚋodigosᚑioᚋodig
 func (ec *executionContext) unmarshalNPodWorkloadInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodWorkloadInput(ctx context.Context, v any) (*model.PodWorkloadInput, error) {
 	res, err := ec.unmarshalInputPodWorkloadInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNProfilingSlots2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProfilingSlots(ctx context.Context, sel ast.SelectionSet, v model.ProfilingSlots) graphql.Marshaler {
+	return ec._ProfilingSlots(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNProfilingSlots2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProfilingSlots(ctx context.Context, sel ast.SelectionSet, v *model.ProfilingSlots) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ProfilingSlots(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNProgrammingLanguage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx context.Context, v any) (model.ProgrammingLanguage, error) {
