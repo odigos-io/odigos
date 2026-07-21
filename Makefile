@@ -612,3 +612,5 @@ install-gatekeeper:
 		attempt=$$((attempt + 1)); \
 	done
 
+include Makefile.depot
+
