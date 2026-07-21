@@ -79,6 +79,11 @@ var OdigosURLTemplatizationProcessorPredicate = ObjectNamePredicate{
 	AllowedObjectName: consts.URLTemplatizationProcessorName,
 }
 
+// OdigosSQLQueryProcessorPredicate filters events for the shared SQL-query Processor CR.
+var OdigosSQLQueryProcessorPredicate = ObjectNamePredicate{
+	AllowedObjectName: consts.SQLQueryProcessorName,
+}
+
 // use this event filter to reconcile only collectors group events for cluster collectors group objects
 // this is useful if you reconcile only depends on changes from the cluster collectors group and should not react to node collectors group changes
 // example usage:
