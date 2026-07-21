@@ -3,6 +3,7 @@
 package main
 
 import (
+	ebpfprofilerwrapper "github.com/odigos-io/odigos/collector/receivers/ebpfprofilerwrapper"
 	countconnector "github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector"
 	datadogconnector "github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector"
 	exceptionsconnector "github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector"
@@ -99,7 +100,6 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
 	otelconftelemetry "go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
-	collector "go.opentelemetry.io/ebpf-profiler/collector"
 
 	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
 	serviceioconnector "github.com/odigos-io/odigos/collector/connectors/serviceioconnector"
@@ -175,7 +175,7 @@ func components() (otelcol.Factories, error) {
 		hostmetricsreceiver.NewFactory(),
 		prometheusreceiver.NewFactory(),
 		odigosebpfreceiver.NewFactory(),
-		collector.NewFactory(),
+		ebpfprofilerwrapper.NewFactory(),
 		journaldreceiver.NewFactory(),
 	)
 	if err != nil {
@@ -190,7 +190,7 @@ func components() (otelcol.Factories, error) {
 		hostmetricsreceiver.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.151.0",
 		prometheusreceiver.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.151.0",
 		odigosebpfreceiver.NewFactory().Type():   "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.151.0",
-		collector.NewFactory().Type():            "go.opentelemetry.io/ebpf-profiler v0.0.202614",
+		ebpfprofilerwrapper.NewFactory().Type():  "github.com/odigos-io/odigos/collector/receivers/ebpfprofilerwrapper v0.151.0",
 		journaldreceiver.NewFactory().Type():     "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver v0.151.0",
 	})
 

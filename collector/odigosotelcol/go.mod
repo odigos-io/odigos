@@ -19,6 +19,7 @@ require (
 	github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.151.0
 	github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.151.0
 	github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor v0.151.0
+	github.com/odigos-io/odigos/collector/receivers/ebpfprofilerwrapper v0.151.0
 	github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.151.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.151.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.151.0
@@ -810,6 +811,8 @@ replace github.com/odigos-io/odigos/collector/connectors/serviceioconnector => .
 replace github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector => ../connectors/servicegraphconnector
 
 replace github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
+
+replace github.com/odigos-io/odigos/collector/receivers/ebpfprofilerwrapper => ../receivers/ebpfprofilerwrapper
 
 replace github.com/odigos-io/odigos/common => ../../common
 

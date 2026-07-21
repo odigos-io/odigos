@@ -105,8 +105,7 @@ receivers:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.151.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.151.0
   - gomod: github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.151.0
-  - gomod: go.opentelemetry.io/ebpf-profiler v0.0.202614
-    import: go.opentelemetry.io/ebpf-profiler/collector
+  - gomod: github.com/odigos-io/odigos/collector/receivers/ebpfprofilerwrapper v0.151.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver v0.151.0
 
 # https://github.com/open-telemetry/opentelemetry-collector/issues/8127
@@ -152,6 +151,7 @@ replaces:
   - github.com/odigos-io/odigos/collector/connectors/serviceioconnector => ../connectors/serviceioconnector
   - github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector => ../connectors/servicegraphconnector
   - github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
+  - github.com/odigos-io/odigos/collector/receivers/ebpfprofilerwrapper => ../receivers/ebpfprofilerwrapper
   - github.com/odigos-io/odigos/common => ../../common
   - go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
   - github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension => ../extension/odigosconfigk8sextension
