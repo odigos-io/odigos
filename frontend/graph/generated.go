@@ -91,6 +91,8 @@ type ComplexityRoot struct {
 		OverwriteExistingValues      func(childComplexity int) int
 		PiiCategories                func(childComplexity int) int
 		Renames                      func(childComplexity int) int
+		Scopes                       func(childComplexity int) int
+		TemplatizeLiterals           func(childComplexity int) int
 		URLTemplatizationRulesGroups func(childComplexity int) int
 	}
 
@@ -1839,6 +1841,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ActionFields.Renames(childComplexity), true
+
+	case "ActionFields.scopes":
+		if e.complexity.ActionFields.Scopes == nil {
+			break
+		}
+
+		return e.complexity.ActionFields.Scopes(childComplexity), true
+
+	case "ActionFields.templatizeLiterals":
+		if e.complexity.ActionFields.TemplatizeLiterals == nil {
+			break
+		}
+
+		return e.complexity.ActionFields.TemplatizeLiterals(childComplexity), true
 
 	case "ActionFields.urlTemplatizationRulesGroups":
 		if e.complexity.ActionFields.URLTemplatizationRulesGroups == nil {
@@ -11075,6 +11091,10 @@ func (ec *executionContext) fieldContext_Action_fields(_ context.Context, field 
 				return ec.fieldContext_ActionFields_urlTemplatizationRulesGroups(ctx, field)
 			case "extractAttribute":
 				return ec.fieldContext_ActionFields_extractAttribute(ctx, field)
+			case "scopes":
+				return ec.fieldContext_ActionFields_scopes(ctx, field)
+			case "templatizeLiterals":
+				return ec.fieldContext_ActionFields_templatizeLiterals(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ActionFields", field.Name)
 		},
@@ -11971,6 +11991,96 @@ func (ec *executionContext) fieldContext_ActionFields_extractAttribute(_ context
 				return ec.fieldContext_ExtractAttribute_extractions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ExtractAttribute", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFields_scopes(ctx context.Context, field graphql.CollectedField, obj *model.ActionFields) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFields_scopes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Scopes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.SourcesScopes)
+	fc.Result = res
+	return ec.marshalOSourcesScopes2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopes(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFields_scopes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFields",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sources":
+				return ec.fieldContext_SourcesScopes_sources(ctx, field)
+			case "namespaces":
+				return ec.fieldContext_SourcesScopes_namespaces(ctx, field)
+			case "languages":
+				return ec.fieldContext_SourcesScopes_languages(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SourcesScopes", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFields_templatizeLiterals(ctx context.Context, field graphql.CollectedField, obj *model.ActionFields) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFields_templatizeLiterals(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TemplatizeLiterals, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFields_templatizeLiterals(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFields",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -54978,7 +55088,7 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "urlTemplatizationRulesGroups", "extractAttribute"}
+	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "urlTemplatizationRulesGroups", "extractAttribute", "scopes", "templatizeLiterals"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -55076,6 +55186,20 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 				return it, err
 			}
 			it.ExtractAttribute = data
+		case "scopes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scopes"))
+			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Scopes = data
+		case "templatizeLiterals":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("templatizeLiterals"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TemplatizeLiterals = data
 		}
 	}
 
@@ -58101,6 +58225,10 @@ func (ec *executionContext) _ActionFields(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._ActionFields_urlTemplatizationRulesGroups(ctx, field, obj)
 		case "extractAttribute":
 			out.Values[i] = ec._ActionFields_extractAttribute(ctx, field, obj)
+		case "scopes":
+			out.Values[i] = ec._ActionFields_scopes(ctx, field, obj)
+		case "templatizeLiterals":
+			out.Values[i] = ec._ActionFields_templatizeLiterals(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

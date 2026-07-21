@@ -12,6 +12,8 @@ enum ActionType {
   PiiMasking
   URLTemplatization
   ExtractAttribute
+  DbQueryTemplatization
+  InferDbAttributes
   UnknownType
 }
 
@@ -80,6 +82,9 @@ input ActionFieldsInput {
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroupInput!]
 
   extractAttribute: ExtractAttributeInput
+
+  scopes: SourcesScopesInput
+  templatizeLiterals: Boolean
 }
 
 # ExtractAttribute is the input shape for the ExtractAttribute action; mirrors
@@ -167,6 +172,9 @@ type ActionFields {
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroup!]
 
   extractAttribute: ExtractAttribute
+
+  scopes: SourcesScopes
+  templatizeLiterals: Boolean
 }
 
 # ExtractAttribute mirrors the v1alpha1 `extractAttribute` config — a wrapper
