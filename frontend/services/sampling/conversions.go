@@ -1,9 +1,7 @@
 package sampling
 
 import (
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -15,7 +13,7 @@ func noisyOperationFromInput(input model.NoisyOperationRuleInput) v1alpha1.Noisy
 	return v1alpha1.NoisyOperation{
 		Name:             services.DerefString(input.Name),
 		Disabled:         services.DerefBool(input.Disabled),
-		SourceScopes:     sourcesScopeInputToCRD(input.SourceScopes),
+		SourceScopes:     services.SourcesScopesInputToCRD(input.SourceScopes),
 		Operation:        headSamplingOperationMatcherInputToCRD(input.Operation),
 		PercentageAtMost: input.PercentageAtMost,
 		Notes:            services.DerefString(input.Notes),
@@ -26,7 +24,7 @@ func highlyRelevantOperationFromInput(input model.HighlyRelevantOperationRuleInp
 	return v1alpha1.HighlyRelevantOperation{
 		Name:              services.DerefString(input.Name),
 		Disabled:          services.DerefBool(input.Disabled),
-		SourceScopes:      sourcesScopeInputToCRD(input.SourceScopes),
+		SourceScopes:      services.SourcesScopesInputToCRD(input.SourceScopes),
 		Error:             services.DerefBool(input.Error),
 		DurationAtLeastMs: input.DurationAtLeastMs,
 		Operation:         tailSamplingOperationMatcherInputToCRD(input.Operation),
@@ -39,7 +37,7 @@ func costReductionRuleFromInput(input model.CostReductionRuleInput) v1alpha1.Cos
 	return v1alpha1.CostReductionRule{
 		Name:             services.DerefString(input.Name),
 		Disabled:         services.DerefBool(input.Disabled),
-		SourceScopes:     sourcesScopeInputToCRD(input.SourceScopes),
+		SourceScopes:     services.SourcesScopesInputToCRD(input.SourceScopes),
 		Operation:        tailSamplingOperationMatcherInputToCRD(input.Operation),
 		PercentageAtMost: input.PercentageAtMost,
 		Notes:            services.DerefString(input.Notes),
@@ -53,7 +51,7 @@ func convertNoisyOperationToModel(rule *v1alpha1.NoisyOperation) *model.NoisyOpe
 		RuleID:           v1alpha1.ComputeNoisyOperationHash(rule),
 		Name:             services.StringPtrIfNotEmpty(rule.Name),
 		Disabled:         rule.Disabled,
-		SourceScopes:     sourcesScopeCRDToModel(rule.SourceScopes),
+		SourceScopes:     services.SourcesScopesCRDToModel(rule.SourceScopes),
 		Operation:        headSamplingOperationMatcherCRDToModel(rule.Operation),
 		PercentageAtMost: rule.PercentageAtMost,
 		Notes:            services.StringPtrIfNotEmpty(rule.Notes),
@@ -65,7 +63,7 @@ func convertHighlyRelevantOperationToModel(rule *v1alpha1.HighlyRelevantOperatio
 		RuleID:            v1alpha1.ComputeHighlyRelevantOperationHash(rule),
 		Name:              services.StringPtrIfNotEmpty(rule.Name),
 		Disabled:          rule.Disabled,
-		SourceScopes:      sourcesScopeCRDToModel(rule.SourceScopes),
+		SourceScopes:      services.SourcesScopesCRDToModel(rule.SourceScopes),
 		Error:             rule.Error,
 		DurationAtLeastMs: rule.DurationAtLeastMs,
 		Operation:         tailSamplingOperationMatcherCRDToModel(rule.Operation),
@@ -79,70 +77,11 @@ func convertCostReductionRuleToModel(rule *v1alpha1.CostReductionRule) *model.Co
 		RuleID:           v1alpha1.ComputeCostReductionRuleHash(rule),
 		Name:             services.StringPtrIfNotEmpty(rule.Name),
 		Disabled:         rule.Disabled,
-		SourceScopes:     sourcesScopeCRDToModel(rule.SourceScopes),
+		SourceScopes:     services.SourcesScopesCRDToModel(rule.SourceScopes),
 		Operation:        tailSamplingOperationMatcherCRDToModel(rule.Operation),
 		PercentageAtMost: rule.PercentageAtMost,
 		Notes:            services.StringPtrIfNotEmpty(rule.Notes),
 	}
-}
-
-// ---- Shared conversion helpers ----
-
-func sourcesScopeInputToCRD(in *model.SourcesScopesInput) *k8sconsts.SourcesScopes {
-	if in == nil {
-		return nil
-	}
-	out := &k8sconsts.SourcesScopes{}
-	if len(in.Sources) > 0 {
-		out.Sources = make([]k8sconsts.PodWorkload, 0, len(in.Sources))
-		for _, s := range in.Sources {
-			if s == nil {
-				continue
-			}
-			out.Sources = append(out.Sources, k8sconsts.PodWorkload{
-				Name:      s.Name,
-				Namespace: s.Namespace,
-				Kind:      k8sconsts.WorkloadKind(s.Kind),
-			})
-		}
-	}
-	if len(in.Namespaces) > 0 {
-		out.Namespaces = append([]string(nil), in.Namespaces...)
-	}
-	if len(in.Languages) > 0 {
-		out.Languages = make([]common.ProgrammingLanguage, 0, len(in.Languages))
-		for _, l := range in.Languages {
-			out.Languages = append(out.Languages, common.ProgrammingLanguage(l))
-		}
-	}
-	return out
-}
-
-func sourcesScopeCRDToModel(in *k8sconsts.SourcesScopes) *model.SourcesScopes {
-	if in == nil {
-		return nil
-	}
-	out := &model.SourcesScopes{}
-	if len(in.Sources) > 0 {
-		out.Sources = make([]*model.K8sWorkloadID, 0, len(in.Sources))
-		for _, s := range in.Sources {
-			out.Sources = append(out.Sources, &model.K8sWorkloadID{
-				Name:      s.Name,
-				Namespace: s.Namespace,
-				Kind:      model.K8sResourceKind(s.Kind),
-			})
-		}
-	}
-	if len(in.Namespaces) > 0 {
-		out.Namespaces = append([]string(nil), in.Namespaces...)
-	}
-	if len(in.Languages) > 0 {
-		out.Languages = make([]model.SamplingWorkloadLanguage, 0, len(in.Languages))
-		for _, l := range in.Languages {
-			out.Languages = append(out.Languages, model.SamplingWorkloadLanguage(l))
-		}
-	}
-	return out
 }
 
 func headSamplingOperationMatcherInputToCRD(input *model.HeadSamplingOperationMatcherInput) *commonapisampling.HeadSamplingOperationMatcher {
