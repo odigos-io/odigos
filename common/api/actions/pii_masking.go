@@ -13,5 +13,5 @@ const (
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type PiiMaskingConfig struct {
-	PiiCategories []PiiCategory `json:"piiCategories"`
+	PiiCategories []PiiCategory `json:"piiCategories" mapstructure:"pii_categories"`
 }
