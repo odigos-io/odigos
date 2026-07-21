@@ -131,6 +131,16 @@ func WithMaxSymbolBytes(n int64) Option {
 	}
 }
 
+// WithMaxSymtabBytes caps the transient decode: a symbol table larger than n bytes
+// on disk is skipped without decoding (the peak-memory guard). n<=0 keeps the default.
+func WithMaxSymtabBytes(n int64) Option {
+	return func(s *Symbolizer) {
+		if n > 0 {
+			s.limits.maxSymtabBytes = n
+		}
+	}
+}
+
 // WithMaxMapsCache caps cached per-pid maps (LRU). n<=0 keeps the default.
 func WithMaxMapsCache(n int) Option {
 	return func(s *Symbolizer) {
