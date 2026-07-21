@@ -41,27 +41,33 @@ func syncWorkload(ctx context.Context, client ctrl.Client, pw k8sconsts.PodWorkl
 		return ctrl.IgnoreNotFound(err)
 	}
 
-	genericWorkload, err := workload.ObjectToWorkload(workloadObj)
-	if err != nil {
-		return err
-	}
+	var pods []corev1.Pod
+	if pw.Kind == k8sconsts.WorkloadKindStaticPod {
+		// Static pods are the workload themselves and have no label selector.
+		pods = []corev1.Pod{*workloadObj.(*corev1.Pod)}
+	} else {
+		genericWorkload, err := workload.ObjectToWorkload(workloadObj)
+		if err != nil {
+			return err
+		}
 
-	labelSelector := genericWorkload.LabelSelector()
-	if labelSelector == nil {
-		// TODO: handle this case
-		return nil
-	}
+		labelSelector := genericWorkload.LabelSelector()
+		if labelSelector == nil {
+			// TODO: handle this case
+			return nil
+		}
 
-	// get the pods that match the label selector
-	pods := &corev1.PodList{}
-	err = client.List(ctx, pods, ctrl.MatchingLabels(labelSelector.MatchLabels))
-	if err != nil {
-		return err
+		podList := &corev1.PodList{}
+		err = client.List(ctx, podList, ctrl.MatchingLabels(labelSelector.MatchLabels))
+		if err != nil {
+			return err
+		}
+		pods = podList.Items
 	}
 
 	podsManifestInjectionStatus := odigosv1.PodsManifestInjectionStatus{}
 
-	for _, pod := range pods.Items {
+	for _, pod := range pods {
 		if agentHashValue, ok := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]; ok {
 			if agentHashValue == ic.Spec.AgentsMetaHash {
 				podsManifestInjectionStatus.HasInjectedUpToDatePods = true

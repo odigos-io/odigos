@@ -153,6 +153,7 @@ const (
 	OdigosTraceStateProcessorName         = "odigostracestate"
 	URLTemplatizationProcessorName        = "odigos-url-templatization"
 	OdigosURLTemplateProcessorType        = "odigosurltemplate"
+	OdigosSQLQueryProcessorType           = "odigossqlquery"
 )
 
 // Auto rollback related consts

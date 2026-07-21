@@ -10,7 +10,6 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
-	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/podsmanifestinjectionstatus"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 
@@ -179,11 +178,6 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 	err = sourceinstrumentation.SetupWithManager(mgr, k8sVersion)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for start language detection: %w", err)
-	}
-
-	err = instrumentationconfig.SetupWithManager(mgr)
-	if err != nil {
-		return fmt.Errorf("failed to create controller for instrumentation config: %w", err)
 	}
 
 	err = podsmanifestinjectionstatus.SetupWithManager(mgr)
