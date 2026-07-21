@@ -79,6 +79,11 @@ var OdigosURLTemplatizationProcessorPredicate = ObjectNamePredicate{
 	AllowedObjectName: consts.URLTemplatizationProcessorName,
 }
 
+// OdigosPiiMaskingProcessorPredicate filters events for the shared PII-masking Processor CR.
+var OdigosPiiMaskingProcessorPredicate = ObjectNamePredicate{
+	AllowedObjectName: consts.PiiMaskingProcessorName,
+}
+
 // OdigosSQLQueryProcessorPredicate filters events for the shared SQL-query Processor CR.
 var OdigosSQLQueryProcessorPredicate = ObjectNamePredicate{
 	AllowedObjectName: consts.SQLQueryProcessorName,
