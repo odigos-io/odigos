@@ -4,6 +4,7 @@ PLATFORM ?= linux/amd64
 OUTPUT_DIR ?= /tmp
 DOCKERFILE ?= Dockerfile
 BUILD_DIR ?= .
+GITHUB_RUN_ID ?=
 
 define depot-build
 	@if [ -z "$(strip $(IMAGE_TAG))" ]; then \
@@ -21,6 +22,7 @@ define depot-build
 		--build-arg RELEASE="$(IMAGE_TAG)" \
 		--tag "$(ORG)/odigos-$(2):$(IMAGE_TAG)" \
 		--output type=docker,dest=$(OUTPUT_DIR)/odigos-$(2).tar \
+		$(if $(strip $(GITHUB_RUN_ID)),--save --save-tag $(2)-$(GITHUB_RUN_ID)) \
 		$(BUILD_DIR)
 endef
 
