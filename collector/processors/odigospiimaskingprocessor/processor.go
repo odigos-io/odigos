@@ -24,9 +24,13 @@ func newPiiMaskingProcessor(set processor.Settings, cfg *Config) *piiMaskingProc
 func (p *piiMaskingProcessor) processTraces(_ context.Context, traces ptrace.Traces) (ptrace.Traces, error) {
 	resourceSpans := traces.ResourceSpans()
 	for i := 0; i < resourceSpans.Len(); i++ {
-		scopeSpans := resourceSpans.At(i).ScopeSpans()
+		resourceSpan := resourceSpans.At(i)
+		p.processAttributes(resourceSpan.Resource().Attributes())
+		scopeSpans := resourceSpan.ScopeSpans()
 		for j := 0; j < scopeSpans.Len(); j++ {
-			spans := scopeSpans.At(j).Spans()
+			scopeSpan := scopeSpans.At(j)
+			p.processAttributes(scopeSpan.Scope().Attributes())
+			spans := scopeSpan.Spans()
 			for k := 0; k < spans.Len(); k++ {
 				p.processSpan(spans.At(k))
 			}
@@ -36,7 +40,15 @@ func (p *piiMaskingProcessor) processTraces(_ context.Context, traces ptrace.Tra
 }
 
 func (p *piiMaskingProcessor) processSpan(span ptrace.Span) {
-	span.Attributes().Range(func(_ string, value pcommon.Value) bool {
+	p.processAttributes(span.Attributes())
+	events := span.Events()
+	for i := 0; i < events.Len(); i++ {
+		p.processAttributes(events.At(i).Attributes())
+	}
+}
+
+func (p *piiMaskingProcessor) processAttributes(attributes pcommon.Map) {
+	attributes.Range(func(_ string, value pcommon.Value) bool {
 		p.processAttributeValue(value)
 		return true
 	})

@@ -267,6 +267,7 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 		}
 		err = r.reportReconciledToProcessor(ctx, action)
+		return utils.K8SUpdateErrorHandler(err)
 	}
 	if action.Spec.DbQueryTemplatization != nil || action.Spec.InferDbAttributes != nil {
 		err = r.reportReconciledToProcessor(ctx, action)
