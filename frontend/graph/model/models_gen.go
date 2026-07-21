@@ -158,9 +158,9 @@ type CodeAttributesInput struct {
 type CollectorDaemonSetInfo struct {
 	Status                       WorkloadRolloutStatus `json:"status"`
 	Nodes                        *NodesSummary         `json:"nodes"`
-	ThroughputTracesBytesPerSec  *float64              `json:"throughputTracesBytesPerSec,omitempty"`
-	ThroughputMetricsBytesPerSec *float64              `json:"throughputMetricsBytesPerSec,omitempty"`
-	ThroughputLogsBytesPerSec    *float64              `json:"throughputLogsBytesPerSec,omitempty"`
+	ThroughputTracesBytesPerSec  *int                  `json:"throughputTracesBytesPerSec,omitempty"`
+	ThroughputMetricsBytesPerSec *int                  `json:"throughputMetricsBytesPerSec,omitempty"`
+	ThroughputLogsBytesPerSec    *int                  `json:"throughputLogsBytesPerSec,omitempty"`
 	Resources                    *Resources            `json:"resources,omitempty"`
 	ImageVersion                 *string               `json:"imageVersion,omitempty"`
 	LastRolloutAt                *string               `json:"lastRolloutAt,omitempty"`
@@ -559,9 +559,9 @@ type FieldInput struct {
 type GatewayDeploymentInfo struct {
 	Status                       WorkloadRolloutStatus        `json:"status"`
 	Hpa                          *HorizontalPodAutoscalerInfo `json:"hpa,omitempty"`
-	ThroughputTracesBytesPerSec  *float64                     `json:"throughputTracesBytesPerSec,omitempty"`
-	ThroughputMetricsBytesPerSec *float64                     `json:"throughputMetricsBytesPerSec,omitempty"`
-	ThroughputLogsBytesPerSec    *float64                     `json:"throughputLogsBytesPerSec,omitempty"`
+	ThroughputTracesBytesPerSec  *int                         `json:"throughputTracesBytesPerSec,omitempty"`
+	ThroughputMetricsBytesPerSec *int                         `json:"throughputMetricsBytesPerSec,omitempty"`
+	ThroughputLogsBytesPerSec    *int                         `json:"throughputLogsBytesPerSec,omitempty"`
 	Resources                    *Resources                   `json:"resources,omitempty"`
 	ImageVersion                 *string                      `json:"imageVersion,omitempty"`
 	LastRolloutAt                *string                      `json:"lastRolloutAt,omitempty"`

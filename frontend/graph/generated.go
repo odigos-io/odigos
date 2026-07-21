@@ -13971,9 +13971,9 @@ func (ec *executionContext) _CollectorDaemonSetInfo_throughputTracesBytesPerSec(
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*float64)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputTracesBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13983,7 +13983,7 @@ func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputTraces
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -14012,9 +14012,9 @@ func (ec *executionContext) _CollectorDaemonSetInfo_throughputMetricsBytesPerSec
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*float64)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputMetricsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14024,7 +14024,7 @@ func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputMetric
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -14053,9 +14053,9 @@ func (ec *executionContext) _CollectorDaemonSetInfo_throughputLogsBytesPerSec(ct
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*float64)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputLogsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14065,7 +14065,7 @@ func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputLogsBy
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -24335,9 +24335,9 @@ func (ec *executionContext) _GatewayDeploymentInfo_throughputTracesBytesPerSec(c
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*float64)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputTracesBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -24347,7 +24347,7 @@ func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputTracesB
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -24376,9 +24376,9 @@ func (ec *executionContext) _GatewayDeploymentInfo_throughputMetricsBytesPerSec(
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*float64)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputMetricsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -24388,7 +24388,7 @@ func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputMetrics
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -24417,9 +24417,9 @@ func (ec *executionContext) _GatewayDeploymentInfo_throughputLogsBytesPerSec(ctx
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*float64)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputLogsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -24429,7 +24429,7 @@ func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputLogsByt
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil

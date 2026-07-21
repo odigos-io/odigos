@@ -53,9 +53,9 @@ enum ManifestFormat {
 type GatewayDeploymentInfo {
   status: WorkloadRolloutStatus!
   hpa: HorizontalPodAutoscalerInfo
-  throughputTracesBytesPerSec: Float
-  throughputMetricsBytesPerSec: Float
-  throughputLogsBytesPerSec: Float
+  throughputTracesBytesPerSec: Int
+  throughputMetricsBytesPerSec: Int
+  throughputLogsBytesPerSec: Int
   resources: Resources
   imageVersion: String
   lastRolloutAt: String
@@ -67,9 +67,9 @@ type GatewayDeploymentInfo {
 type CollectorDaemonSetInfo {
   status: WorkloadRolloutStatus!
   nodes: NodesSummary!
-  throughputTracesBytesPerSec: Float
-  throughputMetricsBytesPerSec: Float
-  throughputLogsBytesPerSec: Float
+  throughputTracesBytesPerSec: Int
+  throughputMetricsBytesPerSec: Int
+  throughputLogsBytesPerSec: Int
   resources: Resources
   imageVersion: String
   lastRolloutAt: String

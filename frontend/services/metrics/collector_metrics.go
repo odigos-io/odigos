@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -180,7 +181,7 @@ func GetCollectorMetricsFromMetricsStore(ctx context.Context, api v1.API, namesp
 	return result, nil
 }
 
-func GetThroughputBytesPerSec(ctx context.Context, api v1.API, metricName, window string) (float64, error) {
+func GetThroughputBytesPerSec(ctx context.Context, api v1.API, metricName, window string) (int, error) {
 	if api == nil {
 		return 0, fmt.Errorf("own-metrics API is nil")
 	}
@@ -196,5 +197,5 @@ func GetThroughputBytesPerSec(ctx context.Context, api v1.API, metricName, windo
 	if !ok || len(vec) == 0 {
 		return 0, nil
 	}
-	return float64(vec[0].Value), nil
+	return int(math.Round(float64(vec[0].Value))), nil
 }
