@@ -86,6 +86,7 @@ export const GET_INSTRUMENTATION_RULES = gql`
             className
           }
         }
+        networkMetrics
       }
     }
   }

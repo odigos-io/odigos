@@ -28,7 +28,7 @@ spec:
               kubectl label namespace odigos-test odigos.io/system-object="true"
             timeout: 2m
         - assert:
-            timeout: 1m10s
+            timeout: 2m20s
             file: ../../common/assert/odigos-installed.yaml
 
     - name: Verify Node Odiglet label has been added

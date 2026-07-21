@@ -1,10 +1,13 @@
 package actions
 
-// +kubebuilder:validation:Enum=CREDIT_CARD
+// +kubebuilder:validation:Enum=CREDIT_CARD;EMAIL;JWT;UUID
 type PiiCategory string
 
 const (
 	CreditCardMasking PiiCategory = "CREDIT_CARD"
+	EmailMasking      PiiCategory = "EMAIL"
+	JwtMasking        PiiCategory = "JWT"
+	UuidMasking       PiiCategory = "UUID"
 )
 
 // +kubebuilder:object:generate=true

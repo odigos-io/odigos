@@ -20,8 +20,8 @@ status:
       status: "True"
       type: AgentEnabled
   (conditions[?type == 'WorkloadRollout']):
-    - message: workload rollout triggered successfully
-      reason: RolloutTriggeredSuccessfully
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
       status: "True"
       type: WorkloadRollout
 ---
@@ -47,8 +47,8 @@ status:
       status: "True"
       type: AgentEnabled
   (conditions[?type == 'WorkloadRollout']):
-    - message: workload rollout triggered successfully
-      reason: RolloutTriggeredSuccessfully
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
       status: "True"
       type: WorkloadRollout
 ---
@@ -74,8 +74,8 @@ status:
       status: "True"
       type: AgentEnabled
   (conditions[?type == 'WorkloadRollout']):
-    - message: workload rollout triggered successfully
-      reason: RolloutTriggeredSuccessfully
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
       status: "True"
       type: WorkloadRollout
 ---
@@ -101,8 +101,8 @@ status:
       status: "True"
       type: AgentEnabled
   (conditions[?type == 'WorkloadRollout']):
-    - message: workload rollout triggered successfully
-      reason: RolloutTriggeredSuccessfully
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
       status: "True"
       type: WorkloadRollout
 ---
@@ -128,7 +128,7 @@ status:
       status: "True"
       type: AgentEnabled
   (conditions[?type == 'WorkloadRollout']):
-    - message: workload rollout triggered successfully
-      reason: RolloutTriggeredSuccessfully
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
       status: "True"
       type: WorkloadRollout

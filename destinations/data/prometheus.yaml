@@ -23,6 +23,7 @@ spec:
       componentProps:
         type: text
         required: true
+        tooltip: "The remote write endpoint. If the URL ends with a known remote write path (`/api/v1/write` for Prometheus/Thanos or `/api/v1/push` for Mimir) it is used as-is; otherwise `/api/v1/write` is appended."
     - name: PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS # Notice: deprecated. not used anymore. will be removed soon.
       displayName: Resource Attributes Labels (Deprecated)
       componentType: multiInput

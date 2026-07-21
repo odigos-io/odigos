@@ -71,7 +71,7 @@ jobs:
           push: true
           provenance: false
           tags: |
-            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-collector:${{ steps.extract_tag.outputs.version }}
+            us-central1-docker.pkg.dev/odigos-cloud/components/agents-collector:${{ steps.extract_tag.outputs.version }}
           build-args: |
             SERVICE_NAME=collector
             ODIGOS_VERSION=${{ steps.extract_tag.outputs.version }}

@@ -45,6 +45,7 @@ type ResolverRoot interface {
 	K8sNamespace() K8sNamespaceResolver
 	K8sWorkload() K8sWorkloadResolver
 	K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver
+	K8sWorkloadRollout() K8sWorkloadRolloutResolver
 	K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -327,11 +328,17 @@ type ComplexityRoot struct {
 		MaxPayloadLength    func(childComplexity int) int
 	}
 
+	DesiredConditionActionItem struct {
+		ButtonText func(childComplexity int) int
+		Type       func(childComplexity int) int
+	}
+
 	DesiredConditionStatus struct {
-		Message    func(childComplexity int) int
-		Name       func(childComplexity int) int
-		ReasonEnum func(childComplexity int) int
-		Status     func(childComplexity int) int
+		ActionItems func(childComplexity int) int
+		Message     func(childComplexity int) int
+		Name        func(childComplexity int) int
+		ReasonEnum  func(childComplexity int) int
+		Status      func(childComplexity int) int
 	}
 
 	Destination struct {
@@ -593,6 +600,7 @@ type ComplexityRoot struct {
 		HeadersCollection        func(childComplexity int) int
 		InstrumentationLibraries func(childComplexity int) int
 		Mutable                  func(childComplexity int) int
+		NetworkMetrics           func(childComplexity int) int
 		Notes                    func(childComplexity int) int
 		PayloadCollection        func(childComplexity int) int
 		ProfileName              func(childComplexity int) int
@@ -900,9 +908,21 @@ type ComplexityRoot struct {
 		Type                     func(childComplexity int) int
 	}
 
+	K8sWorkloadPodsManifestInjectionOverview struct {
+		AgentAppliedOk           func(childComplexity int) int
+		AgentNotAppliedOk        func(childComplexity int) int
+		AgentOutOfDateOk         func(childComplexity int) int
+		TotalAgentAppliedPods    func(childComplexity int) int
+		TotalAgentNotAppliedPods func(childComplexity int) int
+		TotalAgentOutOfDatePods  func(childComplexity int) int
+		TotalPods                func(childComplexity int) int
+	}
+
 	K8sWorkloadRollout struct {
-		PodsManifestInjectionStatus func(childComplexity int) int
-		RolloutStatus               func(childComplexity int) int
+		AgentsMetaHashChangedTime     func(childComplexity int) int
+		PodsManifestInjectionOverview func(childComplexity int) int
+		PodsManifestInjectionStatus   func(childComplexity int) int
+		RolloutStatus                 func(childComplexity int) int
 	}
 
 	K8sWorkloadRuntimeInfo struct {
@@ -1523,6 +1543,9 @@ type K8sWorkloadResolver interface {
 }
 type K8sWorkloadPodContainerResolver interface {
 	Processes(ctx context.Context, obj *model.K8sWorkloadPodContainer) ([]*model.K8sWorkloadPodContainerProcess, error)
+}
+type K8sWorkloadRolloutResolver interface {
+	PodsManifestInjectionOverview(ctx context.Context, obj *model.K8sWorkloadRollout) (*model.K8sWorkloadPodsManifestInjectionOverview, error)
 }
 type K8sWorkloadTelemetryMetricsResolver interface {
 	ExpectingTelemetry(ctx context.Context, obj *model.K8sWorkloadTelemetryMetrics) (*model.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus, error)
@@ -2903,6 +2926,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DbQueryPayloadCollection.MaxPayloadLength(childComplexity), true
 
+	case "DesiredConditionActionItem.buttonText":
+		if e.complexity.DesiredConditionActionItem.ButtonText == nil {
+			break
+		}
+
+		return e.complexity.DesiredConditionActionItem.ButtonText(childComplexity), true
+
+	case "DesiredConditionActionItem.type":
+		if e.complexity.DesiredConditionActionItem.Type == nil {
+			break
+		}
+
+		return e.complexity.DesiredConditionActionItem.Type(childComplexity), true
+
+	case "DesiredConditionStatus.actionItems":
+		if e.complexity.DesiredConditionStatus.ActionItems == nil {
+			break
+		}
+
+		return e.complexity.DesiredConditionStatus.ActionItems(childComplexity), true
+
 	case "DesiredConditionStatus.message":
 		if e.complexity.DesiredConditionStatus.Message == nil {
 			break
@@ -4106,6 +4150,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationRule.Mutable(childComplexity), true
+
+	case "InstrumentationRule.networkMetrics":
+		if e.complexity.InstrumentationRule.NetworkMetrics == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.NetworkMetrics(childComplexity), true
 
 	case "InstrumentationRule.notes":
 		if e.complexity.InstrumentationRule.Notes == nil {
@@ -5443,6 +5494,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadPodContainerProcessInstrumentation.Type(childComplexity), true
+
+	case "K8sWorkloadPodsManifestInjectionOverview.agentAppliedOk":
+		if e.complexity.K8sWorkloadPodsManifestInjectionOverview.AgentAppliedOk == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodsManifestInjectionOverview.AgentAppliedOk(childComplexity), true
+
+	case "K8sWorkloadPodsManifestInjectionOverview.agentNotAppliedOk":
+		if e.complexity.K8sWorkloadPodsManifestInjectionOverview.AgentNotAppliedOk == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodsManifestInjectionOverview.AgentNotAppliedOk(childComplexity), true
+
+	case "K8sWorkloadPodsManifestInjectionOverview.agentOutOfDateOk":
+		if e.complexity.K8sWorkloadPodsManifestInjectionOverview.AgentOutOfDateOk == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodsManifestInjectionOverview.AgentOutOfDateOk(childComplexity), true
+
+	case "K8sWorkloadPodsManifestInjectionOverview.totalAgentAppliedPods":
+		if e.complexity.K8sWorkloadPodsManifestInjectionOverview.TotalAgentAppliedPods == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodsManifestInjectionOverview.TotalAgentAppliedPods(childComplexity), true
+
+	case "K8sWorkloadPodsManifestInjectionOverview.totalAgentNotAppliedPods":
+		if e.complexity.K8sWorkloadPodsManifestInjectionOverview.TotalAgentNotAppliedPods == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodsManifestInjectionOverview.TotalAgentNotAppliedPods(childComplexity), true
+
+	case "K8sWorkloadPodsManifestInjectionOverview.totalAgentOutOfDatePods":
+		if e.complexity.K8sWorkloadPodsManifestInjectionOverview.TotalAgentOutOfDatePods == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodsManifestInjectionOverview.TotalAgentOutOfDatePods(childComplexity), true
+
+	case "K8sWorkloadPodsManifestInjectionOverview.totalPods":
+		if e.complexity.K8sWorkloadPodsManifestInjectionOverview.TotalPods == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPodsManifestInjectionOverview.TotalPods(childComplexity), true
+
+	case "K8sWorkloadRollout.agentsMetaHashChangedTime":
+		if e.complexity.K8sWorkloadRollout.AgentsMetaHashChangedTime == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadRollout.AgentsMetaHashChangedTime(childComplexity), true
+
+	case "K8sWorkloadRollout.podsManifestInjectionOverview":
+		if e.complexity.K8sWorkloadRollout.PodsManifestInjectionOverview == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadRollout.PodsManifestInjectionOverview(childComplexity), true
 
 	case "K8sWorkloadRollout.podsManifestInjectionStatus":
 		if e.complexity.K8sWorkloadRollout.PodsManifestInjectionStatus == nil {
@@ -15803,6 +15917,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "customInstrumentations":
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
+			case "networkMetrics":
+				return ec.fieldContext_InstrumentationRule_networkMetrics(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -18723,6 +18839,94 @@ func (ec *executionContext) fieldContext_DbQueryPayloadCollection_dropPartialPay
 	return fc, nil
 }
 
+func (ec *executionContext) _DesiredConditionActionItem_type(ctx context.Context, field graphql.CollectedField, obj *model.DesiredConditionActionItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DesiredConditionActionItem_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.DesiredConditionActionItemType)
+	fc.Result = res
+	return ec.marshalNDesiredConditionActionItemType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItemType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DesiredConditionActionItem_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DesiredConditionActionItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type DesiredConditionActionItemType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DesiredConditionActionItem_buttonText(ctx context.Context, field graphql.CollectedField, obj *model.DesiredConditionActionItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DesiredConditionActionItem_buttonText(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ButtonText, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DesiredConditionActionItem_buttonText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DesiredConditionActionItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DesiredConditionStatus_name(ctx context.Context, field graphql.CollectedField, obj *model.DesiredConditionStatus) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DesiredConditionStatus_name(ctx, field)
 	if err != nil {
@@ -18891,6 +19095,53 @@ func (ec *executionContext) fieldContext_DesiredConditionStatus_message(_ contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DesiredConditionStatus_actionItems(ctx context.Context, field graphql.CollectedField, obj *model.DesiredConditionStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ActionItems, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.DesiredConditionActionItem)
+	fc.Result = res
+	return ec.marshalODesiredConditionActionItem2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItemᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DesiredConditionStatus_actionItems(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DesiredConditionStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "type":
+				return ec.fieldContext_DesiredConditionActionItem_type(ctx, field)
+			case "buttonText":
+				return ec.fieldContext_DesiredConditionActionItem_buttonText(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionActionItem", field.Name)
 		},
 	}
 	return fc, nil
@@ -26744,6 +26995,47 @@ func (ec *executionContext) fieldContext_InstrumentationRule_customInstrumentati
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationRule_networkMetrics(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_networkMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NetworkMetrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_networkMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationRuleFieldYamlProperties_name(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRuleFieldYamlProperties) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRuleFieldYamlProperties_name(ctx, field)
 	if err != nil {
@@ -29419,6 +29711,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_workloadOdigosHealthStatus(
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -29661,11 +29955,14 @@ func (ec *executionContext) _K8sWorkload_rollout(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.K8sWorkloadRollout)
 	fc.Result = res
-	return ec.marshalOK8sWorkloadRollout2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadRollout(ctx, field.Selections, res)
+	return ec.marshalNK8sWorkloadRollout2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadRollout(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_K8sWorkload_rollout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -29680,6 +29977,10 @@ func (ec *executionContext) fieldContext_K8sWorkload_rollout(_ context.Context, 
 				return ec.fieldContext_K8sWorkloadRollout_rolloutStatus(ctx, field)
 			case "podsManifestInjectionStatus":
 				return ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionStatus(ctx, field)
+			case "podsManifestInjectionOverview":
+				return ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionOverview(ctx, field)
+			case "agentsMetaHashChangedTime":
+				return ec.fieldContext_K8sWorkloadRollout_agentsMetaHashChangedTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRollout", field.Name)
 		},
@@ -29901,6 +30202,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_podsAgentInjectionStatus(_ 
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -29955,6 +30258,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_podsHealthStatus(_ context.
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -30006,6 +30311,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_podsOdigosHealthStatus(_ co
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -30057,6 +30364,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_workloadHealthStatus(_ cont
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -30111,6 +30420,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_processesHealthStatus(_ con
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -30390,6 +30701,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadAgentEnabled_enabledStatus(_
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -30593,6 +30906,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadAgentEnabledContainer_agentE
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31043,6 +31358,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadAutoRollback_autoRollbackSta
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31138,6 +31455,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_runtimeDetection(
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31189,6 +31508,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_agentInjectionEna
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31240,6 +31561,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_rollout(_ context
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31291,6 +31614,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_podsManifestInjec
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31342,6 +31667,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_autoRollback(_ co
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31393,6 +31720,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_agentInjected(_ c
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31444,6 +31773,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_processesAgentHea
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -31495,6 +31826,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadConditions_expectingTelemetr
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -33936,6 +34269,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPod_agentInjectedStatus(_ co
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -34031,6 +34366,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPod_k8sHealthStatus(_ contex
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -34082,6 +34419,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPod_odigosHealthStatus(_ con
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -34621,6 +34960,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_k8sHealthStatus
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -34672,6 +35013,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainer_odigosHealthSta
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -34821,6 +35164,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcess_healthSt
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -35322,6 +35667,314 @@ func (ec *executionContext) fieldContext_K8sWorkloadPodContainerProcessInstrumen
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sWorkloadPodsManifestInjectionOverview_totalPods(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodsManifestInjectionOverview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalPods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalPods, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalPods(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodsManifestInjectionOverview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodsManifestInjectionOverview_totalAgentNotAppliedPods(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodsManifestInjectionOverview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalAgentNotAppliedPods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalAgentNotAppliedPods, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalAgentNotAppliedPods(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodsManifestInjectionOverview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodsManifestInjectionOverview_agentNotAppliedOk(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodsManifestInjectionOverview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_agentNotAppliedOk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentNotAppliedOk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodsManifestInjectionOverview_agentNotAppliedOk(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodsManifestInjectionOverview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodsManifestInjectionOverview_totalAgentAppliedPods(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodsManifestInjectionOverview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalAgentAppliedPods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalAgentAppliedPods, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalAgentAppliedPods(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodsManifestInjectionOverview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodsManifestInjectionOverview_agentAppliedOk(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodsManifestInjectionOverview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_agentAppliedOk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentAppliedOk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodsManifestInjectionOverview_agentAppliedOk(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodsManifestInjectionOverview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodsManifestInjectionOverview_totalAgentOutOfDatePods(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodsManifestInjectionOverview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalAgentOutOfDatePods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalAgentOutOfDatePods, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalAgentOutOfDatePods(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodsManifestInjectionOverview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPodsManifestInjectionOverview_agentOutOfDateOk(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPodsManifestInjectionOverview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_agentOutOfDateOk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentOutOfDateOk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPodsManifestInjectionOverview_agentOutOfDateOk(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPodsManifestInjectionOverview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkloadRollout_rolloutStatus(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRollout) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkloadRollout_rolloutStatus(ctx, field)
 	if err != nil {
@@ -35366,6 +36019,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadRollout_rolloutStatus(_ cont
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -35394,11 +36049,14 @@ func (ec *executionContext) _K8sWorkloadRollout_podsManifestInjectionStatus(ctx 
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.DesiredConditionStatus)
 	fc.Result = res
-	return ec.marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
+	return ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_K8sWorkloadRollout_podsManifestInjectionStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -35417,8 +36075,111 @@ func (ec *executionContext) fieldContext_K8sWorkloadRollout_podsManifestInjectio
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadRollout_podsManifestInjectionOverview(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRollout) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadRollout_podsManifestInjectionOverview(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sWorkloadRollout().PodsManifestInjectionOverview(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sWorkloadPodsManifestInjectionOverview)
+	fc.Result = res
+	return ec.marshalNK8sWorkloadPodsManifestInjectionOverview2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadPodsManifestInjectionOverview(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadRollout_podsManifestInjectionOverview(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadRollout",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "totalPods":
+				return ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalPods(ctx, field)
+			case "totalAgentNotAppliedPods":
+				return ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalAgentNotAppliedPods(ctx, field)
+			case "agentNotAppliedOk":
+				return ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_agentNotAppliedOk(ctx, field)
+			case "totalAgentAppliedPods":
+				return ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalAgentAppliedPods(ctx, field)
+			case "agentAppliedOk":
+				return ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_agentAppliedOk(ctx, field)
+			case "totalAgentOutOfDatePods":
+				return ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_totalAgentOutOfDatePods(ctx, field)
+			case "agentOutOfDateOk":
+				return ec.fieldContext_K8sWorkloadPodsManifestInjectionOverview_agentOutOfDateOk(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadPodsManifestInjectionOverview", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadRollout_agentsMetaHashChangedTime(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRollout) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadRollout_agentsMetaHashChangedTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentsMetaHashChangedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadRollout_agentsMetaHashChangedTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadRollout",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -35515,6 +36276,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfo_completedStatus(
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -36234,6 +36997,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetricsExpectingTel
 				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
 			case "message":
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
@@ -38569,6 +39334,8 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "customInstrumentations":
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
+			case "networkMetrics":
+				return ec.fieldContext_InstrumentationRule_networkMetrics(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -38654,6 +39421,8 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_payloadCollection(ctx, field)
 			case "customInstrumentations":
 				return ec.fieldContext_InstrumentationRule_customInstrumentations(ctx, field)
+			case "networkMetrics":
+				return ec.fieldContext_InstrumentationRule_networkMetrics(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationRule", field.Name)
 		},
@@ -55144,7 +55913,7 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "sourcesScopes", "instrumentationLibraries", "codeAttributes", "headersCollection", "payloadCollection", "customInstrumentations"}
+	fieldsInOrder := [...]string{"ruleName", "notes", "disabled", "workloads", "sourcesScopes", "instrumentationLibraries", "codeAttributes", "headersCollection", "payloadCollection", "customInstrumentations", "networkMetrics"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -55221,6 +55990,13 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 				return it, err
 			}
 			it.CustomInstrumentations = data
+		case "networkMetrics":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("networkMetrics"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NetworkMetrics = data
 		}
 	}
 
@@ -58908,6 +59684,50 @@ func (ec *executionContext) _DbQueryPayloadCollection(ctx context.Context, sel a
 	return out
 }
 
+var desiredConditionActionItemImplementors = []string{"DesiredConditionActionItem"}
+
+func (ec *executionContext) _DesiredConditionActionItem(ctx context.Context, sel ast.SelectionSet, obj *model.DesiredConditionActionItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, desiredConditionActionItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DesiredConditionActionItem")
+		case "type":
+			out.Values[i] = ec._DesiredConditionActionItem_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "buttonText":
+			out.Values[i] = ec._DesiredConditionActionItem_buttonText(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var desiredConditionStatusImplementors = []string{"DesiredConditionStatus"}
 
 func (ec *executionContext) _DesiredConditionStatus(ctx context.Context, sel ast.SelectionSet, obj *model.DesiredConditionStatus) graphql.Marshaler {
@@ -58936,6 +59756,8 @@ func (ec *executionContext) _DesiredConditionStatus(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "actionItems":
+			out.Values[i] = ec._DesiredConditionStatus_actionItems(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -60565,6 +61387,8 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._InstrumentationRule_payloadCollection(ctx, field, obj)
 		case "customInstrumentations":
 			out.Values[i] = ec._InstrumentationRule_customInstrumentations(ctx, field, obj)
+		case "networkMetrics":
+			out.Values[i] = ec._InstrumentationRule_networkMetrics(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -61576,13 +62400,16 @@ func (ec *executionContext) _K8sWorkload(ctx context.Context, sel ast.SelectionS
 		case "rollout":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._K8sWorkload_rollout(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -63269,6 +64096,75 @@ func (ec *executionContext) _K8sWorkloadPodContainerProcessInstrumentation(ctx c
 	return out
 }
 
+var k8sWorkloadPodsManifestInjectionOverviewImplementors = []string{"K8sWorkloadPodsManifestInjectionOverview"}
+
+func (ec *executionContext) _K8sWorkloadPodsManifestInjectionOverview(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadPodsManifestInjectionOverview) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sWorkloadPodsManifestInjectionOverviewImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("K8sWorkloadPodsManifestInjectionOverview")
+		case "totalPods":
+			out.Values[i] = ec._K8sWorkloadPodsManifestInjectionOverview_totalPods(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalAgentNotAppliedPods":
+			out.Values[i] = ec._K8sWorkloadPodsManifestInjectionOverview_totalAgentNotAppliedPods(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "agentNotAppliedOk":
+			out.Values[i] = ec._K8sWorkloadPodsManifestInjectionOverview_agentNotAppliedOk(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalAgentAppliedPods":
+			out.Values[i] = ec._K8sWorkloadPodsManifestInjectionOverview_totalAgentAppliedPods(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "agentAppliedOk":
+			out.Values[i] = ec._K8sWorkloadPodsManifestInjectionOverview_agentAppliedOk(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalAgentOutOfDatePods":
+			out.Values[i] = ec._K8sWorkloadPodsManifestInjectionOverview_totalAgentOutOfDatePods(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "agentOutOfDateOk":
+			out.Values[i] = ec._K8sWorkloadPodsManifestInjectionOverview_agentOutOfDateOk(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var k8sWorkloadRolloutImplementors = []string{"K8sWorkloadRollout"}
 
 func (ec *executionContext) _K8sWorkloadRollout(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkloadRollout) graphql.Marshaler {
@@ -63284,6 +64180,47 @@ func (ec *executionContext) _K8sWorkloadRollout(ctx context.Context, sel ast.Sel
 			out.Values[i] = ec._K8sWorkloadRollout_rolloutStatus(ctx, field, obj)
 		case "podsManifestInjectionStatus":
 			out.Values[i] = ec._K8sWorkloadRollout_podsManifestInjectionStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "podsManifestInjectionOverview":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sWorkloadRollout_podsManifestInjectionOverview(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "agentsMetaHashChangedTime":
+			out.Values[i] = ec._K8sWorkloadRollout_agentsMetaHashChangedTime(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -69240,6 +70177,26 @@ func (ec *executionContext) unmarshalNDataStreamInput2githubᚗcomᚋodigosᚑio
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNDesiredConditionActionItem2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItem(ctx context.Context, sel ast.SelectionSet, v *model.DesiredConditionActionItem) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DesiredConditionActionItem(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNDesiredConditionActionItemType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItemType(ctx context.Context, v any) (model.DesiredConditionActionItemType, error) {
+	var res model.DesiredConditionActionItemType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDesiredConditionActionItemType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItemType(ctx context.Context, sel ast.SelectionSet, v model.DesiredConditionActionItemType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNDesiredConditionStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx context.Context, sel ast.SelectionSet, v model.DesiredConditionStatus) graphql.Marshaler {
 	return ec._DesiredConditionStatus(ctx, sel, &v)
 }
@@ -70879,6 +71836,34 @@ func (ec *executionContext) marshalNK8sWorkloadPodContainerProcessInstrumentatio
 		return graphql.Null
 	}
 	return ec._K8sWorkloadPodContainerProcessInstrumentation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNK8sWorkloadPodsManifestInjectionOverview2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadPodsManifestInjectionOverview(ctx context.Context, sel ast.SelectionSet, v model.K8sWorkloadPodsManifestInjectionOverview) graphql.Marshaler {
+	return ec._K8sWorkloadPodsManifestInjectionOverview(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNK8sWorkloadPodsManifestInjectionOverview2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadPodsManifestInjectionOverview(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadPodsManifestInjectionOverview) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._K8sWorkloadPodsManifestInjectionOverview(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNK8sWorkloadRollout2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadRollout(ctx context.Context, sel ast.SelectionSet, v model.K8sWorkloadRollout) graphql.Marshaler {
+	return ec._K8sWorkloadRollout(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNK8sWorkloadRollout2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadRollout(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadRollout) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._K8sWorkloadRollout(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNK8sWorkloadRuntimeInfoContainer2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadRuntimeInfoContainer(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadRuntimeInfoContainer) graphql.Marshaler {
@@ -72901,6 +73886,53 @@ func (ec *executionContext) unmarshalODbQueryPayloadCollectionInput2ᚖgithubᚗ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalODesiredConditionActionItem2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.DesiredConditionActionItem) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDesiredConditionActionItem2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionActionItem(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalODesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx context.Context, sel ast.SelectionSet, v *model.DesiredConditionStatus) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -74400,13 +75432,6 @@ func (ec *executionContext) marshalOK8sWorkloadPodContainerProcessInstrumentatio
 	}
 
 	return ret
-}
-
-func (ec *executionContext) marshalOK8sWorkloadRollout2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadRollout(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadRollout) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._K8sWorkloadRollout(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOK8sWorkloadRuntimeInfo2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadRuntimeInfo(ctx context.Context, sel ast.SelectionSet, v *model.K8sWorkloadRuntimeInfo) graphql.Marshaler {

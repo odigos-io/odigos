@@ -341,11 +341,17 @@ type DbQueryPayloadCollectionInput struct {
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
 }
 
+type DesiredConditionActionItem struct {
+	Type       DesiredConditionActionItemType `json:"type"`
+	ButtonText string                         `json:"buttonText"`
+}
+
 type DesiredConditionStatus struct {
-	Name       string               `json:"name"`
-	Status     DesiredStateProgress `json:"status"`
-	ReasonEnum *string              `json:"reasonEnum,omitempty"`
-	Message    string               `json:"message"`
+	Name        string                        `json:"name"`
+	Status      DesiredStateProgress          `json:"status"`
+	ReasonEnum  *string                       `json:"reasonEnum,omitempty"`
+	Message     string                        `json:"message"`
+	ActionItems []*DesiredConditionActionItem `json:"actionItems,omitempty"`
 }
 
 type Destination struct {
@@ -713,6 +719,7 @@ type InstrumentationRule struct {
 	HeadersCollection        *HeadersCollection                 `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollection                 `json:"payloadCollection,omitempty"`
 	CustomInstrumentations   *CustomInstrumentations            `json:"customInstrumentations,omitempty"`
+	NetworkMetrics           *bool                              `json:"networkMetrics,omitempty"`
 }
 
 type InstrumentationRuleFieldYamlProperties struct {
@@ -735,6 +742,7 @@ type InstrumentationRuleInput struct {
 	HeadersCollection        *HeadersCollectionInput                 `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollectionInput                 `json:"payloadCollection,omitempty"`
 	CustomInstrumentations   *CustomInstrumentationsInput            `json:"customInstrumentations,omitempty"`
+	NetworkMetrics           *bool                                   `json:"networkMetrics,omitempty"`
 }
 
 type InstrumentationRuleSourcesScope struct {
@@ -880,7 +888,7 @@ type K8sWorkload struct {
 	MarkedForInstrumentation   *K8sWorkloadMarkedForInstrumentation `json:"markedForInstrumentation"`
 	RuntimeInfo                *K8sWorkloadRuntimeInfo              `json:"runtimeInfo,omitempty"`
 	AgentEnabled               *K8sWorkloadAgentEnabled             `json:"agentEnabled,omitempty"`
-	Rollout                    *K8sWorkloadRollout                  `json:"rollout,omitempty"`
+	Rollout                    *K8sWorkloadRollout                  `json:"rollout"`
 	AutoRollback               *K8sWorkloadAutoRollback             `json:"autoRollback,omitempty"`
 	Containers                 []*K8sWorkloadContainer              `json:"containers,omitempty"`
 	Pods                       []*K8sWorkloadPod                    `json:"pods,omitempty"`
@@ -1084,9 +1092,21 @@ type K8sWorkloadPodContainerProcessInstrumentation struct {
 	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
 }
 
+type K8sWorkloadPodsManifestInjectionOverview struct {
+	TotalPods                int  `json:"totalPods"`
+	TotalAgentNotAppliedPods int  `json:"totalAgentNotAppliedPods"`
+	AgentNotAppliedOk        bool `json:"agentNotAppliedOk"`
+	TotalAgentAppliedPods    int  `json:"totalAgentAppliedPods"`
+	AgentAppliedOk           bool `json:"agentAppliedOk"`
+	TotalAgentOutOfDatePods  int  `json:"totalAgentOutOfDatePods"`
+	AgentOutOfDateOk         bool `json:"agentOutOfDateOk"`
+}
+
 type K8sWorkloadRollout struct {
-	RolloutStatus               *DesiredConditionStatus `json:"rolloutStatus,omitempty"`
-	PodsManifestInjectionStatus *DesiredConditionStatus `json:"podsManifestInjectionStatus,omitempty"`
+	RolloutStatus                 *DesiredConditionStatus                   `json:"rolloutStatus,omitempty"`
+	PodsManifestInjectionStatus   *DesiredConditionStatus                   `json:"podsManifestInjectionStatus"`
+	PodsManifestInjectionOverview *K8sWorkloadPodsManifestInjectionOverview `json:"podsManifestInjectionOverview"`
+	AgentsMetaHashChangedTime     *string                                   `json:"agentsMetaHashChangedTime,omitempty"`
 }
 
 type K8sWorkloadRuntimeInfo struct {
@@ -1980,6 +2000,45 @@ func (e ContainerLifecycleStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type DesiredConditionActionItemType string
+
+const (
+	DesiredConditionActionItemTypeRolloutWorkload DesiredConditionActionItemType = "RolloutWorkload"
+)
+
+var AllDesiredConditionActionItemType = []DesiredConditionActionItemType{
+	DesiredConditionActionItemTypeRolloutWorkload,
+}
+
+func (e DesiredConditionActionItemType) IsValid() bool {
+	switch e {
+	case DesiredConditionActionItemTypeRolloutWorkload:
+		return true
+	}
+	return false
+}
+
+func (e DesiredConditionActionItemType) String() string {
+	return string(e)
+}
+
+func (e *DesiredConditionActionItemType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DesiredConditionActionItemType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DesiredConditionActionItemType", str)
+	}
+	return nil
+}
+
+func (e DesiredConditionActionItemType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type DesiredStateProgress string
 
 const (
@@ -2226,6 +2285,7 @@ const (
 	InstrumentationRuleTypeHeadersCollection     InstrumentationRuleType = "HeadersCollection"
 	InstrumentationRuleTypePayloadCollection     InstrumentationRuleType = "PayloadCollection"
 	InstrumentationRuleTypeCustomInstrumentation InstrumentationRuleType = "CustomInstrumentation"
+	InstrumentationRuleTypeNetworkMetrics        InstrumentationRuleType = "NetworkMetrics"
 	InstrumentationRuleTypeUnknownType           InstrumentationRuleType = "UnknownType"
 )
 
@@ -2234,12 +2294,13 @@ var AllInstrumentationRuleType = []InstrumentationRuleType{
 	InstrumentationRuleTypeHeadersCollection,
 	InstrumentationRuleTypePayloadCollection,
 	InstrumentationRuleTypeCustomInstrumentation,
+	InstrumentationRuleTypeNetworkMetrics,
 	InstrumentationRuleTypeUnknownType,
 }
 
 func (e InstrumentationRuleType) IsValid() bool {
 	switch e {
-	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCustomInstrumentation, InstrumentationRuleTypeUnknownType:
+	case InstrumentationRuleTypeCodeAttributes, InstrumentationRuleTypeHeadersCollection, InstrumentationRuleTypePayloadCollection, InstrumentationRuleTypeCustomInstrumentation, InstrumentationRuleTypeNetworkMetrics, InstrumentationRuleTypeUnknownType:
 		return true
 	}
 	return false
