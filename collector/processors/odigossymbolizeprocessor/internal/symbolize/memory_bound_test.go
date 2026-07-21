@@ -1,15 +1,8 @@
 //go:build linux
 
-// memory_bound_test.go proves the two memory guarantees behind CORE-1307:
-//
-//  1. the size-gate (maxSymtabBytes) skips a large symbol table WITHOUT
-//     materialising it, so the transient decode that ballooned the Vodafone
-//     collector's RSS (heap-inuse 66 MB while RSS hit 2.4 GB) never happens;
-//  2. the byte-bounded symbol cache never holds more than its budget, however
-//     many distinct binaries are symbolized.
-//
-// (1) is measured against a real unstripped native library (the Amdocs case),
-// compiled at test time with the same g++ pattern the rest of the suite uses.
+// memory_bound_test.go proves the size-gate skips a large symbol table without
+// materialising it (bounding the transient decode) and the symbol cache stays
+// within its byte budget, measured against a real g++-compiled native library.
 package symbolize
 
 import (
@@ -133,6 +126,37 @@ func TestSizeGateEliminatesTransientDecode(t *testing.T) {
 	}
 	if decodeAlloc < 4*gatedAlloc {
 		t.Fatalf("size-gate reduction too small: decode=%d gated=%d (want decode >= 4x gated)", decodeAlloc, gatedAlloc)
+	}
+}
+
+// TestConfigurableTransientCapIsHonored proves WithMaxSymtabBytes is wired: a
+// Symbolizer built with a small transient cap skips a binary whose symbol table
+// exceeds it (frames stay module+offset), while the default (512 MiB) decodes the
+// same binary. This is what lets an operator bound peak memory on a constrained
+// collector — the cap the config's max_symtab_bytes / budget knob drives.
+func TestConfigurableTransientCapIsHonored(t *testing.T) {
+	so := buildBigTestLib(t, 8000) // ~200 KiB+ symbol table
+	symBytes := symtabSectionBytes(t, so)
+	if symBytes < 128<<10 {
+		t.Skipf("fixture .symtab too small (%d bytes)", symBytes)
+	}
+
+	// Small cap (below the table): the binary is skipped without decoding.
+	capped := New(WithMaxSymtabBytes(32 << 10))
+	defer capped.Close()
+	if es, err := loadELFSymbols(so, capped.limits); err != nil {
+		t.Fatalf("capped parse: %v", err)
+	} else if len(es.functions) != 0 {
+		t.Fatalf("small transient cap must skip the table, got %d symbols", len(es.functions))
+	}
+
+	// Default cap (512 MiB): the same binary decodes normally.
+	def := New()
+	defer def.Close()
+	if es, err := loadELFSymbols(so, def.limits); err != nil {
+		t.Fatalf("default parse: %v", err)
+	} else if len(es.functions) == 0 {
+		t.Fatal("default cap must decode a normal binary")
 	}
 }
 
