@@ -722,6 +722,7 @@
                 "pages": [
                   "vmagent/setup/system-requirements",
                   "vmagent/setup/installation",
+                  "vmagent/setup/docker",
                   "vmagent/setup/upgrade",
                   "vmagent/setup/uninstall"
                 ]
