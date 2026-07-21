@@ -74,6 +74,10 @@ spec:
             {{- end }}
             - name: GOMEMLIMIT
               value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.centralProxy.resources) }}
+            {{- if .Values.centralProxy.maxMessageSize }}
+            - name: MAX_MESSAGE_SIZE
+              value: {{ .Values.centralProxy.maxMessageSize | quote }}
+            {{- end }}
           {{- if or .Values.centralProxy.tls.caSecretName .Values.centralProxy.tls.clientCertSecretName }}
           volumeMounts:
             {{- if .Values.centralProxy.tls.caSecretName }}
