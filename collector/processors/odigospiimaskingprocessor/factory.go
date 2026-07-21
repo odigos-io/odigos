@@ -1,4 +1,4 @@
-package odigossqlqueryprocessor
+package odigospiimaskingprocessor
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processorhelper"
 
-	"github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor/internal/metadata"
+	"github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor/internal/metadata"
 )
 
 //go:generate mdatagen metadata.yaml
@@ -35,7 +35,7 @@ func createTracesProcessor(
 	nextConsumer consumer.Traces,
 ) (processor.Traces, error) {
 	oCfg := cfg.(*Config)
-	proc := newSqlQueryProcessor(set, oCfg)
+	proc := newPiiMaskingProcessor(set, oCfg)
 
 	return processorhelper.NewTraces(
 		ctx,
@@ -44,7 +44,5 @@ func createTracesProcessor(
 		nextConsumer,
 		proc.processTraces,
 		processorhelper.WithCapabilities(consumerCapabilities),
-		processorhelper.WithStart(proc.Start),
-		processorhelper.WithShutdown(proc.Shutdown),
 	)
 }
