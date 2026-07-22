@@ -19,7 +19,8 @@ status:
   containerStatuses:
     - name: manager
       ready: true
-      restartCount: 0
+      # RestartOnSecretRefresh may exit once if webhook certs need refresh on upgrade
+      (restartCount <= `1`): true
       started: true
   phase: Running
 ---
@@ -55,7 +56,8 @@ status:
   containerStatuses:
     - name: manager
       ready: true
-      restartCount: 0
+      # RestartOnSecretRefresh may exit once if webhook certs need refresh on upgrade
+      (restartCount <= `1`): true
       started: true
   phase: Running
 ---
