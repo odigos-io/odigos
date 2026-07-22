@@ -9,23 +9,25 @@ It is similar to the [redact processor](https://github.com/open-telemetry/opente
 ```yaml
 processors:
   odigospiimasking:
-    piiCategories:
+    pii_categories:
       - CREDIT_CARD
       - EMAIL
       - JWT
       - UUID
-    customFormatMaskings:
-      - lookupKey: ssn
-        dataFormat: json
-    customRegexMaskings:
+    custom_format_maskings:
+      - lookup_key: ssn
+        data_format: json
+    custom_regex_maskings:
       - regex: 'secret=([^\s&]+)'
 ```
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `piiCategories` | []string | `[]` | Categories of PII to mask. Supported: `CREDIT_CARD`, `EMAIL`, `JWT`, `UUID`. |
-| `customFormatMaskings` | []object | `[]` | Format-based masking rules (`lookupKey` + `dataFormat`). |
-| `customRegexMaskings` | []object | `[]` | Regex-based masking rules (`regex` with a single capture group). |
+| `pii_categories` | []string | `[]` | Categories of PII to mask. Supported: `CREDIT_CARD`, `EMAIL`, `JWT`, `UUID`. |
+| `custom_format_maskings` | []object | `[]` | Format-based masking rules (`lookup_key` + `data_format`). |
+| `custom_regex_maskings` | []object | `[]` | Regex-based masking rules (`regex` with a single capture group). |
+
+Custom format and regex rules replace only the matched capture group with `****`.
 
 ## Status
 

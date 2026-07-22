@@ -86,9 +86,38 @@ func collectPiiMaskingConfig(ctx context.Context, c client.Client, namespace str
 	return cfg, nil
 }
 
+// marshalPiiMaskingProcessorConfig renders the Action API config into the snake_case
+// keys expected by the odigospiimasking processor mapstructure tags.
+func marshalPiiMaskingProcessorConfig(cfg actionsapi.PiiMaskingConfig) ([]byte, error) {
+	out := map[string]any{}
+	if len(cfg.PiiCategories) > 0 {
+		out["pii_categories"] = cfg.PiiCategories
+	}
+	if len(cfg.CustomFormatMaskings) > 0 {
+		formats := make([]map[string]string, 0, len(cfg.CustomFormatMaskings))
+		for _, masking := range cfg.CustomFormatMaskings {
+			formats = append(formats, map[string]string{
+				"lookup_key":  masking.LookupKey,
+				"data_format": string(masking.DataFormat),
+			})
+		}
+		out["custom_format_maskings"] = formats
+	}
+	if len(cfg.CustomRegexMaskings) > 0 {
+		regexes := make([]map[string]string, 0, len(cfg.CustomRegexMaskings))
+		for _, masking := range cfg.CustomRegexMaskings {
+			regexes = append(regexes, map[string]string{
+				"regex": masking.Regex,
+			})
+		}
+		out["custom_regex_maskings"] = regexes
+	}
+	return json.Marshal(out)
+}
+
 func buildPiiMaskingProcessor(namespace string, cfg actionsapi.PiiMaskingConfig) (*odigosv1.Processor, error) {
 	actionCfg := actions.PiiMaskingConfig{}
-	configJSON, err := json.Marshal(cfg)
+	configJSON, err := marshalPiiMaskingProcessorConfig(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("marshal pii masking processor config: %w", err)
 	}
