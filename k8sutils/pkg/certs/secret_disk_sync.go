@@ -9,7 +9,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,35 +53,50 @@ func (s *SecretDiskSync) Start(ctx context.Context) error {
 		certDir = WebhookCertDir()
 	}
 
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+
 	var lastCert, lastKey []byte
-	err := wait.PollUntilContextCancel(ctx, 200*time.Millisecond, true, func(ctx context.Context) (bool, error) {
-		secret := &corev1.Secret{}
-		if err := s.Client.Get(ctx, s.Secret, secret); err != nil {
-			return false, nil
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			cert, key, ok := s.readTLSMaterial(ctx, certName, keyName)
+			if !ok {
+				continue
+			}
+			if bytes.Equal(cert, lastCert) && bytes.Equal(key, lastKey) {
+				continue
+			}
+			if err := writeTLSMaterial(certDir, certName, keyName, cert, key); err != nil {
+				continue
+			}
+			lastCert = bytes.Clone(cert)
+			lastKey = bytes.Clone(key)
 		}
-		cert := secret.Data[certName]
-		key := secret.Data[keyName]
-		if len(cert) == 0 || len(key) == 0 {
-			return false, nil
-		}
-		if bytes.Equal(cert, lastCert) && bytes.Equal(key, lastKey) {
-			return false, nil
-		}
-		if err := os.MkdirAll(certDir, 0o700); err != nil {
-			return false, nil
-		}
-		if err := os.WriteFile(filepath.Join(certDir, certName), cert, 0o600); err != nil {
-			return false, nil
-		}
-		if err := os.WriteFile(filepath.Join(certDir, keyName), key, 0o600); err != nil {
-			return false, nil
-		}
-		lastCert = bytes.Clone(cert)
-		lastKey = bytes.Clone(key)
-		return false, nil
-	})
-	if ctx.Err() != nil {
-		return nil
 	}
-	return err
+}
+
+func (s *SecretDiskSync) readTLSMaterial(ctx context.Context, certName, keyName string) (cert, key []byte, ok bool) {
+	secret := &corev1.Secret{}
+	if err := s.Client.Get(ctx, s.Secret, secret); err != nil {
+		return nil, nil, false
+	}
+	cert = secret.Data[certName]
+	key = secret.Data[keyName]
+	if len(cert) == 0 || len(key) == 0 {
+		return nil, nil, false
+	}
+	return cert, key, true
+}
+
+func writeTLSMaterial(certDir, certName, keyName string, cert, key []byte) error {
+	if err := os.MkdirAll(certDir, 0o700); err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(certDir, certName), cert, 0o600); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(certDir, keyName), key, 0o600)
 }
