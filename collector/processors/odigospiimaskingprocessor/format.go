@@ -16,11 +16,11 @@ func buildFormatMaskingRegex(key string, format actions.DataFormat) (*regexp.Reg
 		// Examples (key = "user_id"):
 		//   Quoted:     {"user_id": "abc123", "name": "foo"}   -> captures "abc123"
 		//   Unquoted:   {user_id: 42, name: "foo"}             -> captures "42"
-		return regexp.Compile(`(?:^|[\s,{])"?` + escapedKey + `"?\s*:\s*"?([^"\s,}\]]+)`)
+		return regexp.Compile(`(?:^|[\s,{])"?` + escapedKey + `"?\s*:\s*(?:"((?:\\.|[^"\\])*)"|([^"\s,}\]]+))`)
 	case actions.FormatSQL:
 		// Examples (key = "user_id"):
 		//   Quoted:     WHERE user_id = '42' AND status = 'ok'  -> captures "42"
-		return regexp.Compile(`(?:^|[\s,(])` + escapedKey + `\s*=\s*'?([^'\s,;)]+)`)
+		return regexp.Compile(`(?:^|[\s,(])` + escapedKey + `\s*=\s*(?:'((?:''|[^'])*)'|([^'\s,;)]+))`)
 	case actions.FormatResourcePath:
 		// Examples (key = "orders"):
 		//   Path: /api/v1/orders/abc-123 -> captures "abc-123"
