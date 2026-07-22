@@ -10,7 +10,7 @@ OUTPUT_DIR ?=
 # if both GITHUB_RUN_ID and GITHUB_REPOSITORY_NAME are set, save the image to the
 # Depot registry.
 # the tag will be in the format: <repository-name>-<component-name>-<run-id>
-# example: odigos-enterprise-autoscaler-1658821493
+# example: odigos-enterprise-autoscaler-0123456789
 GITHUB_RUN_ID ?=
 GITHUB_REPOSITORY_NAME ?=
 
