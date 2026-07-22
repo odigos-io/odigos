@@ -97,7 +97,7 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		SlotMaxBytes:    profCfg.StoreLimits.SlotMaxBytes,
 		CleanupInterval: profCfg.CleanupInterval,
 	})
-	profileStore.RunCleanup(ctx)
+	go profileStore.RunCleanup(ctx)
 
 	profilesConsumer, err := profiles.NewOdigosProfilesConsumer(profileStore, profilingGate)
 	if err != nil {

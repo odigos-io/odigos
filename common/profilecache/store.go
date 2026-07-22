@@ -21,7 +21,6 @@ type Store struct {
 	ttlSeconds      int
 	slotMaxBytes    int
 	cleanupInterval time.Duration
-	stopCleanup     func()
 	evictedSlots    uint64
 }
 
@@ -260,21 +259,19 @@ func (s *Store) EvictedSlots() uint64 {
 	return s.evictedSlots
 }
 
+// RunCleanup sweeps idle slots every cleanupInterval until ctx is cancelled. It
+// blocks, so callers run it in the background: go store.RunCleanup(ctx).
 func (s *Store) RunCleanup(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
-	s.stopCleanup = cancel
-	go func() {
-		ticker := time.NewTicker(s.cleanupInterval)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				s.SweepNow()
-			}
+	ticker := time.NewTicker(s.cleanupInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			s.SweepNow()
 		}
-	}()
+	}
 }
 
 func (s *Store) SweepNow() {
@@ -285,11 +282,5 @@ func (s *Store) SweepNow() {
 		if slot.lastRequestAt.Before(cutoff) {
 			delete(s.slots, k)
 		}
-	}
-}
-
-func (s *Store) StopCleanup() {
-	if s.stopCleanup != nil {
-		s.stopCleanup()
 	}
 }
