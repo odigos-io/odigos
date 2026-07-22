@@ -1,14 +1,5 @@
 package actions
 
-// +kubebuilder:validation:Enum=resource_path;json;sql
-type DataFormat string
-
-const (
-	FormatResourcePath DataFormat = "resource_path"
-	FormatJSON         DataFormat = "json"
-	FormatSQL          DataFormat = "sql"
-)
-
 // Extraction describes a single extraction rule applied by the
 // odigosextractattribute processor. Either (LookupKey + DataFormat) or
 // Regex must be provided; the captured value is written to a new span
@@ -21,16 +12,14 @@ type Extraction struct {
 	// +kubebuilder:validation:Required
 	TargetAttributeName string `json:"targetAttributeName"`
 
-	// LookupKey is the literal key to search for inside the scanned span attributes.
-	// It is plugged into the pre-set regex pattern selected by DataFormat (e.g. for JSON,
-	// the processor will look for `"<lookupKey>": "<value>"` and capture the value).
+	// LookupKey is the field or path segment whose value should be extracted
+	// (e.g. a JSON key, SQL column name, or URL path segment).
 	// Required when using DataFormat.
 	// You can input either LookupKey+DataFormat, or supply your own Regex.
 	// +kubebuilder:validation:Optional
 	LookupKey string `json:"lookupKey,omitempty"`
 
-	// A pre-set definition which resolves into a regex (e.g. JSON DataFormat would give a regex that searches
-	// inside a JSON string), which also applies LookupKey for searching inside it.
+	// DataFormat is the format of the data to search in (json, sql, or resource_path).
 	// Required when using LookupKey.
 	// You can input either LookupKey+DataFormat, or supply your own Regex.
 	// +kubebuilder:validation:Optional
