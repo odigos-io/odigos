@@ -157,6 +157,7 @@ const (
 	OdigosPiiMaskingProcessorType         = "odigospiimasking"
 	SQLQueryProcessorName                 = "odigos-sql-query"
 	OdigosSQLQueryProcessorType           = "odigossqlquery"
+	OdigosExtractAttributeProcessorType   = "odigosextractattribute"
 )
 
 // Auto rollback related consts
