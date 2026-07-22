@@ -35,7 +35,10 @@ func createTracesProcessor(
 	nextConsumer consumer.Traces,
 ) (processor.Traces, error) {
 	oCfg := cfg.(*Config)
-	proc := newPiiMaskingProcessor(set, oCfg)
+	proc, err := newPiiMaskingProcessor(set, oCfg)
+	if err != nil {
+		return nil, err
+	}
 
 	return processorhelper.NewTraces(
 		ctx,
