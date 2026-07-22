@@ -1,0 +1,17 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Action
+metadata:
+  type: InferDbAttributes
+  displayName: Infer DB Attributes
+spec:
+  docsUrl: https://docs.odigos.io/pipeline/actions/attributes/inferdbattributes
+  description: Parses database query text on spans and adds attributes such as db.operation.name and db.collection.name.
+  signals:
+    traces:
+      supported: true
+  fields:
+    - name: scopes
+      displayName: Source Scope
+      componentType: sourceScopes
+      componentProps:
+        tooltip: Limit this action to specific workloads, namespaces, or programming languages. Leave empty to apply to all sources.

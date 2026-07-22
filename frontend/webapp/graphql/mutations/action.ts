@@ -58,6 +58,16 @@ export const CREATE_ACTION = gql`
             regex
           }
         }
+        scopes {
+          sources {
+            namespace
+            kind
+            name
+          }
+          namespaces
+          languages
+        }
+        templatizeLiterals
       }
       conditions {
         status
@@ -127,6 +137,16 @@ export const UPDATE_ACTION = gql`
             regex
           }
         }
+        scopes {
+          sources {
+            namespace
+            kind
+            name
+          }
+          namespaces
+          languages
+        }
+        templatizeLiterals
       }
       conditions {
         status

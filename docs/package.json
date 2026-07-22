@@ -17,6 +17,11 @@
     "typescript": "^5.9.3"
   },
   "resolutions": {
-    "tar": "^7.5.16"
+    "tar": "^7.5.16",
+    "adm-zip": "^0.6.0",
+    "axios": "1.18.1",
+    "js-yaml": "4.3.0",
+    "sharp": "0.35.3",
+    "fast-uri": "3.1.4"
   }
 }

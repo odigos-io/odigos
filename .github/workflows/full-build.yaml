@@ -8,24 +8,36 @@ on:
       - opened
       - synchronize
       - reopened
+      
   schedule:
     - cron: '0 0 * * *' # Nightly run at midnight
 
+  workflow_dispatch:
+
 jobs:
+  build-depot-images:
+    runs-on: depot-ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: depot/setup-action@v1
+      - name: Build images with Depot
+        run: make -j -f Makefile.depot depot-build-all
+        env:
+          IMAGE_TAG: v0.0.0-pr${{ github.event.number || github.run_number }}
+          PLATFORM: linux/amd64,linux/arm64
+          OUTPUT_DIR: /tmp
+
   build-all-services:
     name: build-all-services
     strategy:
       matrix:
-        service: [autoscaler, scheduler, instrumentor, odigos-collector, odiglet, agents, frontend, operator]
+        service: [instrumentor, odiglet, agents, frontend, operator]
         include:
-          - service: autoscaler
-            dockerfile_path: .
-          - service: scheduler
-            dockerfile_path: .
           - service: instrumentor
             dockerfile_path: .
-          - service: odigos-collector
-            dockerfile_path: collector
           - service: odiglet
             dockerfile_path: odiglet
           - service: agents
@@ -48,7 +60,6 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: ${{ matrix.service }}:pr-${{ github.event.number }}
           provenance: false
           file: ${{ matrix.dockerfile_path }}/Dockerfile
           context: .

@@ -135,6 +135,7 @@ export const GET_WORKLOADS_BY_IDS = gql`
           reasonEnum
           message
         }
+        agentsMetaHashChangedTime
         podsManifestInjectionStatus {
           name
           status
@@ -144,6 +145,15 @@ export const GET_WORKLOADS_BY_IDS = gql`
             type
             buttonText
           }
+        }
+        podsManifestInjectionOverview {
+          totalPods
+          totalAgentNotAppliedPods
+          agentNotAppliedOk
+          totalAgentAppliedPods
+          agentAppliedOk
+          totalAgentOutOfDatePods
+          agentOutOfDateOk
         }
       }
       autoRollback {

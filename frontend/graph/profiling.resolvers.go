@@ -9,7 +9,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/frontend/services/profiles"
 )
 
@@ -75,6 +77,43 @@ func (r *mutationResolver) ClearSourceProfilingBuffer(ctx context.Context, names
 		Status:      out.Status,
 		SourceKey:   out.SourceKey,
 		ActiveSlots: out.ActiveSlots,
+	}, nil
+}
+
+// ConfigureProfilingCache is the resolver for the configureProfilingCache field.
+func (r *mutationResolver) ConfigureProfilingCache(ctx context.Context, maxSlots *int, slotMaxBytes *int, slotTTLSeconds *int) (*model.ProfilingSlots, error) {
+	if r.ProfileStore == nil {
+		return nil, fmt.Errorf("profiling store not configured")
+	}
+	ui := &common.ProfilingUiConfiguration{}
+	if maxSlots != nil {
+		ui.MaxSlots = *maxSlots
+	}
+	if slotMaxBytes != nil {
+		ui.SlotMaxBytes = *slotMaxBytes
+	}
+	if slotTTLSeconds != nil {
+		ui.SlotTTLSeconds = *slotTTLSeconds
+	}
+	// Persist to profiling.ui; the scheduler merges it into effective-config so it survives restart.
+	if _, err := services.UpdateRemoteConfig(ctx, &common.OdigosConfiguration{
+		Profiling: &common.ProfilingConfiguration{Ui: ui},
+	}); err != nil {
+		return nil, err
+	}
+	// Apply live: prune then resize.
+	r.ProfileStore.Reconfigure(ui.MaxSlots, ui.SlotMaxBytes, ui.SlotTTLSeconds)
+
+	activeKeys, keysWithData := r.ProfileStore.ActiveSlots()
+	stats := r.ProfileStore.MemoryStats()
+	return &model.ProfilingSlots{
+		ActiveKeys:          activeKeys,
+		KeysWithData:        keysWithData,
+		TotalBytesUsed:      stats.TotalBytes,
+		SlotMaxBytes:        stats.SlotMaxBytes,
+		MaxSlots:            stats.MaxSlots,
+		MaxTotalBytesBudget: stats.MaxTotalBytesBudget,
+		SlotTTLSeconds:      stats.SlotTTLSeconds,
 	}, nil
 }
 

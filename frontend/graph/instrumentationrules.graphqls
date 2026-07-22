@@ -17,6 +17,7 @@ enum InstrumentationRuleType {
   HeadersCollection
   PayloadCollection
   CustomInstrumentation
+  NetworkMetrics
   UnknownType
 }
 
@@ -61,6 +62,9 @@ type InstrumentationRule {
   headersCollection: HeadersCollection
   payloadCollection: PayloadCollection
   customInstrumentations: CustomInstrumentations
+  # Presence-based enablement of network flow / TCP stats metrics. True when the rule sets
+  # `networkMetrics` (mapped from the CRD's presence-based empty `networkMetrics: {}` object).
+  networkMetrics: Boolean
 }
 
 input InstrumentationRuleInput {
@@ -78,6 +82,9 @@ input InstrumentationRuleInput {
   headersCollection: HeadersCollectionInput
   payloadCollection: PayloadCollectionInput
   customInstrumentations: CustomInstrumentationsInput
+  # Presence-based enablement of network flow / TCP stats metrics. True creates the CRD's
+  # `networkMetrics: {}` object; false/null leaves it unset.
+  networkMetrics: Boolean
 }
 
 type InstrumentationLibraryGlobalId {

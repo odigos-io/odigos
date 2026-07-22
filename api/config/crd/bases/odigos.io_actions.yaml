@@ -68,6 +68,83 @@ spec:
                 required:
                 - clusterAttributes
                 type: object
+              dbQueryTemplatization:
+                description: DbQueryTemplatization is the config for the DbQueryTemplatization
+                  Action.
+                properties:
+                  scopes:
+                    description: |-
+                      the scope of services for which this templatization config will be applied.
+                      if empty, the provided config will be applied to all sources.
+                    properties:
+                      languages:
+                        items:
+                          enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                          - php
+                          - ruby
+                          - rust
+                          - cplusplus
+                          - mysql
+                          - nginx
+                          - redis
+                          - postgres
+                          - unknown
+                          - ignored
+                          - '*'
+                          type: string
+                        type: array
+                      namespaces:
+                        items:
+                          type: string
+                        type: array
+                      sources:
+                        items:
+                          description: |-
+                            PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                            It contains essential details about the controller such as its Name, Namespace, and Kind.
+                            'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                            This struct is useful for identifying and interacting with the overarching entity
+                            that governs the lifecycle and behavior of a Pod, especially in contexts where
+                            understanding the relationship between a Pod and its controlling workload is crucial.
+                          properties:
+                            kind:
+                              description: |-
+                                1. the pascal case representation of the workload kind
+                                it is used in k8s api objects as the `Kind` field.
+                              type: string
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          required:
+                          - kind
+                          - name
+                          - namespace
+                          type: object
+                        type: array
+                    type: object
+                  templatizeLiterals:
+                    description: |-
+                      TemplatizeLiterals replaces number and string literals in SQL queries with placeholders
+                      (e.g. "SELECT * FROM users WHERE id = 1" -> "SELECT * FROM users WHERE id = ?").
+
+                      what is templatized:
+                      - number literals
+                      - string literals
+                      what is not templatized:
+                      - identifiers (e.g. table names, column names, etc.)
+                      - positional parameters (e.g. "SELECT * FROM users WHERE id = $1")
+                      - bind parameters (e.g. "SELECT * FROM users WHERE id = :name")
+                      - boolean literals
+                      - NULL
+                      - keywords, operators, punctuation, whitespace, comments, etc.
+                    type: boolean
+                type: object
               deleteAttribute:
                 description: DeleteAttribute is the config for the DeleteAttribute
                   Action.
@@ -99,8 +176,7 @@ spec:
                       properties:
                         dataFormat:
                           description: |-
-                            A pre-set definition which resolves into a regex (e.g. JSON DataFormat would give a regex that searches
-                            inside a JSON string), which also applies LookupKey for searching inside it.
+                            DataFormat is the format of the data to search in (json, sql, or resource_path).
                             Required when using LookupKey.
                             You can input either LookupKey+DataFormat, or supply your own Regex.
                           enum:
@@ -110,9 +186,8 @@ spec:
                           type: string
                         lookupKey:
                           description: |-
-                            LookupKey is the literal key to search for inside the scanned span attributes.
-                            It is plugged into the pre-set regex pattern selected by DataFormat (e.g. for JSON,
-                            the processor will look for `"<lookupKey>": "<value>"` and capture the value).
+                            LookupKey is the field or path segment whose value should be extracted
+                            (e.g. a JSON key, SQL column name, or URL path segment).
                             Required when using DataFormat.
                             You can input either LookupKey+DataFormat, or supply your own Regex.
                           type: string
@@ -133,6 +208,67 @@ spec:
                     type: array
                 required:
                 - extractions
+                type: object
+              inferDbAttributes:
+                description: InferDbAttributes is the config for the InferDbAttributes
+                  Action.
+                properties:
+                  scopes:
+                    description: |-
+                      the scope of services for which this config will be applied.
+                      if empty, the provided config will be applied to all sources.
+                    properties:
+                      languages:
+                        items:
+                          enum:
+                          - java
+                          - python
+                          - go
+                          - dotnet
+                          - javascript
+                          - php
+                          - ruby
+                          - rust
+                          - cplusplus
+                          - mysql
+                          - nginx
+                          - redis
+                          - postgres
+                          - unknown
+                          - ignored
+                          - '*'
+                          type: string
+                        type: array
+                      namespaces:
+                        items:
+                          type: string
+                        type: array
+                      sources:
+                        items:
+                          description: |-
+                            PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.
+                            It contains essential details about the controller such as its Name, Namespace, and Kind.
+                            'Kind' refers to the type of controller, which can be a Deployment, StatefulSet, or DaemonSet.
+                            This struct is useful for identifying and interacting with the overarching entity
+                            that governs the lifecycle and behavior of a Pod, especially in contexts where
+                            understanding the relationship between a Pod and its controlling workload is crucial.
+                          properties:
+                            kind:
+                              description: |-
+                                1. the pascal case representation of the workload kind
+                                it is used in k8s api objects as the `Kind` field.
+                              type: string
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                          required:
+                          - kind
+                          - name
+                          - namespace
+                          type: object
+                        type: array
+                    type: object
                 type: object
               k8sAttributes:
                 description: K8sAttributes is the config for the K8sAttributes Action.
@@ -262,14 +398,58 @@ spec:
               piiMasking:
                 description: PiiMasking is the config for the PiiMasking Action.
                 properties:
+                  customFormatMaskings:
+                    description: CustomFormatMaskings is the list of format-based
+                      masking rules to apply, in order.
+                    items:
+                      description: |-
+                        CustomFormatMasking masks values found via a LookupKey inside a DataFormat
+                        (e.g. JSON key, SQL column, resource path segment).
+                      properties:
+                        dataFormat:
+                          description: DataFormat is the format of the data to search
+                            in (json, sql, or resource_path).
+                          enum:
+                          - resource_path
+                          - json
+                          - sql
+                          type: string
+                        lookupKey:
+                          description: |-
+                            LookupKey is the field or path segment whose value should be masked
+                            (e.g. a JSON key, SQL column name, or URL path segment).
+                          type: string
+                      required:
+                      - dataFormat
+                      - lookupKey
+                      type: object
+                    type: array
+                  customRegexMaskings:
+                    description: CustomRegexMaskings is the list of regex-based masking
+                      rules to apply, in order.
+                    items:
+                      description: CustomRegexMasking masks values matched by a user-supplied
+                        regular expression.
+                      properties:
+                        regex:
+                          description: Regex is a custom regular expression with a
+                            single capture group whose value is masked.
+                          type: string
+                      required:
+                      - regex
+                      type: object
+                    type: array
                   piiCategories:
+                    description: PiiCategories are predefined PII patterns to mask
+                      (e.g. CREDIT_CARD, EMAIL).
                     items:
                       enum:
                       - CREDIT_CARD
+                      - EMAIL
+                      - JWT
+                      - UUID
                       type: string
                     type: array
-                required:
-                - piiCategories
                 type: object
               renameAttribute:
                 description: RenameAttribute is the config for the RenameAttribute
