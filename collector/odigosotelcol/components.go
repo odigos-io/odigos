@@ -106,6 +106,7 @@ import (
 	odigosconfigk8sextension "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension"
 	odigosextractattributeprocessor "github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor"
 	odigoslogsresourceattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor"
+	odigospiimaskingprocessor "github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor"
 	odigossqlqueryprocessor "github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor"
 	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
 	odigosprofilesprocessor "github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor"
@@ -289,6 +290,7 @@ func components() (otelcol.Factories, error) {
 		odigosconditionalattributes.NewFactory(),
 		odigossqldboperationprocessor.NewFactory(),
 		odigossqlqueryprocessor.NewFactory(),
+		odigospiimaskingprocessor.NewFactory(),
 		batchprocessor.NewFactory(),
 		memorylimiterprocessor.NewFactory(),
 		attributesprocessor.NewFactory(),
@@ -327,6 +329,7 @@ func components() (otelcol.Factories, error) {
 		odigosconditionalattributes.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.151.0",
 		odigossqldboperationprocessor.NewFactory().Type():    "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.151.0",
 		odigossqlqueryprocessor.NewFactory().Type():          "github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor v0.151.0",
+		odigospiimaskingprocessor.NewFactory().Type():        "github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor v0.151.0",
 		batchprocessor.NewFactory().Type():                   "go.opentelemetry.io/collector/processor/batchprocessor v0.151.0",
 		memorylimiterprocessor.NewFactory().Type():           "go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.151.0",
 		attributesprocessor.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.151.0",

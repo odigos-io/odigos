@@ -42,6 +42,8 @@ type ActionFields struct {
 	PiiCategories                []string                       `json:"piiCategories,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroup `json:"urlTemplatizationRulesGroups,omitempty"`
 	ExtractAttribute             *ExtractAttribute              `json:"extractAttribute,omitempty"`
+	Scopes                       *SourcesScopes                 `json:"scopes,omitempty"`
+	TemplatizeLiterals           *bool                          `json:"templatizeLiterals,omitempty"`
 }
 
 type ActionFieldsInput struct {
@@ -58,6 +60,8 @@ type ActionFieldsInput struct {
 	PiiCategories                []string                            `json:"piiCategories,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroupInput `json:"urlTemplatizationRulesGroups,omitempty"`
 	ExtractAttribute             *ExtractAttributeInput              `json:"extractAttribute,omitempty"`
+	Scopes                       *SourcesScopesInput                 `json:"scopes,omitempty"`
+	TemplatizeLiterals           *bool                               `json:"templatizeLiterals,omitempty"`
 }
 
 type ActionInput struct {
@@ -152,14 +156,17 @@ type CodeAttributesInput struct {
 }
 
 type CollectorDaemonSetInfo struct {
-	Status            WorkloadRolloutStatus `json:"status"`
-	Nodes             *NodesSummary         `json:"nodes"`
-	Resources         *Resources            `json:"resources,omitempty"`
-	ImageVersion      *string               `json:"imageVersion,omitempty"`
-	LastRolloutAt     *string               `json:"lastRolloutAt,omitempty"`
-	RolloutInProgress bool                  `json:"rolloutInProgress"`
-	ManifestYaml      string                `json:"manifestYAML"`
-	ConfigMapYaml     string                `json:"configMapYAML"`
+	Status                       WorkloadRolloutStatus `json:"status"`
+	Nodes                        *NodesSummary         `json:"nodes"`
+	ThroughputTracesBytesPerSec  *int                  `json:"throughputTracesBytesPerSec,omitempty"`
+	ThroughputMetricsBytesPerSec *int                  `json:"throughputMetricsBytesPerSec,omitempty"`
+	ThroughputLogsBytesPerSec    *int                  `json:"throughputLogsBytesPerSec,omitempty"`
+	Resources                    *Resources            `json:"resources,omitempty"`
+	ImageVersion                 *string               `json:"imageVersion,omitempty"`
+	LastRolloutAt                *string               `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress            bool                  `json:"rolloutInProgress"`
+	ManifestYaml                 string                `json:"manifestYAML"`
+	ConfigMapYaml                string                `json:"configMapYAML"`
 }
 
 type CollectorGatewayConfig struct {
@@ -550,14 +557,17 @@ type FieldInput struct {
 }
 
 type GatewayDeploymentInfo struct {
-	Status            WorkloadRolloutStatus        `json:"status"`
-	Hpa               *HorizontalPodAutoscalerInfo `json:"hpa,omitempty"`
-	Resources         *Resources                   `json:"resources,omitempty"`
-	ImageVersion      *string                      `json:"imageVersion,omitempty"`
-	LastRolloutAt     *string                      `json:"lastRolloutAt,omitempty"`
-	RolloutInProgress bool                         `json:"rolloutInProgress"`
-	ManifestYaml      string                       `json:"manifestYAML"`
-	ConfigMapYaml     string                       `json:"configMapYAML"`
+	Status                       WorkloadRolloutStatus        `json:"status"`
+	Hpa                          *HorizontalPodAutoscalerInfo `json:"hpa,omitempty"`
+	ThroughputTracesBytesPerSec  *int                         `json:"throughputTracesBytesPerSec,omitempty"`
+	ThroughputMetricsBytesPerSec *int                         `json:"throughputMetricsBytesPerSec,omitempty"`
+	ThroughputLogsBytesPerSec    *int                         `json:"throughputLogsBytesPerSec,omitempty"`
+	Resources                    *Resources                   `json:"resources,omitempty"`
+	ImageVersion                 *string                      `json:"imageVersion,omitempty"`
+	LastRolloutAt                *string                      `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress            bool                         `json:"rolloutInProgress"`
+	ManifestYaml                 string                       `json:"manifestYAML"`
+	ConfigMapYaml                string                       `json:"configMapYAML"`
 }
 
 type GetDestinationCategories struct {
@@ -1826,6 +1836,8 @@ const (
 	ActionTypePiiMasking            ActionType = "PiiMasking"
 	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
 	ActionTypeExtractAttribute      ActionType = "ExtractAttribute"
+	ActionTypeDbQueryTemplatization ActionType = "DbQueryTemplatization"
+	ActionTypeInferDbAttributes     ActionType = "InferDbAttributes"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
 
@@ -1837,12 +1849,14 @@ var AllActionType = []ActionType{
 	ActionTypePiiMasking,
 	ActionTypeURLTemplatization,
 	ActionTypeExtractAttribute,
+	ActionTypeDbQueryTemplatization,
+	ActionTypeInferDbAttributes,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeURLTemplatization, ActionTypeExtractAttribute, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeURLTemplatization, ActionTypeExtractAttribute, ActionTypeDbQueryTemplatization, ActionTypeInferDbAttributes, ActionTypeUnknownType:
 		return true
 	}
 	return false

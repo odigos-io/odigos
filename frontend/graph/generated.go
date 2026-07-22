@@ -91,6 +91,8 @@ type ComplexityRoot struct {
 		OverwriteExistingValues      func(childComplexity int) int
 		PiiCategories                func(childComplexity int) int
 		Renames                      func(childComplexity int) int
+		Scopes                       func(childComplexity int) int
+		TemplatizeLiterals           func(childComplexity int) int
 		URLTemplatizationRulesGroups func(childComplexity int) int
 	}
 
@@ -162,14 +164,17 @@ type ComplexityRoot struct {
 	}
 
 	CollectorDaemonSetInfo struct {
-		ConfigMapYaml     func(childComplexity int) int
-		ImageVersion      func(childComplexity int) int
-		LastRolloutAt     func(childComplexity int) int
-		ManifestYaml      func(childComplexity int) int
-		Nodes             func(childComplexity int) int
-		Resources         func(childComplexity int) int
-		RolloutInProgress func(childComplexity int) int
-		Status            func(childComplexity int) int
+		ConfigMapYaml                func(childComplexity int) int
+		ImageVersion                 func(childComplexity int) int
+		LastRolloutAt                func(childComplexity int) int
+		ManifestYaml                 func(childComplexity int) int
+		Nodes                        func(childComplexity int) int
+		Resources                    func(childComplexity int) int
+		RolloutInProgress            func(childComplexity int) int
+		Status                       func(childComplexity int) int
+		ThroughputLogsBytesPerSec    func(childComplexity int) int
+		ThroughputMetricsBytesPerSec func(childComplexity int) int
+		ThroughputTracesBytesPerSec  func(childComplexity int) int
 	}
 
 	CollectorGatewayConfig struct {
@@ -496,14 +501,17 @@ type ComplexityRoot struct {
 	}
 
 	GatewayDeploymentInfo struct {
-		ConfigMapYaml     func(childComplexity int) int
-		Hpa               func(childComplexity int) int
-		ImageVersion      func(childComplexity int) int
-		LastRolloutAt     func(childComplexity int) int
-		ManifestYaml      func(childComplexity int) int
-		Resources         func(childComplexity int) int
-		RolloutInProgress func(childComplexity int) int
-		Status            func(childComplexity int) int
+		ConfigMapYaml                func(childComplexity int) int
+		Hpa                          func(childComplexity int) int
+		ImageVersion                 func(childComplexity int) int
+		LastRolloutAt                func(childComplexity int) int
+		ManifestYaml                 func(childComplexity int) int
+		Resources                    func(childComplexity int) int
+		RolloutInProgress            func(childComplexity int) int
+		Status                       func(childComplexity int) int
+		ThroughputLogsBytesPerSec    func(childComplexity int) int
+		ThroughputMetricsBytesPerSec func(childComplexity int) int
+		ThroughputTracesBytesPerSec  func(childComplexity int) int
 	}
 
 	GetDestinationCategories struct {
@@ -1838,6 +1846,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ActionFields.Renames(childComplexity), true
 
+	case "ActionFields.scopes":
+		if e.complexity.ActionFields.Scopes == nil {
+			break
+		}
+
+		return e.complexity.ActionFields.Scopes(childComplexity), true
+
+	case "ActionFields.templatizeLiterals":
+		if e.complexity.ActionFields.TemplatizeLiterals == nil {
+			break
+		}
+
+		return e.complexity.ActionFields.TemplatizeLiterals(childComplexity), true
+
 	case "ActionFields.urlTemplatizationRulesGroups":
 		if e.complexity.ActionFields.URLTemplatizationRulesGroups == nil {
 			break
@@ -2180,6 +2202,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CollectorDaemonSetInfo.Status(childComplexity), true
+
+	case "CollectorDaemonSetInfo.throughputLogsBytesPerSec":
+		if e.complexity.CollectorDaemonSetInfo.ThroughputLogsBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.CollectorDaemonSetInfo.ThroughputLogsBytesPerSec(childComplexity), true
+
+	case "CollectorDaemonSetInfo.throughputMetricsBytesPerSec":
+		if e.complexity.CollectorDaemonSetInfo.ThroughputMetricsBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.CollectorDaemonSetInfo.ThroughputMetricsBytesPerSec(childComplexity), true
+
+	case "CollectorDaemonSetInfo.throughputTracesBytesPerSec":
+		if e.complexity.CollectorDaemonSetInfo.ThroughputTracesBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.CollectorDaemonSetInfo.ThroughputTracesBytesPerSec(childComplexity), true
 
 	case "CollectorGatewayConfig.clusterMetricsEnabled":
 		if e.complexity.CollectorGatewayConfig.ClusterMetricsEnabled == nil {
@@ -3772,6 +3815,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GatewayDeploymentInfo.Status(childComplexity), true
+
+	case "GatewayDeploymentInfo.throughputLogsBytesPerSec":
+		if e.complexity.GatewayDeploymentInfo.ThroughputLogsBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.GatewayDeploymentInfo.ThroughputLogsBytesPerSec(childComplexity), true
+
+	case "GatewayDeploymentInfo.throughputMetricsBytesPerSec":
+		if e.complexity.GatewayDeploymentInfo.ThroughputMetricsBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.GatewayDeploymentInfo.ThroughputMetricsBytesPerSec(childComplexity), true
+
+	case "GatewayDeploymentInfo.throughputTracesBytesPerSec":
+		if e.complexity.GatewayDeploymentInfo.ThroughputTracesBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.GatewayDeploymentInfo.ThroughputTracesBytesPerSec(childComplexity), true
 
 	case "GetDestinationCategories.categories":
 		if e.complexity.GetDestinationCategories.Categories == nil {
@@ -10987,6 +11051,10 @@ func (ec *executionContext) fieldContext_Action_fields(_ context.Context, field 
 				return ec.fieldContext_ActionFields_urlTemplatizationRulesGroups(ctx, field)
 			case "extractAttribute":
 				return ec.fieldContext_ActionFields_extractAttribute(ctx, field)
+			case "scopes":
+				return ec.fieldContext_ActionFields_scopes(ctx, field)
+			case "templatizeLiterals":
+				return ec.fieldContext_ActionFields_templatizeLiterals(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ActionFields", field.Name)
 		},
@@ -11883,6 +11951,96 @@ func (ec *executionContext) fieldContext_ActionFields_extractAttribute(_ context
 				return ec.fieldContext_ExtractAttribute_extractions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ExtractAttribute", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFields_scopes(ctx context.Context, field graphql.CollectedField, obj *model.ActionFields) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFields_scopes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Scopes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.SourcesScopes)
+	fc.Result = res
+	return ec.marshalOSourcesScopes2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopes(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFields_scopes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFields",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sources":
+				return ec.fieldContext_SourcesScopes_sources(ctx, field)
+			case "namespaces":
+				return ec.fieldContext_SourcesScopes_namespaces(ctx, field)
+			case "languages":
+				return ec.fieldContext_SourcesScopes_languages(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SourcesScopes", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFields_templatizeLiterals(ctx context.Context, field graphql.CollectedField, obj *model.ActionFields) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFields_templatizeLiterals(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TemplatizeLiterals, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFields_templatizeLiterals(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFields",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -13785,6 +13943,129 @@ func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_nodes(_ context.
 				return ec.fieldContext_NodesSummary_ready(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NodesSummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorDaemonSetInfo_throughputTracesBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.CollectorDaemonSetInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorDaemonSetInfo_throughputTracesBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputTracesBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputTracesBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorDaemonSetInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorDaemonSetInfo_throughputMetricsBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.CollectorDaemonSetInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorDaemonSetInfo_throughputMetricsBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputMetricsBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputMetricsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorDaemonSetInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorDaemonSetInfo_throughputLogsBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.CollectorDaemonSetInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorDaemonSetInfo_throughputLogsBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputLogsBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputLogsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorDaemonSetInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -24026,6 +24307,129 @@ func (ec *executionContext) fieldContext_GatewayDeploymentInfo_hpa(_ context.Con
 				return ec.fieldContext_HorizontalPodAutoscalerInfo_conditions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HorizontalPodAutoscalerInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GatewayDeploymentInfo_throughputTracesBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.GatewayDeploymentInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GatewayDeploymentInfo_throughputTracesBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputTracesBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputTracesBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GatewayDeploymentInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GatewayDeploymentInfo_throughputMetricsBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.GatewayDeploymentInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GatewayDeploymentInfo_throughputMetricsBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputMetricsBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputMetricsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GatewayDeploymentInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GatewayDeploymentInfo_throughputLogsBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.GatewayDeploymentInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GatewayDeploymentInfo_throughputLogsBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputLogsBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputLogsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GatewayDeploymentInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -45240,6 +45644,12 @@ func (ec *executionContext) fieldContext_Query_gatewayDeploymentInfo(_ context.C
 				return ec.fieldContext_GatewayDeploymentInfo_status(ctx, field)
 			case "hpa":
 				return ec.fieldContext_GatewayDeploymentInfo_hpa(ctx, field)
+			case "throughputTracesBytesPerSec":
+				return ec.fieldContext_GatewayDeploymentInfo_throughputTracesBytesPerSec(ctx, field)
+			case "throughputMetricsBytesPerSec":
+				return ec.fieldContext_GatewayDeploymentInfo_throughputMetricsBytesPerSec(ctx, field)
+			case "throughputLogsBytesPerSec":
+				return ec.fieldContext_GatewayDeploymentInfo_throughputLogsBytesPerSec(ctx, field)
 			case "resources":
 				return ec.fieldContext_GatewayDeploymentInfo_resources(ctx, field)
 			case "imageVersion":
@@ -45302,6 +45712,12 @@ func (ec *executionContext) fieldContext_Query_odigletDaemonSetInfo(_ context.Co
 				return ec.fieldContext_CollectorDaemonSetInfo_status(ctx, field)
 			case "nodes":
 				return ec.fieldContext_CollectorDaemonSetInfo_nodes(ctx, field)
+			case "throughputTracesBytesPerSec":
+				return ec.fieldContext_CollectorDaemonSetInfo_throughputTracesBytesPerSec(ctx, field)
+			case "throughputMetricsBytesPerSec":
+				return ec.fieldContext_CollectorDaemonSetInfo_throughputMetricsBytesPerSec(ctx, field)
+			case "throughputLogsBytesPerSec":
+				return ec.fieldContext_CollectorDaemonSetInfo_throughputLogsBytesPerSec(ctx, field)
 			case "resources":
 				return ec.fieldContext_CollectorDaemonSetInfo_resources(ctx, field)
 			case "imageVersion":
@@ -54819,7 +55235,7 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "urlTemplatizationRulesGroups", "extractAttribute"}
+	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "urlTemplatizationRulesGroups", "extractAttribute", "scopes", "templatizeLiterals"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -54917,6 +55333,20 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 				return it, err
 			}
 			it.ExtractAttribute = data
+		case "scopes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scopes"))
+			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Scopes = data
+		case "templatizeLiterals":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("templatizeLiterals"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TemplatizeLiterals = data
 		}
 	}
 
@@ -57942,6 +58372,10 @@ func (ec *executionContext) _ActionFields(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._ActionFields_urlTemplatizationRulesGroups(ctx, field, obj)
 		case "extractAttribute":
 			out.Values[i] = ec._ActionFields_extractAttribute(ctx, field, obj)
+		case "scopes":
+			out.Values[i] = ec._ActionFields_scopes(ctx, field, obj)
+		case "templatizeLiterals":
+			out.Values[i] = ec._ActionFields_templatizeLiterals(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -58426,6 +58860,12 @@ func (ec *executionContext) _CollectorDaemonSetInfo(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "throughputTracesBytesPerSec":
+			out.Values[i] = ec._CollectorDaemonSetInfo_throughputTracesBytesPerSec(ctx, field, obj)
+		case "throughputMetricsBytesPerSec":
+			out.Values[i] = ec._CollectorDaemonSetInfo_throughputMetricsBytesPerSec(ctx, field, obj)
+		case "throughputLogsBytesPerSec":
+			out.Values[i] = ec._CollectorDaemonSetInfo_throughputLogsBytesPerSec(ctx, field, obj)
 		case "resources":
 			out.Values[i] = ec._CollectorDaemonSetInfo_resources(ctx, field, obj)
 		case "imageVersion":
@@ -60726,6 +61166,12 @@ func (ec *executionContext) _GatewayDeploymentInfo(ctx context.Context, sel ast.
 			}
 		case "hpa":
 			out.Values[i] = ec._GatewayDeploymentInfo_hpa(ctx, field, obj)
+		case "throughputTracesBytesPerSec":
+			out.Values[i] = ec._GatewayDeploymentInfo_throughputTracesBytesPerSec(ctx, field, obj)
+		case "throughputMetricsBytesPerSec":
+			out.Values[i] = ec._GatewayDeploymentInfo_throughputMetricsBytesPerSec(ctx, field, obj)
+		case "throughputLogsBytesPerSec":
+			out.Values[i] = ec._GatewayDeploymentInfo_throughputLogsBytesPerSec(ctx, field, obj)
 		case "resources":
 			out.Values[i] = ec._GatewayDeploymentInfo_resources(ctx, field, obj)
 		case "imageVersion":
