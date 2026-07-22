@@ -6,6 +6,8 @@ import (
 	"github.com/odigos-io/odigos/common/api/actions"
 )
 
+const customMaskedValue = "****"
+
 type categoryMask struct {
 	maskedValue string
 	patterns    []*regexp.Regexp
@@ -54,6 +56,26 @@ func maskCategory(category actions.PiiCategory, value string) (string, bool) {
 			result = replaced
 			changed = true
 		}
+	}
+	return result, changed
+}
+
+// maskCaptureGroups replaces each first capture group match with customMaskedValue, leaving the rest of the match intact.
+func maskCaptureGroups(re *regexp.Regexp, value string) (string, bool) {
+	locs := re.FindAllStringSubmatchIndex(value, -1)
+	if len(locs) == 0 {
+		return value, false
+	}
+
+	result := value
+	changed := false
+	for i := len(locs) - 1; i >= 0; i-- {
+		loc := locs[i]
+		if len(loc) < 4 || loc[2] < 0 {
+			continue
+		}
+		result = result[:loc[2]] + customMaskedValue + result[loc[3]:]
+		changed = true
 	}
 	return result, changed
 }
