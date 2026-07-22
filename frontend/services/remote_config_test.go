@@ -67,6 +67,9 @@ func TestUpdateRemoteConfigMergesProfilingCacheLimits(t *testing.T) {
 
 func TestUpdateRemoteConfigPreservesProfilingWhenUpdatingRollout(t *testing.T) {
 	current := &common.OdigosConfiguration{
+		Rollout: &common.RolloutConfiguration{
+			MaxConcurrentRollouts: 5,
+		},
 		Profiling: &common.ProfilingConfiguration{
 			Ui: &common.ProfilingUiConfiguration{
 				MaxSlots:       10,
@@ -85,7 +88,26 @@ func TestUpdateRemoteConfigPreservesProfilingWhenUpdatingRollout(t *testing.T) {
 
 	require.NotNil(t, current.Rollout)
 	require.True(t, *current.Rollout.AutomaticRolloutDisabled)
+	require.Equal(t, 5, current.Rollout.MaxConcurrentRollouts)
 	require.Equal(t, 10, current.Profiling.Ui.MaxSlots)
 	require.Equal(t, 1024, current.Profiling.Ui.SlotMaxBytes)
 	require.Equal(t, 60, current.Profiling.Ui.SlotTTLSeconds)
+}
+
+func TestUpdateRemoteConfigEmptyUpdatePreservesExistingConfig(t *testing.T) {
+	automaticRolloutDisabled := true
+	current := &common.OdigosConfiguration{
+		Rollout: &common.RolloutConfiguration{
+			AutomaticRolloutDisabled: &automaticRolloutDisabled,
+		},
+		Profiling: &common.ProfilingConfiguration{
+			Ui: &common.ProfilingUiConfiguration{MaxSlots: 10},
+		},
+	}
+
+	mergeRemoteConfigUpdate(current, &common.OdigosConfiguration{})
+
+	require.NotNil(t, current.Rollout)
+	require.True(t, *current.Rollout.AutomaticRolloutDisabled)
+	require.Equal(t, 10, current.Profiling.Ui.MaxSlots)
 }

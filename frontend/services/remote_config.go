@@ -78,12 +78,17 @@ func UpdateRemoteConfig(ctx context.Context, config *common.OdigosConfiguration)
 }
 
 func mergeRemoteConfigUpdate(current, update *common.OdigosConfiguration) {
-	if update.Rollout == nil && update.Profiling == nil {
-		*current = *update
+	if update == nil {
 		return
 	}
 	if update.Rollout != nil {
-		current.Rollout = update.Rollout
+		if current.Rollout == nil {
+			current.Rollout = &common.RolloutConfiguration{}
+		}
+		current.Rollout.AutomaticRolloutDisabled = update.Rollout.AutomaticRolloutDisabled
+		if update.Rollout.MaxConcurrentRollouts != 0 {
+			current.Rollout.MaxConcurrentRollouts = update.Rollout.MaxConcurrentRollouts
+		}
 	}
 	if update.Profiling == nil {
 		return
