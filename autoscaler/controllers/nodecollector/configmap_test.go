@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -187,6 +188,62 @@ func TestCalculateConfigMapData(t *testing.T) {
 
 	assert.Equal(t, err, nil)
 	assert.Equal(t, want, got)
+}
+
+func TestIsTracingLoadBalancingNeeded(t *testing.T) {
+	trueVal := true
+	falseVal := false
+
+	tests := []struct {
+		name                  string
+		serviceGraphDisabled  *bool
+		tailSampling          *sampling.TailSamplingConfiguration
+		wantLoadBalancingNeed bool
+	}{
+		{
+			name:                  "service graph enabled by default",
+			wantLoadBalancingNeed: true,
+		},
+		{
+			name:                 "service graph explicitly disabled without tail sampling",
+			serviceGraphDisabled: &trueVal,
+		},
+		{
+			name:                 "tail sampling requires load balancing when service graph disabled",
+			serviceGraphDisabled: &trueVal,
+			tailSampling: &sampling.TailSamplingConfiguration{
+				Disabled: &falseVal,
+			},
+			wantLoadBalancingNeed: true,
+		},
+		{
+			name:                  "tail sampling enabled by default when configured",
+			serviceGraphDisabled:  &trueVal,
+			tailSampling:          &sampling.TailSamplingConfiguration{},
+			wantLoadBalancingNeed: true,
+		},
+		{
+			name:                 "disabled tail sampling does not require load balancing",
+			serviceGraphDisabled: &trueVal,
+			tailSampling: &sampling.TailSamplingConfiguration{
+				Disabled: &trueVal,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := isTracingLoadBalancingNeeded(context.Background(), nil, odigosv1.CollectorsGroup{
+				Spec: odigosv1.CollectorsGroupSpec{
+					ServiceGraphDisabled: tt.serviceGraphDisabled,
+					TailSampling:         tt.tailSampling,
+				},
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.wantLoadBalancingNeed, got)
+		})
+	}
 }
 
 func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
