@@ -28,7 +28,7 @@ func TestBoundedBuffer_Resize(t *testing.T) {
 }
 
 func TestStore_Reconfigure(t *testing.T) {
-	s := NewStore(4, 300, 1000, time.Minute)
+	s := NewStore(StoreConfig{MaxSlots: 4, TTLSeconds: 300, SlotMaxBytes: 1000, CleanupInterval: time.Minute})
 	for _, key := range []string{"a", "b", "c", "d"} {
 		s.EnsureSlot(key)
 		s.AddProfileData(key, make([]byte, 400))

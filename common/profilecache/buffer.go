@@ -64,8 +64,7 @@ func (b *BoundedBuffer) Resize(maxBytes int) {
 	b.trimLocked()
 }
 
-// trimLocked evicts oldest chunks until the buffer fits maxBytes, zeroing evicted
-// entries and compacting the backing slice so it does not grow without bound.
+// trimLocked evicts oldest chunks until the buffer fits maxBytes. The caller must hold b.mu.
 func (b *BoundedBuffer) trimLocked() {
 	dropped := 0
 	for dropped < len(b.chunks) && b.maxBytes > 0 && b.totalBytes > b.maxBytes {

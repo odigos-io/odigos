@@ -46,25 +46,34 @@ type StoreRef interface {
 	Reconfigure(maxSlots, slotMaxBytes, ttlSeconds int)
 }
 
-func NewStore(maxSlots, ttlSeconds, slotMaxBytes int, cleanupInterval time.Duration) *Store {
-	if maxSlots <= 0 {
-		maxSlots = DefaultMaxSlots
+// StoreConfig holds the cache limits for NewStore. Any non-positive field falls
+// back to the package default.
+type StoreConfig struct {
+	MaxSlots        int
+	TTLSeconds      int
+	SlotMaxBytes    int
+	CleanupInterval time.Duration
+}
+
+func NewStore(cfg StoreConfig) *Store {
+	if cfg.MaxSlots <= 0 {
+		cfg.MaxSlots = DefaultMaxSlots
 	}
-	if ttlSeconds <= 0 {
-		ttlSeconds = DefaultSlotTTLSeconds
+	if cfg.TTLSeconds <= 0 {
+		cfg.TTLSeconds = DefaultSlotTTLSeconds
 	}
-	if slotMaxBytes <= 0 {
-		slotMaxBytes = DefaultSlotMaxBytes
+	if cfg.SlotMaxBytes <= 0 {
+		cfg.SlotMaxBytes = DefaultSlotMaxBytes
 	}
-	if cleanupInterval <= 0 {
-		cleanupInterval = DefaultCleanupInterval
+	if cfg.CleanupInterval <= 0 {
+		cfg.CleanupInterval = DefaultCleanupInterval
 	}
 	return &Store{
 		slots:           make(map[string]*Slot),
-		maxSlots:        maxSlots,
-		ttlSeconds:      ttlSeconds,
-		slotMaxBytes:    slotMaxBytes,
-		cleanupInterval: cleanupInterval,
+		maxSlots:        cfg.MaxSlots,
+		ttlSeconds:      cfg.TTLSeconds,
+		slotMaxBytes:    cfg.SlotMaxBytes,
+		cleanupInterval: cfg.CleanupInterval,
 	}
 }
 
