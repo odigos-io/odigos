@@ -37,5 +37,10 @@
     "eslint-config-next": "16.2.10",
     "postcss": "^8.5.18",
     "typescript": "5.9.3"
+  },
+  "resolutions": {
+    "flatted": "3.4.2",
+    "js-yaml": "4.3.0",
+    "sharp": "0.35.3"
   }
 }

@@ -87,7 +87,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
-	google.golang.org/grpc v1.81.1
+	google.golang.org/grpc v1.82.1
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/cri-api v0.35.2
 	k8s.io/klog/v2 v2.130.1
