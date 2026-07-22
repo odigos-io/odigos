@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/loglevel"
 	"github.com/odigos-io/odigos/autoscaler/controllers/metricshandler"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
+	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
@@ -90,6 +92,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 		RenewDeadline:                 durationPointer(20 * time.Second),
 		RetryPeriod:                   durationPointer(5 * time.Second),
 		LeaderElectionReleaseOnCancel: true,
+		WebhookServer: webhook.NewServer(webhook.Options{
+			CertDir: certs.WebhookCertDir(),
+		}),
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
 			ByObject: map[client.Object]cache.ByObject{

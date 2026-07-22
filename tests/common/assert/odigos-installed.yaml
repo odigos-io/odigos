@@ -15,8 +15,7 @@ status:
   containerStatuses:
     - name: manager
       ready: true
-      # RestartOnSecretRefresh exits once after writing webhook certs so kubelet remounts them
-      (restartCount <= `1`): true
+      restartCount: 0
       started: true
   phase: Running
 ---
@@ -44,8 +43,7 @@ status:
   containerStatuses:
     - name: manager
       ready: true
-      # RestartOnSecretRefresh exits once after writing webhook certs so kubelet remounts them
-      (restartCount <= `1`): true
+      restartCount: 0
       started: true
   phase: Running
 ---

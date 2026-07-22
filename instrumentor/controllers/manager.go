@@ -16,6 +16,7 @@ import (
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	cacheutils "github.com/odigos-io/odigos/k8sutils/pkg/cache"
+	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
@@ -152,15 +153,16 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 		},
 	}
 
-	// Check if the environment variable `LOCAL_WEBHOOK_CERT_DIR` is set.
-	// If defined, add WebhookServer options with the specified certificate directory.
-	// This is used primarily for local development environments to provide a custom path for serving TLS certificates.
-	localCertDir := os.Getenv("LOCAL_MUTATING_WEBHOOK_CERT_DIR")
-	if localCertDir != "" {
-		mgrOptions.WebhookServer = webhook.NewServer(webhook.Options{
-			CertDir: localCertDir,
-		})
+	// Serve webhook certs from a writable local dir (not a Secret volume mount) so
+	// readiness is not blocked on kubelet secret projection. LOCAL_MUTATING_WEBHOOK_CERT_DIR
+	// can override this for local development.
+	certDir := os.Getenv("LOCAL_MUTATING_WEBHOOK_CERT_DIR")
+	if certDir == "" {
+		certDir = certs.WebhookCertDir()
 	}
+	mgrOptions.WebhookServer = webhook.NewServer(webhook.Options{
+		CertDir: certDir,
+	})
 
 	return ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOptions)
 }

@@ -22,7 +22,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -148,15 +147,26 @@ func main() {
 		logger.Info("Running on GKE")
 	}
 
+	webhookCertDir := certs.WebhookCertDir()
+	webhookSecret := types.NamespacedName{
+		Namespace: env.GetCurrentNamespace(),
+		Name:      k8sconsts.AutoscalerWebhookSecretName,
+	}
+	if err := mgr.Add(&certs.SecretDiskSync{
+		Client:  mgr.GetClient(),
+		Secret:  webhookSecret,
+		CertDir: webhookCertDir,
+	}); err != nil {
+		logger.Error("unable to add webhook cert disk sync", "err", err)
+		os.Exit(1)
+	}
+
 	rotatorSetupFinished := make(chan struct{})
 	err = rotator.AddRotator(mgr, &rotator.CertRotator{
-		SecretKey: types.NamespacedName{
-			Namespace: env.GetCurrentNamespace(),
-			Name:      k8sconsts.AutoscalerWebhookSecretName,
-		},
-		CertDir: filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs"),
-		IsReady: rotatorSetupFinished,
-		CAName:  k8sconsts.AutoscalerCAName,
+		SecretKey: webhookSecret,
+		CertDir:   webhookCertDir,
+		IsReady:   rotatorSetupFinished,
+		CAName:    k8sconsts.AutoscalerCAName,
 		Webhooks: []rotator.WebhookInfo{
 			{Name: k8sconsts.AutoscalerActionValidatingWebhookName, Type: rotator.Validating},
 		},
@@ -166,11 +176,6 @@ func main() {
 			fmt.Sprintf("%s.%s.svc.cluster.local", k8sconsts.AutoScalerWebhookServiceName, env.GetCurrentNamespace()),
 		},
 		EnableReadinessCheck: true,
-
-		// Restart after writing certs so kubelet remounts the secret immediately.
-		// Without this, readiness waits on slow kubelet secret volume sync (30-100s+).
-		// See: https://github.com/open-policy-agent/cert-controller/issues/35
-		RestartOnSecretRefresh: true,
 
 		// marking the controller as the owner of the webhooks config updated fields.
 		// this avoid CI/CD systems overwriting the managed fields.
