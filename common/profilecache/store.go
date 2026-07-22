@@ -259,7 +259,7 @@ func (s *Store) EvictedSlots() uint64 {
 	return s.evictedSlots
 }
 
-// RunCleanup sweeps idle slots every cleanupInterval until ctx is cancelled. It
+// RunCleanup sweeps idle slots every cleanupInterval until ctx is canceled. It
 // blocks, so callers run it in the background: go store.RunCleanup(ctx).
 func (s *Store) RunCleanup(ctx context.Context) {
 	ticker := time.NewTicker(s.cleanupInterval)
