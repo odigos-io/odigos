@@ -955,7 +955,50 @@ spec:
                       type: object
                     piiMasking:
                       properties:
+                        customFormatMaskings:
+                          description: CustomFormatMaskings is the list of format-based
+                            masking rules to apply, in order.
+                          items:
+                            description: |-
+                              CustomFormatMasking masks values found via a LookupKey inside a DataFormat
+                              (e.g. JSON key, SQL column, resource path segment).
+                            properties:
+                              dataFormat:
+                                description: DataFormat is the format of the data
+                                  to search in (json, sql, or resource_path).
+                                enum:
+                                - resource_path
+                                - json
+                                - sql
+                                type: string
+                              lookupKey:
+                                description: |-
+                                  LookupKey is the field or path segment whose value should be masked
+                                  (e.g. a JSON key, SQL column name, or URL path segment).
+                                type: string
+                            required:
+                            - dataFormat
+                            - lookupKey
+                            type: object
+                          type: array
+                        customRegexMaskings:
+                          description: CustomRegexMaskings is the list of regex-based
+                            masking rules to apply, in order.
+                          items:
+                            description: CustomRegexMasking masks values matched by
+                              a user-supplied regular expression.
+                            properties:
+                              regex:
+                                description: Regex is a custom regular expression
+                                  with a single capture group whose value is masked.
+                                type: string
+                            required:
+                            - regex
+                            type: object
+                          type: array
                         piiCategories:
+                          description: PiiCategories are predefined PII patterns to
+                            mask (e.g. CREDIT_CARD, EMAIL).
                           items:
                             enum:
                             - CREDIT_CARD
@@ -964,8 +1007,6 @@ spec:
                             - UUID
                             type: string
                           type: array
-                      required:
-                      - piiCategories
                       type: object
                     samplingCollectorConfig:
                       description: The sampling configuration that relevant for the

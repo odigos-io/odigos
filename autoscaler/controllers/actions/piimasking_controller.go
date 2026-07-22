@@ -18,15 +18,10 @@ package actions
 
 import (
 	"github.com/odigos-io/odigos/common"
-	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 )
 
 var piiMaskingSupportedSignals = map[common.ObservabilitySignal]struct{}{
 	common.TracesObservabilitySignal: {},
-}
-
-type piiMaskingProcessorConfig struct {
-	PiiCategories []actionsapi.PiiCategory `json:"pii_categories"`
 }
 
 func piiMaskingActionSignalsSupported(signals []common.ObservabilitySignal) bool {
