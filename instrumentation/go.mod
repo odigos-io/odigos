@@ -10,7 +10,7 @@ require (
 	github.com/odigos-io/runtime-detector v0.0.25
 	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/metric v1.44.0
-	golang.org/x/sync v0.20.0
+	golang.org/x/sync v0.22.0
 )
 
 require (
