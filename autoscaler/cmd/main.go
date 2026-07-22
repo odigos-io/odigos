@@ -167,6 +167,11 @@ func main() {
 		},
 		EnableReadinessCheck: true,
 
+		// Restart after writing certs so kubelet remounts the secret immediately.
+		// Without this, readiness waits on slow kubelet secret volume sync (30-100s+).
+		// See: https://github.com/open-policy-agent/cert-controller/issues/35
+		RestartOnSecretRefresh: true,
+
 		// marking the controller as the owner of the webhooks config updated fields.
 		// this avoid CI/CD systems overwriting the managed fields.
 		FieldOwner: k8sconsts.AutoScalerWebhookFieldOwner,

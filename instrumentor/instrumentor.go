@@ -76,6 +76,11 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 		},
 		EnableReadinessCheck: true,
 
+		// Restart after writing certs so kubelet remounts the secret immediately.
+		// Without this, readiness waits on slow kubelet secret volume sync (30-100s+).
+		// See: https://github.com/open-policy-agent/cert-controller/issues/35
+		RestartOnSecretRefresh: true,
+
 		// marking the controller as the owner of the webhooks config updated fields (caBundle)
 		// this helps to avoid CI/CD systems overwriting the controller set fields.
 		FieldOwner: k8sconsts.InstrumentorWebhookFieldOwner,
