@@ -19,4 +19,6 @@ type ContainerCollectorConfig struct {
 	DbQueryTemplatization *actions.DbQueryTemplatizationConfig `json:"dbQueryTemplatization,omitempty"`
 
 	InferDbAttributes *actions.InferDbAttributesConfig `json:"inferDbAttributes,omitempty"`
+
+	PiiMasking *actions.PiiMaskingConfig `json:"piiMasking,omitempty"`
 }

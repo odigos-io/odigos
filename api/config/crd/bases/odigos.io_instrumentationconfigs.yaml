@@ -953,6 +953,20 @@ spec:
                         additional attributes from database query text (e.g. db.operation.name,
                         db.collection.name). Configuration options will be added later.
                       type: object
+                    piiMasking:
+                      properties:
+                        piiCategories:
+                          items:
+                            enum:
+                            - CREDIT_CARD
+                            - EMAIL
+                            - JWT
+                            - UUID
+                            type: string
+                          type: array
+                      required:
+                      - piiCategories
+                      type: object
                     samplingCollectorConfig:
                       description: The sampling configuration that relevant for the
                         collector (tailsampling).
