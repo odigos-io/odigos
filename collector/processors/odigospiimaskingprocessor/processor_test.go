@@ -116,6 +116,13 @@ func TestBuildFormatMaskingRegex(t *testing.T) {
 			want:   `WHERE password = '****' AND status = 'ok'`,
 		},
 		{
+			name:   "sql quoted value with backslash escaped quotes",
+			key:    "password",
+			format: actions.FormatSQL,
+			input:  `WHERE password = 'my \'secret\' pass' AND status = 'ok'`,
+			want:   `WHERE password = '****' AND status = 'ok'`,
+		},
+		{
 			name:   "resource_path",
 			key:    "orders",
 			format: actions.FormatResourcePath,
