@@ -164,14 +164,17 @@ type ComplexityRoot struct {
 	}
 
 	CollectorDaemonSetInfo struct {
-		ConfigMapYaml     func(childComplexity int) int
-		ImageVersion      func(childComplexity int) int
-		LastRolloutAt     func(childComplexity int) int
-		ManifestYaml      func(childComplexity int) int
-		Nodes             func(childComplexity int) int
-		Resources         func(childComplexity int) int
-		RolloutInProgress func(childComplexity int) int
-		Status            func(childComplexity int) int
+		ConfigMapYaml                func(childComplexity int) int
+		ImageVersion                 func(childComplexity int) int
+		LastRolloutAt                func(childComplexity int) int
+		ManifestYaml                 func(childComplexity int) int
+		Nodes                        func(childComplexity int) int
+		Resources                    func(childComplexity int) int
+		RolloutInProgress            func(childComplexity int) int
+		Status                       func(childComplexity int) int
+		ThroughputLogsBytesPerSec    func(childComplexity int) int
+		ThroughputMetricsBytesPerSec func(childComplexity int) int
+		ThroughputTracesBytesPerSec  func(childComplexity int) int
 	}
 
 	CollectorGatewayConfig struct {
@@ -498,14 +501,17 @@ type ComplexityRoot struct {
 	}
 
 	GatewayDeploymentInfo struct {
-		ConfigMapYaml     func(childComplexity int) int
-		Hpa               func(childComplexity int) int
-		ImageVersion      func(childComplexity int) int
-		LastRolloutAt     func(childComplexity int) int
-		ManifestYaml      func(childComplexity int) int
-		Resources         func(childComplexity int) int
-		RolloutInProgress func(childComplexity int) int
-		Status            func(childComplexity int) int
+		ConfigMapYaml                func(childComplexity int) int
+		Hpa                          func(childComplexity int) int
+		ImageVersion                 func(childComplexity int) int
+		LastRolloutAt                func(childComplexity int) int
+		ManifestYaml                 func(childComplexity int) int
+		Resources                    func(childComplexity int) int
+		RolloutInProgress            func(childComplexity int) int
+		Status                       func(childComplexity int) int
+		ThroughputLogsBytesPerSec    func(childComplexity int) int
+		ThroughputMetricsBytesPerSec func(childComplexity int) int
+		ThroughputTracesBytesPerSec  func(childComplexity int) int
 	}
 
 	GetDestinationCategories struct {
@@ -1030,6 +1036,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		ClearSourceProfilingBuffer          func(childComplexity int, namespace string, kind string, name string) int
+		ConfigureProfilingCache             func(childComplexity int, maxSlots *int, slotMaxBytes *int, slotTTLSeconds *int) int
 		CreateAction                        func(childComplexity int, action model.ActionInput) int
 		CreateCostReductionRule             func(childComplexity int, samplingID string, rule model.CostReductionRuleInput) int
 		CreateHighlyRelevantOperationRule   func(childComplexity int, samplingID string, rule model.HighlyRelevantOperationRuleInput) int
@@ -1575,6 +1582,7 @@ type MutationResolver interface {
 	EnableSourceProfiling(ctx context.Context, namespace string, kind string, name string) (*model.EnableProfilingResult, error)
 	DisableSourceProfiling(ctx context.Context, namespace string, kind string, name string) (*model.DisableProfilingResult, error)
 	ClearSourceProfilingBuffer(ctx context.Context, namespace string, kind string, name string) (*model.ClearProfilingBufferResult, error)
+	ConfigureProfilingCache(ctx context.Context, maxSlots *int, slotMaxBytes *int, slotTTLSeconds *int) (*model.ProfilingSlots, error)
 	UpdateLocalUISamplingConfig(ctx context.Context, config *model.SamplingConfigInput) (bool, error)
 	CreateNoisyOperationRule(ctx context.Context, samplingID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
 	UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
@@ -2196,6 +2204,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CollectorDaemonSetInfo.Status(childComplexity), true
+
+	case "CollectorDaemonSetInfo.throughputLogsBytesPerSec":
+		if e.complexity.CollectorDaemonSetInfo.ThroughputLogsBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.CollectorDaemonSetInfo.ThroughputLogsBytesPerSec(childComplexity), true
+
+	case "CollectorDaemonSetInfo.throughputMetricsBytesPerSec":
+		if e.complexity.CollectorDaemonSetInfo.ThroughputMetricsBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.CollectorDaemonSetInfo.ThroughputMetricsBytesPerSec(childComplexity), true
+
+	case "CollectorDaemonSetInfo.throughputTracesBytesPerSec":
+		if e.complexity.CollectorDaemonSetInfo.ThroughputTracesBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.CollectorDaemonSetInfo.ThroughputTracesBytesPerSec(childComplexity), true
 
 	case "CollectorGatewayConfig.clusterMetricsEnabled":
 		if e.complexity.CollectorGatewayConfig.ClusterMetricsEnabled == nil {
@@ -3788,6 +3817,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GatewayDeploymentInfo.Status(childComplexity), true
+
+	case "GatewayDeploymentInfo.throughputLogsBytesPerSec":
+		if e.complexity.GatewayDeploymentInfo.ThroughputLogsBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.GatewayDeploymentInfo.ThroughputLogsBytesPerSec(childComplexity), true
+
+	case "GatewayDeploymentInfo.throughputMetricsBytesPerSec":
+		if e.complexity.GatewayDeploymentInfo.ThroughputMetricsBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.GatewayDeploymentInfo.ThroughputMetricsBytesPerSec(childComplexity), true
+
+	case "GatewayDeploymentInfo.throughputTracesBytesPerSec":
+		if e.complexity.GatewayDeploymentInfo.ThroughputTracesBytesPerSec == nil {
+			break
+		}
+
+		return e.complexity.GatewayDeploymentInfo.ThroughputTracesBytesPerSec(childComplexity), true
 
 	case "GetDestinationCategories.categories":
 		if e.complexity.GetDestinationCategories.Categories == nil {
@@ -5949,6 +5999,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ClearSourceProfilingBuffer(childComplexity, args["namespace"].(string), args["kind"].(string), args["name"].(string)), true
+
+	case "Mutation.configureProfilingCache":
+		if e.complexity.Mutation.ConfigureProfilingCache == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_configureProfilingCache_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ConfigureProfilingCache(childComplexity, args["maxSlots"].(*int), args["slotMaxBytes"].(*int), args["slotTTLSeconds"].(*int)), true
 
 	case "Mutation.createAction":
 		if e.complexity.Mutation.CreateAction == nil {
@@ -8492,6 +8554,80 @@ func (ec *executionContext) field_Mutation_clearSourceProfilingBuffer_argsName(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_configureProfilingCache_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_configureProfilingCache_argsMaxSlots(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["maxSlots"] = arg0
+	arg1, err := ec.field_Mutation_configureProfilingCache_argsSlotMaxBytes(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["slotMaxBytes"] = arg1
+	arg2, err := ec.field_Mutation_configureProfilingCache_argsSlotTTLSeconds(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["slotTTLSeconds"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_configureProfilingCache_argsMaxSlots(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["maxSlots"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("maxSlots"))
+	if tmp, ok := rawArgs["maxSlots"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_configureProfilingCache_argsSlotMaxBytes(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["slotMaxBytes"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("slotMaxBytes"))
+	if tmp, ok := rawArgs["slotMaxBytes"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_configureProfilingCache_argsSlotTTLSeconds(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["slotTTLSeconds"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("slotTTLSeconds"))
+	if tmp, ok := rawArgs["slotTTLSeconds"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
 	return zeroVal, nil
 }
 
@@ -13895,6 +14031,129 @@ func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_nodes(_ context.
 				return ec.fieldContext_NodesSummary_ready(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NodesSummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorDaemonSetInfo_throughputTracesBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.CollectorDaemonSetInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorDaemonSetInfo_throughputTracesBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputTracesBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputTracesBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorDaemonSetInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorDaemonSetInfo_throughputMetricsBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.CollectorDaemonSetInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorDaemonSetInfo_throughputMetricsBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputMetricsBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputMetricsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorDaemonSetInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorDaemonSetInfo_throughputLogsBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.CollectorDaemonSetInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorDaemonSetInfo_throughputLogsBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputLogsBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_throughputLogsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorDaemonSetInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -24136,6 +24395,129 @@ func (ec *executionContext) fieldContext_GatewayDeploymentInfo_hpa(_ context.Con
 				return ec.fieldContext_HorizontalPodAutoscalerInfo_conditions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HorizontalPodAutoscalerInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GatewayDeploymentInfo_throughputTracesBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.GatewayDeploymentInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GatewayDeploymentInfo_throughputTracesBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputTracesBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputTracesBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GatewayDeploymentInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GatewayDeploymentInfo_throughputMetricsBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.GatewayDeploymentInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GatewayDeploymentInfo_throughputMetricsBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputMetricsBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputMetricsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GatewayDeploymentInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GatewayDeploymentInfo_throughputLogsBytesPerSec(ctx context.Context, field graphql.CollectedField, obj *model.GatewayDeploymentInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GatewayDeploymentInfo_throughputLogsBytesPerSec(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ThroughputLogsBytesPerSec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GatewayDeploymentInfo_throughputLogsBytesPerSec(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GatewayDeploymentInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -39852,6 +40234,77 @@ func (ec *executionContext) fieldContext_Mutation_clearSourceProfilingBuffer(ctx
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_configureProfilingCache(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_configureProfilingCache(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ConfigureProfilingCache(rctx, fc.Args["maxSlots"].(*int), fc.Args["slotMaxBytes"].(*int), fc.Args["slotTTLSeconds"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ProfilingSlots)
+	fc.Result = res
+	return ec.marshalNProfilingSlots2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProfilingSlots(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_configureProfilingCache(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "activeKeys":
+				return ec.fieldContext_ProfilingSlots_activeKeys(ctx, field)
+			case "keysWithData":
+				return ec.fieldContext_ProfilingSlots_keysWithData(ctx, field)
+			case "totalBytesUsed":
+				return ec.fieldContext_ProfilingSlots_totalBytesUsed(ctx, field)
+			case "slotMaxBytes":
+				return ec.fieldContext_ProfilingSlots_slotMaxBytes(ctx, field)
+			case "maxSlots":
+				return ec.fieldContext_ProfilingSlots_maxSlots(ctx, field)
+			case "maxTotalBytesBudget":
+				return ec.fieldContext_ProfilingSlots_maxTotalBytesBudget(ctx, field)
+			case "slotTtlSeconds":
+				return ec.fieldContext_ProfilingSlots_slotTtlSeconds(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProfilingSlots", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_configureProfilingCache_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_updateLocalUiSamplingConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_updateLocalUiSamplingConfig(ctx, field)
 	if err != nil {
@@ -45350,6 +45803,12 @@ func (ec *executionContext) fieldContext_Query_gatewayDeploymentInfo(_ context.C
 				return ec.fieldContext_GatewayDeploymentInfo_status(ctx, field)
 			case "hpa":
 				return ec.fieldContext_GatewayDeploymentInfo_hpa(ctx, field)
+			case "throughputTracesBytesPerSec":
+				return ec.fieldContext_GatewayDeploymentInfo_throughputTracesBytesPerSec(ctx, field)
+			case "throughputMetricsBytesPerSec":
+				return ec.fieldContext_GatewayDeploymentInfo_throughputMetricsBytesPerSec(ctx, field)
+			case "throughputLogsBytesPerSec":
+				return ec.fieldContext_GatewayDeploymentInfo_throughputLogsBytesPerSec(ctx, field)
 			case "resources":
 				return ec.fieldContext_GatewayDeploymentInfo_resources(ctx, field)
 			case "imageVersion":
@@ -45412,6 +45871,12 @@ func (ec *executionContext) fieldContext_Query_odigletDaemonSetInfo(_ context.Co
 				return ec.fieldContext_CollectorDaemonSetInfo_status(ctx, field)
 			case "nodes":
 				return ec.fieldContext_CollectorDaemonSetInfo_nodes(ctx, field)
+			case "throughputTracesBytesPerSec":
+				return ec.fieldContext_CollectorDaemonSetInfo_throughputTracesBytesPerSec(ctx, field)
+			case "throughputMetricsBytesPerSec":
+				return ec.fieldContext_CollectorDaemonSetInfo_throughputMetricsBytesPerSec(ctx, field)
+			case "throughputLogsBytesPerSec":
+				return ec.fieldContext_CollectorDaemonSetInfo_throughputLogsBytesPerSec(ctx, field)
 			case "resources":
 				return ec.fieldContext_CollectorDaemonSetInfo_resources(ctx, field)
 			case "imageVersion":
@@ -58554,6 +59019,12 @@ func (ec *executionContext) _CollectorDaemonSetInfo(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "throughputTracesBytesPerSec":
+			out.Values[i] = ec._CollectorDaemonSetInfo_throughputTracesBytesPerSec(ctx, field, obj)
+		case "throughputMetricsBytesPerSec":
+			out.Values[i] = ec._CollectorDaemonSetInfo_throughputMetricsBytesPerSec(ctx, field, obj)
+		case "throughputLogsBytesPerSec":
+			out.Values[i] = ec._CollectorDaemonSetInfo_throughputLogsBytesPerSec(ctx, field, obj)
 		case "resources":
 			out.Values[i] = ec._CollectorDaemonSetInfo_resources(ctx, field, obj)
 		case "imageVersion":
@@ -60854,6 +61325,12 @@ func (ec *executionContext) _GatewayDeploymentInfo(ctx context.Context, sel ast.
 			}
 		case "hpa":
 			out.Values[i] = ec._GatewayDeploymentInfo_hpa(ctx, field, obj)
+		case "throughputTracesBytesPerSec":
+			out.Values[i] = ec._GatewayDeploymentInfo_throughputTracesBytesPerSec(ctx, field, obj)
+		case "throughputMetricsBytesPerSec":
+			out.Values[i] = ec._GatewayDeploymentInfo_throughputMetricsBytesPerSec(ctx, field, obj)
+		case "throughputLogsBytesPerSec":
+			out.Values[i] = ec._GatewayDeploymentInfo_throughputLogsBytesPerSec(ctx, field, obj)
 		case "resources":
 			out.Values[i] = ec._GatewayDeploymentInfo_resources(ctx, field, obj)
 		case "imageVersion":
@@ -65274,6 +65751,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "clearSourceProfilingBuffer":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_clearSourceProfilingBuffer(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "configureProfilingCache":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_configureProfilingCache(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -72520,6 +73004,20 @@ func (ec *executionContext) marshalNPodInfo2ᚖgithubᚗcomᚋodigosᚑioᚋodig
 func (ec *executionContext) unmarshalNPodWorkloadInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodWorkloadInput(ctx context.Context, v any) (*model.PodWorkloadInput, error) {
 	res, err := ec.unmarshalInputPodWorkloadInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNProfilingSlots2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProfilingSlots(ctx context.Context, sel ast.SelectionSet, v model.ProfilingSlots) graphql.Marshaler {
+	return ec._ProfilingSlots(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNProfilingSlots2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProfilingSlots(ctx context.Context, sel ast.SelectionSet, v *model.ProfilingSlots) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ProfilingSlots(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNProgrammingLanguage2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguage(ctx context.Context, v any) (model.ProgrammingLanguage, error) {

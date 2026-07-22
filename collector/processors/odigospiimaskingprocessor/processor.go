@@ -2,23 +2,55 @@ package odigospiimaskingprocessor
 
 import (
 	"context"
+	"fmt"
+	"regexp"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
 	"go.uber.org/zap"
+
+	"github.com/odigos-io/odigos/common/api/actions"
 )
 
 type piiMaskingProcessor struct {
-	logger *zap.Logger
-	config *Config
+	logger        *zap.Logger
+	categories    []actions.PiiCategory
+	customMaskers []*regexp.Regexp
 }
 
-func newPiiMaskingProcessor(set processor.Settings, cfg *Config) *piiMaskingProcessor {
-	return &piiMaskingProcessor{
-		logger: set.Logger,
-		config: cfg,
+func newPiiMaskingProcessor(set processor.Settings, cfg *Config) (*piiMaskingProcessor, error) {
+	customMaskers, err := compileCustomMaskers(cfg)
+	if err != nil {
+		return nil, err
 	}
+	return &piiMaskingProcessor{
+		logger:        set.Logger,
+		categories:    append([]actions.PiiCategory(nil), cfg.PiiCategories...),
+		customMaskers: customMaskers,
+	}, nil
+}
+
+func compileCustomMaskers(cfg *Config) ([]*regexp.Regexp, error) {
+	out := make([]*regexp.Regexp, 0, len(cfg.CustomFormatMaskings)+len(cfg.CustomRegexMaskings))
+
+	for i, masking := range cfg.CustomFormatMaskings {
+		re, err := buildFormatMaskingRegex(masking.LookupKey, masking.DataFormat)
+		if err != nil {
+			return nil, fmt.Errorf("customFormatMaskings[%d]: %w", i, err)
+		}
+		out = append(out, re)
+	}
+
+	for i, masking := range cfg.CustomRegexMaskings {
+		re, err := regexp.Compile(masking.Regex)
+		if err != nil {
+			return nil, fmt.Errorf("customRegexMaskings[%d]: invalid regex: %w", i, err)
+		}
+		out = append(out, re)
+	}
+
+	return out, nil
 }
 
 func (p *piiMaskingProcessor) processTraces(_ context.Context, traces ptrace.Traces) (ptrace.Traces, error) {
@@ -59,12 +91,22 @@ func (p *piiMaskingProcessor) processAttributeValue(value pcommon.Value) {
 func (p *piiMaskingProcessor) maskPiiData(value string) (string, bool) {
 	result := value
 	changed := false
-	for _, category := range p.config.PiiCategories {
+
+	for _, category := range p.categories {
 		masked, applied := maskCategory(category, result)
 		if applied {
 			result = masked
 			changed = true
 		}
 	}
+
+	for _, re := range p.customMaskers {
+		masked, applied := maskCaptureGroups(re, result)
+		if applied {
+			result = masked
+			changed = true
+		}
+	}
+
 	return result, changed
 }
