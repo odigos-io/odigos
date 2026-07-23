@@ -330,6 +330,15 @@ func TestOnSetMalformedOnlyPreservesCacheAndEmptyConfigDeletes(t *testing.T) {
 	})
 	_, ok = proc.maskersCache.get(key)
 	require.False(t, ok)
+
+	proc.OnSet(key, &commonapi.ContainerCollectorConfig{
+		PiiMasking: &actions.PiiMaskingConfig{
+			PiiCategories: []actions.PiiCategory{actions.EmailMasking},
+		},
+	})
+	proc.OnSet(key, nil)
+	_, ok = proc.maskersCache.get(key)
+	require.False(t, ok)
 }
 
 func TestExtension_SkipsWhenNoConfig(t *testing.T) {
