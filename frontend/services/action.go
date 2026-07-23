@@ -18,7 +18,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func deriveTypeFromAction(action *model.Action) model.ActionType {
+func deriveTypeFromAction(action *model.Action, crd *v1alpha1.Action) model.ActionType {
+	// DbQueryTemplatization and InferDbAttributes share ActionFields.scopes, and
+	// InferDbAttributes may have empty fields when scoped to all sources — derive
+	// these from the CRD config rather than field presence.
+	if crd.Spec.DbQueryTemplatization != nil {
+		return model.ActionTypeDbQueryTemplatization
+	}
+	if crd.Spec.InferDbAttributes != nil {
+		return model.ActionTypeInferDbAttributes
+	}
 	if action.Fields.CollectContainerAttributes != nil || action.Fields.CollectReplicaSetAttributes != nil || action.Fields.CollectWorkloadID != nil || action.Fields.CollectClusterID != nil || action.Fields.LabelsAttributes != nil || action.Fields.AnnotationsAttributes != nil {
 		return model.ActionTypeK8sAttributesResolver
 	}
@@ -182,6 +191,8 @@ func getSpecFromInput(input model.ActionInput, existingAction *v1alpha1.Action) 
 	spec.PiiMasking = convertPiiMaskingFromInput(input.Fields, existingAction)
 	spec.URLTemplatization = convertUrlTemplatizationFromInput(input.Fields, existingAction)
 	spec.ExtractAttribute = convertExtractAttributeFromInput(input.Fields, existingAction)
+	spec.DbQueryTemplatization = convertDbQueryTemplatizationFromInput(input.Type, input.Fields, existingAction)
+	spec.InferDbAttributes = convertInferDbAttributesFromInput(input.Type, input.Fields, existingAction)
 
 	return &spec, nil
 }
@@ -404,6 +415,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 
 	urlTemplatizationGroups := convertUrlTemplatizationToModel(action.Spec.URLTemplatization)
 	extractAttribute := convertExtractAttributeToModel(action.Spec.ExtractAttribute)
+	scopes, templatizeLiterals := convertDbActionFieldsToModel(action)
 
 	responseFields := &model.ActionFields{
 		LabelsAttributes:             labelAttrs,
@@ -413,6 +425,8 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		PiiCategories:                piiCategories,
 		URLTemplatizationRulesGroups: urlTemplatizationGroups,
 		ExtractAttribute:             extractAttribute,
+		Scopes:                       scopes,
+		TemplatizeLiterals:           templatizeLiterals,
 	}
 
 	// Handle K8sAttributes fields
@@ -453,7 +467,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		Fields:   responseFields,
 	}
 
-	response.Type = deriveTypeFromAction(response)
+	response.Type = deriveTypeFromAction(response, action)
 	response.Conditions = ConvertConditions(action.Status.Conditions)
 
 	return response, nil
@@ -682,21 +696,23 @@ func convertExtractAttributeFromInput(details *model.ActionFieldsInput, existing
 		return nil
 	}
 
-	extractions := make([]apiactions.Extraction, 0, len(details.ExtractAttribute.Extractions))
+	extractions := make([]actionsapi.Extraction, 0, len(details.ExtractAttribute.Extractions))
 	for _, e := range details.ExtractAttribute.Extractions {
-		row := apiactions.Extraction{
+		row := actionsapi.Extraction{
 			TargetAttributeName: e.TargetAttributeName,
 			LookupKey:           DerefString(e.LookupKey),
 			Regex:               DerefString(e.Regex),
 		}
 		if e.DataFormat != nil {
-			row.DataFormat = apiactions.DataFormat(*e.DataFormat)
+			row.DataFormat = actionsapi.DataFormat(*e.DataFormat)
 		}
 		extractions = append(extractions, row)
 	}
 
 	return &apiactions.ExtractAttributeConfig{
-		Extractions: extractions,
+		ExtractAttributeConfig: actionsapi.ExtractAttributeConfig{
+			Extractions: extractions,
+		},
 	}
 }
 
@@ -728,4 +744,41 @@ func convertExtractAttributeToModel(cfg *apiactions.ExtractAttributeConfig) *mod
 	return &model.ExtractAttribute{
 		Extractions: extractions,
 	}
+}
+
+func convertDbQueryTemplatizationFromInput(actionType model.ActionType, details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.DbQueryTemplatizationConfig {
+	if actionType != model.ActionTypeDbQueryTemplatization {
+		return nil
+	}
+
+	config := &apiactions.DbQueryTemplatizationConfig{
+		Scopes: SourcesScopesInputToCRD(details.Scopes),
+	}
+	if details.TemplatizeLiterals != nil {
+		config.TemplatizeLiterals = *details.TemplatizeLiterals
+	} else if existingAction != nil && existingAction.Spec.DbQueryTemplatization != nil {
+		config.TemplatizeLiterals = existingAction.Spec.DbQueryTemplatization.TemplatizeLiterals
+	}
+	return config
+}
+
+func convertInferDbAttributesFromInput(actionType model.ActionType, details *model.ActionFieldsInput, _ *v1alpha1.Action) *apiactions.InferDbAttributesConfig {
+	if actionType != model.ActionTypeInferDbAttributes {
+		return nil
+	}
+
+	return &apiactions.InferDbAttributesConfig{
+		Scopes: SourcesScopesInputToCRD(details.Scopes),
+	}
+}
+
+func convertDbActionFieldsToModel(action *v1alpha1.Action) (*model.SourcesScopes, *bool) {
+	if action.Spec.DbQueryTemplatization != nil {
+		templatizeLiterals := action.Spec.DbQueryTemplatization.TemplatizeLiterals
+		return SourcesScopesCRDToModel(action.Spec.DbQueryTemplatization.Scopes), &templatizeLiterals
+	}
+	if action.Spec.InferDbAttributes != nil {
+		return SourcesScopesCRDToModel(action.Spec.InferDbAttributes.Scopes), nil
+	}
+	return nil, nil
 }

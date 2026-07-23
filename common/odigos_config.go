@@ -590,6 +590,10 @@ type ProfilingConfiguration struct {
 	// Symbolization controls how native (C/C++/Rust) frames are resolved to
 	// function names. Mirrors the VM agent's profiling.symbolization.native flag.
 	Symbolization *ProfilingSymbolizationConfiguration `json:"symbolization,omitempty" yaml:"symbolization,omitempty"`
+	// Ui tunes the UI backend's in-memory profile cache (slot count, per-slot and
+	// TTL limits). Applied live by the frontend on effective-config changes, so
+	// edits from the settings page take effect without restarting the UI pod.
+	Ui *ProfilingUiConfiguration `json:"ui,omitempty" yaml:"ui,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

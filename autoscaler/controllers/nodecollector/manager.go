@@ -70,7 +70,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Named("nodecollector-instrumentationconfig").
 		For(&odigosv1.InstrumentationConfig{}).
 		// this controller cares about the instrumented application existence and spec changes
-		// (e.g. when ebpfLogCapture is merged into SdkConfigs by the instrumentor).
+		// (e.g. when ebpfLogCapture is merged into Containers config by the instrumentor).
 		WithEventFilter(predicate.Or(&odigospredicate.ExistencePredicate{}, &predicate.GenerationChangedPredicate{})).
 		Complete(&InstrumentationConfigReconciler{
 			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
