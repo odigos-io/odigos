@@ -2,7 +2,6 @@ package collectorconfig
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
@@ -10,7 +9,7 @@ import (
 )
 
 // ProfilingPipelineConfig builds the node collector profiles domain when profiling is enabled.
-func ProfilingPipelineConfig(odigosNamespace string, profiling *common.ProfilingConfiguration, manifestProcessorNames []string, memorySettings odigosv1.CollectorsGroupResourcesSettings) config.Config {
+func ProfilingPipelineConfig(odigosNamespace string, profiling *common.ProfilingConfiguration, manifestProcessorNames []string) config.Config {
 	if !common.ProfilingPipelineActive(profiling) {
 		return config.Config{}
 	}
@@ -22,9 +21,9 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 		"compression": "none",
 	}, profiling.Exporter)
 
+	// memory_limiter itself is defined once, globally, by commonProcessors() (see
+	// common.go) — every pipeline just references its name, never redefines it.
 	processors := config.GenericMap{
-		// Same memory_limiter every other pipeline (traces, metrics, logs) starts with.
-		memoryLimiterProcessorName:                      commonconf.GetMemoryLimiterConfig(memorySettings),
 		commonconf.ProfilingNodeFilterProcessor:         commonconf.ProfilingFilterProcessorConfig(),
 		commonconf.ProfilingNodeK8sAttributesProcessor:  commonconf.K8sAttributesProfilesProcessorConfig(),
 		commonconf.ProfilingNodeOdigosProfilesProcessor: commonconf.OdigosProfilesProcessorConfig(),
