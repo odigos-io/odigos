@@ -90,10 +90,6 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
         name: manager
-        volumeMounts:
-          - name: autoscaler-webhooks-cert
-            mountPath: /tmp/k8s-webhook-server/serving-certs
-            readOnly: true
         resources:
 {{ toYaml .Values.autoscaler.resources | indent 10 }}
         securityContext:
@@ -101,11 +97,6 @@ spec:
       securityContext:
         runAsNonRoot: true
       serviceAccountName: odigos-autoscaler
-      volumes:
-        - name: autoscaler-webhooks-cert
-          secret:
-            secretName: autoscaler-webhooks-cert
-            defaultMode: 420
       terminationGracePeriodSeconds: 10
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.autoscaler }}

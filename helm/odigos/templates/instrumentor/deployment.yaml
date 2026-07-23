@@ -110,10 +110,6 @@ spec:
             {{- end }}
           - name: GOMEMLIMIT
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.instrumentor.resources) }}
-        volumeMounts:
-          - name: instrumentor-webhooks-cert
-            mountPath: /tmp/k8s-webhook-server/serving-certs
-            readOnly: true
         envFrom:
           - configMapRef:
               name: odigos-own-telemetry-otel-config
@@ -139,11 +135,6 @@ spec:
       securityContext:
         runAsNonRoot: true
       serviceAccountName: odigos-instrumentor
-      volumes:
-        - name: instrumentor-webhooks-cert
-          secret:
-            secretName: instrumentor-webhooks-cert
-            defaultMode: 420
       terminationGracePeriodSeconds: 10
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.instrumentor }}
