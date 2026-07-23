@@ -10,18 +10,13 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
+	semconv125 "go.opentelemetry.io/otel/semconv/v1.25.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
 
 	commonapi "github.com/odigos-io/odigos/common/api"
 	"github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/common/collector"
-)
-
-const (
-	dbStatementKey = "db.statement"
-	dbOperationKey = "db.operation"
-	dbSQLTableKey  = "db.sql.table"
 )
 
 type sqlQueryProcessor struct {
@@ -229,7 +224,7 @@ func spanNameAlreadyHas(name, operation, collection string) bool {
 }
 
 func sqlQueryFromAttributes(attrs pcommon.Map) (query string, key string, ok bool) {
-	for _, attrKey := range []string{string(semconv.DBQueryTextKey), dbStatementKey} {
+	for _, attrKey := range []string{string(semconv.DBQueryTextKey), string(semconv125.DBStatementKey)} {
 		query, ok = stringAttrFromAttributes(attrs, attrKey)
 		if ok {
 			return query, attrKey, true
@@ -239,7 +234,7 @@ func sqlQueryFromAttributes(attrs pcommon.Map) (query string, key string, ok boo
 }
 
 func operationFromAttributes(attrs pcommon.Map) (string, bool) {
-	for _, attrKey := range []string{string(semconv.DBOperationNameKey), dbOperationKey} {
+	for _, attrKey := range []string{string(semconv.DBOperationNameKey), string(semconv125.DBOperationKey)} {
 		if op, ok := stringAttrFromAttributes(attrs, attrKey); ok {
 			return op, true
 		}
@@ -248,7 +243,7 @@ func operationFromAttributes(attrs pcommon.Map) (string, bool) {
 }
 
 func collectionFromAttributes(attrs pcommon.Map) (string, bool) {
-	for _, attrKey := range []string{string(semconv.DBCollectionNameKey), dbSQLTableKey} {
+	for _, attrKey := range []string{string(semconv.DBCollectionNameKey), string(semconv125.DBSQLTableKey)} {
 		if coll, ok := stringAttrFromAttributes(attrs, attrKey); ok {
 			return coll, true
 		}
