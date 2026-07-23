@@ -23,10 +23,7 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 	}, profiling.Exporter)
 
 	processors := config.GenericMap{
-		// memory_limiter is the standard first processor on every pipeline (traces,
-		// metrics, logs) — the pipeline's memory backstop under the collector's
-		// GOMEMLIMIT/cgroup budget. Profiles get the same treatment so the symbolize
-		// processor is governed like every other component.
+		// Same memory_limiter every other pipeline (traces, metrics, logs) starts with.
 		memoryLimiterProcessorName:                      commonconf.GetMemoryLimiterConfig(memorySettings),
 		commonconf.ProfilingNodeFilterProcessor:         commonconf.ProfilingFilterProcessorConfig(),
 		commonconf.ProfilingNodeK8sAttributesProcessor:  commonconf.K8sAttributesProfilesProcessorConfig(),
@@ -34,7 +31,7 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 		commonconf.ProfilingNodeServiceNameProcessor:    commonconf.ProfilingServiceNameTransformConfig(),
 	}
 	pipelineProcessors := []string{
-		memoryLimiterProcessorName, // always first — reject before any parse/allocation under memory pressure
+		memoryLimiterProcessorName,
 		commonconf.ProfilingNodeFilterProcessor,
 		commonconf.ProfilingNodeK8sAttributesProcessor,
 		commonconf.ProfilingNodeOdigosProfilesProcessor,
