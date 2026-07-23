@@ -55,10 +55,6 @@ type InstrumentationConfigSpecApplyConfiguration struct {
 	// Pods created before this time may not be in alignment with the AgentsMetaHash.
 	// e.g. can lack the odigos label, or have a different value.
 	AgentsMetaHashChangedTime *v1.Time `json:"agentsMetaHashChangedTime,omitempty"`
-	// Configuration for the OpenTelemetry SDKs that this workload should use.
-	// The SDKs are identified by the programming language they are written in.
-	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
-	SdkConfigs []SdkConfigApplyConfiguration `json:"sdkConfigs,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -148,18 +144,5 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithAgentsMetaHash(value s
 // If called multiple times, the AgentsMetaHashChangedTime field is set to the value of the last call.
 func (b *InstrumentationConfigSpecApplyConfiguration) WithAgentsMetaHashChangedTime(value v1.Time) *InstrumentationConfigSpecApplyConfiguration {
 	b.AgentsMetaHashChangedTime = &value
-	return b
-}
-
-// WithSdkConfigs adds the given value to the SdkConfigs field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the SdkConfigs field.
-func (b *InstrumentationConfigSpecApplyConfiguration) WithSdkConfigs(values ...*SdkConfigApplyConfiguration) *InstrumentationConfigSpecApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithSdkConfigs")
-		}
-		b.SdkConfigs = append(b.SdkConfigs, *values[i])
-	}
 	return b
 }

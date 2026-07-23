@@ -59,6 +59,7 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
           className
         }
       }
+      networkMetrics
     }
   }
 `;
@@ -122,6 +123,7 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
           className
         }
       }
+      networkMetrics
     }
   }
 `;

@@ -15,6 +15,17 @@ import EnterpriseVMAgent from '../../../snippets/enterprise/vmagent/enterprise-v
 - Distributed traces with seamless context propagation
 - Continuous CPU profiling (eBPF) with export to [Pyroscope](/vmagent/instrumentations/profiling/export-pyroscope) or other OTLP Profiles backends
 
+## Deployment options
+
+The VM Agent can be deployed in two ways. Both instrument the same workloads and
+are configured the same way (via Odigos Central or `odictl`):
+
+- **Linux package** — install as an RPM/deb system package managed by `systemd`.
+This is the standard option for a normal Linux host. See [Installation](/vmagent/setup/installation).
+- **Docker container** — run the agent as a privileged container. Use this for
+hosts where installing a system package is not an option, such as immutable hosts
+or Compose-managed fleets. See [Docker Deployment](/vmagent/setup/docker).
+
 ## Key concepts
 
 - **Sources**: The systemd services or Linux processes you instrument with the VM Agent. 
