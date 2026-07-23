@@ -4,12 +4,14 @@
     "dockerfile": "Dockerfile"
   },
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
+    "ghcr.io/devcontainers/features/node:2.1.0": {
+      "version": "lts",
+      "installYarnUsingApt": "true"
     },
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4.0.0": {
       "version": "latest",
-      "enableNonRootDocker": true
+      "enableNonRootDocker": true,
+      "moby": "false"
     }
   },
   "mounts": [
