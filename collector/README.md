@@ -19,6 +19,21 @@ root@...:/go# cd /app
 root@...:/app# make genodigoscol
 ```
 
+### Local Docker image builds
+
+From the repository root:
+
+```bash
+docker build -f collector/Dockerfile -t odigos-collector:dev .
+```
+
+Tips for faster local builds:
+
+- Keep BuildKit enabled (`DOCKER_BUILDKIT=1`, the Docker default) so Go module and compile cache mounts in the Dockerfile are used.
+- The root `.dockerignore` excludes `collector/.tools`, a locally built `collector/odigosotelcol/odigosotelcol` binary, `collector/dist`, examples, and docs — avoid removing those exclusions or the build context can grow by hundreds of MB.
+- Prefer `make build-odigoscol-docker` (what the Dockerfile uses) over `make build-odigoscol` when iterating on the image; the latter also runs unit tests that CI already covers via `make test`.
+- Multi-arch (`linux/amd64,linux/arm64`) does **not** need QEMU for this image: the Dockerfile builds on `$BUILDPLATFORM` and cross-compiles with `CGO_ENABLED=0` / `GOARCH=$TARGETARCH`.
+
 ## Metadata Generation
 
 To generate metadata for a component, create `metadata.yaml` in the component's directory and run:

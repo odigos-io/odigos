@@ -196,7 +196,28 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
+        id: setup-buildx
         uses: docker/setup-buildx-action@v3
+      - name: Cache Go module and build caches
+        id: cache-collector-go
+        uses: actions/cache@v4
+        with:
+          path: |
+            go-pkg-mod-cache
+            go-build-cache
+          key: odigos-collector-go-${{ runner.os }}-${{ hashFiles('collector/odigosotelcol/go.sum') }}
+          restore-keys: |
+            odigos-collector-go-${{ runner.os }}-
+      - name: Inject BuildKit cache mounts
+        uses: reproducible-containers/buildkit-cache-dance@v3
+        with:
+          builder: ${{ steps.setup-buildx.outputs.name }}
+          cache-map: |
+            {
+              "go-pkg-mod-cache": "/go/pkg/mod",
+              "go-build-cache": "/root/.cache/go-build"
+            }
+          skip-extraction: ${{ steps.cache-collector-go.outputs.cache-hit }}
       - name: build Odigos Collector Image
         uses: docker/build-push-action@v6
         with:
@@ -205,6 +226,9 @@ jobs:
           tags: odigos-collector:pr-${{ github.event.number || github.run_number }}
           provenance: false
           file: collector/Dockerfile
+          # Persist BuildKit layers across CI runs (Go module / compile layers).
+          cache-from: type=gha,scope=odigos-collector
+          cache-to: type=gha,mode=max,scope=odigos-collector
           outputs: type=docker,dest=/tmp/odigos-collector.tar
       - name: Load Docker image for scanning
         run: docker load -i /tmp/odigos-collector.tar
