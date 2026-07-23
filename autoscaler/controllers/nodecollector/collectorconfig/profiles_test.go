@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
@@ -13,20 +12,20 @@ import (
 )
 
 func TestProfilingPipelineConfig_Disabled(t *testing.T) {
-	got := ProfilingPipelineConfig("odigos-system", nil, nil, odigosv1.CollectorsGroupResourcesSettings{})
+	got := ProfilingPipelineConfig("odigos-system", nil, nil)
 	assert.Empty(t, got.Receivers)
 	assert.Empty(t, got.Processors)
 	assert.Empty(t, got.Exporters)
 	assert.Empty(t, got.Service.Pipelines)
 
 	off := false
-	got = ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &off}, nil, odigosv1.CollectorsGroupResourcesSettings{})
+	got = ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &off}, nil)
 	assert.Empty(t, got.Service.Pipelines)
 }
 
 func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 	on := true
-	got := ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nil, odigosv1.CollectorsGroupResourcesSettings{})
+	got := ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nil)
 	require.Contains(t, got.Receivers, commonconf.ProfilingReceiver)
 	require.Contains(t, got.Processors, commonconf.ProfilingNodeFilterProcessor)
 	require.Contains(t, got.Processors, commonconf.ProfilingNodeK8sAttributesProcessor)
@@ -62,7 +61,7 @@ func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 func TestProfilingPipelineConfig_UserProcessorsAppended(t *testing.T) {
 	on := true
 	userProcessors := []string{"resource/addclusterinfo", "transform/rename"}
-	got := ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, userProcessors, odigosv1.CollectorsGroupResourcesSettings{})
+	got := ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, userProcessors)
 
 	pl, ok := got.Service.Pipelines["profiles"]
 	require.True(t, ok)
@@ -87,7 +86,7 @@ func TestProfilingPipelineConfig_NativeSymbolizationDisabled(t *testing.T) {
 	got := ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{
 		Enabled:       &on,
 		Symbolization: &common.ProfilingSymbolizationConfiguration{Native: &off},
-	}, nil, odigosv1.CollectorsGroupResourcesSettings{})
+	}, nil)
 	require.NotContains(t, got.Processors, commonconf.ProfilingNodeSymbolizeProcessor)
 
 	pl := got.Service.Pipelines["profiles"]

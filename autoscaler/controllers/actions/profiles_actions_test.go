@@ -115,9 +115,13 @@ func TestE2E_ProfilesActions_ActionToRenderedConfig(t *testing.T) {
 	on := true
 	nodeResults := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(nodeProcs))
 	require.Empty(t, nodeResults.ProfilesProcessors)
+	// Merge alongside common_application_telemetry (as calculateCollectorConfigDomains does in
+	// production) so a processor name collision between domains — e.g. profiling redefining
+	// memory_limiter, which commonProcessors() already provides — fails this test.
 	nodeCfg, err := config.MergeConfigs(map[string]config.Config{
-		"processors": nodeResults.ProcessorsConfig,
-		"profiling":  collectorconfig.ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nodeResults.ProfilesProcessors, odigosv1.CollectorsGroupResourcesSettings{}),
+		"processors":                   nodeResults.ProcessorsConfig,
+		"common_application_telemetry": collectorconfig.CommonApplicationTelemetryConfig(&odigosv1.CollectorsGroup{}, false, "odigos-system", nil),
+		"profiling":                    collectorconfig.ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nodeResults.ProfilesProcessors),
 	})
 	require.NoError(t, err)
 	assert.Equal(t, []string{
