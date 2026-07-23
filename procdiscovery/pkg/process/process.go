@@ -8,6 +8,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/odigos-io/odigos/common/otheragent"
 )
 
 const (
@@ -46,30 +48,6 @@ var LangsVersionEnvs = map[string]struct{}{
 	JavaHomeConst:      {},
 	PhpVersionConst:    {},
 	RubyVersionConst:   {},
-}
-
-const (
-	NewRelicAgentName  = "New Relic Agent"
-	DynatraceAgentName = "Dynatrace Agent"
-	DataDogAgentName   = "Datadog Agent"
-)
-
-const (
-	NewRelicAgentEnv                 = "NEW_RELIC_CONFIG_FILE"
-	DynatraceDynamizerEnv            = "DT_DYNAMIZER_TARGET_EXE"
-	DynatraceDynamizerExeSubString   = "oneagentdynamizer"
-	DynatraceFullStackEnvValuePrefix = "/dynatrace/"
-	DataDogAgentEnv                  = "DD_TRACE_AGENT_URL"
-)
-
-var OtherAgentEnvs = map[string]string{
-	NewRelicAgentEnv:      NewRelicAgentName,
-	DynatraceDynamizerEnv: DynatraceAgentName,
-	DataDogAgentEnv:       DataDogAgentName,
-}
-
-var OtherAgentCmdSubString = map[string]string{
-	"newrelic.jar": NewRelicAgentName,
 }
 
 type Details struct {
@@ -165,6 +143,21 @@ func (d *Details) GetDetailedEnvsValue(key string) (string, bool) {
 func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
 	value, exists := d.Environments.OverwriteEnvs[key]
 	return value, exists
+}
+
+// Cmdline returns the process command line.
+func (pcx *ProcessContext) Cmdline() string { return pcx.CmdLine }
+
+// LookupEnv returns an env var value from the collected DetailedEnvs. The
+// other-agent detection keys are collected up front (see getRelevantEnvVars),
+// so env-based detection reads them from here without touching /proc again.
+func (pcx *ProcessContext) LookupEnv(key string) (string, bool) {
+	return pcx.GetDetailedEnvsValue(key)
+}
+
+// MapsReader returns a reader over the process memory maps for library-load detection.
+func (pcx *ProcessContext) MapsReader() (io.Reader, error) {
+	return pcx.GetMapsFile()
 }
 
 // Find all processes in the system.
@@ -333,7 +326,9 @@ func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) Proce
 			detailedEnvsResult[envName] = envDetectionValue
 		}
 
-		if _, ok := OtherAgentEnvs[envName]; ok {
+		// Collect the keys the shared other-agent detector inspects, so detection
+		// can read them off the process env without any caller wiring.
+		if _, ok := otheragent.AgentDetectionEnvKeys[envName]; ok {
 			detailedEnvsResult[envName] = envDetectionValue
 		}
 	}
