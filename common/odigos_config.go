@@ -604,10 +604,9 @@ type ProfilingSymbolizationConfiguration struct {
 	// set to false to leave native frames as raw addresses.
 	Native *bool `json:"native,omitempty" yaml:"native,omitempty"`
 
-	// MaxMemoryMiB caps the parsed-symbol cache the node collector's symbolize
-	// processor holds (LRU by bytes). Larger = more complete symbolization on a
-	// busy node; smaller = tighter collector memory. Unset uses the processor
-	// default (256 MiB).
+	// MaxMemoryMiB bounds the node collector symbolize processor's memory: both the
+	// retained symbol cache and the transient per-binary decode are sized off this
+	// one budget. Unset uses the processor's built-in defaults.
 	MaxMemoryMiB *int `json:"maxMemoryMiB,omitempty" yaml:"maxMemoryMiB,omitempty"`
 }
 
