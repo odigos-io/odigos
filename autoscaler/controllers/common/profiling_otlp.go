@@ -123,14 +123,13 @@ func OdigosSymbolizeProcessorConfig(symbolization *odigoscommon.ProfilingSymboli
 	// One budget bounds both caps; unset → the processor defaults apply.
 	if symbolization != nil && symbolization.MaxMemoryMiB != nil && *symbolization.MaxMemoryMiB > 0 {
 		budget := int64(*symbolization.MaxMemoryMiB) << 20
-		cfg["max_symbol_bytes"] = budget                          // retained symbol cache
-		cfg["max_symtab_bytes"] = budget / symtabDecodeCostFactor // transient decode ≈ 5x on-disk
+		cfg["max_symbol_bytes"] = budget
+		cfg["max_symtab_bytes"] = budget / symtabDecodeCostFactor
 	}
 	return cfg
 }
 
-// symtabDecodeCostFactor is how much a symbol table costs to decode vs its on-disk
-// size, so gating on-disk at budget/factor keeps one decode within the budget.
+// symtabDecodeCostFactor: decoding a symbol table costs ~5x its on-disk size.
 const symtabDecodeCostFactor = 5
 
 // ProfilingServiceNameTransformConfig sets resource attribute service.name from K8s workload
