@@ -24,6 +24,12 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
+**Creating an ingest token**<br />
+Data is sent to Observe's OTLP collection endpoint, which requires a **Datastream ingest token** (a user/API token will be rejected with `401`). Create one in the Observe UI under **Datastreams**, following [Configure your own OTel collector without Kubernetes](https://docs.observeinc.com/docs/configure-your-own-otel-collector-in-a-non-kubernetes-environment).
+
+**Collection endpoint**<br />
+By default the endpoint is `https://<customer_id>.collect.observeinc.com/v2/otel`. For regional tenants or other overrides, set the optional `OBSERVE_ENDPOINT` field. See [Configure your own OTel collector](https://docs.observeinc.com/docs/configure-your-own-otel-collector) for the endpoint format.
+
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
     !! END CUSTOM EDIT !!
@@ -40,12 +46,16 @@ icon: 'signal-stream'
 
 - **OBSERVE_CUSTOMER_ID** `string` : Customer ID. The Customer ID is the first part of your Observe URL. For example, if your Observe URL is `https://<customer_id>.observe.com`, then the Customer ID is `<customer_id>`.
   - This field is required
-- **OBSERVE_TOKEN** `string` : Token. You can create a token in your Observe dashboard, under "Datastreams".
+- **OBSERVE_TOKEN** `string` : Token. A Datastream ingest token (not a user/API token). Create one in the Observe UI under "Datastreams". See https://docs.observeinc.com/docs/configure-your-own-otel-collector-in-a-non-kubernetes-environment for how to create an ingest token.
   - This field is required
+- **OBSERVE_ENDPOINT** `string` : Collection Endpoint. Optional. The full OTLP/HTTP collection endpoint. Set this to override the default, for example for a regional tenant such as `https://<customer_id>.collect.eu1.observeinc.com/v2/otel`. When empty, it is derived from the Customer ID. See https://docs.observeinc.com/docs/configure-your-own-otel-collector for the endpoint format.
+  - This field is optional
+  - Example: `https://<customer_id>.collect.observeinc.com/v2/otel`
 
 <Check>
-  We handle the endpoint internally, so you don't need to provide it.
-  - The endpoint is `https://${OBSERVE_CUSTOMER_ID}.collect.observeinc.com/v2/otel`
+  By default the endpoint is derived from your Customer ID as `https://${OBSERVE_CUSTOMER_ID}.collect.observeinc.com/v2/otel`.
+  To send to a different endpoint (for example a regional tenant), set the optional `OBSERVE_ENDPOINT` field.
+  For details on the collection endpoint and creating an ingest token, see Observe's guides for [configuring your own OTel collector](https://docs.observeinc.com/docs/configure-your-own-otel-collector) and [configuring it without Kubernetes](https://docs.observeinc.com/docs/configure-your-own-otel-collector-in-a-non-kubernetes-environment).
 </Check>
 
 ### Adding Destination to Odigos
@@ -80,6 +90,8 @@ There are two primary methods for configuring destinations in Odigos:
     spec:
       data:
         OBSERVE_CUSTOMER_ID: <Customer ID>
+        # Note: The commented fields below are optional.
+        # OBSERVE_ENDPOINT: <Collection Endpoint>
       destinationName: observe
       secretRef:
         name: observe-secret
