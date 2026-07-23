@@ -101,14 +101,10 @@ func estimateHeapBytes(es *elfSymbols) int64 {
 }
 
 // readFunctionSymbols returns the STT_FUNC symbols, preferring .symtab then
-// falling back to .dynsym, with a tag naming the source table.
-//
-// A symbol table larger than lim.maxSymtabBytes is skipped WITHOUT decoding:
-// Go's elf.File.Symbols() materialises the whole table (every symbol + the full
-// string table) transiently before we filter to STT_FUNC, so on a huge unstripped
-// binary that transient — not the retained cache — is what spikes RSS. Gating on
-// section size caps it before the allocation happens; the frames stay
-// module+offset, which the pipeline handles gracefully.
+// falling back to .dynsym. A table over lim.maxSymtabBytes is skipped without
+// decoding — elf.File.Symbols() transiently materialises the whole table, and
+// on a huge unstripped binary that transient, not the retained cache, is what
+// spikes RSS.
 func readFunctionSymbols(f *elf.File, lim parseLimits) ([]functionSymbol, string) {
 	if symtabWithinLimit(f, ".symtab", lim.maxSymtabBytes) {
 		if syms := functionSymbolsFrom(f.Symbols); len(syms) > 0 {
@@ -123,9 +119,8 @@ func readFunctionSymbols(f *elf.File, lim parseLimits) ([]functionSymbol, string
 	return nil, ""
 }
 
-// symtabWithinLimit reports whether the named symbol table (plus its linked
-// string table) is small enough to decode. An absent table, or limit<=0,
-// returns true — there is either nothing to decode or no gate configured.
+// symtabWithinLimit reports whether name's symbol table, plus its linked string
+// table, fits within limit. No table, or limit<=0, is always within limit.
 func symtabWithinLimit(f *elf.File, name string, limit int64) bool {
 	if limit <= 0 {
 		return true
@@ -135,10 +130,8 @@ func symtabWithinLimit(f *elf.File, name string, limit int64) bool {
 		return true
 	}
 	total := int64(sec.Size)
-	// elf.File.Symbols() also reads the linked string table (Link → .strtab/.dynstr);
-	// account for it so the gate reflects the real transient allocation.
 	if int(sec.Link) < len(f.Sections) {
-		total += int64(f.Sections[sec.Link].Size)
+		total += int64(f.Sections[sec.Link].Size) // linked .strtab/.dynstr, also decoded by Symbols()
 	}
 	return total <= limit
 }

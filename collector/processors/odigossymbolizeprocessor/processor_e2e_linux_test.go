@@ -134,16 +134,13 @@ func TestE2E_RealSymbolizerFillsNativeFrame(t *testing.T) {
 	const pid = 7777
 	fakeProc(t, pid, so)
 
-	// Build an OTLP profile with one native location at the function's VA.
-	// MemoryStart=0 => the symbolizer treats the location address as a virtual
-	// address directly (no segment math), so addr == the symbol VA.
+	// MemoryStart=0 => location address is used directly as the symbol VA.
 	pd := newProfilesWithNativeLoc(pid, "libe2e.so", va)
 
 	p := newProcessor(zap.NewNop(), &Config{})
 	defer func() { _ = p.Shutdown(context.Background()) }()
 
-	// Symbol parsing is asynchronous; processProfiles prewarms then resolves, so
-	// re-run until the warm cache fills the native Line (or time out).
+	// Parsing is async: prewarm then retry until the cache fills the Line.
 	deadline := time.Now().Add(5 * time.Second)
 	var gotName string
 	for time.Now().Before(deadline) {
