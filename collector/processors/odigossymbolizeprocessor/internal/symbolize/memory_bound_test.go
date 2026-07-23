@@ -62,16 +62,11 @@ func symtabSectionBytes(t *testing.T, path string) int64 {
 	return total
 }
 
-// TestSizeGateEliminatesTransientDecode is the direct proof of the transient cap.
-// We parse a real unstripped .so twice and compare bytes ALLOCATED (runtime
-// TotalAlloc delta, which counts the transient []elf.Symbol + string table even
-// though they're freed):
-//   - gate OFF (maxSymtabBytes=0): stdlib decodes the whole table -> large alloc
-//   - gate ON  (threshold below both tables): the tables are skipped -> tiny alloc
-//
-// The gated path must allocate dramatically less; we require >=4x to guard
-// against silent regressions. The ratio grows with symtab size, so on a real
-// 100+ MiB Oracle/Amdocs symtab the eliminated transient is hundreds of MB.
+// TestSizeGateEliminatesTransientDecode proves the gate cuts the transient
+// allocation: it parses the same binary with the gate off (decodes the whole
+// table) and on (skips it), comparing bytes allocated via runtime.MemStats
+// TotalAlloc, which counts memory freed after GC. Requires >=4x less to guard
+// against silent regressions.
 func TestSizeGateEliminatesTransientDecode(t *testing.T) {
 	self := os.Getenv("SYMBOLIZE_TEST_ELF")
 	if self == "" {
@@ -102,14 +97,12 @@ func TestSizeGateEliminatesTransientDecode(t *testing.T) {
 	off.maxSymtabBytes = 0 // no gate: decode everything
 	decodeAlloc := measure(off)
 
-	// Gate below BOTH .symtab and .dynsym so neither table is decoded (an exported
-	// .so carries the same functions in .dynsym; the fix code gates both tables).
+	// Below both .symtab and .dynsym, since an exported .so carries the same functions in .dynsym too.
 	on := base
-	on.maxSymtabBytes = 32 << 10 // 32 KiB, well under either table
+	on.maxSymtabBytes = 32 << 10
 	gatedAlloc := measure(on)
 
-	// Sanity: prove we compared the two real paths — ungated must produce symbols,
-	// gated must skip them.
+	// Sanity: ungated must produce symbols, gated must skip them.
 	esOff, _ := loadELFSymbols(self, off)
 	esOn, _ := loadELFSymbols(self, on)
 	if len(esOff.functions) == 0 {
@@ -130,10 +123,8 @@ func TestSizeGateEliminatesTransientDecode(t *testing.T) {
 }
 
 // TestConfigurableTransientCapIsHonored proves WithMaxSymtabBytes is wired: a
-// Symbolizer built with a small transient cap skips a binary whose symbol table
-// exceeds it (frames stay module+offset), while the default (512 MiB) decodes the
-// same binary. This is what lets an operator bound peak memory on a constrained
-// collector — the cap the config's max_symtab_bytes / budget knob drives.
+// small cap skips a binary whose symbol table exceeds it, while the default
+// (512 MiB) decodes the same binary normally.
 func TestConfigurableTransientCapIsHonored(t *testing.T) {
 	so := buildBigTestLib(t, 8000) // ~200 KiB+ symbol table
 	symBytes := symtabSectionBytes(t, so)
@@ -160,10 +151,9 @@ func TestConfigurableTransientCapIsHonored(t *testing.T) {
 	}
 }
 
-// TestSymbolCacheStaysWithinByteBudget proves the retained side stays bounded:
-// however many distinct binaries are symbolized, the parsed-symbol cache never
-// exceeds its configured byte budget. Fixture-free (synthetic entries) so it runs
-// everywhere, not just where a compiler is present.
+// TestSymbolCacheStaysWithinByteBudget proves the retained cache never exceeds
+// its configured byte budget, however many binaries are symbolized. Uses
+// synthetic entries so it runs without a compiler.
 func TestSymbolCacheStaysWithinByteBudget(t *testing.T) {
 	const entryBytes = 100_000
 	budget := int64(4 * entryBytes) // holds only a few entries -> eviction must run
