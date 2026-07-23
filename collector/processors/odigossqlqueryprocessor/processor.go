@@ -3,6 +3,7 @@ package odigossqlqueryprocessor
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/DataDog/go-sqllexer"
@@ -18,6 +19,11 @@ import (
 	"github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/common/collector"
 )
+
+// uuidRegex matches standalone UUID literals (CQL) so they can be redacted
+// before sqllexer tokenization, which otherwise mangles them.
+// it checks for standalone UUIDs, not part of a longer identifier/literal.
+var uuidRegex = regexp.MustCompile(`(^|[^0-9A-Fa-f])([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})($|[^0-9A-Fa-f])`)
 
 type sqlQueryProcessor struct {
 	logger     *zap.Logger
@@ -113,7 +119,7 @@ func (p *sqlQueryProcessor) resolveSourceConfig(resource pcommon.Resource) (*com
 func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redactLiterals bool) {
 	attrs := span.Attributes()
 
-	dbms, skip := resolveDBMS(attrs)
+	dbms, skip, isCassandra := resolveDBMS(attrs)
 	if skip {
 		return
 	}
@@ -126,6 +132,17 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 	operation, hasOperation := operationFromAttributes(attrs)
 	collection, hasCollection := collectionFromAttributes(attrs)
 	inferNeeded := inferAttributes && !(hasOperation && hasCollection)
+	if !inferNeeded && !redactLiterals {
+		// if we only infer and the query is already infered, we can skip
+		return
+	}
+
+	if redactLiterals && isCassandra {
+		// cassandra uses CQL, not SQL
+		// UUIDs are first class citizens in CQL, in they don't get tokenized correctly by sqllexer.
+		// Reject if the UUID is a prefix of a longer identifier/literal
+		query = uuidRegex.ReplaceAllString(query, "${1}?${3}")
+	}
 
 	switch {
 	case redactLiterals && inferNeeded:
