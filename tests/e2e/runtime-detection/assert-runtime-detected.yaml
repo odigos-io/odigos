@@ -261,8 +261,8 @@ status:
   runtimeDetailsByContainer:
     - containerName: python-other-agent
       language: python
-      otherAgent:
-        name: New Relic Agent
+      otherAgents:
+        - name: New Relic Agent
       (runtimeVersion != null): true
       secureExecutionMode: false
 ---
