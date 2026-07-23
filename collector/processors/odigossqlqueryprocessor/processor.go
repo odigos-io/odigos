@@ -18,7 +18,11 @@ import (
 	"github.com/odigos-io/odigos/common/collector"
 )
 
-const dbStatementKey = "db.statement"
+const (
+	dbStatementKey = "db.statement"
+	dbOperationKey = "db.operation"
+	dbSQLTableKey  = "db.sql.table"
+)
 
 type sqlQueryProcessor struct {
 	logger     *zap.Logger
@@ -114,14 +118,6 @@ func (p *sqlQueryProcessor) resolveSourceConfig(resource pcommon.Resource) (*com
 func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redactLiterals bool) {
 	attrs := span.Attributes()
 
-	opAttr, hasOperation := attrs.Get(string(semconv.DBOperationNameKey))
-	collAttr, hasCollection := attrs.Get(string(semconv.DBCollectionNameKey))
-	inferNeeded := inferAttributes && !(hasOperation && hasCollection)
-
-	if !inferNeeded && !redactLiterals {
-		return
-	}
-
 	dbms, skip := resolveDBMS(attrs)
 	if skip {
 		return
@@ -132,6 +128,10 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 		return
 	}
 
+	operation, hasOperation := operationFromAttributes(attrs)
+	collection, hasCollection := collectionFromAttributes(attrs)
+	inferNeeded := inferAttributes && !(hasOperation && hasCollection)
+
 	switch {
 	case redactLiterals && inferNeeded:
 		normalized, meta, err := p.obfuscateAndNormalize(query, dbms)
@@ -141,7 +141,7 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 			return
 		}
 		attrs.PutStr(queryKey, normalized)
-		p.enhanceFromMetadata(span, opAttr, hasOperation, collAttr, hasCollection, meta)
+		p.enhanceFromMetadata(span, operation, hasOperation, collection, hasCollection, meta)
 	case redactLiterals:
 		attrs.PutStr(queryKey, p.obfuscate(query, dbms))
 	case inferNeeded:
@@ -150,7 +150,7 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 			p.logger.Debug("failed to normalize SQL query", zap.Error(err))
 			return
 		}
-		p.enhanceFromMetadata(span, opAttr, hasOperation, collAttr, hasCollection, meta)
+		p.enhanceFromMetadata(span, operation, hasOperation, collection, hasCollection, meta)
 	}
 }
 
@@ -179,9 +179,9 @@ func (p *sqlQueryProcessor) normalize(query string, dbms sqllexer.DBMSType) (*sq
 
 func (p *sqlQueryProcessor) enhanceFromMetadata(
 	span ptrace.Span,
-	opAttr pcommon.Value,
+	operation string,
 	hasOperation bool,
-	collAttr pcommon.Value,
+	collection string,
 	hasCollection bool,
 	meta *sqllexer.StatementMetadata,
 ) {
@@ -193,19 +193,13 @@ func (p *sqlQueryProcessor) enhanceFromMetadata(
 	ops := sqlOperations(meta.Commands)
 	added := false
 
-	operation := ""
-	if hasOperation {
-		operation = opAttr.Str()
-	} else if len(ops) == 1 {
+	if !hasOperation && len(ops) == 1 {
 		operation = ops[0]
 		attrs.PutStr(string(semconv.DBOperationNameKey), operation)
 		added = true
 	}
 
-	collection := ""
-	if hasCollection {
-		collection = collAttr.Str()
-	} else if len(meta.Tables) == 1 {
+	if !hasCollection && len(meta.Tables) == 1 {
 		collection = meta.Tables[0]
 		attrs.PutStr(string(semconv.DBCollectionNameKey), collection)
 		added = true
@@ -236,16 +230,42 @@ func spanNameAlreadyHas(name, operation, collection string) bool {
 
 func sqlQueryFromAttributes(attrs pcommon.Map) (query string, key string, ok bool) {
 	for _, attrKey := range []string{string(semconv.DBQueryTextKey), dbStatementKey} {
-		val, found := attrs.Get(attrKey)
-		if !found || val.Type() != pcommon.ValueTypeStr {
-			continue
-		}
-		query = val.Str()
-		if query != "" {
+		query, ok = stringAttrFromAttributes(attrs, attrKey)
+		if ok {
 			return query, attrKey, true
 		}
 	}
 	return "", "", false
+}
+
+func operationFromAttributes(attrs pcommon.Map) (string, bool) {
+	for _, attrKey := range []string{string(semconv.DBOperationNameKey), dbOperationKey} {
+		if op, ok := stringAttrFromAttributes(attrs, attrKey); ok {
+			return op, true
+		}
+	}
+	return "", false
+}
+
+func collectionFromAttributes(attrs pcommon.Map) (string, bool) {
+	for _, attrKey := range []string{string(semconv.DBCollectionNameKey), dbSQLTableKey} {
+		if coll, ok := stringAttrFromAttributes(attrs, attrKey); ok {
+			return coll, true
+		}
+	}
+	return "", false
+}
+
+func stringAttrFromAttributes(attrs pcommon.Map, key string) (string, bool) {
+	val, found := attrs.Get(key)
+	if !found || val.Type() != pcommon.ValueTypeStr {
+		return "", false
+	}
+	s := val.Str()
+	if s == "" {
+		return "", false
+	}
+	return s, true
 }
 
 // sqlOperations returns SQL commands suitable for db.operation.name,
