@@ -79,6 +79,16 @@ export const GET_ACTIONS = gql`
               regex
             }
           }
+          scopes {
+            sources {
+              namespace
+              kind
+              name
+            }
+            namespaces
+            languages
+          }
+          templatizeLiterals
         }
         conditions {
           status

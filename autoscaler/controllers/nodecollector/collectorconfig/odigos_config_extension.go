@@ -19,16 +19,26 @@ func NodeHasURLTemplateProcessor(processors []*odigosv1.Processor) bool {
 	return false
 }
 
+// NodeHasSQLQueryProcessor reports whether processors (node-collector role only) include SQL query processing.
+func NodeHasSQLQueryProcessor(processors []*odigosv1.Processor) bool {
+	for _, p := range processors {
+		if p != nil && p.Spec.Type == consts.OdigosSQLQueryProcessorType {
+			return true
+		}
+	}
+	return false
+}
+
 // NodeNeedsOdigosConfigK8sExtension reports whether the node collector should merge
 // the odigos_config_k8s extension domain.
 func NodeNeedsOdigosConfigK8sExtension(processors []*odigosv1.Processor, profiling *odigoscommon.ProfilingConfiguration) bool {
-	// odigos_config_k8s is added in two scenarios:
-	// 1. URL templatization
+	// odigos_config_k8s is added when a node-side processor needs per-source config, or profiling is on.
 	if NodeHasURLTemplateProcessor(processors) {
 		return true
 	}
-
-	// 2. Profiling enabled
+	if NodeHasSQLQueryProcessor(processors) {
+		return true
+	}
 	if odigoscommon.ProfilingPipelineActive(profiling) {
 		return true
 	}
