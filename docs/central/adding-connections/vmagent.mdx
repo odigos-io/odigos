@@ -53,12 +53,12 @@ To connect VM Agent to Odigos Central, use one of the following methods:
         />
       </Step>
 
-      <Step title="Navigate to the Tower section">
-        Use the arrow keys or mouse to navigate to the Tower section on the left side of the screen.
+      <Step title="Navigate to the Central section">
+        Use the arrow keys or mouse to navigate to the Central section on the left side of the screen.
 
         <img 
-          src="../../../images/central/vmagent/odictl-tower.png" 
-          alt="odictl tower screen"
+          src="../../../images/central/vmagent/odictl-central.png" 
+          alt="odictl Central screen"
           style={{    
             width: "700px",
             height: "auto",
@@ -67,25 +67,25 @@ To connect VM Agent to Odigos Central, use one of the following methods:
           }}
         />
       </Step>
-      <Step title="Configure Tower settings">
+      <Step title="Configure Central settings">
         Use the `Tab` key or mouse to navigate and configure the following fields:
 
-        <ParamField path="tower.enabled" type="boolean" required>
+        <ParamField path="central.enabled" type="boolean" required>
           Enable the Central controller. If false, the controller will not start.<br/>
           Set this value to `true`.
         </ParamField>
-        <ParamField path="tower.endpoint" type="string" required>
+        <ParamField path="central.endpoint" type="string" required>
           WebSocket endpoint of the Central server in host:port or URL format.<br/>
           Set this to the Central endpoint URL from the [Prerequisites](#prerequisites) section above.
         </ParamField>
-        <ParamField path="tower.agent_name" type="string">
+        <ParamField path="central.agent_name" type="string">
           Agent name identifier for this VM Agent instance. (Defaults to IP of the host where dots are replaced with dashes, with an ip- prefix)<br/>
           Set this to the display name you want to see in Odigos Central.
         </ParamField>
 
         <img 
-          src="../../../images/central/vmagent/odictl-tower-configured.png" 
-          alt="odictl tower screen"
+          src="../../../images/central/vmagent/odictl-central-configured.png" 
+          alt="odictl Central screen"
           style={{    
             width: "700px",
             height: "auto",
@@ -133,15 +133,15 @@ To connect VM Agent to Odigos Central, use one of the following methods:
 
         Modify the following fields:
 
-        <ParamField path="enabled" type="boolean" required>
+        <ParamField path="central.enabled" type="boolean" required>
           Enable the Central controller. If false, the controller will not start.<br/>
           Set this value to `true`.
         </ParamField>
-        <ParamField path="endpoint" type="string" required>
+        <ParamField path="central.endpoint" type="string" required>
           WebSocket endpoint of the Central server in host:port or URL format.<br/>
           Set this to the Central endpoint URL from the [Prerequisites](#prerequisites) section above.
         </ParamField>
-        <ParamField path="agent_name" type="string">
+        <ParamField path="central.agent_name" type="string">
           Agent name identifier for this VM Agent instance. (Defaults to IP of the host where dots are replaced with dashes, with an ip- prefix)<br/>
           Set this to the display name you want to see in Odigos Central.
         </ParamField>
@@ -151,7 +151,7 @@ To connect VM Agent to Odigos Central, use one of the following methods:
         log_format: console
         cli:
           port: 23678
-        tower:
+        central:
           enabled: true
           endpoint: "odigoscentral.example.com"
           agent_name: ip-10-0-1-51
