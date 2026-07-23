@@ -86,6 +86,15 @@ func calculateTracesConfig(
 		collectorConfig.InferDbAttributes = inferDbAttributesConfig
 	}
 
+	// PII Masking
+	piiMaskingConfig := traces.CalculatePiiMaskingConfig(agentLevelActions, runtimeDetails.Language, pw)
+	if piiMaskingConfig != nil {
+		if collectorConfig == nil {
+			collectorConfig = &commonapi.ContainerCollectorConfig{}
+		}
+		collectorConfig.PiiMasking = piiMaskingConfig
+	}
+
 	// Sampling
 	noisyOps, relevantOps, costRules := traces.CalculateSamplingCategoryRulesForContainer(samplingRules, runtimeDetails.Language, pw, containerName, d, workloadObj, effectiveConfig)
 

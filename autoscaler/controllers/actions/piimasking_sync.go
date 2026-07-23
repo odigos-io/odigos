@@ -4,120 +4,43 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
-	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
-func piiMaskingConfigEmpty(cfg actionsapi.PiiMaskingConfig) bool {
-	return len(cfg.PiiCategories) == 0 && len(cfg.CustomFormatMaskings) == 0 && len(cfg.CustomRegexMaskings) == 0
-}
-
-func collectPiiMaskingConfig(ctx context.Context, c client.Client, namespace string) (actionsapi.PiiMaskingConfig, error) {
+func hasAnyPiiMaskingAction(ctx context.Context, c client.Client, namespace string) (bool, error) {
 	var list odigosv1.ActionList
 	if err := c.List(ctx, &list, client.InNamespace(namespace)); err != nil {
-		return actionsapi.PiiMaskingConfig{}, err
+		return false, err
 	}
-
-	sort.Slice(list.Items, func(i, j int) bool {
-		return list.Items[i].Name < list.Items[j].Name
-	})
-
-	seenCategories := make(map[actionsapi.PiiCategory]struct{})
-	seenFormats := make(map[string]struct{})
-	seenRegexes := make(map[string]struct{})
-	cfg := actionsapi.PiiMaskingConfig{}
-
 	for i := range list.Items {
 		a := &list.Items[i]
-		if a.Spec.PiiMasking == nil || a.Spec.Disabled {
+		if a.Spec.Disabled || a.Spec.PiiMasking == nil {
 			continue
 		}
 		if !piiMaskingActionSignalsSupported(a.Spec.Signals) {
 			continue
 		}
-
-		for _, category := range a.Spec.PiiMasking.PiiCategories {
-			if _, ok := seenCategories[category]; ok {
-				continue
-			}
-			seenCategories[category] = struct{}{}
-			cfg.PiiCategories = append(cfg.PiiCategories, category)
-		}
-
-		for _, masking := range a.Spec.PiiMasking.CustomFormatMaskings {
-			if masking.LookupKey == "" || masking.DataFormat == "" {
-				continue
-			}
-			key := masking.LookupKey + "\x00" + string(masking.DataFormat)
-			if _, ok := seenFormats[key]; ok {
-				continue
-			}
-			seenFormats[key] = struct{}{}
-			cfg.CustomFormatMaskings = append(cfg.CustomFormatMaskings, masking)
-		}
-
-		for _, masking := range a.Spec.PiiMasking.CustomRegexMaskings {
-			if masking.Regex == "" {
-				continue
-			}
-			if _, ok := seenRegexes[masking.Regex]; ok {
-				continue
-			}
-			seenRegexes[masking.Regex] = struct{}{}
-			cfg.CustomRegexMaskings = append(cfg.CustomRegexMaskings, masking)
-		}
+		return true, nil
 	}
-
-	sort.Slice(cfg.PiiCategories, func(i, j int) bool {
-		return cfg.PiiCategories[i] < cfg.PiiCategories[j]
-	})
-
-	return cfg, nil
+	return false, nil
 }
 
-// marshalPiiMaskingProcessorConfig renders the Action API config into the snake_case
-// keys expected by the odigospiimasking processor mapstructure tags.
-func marshalPiiMaskingProcessorConfig(cfg actionsapi.PiiMaskingConfig) ([]byte, error) {
-	out := map[string]any{}
-	if len(cfg.PiiCategories) > 0 {
-		out["pii_categories"] = cfg.PiiCategories
-	}
-	if len(cfg.CustomFormatMaskings) > 0 {
-		formats := make([]map[string]string, 0, len(cfg.CustomFormatMaskings))
-		for _, masking := range cfg.CustomFormatMaskings {
-			formats = append(formats, map[string]string{
-				"lookup_key":  masking.LookupKey,
-				"data_format": string(masking.DataFormat),
-			})
-		}
-		out["custom_format_maskings"] = formats
-	}
-	if len(cfg.CustomRegexMaskings) > 0 {
-		regexes := make([]map[string]string, 0, len(cfg.CustomRegexMaskings))
-		for _, masking := range cfg.CustomRegexMaskings {
-			regexes = append(regexes, map[string]string{
-				"regex": masking.Regex,
-			})
-		}
-		out["custom_regex_maskings"] = regexes
-	}
-	return json.Marshal(out)
-}
-
-func buildPiiMaskingProcessor(namespace string, cfg actionsapi.PiiMaskingConfig) (*odigosv1.Processor, error) {
+func buildPiiMaskingProcessor(namespace string) (*odigosv1.Processor, error) {
 	actionCfg := actions.PiiMaskingConfig{}
-	configJSON, err := marshalPiiMaskingProcessorConfig(cfg)
+	configJSON, err := json.Marshal(map[string]interface{}{
+		"odigos_config_extension": k8sconsts.OdigosConfigK8sExtensionType,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("marshal pii masking processor config: %w", err)
 	}
@@ -146,9 +69,9 @@ func buildPiiMaskingProcessor(namespace string, cfg actionsapi.PiiMaskingConfig)
 }
 
 // SyncPiiMaskingProcessor creates, patches, or deletes the shared PII-masking Processor from Actions.
-// Categories and custom masking rules from all non-disabled PiiMasking actions are unioned into a
-// single processor. When no enabled actions remain, the shared Processor is deleted.
-// Legacy per-action Processor CRs (named after the Action) are also removed.
+// When any enabled PiiMasking action exists, the processor is configured with odigos_config_extension
+// so per-source rules come from InstrumentationConfig. When no enabled actions remain, the shared
+// Processor is deleted. Legacy per-action Processor CRs (named after the Action) are also removed.
 func SyncPiiMaskingProcessor(ctx context.Context, c client.Client) error {
 	logger := commonlogger.FromContext(ctx).WithName("pii-masking")
 	ns := env.GetCurrentNamespace()
@@ -157,11 +80,11 @@ func SyncPiiMaskingProcessor(ctx context.Context, c client.Client) error {
 		return err
 	}
 
-	cfg, err := collectPiiMaskingConfig(ctx, c, ns)
+	need, err := hasAnyPiiMaskingAction(ctx, c, ns)
 	if err != nil {
 		return err
 	}
-	if piiMaskingConfigEmpty(cfg) {
+	if !need {
 		proc := &odigosv1.Processor{ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      consts.PiiMaskingProcessorName,
@@ -175,7 +98,7 @@ func SyncPiiMaskingProcessor(ctx context.Context, c client.Client) error {
 		return nil
 	}
 
-	proc, err := buildPiiMaskingProcessor(ns, cfg)
+	proc, err := buildPiiMaskingProcessor(ns)
 	if err != nil {
 		return err
 	}

@@ -1,25 +1,29 @@
 package odigospiimaskingprocessor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor/processortest"
 
+	commonapi "github.com/odigos-io/odigos/common/api"
 	"github.com/odigos-io/odigos/common/api/actions"
+	"github.com/odigos-io/odigos/common/collector"
 )
 
 func TestMaskPiiData_CategoriesAndCustom(t *testing.T) {
-	proc, err := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), &Config{
-		PiiMaskingConfig: actions.PiiMaskingConfig{
-			PiiCategories: []actions.PiiCategory{actions.EmailMasking},
-			CustomFormatMaskings: []actions.CustomFormatMasking{
-				{LookupKey: "ssn", DataFormat: actions.FormatJSON},
-			},
-			CustomRegexMaskings: []actions.CustomRegexMasking{
-				{Regex: `api[_-]?key=([^\s&]+)`},
-			},
+	cfg, err := compilePiiMaskingConfig(&actions.PiiMaskingConfig{
+		PiiCategories: []actions.PiiCategory{actions.EmailMasking},
+		CustomFormatMaskings: []actions.CustomFormatMasking{
+			{LookupKey: "ssn", DataFormat: actions.FormatJSON},
+		},
+		CustomRegexMaskings: []actions.CustomRegexMasking{
+			{Regex: `api[_-]?key=([^\s&]+)`},
 		},
 	})
 	require.NoError(t, err)
@@ -58,7 +62,7 @@ func TestMaskPiiData_CategoriesAndCustom(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, changed := proc.maskPiiData(tc.input)
+			got, changed := maskPiiData(tc.input, cfg)
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.input != tc.want, changed)
 		})
@@ -107,15 +111,15 @@ func TestBuildFormatMaskingRegex(t *testing.T) {
 	}
 }
 
-func TestConfigValidate(t *testing.T) {
+func TestCompilePiiMaskingConfig(t *testing.T) {
 	tests := []struct {
 		name    string
-		cfg     Config
+		cfg     actions.PiiMaskingConfig
 		wantErr string
 	}{
 		{
 			name: "valid",
-			cfg: Config{PiiMaskingConfig: actions.PiiMaskingConfig{
+			cfg: actions.PiiMaskingConfig{
 				PiiCategories: []actions.PiiCategory{actions.EmailMasking},
 				CustomFormatMaskings: []actions.CustomFormatMasking{
 					{LookupKey: "ssn", DataFormat: actions.FormatJSON},
@@ -123,47 +127,47 @@ func TestConfigValidate(t *testing.T) {
 				CustomRegexMaskings: []actions.CustomRegexMasking{
 					{Regex: `(secret)`},
 				},
-			}},
+			},
 		},
 		{
 			name: "invalid category",
-			cfg: Config{PiiMaskingConfig: actions.PiiMaskingConfig{
+			cfg: actions.PiiMaskingConfig{
 				PiiCategories: []actions.PiiCategory{"PHONE"},
-			}},
+			},
 			wantErr: "unsupported category",
 		},
 		{
 			name: "format missing lookupKey",
-			cfg: Config{PiiMaskingConfig: actions.PiiMaskingConfig{
+			cfg: actions.PiiMaskingConfig{
 				CustomFormatMaskings: []actions.CustomFormatMasking{
 					{DataFormat: actions.FormatJSON},
 				},
-			}},
+			},
 			wantErr: "lookupKey is required",
 		},
 		{
 			name: "regex without capture group",
-			cfg: Config{PiiMaskingConfig: actions.PiiMaskingConfig{
+			cfg: actions.PiiMaskingConfig{
 				CustomRegexMaskings: []actions.CustomRegexMasking{
 					{Regex: `abc`},
 				},
-			}},
+			},
 			wantErr: "capture group",
 		},
 		{
 			name: "invalid regex",
-			cfg: Config{PiiMaskingConfig: actions.PiiMaskingConfig{
+			cfg: actions.PiiMaskingConfig{
 				CustomRegexMaskings: []actions.CustomRegexMasking{
 					{Regex: `(`},
 				},
-			}},
+			},
 			wantErr: "invalid regex",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := tc.cfg.Validate()
+			_, err := compilePiiMaskingConfig(&tc.cfg)
 			if tc.wantErr == "" {
 				assert.NoError(t, err)
 				return
@@ -172,4 +176,103 @@ func TestConfigValidate(t *testing.T) {
 			assert.Contains(t, err.Error(), tc.wantErr)
 		})
 	}
+}
+
+func TestConfigValidate(t *testing.T) {
+	extID := component.MustNewID("odigosconfigk8s")
+
+	err := Config{}.Validate()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "odigos_config_extension is required")
+
+	err = Config{OdigosConfigExtension: &extID}.Validate()
+	assert.NoError(t, err)
+}
+
+type stubOdigosConfigExtension struct {
+	key string
+	cfg *commonapi.ContainerCollectorConfig
+}
+
+func (s *stubOdigosConfigExtension) GetFromResource(pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool) {
+	if s.cfg == nil {
+		return nil, false
+	}
+	return s.cfg, true
+}
+
+func (s *stubOdigosConfigExtension) IsActiveSource(pcommon.Resource) bool { return true }
+
+func (s *stubOdigosConfigExtension) GetWorkloadCacheKey(pcommon.Resource) (string, error) {
+	return s.key, nil
+}
+
+func (s *stubOdigosConfigExtension) GetWorkloadIdentityFromResource(pcommon.Resource) (string, pcommon.Map, error) {
+	return s.key, pcommon.NewMap(), nil
+}
+
+func (s *stubOdigosConfigExtension) RegisterWorkloadConfigCacheCallback(collector.WorkloadConfigCacheCallback) {
+}
+
+func (s *stubOdigosConfigExtension) UnregisterWorkloadConfigCacheCallback(collector.WorkloadConfigCacheCallback) {
+}
+
+func (s *stubOdigosConfigExtension) WaitForCacheSync(context.Context) bool { return true }
+
+func (s *stubOdigosConfigExtension) GetDataStreamsForWorkload(pcommon.Resource) ([]string, bool) {
+	return nil, false
+}
+
+func generateTestTrace(attrs map[string]string) ptrace.Traces {
+	traces := ptrace.NewTraces()
+	rs := traces.ResourceSpans().AppendEmpty()
+	span := rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+	span.SetName("test")
+	for k, v := range attrs {
+		span.Attributes().PutStr(k, v)
+	}
+	return traces
+}
+
+func TestExtension_PerSourceConfig(t *testing.T) {
+	proc := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), &Config{})
+
+	ext := &stubOdigosConfigExtension{key: "default/deployment/app/container"}
+	proc.provider = ext
+	proc.OnSet(ext.key, &commonapi.ContainerCollectorConfig{
+		PiiMasking: &actions.PiiMaskingConfig{
+			PiiCategories: []actions.PiiCategory{actions.EmailMasking},
+		},
+	})
+
+	traces := generateTestTrace(map[string]string{
+		"message": "contact user@example.com",
+	})
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	msg, ok := span.Attributes().Get("message")
+	require.True(t, ok)
+	require.Equal(t, "contact ***EMAIL***", msg.Str())
+}
+
+func TestExtension_SkipsWhenNoConfig(t *testing.T) {
+	proc := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), &Config{})
+
+	ext := &stubOdigosConfigExtension{key: "default/deployment/app/container"}
+	proc.provider = ext
+
+	traces := generateTestTrace(map[string]string{
+		"message": "contact user@example.com",
+	})
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	msg, ok := span.Attributes().Get("message")
+	require.True(t, ok)
+	require.Equal(t, "contact user@example.com", msg.Str())
 }
