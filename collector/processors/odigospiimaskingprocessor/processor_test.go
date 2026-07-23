@@ -2,6 +2,7 @@ package odigospiimaskingprocessor
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,6 +11,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor/processortest"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 
 	commonapi "github.com/odigos-io/odigos/common/api"
 	"github.com/odigos-io/odigos/common/api/actions"
@@ -256,6 +259,77 @@ func TestExtension_PerSourceConfig(t *testing.T) {
 	msg, ok := span.Attributes().Get("message")
 	require.True(t, ok)
 	require.Equal(t, "contact ***EMAIL***", msg.Str())
+}
+
+func TestOnSetCachesValidRulesAndLogsMalformedRules(t *testing.T) {
+	piiConfig := &actions.PiiMaskingConfig{
+		PiiCategories: []actions.PiiCategory{"PHONE", actions.EmailMasking},
+		CustomFormatMaskings: []actions.CustomFormatMasking{
+			{},
+			{LookupKey: "ssn", DataFormat: actions.FormatJSON},
+		},
+		CustomRegexMaskings: []actions.CustomRegexMasking{
+			{Regex: `(`},
+			{Regex: `api[_-]?key=([^\s&]+)`},
+		},
+	}
+
+	core, observed := observer.New(zap.WarnLevel)
+	settings := processortest.NewNopSettings(processortest.NopType)
+	settings.Logger = zap.New(core)
+	proc := newPiiMaskingProcessor(settings, &Config{})
+	ext := &stubOdigosConfigExtension{key: "default/deployment/app/container"}
+	proc.provider = ext
+	proc.OnSet(ext.key, &commonapi.ContainerCollectorConfig{PiiMasking: piiConfig})
+
+	compiled, cachePresent := proc.maskersCache.get(ext.key)
+	require.True(t, cachePresent)
+	require.Equal(t, []actions.PiiCategory{actions.EmailMasking}, compiled.categories)
+	require.Len(t, compiled.customMaskers, 2)
+
+	require.Len(t, observed.All(), 1)
+	loggedError := fmt.Sprint(observed.All()[0].ContextMap()["error"])
+	assert.Contains(t, loggedError, "piiCategories[0]")
+	assert.Contains(t, loggedError, "customFormatMaskings[0]")
+	assert.Contains(t, loggedError, "customRegexMaskings[0]")
+
+	traces := generateTestTrace(map[string]string{
+		"message": `contact user@example.com payload={"ssn":"999"} api-key=abc123`,
+	})
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	message, ok := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).Attributes().Get("message")
+	require.True(t, ok)
+	require.Equal(t, `contact ***EMAIL*** payload={"ssn":"****"} api-key=****`, message.Str())
+}
+
+func TestOnSetMalformedOnlyPreservesCacheAndEmptyConfigDeletes(t *testing.T) {
+	proc := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), &Config{})
+	key := "default/deployment/app/container"
+
+	proc.OnSet(key, &commonapi.ContainerCollectorConfig{
+		PiiMasking: &actions.PiiMaskingConfig{
+			PiiCategories: []actions.PiiCategory{actions.EmailMasking},
+		},
+	})
+	proc.OnSet(key, &commonapi.ContainerCollectorConfig{
+		PiiMasking: &actions.PiiMaskingConfig{
+			PiiCategories:        []actions.PiiCategory{"PHONE"},
+			CustomFormatMaskings: []actions.CustomFormatMasking{{}},
+			CustomRegexMaskings:  []actions.CustomRegexMasking{{Regex: `(`}},
+		},
+	})
+
+	compiled, ok := proc.maskersCache.get(key)
+	require.True(t, ok)
+	require.Equal(t, []actions.PiiCategory{actions.EmailMasking}, compiled.categories)
+
+	proc.OnSet(key, &commonapi.ContainerCollectorConfig{
+		PiiMasking: &actions.PiiMaskingConfig{},
+	})
+	_, ok = proc.maskersCache.get(key)
+	require.False(t, ok)
 }
 
 func TestExtension_SkipsWhenNoConfig(t *testing.T) {
