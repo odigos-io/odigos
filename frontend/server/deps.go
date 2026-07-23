@@ -12,6 +12,7 @@ import (
 
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/common/profilecache"
 	"github.com/odigos-io/odigos/config"
 	"github.com/odigos-io/odigos/actions"
 	"github.com/odigos-io/odigos/destinations"
@@ -90,13 +91,13 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		log.Error("profiling: could not load initial effective config; ingest off until effective-config is readable", "err", profCfgErr)
 	}
 	profilingGate := profiles.NewProfilesIngestGate(profilingIngest)
-	profileStore := profiles.NewProfileStore(
-		profCfg.StoreLimits.MaxSlots,
-		profCfg.StoreLimits.SlotTTLSeconds,
-		profCfg.StoreLimits.SlotMaxBytes,
-		profCfg.CleanupInterval,
-	)
-	profileStore.RunCleanup(ctx)
+	profileStore := profilecache.NewStore(profilecache.StoreConfig{
+		MaxSlots:        profCfg.StoreLimits.MaxSlots,
+		TTLSeconds:      profCfg.StoreLimits.SlotTTLSeconds,
+		SlotMaxBytes:    profCfg.StoreLimits.SlotMaxBytes,
+		CleanupInterval: profCfg.CleanupInterval,
+	})
+	go profileStore.RunCleanup(ctx)
 
 	profilesConsumer, err := profiles.NewOdigosProfilesConsumer(profileStore, profilingGate)
 	if err != nil {

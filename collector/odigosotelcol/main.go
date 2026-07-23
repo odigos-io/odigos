@@ -34,9 +34,9 @@ func main() {
 			},
 		},
 		ProviderModules: map[string]string{
-			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():         "go.opentelemetry.io/collector/confmap/provider/envprovider v0.151.0",
+			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():         "go.opentelemetry.io/collector/confmap/provider/envprovider v1.57.0",
 			odigosk8scmprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.151.0",
-			fileprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():        "go.opentelemetry.io/collector/confmap/provider/fileprovider v0.151.0",
+			fileprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():        "go.opentelemetry.io/collector/confmap/provider/fileprovider v1.57.0",
 		},
 		ConverterModules: []string{},
 	}

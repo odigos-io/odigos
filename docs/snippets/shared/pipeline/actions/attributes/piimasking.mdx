@@ -4,10 +4,10 @@ import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
 
 <Warning>
   Before enabling **pii masking**, please note the following:
-  - This action masks span attribute values by replacing only the sensitive portions with `****`, while leaving the rest of the value intact.
-  - The regex used for masking are predefined for each PII category and cannot be configured.
+  - Predefined PII categories replace matched values with a category-specific token (e.g. `***EMAIL***`, `***CREDIT_CARD***`).
+  - Custom format and regex maskings replace only the matched capture group with `****`, leaving the rest of the value intact.
   - Currently, only trace signals are supported.
-  - All span attribute values in every span will be examined and masked accordingly.
+  - All span attribute values in every matching span will be examined and masked accordingly.
 </Warning>
 
 ## Use Cases
@@ -20,6 +20,10 @@ import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
 
 - Ensure compliance with legal and privacy.
     - Payment Card Industry (PCI) Data Security Standards prohibit logging certain things or storing them unencrypted.
+
+**Domain-specific secrets**
+
+- Mask application-specific fields (e.g. SSN in JSON payloads, passwords in SQL statements, or identifiers in URL paths) using `customFormatMaskings` or `customRegexMaskings` when they are not covered by a predefined PII category.
 
 ## Configuration Options
 
@@ -49,17 +53,63 @@ The PiiMasking action is configured using the `odigos.io/v1alpha1.Action` CRD wi
     **piiMasking** `object` : Configuration for the PiiMasking action.
     - This field is *required* for this action type
     <AccordionGroup>
-      <Accordion title="piiCategories *">
-        **piiCategories** `string[]` : An array of strings representing the PII Category you want to mask.
-        - This field is *required*
+      <Accordion title="scopes">
+        **scopes** `object` : Limits which sources this masking config applies to.
+        - This field is *optional*
+        - If unset or empty, the config is applied to all sources.
+        <AccordionGroup>
+          <Accordion title="sources">
+            **sources** `object[]` : A list of workloads to apply this action to.
+            - Each entry requires `name`, `namespace`, and `kind` (`Deployment`, `StatefulSet`, or `DaemonSet`).
+          </Accordion>
+          <Accordion title="namespaces">
+            **namespaces** `string[]` : Apply this action to all sources in the listed namespaces.
+          </Accordion>
+          <Accordion title="languages">
+            **languages** `string[]` : Apply this action only to containers instrumented with the listed programming languages.
+          </Accordion>
+        </AccordionGroup>
+      </Accordion>
+      <Accordion title="piiCategories">
+        **piiCategories** `string[]` : An array of strings representing the PII categories you want to mask.
+        - This field is *optional*
         - The available PII categories are:
           - `CREDIT_CARD` - mask Visa and MasterCard credit card numbers
           - `EMAIL` - mask email addresses
           - `JWT` - mask JSON Web Tokens
           - `UUID` - mask UUIDs
         <Note>
-          Can't find the PII category you need? Please Contact us and we will add it for you
+          Can't find the PII category you need? Use `customFormatMaskings` or `customRegexMaskings`, or contact us and we will add it for you.
         </Note>
+      </Accordion>
+      <Accordion title="customFormatMaskings">
+        **customFormatMaskings** `object[]` : Format-based masking rules applied in order. Each rule looks up a key inside structured attribute values and masks the matched value.
+        - This field is *optional*
+        <AccordionGroup>
+          <Accordion title="lookupKey *">
+            **lookupKey** `string` : The field or path segment whose value should be masked (e.g. a JSON key, SQL column name, or URL path segment).
+            - This field is *required*
+          </Accordion>
+          <Accordion title="dataFormat *">
+            **dataFormat** `string` : The format of the data to search in.
+            - This field is *required*
+            - Supported values:
+              - `json` — matches `key: value` pairs in JSON envelopes (e.g. `{"ssn": "123-45-6789"}` or `ssn: 123-45-6789`).
+              - `sql` — matches `key = value` pairs in SQL statements (e.g. `WHERE password = 'hunter2'`).
+              - `resource_path` — matches `key/value` segments inside URL paths (e.g. `/orders/abc-123`), stopping at the next `/`, whitespace, `?`, `&`, `#`, or quote.
+          </Accordion>
+        </AccordionGroup>
+      </Accordion>
+      <Accordion title="customRegexMaskings">
+        **customRegexMaskings** `object[]` : Regex-based masking rules applied in order.
+        - This field is *optional*
+        <AccordionGroup>
+          <Accordion title="regex *">
+            **regex** `string` : A custom regular expression with a single capture group whose value is masked with `****`.
+            - This field is *required*
+            - The pattern must contain at least one capture group; only the first capture group is replaced.
+          </Accordion>
+        </AccordionGroup>
       </Accordion>
     </AccordionGroup>
   </Accordion>
@@ -67,7 +117,7 @@ The PiiMasking action is configured using the `odigos.io/v1alpha1.Action` CRD wi
 
 ## Basic Example
 
-The following example demonstrates how to configure the Pii Masking action to mask Visa and MasterCard credit card numbers from span attribute values using the new Action CRD.
+The following example demonstrates how to configure the Pii Masking action to mask Visa and MasterCard credit card numbers from span attribute values using the Action CRD.
 
 <Steps>
   <Step>
@@ -96,3 +146,84 @@ The following example demonstrates how to configure the Pii Masking action to ma
     ```
   </Step>
 </Steps>
+
+## Custom Masking Example
+
+The following example combines a predefined category with custom format and regex rules. Given span attributes such as:
+
+- `{"ssn": "123-45-6789", "name": "alice"}`
+- `WHERE password = 'hunter2' AND status = 'ok'`
+- `/api/v1/orders/abc-123/items`
+- `auth api_key=super-secret-value next`
+
+the action produces:
+
+| Input fragment | Masked result |
+| -------------- | ------------- |
+| `user@example.com` | `***EMAIL***` |
+| `"ssn": "123-45-6789"` | `"ssn": "****"` |
+| `password = 'hunter2'` | `password = '****'` |
+| `/orders/abc-123/` | `/orders/****/` |
+| `api_key=super-secret-value` | `api_key=****` |
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml pii-masking-custom.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
+    metadata:
+      name: pii-masking-custom
+      namespace: odigos-system
+    spec:
+      actionName: Custom PII Masking
+      signals:
+        - TRACES
+      piiMasking:
+        piiCategories:
+          - EMAIL
+        customFormatMaskings:
+          - lookupKey: ssn
+            dataFormat: json
+          - lookupKey: password
+            dataFormat: sql
+          - lookupKey: orders
+            dataFormat: resource_path
+        customRegexMaskings:
+          - regex: 'api[_-]?key=([^\s&]+)'
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```bash
+    kubectl apply -f pii-masking-custom.yaml
+    ```
+  </Step>
+</Steps>
+
+## Scoped Example
+
+To limit masking to specific workloads, add `scopes`. Omit `scopes` (or leave it empty) to apply the action to all sources.
+
+```yaml pii-masking-scoped.yaml
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: pii-masking-my-app
+  namespace: odigos-system
+spec:
+  actionName: PII Masking for my-app
+  signals:
+    - TRACES
+  piiMasking:
+    scopes:
+      sources:
+        - name: my-app
+          namespace: default
+          kind: Deployment
+    piiCategories:
+      - CREDIT_CARD
+      - EMAIL
+```

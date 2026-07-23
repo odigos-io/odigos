@@ -86,15 +86,6 @@ func isEbpfLogCaptureEnabled(sources *odigosv1.InstrumentationConfigList) bool {
 				return true
 			}
 		}
-
-		// TODO: remove once fully migrated to container config
-		for _, sdkConfig := range ic.Spec.SdkConfigs {
-			if sdkConfig.EbpfLogCapture != nil &&
-				sdkConfig.EbpfLogCapture.Enabled != nil &&
-				*sdkConfig.EbpfLogCapture.Enabled {
-				return true
-			}
-		}
 	}
 	return false
 }
