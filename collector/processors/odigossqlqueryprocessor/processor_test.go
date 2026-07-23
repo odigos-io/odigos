@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor/processortest"
+	semconv125 "go.opentelemetry.io/otel/semconv/v1.25.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
 	commonapi "github.com/odigos-io/odigos/common/api"
@@ -56,7 +57,7 @@ func TestInferAttributes_FromDbQueryText(t *testing.T) {
 func TestInferAttributes_FromDbStatement(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
-		dbStatementKey: "INSERT INTO orders VALUES (1)",
+		string(semconv125.DBStatementKey): "INSERT INTO orders VALUES (1)",
 	})
 
 	out, err := proc.processTraces(context.Background(), traces)
@@ -76,8 +77,8 @@ func TestInferAttributes_FromDbStatement(t *testing.T) {
 func TestInferAttributes_PrefersDbQueryTextOverDbStatement(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
-		string(semconv.DBQueryTextKey): "SELECT * FROM users",
-		dbStatementKey:                 "DELETE FROM orders",
+		string(semconv.DBQueryTextKey):    "SELECT * FROM users",
+		string(semconv125.DBStatementKey): "DELETE FROM orders",
 	})
 
 	out, err := proc.processTraces(context.Background(), traces)
@@ -266,14 +267,14 @@ func TestRedactLiterals_WhenAttributesAlreadyPresent(t *testing.T) {
 func TestRedactLiterals_DbStatement(t *testing.T) {
 	proc := newTestProcessor(t, &Config{RedactLiterals: true})
 	traces := generateTestTrace(map[string]string{
-		dbStatementKey: "INSERT INTO orders VALUES (1, 'x')",
+		string(semconv125.DBStatementKey): "INSERT INTO orders VALUES (1, 'x')",
 	})
 
 	out, err := proc.processTraces(context.Background(), traces)
 	require.NoError(t, err)
 
 	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
-	query, ok := span.Attributes().Get(dbStatementKey)
+	query, ok := span.Attributes().Get(string(semconv125.DBStatementKey))
 	require.True(t, ok)
 	require.Equal(t, "INSERT INTO orders VALUES (?, ?)", query.Str())
 }
