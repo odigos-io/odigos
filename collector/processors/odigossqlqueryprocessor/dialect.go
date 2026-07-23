@@ -91,16 +91,18 @@ func dbSystemValue(attrs pcommon.Map) (string, bool) {
 // resolveDBMS reads db.system.name / db.system from span attributes and returns
 // the sqllexer dialect and whether processing should be skipped for a known
 // non-SQL system.
-func resolveDBMS(spanAttrs pcommon.Map) (dbms sqllexer.DBMSType, skip bool) {
+// it also returns if the db system is cassandra, which is a special case.
+func resolveDBMS(spanAttrs pcommon.Map) (dbms sqllexer.DBMSType, skip bool, isCassandra bool) {
 	system, found := dbSystemValue(spanAttrs)
 	if !found {
-		return defaultDBMS, false
+		return defaultDBMS, true, false
 	}
 	if _, nonSQL := nonSQLSystems[system]; nonSQL {
-		return defaultDBMS, true
+		return defaultDBMS, true, system == semconv.DBSystemCassandra.Value.AsString()
 	}
 	if mapped, ok := dbmsBySystem[system]; ok {
-		return mapped, false
+		return mapped, false, false
 	}
-	return defaultDBMS, false
+	isCassandra = system == semconv.DBSystemCassandra.Value.AsString()
+	return defaultDBMS, false, isCassandra
 }
