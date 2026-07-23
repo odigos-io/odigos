@@ -1,0 +1,16 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: |
+  Validates that Spring WebClient (Reactor Netty HTTP client) propagates trace context correctly.
+  java-http-client calls java-supported-version via WebClient; the downstream server span must
+  be parented to a java-http-client client span, proving traceparent injection over reactor-netty.
+query: |
+  length(
+    [?
+      span.resourceAttributes."telemetry.sdk.language" == 'java' && span.serviceName == 'java-supported-version' && span.kind == 'server'
+        &&
+      parent.span.serviceName == 'java-http-client' && parent.span.resourceAttributes."telemetry.sdk.language" == 'java'
+    ]
+  ) > `0`
+expected:
+  count: 1

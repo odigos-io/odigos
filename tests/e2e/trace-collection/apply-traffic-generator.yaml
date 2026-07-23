@@ -36,6 +36,8 @@ spec:
               curl -s --fail http://java-old-version:3000
               curl -s --fail http://java-unique-exec:3000
 
+              curl -s --fail http://java-http-client:3000/call-via-webclient
+
               curl -s --fail http://python-alpine:3000/insert-random/
               curl -s --fail http://python-latest-version:3000/insert-random/
               curl -s --fail http://python-min-version:3000/insert-random/
