@@ -6,3 +6,7 @@ status:
   distributions: [odigos]
   codeowners:
     active: [blumamir]
+
+tests:
+  # Processor.Start requires odigos_config_extension on the host, which mdatagen's NopHost cannot provide.
+  skip_lifecycle: true

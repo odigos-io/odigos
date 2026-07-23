@@ -11,6 +11,11 @@ const ActionNamePiiMasking = "PiiMasking"
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type PiiMaskingConfig struct {
+
+	// the scope of services for which this masking config will be applied.
+	// if empty, the provided config will be applied to all sources.
+	Scopes *k8sconsts.SourcesScopes `json:"scopes,omitempty"`
+
 	actionsapi.PiiMaskingConfig `json:",inline"`
 }
 

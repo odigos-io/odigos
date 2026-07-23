@@ -44,5 +44,7 @@ func createTracesProcessor(
 		nextConsumer,
 		proc.processTraces,
 		processorhelper.WithCapabilities(consumerCapabilities),
+		processorhelper.WithStart(proc.Start),
+		processorhelper.WithShutdown(proc.Shutdown),
 	)
 }

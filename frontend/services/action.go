@@ -696,21 +696,23 @@ func convertExtractAttributeFromInput(details *model.ActionFieldsInput, existing
 		return nil
 	}
 
-	extractions := make([]apiactions.Extraction, 0, len(details.ExtractAttribute.Extractions))
+	extractions := make([]actionsapi.Extraction, 0, len(details.ExtractAttribute.Extractions))
 	for _, e := range details.ExtractAttribute.Extractions {
-		row := apiactions.Extraction{
+		row := actionsapi.Extraction{
 			TargetAttributeName: e.TargetAttributeName,
 			LookupKey:           DerefString(e.LookupKey),
 			Regex:               DerefString(e.Regex),
 		}
 		if e.DataFormat != nil {
-			row.DataFormat = apiactions.DataFormat(*e.DataFormat)
+			row.DataFormat = actionsapi.DataFormat(*e.DataFormat)
 		}
 		extractions = append(extractions, row)
 	}
 
 	return &apiactions.ExtractAttributeConfig{
-		Extractions: extractions,
+		ExtractAttributeConfig: actionsapi.ExtractAttributeConfig{
+			Extractions: extractions,
+		},
 	}
 }
 
