@@ -100,6 +100,12 @@ type InstrumentationRuleSpec struct {
 
 	// Configure the agent own logging configuration.
 	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
+
+	// AllowConcurrentAgents overrides the global allow_concurrent_agents for the scoped
+	// workloads: when true, Odigos instruments the container even if another instrumentation
+	// agent is detected in it; when false, such containers are skipped. Unset falls back to
+	// the global config.
+	AllowConcurrentAgents *bool `json:"allowConcurrentAgents,omitempty"`
 }
 
 // Verify validates the InstrumentationRuleSpec.

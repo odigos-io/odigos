@@ -1135,7 +1135,7 @@ type K8sWorkloadRuntimeInfoContainer struct {
 	CriErrorMessage         *string             `json:"criErrorMessage,omitempty"`
 	LibcType                *string             `json:"libcType,omitempty"`
 	SecureExecutionMode     *bool               `json:"secureExecutionMode,omitempty"`
-	OtherAgentName          *string             `json:"otherAgentName,omitempty"`
+	OtherAgentNames         []string            `json:"otherAgentNames,omitempty"`
 }
 
 type K8sWorkloadTelemetryMetrics struct {

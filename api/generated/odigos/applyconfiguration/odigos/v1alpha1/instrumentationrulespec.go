@@ -65,6 +65,11 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	TraceVerbosity *instrumentationrules.TraceVerbosity `json:"traceVerbosity,omitempty"`
 	// Configure the agent own logging configuration.
 	AgentDiagnostics *instrumentationrules.AgentDiagnostics `json:"agentDiagnostics,omitempty"`
+	// AllowConcurrentAgents overrides the global allow_concurrent_agents for the scoped
+	// workloads: when true, Odigos instruments the container even if another instrumentation
+	// agent is detected in it; when false, such containers are skipped. Unset falls back to
+	// the global config.
+	AllowConcurrentAgents *bool `json:"allowConcurrentAgents,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -210,5 +215,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithTraceVerbosity(value ins
 // If called multiple times, the AgentDiagnostics field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithAgentDiagnostics(value instrumentationrules.AgentDiagnostics) *InstrumentationRuleSpecApplyConfiguration {
 	b.AgentDiagnostics = &value
+	return b
+}
+
+// WithAllowConcurrentAgents sets the AllowConcurrentAgents field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AllowConcurrentAgents field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithAllowConcurrentAgents(value bool) *InstrumentationRuleSpecApplyConfiguration {
+	b.AllowConcurrentAgents = &value
 	return b
 }
