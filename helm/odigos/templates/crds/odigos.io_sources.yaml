@@ -137,11 +137,16 @@ spec:
                           - glibc
                           - musl
                           type: string
-                        otherAgent:
-                          properties:
-                            name:
-                              type: string
-                          type: object
+                        otherAgents:
+                          description: |-
+                            OtherAgents lists other instrumentation agents detected in the container
+                            (a process can carry more than one); empty when none.
+                          items:
+                            properties:
+                              name:
+                                type: string
+                            type: object
+                          type: array
                         runtimeUpdateState:
                           description: A temporary variable used during migration
                             to track whether the new runtime detection process has

@@ -286,7 +286,8 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 			continue
 		}
 
-		agentConfig := calculateContainerAgentConfig(containerName, containerDistro, effectiveConfig, containerRuntimeDetails, rollbackOccurred, existingBackoffReason)
+		allowConcurrentAgents := resolveAllowConcurrentAgents(rulesForContainer, effectiveConfig)
+		agentConfig := calculateContainerAgentConfig(containerName, containerDistro, effectiveConfig, containerRuntimeDetails, rollbackOccurred, existingBackoffReason, allowConcurrentAgents)
 		// add the dynamic agent configs to enabled agents
 		if agentConfig.AgentEnabled {
 			agentConfig.Traces = dynamicContainerConfigs.AgentTracesConfig
@@ -504,6 +505,7 @@ func calculateContainerAgentConfig(containerName string,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	rollbackOccurred bool,
 	existingBackoffReason odigosv1.AgentEnabledReason,
+	allowConcurrentAgents bool,
 ) odigosv1.ContainerAgentConfig {
 
 	distroName := d.Name
@@ -540,13 +542,14 @@ func calculateContainerAgentConfig(containerName string,
 	podManifestInjectionOptional := !distro.IsRestartRequired(d, effectiveConfig)
 
 	// check for presence of other agents
-	if runtimeDetails.OtherAgent != nil {
-		if effectiveConfig.AllowConcurrentAgents == nil || !*effectiveConfig.AllowConcurrentAgents {
+	if len(runtimeDetails.OtherAgents) > 0 {
+		otherAgents := otherAgentNames(runtimeDetails.OtherAgents)
+		if !allowConcurrentAgents {
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
 				AgentEnabled:        false,
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonOtherAgentDetected,
-				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
+				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent(s) [%s] detected running in the container", otherAgents),
 			}
 		}
 		return odigosv1.ContainerAgentConfig{
@@ -554,7 +557,7 @@ func calculateContainerAgentConfig(containerName string,
 			AgentEnabled:                 true,
 			PodManifestInjectionOptional: podManifestInjectionOptional,
 			AgentEnabledReason:           odigosv1.AgentEnabledReasonEnabledSuccessfully,
-			AgentEnabledMessage:          fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
+			AgentEnabledMessage:          fmt.Sprintf("we are operating alongside other instrumentation agent(s) [%s], which is not the recommended configuration. We suggest disabling them for optimal performance.", otherAgents),
 			OtelDistroName:               distroName,
 			DistroParams:                 distroParameters,
 			EnvInjectionMethod:           envInjectionDecision,
@@ -649,4 +652,26 @@ func gotReadySignals(cg *odigosv1.CollectorsGroup) (bool, string) {
 	}
 
 	return true, ""
+}
+
+// resolveAllowConcurrentAgents returns the effective allow_concurrent_agents for a
+// container: the last matching InstrumentationRule that sets it wins (rules are sorted
+// deterministically), otherwise the global config (nil = false).
+func resolveAllowConcurrentAgents(rules []odigosv1.InstrumentationRule, cfg *common.OdigosConfiguration) bool {
+	allow := cfg.AllowConcurrentAgents != nil && *cfg.AllowConcurrentAgents
+	for i := range rules {
+		if rules[i].Spec.AllowConcurrentAgents != nil {
+			allow = *rules[i].Spec.AllowConcurrentAgents
+		}
+	}
+	return allow
+}
+
+// otherAgentNames joins detected other-agent names for user-facing messages.
+func otherAgentNames(agents []odigosv1.OtherAgent) string {
+	names := make([]string, 0, len(agents))
+	for _, a := range agents {
+		names = append(names, a.Name)
+	}
+	return strings.Join(names, ", ")
 }
