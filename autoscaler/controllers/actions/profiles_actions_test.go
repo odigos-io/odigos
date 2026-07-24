@@ -126,6 +126,7 @@ func TestE2E_ProfilesActions_ActionToRenderedConfig(t *testing.T) {
 		commonconf.ProfilingNodeOdigosProfilesProcessor,
 		commonconf.ProfilingNodeSymbolizeProcessor,
 		commonconf.ProfilingNodeServiceNameProcessor,
+		"odigostrafficmetrics",
 	}, nodeCfg.Service.Pipelines["profiles"].Processors)
 }
 
