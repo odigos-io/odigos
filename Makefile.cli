@@ -9,6 +9,10 @@
 #   FLAGS               - extra CLI flags appended to cli-install
 
 CLI_IMAGE ?= $(ORG)/odigos-cli$(IMG_SUFFIX):$(TAG)
+CLI_SUMMARY ?= Odigos CLI
+CLI_DESCRIPTION ?= Odigos CLI to install and manage Odigos in your Kubernetes cluster.
+SHORT_COMMIT ?= $(shell git rev-parse --short HEAD)
+DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 # RHEL-certified CLI (ko + Dockerfile.rhel-base); matches .github/workflows/publish-modules-rhel publish-cli-rhel
 CLI_RHEL_IMAGE_NAME ?= odigos-cli-rhel-certified
@@ -79,13 +83,18 @@ cli-diagnose:
 # Default tag: $(CLI_IMAGE) = $(ORG)/odigos-cli$(IMG_SUFFIX):$(TAG)
 # Override: make build-cli-image TAG=e2e-test
 #           make build-cli-image CLI_IMAGE=my.registry/odigos-cli:dev
+# RHEL via Dockerfile target: make build-cli-image RHEL=true
 # Embeds whatever charts are already present under cli/pkg/helm/embedded/.
 .PHONY: build-cli-image
 build-cli-image:
-	docker build -t $(CLI_IMAGE) -f cli/Dockerfile . \
+	docker build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) -t $(CLI_IMAGE) -f cli/Dockerfile . \
 		--build-arg VERSION=$(TAG) \
-		--build-arg SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
-		--build-arg DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+		--build-arg RELEASE=$(TAG) \
+		--build-arg SUMMARY="$(CLI_SUMMARY)" \
+		--build-arg DESCRIPTION="$(CLI_DESCRIPTION)" \
+		--build-arg SHORT_COMMIT=$(SHORT_COMMIT) \
+		--build-arg DATE=$(DATE) \
+		--build-arg RHEL=$(RHEL)
 
 # Extract the /odigos binary from a CLI image to cli/odigos for use on the host.
 # Default image: $(CLI_IMAGE). Requires the image to be local or pullable.
