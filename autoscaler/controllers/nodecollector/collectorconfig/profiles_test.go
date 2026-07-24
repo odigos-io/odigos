@@ -44,6 +44,7 @@ func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 		commonconf.ProfilingNodeOdigosProfilesProcessor,
 		commonconf.ProfilingNodeSymbolizeProcessor,
 		commonconf.ProfilingNodeServiceNameProcessor,
+		odigosTrafficMetricsProcessorName,
 	}, pl.Processors)
 	assert.Equal(t, []string{commonconf.ProfilingNodeToGatewayExporter}, pl.Exporters)
 
@@ -74,6 +75,7 @@ func TestProfilingPipelineConfig_UserProcessorsAppended(t *testing.T) {
 		commonconf.ProfilingNodeServiceNameProcessor,
 		"resource/addclusterinfo",
 		"transform/rename",
+		odigosTrafficMetricsProcessorName,
 	}, pl.Processors)
 }
 
@@ -93,5 +95,6 @@ func TestProfilingPipelineConfig_NativeSymbolizationDisabled(t *testing.T) {
 		commonconf.ProfilingNodeK8sAttributesProcessor,
 		commonconf.ProfilingNodeOdigosProfilesProcessor,
 		commonconf.ProfilingNodeServiceNameProcessor,
+		odigosTrafficMetricsProcessorName,
 	}, pl.Processors)
 }

@@ -41,6 +41,7 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 	}
 	pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeServiceNameProcessor)
 	pipelineProcessors = append(pipelineProcessors, manifestProcessorNames...)
+	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
 	return config.Config{
 		Receivers: config.GenericMap{
