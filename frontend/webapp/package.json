@@ -18,7 +18,7 @@
     "@apollo/client": "^4.2.6",
     "@odigos/ui-kit": "0.0.270",
     "graphql": "^16.14.2",
-    "next": "15.5.18",
+    "next": "15.5.21",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-error-boundary": "^6.1.2",
@@ -35,7 +35,7 @@
     "check-peer-dependencies": "^4.3.4",
     "eslint": "9.39.2",
     "eslint-config-next": "16.2.10",
-    "postcss": "^8.5.18",
+    "postcss": "^8.5.22",
     "typescript": "5.9.3"
   },
   "resolutions": {
