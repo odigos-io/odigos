@@ -234,8 +234,9 @@ func TestSymtabSkipsAreAggregatedNotPerBinary(t *testing.T) {
 	if warns := logs.FilterLevelExact(zapcore.WarnLevel).Len(); warns != 0 {
 		t.Fatalf("parseAndCache must not log Warn per binary, got %d Warn entries", warns)
 	}
-	if debugs := logs.FilterLevelExact(zapcore.DebugLevel).Len(); debugs != n {
-		t.Fatalf("expected %d per-binary Debug entries, got %d", n, debugs)
+	skipDebugs := logs.FilterMessage("symbolize: symbol table exceeds max_symtab_bytes, skipping decode; native frames for this binary will stay unresolved")
+	if got := skipDebugs.FilterLevelExact(zapcore.DebugLevel).Len(); got != n {
+		t.Fatalf("expected %d per-binary skip Debug entries, got %d", n, got)
 	}
 
 	// One sweep drains the counter into exactly one Warn carrying the count.
