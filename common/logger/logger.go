@@ -40,6 +40,7 @@ func Init(levelStr string, component string, opts ...Option) *zap.Logger {
 	ws := buildWriteSyncer(cfg)
 
 	core := zapcore.NewCore(encoder, ws, atom)
+	core = NewDowngradeCore(core, DefaultDowngradeRules())
 	instance = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	if component != "" {
 		instance = instance.With(zap.String("component", component))

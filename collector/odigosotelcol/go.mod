@@ -19,6 +19,7 @@ require (
 	github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.151.0
 	github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.151.0
 	github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor v0.151.0
+	github.com/odigos-io/odigos/collector/receivers/ebpfprofilerwrapper v0.151.0
 	github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.151.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.151.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.151.0
@@ -123,7 +124,6 @@ require (
 	go.opentelemetry.io/collector/receiver v1.57.0
 	go.opentelemetry.io/collector/receiver/otlpreceiver v0.151.0
 	go.opentelemetry.io/collector/service v0.151.0
-	go.opentelemetry.io/ebpf-profiler v0.0.202614
 	golang.org/x/sys v0.47.0
 )
 
@@ -700,6 +700,7 @@ require (
 	go.opentelemetry.io/contrib/otelconf v0.23.0 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.43.0 // indirect
 	go.opentelemetry.io/contrib/zpages v0.68.0 // indirect
+	go.opentelemetry.io/ebpf-profiler v0.0.202614 // indirect
 	go.opentelemetry.io/otel v1.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.19.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.19.0 // indirect
@@ -810,6 +811,8 @@ replace github.com/odigos-io/odigos/collector/connectors/serviceioconnector => .
 replace github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector => ../connectors/servicegraphconnector
 
 replace github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
+
+replace github.com/odigos-io/odigos/collector/receivers/ebpfprofilerwrapper => ../receivers/ebpfprofilerwrapper
 
 replace github.com/odigos-io/odigos/common => ../../common
 
