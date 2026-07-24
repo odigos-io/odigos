@@ -5,13 +5,14 @@ metadata:
   displayName: Custom Instrumentation
 spec:
   docsUrl: https://docs.odigos.io/pipeline/rules/custominstrumentation
-  description: The "Custom Instrumentation" rule can be used to instrument a specific symbol (i.e. for Golang), or a class and method combination (i.e. for Java) for detailed tracing.
+  description: The "Custom Instrumentation" rule can be used to instrument a specific symbol (i.e. for Golang), a class and method combination (i.e. for Java), or a class and function combination (i.e. for PHP) for detailed tracing.
   supportedLanguages:
     - go
     - java
+    - php
   fields:
-    # Persisted as `customInstrumentations: { golang: [...], java: [...] }`. Two
-    # tables share the same `name`; each `wrapKey` targets its own sub-list and
+    # Persisted as `customInstrumentations: { golang: [...], java: [...], php: [...] }`.
+    # Tables share the same `name`; each `wrapKey` targets its own sub-list and
     # writes merge, so editing one language doesn't clobber the other.
     - name: customInstrumentations
       displayName: Golang custom probes
@@ -53,3 +54,19 @@ spec:
             label: Method name
             placeholder: e.g. myMethod
             tooltip: The name of the method to be instrumented.
+    - name: customInstrumentations
+      displayName: PHP custom probes
+      componentType: multiTabledInput
+      initialValue: '[{}]'
+      componentProps:
+        wrapKey: php
+        limitFieldsPerRow: 2
+        columns:
+          - keyName: className
+            label: Class name
+            placeholder: e.g. App\Service\OrderService
+            tooltip: The fully qualified class name to instrument. Leave empty for a global function.
+          - keyName: functionName
+            label: Function name
+            placeholder: e.g. processOrder
+            tooltip: The name of the function or method to instrument.

@@ -434,6 +434,20 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		}
 	}
 
+	if input.CustomInstrumentations.Php != nil {
+		customInstrumentations.Php = make([]instrumentationrules.PhpCustomProbe, 0, len(input.CustomInstrumentations.Php))
+		for _, probe := range input.CustomInstrumentations.Php {
+			apiProbe := instrumentationrules.PhpCustomProbe{}
+			if probe.ClassName != nil {
+				apiProbe.ClassName = *probe.ClassName
+			}
+			if probe.FunctionName != nil {
+				apiProbe.FunctionName = *probe.FunctionName
+			}
+			customInstrumentations.Php = append(customInstrumentations.Php, apiProbe)
+		}
+	}
+
 	// Remove duplicate Golang probes
 	uniqueGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(customInstrumentations.Golang))
 	uniqGoProbes := make(map[instrumentationrules.GolangCustomProbe]struct{})
@@ -455,6 +469,17 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		uniqueJavaProbes = append(uniqueJavaProbes, probe)
 	}
 	customInstrumentations.Java = uniqueJavaProbes
+
+	// Remove duplicate PHP probes
+	uniquePhpProbes := make([]instrumentationrules.PhpCustomProbe, 0, len(customInstrumentations.Php))
+	phpSeen := make(map[instrumentationrules.PhpCustomProbe]struct{})
+	for _, probe := range customInstrumentations.Php {
+		phpSeen[probe] = struct{}{}
+	}
+	for probe := range phpSeen {
+		uniquePhpProbes = append(uniquePhpProbes, probe)
+	}
+	customInstrumentations.Php = uniquePhpProbes
 	return customInstrumentations
 }
 
@@ -814,6 +839,14 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 			customInstruAsGqlModel.Java = append(customInstruAsGqlModel.Java, &model.JavaCustomProbe{
 				ClassName:  &javaProbe.ClassName,
 				MethodName: &javaProbe.MethodName,
+			})
+		}
+	}
+	if customInstruAsInstruRule.Php != nil {
+		for _, phpProbe := range customInstruAsInstruRule.Php {
+			customInstruAsGqlModel.Php = append(customInstruAsGqlModel.Php, &model.PhpCustomProbe{
+				ClassName:    &phpProbe.ClassName,
+				FunctionName: &phpProbe.FunctionName,
 			})
 		}
 	}
