@@ -411,6 +411,10 @@ func isOdigosTrafficMetricsProcessorRelevant(name string, destinationPipelines [
 	if name == "metrics/otelcol" {
 		return false
 	}
+	// the odigostrafficmetrics processor does not support the profiles signal in the pinned collector build.
+	if strings.HasPrefix(name, "profiles/") {
+		return false
+	}
 	// we should add the odigostrafficmetrics processor to all destination pipelines
 	if slices.Contains(destinationPipelines, name) {
 		return true

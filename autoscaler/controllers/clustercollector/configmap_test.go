@@ -132,3 +132,24 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 		})
 	}
 }
+
+func TestAddSelfTelemetryPipeline_ProfilesPipelineExcludesTrafficMetrics(t *testing.T) {
+	// the odigostrafficmetrics processor does not support the profiles signal,
+	// so it must not be appended to profiles destination pipelines.
+	c := &config.Config{
+		Receivers: config.GenericMap{"otlp": struct{}{}},
+		Exporters: config.GenericMap{"otlp_grpc/local": config.GenericMap{}},
+		Service: config.Service{
+			Pipelines: map[string]config.Pipeline{
+				"profiles/generic-dest": {
+					Receivers: []string{"otlp"},
+					Exporters: []string{"otlp_grpc/local"},
+				},
+			},
+		},
+	}
+
+	err := addSelfTelemetryPipeline(c, k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault, []string{"profiles/generic-dest"}, []string{})
+	assert.NoError(t, err)
+	assert.NotContains(t, c.Service.Pipelines["profiles/generic-dest"].Processors, "odigostrafficmetrics")
+}
