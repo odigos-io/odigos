@@ -68,6 +68,12 @@ type Symbolizer struct {
 
 	clock atomic.Uint64 // monotonic counter driving LRU "last used"
 
+	// symtabSkips counts binaries skipped for exceeding max_symtab_bytes since the
+	// last sweep; runSweeper drains it into one periodic Warn instead of one per
+	// binary, so a busy node with many oversized libraries can't turn into a
+	// per-restart warning storm. Per-binary detail still logs at Debug.
+	symtabSkips atomic.Int64
+
 	maxSymbols      int
 	maxSymbolBytes  int64
 	maxMaps         int
@@ -393,10 +399,12 @@ func (s *Symbolizer) parseAndCache(path string) {
 		return
 	}
 	if es.symtabSkippedForSize {
-		// Visible at Warn (not Debug): this binary's native frames will show as
-		// module+offset, not names, until max_symtab_bytes is raised — an operator
-		// should know why, not just wonder why an app isn't fully symbolized.
-		s.log.Warn("symbolize: symbol table exceeds max_symtab_bytes, skipping decode; native frames for this binary will stay unresolved",
+		// Counted into the periodic sweep summary (Warn, bounded rate) instead of
+		// logged here directly — a busy node can have many distinct oversized
+		// binaries, one per restart/container, and that must not become a
+		// per-binary warning storm. Per-binary detail stays available at Debug.
+		s.symtabSkips.Add(1)
+		s.log.Debug("symbolize: symbol table exceeds max_symtab_bytes, skipping decode; native frames for this binary will stay unresolved",
 			zap.String("path", path), zap.Int64("max_symtab_bytes", s.limits.maxSymtabBytes))
 	}
 	e := &cachedSymbols{symbols: es, modTime: fi.ModTime().UnixNano(), size: fi.Size(), heapBytes: es.heapBytes}
@@ -437,7 +445,18 @@ func (s *Symbolizer) runSweeper() {
 			return
 		case <-t.C:
 			s.evictExitedProcesses()
+			s.reportSymtabSkips()
 		}
+	}
+}
+
+// reportSymtabSkips drains the symtab-size-skip counter into one Warn per sweep
+// interval (rather than one per binary) so the signal stays visible without
+// scaling with pod/binary churn. See symtabSkips' doc comment.
+func (s *Symbolizer) reportSymtabSkips() {
+	if n := s.symtabSkips.Swap(0); n > 0 {
+		s.log.Warn("symbolize: binaries skipped for exceeding max_symtab_bytes since last report; their native frames stayed unresolved (enable debug logging for per-binary detail)",
+			zap.Int64("count", n), zap.Duration("since", s.sweepEvery), zap.Int64("max_symtab_bytes", s.limits.maxSymtabBytes))
 	}
 }
 

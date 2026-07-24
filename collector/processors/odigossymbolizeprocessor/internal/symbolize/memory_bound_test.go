@@ -12,8 +12,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 // buildBigTestLib compiles a shared library with n trivial exported functions,
@@ -182,4 +187,70 @@ func TestSymbolCacheStaysWithinByteBudget(t *testing.T) {
 	}
 	t.Logf("after 512 inserts of %d-byte entries under a %d-byte budget: cachedBytes=%d, entries=%d",
 		entryBytes, budget, s.cachedBytes, len(s.symbolCache))
+}
+
+// TestSymtabSkipsAreAggregatedNotPerBinary proves the noise-reduction fix: N
+// distinct binaries tripping the max_symtab_bytes gate produce zero Warn logs
+// from parseAndCache itself (only Debug, one per binary), and a single sweep
+// drains the count into exactly one Warn — so a busy node with many oversized
+// libraries, or one restarting across many pods, can't turn into a
+// per-binary/per-restart warning storm.
+func TestSymtabSkipsAreAggregatedNotPerBinary(t *testing.T) {
+	so := buildBigTestLib(t, 8000)
+	symBytes := symtabSectionBytes(t, so)
+	if symBytes < 128<<10 {
+		t.Skipf("fixture .symtab too small (%d bytes)", symBytes)
+	}
+
+	// Copy the same oversized binary to N distinct paths: parseAndCache dedups by
+	// path, so this simulates N distinct binaries (or the same one across N
+	// container instances) all tripping the gate.
+	const n = 3
+	dir := t.TempDir()
+	paths := make([]string, n)
+	data, err := os.ReadFile(so)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range paths {
+		p := filepath.Join(dir, "lib"+strconv.Itoa(i)+".so")
+		if err := os.WriteFile(p, data, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		paths[i] = p
+	}
+
+	core, logs := observer.New(zap.DebugLevel)
+	s := New(WithMaxSymtabBytes(32<<10), WithLogger(zap.New(core)))
+	defer s.Close()
+
+	for _, p := range paths {
+		s.parseAndCache(p)
+	}
+
+	if got := s.symtabSkips.Load(); got != n {
+		t.Fatalf("symtabSkips = %d, want %d after %d skipped binaries", got, n, n)
+	}
+	if warns := logs.FilterLevelExact(zapcore.WarnLevel).Len(); warns != 0 {
+		t.Fatalf("parseAndCache must not log Warn per binary, got %d Warn entries", warns)
+	}
+	if debugs := logs.FilterLevelExact(zapcore.DebugLevel).Len(); debugs != n {
+		t.Fatalf("expected %d per-binary Debug entries, got %d", n, debugs)
+	}
+
+	// One sweep drains the counter into exactly one Warn carrying the count.
+	s.reportSymtabSkips()
+	warnEntries := logs.FilterLevelExact(zapcore.WarnLevel).All()
+	if len(warnEntries) != 1 {
+		t.Fatalf("expected exactly 1 Warn after the sweep, got %d", len(warnEntries))
+	}
+	if got := warnEntries[0].ContextMap()["count"]; got != int64(n) {
+		t.Fatalf("summary Warn count = %v, want %d", got, n)
+	}
+
+	// A second sweep with nothing new skipped must log nothing further.
+	s.reportSymtabSkips()
+	if warns := logs.FilterLevelExact(zapcore.WarnLevel).Len(); warns != 1 {
+		t.Fatalf("expected still exactly 1 Warn total after an empty sweep, got %d", warns)
+	}
 }
