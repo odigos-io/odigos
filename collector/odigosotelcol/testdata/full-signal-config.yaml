@@ -1,0 +1,33 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:0
+      http:
+        endpoint: 127.0.0.1:0
+
+processors:
+  odigostrafficmetrics:
+    sampling_ratio: 1.0
+
+exporters:
+  nop:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [odigostrafficmetrics]
+      exporters: [nop]
+    metrics:
+      receivers: [otlp]
+      processors: [odigostrafficmetrics]
+      exporters: [nop]
+    logs:
+      receivers: [otlp]
+      processors: [odigostrafficmetrics]
+      exporters: [nop]
+    profiles/test-dest:
+      receivers: [otlp]
+      processors: [odigostrafficmetrics]
+      exporters: [nop]

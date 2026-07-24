@@ -21,14 +21,19 @@ func TestSetupTelemetry(t *testing.T) {
 	defer tb.Shutdown()
 	tb.OdigosAcceptedLogRecords.Add(context.Background(), 1)
 	tb.OdigosAcceptedMetricPoints.Add(context.Background(), 1)
+	tb.OdigosAcceptedProfileSamples.Add(context.Background(), 1)
 	tb.OdigosAcceptedSpans.Add(context.Background(), 1)
 	tb.OdigosLogDataSize.Add(context.Background(), 1)
 	tb.OdigosMetricDataSize.Add(context.Background(), 1)
+	tb.OdigosProfileDataSize.Add(context.Background(), 1)
 	tb.OdigosTraceDataSize.Add(context.Background(), 1)
 	AssertEqualOdigosAcceptedLogRecords(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
 	AssertEqualOdigosAcceptedMetricPoints(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosAcceptedProfileSamples(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
 	AssertEqualOdigosAcceptedSpans(t, testTel,
@@ -38,6 +43,9 @@ func TestSetupTelemetry(t *testing.T) {
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
 	AssertEqualOdigosMetricDataSize(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualOdigosProfileDataSize(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
 	AssertEqualOdigosTraceDataSize(t, testTel,
