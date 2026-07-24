@@ -64,3 +64,15 @@ func TestProfilingFilterProcessorConfig(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, ProfilingProfileDropConditions(), pc)
 }
+
+func TestOdigosSymbolizeProcessorConfig(t *testing.T) {
+	// Unset → empty, so the processor's built-in default (256 MiB) applies.
+	assert.Empty(t, OdigosSymbolizeProcessorConfig(nil))
+	assert.Empty(t, OdigosSymbolizeProcessorConfig(&odigoscommon.ProfilingSymbolizationConfiguration{}))
+
+	// Configured → both caps derived from the one budget.
+	n := 200
+	got := OdigosSymbolizeProcessorConfig(&odigoscommon.ProfilingSymbolizationConfiguration{MaxMemoryMiB: &n})
+	assert.Equal(t, int64(200)<<20, got["max_symbol_bytes"])
+	assert.Equal(t, (int64(200)<<20)/symtabDecodeCostFactor, got["max_symtab_bytes"])
+}
