@@ -35,14 +35,21 @@ type elfSymbols struct {
 	buildID   string // hex GNU build-id, "" if absent
 	source    string // "symtab" | "dynsym" | ""
 	heapBytes int64  // estimated memory this entry holds (for the byte-bounded cache)
+	// symtabSkippedForSize is true when a symbol table existed but exceeded
+	// maxSymtabBytes and was skipped without decoding — i.e. this binary's
+	// native frames will stay module+offset because of the size gate, not
+	// because it genuinely has no symbols (a fully stripped binary would also
+	// have source=="", but with this false).
+	symtabSkippedForSize bool
 }
 
 // parseLimits guards against pathological/corrupt binaries that could exhaust
 // memory or a parse worker. They are deliberately generous — real binaries
 // (including Oracle's ~50 MB libclntsh) pass; only absurd inputs are rejected.
 type parseLimits struct {
-	maxFileBytes int64 // skip ELF files larger than this
-	maxSymbols   int   // skip binaries with more than this many function symbols
+	maxFileBytes   int64 // skip ELF files larger than this
+	maxSymbols     int   // skip binaries with more than this many function symbols
+	maxSymtabBytes int64 // skip decoding a symbol table (+ its string table) larger than this
 }
 
 // limitExceededError is returned when a binary trips a parseLimit; the caller
@@ -75,7 +82,7 @@ func loadELFSymbols(path string, lim parseLimits) (*elfSymbols, error) {
 		}
 	}
 
-	functions, source := readFunctionSymbols(f)
+	functions, source, skippedForSize := readFunctionSymbols(f, lim)
 	if lim.maxSymbols > 0 && len(functions) > lim.maxSymbols {
 		return nil, limitExceededError{fmt.Sprintf("symbolize: %s has %d symbols (> %d)", path, len(functions), lim.maxSymbols)}
 	}
@@ -83,6 +90,7 @@ func loadELFSymbols(path string, lim parseLimits) (*elfSymbols, error) {
 		es.functions, es.source = functions, source
 		sort.Slice(es.functions, func(i, j int) bool { return es.functions[i].addr < es.functions[j].addr })
 	}
+	es.symtabSkippedForSize = skippedForSize
 	es.heapBytes = estimateHeapBytes(es)
 	return es, nil
 }
@@ -100,15 +108,45 @@ func estimateHeapBytes(es *elfSymbols) int64 {
 }
 
 // readFunctionSymbols returns the STT_FUNC symbols, preferring .symtab then
-// falling back to .dynsym, with a tag naming the source table.
-func readFunctionSymbols(f *elf.File) ([]functionSymbol, string) {
-	if syms := functionSymbolsFrom(f.Symbols); len(syms) > 0 {
-		return syms, "symtab"
+// falling back to .dynsym. A table over lim.maxSymtabBytes is skipped without
+// decoding — elf.File.Symbols() transiently materialises the whole table, and
+// on a huge unstripped binary that transient, not the retained cache, is what
+// spikes RSS. skippedForSize reports whether that happened to a table that
+// was actually present (as opposed to the binary simply having none), so the
+// caller can tell "no symbols to resolve" apart from "resolvable, but too big".
+func readFunctionSymbols(f *elf.File, lim parseLimits) (syms []functionSymbol, source string, skippedForSize bool) {
+	if symtabWithinLimit(f, ".symtab", lim.maxSymtabBytes) {
+		if syms := functionSymbolsFrom(f.Symbols); len(syms) > 0 {
+			return syms, "symtab", false
+		}
+	} else {
+		skippedForSize = true
 	}
-	if syms := functionSymbolsFrom(f.DynamicSymbols); len(syms) > 0 {
-		return syms, "dynsym"
+	if symtabWithinLimit(f, ".dynsym", lim.maxSymtabBytes) {
+		if syms := functionSymbolsFrom(f.DynamicSymbols); len(syms) > 0 {
+			return syms, "dynsym", false
+		}
+	} else {
+		skippedForSize = true
 	}
-	return nil, ""
+	return nil, "", skippedForSize
+}
+
+// symtabWithinLimit reports whether name's symbol table, plus its linked string
+// table, fits within limit. No table, or limit<=0, is always within limit.
+func symtabWithinLimit(f *elf.File, name string, limit int64) bool {
+	if limit <= 0 {
+		return true
+	}
+	sec := f.Section(name)
+	if sec == nil {
+		return true
+	}
+	total := int64(sec.Size)
+	if int(sec.Link) < len(f.Sections) {
+		total += int64(f.Sections[sec.Link].Size) // linked .strtab/.dynstr, also decoded by Symbols()
+	}
+	return total <= limit
 }
 
 // functionSymbolsFrom keeps only the named, addressed STT_FUNC entries from one
