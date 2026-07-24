@@ -22,6 +22,14 @@ Number of data points passed through the processor.
 | ---- | ----------- | ---------- | --------- | --------- |
 | {datapoints} | Sum | Int | true | Development |
 
+### otelcol_odigos_accepted_profile_samples
+
+Number of profile samples passed through the processor.
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {samples} | Sum | Int | true | Development |
+
 ### otelcol_odigos_accepted_spans
 
 Number of spans passed through the processor.
@@ -41,6 +49,14 @@ Total size of log data passed to the processor
 ### otelcol_odigos_metric_data_size
 
 Total size of metric data passed to the processor
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| By | Sum | Int | true | Development |
+
+### otelcol_odigos_profile_data_size
+
+Total size of profile data passed to the processor
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |
