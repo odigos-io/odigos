@@ -39,11 +39,13 @@ func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 	// Native symbolization is ON by default when profiling is enabled.
 	require.Contains(t, got.Processors, commonconf.ProfilingNodeSymbolizeProcessor)
 	assert.Equal(t, []string{
+		memoryLimiterProcessorName,
 		commonconf.ProfilingNodeFilterProcessor,
 		commonconf.ProfilingNodeK8sAttributesProcessor,
 		commonconf.ProfilingNodeOdigosProfilesProcessor,
 		commonconf.ProfilingNodeSymbolizeProcessor,
 		commonconf.ProfilingNodeServiceNameProcessor,
+		odigosTrafficMetricsProcessorName,
 	}, pl.Processors)
 	assert.Equal(t, []string{commonconf.ProfilingNodeToGatewayExporter}, pl.Exporters)
 
@@ -67,6 +69,7 @@ func TestProfilingPipelineConfig_UserProcessorsAppended(t *testing.T) {
 	// User processors run after the built-in enrichment chain (native symbolization is on by
 	// default, so the symbolize processor is present) and before export.
 	assert.Equal(t, []string{
+		memoryLimiterProcessorName,
 		commonconf.ProfilingNodeFilterProcessor,
 		commonconf.ProfilingNodeK8sAttributesProcessor,
 		commonconf.ProfilingNodeOdigosProfilesProcessor,
@@ -74,6 +77,7 @@ func TestProfilingPipelineConfig_UserProcessorsAppended(t *testing.T) {
 		commonconf.ProfilingNodeServiceNameProcessor,
 		"resource/addclusterinfo",
 		"transform/rename",
+		odigosTrafficMetricsProcessorName,
 	}, pl.Processors)
 }
 
@@ -89,9 +93,11 @@ func TestProfilingPipelineConfig_NativeSymbolizationDisabled(t *testing.T) {
 
 	pl := got.Service.Pipelines["profiles"]
 	assert.Equal(t, []string{
+		memoryLimiterProcessorName,
 		commonconf.ProfilingNodeFilterProcessor,
 		commonconf.ProfilingNodeK8sAttributesProcessor,
 		commonconf.ProfilingNodeOdigosProfilesProcessor,
 		commonconf.ProfilingNodeServiceNameProcessor,
+		odigosTrafficMetricsProcessorName,
 	}, pl.Processors)
 }

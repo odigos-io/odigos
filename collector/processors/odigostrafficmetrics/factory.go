@@ -6,8 +6,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/consumer/xconsumer"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processorhelper"
+	"go.opentelemetry.io/collector/processor/processorhelper/xprocessorhelper"
+	"go.opentelemetry.io/collector/processor/xprocessor"
 )
 
 //go:generate mdatagen metadata.yaml
@@ -15,13 +18,14 @@ import (
 var consumerCapabilities = consumer.Capabilities{MutatesData: false}
 
 // NewFactory creates a new ProcessorFactory with default configuration
-func NewFactory() processor.Factory {
-	return processor.NewFactory(
+func NewFactory() xprocessor.Factory {
+	return xprocessor.NewFactory(
 		metadata.Type,
 		createDefaultConfig,
-		processor.WithTraces(createTracesProcessor, metadata.TracesStability),
-		processor.WithLogs(createLogsProcessor, metadata.LogsStability),
-		processor.WithMetrics(createMetricsProcessor, metadata.MetricsStability),
+		xprocessor.WithTraces(createTracesProcessor, metadata.TracesStability),
+		xprocessor.WithLogs(createLogsProcessor, metadata.LogsStability),
+		xprocessor.WithMetrics(createMetricsProcessor, metadata.MetricsStability),
+		xprocessor.WithProfiles(createProfilesProcessor, metadata.ProfilesStability),
 	)
 }
 
@@ -74,4 +78,19 @@ func createMetricsProcessor(
 	}
 
 	return processorhelper.NewMetrics(ctx, set, cfg, nextConsumer, tmp.processMetrics, processorhelper.WithCapabilities(consumerCapabilities))
+}
+
+func createProfilesProcessor(
+	ctx context.Context,
+	set processor.Settings,
+	cfg component.Config,
+	nextConsumer xconsumer.Profiles,
+) (xprocessor.Profiles, error) {
+	oCfg := cfg.(*Config)
+	tmp, err := newThroughputMeasurementProcessor(set, oCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return xprocessorhelper.NewProfiles(ctx, set, cfg, nextConsumer, tmp.processProfiles, xprocessorhelper.WithCapabilities(consumerCapabilities))
 }
