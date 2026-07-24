@@ -1,52 +1,10 @@
-# VCS / IDE / local tooling
+frontend/webapp/node_modules
 .git/
-.github/
-.vscode/
-.cursor/
-.devcontainer/
-.tools/
-**/.tools/
-
-# Workspace / credentials
-go.work
-go.work.sum
-go.work.bak
-go.work.sum.bak
-gha-creds-*.json
-.env
-kubeconfig
-
-# Docs and non-build trees (root-context builds never COPY these)
-docs/
-scripts/
-hooks/
-own-observability/
-tests/
-tests-infrastructure/
-
-# Local build / test artifacts
-**/bin/
-**/testbin/
-**/dist/
-**/artifacts/
-**/__debug_bin*
-**/*.log
-**/*.logs
-**/cover.out
-**/.DS_Store
-
-# CLI host binary (rebuilt inside the image)
-cli/odigos
-/odigos
-
-# Frontend: deps and host build outputs (yarn build runs in the image)
-**/node_modules/
-frontend/webapp/.next/
-frontend/webapp/out/
-frontend/webapp/cypress/
-
-# Dockerfiles are read via -f from the host; keep them out of the context
 Dockerfile
 odiglet/Dockerfile
 odiglet/base.Dockerfile
 odiglet/debug.Dockerfile
+tests # not needed in context for odigos components builds
+go.work
+go.work.sum
+gha-creds-*.json
