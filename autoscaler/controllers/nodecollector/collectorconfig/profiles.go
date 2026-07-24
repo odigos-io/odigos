@@ -21,6 +21,8 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 		"compression": "none",
 	}, profiling.Exporter)
 
+	// memory_limiter itself is defined once, globally, by commonProcessors() (see
+	// common.go) — every pipeline just references its name, never redefines it.
 	processors := config.GenericMap{
 		commonconf.ProfilingNodeFilterProcessor:         commonconf.ProfilingFilterProcessorConfig(),
 		commonconf.ProfilingNodeK8sAttributesProcessor:  commonconf.K8sAttributesProfilesProcessorConfig(),
@@ -28,6 +30,7 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 		commonconf.ProfilingNodeServiceNameProcessor:    commonconf.ProfilingServiceNameTransformConfig(),
 	}
 	pipelineProcessors := []string{
+		memoryLimiterProcessorName,
 		commonconf.ProfilingNodeFilterProcessor,
 		commonconf.ProfilingNodeK8sAttributesProcessor,
 		commonconf.ProfilingNodeOdigosProfilesProcessor,
