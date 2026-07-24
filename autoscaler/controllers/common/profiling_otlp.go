@@ -118,9 +118,19 @@ func OdigosProfilesProcessorConfig() config.GenericMap {
 // collector profiles pipeline. It needs no configuration: native frames are resolved
 // on-host from /proc/<pid>/maps + ELF symbols, and frames the profiler already named
 // (interpreted runtimes, Go) pass through. Defaults to bounded caches and async parsing.
-func OdigosSymbolizeProcessorConfig() config.GenericMap {
-	return config.GenericMap{}
+func OdigosSymbolizeProcessorConfig(symbolization *odigoscommon.ProfilingSymbolizationConfiguration) config.GenericMap {
+	cfg := config.GenericMap{}
+	// One budget bounds both caps; unset → the processor defaults apply.
+	if symbolization != nil && symbolization.MaxMemoryMiB != nil && *symbolization.MaxMemoryMiB > 0 {
+		budget := int64(*symbolization.MaxMemoryMiB) << 20
+		cfg["max_symbol_bytes"] = budget
+		cfg["max_symtab_bytes"] = budget / symtabDecodeCostFactor
+	}
+	return cfg
 }
+
+// symtabDecodeCostFactor: decoding a symbol table costs ~5x its on-disk size.
+const symtabDecodeCostFactor = 5
 
 // ProfilingServiceNameTransformConfig sets resource attribute service.name from K8s workload
 // metadata enriched by k8sattributes. Without this, Pyroscope derives labels from
