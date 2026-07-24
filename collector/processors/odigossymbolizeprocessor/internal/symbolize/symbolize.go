@@ -31,6 +31,7 @@ const (
 	defaultSweepEvery     = 30 * time.Second // how often to drop caches for exited processes
 	defaultMaxFileBytes   = 8 << 30          // 8 GiB — corrupt/absurd ELF guard
 	defaultMaxSymbols     = 5_000_000        // pathological-binary guard
+	defaultMaxSymtabBytes = 512 << 20        // 512 MiB — cap the transient symbol-table decode
 )
 
 // Mapping describes one loaded module as an OTLP profile carries it.
@@ -130,6 +131,16 @@ func WithMaxSymbolBytes(n int64) Option {
 	}
 }
 
+// WithMaxSymtabBytes caps the transient decode: a symbol table larger than n bytes
+// on disk is skipped without decoding (the peak-memory guard). n<=0 keeps the default.
+func WithMaxSymtabBytes(n int64) Option {
+	return func(s *Symbolizer) {
+		if n > 0 {
+			s.limits.maxSymtabBytes = n
+		}
+	}
+}
+
 // WithMaxMapsCache caps cached per-pid maps (LRU). n<=0 keeps the default.
 func WithMaxMapsCache(n int) Option {
 	return func(s *Symbolizer) {
@@ -171,7 +182,7 @@ func New(opts ...Option) *Symbolizer {
 		mapsTTL:         defaultMapsTTL,
 		backoffDuration: defaultBackoff,
 		sweepEvery:      defaultSweepEvery,
-		limits:          parseLimits{maxFileBytes: defaultMaxFileBytes, maxSymbols: defaultMaxSymbols},
+		limits:          parseLimits{maxFileBytes: defaultMaxFileBytes, maxSymbols: defaultMaxSymbols, maxSymtabBytes: defaultMaxSymtabBytes},
 		stop:            make(chan struct{}),
 	}
 	for _, o := range opts {
