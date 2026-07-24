@@ -118,9 +118,13 @@ func OdigosProfilesProcessorConfig() config.GenericMap {
 // collector profiles pipeline. It needs no configuration: native frames are resolved
 // on-host from /proc/<pid>/maps + ELF symbols, and frames the profiler already named
 // (interpreted runtimes, Go) pass through. Defaults to bounded caches and async parsing.
+// maxMemoryMiB is the only symbolizer memory knob Odigos exposes; the processor's
+// own max_symbol_bytes/max_symtab_bytes fields are lower-level dials for direct,
+// non-Odigos use of the processor. This always sets both together from the one
+// budget, or neither (unset → the processor's built-in defaults) — Odigos never
+// has a path that sets just one, so there is no partial-override case to resolve.
 func OdigosSymbolizeProcessorConfig(symbolization *odigoscommon.ProfilingSymbolizationConfiguration) config.GenericMap {
 	cfg := config.GenericMap{}
-	// One budget bounds both caps; unset → the processor defaults apply.
 	if symbolization != nil && symbolization.MaxMemoryMiB != nil && *symbolization.MaxMemoryMiB > 0 {
 		budget := int64(*symbolization.MaxMemoryMiB) << 20
 		cfg["max_symbol_bytes"] = budget
