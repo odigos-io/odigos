@@ -3,6 +3,7 @@ status:
   class: processor
   stability:
     beta: [logs, metrics, traces]
+    alpha: [profiles]
   distributions: [contrib]
   codeowners:
     active: [RonFed]
@@ -22,6 +23,15 @@ telemetry:
       enabled: true
       description: Number of data points passed through the processor.
       unit: "{datapoints}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+
+    odigos_accepted_profile_samples:
+      enabled: true
+      description: Number of profile samples passed through the processor.
+      unit: "{samples}"
       sum:
         value_type: int
         monotonic: true
@@ -48,6 +58,15 @@ telemetry:
     odigos_metric_data_size:
       enabled: true
       description: "Total size of metric data passed to the processor"
+      unit: "By"
+      sum:
+        value_type: int
+        monotonic: true
+      stability: development
+
+    odigos_profile_data_size:
+      enabled: true
+      description: "Total size of profile data passed to the processor"
       unit: "By"
       sum:
         value_type: int
