@@ -35,6 +35,12 @@ type elfSymbols struct {
 	buildID   string // hex GNU build-id, "" if absent
 	source    string // "symtab" | "dynsym" | ""
 	heapBytes int64  // estimated memory this entry holds (for the byte-bounded cache)
+	// symtabSkippedForSize is true when a symbol table existed but exceeded
+	// maxSymtabBytes and was skipped without decoding — i.e. this binary's
+	// native frames will stay module+offset because of the size gate, not
+	// because it genuinely has no symbols (a fully stripped binary would also
+	// have source=="", but with this false).
+	symtabSkippedForSize bool
 }
 
 // parseLimits guards against pathological/corrupt binaries that could exhaust
@@ -76,7 +82,7 @@ func loadELFSymbols(path string, lim parseLimits) (*elfSymbols, error) {
 		}
 	}
 
-	functions, source := readFunctionSymbols(f, lim)
+	functions, source, skippedForSize := readFunctionSymbols(f, lim)
 	if lim.maxSymbols > 0 && len(functions) > lim.maxSymbols {
 		return nil, limitExceededError{fmt.Sprintf("symbolize: %s has %d symbols (> %d)", path, len(functions), lim.maxSymbols)}
 	}
@@ -84,6 +90,7 @@ func loadELFSymbols(path string, lim parseLimits) (*elfSymbols, error) {
 		es.functions, es.source = functions, source
 		sort.Slice(es.functions, func(i, j int) bool { return es.functions[i].addr < es.functions[j].addr })
 	}
+	es.symtabSkippedForSize = skippedForSize
 	es.heapBytes = estimateHeapBytes(es)
 	return es, nil
 }
@@ -104,19 +111,25 @@ func estimateHeapBytes(es *elfSymbols) int64 {
 // falling back to .dynsym. A table over lim.maxSymtabBytes is skipped without
 // decoding — elf.File.Symbols() transiently materialises the whole table, and
 // on a huge unstripped binary that transient, not the retained cache, is what
-// spikes RSS.
-func readFunctionSymbols(f *elf.File, lim parseLimits) ([]functionSymbol, string) {
+// spikes RSS. skippedForSize reports whether that happened to a table that
+// was actually present (as opposed to the binary simply having none), so the
+// caller can tell "no symbols to resolve" apart from "resolvable, but too big".
+func readFunctionSymbols(f *elf.File, lim parseLimits) (syms []functionSymbol, source string, skippedForSize bool) {
 	if symtabWithinLimit(f, ".symtab", lim.maxSymtabBytes) {
 		if syms := functionSymbolsFrom(f.Symbols); len(syms) > 0 {
-			return syms, "symtab"
+			return syms, "symtab", false
 		}
+	} else {
+		skippedForSize = true
 	}
 	if symtabWithinLimit(f, ".dynsym", lim.maxSymtabBytes) {
 		if syms := functionSymbolsFrom(f.DynamicSymbols); len(syms) > 0 {
-			return syms, "dynsym"
+			return syms, "dynsym", false
 		}
+	} else {
+		skippedForSize = true
 	}
-	return nil, ""
+	return nil, "", skippedForSize
 }
 
 // symtabWithinLimit reports whether name's symbol table, plus its linked string

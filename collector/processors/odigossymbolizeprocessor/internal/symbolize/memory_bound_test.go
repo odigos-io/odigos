@@ -132,22 +132,27 @@ func TestConfigurableTransientCapIsHonored(t *testing.T) {
 		t.Skipf("fixture .symtab too small (%d bytes)", symBytes)
 	}
 
-	// Small cap (below the table): the binary is skipped without decoding.
+	// Small cap (below the table): the binary is skipped without decoding, and
+	// flagged as skipped-for-size (not just "no symbols") so the caller can warn.
 	capped := New(WithMaxSymtabBytes(32 << 10))
 	defer capped.Close()
 	if es, err := loadELFSymbols(so, capped.limits); err != nil {
 		t.Fatalf("capped parse: %v", err)
 	} else if len(es.functions) != 0 {
 		t.Fatalf("small transient cap must skip the table, got %d symbols", len(es.functions))
+	} else if !es.symtabSkippedForSize {
+		t.Fatal("expected symtabSkippedForSize=true when the table is skipped for exceeding the cap")
 	}
 
-	// Default cap (512 MiB): the same binary decodes normally.
+	// Default cap (512 MiB): the same binary decodes normally, not flagged.
 	def := New()
 	defer def.Close()
 	if es, err := loadELFSymbols(so, def.limits); err != nil {
 		t.Fatalf("default parse: %v", err)
 	} else if len(es.functions) == 0 {
 		t.Fatal("default cap must decode a normal binary")
+	} else if es.symtabSkippedForSize {
+		t.Fatal("expected symtabSkippedForSize=false when the table decodes normally")
 	}
 }
 

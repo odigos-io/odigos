@@ -392,6 +392,13 @@ func (s *Symbolizer) parseAndCache(path string) {
 		s.recordParseFailure(path, "parse", err)
 		return
 	}
+	if es.symtabSkippedForSize {
+		// Visible at Warn (not Debug): this binary's native frames will show as
+		// module+offset, not names, until max_symtab_bytes is raised — an operator
+		// should know why, not just wonder why an app isn't fully symbolized.
+		s.log.Warn("symbolize: symbol table exceeds max_symtab_bytes, skipping decode; native frames for this binary will stay unresolved",
+			zap.String("path", path), zap.Int64("max_symtab_bytes", s.limits.maxSymtabBytes))
+	}
 	e := &cachedSymbols{symbols: es, modTime: fi.ModTime().UnixNano(), size: fi.Size(), heapBytes: es.heapBytes}
 	e.lastUsed.Store(s.nextClock())
 	s.mu.Lock()
