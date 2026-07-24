@@ -31,7 +31,7 @@
     "@types/node": "26.1.1",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
-    "autoprefixer": "^10.5.2",
+    "autoprefixer": "^10.5.4",
     "check-peer-dependencies": "^4.3.4",
     "eslint": "9.39.2",
     "eslint-config-next": "16.2.10",
