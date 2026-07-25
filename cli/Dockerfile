@@ -59,7 +59,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     go build -tags=embed_manifests -a -o odigos \
     -ldflags="-s -w \
               -X github.com/odigos-io/odigos/cli/cmd.OdigosVersion=${VERSION} \
-              -X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=$${CHART_VER} \
+              -X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=${CHART_VER} \
               -X github.com/odigos-io/odigos/cli/cmd.OdigosCommit=${SHORT_COMMIT} \
               -X github.com/odigos-io/odigos/cli/cmd.OdigosDate=${DATE}" \
     .
