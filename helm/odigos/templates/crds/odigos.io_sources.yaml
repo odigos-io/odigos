@@ -137,6 +137,17 @@ spec:
                           - glibc
                           - musl
                           type: string
+                        otherAgent:
+                          description: |-
+                            OtherAgent is the legacy singular form of OtherAgents. Kept for upgrade
+                            compatibility so stored status written before the plural rename is still
+                            recognized; new writes should only set OtherAgents.
+
+                            Deprecated: use OtherAgents.
+                          properties:
+                            name:
+                              type: string
+                          type: object
                         otherAgents:
                           description: |-
                             OtherAgents lists other instrumentation agents detected in the container

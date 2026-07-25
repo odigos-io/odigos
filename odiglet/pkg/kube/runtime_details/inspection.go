@@ -493,8 +493,10 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 	}
 
 	// 6. Update OtherAgents when the detected set changed (added, removed, or names differ).
-	if !sameOtherAgents(existing.OtherAgents, new.OtherAgents) {
+	// Also clear the deprecated singular OtherAgent once we have rewritten the plural form.
+	if !sameOtherAgents(existing.DetectedOtherAgents(), new.DetectedOtherAgents()) || existing.OtherAgent != nil {
 		existing.OtherAgents = new.OtherAgents
+		existing.OtherAgent = nil
 		updated = true
 	}
 

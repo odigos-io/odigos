@@ -542,8 +542,9 @@ func calculateContainerAgentConfig(containerName string,
 	podManifestInjectionOptional := !distro.IsRestartRequired(d, effectiveConfig)
 
 	// check for presence of other agents
-	if len(runtimeDetails.OtherAgents) > 0 {
-		otherAgents := otherAgentNames(runtimeDetails.OtherAgents)
+	detectedAgents := runtimeDetails.DetectedOtherAgents()
+	if len(detectedAgents) > 0 {
+		otherAgents := otherAgentNames(detectedAgents)
 		if !allowConcurrentAgents {
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,

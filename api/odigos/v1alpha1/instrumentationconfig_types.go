@@ -238,11 +238,17 @@ type RuntimeDetailsByContainer struct {
 	ContainerName  string                     `json:"containerName"`
 	Language       common.ProgrammingLanguage `json:"language"`
 	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
-	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
+	EnvVars []EnvVar `json:"envVars,omitempty"`
 	// OtherAgents lists other instrumentation agents detected in the container
 	// (a process can carry more than one); empty when none.
-	OtherAgents    []OtherAgent               `json:"otherAgents,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+	OtherAgents []OtherAgent `json:"otherAgents,omitempty"`
+	// OtherAgent is the legacy singular form of OtherAgents. Kept for upgrade
+	// compatibility so stored status written before the plural rename is still
+	// recognized; new writes should only set OtherAgents.
+	//
+	// Deprecated: use OtherAgents.
+	OtherAgent *OtherAgent      `json:"otherAgent,omitempty"`
+	LibCType   *common.LibCType `json:"libCType,omitempty"`
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.
 	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
@@ -257,6 +263,22 @@ type RuntimeDetailsByContainer struct {
 	EnvFromContainerRuntime []EnvVar `json:"envFromContainerRuntime,omitempty"`
 	// A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.
 	RuntimeUpdateState *ProcessingState `json:"runtimeUpdateState,omitempty"`
+}
+
+// DetectedOtherAgents returns foreign agents recorded on this container.
+// Prefer OtherAgents; fall back to the deprecated singular OtherAgent so upgrades
+// do not briefly treat previously detected agents as absent.
+func (r *RuntimeDetailsByContainer) DetectedOtherAgents() []OtherAgent {
+	if r == nil {
+		return nil
+	}
+	if len(r.OtherAgents) > 0 {
+		return r.OtherAgents
+	}
+	if r.OtherAgent != nil {
+		return []OtherAgent{*r.OtherAgent}
+	}
+	return nil
 }
 
 // represents the status of odigos MANIFEST injection to existing pods template.

@@ -1542,6 +1542,11 @@ func (in *RuntimeDetailsByContainer) DeepCopyInto(out *RuntimeDetailsByContainer
 		*out = make([]OtherAgent, len(*in))
 		copy(*out, *in)
 	}
+	if in.OtherAgent != nil {
+		in, out := &in.OtherAgent, &out.OtherAgent
+		*out = new(OtherAgent)
+		**out = **in
+	}
 	if in.LibCType != nil {
 		in, out := &in.LibCType, &out.LibCType
 		*out = new(common.LibCType)

@@ -47,8 +47,9 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 	if runtimeDetails.RuntimeVersion != "" {
 		runtimeVersion = &runtimeDetails.RuntimeVersion
 	}
-	otherAgentNames := make([]string, 0, len(runtimeDetails.OtherAgents))
-	for _, a := range runtimeDetails.OtherAgents {
+	detectedAgents := runtimeDetails.DetectedOtherAgents()
+	otherAgentNames := make([]string, 0, len(detectedAgents))
+	for _, a := range detectedAgents {
 		otherAgentNames = append(otherAgentNames, a.Name)
 	}
 	var libcType *string
