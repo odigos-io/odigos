@@ -377,6 +377,63 @@ func TestSkipWhenMissingDbSystem(t *testing.T) {
 	require.Equal(t, "db", span.Name())
 }
 
+func TestRedactCassandraUUIDs(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{
+			name: "single uuid",
+			in:   "SELECT * FROM t WHERE id = 550e8400-e29b-41d4-a716-446655440000",
+			want: "SELECT * FROM t WHERE id = ?",
+		},
+		{
+			name: "tight comma IN list redacts every uuid",
+			in:   "SELECT * FROM t WHERE id IN (550e8400-e29b-41d4-a716-446655440000,6ba7b810-9dad-11d1-80b4-00c04fd430c8,7c9e6679-7425-40de-944b-e07fc1f90ae7)",
+			want: "SELECT * FROM t WHERE id IN (?,?,?)",
+		},
+		{
+			name: "spaced comma IN list",
+			in:   "SELECT * FROM t WHERE id IN (550e8400-e29b-41d4-a716-446655440000, 6ba7b810-9dad-11d1-80b4-00c04fd430c8)",
+			want: "SELECT * FROM t WHERE id IN (?, ?)",
+		},
+		{
+			name: "values list with parens",
+			in:   "INSERT INTO t (id) VALUES (550e8400-e29b-41d4-a716-446655440000),(6ba7b810-9dad-11d1-80b4-00c04fd430c8)",
+			want: "INSERT INTO t (id) VALUES (?),(?)",
+		},
+		{
+			name: "rejects uuid prefix of longer hex literal",
+			in:   "SELECT * FROM t WHERE id = 550e8400-e29b-41d4-a716-446655440000ff",
+			want: "SELECT * FROM t WHERE id = 550e8400-e29b-41d4-a716-446655440000ff",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, redactCassandraUUIDs(tt.in))
+		})
+	}
+}
+
+func TestRedactLiterals_CassandraINListUUIDs(t *testing.T) {
+	proc := newTestProcessor(t, &Config{RedactLiterals: true})
+	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):    semconv.DBSystemCassandra.Value.AsString(),
+		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id IN (550e8400-e29b-41d4-a716-446655440000,6ba7b810-9dad-11d1-80b4-00c04fd430c8)",
+	})
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	query, ok := span.Attributes().Get(string(semconv.DBQueryTextKey))
+	require.True(t, ok)
+	require.Equal(t, "SELECT * FROM users WHERE id IN (?,?)", query.Str())
+	require.NotContains(t, query.Str(), "6ba7b810")
+	require.NotContains(t, query.Str(), "550e8400")
+}
+
 func TestSkipNonSQL_MongoDB(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true, RedactLiterals: true})
 	originalQuery := `{"find": "users", "filter": {"id": 1}}`

@@ -22,8 +22,33 @@ import (
 
 // uuidRegex matches standalone UUID literals (CQL) so they can be redacted
 // before sqllexer tokenization, which otherwise mangles them.
-// it checks for standalone UUIDs, not part of a longer identifier/literal.
+// Group 1 is the leading boundary, group 2 the UUID, group 3 the trailing
+// boundary. The trailing group is only used to reject UUIDs that are a prefix
+// of a longer hex literal; redactCassandraUUIDs does not consume it when
+// advancing, so adjacent UUIDs separated by a single delimiter (e.g. IN lists)
+// are all redacted.
 var uuidRegex = regexp.MustCompile(`(^|[^0-9A-Fa-f])([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})($|[^0-9A-Fa-f])`)
+
+// redactCassandraUUIDs replaces standalone UUID literals with ?.
+// Unlike ReplaceAllString, each match resumes after the UUID (not after the
+// trailing boundary), so a comma consumed as uuid1's trailer remains available
+// as uuid2's leader.
+func redactCassandraUUIDs(query string) string {
+	var b strings.Builder
+	b.Grow(len(query))
+	for {
+		loc := uuidRegex.FindStringSubmatchIndex(query)
+		if loc == nil {
+			b.WriteString(query)
+			return b.String()
+		}
+		// loc: [fullStart, fullEnd, g1Start, g1End, g2Start, g2End, g3Start, g3End]
+		b.WriteString(query[:loc[0]])
+		b.WriteString(query[loc[2]:loc[3]]) // leading boundary
+		b.WriteByte('?')
+		query = query[loc[5]:] // resume at trailing boundary (not past it)
+	}
+}
 
 type sqlQueryProcessor struct {
 	logger     *zap.Logger
@@ -139,9 +164,8 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 
 	if redactLiterals && isCassandra {
 		// cassandra uses CQL, not SQL
-		// UUIDs are first class citizens in CQL, in they don't get tokenized correctly by sqllexer.
-		// Reject if the UUID is a prefix of a longer identifier/literal
-		query = uuidRegex.ReplaceAllString(query, "${1}?${3}")
+		// UUIDs are first class citizens in CQL, and they don't get tokenized correctly by sqllexer.
+		query = redactCassandraUUIDs(query)
 	}
 
 	switch {
