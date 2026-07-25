@@ -84,11 +84,11 @@ cli-diagnose:
 # Override: make build-cli-image TAG=e2e-test
 #           make build-cli-image CLI_IMAGE=my.registry/odigos-cli:dev
 # RHEL via Dockerfile target: make build-cli-image RHEL=true
-# Embeds whatever charts are already present under cli/pkg/helm/embedded/.
 .PHONY: build-cli-image
 build-cli-image:
 	docker build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) -t $(CLI_IMAGE) -f cli/Dockerfile . \
 		--build-arg VERSION=$(TAG) \
+		--build-arg CHART_VERSION=$(TAG) \
 		--build-arg RELEASE=$(TAG) \
 		--build-arg SUMMARY="$(CLI_SUMMARY)" \
 		--build-arg DESCRIPTION="$(CLI_DESCRIPTION)" \

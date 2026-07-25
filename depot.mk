@@ -14,6 +14,10 @@ OUTPUT_DIR ?=
 GITHUB_RUN_ID ?=
 GITHUB_REPOSITORY_NAME ?=
 
+# used for cli builds to be able to override the chart version for testing (set it to 0.0.0-e2e-test)
+# this is to allow fine grained control over which version is used for which part of the image build
+CHART_VERSION ?= $(IMAGE_TAG)
+
 define depot-build
 	@if [ -z "$(strip $(IMAGE_TAG))" ]; then \
 		echo "Error: IMAGE_TAG is required. Usage: make $@ IMAGE_TAG=<tag>"; \
@@ -66,6 +70,7 @@ define depot-build
 		--build-arg SERVICE_NAME=$(2) \
 		--build-arg ODIGOS_VERSION="$(IMAGE_TAG)" \
 		--build-arg VERSION="$(IMAGE_TAG)" \
+		--build-arg CHART_VERSION="$(CHART_VERSION)" \
 		--build-arg RELEASE="$(IMAGE_TAG)" \
 		$(3) \
 		$(OUTPUT_FLAG) \
@@ -89,7 +94,7 @@ depot-build-collector:
 # avoid cache misses when commit/date change every run but the values are unused.
 # VERSION/ODIGOS_VERSION/RELEASE come from IMAGE_TAG via depot-build.
 # Defaults: current git short SHA and UTC timestamp.
-# CI example: make -f Makefile.depot depot-build-cli IMAGE_TAG=v0.0.0 SHORT_COMMIT=ci DATE=ci
+# CI example: make -f depot.mk depot-build-cli IMAGE_TAG=v0.0.0 SHORT_COMMIT=ci DATE=ci
 SHORT_COMMIT ?= $(shell git rev-parse --short HEAD)
 DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
