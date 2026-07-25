@@ -3,8 +3,13 @@ USER root
 ARG CHART_VERSION
 WORKDIR /workspace
 COPY helm/ helm/
+# Helm requires SemVer for chart.metadata.version. Non-SemVer tags used as image
+# tags (e.g. e2e-test, commit SHAs) are prefixed to 0.0.0-<tag>.
 RUN set -e && \
     CHART_VER="${CHART_VERSION#v}" && \
+    if ! echo "${CHART_VER}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([+-].*)?$'; then \
+      CHART_VER="0.0.0-${CHART_VER}"; \
+    fi && \
     echo "Packaging Helm charts for version ${CHART_VER}" && \
     for chart in helm/odigos helm/odigos-central; do \
       echo "Updating ${chart}/Chart.yaml with version ${CHART_VER}" && \
@@ -47,6 +52,9 @@ WORKDIR /workspace/cli
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     CHART_VER="${CHART_VERSION#v}" && \
+    if ! echo "${CHART_VER}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([+-].*)?$'; then \
+      CHART_VER="0.0.0-${CHART_VER}"; \
+    fi && \
     CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
     go build -tags=embed_manifests -a -o odigos \
     -ldflags="-s -w \
