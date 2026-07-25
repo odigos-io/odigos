@@ -21,7 +21,7 @@ TARGET?=
 RHEL?=false
 BUILD_DIR=.
 
-include Makefile.cli
+include cli.mk
 
 ifeq ($(RHEL),true)
     IMG_SUFFIX=-rhel-certified
