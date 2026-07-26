@@ -54,10 +54,11 @@ describe('Actions CRUD', () => {
           }
           case 'PiiMasking': {
             // Credit card is pre-selected; also exercise EMAIL/JWT/UUID so CreateAction
-            // covers every category the Action CRD enum accepts.
-            cy.get('[data-id=piiCategories]').contains('Email').click();
-            cy.get('[data-id=piiCategories]').contains('JWT').click();
-            cy.get('[data-id=piiCategories]').contains('UUID').click();
+            // covers every category the Action CRD enum accepts. checkboxList (array mode)
+            // sets data-id from each option id, not the field name.
+            cy.get('[data-id=EMAIL]').click();
+            cy.get('[data-id=JWT]').click();
+            cy.get('[data-id=UUID]').click();
             break;
           }
           case 'ExtractAttribute': {
