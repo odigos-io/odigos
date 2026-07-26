@@ -68,6 +68,7 @@ export const CREATE_ACTION = gql`
           languages
         }
         templatizeLiterals
+        removePostgresCastOperator
       }
       conditions {
         status
@@ -147,6 +148,7 @@ export const UPDATE_ACTION = gql`
           languages
         }
         templatizeLiterals
+        removePostgresCastOperator
       }
       conditions {
         status

@@ -85,6 +85,7 @@ input ActionFieldsInput {
 
   scopes: SourcesScopesInput
   templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
 }
 
 # ExtractAttribute is the input shape for the ExtractAttribute action; mirrors
@@ -175,6 +176,7 @@ type ActionFields {
 
   scopes: SourcesScopes
   templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
 }
 
 # ExtractAttribute mirrors the v1alpha1 `extractAttribute` config — a wrapper

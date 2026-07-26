@@ -44,6 +44,7 @@ type ActionFields struct {
 	ExtractAttribute             *ExtractAttribute              `json:"extractAttribute,omitempty"`
 	Scopes                       *SourcesScopes                 `json:"scopes,omitempty"`
 	TemplatizeLiterals           *bool                          `json:"templatizeLiterals,omitempty"`
+	RemovePostgresCastOperator   *bool                          `json:"removePostgresCastOperator,omitempty"`
 }
 
 type ActionFieldsInput struct {
@@ -62,6 +63,7 @@ type ActionFieldsInput struct {
 	ExtractAttribute             *ExtractAttributeInput              `json:"extractAttribute,omitempty"`
 	Scopes                       *SourcesScopesInput                 `json:"scopes,omitempty"`
 	TemplatizeLiterals           *bool                               `json:"templatizeLiterals,omitempty"`
+	RemovePostgresCastOperator   *bool                               `json:"removePostgresCastOperator,omitempty"`
 }
 
 type ActionInput struct {
