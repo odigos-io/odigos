@@ -6,28 +6,21 @@ It is similar to the [redact processor](https://github.com/open-telemetry/opente
 
 ## Configuration
 
+Per-source rules come from InstrumentationConfig (`workloadCollectorConfig[].piiMasking`) via `odigos_config_extension`:
+
 ```yaml
 processors:
   odigospiimasking:
-    pii_categories:
-      - CREDIT_CARD
-      - EMAIL
-      - JWT
-      - UUID
-    custom_format_maskings:
-      - lookup_key: ssn
-        data_format: json
-    custom_regex_maskings:
-      - regex: 'secret=([^\s&]+)'
+    odigos_config_extension: odigosconfigk8s
 ```
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `pii_categories` | []string | `[]` | Categories of PII to mask. Supported: `CREDIT_CARD`, `EMAIL`, `JWT`, `UUID`. |
-| `custom_format_maskings` | []object | `[]` | Format-based masking rules (`lookup_key` + `data_format`). |
-| `custom_regex_maskings` | []object | `[]` | Regex-based masking rules (`regex` with a single capture group). |
+| `odigos_config_extension` | component ID | required | Extension implementing `OdigosConfigExtension` that supplies per-source PII masking config. |
 
-Custom format and regex rules replace only the matched capture group with `****`.
+Supported PII categories: `CREDIT_CARD`, `EMAIL`, `JWT`, `UUID`.
+
+Custom format (`lookup_key` + `data_format`) and regex rules replace only the matched capture group with `****`.
 
 ## Status
 

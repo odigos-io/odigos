@@ -90,7 +90,8 @@ func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigo
 		if action.Spec.URLTemplatization != nil ||
 			action.Spec.SpanRenamer != nil ||
 			action.Spec.DbQueryTemplatization != nil ||
-			action.Spec.InferDbAttributes != nil {
+			action.Spec.InferDbAttributes != nil ||
+			action.Spec.PiiMasking != nil {
 			agentLevelActions = append(agentLevelActions, action)
 		}
 	}
@@ -130,7 +131,8 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client) (*[]o
 			(ir.Spec.CustomInstrumentations != nil) ||
 			(ir.Spec.EbpfLogCapture != nil) ||
 			(ir.Spec.AgentDiagnostics != nil) ||
-			(ir.Spec.NetworkMetrics != nil) {
+			(ir.Spec.NetworkMetrics != nil) ||
+			(ir.Spec.AllowConcurrentAgents != nil) {
 
 			relevantIr = append(relevantIr, *ir)
 		}

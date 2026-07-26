@@ -21,6 +21,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
+	"github.com/odigos-io/odigos/common/otheragent"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -200,7 +201,7 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 	}
 
 	envs := make([]odigosv1.EnvVar, 0)
-	var detectedAgent *odigosv1.OtherAgent
+	var detectedAgents []odigosv1.OtherAgent
 	var libcType *common.LibCType
 	var secureExecutionMode *bool
 	var inspectProc *procdiscovery.Details
@@ -220,23 +221,14 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 			envs = append(envs, odigosv1.EnvVar{Name: envName, Value: envValue})
 		}
 
-		for envName := range inspectProc.Environments.DetailedEnvs {
-			if otherAgentName, exists := procdiscovery.OtherAgentEnvs[envName]; exists {
-				detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
-			}
+		// Detect other instrumentation agents already running in this process.
+		agentCtx := procdiscovery.NewProcessContext(*inspectProc)
+		for _, a := range otheragent.DetectAll(agentCtx, langDetails.Language) {
+			detectedAgents = append(detectedAgents, odigosv1.OtherAgent{Name: a.Name})
 		}
-
-		// Languages that can be detected using command line Substrings, e.g. Java<>newrelic
-		for otherAgentCmdSubstring, otherAgentName := range procdiscovery.OtherAgentCmdSubString {
-			if strings.Contains(inspectProc.CmdLine, otherAgentCmdSubstring) {
-				detectedAgent = &odigosv1.OtherAgent{Name: otherAgentName}
-			}
-		}
-
-		// Agent that can be detected using environment variables
-		val, ok := inspectProc.Environments.OverwriteEnvs[consts.LdPreloadEnvVarName]
-		if ok && strings.Contains(val, procdiscovery.DynatraceFullStackEnvValuePrefix) {
-			detectedAgent = &odigosv1.OtherAgent{Name: procdiscovery.DynatraceAgentName}
+		if err := agentCtx.CloseFiles(); err != nil {
+			logger.Error("error closing process files after other-agent detection",
+				"err", err, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 		}
 
 		// Inspecting libc type is expensive and not relevant for all languages
@@ -257,7 +249,7 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 		Language:            langDetails.Language,
 		RuntimeVersion:      langDetails.RuntimeVersion,
 		EnvVars:             envs,
-		OtherAgent:          detectedAgent,
+		OtherAgents:         detectedAgents,
 		LibCType:            libcType,
 		SecureExecutionMode: secureExecutionMode,
 	}
@@ -500,19 +492,27 @@ func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigo
 		updated = true
 	}
 
-	// 6. Update OtherAgent if there is any difference between the existing and new values.
-	// This includes three cases:
-	// 1. existing.OtherAgent is nil but new.OtherAgent is not (addition),
-	// 2. existing.OtherAgent is not nil but new.OtherAgent is nil (removal),
-	// 3. both are non-nil but their .Name fields differ (modification).
-	if (existing.OtherAgent == nil && new.OtherAgent != nil) ||
-		(existing.OtherAgent != nil && new.OtherAgent == nil) ||
-		(existing.OtherAgent != nil && new.OtherAgent != nil && existing.OtherAgent.Name != new.OtherAgent.Name) {
-		existing.OtherAgent = new.OtherAgent
+	// 6. Update OtherAgents when the detected set changed (added, removed, or names differ).
+	if !sameOtherAgents(existing.OtherAgents, new.OtherAgents) {
+		existing.OtherAgents = new.OtherAgents
 		updated = true
 	}
 
 	return updated
+}
+
+// sameOtherAgents reports whether two detected-agent lists are equal (order-sensitive;
+// DetectAll returns a deterministic, deduped order).
+func sameOtherAgents(a, b []odigosv1.OtherAgent) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i].Name != b[i].Name {
+			return false
+		}
+	}
+	return true
 }
 
 func mergeLdPreloadEnvVars(

@@ -25,6 +25,7 @@ func newResolver(cfg *Config, logger *zap.Logger) resolver {
 		opts = append(opts,
 			symbolize.WithMaxSymbolCache(cfg.MaxSymbolCache),
 			symbolize.WithMaxSymbolBytes(cfg.MaxSymbolBytes),
+			symbolize.WithMaxSymtabBytes(cfg.MaxSymtabBytes),
 			symbolize.WithMaxMapsCache(cfg.MaxMapsCache),
 			symbolize.WithParseWorkers(cfg.ParseWorkers),
 		)

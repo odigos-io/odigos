@@ -141,9 +141,20 @@ spec:
             timeout: 1m10s
             file: ../../common/assert/pipeline-ready.yaml
 
+    # Wait for the upgraded instrumentor's injection webhook to actually serve
+    # (pods rolled out + Ready = serving cert mounted) before checking that the
+    # demo apps are instrumented. Without this, the workload rollout can race the
+    # kubelet secret-volume sync (cert-controller#35) and be admitted uninjected.
+    - name: Wait for instrumentor webhook to be serving after upgrade
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/instrumentor-webhook-ready.yaml
+
     - name: Simple-demo instrumented after upgrade
       try:
         - assert:
+            timeout: 3m
             file: ../../common/assert/simple-demo-instrumented.yaml
 
     - name: Generate Traffic
