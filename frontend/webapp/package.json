@@ -15,7 +15,7 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@apollo/client": "^4.2.6",
+    "@apollo/client": "^4.2.8",
     "@odigos/ui-kit": "0.0.270",
     "graphql": "^16.14.2",
     "next": "15.5.21",
