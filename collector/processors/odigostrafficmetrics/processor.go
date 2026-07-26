@@ -9,6 +9,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pprofile"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/otel/attribute"
@@ -21,6 +22,7 @@ type dataSizesMetricsProcessor struct {
 	tracesSizer             *ptrace.ProtoMarshaler
 	metricsSizer            *pmetric.ProtoMarshaler
 	logsSizer               *plog.ProtoMarshaler
+	profilesSizer           *pprofile.ProtoMarshaler
 	resAttrsKeys            []string
 	samplingFraction        float64
 	inverseSamplingFraction int64
@@ -50,6 +52,7 @@ func newThroughputMeasurementProcessor(set processor.Settings, cfg *Config) (*da
 		tracesSizer:             &ptrace.ProtoMarshaler{},
 		metricsSizer:            &pmetric.ProtoMarshaler{},
 		logsSizer:               &plog.ProtoMarshaler{},
+		profilesSizer:           &pprofile.ProtoMarshaler{},
 		resAttrsKeys:            cfg.ResourceAttributesKeys,
 		samplingFraction:        samplingFraction,
 		inverseSamplingFraction: inverseSamplingFraction,
@@ -96,6 +99,21 @@ func (p *dataSizesMetricsProcessor) processLogs(ctx context.Context, ld plog.Log
 		p.obsrep.OdigosAcceptedLogRecords.Add(ctx, int64(ld.LogRecordCount()))
 	}
 	return ld, nil
+}
+
+func (p *dataSizesMetricsProcessor) processProfiles(ctx context.Context, pd pprofile.Profiles) (pprofile.Profiles, error) {
+	if p.samplingFraction != 0 && rand.Float64() < p.samplingFraction {
+		resProfiles := pd.ResourceProfiles()
+		for i := 0; i < resProfiles.Len(); i++ {
+			res := resProfiles.At(i).Resource()
+			p.obsrep.OdigosProfileDataSize.Add(ctx,
+				int64(p.profilesSizer.ResourceProfilesSize(resProfiles.At(i)))*p.inverseSamplingFraction,
+				metric.WithAttributeSet(p.attributeSetFromResource(res)),
+			)
+		}
+		p.obsrep.OdigosAcceptedProfileSamples.Add(ctx, int64(pd.SampleCount()))
+	}
+	return pd, nil
 }
 
 func (p *dataSizesMetricsProcessor) processMetrics(ctx context.Context, md pmetric.Metrics) (pmetric.Metrics, error) {

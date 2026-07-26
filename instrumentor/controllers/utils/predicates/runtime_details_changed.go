@@ -1,6 +1,8 @@
 package predicates
 
 import (
+	"slices"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -58,7 +60,7 @@ func (i RuntimeDetailsChangedPredicate) Update(e event.UpdateEvent) bool {
 
 		if oldDetails.Language != newDetails.Language ||
 			oldDetails.RuntimeVersion != newDetails.RuntimeVersion ||
-			oldDetails.OtherAgent != newDetails.OtherAgent {
+			!slices.Equal(oldDetails.OtherAgents, newDetails.OtherAgents) {
 			return true // runtime details have changed
 		}
 

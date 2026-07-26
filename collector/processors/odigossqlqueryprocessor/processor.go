@@ -3,6 +3,7 @@ package odigossqlqueryprocessor
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/DataDog/go-sqllexer"
@@ -10,6 +11,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
+	semconv125 "go.opentelemetry.io/otel/semconv/v1.25.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
 
@@ -18,7 +20,10 @@ import (
 	"github.com/odigos-io/odigos/common/collector"
 )
 
-const dbStatementKey = "db.statement"
+// uuidRegex matches standalone UUID literals (CQL) so they can be redacted
+// before sqllexer tokenization, which otherwise mangles them.
+// it checks for standalone UUIDs, not part of a longer identifier/literal.
+var uuidRegex = regexp.MustCompile(`(^|[^0-9A-Fa-f])([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})($|[^0-9A-Fa-f])`)
 
 type sqlQueryProcessor struct {
 	logger     *zap.Logger
@@ -114,15 +119,7 @@ func (p *sqlQueryProcessor) resolveSourceConfig(resource pcommon.Resource) (*com
 func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redactLiterals bool) {
 	attrs := span.Attributes()
 
-	opAttr, hasOperation := attrs.Get(string(semconv.DBOperationNameKey))
-	collAttr, hasCollection := attrs.Get(string(semconv.DBCollectionNameKey))
-	inferNeeded := inferAttributes && !(hasOperation && hasCollection)
-
-	if !inferNeeded && !redactLiterals {
-		return
-	}
-
-	dbms, skip := resolveDBMS(attrs)
+	dbms, skip, isCassandra := resolveDBMS(attrs)
 	if skip {
 		return
 	}
@@ -130,6 +127,21 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 	query, queryKey, ok := sqlQueryFromAttributes(attrs)
 	if !ok {
 		return
+	}
+
+	operation, hasOperation := operationFromAttributes(attrs)
+	collection, hasCollection := collectionFromAttributes(attrs)
+	inferNeeded := inferAttributes && !(hasOperation && hasCollection)
+	if !inferNeeded && !redactLiterals {
+		// if we only infer and the query is already infered, we can skip
+		return
+	}
+
+	if redactLiterals && isCassandra {
+		// cassandra uses CQL, not SQL
+		// UUIDs are first class citizens in CQL, in they don't get tokenized correctly by sqllexer.
+		// Reject if the UUID is a prefix of a longer identifier/literal
+		query = uuidRegex.ReplaceAllString(query, "${1}?${3}")
 	}
 
 	switch {
@@ -141,7 +153,7 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 			return
 		}
 		attrs.PutStr(queryKey, normalized)
-		p.enhanceFromMetadata(span, opAttr, hasOperation, collAttr, hasCollection, meta)
+		p.enhanceFromMetadata(span, operation, hasOperation, collection, hasCollection, meta)
 	case redactLiterals:
 		attrs.PutStr(queryKey, p.obfuscate(query, dbms))
 	case inferNeeded:
@@ -150,7 +162,7 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 			p.logger.Debug("failed to normalize SQL query", zap.Error(err))
 			return
 		}
-		p.enhanceFromMetadata(span, opAttr, hasOperation, collAttr, hasCollection, meta)
+		p.enhanceFromMetadata(span, operation, hasOperation, collection, hasCollection, meta)
 	}
 }
 
@@ -179,9 +191,9 @@ func (p *sqlQueryProcessor) normalize(query string, dbms sqllexer.DBMSType) (*sq
 
 func (p *sqlQueryProcessor) enhanceFromMetadata(
 	span ptrace.Span,
-	opAttr pcommon.Value,
+	operation string,
 	hasOperation bool,
-	collAttr pcommon.Value,
+	collection string,
 	hasCollection bool,
 	meta *sqllexer.StatementMetadata,
 ) {
@@ -193,19 +205,13 @@ func (p *sqlQueryProcessor) enhanceFromMetadata(
 	ops := sqlOperations(meta.Commands)
 	added := false
 
-	operation := ""
-	if hasOperation {
-		operation = opAttr.Str()
-	} else if len(ops) == 1 {
+	if !hasOperation && len(ops) == 1 {
 		operation = ops[0]
 		attrs.PutStr(string(semconv.DBOperationNameKey), operation)
 		added = true
 	}
 
-	collection := ""
-	if hasCollection {
-		collection = collAttr.Str()
-	} else if len(meta.Tables) == 1 {
+	if !hasCollection && len(meta.Tables) == 1 {
 		collection = meta.Tables[0]
 		attrs.PutStr(string(semconv.DBCollectionNameKey), collection)
 		added = true
@@ -235,17 +241,43 @@ func spanNameAlreadyHas(name, operation, collection string) bool {
 }
 
 func sqlQueryFromAttributes(attrs pcommon.Map) (query string, key string, ok bool) {
-	for _, attrKey := range []string{string(semconv.DBQueryTextKey), dbStatementKey} {
-		val, found := attrs.Get(attrKey)
-		if !found || val.Type() != pcommon.ValueTypeStr {
-			continue
-		}
-		query = val.Str()
-		if query != "" {
+	for _, attrKey := range []string{string(semconv.DBQueryTextKey), string(semconv125.DBStatementKey)} {
+		query, ok = stringAttrFromAttributes(attrs, attrKey)
+		if ok {
 			return query, attrKey, true
 		}
 	}
 	return "", "", false
+}
+
+func operationFromAttributes(attrs pcommon.Map) (string, bool) {
+	for _, attrKey := range []string{string(semconv.DBOperationNameKey), string(semconv125.DBOperationKey)} {
+		if op, ok := stringAttrFromAttributes(attrs, attrKey); ok {
+			return op, true
+		}
+	}
+	return "", false
+}
+
+func collectionFromAttributes(attrs pcommon.Map) (string, bool) {
+	for _, attrKey := range []string{string(semconv.DBCollectionNameKey), string(semconv125.DBSQLTableKey)} {
+		if coll, ok := stringAttrFromAttributes(attrs, attrKey); ok {
+			return coll, true
+		}
+	}
+	return "", false
+}
+
+func stringAttrFromAttributes(attrs pcommon.Map, key string) (string, bool) {
+	val, found := attrs.Get(key)
+	if !found || val.Type() != pcommon.ValueTypeStr {
+		return "", false
+	}
+	s := val.Str()
+	if s == "" {
+		return "", false
+	}
+	return s, true
 }
 
 // sqlOperations returns SQL commands suitable for db.operation.name,

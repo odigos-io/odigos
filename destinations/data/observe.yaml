@@ -30,9 +30,18 @@ spec:
       componentProps:
         type: password
         required: true
-        tooltip: You can create a token in your Observe dashboard, under "Datastreams".
+        tooltip: A Datastream ingest token (not a user/API token). Create one in the Observe UI under "Datastreams". See https://docs.observeinc.com/docs/configure-your-own-otel-collector-in-a-non-kubernetes-environment for how to create an ingest token.
+    - name: OBSERVE_ENDPOINT
+      displayName: Collection Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: https://<customer_id>.collect.observeinc.com/v2/otel
+        tooltip: 'Optional. The full OTLP/HTTP collection endpoint. Set this to override the default, for example for a regional tenant such as `https://<customer_id>.collect.eu1.observeinc.com/v2/otel`. When empty, it is derived from the Customer ID. See https://docs.observeinc.com/docs/configure-your-own-otel-collector for the endpoint format.'
   note:
     type: Check
     content: |
-      We handle the endpoint internally, so you don't need to provide it.
-      - The endpoint is `https://${OBSERVE_CUSTOMER_ID}.collect.observeinc.com/v2/otel`
+      By default the endpoint is derived from your Customer ID as `https://${OBSERVE_CUSTOMER_ID}.collect.observeinc.com/v2/otel`.
+      To send to a different endpoint (for example a regional tenant), set the optional `OBSERVE_ENDPOINT` field.
+      For details on the collection endpoint and creating an ingest token, see Observe's guides for [configuring your own OTel collector](https://docs.observeinc.com/docs/configure-your-own-otel-collector) and [configuring it without Kubernetes](https://docs.observeinc.com/docs/configure-your-own-otel-collector-in-a-non-kubernetes-environment).

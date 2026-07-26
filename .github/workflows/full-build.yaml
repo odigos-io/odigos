@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: depot/setup-action@v1
       - name: Build images with Depot
-        run: make -j -f Makefile.depot depot-build-all
+        run: make -j -f depot.mk depot-build-all
         env:
           IMAGE_TAG: v0.0.0-pr${{ github.event.number || github.run_number }}
           PLATFORM: linux/amd64,linux/arm64

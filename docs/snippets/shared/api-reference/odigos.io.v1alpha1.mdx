@@ -2691,6 +2691,20 @@ register instrumented processes for eBPF log capture.</p>
    <p>Configure the agent own logging configuration.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>allowConcurrentAgents</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>AllowConcurrentAgents overrides the global allow_concurrent_agents for the scoped
+workloads: when true, Odigos instruments the container even if another instrumentation
+agent is detected in it; when false, such containers are skipped. Unset falls back to
+the global config.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -3156,14 +3170,15 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 </tr>
 <tr>
 <td>
-<code>otherAgent</code> <B>[Required]</B>
+<code>otherAgents</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-OtherAgent"><code>OtherAgent</code></a>
+<a href="#odigos-io-v1alpha1-OtherAgent"><code>[]OtherAgent</code></a>
 </td>
 <td>
-   <span class="text-muted">No description provided.</span>
-   </td>
+   <p>OtherAgents lists other instrumentation agents detected in the container
+(a process can carry more than one); empty when none.</p>
+</td>
 </tr>
 <tr>
 <td>

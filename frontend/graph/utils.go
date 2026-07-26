@@ -47,9 +47,9 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 	if runtimeDetails.RuntimeVersion != "" {
 		runtimeVersion = &runtimeDetails.RuntimeVersion
 	}
-	var otherAgentName *string
-	if runtimeDetails.OtherAgent != nil {
-		otherAgentName = &runtimeDetails.OtherAgent.Name
+	otherAgentNames := make([]string, 0, len(runtimeDetails.OtherAgents))
+	for _, a := range runtimeDetails.OtherAgents {
+		otherAgentNames = append(otherAgentNames, a.Name)
 	}
 	var libcType *string
 	if runtimeDetails.LibCType != nil {
@@ -65,7 +65,7 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 		CriErrorMessage:         runtimeDetails.CriErrorMessage,
 		LibcType:                libcType,
 		SecureExecutionMode:     runtimeDetails.SecureExecutionMode,
-		OtherAgentName:          otherAgentName,
+		OtherAgentNames:         otherAgentNames,
 	}
 }
 

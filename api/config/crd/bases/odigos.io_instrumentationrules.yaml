@@ -62,6 +62,13 @@ spec:
                     - debug
                     type: string
                 type: object
+              allowConcurrentAgents:
+                description: |-
+                  AllowConcurrentAgents overrides the global allow_concurrent_agents for the scoped
+                  workloads: when true, Odigos instruments the container even if another instrumentation
+                  agent is detected in it; when false, such containers are skipped. Unset falls back to
+                  the global config.
+                type: boolean
               codeAttributes:
                 description: Configure which code attributes should be recorded as
                   span attributes.

@@ -12,15 +12,16 @@ import (
 
 func TestResolveDBMS(t *testing.T) {
 	tests := []struct {
-		name     string
-		attrs    map[string]string
-		wantDBMS sqllexer.DBMSType
-		wantSkip bool
+		name            string
+		attrs           map[string]string
+		wantDBMS        sqllexer.DBMSType
+		wantSkip        bool
+		wantIsCassandra bool
 	}{
 		{
 			name:     "missing",
 			wantDBMS: defaultDBMS,
-			wantSkip: false,
+			wantSkip: true,
 		},
 		{
 			name:     "db.system postgresql",
@@ -85,6 +86,13 @@ func TestResolveDBMS(t *testing.T) {
 			wantDBMS: defaultDBMS,
 			wantSkip: true,
 		},
+		{
+			name:            "cassandra not skipped",
+			attrs:           map[string]string{string(semconv.DBSystemKey): semconv.DBSystemCassandra.Value.AsString()},
+			wantDBMS:        defaultDBMS,
+			wantSkip:        false,
+			wantIsCassandra: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -93,9 +101,10 @@ func TestResolveDBMS(t *testing.T) {
 			for k, v := range tt.attrs {
 				attrs.PutStr(k, v)
 			}
-			dbms, skip := resolveDBMS(attrs)
+			dbms, skip, isCassandra := resolveDBMS(attrs)
 			require.Equal(t, tt.wantSkip, skip)
 			require.Equal(t, tt.wantDBMS, dbms)
+			require.Equal(t, tt.wantIsCassandra, isCassandra)
 		})
 	}
 }

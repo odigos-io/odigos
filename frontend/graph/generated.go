@@ -946,7 +946,7 @@ type ComplexityRoot struct {
 		CriErrorMessage         func(childComplexity int) int
 		Language                func(childComplexity int) int
 		LibcType                func(childComplexity int) int
-		OtherAgentName          func(childComplexity int) int
+		OtherAgentNames         func(childComplexity int) int
 		ProcessEnvVars          func(childComplexity int) int
 		RuntimeVersion          func(childComplexity int) int
 		SecureExecutionMode     func(childComplexity int) int
@@ -5701,12 +5701,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadRuntimeInfoContainer.LibcType(childComplexity), true
 
-	case "K8sWorkloadRuntimeInfoContainer.otherAgentName":
-		if e.complexity.K8sWorkloadRuntimeInfoContainer.OtherAgentName == nil {
+	case "K8sWorkloadRuntimeInfoContainer.otherAgentNames":
+		if e.complexity.K8sWorkloadRuntimeInfoContainer.OtherAgentNames == nil {
 			break
 		}
 
-		return e.complexity.K8sWorkloadRuntimeInfoContainer.OtherAgentName(childComplexity), true
+		return e.complexity.K8sWorkloadRuntimeInfoContainer.OtherAgentNames(childComplexity), true
 
 	case "K8sWorkloadRuntimeInfoContainer.processEnvVars":
 		if e.complexity.K8sWorkloadRuntimeInfoContainer.ProcessEnvVars == nil {
@@ -32423,8 +32423,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainer_runtimeInfo(_ cont
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_libcType(ctx, field)
 			case "secureExecutionMode":
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_secureExecutionMode(ctx, field)
-			case "otherAgentName":
-				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field)
+			case "otherAgentNames":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentNames(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRuntimeInfoContainer", field.Name)
 		},
@@ -34186,8 +34186,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_runtimeIn
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_libcType(ctx, field)
 			case "secureExecutionMode":
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_secureExecutionMode(ctx, field)
-			case "otherAgentName":
-				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field)
+			case "otherAgentNames":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentNames(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRuntimeInfoContainer", field.Name)
 		},
@@ -36870,8 +36870,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfo_containers(_ con
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_libcType(ctx, field)
 			case "secureExecutionMode":
 				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_secureExecutionMode(ctx, field)
-			case "otherAgentName":
-				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field)
+			case "otherAgentNames":
+				return ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentNames(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadRuntimeInfoContainer", field.Name)
 		},
@@ -37228,8 +37228,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfoContainer_secureE
 	return fc, nil
 }
 
-func (ec *executionContext) _K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRuntimeInfoContainer) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field)
+func (ec *executionContext) _K8sWorkloadRuntimeInfoContainer_otherAgentNames(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadRuntimeInfoContainer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentNames(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -37242,7 +37242,7 @@ func (ec *executionContext) _K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.OtherAgentName, nil
+		return obj.OtherAgentNames, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -37251,12 +37251,12 @@ func (ec *executionContext) _K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_K8sWorkloadRuntimeInfoContainer_otherAgentNames(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadRuntimeInfoContainer",
 		Field:      field,
@@ -64933,8 +64933,8 @@ func (ec *executionContext) _K8sWorkloadRuntimeInfoContainer(ctx context.Context
 			out.Values[i] = ec._K8sWorkloadRuntimeInfoContainer_libcType(ctx, field, obj)
 		case "secureExecutionMode":
 			out.Values[i] = ec._K8sWorkloadRuntimeInfoContainer_secureExecutionMode(ctx, field, obj)
-		case "otherAgentName":
-			out.Values[i] = ec._K8sWorkloadRuntimeInfoContainer_otherAgentName(ctx, field, obj)
+		case "otherAgentNames":
+			out.Values[i] = ec._K8sWorkloadRuntimeInfoContainer_otherAgentNames(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

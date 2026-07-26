@@ -7,7 +7,7 @@ import (
 	semconv137 "go.opentelemetry.io/otel/semconv/v1.37.0"
 )
 
-// defaultDBMS is used when db.system / db.system.name is missing or not mapped.
+// defaultDBMS is used when db.system / db.system.name is present but not mapped.
 const defaultDBMS sqllexer.DBMSType = ""
 
 // dbmsBySystem maps known SQL db.system / db.system.name values to sqllexer dialects.
@@ -37,8 +37,14 @@ var dbmsBySystem = map[string]sqllexer.DBMSType{
 // nonSQLSystems are db.system / db.system.name values that are known not to be SQL
 // and should skip literal redaction and attribute inference.
 var nonSQLSystems = map[string]struct{}{
+
+	// cassandra is CQL, not SQL
+	// sometimes the tokenizer will work but not always.
+	// for now we treat it as SQL and we should consider to have CQL tokenizer later on.
+	//
+	// semconv.DBSystemCassandra.Value.AsString(): {},
+
 	// db.system (semconv v1.26)
-	semconv.DBSystemCassandra.Value.AsString():     {},
 	semconv.DBSystemHBase.Value.AsString():         {},
 	semconv.DBSystemMongoDB.Value.AsString():       {},
 	semconv.DBSystemRedis.Value.AsString():         {},
@@ -53,7 +59,6 @@ var nonSQLSystems = map[string]struct{}{
 	semconv.DBSystemOpensearch.Value.AsString():    {},
 
 	// db.system.name (semconv v1.37+)
-	semconv137.DBSystemNameCassandra.Value.AsString():     {},
 	semconv137.DBSystemNameHBase.Value.AsString():         {},
 	semconv137.DBSystemNameMongoDB.Value.AsString():       {},
 	semconv137.DBSystemNameRedis.Value.AsString():         {},
@@ -84,18 +89,20 @@ func dbSystemValue(attrs pcommon.Map) (string, bool) {
 }
 
 // resolveDBMS reads db.system.name / db.system from span attributes and returns
-// the sqllexer dialect and whether processing should be skipped for a known
-// non-SQL system.
-func resolveDBMS(spanAttrs pcommon.Map) (dbms sqllexer.DBMSType, skip bool) {
+// the sqllexer dialect and whether processing should be skipped (missing db
+// system or a known non-SQL system).
+// it also returns if the db system is cassandra, which is a special case.
+func resolveDBMS(spanAttrs pcommon.Map) (dbms sqllexer.DBMSType, skip bool, isCassandra bool) {
 	system, found := dbSystemValue(spanAttrs)
 	if !found {
-		return defaultDBMS, false
+		return defaultDBMS, true, false
 	}
 	if _, nonSQL := nonSQLSystems[system]; nonSQL {
-		return defaultDBMS, true
+		return defaultDBMS, true, system == semconv.DBSystemCassandra.Value.AsString()
 	}
 	if mapped, ok := dbmsBySystem[system]; ok {
-		return mapped, false
+		return mapped, false, false
 	}
-	return defaultDBMS, false
+	isCassandra = system == semconv.DBSystemCassandra.Value.AsString()
+	return defaultDBMS, false, isCassandra
 }
