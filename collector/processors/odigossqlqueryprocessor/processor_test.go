@@ -34,6 +34,7 @@ func generateTestTrace(attrs map[string]string) ptrace.Traces {
 func TestInferAttributes_FromDbQueryText(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):    semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 1",
 	})
 
@@ -57,6 +58,7 @@ func TestInferAttributes_FromDbQueryText(t *testing.T) {
 func TestInferAttributes_FromDbStatement(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):       semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv125.DBStatementKey): "INSERT INTO orders VALUES (1)",
 	})
 
@@ -77,6 +79,7 @@ func TestInferAttributes_FromDbStatement(t *testing.T) {
 func TestInferAttributes_PrefersDbQueryTextOverDbStatement(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):       semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv.DBQueryTextKey):    "SELECT * FROM users",
 		string(semconv125.DBStatementKey): "DELETE FROM orders",
 	})
@@ -95,6 +98,7 @@ func TestInferAttributes_PrefersDbQueryTextOverDbStatement(t *testing.T) {
 func TestInferAttributes_DoesNotOverwriteExisting(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):         semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv.DBQueryTextKey):      "SELECT * FROM users",
 		string(semconv.DBOperationNameKey):  "EXISTING_OP",
 		string(semconv.DBCollectionNameKey): "existing_table",
@@ -114,6 +118,7 @@ func TestInferAttributes_DoesNotOverwriteExisting(t *testing.T) {
 func TestInferAttributes_FillsMissingOnly(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):        semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv.DBQueryTextKey):     "UPDATE users SET name = 'x'",
 		string(semconv.DBOperationNameKey): "EXISTING_OP",
 	})
@@ -166,6 +171,7 @@ func TestInferAttributes_IgnoresNonStringQuery(t *testing.T) {
 func TestInferAttributes_MultipleTables(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):    semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv.DBQueryTextKey): "SELECT * FROM users JOIN orders ON users.id = orders.user_id",
 	})
 
@@ -185,6 +191,7 @@ func TestInferAttributes_MultipleTables(t *testing.T) {
 func TestInferAttributes_OperationOnlySpanName(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):    semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv.DBQueryTextKey): "SELECT 1",
 	})
 
@@ -201,6 +208,7 @@ func TestInferAttributes_OperationOnlySpanName(t *testing.T) {
 func TestRedactLiterals_Only(t *testing.T) {
 	proc := newTestProcessor(t, &Config{RedactLiterals: true})
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):    semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 1 AND name = 'alice'",
 	})
 
@@ -220,6 +228,7 @@ func TestRedactLiterals_Only(t *testing.T) {
 func TestRedactLiterals_WithInferAttributes(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true, RedactLiterals: true})
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):    semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 1 AND name = 'alice'",
 	})
 
@@ -244,6 +253,7 @@ func TestRedactLiterals_WithInferAttributes(t *testing.T) {
 func TestRedactLiterals_WhenAttributesAlreadyPresent(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true, RedactLiterals: true})
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):         semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv.DBQueryTextKey):      "SELECT * FROM users WHERE id = 1",
 		string(semconv.DBOperationNameKey):  "EXISTING_OP",
 		string(semconv.DBCollectionNameKey): "existing_table",
@@ -267,6 +277,7 @@ func TestRedactLiterals_WhenAttributesAlreadyPresent(t *testing.T) {
 func TestRedactLiterals_DbStatement(t *testing.T) {
 	proc := newTestProcessor(t, &Config{RedactLiterals: true})
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):       semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv125.DBStatementKey): "INSERT INTO orders VALUES (1, 'x')",
 	})
 
@@ -319,6 +330,7 @@ func TestInferAttributes_KeepsSpanNameWhenAlreadyPresent(t *testing.T) {
 	td := ptrace.NewTraces()
 	span := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans().AppendEmpty()
 	span.SetName("SELECT users")
+	span.Attributes().PutStr(string(semconv.DBSystemKey), semconv.DBSystemPostgreSQL.Value.AsString())
 	span.Attributes().PutStr(string(semconv.DBQueryTextKey), "SELECT * FROM users WHERE id = 1")
 
 	out, err := proc.processTraces(context.Background(), td)
@@ -336,6 +348,7 @@ func TestInferAttributes_UpdatesSpanNameWhenMissingCollection(t *testing.T) {
 	td := ptrace.NewTraces()
 	span := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans().AppendEmpty()
 	span.SetName("SELECT")
+	span.Attributes().PutStr(string(semconv.DBSystemKey), semconv.DBSystemPostgreSQL.Value.AsString())
 	span.Attributes().PutStr(string(semconv.DBQueryTextKey), "SELECT * FROM users WHERE id = 1")
 
 	out, err := proc.processTraces(context.Background(), td)
@@ -343,6 +356,25 @@ func TestInferAttributes_UpdatesSpanNameWhenMissingCollection(t *testing.T) {
 
 	outSpan := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
 	require.Equal(t, "SELECT users", outSpan.Name())
+}
+
+func TestSkipWhenMissingDbSystem(t *testing.T) {
+	proc := newTestProcessor(t, &Config{InferAttributes: true, RedactLiterals: true})
+	originalQuery := "SELECT * FROM users WHERE id = 1"
+	traces := generateTestTrace(map[string]string{
+		string(semconv.DBQueryTextKey): originalQuery,
+	})
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	query, ok := span.Attributes().Get(string(semconv.DBQueryTextKey))
+	require.True(t, ok)
+	require.Equal(t, originalQuery, query.Str())
+	_, hasOp := span.Attributes().Get(string(semconv.DBOperationNameKey))
+	require.False(t, hasOp)
+	require.Equal(t, "db", span.Name())
 }
 
 func TestSkipNonSQL_MongoDB(t *testing.T) {
@@ -408,6 +440,7 @@ func TestExtension_PerSourceConfig(t *testing.T) {
 	}
 
 	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):    semconv.DBSystemPostgreSQL.Value.AsString(),
 		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 1 AND name = 'alice'",
 	})
 

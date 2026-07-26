@@ -31,6 +31,7 @@ const (
 	defaultSweepEvery     = 30 * time.Second // how often to drop caches for exited processes
 	defaultMaxFileBytes   = 8 << 30          // 8 GiB — corrupt/absurd ELF guard
 	defaultMaxSymbols     = 5_000_000        // pathological-binary guard
+	defaultMaxSymtabBytes = 512 << 20        // 512 MiB — cap the transient symbol-table decode
 )
 
 // Mapping describes one loaded module as an OTLP profile carries it.
@@ -130,6 +131,16 @@ func WithMaxSymbolBytes(n int64) Option {
 	}
 }
 
+// WithMaxSymtabBytes caps the transient decode: a symbol table larger than n bytes
+// on disk is skipped without decoding (the peak-memory guard). n<=0 keeps the default.
+func WithMaxSymtabBytes(n int64) Option {
+	return func(s *Symbolizer) {
+		if n > 0 {
+			s.limits.maxSymtabBytes = n
+		}
+	}
+}
+
 // WithMaxMapsCache caps cached per-pid maps (LRU). n<=0 keeps the default.
 func WithMaxMapsCache(n int) Option {
 	return func(s *Symbolizer) {
@@ -171,7 +182,7 @@ func New(opts ...Option) *Symbolizer {
 		mapsTTL:         defaultMapsTTL,
 		backoffDuration: defaultBackoff,
 		sweepEvery:      defaultSweepEvery,
-		limits:          parseLimits{maxFileBytes: defaultMaxFileBytes, maxSymbols: defaultMaxSymbols},
+		limits:          parseLimits{maxFileBytes: defaultMaxFileBytes, maxSymbols: defaultMaxSymbols, maxSymtabBytes: defaultMaxSymtabBytes},
 		stop:            make(chan struct{}),
 	}
 	for _, o := range opts {
@@ -380,6 +391,13 @@ func (s *Symbolizer) parseAndCache(path string) {
 	if err != nil {
 		s.recordParseFailure(path, "parse", err)
 		return
+	}
+	if es.symtabSkippedForSize {
+		// Visible at Warn (not Debug): this binary's native frames will show as
+		// module+offset, not names, until max_symtab_bytes is raised — an operator
+		// should know why, not just wonder why an app isn't fully symbolized.
+		s.log.Warn("symbolize: symbol table exceeds max_symtab_bytes, skipping decode; native frames for this binary will stay unresolved",
+			zap.String("path", path), zap.Int64("max_symtab_bytes", s.limits.maxSymtabBytes))
 	}
 	e := &cachedSymbols{symbols: es, modTime: fi.ModTime().UnixNano(), size: fi.Size(), heapBytes: es.heapBytes}
 	e.lastUsed.Store(s.nextClock())
