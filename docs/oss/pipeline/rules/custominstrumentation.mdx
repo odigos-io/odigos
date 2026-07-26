@@ -1,6 +1,6 @@
 ---
 title: "Custom Instrumentation"
-description: "The \"Custom Instrumentation\" rule can be used to instrument specific functions in PHP applications, or (with Odigos Enterprise) arbitrary Go/Java functions via eBPF."
+description: 'The "Custom Instrumentation" rule can be used to instrument specific functions in PHP applications, or (with Odigos Enterprise) arbitrary Go/Java functions via eBPF.'
 sidebarTitle: "Custom Instrumentation"
 icon: "terminal"
 ---
@@ -16,18 +16,18 @@ PHP probes are delivered as environment variables and require a pod restart to t
 ## Configuration Options
 
 <AccordionGroup>
-    <Accordion title="PHP">
-        <AccordionGroup>
-                    <Accordion title="className">
-                        **className** `string` - The fully qualified class name to instrument. Leave empty for a global function.
-                        - This field is *optional*
-                    </Accordion>
-                    <Accordion title="functionName">
-                        **functionName** `string` - The name of the function or method to instrument.
-                        - This field is *required*
-                    </Accordion>
-        </AccordionGroup>
-    </Accordion>
+  <Accordion title="PHP">
+    <AccordionGroup>
+      <Accordion title="className">
+        **className** `string` - The fully qualified class name to instrument.
+        Leave empty for a global function. - This field is *optional*
+      </Accordion>
+      <Accordion title="functionName">
+        **functionName** `string` - The name of the function or method to
+        instrument. - This field is *required*
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
 </AccordionGroup>
 
 ## Basic Example
@@ -61,4 +61,5 @@ The following example instruments the `processOrder` method on `App\Service\Orde
     <Step>
     Restart the PHP workload so the new `ODIGOS_PHP_AGENT_CUSTOM_INSTRUMENTATIONS` environment variable is picked up.
     </Step>
+
 </Steps>

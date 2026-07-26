@@ -55,4 +55,3 @@ service:
       readers: []
     logs:
       level: ""
-    resource: {}
