@@ -79,16 +79,21 @@ cli-diagnose:
 	@echo "Diagnosing cluster data for debugging"
 	cd ./cli ; go run -tags=embed_manifests . diagnose
 
+# Chart version embedded in the CLI (must be SemVer for helm package).
+# Defaults to TAG; non-SemVer tags are normalized in cli/Dockerfile to 0.0.0-<tag>.
+# Override explicitly when needed: make build-cli-image TAG=e2e-test CHART_VERSION=0.0.0-e2e-test
+CHART_VERSION ?= $(TAG)
+
 # Build the CLI container image with docker (cli/Dockerfile).
 # Default tag: $(CLI_IMAGE) = $(ORG)/odigos-cli$(IMG_SUFFIX):$(TAG)
 # Override: make build-cli-image TAG=e2e-test
 #           make build-cli-image CLI_IMAGE=my.registry/odigos-cli:dev
 # RHEL via Dockerfile target: make build-cli-image RHEL=true
-# Embeds whatever charts are already present under cli/pkg/helm/embedded/.
 .PHONY: build-cli-image
 build-cli-image:
 	docker build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) -t $(CLI_IMAGE) -f cli/Dockerfile . \
 		--build-arg VERSION=$(TAG) \
+		--build-arg CHART_VERSION=$(CHART_VERSION) \
 		--build-arg RELEASE=$(TAG) \
 		--build-arg SUMMARY="$(CLI_SUMMARY)" \
 		--build-arg DESCRIPTION="$(CLI_DESCRIPTION)" \

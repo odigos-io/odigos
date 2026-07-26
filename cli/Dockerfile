@@ -1,7 +1,27 @@
+FROM --platform=$BUILDPLATFORM alpine/helm:3.15.2 AS chart-builder
+USER root
+ARG CHART_VERSION
+WORKDIR /workspace
+COPY helm/ helm/
+# Helm requires SemVer for chart.metadata.version. Non-SemVer tags used as image
+# tags (e.g. e2e-test, commit SHAs) are prefixed to 0.0.0-<tag>.
+RUN set -e && \
+    CHART_VER="${CHART_VERSION#v}" && \
+    if ! echo "${CHART_VER}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([+-].*)?$'; then \
+      CHART_VER="0.0.0-${CHART_VER}"; \
+    fi && \
+    echo "Packaging Helm charts for version ${CHART_VER}" && \
+    for chart in helm/odigos helm/odigos-central; do \
+      echo "Updating ${chart}/Chart.yaml with version ${CHART_VER}" && \
+      sed -i -E 's/0.0.0/'"${CHART_VER}"'/' "${chart}/Chart.yaml"; \
+    done && \
+    helm package helm/odigos helm/odigos-central -d /workspace/chart-artifacts
+
 FROM --platform=$BUILDPLATFORM golang:1.26.4 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION
+ARG CHART_VERSION
 ARG SHORT_COMMIT
 ARG DATE
 ARG RHEL=false
@@ -26,15 +46,20 @@ COPY k8sutils/ k8sutils/
 COPY profiles/ profiles/
 COPY odigosauth/ odigosauth/
 COPY cli/ cli/
+COPY --from=chart-builder /workspace/chart-artifacts/ cli/pkg/helm/embedded/
 
 WORKDIR /workspace/cli
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
+    CHART_VER="${CHART_VERSION#v}" && \
+    if ! echo "${CHART_VER}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([+-].*)?$'; then \
+      CHART_VER="0.0.0-${CHART_VER}"; \
+    fi && \
     CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
     go build -tags=embed_manifests -a -o odigos \
     -ldflags="-s -w \
               -X github.com/odigos-io/odigos/cli/cmd.OdigosVersion=${VERSION} \
-              -X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=${VERSION} \
+              -X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=${CHART_VER} \
               -X github.com/odigos-io/odigos/cli/cmd.OdigosCommit=${SHORT_COMMIT} \
               -X github.com/odigos-io/odigos/cli/cmd.OdigosDate=${DATE}" \
     .
