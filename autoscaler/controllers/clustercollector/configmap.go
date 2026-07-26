@@ -130,8 +130,10 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 				},
 			},
 		},
-		Resource: map[string]*string{
-			string(semconv.K8SPodNameKey): &podNameFromEnv,
+		Resource: &config.TelemetryResource{
+			Attributes: []config.ResourceAttribute{
+				{Name: string(semconv.K8SPodNameKey), Value: podNameFromEnv},
+			},
 		},
 	}
 
