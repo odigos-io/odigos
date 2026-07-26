@@ -20,6 +20,7 @@ Instrumented services
        ▼
  Cluster Gateway Collector
        ├──► servicegraph connector ──► Odigos UI (topology map)
+       └──► servicegraph connector ──► odigos-insights (blast radius) [Enterprise, when insights is enabled]
 ```
 
 1. The **servicegraph connector** receives every trace that passes through the gateway.
@@ -91,5 +92,25 @@ collectorGateway:
     - db.name           # database index (rarely useful for Redis — most apps use index 0)
     - db.system         # technology name (e.g. "redis") — last resort, not instance-specific
 ```
+
+## Blast Radius (Enterprise)
+
+When the enterprise **Insights** feature is enabled (`insights.enabled=true`), Odigos also
+ships the service-graph metrics to the `odigos-insights` service over OTLP, on a dedicated
+gateway pipeline that is kept separate from the UI's topology path (so the standard Service
+Map is unaffected).
+
+`odigos-insights` aggregates the edges into a topology table and exposes a **Blast Radius**
+view in the UI: for a detected anomaly on a service, it draws the neighborhood of upstream
+callers and downstream callees (including virtual/uninstrumented dependencies) that could be
+affected. To join edges to anomalies — which are keyed by `(namespace, service)` — Odigos
+automatically forces `k8s.namespace.name` into the service-graph dimensions while insights is
+active, so `service.name` alone is never ambiguous across namespaces.
+
+<Note>
+  This side-channel and the Blast Radius view are only active when the enterprise insights
+  feature is enabled. With insights off, the service graph behaves exactly as described above
+  (UI topology map only) and no metrics are sent to `odigos-insights`.
+</Note>
 
 <GettingHelp />

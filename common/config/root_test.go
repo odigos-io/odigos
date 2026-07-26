@@ -315,6 +315,50 @@ func baseConfigWithSelfMetrics() *config.Config {
 	return base
 }
 
+// TestServiceGraphInsights verifies that when insights is active the gateway
+// gets the dedicated servicegraph->insights OTLP pipeline (leaving the UI's
+// prometheus/servicegraph pipeline intact) and forces the k8s.namespace.name
+// dimension so edges can be joined to anomalies keyed by (namespace, service).
+func TestServiceGraphInsights(t *testing.T) {
+	on := true
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:      "odigos-system",
+		Insights:             &common.InsightsConfiguration{Enabled: &on},
+		InsightsOtlpEndpoint: "odigos-insights.odigos-system:4317",
+	}
+	out, err, _, _ := pipelinegen.CalculateGatewayConfig(
+		baseConfigWithSelfMetrics(),
+		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
+		[]config.ProcessorConfigurer{},
+		nil, nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+
+	// The dedicated insights pipeline + exporter exist, and the UI's prometheus
+	// pipeline is still present (untouched).
+	assert.Contains(t, out, "metrics/servicegraph-insights:")
+	assert.Contains(t, out, "otlp_grpc/servicegraph-insights:")
+	assert.Contains(t, out, "odigos-insights.odigos-system:4317")
+	assert.Contains(t, out, "metrics/servicegraph:")
+	// Namespace dimension is forced on so edges carry it.
+	assert.Contains(t, out, "- k8s.namespace.name\n")
+}
+
+// TestServiceGraphInsightsDisabled verifies the insights side-channel is absent
+// when insights is not active, so the default service-graph path is unchanged.
+func TestServiceGraphInsightsDisabled(t *testing.T) {
+	gatewayOptions := pipelinegen.GatewayConfigOptions{OdigosNamespace: "odigos-system"}
+	out, err, _, _ := pipelinegen.CalculateGatewayConfig(
+		baseConfigWithSelfMetrics(),
+		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
+		[]config.ProcessorConfigurer{},
+		nil, nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+	assert.NotContains(t, out, "metrics/servicegraph-insights:")
+	assert.NotContains(t, out, "otlp_grpc/servicegraph-insights:")
+}
+
 func TestServiceGraphOptions(t *testing.T) {
 	tests := []struct {
 		name                       string
