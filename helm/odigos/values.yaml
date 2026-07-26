@@ -1185,13 +1185,29 @@ insights:
 
   # @schema
   # description: |-
-  #   Number of insights service replicas. Safe to scale above 1: schema
-  #   migrations run once via a separate Job (not per-replica), and baseline
-  #   writes are additive/idempotent in ClickHouse, so replicas converge without
-  #   coordination.
-  # minimum: 1
+  #   CPU-based HorizontalPodAutoscaler for insights (always on; requires
+  #   metrics-server). The HPA owns the replica count. min/max replicas default
+  #   to the gateway's values.
   # @schema
-  replicas: 2
+  autoscaling:
+    # @schema
+    # description: Target average CPU utilization percentage.
+    # minimum: 1
+    # maximum: 100
+    # @schema
+    cpuTargetUtilization: 80
+
+    # @schema
+    # description: Min replicas. Defaults to the gateway's minimum; uncomment to override.
+    # minimum: 1
+    # @schema
+    # minReplicas: 2
+
+    # @schema
+    # description: Max replicas. Defaults to the gateway's maximum; uncomment to override.
+    # minimum: 1
+    # @schema
+    # maxReplicas: 10
 
   resources:
     requests:

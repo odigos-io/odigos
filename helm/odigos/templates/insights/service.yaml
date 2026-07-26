@@ -8,6 +8,9 @@ metadata:
     app.kubernetes.io/name: odigos-insights
     odigos.io/system-object: "true"
 spec:
+  # ClusterIP VIP front door for the HTTP API + /metrics. The OTLP gRPC port
+  # lives on the odigos-insights-headless Service instead, so the gateway can
+  # round_robin across pods; nothing should dial this Service on :4317.
   type: ClusterIP
   selector:
     app.kubernetes.io/name: odigos-insights
@@ -15,9 +18,5 @@ spec:
     - name: http
       port: 8080
       targetPort: 8080
-      protocol: TCP
-    - name: otlp-grpc
-      port: 4317
-      targetPort: 4317
       protocol: TCP
 {{- end }}

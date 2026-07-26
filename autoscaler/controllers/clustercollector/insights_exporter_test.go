@@ -74,7 +74,11 @@ func TestAddInsightsGatewayExporter_EnabledAppendsExporterToRootPipeline(t *test
 
 	exp, ok := c.Exporters[commonconf.InsightsGatewayExporter].(config.GenericMap)
 	require.True(t, ok, "exporter must be registered")
-	assert.Equal(t, k8sconsts.InsightsOtlpGrpcEndpoint("odigos-system"), exp["endpoint"])
+	// Must target the headless Service via dns:/// with round_robin so the
+	// gateway load balances across insights replicas instead of pinning one pod.
+	assert.Equal(t, k8sconsts.InsightsOtlpGrpcDNSEndpoint("odigos-system"), exp["endpoint"])
+	assert.Equal(t, "dns:///odigos-insights-headless.odigos-system:4317", exp["endpoint"])
+	assert.Equal(t, "round_robin", exp["balancer_name"])
 	assert.Equal(t, "none", exp["compression"])
 	tls, _ := exp["tls"].(config.GenericMap)
 	assert.Equal(t, true, tls["insecure"])
