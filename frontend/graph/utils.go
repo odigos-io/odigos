@@ -5,11 +5,28 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/graph/status"
+	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func IsOnprem(ctx context.Context) (bool, error) {
+	odigosNs := env.GetCurrentNamespace()
+	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	tier := configMap.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
+	return tier == string(common.OnPremOdigosTier), nil
+}
 
 func emptyStrToNil(str string) *string {
 	if str == "" {
