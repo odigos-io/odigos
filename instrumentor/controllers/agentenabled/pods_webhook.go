@@ -424,7 +424,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		if err != nil {
 			return false, nil, fmt.Errorf("failed to marshal custom instrumentations config: %w", err)
 		}
-		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_CUSTOM_INSTRUMENTATIONS", string(customInstrumentationsConfigJson))
+		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, k8sconsts.OdigosPhpAgentCustomInstrumentationsEnvVar, string(customInstrumentationsConfigJson))
 	}
 
 	volumeMounted := false
