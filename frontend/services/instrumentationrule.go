@@ -382,9 +382,9 @@ func getCodeAttributesInput(input model.InstrumentationRuleInput) *instrumentati
 	return codeAttributes
 }
 
-func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instrumentationrules.CustomInstrumentations {
+func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*instrumentationrules.CustomInstrumentations, error) {
 	if input.CustomInstrumentations == nil {
-		return nil
+		return nil, nil
 	}
 	customInstrumentations := &instrumentationrules.CustomInstrumentations{}
 	// Iterate Java custom probes and verify input
@@ -480,7 +480,11 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		uniquePhpProbes = append(uniquePhpProbes, probe)
 	}
 	customInstrumentations.Php = uniquePhpProbes
-	return customInstrumentations
+
+	if err := customInstrumentations.Verify(); err != nil {
+		return nil, err
+	}
+	return customInstrumentations, nil
 }
 
 func UpdateInstrumentationRule(ctx context.Context, id string, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
@@ -535,7 +539,11 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	}
 
 	if input.CustomInstrumentations != nil {
-		existingRule.Spec.CustomInstrumentations = getCustomInstrumentationsInput(input)
+		customInstrumentations, err := getCustomInstrumentationsInput(input)
+		if err != nil {
+			return nil, fmt.Errorf("invalid custom instrumentations: %w", err)
+		}
+		existingRule.Spec.CustomInstrumentations = customInstrumentations
 	} else {
 		existingRule.Spec.CustomInstrumentations = nil
 	}
@@ -605,6 +613,11 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		instrumentationLibraries = &convertedLibraries
 	}
 
+	customInstrumentations, err := getCustomInstrumentationsInput(input)
+	if err != nil {
+		return nil, fmt.Errorf("invalid custom instrumentations: %w", err)
+	}
+
 	// Define the new rule spec based on the input
 	newRule := &v1alpha1.InstrumentationRule{
 		ObjectMeta: metav1.ObjectMeta{
@@ -619,7 +632,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			CodeAttributes:           getCodeAttributesInput(input),
 			HeadersCollection:        getHeadersCollectionInput(input),
 			PayloadCollection:        getPayloadCollectionInput(input),
-			CustomInstrumentations:   getCustomInstrumentationsInput(input),
+			CustomInstrumentations:   customInstrumentations,
 			NetworkMetrics:           getNetworkMetricsInput(input),
 		},
 	}
