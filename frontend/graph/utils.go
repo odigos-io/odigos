@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func IsOnprem(ctx context.Context) (bool, error) {
+func isOnprem(ctx context.Context) (bool, error) {
 	odigosNs := env.GetCurrentNamespace()
 	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
@@ -26,6 +26,17 @@ func IsOnprem(ctx context.Context) (bool, error) {
 
 	tier := configMap.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
 	return tier == string(common.OnPremOdigosTier), nil
+}
+
+func RequireOnprem(ctx context.Context) error {
+	isOnprem, err := isOnprem(ctx)
+	if err != nil {
+		return err
+	}
+	if !isOnprem {
+		return fmt.Errorf("this feature is only supported for onprem installations")
+	}
+	return nil
 }
 
 func emptyStrToNil(str string) *string {
