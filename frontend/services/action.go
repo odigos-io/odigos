@@ -44,6 +44,9 @@ func deriveTypeFromAction(action *model.Action, crd *v1alpha1.Action) model.Acti
 	if action.Fields.PiiCategories != nil || action.Fields.CustomFormatMaskings != nil || action.Fields.CustomRegexMaskings != nil {
 		return model.ActionTypePiiMasking
 	}
+	if crd.Spec.URLTemplatization != nil {
+		return model.ActionTypeURLTemplatization
+	}
 	if action.Fields.URLTemplatizationRulesGroups != nil {
 		return model.ActionTypeURLTemplatization
 	}
@@ -103,6 +106,9 @@ func CreateAction(ctx context.Context, input model.ActionInput) (*model.Action, 
 	payload := &v1alpha1.Action{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "action-",
+			Labels: map[string]string{
+				k8sconsts.OdigosCreatedByLabel: k8sconsts.OdigosCreatedByOdigosUIValue,
+			},
 		},
 		Spec: *spec,
 	}
@@ -465,6 +471,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	}
 
 	urlTemplatizationGroups := convertUrlTemplatizationToModel(action.Spec.URLTemplatization)
+	urlTemplatizationDefaultGroups := convertUrlTemplatizationDefaultToModel(action.Spec.URLTemplatization)
 	extractAttribute := convertExtractAttributeToModel(action.Spec.ExtractAttribute)
 	scopes, templatizeLiterals := convertDbActionFieldsToModel(action)
 
@@ -476,8 +483,9 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		PiiCategories:                piiCategories,
 		CustomFormatMaskings:         customFormatMaskings,
 		CustomRegexMaskings:          customRegexMaskings,
-		URLTemplatizationRulesGroups: urlTemplatizationGroups,
-		ExtractAttribute:             extractAttribute,
+		URLTemplatizationRulesGroups:   urlTemplatizationGroups,
+		URLTemplatizationDefaultGroups: urlTemplatizationDefaultGroups,
+		ExtractAttribute:               extractAttribute,
 		Scopes:                       scopes,
 		TemplatizeLiterals:           templatizeLiterals,
 	}
@@ -512,12 +520,13 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	}
 
 	response := &model.Action{
-		ID:       action.Name,
-		Name:     &action.Spec.ActionName,
-		Notes:    &action.Spec.Notes,
-		Disabled: action.Spec.Disabled,
-		Signals:  signals,
-		Fields:   responseFields,
+		ID:          action.Name,
+		Name:        &action.Spec.ActionName,
+		Notes:       &action.Spec.Notes,
+		Disabled:    action.Spec.Disabled,
+		Signals:     signals,
+		Fields:      responseFields,
+		UIGenerated: isActionUiGenerated(action),
 	}
 
 	response.Type = deriveTypeFromAction(response, action)
@@ -525,6 +534,13 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	response.Statuses = graphstatus.ConvertActionConditionsToStatuses(action.Status.Conditions, action.Generation)
 
 	return response, nil
+}
+
+func isActionUiGenerated(action *v1alpha1.Action) bool {
+	if action == nil || action.Labels == nil {
+		return false
+	}
+	return action.Labels[k8sconsts.OdigosCreatedByLabel] == k8sconsts.OdigosCreatedByOdigosUIValue
 }
 
 func convertLabelsAttributesToModel(labelsAttributes []actionsv1.K8sLabelAttribute) []*model.K8sLabelAttribute {
@@ -644,77 +660,114 @@ func stringifyMap(m map[string]string) (string, error) {
 }
 
 func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.URLTemplatizationConfig {
-	if details.URLTemplatizationRulesGroups == nil {
+	if details.URLTemplatizationRulesGroups == nil && details.URLTemplatizationDefaultGroups == nil {
 		if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
 			return existingAction.Spec.URLTemplatization
 		}
 		return nil
 	}
 
-	rules := make([]apiactions.UrlTemplatizationRule, 0, len(details.URLTemplatizationRulesGroups))
-	for _, g := range details.URLTemplatizationRulesGroups {
-		group := apiactions.UrlTemplatizationRule{}
+	var rules []apiactions.UrlTemplatizationRule
+	if details.URLTemplatizationRulesGroups != nil {
+		rules = make([]apiactions.UrlTemplatizationRule, 0, len(details.URLTemplatizationRulesGroups))
+		for _, g := range details.URLTemplatizationRulesGroups {
+			group := apiactions.UrlTemplatizationRule{}
 
-		// Fold the URL-templatization filter form into the tri-list SourcesScopes shape:
-		//   * Each WorkloadFilter row → one PodWorkload appended to Sources (with namespace baked in).
-		//   * Singleton fallback path: build one PodWorkload if a workload identity is given,
-		//     otherwise fall back to a namespace-only entry.
-		//   * FilterProgrammingLanguage → Languages.
-		scopes := &k8sconsts.SourcesScopes{}
-		if len(g.WorkloadFilters) > 0 {
-			for _, wf := range g.WorkloadFilters {
-				pw := k8sconsts.PodWorkload{}
-				if g.FilterK8sNamespace != nil {
-					pw.Namespace = *g.FilterK8sNamespace
+			// Fold the URL-templatization filter form into the tri-list SourcesScopes shape:
+			//   * Each WorkloadFilter row → one PodWorkload appended to Sources (with namespace baked in).
+			//   * Singleton fallback path: build one PodWorkload if a workload identity is given,
+			//     otherwise fall back to a namespace-only entry.
+			//   * FilterProgrammingLanguage → Languages.
+			scopes := &k8sconsts.SourcesScopes{}
+			if len(g.WorkloadFilters) > 0 {
+				for _, wf := range g.WorkloadFilters {
+					pw := k8sconsts.PodWorkload{}
+					if g.FilterK8sNamespace != nil {
+						pw.Namespace = *g.FilterK8sNamespace
+					}
+					if wf.Kind != nil {
+						pw.Kind = k8sconsts.WorkloadKind(*wf.Kind)
+					}
+					if wf.Name != nil {
+						pw.Name = *wf.Name
+					}
+					scopes.Sources = append(scopes.Sources, pw)
 				}
-				if wf.Kind != nil {
-					pw.Kind = k8sconsts.WorkloadKind(*wf.Kind)
+			} else if g.FilterK8sNamespace != nil || g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil {
+				if g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil {
+					pw := k8sconsts.PodWorkload{}
+					if g.FilterK8sNamespace != nil {
+						pw.Namespace = *g.FilterK8sNamespace
+					}
+					if g.FilterK8sWorkloadKind != nil {
+						pw.Kind = k8sconsts.WorkloadKind(*g.FilterK8sWorkloadKind)
+					}
+					if g.FilterK8sWorkloadName != nil {
+						pw.Name = *g.FilterK8sWorkloadName
+					}
+					scopes.Sources = append(scopes.Sources, pw)
+				} else if g.FilterK8sNamespace != nil {
+					scopes.Namespaces = append(scopes.Namespaces, *g.FilterK8sNamespace)
 				}
-				if wf.Name != nil {
-					pw.Name = *wf.Name
-				}
-				scopes.Sources = append(scopes.Sources, pw)
 			}
-		} else if g.FilterK8sNamespace != nil || g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil {
-			if g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil {
-				pw := k8sconsts.PodWorkload{}
-				if g.FilterK8sNamespace != nil {
-					pw.Namespace = *g.FilterK8sNamespace
-				}
-				if g.FilterK8sWorkloadKind != nil {
-					pw.Kind = k8sconsts.WorkloadKind(*g.FilterK8sWorkloadKind)
-				}
-				if g.FilterK8sWorkloadName != nil {
-					pw.Name = *g.FilterK8sWorkloadName
-				}
-				scopes.Sources = append(scopes.Sources, pw)
-			} else if g.FilterK8sNamespace != nil {
-				scopes.Namespaces = append(scopes.Namespaces, *g.FilterK8sNamespace)
+			if g.FilterProgrammingLanguage != nil {
+				scopes.Languages = append(scopes.Languages, common.ProgrammingLanguage(*g.FilterProgrammingLanguage))
 			}
-		}
-		if g.FilterProgrammingLanguage != nil {
-			scopes.Languages = append(scopes.Languages, common.ProgrammingLanguage(*g.FilterProgrammingLanguage))
-		}
-		if len(scopes.Sources) > 0 || len(scopes.Namespaces) > 0 || len(scopes.Languages) > 0 {
-			group.Scopes = scopes
-		}
+			if len(scopes.Sources) > 0 || len(scopes.Namespaces) > 0 || len(scopes.Languages) > 0 {
+				group.Scopes = scopes
+			}
 
-		for _, rule := range g.TemplatizationRules {
-			group.Templates = append(group.Templates, rule.Template)
+			for _, rule := range g.TemplatizationRules {
+				group.Templates = append(group.Templates, rule.Template)
+			}
+			rules = append(rules, group)
 		}
-		rules = append(rules, group)
+	} else if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
+		rules = existingAction.Spec.URLTemplatization.Rules
 	}
 
 	config := &apiactions.URLTemplatizationConfig{
 		Rules: rules,
 	}
-	// The GraphQL/UI shape only exposes the rule groups, not the default templatization groups.
-	// Preserve any YAML-managed default templatization from the existing Action so that updating
+	// Prefer explicit default groups from the GraphQL input when provided. Otherwise preserve
+	// any YAML-managed default templatization from the existing Action so that updating
 	// rules through the UI does not silently drop it.
-	if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
+	if details.URLTemplatizationDefaultGroups != nil {
+		config.Default = convertUrlTemplatizationDefaultFromInput(details.URLTemplatizationDefaultGroups)
+	} else if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
 		config.Default = existingAction.Spec.URLTemplatization.Default
 	}
 	return config
+}
+
+func convertUrlTemplatizationDefaultFromInput(groups []*model.URLTemplatizationDefaultGroupInput) []apiactions.URLTemplatizationDefaultTemplatizationGroup {
+	if groups == nil {
+		return nil
+	}
+	out := make([]apiactions.URLTemplatizationDefaultTemplatizationGroup, 0, len(groups))
+	for _, g := range groups {
+		if g == nil {
+			continue
+		}
+		group := apiactions.URLTemplatizationDefaultTemplatizationGroup{
+			Scopes: SourcesScopesInputToCRD(g.Scopes),
+		}
+		if g.Disabled != nil {
+			group.Disabled = *g.Disabled
+		}
+		if g.SkipPolicy != nil {
+			skip := &actionsapi.DefaultTemplatizationSkipPolicyConfig{}
+			if g.SkipPolicy.SkipForNonSuccessCodes != nil {
+				skip.SkipForNonSuccessCodes = *g.SkipPolicy.SkipForNonSuccessCodes
+			}
+			if len(g.SkipPolicy.SkipHTTPStatusCodes) > 0 {
+				skip.SkipHttpStatusCodes = append([]int(nil), g.SkipPolicy.SkipHTTPStatusCodes...)
+			}
+			group.SkipPolicy = skip
+		}
+		out = append(out, group)
+	}
+	return out
 }
 
 func convertUrlTemplatizationToModel(cfg *apiactions.URLTemplatizationConfig) []*model.URLTemplatizationRulesGroup {
@@ -763,6 +816,36 @@ func convertUrlTemplatizationToModel(cfg *apiactions.URLTemplatizationConfig) []
 			group.TemplatizationRules = append(group.TemplatizationRules, &model.URLTemplatizationRule{
 				Template: rule,
 			})
+		}
+		result = append(result, group)
+	}
+	return result
+}
+
+func convertUrlTemplatizationDefaultToModel(cfg *apiactions.URLTemplatizationConfig) []*model.URLTemplatizationDefaultGroup {
+	if cfg == nil || len(cfg.Default) == 0 {
+		return nil
+	}
+
+	result := make([]*model.URLTemplatizationDefaultGroup, 0, len(cfg.Default))
+	for _, g := range cfg.Default {
+		group := &model.URLTemplatizationDefaultGroup{
+			Scopes: SourcesScopesCRDToModel(g.Scopes),
+		}
+		if g.Disabled {
+			disabled := true
+			group.Disabled = &disabled
+		}
+		if g.SkipPolicy != nil {
+			skipPolicy := &model.URLTemplatizationDefaultSkipPolicy{}
+			if g.SkipPolicy.SkipForNonSuccessCodes {
+				v := true
+				skipPolicy.SkipForNonSuccessCodes = &v
+			}
+			if len(g.SkipPolicy.SkipHttpStatusCodes) > 0 {
+				skipPolicy.SkipHTTPStatusCodes = append([]int(nil), g.SkipPolicy.SkipHttpStatusCodes...)
+			}
+			group.SkipPolicy = skipPolicy
 		}
 		result = append(result, group)
 	}

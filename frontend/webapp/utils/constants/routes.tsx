@@ -6,6 +6,7 @@ export const ROUTES = {
   PIPELINE_COLLECTORS: '/pipeline-collectors',
   SETTINGS: '/settings',
   SAMPLING: '/sampling',
+  URL_TEMPLATING: '/url-templating',
   TRACE_CORRELATIONS: '/trace-correlations',
 
   // legacy routes

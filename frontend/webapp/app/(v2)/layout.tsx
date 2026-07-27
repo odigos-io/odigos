@@ -20,6 +20,8 @@ const ViewportColumn = styled(FlexColumn)`
 const ContentRow = styled(FlexRow)`
   flex: 1;
   min-height: 0;
+  align-items: stretch;
+  width: 100%;
 `;
 
 function InnerLayout({ children }: PropsWithChildren) {

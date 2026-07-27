@@ -82,6 +82,7 @@ input ActionFieldsInput {
   customRegexMaskings: [CustomRegexMaskingInput!]
 
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroupInput!]
+  urlTemplatizationDefaultGroups: [UrlTemplatizationDefaultGroupInput!]
 
   extractAttribute: ExtractAttributeInput
 
@@ -167,6 +168,9 @@ type Action {
   disabled: Boolean!
   signals: [SignalType!]!
   fields: ActionFields!
+  # True when this Action was created from the Odigos UI
+  # (metadata label odigos.io/created-by=odigos-ui).
+  uiGenerated: Boolean!
   conditions: [Condition!]
   # Desired-state statuses derived from Action CR status conditions
   # (e.g. TransformedToProcessor, AddedToCollectorConfig).
@@ -190,6 +194,7 @@ type ActionFields {
   customRegexMaskings: [CustomRegexMasking!]
 
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroup!]
+  urlTemplatizationDefaultGroups: [UrlTemplatizationDefaultGroup!]
 
   extractAttribute: ExtractAttribute
 
@@ -238,6 +243,28 @@ type UrlTemplatizationRulesGroup {
   workloadFilters: [TemplatizationWorkloadFilter!]
   templatizationRules: [URLTemplatizationRule!]!
   notes: String
+}
+
+type UrlTemplatizationDefaultSkipPolicy {
+  skipForNonSuccessCodes: Boolean
+  skipHttpStatusCodes: [Int!]
+}
+
+type UrlTemplatizationDefaultGroup {
+  scopes: SourcesScopes
+  disabled: Boolean
+  skipPolicy: UrlTemplatizationDefaultSkipPolicy
+}
+
+input UrlTemplatizationDefaultSkipPolicyInput {
+  skipForNonSuccessCodes: Boolean
+  skipHttpStatusCodes: [Int!]
+}
+
+input UrlTemplatizationDefaultGroupInput {
+  scopes: SourcesScopesInput
+  disabled: Boolean
+  skipPolicy: UrlTemplatizationDefaultSkipPolicyInput
 }
 
 type K8sLabelAttribute {
