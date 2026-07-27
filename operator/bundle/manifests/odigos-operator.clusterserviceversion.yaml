@@ -433,6 +433,7 @@ spec:
                 - destinations/status
                 - instrumentationconfigs/status
                 - instrumentationinstances/status
+                - processors/status
               verbs:
                 - get
                 - list
