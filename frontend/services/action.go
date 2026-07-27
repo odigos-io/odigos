@@ -188,7 +188,11 @@ func getSpecFromInput(input model.ActionInput, existingAction *v1alpha1.Action) 
 	}
 	spec.RenameAttribute = renameAttribute
 
-	spec.PiiMasking = convertPiiMaskingFromInput(input.Fields, existingAction)
+	piiMasking, err := convertPiiMaskingFromInput(input.Fields, existingAction)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert pii masking: %v", err)
+	}
+	spec.PiiMasking = piiMasking
 	spec.URLTemplatization = convertUrlTemplatizationFromInput(input.Fields, existingAction)
 	spec.ExtractAttribute = convertExtractAttributeFromInput(input.Fields, existingAction)
 	spec.DbQueryTemplatization = convertDbQueryTemplatizationFromInput(input.Type, input.Fields, existingAction)
@@ -358,16 +362,23 @@ func convertRenameAttributeFromInput(details *model.ActionFieldsInput, existingA
 	return config, nil
 }
 
-func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.PiiMaskingConfig {
+var supportedPiiCategories = map[actionsapi.PiiCategory]struct{}{
+	actionsapi.CreditCardMasking: {},
+	actionsapi.EmailMasking:      {},
+	actionsapi.JwtMasking:        {},
+	actionsapi.UuidMasking:       {},
+}
+
+func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) (*apiactions.PiiMaskingConfig, error) {
 	withPiiMasking := details.PiiCategories != nil ||
 		details.CustomFormatMaskings != nil ||
 		details.CustomRegexMaskings != nil
 
 	if !withPiiMasking {
 		if existingAction != nil && existingAction.Spec.PiiMasking != nil {
-			return existingAction.Spec.PiiMasking
+			return existingAction.Spec.PiiMasking, nil
 		}
-		return nil
+		return nil, nil
 	}
 
 	config := &apiactions.PiiMaskingConfig{}
@@ -379,7 +390,11 @@ func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction
 	if details.PiiCategories != nil {
 		piiCategories := make([]actionsapi.PiiCategory, len(details.PiiCategories))
 		for i, cat := range details.PiiCategories {
-			piiCategories[i] = actionsapi.PiiCategory(cat)
+			category := actionsapi.PiiCategory(cat)
+			if _, ok := supportedPiiCategories[category]; !ok {
+				return nil, fmt.Errorf("unsupported pii category %q: supported values: CREDIT_CARD, EMAIL, JWT, UUID", cat)
+			}
+			piiCategories[i] = category
 		}
 		config.PiiCategories = piiCategories
 	}
@@ -411,7 +426,7 @@ func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction
 		config.CustomRegexMaskings = regexMaskings
 	}
 
-	return config
+	return config, nil
 }
 
 func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
