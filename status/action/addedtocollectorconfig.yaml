@@ -10,13 +10,15 @@ spec:
 
   docs:
     title: "Action Added to Collector Config"
-    summary: "Technical status for odigosConfigExtension actions: whether their configuration was written into a collector ConfigMap."
+    summary: "Technical status for whether an action's configuration was written into a collector ConfigMap."
     description: |
-      This status applies only to actions that use the odigosConfigExtension config mechanism.
-      Other action types do not set this condition.
+      This status applies to:
+      - odigosConfigExtension actions, written directly into a collector ConfigMap
+      - 1:1 processor-backed actions, when the owned Processor (same name as the Action)
+        has been reconciled into a collector ConfigMap
 
-      For those actions, Odigos includes processor configuration in a collector ConfigMap
-      (cluster gateway or node collector).
+      Shared-processor actions (for example URL templatization) do not set this condition.
+
       This condition reports only that the ConfigMap was updated to include the action,
       or that it was removed because the action is disabled.
 
@@ -36,36 +38,37 @@ spec:
     title: "Added to Collector Config"
     k8sConditionStatus: "True"
     odigosSeverity: "Success"
-    summary: "This odigosConfigExtension action's configuration is present in a collector ConfigMap."
+    summary: "This action's configuration is present in a collector ConfigMap."
     description: |
-      Odigos successfully updated a collector ConfigMap to include this odigosConfigExtension action's processor configuration.
-      This is a technical status for config-extension actions only.
+      Odigos successfully updated a collector ConfigMap to include this action's processor configuration
+      (either directly for odigosConfigExtension actions, or via the owned Processor for 1:1 actions).
+      This is a technical status only.
       It does not confirm that the collector has reloaded the config, is healthy, or that the action is applied to all sources.
     states:
     - state: "clusterGateway"
       title: "Added to Cluster Gateway Config"
-      summary: "This odigosConfigExtension action's configuration is present in the cluster gateway collector ConfigMap."
+      summary: "This action's configuration is present in the cluster gateway collector ConfigMap."
       message: "Action was added to the cluster gateway collector ConfigMap."
     - state: "nodeCollector"
       title: "Added to Node Collector Config"
-      summary: "This odigosConfigExtension action's configuration is present in the node collector ConfigMap."
+      summary: "This action's configuration is present in the node collector ConfigMap."
       message: "Action was added to the node collector ConfigMap."
 
   - name: "ConfigRemovedDisabled"
     title: "Removed from Collector Config (Disabled)"
     k8sConditionStatus: "False"
     odigosSeverity: "Disabled"
-    summary: "This odigosConfigExtension action is disabled, so its configuration was removed from the collector ConfigMap."
+    summary: "This action is disabled, so its configuration was removed from the collector ConfigMap."
     description: |
-      The action uses the odigosConfigExtension config mechanism but is disabled.
+      The action is disabled.
       Odigos removed its processor configuration from the collector ConfigMap so it is not part of the pipeline.
       Re-enable the action to add it back to the collector config.
     states:
     - state: "clusterGateway"
       title: "Removed from Cluster Gateway Config (Disabled)"
-      summary: "This odigosConfigExtension action is disabled, so its configuration was removed from the cluster gateway collector ConfigMap."
+      summary: "This action is disabled, so its configuration was removed from the cluster gateway collector ConfigMap."
       message: "Action is disabled; removed from the cluster gateway collector ConfigMap."
     - state: "nodeCollector"
       title: "Removed from Node Collector Config (Disabled)"
-      summary: "This odigosConfigExtension action is disabled, so its configuration was removed from the node collector ConfigMap."
+      summary: "This action is disabled, so its configuration was removed from the node collector ConfigMap."
       message: "Action is disabled; removed from the node collector ConfigMap."

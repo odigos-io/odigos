@@ -9,23 +9,23 @@ import (
 
 const (
 	AddedToCollectorConfigType          = "AddedToCollectorConfig"
-	AddedToCollectorConfigOwnerResource = "action"
+	AddedToCollectorConfigOwnerResource = "processor"
 	AddedToCollectorConfigScope         = "cluster"
 	AddedToCollectorConfigComponent     = "autoscaler"
 )
 
 var AddedToCollectorConfigDocs = status.Docs{
-	Title:       "Action Added to Collector Config",
-	Summary:     "Technical status for whether an action's configuration was written into a collector ConfigMap.",
-	Description: "This status applies to:\n- odigosConfigExtension actions, written directly into a collector ConfigMap\n- 1:1 processor-backed actions, when the owned Processor (same name as the Action)\n  has been reconciled into a collector ConfigMap\n\nShared-processor actions (for example URL templatization) do not set this condition.\n\nThis condition reports only that the ConfigMap was updated to include the action,\nor that it was removed because the action is disabled.\n\nIt is a technical status and is not a primary user-facing health signal.\nIt does not mean the collector has reloaded or accepted the config, that the collector is running,\nthat there are no collector errors, or that the action applies to every source.\n",
+	Title:       "Processor Added to Collector Config",
+	Summary:     "Technical status for Processor resources: whether their configuration was written into a collector ConfigMap.",
+	Description: "Odigos includes Processor CR configuration in a collector ConfigMap\n(cluster gateway and/or node collector, according to spec.collectorRoles).\nThis condition reports only that the ConfigMap was updated to include the processor,\nor that it was removed because the processor is disabled.\n\nIt is a technical status and is not a primary user-facing health signal.\nIt does not mean the collector has reloaded or accepted the config, that the collector is running,\nthat there are no collector errors, or that the processor applies to every source.\n",
 	States: []status.StateDoc{
 		{
 			State:   "clusterGateway",
-			Summary: "Action configuration was written into or removed from the cluster gateway collector ConfigMap.",
+			Summary: "Processor configuration was written into or removed from the cluster gateway collector ConfigMap.",
 		},
 		{
 			State:   "nodeCollector",
-			Summary: "Action configuration was written into or removed from the node collector ConfigMap.",
+			Summary: "Processor configuration was written into or removed from the node collector ConfigMap.",
 		},
 	},
 }
@@ -43,9 +43,9 @@ var (
 	AddedToCollectorConfigConfigUpdated_ClusterGateway = status.WithMessageTemplate(status.Reason{
 		Name:               string(AddedToCollectorConfigReasonConfigUpdated_ClusterGateway),
 		Title:              "Added to Cluster Gateway Config",
-		Summary:            "This action's configuration is present in the cluster gateway collector ConfigMap.",
-		Description:        "Odigos successfully updated a collector ConfigMap to include this action's processor configuration\n(either directly for odigosConfigExtension actions, or via the owned Processor for 1:1 actions).\nThis is a technical status only.\nIt does not confirm that the collector has reloaded the config, is healthy, or that the action is applied to all sources.\n",
-		Message:            "Action was added to the cluster gateway collector ConfigMap.",
+		Summary:            "This processor's configuration is present in the cluster gateway collector ConfigMap.",
+		Description:        "Odigos successfully updated a collector ConfigMap to include this processor's configuration.\nThis is a technical reconciliation status only.\nIt does not confirm that the collector has reloaded the config, is healthy, or that the processor is applied to all sources.\n",
+		Message:            "Processor was added to the cluster gateway collector ConfigMap.",
 		State:              "clusterGateway",
 		K8sConditionStatus: metav1.ConditionTrue,
 		OdigosSeverity:     status.OdigosSeveritySuccess,
@@ -53,9 +53,9 @@ var (
 	AddedToCollectorConfigConfigUpdated_NodeCollector = status.WithMessageTemplate(status.Reason{
 		Name:               string(AddedToCollectorConfigReasonConfigUpdated_NodeCollector),
 		Title:              "Added to Node Collector Config",
-		Summary:            "This action's configuration is present in the node collector ConfigMap.",
-		Description:        "Odigos successfully updated a collector ConfigMap to include this action's processor configuration\n(either directly for odigosConfigExtension actions, or via the owned Processor for 1:1 actions).\nThis is a technical status only.\nIt does not confirm that the collector has reloaded the config, is healthy, or that the action is applied to all sources.\n",
-		Message:            "Action was added to the node collector ConfigMap.",
+		Summary:            "This processor's configuration is present in the node collector ConfigMap.",
+		Description:        "Odigos successfully updated a collector ConfigMap to include this processor's configuration.\nThis is a technical reconciliation status only.\nIt does not confirm that the collector has reloaded the config, is healthy, or that the processor is applied to all sources.\n",
+		Message:            "Processor was added to the node collector ConfigMap.",
 		State:              "nodeCollector",
 		K8sConditionStatus: metav1.ConditionTrue,
 		OdigosSeverity:     status.OdigosSeveritySuccess,
@@ -63,9 +63,9 @@ var (
 	AddedToCollectorConfigConfigRemovedDisabled_ClusterGateway = status.WithMessageTemplate(status.Reason{
 		Name:               string(AddedToCollectorConfigReasonConfigRemovedDisabled_ClusterGateway),
 		Title:              "Removed from Cluster Gateway Config (Disabled)",
-		Summary:            "This action is disabled, so its configuration was removed from the cluster gateway collector ConfigMap.",
-		Description:        "The action is disabled.\nOdigos removed its processor configuration from the collector ConfigMap so it is not part of the pipeline.\nRe-enable the action to add it back to the collector config.\n",
-		Message:            "Action is disabled; removed from the cluster gateway collector ConfigMap.",
+		Summary:            "This processor is disabled, so its configuration was removed from the cluster gateway collector ConfigMap.",
+		Description:        "The processor is disabled (spec.disabled).\nOdigos removed its configuration from the collector ConfigMap so it is not part of the pipeline.\nRe-enable the processor to add it back to the collector config.\n",
+		Message:            "Processor is disabled; removed from the cluster gateway collector ConfigMap.",
 		State:              "clusterGateway",
 		K8sConditionStatus: metav1.ConditionFalse,
 		OdigosSeverity:     status.OdigosSeverityDisabled,
@@ -73,9 +73,9 @@ var (
 	AddedToCollectorConfigConfigRemovedDisabled_NodeCollector = status.WithMessageTemplate(status.Reason{
 		Name:               string(AddedToCollectorConfigReasonConfigRemovedDisabled_NodeCollector),
 		Title:              "Removed from Node Collector Config (Disabled)",
-		Summary:            "This action is disabled, so its configuration was removed from the node collector ConfigMap.",
-		Description:        "The action is disabled.\nOdigos removed its processor configuration from the collector ConfigMap so it is not part of the pipeline.\nRe-enable the action to add it back to the collector config.\n",
-		Message:            "Action is disabled; removed from the node collector ConfigMap.",
+		Summary:            "This processor is disabled, so its configuration was removed from the node collector ConfigMap.",
+		Description:        "The processor is disabled (spec.disabled).\nOdigos removed its configuration from the collector ConfigMap so it is not part of the pipeline.\nRe-enable the processor to add it back to the collector config.\n",
+		Message:            "Processor is disabled; removed from the node collector ConfigMap.",
 		State:              "nodeCollector",
 		K8sConditionStatus: metav1.ConditionFalse,
 		OdigosSeverity:     status.OdigosSeverityDisabled,

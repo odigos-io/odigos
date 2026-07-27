@@ -35,8 +35,16 @@ func (r *ProcessorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	result, err := reconcileClusterCollector(ctx, r.Client, r.Scheme, r.OdigosVersion)
+	if err != nil {
+		return utils.K8SUpdateErrorHandler(err)
+	}
 	if !result.IsZero() {
 		return result, nil
 	}
-	return utils.K8SUpdateErrorHandler(err)
+
+	// sync the AddedToCollectorConfig condition for this processor after a successful
+	// cluster collector sync. usually a no-op when nothing changed.
+	return utils.K8SUpdateErrorHandler(commonconf.SyncProcessorAddedToCollectorConfig(
+		ctx, r.Client, req.NamespacedName, odigosv1.CollectorsGroupRoleClusterGateway,
+	))
 }

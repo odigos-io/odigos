@@ -140,6 +140,14 @@ rules:
       - update
       - delete
   - apiGroups:
+      - odigos.io
+    resources:
+      - processors/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
       - actions.odigos.io
     resources:
       - '*'

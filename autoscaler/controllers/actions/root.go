@@ -12,8 +12,8 @@ import (
 
 func SetupWithManager(mgr ctrl.Manager) error {
 	err := ctrl.NewControllerManagedBy(mgr).
-		For(&odigosv1.Action{}).
-		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		For(&odigosv1.Action{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&odigosv1.Processor{}, builder.MatchEveryOwner).
 		Complete(&ActionReconciler{
 			Client: mgr.GetClient(),
 		})

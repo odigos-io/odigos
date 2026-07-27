@@ -9,7 +9,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/status"
 	addedToCollectorConfig "github.com/odigos-io/odigos/status/action/generated"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,8 +36,9 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 }
 
 // syncActionAddedToCollectorConfig sets AddedToCollectorConfig (ClusterGateway) when
-// this action is an odigosConfigExtension action (added or removed-because-disabled),
-// otherwise removes a stale ClusterGateway condition if present.
+// this action is an odigosConfigExtension action (added or removed-because-disabled).
+// Processor-backed actions get this condition from the actions controller by mirroring
+// the owned Processor status; they are left untouched here.
 func syncActionAddedToCollectorConfig(ctx context.Context, c client.Client, key types.NamespacedName) error {
 	action := &odigosv1.Action{}
 	err := c.Get(ctx, key, action)
@@ -46,25 +46,14 @@ func syncActionAddedToCollectorConfig(ctx context.Context, c client.Client, key 
 		return err
 	}
 
-	if commonconf.IsConfigExtension(action) {
-		if action.Spec.Disabled {
-			return setAddedToCollectorConfigReason(ctx, c, action, addedToCollectorConfig.AddedToCollectorConfigConfigRemovedDisabled_ClusterGateway)
-		}
-		return setAddedToCollectorConfigReason(ctx, c, action, addedToCollectorConfig.AddedToCollectorConfigConfigUpdated_ClusterGateway)
+	if !commonconf.IsConfigExtension(action) {
+		return nil
 	}
 
-	// Action is not a config-extension action for the gateway — clear a leftover
-	// ClusterGateway AddedToCollectorConfig condition so status does not stay stale
-	// after type change or move to node collector.
-	cond := meta.FindStatusCondition(action.Status.Conditions, addedToCollectorConfig.AddedToCollectorConfigType)
-	if cond == nil {
-		return nil
+	if action.Spec.Disabled {
+		return setAddedToCollectorConfigReason(ctx, c, action, addedToCollectorConfig.AddedToCollectorConfigConfigRemovedDisabled_ClusterGateway)
 	}
-	changed := meta.RemoveStatusCondition(&action.Status.Conditions, addedToCollectorConfig.AddedToCollectorConfigType)
-	if !changed {
-		return nil
-	}
-	return c.Status().Update(ctx, action)
+	return setAddedToCollectorConfigReason(ctx, c, action, addedToCollectorConfig.AddedToCollectorConfigConfigUpdated_ClusterGateway)
 }
 
 func setAddedToCollectorConfigReason(ctx context.Context, c client.Client, action *odigosv1.Action, reason status.Reason) error {
