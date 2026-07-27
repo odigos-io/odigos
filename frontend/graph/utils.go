@@ -14,12 +14,14 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func isOnprem(ctx context.Context) (bool, error) {
 	odigosNs := env.GetCurrentNamespace()
-	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+	var configMap corev1.ConfigMap
+	err := kube.CacheClient.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosDeploymentConfigMapName}, &configMap)
 	if err != nil {
 		return false, err
 	}
