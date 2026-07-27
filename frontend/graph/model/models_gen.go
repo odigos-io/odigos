@@ -9,14 +9,15 @@ import (
 )
 
 type Action struct {
-	ID         string        `json:"id"`
-	Type       ActionType    `json:"type"`
-	Name       *string       `json:"name,omitempty"`
-	Notes      *string       `json:"notes,omitempty"`
-	Disabled   bool          `json:"disabled"`
-	Signals    []SignalType  `json:"signals"`
-	Fields     *ActionFields `json:"fields"`
-	Conditions []*Condition  `json:"conditions,omitempty"`
+	ID         string                    `json:"id"`
+	Type       ActionType                `json:"type"`
+	Name       *string                   `json:"name,omitempty"`
+	Notes      *string                   `json:"notes,omitempty"`
+	Disabled   bool                      `json:"disabled"`
+	Signals    []SignalType              `json:"signals"`
+	Fields     *ActionFields             `json:"fields"`
+	Conditions []*Condition              `json:"conditions,omitempty"`
+	Statuses   []*DesiredConditionStatus `json:"statuses"`
 }
 
 type ActionFieldYamlProperties struct {

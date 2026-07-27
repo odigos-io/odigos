@@ -15,6 +15,10 @@ spec:
       supported: false
     profiles:
       supported: false
+  processors:
+    - configMechanism: odigosConfigExtension
+      type: odigospiimasking
+      preSpanMetrics: true
   fields:
     - name: piiCategories
       displayName: Predefined PII categories

@@ -26,28 +26,6 @@ import (
 
 const ActionMigratedLegacyPrefix = "migrated-legacy-"
 
-// condition types for action CR
-const (
-	// TransformedToProcessor is the condition when the action CR is transformed to a processor CR.
-	// This is the first step in the reconciliation process.
-	ActionTransformedToProcessorType = "TransformedToProcessor"
-)
-
-// +kubebuilder:validation:Enum=ProcessorCreated;FailedToCreateProcessor;FailedToTransformToProcessor;ProcessorNotRequired
-type ActionTransformedToProcessorReason string
-
-// Reasons for action condition types
-const (
-	// ProcessorCreatedReason is added to the action when the processor CR is created.
-	ActionTransformedToProcessorReasonProcessorCreated ActionTransformedToProcessorReason = "ProcessorCreated"
-	// FailedToCreateProcessorReason is added to the action when the processor CR creation fails.
-	ActionTransformedToProcessorReasonFailedToCreateProcessor ActionTransformedToProcessorReason = "FailedToCreateProcessor"
-	// FailedToTransformToProcessorReason is added to the action when the transformation to processor object fails.
-	ActionTransformedToProcessorReasonFailedToTransformToProcessorReason ActionTransformedToProcessorReason = "FailedToTransformToProcessor"
-	// ActionTransformedToProcessorReasonProcessorNotRequired is added to the action when the action should not need to be transformed to a processor CR. e.g. when the action is a URL templatization action.
-	ActionTransformedToProcessorReasonProcessorNotRequired ActionTransformedToProcessorReason = "ProcessorNotRequired"
-)
-
 type ActionSpec struct {
 	// Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.
 	ActionName string `json:"actionName,omitempty"`

@@ -30,42 +30,6 @@ input K8sWorkloadIdInput {
   name: String!
 }
 
-# describes a condition for a workload in odigos
-# and its status and message which describes if the condition is met or not and in what state it is.
-type DesiredConditionStatus {
-  # name of the condition, in PascalCase ("AgentInjected", "RuntimeInfo", etc.)
-  name: String!
-
-  # indicates if the desired state is met or not, and what is the progress towards it.
-  status: DesiredStateProgress!
-
-  # reasonEnum is a String, out of close set of enum values per condition type.
-  # use PascalCase for the enum values.
-  # the exact values per condition type are undocumented and should be considered internal.
-  # since it's an enum value, it is suitable for automatic processing and be used in scripts.
-  reasonEnum: String
-
-  # message is a human readable, high cardinality, free form text,
-  # that describes the status for this condition.
-  # it is used to provide additional context relevant to the human reading it.
-  message: String!
-
-  # actions the user can take to resolve or advance this condition.
-  actionItems: [DesiredConditionActionItem!]
-}
-
-type DesiredConditionActionItem {
-  # identifies the action that the client should invoke.
-  type: DesiredConditionActionItemType!
-
-  # human-readable label describing the action.
-  buttonText: String!
-}
-
-enum DesiredConditionActionItemType {
-  RolloutWorkload
-}
-
 # Indicates if a workload in the cluster is marked for instrumentation and why.
 type K8sWorkloadMarkedForInstrumentation {
   # markedForInstrumentation is the reconciled decision for this workload.
