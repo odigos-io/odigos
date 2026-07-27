@@ -382,9 +382,9 @@ func getCodeAttributesInput(input model.InstrumentationRuleInput) *instrumentati
 	return codeAttributes
 }
 
-func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instrumentationrules.CustomInstrumentations {
+func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*instrumentationrules.CustomInstrumentations, error) {
 	if input.CustomInstrumentations == nil {
-		return nil
+		return nil, nil
 	}
 	customInstrumentations := &instrumentationrules.CustomInstrumentations{}
 	// Iterate Java custom probes and verify input
@@ -434,6 +434,20 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		}
 	}
 
+	if input.CustomInstrumentations.Php != nil {
+		customInstrumentations.Php = make([]instrumentationrules.PhpCustomProbe, 0, len(input.CustomInstrumentations.Php))
+		for _, probe := range input.CustomInstrumentations.Php {
+			apiProbe := instrumentationrules.PhpCustomProbe{}
+			if probe.ClassName != nil {
+				apiProbe.ClassName = *probe.ClassName
+			}
+			if probe.FunctionName != nil {
+				apiProbe.FunctionName = *probe.FunctionName
+			}
+			customInstrumentations.Php = append(customInstrumentations.Php, apiProbe)
+		}
+	}
+
 	// Remove duplicate Golang probes
 	uniqueGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(customInstrumentations.Golang))
 	uniqGoProbes := make(map[instrumentationrules.GolangCustomProbe]struct{})
@@ -455,7 +469,22 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		uniqueJavaProbes = append(uniqueJavaProbes, probe)
 	}
 	customInstrumentations.Java = uniqueJavaProbes
-	return customInstrumentations
+
+	// Remove duplicate PHP probes
+	uniquePhpProbes := make([]instrumentationrules.PhpCustomProbe, 0, len(customInstrumentations.Php))
+	phpSeen := make(map[instrumentationrules.PhpCustomProbe]struct{})
+	for _, probe := range customInstrumentations.Php {
+		phpSeen[probe] = struct{}{}
+	}
+	for probe := range phpSeen {
+		uniquePhpProbes = append(uniquePhpProbes, probe)
+	}
+	customInstrumentations.Php = uniquePhpProbes
+
+	if err := customInstrumentations.Verify(); err != nil {
+		return nil, err
+	}
+	return customInstrumentations, nil
 }
 
 func UpdateInstrumentationRule(ctx context.Context, id string, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
@@ -510,7 +539,11 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	}
 
 	if input.CustomInstrumentations != nil {
-		existingRule.Spec.CustomInstrumentations = getCustomInstrumentationsInput(input)
+		customInstrumentations, err := getCustomInstrumentationsInput(input)
+		if err != nil {
+			return nil, fmt.Errorf("invalid custom instrumentations: %w", err)
+		}
+		existingRule.Spec.CustomInstrumentations = customInstrumentations
 	} else {
 		existingRule.Spec.CustomInstrumentations = nil
 	}
@@ -580,6 +613,11 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		instrumentationLibraries = &convertedLibraries
 	}
 
+	customInstrumentations, err := getCustomInstrumentationsInput(input)
+	if err != nil {
+		return nil, fmt.Errorf("invalid custom instrumentations: %w", err)
+	}
+
 	// Define the new rule spec based on the input
 	newRule := &v1alpha1.InstrumentationRule{
 		ObjectMeta: metav1.ObjectMeta{
@@ -594,7 +632,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			CodeAttributes:           getCodeAttributesInput(input),
 			HeadersCollection:        getHeadersCollectionInput(input),
 			PayloadCollection:        getPayloadCollectionInput(input),
-			CustomInstrumentations:   getCustomInstrumentationsInput(input),
+			CustomInstrumentations:   customInstrumentations,
 			NetworkMetrics:           getNetworkMetricsInput(input),
 		},
 	}
@@ -814,6 +852,14 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 			customInstruAsGqlModel.Java = append(customInstruAsGqlModel.Java, &model.JavaCustomProbe{
 				ClassName:  &javaProbe.ClassName,
 				MethodName: &javaProbe.MethodName,
+			})
+		}
+	}
+	if customInstruAsInstruRule.Php != nil {
+		for _, phpProbe := range customInstruAsInstruRule.Php {
+			customInstruAsGqlModel.Php = append(customInstruAsGqlModel.Php, &model.PhpCustomProbe{
+				ClassName:    &phpProbe.ClassName,
+				FunctionName: &phpProbe.FunctionName,
 			})
 		}
 	}
