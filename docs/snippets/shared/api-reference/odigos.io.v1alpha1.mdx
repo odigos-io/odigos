@@ -3109,7 +3109,24 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 
 <p>ProcessorStatus defines the observed state of the processor</p>
 
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
 
+
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a processor's current state.</p>
+</td>
+</tr>
+</tbody>
+</table>
 
 ## `RuntimeDetailsByContainer` <a id="odigos-io-v1alpha1-RuntimeDetailsByContainer"></a>
 
