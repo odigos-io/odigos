@@ -58,6 +58,10 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
           methodName
           className
         }
+        php {
+          className
+          functionName
+        }
       }
       networkMetrics
     }
@@ -121,6 +125,10 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
         java {
           methodName
           className
+        }
+        php {
+          className
+          functionName
         }
       }
       networkMetrics

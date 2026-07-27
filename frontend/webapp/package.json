@@ -16,26 +16,26 @@
   },
   "dependencies": {
     "@apollo/client": "^4.2.6",
-    "@odigos/ui-kit": "0.0.270",
+    "@odigos/ui-kit": "0.0.271",
     "graphql": "^16.14.2",
     "next": "15.5.21",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-error-boundary": "^6.1.2",
-    "rxjs": "^7.8.1",
+    "rxjs": "^7.8.2",
     "styled-components": "6.3.12",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.2.10",
+    "@next/bundle-analyzer": "^16.2.12",
     "@types/node": "26.1.1",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
-    "autoprefixer": "^10.5.2",
+    "autoprefixer": "^10.5.4",
     "check-peer-dependencies": "^4.3.4",
     "eslint": "9.39.2",
-    "eslint-config-next": "16.2.10",
-    "postcss": "^8.5.22",
+    "eslint-config-next": "16.2.12",
+    "postcss": "^8.5.23",
     "typescript": "5.9.3"
   },
   "resolutions": {

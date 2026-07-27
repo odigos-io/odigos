@@ -85,6 +85,10 @@ export const GET_INSTRUMENTATION_RULES = gql`
             methodName
             className
           }
+          php {
+            className
+            functionName
+          }
         }
         networkMetrics
       }

@@ -318,11 +318,13 @@ type CostReductionRuleInput struct {
 type CustomInstrumentations struct {
 	Golang []*GolangCustomProbe `json:"golang,omitempty"`
 	Java   []*JavaCustomProbe   `json:"java,omitempty"`
+	Php    []*PhpCustomProbe    `json:"php,omitempty"`
 }
 
 type CustomInstrumentationsInput struct {
 	Golang []*GolangCustomProbeInput `json:"golang,omitempty"`
 	Java   []*JavaCustomProbeInput   `json:"java,omitempty"`
+	Php    []*PhpCustomProbeInput    `json:"php,omitempty"`
 }
 
 type CustomReadDataLabel struct {
@@ -1433,6 +1435,16 @@ type PersistNamespaceSourceInput struct {
 	Kind              K8sResourceKind `json:"kind"`
 	Selected          bool            `json:"selected"`
 	CurrentStreamName string          `json:"currentStreamName"`
+}
+
+type PhpCustomProbe struct {
+	ClassName    *string `json:"className,omitempty"`
+	FunctionName *string `json:"functionName,omitempty"`
+}
+
+type PhpCustomProbeInput struct {
+	ClassName    *string `json:"className,omitempty"`
+	FunctionName *string `json:"functionName,omitempty"`
 }
 
 type PodAnalyze struct {
