@@ -103,6 +103,12 @@ export const GET_ACTIONS = gql`
           reason
           message
         }
+        statuses {
+          name
+          status
+          reasonEnum
+          message
+        }
       }
     }
   }
