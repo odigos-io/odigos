@@ -11,10 +11,6 @@ on:
         description: "Enterprise branch to cut the pre-release from"
         required: false
         default: "main"
-      vmagent_branch:
-        description: "vm-agent branch to cut the pre-release from"
-        required: false
-        default: "main"
 
 permissions: read-all
 
@@ -145,22 +141,6 @@ jobs:
           event-type: ensure-release-branch
           client-payload: '{"branch":"${{ steps.rc_version.outputs.release_branch_name }}","source_branch":"${{ inputs.enterprise_branch }}"}'
 
-      - name: Get vm-agent Sts Token
-        id: sts-vmagent
-        uses: odigos-io/ci-core/sts@main
-        with:
-          scope: odigos-io/vm-agent
-          identity: trigger-ensure-release-branch
-          output-git-config: "false"
-
-      - name: Trigger release branch workflow in vm-agent
-        uses: peter-evans/repository-dispatch@v4
-        with:
-          token: ${{ steps.sts-vmagent.outputs.GH_TOKEN }}
-          repository: odigos-io/vm-agent
-          event-type: ensure-release-branch
-          client-payload: '{"branch":"${{ steps.rc_version.outputs.release_branch_name }}","source_branch":"${{ inputs.vmagent_branch }}"}'
-
       - name: Configure Git for bot commits
         run: |
           git config user.email "bot@odigos.io"
@@ -206,7 +186,7 @@ jobs:
                 --head $PR_BRANCH \
                 --title "$PR_TITLE" \
                 --label "prerelease" \
-                --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }} (oss: ${{ inputs.oss_branch }}, enterprise: ${{ inputs.enterprise_branch }}, vm-agent: ${{ inputs.vmagent_branch }})"
+                --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }} (oss: ${{ inputs.oss_branch }}, enterprise: ${{ inputs.enterprise_branch }})"
             else
               echo "PR for branch $PR_BRANCH already exists"
             fi
@@ -227,7 +207,7 @@ jobs:
               --head $PR_BRANCH \
               --title "$PR_TITLE" \
               --label "prerelease" \
-              --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }} (oss: ${{ inputs.oss_branch }}, enterprise: ${{ inputs.enterprise_branch }}, vm-agent: ${{ inputs.vmagent_branch }})"
+              --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }} (oss: ${{ inputs.oss_branch }}, enterprise: ${{ inputs.enterprise_branch }})"
           fi
 
       - name: Notify Slack
