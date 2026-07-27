@@ -14,8 +14,8 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	actionutil "github.com/odigos-io/odigos/k8sutils/pkg/action"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/status"
@@ -289,7 +289,7 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Config-extension actions (including PiiMasking) are applied via collector config, not Processor CRs.
-	if commonconf.IsConfigExtension(action) {
+	if actionutil.IsConfigExtension(action) {
 		return utils.K8SUpdateErrorHandler(r.clearTransformedToProcessor(ctx, action))
 	}
 

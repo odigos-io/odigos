@@ -4,7 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	actionutil "github.com/odigos-io/odigos/k8sutils/pkg/action"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/status"
@@ -46,7 +46,7 @@ func syncActionAddedToCollectorConfig(ctx context.Context, c client.Client, key 
 		return err
 	}
 
-	if !commonconf.IsConfigExtension(action) {
+	if !actionutil.IsConfigExtension(action) {
 		return nil
 	}
 
