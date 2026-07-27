@@ -27,10 +27,14 @@ func addInsightsGatewayExporter(c *config.Config, odigosNs string, insights *com
 		c.Exporters = config.GenericMap{}
 	}
 
+	// Target the headless insights Service via the dns:/// resolver and enable
+	// round_robin so the gateway's gRPC client fans out across every insights
+	// pod instead of pinning one behind the ClusterIP VIP.
 	c.Exporters[commonconf.InsightsGatewayExporter] = config.GenericMap{
-		"endpoint":    k8sconsts.InsightsOtlpGrpcEndpoint(odigosNs),
-		"tls":         config.GenericMap{"insecure": true},
-		"compression": "none",
+		"endpoint":      k8sconsts.InsightsOtlpGrpcDNSEndpoint(odigosNs),
+		"balancer_name": "round_robin",
+		"tls":           config.GenericMap{"insecure": true},
+		"compression":   "none",
 		"retry_on_failure": config.GenericMap{
 			"enabled": false,
 		},

@@ -8,10 +8,10 @@ metadata:
     app.kubernetes.io/name: odigos-insights
     odigos.io/system-object: "true"
 spec:
-  # Replicas can scale freely: the schema is applied once by the migration Job
-  # (not per-replica), and baseline writes are additive/idempotent in ClickHouse,
-  # so multiple replicas converge without coordination.
-  replicas: {{ .Values.insights.replicas }}
+  # No replicas field: the HPA (templates/insights/hpa.yaml) always owns the
+  # replica count, so setting it here would make helm and the HPA fight over it
+  # on every reconcile. Replicas scale freely anyway — schema migrations run once
+  # via a separate Job and baseline writes are idempotent in ClickHouse.
   selector:
     matchLabels:
       app.kubernetes.io/name: odigos-insights
