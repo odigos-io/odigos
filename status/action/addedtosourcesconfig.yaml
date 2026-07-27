@@ -24,6 +24,17 @@ spec:
 
   reasons:
 
+  - name: "WaitingForReconcile"
+    title: "Waiting for Reconcile"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "This action's configuration changed and Odigos has not finished applying the latest version yet."
+    message: "Waiting for the latest configuration to be applied"
+    description: |
+      The action was updated (or created), but status conditions still reflect an older
+      generation. Controllers have not finished reconciling the current configuration.
+      This is usually short-lived and resolves once reconciliation completes.
+
   - name: "ConfigUpdated"
     title: "Applied to Sources"
     k8sConditionStatus: "True"

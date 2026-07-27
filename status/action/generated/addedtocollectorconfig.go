@@ -33,6 +33,7 @@ var AddedToCollectorConfigDocs = status.Docs{
 type AddedToCollectorConfigReason string
 
 const (
+	AddedToCollectorConfigReasonWaitingForReconcile                  AddedToCollectorConfigReason = "WaitingForReconcile"
 	AddedToCollectorConfigReasonConfigUpdated_ClusterGateway         AddedToCollectorConfigReason = "ConfigUpdated_ClusterGateway"
 	AddedToCollectorConfigReasonConfigUpdated_NodeCollector          AddedToCollectorConfigReason = "ConfigUpdated_NodeCollector"
 	AddedToCollectorConfigReasonConfigRemovedDisabled_ClusterGateway AddedToCollectorConfigReason = "ConfigRemovedDisabled_ClusterGateway"
@@ -40,6 +41,15 @@ const (
 )
 
 var (
+	AddedToCollectorConfigWaitingForReconcile = status.WithMessageTemplate(status.Reason{
+		Name:               string(AddedToCollectorConfigReasonWaitingForReconcile),
+		Title:              "Waiting for Reconcile",
+		Summary:            "This action's configuration changed and Odigos has not finished applying the latest version yet.",
+		Description:        "The action was updated (or created), but status conditions still reflect an older\ngeneration. Controllers have not finished reconciling the current configuration.\nThis is usually short-lived and resolves once reconciliation completes.\n",
+		Message:            "Waiting for the latest configuration to be applied",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityWaiting,
+	})
 	AddedToCollectorConfigConfigUpdated_ClusterGateway = status.WithMessageTemplate(status.Reason{
 		Name:               string(AddedToCollectorConfigReasonConfigUpdated_ClusterGateway),
 		Title:              "Added to Cluster Collector Configuration",
@@ -82,6 +92,7 @@ var (
 	})
 
 	AddedToCollectorConfigByReason = map[string]status.Reason{
+		string(AddedToCollectorConfigReasonWaitingForReconcile):                  AddedToCollectorConfigWaitingForReconcile,
 		string(AddedToCollectorConfigReasonConfigUpdated_ClusterGateway):         AddedToCollectorConfigConfigUpdated_ClusterGateway,
 		string(AddedToCollectorConfigReasonConfigUpdated_NodeCollector):          AddedToCollectorConfigConfigUpdated_NodeCollector,
 		string(AddedToCollectorConfigReasonConfigRemovedDisabled_ClusterGateway): AddedToCollectorConfigConfigRemovedDisabled_ClusterGateway,

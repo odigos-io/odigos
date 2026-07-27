@@ -9,12 +9,43 @@ import (
 
 // ConvertActionConditionsToStatuses maps Action CR status conditions to
 // DesiredConditionStatus using the generated action status reason catalogs.
-func ConvertActionConditionsToStatuses(conditions []metav1.Condition) []*model.DesiredConditionStatus {
+// Conditions whose ObservedGeneration does not match generation are treated as
+// stale and reported as WaitingForReconcile until controllers reconcile the current spec.
+func ConvertActionConditionsToStatuses(conditions []metav1.Condition, generation int64) []*model.DesiredConditionStatus {
 	result := make([]*model.DesiredConditionStatus, 0, len(conditions))
 	for _, c := range conditions {
+		if c.ObservedGeneration != generation {
+			result = append(result, waitingForReconcileStatus(c.Type))
+			continue
+		}
 		result = append(result, convertActionConditionToStatus(c))
 	}
 	return result
+}
+
+func waitingForReconcileStatus(conditionType string) *model.DesiredConditionStatus {
+	r, ok := waitingForReconcileReasonByConditionType(conditionType)
+	if !ok {
+		return &model.DesiredConditionStatus{
+			Name:    conditionType,
+			Status:  model.DesiredStateProgressWaiting,
+			Message: "Waiting for the latest configuration to be applied",
+		}
+	}
+	return actionReasonToDesiredConditionStatus(conditionType, r, r.Message)
+}
+
+func waitingForReconcileReasonByConditionType(conditionType string) (status.Reason, bool) {
+	switch conditionType {
+	case actionstatus.TransformedToProcessorType:
+		return actionstatus.TransformedToProcessorWaitingForReconcile, true
+	case actionstatus.AddedToCollectorConfigType:
+		return actionstatus.AddedToCollectorConfigWaitingForReconcile, true
+	case actionstatus.AddedToSourcesConfigType:
+		return actionstatus.AddedToSourcesConfigWaitingForReconcile, true
+	default:
+		return status.Reason{}, false
+	}
 }
 
 func convertActionConditionToStatus(c metav1.Condition) *model.DesiredConditionStatus {

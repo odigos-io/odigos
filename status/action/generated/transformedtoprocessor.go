@@ -30,6 +30,7 @@ var TransformedToProcessorDocs = status.Docs{
 type TransformedToProcessorReason string
 
 const (
+	TransformedToProcessorReasonWaitingForReconcile          TransformedToProcessorReason = "WaitingForReconcile"
 	TransformedToProcessorReasonProcessorCreated             TransformedToProcessorReason = "ProcessorCreated"
 	TransformedToProcessorReasonActionDisabled               TransformedToProcessorReason = "ActionDisabled"
 	TransformedToProcessorReasonFailedToCreateProcessor      TransformedToProcessorReason = "FailedToCreateProcessor"
@@ -37,6 +38,15 @@ const (
 )
 
 var (
+	TransformedToProcessorWaitingForReconcile = status.WithMessageTemplate(status.Reason{
+		Name:               string(TransformedToProcessorReasonWaitingForReconcile),
+		Title:              "Waiting for Reconcile",
+		Summary:            "This action's configuration changed and Odigos has not finished applying the latest version yet.",
+		Description:        "The action was updated (or created), but status conditions still reflect an older\ngeneration. Controllers have not finished reconciling the current configuration.\nThis is usually short-lived and resolves once reconciliation completes.\n",
+		Message:            "Waiting for the latest configuration to be applied",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityWaiting,
+	})
 	TransformedToProcessorProcessorCreated = status.WithMessageTemplate(status.Reason{
 		Name:               string(TransformedToProcessorReasonProcessorCreated),
 		Title:              "Action Accepted",
@@ -75,6 +85,7 @@ var (
 	})
 
 	TransformedToProcessorByReason = map[string]status.Reason{
+		string(TransformedToProcessorReasonWaitingForReconcile):          TransformedToProcessorWaitingForReconcile,
 		string(TransformedToProcessorReasonProcessorCreated):             TransformedToProcessorProcessorCreated,
 		string(TransformedToProcessorReasonActionDisabled):               TransformedToProcessorActionDisabled,
 		string(TransformedToProcessorReasonFailedToCreateProcessor):      TransformedToProcessorFailedToCreateProcessor,

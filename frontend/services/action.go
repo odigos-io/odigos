@@ -485,7 +485,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 
 	response.Type = deriveTypeFromAction(response, action)
 	response.Conditions = ConvertConditions(action.Status.Conditions)
-	response.Statuses = graphstatus.ConvertActionConditionsToStatuses(action.Status.Conditions)
+	response.Statuses = graphstatus.ConvertActionConditionsToStatuses(action.Status.Conditions, action.Generation)
 
 	return response, nil
 }

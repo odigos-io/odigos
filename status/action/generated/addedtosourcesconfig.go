@@ -23,11 +23,21 @@ var AddedToSourcesConfigDocs = status.Docs{
 type AddedToSourcesConfigReason string
 
 const (
+	AddedToSourcesConfigReasonWaitingForReconcile   AddedToSourcesConfigReason = "WaitingForReconcile"
 	AddedToSourcesConfigReasonConfigUpdated         AddedToSourcesConfigReason = "ConfigUpdated"
 	AddedToSourcesConfigReasonConfigRemovedDisabled AddedToSourcesConfigReason = "ConfigRemovedDisabled"
 )
 
 var (
+	AddedToSourcesConfigWaitingForReconcile = status.WithMessageTemplate(status.Reason{
+		Name:               string(AddedToSourcesConfigReasonWaitingForReconcile),
+		Title:              "Waiting for Reconcile",
+		Summary:            "This action's configuration changed and Odigos has not finished applying the latest version yet.",
+		Description:        "The action was updated (or created), but status conditions still reflect an older\ngeneration. Controllers have not finished reconciling the current configuration.\nThis is usually short-lived and resolves once reconciliation completes.\n",
+		Message:            "Waiting for the latest configuration to be applied",
+		K8sConditionStatus: metav1.ConditionUnknown,
+		OdigosSeverity:     status.OdigosSeverityWaiting,
+	})
 	AddedToSourcesConfigConfigUpdated = status.WithMessageTemplate(status.Reason{
 		Name:               string(AddedToSourcesConfigReasonConfigUpdated),
 		Title:              "Applied to Sources",
@@ -48,6 +58,7 @@ var (
 	})
 
 	AddedToSourcesConfigByReason = map[string]status.Reason{
+		string(AddedToSourcesConfigReasonWaitingForReconcile):   AddedToSourcesConfigWaitingForReconcile,
 		string(AddedToSourcesConfigReasonConfigUpdated):         AddedToSourcesConfigConfigUpdated,
 		string(AddedToSourcesConfigReasonConfigRemovedDisabled): AddedToSourcesConfigConfigRemovedDisabled,
 	}
