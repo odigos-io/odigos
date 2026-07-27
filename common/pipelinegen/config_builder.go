@@ -39,7 +39,7 @@ type GatewayConfigOptions struct {
 	// odigos-insights service (e.g. odigos-insights.<ns>:4317). Set by the
 	// caller so pipelinegen (in the common module) does not depend on the api
 	// module for the endpoint helper. When insights is active this is the
-	// destination for the servicegraph metrics side-channel.
+	// destination for the OTLP exporter added to metrics/servicegraph.
 	InsightsOtlpEndpoint string
 }
 
@@ -346,23 +346,21 @@ func insertServiceGraphPipeline(currentConfig *config.Config, gatewayOptions *Ga
 
 	currentConfig.Connectors[consts.ServiceGraphConnectorName] = connectorCfg
 
-	// Add the service graph pipeline to receive the service graph metrics from the root traces pipeline
-	currentConfig.Service.Pipelines["metrics/servicegraph"] = config.Pipeline{
-		Receivers: []string{consts.ServiceGraphConnectorName},
-		Exporters: []string{"prometheus/servicegraph"},
-	}
-
-	// When insights is active, fan the same connector metrics to the insights
-	// service over OTLP on a dedicated pipeline. Kept separate from the
-	// prometheus/servicegraph pipeline above so the UI service-map path is
-	// entirely unaffected. A connector may be used as a receiver in multiple
-	// pipelines, so each consumer gets its own copy of the metrics.
+	// metrics/servicegraph receives the connector's metrics and exports them to
+	// the local prometheus/servicegraph endpoint (scraped back for the UI
+	// service map). When insights is active, the same pipeline also fans out
+	// to odigos-insights over OTLP — one connector, one pipeline, two exporters.
+	exporters := []string{"prometheus/servicegraph"}
+	var processors []string
 	if insightsOn {
 		// Stamp the gateway pod name onto the metrics resource so per-pod
 		// cumulative counters don't overwrite each other in ClickHouse (trace
 		// load balancing spreads an edge's spans across gateway pods). Reuse the
 		// self-telemetry processor when present, otherwise define it here so the
 		// pipeline is always valid even if self-telemetry wasn't applied.
+		// Harmless on the Prometheus path: resource_to_telemetry_conversion is
+		// off by default, so k8s.pod.name stays a resource attribute and never
+		// becomes a scrape label on the UI metrics.
 		if _, ok := currentConfig.Processors["resource/pod-name"]; !ok {
 			currentConfig.Processors["resource/pod-name"] = config.GenericMap{
 				"attributes": []config.GenericMap{
@@ -374,6 +372,7 @@ func insertServiceGraphPipeline(currentConfig *config.Config, gatewayOptions *Ga
 				},
 			}
 		}
+		processors = []string{"resource/pod-name"}
 		currentConfig.Exporters[consts.ServiceGraphInsightsExporterName] = config.GenericMap{
 			"endpoint":    gatewayOptions.InsightsOtlpEndpoint,
 			"tls":         config.GenericMap{"insecure": true},
@@ -382,11 +381,12 @@ func insertServiceGraphPipeline(currentConfig *config.Config, gatewayOptions *Ga
 				"enabled": false,
 			},
 		}
-		currentConfig.Service.Pipelines[consts.ServiceGraphInsightsPipelineName] = config.Pipeline{
-			Receivers:  []string{consts.ServiceGraphConnectorName},
-			Processors: []string{"resource/pod-name"},
-			Exporters:  []string{consts.ServiceGraphInsightsExporterName},
-		}
+		exporters = append(exporters, consts.ServiceGraphInsightsExporterName)
+	}
+	currentConfig.Service.Pipelines["metrics/servicegraph"] = config.Pipeline{
+		Receivers:  []string{consts.ServiceGraphConnectorName},
+		Processors: processors,
+		Exporters:  exporters,
 	}
 
 	// Add the service graph exporter to the root traces pipeline

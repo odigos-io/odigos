@@ -198,8 +198,8 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	// When on, pipelinegen installs groupbytrace on traces/in so the exporter sees full traces.
 	gatewayOptions.Insights = insightsCfg
 	// Provide the insights OTLP endpoint so pipelinegen (in the common module, which
-	// cannot import api/k8sconsts) can wire the servicegraph metrics side-channel to
-	// insights for the blast-radius topology.
+	// cannot import api/k8sconsts) can add an OTLP exporter to metrics/servicegraph
+	// for the blast-radius topology.
 	if odigoscommon.InsightsPipelineActive(insightsCfg) {
 		gatewayOptions.InsightsOtlpEndpoint = k8sconsts.InsightsOtlpGrpcEndpoint(env.GetCurrentNamespace())
 	}
