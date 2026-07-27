@@ -41,7 +41,7 @@ func deriveTypeFromAction(action *model.Action, crd *v1alpha1.Action) model.Acti
 	if action.Fields.Renames != nil {
 		return model.ActionTypeRenameAttribute
 	}
-	if action.Fields.PiiCategories != nil {
+	if action.Fields.PiiCategories != nil || action.Fields.CustomFormatMaskings != nil || action.Fields.CustomRegexMaskings != nil {
 		return model.ActionTypePiiMasking
 	}
 	if action.Fields.URLTemplatizationRulesGroups != nil {
@@ -371,12 +371,24 @@ var supportedPiiCategories = map[actionsapi.PiiCategory]struct{}{
 }
 
 func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) (*apiactions.PiiMaskingConfig, error) {
-	withPiiMasking := false
-	var config *apiactions.PiiMaskingConfig
+	withPiiMasking := details.PiiCategories != nil ||
+		details.CustomFormatMaskings != nil ||
+		details.CustomRegexMaskings != nil
+
+	if !withPiiMasking {
+		if existingAction != nil && existingAction.Spec.PiiMasking != nil {
+			return existingAction.Spec.PiiMasking, nil
+		}
+		return nil, nil
+	}
+
+	config := &apiactions.PiiMaskingConfig{}
+	if existingAction != nil && existingAction.Spec.PiiMasking != nil {
+		// Preserve fields omitted from the input (partial update).
+		config = existingAction.Spec.PiiMasking.DeepCopy()
+	}
 
 	if details.PiiCategories != nil {
-		config = &apiactions.PiiMaskingConfig{}
-
 		piiCategories := make([]actionsapi.PiiCategory, len(details.PiiCategories))
 		for i, cat := range details.PiiCategories {
 			category := actionsapi.PiiCategory(cat)
@@ -386,14 +398,33 @@ func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction
 			piiCategories[i] = category
 		}
 		config.PiiCategories = piiCategories
-		withPiiMasking = true
 	}
 
-	if !withPiiMasking {
-		if existingAction != nil && existingAction.Spec.PiiMasking != nil {
-			return existingAction.Spec.PiiMasking, nil
+	if details.CustomFormatMaskings != nil {
+		formatMaskings := make([]actionsapi.CustomFormatMasking, 0, len(details.CustomFormatMaskings))
+		for _, m := range details.CustomFormatMaskings {
+			if m == nil {
+				continue
+			}
+			formatMaskings = append(formatMaskings, actionsapi.CustomFormatMasking{
+				LookupKey:  m.LookupKey,
+				DataFormat: actionsapi.DataFormat(m.DataFormat),
+			})
 		}
-		return nil, nil
+		config.CustomFormatMaskings = formatMaskings
+	}
+
+	if details.CustomRegexMaskings != nil {
+		regexMaskings := make([]actionsapi.CustomRegexMasking, 0, len(details.CustomRegexMaskings))
+		for _, m := range details.CustomRegexMaskings {
+			if m == nil {
+				continue
+			}
+			regexMaskings = append(regexMaskings, actionsapi.CustomRegexMasking{
+				Regex: m.Regex,
+			})
+		}
+		config.CustomRegexMaskings = regexMaskings
 	}
 
 	return config, nil
@@ -425,8 +456,12 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	}
 
 	var piiCategories []string
+	var customFormatMaskings []*model.CustomFormatMasking
+	var customRegexMaskings []*model.CustomRegexMasking
 	if action.Spec.PiiMasking != nil {
 		piiCategories = convertPiiCategoriesToModel(action.Spec.PiiMasking.PiiCategories)
+		customFormatMaskings = convertCustomFormatMaskingsToModel(action.Spec.PiiMasking.CustomFormatMaskings)
+		customRegexMaskings = convertCustomRegexMaskingsToModel(action.Spec.PiiMasking.CustomRegexMaskings)
 	}
 
 	urlTemplatizationGroups := convertUrlTemplatizationToModel(action.Spec.URLTemplatization)
@@ -439,6 +474,8 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		ClusterAttributes:            clustAttrs,
 		Renames:                      renames,
 		PiiCategories:                piiCategories,
+		CustomFormatMaskings:         customFormatMaskings,
+		CustomRegexMaskings:          customRegexMaskings,
 		URLTemplatizationRulesGroups: urlTemplatizationGroups,
 		ExtractAttribute:             extractAttribute,
 		Scopes:                       scopes,
@@ -568,6 +605,33 @@ func convertPiiCategoriesToModel(piiCategories []actionsapi.PiiCategory) []strin
 		result = append(result, string(category))
 	}
 
+	return result
+}
+
+func convertCustomFormatMaskingsToModel(maskings []actionsapi.CustomFormatMasking) []*model.CustomFormatMasking {
+	if len(maskings) == 0 {
+		return nil
+	}
+	result := make([]*model.CustomFormatMasking, 0, len(maskings))
+	for _, m := range maskings {
+		result = append(result, &model.CustomFormatMasking{
+			LookupKey:  m.LookupKey,
+			DataFormat: model.ExtractionDataFormat(m.DataFormat),
+		})
+	}
+	return result
+}
+
+func convertCustomRegexMaskingsToModel(maskings []actionsapi.CustomRegexMasking) []*model.CustomRegexMasking {
+	if len(maskings) == 0 {
+		return nil
+	}
+	result := make([]*model.CustomRegexMasking, 0, len(maskings))
+	for _, m := range maskings {
+		result = append(result, &model.CustomRegexMasking{
+			Regex: m.Regex,
+		})
+	}
 	return result
 }
 

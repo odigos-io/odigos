@@ -78,6 +78,8 @@ input ActionFieldsInput {
   attributeNamesToDelete: [String!]
   renames: String
   piiCategories: [String!]
+  customFormatMaskings: [CustomFormatMaskingInput!]
+  customRegexMaskings: [CustomRegexMaskingInput!]
 
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroupInput!]
 
@@ -85,6 +87,19 @@ input ActionFieldsInput {
 
   scopes: SourcesScopesInput
   templatizeLiterals: Boolean
+}
+
+# CustomFormatMasking masks a value found by lookup key inside a data format
+# (JSON, SQL, or resource path). Used by PiiMasking.
+input CustomFormatMaskingInput {
+  lookupKey: String!
+  dataFormat: ExtractionDataFormat!
+}
+
+# CustomRegexMasking masks the value matched by a regex with a single capture group.
+# Used by PiiMasking.
+input CustomRegexMaskingInput {
+  regex: String!
 }
 
 # ExtractAttribute is the input shape for the ExtractAttribute action; mirrors
@@ -171,6 +186,8 @@ type ActionFields {
   attributeNamesToDelete: [String!]
   renames: String
   piiCategories: [String!]
+  customFormatMaskings: [CustomFormatMasking!]
+  customRegexMaskings: [CustomRegexMasking!]
 
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroup!]
 
@@ -178,6 +195,15 @@ type ActionFields {
 
   scopes: SourcesScopes
   templatizeLiterals: Boolean
+}
+
+type CustomFormatMasking {
+  lookupKey: String!
+  dataFormat: ExtractionDataFormat!
+}
+
+type CustomRegexMasking {
+  regex: String!
 }
 
 # ExtractAttribute mirrors the v1alpha1 `extractAttribute` config — a wrapper

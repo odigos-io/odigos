@@ -55,6 +55,13 @@ export const GET_ACTIONS = gql`
           attributeNamesToDelete
           renames
           piiCategories
+          customFormatMaskings {
+            lookupKey
+            dataFormat
+          }
+          customRegexMaskings {
+            regex
+          }
           urlTemplatizationRulesGroups {
             filterK8sNamespace
             filterK8sWorkloadKind
