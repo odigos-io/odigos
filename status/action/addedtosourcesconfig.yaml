@@ -1,0 +1,46 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Status
+metadata:
+  name: added-to-sources-config
+  ownerResource: action
+  scope: cluster
+  component: instrumentor
+spec:
+  type: 'AddedToSourcesConfig'
+
+  docs:
+    title: "Action Applied to Sources"
+    summary: "Reports whether this action's settings were applied to the configuration of your instrumented sources."
+    description: |
+      Some actions change how instrumentation behaves on your sources.
+      When you create, update, or disable such an action, Odigos updates the
+      configuration for each relevant source so the change can take effect.
+
+      This status confirms that Odigos finished applying that update
+      (or removed the action from sources because it is disabled).
+
+      It does not mean every application has already restarted or reloaded,
+      or that you will immediately see the effect in your telemetry.
+
+  reasons:
+
+  - name: "ConfigUpdated"
+    title: "Applied to Sources"
+    k8sConditionStatus: "True"
+    odigosSeverity: "Success"
+    summary: "This action's settings were applied to your instrumented sources."
+    message: "Action settings were applied to instrumented sources."
+    description: |
+      Odigos updated the configuration of your instrumented sources to include this action.
+      Sources may still need to reload or restart before the change is fully active.
+      This does not by itself confirm that telemetry already reflects the action.
+
+  - name: "ConfigRemovedDisabled"
+    title: "Removed from Sources (Disabled)"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Disabled"
+    summary: "This action is disabled, so it was removed from your instrumented sources."
+    message: "Action is disabled; removed from instrumented sources."
+    description: |
+      This action is disabled, so Odigos removed it from the configuration of your instrumented sources.
+      Re-enable the action to apply it to sources again.

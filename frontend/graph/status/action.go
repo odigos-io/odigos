@@ -35,6 +35,8 @@ func actionReasonByCondition(c metav1.Condition) (status.Reason, bool) {
 		return actionstatus.TransformedToProcessorReasonByName(c.Reason)
 	case actionstatus.AddedToCollectorConfigType:
 		return actionstatus.AddedToCollectorConfigReasonByName(c.Reason)
+	case actionstatus.AddedToSourcesConfigType:
+		return actionstatus.AddedToSourcesConfigReasonByName(c.Reason)
 	default:
 		return status.Reason{}, false
 	}
