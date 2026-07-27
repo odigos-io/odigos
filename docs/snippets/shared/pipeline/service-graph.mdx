@@ -19,7 +19,9 @@ Instrumented services
        │ (OTLP traces)
        ▼
  Cluster Gateway Collector
-       ├──► servicegraph connector ──► Odigos UI (topology map)
+       │
+       └──► servicegraph connector ──► metrics/servicegraph pipeline
+                                            ├──► prometheus ──► Odigos UI (topology map)
 ```
 
 1. The **servicegraph connector** receives every trace that passes through the gateway.

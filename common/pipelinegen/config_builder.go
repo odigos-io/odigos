@@ -34,6 +34,13 @@ type GatewayConfigOptions struct {
 	// Passed as the full config (not a bool) so future toggles on the same
 	// feature can be added without changing this surface.
 	Insights *common.InsightsConfiguration
+
+	// InsightsOtlpEndpoint is the in-cluster OTLP gRPC host:port of the
+	// odigos-insights service (e.g. odigos-insights.<ns>:4317). Set by the
+	// caller so pipelinegen (in the common module) does not depend on the api
+	// module for the endpoint helper. When insights is active this is the
+	// destination for the OTLP exporter added to metrics/servicegraph.
+	InsightsOtlpEndpoint string
 }
 
 func GetGatewayConfig(
@@ -230,7 +237,7 @@ func CalculateGatewayConfig(
 	// - ServiceGraph.Disabled: assume false (enabled) if nil
 	// - ClusterMetricsEnabled: assume false (disabled) if nil
 	if tracesEnabled && (gatewayOptions.ServiceGraph.Disabled == nil || !*gatewayOptions.ServiceGraph.Disabled) {
-		insertServiceGraphPipeline(currentConfig, gatewayOptions.ServiceGraph.ExtraDimensions, gatewayOptions.ServiceGraph.VirtualNodePeerAttributes)
+		insertServiceGraphPipeline(currentConfig, gatewayOptions)
 	}
 	if metricsEnabled && gatewayOptions.ClusterMetricsEnabled != nil && *gatewayOptions.ClusterMetricsEnabled {
 		insertClusterMetricsResources(currentConfig, gatewayOptions.OdigosNamespace)
@@ -291,7 +298,11 @@ func applyRootPipelineForSignal(currentConfig *config.Config, signal common.Obse
 	}
 }
 
-func insertServiceGraphPipeline(currentConfig *config.Config, extraDimensions []string, virtualNodePeerAttributes []string) {
+func insertServiceGraphPipeline(currentConfig *config.Config, gatewayOptions *GatewayConfigOptions) {
+	extraDimensions := gatewayOptions.ServiceGraph.ExtraDimensions
+	virtualNodePeerAttributes := gatewayOptions.ServiceGraph.VirtualNodePeerAttributes
+	insightsOn := common.InsightsPipelineActive(gatewayOptions.Insights) && gatewayOptions.InsightsOtlpEndpoint != ""
+
 	// Add the service graph exporter to expose the service graph metrics to prometheus
 	currentConfig.Exporters["prometheus/servicegraph"] = config.GenericMap{
 		"endpoint":  fmt.Sprintf("localhost:%d", consts.ServiceGraphEndpointPort),
@@ -307,6 +318,14 @@ func insertServiceGraphPipeline(currentConfig *config.Config, extraDimensions []
 	// Build dimensions: always include service.name as the base, then append any extras
 	dimensions := []string{string(semconv.ServiceNameKey)}
 	dimensions = append(dimensions, extraDimensions...)
+
+	// When insights is active, the emitted edges must carry the namespace so the
+	// blast-radius topology can be joined to anomalies keyed by (namespace, service).
+	// service.name alone is ambiguous across namespaces, so force k8s.namespace.name
+	// into the connector dimensions (deduped against user-provided extras).
+	if insightsOn && !slices.Contains(dimensions, string(semconv.K8SNamespaceNameKey)) {
+		dimensions = append(dimensions, string(semconv.K8SNamespaceNameKey))
+	}
 
 	// Add the service graph connector to receive the service graph metrics from the root traces pipeline
 	// Retain incomplete edges for up to 15s to allow delayed span matching
@@ -327,10 +346,47 @@ func insertServiceGraphPipeline(currentConfig *config.Config, extraDimensions []
 
 	currentConfig.Connectors[consts.ServiceGraphConnectorName] = connectorCfg
 
-	// Add the service graph pipeline to receive the service graph metrics from the root traces pipeline
+	// metrics/servicegraph receives the connector's metrics and exports them to
+	// the local prometheus/servicegraph endpoint (scraped back for the UI
+	// service map). When insights is active, the same pipeline also fans out
+	// to odigos-insights over OTLP — one connector, one pipeline, two exporters.
+	exporters := []string{"prometheus/servicegraph"}
+	var processors []string
+	if insightsOn {
+		// Stamp the gateway pod name onto the metrics resource so per-pod
+		// cumulative counters don't overwrite each other in ClickHouse (trace
+		// load balancing spreads an edge's spans across gateway pods). Reuse the
+		// self-telemetry processor when present, otherwise define it here so the
+		// pipeline is always valid even if self-telemetry wasn't applied.
+		// Harmless on the Prometheus path: resource_to_telemetry_conversion is
+		// off by default, so k8s.pod.name stays a resource attribute and never
+		// becomes a scrape label on the UI metrics.
+		if _, ok := currentConfig.Processors["resource/pod-name"]; !ok {
+			currentConfig.Processors["resource/pod-name"] = config.GenericMap{
+				"attributes": []config.GenericMap{
+					{
+						"key":    string(semconv.K8SPodNameKey),
+						"value":  "${POD_NAME}",
+						"action": "upsert",
+					},
+				},
+			}
+		}
+		processors = []string{"resource/pod-name"}
+		currentConfig.Exporters[consts.ServiceGraphInsightsExporterName] = config.GenericMap{
+			"endpoint":    gatewayOptions.InsightsOtlpEndpoint,
+			"tls":         config.GenericMap{"insecure": true},
+			"compression": "none",
+			"retry_on_failure": config.GenericMap{
+				"enabled": false,
+			},
+		}
+		exporters = append(exporters, consts.ServiceGraphInsightsExporterName)
+	}
 	currentConfig.Service.Pipelines["metrics/servicegraph"] = config.Pipeline{
-		Receivers: []string{consts.ServiceGraphConnectorName},
-		Exporters: []string{"prometheus/servicegraph"},
+		Receivers:  []string{consts.ServiceGraphConnectorName},
+		Processors: processors,
+		Exporters:  exporters,
 	}
 
 	// Add the service graph exporter to the root traces pipeline
