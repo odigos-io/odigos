@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	graphstatus "github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,7 +41,7 @@ func deriveTypeFromAction(action *model.Action, crd *v1alpha1.Action) model.Acti
 	if action.Fields.Renames != nil {
 		return model.ActionTypeRenameAttribute
 	}
-	if action.Fields.PiiCategories != nil {
+	if action.Fields.PiiCategories != nil || action.Fields.CustomFormatMaskings != nil || action.Fields.CustomRegexMaskings != nil {
 		return model.ActionTypePiiMasking
 	}
 	if action.Fields.URLTemplatizationRulesGroups != nil {
@@ -188,7 +189,11 @@ func getSpecFromInput(input model.ActionInput, existingAction *v1alpha1.Action) 
 	}
 	spec.RenameAttribute = renameAttribute
 
-	spec.PiiMasking = convertPiiMaskingFromInput(input.Fields, existingAction)
+	piiMasking, err := convertPiiMaskingFromInput(input.Fields, existingAction)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert pii masking: %v", err)
+	}
+	spec.PiiMasking = piiMasking
 	spec.URLTemplatization = convertUrlTemplatizationFromInput(input.Fields, existingAction)
 	spec.ExtractAttribute = convertExtractAttributeFromInput(input.Fields, existingAction)
 	spec.DbQueryTemplatization = convertDbQueryTemplatizationFromInput(input.Type, input.Fields, existingAction)
@@ -358,29 +363,71 @@ func convertRenameAttributeFromInput(details *model.ActionFieldsInput, existingA
 	return config, nil
 }
 
-func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.PiiMaskingConfig {
-	withPiiMasking := false
-	var config *apiactions.PiiMaskingConfig
+var supportedPiiCategories = map[actionsapi.PiiCategory]struct{}{
+	actionsapi.CreditCardMasking: {},
+	actionsapi.EmailMasking:      {},
+	actionsapi.JwtMasking:        {},
+	actionsapi.UuidMasking:       {},
+}
 
-	if details.PiiCategories != nil {
-		config = &apiactions.PiiMaskingConfig{}
-
-		piiCategories := make([]actionsapi.PiiCategory, len(details.PiiCategories))
-		for i, cat := range details.PiiCategories {
-			piiCategories[i] = actionsapi.PiiCategory(cat)
-		}
-		config.PiiCategories = piiCategories
-		withPiiMasking = true
-	}
+func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) (*apiactions.PiiMaskingConfig, error) {
+	withPiiMasking := details.PiiCategories != nil ||
+		details.CustomFormatMaskings != nil ||
+		details.CustomRegexMaskings != nil
 
 	if !withPiiMasking {
 		if existingAction != nil && existingAction.Spec.PiiMasking != nil {
-			return existingAction.Spec.PiiMasking
+			return existingAction.Spec.PiiMasking, nil
 		}
-		return nil
+		return nil, nil
 	}
 
-	return config
+	config := &apiactions.PiiMaskingConfig{}
+	if existingAction != nil && existingAction.Spec.PiiMasking != nil {
+		// Preserve fields omitted from the input (partial update).
+		config = existingAction.Spec.PiiMasking.DeepCopy()
+	}
+
+	if details.PiiCategories != nil {
+		piiCategories := make([]actionsapi.PiiCategory, len(details.PiiCategories))
+		for i, cat := range details.PiiCategories {
+			category := actionsapi.PiiCategory(cat)
+			if _, ok := supportedPiiCategories[category]; !ok {
+				return nil, fmt.Errorf("unsupported pii category %q: supported values: CREDIT_CARD, EMAIL, JWT, UUID", cat)
+			}
+			piiCategories[i] = category
+		}
+		config.PiiCategories = piiCategories
+	}
+
+	if details.CustomFormatMaskings != nil {
+		formatMaskings := make([]actionsapi.CustomFormatMasking, 0, len(details.CustomFormatMaskings))
+		for _, m := range details.CustomFormatMaskings {
+			if m == nil {
+				continue
+			}
+			formatMaskings = append(formatMaskings, actionsapi.CustomFormatMasking{
+				LookupKey:  m.LookupKey,
+				DataFormat: actionsapi.DataFormat(m.DataFormat),
+			})
+		}
+		config.CustomFormatMaskings = formatMaskings
+	}
+
+	if details.CustomRegexMaskings != nil {
+		regexMaskings := make([]actionsapi.CustomRegexMasking, 0, len(details.CustomRegexMaskings))
+		for _, m := range details.CustomRegexMaskings {
+			if m == nil {
+				continue
+			}
+			regexMaskings = append(regexMaskings, actionsapi.CustomRegexMasking{
+				Regex: m.Regex,
+			})
+		}
+		config.CustomRegexMaskings = regexMaskings
+	}
+
+	return config, nil
 }
 
 func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
@@ -409,8 +456,12 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	}
 
 	var piiCategories []string
+	var customFormatMaskings []*model.CustomFormatMasking
+	var customRegexMaskings []*model.CustomRegexMasking
 	if action.Spec.PiiMasking != nil {
 		piiCategories = convertPiiCategoriesToModel(action.Spec.PiiMasking.PiiCategories)
+		customFormatMaskings = convertCustomFormatMaskingsToModel(action.Spec.PiiMasking.CustomFormatMaskings)
+		customRegexMaskings = convertCustomRegexMaskingsToModel(action.Spec.PiiMasking.CustomRegexMaskings)
 	}
 
 	urlTemplatizationGroups := convertUrlTemplatizationToModel(action.Spec.URLTemplatization)
@@ -423,6 +474,8 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		ClusterAttributes:            clustAttrs,
 		Renames:                      renames,
 		PiiCategories:                piiCategories,
+		CustomFormatMaskings:         customFormatMaskings,
+		CustomRegexMaskings:          customRegexMaskings,
 		URLTemplatizationRulesGroups: urlTemplatizationGroups,
 		ExtractAttribute:             extractAttribute,
 		Scopes:                       scopes,
@@ -470,6 +523,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 
 	response.Type = deriveTypeFromAction(response, action)
 	response.Conditions = ConvertConditions(action.Status.Conditions)
+	response.Statuses = graphstatus.ConvertActionConditionsToStatuses(action.Status.Conditions, action.Generation)
 
 	return response, nil
 }
@@ -552,6 +606,33 @@ func convertPiiCategoriesToModel(piiCategories []actionsapi.PiiCategory) []strin
 		result = append(result, string(category))
 	}
 
+	return result
+}
+
+func convertCustomFormatMaskingsToModel(maskings []actionsapi.CustomFormatMasking) []*model.CustomFormatMasking {
+	if len(maskings) == 0 {
+		return nil
+	}
+	result := make([]*model.CustomFormatMasking, 0, len(maskings))
+	for _, m := range maskings {
+		result = append(result, &model.CustomFormatMasking{
+			LookupKey:  m.LookupKey,
+			DataFormat: model.ExtractionDataFormat(m.DataFormat),
+		})
+	}
+	return result
+}
+
+func convertCustomRegexMaskingsToModel(maskings []actionsapi.CustomRegexMasking) []*model.CustomRegexMasking {
+	if len(maskings) == 0 {
+		return nil
+	}
+	result := make([]*model.CustomRegexMasking, 0, len(maskings))
+	for _, m := range maskings {
+		result = append(result, &model.CustomRegexMasking{
+			Regex: m.Regex,
+		})
+	}
 	return result
 }
 

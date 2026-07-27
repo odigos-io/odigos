@@ -12,8 +12,8 @@ import (
 
 func SetupWithManager(mgr ctrl.Manager) error {
 	err := ctrl.NewControllerManagedBy(mgr).
-		For(&odigosv1.Action{}).
-		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		For(&odigosv1.Action{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&odigosv1.Processor{}, builder.MatchEveryOwner).
 		Complete(&ActionReconciler{
 			Client: mgr.GetClient(),
 		})
@@ -29,34 +29,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 			&odigospredicate.OdigosURLTemplatizationProcessorPredicate,
 		)).
 		Complete(&SharedURLTemplatizationProcessorReconciler{
-			Client: mgr.GetClient(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = ctrl.NewControllerManagedBy(mgr).
-		Named("shared-pii-masking-processor").
-		For(&odigosv1.Processor{}).
-		WithEventFilter(predicate.And(
-			&predicate.GenerationChangedPredicate{},
-			&odigospredicate.OdigosPiiMaskingProcessorPredicate,
-		)).
-		Complete(&SharedPiiMaskingProcessorReconciler{
-			Client: mgr.GetClient(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = ctrl.NewControllerManagedBy(mgr).
-		Named("shared-sql-query-processor").
-		For(&odigosv1.Processor{}).
-		WithEventFilter(predicate.And(
-			&predicate.GenerationChangedPredicate{},
-			&odigospredicate.OdigosSQLQueryProcessorPredicate,
-		)).
-		Complete(&SharedSQLQueryProcessorReconciler{
 			Client: mgr.GetClient(),
 		})
 	if err != nil {

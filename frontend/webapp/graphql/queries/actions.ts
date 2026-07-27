@@ -55,6 +55,13 @@ export const GET_ACTIONS = gql`
           attributeNamesToDelete
           renames
           piiCategories
+          customFormatMaskings {
+            lookupKey
+            dataFormat
+          }
+          customRegexMaskings {
+            regex
+          }
           urlTemplatizationRulesGroups {
             filterK8sNamespace
             filterK8sWorkloadKind
@@ -95,6 +102,12 @@ export const GET_ACTIONS = gql`
           status
           type
           reason
+          message
+        }
+        statuses {
+          name
+          status
+          reasonEnum
           message
         }
       }

@@ -66,6 +66,12 @@ type ProcessorSpec struct {
 
 // ProcessorStatus defines the observed state of the processor
 type ProcessorStatus struct {
+	// Represents the observations of a processor's current state.
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=type
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
 //+genclient

@@ -15,16 +15,20 @@ spec:
       supported: false
     profiles:
       supported: false
+  processors:
+    - configMechanism: odigosConfigExtension
+      type: odigospiimasking
+      preSpanMetrics: true
   fields:
     - name: piiCategories
-      displayName: Attributes to mask
+      displayName: Predefined PII categories
       componentType: checkboxList
       # Pre-select Credit card to match the previous bespoke form. `array` mode
       # stores the checked option ids as a string[] (the persisted piiCategories shape).
       initialValue: '["CREDIT_CARD"]'
       componentProps:
         valueMode: array
-        tooltip: Select the PII categories to mask.
+        tooltip: Built-in shortcuts that detect and mask common PII patterns (for example credit cards or emails).
         options:
           - id: CREDIT_CARD
             label: Credit card
@@ -34,3 +38,59 @@ spec:
             label: JWT
           - id: UUID
             label: UUID
+
+    # Format-based rules: mask a value found by lookup key inside JSON, SQL, or
+    # a resource path. Persists as customFormatMaskings [{lookupKey, dataFormat}].
+    - name: customFormatMaskings
+      displayName: Custom format maskings
+      initialValue: '[]'
+      componentType: multiTabledInput
+      componentProps:
+        variant: cards
+        tooltip: Mask values found by lookup key inside JSON, SQL, or resource paths.
+        columns:
+          - keyName: dataFormat
+            componentType: radioGroup
+            defaultValue: json
+            options:
+              - id: json
+                label: JSON
+              - id: sql
+                label: SQL
+              - id: resource_path
+                label: Resource path
+          - keyName: lookupKey
+            label: Lookup key
+            placeholder: e.g. customer_id
+            copyByColumn:
+              column: dataFormat
+              map:
+                json:
+                  label: JSON key
+                  placeholder: e.g. customer_id
+                  helpMessage: Type the JSON key whose value should be masked.
+                sql:
+                  label: SQL key
+                  placeholder: e.g. invoice_id
+                  helpMessage: Type the SQL key whose value should be masked.
+                resource_path:
+                  label: Resource path key
+                  placeholder: e.g. tenants
+                  helpMessage: Type the resource name whose value should be masked.
+
+    # Regex-based rules: mask the capture group matched by a custom pattern.
+    # Persists as customRegexMaskings [{regex}].
+    - name: customRegexMaskings
+      displayName: Custom regex maskings
+      initialValue: '[]'
+      componentType: multiTabledInput
+      componentProps:
+        variant: cards
+        tooltip: Mask values matched by a regular expression with a single capture group.
+        columns:
+          - keyName: regex
+            label: Regex
+            placeholder: 'e.g. id=([^&]+)'
+            helpMessage: A regex with a single capture group; the captured value is masked.
+            fullRow: true
+            withRegexTester: true

@@ -9,14 +9,15 @@ import (
 )
 
 type Action struct {
-	ID         string        `json:"id"`
-	Type       ActionType    `json:"type"`
-	Name       *string       `json:"name,omitempty"`
-	Notes      *string       `json:"notes,omitempty"`
-	Disabled   bool          `json:"disabled"`
-	Signals    []SignalType  `json:"signals"`
-	Fields     *ActionFields `json:"fields"`
-	Conditions []*Condition  `json:"conditions,omitempty"`
+	ID         string                    `json:"id"`
+	Type       ActionType                `json:"type"`
+	Name       *string                   `json:"name,omitempty"`
+	Notes      *string                   `json:"notes,omitempty"`
+	Disabled   bool                      `json:"disabled"`
+	Signals    []SignalType              `json:"signals"`
+	Fields     *ActionFields             `json:"fields"`
+	Conditions []*Condition              `json:"conditions,omitempty"`
+	Statuses   []*DesiredConditionStatus `json:"statuses"`
 }
 
 type ActionFieldYamlProperties struct {
@@ -40,6 +41,8 @@ type ActionFields struct {
 	AttributeNamesToDelete       []string                       `json:"attributeNamesToDelete,omitempty"`
 	Renames                      *string                        `json:"renames,omitempty"`
 	PiiCategories                []string                       `json:"piiCategories,omitempty"`
+	CustomFormatMaskings         []*CustomFormatMasking         `json:"customFormatMaskings,omitempty"`
+	CustomRegexMaskings          []*CustomRegexMasking          `json:"customRegexMaskings,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroup `json:"urlTemplatizationRulesGroups,omitempty"`
 	ExtractAttribute             *ExtractAttribute              `json:"extractAttribute,omitempty"`
 	Scopes                       *SourcesScopes                 `json:"scopes,omitempty"`
@@ -59,6 +62,8 @@ type ActionFieldsInput struct {
 	AttributeNamesToDelete       []string                            `json:"attributeNamesToDelete,omitempty"`
 	Renames                      *string                             `json:"renames,omitempty"`
 	PiiCategories                []string                            `json:"piiCategories,omitempty"`
+	CustomFormatMaskings         []*CustomFormatMaskingInput         `json:"customFormatMaskings,omitempty"`
+	CustomRegexMaskings          []*CustomRegexMaskingInput          `json:"customRegexMaskings,omitempty"`
 	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroupInput `json:"urlTemplatizationRulesGroups,omitempty"`
 	ExtractAttribute             *ExtractAttributeInput              `json:"extractAttribute,omitempty"`
 	Scopes                       *SourcesScopesInput                 `json:"scopes,omitempty"`
@@ -316,20 +321,40 @@ type CostReductionRuleInput struct {
 	Notes            *string                            `json:"notes,omitempty"`
 }
 
+type CustomFormatMasking struct {
+	LookupKey  string               `json:"lookupKey"`
+	DataFormat ExtractionDataFormat `json:"dataFormat"`
+}
+
+type CustomFormatMaskingInput struct {
+	LookupKey  string               `json:"lookupKey"`
+	DataFormat ExtractionDataFormat `json:"dataFormat"`
+}
+
 type CustomInstrumentations struct {
 	Golang []*GolangCustomProbe `json:"golang,omitempty"`
 	Java   []*JavaCustomProbe   `json:"java,omitempty"`
+	Php    []*PhpCustomProbe    `json:"php,omitempty"`
 }
 
 type CustomInstrumentationsInput struct {
 	Golang []*GolangCustomProbeInput `json:"golang,omitempty"`
 	Java   []*JavaCustomProbeInput   `json:"java,omitempty"`
+	Php    []*PhpCustomProbeInput    `json:"php,omitempty"`
 }
 
 type CustomReadDataLabel struct {
 	Condition string `json:"condition"`
 	Title     string `json:"title"`
 	Value     string `json:"value"`
+}
+
+type CustomRegexMasking struct {
+	Regex string `json:"regex"`
+}
+
+type CustomRegexMaskingInput struct {
+	Regex string `json:"regex"`
 }
 
 type DataStream struct {
@@ -1434,6 +1459,16 @@ type PersistNamespaceSourceInput struct {
 	Kind              K8sResourceKind `json:"kind"`
 	Selected          bool            `json:"selected"`
 	CurrentStreamName string          `json:"currentStreamName"`
+}
+
+type PhpCustomProbe struct {
+	ClassName    *string `json:"className,omitempty"`
+	FunctionName *string `json:"functionName,omitempty"`
+}
+
+type PhpCustomProbeInput struct {
+	ClassName    *string `json:"className,omitempty"`
+	FunctionName *string `json:"functionName,omitempty"`
 }
 
 type PodAnalyze struct {
