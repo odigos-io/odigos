@@ -12,7 +12,7 @@ import (
 )
 
 // URLTemplateNodeCGReconciler watches the node CollectorsGroup (e.g. span metrics toggled) and re-syncs
-// shared processors whose collector roles depend on span metrics (URL templatization, SQL query).
+// shared processors whose collector roles depend on span metrics (URL templatization).
 // Uses ApplyFull so roles are patched even when the Processor CR already exists
 // (unlike Action reconcile with CreateIfMissing).
 type URLTemplateNodeCGReconciler struct {
@@ -25,16 +25,12 @@ func (r *URLTemplateNodeCGReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		logger.Error(err, "sync URL-templatization processor after node CollectorsGroup change failed")
 		return ctrl.Result{}, err
 	}
-	if err := SyncSQLQueryProcessor(ctx, r.Client, SQLQuerySyncApplyFull); err != nil {
-		logger.Error(err, "sync SQL-query processor after node CollectorsGroup change failed")
-		return ctrl.Result{}, err
-	}
 	return ctrl.Result{}, nil
 }
 
-// urlTemplateNodeCGSpanMetricsTogglePredicate matches SyncUrlTemplatizationProcessor /
-// SyncSQLQueryProcessor: only span metrics on/off (Metrics.SpanMetrics nil vs non-nil)
-// affects shared Processor collector roles.
+// urlTemplateNodeCGSpanMetricsTogglePredicate matches SyncUrlTemplatizationProcessor:
+// only span metrics on/off (Metrics.SpanMetrics nil vs non-nil) affects shared
+// Processor collector roles.
 type urlTemplateNodeCGSpanMetricsTogglePredicate struct{}
 
 func (urlTemplateNodeCGSpanMetricsTogglePredicate) Create(event.CreateEvent) bool {

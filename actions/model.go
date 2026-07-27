@@ -56,6 +56,9 @@ type Processor struct {
 	ConfigMechanism string `yaml:"configMechanism"`
 	// Type is the collector processor type (e.g. "odigossqlquery").
 	Type string `yaml:"type"`
+	// PreSpanMetrics indicates the processor must run on the node collector
+	// before span metrics when span metrics are enabled.
+	PreSpanMetrics bool `yaml:"preSpanMetrics"`
 }
 
 type Field struct {

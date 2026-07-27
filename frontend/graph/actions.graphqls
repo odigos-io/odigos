@@ -153,6 +153,9 @@ type Action {
   signals: [SignalType!]!
   fields: ActionFields!
   conditions: [Condition!]
+  # Desired-state statuses derived from Action CR status conditions
+  # (e.g. TransformedToProcessor, AddedToCollectorConfig).
+  statuses: [DesiredConditionStatus!]!
 }
 
 type ActionFields {

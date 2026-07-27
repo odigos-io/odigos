@@ -12,6 +12,7 @@ spec:
   processors:
     - configMechanism: odigosConfigExtension
       type: odigossqlquery
+      preSpanMetrics: true
   fields:
     - name: scopes
       displayName: Source Scope

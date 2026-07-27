@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	graphstatus "github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -469,6 +470,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 
 	response.Type = deriveTypeFromAction(response, action)
 	response.Conditions = ConvertConditions(action.Status.Conditions)
+	response.Statuses = graphstatus.ConvertActionConditionsToStatuses(action.Status.Conditions)
 
 	return response, nil
 }
