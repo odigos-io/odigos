@@ -59,15 +59,16 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Action struct {
-		Conditions func(childComplexity int) int
-		Disabled   func(childComplexity int) int
-		Fields     func(childComplexity int) int
-		ID         func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Notes      func(childComplexity int) int
-		Signals    func(childComplexity int) int
-		Statuses   func(childComplexity int) int
-		Type       func(childComplexity int) int
+		Conditions  func(childComplexity int) int
+		Disabled    func(childComplexity int) int
+		Fields      func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Notes       func(childComplexity int) int
+		Signals     func(childComplexity int) int
+		Statuses    func(childComplexity int) int
+		Type        func(childComplexity int) int
+		UIGenerated func(childComplexity int) int
 	}
 
 	ActionFieldYamlProperties struct {
@@ -80,23 +81,24 @@ type ComplexityRoot struct {
 	}
 
 	ActionFields struct {
-		AnnotationsAttributes        func(childComplexity int) int
-		AttributeNamesToDelete       func(childComplexity int) int
-		ClusterAttributes            func(childComplexity int) int
-		CollectClusterID             func(childComplexity int) int
-		CollectContainerAttributes   func(childComplexity int) int
-		CollectReplicaSetAttributes  func(childComplexity int) int
-		CollectWorkloadID            func(childComplexity int) int
-		CustomFormatMaskings         func(childComplexity int) int
-		CustomRegexMaskings          func(childComplexity int) int
-		ExtractAttribute             func(childComplexity int) int
-		LabelsAttributes             func(childComplexity int) int
-		OverwriteExistingValues      func(childComplexity int) int
-		PiiCategories                func(childComplexity int) int
-		Renames                      func(childComplexity int) int
-		Scopes                       func(childComplexity int) int
-		TemplatizeLiterals           func(childComplexity int) int
-		URLTemplatizationRulesGroups func(childComplexity int) int
+		AnnotationsAttributes          func(childComplexity int) int
+		AttributeNamesToDelete         func(childComplexity int) int
+		ClusterAttributes              func(childComplexity int) int
+		CollectClusterID               func(childComplexity int) int
+		CollectContainerAttributes     func(childComplexity int) int
+		CollectReplicaSetAttributes    func(childComplexity int) int
+		CollectWorkloadID              func(childComplexity int) int
+		CustomFormatMaskings           func(childComplexity int) int
+		CustomRegexMaskings            func(childComplexity int) int
+		ExtractAttribute               func(childComplexity int) int
+		LabelsAttributes               func(childComplexity int) int
+		OverwriteExistingValues        func(childComplexity int) int
+		PiiCategories                  func(childComplexity int) int
+		Renames                        func(childComplexity int) int
+		Scopes                         func(childComplexity int) int
+		TemplatizeLiterals             func(childComplexity int) int
+		URLTemplatizationDefaultGroups func(childComplexity int) int
+		URLTemplatizationRulesGroups   func(childComplexity int) int
 	}
 
 	ActionTypeOption struct {
@@ -1506,6 +1508,17 @@ type ComplexityRoot struct {
 		Template func(childComplexity int) int
 	}
 
+	UrlTemplatizationDefaultGroup struct {
+		Disabled   func(childComplexity int) int
+		Scopes     func(childComplexity int) int
+		SkipPolicy func(childComplexity int) int
+	}
+
+	UrlTemplatizationDefaultSkipPolicy struct {
+		SkipForNonSuccessCodes func(childComplexity int) int
+		SkipHTTPStatusCodes    func(childComplexity int) int
+	}
+
 	UrlTemplatizationRulesGroup struct {
 		FilterK8sNamespace        func(childComplexity int) int
 		FilterK8sWorkloadKind     func(childComplexity int) int
@@ -1747,6 +1760,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Action.Type(childComplexity), true
 
+	case "Action.uiGenerated":
+		if e.complexity.Action.UIGenerated == nil {
+			break
+		}
+
+		return e.complexity.Action.UIGenerated(childComplexity), true
+
 	case "ActionFieldYamlProperties.componentProperties":
 		if e.complexity.ActionFieldYamlProperties.ComponentProperties == nil {
 			break
@@ -1900,6 +1920,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ActionFields.TemplatizeLiterals(childComplexity), true
+
+	case "ActionFields.urlTemplatizationDefaultGroups":
+		if e.complexity.ActionFields.URLTemplatizationDefaultGroups == nil {
+			break
+		}
+
+		return e.complexity.ActionFields.URLTemplatizationDefaultGroups(childComplexity), true
 
 	case "ActionFields.urlTemplatizationRulesGroups":
 		if e.complexity.ActionFields.URLTemplatizationRulesGroups == nil {
@@ -8238,6 +8265,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.URLTemplatizationRule.Template(childComplexity), true
 
+	case "UrlTemplatizationDefaultGroup.disabled":
+		if e.complexity.UrlTemplatizationDefaultGroup.Disabled == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationDefaultGroup.Disabled(childComplexity), true
+
+	case "UrlTemplatizationDefaultGroup.scopes":
+		if e.complexity.UrlTemplatizationDefaultGroup.Scopes == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationDefaultGroup.Scopes(childComplexity), true
+
+	case "UrlTemplatizationDefaultGroup.skipPolicy":
+		if e.complexity.UrlTemplatizationDefaultGroup.SkipPolicy == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationDefaultGroup.SkipPolicy(childComplexity), true
+
+	case "UrlTemplatizationDefaultSkipPolicy.skipForNonSuccessCodes":
+		if e.complexity.UrlTemplatizationDefaultSkipPolicy.SkipForNonSuccessCodes == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationDefaultSkipPolicy.SkipForNonSuccessCodes(childComplexity), true
+
+	case "UrlTemplatizationDefaultSkipPolicy.skipHttpStatusCodes":
+		if e.complexity.UrlTemplatizationDefaultSkipPolicy.SkipHTTPStatusCodes == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationDefaultSkipPolicy.SkipHTTPStatusCodes(childComplexity), true
+
 	case "UrlTemplatizationRulesGroup.filterK8sNamespace":
 		if e.complexity.UrlTemplatizationRulesGroup.FilterK8sNamespace == nil {
 			break
@@ -8375,6 +8437,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputTemplatizationWorkloadFilterInput,
 		ec.unmarshalInputTraceCorrelationsTimeRangeInput,
 		ec.unmarshalInputURLTemplatizationRuleInput,
+		ec.unmarshalInputUrlTemplatizationDefaultGroupInput,
+		ec.unmarshalInputUrlTemplatizationDefaultSkipPolicyInput,
 		ec.unmarshalInputUrlTemplatizationRulesGroupInput,
 		ec.unmarshalInputWorkloadFilter,
 	)
@@ -11225,6 +11289,8 @@ func (ec *executionContext) fieldContext_Action_fields(_ context.Context, field 
 				return ec.fieldContext_ActionFields_customRegexMaskings(ctx, field)
 			case "urlTemplatizationRulesGroups":
 				return ec.fieldContext_ActionFields_urlTemplatizationRulesGroups(ctx, field)
+			case "urlTemplatizationDefaultGroups":
+				return ec.fieldContext_ActionFields_urlTemplatizationDefaultGroups(ctx, field)
 			case "extractAttribute":
 				return ec.fieldContext_ActionFields_extractAttribute(ctx, field)
 			case "scopes":
@@ -11233,6 +11299,50 @@ func (ec *executionContext) fieldContext_Action_fields(_ context.Context, field 
 				return ec.fieldContext_ActionFields_templatizeLiterals(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ActionFields", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Action_uiGenerated(ctx context.Context, field graphql.CollectedField, obj *model.Action) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Action_uiGenerated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UIGenerated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Action_uiGenerated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Action",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -12230,6 +12340,55 @@ func (ec *executionContext) fieldContext_ActionFields_urlTemplatizationRulesGrou
 				return ec.fieldContext_UrlTemplatizationRulesGroup_notes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationRulesGroup", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFields_urlTemplatizationDefaultGroups(ctx context.Context, field graphql.CollectedField, obj *model.ActionFields) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFields_urlTemplatizationDefaultGroups(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URLTemplatizationDefaultGroups, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.URLTemplatizationDefaultGroup)
+	fc.Result = res
+	return ec.marshalOUrlTemplatizationDefaultGroup2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroupᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFields_urlTemplatizationDefaultGroups(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFields",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "scopes":
+				return ec.fieldContext_UrlTemplatizationDefaultGroup_scopes(ctx, field)
+			case "disabled":
+				return ec.fieldContext_UrlTemplatizationDefaultGroup_disabled(ctx, field)
+			case "skipPolicy":
+				return ec.fieldContext_UrlTemplatizationDefaultGroup_skipPolicy(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationDefaultGroup", field.Name)
 		},
 	}
 	return fc, nil
@@ -16334,6 +16493,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_actions(_ context.Conte
 				return ec.fieldContext_Action_signals(ctx, field)
 			case "fields":
 				return ec.fieldContext_Action_fields(ctx, field)
+			case "uiGenerated":
+				return ec.fieldContext_Action_uiGenerated(ctx, field)
 			case "conditions":
 				return ec.fieldContext_Action_conditions(ctx, field)
 			case "statuses":
@@ -39435,6 +39596,8 @@ func (ec *executionContext) fieldContext_Mutation_createAction(ctx context.Conte
 				return ec.fieldContext_Action_signals(ctx, field)
 			case "fields":
 				return ec.fieldContext_Action_fields(ctx, field)
+			case "uiGenerated":
+				return ec.fieldContext_Action_uiGenerated(ctx, field)
 			case "conditions":
 				return ec.fieldContext_Action_conditions(ctx, field)
 			case "statuses":
@@ -39510,6 +39673,8 @@ func (ec *executionContext) fieldContext_Mutation_updateAction(ctx context.Conte
 				return ec.fieldContext_Action_signals(ctx, field)
 			case "fields":
 				return ec.fieldContext_Action_fields(ctx, field)
+			case "uiGenerated":
+				return ec.fieldContext_Action_uiGenerated(ctx, field)
 			case "conditions":
 				return ec.fieldContext_Action_conditions(ctx, field)
 			case "statuses":
@@ -53555,6 +53720,225 @@ func (ec *executionContext) fieldContext_URLTemplatizationRule_examples(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _UrlTemplatizationDefaultGroup_scopes(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationDefaultGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationDefaultGroup_scopes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Scopes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.SourcesScopes)
+	fc.Result = res
+	return ec.marshalOSourcesScopes2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopes(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationDefaultGroup_scopes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationDefaultGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sources":
+				return ec.fieldContext_SourcesScopes_sources(ctx, field)
+			case "namespaces":
+				return ec.fieldContext_SourcesScopes_namespaces(ctx, field)
+			case "languages":
+				return ec.fieldContext_SourcesScopes_languages(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SourcesScopes", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationDefaultGroup_disabled(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationDefaultGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationDefaultGroup_disabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationDefaultGroup_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationDefaultGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationDefaultGroup_skipPolicy(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationDefaultGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationDefaultGroup_skipPolicy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SkipPolicy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.URLTemplatizationDefaultSkipPolicy)
+	fc.Result = res
+	return ec.marshalOUrlTemplatizationDefaultSkipPolicy2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultSkipPolicy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationDefaultGroup_skipPolicy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationDefaultGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "skipForNonSuccessCodes":
+				return ec.fieldContext_UrlTemplatizationDefaultSkipPolicy_skipForNonSuccessCodes(ctx, field)
+			case "skipHttpStatusCodes":
+				return ec.fieldContext_UrlTemplatizationDefaultSkipPolicy_skipHttpStatusCodes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationDefaultSkipPolicy", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationDefaultSkipPolicy_skipForNonSuccessCodes(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationDefaultSkipPolicy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationDefaultSkipPolicy_skipForNonSuccessCodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SkipForNonSuccessCodes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationDefaultSkipPolicy_skipForNonSuccessCodes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationDefaultSkipPolicy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationDefaultSkipPolicy_skipHttpStatusCodes(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationDefaultSkipPolicy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationDefaultSkipPolicy_skipHttpStatusCodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SkipHTTPStatusCodes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]int)
+	fc.Result = res
+	return ec.marshalOInt2ᚕintᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationDefaultSkipPolicy_skipHttpStatusCodes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationDefaultSkipPolicy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _UrlTemplatizationRulesGroup_filterK8sNamespace(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRulesGroup) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UrlTemplatizationRulesGroup_filterK8sNamespace(ctx, field)
 	if err != nil {
@@ -55899,7 +56283,7 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "customFormatMaskings", "customRegexMaskings", "urlTemplatizationRulesGroups", "extractAttribute", "scopes", "templatizeLiterals"}
+	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "customFormatMaskings", "customRegexMaskings", "urlTemplatizationRulesGroups", "urlTemplatizationDefaultGroups", "extractAttribute", "scopes", "templatizeLiterals"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -56004,6 +56388,13 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 				return it, err
 			}
 			it.URLTemplatizationRulesGroups = data
+		case "urlTemplatizationDefaultGroups":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("urlTemplatizationDefaultGroups"))
+			data, err := ec.unmarshalOUrlTemplatizationDefaultGroupInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroupInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.URLTemplatizationDefaultGroups = data
 		case "extractAttribute":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extractAttribute"))
 			data, err := ec.unmarshalOExtractAttributeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐExtractAttributeInput(ctx, v)
@@ -58861,6 +59252,81 @@ func (ec *executionContext) unmarshalInputURLTemplatizationRuleInput(ctx context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUrlTemplatizationDefaultGroupInput(ctx context.Context, obj any) (model.URLTemplatizationDefaultGroupInput, error) {
+	var it model.URLTemplatizationDefaultGroupInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"scopes", "disabled", "skipPolicy"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "scopes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scopes"))
+			data, err := ec.unmarshalOSourcesScopesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSourcesScopesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Scopes = data
+		case "disabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Disabled = data
+		case "skipPolicy":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skipPolicy"))
+			data, err := ec.unmarshalOUrlTemplatizationDefaultSkipPolicyInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultSkipPolicyInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SkipPolicy = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUrlTemplatizationDefaultSkipPolicyInput(ctx context.Context, obj any) (model.URLTemplatizationDefaultSkipPolicyInput, error) {
+	var it model.URLTemplatizationDefaultSkipPolicyInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"skipForNonSuccessCodes", "skipHttpStatusCodes"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "skipForNonSuccessCodes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skipForNonSuccessCodes"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SkipForNonSuccessCodes = data
+		case "skipHttpStatusCodes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skipHttpStatusCodes"))
+			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SkipHTTPStatusCodes = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUrlTemplatizationRulesGroupInput(ctx context.Context, obj any) (model.URLTemplatizationRulesGroupInput, error) {
 	var it model.URLTemplatizationRulesGroupInput
 	asMap := map[string]any{}
@@ -59026,6 +59492,11 @@ func (ec *executionContext) _Action(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "uiGenerated":
+			out.Values[i] = ec._Action_uiGenerated(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "conditions":
 			out.Values[i] = ec._Action_conditions(ctx, field, obj)
 		case "statuses":
@@ -59159,6 +59630,8 @@ func (ec *executionContext) _ActionFields(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._ActionFields_customRegexMaskings(ctx, field, obj)
 		case "urlTemplatizationRulesGroups":
 			out.Values[i] = ec._ActionFields_urlTemplatizationRulesGroups(ctx, field, obj)
+		case "urlTemplatizationDefaultGroups":
+			out.Values[i] = ec._ActionFields_urlTemplatizationDefaultGroups(ctx, field, obj)
 		case "extractAttribute":
 			out.Values[i] = ec._ActionFields_extractAttribute(ctx, field, obj)
 		case "scopes":
@@ -70292,6 +70765,84 @@ func (ec *executionContext) _URLTemplatizationRule(ctx context.Context, sel ast.
 	return out
 }
 
+var urlTemplatizationDefaultGroupImplementors = []string{"UrlTemplatizationDefaultGroup"}
+
+func (ec *executionContext) _UrlTemplatizationDefaultGroup(ctx context.Context, sel ast.SelectionSet, obj *model.URLTemplatizationDefaultGroup) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, urlTemplatizationDefaultGroupImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UrlTemplatizationDefaultGroup")
+		case "scopes":
+			out.Values[i] = ec._UrlTemplatizationDefaultGroup_scopes(ctx, field, obj)
+		case "disabled":
+			out.Values[i] = ec._UrlTemplatizationDefaultGroup_disabled(ctx, field, obj)
+		case "skipPolicy":
+			out.Values[i] = ec._UrlTemplatizationDefaultGroup_skipPolicy(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var urlTemplatizationDefaultSkipPolicyImplementors = []string{"UrlTemplatizationDefaultSkipPolicy"}
+
+func (ec *executionContext) _UrlTemplatizationDefaultSkipPolicy(ctx context.Context, sel ast.SelectionSet, obj *model.URLTemplatizationDefaultSkipPolicy) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, urlTemplatizationDefaultSkipPolicyImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UrlTemplatizationDefaultSkipPolicy")
+		case "skipForNonSuccessCodes":
+			out.Values[i] = ec._UrlTemplatizationDefaultSkipPolicy_skipForNonSuccessCodes(ctx, field, obj)
+		case "skipHttpStatusCodes":
+			out.Values[i] = ec._UrlTemplatizationDefaultSkipPolicy_skipHttpStatusCodes(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var urlTemplatizationRulesGroupImplementors = []string{"UrlTemplatizationRulesGroup"}
 
 func (ec *executionContext) _UrlTemplatizationRulesGroup(ctx context.Context, sel ast.SelectionSet, obj *model.URLTemplatizationRulesGroup) graphql.Marshaler {
@@ -74725,6 +75276,21 @@ func (ec *executionContext) unmarshalNURLTemplatizationRuleInput2ᚖgithubᚗcom
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNUrlTemplatizationDefaultGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroup(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationDefaultGroup) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UrlTemplatizationDefaultGroup(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNUrlTemplatizationDefaultGroupInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroupInput(ctx context.Context, v any) (*model.URLTemplatizationDefaultGroupInput, error) {
+	res, err := ec.unmarshalInputUrlTemplatizationDefaultGroupInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNUrlTemplatizationRulesGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRulesGroup(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationRulesGroup) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -76122,6 +76688,42 @@ func (ec *executionContext) marshalOInstrumentorConfig2ᚖgithubᚗcomᚋodigos�
 		return graphql.Null
 	}
 	return ec._InstrumentorConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚕintᚄ(ctx context.Context, v any) ([]int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
@@ -78115,6 +78717,86 @@ func (ec *executionContext) marshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigo
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOUrlTemplatizationDefaultGroup2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroupᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.URLTemplatizationDefaultGroup) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUrlTemplatizationDefaultGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroup(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOUrlTemplatizationDefaultGroupInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroupInputᚄ(ctx context.Context, v any) ([]*model.URLTemplatizationDefaultGroupInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.URLTemplatizationDefaultGroupInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNUrlTemplatizationDefaultGroupInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultGroupInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOUrlTemplatizationDefaultSkipPolicy2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultSkipPolicy(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationDefaultSkipPolicy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._UrlTemplatizationDefaultSkipPolicy(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOUrlTemplatizationDefaultSkipPolicyInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationDefaultSkipPolicyInput(ctx context.Context, v any) (*model.URLTemplatizationDefaultSkipPolicyInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUrlTemplatizationDefaultSkipPolicyInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOUrlTemplatizationRulesGroup2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRulesGroupᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.URLTemplatizationRulesGroup) graphql.Marshaler {

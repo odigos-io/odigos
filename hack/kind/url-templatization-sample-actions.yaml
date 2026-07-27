@@ -1,0 +1,149 @@
+# Sample URL templatization Actions for kind / UI development.
+# Apply: kubectl apply -f hack/kind/url-templatization-sample-actions.yaml
+---
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: action-q2k2j
+  namespace: odigos-system
+spec:
+  actionName: URL templates - global
+  notes: Global REST API templates — user/org trees, wildcards for static segments
+  signals:
+    - TRACES
+  urlTemplatization:
+    rules:
+      - templates:
+          - /users/{id}
+          - /users/{id}/profile
+          - /users/{id}/settings
+          - /users/{id}/orders
+          - /users/{id}/orders/{orderId}
+          - /users/{id}/orders/{orderId}/items/{itemId}
+          - /users/{id}/subroute/{subrouteId}
+          - /users/{id}/subroute/{subrouteId}/attachments/*
+          - /users/{id}/notifications/*
+          - /organizations/{orgId}
+          - /organizations/{orgId}/members/{memberId}
+          - /organizations/{orgId}/billing/invoices/{invoiceId}
+          - /api/v1/products/{productId}
+          - /api/v1/products/{productId}/reviews/{reviewId}
+          - /api/v1/categories/*
+          - /static/*
+          - /health
+          - /ready
+          - /version
+      - scopes:
+          languages:
+            - java
+        templates:
+          - /actuator/*
+          - /api/v2/accounts/{accountId}
+          - /api/v2/accounts/{accountId}/transactions/{transactionId}
+          - /api/v2/accounts/{accountId}/documents/*
+      - scopes:
+          languages:
+            - python
+        templates:
+          - /api/v1/workflows/{workflowId}
+          - /api/v1/workflows/{workflowId}/runs/{runId}
+          - /api/v1/workflows/{workflowId}/runs/{runId}/steps/*
+---
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: action-s6php
+  namespace: odigos-system
+spec:
+  actionName: URL templates - java-sql-query
+  notes: sql-query workload — query JDBC admin paths with wildcard result blobs
+  signals:
+    - TRACES
+  urlTemplatization:
+    default:
+      - scopes:
+          namespaces:
+            - java-sql-query
+        skipPolicy:
+          skipForNonSuccessCodes: true
+    rules:
+      - scopes:
+          namespaces:
+            - java-sql-query
+          sources:
+            - kind: Deployment
+              name: sql-query
+              namespace: java-sql-query
+        templates:
+          - /api/queries/{queryId}
+          - /api/queries/{queryId}/execute
+          - /api/queries/{queryId}/explain
+          - /api/queries/{queryId}/results/*
+          - /jdbc/{table}/{id}
+          - /jdbc/{table}/{id}/columns
+          - /jdbc/{table}/{id}/indexes
+          - /admin/datasources/{datasourceId}
+          - /admin/datasources/{datasourceId}/schemas/*
+          - /admin/migrations/*
+          - /health
+---
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: action-xqrhn
+  namespace: odigos-system
+spec:
+  actionName: URL templates - disabled
+  disabled: true
+  notes: Disabled action — portal user subtree and legacy admin paths
+  signals:
+    - TRACES
+  urlTemplatization:
+    rules:
+      - templates:
+          - /legacy/{segment}
+          - /legacy/{segment}/details/*
+          - /admin/{resource}/{id}
+          - /admin/{resource}/{id}/audit/*
+          - /admin/{resource}/{id}/permissions/*
+      - scopes:
+          namespaces:
+            - production
+        templates:
+          - /portal/users/{id}
+          - /portal/users/{id}/subroute/{subrouteId}
+          - /portal/users/{id}/subroute/{subrouteId}/files/*
+          - /portal/organizations/{orgId}/settings/*
+---
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: action-pyurl
+  namespace: odigos-system
+spec:
+  actionName: URL templates - python checkout
+  notes: Python-only ecommerce API with checkout tree and openapi wildcard
+  signals:
+    - TRACES
+  urlTemplatization:
+    default:
+      - scopes:
+          languages:
+            - python
+        skipPolicy:
+          skipHttpStatusCodes:
+            - 404
+    rules:
+      - scopes:
+          languages:
+            - python
+        templates:
+          - /api/v1/checkout/{cartId}
+          - /api/v1/checkout/{cartId}/items/{itemId}
+          - /api/v1/checkout/{cartId}/payment/*
+          - /api/v1/inventory/{sku}
+          - /api/v1/inventory/{sku}/warehouses/{warehouseId}
+          - /api/v1/customers/{customerId}
+          - /api/v1/customers/{customerId}/addresses/{addressId}
+          - /openapi/*
+          - /docs/*

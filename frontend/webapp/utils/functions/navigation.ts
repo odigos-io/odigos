@@ -2,7 +2,7 @@ import { ROUTES } from '../constants';
 import { SVG } from '@odigos/ui-kit/types';
 import { NavbarProps } from '@odigos/ui-kit/components';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import { OverviewIcon, PipelineCollectorIcon, SamplingIcon, ServiceMapIcon, SettingsIcon } from '@odigos/ui-kit/icons';
+import { ActionIcon, OverviewIcon, PipelineCollectorIcon, SamplingIcon, ServiceMapIcon, SettingsIcon } from '@odigos/ui-kit/icons';
 
 const getPayloadForIcon = (router: AppRouterInstance, currentPath: string, targetPath: string, label: string, icon: SVG): NavbarProps['icons'][number] => {
   return {
@@ -20,6 +20,7 @@ export const getNavbarIcons = (router: AppRouterInstance, currentPath: string) =
     getPayloadForIcon(router, currentPath, ROUTES.SERVICE_MAP, 'Service Map', ServiceMapIcon),
     getPayloadForIcon(router, currentPath, ROUTES.PIPELINE_COLLECTORS, 'Collectors Pipeline', PipelineCollectorIcon),
     getPayloadForIcon(router, currentPath, ROUTES.SAMPLING, 'Sampling Rules', SamplingIcon),
+    getPayloadForIcon(router, currentPath, ROUTES.URL_TEMPLATING, 'URL Templating', ActionIcon),
     getPayloadForIcon(router, currentPath, ROUTES.SETTINGS, 'Settings', SettingsIcon),
   ];
 
