@@ -1,0 +1,146 @@
+import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
+
+## Considerations
+
+<Warning>
+  Before enabling **infer DB attributes**, please note the following:
+  - Currently, only trace signals are supported.
+  - The action parses `db.query.text` when present, otherwise `db.statement`.
+  - Existing `db.operation.name` / `db.collection.name` (or legacy `db.operation` / `db.sql.table`) values are **not** overwritten.
+  - Attributes are added only when inference is unambiguous: a single SQL operation and a single table/collection.
+  - When new operation (and optionally collection) attributes are added, the span name may be updated to `OPERATION collection` (e.g. `SELECT users`) if it does not already contain those values.
+  - Spans without a `db.system` / `db.system.name` attribute, or with a known non-SQL system (e.g. MongoDB, Redis), are skipped.
+</Warning>
+
+## Use Cases
+
+**Enrich incomplete database spans**
+
+- Some instrumentations record only the raw query text. This action derives OpenTelemetry semantic attributes (`db.operation.name`, `db.collection.name`) so backends can filter and group by operation and table.
+
+**Better span names and metrics**
+
+- Normalized span names such as `SELECT users` make traces easier to read and improve aggregations when span metrics are enabled.
+
+**Consistent attributes across languages**
+
+- Apply the same inference rules cluster-wide, regardless of which language or library produced the span.
+
+## Configuration Options
+
+The InferDbAttributes action is configured using the `odigos.io/v1alpha1.Action` CRD with the `inferDbAttributes` configuration section.
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the action will operate on.
+    - This field is *required*
+    - Supported values: `TRACES`
+  </Accordion>
+  <Accordion title="inferDbAttributes *">
+    **inferDbAttributes** `object` : Configuration for the InferDbAttributes action.
+    - This field is *required* for this action type
+    - No additional options are required; an empty object enables inference for matching sources.
+    <AccordionGroup>
+      <Accordion title="scopes">
+        **scopes** `object` : Limits which sources this config applies to.
+        - This field is *optional*
+        - If unset or empty, the config is applied to all sources.
+        <AccordionGroup>
+          <Accordion title="sources">
+            **sources** `object[]` : A list of workloads to apply this action to.
+            - Each entry requires `name`, `namespace`, and `kind` (`Deployment`, `StatefulSet`, or `DaemonSet`).
+          </Accordion>
+          <Accordion title="namespaces">
+            **namespaces** `string[]` : Apply this action to all sources in the listed namespaces.
+          </Accordion>
+          <Accordion title="languages">
+            **languages** `string[]` : Apply this action only to containers instrumented with the listed programming languages.
+          </Accordion>
+        </AccordionGroup>
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+Given a span with:
+
+```text
+db.query.text: SELECT * FROM users WHERE id = 1
+```
+
+and without `db.operation.name` / `db.collection.name`, the action adds:
+
+| Attribute | Value |
+| --------- | ----- |
+| `db.operation.name` | `SELECT` |
+| `db.collection.name` | `users` |
+
+and may set the span name to `SELECT users`.
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml infer-db-attributes.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
+    metadata:
+      name: infer-db-attributes
+      namespace: odigos-system
+    spec:
+      actionName: Infer DB Attributes
+      signals:
+        - TRACES
+      inferDbAttributes: {}
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```bash
+    kubectl apply -f infer-db-attributes.yaml
+    ```
+  </Step>
+</Steps>
+
+## Scoped Example
+
+To limit inference to specific workloads, add `scopes`. Omit `scopes` (or leave it empty) to apply the action to all sources.
+
+```yaml infer-db-attributes-scoped.yaml
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: infer-db-attributes-my-app
+  namespace: odigos-system
+spec:
+  actionName: Infer DB Attributes for my-app
+  signals:
+    - TRACES
+  inferDbAttributes:
+    scopes:
+      sources:
+        - name: my-app
+          namespace: default
+          kind: Deployment
+```
+
+<Tip>
+  Pair this action with [DB Query Templatization](./dbquerytemplatization) to both infer semantic attributes and replace literals in the query text.
+</Tip>
