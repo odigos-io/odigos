@@ -341,6 +341,20 @@ spec:
                                     type: string
                                 type: object
                               type: array
+                            php:
+                              items:
+                                description: |-
+                                  PhpCustomProbe contains the details for a custom probe for PHP applications.
+                                  className is optional; when empty, functionName refers to a global function.
+                                properties:
+                                  className:
+                                    type: string
+                                  functionName:
+                                    type: string
+                                required:
+                                - functionName
+                                type: object
+                              type: array
                           type: object
                         headSampling:
                           description: |-
