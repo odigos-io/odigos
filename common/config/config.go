@@ -17,6 +17,9 @@ type ExporterConfigurer interface {
 	// expected to be unique across all instances of exporters used in collector config, [a-zA-Z0-9-_]+
 	GetID() string
 	GetConfig() map[string]string
+	// GetSendingQueue returns destination-level sending_queue and batch settings.
+	// Destinations apply defaults (1000 requests / 8192 items) when unset.
+	GetSendingQueueConfig() *SendingQueueConfig
 }
 
 type ProcessorConfigurer interface {

@@ -88,6 +88,41 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              sendingQueue:
+                description: SendingQueue configures exporterhelper sending_queue
+                  for this destination's exporters.
+                properties:
+                  batch:
+                    description: Batch configures exporterhelper sending_queue.batch
+                      for this destination's exporters.
+                    properties:
+                      size:
+                        description: Size is the minimum batch size before flush.
+                          Maps to exporterhelper sending_queue.batch.min_size.
+                        minimum: 1
+                        type: integer
+                      unit:
+                        description: Unit is how batch size is measured (items or
+                          bytes). Maps to exporterhelper sending_queue.batch.sizer.
+                        enum:
+                        - items
+                        - bytes
+                        type: string
+                    type: object
+                  size:
+                    description: Size is the maximum queue size. Maps to exporterhelper
+                      sending_queue.queue_size.
+                    minimum: 1
+                    type: integer
+                  unit:
+                    description: Unit is how queue size is measured (items, bytes,
+                      requests). Maps to exporterhelper sending_queue.sizer.
+                    enum:
+                    - items
+                    - bytes
+                    - requests
+                    type: string
+                type: object
               signals:
                 items:
                   enum:
