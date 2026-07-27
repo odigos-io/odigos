@@ -9,66 +9,59 @@ spec:
   type: 'AddedToCollectorConfig'
 
   docs:
-    title: "Action Added to Collector Config"
-    summary: "Technical status for whether an action's configuration was written into a collector ConfigMap."
+    title: "Action Added to Collector Configuration"
+    summary: "Reports whether this action's settings were written into the configuration used by the Odigos collectors."
     description: |
-      This status applies to:
-      - odigosConfigExtension actions, written directly into a collector ConfigMap
-      - 1:1 processor-backed actions, when the owned Processor (same name as the Action)
-        has been reconciled into a collector ConfigMap
+      Actions that run in the collectors need their settings included in the
+      collectors' configuration (cluster collector and/or node collectors).
 
-      Shared-processor actions (for example URL templatization) do not set this condition.
+      This status confirms that Odigos finished updating that configuration
+      to include the action, or removed it because the action is disabled.
 
-      This condition reports only that the ConfigMap was updated to include the action,
-      or that it was removed because the action is disabled.
-
-      It is a technical status and is not a primary user-facing health signal.
-      It does not mean the collector has reloaded or accepted the config, that the collector is running,
-      that there are no collector errors, or that the action applies to every source.
+      It does not mean collectors have already reloaded their configuration,
+      are healthy, or that you will immediately see the effect in your telemetry.
 
     states:
     - state: "clusterGateway"
-      summary: "Action configuration was written into or removed from the cluster gateway collector ConfigMap."
+      summary: "Action settings were written into or removed from the cluster collector configuration."
     - state: "nodeCollector"
-      summary: "Action configuration was written into or removed from the node collector ConfigMap."
+      summary: "Action settings were written into or removed from the node collector configuration."
 
   reasons:
 
   - name: "ConfigUpdated"
-    title: "Added to Collector Config"
+    title: "Added to Collector Configuration"
     k8sConditionStatus: "True"
     odigosSeverity: "Success"
-    summary: "This action's configuration is present in a collector ConfigMap."
+    summary: "This action's settings are present in the collector configuration."
     description: |
-      Odigos successfully updated a collector ConfigMap to include this action's processor configuration
-      (either directly for odigosConfigExtension actions, or via the owned Processor for 1:1 actions).
-      This is a technical status only.
-      It does not confirm that the collector has reloaded the config, is healthy, or that the action is applied to all sources.
+      Odigos updated the collectors' configuration to include this action.
+      Collectors may still need to reload their configuration before the change is fully active.
+      This does not by itself confirm that telemetry already reflects the action.
     states:
     - state: "clusterGateway"
-      title: "Added to Cluster Gateway Config"
-      summary: "This action's configuration is present in the cluster gateway collector ConfigMap."
-      message: "Action was added to the cluster gateway collector ConfigMap."
+      title: "Added to Cluster Collector Configuration"
+      summary: "This action's settings are present in the cluster collector configuration."
+      message: "Action was added to the cluster collector configuration."
     - state: "nodeCollector"
-      title: "Added to Node Collector Config"
-      summary: "This action's configuration is present in the node collector ConfigMap."
-      message: "Action was added to the node collector ConfigMap."
+      title: "Added to Node Collector Configuration"
+      summary: "This action's settings are present in the node collector configuration."
+      message: "Action was added to the node collector configuration."
 
   - name: "ConfigRemovedDisabled"
-    title: "Removed from Collector Config (Disabled)"
+    title: "Removed from Collector Configuration (Disabled)"
     k8sConditionStatus: "False"
     odigosSeverity: "Disabled"
-    summary: "This action is disabled, so its configuration was removed from the collector ConfigMap."
+    summary: "This action is disabled, so it was removed from the collector configuration."
     description: |
-      The action is disabled.
-      Odigos removed its processor configuration from the collector ConfigMap so it is not part of the pipeline.
-      Re-enable the action to add it back to the collector config.
+      This action is disabled, so Odigos removed it from the collectors' configuration.
+      Re-enable the action to add it back to the collector configuration.
     states:
     - state: "clusterGateway"
-      title: "Removed from Cluster Gateway Config (Disabled)"
-      summary: "This action is disabled, so its configuration was removed from the cluster gateway collector ConfigMap."
-      message: "Action is disabled; removed from the cluster gateway collector ConfigMap."
+      title: "Removed from Cluster Collector Configuration (Disabled)"
+      summary: "This action is disabled, so it was removed from the cluster collector configuration."
+      message: "Action is disabled; removed from the cluster collector configuration."
     - state: "nodeCollector"
-      title: "Removed from Node Collector Config (Disabled)"
-      summary: "This action is disabled, so its configuration was removed from the node collector ConfigMap."
-      message: "Action is disabled; removed from the node collector ConfigMap."
+      title: "Removed from Node Collector Configuration (Disabled)"
+      summary: "This action is disabled, so it was removed from the node collector configuration."
+      message: "Action is disabled; removed from the node collector configuration."
