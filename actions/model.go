@@ -16,10 +16,16 @@ type Metadata struct {
 	// Type must match the GraphQL ActionType enum value (e.g. "K8sAttributesResolver").
 	Type        string `yaml:"type"`
 	DisplayName string `yaml:"displayName"`
+	// Category groups related actions in the action picker (e.g. "enrichment").
+	// The UI resolves the human-readable section title from this slug.
+	Category string `yaml:"category"`
 }
 
 type Spec struct {
-	// Description is a short, human-readable summary shown in the action picker.
+	// Subtitle is a one-line summary shown under the action title in the
+	// action picker list.
+	Subtitle string `yaml:"subtitle"`
+	// Description is the longer summary shown at the top of the action form.
 	Description string `yaml:"description"`
 	// Signals declares which telemetry signals this action can process. Mirrors
 	// the destinations catalog (odigos/destinations) so the YAML authoring format
