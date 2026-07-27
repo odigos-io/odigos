@@ -34,6 +34,7 @@ func (d profilesDestination) GetType() common.DestinationType { return common.Py
 func (d profilesDestination) GetConfig() map[string]string {
 	return map[string]string{"PYROSCOPE_URL": "pyroscope.example.com:4040"}
 }
+func (d profilesDestination) GetSendingQueueConfig() *config.SendingQueueConfig { return nil }
 func (d profilesDestination) GetSignals() []common.ObservabilitySignal {
 	return []common.ObservabilitySignal{common.ProfilesObservabilitySignal}
 }
