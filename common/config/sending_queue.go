@@ -1,5 +1,7 @@
 package config
 
+import "strings"
+
 // Sending queue batch config for OpenTelemetry exporterhelper.
 // Replaces the standalone batchprocessor when set on an exporter.
 // https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/exporterhelper/README.md#sending-queue
@@ -81,4 +83,91 @@ func BuildSendingQueue(queue SendingQueueConfig) GenericMap {
 		sendingQueue["queue_size"] = queue.Size
 	}
 	return sendingQueue
+}
+
+// ConfigureDestination runs the destination configer, then applies destination-level
+// sending_queue to every exporter referenced by the returned pipelines.
+// sendingQueueApplied is true when sending_queue was applied to every exporter on every
+// pipeline; false means it could not (keep the legacy batch processor).
+func ConfigureDestination(configer Configer, dest ExporterConfigurer, cfg *Config) (pipelineNames []string, sendingQueueApplied bool, err error) {
+	pipelineNames, err = configer.ModifyConfig(dest, cfg)
+	if err != nil {
+		return nil, false, err
+	}
+	sendingQueueApplied = applySendingQueue(dest, cfg, pipelineNames)
+	return pipelineNames, sendingQueueApplied, nil
+}
+
+// applySendingQueue stamps sending_queue onto supported exporters.
+// Returns true when sending_queue was applied to every exporter on every pipeline;
+// false if any exporter could not receive it.
+func applySendingQueue(dest ExporterConfigurer, cfg *Config, pipelineNames []string) bool {
+	q := dest.GetSendingQueueConfig()
+	if q == nil {
+		return false
+	}
+	queue := BuildSendingQueue(*q)
+	applied := len(pipelineNames) > 0
+
+	for _, pipelineName := range pipelineNames {
+		pipeline, ok := cfg.Service.Pipelines[pipelineName]
+		if !ok {
+			applied = false
+			continue
+		}
+		if len(pipeline.Exporters) == 0 {
+			applied = false
+			continue
+		}
+		for _, exporterName := range pipeline.Exporters {
+			if !supportsSendingQueue(exporterName) {
+				applied = false
+				continue
+			}
+			exporterConfig, ok := cfg.Exporters[exporterName]
+			if !ok {
+				applied = false
+				continue
+			}
+			switch m := exporterConfig.(type) {
+			case GenericMap:
+				m["sending_queue"] = queue
+			case map[string]interface{}:
+				m["sending_queue"] = queue
+			default:
+				applied = false
+			}
+		}
+	}
+	return applied
+}
+
+// unsupportedSendingQueuePrefixes are collector exporter type prefixes that lack
+// exporterhelper sending_queue (checked against collector v0.151.0) and keep the
+// pipeline batch processor until fixed upstream / in our exporters:
+//   - nop/, debug/ — no exporterhelper.WithQueue
+//   - awsemf/, awsxray/ — no exporterhelper.WithQueue
+//   - azureblobstorage/, googlecloudstorage/ — helper without WithQueue
+//   - prometheusremotewrite/ — uses remote_write_queue, not sending_queue
+//
+// TODO(2026-07-27): revisit when collector exporters gain sending_queue support.
+var unsupportedSendingQueuePrefixes = []string{
+	"nop/",
+	"debug/",
+	"awsemf/",
+	"awsxray/",
+	"azureblobstorage/",
+	"googlecloudstorage/",
+	"prometheusremotewrite/",
+}
+
+// supportsSendingQueue reports whether the collector exporter type accepts
+// exporterhelper sending_queue.
+func supportsSendingQueue(exporterName string) bool {
+	for _, prefix := range unsupportedSendingQueuePrefixes {
+		if strings.HasPrefix(exporterName, prefix) {
+			return false
+		}
+	}
+	return true
 }
