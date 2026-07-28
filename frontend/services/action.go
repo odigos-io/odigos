@@ -108,7 +108,7 @@ func CreateAction(ctx context.Context, input model.ActionInput) (*model.Action, 
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "action-",
 			Labels: map[string]string{
-				k8sconsts.OdigosCreatedByLabel: k8sconsts.OdigosCreatedByOdigosUIValue,
+				k8sconsts.OdigosProfilesManagedByLabel: k8sconsts.OdigosUIManagedByValue,
 			},
 		},
 		Spec: *spec,
@@ -541,7 +541,7 @@ func isActionUiGenerated(action *v1alpha1.Action) bool {
 	if action == nil || action.Labels == nil {
 		return false
 	}
-	return action.Labels[k8sconsts.OdigosCreatedByLabel] == k8sconsts.OdigosCreatedByOdigosUIValue
+	return action.Labels[k8sconsts.OdigosProfilesManagedByLabel] == k8sconsts.OdigosUIManagedByValue
 }
 
 func convertLabelsAttributesToModel(labelsAttributes []actionsv1.K8sLabelAttribute) []*model.K8sLabelAttribute {

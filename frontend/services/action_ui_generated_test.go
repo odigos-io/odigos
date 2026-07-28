@@ -14,13 +14,13 @@ func TestIsActionUiGenerated(t *testing.T) {
 	require.False(t, isActionUiGenerated(&v1alpha1.Action{}))
 	require.False(t, isActionUiGenerated(&v1alpha1.Action{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{k8sconsts.OdigosCreatedByLabel: "helm"},
+			Labels: map[string]string{k8sconsts.OdigosProfilesManagedByLabel: "helm"},
 		},
 	}))
 	require.True(t, isActionUiGenerated(&v1alpha1.Action{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				k8sconsts.OdigosCreatedByLabel: k8sconsts.OdigosCreatedByOdigosUIValue,
+				k8sconsts.OdigosProfilesManagedByLabel: k8sconsts.OdigosUIManagedByValue,
 			},
 		},
 	}))
@@ -31,7 +31,7 @@ func TestConvertActionToModelReportsUiGenerated(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "action-ui",
 			Labels: map[string]string{
-				k8sconsts.OdigosCreatedByLabel: k8sconsts.OdigosCreatedByOdigosUIValue,
+				k8sconsts.OdigosProfilesManagedByLabel: k8sconsts.OdigosUIManagedByValue,
 			},
 		},
 	}

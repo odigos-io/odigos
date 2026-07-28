@@ -169,7 +169,7 @@ type Action {
   signals: [SignalType!]!
   fields: ActionFields!
   # True when this Action was created from the Odigos UI
-  # (metadata label odigos.io/created-by=odigos-ui).
+  # (metadata label odigos.io/managed-by=odigos-ui).
   uiGenerated: Boolean!
   conditions: [Condition!]
   # Desired-state statuses derived from Action CR status conditions
