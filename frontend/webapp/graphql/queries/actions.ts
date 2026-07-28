@@ -64,6 +64,15 @@ export const GET_ACTIONS = gql`
             regex
           }
           urlTemplatizationRulesGroups {
+            scopes {
+              namespaces
+              languages
+              sources {
+                namespace
+                kind
+                name
+              }
+            }
             filterK8sNamespace
             filterK8sWorkloadKind
             filterK8sWorkloadName

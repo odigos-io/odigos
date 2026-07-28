@@ -43,6 +43,15 @@ export const CREATE_ACTION = gql`
           regex
         }
         urlTemplatizationRulesGroups {
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
           filterK8sNamespace
           filterK8sWorkloadKind
           filterK8sWorkloadName
@@ -146,6 +155,15 @@ export const UPDATE_ACTION = gql`
           regex
         }
         urlTemplatizationRulesGroups {
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
           filterK8sNamespace
           filterK8sWorkloadKind
           filterK8sWorkloadName

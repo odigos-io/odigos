@@ -1852,22 +1852,24 @@ type URLTemplatizationDefaultSkipPolicyInput struct {
 }
 
 type URLTemplatizationRulesGroup struct {
+	Scopes                    *SourcesScopes                  `json:"scopes,omitempty"`
+	TemplatizationRules       []*URLTemplatizationRule        `json:"templatizationRules"`
 	FilterK8sNamespace        *string                         `json:"filterK8sNamespace,omitempty"`
 	FilterK8sWorkloadKind     *K8sResourceKind                `json:"filterK8sWorkloadKind,omitempty"`
 	FilterK8sWorkloadName     *string                         `json:"filterK8sWorkloadName,omitempty"`
 	FilterProgrammingLanguage *string                         `json:"filterProgrammingLanguage,omitempty"`
 	WorkloadFilters           []*TemplatizationWorkloadFilter `json:"workloadFilters,omitempty"`
-	TemplatizationRules       []*URLTemplatizationRule        `json:"templatizationRules"`
 	Notes                     *string                         `json:"notes,omitempty"`
 }
 
 type URLTemplatizationRulesGroupInput struct {
+	Scopes                    *SourcesScopesInput                  `json:"scopes,omitempty"`
+	TemplatizationRules       []*URLTemplatizationRuleInput        `json:"templatizationRules"`
 	FilterK8sNamespace        *string                              `json:"filterK8sNamespace,omitempty"`
 	FilterK8sWorkloadKind     *K8sResourceKind                     `json:"filterK8sWorkloadKind,omitempty"`
 	FilterK8sWorkloadName     *string                              `json:"filterK8sWorkloadName,omitempty"`
 	FilterProgrammingLanguage *string                              `json:"filterProgrammingLanguage,omitempty"`
 	WorkloadFilters           []*TemplatizationWorkloadFilterInput `json:"workloadFilters,omitempty"`
-	TemplatizationRules       []*URLTemplatizationRuleInput        `json:"templatizationRules"`
 	Notes                     *string                              `json:"notes,omitempty"`
 }
 
