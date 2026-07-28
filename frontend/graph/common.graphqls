@@ -54,6 +54,17 @@ enum Tier {
   onprem
 }
 
+enum FieldType {
+  input
+  multiInput
+  keyValuePairs
+  textarea
+  dropdown
+  checkbox
+  toggle
+  time
+}
+
 type Condition {
   status: ConditionStatus!
   type: String!

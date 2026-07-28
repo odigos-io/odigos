@@ -88,7 +88,7 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		ControllerManagedBy(mgr).
 		Named("agentenabled-actions").
 		For(&odigosv1.Action{}).
-		WithEventFilter(&instrumentorpredicate.AgentInjectionEnabledActionsPredicate{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(&ActionReconciler{
 			Client:                    mgr.GetClient(),
 			DistrosProvider:           dp,

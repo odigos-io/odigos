@@ -949,6 +949,14 @@ spec:
                       type: string
                     dbQueryTemplatization:
                       properties:
+                        removePostgresCastOperator:
+                          description: |-
+                            RemovePostgresCastOperator strips PostgreSQL `::type` casts from query text
+                            (e.g. "SELECT * FROM users WHERE id = ?::uuid" -> "SELECT * FROM users WHERE id = ?").
+                            Useful to reduce cardinality when the same query is issued with different cast types,
+                            or when casts remain after literal templatization.
+                            Applies only to PostgreSQL spans.
+                          type: boolean
                         templatizeLiterals:
                           description: |-
                             TemplatizeLiterals replaces number and string literals in SQL queries with placeholders

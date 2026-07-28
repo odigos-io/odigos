@@ -5,6 +5,8 @@ export const GET_ACTION_TYPES = gql`
     actionTypes {
       type
       displayName
+      category
+      subtitle
       description
       allowedSignals
       docsUrl
@@ -96,11 +98,18 @@ export const GET_ACTIONS = gql`
             languages
           }
           templatizeLiterals
+          removePostgresCastOperator
         }
         conditions {
           status
           type
           reason
+          message
+        }
+        statuses {
+          name
+          status
+          reasonEnum
           message
         }
       }

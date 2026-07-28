@@ -94,6 +94,19 @@ spec:
           ports:
             - containerPort: {{ .Values.auth.port }}
               name: {{ .Values.auth.portName }}
+          {{- if .Values.auth.startupProbe.enabled }}
+          # Gates the liveness and readiness probes until Keycloak finishes booting,
+          # so both can use short delays without restarting a slow-starting pod.
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.auth.startupProbe.port }}
+            initialDelaySeconds: {{ .Values.auth.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.auth.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.auth.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.auth.startupProbe.failureThreshold }}
+            successThreshold: {{ .Values.auth.startupProbe.successThreshold }}
+          {{- end }}
           {{- if .Values.auth.livenessProbe.enabled }}
           livenessProbe:
             httpGet:

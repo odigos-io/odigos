@@ -66,6 +66,7 @@ type ComplexityRoot struct {
 		Name       func(childComplexity int) int
 		Notes      func(childComplexity int) int
 		Signals    func(childComplexity int) int
+		Statuses   func(childComplexity int) int
 		Type       func(childComplexity int) int
 	}
 
@@ -92,6 +93,7 @@ type ComplexityRoot struct {
 		LabelsAttributes             func(childComplexity int) int
 		OverwriteExistingValues      func(childComplexity int) int
 		PiiCategories                func(childComplexity int) int
+		RemovePostgresCastOperator   func(childComplexity int) int
 		Renames                      func(childComplexity int) int
 		Scopes                       func(childComplexity int) int
 		TemplatizeLiterals           func(childComplexity int) int
@@ -100,10 +102,12 @@ type ComplexityRoot struct {
 
 	ActionTypeOption struct {
 		AllowedSignals func(childComplexity int) int
+		Category       func(childComplexity int) int
 		Description    func(childComplexity int) int
 		DisplayName    func(childComplexity int) int
 		DocsURL        func(childComplexity int) int
 		Fields         func(childComplexity int) int
+		Subtitle       func(childComplexity int) int
 		Type           func(childComplexity int) int
 	}
 
@@ -1732,6 +1736,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Action.Signals(childComplexity), true
 
+	case "Action.statuses":
+		if e.complexity.Action.Statuses == nil {
+			break
+		}
+
+		return e.complexity.Action.Statuses(childComplexity), true
+
 	case "Action.type":
 		if e.complexity.Action.Type == nil {
 			break
@@ -1872,6 +1883,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ActionFields.PiiCategories(childComplexity), true
 
+	case "ActionFields.removePostgresCastOperator":
+		if e.complexity.ActionFields.RemovePostgresCastOperator == nil {
+			break
+		}
+
+		return e.complexity.ActionFields.RemovePostgresCastOperator(childComplexity), true
+
 	case "ActionFields.renames":
 		if e.complexity.ActionFields.Renames == nil {
 			break
@@ -1907,6 +1925,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ActionTypeOption.AllowedSignals(childComplexity), true
 
+	case "ActionTypeOption.category":
+		if e.complexity.ActionTypeOption.Category == nil {
+			break
+		}
+
+		return e.complexity.ActionTypeOption.Category(childComplexity), true
+
 	case "ActionTypeOption.description":
 		if e.complexity.ActionTypeOption.Description == nil {
 			break
@@ -1934,6 +1959,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ActionTypeOption.Fields(childComplexity), true
+
+	case "ActionTypeOption.subtitle":
+		if e.complexity.ActionTypeOption.Subtitle == nil {
+			break
+		}
+
+		return e.complexity.ActionTypeOption.Subtitle(childComplexity), true
 
 	case "ActionTypeOption.type":
 		if e.complexity.ActionTypeOption.Type == nil {
@@ -8465,7 +8497,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "actions.graphqls" "collectors.graphqls" "common.graphqls" "configs.graphqls" "datastreams.graphqls" "describe.graphqls" "destinations.graphqls" "diagnose.graphqls" "enum.graphqls" "instrumentationrules.graphqls" "metrics.graphqls" "pod.graphqls" "profiling.graphqls" "sampling.graphqls" "servicemap.graphqls" "sources.graphqls" "tokens.graphqls" "tracecorrelations.graphqls" "workload.graphqls"
+//go:embed "actions.graphqls" "collectors.graphqls" "common.graphqls" "configs.graphqls" "datastreams.graphqls" "describe.graphqls" "desiredcondition.graphqls" "destinations.graphqls" "diagnose.graphqls" "instrumentationrules.graphqls" "metrics.graphqls" "pod.graphqls" "profiling.graphqls" "sampling.graphqls" "servicemap.graphqls" "sources.graphqls" "tokens.graphqls" "tracecorrelations.graphqls" "workload.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -8483,9 +8515,9 @@ var sources = []*ast.Source{
 	{Name: "configs.graphqls", Input: sourceData("configs.graphqls"), BuiltIn: false},
 	{Name: "datastreams.graphqls", Input: sourceData("datastreams.graphqls"), BuiltIn: false},
 	{Name: "describe.graphqls", Input: sourceData("describe.graphqls"), BuiltIn: false},
+	{Name: "desiredcondition.graphqls", Input: sourceData("desiredcondition.graphqls"), BuiltIn: false},
 	{Name: "destinations.graphqls", Input: sourceData("destinations.graphqls"), BuiltIn: false},
 	{Name: "diagnose.graphqls", Input: sourceData("diagnose.graphqls"), BuiltIn: false},
-	{Name: "enum.graphqls", Input: sourceData("enum.graphqls"), BuiltIn: false},
 	{Name: "instrumentationrules.graphqls", Input: sourceData("instrumentationrules.graphqls"), BuiltIn: false},
 	{Name: "metrics.graphqls", Input: sourceData("metrics.graphqls"), BuiltIn: false},
 	{Name: "pod.graphqls", Input: sourceData("pod.graphqls"), BuiltIn: false},
@@ -11223,6 +11255,8 @@ func (ec *executionContext) fieldContext_Action_fields(_ context.Context, field 
 				return ec.fieldContext_ActionFields_scopes(ctx, field)
 			case "templatizeLiterals":
 				return ec.fieldContext_ActionFields_templatizeLiterals(ctx, field)
+			case "removePostgresCastOperator":
+				return ec.fieldContext_ActionFields_removePostgresCastOperator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ActionFields", field.Name)
 		},
@@ -11276,6 +11310,62 @@ func (ec *executionContext) fieldContext_Action_conditions(_ context.Context, fi
 				return ec.fieldContext_Condition_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Action_statuses(ctx context.Context, field graphql.CollectedField, obj *model.Action) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Action_statuses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Statuses, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.DesiredConditionStatus)
+	fc.Result = res
+	return ec.marshalNDesiredConditionStatus2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatusᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Action_statuses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Action",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_DesiredConditionStatus_name(ctx, field)
+			case "status":
+				return ec.fieldContext_DesiredConditionStatus_status(ctx, field)
+			case "reasonEnum":
+				return ec.fieldContext_DesiredConditionStatus_reasonEnum(ctx, field)
+			case "message":
+				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
+			case "actionItems":
+				return ec.fieldContext_DesiredConditionStatus_actionItems(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
 		},
 	}
 	return fc, nil
@@ -12306,6 +12396,47 @@ func (ec *executionContext) fieldContext_ActionFields_templatizeLiterals(_ conte
 	return fc, nil
 }
 
+func (ec *executionContext) _ActionFields_removePostgresCastOperator(ctx context.Context, field graphql.CollectedField, obj *model.ActionFields) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFields_removePostgresCastOperator(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RemovePostgresCastOperator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFields_removePostgresCastOperator(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFields",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ActionTypeOption_type(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ActionTypeOption_type(ctx, field)
 	if err != nil {
@@ -12382,6 +12513,94 @@ func (ec *executionContext) _ActionTypeOption_displayName(ctx context.Context, f
 }
 
 func (ec *executionContext) fieldContext_ActionTypeOption_displayName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionTypeOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionTypeOption_category(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionTypeOption_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionTypeOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionTypeOption_subtitle(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_subtitle(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Subtitle, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionTypeOption_subtitle(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ActionTypeOption",
 		Field:      field,
@@ -16272,6 +16491,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_actions(_ context.Conte
 				return ec.fieldContext_Action_fields(ctx, field)
 			case "conditions":
 				return ec.fieldContext_Action_conditions(ctx, field)
+			case "statuses":
+				return ec.fieldContext_Action_statuses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Action", field.Name)
 		},
@@ -39371,6 +39592,8 @@ func (ec *executionContext) fieldContext_Mutation_createAction(ctx context.Conte
 				return ec.fieldContext_Action_fields(ctx, field)
 			case "conditions":
 				return ec.fieldContext_Action_conditions(ctx, field)
+			case "statuses":
+				return ec.fieldContext_Action_statuses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Action", field.Name)
 		},
@@ -39444,6 +39667,8 @@ func (ec *executionContext) fieldContext_Mutation_updateAction(ctx context.Conte
 				return ec.fieldContext_Action_fields(ctx, field)
 			case "conditions":
 				return ec.fieldContext_Action_conditions(ctx, field)
+			case "statuses":
+				return ec.fieldContext_Action_statuses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Action", field.Name)
 		},
@@ -46180,6 +46405,10 @@ func (ec *executionContext) fieldContext_Query_actionTypes(_ context.Context, fi
 				return ec.fieldContext_ActionTypeOption_type(ctx, field)
 			case "displayName":
 				return ec.fieldContext_ActionTypeOption_displayName(ctx, field)
+			case "category":
+				return ec.fieldContext_ActionTypeOption_category(ctx, field)
+			case "subtitle":
+				return ec.fieldContext_ActionTypeOption_subtitle(ctx, field)
 			case "description":
 				return ec.fieldContext_ActionTypeOption_description(ctx, field)
 			case "allowedSignals":
@@ -55829,7 +56058,7 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "customFormatMaskings", "customRegexMaskings", "urlTemplatizationRulesGroups", "extractAttribute", "scopes", "templatizeLiterals"}
+	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "customFormatMaskings", "customRegexMaskings", "urlTemplatizationRulesGroups", "extractAttribute", "scopes", "templatizeLiterals", "removePostgresCastOperator"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -55955,6 +56184,13 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 				return it, err
 			}
 			it.TemplatizeLiterals = data
+		case "removePostgresCastOperator":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removePostgresCastOperator"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RemovePostgresCastOperator = data
 		}
 	}
 
@@ -58958,6 +59194,11 @@ func (ec *executionContext) _Action(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "conditions":
 			out.Values[i] = ec._Action_conditions(ctx, field, obj)
+		case "statuses":
+			out.Values[i] = ec._Action_statuses(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -59090,6 +59331,8 @@ func (ec *executionContext) _ActionFields(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._ActionFields_scopes(ctx, field, obj)
 		case "templatizeLiterals":
 			out.Values[i] = ec._ActionFields_templatizeLiterals(ctx, field, obj)
+		case "removePostgresCastOperator":
+			out.Values[i] = ec._ActionFields_removePostgresCastOperator(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -59131,6 +59374,16 @@ func (ec *executionContext) _ActionTypeOption(ctx context.Context, sel ast.Selec
 			}
 		case "displayName":
 			out.Values[i] = ec._ActionTypeOption_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "category":
+			out.Values[i] = ec._ActionTypeOption_category(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "subtitle":
+			out.Values[i] = ec._ActionTypeOption_subtitle(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -71519,6 +71772,50 @@ func (ec *executionContext) marshalNDesiredConditionActionItemType2githubᚗcom�
 
 func (ec *executionContext) marshalNDesiredConditionStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx context.Context, sel ast.SelectionSet, v model.DesiredConditionStatus) graphql.Marshaler {
 	return ec._DesiredConditionStatus(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDesiredConditionStatus2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.DesiredConditionStatus) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNDesiredConditionStatus2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐDesiredConditionStatus(ctx context.Context, sel ast.SelectionSet, v *model.DesiredConditionStatus) graphql.Marshaler {

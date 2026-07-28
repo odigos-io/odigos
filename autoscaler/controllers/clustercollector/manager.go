@@ -82,6 +82,25 @@ func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 		return err
 	}
 
+	// Config-extension actions (odigosConfigExtension) are converted directly into
+	// cluster collector processors and written into the gateway ConfigMap — they do
+	// not create Processor CRs. Watch Action changes so the collector config and
+	// AddedToCollectorConfig status stay in sync when those actions are created,
+	// updated, or deleted.
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("clustercollector-actions").
+		For(&odigosv1.Action{}).
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		Complete(&ActionReconciler{
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
+		})
+	if err != nil {
+		return err
+	}
+
 	err = builder.
 		ControllerManagedBy(mgr).
 		Named("clustercollector-secret").

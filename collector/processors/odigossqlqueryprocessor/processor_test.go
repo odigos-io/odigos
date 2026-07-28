@@ -476,3 +476,86 @@ func TestExtension_SkipsWhenNoConfig(t *testing.T) {
 	_, hasOp := span.Attributes().Get(string(semconv.DBOperationNameKey))
 	require.False(t, hasOp)
 }
+
+func TestRemovePostgresCastOperator_WithRedactLiterals(t *testing.T) {
+	proc := newTestProcessor(t, &Config{})
+	proc.provider = &stubOdigosConfigExtension{
+		cfg: &commonapi.ContainerCollectorConfig{
+			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
+				TemplatizeLiterals:         true,
+				RemovePostgresCastOperator: true,
+			},
+		},
+	}
+
+	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):    semconv.DBSystemPostgreSQL.Value.AsString(),
+		string(semconv.DBQueryTextKey): "SELECT * FROM users WHERE id = 'abc'::uuid AND data = '{\"a\":1}'::jsonb",
+	})
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	query, ok := span.Attributes().Get(string(semconv.DBQueryTextKey))
+	require.True(t, ok)
+	require.Equal(t, "SELECT * FROM users WHERE id = ? AND data = ?", query.Str())
+}
+
+func TestRemovePostgresCastOperator_Only(t *testing.T) {
+	proc := newTestProcessor(t, &Config{})
+	proc.provider = &stubOdigosConfigExtension{
+		cfg: &commonapi.ContainerCollectorConfig{
+			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
+				RemovePostgresCastOperator: true,
+			},
+		},
+	}
+
+	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):    semconv.DBSystemPostgreSQL.Value.AsString(),
+		string(semconv.DBQueryTextKey): "SELECT col::text, arr::int[] FROM t WHERE id = $1::uuid",
+	})
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	query, ok := span.Attributes().Get(string(semconv.DBQueryTextKey))
+	require.True(t, ok)
+	require.Equal(t, "SELECT col, arr FROM t WHERE id = $1", query.Str())
+}
+
+func TestRemovePostgresCastOperator_SkippedForMySQL(t *testing.T) {
+	proc := newTestProcessor(t, &Config{})
+	proc.provider = &stubOdigosConfigExtension{
+		cfg: &commonapi.ContainerCollectorConfig{
+			DbQueryTemplatization: &actions.DbQueryTemplatizationConfig{
+				TemplatizeLiterals:         true,
+				RemovePostgresCastOperator: true,
+			},
+		},
+	}
+
+	original := "SELECT * FROM users WHERE id = 1"
+	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey):    semconv.DBSystemMySQL.Value.AsString(),
+		string(semconv.DBQueryTextKey): original,
+	})
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	query, ok := span.Attributes().Get(string(semconv.DBQueryTextKey))
+	require.True(t, ok)
+	require.Equal(t, "SELECT * FROM users WHERE id = ?", query.Str())
+}
+
+func TestStripPostgresCasts(t *testing.T) {
+	require.Equal(t, "SELECT * FROM users WHERE id = ?", stripPostgresCasts("SELECT * FROM users WHERE id = ?::uuid"))
+	require.Equal(t, "SELECT * FROM users where ? <@ ?", stripPostgresCasts("SELECT * FROM users where ? :: jsonb <@ ? :: jsonb"))
+	require.Equal(t, "SELECT * FROM users WHERE arr = ?", stripPostgresCasts("SELECT * FROM users WHERE arr = ?::int[]"))
+	require.Equal(t, "SELECT * FROM users WHERE x = ?", stripPostgresCasts("SELECT * FROM users WHERE x = ?::public.my_type"))
+	require.Equal(t, "SELECT col FROM t", stripPostgresCasts("SELECT col::text FROM t"))
+}
