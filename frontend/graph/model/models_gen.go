@@ -9,14 +9,15 @@ import (
 )
 
 type Action struct {
-	ID         string        `json:"id"`
-	Type       ActionType    `json:"type"`
-	Name       *string       `json:"name,omitempty"`
-	Notes      *string       `json:"notes,omitempty"`
-	Disabled   bool          `json:"disabled"`
-	Signals    []SignalType  `json:"signals"`
-	Fields     *ActionFields `json:"fields"`
-	Conditions []*Condition  `json:"conditions,omitempty"`
+	ID         string                    `json:"id"`
+	Type       ActionType                `json:"type"`
+	Name       *string                   `json:"name,omitempty"`
+	Notes      *string                   `json:"notes,omitempty"`
+	Disabled   bool                      `json:"disabled"`
+	Signals    []SignalType              `json:"signals"`
+	Fields     *ActionFields             `json:"fields"`
+	Conditions []*Condition              `json:"conditions,omitempty"`
+	Statuses   []*DesiredConditionStatus `json:"statuses"`
 }
 
 type ActionFieldYamlProperties struct {
@@ -46,6 +47,7 @@ type ActionFields struct {
 	ExtractAttribute             *ExtractAttribute              `json:"extractAttribute,omitempty"`
 	Scopes                       *SourcesScopes                 `json:"scopes,omitempty"`
 	TemplatizeLiterals           *bool                          `json:"templatizeLiterals,omitempty"`
+	RemovePostgresCastOperator   *bool                          `json:"removePostgresCastOperator,omitempty"`
 }
 
 type ActionFieldsInput struct {
@@ -66,6 +68,7 @@ type ActionFieldsInput struct {
 	ExtractAttribute             *ExtractAttributeInput              `json:"extractAttribute,omitempty"`
 	Scopes                       *SourcesScopesInput                 `json:"scopes,omitempty"`
 	TemplatizeLiterals           *bool                               `json:"templatizeLiterals,omitempty"`
+	RemovePostgresCastOperator   *bool                               `json:"removePostgresCastOperator,omitempty"`
 }
 
 type ActionInput struct {
@@ -80,6 +83,8 @@ type ActionInput struct {
 type ActionTypeOption struct {
 	Type           string                       `json:"type"`
 	DisplayName    string                       `json:"displayName"`
+	Category       string                       `json:"category"`
+	Subtitle       string                       `json:"subtitle"`
 	Description    string                       `json:"description"`
 	AllowedSignals []SignalType                 `json:"allowedSignals"`
 	DocsURL        string                       `json:"docsUrl"`

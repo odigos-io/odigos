@@ -50,6 +50,12 @@ type ActionFieldYamlProperties {
 type ActionTypeOption {
   type: String!
   displayName: String!
+  # Slug grouping related actions in the action picker (e.g. "enrichment").
+  # The UI resolves the human-readable section title from this slug.
+  category: String!
+  # One-line summary shown under the title in the action picker list.
+  subtitle: String!
+  # Longer summary shown at the top of the action form.
   description: String!
   allowedSignals: [SignalType!]!
   docsUrl: String!
@@ -87,6 +93,7 @@ input ActionFieldsInput {
 
   scopes: SourcesScopesInput
   templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
 }
 
 # CustomFormatMasking masks a value found by lookup key inside a data format
@@ -168,6 +175,9 @@ type Action {
   signals: [SignalType!]!
   fields: ActionFields!
   conditions: [Condition!]
+  # Desired-state statuses derived from Action CR status conditions
+  # (e.g. TransformedToProcessor, AddedToCollectorConfig).
+  statuses: [DesiredConditionStatus!]!
 }
 
 type ActionFields {
@@ -192,6 +202,7 @@ type ActionFields {
 
   scopes: SourcesScopes
   templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
 }
 
 type CustomFormatMasking {

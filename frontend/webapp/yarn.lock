@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@apollo/client@^4.2.6":
-  version "4.2.6"
-  resolved "https://registry.npmjs.org/@apollo/client/-/client-4.2.6.tgz"
-  integrity sha512-zAkN947OHLLvSaEZvhXmT2YGPuDSJyIlW3+ylvxbRfSQFJW5PiaGs0PvhhMGfyYvO8gtfg+JjI8jjkczQSwt5w==
+"@apollo/client@^4.2.8":
+  version "4.2.8"
+  resolved "https://registry.yarnpkg.com/@apollo/client/-/client-4.2.8.tgz#b6c0bd3b60c7bba35c04a859e58ccd3c623bd6bd"
+  integrity sha512-Iw/e/5fpOx+/2CgtcFNLdwxtdPzwTfmD4mYRjHA1UBdkfe6WOtWLRQeRESCUJCh49blXwp9I496A0MIoLgmCsw==
   dependencies:
     "@graphql-typed-document-node/core" "^3.1.1"
     "@wry/caches" "^1.0.0"
@@ -583,10 +583,10 @@
   resolved "https://registry.npmjs.org/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@0.0.271":
-  version "0.0.271"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.271.tgz#f0f4c66e5b947ed5a12a0f7f584ddc383dc5944e"
-  integrity sha512-Ep44NRppTUIu1xyw8OUwm9D1Uo2JXC0+4Ls0p5jluNm+0IY6UcVNBYFCPPUbOpUDOkJVaf3cdn6LUWsu7hMR9Q==
+"@odigos/ui-kit@0.0.274":
+  version "0.0.274"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.274.tgz#c37d9797cd8e60e7520e836be2bbad15e10ea0c6"
+  integrity sha512-IZYEJBiiWNIflm3PEVNSZuDsfkXf9I6U8cDQt8/ern7gmzRZtbYnTz9Zv0zkXyqprOCvPZwelfMV5CP06I3FOw==
   dependencies:
     "@xyflow/react" "^12.11.2"
     elkjs "^0.12.0"

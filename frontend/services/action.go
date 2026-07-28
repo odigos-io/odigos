@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	graphstatus "github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -465,7 +466,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 
 	urlTemplatizationGroups := convertUrlTemplatizationToModel(action.Spec.URLTemplatization)
 	extractAttribute := convertExtractAttributeToModel(action.Spec.ExtractAttribute)
-	scopes, templatizeLiterals := convertDbActionFieldsToModel(action)
+	scopes, templatizeLiterals, removePostgresCastOperator := convertDbActionFieldsToModel(action)
 
 	responseFields := &model.ActionFields{
 		LabelsAttributes:             labelAttrs,
@@ -479,6 +480,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		ExtractAttribute:             extractAttribute,
 		Scopes:                       scopes,
 		TemplatizeLiterals:           templatizeLiterals,
+		RemovePostgresCastOperator:   removePostgresCastOperator,
 	}
 
 	// Handle K8sAttributes fields
@@ -521,6 +523,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 
 	response.Type = deriveTypeFromAction(response, action)
 	response.Conditions = ConvertConditions(action.Status.Conditions)
+	response.Statuses = graphstatus.ConvertActionConditionsToStatuses(action.Status.Conditions, action.Generation)
 
 	return response, nil
 }
@@ -838,6 +841,11 @@ func convertDbQueryTemplatizationFromInput(actionType model.ActionType, details 
 	} else if existingAction != nil && existingAction.Spec.DbQueryTemplatization != nil {
 		config.TemplatizeLiterals = existingAction.Spec.DbQueryTemplatization.TemplatizeLiterals
 	}
+	if details.RemovePostgresCastOperator != nil {
+		config.RemovePostgresCastOperator = *details.RemovePostgresCastOperator
+	} else if existingAction != nil && existingAction.Spec.DbQueryTemplatization != nil {
+		config.RemovePostgresCastOperator = existingAction.Spec.DbQueryTemplatization.RemovePostgresCastOperator
+	}
 	return config
 }
 
@@ -851,13 +859,14 @@ func convertInferDbAttributesFromInput(actionType model.ActionType, details *mod
 	}
 }
 
-func convertDbActionFieldsToModel(action *v1alpha1.Action) (*model.SourcesScopes, *bool) {
+func convertDbActionFieldsToModel(action *v1alpha1.Action) (*model.SourcesScopes, *bool, *bool) {
 	if action.Spec.DbQueryTemplatization != nil {
 		templatizeLiterals := action.Spec.DbQueryTemplatization.TemplatizeLiterals
-		return SourcesScopesCRDToModel(action.Spec.DbQueryTemplatization.Scopes), &templatizeLiterals
+		removePostgresCastOperator := action.Spec.DbQueryTemplatization.RemovePostgresCastOperator
+		return SourcesScopesCRDToModel(action.Spec.DbQueryTemplatization.Scopes), &templatizeLiterals, &removePostgresCastOperator
 	}
 	if action.Spec.InferDbAttributes != nil {
-		return SourcesScopesCRDToModel(action.Spec.InferDbAttributes.Scopes), nil
+		return SourcesScopesCRDToModel(action.Spec.InferDbAttributes.Scopes), nil, nil
 	}
-	return nil, nil
+	return nil, nil, nil
 }

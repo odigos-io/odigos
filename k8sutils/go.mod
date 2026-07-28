@@ -4,6 +4,7 @@ go 1.26.2
 
 require (
 	github.com/argoproj/argo-rollouts v1.8.3
+	github.com/odigos-io/odigos/actions v0.0.0
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/odigosauth v0.0.0
@@ -97,6 +98,7 @@ require (
 )
 
 replace (
+	github.com/odigos-io/odigos/actions => ../actions
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth

@@ -26,6 +26,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/odigos-io/odigos/actions"
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
@@ -105,6 +106,11 @@ func main() {
 
 	if odigosVersion == "" {
 		logger.Error("ODIGOS_VERSION environment variable is not set and version flag is not provided")
+		os.Exit(1)
+	}
+
+	if err := actions.Load(); err != nil {
+		logger.Error("unable to load actions catalog", "err", err)
 		os.Exit(1)
 	}
 

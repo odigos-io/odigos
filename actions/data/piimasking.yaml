@@ -3,8 +3,10 @@ kind: Action
 metadata:
   type: PiiMasking
   displayName: PII Masking
+  category: privacy
 spec:
   docsUrl: https://docs.odigos.io/pipeline/actions/attributes/piimasking
+  subtitle: Mask PII data in your traces.
   description: This action processes a list of PII categories to be masked from the traces.
   signals:
     traces:
@@ -15,6 +17,10 @@ spec:
       supported: false
     profiles:
       supported: false
+  processors:
+    - configMechanism: odigosConfigExtension
+      type: odigospiimasking
+      preSpanMetrics: true
   fields:
     - name: piiCategories
       displayName: Predefined PII categories
