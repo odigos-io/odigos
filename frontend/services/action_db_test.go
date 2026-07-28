@@ -14,8 +14,10 @@ import (
 
 func TestConvertDbQueryTemplatizationFromInput(t *testing.T) {
 	templatize := true
+	removeCast := true
 	cfg := convertDbQueryTemplatizationFromInput(model.ActionTypeDbQueryTemplatization, &model.ActionFieldsInput{
-		TemplatizeLiterals: &templatize,
+		TemplatizeLiterals:         &templatize,
+		RemovePostgresCastOperator: &removeCast,
 		Scopes: &model.SourcesScopesInput{
 			Namespaces: []string{"default"},
 			Languages:  []model.SamplingWorkloadLanguage{model.SamplingWorkloadLanguageJava},
@@ -24,6 +26,7 @@ func TestConvertDbQueryTemplatizationFromInput(t *testing.T) {
 
 	require.NotNil(t, cfg)
 	require.True(t, cfg.TemplatizeLiterals)
+	require.True(t, cfg.RemovePostgresCastOperator)
 	require.Equal(t, []string{"default"}, cfg.Scopes.Namespaces)
 	require.Equal(t, []common.ProgrammingLanguage{common.JavaProgrammingLanguage}, cfg.Scopes.Languages)
 }
@@ -41,7 +44,8 @@ func TestConvertDbQueryTemplatizationPreservesTemplatizeLiterals(t *testing.T) {
 		Spec: v1alpha1.ActionSpec{
 			DbQueryTemplatization: &dbqueryactions.DbQueryTemplatizationConfig{
 				DbQueryTemplatizationConfig: actionsapi.DbQueryTemplatizationConfig{
-					TemplatizeLiterals: true,
+					TemplatizeLiterals:         true,
+					RemovePostgresCastOperator: true,
 				},
 			},
 		},
@@ -53,6 +57,7 @@ func TestConvertDbQueryTemplatizationPreservesTemplatizeLiterals(t *testing.T) {
 
 	require.NotNil(t, cfg)
 	require.True(t, cfg.TemplatizeLiterals)
+	require.True(t, cfg.RemovePostgresCastOperator)
 	require.Equal(t, []string{"ns-a"}, cfg.Scopes.Namespaces)
 }
 
@@ -82,12 +87,13 @@ func TestConvertInferDbAttributesEmptyFields(t *testing.T) {
 }
 
 func TestConvertDbActionFieldsToModel(t *testing.T) {
-	scopes, templatizeLiterals := convertDbActionFieldsToModel(&v1alpha1.Action{
+	scopes, templatizeLiterals, removePostgresCastOperator := convertDbActionFieldsToModel(&v1alpha1.Action{
 		Spec: v1alpha1.ActionSpec{
 			DbQueryTemplatization: &dbqueryactions.DbQueryTemplatizationConfig{
 				Scopes: &k8sconsts.SourcesScopes{Namespaces: []string{"prod"}},
 				DbQueryTemplatizationConfig: actionsapi.DbQueryTemplatizationConfig{
-					TemplatizeLiterals: true,
+					TemplatizeLiterals:         true,
+					RemovePostgresCastOperator: true,
 				},
 			},
 		},
@@ -97,6 +103,8 @@ func TestConvertDbActionFieldsToModel(t *testing.T) {
 	require.Equal(t, []string{"prod"}, scopes.Namespaces)
 	require.NotNil(t, templatizeLiterals)
 	require.True(t, *templatizeLiterals)
+	require.NotNil(t, removePostgresCastOperator)
+	require.True(t, *removePostgresCastOperator)
 }
 
 func TestDeriveTypeFromDbActions(t *testing.T) {
