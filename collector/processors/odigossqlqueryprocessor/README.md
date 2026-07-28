@@ -16,6 +16,7 @@ On each resource, it calls `GetFromResource` and applies the workload's collecto
 | --- | --- |
 | `inferDbAttributes` (non-nil) | Infer `db.operation.name` / `db.collection.name` and update the span name when attributes are added. |
 | `dbQueryTemplatization.templatizeLiterals: true` | Replace literals in `db.query.text` / `db.statement` with `?` placeholders. |
+| `dbQueryTemplatization.removePostgresCastOperator: true` | Strip PostgreSQL `::type` casts from query text (PostgreSQL spans only). |
 
 Sources without those fields set are skipped. When both are enabled for a source, infer and redact run in a single pass (`ObfuscateAndNormalize`).
 

@@ -3,8 +3,10 @@ kind: Action
 metadata:
   type: DeleteAttribute
   displayName: Delete Attribute
+  category: privacy
 spec:
   docsUrl: https://docs.odigos.io/pipeline/actions/attributes/deleteattribute
+  subtitle: Delete attributes from logs, metrics, and traces.
   description: This action will delete the specified attributes from all telemetry signals that are specified in the signals field, regardless of the source, or any other condition.
   signals:
     traces:

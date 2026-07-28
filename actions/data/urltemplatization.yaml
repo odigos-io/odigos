@@ -3,8 +3,10 @@ kind: Action
 metadata:
   type: URLTemplatization
   displayName: URL Templatization
+  category: normalization
 spec:
   docsUrl: https://docs.odigos.io/pipeline/actions/attributes/urltemplatization
+  subtitle: Replace dynamic URL path segments with named placeholders.
   description: Normalizes HTTP URL paths by replacing dynamic segments (IDs, UUIDs, dates) with named placeholders (e.g. /user/1234 -> /user/{id}). Reduces cardinality of http.route and span names, improving usability in telemetry backends.
   signals:
     traces:
