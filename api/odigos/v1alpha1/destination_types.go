@@ -45,6 +45,15 @@ type SendingQueueBatch struct {
 	// +optional
 	// +kubebuilder:validation:Minimum=1
 	Size int `json:"size,omitempty"`
+	// MaxSize is the maximum batch size (enables splitting). Maps to exporterhelper sending_queue.batch.max_size.
+	// 0 means no maximum (OTel default). Nil means unset (omit from config).
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	MaxSize *int `json:"maxSize,omitempty"`
+	// FlushTimeout is how long to wait before flushing a batch. Maps to exporterhelper sending_queue.batch.flush_timeout.
+	// Example: "200ms", "1s".
+	// +optional
+	FlushTimeout string `json:"flushTimeout,omitempty"`
 }
 
 type SendingQueue struct {
@@ -155,6 +164,13 @@ func (dest Destination) GetSendingQueueConfig() *config.SendingQueueConfig {
 		}
 		if dest.Spec.SendingQueue.Batch.Size > 0 {
 			sendingQueue.Batch.Size = dest.Spec.SendingQueue.Batch.Size
+		}
+		// MaxSize is 0 by default (=no limit), so any non nil values apply
+		if dest.Spec.SendingQueue.Batch.MaxSize != nil {
+			sendingQueue.Batch.MaxSize = dest.Spec.SendingQueue.Batch.MaxSize
+		}
+		if dest.Spec.SendingQueue.Batch.FlushTimeout != "" {
+			sendingQueue.Batch.FlushTimeout = dest.Spec.SendingQueue.Batch.FlushTimeout
 		}
 	}
 	return &sendingQueue
