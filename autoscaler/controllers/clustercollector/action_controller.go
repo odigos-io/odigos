@@ -2,13 +2,18 @@ package clustercollector
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	actionutil "github.com/odigos-io/odigos/k8sutils/pkg/action"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/status"
 	addedToCollectorConfig "github.com/odigos-io/odigos/status/action/generated"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -35,8 +40,10 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return utils.K8SUpdateErrorHandler(syncActionAddedToCollectorConfig(ctx, r.Client, req.NamespacedName))
 }
 
-// syncActionAddedToCollectorConfig sets AddedToCollectorConfig (ClusterGateway) when
-// this action is an odigosConfigExtension action (added or removed-because-disabled).
+// syncActionAddedToCollectorConfig sets AddedToCollectorConfig when this action is an
+// odigosConfigExtension action (added or removed-because-disabled). The collector role
+// matches ConvertActionsToConfigExtensionProcessors (SQL moves to the node collector
+// when span metrics are enabled).
 // Processor-backed actions get this condition from the actions controller by mirroring
 // the owned Processor status; they are left untouched here.
 func syncActionAddedToCollectorConfig(ctx context.Context, c client.Client, key types.NamespacedName) error {
@@ -50,10 +57,66 @@ func syncActionAddedToCollectorConfig(ctx context.Context, c client.Client, key 
 		return nil
 	}
 
-	if action.Spec.Disabled {
-		return setAddedToCollectorConfigReason(ctx, c, action, addedToCollectorConfig.AddedToCollectorConfigConfigRemovedDisabled_ClusterGateway)
+	spanMetricsEnabled, err := nodeSpanMetricsEnabled(ctx, c)
+	if err != nil {
+		return err
 	}
-	return setAddedToCollectorConfigReason(ctx, c, action, addedToCollectorConfig.AddedToCollectorConfigConfigUpdated_ClusterGateway)
+	return setConfigExtensionActionAddedToCollectorConfig(ctx, c, action, spanMetricsEnabled)
+}
+
+func syncAllConfigExtensionActionStatuses(ctx context.Context, c client.Client, actionList odigosv1.ActionList, spanMetricsEnabled bool) error {
+	for i := range actionList.Items {
+		action := &actionList.Items[i]
+		if !actionutil.IsConfigExtension(action) {
+			continue
+		}
+		if err := setConfigExtensionActionAddedToCollectorConfig(ctx, c, action, spanMetricsEnabled); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setConfigExtensionActionAddedToCollectorConfig(ctx context.Context, c client.Client, action *odigosv1.Action, spanMetricsEnabled bool) error {
+	role := commonconf.ConfigExtensionActionCollectorRole(action, spanMetricsEnabled)
+	updatedReason, removedReason, err := addedToCollectorConfigReasonsForRole(role)
+	if err != nil {
+		return err
+	}
+	if action.Spec.Disabled {
+		return setAddedToCollectorConfigReason(ctx, c, action, removedReason)
+	}
+	return setAddedToCollectorConfigReason(ctx, c, action, updatedReason)
+}
+
+func addedToCollectorConfigReasonsForRole(role odigosv1.CollectorsGroupRole) (status.Reason, status.Reason, error) {
+	switch role {
+	case odigosv1.CollectorsGroupRoleClusterGateway:
+		return addedToCollectorConfig.AddedToCollectorConfigConfigUpdated_ClusterGateway,
+			addedToCollectorConfig.AddedToCollectorConfigConfigRemovedDisabled_ClusterGateway,
+			nil
+	case odigosv1.CollectorsGroupRoleNodeCollector:
+		return addedToCollectorConfig.AddedToCollectorConfigConfigUpdated_NodeCollector,
+			addedToCollectorConfig.AddedToCollectorConfigConfigRemovedDisabled_NodeCollector,
+			nil
+	default:
+		return status.Reason{}, status.Reason{}, fmt.Errorf("unsupported collector role %q for AddedToCollectorConfig", role)
+	}
+}
+
+func nodeSpanMetricsEnabled(ctx context.Context, c client.Client) (bool, error) {
+	nodeCG := &odigosv1.CollectorsGroup{}
+	err := c.Get(ctx, client.ObjectKey{
+		Namespace: env.GetCurrentNamespace(),
+		Name:      k8sconsts.OdigosNodeCollectorCollectorGroupName,
+	}, nodeCG)
+	if apierrors.IsNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return commonconf.NodeCollectorsGroupSpanMetricsEnabled(nodeCG), nil
 }
 
 func setAddedToCollectorConfigReason(ctx context.Context, c client.Client, action *odigosv1.Action, reason status.Reason) error {

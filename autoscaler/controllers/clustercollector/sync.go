@@ -51,7 +51,17 @@ func reconcileClusterCollector(ctx context.Context, k8sClient client.Client, sch
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	configExtProcessors := commonconf.ConvertActionsToConfigExtensionProcessors(actionList)
+
+	nodeCG := &odigosv1.CollectorsGroup{}
+	nodeCGErr := k8sClient.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, nodeCG)
+	if client.IgnoreNotFound(nodeCGErr) != nil {
+		return ctrl.Result{}, nodeCGErr
+	}
+	if nodeCGErr != nil {
+		nodeCG = nil
+	}
+	spanMetricsEnabled := commonconf.NodeCollectorsGroupSpanMetricsEnabled(nodeCG)
+	configExtProcessors := commonconf.ConvertActionsToConfigExtensionProcessors(actionList, spanMetricsEnabled)
 
 	// Add the generic batch processor to the list of processors
 	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
@@ -63,6 +73,11 @@ func reconcileClusterCollector(ctx context.Context, k8sClient client.Client, sch
 	if statusErr != nil {
 		logger.Error(statusErr, "Failed to patch collectors group status")
 		// just log the error, do not fail the reconciliation
+	}
+	if err == nil {
+		if statusSyncErr := syncAllConfigExtensionActionStatuses(ctx, k8sClient, actionList, spanMetricsEnabled); statusSyncErr != nil {
+			logger.Error(statusSyncErr, "Failed to sync config-extension action collector statuses")
+		}
 	}
 	return ctrl.Result{}, err
 }

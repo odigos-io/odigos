@@ -101,5 +101,24 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	// Config-extension actions (especially SQL query) may run on the node collector when
+	// span metrics are enabled. Watch Action changes so the node ConfigMap stays in sync;
+	// there is no Processor CR for these migrated actions.
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("nodecollector-actions").
+		For(&odigosv1.Action{}).
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		Complete(&ActionReconciler{
+			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
+				Client:          mgr.GetClient(),
+				scheme:          mgr.GetScheme(),
+				odigosNamespace: odigosNamespace,
+			},
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

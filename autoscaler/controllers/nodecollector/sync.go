@@ -8,6 +8,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -61,6 +62,14 @@ func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context
 		logger.Error(err, "Failed to list processors")
 		return ctrl.Result{}, err
 	}
+
+	var actionList odigosv1.ActionList
+	if err := b.Client.List(ctx, &actionList, client.InNamespace(b.odigosNamespace)); err != nil {
+		logger.Error(err, "Failed to list actions")
+		return ctrl.Result{}, err
+	}
+	spanMetricsEnabled := commonconf.NodeCollectorsGroupSpanMetricsEnabled(dataCollectionCollectorGroup)
+	processors.Items = append(processors.Items, commonconf.ConvertActionsToConfigExtensionProcessors(actionList, spanMetricsEnabled)...)
 
 	err = b.syncDataCollection(ctx, &ics, clusterCollectorCollectorGroup, &processors, dataCollectionCollectorGroup)
 	if err != nil {
