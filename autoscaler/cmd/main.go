@@ -194,7 +194,7 @@ func main() {
 		OnGKE:          onGKE,
 	}
 
-	err = controllers.SetupWithManager(mgr, odigosVersion)
+	err = controllers.SetupWithManager(mgr, odigosVersion, env.GetOdigosTierFromEnv())
 	if err != nil {
 		logger.Error("unable to create odigos controllers", "err", err)
 		os.Exit(1)

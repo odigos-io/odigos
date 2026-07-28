@@ -29,6 +29,11 @@ type nodeCollectorBaseReconciler struct {
 	scheme               *runtime.Scheme
 	autoscalerDeployment *appsv1.Deployment
 	odigosNamespace      string
+	// tier is read once from ODIGOS_TIER at autoscaler startup. Community tier never gets
+	// enterprise-only node collector pipelines (eBPF maps receiver, continuous profiling) wired
+	// into its generated config, regardless of what's stored in OdigosConfiguration - the OSS
+	// collector image doesn't have those components compiled in.
+	tier common.OdigosTier
 }
 
 func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context) (ctrl.Result, error) {

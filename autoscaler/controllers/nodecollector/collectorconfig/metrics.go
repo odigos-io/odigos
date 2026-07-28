@@ -2,6 +2,7 @@ package collectorconfig
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 )
 
@@ -11,10 +12,15 @@ const (
 	odigosMetricsPipelineName = "metrics"
 )
 
-func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) (config.GenericMap, []string) {
+func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings, tier common.OdigosTier) (config.GenericMap, []string) {
 	receivers := config.GenericMap{}
-	// For now, we are adding odigosebpfreceiver in any case if metrics enabled.
-	pipelineReceiverNames := []string{odigosEbpfReceiverName}
+	pipelineReceiverNames := []string{}
+	// odigosebpfreceiver only exists in the enterprise collector image - the OSS collector
+	// doesn't have it compiled in, so wiring it into community tier's config would make every
+	// OSS node collector fail to start (unknown component type).
+	if tier != common.CommunityOdigosTier {
+		pipelineReceiverNames = append(pipelineReceiverNames, odigosEbpfReceiverName)
+	}
 
 	if metricsConfigSettings.AgentsTelemetry != nil {
 		pipelineReceiverNames = append(pipelineReceiverNames, OTLPInReceiverName)
@@ -76,6 +82,7 @@ func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsColl
 type MetricsConfigOptions struct {
 	CommonSignalConfig
 	MetricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings
+	Tier                  common.OdigosTier
 }
 
 func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) config.Config {
@@ -92,7 +99,7 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) 
 	metricsPipelineProcessors = append(metricsPipelineProcessors, opts.ManifestProcessorNames...)
 	metricsPipelineProcessors = append(metricsPipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
-	receivers, pipelineReceiverNames := metricsReceivers(opts.MetricsConfigSettings)
+	receivers, pipelineReceiverNames := metricsReceivers(opts.MetricsConfigSettings, opts.Tier)
 	if len(pipelineReceiverNames) == 0 {
 		// if all metrics sources are not enabled, skip the metrics pipeline generation as it has no receivers and will fail the collector
 		return config.Config{}

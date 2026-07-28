@@ -56,7 +56,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		profilingCfg = cfg.Profiling
 	}
 
-	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg)
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg, b.tier)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
@@ -177,7 +177,8 @@ func calculateCollectorConfigDomains(
 	processors []*odigosv1.Processor,
 	onGKE bool,
 	loadBalancingNeeded bool,
-	profiling *odigoscommon.ProfilingConfiguration) (map[string]config.Config, string, error) {
+	profiling *odigoscommon.ProfilingConfiguration,
+	tier odigoscommon.OdigosTier) (map[string]config.Config, string, error) {
 
 	logger := commonlogger.FromContext(ctx)
 
@@ -249,6 +250,7 @@ func calculateCollectorConfigDomains(
 		metricsConfig := collectorconfig.MetricsConfig(nodeCG, collectorconfig.MetricsConfigOptions{
 			CommonSignalConfig:    commonSignalConfig.WithProcessors(processorsResults.MetricsProcessors),
 			MetricsConfigSettings: metricsConfigSettings,
+			Tier:                  tier,
 		})
 		configDomains["metrics"] = metricsConfig
 	}
@@ -293,7 +295,10 @@ func calculateCollectorConfigDomains(
 		configDomains["logs"] = logsConfig
 	}
 
-	if odigoscommon.ProfilingPipelineActive(profiling) {
+	// The continuous-profiling receiver only exists in the enterprise collector image, so
+	// community tier must never get a "profiling" pipeline wired in, regardless of what's
+	// stored in OdigosConfiguration.Profiling.Enabled - the OSS collector would fail to start.
+	if tier != odigoscommon.CommunityOdigosTier && odigoscommon.ProfilingPipelineActive(profiling) {
 		configDomains["profiling"] = collectorconfig.ProfilingPipelineConfig(odigosNamespace, profiling, processorsResults.ProfilesProcessors)
 	}
 
