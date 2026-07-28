@@ -25,6 +25,11 @@ import (
 // it checks for standalone UUIDs, not part of a longer identifier/literal.
 var uuidRegex = regexp.MustCompile(`(^|[^0-9A-Fa-f])([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})($|[^0-9A-Fa-f])`)
 
+// postgresCastRegex matches PostgreSQL `::type` casts, including optional
+// schema qualification and array brackets (e.g. ::uuid, ::public.my_type, ::int[]).
+// Leading whitespace is included so normalized forms like "? :: jsonb" collapse cleanly.
+var postgresCastRegex = regexp.MustCompile(`(?i)\s*::\s*(?:[A-Za-z_][\w$]*\.)?[A-Za-z_][\w$]*(?:\s*\[\s*\])*`)
+
 type sqlQueryProcessor struct {
 	logger     *zap.Logger
 	config     *Config
@@ -85,7 +90,8 @@ func (p *sqlQueryProcessor) processTraces(_ context.Context, traces ptrace.Trace
 		}
 		inferAttributes := srcCfg.InferDbAttributes != nil
 		redactLiterals := srcCfg.DbQueryTemplatization != nil && srcCfg.DbQueryTemplatization.TemplatizeLiterals
-		if !inferAttributes && !redactLiterals {
+		removePostgresCast := srcCfg.DbQueryTemplatization != nil && srcCfg.DbQueryTemplatization.RemovePostgresCastOperator
+		if !inferAttributes && !redactLiterals && !removePostgresCast {
 			continue
 		}
 
@@ -93,7 +99,7 @@ func (p *sqlQueryProcessor) processTraces(_ context.Context, traces ptrace.Trace
 		for j := 0; j < scopeSpans.Len(); j++ {
 			spans := scopeSpans.At(j).Spans()
 			for k := 0; k < spans.Len(); k++ {
-				p.processSpan(spans.At(k), inferAttributes, redactLiterals)
+				p.processSpan(spans.At(k), inferAttributes, redactLiterals, removePostgresCast)
 			}
 		}
 	}
@@ -116,7 +122,7 @@ func (p *sqlQueryProcessor) resolveSourceConfig(resource pcommon.Resource) (*com
 	return p.provider.GetFromResource(resource)
 }
 
-func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redactLiterals bool) {
+func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redactLiterals, removePostgresCast bool) {
 	attrs := span.Attributes()
 
 	dbms, skip, isCassandra := resolveDBMS(attrs)
@@ -124,6 +130,7 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 		return
 	}
 
+	queryModified := false
 	query, queryKey, ok := sqlQueryFromAttributes(attrs)
 	if !ok {
 		return
@@ -132,7 +139,9 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 	operation, hasOperation := operationFromAttributes(attrs)
 	collection, hasCollection := collectionFromAttributes(attrs)
 	inferNeeded := inferAttributes && !(hasOperation && hasCollection)
-	if !inferNeeded && !redactLiterals {
+	// Casts are PostgreSQL-specific; ignore the option for other dialects.
+	removePostgresCast = removePostgresCast && dbms == sqllexer.DBMSPostgres
+	if !inferNeeded && !redactLiterals && !removePostgresCast {
 		// if we only infer and the query is already infered, we can skip
 		return
 	}
@@ -142,6 +151,12 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 		// UUIDs are first class citizens in CQL, in they don't get tokenized correctly by sqllexer.
 		// Reject if the UUID is a prefix of a longer identifier/literal
 		query = uuidRegex.ReplaceAllString(query, "${1}?${3}")
+		queryModified = true
+	}
+
+	if removePostgresCast {
+		query = stripPostgresCasts(query)
+		queryModified = true
 	}
 
 	switch {
@@ -152,10 +167,13 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 			p.logger.Debug("failed to obfuscate and normalize SQL query", zap.Error(err))
 			return
 		}
-		attrs.PutStr(queryKey, normalized)
+		query = normalized
 		p.enhanceFromMetadata(span, operation, hasOperation, collection, hasCollection, meta)
+		queryModified = true
 	case redactLiterals:
-		attrs.PutStr(queryKey, p.obfuscate(query, dbms))
+		obfuscated := p.obfuscate(query, dbms)
+		query = obfuscated
+		queryModified = true
 	case inferNeeded:
 		meta, err := p.normalize(query, dbms)
 		if err != nil {
@@ -164,6 +182,14 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 		}
 		p.enhanceFromMetadata(span, operation, hasOperation, collection, hasCollection, meta)
 	}
+
+	if queryModified {
+		attrs.PutStr(queryKey, query)
+	}
+}
+
+func stripPostgresCasts(query string) string {
+	return postgresCastRegex.ReplaceAllString(query, "")
 }
 
 func (p *sqlQueryProcessor) obfuscateAndNormalize(query string, dbms sqllexer.DBMSType) (string, *sqllexer.StatementMetadata, error) {

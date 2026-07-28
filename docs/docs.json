@@ -208,7 +208,9 @@
                           "oss/pipeline/actions/attributes/renameattribute",
                           "oss/pipeline/actions/attributes/piimasking",
                           "oss/pipeline/actions/attributes/k8sattributes",
-                          "oss/pipeline/actions/attributes/extractattribute"
+                          "oss/pipeline/actions/attributes/extractattribute",
+                          "oss/pipeline/actions/attributes/dbquerytemplatization",
+                          "oss/pipeline/actions/attributes/inferdbattributes"
                         ]
                       },
                       "oss/pipeline/actions/crd",
@@ -539,7 +541,9 @@
                           "enterprise/pipeline/actions/attributes/renameattribute",
                           "enterprise/pipeline/actions/attributes/piimasking",
                           "enterprise/pipeline/actions/attributes/k8sattributes",
-                          "enterprise/pipeline/actions/attributes/extractattribute"
+                          "enterprise/pipeline/actions/attributes/extractattribute",
+                          "enterprise/pipeline/actions/attributes/dbquerytemplatization",
+                          "enterprise/pipeline/actions/attributes/inferdbattributes"
                         ]
                       },
                       "enterprise/pipeline/actions/crd",

@@ -93,6 +93,7 @@ input ActionFieldsInput {
 
   scopes: SourcesScopesInput
   templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
 }
 
 # CustomFormatMasking masks a value found by lookup key inside a data format
@@ -201,6 +202,7 @@ type ActionFields {
 
   scopes: SourcesScopes
   templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
 }
 
 type CustomFormatMasking {
