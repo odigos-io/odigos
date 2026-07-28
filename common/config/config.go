@@ -17,8 +17,9 @@ type ExporterConfigurer interface {
 	// expected to be unique across all instances of exporters used in collector config, [a-zA-Z0-9-_]+
 	GetID() string
 	GetConfig() map[string]string
-	// GetSendingQueue returns destination-level sending_queue and batch settings.
-	// Destinations apply defaults (1000 requests / 8192 items) when unset.
+	// GetSendingQueue returns destination-level sending_queue settings.
+	// Nil skips applying sending_queue. Zero-value config enables queue with OTel defaults
+	// (queue_size 1000 requests, batch min_size 8192 items).
 	GetSendingQueueConfig() *SendingQueueConfig
 }
 
