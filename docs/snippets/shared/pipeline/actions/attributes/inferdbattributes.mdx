@@ -59,6 +59,7 @@ The InferDbAttributes action is configured using the `odigos.io/v1alpha1.Action`
         **scopes** `object` : Limits which sources this config applies to.
         - This field is *optional*
         - If unset or empty, the config is applied to all sources.
+        - If multiple source scopes are set, they must all match simultaneously (AND logic).
         <AccordionGroup>
           <Accordion title="sources">
             **sources** `object[]` : A list of workloads to apply this action to.
@@ -91,7 +92,7 @@ and without `db.operation.name` / `db.collection.name`, the action adds:
 | `db.operation.name` | `SELECT` |
 | `db.collection.name` | `users` |
 
-and may set the span name to `SELECT users`.
+and updates the span name to `SELECT users` if it hasn't been set to that already.
 
 <Steps>
   <Step>

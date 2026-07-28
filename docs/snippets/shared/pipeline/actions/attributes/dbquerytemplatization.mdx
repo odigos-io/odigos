@@ -4,9 +4,9 @@ import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
 
 <Warning>
   Before enabling **DB query templatization**, please note the following:
-  - The action rewrites `db.query.text` when present, otherwise `db.statement`.
+  - The action rewrites `db.query.text` (or the deprecated `db.statement`) in place when present.
   - Number and string literals are replaced with `?`. Identifiers, bind/positional parameters, booleans, and `NULL` are left unchanged.
-  - Spans without a `db.system` / `db.system.name` attribute, or with a known non-SQL system (e.g. MongoDB, Redis), are skipped.
+  - Spans without a `db.system.name` (or the deprecated `db.system`) attribute, or with a known non-SQL system (e.g. MongoDB, Redis), are skipped.
 </Warning>
 
 ## Use Cases
@@ -55,10 +55,11 @@ The DbQueryTemplatization action is configured using the `odigos.io/v1alpha1.Act
         **scopes** `object` : Limits which sources this templatization config applies to.
         - This field is *optional*
         - If unset or empty, the config is applied to all sources.
+        - If multiple source scopes are set, they must all match simultaneously (AND logic).
         <AccordionGroup>
           <Accordion title="sources">
             **sources** `object[]` : A list of workloads to apply this action to.
-            - Each entry requires `name`, `namespace`, and `kind` (`Deployment`, `StatefulSet`, or `DaemonSet`).
+            - Each entry requires `name`, `namespace`, and `kind` (`Deployment`, `StatefulSet`, etc.).
           </Accordion>
           <Accordion title="namespaces">
             **namespaces** `string[]` : Apply this action to all sources in the listed namespaces.
