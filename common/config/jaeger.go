@@ -58,7 +58,6 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 	}
 
 	exporterConfig["tls"] = tlsConfig
-
 	currentConfig.Exporters[exporterName] = exporterConfig
 	pipelineNames := []string{}
 	if isTracingEnabled(dest) {

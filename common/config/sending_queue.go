@@ -13,28 +13,20 @@ type BatchUnit string
 const (
 	BatchUnitItems BatchUnit = "items"
 	BatchUnitBytes BatchUnit = "bytes"
-
-	// OpenTelemetry exporterhelper defaults when sending_queue is enabled with batch: {}.
-	defaultQueueEnabled      = true
-	defaultQueueSize         = 1000
-	defaultBatchMinSize      = 8192
-	defaultBatchMaxSize      = 0
-	defaultBatchFlushTimeout = "200ms"
-	defaultBatchSizer        = BatchUnitItems
 )
 
+// QueueUnit is how queue size is measured.
+// Maps to exporterhelper sending_queue.sizer.
 type QueueUnit string
 
 const (
 	QueueUnitItems    QueueUnit = "items"
 	QueueUnitBytes    QueueUnit = "bytes"
 	QueueUnitRequests QueueUnit = "requests"
-
-	defaultQueueSizer = QueueUnitRequests
 )
 
 // SendingQueueConfig holds optional overrides for exporterhelper sending_queue.
-// Zero values mean OTel defaults: queue_size 1000 requests, batch min_size 8192 items.
+// Zero values mean OTel defaults (see DefaultSendingQueueConfig).
 type SendingQueueConfig struct {
 	Unit  QueueUnit
 	Size  int
@@ -48,15 +40,19 @@ type BatchConfig struct {
 	FlushTimeout string
 }
 
-// DefaultSendingQueueConfig enables sending_queue with OTel defaults via batch: {}
-// (queue_size 1000 requests, batch min_size 8192 items, flush_timeout 200ms).
+// DefaultSendingQueueConfig enables sending_queue with OTel defaults via batch: {}.
+// Empty fields are omitted from collector config; exporterhelper then applies:
+//   - enabled: true
+//   - sizer: requests, queue_size: 1000
+//   - batch.sizer: items, batch.min_size: 8192, batch.max_size: 0, batch.flush_timeout: 200ms
+// https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/exporterhelper/README.md#sending-queue
 func DefaultSendingQueueConfig() SendingQueueConfig {
 	return SendingQueueConfig{}
 }
 
 // BuildSendingQueue builds an exporterhelper sending_queue.
 // Always sets enabled: true and batch (at least batch: {} so batching is on).
-// Zero-value fields omit overrides and keep OTel defaults (1000 requests / 8192 items / 200ms).
+// Zero-value fields omit overrides and keep OTel defaults (see DefaultSendingQueueConfig).
 func BuildSendingQueue(queue SendingQueueConfig) GenericMap {
 	batch := GenericMap{}
 	if queue.Batch.Unit != "" {
@@ -73,7 +69,7 @@ func BuildSendingQueue(queue SendingQueueConfig) GenericMap {
 	}
 
 	sendingQueue := GenericMap{
-		"enabled": defaultQueueEnabled,
+		"enabled": true,
 		"batch":   batch,
 	}
 	if queue.Unit != "" {
