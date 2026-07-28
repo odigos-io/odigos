@@ -70,6 +70,7 @@ export type DefaultTemplatizationCrGroup = {
   actionDisabled: boolean;
   actionUiGenerated: boolean;
   groupIndex: number;
+  scopes: UrlTemplatizationDefaultGroup['scopes'];
   scopeTokens: ScopeToken[];
   disabled: boolean;
   skipForNonSuccessCodes: boolean;
@@ -82,14 +83,18 @@ export type UrlTemplatizationAggregation = {
   defaultGroups: AggregatedDefaultGroup[];
   totalCustomRuleInstances: number;
   totalDefaultGroupInstances: number;
+  enabledCustomRuleInstances: number;
   actionCount: number;
+  enabledActionCount: number;
   clusterDefaultEffect: ClusterDefaultTemplatizationEffect;
+  pageSummary: string;
 };
 
 export type ClusterDefaultTemplatizationMode = 'none' | 'cluster_wide' | 'scoped';
 
 export type ClusterDefaultTemplatizationEffect = {
   mode: ClusterDefaultTemplatizationMode;
+  disabledClusterWide: boolean;
   title: string;
   description: string;
   sectionSummary: string;
@@ -148,10 +153,10 @@ export function deriveClusterDefaultTemplatizationEffect(actions: Action[]): Clu
   if (defaultGroups.length === 0) {
     return {
       mode: 'none',
+      disabledClusterWide: false,
       title: 'No default templatization rules',
-      sectionSummary: 'No explicit default templating rules configured',
-      description:
-        'No enabled URL templatization action defines default templatization. Odigos still applies built-in heuristic default templatization for instrumented workloads covered by these actions.',
+      sectionSummary: 'No default templating rules configured',
+      description: 'No default rules configured. Only custom templates apply.',
     };
   }
 
@@ -161,10 +166,10 @@ export function deriveClusterDefaultTemplatizationEffect(actions: Action[]): Clu
     if (allGlobalDisabled) {
       return {
         mode: 'cluster_wide',
+        disabledClusterWide: true,
         title: 'Default templatization disabled cluster-wide',
         sectionSummary: 'Default templating is disabled in the entire cluster',
-        description:
-          'At least one enabled action disables default templatization for all sources. Scoped default rules may still apply where configured.',
+        description: 'Custom rules apply when they match; otherwise no default templating is used.',
       };
     }
 
@@ -173,25 +178,27 @@ export function deriveClusterDefaultTemplatizationEffect(actions: Action[]): Clu
       .map((group) => formatDefaultConfig(group))
       .filter((label) => label !== 'Default heuristic templatization enabled');
 
-    const skipDetail =
+    const description =
       skipDescriptions.length > 0
-        ? ` ${[...new Set(skipDescriptions)].join('; ')}.`
-        : ' Default heuristic templatization applies when no custom template matches.';
+        ? `Custom templates first, then default templating cluster-wide. ${[...new Set(skipDescriptions)].join('; ')}.`
+        : 'Will try custom templates first; otherwise, apply heuristic default templating.';
 
     return {
       mode: 'cluster_wide',
+      disabledClusterWide: false,
       title: 'Default templatization for the entire cluster',
       sectionSummary: 'Default templating is enabled in the entire cluster',
-      description: `An enabled action configures default templatization for all sources.${skipDetail}`,
+      description,
     };
   }
 
   return {
     mode: 'scoped',
+    disabledClusterWide: false,
     title: 'Default templatization for specific scopes only',
     sectionSummary: 'Default templatization for specific scopes only',
     description:
-      'Enabled actions define default templatization only for selected namespaces, workloads, or languages—not cluster-wide. Workloads outside those scopes rely on built-in default behavior unless another rule applies.',
+      'Spans try custom templates first; if none match, heuristic default templating is applied for the selected scopes.',
   };
 }
 
@@ -203,6 +210,43 @@ export function customTemplatesSectionSummary(ruleCount: number): string {
     return '1 custom rule';
   }
   return `${ruleCount} custom rules`;
+}
+
+function customRulesSuffix(ruleCount: number): string {
+  if (ruleCount === 0) {
+    return '';
+  }
+  if (ruleCount === 1) {
+    return ' · 1 custom rule';
+  }
+  return ` · ${ruleCount} custom rules`;
+}
+
+/** Page-level status line for default templatization + custom rules. */
+export function deriveUrlTemplatizationPageSummary(
+  effect: ClusterDefaultTemplatizationEffect,
+  enabledCustomRuleCount: number,
+  enabledActionCount: number,
+): string {
+  if (enabledActionCount === 0) {
+    return 'URL templating is OFF';
+  }
+
+  const customSuffix = customRulesSuffix(enabledCustomRuleCount);
+  const defaultIsOff = effect.disabledClusterWide || effect.mode === 'none';
+
+  if (defaultIsOff) {
+    if (enabledCustomRuleCount === 0) {
+      return 'URL templating is OFF';
+    }
+    return `Default templating is OFF${customSuffix}`;
+  }
+
+  if (effect.mode === 'scoped') {
+    return `Applying default templating to specific scopes${customSuffix}`;
+  }
+
+  return `Applying default templating to the entire cluster${customSuffix}`;
 }
 
 function formatLanguageToken(language: string): string {
@@ -288,50 +332,76 @@ export function scopeTokensFromSourcesScopes(scopes: UrlTemplatizationDefaultGro
 }
 
 export function scopeTokensFromCustomRulesGroup(group: UrlTemplatizationRulesGroup): ScopeToken[] {
-  const namespace = group.filterK8sNamespace?.trim();
-  const language = group.filterProgrammingLanguage?.trim();
+  const namespaceField = group.filterK8sNamespace?.trim() ?? '';
+  const languageField = group.filterProgrammingLanguage?.trim() ?? '';
   const workloadFilters = group.workloadFilters?.filter((filter) => filter?.kind || filter?.name) ?? [];
+  const hasLegacyWorkload = !!(group.filterK8sWorkloadKind || group.filterK8sWorkloadName);
 
-  const hasLegacyWorkload = group.filterK8sWorkloadKind || group.filterK8sWorkloadName;
-  if (!namespace && !language && workloadFilters.length === 0 && !hasLegacyWorkload) {
+  if (!namespaceField && !languageField && workloadFilters.length === 0 && !hasLegacyWorkload) {
     return [{ type: 'entire_cluster' }];
   }
 
+  const separatorIndex = namespaceField.indexOf('||');
+  const hasExplicitScopeNamespaces = separatorIndex >= 0;
+  const sourceNsPart = hasExplicitScopeNamespaces ? namespaceField.slice(0, separatorIndex) : namespaceField;
+  const extraNsPart = hasExplicitScopeNamespaces ? namespaceField.slice(separatorIndex + 2) : '';
+
+  const sourceNamespaces = sourceNsPart.split(',').map((value) => value.trim());
+  const languages = languageField
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
   const tokens: ScopeToken[] = [];
 
-  if (namespace) {
-    tokens.push({ type: 'namespace', values: [namespace] });
-  }
-
-  if (workloadFilters.length) {
-    const workloadToken = buildWorkloadScopeToken(
-      workloadFilters.map((filter) => ({
-        namespace,
-        kind: filter.kind,
-        name: filter.name,
-      })),
-    );
-    if (workloadToken) {
-      tokens.push(workloadToken);
+  if (workloadFilters.length > 0 || hasLegacyWorkload) {
+    if (hasExplicitScopeNamespaces) {
+      const scopeNamespaces = extraNsPart
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (scopeNamespaces.length) {
+        tokens.push({ type: 'namespace', values: scopeNamespaces });
+      }
     }
-  } else if (hasLegacyWorkload) {
-    const workloadToken = buildWorkloadScopeToken([
-      {
-        namespace,
-        kind: group.filterK8sWorkloadKind,
-        name: group.filterK8sWorkloadName,
-      },
-    ]);
-    if (workloadToken) {
-      tokens.push(workloadToken);
+
+    if (workloadFilters.length) {
+      const workloadToken = buildWorkloadScopeToken(
+        workloadFilters.map((filter, index) => ({
+          namespace:
+            sourceNamespaces[index] ||
+            (sourceNamespaces.length === 1 ? sourceNamespaces[0] : undefined),
+          kind: filter.kind,
+          name: filter.name,
+        })),
+      );
+      if (workloadToken) {
+        tokens.push(workloadToken);
+      }
+    } else {
+      const workloadToken = buildWorkloadScopeToken([
+        {
+          namespace: sourceNamespaces[0] || undefined,
+          kind: group.filterK8sWorkloadKind,
+          name: group.filterK8sWorkloadName,
+        },
+      ]);
+      if (workloadToken) {
+        tokens.push(workloadToken);
+      }
+    }
+  } else {
+    const scopeNamespaces = sourceNamespaces.filter(Boolean);
+    if (scopeNamespaces.length) {
+      tokens.push({ type: 'namespace', values: scopeNamespaces });
     }
   }
 
-  if (language) {
-    tokens.push({ type: 'language', values: [formatLanguageToken(language)] });
+  if (languages.length) {
+    tokens.push({ type: 'language', values: languages.map(formatLanguageToken) });
   }
 
-  return tokens;
+  return tokens.length ? tokens : [{ type: 'entire_cluster' }];
 }
 
 function formatDefaultConfig(group: UrlTemplatizationDefaultGroup): string {
@@ -416,6 +486,7 @@ export function collectDefaultTemplatizationCrGroups(actions: Action[]): Default
         actionDisabled: !!action.disabled,
         actionUiGenerated: actionUiGenerated(action),
         groupIndex,
+        scopes: group.scopes ?? null,
         scopeTokens: scopeTokensFromSourcesScopes(group.scopes),
         disabled: !!group.disabled,
         skipForNonSuccessCodes: !!group.skipPolicy?.skipForNonSuccessCodes,
@@ -455,10 +526,15 @@ export function aggregateUrlTemplatization(actions: Action[]): UrlTemplatization
 
   let totalCustomRuleInstances = 0;
   let totalDefaultGroupInstances = 0;
+  let enabledCustomRuleInstances = 0;
+  let enabledActionCount = 0;
 
   for (const action of actions) {
     const label = actionLabel(action);
     const fields = action.fields as UrlTemplatizationActionFields | undefined;
+    if (!action.disabled) {
+      enabledActionCount += 1;
+    }
 
     for (const group of fields?.urlTemplatizationRulesGroups ?? []) {
       const scopeTokens = scopeTokensFromCustomRulesGroup(group);
@@ -468,6 +544,9 @@ export function aggregateUrlTemplatization(actions: Action[]): UrlTemplatization
           continue;
         }
         totalCustomRuleInstances += 1;
+        if (!action.disabled) {
+          enabledCustomRuleInstances += 1;
+        }
         const key = customRuleKey(template, scopeTokens, action.id);
         const entry =
           customMap.get(key) ??
@@ -570,12 +649,21 @@ export function aggregateUrlTemplatization(actions: Action[]): UrlTemplatization
         a.configLabel.localeCompare(b.configLabel),
     );
 
+  const clusterDefaultEffect = deriveClusterDefaultTemplatizationEffect(actions);
+
   return {
     customTemplates,
     defaultGroups,
     totalCustomRuleInstances,
     totalDefaultGroupInstances,
+    enabledCustomRuleInstances,
     actionCount: actions.length,
-    clusterDefaultEffect: deriveClusterDefaultTemplatizationEffect(actions),
+    enabledActionCount,
+    clusterDefaultEffect,
+    pageSummary: deriveUrlTemplatizationPageSummary(
+      clusterDefaultEffect,
+      enabledCustomRuleInstances,
+      enabledActionCount,
+    ),
   };
 }

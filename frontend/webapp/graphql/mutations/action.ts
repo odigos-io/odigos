@@ -58,6 +58,22 @@ export const CREATE_ACTION = gql`
             examples
           }
         }
+        urlTemplatizationDefaultGroups {
+          disabled
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
+          skipPolicy {
+            skipForNonSuccessCodes
+            skipHttpStatusCodes
+          }
+        }
         extractAttribute {
           extractions {
             targetAttributeName
@@ -143,6 +159,22 @@ export const UPDATE_ACTION = gql`
             template
             notes
             examples
+          }
+        }
+        urlTemplatizationDefaultGroups {
+          disabled
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
+          skipPolicy {
+            skipForNonSuccessCodes
+            skipHttpStatusCodes
           }
         }
         extractAttribute {

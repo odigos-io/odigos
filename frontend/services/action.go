@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -671,50 +672,8 @@ func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existin
 	if details.URLTemplatizationRulesGroups != nil {
 		rules = make([]apiactions.UrlTemplatizationRule, 0, len(details.URLTemplatizationRulesGroups))
 		for _, g := range details.URLTemplatizationRulesGroups {
-			group := apiactions.UrlTemplatizationRule{}
-
-			// Fold the URL-templatization filter form into the tri-list SourcesScopes shape:
-			//   * Each WorkloadFilter row → one PodWorkload appended to Sources (with namespace baked in).
-			//   * Singleton fallback path: build one PodWorkload if a workload identity is given,
-			//     otherwise fall back to a namespace-only entry.
-			//   * FilterProgrammingLanguage → Languages.
-			scopes := &k8sconsts.SourcesScopes{}
-			if len(g.WorkloadFilters) > 0 {
-				for _, wf := range g.WorkloadFilters {
-					pw := k8sconsts.PodWorkload{}
-					if g.FilterK8sNamespace != nil {
-						pw.Namespace = *g.FilterK8sNamespace
-					}
-					if wf.Kind != nil {
-						pw.Kind = k8sconsts.WorkloadKind(*wf.Kind)
-					}
-					if wf.Name != nil {
-						pw.Name = *wf.Name
-					}
-					scopes.Sources = append(scopes.Sources, pw)
-				}
-			} else if g.FilterK8sNamespace != nil || g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil {
-				if g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil {
-					pw := k8sconsts.PodWorkload{}
-					if g.FilterK8sNamespace != nil {
-						pw.Namespace = *g.FilterK8sNamespace
-					}
-					if g.FilterK8sWorkloadKind != nil {
-						pw.Kind = k8sconsts.WorkloadKind(*g.FilterK8sWorkloadKind)
-					}
-					if g.FilterK8sWorkloadName != nil {
-						pw.Name = *g.FilterK8sWorkloadName
-					}
-					scopes.Sources = append(scopes.Sources, pw)
-				} else if g.FilterK8sNamespace != nil {
-					scopes.Namespaces = append(scopes.Namespaces, *g.FilterK8sNamespace)
-				}
-			}
-			if g.FilterProgrammingLanguage != nil {
-				scopes.Languages = append(scopes.Languages, common.ProgrammingLanguage(*g.FilterProgrammingLanguage))
-			}
-			if len(scopes.Sources) > 0 || len(scopes.Namespaces) > 0 || len(scopes.Languages) > 0 {
-				group.Scopes = scopes
+			group := apiactions.UrlTemplatizationRule{
+				Scopes: urlTemplatizationRulesGroupInputToScopes(g),
 			}
 
 			for _, rule := range g.TemplatizationRules {
@@ -778,39 +737,7 @@ func convertUrlTemplatizationToModel(cfg *apiactions.URLTemplatizationConfig) []
 	var result []*model.URLTemplatizationRulesGroup
 	for _, g := range cfg.Rules {
 		group := &model.URLTemplatizationRulesGroup{}
-
-		// Unfold tri-list SourcesScopes back into the URL-templatization filter form.
-		// The GraphQL shape exposes only single-value FilterK8sNamespace and
-		// FilterProgrammingLanguage, so multi-namespace/multi-language scopes are
-		// projected to the first entry (best-effort; the wire format predates the list).
-		if g.Scopes != nil {
-			for _, src := range g.Scopes.Sources {
-				if src.Kind != "" || src.Name != "" {
-					filter := &model.TemplatizationWorkloadFilter{}
-					if src.Kind != "" {
-						kind := model.K8sResourceKind(src.Kind)
-						filter.Kind = &kind
-					}
-					if src.Name != "" {
-						name := src.Name
-						filter.Name = &name
-					}
-					group.WorkloadFilters = append(group.WorkloadFilters, filter)
-				}
-				if src.Namespace != "" && group.FilterK8sNamespace == nil {
-					ns := src.Namespace
-					group.FilterK8sNamespace = &ns
-				}
-			}
-			if group.FilterK8sNamespace == nil && len(g.Scopes.Namespaces) > 0 {
-				ns := g.Scopes.Namespaces[0]
-				group.FilterK8sNamespace = &ns
-			}
-			if len(g.Scopes.Languages) > 0 {
-				lang := string(g.Scopes.Languages[0])
-				group.FilterProgrammingLanguage = &lang
-			}
-		}
+		encodeUrlTemplatizationScopesToRulesGroup(g.Scopes, group)
 
 		for _, rule := range g.Templates {
 			group.TemplatizationRules = append(group.TemplatizationRules, &model.URLTemplatizationRule{
@@ -820,6 +747,177 @@ func convertUrlTemplatizationToModel(cfg *apiactions.URLTemplatizationConfig) []
 		result = append(result, group)
 	}
 	return result
+}
+
+// urlTemplatizationNamespaceScopeSeparator separates per-source namespaces from
+// additional namespace-scope entries inside FilterK8sNamespace. Multi-value
+// lists are CSV-encoded so the existing GraphQL String fields can carry any
+// number of entities without a schema change.
+const urlTemplatizationNamespaceScopeSeparator = "||"
+
+func splitCSV(value string) []string {
+	if value == "" {
+		return nil
+	}
+	parts := strings.Split(value, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
+}
+
+// splitCSVPreserveEmpty keeps blank slots so per-source namespace indices stay
+// aligned with WorkloadFilters when encoded as a parallel CSV list.
+func splitCSVPreserveEmpty(value string) []string {
+	if value == "" {
+		return nil
+	}
+	parts := strings.Split(value, ",")
+	out := make([]string, len(parts))
+	for i, part := range parts {
+		out[i] = strings.TrimSpace(part)
+	}
+	return out
+}
+
+func joinCSV(values []string) string {
+	cleaned := make([]string, 0, len(values))
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed != "" {
+			cleaned = append(cleaned, trimmed)
+		}
+	}
+	return strings.Join(cleaned, ",")
+}
+
+func parseNamespaceFilterField(value *string) (sourceNamespaces []string, scopeNamespaces []string) {
+	if value == nil {
+		return nil, nil
+	}
+	trimmed := strings.TrimSpace(*value)
+	if trimmed == "" {
+		return nil, nil
+	}
+	parts := strings.SplitN(trimmed, urlTemplatizationNamespaceScopeSeparator, 2)
+	sourceNamespaces = splitCSVPreserveEmpty(parts[0])
+	if len(parts) == 2 {
+		scopeNamespaces = splitCSV(parts[1])
+	}
+	return sourceNamespaces, scopeNamespaces
+}
+
+func urlTemplatizationRulesGroupInputToScopes(g *model.URLTemplatizationRulesGroupInput) *k8sconsts.SourcesScopes {
+	if g == nil {
+		return nil
+	}
+
+	scopes := &k8sconsts.SourcesScopes{}
+	sourceNamespaces, scopeNamespaces := parseNamespaceFilterField(g.FilterK8sNamespace)
+
+	if len(g.WorkloadFilters) > 0 {
+		for i, wf := range g.WorkloadFilters {
+			if wf == nil {
+				continue
+			}
+			pw := k8sconsts.PodWorkload{}
+			if i < len(sourceNamespaces) {
+				pw.Namespace = sourceNamespaces[i]
+			} else if len(sourceNamespaces) == 1 {
+				pw.Namespace = sourceNamespaces[0]
+			}
+			if wf.Kind != nil {
+				pw.Kind = k8sconsts.WorkloadKind(*wf.Kind)
+			}
+			if wf.Name != nil {
+				pw.Name = *wf.Name
+			}
+			scopes.Sources = append(scopes.Sources, pw)
+		}
+		scopes.Namespaces = append(scopes.Namespaces, scopeNamespaces...)
+	} else if g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil {
+		pw := k8sconsts.PodWorkload{}
+		if len(sourceNamespaces) > 0 {
+			pw.Namespace = sourceNamespaces[0]
+		}
+		if g.FilterK8sWorkloadKind != nil {
+			pw.Kind = k8sconsts.WorkloadKind(*g.FilterK8sWorkloadKind)
+		}
+		if g.FilterK8sWorkloadName != nil {
+			pw.Name = *g.FilterK8sWorkloadName
+		}
+		scopes.Sources = append(scopes.Sources, pw)
+		scopes.Namespaces = append(scopes.Namespaces, scopeNamespaces...)
+	} else {
+		// Namespace-only (or namespace + language) scope: all CSV entries are namespace filters.
+		allNamespaces := append([]string{}, sourceNamespaces...)
+		allNamespaces = append(allNamespaces, scopeNamespaces...)
+		scopes.Namespaces = append(scopes.Namespaces, allNamespaces...)
+	}
+
+	if g.FilterProgrammingLanguage != nil {
+		for _, lang := range splitCSV(*g.FilterProgrammingLanguage) {
+			scopes.Languages = append(scopes.Languages, common.ProgrammingLanguage(lang))
+		}
+	}
+
+	if len(scopes.Sources) == 0 && len(scopes.Namespaces) == 0 && len(scopes.Languages) == 0 {
+		return nil
+	}
+	return scopes
+}
+
+func encodeUrlTemplatizationScopesToRulesGroup(scopes *k8sconsts.SourcesScopes, group *model.URLTemplatizationRulesGroup) {
+	if scopes == nil || group == nil {
+		return
+	}
+
+	sourceNamespaces := make([]string, 0, len(scopes.Sources))
+	for _, src := range scopes.Sources {
+		if src.Kind != "" || src.Name != "" {
+			filter := &model.TemplatizationWorkloadFilter{}
+			if src.Kind != "" {
+				kind := model.K8sResourceKind(src.Kind)
+				filter.Kind = &kind
+			}
+			if src.Name != "" {
+				name := src.Name
+				filter.Name = &name
+			}
+			group.WorkloadFilters = append(group.WorkloadFilters, filter)
+		}
+		sourceNamespaces = append(sourceNamespaces, src.Namespace)
+	}
+
+	var filterNamespace string
+	if len(group.WorkloadFilters) > 0 {
+		// Preserve empty slots so decode can zip namespaces with workload filters.
+		sourcePart := strings.Join(sourceNamespaces, ",")
+		scopePart := joinCSV(scopes.Namespaces)
+		if scopePart != "" {
+			filterNamespace = sourcePart + urlTemplatizationNamespaceScopeSeparator + scopePart
+		} else {
+			filterNamespace = sourcePart
+		}
+	} else if len(scopes.Namespaces) > 0 {
+		filterNamespace = joinCSV(scopes.Namespaces)
+	}
+	if filterNamespace != "" {
+		group.FilterK8sNamespace = &filterNamespace
+	}
+
+	if len(scopes.Languages) > 0 {
+		langs := make([]string, 0, len(scopes.Languages))
+		for _, lang := range scopes.Languages {
+			langs = append(langs, string(lang))
+		}
+		joined := joinCSV(langs)
+		group.FilterProgrammingLanguage = &joined
+	}
 }
 
 func convertUrlTemplatizationDefaultToModel(cfg *apiactions.URLTemplatizationConfig) []*model.URLTemplatizationDefaultGroup {

@@ -24,43 +24,46 @@ export type AppendRuleGroupInput = {
   templates: string[];
 };
 
+/** Separates per-source namespaces from additional namespace-scope entries in filterK8sNamespace. */
+export const RULE_GROUP_NAMESPACE_SCOPE_SEPARATOR = '||';
+
 export function makeEmptySourcesScopes(): SourcesScopes {
   return { sources: [], namespaces: [], languages: [] };
 }
 
+function joinCsv(values: string[]): string | null {
+  const cleaned = values.map((value) => value.trim()).filter(Boolean);
+  return cleaned.length ? cleaned.join(',') : null;
+}
+
 /**
- * Fold SourceScopeSection's SourcesScopes into the GraphQL URL-templatization
- * filter form (single namespace / language + workloadFilters). Multi-value
- * scopes are rejected so we do not silently drop entries on convert.
+ * Map SourceScopeSection's SourcesScopes into the existing GraphQL filter fields.
+ * Multi-value selections are encoded as CSV (and optional `||` for extra namespaces)
+ * so the API shape stays unchanged while any number of entities is allowed.
  */
 export function sourcesScopesToAppendRuleGroupFilters(
   scopes: SourcesScopes,
-): { ok: true; filters: Omit<AppendRuleGroupInput, 'templates' | 'notes'> } | { ok: false; error: string } {
-  const sources = scopes.sources ?? [];
-  const namespaces = scopes.namespaces ?? [];
-  const languages = scopes.languages ?? [];
+): { ok: true; filters: Omit<AppendRuleGroupInput, 'templates' | 'notes'> } {
+  const sources = (scopes.sources ?? []).filter((source) => source.name?.trim());
+  const namespaces = (scopes.namespaces ?? []).map((value) => value.trim()).filter(Boolean);
+  const languages = (scopes.languages ?? []).map((value) => value.trim()).filter(Boolean);
+
+  const filterProgrammingLanguage = joinCsv(languages);
 
   if (sources.length > 0) {
-    const distinctNamespaces = Array.from(
-      new Set(sources.map((source) => source.namespace?.trim()).filter(Boolean)),
-    );
-    if (distinctNamespaces.length > 1) {
-      return {
-        ok: false,
-        error: 'Selected sources must share a single namespace for URL templatization rule groups.',
-      };
-    }
-    if (namespaces.length > 0 || languages.length > 0) {
-      return {
-        ok: false,
-        error: 'Choose either sources, namespaces, or languages — not a combination.',
-      };
-    }
+    // Keep empty slots so namespace indices stay aligned with workloadFilters.
+    const sourceNamespaces = sources.map((source) => source.namespace?.trim() || '');
+    const sourceNsCsv = sourceNamespaces.join(',');
+    const extraNsCsv = joinCsv(namespaces);
+    const filterK8sNamespace = extraNsCsv
+      ? `${sourceNsCsv}${RULE_GROUP_NAMESPACE_SCOPE_SEPARATOR}${extraNsCsv}`
+      : sourceNsCsv || null;
+
     return {
       ok: true,
       filters: {
-        filterK8sNamespace: distinctNamespaces[0] ?? null,
-        filterProgrammingLanguage: null,
+        filterK8sNamespace,
+        filterProgrammingLanguage,
         workloadFilters: sources.map((source) => ({
           kind: source.kind || null,
           name: source.name || null,
@@ -69,51 +72,11 @@ export function sourcesScopesToAppendRuleGroupFilters(
     };
   }
 
-  if (namespaces.length > 0) {
-    if (namespaces.length > 1) {
-      return {
-        ok: false,
-        error: 'Select a single namespace for this rule group.',
-      };
-    }
-    if (languages.length > 0) {
-      return {
-        ok: false,
-        error: 'Choose either sources, namespaces, or languages — not a combination.',
-      };
-    }
-    return {
-      ok: true,
-      filters: {
-        filterK8sNamespace: namespaces[0]?.trim() || null,
-        filterProgrammingLanguage: null,
-        workloadFilters: null,
-      },
-    };
-  }
-
-  if (languages.length > 0) {
-    if (languages.length > 1) {
-      return {
-        ok: false,
-        error: 'Select a single programming language for this rule group.',
-      };
-    }
-    return {
-      ok: true,
-      filters: {
-        filterK8sNamespace: null,
-        filterProgrammingLanguage: languages[0]?.trim() || null,
-        workloadFilters: null,
-      },
-    };
-  }
-
   return {
     ok: true,
     filters: {
-      filterK8sNamespace: null,
-      filterProgrammingLanguage: null,
+      filterK8sNamespace: joinCsv(namespaces),
+      filterProgrammingLanguage,
       workloadFilters: null,
     },
   };

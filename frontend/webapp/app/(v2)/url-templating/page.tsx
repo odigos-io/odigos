@@ -4,8 +4,8 @@ import React, { useMemo, useState, useCallback, type PropsWithChildren } from 'r
 import styled from 'styled-components';
 import { ActionIcon } from '@odigos/ui-kit/icons';
 import { RichTitle } from '@odigos/ui-kit/snippets';
-import { useApiQuery } from '@odigos/ui-kit/contexts';
-import { StatusType } from '@odigos/ui-kit/types';
+import { useApiMutation, useApiQuery } from '@odigos/ui-kit/contexts';
+import { ActionType, SignalType, StatusType } from '@odigos/ui-kit/types';
 import type { Action } from '@odigos/ui-kit/types';
 import {
   Button,
@@ -22,13 +22,17 @@ import {
   Segment,
   SegmentSize,
   SegmentVariant,
+  StatusCard,
   Typography,
   TypographyColor,
   TypographySize,
+  WarningModal,
 } from '@odigos/ui-kit/components';
 import { CustomTemplateCrGroupsView, CustomTemplateListView, CustomTemplateTreeView } from './custom-templates-view';
 import { CreateGroupTemplatesDrawer } from './create-group-templates-drawer';
 import { DefaultTemplatizationCrGroupsView } from './default-templatization-view';
+import { DefaultTemplatizationDetailDrawer } from './default-templatization-detail-drawer';
+import { EditDefaultTemplatizationDrawer } from './edit-default-templatization-drawer';
 import { EditGroupTemplatesDrawer } from './edit-group-templates-drawer';
 import { NewCustomTemplateDrawer, type NewCustomTemplateTarget } from './new-custom-template-drawer';
 import { SectionHelpButton } from './section-help-button';
@@ -42,7 +46,13 @@ import {
   isUrlTemplatizationAction,
   scopeTokensSortKey,
   type CustomTemplateCrGroup,
+  type DefaultTemplatizationCrGroup,
 } from './url-templatization-aggregate';
+import {
+  buildUpdateActionReenablingClusterWideDefaults,
+  buildUpdateActionWithAppendedDefaultGroup,
+} from './action-default-group-update';
+import { findUiTemplateRulesAction, UI_TEMPLATE_RULES_ACTION_NAME } from './ui-template-rules';
 import { useConfig } from '@/hooks';
 
 const PageRoot = styled(FlexColumn)`
@@ -95,7 +105,114 @@ const CustomTemplatesSearchWrap = styled.div`
   min-width: 200px;
 `;
 
+const StatusActions = styled(FlexRow)`
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const StatusBannerWrap = styled.div`
+  flex: 0 0 auto;
+  width: 100%;
+  align-self: stretch;
+
+  /* StatusCard uses flex: 1; keep the page banner content-sized. */
+  & > * {
+    flex: 0 0 auto;
+  }
+`;
+
+const StatusPanel = styled(FlexColumn)<{ $status: StatusType }>`
+  flex: 0 0 auto;
+  width: 100%;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid
+    ${({ theme, $status }) => {
+      if ($status === StatusType.Warning) {
+        return theme.v2.colors.yellow[600];
+      }
+      if ($status === StatusType.Success) {
+        return theme.v2.colors.green[600];
+      }
+      if ($status === StatusType.Info) {
+        return theme.v2.colors.blue[500];
+      }
+      return theme.v2.colors.silver[600];
+    }};
+  background: ${({ theme, $status }) => {
+    if ($status === StatusType.Warning) {
+      return `color-mix(in srgb, ${theme.v2.colors.yellow[600]} 10%, ${theme.v2.colors.silver[900]})`;
+    }
+    if ($status === StatusType.Success) {
+      return `color-mix(in srgb, ${theme.v2.colors.green[600]} 10%, ${theme.v2.colors.silver[900]})`;
+    }
+    if ($status === StatusType.Info) {
+      return `color-mix(in srgb, ${theme.v2.colors.blue[500]} 10%, ${theme.v2.colors.silver[900]})`;
+    }
+    return theme.v2.colors.silver[900];
+  }};
+`;
+
 export type CustomTemplateViewMode = 'list' | 'tree' | 'action';
+
+const ENABLE_CLUSTER_DEFAULT_WARNING =
+  'Default heuristic templating works for most URLs, but not always. Enabling it for the entire cluster can increase cardinality when unusual paths are templatized incorrectly.';
+
+function TemplatingStatusBanner({
+  status,
+  title,
+  description,
+  action,
+}: {
+  status: StatusType;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}) {
+  if (!action) {
+    return (
+      <StatusBannerWrap>
+        <StatusCard status={status} title={title} description={description} />
+      </StatusBannerWrap>
+    );
+  }
+
+  return (
+    <StatusPanel $status={status} $gap={12}>
+      <FlexColumn $gap={4}>
+        <Typography size={TypographySize.XS}>{title}</Typography>
+        <Typography size={TypographySize.XXS} color={TypographyColor.Secondary}>
+          {description}
+        </Typography>
+      </FlexColumn>
+      <StatusActions $gap={12}>{action}</StatusActions>
+    </StatusPanel>
+  );
+}
+
+function pageSummaryStatus(
+  effect: { mode: string; disabledClusterWide: boolean },
+  enabledCustomRuleCount: number,
+  enabledActionCount: number,
+): StatusType {
+  if (enabledActionCount === 0) {
+    return StatusType.Disabled;
+  }
+  const defaultIsOff = effect.disabledClusterWide || effect.mode === 'none';
+  if (defaultIsOff && enabledCustomRuleCount === 0) {
+    return StatusType.Disabled;
+  }
+  if (defaultIsOff) {
+    return StatusType.Warning;
+  }
+  if (effect.mode === 'scoped') {
+    return StatusType.Info;
+  }
+  return StatusType.Success;
+}
 
 function PageShell({
   children,
@@ -127,11 +244,26 @@ export default function UrlTemplatingPage() {
   const [customTemplateQuery, setCustomTemplateQuery] = useState('');
   const [customTemplateView, setCustomTemplateView] = useState<CustomTemplateViewMode>('action');
   const [selectedTemplateDetail, setSelectedTemplateDetail] = useState<UrlTemplateDetail | null>(null);
+  const [selectedDefaultGroup, setSelectedDefaultGroup] = useState<DefaultTemplatizationCrGroup | null>(null);
+  const [editDefaultGroup, setEditDefaultGroup] = useState<DefaultTemplatizationCrGroup | null>(null);
+  const [createDefaultAction, setCreateDefaultAction] = useState<Action | null>(null);
   const [editTemplatesGroup, setEditTemplatesGroup] = useState<CustomTemplateCrGroup | null>(null);
   const [editFocusNewTemplate, setEditFocusNewTemplate] = useState(false);
   const [createGroupAction, setCreateGroupAction] = useState<Action | null>(null);
   const [createLockEntireClusterScope, setCreateLockEntireClusterScope] = useState(false);
   const [newTemplateOpen, setNewTemplateOpen] = useState(false);
+  const [confirmEnableClusterDefaultOpen, setConfirmEnableClusterDefaultOpen] = useState(false);
+  const [enableClusterDefaultError, setEnableClusterDefaultError] = useState<string | null>(null);
+
+  const [createAction, { loading: creatingAction }] = useApiMutation('CREATE_ACTION', {
+    refetchQueries: ['GetActions'],
+    awaitRefetchQueries: true,
+  });
+  const [updateAction, { loading: updatingAction }] = useApiMutation('UPDATE_ACTION', {
+    refetchQueries: ['GetActions'],
+    awaitRefetchQueries: true,
+  });
+  const enablingClusterDefault = creatingAction || updatingAction;
 
   const urlTemplatizationActions = useMemo(() => {
     const actions = data?.computePlatform?.actions ?? [];
@@ -140,6 +272,10 @@ export default function UrlTemplatingPage() {
 
   const aggregation = useMemo(() => aggregateUrlTemplatization(urlTemplatizationActions), [urlTemplatizationActions]);
 
+  const defaultTemplatizationOff =
+    aggregation.enabledActionCount === 0 ||
+    aggregation.clusterDefaultEffect.mode === 'none' ||
+    aggregation.clusterDefaultEffect.disabledClusterWide;
   const filteredCustomTemplates = useMemo(() => {
     const query = customTemplateQuery.trim().toLowerCase();
     if (!query) {
@@ -171,6 +307,47 @@ export default function UrlTemplatingPage() {
     }
     return urlTemplatizationActions.find((action) => action.id === selectedTemplateDetail.actionId) ?? null;
   }, [selectedTemplateDetail, urlTemplatizationActions]);
+
+  const selectedDefaultAction = useMemo(() => {
+    if (createDefaultAction) {
+      return createDefaultAction;
+    }
+    const group = editDefaultGroup ?? selectedDefaultGroup;
+    if (!group) {
+      return null;
+    }
+    return urlTemplatizationActions.find((action) => action.id === group.actionId) ?? null;
+  }, [createDefaultAction, editDefaultGroup, selectedDefaultGroup, urlTemplatizationActions]);
+
+  const handleOpenCreateDefaultRule = useCallback(async () => {
+    const enabledActions = urlTemplatizationActions.filter((action) => !action.disabled);
+    let target = findUiTemplateRulesAction(enabledActions) ?? enabledActions[0] ?? null;
+    if (!target) {
+      const { data: created, error: createError } = await createAction({
+        action: {
+          type: ActionType.URLTemplatization,
+          name: UI_TEMPLATE_RULES_ACTION_NAME,
+          notes: 'Default action for URL templates created from the Odigos UI.',
+          disabled: false,
+          signals: [SignalType.Traces],
+          fields: {
+            urlTemplatizationRulesGroups: [],
+            urlTemplatizationDefaultGroups: [],
+          },
+        },
+      });
+      if (createError) {
+        return;
+      }
+      if (!created?.createAction) {
+        return;
+      }
+      target = created.createAction;
+      void refetch();
+    }
+    setEditDefaultGroup(null);
+    setCreateDefaultAction(target);
+  }, [createAction, refetch, urlTemplatizationActions]);
 
   const drawerActionRuleGroups = useMemo(() => {
     if (!selectedTemplateDetail) {
@@ -228,6 +405,122 @@ export default function UrlTemplatingPage() {
     [handleEditGroupTemplates],
   );
 
+  const handleEnableClusterWideDefault = useCallback(async () => {
+    setEnableClusterDefaultError(null);
+    try {
+      const enabledActions = urlTemplatizationActions.filter((action) => !action.disabled);
+      let reenabledAny = false;
+      for (const action of enabledActions) {
+        const variables = buildUpdateActionReenablingClusterWideDefaults(action);
+        if (!variables) {
+          continue;
+        }
+        const { error: updateError } = await updateAction(variables);
+        if (updateError) {
+          throw new Error(updateError.message || 'Failed to enable default templating');
+        }
+        reenabledAny = true;
+      }
+      if (reenabledAny) {
+        setConfirmEnableClusterDefaultOpen(false);
+        void refetch();
+        return;
+      }
+
+      let target = findUiTemplateRulesAction(enabledActions) ?? enabledActions[0];
+      if (!target) {
+        const { data: created, error: createError } = await createAction({
+          action: {
+            type: ActionType.URLTemplatization,
+            name: UI_TEMPLATE_RULES_ACTION_NAME,
+            notes: 'Default action for URL templates created from the Odigos UI.',
+            disabled: false,
+            signals: [SignalType.Traces],
+            fields: {
+              urlTemplatizationRulesGroups: [],
+              urlTemplatizationDefaultGroups: [
+                {
+                  scopes: null,
+                  disabled: false,
+                  skipPolicy: null,
+                },
+              ],
+            },
+          },
+        });
+        if (createError) {
+          throw new Error(createError.message || 'Failed to enable default templating');
+        }
+        if (!created?.createAction) {
+          throw new Error('Failed to enable default templating');
+        }
+        setConfirmEnableClusterDefaultOpen(false);
+        void refetch();
+        return;
+      }
+
+      const { error: updateError } = await updateAction(buildUpdateActionWithAppendedDefaultGroup(target));
+      if (updateError) {
+        throw new Error(updateError.message || 'Failed to enable default templating');
+      }
+      setConfirmEnableClusterDefaultOpen(false);
+      void refetch();
+    } catch (err) {
+      setEnableClusterDefaultError(
+        err instanceof Error ? err.message : 'Failed to enable default templating',
+      );
+    }
+  }, [createAction, refetch, updateAction, urlTemplatizationActions]);
+
+  const enableClusterDefaultButton =
+    isReadonly || !defaultTemplatizationOff ? null : (
+      <Button
+        data-id="url-templating-enable-cluster-default"
+        label="Enable default templating for entire cluster"
+        variant={ButtonVariants.Primary}
+        size={ButtonSize.S}
+        onClick={() => {
+          setEnableClusterDefaultError(null);
+          setConfirmEnableClusterDefaultOpen(true);
+        }}
+        disabled={enablingClusterDefault}
+      />
+    );
+
+  const enableClusterDefaultModal = (
+    <WarningModal
+      isOpen={confirmEnableClusterDefaultOpen}
+      title="Enable default templating cluster-wide?"
+      description={ENABLE_CLUSTER_DEFAULT_WARNING}
+      onClose={() => {
+        if (!enablingClusterDefault) {
+          setConfirmEnableClusterDefaultOpen(false);
+          setEnableClusterDefaultError(null);
+        }
+      }}
+      denyButton={{
+        label: 'Cancel',
+        onClick: () => {
+          setConfirmEnableClusterDefaultOpen(false);
+          setEnableClusterDefaultError(null);
+        },
+        disabled: enablingClusterDefault,
+      }}
+      approveButton={{
+        label: 'Enable for entire cluster',
+        onClick: () => {
+          void handleEnableClusterWideDefault();
+        },
+        loading: enablingClusterDefault,
+        disabled: enablingClusterDefault,
+      }}
+    >
+      {enableClusterDefaultError ? (
+        <Note status={StatusType.Error} message={enableClusterDefaultError} fullWidth />
+      ) : null}
+    </WarningModal>
+  );
+
   const filteredCustomTemplateCrGroups = useMemo(() => {
     const query = customTemplateQuery.trim().toLowerCase();
     if (!query) {
@@ -255,6 +548,19 @@ export default function UrlTemplatingPage() {
       variant={ButtonVariants.Primary}
       size={ButtonSize.S}
       onClick={() => setNewTemplateOpen(true)}
+    />
+  );
+
+  const newDefaultRuleButton = isReadonly ? null : (
+    <Button
+      data-id="url-templating-new-default-rule"
+      label="+ New default rule"
+      variant={ButtonVariants.Primary}
+      size={ButtonSize.S}
+      onClick={() => {
+        void handleOpenCreateDefaultRule();
+      }}
+      disabled={enablingClusterDefault}
     />
   );
 
@@ -288,6 +594,38 @@ export default function UrlTemplatingPage() {
               }
         }
         onClose={() => setSelectedTemplateDetail(null)}
+      />
+      <DefaultTemplatizationDetailDrawer
+        group={selectedDefaultGroup}
+        action={isReadonly ? null : selectedDefaultAction}
+        onEdit={
+          isReadonly
+            ? undefined
+            : (group) => {
+                setSelectedDefaultGroup(null);
+                setEditDefaultGroup(group);
+              }
+        }
+        onDeleted={
+          isReadonly
+            ? undefined
+            : () => {
+                void refetch();
+              }
+        }
+        onClose={() => setSelectedDefaultGroup(null)}
+      />
+      <EditDefaultTemplatizationDrawer
+        group={editDefaultGroup}
+        action={isReadonly ? null : selectedDefaultAction}
+        creating={!!createDefaultAction && !editDefaultGroup}
+        onClose={() => {
+          setEditDefaultGroup(null);
+          setCreateDefaultAction(null);
+        }}
+        onSaved={() => {
+          void refetch();
+        }}
       />
       <EditGroupTemplatesDrawer
         group={editTemplatesGroup}
@@ -344,6 +682,12 @@ export default function UrlTemplatingPage() {
   if (!urlTemplatizationActions.length) {
     return (
       <PageShell headerAction={newTemplateButton}>
+        <TemplatingStatusBanner
+          status={StatusType.Disabled}
+          title="URL templating is OFF"
+          description="No URL templatization actions are configured in this cluster."
+          action={enableClusterDefaultButton}
+        />
         <CenterThis>
           <NoData
             icon={ActionIcon}
@@ -352,16 +696,27 @@ export default function UrlTemplatingPage() {
           />
         </CenterThis>
         {sharedDrawers}
+        {enableClusterDefaultModal}
       </PageShell>
     );
   }
 
-  const { clusterDefaultEffect } = aggregation;
+  const { clusterDefaultEffect, pageSummary } = aggregation;
 
   const customSectionSummary = customTemplatesSectionSummary(aggregation.totalCustomRuleInstances);
 
   return (
     <PageShell headerAction={newTemplateButton}>
+      <TemplatingStatusBanner
+        status={pageSummaryStatus(
+          clusterDefaultEffect,
+          aggregation.enabledCustomRuleInstances,
+          aggregation.enabledActionCount,
+        )}
+        title={pageSummary}
+        description={clusterDefaultEffect.description}
+        action={enableClusterDefaultButton}
+      />
       <DataCard
         bgTint="800"
         withCollapse
@@ -377,14 +732,25 @@ export default function UrlTemplatingPage() {
             />
           ),
         }}
+        renderOnRightSide={newDefaultRuleButton}
       >
         {defaultTemplatizationCrGroups.length === 0 ? (
           <Typography size={TypographySize.XXS} color={TypographyColor.Secondary}>
-            No default templatization scope groups configured. Built-in heuristic default
-            templatization still applies when no custom template matches.
+            No default templatization rules configured.
           </Typography>
         ) : (
-          <DefaultTemplatizationCrGroupsView groups={defaultTemplatizationCrGroups} />
+          <DefaultTemplatizationCrGroupsView
+            groups={defaultTemplatizationCrGroups}
+            onSelectGroup={setSelectedDefaultGroup}
+            onEditGroup={
+              isReadonly
+                ? undefined
+                : (group) => {
+                    setCreateDefaultAction(null);
+                    setEditDefaultGroup(group);
+                  }
+            }
+          />
         )}
       </DataCard>
 
@@ -470,6 +836,7 @@ export default function UrlTemplatingPage() {
         )}
       </DataCard>
       {sharedDrawers}
+      {enableClusterDefaultModal}
     </PageShell>
   );
 }

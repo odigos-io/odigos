@@ -1,11 +1,21 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import styled from 'styled-components';
-import { ChevronRightIcon } from '@odigos/ui-kit/icons';
-import { Badge, FlexColumn, FlexRow, Typography, TypographyColor, TypographySize } from '@odigos/ui-kit/components';
+import { EditIcon } from '@odigos/ui-kit/icons';
+import {
+  Badge,
+  FlexColumn,
+  FlexRow,
+  IconButton,
+  IconButtonSize,
+  Typography,
+  TypographyColor,
+  TypographySize,
+} from '@odigos/ui-kit/components';
 import { ActionOriginBadge } from './action-origin-badge';
 import { ScopeTokens } from './scope-tokens';
+import { stopRowActivation, templateRowActivationProps } from './template-row-activation';
 import type { DefaultTemplatizationCrGroup } from './url-templatization-aggregate';
 import { scopeTokensSortKey } from './url-templatization-aggregate';
 
@@ -21,51 +31,27 @@ const CrActionBlock = styled(FlexColumn)`
   }
 `;
 
-const CrRuleGroupBlock = styled(FlexColumn)`
+const CrRuleGroupRow = styled(FlexRow)`
   width: 100%;
+  align-items: center;
   gap: 8px;
   padding: 10px 12px;
   border-radius: 8px;
   background: ${({ theme }) => theme.v2.colors.silver[900]};
   border: 1px solid ${({ theme }) => theme.v2.colors.silver[700]};
-`;
-
-const CrGroupHeader = styled(FlexRow)`
-  width: 100%;
-  align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
   cursor: pointer;
-  user-select: none;
-  border-radius: 6px;
-  margin: -4px -6px;
-  padding: 4px 6px;
+  transition: background 0.12s ease, border-color 0.12s ease;
 
   &:hover {
     background: ${({ theme }) => theme.v2.colors.silver[800]};
+    border-color: ${({ theme }) => theme.v2.colors.silver[600]};
   }
 
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.v2.colors.blue[400]};
     outline-offset: 2px;
   }
-`;
-
-const CrGroupChevron = styled.span<{ $open: boolean }>`
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(${({ $open }) => ($open ? '90deg' : '0deg')});
-  transition: transform 0.15s ease;
-  color: ${({ theme }) => theme.v2.colors.grey[400]};
-`;
-
-const CrGroupHeaderMain = styled(FlexRow)`
-  flex: 1;
-  min-width: 0;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
 `;
 
 function defaultGroupKey(group: DefaultTemplatizationCrGroup): string {
@@ -75,69 +61,54 @@ function defaultGroupKey(group: DefaultTemplatizationCrGroup): string {
 function DefaultRuleGroupCard({
   group,
   actionDisabled,
+  onSelect,
+  onEdit,
 }: {
   group: DefaultTemplatizationCrGroup;
   actionDisabled: boolean;
+  onSelect: (group: DefaultTemplatizationCrGroup) => void;
+  onEdit?: (group: DefaultTemplatizationCrGroup) => void;
 }) {
-  const [open, setOpen] = useState(true);
   const muted = group.disabled || actionDisabled;
-
-  const toggleOpen = () => setOpen((value) => !value);
+  const groupKey = defaultGroupKey(group);
+  const activation = templateRowActivationProps(() => onSelect(group));
 
   return (
-    <CrRuleGroupBlock $gap={8}>
-      <CrGroupHeader
-        $gap={8}
-        role="button"
-        tabIndex={0}
-        aria-expanded={open}
-        title={open ? 'Collapse rule group' : 'Expand rule group'}
-        onClick={toggleOpen}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            toggleOpen();
-          }
-        }}
-      >
-        <CrGroupChevron $open={open}>
-          <ChevronRightIcon size={12} />
-        </CrGroupChevron>
-        <CrGroupHeaderMain $gap={8}>
-          <Typography size={TypographySize.XXXS} color={TypographyColor.Secondary}>
-            Group {group.groupIndex + 1}
-          </Typography>
-          <span style={actionDisabled ? { opacity: 0.55 } : undefined}>
-            <ScopeTokens tokens={group.scopeTokens} />
-          </span>
-          {group.disabled ? <Badge label="Disabled" /> : <Badge label="Enabled" />}
-        </CrGroupHeaderMain>
-      </CrGroupHeader>
-
-      {open ? (
-        <FlexColumn $gap={6}>
-          <Typography
-            size={TypographySize.XS}
-            color={muted ? TypographyColor.Secondary : undefined}
-          >
-            {group.configLabel}
-          </Typography>
-          <FlexRow $gap={6} $alignItems="center" style={{ flexWrap: 'wrap' }}>
-            {group.skipForNonSuccessCodes ? <Badge label="Skip non-2xx" /> : null}
-            {group.skipHttpStatusCodes.length > 0 ? (
-              <Badge label={`Skip HTTP ${group.skipHttpStatusCodes.join(', ')}`} />
-            ) : null}
-          </FlexRow>
-        </FlexColumn>
+    <CrRuleGroupRow $gap={8} title="View default templatization rule" {...activation}>
+      {onEdit ? (
+        <IconButton
+          data-id={`url-templating-edit-default-${groupKey}`}
+          icon={EditIcon}
+          size={IconButtonSize.XS}
+          onClick={(event) => {
+            stopRowActivation(event);
+            onEdit(group);
+          }}
+        />
       ) : null}
-    </CrRuleGroupBlock>
+      <Typography size={TypographySize.XS} color={muted ? TypographyColor.Secondary : undefined}>
+        {group.configLabel}
+      </Typography>
+      <span style={actionDisabled ? { opacity: 0.55 } : undefined}>
+        <ScopeTokens tokens={group.scopeTokens} />
+      </span>
+      {group.disabled ? <Badge label="Default Templating Disabled" /> : <Badge label="Default Templating Enabled" />}
+      {group.skipForNonSuccessCodes ? <Badge label="Skip non-2xx" /> : null}
+      {group.skipHttpStatusCodes.length > 0 ? (
+        <Badge label={`Skip HTTP ${group.skipHttpStatusCodes.join(', ')}`} />
+      ) : null}
+    </CrRuleGroupRow>
   );
 }
 
 export function DefaultTemplatizationCrGroupsView({
   groups,
+  onSelectGroup,
+  onEditGroup,
 }: {
   groups: DefaultTemplatizationCrGroup[];
+  onSelectGroup: (group: DefaultTemplatizationCrGroup) => void;
+  onEditGroup?: (group: DefaultTemplatizationCrGroup) => void;
 }) {
   const actionSections = useMemo(() => {
     const order: string[] = [];
@@ -187,6 +158,8 @@ export function DefaultTemplatizationCrGroupsView({
               key={defaultGroupKey(group)}
               group={group}
               actionDisabled={actionDisabled}
+              onSelect={onSelectGroup}
+              onEdit={onEditGroup}
             />
           ))}
         </CrActionBlock>

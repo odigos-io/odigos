@@ -245,7 +245,6 @@ export function CreateGroupTemplatesDrawer({
   const templates = useMemo(() => sortUrlTemplates(normalizedTemplateValues(draftTemplates)), [draftTemplates]);
 
   const scopeMapping = useMemo(() => sourcesScopesToAppendRuleGroupFilters(scopes), [scopes]);
-  const scopeError = scopeMapping.ok ? null : scopeMapping.error;
 
   const validationError = useMemo(() => {
     if (templates.length === 0) {
@@ -261,27 +260,20 @@ export function CreateGroupTemplatesDrawer({
     return null;
   }, [templates]);
 
-  const canSave = !scopeError && !validationError && !saving && !!action && templates.length > 0;
+  const canSave = !validationError && !saving && !!action && templates.length > 0;
 
   const saveWarningMessage = useMemo(() => {
-    if (!templates.length || scopeError || validationError) {
+    if (!templates.length || validationError) {
       return undefined;
     }
     return buildCreateSaveWarning(templates.length);
-  }, [scopeError, templates.length, validationError]);
+  }, [templates.length, validationError]);
 
   const footerNotice = useMemo(() => {
     if (saveError) {
       return {
         status: StatusType.Error,
         message: saveError,
-        fullWidth: true as const,
-      };
-    }
-    if (scopeError) {
-      return {
-        status: StatusType.Warning,
-        message: scopeError,
         fullWidth: true as const,
       };
     }
@@ -300,7 +292,7 @@ export function CreateGroupTemplatesDrawer({
       };
     }
     return undefined;
-  }, [saveError, saveWarningMessage, scopeError, validationError]);
+  }, [saveError, saveWarningMessage, validationError]);
 
   const updateRow = useCallback((index: number, value: string) => {
     setDraftTemplates((rows) => withTrailingEmptyRow(rows.map((row, i) => (i === index ? { ...row, value } : row))));
@@ -312,7 +304,7 @@ export function CreateGroupTemplatesDrawer({
   }, []);
 
   const handleSave = async () => {
-    if (!action || !canSave || !scopeMapping.ok) {
+    if (!action || !canSave) {
       return;
     }
     setSaveError(null);
