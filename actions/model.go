@@ -41,10 +41,24 @@ type Spec struct {
 	} `yaml:"signals"`
 	// DocsURL is the full documentation URL (e.g. https://docs.odigos.io/...).
 	DocsURL string `yaml:"docsUrl"`
+	// Processors is optional metadata for actions that map onto shared collector
+	// processors (for example via an Odigos config extension).
+	Processors []Processor `yaml:"processors"`
 	// Fields is an optional dynamic-form description. Actions describe their form
 	// fields here so the UI can render them generically (including nested/tabular
 	// fields); complex actions may still ship a bespoke form in the UI.
 	Fields []Field `yaml:"fields"`
+}
+
+type Processor struct {
+	// ConfigMechanism describes how the processor receives its config
+	// (e.g. "odigosConfigExtension").
+	ConfigMechanism string `yaml:"configMechanism"`
+	// Type is the collector processor type (e.g. "odigossqlquery").
+	Type string `yaml:"type"`
+	// PreSpanMetrics indicates the processor must run on the node collector
+	// before span metrics when span metrics are enabled.
+	PreSpanMetrics bool `yaml:"preSpanMetrics"`
 }
 
 type Field struct {

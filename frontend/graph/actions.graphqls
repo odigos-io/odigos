@@ -87,6 +87,7 @@ input ActionFieldsInput {
 
   scopes: SourcesScopesInput
   templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
 }
 
 # CustomFormatMasking masks a value found by lookup key inside a data format
@@ -168,6 +169,9 @@ type Action {
   signals: [SignalType!]!
   fields: ActionFields!
   conditions: [Condition!]
+  # Desired-state statuses derived from Action CR status conditions
+  # (e.g. TransformedToProcessor, AddedToCollectorConfig).
+  statuses: [DesiredConditionStatus!]!
 }
 
 type ActionFields {
@@ -192,6 +196,7 @@ type ActionFields {
 
   scopes: SourcesScopes
   templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
 }
 
 type CustomFormatMasking {

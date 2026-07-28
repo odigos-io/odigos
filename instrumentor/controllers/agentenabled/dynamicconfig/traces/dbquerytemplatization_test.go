@@ -80,7 +80,8 @@ func TestCalculateDbQueryTemplatizationConfig_orsMatchingActions(t *testing.T) {
 						Languages: []common.ProgrammingLanguage{common.JavaProgrammingLanguage},
 					},
 					DbQueryTemplatizationConfig: actions.DbQueryTemplatizationConfig{
-						TemplatizeLiterals: true,
+						TemplatizeLiterals:         true,
+						RemovePostgresCastOperator: true,
 					},
 				},
 			},
@@ -91,4 +92,24 @@ func TestCalculateDbQueryTemplatizationConfig_orsMatchingActions(t *testing.T) {
 
 	require.NotNil(t, got)
 	require.True(t, got.TemplatizeLiterals)
+	require.True(t, got.RemovePostgresCastOperator)
+}
+
+func TestCalculateDbQueryTemplatizationConfig_removeCastOnly(t *testing.T) {
+	actionsList := []odigosv1.Action{{
+		Spec: odigosv1.ActionSpec{
+			DbQueryTemplatization: &dbqueryactions.DbQueryTemplatizationConfig{
+				DbQueryTemplatizationConfig: actions.DbQueryTemplatizationConfig{
+					RemovePostgresCastOperator: true,
+				},
+			},
+		},
+	}}
+	pw := k8sconsts.PodWorkload{Name: "app", Namespace: "default", Kind: k8sconsts.WorkloadKindDeployment}
+
+	got := CalculateDbQueryTemplatizationConfig(&actionsList, common.JavaProgrammingLanguage, pw)
+
+	require.NotNil(t, got)
+	require.False(t, got.TemplatizeLiterals)
+	require.True(t, got.RemovePostgresCastOperator)
 }

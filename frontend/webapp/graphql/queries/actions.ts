@@ -96,11 +96,18 @@ export const GET_ACTIONS = gql`
             languages
           }
           templatizeLiterals
+          removePostgresCastOperator
         }
         conditions {
           status
           type
           reason
+          message
+        }
+        statuses {
+          name
+          status
+          reasonEnum
           message
         }
       }
