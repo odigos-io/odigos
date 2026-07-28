@@ -441,6 +441,11 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 	})
 
 	g.Go(func() error {
+		// No shared maps means nothing to hand out, so don't stand up a server nobody connects to.
+		if m.tracesMap == nil {
+			return nil
+		}
+
 		// Start the FD server
 		server := &unixfd.Server{
 			SocketPath: unixfd.DefaultSocketPath,
@@ -608,9 +613,11 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 		// return nil
 	}
 
+	// Without a map there is no external reader, and a factory told otherwise would skip
+	// starting its own reader loop.
 	settings.TracesMap = ReaderMap{
 		Map:            m.tracesMap,
-		ExternalReader: true,
+		ExternalReader: m.tracesMap != nil,
 	}
 
 	settings.MetricsMap = MetricsMap{
@@ -620,7 +627,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 
 	settings.LogsMap = ReaderMap{
 		Map:            m.logsMap,
-		ExternalReader: true,
+		ExternalReader: m.logsMap != nil,
 	}
 
 	// Generic factories attach to every process regardless of its distro, off the main path (no

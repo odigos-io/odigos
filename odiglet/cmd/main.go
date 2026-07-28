@@ -105,6 +105,8 @@ func main() {
 		Factories:                  factories,
 		DistributionGetter:         dg,
 		OdigletHealthProbeBindPort: healthProbeBindPort,
+		// Set explicitly, not left to the zero value, since enterprise odiglet sets it true.
+		EnableEbpfMapExchange: false,
 	}
 
 	o, err := odiglet.New(clientset, instrumentationManagerOptions)

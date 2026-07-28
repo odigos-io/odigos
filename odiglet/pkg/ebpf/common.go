@@ -35,6 +35,11 @@ type InstrumentationManagerOptions struct {
 	OnLogsMapCreated func(*cilumebpf.Map)
 	// LogsAttrSubscribe streams per-process resource attributes to the collector.
 	LogsAttrSubscribe func() (updates <-chan string, snapshot []string)
+	// EnableEbpfMapExchange creates the shared traces/metrics/logs eBPF maps and serves them
+	// over the unix socket for an external reader. The only reader is odigosebpfreceiver, which
+	// exists only in the enterprise collector image, and no OSS instrumentation factory writes
+	// to these maps - so OSS callers leave this false.
+	EnableEbpfMapExchange bool
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
@@ -63,32 +68,40 @@ func NewManager(
 	}
 	appendEnvVarSlice = append(appendEnvVarSlice, k8sconsts.OtelResourceAttributesEnvVar)
 
-	// Create the eBPF maps
+	// Unconditional: a process-wide rlimit raise the instrumentations rely on before loading
+	// any eBPF program of their own, not just for the maps below.
 	if err := rlimit.RemoveMemlock(); err != nil {
 		return nil, fmt.Errorf("failed to remove memlock rlimit: %w", err)
 	}
 
-	tracesMap, err := ebpfcommon.CreateTracesMap()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create traces map: %w", err)
-	}
+	var tracesMap *cilumebpf.Map
+	var metricsMap, metricsAttributesMap *cilumebpf.Map
+	var logsMap *cilumebpf.Map
 
-	metricsMap, metricsAttributesMap, err := ebpfcommon.CreateMetricsMaps()
-	if err != nil {
-		tracesMap.Close()
-		return nil, fmt.Errorf("failed to create metrics attributes eBPF maps: %w", err)
-	}
+	if opts.EnableEbpfMapExchange {
+		var err error
+		tracesMap, err = ebpfcommon.CreateTracesMap()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create traces map: %w", err)
+		}
 
-	logsMap, err := ebpfcommon.CreateLogsMap()
-	if err != nil {
-		tracesMap.Close()
-		metricsMap.Close()
-		metricsAttributesMap.Close()
-		return nil, fmt.Errorf("failed to create logs eBPF map: %w", err)
-	}
+		metricsMap, metricsAttributesMap, err = ebpfcommon.CreateMetricsMaps()
+		if err != nil {
+			tracesMap.Close()
+			return nil, fmt.Errorf("failed to create metrics attributes eBPF maps: %w", err)
+		}
 
-	if logsMap != nil && opts.OnLogsMapCreated != nil {
-		opts.OnLogsMapCreated(logsMap)
+		logsMap, err = ebpfcommon.CreateLogsMap()
+		if err != nil {
+			tracesMap.Close()
+			metricsMap.Close()
+			metricsAttributesMap.Close()
+			return nil, fmt.Errorf("failed to create logs eBPF map: %w", err)
+		}
+
+		if logsMap != nil && opts.OnLogsMapCreated != nil {
+			opts.OnLogsMapCreated(logsMap)
+		}
 	}
 
 	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
