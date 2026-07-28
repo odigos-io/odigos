@@ -102,10 +102,12 @@ type ComplexityRoot struct {
 
 	ActionTypeOption struct {
 		AllowedSignals func(childComplexity int) int
+		Category       func(childComplexity int) int
 		Description    func(childComplexity int) int
 		DisplayName    func(childComplexity int) int
 		DocsURL        func(childComplexity int) int
 		Fields         func(childComplexity int) int
+		Subtitle       func(childComplexity int) int
 		Type           func(childComplexity int) int
 	}
 
@@ -1923,6 +1925,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ActionTypeOption.AllowedSignals(childComplexity), true
 
+	case "ActionTypeOption.category":
+		if e.complexity.ActionTypeOption.Category == nil {
+			break
+		}
+
+		return e.complexity.ActionTypeOption.Category(childComplexity), true
+
 	case "ActionTypeOption.description":
 		if e.complexity.ActionTypeOption.Description == nil {
 			break
@@ -1950,6 +1959,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ActionTypeOption.Fields(childComplexity), true
+
+	case "ActionTypeOption.subtitle":
+		if e.complexity.ActionTypeOption.Subtitle == nil {
+			break
+		}
+
+		return e.complexity.ActionTypeOption.Subtitle(childComplexity), true
 
 	case "ActionTypeOption.type":
 		if e.complexity.ActionTypeOption.Type == nil {
@@ -12497,6 +12513,94 @@ func (ec *executionContext) _ActionTypeOption_displayName(ctx context.Context, f
 }
 
 func (ec *executionContext) fieldContext_ActionTypeOption_displayName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionTypeOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionTypeOption_category(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionTypeOption_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionTypeOption",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionTypeOption_subtitle(ctx context.Context, field graphql.CollectedField, obj *model.ActionTypeOption) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionTypeOption_subtitle(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Subtitle, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionTypeOption_subtitle(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ActionTypeOption",
 		Field:      field,
@@ -46301,6 +46405,10 @@ func (ec *executionContext) fieldContext_Query_actionTypes(_ context.Context, fi
 				return ec.fieldContext_ActionTypeOption_type(ctx, field)
 			case "displayName":
 				return ec.fieldContext_ActionTypeOption_displayName(ctx, field)
+			case "category":
+				return ec.fieldContext_ActionTypeOption_category(ctx, field)
+			case "subtitle":
+				return ec.fieldContext_ActionTypeOption_subtitle(ctx, field)
 			case "description":
 				return ec.fieldContext_ActionTypeOption_description(ctx, field)
 			case "allowedSignals":
@@ -59266,6 +59374,16 @@ func (ec *executionContext) _ActionTypeOption(ctx context.Context, sel ast.Selec
 			}
 		case "displayName":
 			out.Values[i] = ec._ActionTypeOption_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "category":
+			out.Values[i] = ec._ActionTypeOption_category(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "subtitle":
+			out.Values[i] = ec._ActionTypeOption_subtitle(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

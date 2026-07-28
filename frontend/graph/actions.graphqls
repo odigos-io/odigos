@@ -50,6 +50,12 @@ type ActionFieldYamlProperties {
 type ActionTypeOption {
   type: String!
   displayName: String!
+  # Slug grouping related actions in the action picker (e.g. "enrichment").
+  # The UI resolves the human-readable section title from this slug.
+  category: String!
+  # One-line summary shown under the title in the action picker list.
+  subtitle: String!
+  # Longer summary shown at the top of the action form.
   description: String!
   allowedSignals: [SignalType!]!
   docsUrl: String!
