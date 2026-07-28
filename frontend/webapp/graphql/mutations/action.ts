@@ -34,6 +34,13 @@ export const CREATE_ACTION = gql`
         attributeNamesToDelete
         renames
         piiCategories
+        customFormatMaskings {
+          lookupKey
+          dataFormat
+        }
+        customRegexMaskings {
+          regex
+        }
         urlTemplatizationRulesGroups {
           filterK8sNamespace
           filterK8sWorkloadKind
@@ -68,6 +75,7 @@ export const CREATE_ACTION = gql`
           languages
         }
         templatizeLiterals
+        removePostgresCastOperator
       }
       conditions {
         status
@@ -113,6 +121,13 @@ export const UPDATE_ACTION = gql`
         attributeNamesToDelete
         renames
         piiCategories
+        customFormatMaskings {
+          lookupKey
+          dataFormat
+        }
+        customRegexMaskings {
+          regex
+        }
         urlTemplatizationRulesGroups {
           filterK8sNamespace
           filterK8sWorkloadKind
@@ -147,6 +162,7 @@ export const UPDATE_ACTION = gql`
           languages
         }
         templatizeLiterals
+        removePostgresCastOperator
       }
       conditions {
         status

@@ -50,6 +50,12 @@ type ActionFieldYamlProperties {
 type ActionTypeOption {
   type: String!
   displayName: String!
+  # Slug grouping related actions in the action picker (e.g. "enrichment").
+  # The UI resolves the human-readable section title from this slug.
+  category: String!
+  # One-line summary shown under the title in the action picker list.
+  subtitle: String!
+  # Longer summary shown at the top of the action form.
   description: String!
   allowedSignals: [SignalType!]!
   docsUrl: String!
@@ -78,6 +84,8 @@ input ActionFieldsInput {
   attributeNamesToDelete: [String!]
   renames: String
   piiCategories: [String!]
+  customFormatMaskings: [CustomFormatMaskingInput!]
+  customRegexMaskings: [CustomRegexMaskingInput!]
 
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroupInput!]
 
@@ -85,6 +93,20 @@ input ActionFieldsInput {
 
   scopes: SourcesScopesInput
   templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
+}
+
+# CustomFormatMasking masks a value found by lookup key inside a data format
+# (JSON, SQL, or resource path). Used by PiiMasking.
+input CustomFormatMaskingInput {
+  lookupKey: String!
+  dataFormat: ExtractionDataFormat!
+}
+
+# CustomRegexMasking masks the value matched by a regex with a single capture group.
+# Used by PiiMasking.
+input CustomRegexMaskingInput {
+  regex: String!
 }
 
 # ExtractAttribute is the input shape for the ExtractAttribute action; mirrors
@@ -153,6 +175,9 @@ type Action {
   signals: [SignalType!]!
   fields: ActionFields!
   conditions: [Condition!]
+  # Desired-state statuses derived from Action CR status conditions
+  # (e.g. TransformedToProcessor, AddedToCollectorConfig).
+  statuses: [DesiredConditionStatus!]!
 }
 
 type ActionFields {
@@ -168,6 +193,8 @@ type ActionFields {
   attributeNamesToDelete: [String!]
   renames: String
   piiCategories: [String!]
+  customFormatMaskings: [CustomFormatMasking!]
+  customRegexMaskings: [CustomRegexMasking!]
 
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroup!]
 
@@ -175,6 +202,16 @@ type ActionFields {
 
   scopes: SourcesScopes
   templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
+}
+
+type CustomFormatMasking {
+  lookupKey: String!
+  dataFormat: ExtractionDataFormat!
+}
+
+type CustomRegexMasking {
+  regex: String!
 }
 
 # ExtractAttribute mirrors the v1alpha1 `extractAttribute` config — a wrapper

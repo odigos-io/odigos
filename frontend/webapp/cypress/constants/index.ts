@@ -11,7 +11,6 @@ export const CRD_NAMES = {
   INSTRUMENTATION_CONFIG: 'instrumentationconfigs.odigos.io',
   DESTINATION: 'destinations.odigos.io',
   ACTION: 'actions.odigos.io',
-  INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
   SAMPLING: 'samplings.odigos.io',
 };
 
@@ -72,7 +71,6 @@ export const SELECTED_ENTITIES = {
     AUTOFILL_VALUE: `jaeger.${NAMESPACES.DESTINATIONS}:4317`,
   },
   ACTIONS: ['K8sAttributesResolver', 'AddClusterInfo', 'DeleteAttribute', 'RenameAttribute', 'PiiMasking', 'ExtractAttribute'],
-  INSTRUMENTATION_RULES: ['PayloadCollection', 'CodeAttributes'],
 };
 
 export const DATA_IDS = {
@@ -87,15 +85,13 @@ export const DATA_IDS = {
   SELECT_DESTINATION_AUTOFILL_FIELD: `[name=${SELECTED_ENTITIES.DESTINATION.AUTOFILL_FIELD}]`,
   DEST_FORM_ADD: '[data-id=dest-form-add]',
 
-  // v2 add-drawer selectors (actions & rules)
+  // v2 add-drawer selectors (actions)
   ACTION_OPTION: (type: string) => `[data-id=option-${type}]`,
-  RULE_OPTION: (type: string) => `[data-id=option-${type}]`,
 
   // data-flow "add" buttons (trigger drawer open)
   ADD_SOURCE: '[data-id=add-Source]',
   ADD_DESTINATION: '[data-id=add-Destination]',
   ADD_ACTION: '[data-id=add-Action]',
-  ADD_INSTRUMENTATION_RULE: '[data-id=add-InstrumentationRule]',
 
   // legacy modals & edit-drawers
   MODAL: '[data-id=modal]',
@@ -108,10 +104,6 @@ export const DATA_IDS = {
   DROPDOWN_OPTION: (id: string) => `[data-id="option-${id}"]`,
   APPROVE: '[data-id=approve]',
   DENY: '[data-id=deny]',
-
-  // v2 edit-rule-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
-  RULE_DRAWER_PREFIX: 'edit-rule',
-  RULE_NAME_INPUT: '[data-id=ruleName]',
 
   // v2 edit-action-drawer prefix (used with DROPDOWN_OPTION + `${prefix}-btn-save` etc.)
   ACTION_DRAWER_PREFIX: 'edit-action',
@@ -194,7 +186,6 @@ export const TEXTS = {
   DESTINATION_WARN_MODAL_TITLE: 'Delete destination?',
   DESTINATION_WARN_MODAL_NOTE: 'Are you sure you want to delete this destination?',
   ACTION_WARN_MODAL_TITLE: 'Delete action?',
-  INSTRUMENTATION_RULE_WARN_MODAL_TITLE: 'Delete instrumentation rule?',
 
   NOTIF_CREATED: 'Successfully created',
   NOTIF_UPDATED: 'Successfully updated',
@@ -213,10 +204,6 @@ export const TEXTS = {
   NOTIF_ACTION_CREATED: (actionType: string) => `Successfully created "${actionType}" action`,
   NOTIF_ACTION_UPDATED: (actionType: string) => `Successfully updated "${actionType}" action`,
   NOTIF_ACTION_DELETED: (actionType: string) => `Successfully deleted "${actionType}" action`,
-
-  NOTIF_INSTRUMENTATION_RULE_CREATED: (ruleType: string) => `Successfully created "${ruleType}" rule`,
-  NOTIF_INSTRUMENTATION_RULE_UPDATED: (ruleType: string) => `Successfully updated "${ruleType}" rule`,
-  NOTIF_INSTRUMENTATION_RULE_DELETED: (ruleType: string) => `Successfully deleted "${ruleType}" rule`,
 
   NOTIF_CONFIG_UPDATED: 'Local UI configuration updated successfully',
   NOTIF_CONFIG_RESET: 'Local UI configuration reset to factory defaults',

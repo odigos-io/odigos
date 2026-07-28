@@ -3,12 +3,18 @@ kind: Action
 metadata:
   type: InferDbAttributes
   displayName: Infer DB Attributes
+  category: enrichment
 spec:
   docsUrl: https://docs.odigos.io/pipeline/actions/attributes/inferdbattributes
+  subtitle: Infer database operation and collection attributes.
   description: Parses database query text on spans and adds attributes such as db.operation.name and db.collection.name.
   signals:
     traces:
       supported: true
+  processors:
+    - configMechanism: odigosConfigExtension
+      type: odigossqlquery
+      preSpanMetrics: true
   fields:
     - name: scopes
       displayName: Source Scope
