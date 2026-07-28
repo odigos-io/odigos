@@ -24,3 +24,8 @@ spec:
       componentType: toggle
       componentProps:
         tooltip: When enabled, number and string literals in SQL queries are replaced with placeholders. Identifiers, bind/positional parameters, booleans, and NULL are left unchanged.
+    - name: removePostgresCastOperator
+      displayName: Remove PostgreSQL Cast Operator
+      componentType: toggle
+      componentProps:
+        tooltip: When enabled, PostgreSQL "::type" casts are stripped from query text (e.g. "?::uuid" becomes "?"), reducing cardinality for queries that only differ by cast type.

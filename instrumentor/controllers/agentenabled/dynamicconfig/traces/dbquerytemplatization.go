@@ -9,9 +9,11 @@ import (
 )
 
 // CalculateDbQueryTemplatizationConfig merges matching DbQueryTemplatization Actions for a container.
-// TemplatizeLiterals is OR'd across matching actions. Returns nil when no matching action enables it.
+// TemplatizeLiterals and RemovePostgresCastOperator are OR'd across matching actions.
+// Returns nil when no matching action enables either option.
 func CalculateDbQueryTemplatizationConfig(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *actions.DbQueryTemplatizationConfig {
 	templatizeLiterals := false
+	removePostgresCastOperator := false
 
 	for _, action := range *agentLevelActions {
 		if action.Spec.DbQueryTemplatization == nil {
@@ -19,14 +21,16 @@ func CalculateDbQueryTemplatizationConfig(agentLevelActions *[]odigosv1.Action, 
 		}
 		if scope.SourceScopeMatchesContainer(action.Spec.DbQueryTemplatization.Scopes, pw, language) {
 			templatizeLiterals = templatizeLiterals || action.Spec.DbQueryTemplatization.TemplatizeLiterals
+			removePostgresCastOperator = removePostgresCastOperator || action.Spec.DbQueryTemplatization.RemovePostgresCastOperator
 		}
 	}
 
-	if !templatizeLiterals {
+	if !templatizeLiterals && !removePostgresCastOperator {
 		return nil
 	}
 
 	return &actions.DbQueryTemplatizationConfig{
-		TemplatizeLiterals: true,
+		TemplatizeLiterals:         templatizeLiterals,
+		RemovePostgresCastOperator: removePostgresCastOperator,
 	}
 }

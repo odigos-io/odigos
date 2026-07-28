@@ -93,6 +93,7 @@ type ComplexityRoot struct {
 		LabelsAttributes             func(childComplexity int) int
 		OverwriteExistingValues      func(childComplexity int) int
 		PiiCategories                func(childComplexity int) int
+		RemovePostgresCastOperator   func(childComplexity int) int
 		Renames                      func(childComplexity int) int
 		Scopes                       func(childComplexity int) int
 		TemplatizeLiterals           func(childComplexity int) int
@@ -1879,6 +1880,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ActionFields.PiiCategories(childComplexity), true
+
+	case "ActionFields.removePostgresCastOperator":
+		if e.complexity.ActionFields.RemovePostgresCastOperator == nil {
+			break
+		}
+
+		return e.complexity.ActionFields.RemovePostgresCastOperator(childComplexity), true
 
 	case "ActionFields.renames":
 		if e.complexity.ActionFields.Renames == nil {
@@ -11231,6 +11239,8 @@ func (ec *executionContext) fieldContext_Action_fields(_ context.Context, field 
 				return ec.fieldContext_ActionFields_scopes(ctx, field)
 			case "templatizeLiterals":
 				return ec.fieldContext_ActionFields_templatizeLiterals(ctx, field)
+			case "removePostgresCastOperator":
+				return ec.fieldContext_ActionFields_removePostgresCastOperator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ActionFields", field.Name)
 		},
@@ -12358,6 +12368,47 @@ func (ec *executionContext) _ActionFields_templatizeLiterals(ctx context.Context
 }
 
 func (ec *executionContext) fieldContext_ActionFields_templatizeLiterals(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFields",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFields_removePostgresCastOperator(ctx context.Context, field graphql.CollectedField, obj *model.ActionFields) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFields_removePostgresCastOperator(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RemovePostgresCastOperator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFields_removePostgresCastOperator(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ActionFields",
 		Field:      field,
@@ -55899,7 +55950,7 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "customFormatMaskings", "customRegexMaskings", "urlTemplatizationRulesGroups", "extractAttribute", "scopes", "templatizeLiterals"}
+	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "customFormatMaskings", "customRegexMaskings", "urlTemplatizationRulesGroups", "extractAttribute", "scopes", "templatizeLiterals", "removePostgresCastOperator"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -56025,6 +56076,13 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 				return it, err
 			}
 			it.TemplatizeLiterals = data
+		case "removePostgresCastOperator":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removePostgresCastOperator"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RemovePostgresCastOperator = data
 		}
 	}
 
@@ -59165,6 +59223,8 @@ func (ec *executionContext) _ActionFields(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._ActionFields_scopes(ctx, field, obj)
 		case "templatizeLiterals":
 			out.Values[i] = ec._ActionFields_templatizeLiterals(ctx, field, obj)
+		case "removePostgresCastOperator":
+			out.Values[i] = ec._ActionFields_removePostgresCastOperator(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
