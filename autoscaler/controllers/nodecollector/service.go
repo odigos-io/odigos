@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 var (
@@ -34,16 +34,20 @@ func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigo
 
 	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
 	dcService := &v1.Service{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosNodeCollectorLocalTrafficServiceName,
 			Namespace: dc.Namespace,
 			Labels:    ClusterCollectorGateway,
 		},
-		Spec: v1.ServiceSpec{
+	}
+
+	if err := ctrl.SetControllerReference(dc, dcService, b.scheme); err != nil {
+		logger.Error(err, "failed to set controller reference")
+		return err
+	}
+
+	_, err := controllerutil.CreateOrPatch(ctx, b.Client, dcService, func() error {
+		dcService.Spec = v1.ServiceSpec{
 			Selector: map[string]string{
 				k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleNodeCollector),
 			},
@@ -69,23 +73,8 @@ func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigo
 				},
 			},
 			InternalTrafficPolicy: &localTrafficPolicy,
-		},
-	}
-
-	if err := ctrl.SetControllerReference(dc, dcService, b.scheme); err != nil {
-		logger.Error(err, "failed to set controller reference")
-		return err
-	}
-
-	// Use server-side apply instead of create/update: the autoscaler cache only caches
-	// Services labeled as the cluster gateway, so this node collector Service is not in the
-	// cache and a cached Get would always miss. SSA writes directly to the API server and
-	// reconciles the desired spec on both create and update (e.g. adding the grpc appProtocol
-	// to an existing Service).
-	if err := b.Client.Patch(ctx, dcService, client.Apply, client.ForceOwnership, client.FieldOwner("autoscaler")); err != nil {
-		logger.Error(err, "failed to apply node collector service")
-		return err
-	}
-
-	return nil
+		}
+		return nil
+	})
+	return err
 }
