@@ -32,7 +32,7 @@ For agents and languages that requires filesystem mounts, odigos webhook will ad
 
 #### Caveats
 
-- May sometimes not integrate well with node auto-scaling tools like [Karpenter](https://karpenter.sh/).
+- Not supported with [Karpenter](../../setup/odigos-with-karpenter). Use [`k8s-init-container`](#3-InitContainer), or [`k8s-host-path`](#2-HostPath) / [`k8s-csi-driver`](#4-CSI-Driver) with the Karpenter integration steps.
 - Odiglet daemonset needs to be running on a node for instrumented pods to be scheduled on that node.
 
 ### 2. HostPath
@@ -85,6 +85,8 @@ If your cluster enforces such policies, you have the following options:
 - Use the VirtualDevice method.
 - Request the cluster administrator to whitelist the Odigos agent host path in the policy tool.
 
+When using [Karpenter](../../setup/odigos-with-karpenter), follow the Karpenter integration steps. HostPath requires the `karpenter.enabled` configuration and startup taint workflow.
+
 
 ### 3. InitContainer
 
@@ -114,6 +116,8 @@ Odigos will add an InitContainer that copies the necessary files for instrumenta
 
 The InitContainer method must be enabled in the cluster and introduces a slight delay during pod initialization.
 This approach is ideal for users who prioritize avoiding hostPath or virtual device usage over startup speed.
+
+Works with [Karpenter](../../setup/odigos-with-karpenter) out of the box. No additional Karpenter configuration is required.
 
 ### 4. CSI Driver
 
@@ -158,3 +162,4 @@ For agents and languages that requires filesystem mounts, odigos webhook will ad
 
 - Requires CSI support in the cluster (available in Kubernetes 1.13+).
 - Like VirtualDevice, requires odiglet daemonset to be running on nodes for instrumented pods to be scheduled.
+- When using [Karpenter](../../setup/odigos-with-karpenter), follow the Karpenter integration steps. CSI Driver requires the `karpenter.enabled` configuration and startup taint workflow.
