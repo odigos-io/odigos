@@ -18,20 +18,18 @@ import (
 )
 
 // Defaults. Caches evict by both entry count and total bytes so a long-running
-// collector on a busy node cannot leak memory — one Oracle binary alone can hold
-// tens of MB of symbols, so the byte budget is the real guard at scale.
+// collector on a busy node cannot leak memory.
 const (
 	defaultMaxSymbolCache = 1024
-	defaultMaxSymbolBytes = 256 << 20 // 256 MiB of parsed symbols across all binaries
+	defaultMaxMemoryBytes = 256 << 20 // same budget WithMaxMemoryBytes takes; see symtabDecodeCostFactor for the split
 	defaultMaxMapsCache   = 4096
 	defaultMapsTTL        = 30 * time.Second
-	defaultBackoff        = 60 * time.Second // wait before retrying a failed/oversized binary
+	defaultBackoff        = 60 * time.Second // before retrying a failed/oversized binary
 	defaultParseWorkers   = 2
 	defaultParseQueue     = 1024
-	defaultSweepEvery     = 30 * time.Second // how often to drop caches for exited processes
-	defaultMaxFileBytes   = 8 << 30          // 8 GiB — corrupt/absurd ELF guard
-	defaultMaxSymbols     = 5_000_000        // pathological-binary guard
-	defaultMaxSymtabBytes = 512 << 20        // 512 MiB — cap the transient symbol-table decode
+	defaultSweepEvery     = 30 * time.Second
+	defaultMaxFileBytes   = 8 << 30   // corrupt/absurd ELF guard
+	defaultMaxSymbols     = 5_000_000 // pathological-binary guard
 )
 
 // Mapping describes one loaded module as an OTLP profile carries it.
@@ -67,6 +65,12 @@ type Symbolizer struct {
 	cachedBytes int64                     // total estimated bytes held by symbolCache
 
 	clock atomic.Uint64 // monotonic counter driving LRU "last used"
+
+	// symtabSkips counts binaries skipped for exceeding max_symtab_bytes since the
+	// last sweep; runSweeper drains it into one periodic Warn instead of one per
+	// binary, so a busy node with many oversized libraries can't turn into a
+	// per-restart warning storm. Per-binary detail still logs at Debug.
+	symtabSkips atomic.Int64
 
 	maxSymbols      int
 	maxSymbolBytes  int64
@@ -141,6 +145,27 @@ func WithMaxSymtabBytes(n int64) Option {
 	}
 }
 
+// symtabDecodeCostFactor: elf.File.Symbols() materialises the whole
+// symtab+strtab before we can filter to STT_FUNC, so decode costs more than
+// the on-disk table size. Measured (runtime.MemStats TotalAlloc around this
+// package's actual decode call, on real ELF binaries from 132 KiB to 8.7 MiB
+// of symtab+strtab): 2.65x-3.3x. 4 is that range with headroom.
+const symtabDecodeCostFactor = 4
+
+// WithMaxMemoryBytes sets one budget for both guards: the retained cache
+// (WithMaxSymbolBytes) gets it in full, the transient decode gate
+// (WithMaxSymtabBytes) gets budget/symtabDecodeCostFactor. The only budget
+// knob the processor's Config exposes, so the two can't drift apart. n<=0
+// keeps both at their defaults.
+func WithMaxMemoryBytes(n int64) Option {
+	return func(s *Symbolizer) {
+		if n > 0 {
+			s.maxSymbolBytes = n
+			s.limits.maxSymtabBytes = n / symtabDecodeCostFactor
+		}
+	}
+}
+
 // WithMaxMapsCache caps cached per-pid maps (LRU). n<=0 keeps the default.
 func WithMaxMapsCache(n int) Option {
 	return func(s *Symbolizer) {
@@ -177,12 +202,12 @@ func New(opts ...Option) *Symbolizer {
 		backoff:         make(map[string]int64),
 		parsing:         make(map[string]struct{}),
 		maxSymbols:      defaultMaxSymbolCache,
-		maxSymbolBytes:  defaultMaxSymbolBytes,
+		maxSymbolBytes:  defaultMaxMemoryBytes,
 		maxMaps:         defaultMaxMapsCache,
 		mapsTTL:         defaultMapsTTL,
 		backoffDuration: defaultBackoff,
 		sweepEvery:      defaultSweepEvery,
-		limits:          parseLimits{maxFileBytes: defaultMaxFileBytes, maxSymbols: defaultMaxSymbols, maxSymtabBytes: defaultMaxSymtabBytes},
+		limits:          parseLimits{maxFileBytes: defaultMaxFileBytes, maxSymbols: defaultMaxSymbols, maxSymtabBytes: defaultMaxMemoryBytes / symtabDecodeCostFactor},
 		stop:            make(chan struct{}),
 	}
 	for _, o := range opts {
@@ -393,10 +418,12 @@ func (s *Symbolizer) parseAndCache(path string) {
 		return
 	}
 	if es.symtabSkippedForSize {
-		// Visible at Warn (not Debug): this binary's native frames will show as
-		// module+offset, not names, until max_symtab_bytes is raised — an operator
-		// should know why, not just wonder why an app isn't fully symbolized.
-		s.log.Warn("symbolize: symbol table exceeds max_symtab_bytes, skipping decode; native frames for this binary will stay unresolved",
+		// Counted into the periodic sweep summary (Warn, bounded rate) instead of
+		// logged here directly — a busy node can have many distinct oversized
+		// binaries, one per restart/container, and that must not become a
+		// per-binary warning storm. Per-binary detail stays available at Debug.
+		s.symtabSkips.Add(1)
+		s.log.Debug("symbolize: symbol table exceeds max_symtab_bytes, skipping decode; native frames for this binary will stay unresolved",
 			zap.String("path", path), zap.Int64("max_symtab_bytes", s.limits.maxSymtabBytes))
 	}
 	e := &cachedSymbols{symbols: es, modTime: fi.ModTime().UnixNano(), size: fi.Size(), heapBytes: es.heapBytes}
@@ -437,7 +464,18 @@ func (s *Symbolizer) runSweeper() {
 			return
 		case <-t.C:
 			s.evictExitedProcesses()
+			s.reportSymtabSkips()
 		}
+	}
+}
+
+// reportSymtabSkips drains the symtab-size-skip counter into one Warn per sweep
+// interval (rather than one per binary) so the signal stays visible without
+// scaling with pod/binary churn. See symtabSkips' doc comment.
+func (s *Symbolizer) reportSymtabSkips() {
+	if n := s.symtabSkips.Swap(0); n > 0 {
+		s.log.Warn("symbolize: binaries skipped for exceeding max_symtab_bytes since last report; their native frames stayed unresolved (enable debug logging for per-binary detail)",
+			zap.Int64("count", n), zap.Duration("since", s.sweepEvery), zap.Int64("max_symtab_bytes", s.limits.maxSymtabBytes))
 	}
 }
 

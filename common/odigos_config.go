@@ -603,6 +603,11 @@ type ProfilingSymbolizationConfiguration struct {
 	// collector (odigossymbolizeprocessor). On by default when profiling is enabled;
 	// set to false to leave native frames as raw addresses.
 	Native *bool `json:"native,omitempty" yaml:"native,omitempty"`
+
+	// MaxMemoryMiB bounds the node collector symbolize processor's memory: both the
+	// retained symbol cache and the transient per-binary decode are sized off this
+	// one budget. Unset uses the processor's built-in defaults.
+	MaxMemoryMiB *int `json:"maxMemoryMiB,omitempty" yaml:"maxMemoryMiB,omitempty"`
 }
 
 // NativeSymbolizationEnabled reports whether native on-host symbolization should

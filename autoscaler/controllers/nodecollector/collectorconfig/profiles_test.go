@@ -3,6 +3,8 @@ package collectorconfig
 import (
 	"testing"
 
+	"github.com/go-logr/logr"
+	"github.com/go-logr/logr/funcr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
@@ -12,20 +14,20 @@ import (
 )
 
 func TestProfilingPipelineConfig_Disabled(t *testing.T) {
-	got := ProfilingPipelineConfig("odigos-system", nil, nil)
+	got := ProfilingPipelineConfig(logr.Discard(), "odigos-system", nil, nil)
 	assert.Empty(t, got.Receivers)
 	assert.Empty(t, got.Processors)
 	assert.Empty(t, got.Exporters)
 	assert.Empty(t, got.Service.Pipelines)
 
 	off := false
-	got = ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &off}, nil)
+	got = ProfilingPipelineConfig(logr.Discard(), "odigos-system", &common.ProfilingConfiguration{Enabled: &off}, nil)
 	assert.Empty(t, got.Service.Pipelines)
 }
 
 func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 	on := true
-	got := ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nil)
+	got := ProfilingPipelineConfig(logr.Discard(), "odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nil)
 	require.Contains(t, got.Receivers, commonconf.ProfilingReceiver)
 	require.Contains(t, got.Processors, commonconf.ProfilingNodeFilterProcessor)
 	require.Contains(t, got.Processors, commonconf.ProfilingNodeK8sAttributesProcessor)
@@ -62,7 +64,7 @@ func TestProfilingPipelineConfig_Enabled(t *testing.T) {
 func TestProfilingPipelineConfig_UserProcessorsAppended(t *testing.T) {
 	on := true
 	userProcessors := []string{"resource/addclusterinfo", "transform/rename"}
-	got := ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, userProcessors)
+	got := ProfilingPipelineConfig(logr.Discard(), "odigos-system", &common.ProfilingConfiguration{Enabled: &on}, userProcessors)
 
 	pl, ok := got.Service.Pipelines["profiles"]
 	require.True(t, ok)
@@ -81,11 +83,39 @@ func TestProfilingPipelineConfig_UserProcessorsAppended(t *testing.T) {
 	}, pl.Processors)
 }
 
+// TestProfilingPipelineConfig_UserSymbolizeProcessorWarns covers the escape hatch a
+// user can reach via the Processor CRD: a manifest processor of type
+// odigossymbolizeprocessor runs as its own instance, independent of maxMemoryMiB.
+// That's allowed (it's the same general capability every CRD-managed processor
+// has), but it used to be silent -- this asserts it's now surfaced via a Warn log.
+func TestProfilingPipelineConfig_UserSymbolizeProcessorWarns(t *testing.T) {
+	on := true
+
+	var logs []string
+	logger := funcr.New(func(_, args string) { logs = append(logs, args) }, funcr.Options{})
+
+	got := ProfilingPipelineConfig(logger, "odigos-system",
+		&common.ProfilingConfiguration{Enabled: &on},
+		[]string{"odigossymbolizeprocessor/my-custom-instance"})
+
+	require.Contains(t, got.Service.Pipelines["profiles"].Processors, "odigossymbolizeprocessor/my-custom-instance")
+	require.Len(t, logs, 1)
+	assert.Contains(t, logs[0], "odigossymbolizeprocessor/my-custom-instance")
+
+	// The built-in UserProcessorsAppended case (no odigossymbolizeprocessor-typed
+	// manifest processor) must not warn.
+	logs = nil
+	_ = ProfilingPipelineConfig(logger, "odigos-system",
+		&common.ProfilingConfiguration{Enabled: &on},
+		[]string{"resource/addclusterinfo", "transform/rename"})
+	assert.Empty(t, logs)
+}
+
 // TestProfilingPipelineConfig_NativeSymbolizationDisabled drops the symbolize
 // processor when a user explicitly opts out (profiling.symbolization.native: false).
 func TestProfilingPipelineConfig_NativeSymbolizationDisabled(t *testing.T) {
 	on, off := true, false
-	got := ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{
+	got := ProfilingPipelineConfig(logr.Discard(), "odigos-system", &common.ProfilingConfiguration{
 		Enabled:       &on,
 		Symbolization: &common.ProfilingSymbolizationConfiguration{Native: &off},
 	}, nil)

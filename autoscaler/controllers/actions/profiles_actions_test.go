@@ -9,6 +9,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -121,7 +122,7 @@ func TestE2E_ProfilesActions_ActionToRenderedConfig(t *testing.T) {
 	nodeCfg, err := config.MergeConfigs(map[string]config.Config{
 		"processors":                   nodeResults.ProcessorsConfig,
 		"common_application_telemetry": collectorconfig.CommonApplicationTelemetryConfig(&odigosv1.CollectorsGroup{}, false, "odigos-system", nil),
-		"profiling":                    collectorconfig.ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nodeResults.ProfilesProcessors),
+		"profiling":                    collectorconfig.ProfilingPipelineConfig(logr.Discard(), "odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nodeResults.ProfilesProcessors),
 	})
 	require.NoError(t, err)
 	assert.Equal(t, []string{

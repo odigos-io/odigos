@@ -12,8 +12,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 // buildBigTestLib compiles a shared library with n trivial exported functions,
@@ -124,7 +129,7 @@ func TestSizeGateEliminatesTransientDecode(t *testing.T) {
 
 // TestConfigurableTransientCapIsHonored proves WithMaxSymtabBytes is wired: a
 // small cap skips a binary whose symbol table exceeds it, while the default
-// (512 MiB) decodes the same binary normally.
+// decodes the same (small) binary normally.
 func TestConfigurableTransientCapIsHonored(t *testing.T) {
 	so := buildBigTestLib(t, 8000) // ~200 KiB+ symbol table
 	symBytes := symtabSectionBytes(t, so)
@@ -144,7 +149,7 @@ func TestConfigurableTransientCapIsHonored(t *testing.T) {
 		t.Fatal("expected symtabSkippedForSize=true when the table is skipped for exceeding the cap")
 	}
 
-	// Default cap (512 MiB): the same binary decodes normally, not flagged.
+	// Default cap: the same binary decodes normally, not flagged.
 	def := New()
 	defer def.Close()
 	if es, err := loadELFSymbols(so, def.limits); err != nil {
@@ -153,6 +158,32 @@ func TestConfigurableTransientCapIsHonored(t *testing.T) {
 		t.Fatal("default cap must decode a normal binary")
 	} else if es.symtabSkippedForSize {
 		t.Fatal("expected symtabSkippedForSize=false when the table decodes normally")
+	}
+}
+
+// TestMaxMemoryBytesDerivesBothGuards proves WithMaxMemoryBytes sets both
+// guards from one value, at symtabDecodeCostFactor, and that the zero-config
+// default follows the same formula.
+func TestMaxMemoryBytesDerivesBothGuards(t *testing.T) {
+	s := New(WithMaxMemoryBytes(200 << 20)) // 200 MiB
+	defer s.Close()
+
+	if s.maxSymbolBytes != 200<<20 {
+		t.Fatalf("maxSymbolBytes = %d, want %d", s.maxSymbolBytes, 200<<20)
+	}
+	want := int64(200<<20) / symtabDecodeCostFactor
+	if s.limits.maxSymtabBytes != want {
+		t.Fatalf("limits.maxSymtabBytes = %d, want %d", s.limits.maxSymtabBytes, want)
+	}
+
+	// n<=0 leaves both at the default, unchanged.
+	def := New(WithMaxMemoryBytes(0))
+	defer def.Close()
+	if def.maxSymbolBytes != defaultMaxMemoryBytes {
+		t.Fatalf("maxSymbolBytes = %d, want default %d", def.maxSymbolBytes, defaultMaxMemoryBytes)
+	}
+	if wantDefault := int64(defaultMaxMemoryBytes) / symtabDecodeCostFactor; def.limits.maxSymtabBytes != wantDefault {
+		t.Fatalf("limits.maxSymtabBytes = %d, want default %d", def.limits.maxSymtabBytes, wantDefault)
 	}
 }
 
@@ -182,4 +213,71 @@ func TestSymbolCacheStaysWithinByteBudget(t *testing.T) {
 	}
 	t.Logf("after 512 inserts of %d-byte entries under a %d-byte budget: cachedBytes=%d, entries=%d",
 		entryBytes, budget, s.cachedBytes, len(s.symbolCache))
+}
+
+// TestSymtabSkipsAreAggregatedNotPerBinary proves the noise-reduction fix: N
+// distinct binaries tripping the max_symtab_bytes gate produce zero Warn logs
+// from parseAndCache itself (only Debug, one per binary), and a single sweep
+// drains the count into exactly one Warn — so a busy node with many oversized
+// libraries, or one restarting across many pods, can't turn into a
+// per-binary/per-restart warning storm.
+func TestSymtabSkipsAreAggregatedNotPerBinary(t *testing.T) {
+	so := buildBigTestLib(t, 8000)
+	symBytes := symtabSectionBytes(t, so)
+	if symBytes < 128<<10 {
+		t.Skipf("fixture .symtab too small (%d bytes)", symBytes)
+	}
+
+	// Copy the same oversized binary to N distinct paths: parseAndCache dedups by
+	// path, so this simulates N distinct binaries (or the same one across N
+	// container instances) all tripping the gate.
+	const n = 3
+	dir := t.TempDir()
+	paths := make([]string, n)
+	data, err := os.ReadFile(so)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range paths {
+		p := filepath.Join(dir, "lib"+strconv.Itoa(i)+".so")
+		if err := os.WriteFile(p, data, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		paths[i] = p
+	}
+
+	core, logs := observer.New(zap.DebugLevel)
+	s := New(WithMaxSymtabBytes(32<<10), WithLogger(zap.New(core)))
+	defer s.Close()
+
+	for _, p := range paths {
+		s.parseAndCache(p)
+	}
+
+	if got := s.symtabSkips.Load(); got != n {
+		t.Fatalf("symtabSkips = %d, want %d after %d skipped binaries", got, n, n)
+	}
+	if warns := logs.FilterLevelExact(zapcore.WarnLevel).Len(); warns != 0 {
+		t.Fatalf("parseAndCache must not log Warn per binary, got %d Warn entries", warns)
+	}
+	skipDebugs := logs.FilterMessage("symbolize: symbol table exceeds max_symtab_bytes, skipping decode; native frames for this binary will stay unresolved")
+	if got := skipDebugs.FilterLevelExact(zapcore.DebugLevel).Len(); got != n {
+		t.Fatalf("expected %d per-binary skip Debug entries, got %d", n, got)
+	}
+
+	// One sweep drains the counter into exactly one Warn carrying the count.
+	s.reportSymtabSkips()
+	warnEntries := logs.FilterLevelExact(zapcore.WarnLevel).All()
+	if len(warnEntries) != 1 {
+		t.Fatalf("expected exactly 1 Warn after the sweep, got %d", len(warnEntries))
+	}
+	if got := warnEntries[0].ContextMap()["count"]; got != int64(n) {
+		t.Fatalf("summary Warn count = %v, want %d", got, n)
+	}
+
+	// A second sweep with nothing new skipped must log nothing further.
+	s.reportSymtabSkips()
+	if warns := logs.FilterLevelExact(zapcore.WarnLevel).Len(); warns != 1 {
+		t.Fatalf("expected still exactly 1 Warn total after an empty sweep, got %d", warns)
+	}
 }

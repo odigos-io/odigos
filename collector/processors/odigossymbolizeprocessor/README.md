@@ -34,7 +34,7 @@ for **any** language with zero configuration.
 ## Configuration
 
 Zero-config — `odigossymbolizeprocessor: {}` works out of the box. Optional knobs:
-`pid_attribute`, `max_symbol_cache`, `max_symbol_bytes`, `max_maps_cache`,
+`pid_attribute`, `max_symbol_cache`, `max_memory_bytes`, `max_maps_cache`,
 `maps_ttl_seconds`, `parse_workers`.
 
 It runs in the **k8s node collector** and the **VM agent** collector — one code
