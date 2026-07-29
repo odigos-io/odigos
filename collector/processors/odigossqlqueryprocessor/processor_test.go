@@ -325,6 +325,27 @@ func TestRedactLiterals_UnsupportedDbSystemUsesDefault(t *testing.T) {
 	require.Equal(t, "SELECT * FROM users WHERE id = ? # secret", query.Str())
 }
 
+func TestRedactLiterals_CassandraCommaSeparatedUUIDs(t *testing.T) {
+	proc := newTestProcessor(t, &Config{RedactLiterals: true})
+	// No space after commas: the previous UUID regex consumed each trailing
+	// delimiter, so only every other UUID was redacted.
+	traces := generateTestTrace(map[string]string{
+		string(semconv.DBSystemKey): semconv.DBSystemCassandra.Value.AsString(),
+		string(semconv.DBQueryTextKey): "SELECT * FROM ks.users WHERE id IN (" +
+			"550e8400-e29b-41d4-a716-446655440000," +
+			"6ba7b810-9dad-11d1-80b4-00c04fd430c8," +
+			"6ba7b811-9dad-11d1-80b4-00c04fd430c8)",
+	})
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	query, ok := span.Attributes().Get(string(semconv.DBQueryTextKey))
+	require.True(t, ok)
+	require.Equal(t, "SELECT * FROM ks.users WHERE id IN (?,?,?)", query.Str())
+}
+
 func TestInferAttributes_KeepsSpanNameWhenAlreadyPresent(t *testing.T) {
 	proc := newTestProcessor(t, &Config{InferAttributes: true})
 	td := ptrace.NewTraces()

@@ -96,6 +96,28 @@ redis:
   # TCP keepalive interval in seconds. Sends probe packets on idle connections to prevent
   # network infrastructure (NAT/firewall) from closing them due to idle timeouts.
   tcpKeepalive: 30
+
+  # Liveness probe settings
+  # `redis-cli ping` fails when the server is unresponsive (hung process, OOM),
+  # which a TCP check on the port would not catch.
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 3
+    failureThreshold: 5
+    # Must be 1 for liveness probes
+    successThreshold: 1
+
+  # Readiness probe settings
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+    successThreshold: 1
+
   resources:
     requests:
       cpu: 100m
@@ -165,11 +187,26 @@ auth:
   # Limits Keycloak's JVM memory to a small, efficient range suitable for medium traffic
   javaOpts: '-Xms128m -Xmx256m'
 
+  # Startup probe settings
+  # Absorbs Keycloak's slow JVM boot (up to failureThreshold * periodSeconds = 300s)
+  # so the liveness and readiness probes below can use short initial delays.
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+    # Must be 1 for startup probes
+    successThreshold: 1
+    port: 8080
+
   # Liveness probe settings
   # Keycloak exposes /health/live for liveness checks
+  # initialDelaySeconds is 0 because the startup probe already covers boot time.
+  # Raise it if startupProbe.enabled is set to false.
   livenessProbe:
     enabled: true
-    initialDelaySeconds: 120
+    initialDelaySeconds: 0
     periodSeconds: 30
     timeoutSeconds: 5
     failureThreshold: 3
@@ -180,7 +217,7 @@ auth:
   # Keycloak exposes /health/ready for readiness checks
   readinessProbe:
     enabled: true
-    initialDelaySeconds: 60
+    initialDelaySeconds: 0
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
