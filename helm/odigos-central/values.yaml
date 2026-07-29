@@ -251,9 +251,15 @@ cloudConnectors:
     tolerations: []
     affinity: {}
 
-  # The AWS provider connector runtime image the controller stamps onto per-account connector Deployments.
+  # Provider connector runtime images the controller stamps onto per-account connector Deployments.
   aws:
     # -- Override the AWS connector image (empty = built-in odigos-enterprise-connector-aws).
+    image: ''
+  gcp:
+    # -- Override the GCP connector image (empty = built-in odigos-enterprise-connector-gcp).
+    image: ''
+  azure:
+    # -- Override the Azure connector image (empty = built-in odigos-enterprise-connector-azure).
     image: ''
 
   # Bundled PostgreSQL (durable store for connector state) + Atlas migrations.
