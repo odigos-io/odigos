@@ -6,9 +6,21 @@ Unlike traditional autoscalers, Karpenter can provision nodes in seconds and mak
 
 ---
 
+## Mount Method Compatibility
+
+Odigos support for Karpenter depends on the configured [mount method](../instrumentations/configuration/mount-method):
+
+- **[`k8s-init-container`](../instrumentations/configuration/mount-method#3-InitContainer)**: Works with Karpenter out of the box. No additional Karpenter configuration is required.
+- **[`k8s-host-path`](../instrumentations/configuration/mount-method#2-HostPath)** and **[`k8s-csi-driver`](../instrumentations/configuration/mount-method#4-CSI-Driver)**: Supported when you follow the Karpenter integration steps in this document.
+- **[`k8s-virtual-device`](../instrumentations/configuration/mount-method#1-VirtualDevice)** (default) and any other mount methods: Not supported with Karpenter.
+
+If you use `k8s-init-container`, you can stop here. The rest of this document applies to `k8s-host-path` and `k8s-csi-driver`.
+
+---
+
 ## Why Special Configuration Is Needed with Karpenter
 
-By default, Odigos adds a **node affinity** rule to all instrumented pods to ensure they only run on nodes where `odiglet` is installed.
+For the [`k8s-host-path`](../instrumentations/configuration/mount-method#2-HostPath) and [`k8s-csi-driver`](../instrumentations/configuration/mount-method#4-CSI-Driver) mount methods, Odigos adds a **node affinity** rule to instrumented pods so they only run on nodes where `odiglet` is installed.
 
 This works fine in static clusters — but in Karpenter-managed clusters, this causes a problem:
 
@@ -29,7 +41,7 @@ Instead, it relies on a **startup taint mechanism**:
 
 ## How to Configure Odigos for Karpenter
 
-To enable seamless integration between Odigos and Karpenter, follow these four steps:
+Use these steps when your [mount method](../instrumentations/configuration/mount-method) is `k8s-host-path` or `k8s-csi-driver`.
 
 
 ### 1. Configure the Karpenter NodePool CRD
