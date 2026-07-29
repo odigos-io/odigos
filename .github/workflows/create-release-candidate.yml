@@ -110,7 +110,7 @@ jobs:
           identity: trigger-ensure-release-branch
           output-git-config: "false"
 
-      - name: Ensure enterprise release branch exists (required base for the automated dependency-bump PR)
+      - name: Ensure enterprise release branch exists
         uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ steps.sts-enterprise.outputs.GH_TOKEN }}
@@ -124,10 +124,8 @@ jobs:
           RELEASE_BRANCH: ${{ steps.rc_version.outputs.release_branch_name }}
         run: |
           set -euo pipefail
-          # repository_dispatch above is fire-and-forget. Pushing the OSS tag below
-          # immediately fans out (via publish-modules.yml) to an enterprise PR that
-          # requires this branch to already exist, so wait for it to actually land
-          # before tagging - otherwise this races and fails intermittently.
+          # dispatch above is fire-and-forget; tagging below needs this branch to
+          # already exist, so poll rather than race it.
           for i in $(seq 1 30); do
             if gh api "repos/odigos-io/odigos-enterprise/branches/$RELEASE_BRANCH" >/dev/null 2>&1; then
               echo "Enterprise branch '$RELEASE_BRANCH' confirmed."

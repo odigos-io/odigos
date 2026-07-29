@@ -244,10 +244,7 @@ jobs:
 
       - name: Ensure release branch exists (base for future patch releases)
         run: |
-            # RC creation no longer creates this branch up front (pre-releases are
-            # tagged directly from whatever branch was requested), so create it here
-            # instead, from the commit that just became stable. create-patch.yml
-            # requires releases/vX.Y.0 to already exist.
+            # Pre-releases no longer create this branch; create-patch.yml still needs it.
             RELEASE_BRANCH="releases/$(echo "${{ env.STABLE_TAG }}" | sed -E 's/^(v[0-9]+\.[0-9]+)\.[0-9]+$/\1.0/')"
             if git ls-remote --heads origin "$RELEASE_BRANCH" | grep -qE "refs/heads/${RELEASE_BRANCH}$"; then
                 echo "Branch '$RELEASE_BRANCH' already exists."
