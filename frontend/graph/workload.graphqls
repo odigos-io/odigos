@@ -16,7 +16,10 @@ type K8sWorkloadId {
 # - namespace: namespace is set, other fields are empty.
 # - all workloads: all fields are empty.
 #
-# setting markedForInstrumentation to true will return just those that are relevant for instrumentation.
+# setting markedForInstrumentation to true returns workloads relevant to the Overview:
+# those currently marked for instrumentation (have an InstrumentationConfig), plus
+# workloads with an explicit disabled Source CR (disableInstrumentation=true).
+# Truly uninstrumented workloads (no Source / not covered) are still excluded.
 input WorkloadFilter {
   namespace: String
   kind: K8sResourceKind

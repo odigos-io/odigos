@@ -88,7 +88,7 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 		w.RollbackOccurred = ic.Status.RollbackOccurred
 	}
 
-	// markedForInstrumentation
+	// markedForInstrumentation + dataStreamNames (+ serviceName fallback from Source)
 	if sources, err := l.GetSources(ctx, id); err == nil {
 		enabled, reason, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, nil)
 		if err == nil {
@@ -104,16 +104,20 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 				Message:                  reason.Message,
 			}
 		}
-	}
 
-	// dataStreamNames
-	if sources, err := l.GetSources(ctx, id); err == nil {
 		ptrNames := services.ExtractDataStreamsFromSource(sources.Workload, sources.Namespace)
 		names := make([]string, len(ptrNames))
 		for i, p := range ptrNames {
 			names[i] = *p
 		}
 		w.DataStreamNames = names
+
+		// When a Source is disabled its InstrumentationConfig is deleted; keep the
+		// configured otel service name visible from the Source CR itself.
+		if w.ServiceName == nil && sources.Workload != nil && sources.Workload.Spec.OtelServiceName != "" {
+			name := sources.Workload.Spec.OtelServiceName
+			w.ServiceName = &name
+		}
 	}
 
 	// numberOfInstances
@@ -241,9 +245,13 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 		healthConditions = append(healthConditions, runtimeDetection, agentInjectionEnabled, rolloutStatus)
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
+		message := "workload is not marked for instrumentation"
+		if w.MarkedForInstrumentation != nil && w.MarkedForInstrumentation.Message != "" {
+			message = w.MarkedForInstrumentation.Message
+		}
 		healthConditions = append(healthConditions, &model.DesiredConditionStatus{
 			Name: status.WorkloadOdigosHealthStatus, Status: model.DesiredStateProgressDisabled,
-			ReasonEnum: &reasonStr, Message: "workload is not marked for instrumentation",
+			ReasonEnum: &reasonStr, Message: message,
 		})
 	}
 	healthConditions = append(healthConditions, podsManifestInjectionStatus, agentInjected, processesHealth, expectingTelemetry)
