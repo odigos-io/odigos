@@ -20,10 +20,9 @@ import (
 	"github.com/odigos-io/odigos/common/collector"
 )
 
-// uuidRegex matches standalone UUID literals (CQL) so they can be redacted
-// before sqllexer tokenization, which otherwise mangles them.
-// it checks for standalone UUIDs, not part of a longer identifier/literal.
-var uuidRegex = regexp.MustCompile(`(^|[^0-9A-Fa-f])([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})($|[^0-9A-Fa-f])`)
+// uuidRegex matches UUID literals (CQL) so they can be redacted before
+// sqllexer tokenization, which otherwise mangles them.
+var uuidRegex = regexp.MustCompile(`(^|[^0-9A-Fa-f])([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})`)
 
 // postgresCastRegex matches PostgreSQL `::type` casts, including optional
 // schema qualification and array brackets (e.g. ::uuid, ::public.my_type, ::int[]).
@@ -148,9 +147,8 @@ func (p *sqlQueryProcessor) processSpan(span ptrace.Span, inferAttributes, redac
 
 	if redactLiterals && isCassandra {
 		// cassandra uses CQL, not SQL
-		// UUIDs are first class citizens in CQL, in they don't get tokenized correctly by sqllexer.
-		// Reject if the UUID is a prefix of a longer identifier/literal
-		query = uuidRegex.ReplaceAllString(query, "${1}?${3}")
+		// UUIDs are first class citizens in CQL, and they don't get tokenized correctly by sqllexer.
+		query = uuidRegex.ReplaceAllString(query, "${1}?")
 		queryModified = true
 	}
 
