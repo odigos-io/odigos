@@ -9,7 +9,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	apiactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
-	"github.com/odigos-io/odigos/common"
 	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	graphstatus "github.com/odigos-io/odigos/frontend/graph/status"
@@ -476,19 +475,19 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	scopes, templatizeLiterals, removePostgresCastOperator := convertDbActionFieldsToModel(action)
 
 	responseFields := &model.ActionFields{
-		LabelsAttributes:             labelAttrs,
-		AnnotationsAttributes:        annotAttrs,
-		ClusterAttributes:            clustAttrs,
-		Renames:                      renames,
-		PiiCategories:                piiCategories,
-		CustomFormatMaskings:         customFormatMaskings,
-		CustomRegexMaskings:          customRegexMaskings,
+		LabelsAttributes:               labelAttrs,
+		AnnotationsAttributes:          annotAttrs,
+		ClusterAttributes:              clustAttrs,
+		Renames:                        renames,
+		PiiCategories:                  piiCategories,
+		CustomFormatMaskings:           customFormatMaskings,
+		CustomRegexMaskings:            customRegexMaskings,
 		URLTemplatizationRulesGroups:   urlTemplatizationGroups,
 		URLTemplatizationDefaultGroups: urlTemplatizationDefaultGroups,
 		ExtractAttribute:               extractAttribute,
-		Scopes:                       scopes,
-		TemplatizeLiterals:           templatizeLiterals,
-		RemovePostgresCastOperator:   removePostgresCastOperator,
+		Scopes:                         scopes,
+		TemplatizeLiterals:             templatizeLiterals,
+		RemovePostgresCastOperator:     removePostgresCastOperator,
 	}
 
 	// Handle K8sAttributes fields
