@@ -102,6 +102,27 @@ jobs:
           echo "rc_version=$RC_VERSION" >> $GITHUB_OUTPUT
           echo "release_branch_name=releases/${{ steps.next_version.outputs.release_base }}" >> $GITHUB_OUTPUT
 
+      - name: Ensure OSS release branch exists
+        env:
+          OSS_BRANCH: ${{ inputs.oss_branch }}
+          RELEASE_BRANCH: ${{ steps.rc_version.outputs.release_branch_name }}
+        run: |
+          set -euo pipefail
+          # cherry-pick.yml and full-build.yaml's releases/** checks target this
+          # branch throughout the RC cycle, not just once it's stable - keep it
+          # around from the first RC, same as before.
+          git fetch origin "$OSS_BRANCH"
+          if git ls-remote --heads origin "$RELEASE_BRANCH" | grep -qE "refs/heads/${RELEASE_BRANCH}$"; then
+            echo "Branch '$RELEASE_BRANCH' already exists."
+            if ! git merge-base --is-ancestor "origin/${OSS_BRANCH}" "origin/${RELEASE_BRANCH}"; then
+              echo "::warning::'$RELEASE_BRANCH' already exists and does not contain the tip of '$OSS_BRANCH' - oss_branch is only applied the first time this branch is created, so it was ignored this run."
+            fi
+          else
+            echo "Creating '$RELEASE_BRANCH' from '$OSS_BRANCH'"
+            git branch "$RELEASE_BRANCH" "origin/$OSS_BRANCH"
+            git push origin "$RELEASE_BRANCH"
+          fi
+
       - name: Get enterprise Sts Token
         id: sts-enterprise
         uses: odigos-io/ci-core/sts@main
