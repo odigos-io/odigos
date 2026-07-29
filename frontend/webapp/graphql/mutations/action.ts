@@ -9,6 +9,7 @@ export const CREATE_ACTION = gql`
       notes
       disabled
       signals
+      uiGenerated
       fields {
         collectContainerAttributes
         collectReplicaSetAttributes
@@ -42,6 +43,15 @@ export const CREATE_ACTION = gql`
           regex
         }
         urlTemplatizationRulesGroups {
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
           filterK8sNamespace
           filterK8sWorkloadKind
           filterK8sWorkloadName
@@ -55,6 +65,22 @@ export const CREATE_ACTION = gql`
             template
             notes
             examples
+          }
+        }
+        urlTemplatizationDefaultGroups {
+          disabled
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
+          skipPolicy {
+            skipForNonSuccessCodes
+            skipHttpStatusCodes
           }
         }
         extractAttribute {
@@ -96,6 +122,7 @@ export const UPDATE_ACTION = gql`
       notes
       disabled
       signals
+      uiGenerated
       fields {
         collectContainerAttributes
         collectReplicaSetAttributes
@@ -129,6 +156,15 @@ export const UPDATE_ACTION = gql`
           regex
         }
         urlTemplatizationRulesGroups {
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
           filterK8sNamespace
           filterK8sWorkloadKind
           filterK8sWorkloadName
@@ -142,6 +178,22 @@ export const UPDATE_ACTION = gql`
             template
             notes
             examples
+          }
+        }
+        urlTemplatizationDefaultGroups {
+          disabled
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
+          skipPolicy {
+            skipForNonSuccessCodes
+            skipHttpStatusCodes
           }
         }
         extractAttribute {
