@@ -32,6 +32,7 @@ export const GET_ACTIONS = gql`
         notes
         disabled
         signals
+        uiGenerated
         fields {
           collectContainerAttributes
           collectReplicaSetAttributes
@@ -65,6 +66,15 @@ export const GET_ACTIONS = gql`
             regex
           }
           urlTemplatizationRulesGroups {
+            scopes {
+              namespaces
+              languages
+              sources {
+                namespace
+                kind
+                name
+              }
+            }
             filterK8sNamespace
             filterK8sWorkloadKind
             filterK8sWorkloadName
@@ -78,6 +88,22 @@ export const GET_ACTIONS = gql`
               template
               notes
               examples
+            }
+          }
+          urlTemplatizationDefaultGroups {
+            disabled
+            scopes {
+              namespaces
+              languages
+              sources {
+                namespace
+                kind
+                name
+              }
+            }
+            skipPolicy {
+              skipForNonSuccessCodes
+              skipHttpStatusCodes
             }
           }
           extractAttribute {

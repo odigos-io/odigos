@@ -88,6 +88,7 @@ input ActionFieldsInput {
   customRegexMaskings: [CustomRegexMaskingInput!]
 
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroupInput!]
+  urlTemplatizationDefaultGroups: [UrlTemplatizationDefaultGroupInput!]
 
   extractAttribute: ExtractAttributeInput
 
@@ -138,13 +139,26 @@ input TemplatizationWorkloadFilterInput {
 }
 
 input UrlTemplatizationRulesGroupInput {
-  filterK8sNamespace: String
-  filterK8sWorkloadKind: K8sResourceKind
-  filterK8sWorkloadName: String
-  filterProgrammingLanguage: String
-  workloadFilters: [TemplatizationWorkloadFilterInput!]
+  scopes: SourcesScopesInput
   templatizationRules: [URLTemplatizationRuleInput!]!
+  # Deprecated. Accepted but ignored by the server; use scopes instead.
+  filterK8sNamespace: String
+    @deprecated(reason: "use scopes; field is ignored by the server")
+  # Deprecated. Accepted but ignored by the server; use scopes instead.
+  filterK8sWorkloadKind: K8sResourceKind
+    @deprecated(reason: "use scopes; field is ignored by the server")
+  # Deprecated. Accepted but ignored by the server; use scopes instead.
+  filterK8sWorkloadName: String
+    @deprecated(reason: "use scopes; field is ignored by the server")
+  # Deprecated. Accepted but ignored by the server; use scopes instead.
+  filterProgrammingLanguage: String
+    @deprecated(reason: "use scopes; field is ignored by the server")
+  # Deprecated. Accepted but ignored by the server; use scopes instead.
+  workloadFilters: [TemplatizationWorkloadFilterInput!]
+    @deprecated(reason: "use scopes; field is ignored by the server")
+  # Deprecated. Not present on the Action CRD; ignored by the server.
   notes: String
+    @deprecated(reason: "removed from the action spec; field is ignored by the server")
 }
 
 input K8sLabelAttributeInput {
@@ -174,6 +188,9 @@ type Action {
   disabled: Boolean!
   signals: [SignalType!]!
   fields: ActionFields!
+  # True when this Action was created from the Odigos UI
+  # (metadata label odigos.io/managed-by=odigos-ui).
+  uiGenerated: Boolean!
   conditions: [Condition!]
   # Desired-state statuses derived from Action CR status conditions
   # (e.g. TransformedToProcessor, AddedToCollectorConfig).
@@ -197,6 +214,7 @@ type ActionFields {
   customRegexMaskings: [CustomRegexMasking!]
 
   urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroup!]
+  urlTemplatizationDefaultGroups: [UrlTemplatizationDefaultGroup!]
 
   extractAttribute: ExtractAttribute
 
@@ -239,13 +257,48 @@ type TemplatizationWorkloadFilter {
 }
 
 type UrlTemplatizationRulesGroup {
-  filterK8sNamespace: String
-  filterK8sWorkloadKind: K8sResourceKind
-  filterK8sWorkloadName: String
-  filterProgrammingLanguage: String
-  workloadFilters: [TemplatizationWorkloadFilter!]
+  scopes: SourcesScopes
   templatizationRules: [URLTemplatizationRule!]!
+  # Deprecated. Not populated by the server; use scopes instead.
+  filterK8sNamespace: String
+    @deprecated(reason: "use scopes; field is not populated by the server")
+  # Deprecated. Not populated by the server; use scopes instead.
+  filterK8sWorkloadKind: K8sResourceKind
+    @deprecated(reason: "use scopes; field is not populated by the server")
+  # Deprecated. Not populated by the server; use scopes instead.
+  filterK8sWorkloadName: String
+    @deprecated(reason: "use scopes; field is not populated by the server")
+  # Deprecated. Not populated by the server; use scopes instead.
+  filterProgrammingLanguage: String
+    @deprecated(reason: "use scopes; field is not populated by the server")
+  # Deprecated. Not populated by the server; use scopes instead.
+  workloadFilters: [TemplatizationWorkloadFilter!]
+    @deprecated(reason: "use scopes; field is not populated by the server")
+  # Deprecated. Not present on the Action CRD; not populated by the server.
   notes: String
+    @deprecated(reason: "removed from the action spec; field is not populated by the server")
+}
+
+type UrlTemplatizationDefaultSkipPolicy {
+  skipForNonSuccessCodes: Boolean
+  skipHttpStatusCodes: [Int!]
+}
+
+type UrlTemplatizationDefaultGroup {
+  scopes: SourcesScopes
+  disabled: Boolean
+  skipPolicy: UrlTemplatizationDefaultSkipPolicy
+}
+
+input UrlTemplatizationDefaultSkipPolicyInput {
+  skipForNonSuccessCodes: Boolean
+  skipHttpStatusCodes: [Int!]
+}
+
+input UrlTemplatizationDefaultGroupInput {
+  scopes: SourcesScopesInput
+  disabled: Boolean
+  skipPolicy: UrlTemplatizationDefaultSkipPolicyInput
 }
 
 type K8sLabelAttribute {
