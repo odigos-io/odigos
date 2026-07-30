@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 )
 
@@ -14,9 +15,13 @@ const (
 	odigosLogsResourceAttrsProcessorName = "odigoslogsresourceattrsprocessor"
 )
 
-func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string) (config.GenericMap, []string) {
+func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string, tier common.OdigosTier) (config.GenericMap, []string) {
 
-	if isEbpfLogCaptureEnabled(sources) {
+	// odigosebpfreceiver only exists in the enterprise collector image - see the identical
+	// comment in collectorconfig/metrics.go. No current OSS distro sets ebpfLogCapture.supported,
+	// so this path shouldn't be reachable for community tier today, but gate it anyway rather
+	// than rely on that staying true.
+	if tier != common.CommunityOdigosTier && isEbpfLogCaptureEnabled(sources) {
 		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here
 		return config.GenericMap{}, []string{odigosEbpfReceiverName}
 	}
@@ -111,7 +116,7 @@ func LogsConfig(nodeCG *odigosv1.CollectorsGroup, opts LogsConfigOptions) config
 	// append odigos traffic metrics processor last (after manifest processors)
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
 
-	receivers, pipelineReceivers := getReceivers(opts.Logger, opts.Sources, opts.OdigosNamespace)
+	receivers, pipelineReceivers := getReceivers(opts.Logger, opts.Sources, opts.OdigosNamespace, opts.Tier)
 
 	return config.Config{
 		Receivers: receivers,
