@@ -82,7 +82,6 @@ func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsColl
 type MetricsConfigOptions struct {
 	CommonSignalConfig
 	MetricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings
-	Tier                  common.OdigosTier
 }
 
 func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, opts MetricsConfigOptions) config.Config {

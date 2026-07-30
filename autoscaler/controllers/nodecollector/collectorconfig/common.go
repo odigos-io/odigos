@@ -22,6 +22,9 @@ type CommonSignalConfig struct {
 	OdigosNamespace          string
 	ManifestProcessorNames   []string
 	ResourceDetectionEnabled bool
+	// Tier gates enterprise-only collector components (currently odigosebpfreceiver) out of
+	// community-tier config, since the OSS collector image doesn't have them compiled in.
+	Tier common.OdigosTier
 }
 
 // WithProcessors returns a copy of the config with the given manifest processor names set.
@@ -188,7 +191,10 @@ func init() {
 				},
 			},
 		},
-		odigosEbpfReceiverName: config.GenericMap{},
+		// odigosEbpfReceiverName is intentionally NOT included here - it only exists in the
+		// enterprise collector image, so defining it at all in the OSS collector's config would
+		// fail with "unknown type: odigosebpf" regardless of whether any pipeline references it.
+		// Added conditionally per-tier in CommonApplicationTelemetryConfig instead.
 	}
 
 	commonExtensions = config.GenericMap{
@@ -205,12 +211,24 @@ func init() {
 	}
 }
 
-func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string, detectors []string) config.Config {
+func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string, detectors []string, tier common.OdigosTier) config.Config {
+	receivers := cloneGenericMap(commonReceivers)
+	if tier != common.CommunityOdigosTier {
+		receivers[odigosEbpfReceiverName] = config.GenericMap{}
+	}
 	return config.Config{
-		Receivers:  commonReceivers,
+		Receivers:  receivers,
 		Exporters:  getCommonExporters(nodeCG.Spec.OtlpExporterConfiguration, odigosNamespace),
 		Processors: commonProcessors(nodeCG, onGKE, detectors),
 	}
+}
+
+func cloneGenericMap(m config.GenericMap) config.GenericMap {
+	out := make(config.GenericMap, len(m)+1)
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
 }
 
 func CommonConfig() config.Config {

@@ -219,12 +219,13 @@ func calculateCollectorConfigDomains(
 
 	// resource detectors [ec2, eks, azure, aks, gcp] built once.
 	detectors := collectorconfig.BuildResourceDetectors(nodeCG.Spec.ResourceDetectors, onGKE)
-	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace, detectors)
+	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace, detectors, tier)
 
 	commonSignalConfig := collectorconfig.CommonSignalConfig{
 		Logger:                   logger.Logr(),
 		OdigosNamespace:          odigosNamespace,
 		ResourceDetectionEnabled: collectorconfig.ResourceDetectionEnabled(detectors),
+		Tier:                     tier,
 	}
 
 	// metrics
@@ -250,7 +251,6 @@ func calculateCollectorConfigDomains(
 		metricsConfig := collectorconfig.MetricsConfig(nodeCG, collectorconfig.MetricsConfigOptions{
 			CommonSignalConfig:    commonSignalConfig.WithProcessors(processorsResults.MetricsProcessors),
 			MetricsConfigSettings: metricsConfigSettings,
-			Tier:                  tier,
 		})
 		configDomains["metrics"] = metricsConfig
 	}
