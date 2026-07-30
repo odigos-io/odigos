@@ -108,13 +108,12 @@ jobs:
           - kube-version: "1.32"
             kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
           # karpenter-mount-methods: same release gating as odigos-enterprise important-customers
-          # (release-bot-* → releases/*). Uncomment to enable in CI; local: chainsaw test tests/e2e/karpenter-mount-methods
-          # - kube-version: "1.32"
-          #   kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
-          #   test-scenario: "karpenter-mount-methods"
+          # (release-bot-* → releases/*). Local: chainsaw test tests/e2e/karpenter-mount-methods
+          - kube-version: "1.32"
+            kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
+            test-scenario: "karpenter-mount-methods"
 
     steps:
-      # Same pattern as odigos-enterprise important-customers: skip release-only scenarios off release PRs.
       - name: Check if test should run
         id: should-run
         run: |

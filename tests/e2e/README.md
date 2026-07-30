@@ -79,9 +79,8 @@ After writing and testing new scenario, you should also add it to the GitHub Act
 `tests/e2e/karpenter-mount-methods` needs Karpenter KWOK (Go + ko).
 Local: `chainsaw test tests/e2e/karpenter-mount-methods`.
 
-CI: matrix entry in `.github/workflows/e2e.yaml` (commented). Same skip as
+CI: matrix entry in `.github/workflows/e2e.yaml`. Same skip as
 odigos-enterprise `important-customers` — only `release-bot-*` → `releases/*`.
-Uncomment the matrix `include` for `karpenter-mount-methods` to enable.
 
 ## Working with simple-trace-db
 
