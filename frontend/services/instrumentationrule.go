@@ -500,10 +500,12 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	existingRule.Spec.Notes = *input.Notes
 	existingRule.Spec.Disabled = *input.Disabled
 
+	// Preserve selectors when omitted. GraphQL clients (and UI forms that don't
+	// edit SourcesScopes / InstrumentationLibraries) send nil for these fields;
+	// treating omit as clear would widen a scoped GitOps/kubectl rule cluster-wide.
+	// Explicit empty lists still clear via convertSourcesScopeInput / empty slice.
 	if input.SourcesScopes != nil {
 		existingRule.Spec.Scopes = convertSourcesScopeInput(input.SourcesScopes)
-	} else {
-		existingRule.Spec.Scopes = nil
 	}
 
 	if input.InstrumentationLibraries != nil {
@@ -516,8 +518,6 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 			}
 		}
 		existingRule.Spec.InstrumentationLibraries = &convertedLibraries
-	} else {
-		existingRule.Spec.InstrumentationLibraries = nil
 	}
 
 	if input.PayloadCollection != nil {
