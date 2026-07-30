@@ -1,0 +1,11 @@
+apiVersion: karpenter.sh/v1alpha1
+kind: NodeOverlay
+metadata:
+  name: odigos-instrumentation
+spec:
+  requirements:
+    - key: karpenter.sh/nodepool
+      operator: In
+      values: ["default"]
+  capacity:
+    instrumentation.odigos.io/generic: "1024"
