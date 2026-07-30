@@ -78,7 +78,6 @@ After writing and testing new scenario, you should also add it to the GitHub Act
 
 `tests/e2e/karpenter-mount-methods` needs Karpenter KWOK (Go + ko).
 Local: `chainsaw test tests/e2e/karpenter-mount-methods`.
-CI runs it only on release PRs (`release-bot-*` → `releases/*`).
 
 ## Working with simple-trace-db
 
