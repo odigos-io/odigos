@@ -4,11 +4,13 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 
 	"github.com/odigos-io/odigos/common"
 )
+
+// redefining here to avoid depending on the api package
+var OdigosAgentsDirectory = "/var/odigos"
 
 type lister struct {
 	plugins map[string]dpm.PluginInterface
@@ -47,8 +49,8 @@ func NewLister(ctx context.Context) (dpm.ListerInterface, error) {
 		return &v1beta1.ContainerAllocateResponse{
 			Mounts: []*v1beta1.Mount{
 				{
-					ContainerPath: k8sconsts.OdigosAgentsDirectory,
-					HostPath:      k8sconsts.OdigosAgentsDirectory,
+					ContainerPath: OdigosAgentsDirectory,
+					HostPath:      OdigosAgentsDirectory,
 					ReadOnly:      true,
 				},
 			},
