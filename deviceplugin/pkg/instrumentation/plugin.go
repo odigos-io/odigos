@@ -4,9 +4,7 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
-	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/instrumentation/devices"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
@@ -29,16 +27,6 @@ func NewPlugin(initialSize int64, lsf LangSpecificFunc) dpm.PluginInterface {
 		stopCh:           make(chan struct{}),
 		LangSpecificFunc: lsf,
 	}
-}
-
-func NewMuslPlugin(lang common.ProgrammingLanguage, maxPods int64, lsf LangSpecificFunc) dpm.PluginInterface {
-	wrappedLsf := func(deviceId string) *v1beta1.ContainerAllocateResponse {
-		res := lsf(deviceId)
-		libc.ModifyEnvVarsForMusl(lang, res.Envs)
-		return res
-	}
-
-	return NewPlugin(maxPods, wrappedLsf)
 }
 
 func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empty) (*v1beta1.DevicePluginOptions, error) {
