@@ -57,11 +57,11 @@ spec:
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
         - assert:
             timeout: 1m30s
             file: ../../common/assert/simple-demo-runtime-detected.yaml
-        - apply:
-            file: ../../common/apply/add-simple-trace-db-destination.yaml
         - assert:
             timeout: 1m30s
             file: ../../common/assert/pipeline-ready.yaml
@@ -70,7 +70,10 @@ spec:
             file: ../../common/assert/simple-demo-instrumented.yaml
         - script:
             timeout: 1m30s
-            content: ../../common/wait_for_rollout.sh
+            content: |
+              ../../common/wait_for_rollout.sh
+              kubectl rollout status deployment -l app=currency
+              kubectl rollout status deployment -l app=geolocation
 
     - name: '[1 - Virtual Device] Scale inventory — Pending without NodeOverlay, NodeClaim after'
       try:
@@ -83,9 +86,16 @@ spec:
         - script:
             timeout: 2m
             content: |
-              ../../../cli/odigos install --ns odigos-test \
-                --set image.tag=e2e-test \
-                --set instrumentor.mountMethod=k8s-init-container
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --ns odigos-test \
+                  --set image.tag="$COMMIT_HASH" \
+                  --set imagePrefix=public.ecr.aws/y2v0v6s7 \
+                  --set instrumentor.mountMethod=k8s-init-container
+              else
+                ../../../cli/odigos install --ns odigos-test \
+                  --set image.tag=e2e-test \
+                  --set instrumentor.mountMethod=k8s-init-container
+              fi
         - script:
             timeout: 1m
             content: ../../common/assert_config_value.sh -k mountMethod -v k8s-init-container
@@ -94,10 +104,10 @@ spec:
             content: |
               kubectl rollout status daemonset/odiglet -n odigos-test --timeout=5m
               sleep 2
-              for d in frontend inventory coupon currency membership pricing geolocation; do
-                kubectl rollout restart "deployment/$d"
-              done
+              kubectl rollout restart deployment -n default
               ../../common/wait_for_rollout.sh
+              kubectl rollout status deployment -l app=currency
+              kubectl rollout status deployment -l app=geolocation
         - assert:
             timeout: 2m
             file: ../mount-method/simple-demo-instrumented.yaml
@@ -107,10 +117,18 @@ spec:
         - script:
             timeout: 2m
             content: |
-              ../../../cli/odigos install --ns odigos-test \
-                --set image.tag=e2e-test \
-                --set instrumentor.mountMethod=k8s-csi-driver \
-                --set karpenter.enabled=true
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --ns odigos-test \
+                  --set image.tag="$COMMIT_HASH" \
+                  --set imagePrefix=public.ecr.aws/y2v0v6s7 \
+                  --set instrumentor.mountMethod=k8s-csi-driver \
+                  --set karpenter.enabled=true
+              else
+                ../../../cli/odigos install --ns odigos-test \
+                  --set image.tag=e2e-test \
+                  --set instrumentor.mountMethod=k8s-csi-driver \
+                  --set karpenter.enabled=true
+              fi
         - script:
             timeout: 1m
             content: |
@@ -135,13 +153,16 @@ spec:
             timeout: 5m
             content: |
               sleep 2
-              for d in frontend inventory coupon currency membership pricing geolocation; do
-                kubectl rollout restart "deployment/$d"
-              done
+              kubectl rollout restart deployment -n default
               ../../common/wait_for_rollout.sh
+              kubectl rollout status deployment -l app=currency
+              kubectl rollout status deployment -l app=geolocation
         - assert:
             timeout: 2m
             file: ../mount-method/simple-demo-instrumented-with-csi.yaml
+
+
+
         - script:
             timeout: 1m
             content: ./assert-no-odiglet-affinity.sh
