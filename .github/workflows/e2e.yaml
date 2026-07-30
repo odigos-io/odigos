@@ -107,20 +107,63 @@ jobs:
             kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
           - kube-version: "1.32"
             kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
+          # karpenter-mount-methods: same release gating as odigos-enterprise important-customers
+          # (release-bot-* → releases/*). Uncomment to enable in CI; local: chainsaw test tests/e2e/karpenter-mount-methods
+          # - kube-version: "1.32"
+          #   kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
+          #   test-scenario: "karpenter-mount-methods"
 
     steps:
+      # Same pattern as odigos-enterprise important-customers: skip release-only scenarios off release PRs.
+      - name: Check if test should run
+        id: should-run
+        run: |
+          if [[ "${{ matrix.test-scenario }}" == "karpenter-mount-methods" ]]; then
+            HEAD_REF="${{ github.head_ref }}"
+            BASE_REF="${{ github.base_ref }}"
+            if [[ "$HEAD_REF" == release-bot-* && "$BASE_REF" == releases/* ]]; then
+              echo "Running karpenter-mount-methods - release PR detected (head: $HEAD_REF, base: $BASE_REF)"
+              echo "skip=false" >> $GITHUB_OUTPUT
+            else
+              echo "Skipping karpenter-mount-methods - not a release PR (head: $HEAD_REF, base: $BASE_REF)"
+              echo "skip=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout
+        if: steps.should-run.outputs.skip != 'true'
         uses: actions/checkout@v5
 
+      - name: Set up Go
+        if: steps.should-run.outputs.skip != 'true' && matrix.test-scenario == 'karpenter-mount-methods'
+        uses: actions/setup-go@v6
+        with:
+          go-version: "~1.26.4"
+          check-latest: true
+          cache: true
+
+      - name: Install ko
+        if: steps.should-run.outputs.skip != 'true' && matrix.test-scenario == 'karpenter-mount-methods'
+        uses: ko-build/setup-ko@v0.9
+
+      - name: Install jq
+        if: steps.should-run.outputs.skip != 'true' && matrix.test-scenario == 'karpenter-mount-methods'
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Set up Helm
+        if: steps.should-run.outputs.skip != 'true'
         uses: azure/setup-helm@v4
         with:
           version: v3.9.0
 
       - name: Install chainsaw
+        if: steps.should-run.outputs.skip != 'true'
         uses: kyverno/action-install-chainsaw@v0.2.13
 
       - name: Create Kind Cluster
+        if: steps.should-run.outputs.skip != 'true'
         uses: helm/kind-action@v1.12.0
         with:
           node_image: ${{ matrix.kind-image }}
@@ -129,12 +172,14 @@ jobs:
           config: tests/common/apply/kind-config.yaml
 
       - name: wait for cluster readiness
+        if: steps.should-run.outputs.skip != 'true'
         run: |
           kubectl wait --for=condition=Ready node --all --timeout=180s
           kubectl wait -n kube-system --for=condition=Ready pod --all --timeout=300s
           kubectl rollout status -n kube-system deployment/coredns --timeout=300s
 
       - name: Restore cached Odigos images
+        if: steps.should-run.outputs.skip != 'true'
         id: restore-images-cache
         uses: actions/cache/restore@v4
         with:
@@ -145,18 +190,20 @@ jobs:
           key: ${{ github.run_id }}-odigos-images
 
       - name: Check if images cache was restored
-        if: steps.restore-images-cache.outputs.cache-hit != 'true'
+        if: steps.should-run.outputs.skip != 'true' && steps.restore-images-cache.outputs.cache-hit != 'true'
         run: |
           echo "❌ Cache miss for Odigos images - this should not happen!"
           echo "Expected cache key: ${{ github.run_id }}-odigos-images"
           exit 1
 
       - name: Load Odigos Images to Kind Cluster
+        if: steps.should-run.outputs.skip != 'true'
         run: |
           kind load image-archive odigos-images.tar
           kind load image-archive cli-image.tar
 
       - name: Restore cached CLI binary
+        if: steps.should-run.outputs.skip != 'true'
         id: restore-cli-cache
         uses: actions/cache/restore@v4
         with:
@@ -165,16 +212,18 @@ jobs:
           key: ${{ github.run_id }}-odigos-cli
 
       - name: Check if CLI cache was restored
-        if: steps.restore-cli-cache.outputs.cache-hit != 'true'
+        if: steps.should-run.outputs.skip != 'true' && steps.restore-cli-cache.outputs.cache-hit != 'true'
         run: |
           echo "❌ Cache miss for CLI binary - this should not happen!"
           echo "Expected cache key: ${{ github.run_id }}-odigos-cli"
           exit 1
 
       - name: Move CLI binary & set permissions
+        if: steps.should-run.outputs.skip != 'true'
         run: chmod +x cli/odigos
 
       - name: Get latest release tag for branch from Helm
+        if: steps.should-run.outputs.skip != 'true'
         id: get-latest-tag
         run: |
           echo "📦 Updating Helm repositories..."
@@ -196,6 +245,7 @@ jobs:
           echo "Latest release tag for branch $BRANCH: $LATEST_RELEASE_TAG"
 
       - name: Run E2E Tests
+        if: steps.should-run.outputs.skip != 'true'
         env:
           LATEST_RELEASE_TAG: ${{ steps.get-latest-tag.outputs.LATEST_RELEASE_TAG }}
         run: |
@@ -206,7 +256,7 @@ jobs:
           EOF
 
       - name: Cluster diagnostics
-        if: failure()
+        if: failure() && steps.should-run.outputs.skip != 'true'
         run: |
           echo "==== Nodes ===="; kubectl get nodes -o wide
           echo "==== Pods (all namespaces) ===="; kubectl get pods -A -o wide
@@ -223,12 +273,12 @@ jobs:
 
       ################### Diagnose and collect logs ###################
       - name: Run diagnose command
-        if: ${{ failure() && matrix.test-scenario != 'ui' }}
+        if: ${{ failure() && steps.should-run.outputs.skip != 'true' && matrix.test-scenario != 'ui' }}
         run: ./cli/odigos diagnose
         continue-on-error: true
 
       - name: Upload diagnose artifact
-        if: ${{ failure() && matrix.test-scenario != 'ui' }}
+        if: ${{ failure() && steps.should-run.outputs.skip != 'true' && matrix.test-scenario != 'ui' }}
         uses: actions/upload-artifact@v4
         with:
           name: run-details-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
@@ -236,7 +286,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload UI screenshots artifact
-        if: ${{ failure() && matrix.test-scenario == 'ui' }}
+        if: ${{ failure() && steps.should-run.outputs.skip != 'true' && matrix.test-scenario == 'ui' }}
         uses: actions/upload-artifact@v4
         with:
           name: ui-screenshots-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
@@ -244,7 +294,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload UI videos artifact
-        if: ${{ failure() && matrix.test-scenario == 'ui' }}
+        if: ${{ failure() && steps.should-run.outputs.skip != 'true' && matrix.test-scenario == 'ui' }}
         uses: actions/upload-artifact@v4
         with:
           name: ui-videos-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
@@ -252,7 +302,7 @@ jobs:
         continue-on-error: true
 
       - name: Delete pipeline build caches on success
-        if: ${{ success() }}
+        if: ${{ success() && steps.should-run.outputs.skip != 'true' }}
         run: |
           echo "Deleting pipeline build caches..."
           gh extension install actions/gh-actions-cache || true
