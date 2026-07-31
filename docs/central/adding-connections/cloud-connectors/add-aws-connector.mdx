@@ -55,7 +55,7 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
         | Read and update function config | `lambda:GetFunctionConfiguration`, `lambda:UpdateFunctionConfiguration` |
         | Manage OTel layers | `lambda:GetLayerVersion`, `lambda:ListLayers`, `lambda:PublishLayerVersion`, `lambda:DeleteLayerVersion` |
 
-        Lambda instrumentation also requires an [OTLP destination](/central/adding-connections/cloud-connectors/instrument-workloads) after the connector is online.
+        Lambda instrumentation also requires an [OTLP destination](/central/adding-connections/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online.
       </Tab>
       <Tab title="Custom">
         Pick which resource types may be discovered and which may be instrumented. The UI updates the **policy preview** to match your selections so the IAM policy stays aligned with what verification will validate.
@@ -203,7 +203,7 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
 <Card
   title="Instrument workloads"
   icon="microchip"
-  href="/central/adding-connections/cloud-connectors/instrument-workloads"
+  href="/central/adding-connections/cloud-connectors/instrument-workloads#add-an-otlp-destination"
 >
   Add an OTLP destination, create Sources for discovered Lambdas, and track instrumentation.
 </Card>

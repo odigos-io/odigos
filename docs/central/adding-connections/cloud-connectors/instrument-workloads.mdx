@@ -13,12 +13,18 @@ Once a Cloud Connector is online, browse the workloads it discovered and create 
     A Cloud Connector with discovery enabled for the workload types you want.
   </Step>
   <Step title="OTLP destination">
-    At least one **OTLP destination** on that connector. Workload instrumentation is destination-gated; without a usable OTLP endpoint the connector will not attach instrumentation.
+    At least one **OTLP destination** on that connector. See [Add an OTLP destination](#add-an-otlp-destination). Workload instrumentation is destination-gated; without a usable OTLP endpoint the connector will not attach instrumentation.
   </Step>
   <Step title="Reachable endpoint">
-    Instrumented workloads export OTLP to that destination from the cloud environment (for example from Lambda or Cloud Run). Point the destination at an endpoint those workloads can reach — typically a **regional collector** in the same cloud account or network, or another collector/backend with appropriate public or VPC access. See [Telemetry export](/central/adding-connections/cloud-connectors/overview#telemetry-export).
+    Instrumented workloads export OTLP to that destination from the cloud environment (for example from Lambda or Cloud Run). Point the destination at an endpoint those workloads can reach — for example a collector or backend with appropriate public or VPC access. See [Telemetry export](/central/adding-connections/cloud-connectors/overview#telemetry-export).
   </Step>
 </Steps>
+
+## Add an OTLP destination
+
+Before you create Sources, add at least one destination on the connector so instrumented workloads have somewhere to export telemetry.
+
+Follow the [Destinations overview](/enterprise/backends-overview) for how to add and configure a destination, then apply that setup on the connector in Central. The endpoint must be reachable from the cloud workloads themselves (not only from the Central cluster).
 
 ## Browse discovered workloads
 
@@ -56,7 +62,7 @@ To remove instrumentation from one or more Sources, select them with the checkbo
 
 <AccordionGroup>
   <Accordion title="No instrumentation applied">
-    Confirm an OTLP destination exists on the connector and the Source is enabled.
+    Confirm an [OTLP destination](#add-an-otlp-destination) exists on the connector and the Source is enabled. See [Destinations overview](/enterprise/backends-overview) for how to add and configure destinations.
   </Accordion>
   <Accordion title="GCP: permission denied on update">
     Grant `iam.serviceAccounts.actAs` (or `roles/iam.serviceAccountUser` on the runtime service account). See [Add GCP connector](/central/adding-connections/cloud-connectors/add-gcp-connector).
