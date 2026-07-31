@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/k8sutils
 go 1.26.2
 
 require (
-	github.com/argoproj/argo-rollouts v1.8.3
+	github.com/argoproj/argo-rollouts v1.9.1
 	github.com/odigos-io/odigos/actions v0.0.0
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
@@ -91,7 +91,7 @@ require (
 	google.golang.org/grpc v1.82.1
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/cri-api v0.35.2
-	k8s.io/klog/v2 v2.130.1
+	k8s.io/klog/v2 v2.140.0
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
 	sigs.k8s.io/controller-runtime v0.23.3
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
