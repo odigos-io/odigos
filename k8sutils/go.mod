@@ -102,4 +102,6 @@ replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth
+	// argo-rollouts@v1.9.1 requires this via its own internal-only replace, which doesn't propagate to us.
+	k8s.io/kubelet => k8s.io/kubelet v0.34.1
 )

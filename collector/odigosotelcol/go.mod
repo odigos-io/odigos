@@ -821,4 +821,6 @@ replace github.com/apache/thrift => github.com/apache/thrift v0.23.0
 
 replace github.com/prometheus/prometheus => github.com/prometheus/prometheus v0.311.4-0.20260507094802-91c184a899b8
 
+replace github.com/DataDog/datadog-agent/comp/core/delegatedauth => github.com/DataDog/datadog-agent/comp/core/delegatedauth v0.79.0-devel
+
 exclude github.com/knadh/koanf v1.5.0

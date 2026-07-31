@@ -257,12 +257,16 @@ require (
 )
 
 replace (
+	// k8sutils requires this via its own local-only replace, which doesn't propagate to us.
+	github.com/odigos-io/odigos/actions => ../actions
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/distros => ../distros
 	github.com/odigos-io/odigos/instrumentation => ../instrumentation
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks/obi => ./pkg/ebpf/sdks/obi
+	// Same as actions above, required transitively via k8sutils.
+	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 	github.com/odigos-io/odigos/opampserver => ../opampserver
 	github.com/odigos-io/odigos/procdiscovery => ../procdiscovery
 )

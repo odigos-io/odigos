@@ -402,4 +402,6 @@ replace (
 	// Pyroscope (and Mimir) expect KnownFields YAML decoding; upstream v3.0.1 lacks DecodeWithOptions.
 	// Matches github.com/grafana/pyroscope go.mod.
 	gopkg.in/yaml.v3 => github.com/colega/go-yaml-yaml v0.0.0-20220720105220-255a8d16d094
+	// argo-rollouts@v1.9.1 requires this via its own internal-only replace, which doesn't propagate to us.
+	k8s.io/kubelet => k8s.io/kubelet v0.34.1
 )

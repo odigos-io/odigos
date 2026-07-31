@@ -192,6 +192,8 @@ require (
 )
 
 replace (
+	// k8sutils requires this via its own local-only replace, which doesn't propagate to us.
+	github.com/odigos-io/odigos/actions => ../actions
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/cli => ../cli
 	github.com/odigos-io/odigos/common => ../common

@@ -163,10 +163,14 @@ require (
 )
 
 replace (
+	// k8sutils requires this via its own local-only replace, which doesn't propagate to us.
+	github.com/odigos-io/odigos/actions => ../actions
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/autoscaler => ../autoscaler
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 	github.com/odigos-io/odigos/profiles => ../profiles
+	// argo-rollouts@v1.9.1 requires this via its own internal-only replace, which doesn't propagate to us.
+	k8s.io/kubelet => k8s.io/kubelet v0.34.1
 )
