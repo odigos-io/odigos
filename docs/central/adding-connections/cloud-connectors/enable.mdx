@@ -1,0 +1,187 @@
+---
+title: 'Enable Cloud Connectors'
+description: 'Enable the Cloud Connectors feature on Odigos Central with Helm or the CLI, including bundled PostgreSQL configuration.'
+sidebarTitle: 'Enable'
+---
+
+Cloud Connectors are **off by default**. Until you enable them, Central does not install the connector controller, the connector PostgreSQL store, or the `OdigosCloudConnector` CRD.
+
+Enabling the feature does **not** create per-account connectors. After the subsystem is running, add a provider connector from the Central UI (for example [AWS](/central/adding-connections/cloud-connectors/add-aws-connector)).
+
+<Info>
+  Cloud Connectors require the same Odigos Enterprise on-prem token (or install
+  secret) as the rest of the Central installation.
+</Info>
+
+## What gets installed
+
+When `cloudConnectors.enabled` is `true` and the Central install secret exists, the chart installs:
+
+- The `OdigosCloudConnector` CRD
+- The `connector-runtime` controller
+- Bundled PostgreSQL (`odigos-connector-postgres`) and a PVC when persistence is enabled
+
+## Enable Cloud Connectors
+
+<Tabs>
+  <Tab title="CLI">
+    At install time:
+
+    ```bash
+    odigos pro central install \
+      --set onPremToken=<token> \
+      --set cloudConnectors.enabled=true \
+      --set cloudConnectors.postgres.password=<strong-password> \
+      --set cloudConnectors.postgres.persistence.enabled=true \
+      --set cloudConnectors.postgres.persistence.size=20Gi \
+      --set cloudConnectors.postgres.persistence.storageClassName=
+    ```
+
+    On an existing Central installation:
+
+    ```bash
+    odigos pro central upgrade \
+      --set cloudConnectors.enabled=true \
+      --set cloudConnectors.postgres.password=<strong-password> \
+      --set cloudConnectors.postgres.persistence.enabled=true \
+      --set cloudConnectors.postgres.persistence.size=20Gi \
+      --set cloudConnectors.postgres.persistence.storageClassName=
+    ```
+
+    <Tip>
+      Leave `storageClassName` empty to use the cluster default, or set it to a
+      class your cluster requires (e.g. `gp3`).
+    </Tip>
+  </Tab>
+
+  <Tab title="Helm">
+    Enable with `--set`:
+
+    ```bash
+    helm upgrade --install odigos-central odigos/odigos-central \
+      --namespace odigos-central \
+      --reuse-values \
+      --set cloudConnectors.enabled=true \
+      --set cloudConnectors.postgres.password=<strong-password> \
+      --set cloudConnectors.postgres.persistence.enabled=true \
+      --set cloudConnectors.postgres.persistence.size=20Gi \
+      --set cloudConnectors.postgres.persistence.storageClassName=
+    ```
+
+    Or in `values.yaml`:
+
+    ```yaml
+    cloudConnectors:
+      enabled: true
+      postgres:
+        password: "<strong-password>"
+        persistence:
+          enabled: true
+          size: 20Gi
+          storageClassName: "" # set if your cluster requires an explicit class
+    ```
+
+    Then apply:
+
+    ```bash
+    helm upgrade --install odigos-central odigos/odigos-central \
+      --namespace odigos-central \
+      --create-namespace \
+      -f values.yaml
+    ```
+  </Tab>
+</Tabs>
+
+## PostgreSQL configuration
+
+Cloud Connectors use a bundled PostgreSQL instance under `cloudConnectors.postgres`. Configure these values when you enable the feature:
+
+<ParamField path="cloudConnectors.postgres.password" type="string" default="odigos">
+  Database password. Change this for non-development installs.
+</ParamField>
+
+<ParamField path="cloudConnectors.postgres.username" type="string" default="odigos">
+  Database username.
+</ParamField>
+
+<ParamField path="cloudConnectors.postgres.database" type="string" default="odigos_central">
+  Database name.
+</ParamField>
+
+<ParamField path="cloudConnectors.postgres.persistence.enabled" type="boolean" default="true">
+  Persist connector state on a PVC.
+</ParamField>
+
+<ParamField path="cloudConnectors.postgres.persistence.size" type="string" default="20Gi">
+  PVC size. Your cluster must provide storage.
+</ParamField>
+
+<ParamField path="cloudConnectors.postgres.persistence.storageClassName" type="string" default="">
+  Storage class. Empty uses the cluster default.
+</ParamField>
+
+<AccordionGroup>
+  <Accordion title="Advanced Postgres settings">
+    | Value | Default | Description |
+    | --- | --- | --- |
+    | `postgres.persistence.accessModes` | `[ReadWriteOnce]` | PVC access modes |
+    | `postgres.resources` | chart defaults | CPU and memory requests/limits for the Postgres pod |
+    | `postgres.image` | chart default | Leave at the chart default unless Odigos support or engineering asks you to override it |
+
+    <Warning>
+      Do not set a custom Postgres image on your own. Use the image shipped with
+      the chart unless Odigos support or engineering directs otherwise.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Optional provider image overrides">
+    Provider connector images (`cloudConnectors.aws.image`, `cloudConnectors.gcp.image`) default to the versions shipped with the chart.
+
+    <Warning>
+      Override these only when Odigos support or engineering asks you to. Custom
+      images can break discovery, instrumentation, or schema compatibility.
+    </Warning>
+
+    ```yaml
+    cloudConnectors:
+      enabled: true
+      aws:
+        image: "" # empty = chart default; set only if directed by Odigos
+      gcp:
+        image: "" # empty = chart default; set only if directed by Odigos
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Verify
+
+After enablement, confirm the subsystem is running in the Central namespace (default `odigos-central`):
+
+```bash
+kubectl get pods -n odigos-central -l 'app in (connector-runtime,odigos-connector-postgres)'
+```
+
+You should see `connector-runtime` and `odigos-connector-postgres` in a Running state.
+
+<Check>
+  Once both pods are Running, you are ready to add a cloud provider connector.
+</Check>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Add AWS connector"
+    icon="aws"
+    href="/central/adding-connections/cloud-connectors/add-aws-connector"
+  >
+    Connect an AWS account.
+  </Card>
+  <Card
+    title="Instrument workloads"
+    icon="microchip"
+    href="/central/adding-connections/cloud-connectors/instrument-workloads"
+  >
+    Create Sources after a connector is online.
+  </Card>
+</CardGroup>

@@ -29,6 +29,7 @@ You can install Odigos Central using the CLI or Helm chart.
     | `--set auth.externalUrl` | `http://localhost:8081` | Browser-accessible URL of the Central Backend for SSO redirect flows |
     | `--set auth.adminPassword` | (auto-generated) | Admin password for Keycloak. If not provided, a random password is generated |
     | `--set auth.adminUsername` | `admin` | Admin username for Keycloak |
+    | `--set cloudConnectors.enabled` | `false` | Enable [Cloud Connectors](/central/adding-connections/cloud-connectors/enable) (controller, Postgres, CRD) |
     | `--namespace`, `-n` | `odigos-central` | Target namespace for installation |
     | `--version` | (current) | Specify a specific version to install |
 
@@ -100,3 +101,46 @@ You can install Odigos Central using the CLI or Helm chart.
 
   </Tab>
 </Tabs>
+
+## Optional: Cloud Connectors
+
+Cloud Connectors are disabled by default. To discover and instrument cloud workloads (AWS, GCP, and more) from Central, enable the feature at install or upgrade time:
+
+<Tabs>
+  <Tab title="CLI">
+    ```bash
+    odigos pro central install \
+      --set onPremToken=<token> \
+      --set cloudConnectors.enabled=true \
+      --set cloudConnectors.postgres.password=<strong-password> \
+      --set cloudConnectors.postgres.persistence.enabled=true \
+      --set cloudConnectors.postgres.persistence.size=20Gi \
+      --set cloudConnectors.postgres.persistence.storageClassName=
+    ```
+
+    On an existing install:
+
+    ```bash
+    odigos pro central upgrade \
+      --set cloudConnectors.enabled=true \
+      --set cloudConnectors.postgres.password=<strong-password> \
+      --set cloudConnectors.postgres.persistence.enabled=true \
+      --set cloudConnectors.postgres.persistence.size=20Gi \
+      --set cloudConnectors.postgres.persistence.storageClassName=
+    ```
+  </Tab>
+  <Tab title="Helm">
+    ```bash
+    helm upgrade --install odigos-central odigos/odigos-central \
+      --namespace odigos-central \
+      --reuse-values \
+      --set cloudConnectors.enabled=true \
+      --set cloudConnectors.postgres.password=<strong-password> \
+      --set cloudConnectors.postgres.persistence.enabled=true \
+      --set cloudConnectors.postgres.persistence.size=20Gi \
+      --set cloudConnectors.postgres.persistence.storageClassName=
+    ```
+  </Tab>
+</Tabs>
+
+See [Enable Cloud Connectors](/central/adding-connections/cloud-connectors/enable) for PostgreSQL settings, verification steps, and full values.

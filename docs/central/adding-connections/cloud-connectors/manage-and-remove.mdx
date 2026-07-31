@@ -1,0 +1,115 @@
+---
+title: 'Manage and Remove Cloud Connectors'
+description: 'Monitor Cloud Connector health, understand status, and remove connectors with retain or cleanup deletion policies.'
+sidebarTitle: 'Manage and Remove'
+---
+
+Use this page to operate connectors after they are online — health, immutable fields, and safe removal.
+
+## Connector status
+
+The connectors list and detail views show installation and runtime health. The connector phase is one of:
+
+| Status | Meaning |
+| --- | --- |
+| **Pending** | The connector resource exists but has not started yet |
+| **Starting** | The connector workload is deploying, or the runtime has not finished registering, authenticating, and completing a successful discovery cycle |
+| **Connected** | The runtime is healthy: authenticated to the cloud account and discovery is succeeding |
+| **Degraded** | The runtime is up but not fully healthy (for example discovery failures, or heartbeats that have gone stale) |
+| **Error** | A hard failure that blocks a healthy runtime (for example the connector image cannot be resolved, or `spec.provider` was changed after create) |
+| **Disabled** | The connector runtime reported itself as disabled |
+| **Deleting** | The connector is being removed (including instrumentation cleanup when the deletion policy is `cleanup`) |
+
+<AccordionGroup>
+  <Accordion title="Common causes of Degraded or Error">
+    **Degraded** usually means:
+
+    - A discovery cycle failed (missing permissions, cloud API errors, or other detector failures)
+    - The runtime stopped refreshing its heartbeat (for example the pod is wedged or lost its Postgres connection), so the last healthy status went stale
+
+    Auth that has not succeeded yet, or discovery that has not completed a successful cycle yet, typically stays in **Starting** rather than **Degraded**.
+
+    **Error** usually means:
+
+    - The connector image could not be resolved for the provider
+    - `spec.provider` was changed after the connector was created (provider is immutable)
+
+    Schema version mismatches fail connector startup (the pod does not stay healthy), which typically shows as **Starting** or, if heartbeats stop updating, **Degraded** — not a dedicated schema-mismatch phase.
+
+    Fix credentials or IAM, confirm [Cloud Connectors are enabled](/central/adding-connections/cloud-connectors/enable), and check `connector-runtime` / connector pods in the Central namespace.
+  </Accordion>
+</AccordionGroup>
+
+## What you can change
+
+- You can update display name, credentials Secret contents, discovery interval, and **capabilities** (which types to discover/instrument), depending on what the UI exposes for your version.
+- **`provider` is immutable** after the connector is created. To switch providers (for example from AWS to another cloud), create a new connector.
+
+## Delete a connector
+
+Deleting a connector removes the connector runtime from the Central cluster. What happens to cloud-side instrumentation depends on the deletion policy annotation on the `OdigosCloudConnector` resource:
+
+```yaml
+metadata:
+  annotations:
+    odigos.io/deletion-policy: retain   # or cleanup
+```
+
+<Tabs>
+  <Tab title="retain (default)">
+    Deletes the connector from Central (the connector pod and related resources in the Central cluster). It does **not** uninstrument cloud workloads.
+
+    Any Odigos instrumentation already applied in the cloud account stays in place (for example Lambda layers or Cloud Run agent injection). To remove that instrumentation, [uninstrument Sources](/central/adding-connections/cloud-connectors/instrument-workloads#uninstrument-workloads) while the connector is still online, or change those resources outside Odigos after delete.
+
+    <Info>
+      Creating a connector from the Central UI typically leaves the annotation
+      unset, which means **retain**.
+    </Info>
+  </Tab>
+  <Tab title="cleanup">
+    Before removing the connector, attempt to roll back Odigos instrumentation in the provider.
+
+    Set the annotation explicitly:
+
+    ```yaml
+    metadata:
+      annotations:
+        odigos.io/deletion-policy: cleanup
+    ```
+
+    <Warning>
+      If rollback does not finish within the cleanup timeout (**15 minutes** by
+      default), the connector may still be deleted and some resources can remain
+      instrumented.
+    </Warning>
+  </Tab>
+</Tabs>
+
+### Sources on delete
+
+When you delete a connector, Sources and discovery data for that account boundary are no longer managed through that connector.
+
+<Tip>
+  Prefer disabling or deleting Sources first if you want a controlled rollback
+  while the connector is still running, especially under the default **retain**
+  policy.
+</Tip>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card
+    title="Instrument workloads"
+    icon="microchip"
+    href="/central/adding-connections/cloud-connectors/instrument-workloads"
+  >
+    Create and disable Sources while the connector is online.
+  </Card>
+  <Card
+    title="Cloud Connectors overview"
+    icon="cloud"
+    href="/central/adding-connections/cloud-connectors/overview"
+  >
+    Back to concepts and supported providers.
+  </Card>
+</CardGroup>

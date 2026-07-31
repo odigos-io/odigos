@@ -1,0 +1,209 @@
+---
+title: 'Add an AWS Connector'
+description: 'Connect an AWS account to Odigos Central, configure authentication and capabilities, and verify discovery.'
+sidebarTitle: 'Add AWS'
+---
+
+Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Central cluster, discovers resources across every region enabled in that account, and can instrument AWS Lambda functions when you create Sources.
+
+<Note>
+  [Enable Cloud Connectors](/central/adding-connections/cloud-connectors/enable)
+  before you add a connector.
+</Note>
+
+## Resource types
+
+| Type | Domain | Discovery | Instrumentation |
+| --- | --- | --- | --- |
+| `aws.lambda` | Workload | Yes | Yes (OpenTelemetry Lambda layer) |
+| `aws.fargate-task` | Workload | Yes | Coming soon |
+| `aws.ecs-cluster` | Compute platform | Yes | Agent install coming soon |
+| `aws.fargate-cluster` | Compute platform | Yes | Agent install coming soon |
+
+## Add the connector
+
+<Steps>
+  <Step title="Open Add connector and choose AWS">
+    In the Central UI, open Connections / Connectors and start **Add connector**. Choose **Amazon Web Services**.
+  </Step>
+
+  <Step title="Choose access level">
+    Choose how much access this connector should have. The UI shows an **example IAM permissions policy** for the level you pick. You will attach that policy when you create the IAM role or user in the next step.
+
+    <Tabs defaultTabIndex="1">
+      <Tab title="Discovery only">
+        The connector can list and discover resources (e.g. Lambda functions and ECS/Fargate resources) but cannot change them or attach instrumentation.
+
+        Use this when you want inventory and visibility first, or when a separate identity will handle instrumentation later.
+
+        Typical policy actions include:
+
+        | Purpose | Actions |
+        | --- | --- |
+        | Authentication | `sts:GetCallerIdentity` |
+        | Region enumeration | `ec2:DescribeRegions` |
+        | Lambda discovery | `lambda:ListFunctions` |
+        | ECS / Fargate discovery | `ecs:ListClusters`, `ecs:DescribeClusters`, `ecs:ListServices`, `ecs:DescribeServices`, `ecs:ListTasks`, `ecs:DescribeTasks` |
+      </Tab>
+      <Tab title="Discovery + instrumentation">
+        The connector can discover resources and instrument supported workloads. Prefer this for a full setup in one step.
+
+        Includes all discovery actions, plus Lambda instrumentation:
+
+        | Purpose | Actions |
+        | --- | --- |
+        | Read and update function config | `lambda:GetFunctionConfiguration`, `lambda:UpdateFunctionConfiguration` |
+        | Manage OTel layers | `lambda:GetLayerVersion`, `lambda:ListLayers`, `lambda:PublishLayerVersion`, `lambda:DeleteLayerVersion` |
+
+        Lambda instrumentation also requires an [OTLP destination](/central/adding-connections/cloud-connectors/instrument-workloads) after the connector is online.
+      </Tab>
+      <Tab title="Custom">
+        Pick which resource types may be discovered and which may be instrumented. The UI updates the **policy preview** to match your selections so the IAM policy stays aligned with what verification will validate.
+
+        Use Custom when you need a narrower or broader mix than the presets (e.g. discover ECS clusters but only instrument Lambda).
+      </Tab>
+    </Tabs>
+
+    <Info>
+      Use the policy preview as the source of truth for the permissions policy.
+      This keeps connector access scoped — not blanket account admin. See
+      [You control the access scope](/central/adding-connections/cloud-connectors/overview#you-control-the-access-scope).
+    </Info>
+
+    Click **Next** to continue to **Setup credentials**.
+  </Step>
+
+  <Step title="Setup credentials">
+    On the **Setup credentials** screen, apply the IAM policy from the previous step in your AWS account and enter the credentials Odigos will use.
+
+    #### 1. Choose authentication method
+
+    <Tabs>
+      <Tab title="Assume Role">
+        Odigos assumes a scoped IAM role. Prefer this for production: you attach the permissions policy to the role, and Odigos does not rely on long-lived admin credentials in the connector.
+
+        You still provide base access keys that are allowed to call `sts:AssumeRole` on that role (plus the Role ARN and External ID).
+
+        #### Choose setup method
+
+        The UI guides you through **creating the IAM role** using the workflow you prefer. Choose one.  Each path ends with the same role (trust policy + access-level permissions) and a Role ARN to paste back into Odigos.
+
+        <Tabs>
+          <Tab title="CloudFormation">
+            1. Open the CloudFormation instructions in the UI.
+            2. Deploy the provided template (or stack) in the target AWS account.
+            3. Confirm the stack created the IAM role with the UI trust policy and the permissions policy from the access level step.
+            4. Copy the **Role ARN** from the stack outputs or the IAM console.
+          </Tab>
+          <Tab title="Terraform">
+            1. Open the Terraform snippet in the UI.
+            2. Apply it in the target account or module.
+            3. Confirm the role was created with the UI trust policy and the permissions policy from the access level step.
+            4. Copy the **Role ARN** from the Terraform output or the IAM console.
+          </Tab>
+          <Tab title="AWS CLI">
+            1. Open the AWS CLI commands in the UI.
+            2. Run them against the target account (creates the role, trust policy, and attaches permissions).
+            3. Confirm the commands completed successfully.
+            4. Copy the **Role ARN** from the command output or the IAM console.
+          </Tab>
+          <Tab title="Manual">
+            1. Open the AWS Console → IAM → Roles → Create role.
+            2. Select **Custom trust policy**.
+            3. Paste the trust policy from the UI (includes the External ID condition when present).
+            4. Attach the **permissions policy from the access level step**.
+            5. Name the role and create it.
+            6. Open the role summary and copy the **Role ARN**.
+          </Tab>
+        </Tabs>
+
+        #### Enter credentials in Odigos
+
+        Paste the values from the previous step into the form — account ID, base access keys, the Role ARN you copied, and the External ID from the UI trust policy.
+
+        <ParamField path="AWS Account ID" type="string" required>
+          The 12-digit account ID where the IAM role lives.
+        </ParamField>
+        <ParamField path="Access Key ID" type="string" required>
+          Access key for an identity that can assume the role.
+        </ParamField>
+        <ParamField path="Secret Access Key" type="string" required>
+          Secret access key for that identity.
+        </ParamField>
+        <ParamField path="Session Token" type="string">
+          Required only for temporary access keys.
+        </ParamField>
+        <ParamField path="IAM Role ARN" type="string" required>
+          ARN of the cross-account role Odigos assumes.
+        </ParamField>
+        <ParamField path="External ID" type="string">
+          Must match the External ID in the role trust policy (shown in the UI, e.g. `odigos-connector`).
+        </ParamField>
+      </Tab>
+
+      <Tab title="Static keys">
+        Use IAM user access keys that already have the permissions policy from the access level step attached. There is no separate role setup flow in the UI for this method.
+
+        1. In AWS, create or select an IAM user.
+        2. Attach the **permissions policy from the access level step**.
+        3. Create an access key for that user.
+        4. Enter the credentials in Odigos:
+
+        <ParamField path="AWS Account ID" type="string" required>
+          The 12-digit account ID where the IAM user lives.
+        </ParamField>
+        <ParamField path="Access Key ID" type="string" required>
+          IAM user access key ID.
+        </ParamField>
+        <ParamField path="Secret Access Key" type="string" required>
+          IAM user secret access key.
+        </ParamField>
+        <ParamField path="Session Token" type="string">
+          Required only for temporary access keys.
+        </ParamField>
+      </Tab>
+    </Tabs>
+
+    Credentials are stored in a Kubernetes Secret in the Central cluster — never in the connector spec.
+  </Step>
+
+  <Step title="Verify and create">
+    Click **Verify & Create Connector**. Central runs connection checks, then creates the credentials Secret and `OdigosCloudConnector` resource when verification succeeds.
+
+    Checks may include:
+
+    | Check | What it verifies |
+    | --- | --- |
+    | Authentication | Credentials resolve and `sts:GetCallerIdentity` succeeds |
+    | Account match | Caller identity belongs to the configured account ID |
+    | Region access | `ec2:DescribeRegions` succeeds when discovery is enabled |
+    | Lambda discovery permissions | `lambda:ListFunctions` when Lambda discovery is enabled |
+    | ECS discovery permissions | `ecs:ListClusters` when any ECS/Fargate discovery type is enabled |
+
+    <Info>
+      Verification covers authentication and discovery permissions for the access
+      level you selected. For **Discovery + instrumentation**, also ensure the
+      instrumentation actions from the policy preview are on the role before you
+      create Sources.
+    </Info>
+  </Step>
+
+  <Step title="Wait for Connected">
+    After create succeeds, wait until the connector status is **Connected** and initial discovery has completed.
+  </Step>
+</Steps>
+
+<Check>
+  When the connector shows Connected, you can browse discovered workloads and
+  start [instrumenting](/central/adding-connections/cloud-connectors/instrument-workloads).
+</Check>
+
+## Next steps
+
+<Card
+  title="Instrument workloads"
+  icon="microchip"
+  href="/central/adding-connections/cloud-connectors/instrument-workloads"
+>
+  Add an OTLP destination, create Sources for discovered Lambdas, and track instrumentation.
+</Card>

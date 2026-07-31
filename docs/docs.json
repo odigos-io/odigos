@@ -703,7 +703,17 @@
                 "group": "Adding Connections",
                 "pages": [
                   "central/adding-connections/remote-clusters",
-                  "central/adding-connections/vmagent"
+                  "central/adding-connections/vmagent",
+                  {
+                    "group": "Cloud Connectors",
+                    "pages": [
+                      "central/adding-connections/cloud-connectors/overview",
+                      "central/adding-connections/cloud-connectors/enable",
+                      "central/adding-connections/cloud-connectors/add-aws-connector",
+                      "central/adding-connections/cloud-connectors/instrument-workloads",
+                      "central/adding-connections/cloud-connectors/manage-and-remove"
+                    ]
+                  }
                 ]
               },
               "central/authentication",
