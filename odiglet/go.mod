@@ -41,7 +41,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/andybalholm/brotli v1.2.2 // indirect
-	github.com/argoproj/argo-rollouts v1.8.3 // indirect
+	github.com/argoproj/argo-rollouts v1.9.1 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.41.7 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.32.18 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.17 // indirect
@@ -257,12 +257,16 @@ require (
 )
 
 replace (
+	// k8sutils requires this via its own local-only replace, which doesn't propagate to us.
+	github.com/odigos-io/odigos/actions => ../actions
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/distros => ../distros
 	github.com/odigos-io/odigos/instrumentation => ../instrumentation
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks/obi => ./pkg/ebpf/sdks/obi
+	// Same as actions above, required transitively via k8sutils.
+	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 	github.com/odigos-io/odigos/opampserver => ../opampserver
 	github.com/odigos-io/odigos/procdiscovery => ../procdiscovery
 )

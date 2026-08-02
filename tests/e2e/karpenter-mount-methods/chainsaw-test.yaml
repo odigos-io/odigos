@@ -1,0 +1,185 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: karpenter-mount-methods
+spec:
+  description: >
+    Karpenter integration across mount methods: virtual-device+NodeOverlay,
+    init-container schedule-only, then CSI with karpenter.enabled and startup taints.
+    No tracing assertions.
+  skipDelete: true
+  steps:
+    # Karpenter needs a cloud provider to create nodes. On kind we use KWOK (fake nodes)
+    # instead of AWS/GCP: install KWOK + Karpenter KWOK controller, then apply our NodePool
+    # (with odigos.io/needs-init startupTaints) and KWOKNodeClass. NodeOverlay is applied later
+    # in the virtual-device step. Optional: KARPENTER_DIR=/path/to/karpenter to skip the git clone.
+    - name: '[0 - Setup] Install Karpenter KWOK'
+      try:
+        - script:
+            timeout: 10m
+            content: ./setup-karpenter-kwok.sh
+
+    - name: '[0 - Setup] Install simple-demo + destination'
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-installed.yaml
+        - assert:
+            timeout: 1m10s
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: '[1 - Virtual Device] Install Odigos (default mount method)'
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --ns odigos-test \
+                  --set image.tag="$COMMIT_HASH" \
+                  --set imagePrefix=public.ecr.aws/y2v0v6s7
+              else
+                ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
+              fi
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+              ../../common/verify_odigos_installation.sh odigos-test
+        - assert:
+            timeout: 2m30s
+            file: ../../common/assert/odigos-installed.yaml
+        - script:
+            timeout: 1m
+            content: ../../common/assert_config_value.sh -k mountMethod -v k8s-virtual-device
+
+    - name: '[1 - Virtual Device] Instrument + destination'
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+        - assert:
+            timeout: 1m30s
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+        - assert:
+            timeout: 1m30s
+            file: ../../common/assert/pipeline-ready.yaml
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-instrumented.yaml
+        - script:
+            timeout: 1m30s
+            content: |
+              ../../common/wait_for_rollout.sh
+              kubectl rollout status deployment -l app=currency
+              kubectl rollout status deployment -l app=geolocation
+
+    - name: '[1 - Virtual Device] Scale inventory — Pending without NodeOverlay, NodeClaim after'
+      try:
+        - script:
+            timeout: 6m
+            content: ./assert-nodeoverlay-scale.sh
+
+    - name: '[2 - Init Container] Switch mount method'
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --ns odigos-test \
+                  --set image.tag="$COMMIT_HASH" \
+                  --set imagePrefix=public.ecr.aws/y2v0v6s7 \
+                  --set instrumentor.mountMethod=k8s-init-container
+              else
+                ../../../cli/odigos install --ns odigos-test \
+                  --set image.tag=e2e-test \
+                  --set instrumentor.mountMethod=k8s-init-container
+              fi
+        - script:
+            timeout: 1m
+            content: ../../common/assert_config_value.sh -k mountMethod -v k8s-init-container
+        - script:
+            timeout: 5m
+            content: |
+              kubectl rollout status daemonset/odiglet -n odigos-test --timeout=5m
+              sleep 2
+              kubectl rollout restart deployment -n default
+              ../../common/wait_for_rollout.sh
+              kubectl rollout status deployment -l app=currency
+              kubectl rollout status deployment -l app=geolocation
+        - assert:
+            timeout: 2m
+            file: ../mount-method/simple-demo-instrumented.yaml
+
+    - name: '[3 - CSI + Karpenter] Switch to CSI with karpenter.enabled'
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --ns odigos-test \
+                  --set image.tag="$COMMIT_HASH" \
+                  --set imagePrefix=public.ecr.aws/y2v0v6s7 \
+                  --set instrumentor.mountMethod=k8s-csi-driver \
+                  --set karpenter.enabled=true
+              else
+                ../../../cli/odigos install --ns odigos-test \
+                  --set image.tag=e2e-test \
+                  --set instrumentor.mountMethod=k8s-csi-driver \
+                  --set karpenter.enabled=true
+              fi
+        - script:
+            timeout: 1m
+            content: |
+              ../../common/assert_config_value.sh -k mountMethod -v k8s-csi-driver
+              ../../common/assert_config_value.sh -k karpenterEnabled -v true
+
+    - name: '[3 - CSI + Karpenter] Apply startup taint and verify it exists'
+      try:
+        - script:
+            timeout: 1m
+            content: ./assert-startup-taint-applied.sh
+
+    - name: '[3 - CSI + Karpenter] Rollout odiglet and verify startup taint removed'
+      try:
+        - script:
+            timeout: 3m
+            content: ./assert-startup-taint-removed.sh
+
+    - name: '[3 - CSI + Karpenter] Pods schedule with CSI and without odiglet affinity'
+      try:
+        - script:
+            timeout: 5m
+            content: |
+              sleep 2
+              kubectl rollout restart deployment -n default
+              ../../common/wait_for_rollout.sh
+              kubectl rollout status deployment -l app=currency
+              kubectl rollout status deployment -l app=geolocation
+        - assert:
+            timeout: 2m
+            file: ../mount-method/simple-demo-instrumented-with-csi.yaml
+
+
+
+        - script:
+            timeout: 1m
+            content: ./assert-no-odiglet-affinity.sh
+
+    - name: 'Cleanup'
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              kubectl delete nodeoverlay odigos-instrumentation --ignore-not-found || true
+              kubectl delete nodeclaims --all --ignore-not-found || true
+              ../../../cli/odigos uninstall --ns odigos-test || true
+              for i in $(seq 1 10); do
+                if ../../common/assert_odigos_uninstalled.sh; then
+                  exit 0
+                fi
+                sleep 5
+              done
+              echo "Failed to verify Odigos uninstallation"
+              exit 1

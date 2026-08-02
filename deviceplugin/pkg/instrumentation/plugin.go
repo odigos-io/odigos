@@ -2,43 +2,34 @@ package instrumentation
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
-	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
-	"github.com/odigos-io/odigos/deviceplugin/pkg/instrumentation/devices"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
-type LangSpecificFunc func(deviceId string) *v1beta1.ContainerAllocateResponse
-
 type plugin struct {
 	v1beta1.UnimplementedDevicePluginServer
-	idsManager       devices.DeviceManager
-	stopCh           chan struct{}
-	LangSpecificFunc LangSpecificFunc
+	devices []*v1beta1.Device
+	stopCh  chan struct{}
 }
 
-func NewPlugin(initialSize int64, lsf LangSpecificFunc) dpm.PluginInterface {
-	idManager := devices.NewIDManager(initialSize)
+func NewPlugin(initialSize int64) dpm.PluginInterface {
+	devicesList := make([]*v1beta1.Device, initialSize)
+	for i := int64(0); i < initialSize; i++ {
+		devicesList[i] = &v1beta1.Device{
+			ID:     uuid.New().String(),
+			Health: v1beta1.Healthy,
+		}
+	}
 
 	return &plugin{
-		idsManager:       idManager,
-		stopCh:           make(chan struct{}),
-		LangSpecificFunc: lsf,
+		devices: devicesList,
+		stopCh:  make(chan struct{}),
 	}
-}
-
-func NewMuslPlugin(lang common.ProgrammingLanguage, maxPods int64, lsf LangSpecificFunc) dpm.PluginInterface {
-	wrappedLsf := func(deviceId string) *v1beta1.ContainerAllocateResponse {
-		res := lsf(deviceId)
-		libc.ModifyEnvVarsForMusl(lang, res.Envs)
-		return res
-	}
-
-	return NewPlugin(maxPods, wrappedLsf)
 }
 
 func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empty) (*v1beta1.DevicePluginOptions, error) {
@@ -50,10 +41,9 @@ func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empt
 
 func (p *plugin) ListAndWatch(empty *v1beta1.Empty, server v1beta1.DevicePlugin_ListAndWatchServer) error {
 	logger := commonlogger.LoggerCompat().With("subsystem", "deviceplugin")
-	devicesList := p.idsManager.GetDevices()
-	logger.Debug("ListAndWatch", "devices", devicesList)
+	logger.Debug("ListAndWatch", "devices", p.devices)
 	err := server.Send(&v1beta1.ListAndWatchResponse{
-		Devices: devicesList,
+		Devices: p.devices,
 	})
 
 	if err != nil {
@@ -84,12 +74,26 @@ func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest)
 	logger := commonlogger.LoggerCompat().With("subsystem", "deviceplugin")
 	for _, req := range request.ContainerRequests {
 		if len(req.DevicesIds) != 1 {
-			logger.Info("got instrumentation device not equal to 1, skipping", "devices", req.DevicesIds)
-			continue
+			// instrumentation device amount must equal to 1.
+			// this is what being set on the container resource request:
+			// resources:
+			//   instrumentation.odigos.io/generic: 1
+			// so it must equal to 1 if coming from odigos.
+			// larger amount can exhaust the limited device we allocated.
+			logger.Error("got instrumentation device not equal to 1", "devices", req.DevicesIds)
+			return nil, fmt.Errorf("got instrumentation device not equal to 1, devices: %v", req.DevicesIds)
 		}
 
-		deviceId := req.DevicesIds[0]
-		res.ContainerResponses = append(res.ContainerResponses, p.LangSpecificFunc(deviceId))
+		containerAllocateResponse := &v1beta1.ContainerAllocateResponse{
+			Mounts: []*v1beta1.Mount{
+				{
+					ContainerPath: OdigosAgentsDirectory,
+					HostPath:      OdigosAgentsDirectory,
+					ReadOnly:      true,
+				},
+			},
+		}
+		res.ContainerResponses = append(res.ContainerResponses, containerAllocateResponse)
 	}
 
 	return res, nil

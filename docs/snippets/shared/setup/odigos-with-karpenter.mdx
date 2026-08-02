@@ -6,9 +6,90 @@ Unlike traditional autoscalers, Karpenter can provision nodes in seconds and mak
 
 ---
 
-## Why Special Configuration Is Needed with Karpenter
+## Mount Method Compatibility
 
-By default, Odigos adds a **node affinity** rule to all instrumented pods to ensure they only run on nodes where `odiglet` is installed.
+Odigos support for Karpenter depends on the configured [mount method](../instrumentations/configuration/mount-method):
+
+| Mount method | Karpenter support | What you need |
+| --- | --- | --- |
+| [`k8s-init-container`](../instrumentations/configuration/mount-method#3-InitContainer) | Works out of the box | No additional Karpenter configuration |
+| [`k8s-host-path`](../instrumentations/configuration/mount-method#2-HostPath) / [`k8s-csi-driver`](../instrumentations/configuration/mount-method#4-CSI-Driver) | Supported with Odigos Karpenter integration | Enable `karpenter.enabled` and configure NodePool `startupTaints` (see [HostPath and CSI](#hostpath-and-csi-startup-taints)) |
+| [`k8s-virtual-device`](../instrumentations/configuration/mount-method#1-VirtualDevice) (default) | Supported only when your Karpenter installation can apply [NodeOverlay](https://karpenter.sh/docs/concepts/nodeoverlays/) capacity | Enable the NodeOverlay feature (when required) and apply a NodeOverlay CR (see [Virtual Device](#virtual-device-nodeoverlay)) |
+
+Follow the section for your mount method below.
+
+---
+
+## Init Container
+
+If you use `k8s-init-container`, no Karpenter-specific configuration is required. You can stop here.
+
+---
+
+## Virtual Device (NodeOverlay)
+
+With `k8s-virtual-device`, instrumented pods request the extended resource `instrumentation.odigos.io/generic`. That capacity is advertised by the Odigos device plugin on nodes where `odiglet` is already running.
+
+Karpenter simulates new nodes from instance-type information. Because that simulation does not include the Odigos device resource by default, Karpenter can fail provisioning with errors such as:
+
+```text
+no instance type has enough resources ... instrumentation.odigos.io/generic: "1"
+```
+
+### Provider and version caveats
+
+Support depends on your **Karpenter version, cloud provider, and how the controller is packaged**:
+
+- [NodeOverlay](https://karpenter.sh/docs/concepts/nodeoverlays/) is an alpha Karpenter feature (available since Karpenter v1.7.x). Exact enablement steps and API readiness vary by release.
+- On many installs (including official AWS Karpenter Helm charts), NodeOverlay is **disabled by default** and must be turned on with a feature gate, for example:
+
+```bash
+helm upgrade karpenter oci://public.ecr.aws/karpenter/karpenter \
+  --namespace <KARPENTER_NAMESPACE> \
+  --reuse-values \
+  --set settings.featureGates.nodeOverlay=true
+```
+
+  Equivalently, set `--feature-gates NodeOverlay=true` / `FEATURE_GATES=...,NodeOverlay=true` on the Karpenter controller.
+- Not every Karpenter distribution applies NodeOverlays during provisioning, even if the CRD and feature gate exist. Validate in your environment that creating the overlay below allows Karpenter to launch nodes for pods that request `instrumentation.odigos.io/generic`.
+
+If NodeOverlay is unavailable or ineffective in your Karpenter install, use [`k8s-init-container`](../instrumentations/configuration/mount-method#3-InitContainer), or [`k8s-host-path`](../instrumentations/configuration/mount-method#2-HostPath) / [`k8s-csi-driver`](../instrumentations/configuration/mount-method#4-CSI-Driver) with the [startup taint integration](#hostpath-and-csi-startup-taints).
+
+### Apply a NodeOverlay
+
+After NodeOverlay support is enabled in your Karpenter controller, apply a [NodeOverlay](https://karpenter.sh/docs/concepts/nodeoverlays/) that adds the Odigos device capacity for the NodePool that should run instrumented workloads.
+
+Replace `default` with your NodePool name if needed:
+
+```bash
+cat <<'EOF' | kubectl apply -f -
+apiVersion: karpenter.sh/v1alpha1
+kind: NodeOverlay
+metadata:
+  name: odigos-instrumentation
+spec:
+  requirements:
+    - key: karpenter.sh/nodepool
+      operator: In
+      values: ["default"]
+  capacity:
+    instrumentation.odigos.io/generic: "1024"
+EOF
+```
+
+Confirm the overlay is ready:
+
+```bash
+kubectl get nodeoverlay odigos-instrumentation
+```
+
+Karpenter should then be able to provision nodes for pods that request `instrumentation.odigos.io/generic`. After the node registers, `odiglet` advertises the real device capacity so pods can schedule.
+
+---
+
+## HostPath and CSI (Startup Taints)
+
+For the [`k8s-host-path`](../instrumentations/configuration/mount-method#2-HostPath) and [`k8s-csi-driver`](../instrumentations/configuration/mount-method#4-CSI-Driver) mount methods, Odigos adds a **node affinity** rule to instrumented pods so they only run on nodes where `odiglet` is installed.
 
 This works fine in static clusters — but in Karpenter-managed clusters, this causes a problem:
 
@@ -24,13 +105,6 @@ Instead, it relies on a **startup taint mechanism**:
   <Info> The exact method for configuring this taint in Karpenter will be explained in the following section. </Info>
 - The `odiglet` removes this taint after it prepares the node for instrumentation.
 - This allows instrumented pods to schedule only **after** the node is ready — achieving the same safety as affinity, without blocking provisioning.
-
----
-
-## How to Configure Odigos for Karpenter
-
-To enable seamless integration between Odigos and Karpenter, follow these four steps:
-
 
 ### 1. Configure the Karpenter NodePool CRD
 
@@ -56,8 +130,6 @@ kubectl patch nodepool $NODEPOOL_NAME --type merge --patch "$(kubectl get nodepo
 
 Replace `<NODEPOOL_NAME>` with the actual name of your Karpenter NodePool.
 
----
-
 ### 2. Add the Startup Taint to Existing Nodes
 
 To manually add the startup taint to all current nodes:
@@ -67,8 +139,6 @@ kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | x
 ```
 
 This ensures existing nodes behave consistently until they're replaced by Karpenter-managed ones.
-
----
 
 ### 3. Enable the Karpenter Integration in Odigos
 
@@ -92,9 +162,6 @@ helm upgrade --install odigos odigos/odigos \
 ```
 </Tab>
 </Tabs>
-
-
----
 
 ### 4. Restart the Odiglet DaemonSet
 

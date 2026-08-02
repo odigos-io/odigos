@@ -28,7 +28,6 @@ jobs:
         env:
           IMAGE_TAG: v0.0.0-pr${{ github.event.number || github.run_number }}
           PLATFORM: linux/amd64,linux/arm64
-          OUTPUT_DIR: /tmp
 
   build-all-services:
     name: build-all-services

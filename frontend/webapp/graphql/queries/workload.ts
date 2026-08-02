@@ -8,6 +8,9 @@ const WORKLOAD_FIELDS_SLIM = `
   }
   serviceName
   dataStreamNames
+  markedForInstrumentation {
+    markedForInstrumentation
+  }
   runtimeInfo {
     detectedLanguages
   }

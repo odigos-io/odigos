@@ -17,6 +17,7 @@ runs:
         git tag common/${{ inputs.tag }}
         git tag config/${{ inputs.tag }}
         git tag destinations/${{ inputs.tag }}
+        git tag deviceplugin/${{ inputs.tag }}
         git tag distros/${{ inputs.tag }}
         git tag frontend/${{ inputs.tag }}
         git tag instrumentation/${{ inputs.tag }}

@@ -91,10 +91,16 @@ func (r *k8sWorkloadResolver) ServiceName(ctx context.Context, obj *model.K8sWor
 	if err != nil {
 		return nil, err
 	}
-	if ic == nil {
-		return nil, nil
+	if ic != nil && ic.Spec.ServiceName != "" {
+		return &ic.Spec.ServiceName, nil
 	}
-	return &ic.Spec.ServiceName, nil
+	// Disabled Sources have no InstrumentationConfig; fall back to the Source CR.
+	sources, err := l.GetSources(ctx, *obj.ID)
+	if err != nil || sources == nil || sources.Workload == nil || sources.Workload.Spec.OtelServiceName == "" {
+		return nil, err
+	}
+	name := sources.Workload.Spec.OtelServiceName
+	return &name, nil
 }
 
 // WorkloadOdigosHealthStatus is the resolver for the workloadOdigosHealthStatus field.

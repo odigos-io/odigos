@@ -285,6 +285,17 @@ go-mod-tidy/%: DIR=$*
 go-mod-tidy/%:
 	@cd $(DIR) && go mod tidy -compat=1.21
 
+# `go build`/`go test`/`go mod tidy` only need to resolve packages actually compiled, so a module whose
+# graph contains an unresolvable dependency (e.g. one only reachable via another module's own internal-only
+# replace directive) can pass all three while still being completely broken for tooling that loads the whole
+# module graph, like gopls/GoLand's `go list -m all`. This target reproduces that exact call per module so
+# CI catches it instead of a contributor's IDE (see CORE-1400).
+.PHONY: verify-go-mod-graph
+verify-go-mod-graph: $(ALL_GO_MOD_DIRS:%=verify-go-mod-graph/%)
+verify-go-mod-graph/%: DIR=$*
+verify-go-mod-graph/%:
+	@cd $(DIR) && go list -mod=mod -m all > /dev/null
+
 .PHONY: update-dep
 update-dep: $(ALL_GO_MOD_DIRS:%=update-dep/%)
 update-dep/%: DIR=$*
