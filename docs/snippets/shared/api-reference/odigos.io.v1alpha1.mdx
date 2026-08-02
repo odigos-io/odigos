@@ -2707,20 +2707,6 @@ register instrumented processes for eBPF log capture.</p>
    <p>Configure the agent own logging configuration.</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>allowConcurrentAgents</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <p>AllowConcurrentAgents overrides the global allow_concurrent_agents for the scoped
-workloads: when true, Odigos instruments the container even if another instrumentation
-agent is detected in it; when false, such containers are skipped. Unset falls back to
-the global config.</p>
-</td>
-</tr>
 </tbody>
 </table>
 
