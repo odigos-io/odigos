@@ -8,6 +8,7 @@ const (
 	NewRelicAgentName      = "New Relic Agent"
 	DynatraceAgentName     = "Dynatrace Agent"
 	OpenTelemetryAgentName = "OpenTelemetry Agent"
+	Wo11yAgentName         = "Wo11y Agent"
 	GrafanaOtelAgentName   = "Grafana OpenTelemetry Agent"
 	SplunkOtelAgentName    = "Splunk OpenTelemetry Agent"
 	AWSDistroOtelAgentName = "AWS Distro for OpenTelemetry Agent"
@@ -99,6 +100,9 @@ var KnownAgents = []KnownAgent{
 	{Name: OpenTelemetryAgentName, Language: common.JavascriptProgrammingLanguage, Signal: EnvValueContains,
 		Key: envNodeOptions, Match: "@opentelemetry/auto-instrumentations-node"},
 	{Name: OpenTelemetryAgentName, Language: common.PythonProgrammingLanguage, Signal: CmdlineContains, Match: "opentelemetry-instrument"},
+
+	// Wo11y Agent
+	{Name: Wo11yAgentName, Language: common.JavaProgrammingLanguage, Signal: EnvValueContains, Key: envJavaToolOptions, Match: "wo11y-agent"},
 
 	// Grafana OpenTelemetry
 	{Name: GrafanaOtelAgentName, Language: common.JavaProgrammingLanguage, Signal: CmdlineContains, Match: "grafana-opentelemetry-java"},
