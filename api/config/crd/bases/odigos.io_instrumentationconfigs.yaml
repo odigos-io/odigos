@@ -341,6 +341,20 @@ spec:
                                     type: string
                                 type: object
                               type: array
+                            php:
+                              items:
+                                description: |-
+                                  PhpCustomProbe contains the details for a custom probe for PHP applications.
+                                  className is optional; when empty, functionName refers to a global function.
+                                properties:
+                                  className:
+                                    type: string
+                                  functionName:
+                                    type: string
+                                required:
+                                - functionName
+                                type: object
+                              type: array
                           type: object
                         headSampling:
                           description: |-
@@ -808,6 +822,15 @@ spec:
                   this peoperty can be used to know all container names in the workload, even if other controllers did not yet run.
                 items:
                   properties:
+                    allowConcurrentAgents:
+                      description: |-
+                        Odigos by default will attempt to detect if another agent is already running in the container,
+                        and if so, will avoid adding odigos agent to the container.
+                        This option allows to override this setting for a specific container in a source.
+                        Can be used for selective setting of which containers should run odigos concurrently with other agents.
+                        empty means take odigos global config for this setting.
+                        when not empty, the value will override the global config for this container
+                      type: boolean
                     containerName:
                       description: The name of the container to override.
                       type: string
@@ -883,11 +906,16 @@ spec:
                           - glibc
                           - musl
                           type: string
-                        otherAgent:
-                          properties:
-                            name:
-                              type: string
-                          type: object
+                        otherAgents:
+                          description: |-
+                            OtherAgents lists other instrumentation agents detected in the container
+                            (a process can carry more than one); empty when none.
+                          items:
+                            properties:
+                              name:
+                                type: string
+                            type: object
+                          type: array
                         runtimeUpdateState:
                           description: A temporary variable used during migration
                             to track whether the new runtime detection process has
@@ -930,6 +958,14 @@ spec:
                       type: string
                     dbQueryTemplatization:
                       properties:
+                        removePostgresCastOperator:
+                          description: |-
+                            RemovePostgresCastOperator strips PostgreSQL `::type` casts from query text
+                            (e.g. "SELECT * FROM users WHERE id = ?::uuid" -> "SELECT * FROM users WHERE id = ?").
+                            Useful to reduce cardinality when the same query is issued with different cast types,
+                            or when casts remain after literal templatization.
+                            Applies only to PostgreSQL spans.
+                          type: boolean
                         templatizeLiterals:
                           description: |-
                             TemplatizeLiterals replaces number and string literals in SQL queries with placeholders
@@ -1493,11 +1529,16 @@ spec:
                       - glibc
                       - musl
                       type: string
-                    otherAgent:
-                      properties:
-                        name:
-                          type: string
-                      type: object
+                    otherAgents:
+                      description: |-
+                        OtherAgents lists other instrumentation agents detected in the container
+                        (a process can carry more than one); empty when none.
+                      items:
+                        properties:
+                          name:
+                            type: string
+                        type: object
+                      type: array
                     runtimeUpdateState:
                       description: A temporary variable used during migration to track
                         whether the new runtime detection process has been executed.

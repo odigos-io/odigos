@@ -5,11 +5,41 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/graph/status"
+	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func isOnprem(ctx context.Context) (bool, error) {
+	odigosNs := env.GetCurrentNamespace()
+	var configMap corev1.ConfigMap
+	err := kube.CacheClient.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosDeploymentConfigMapName}, &configMap)
+	if err != nil {
+		return false, err
+	}
+
+	tier := configMap.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
+	return tier == string(common.OnPremOdigosTier), nil
+}
+
+func RequireOnprem(ctx context.Context) error {
+	isOnprem, err := isOnprem(ctx)
+	if err != nil {
+		return err
+	}
+	if !isOnprem {
+		return fmt.Errorf("this feature is only supported for onprem installations")
+	}
+	return nil
+}
 
 func emptyStrToNil(str string) *string {
 	if str == "" {
@@ -47,9 +77,9 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 	if runtimeDetails.RuntimeVersion != "" {
 		runtimeVersion = &runtimeDetails.RuntimeVersion
 	}
-	var otherAgentName *string
-	if runtimeDetails.OtherAgent != nil {
-		otherAgentName = &runtimeDetails.OtherAgent.Name
+	otherAgentNames := make([]string, 0, len(runtimeDetails.OtherAgents))
+	for _, a := range runtimeDetails.OtherAgents {
+		otherAgentNames = append(otherAgentNames, a.Name)
 	}
 	var libcType *string
 	if runtimeDetails.LibCType != nil {
@@ -65,7 +95,7 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 		CriErrorMessage:         runtimeDetails.CriErrorMessage,
 		LibcType:                libcType,
 		SecureExecutionMode:     runtimeDetails.SecureExecutionMode,
-		OtherAgentName:          otherAgentName,
+		OtherAgentNames:         otherAgentNames,
 	}
 }
 

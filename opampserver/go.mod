@@ -16,7 +16,7 @@ require (
 )
 
 require (
-	github.com/argoproj/argo-rollouts v1.8.3 // indirect
+	github.com/argoproj/argo-rollouts v1.9.1 // indirect
 	github.com/evanphx/json-patch v5.9.11+incompatible // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-openapi/swag/cmdutils v0.25.4 // indirect
@@ -85,7 +85,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.35.0 // indirect
-	k8s.io/klog/v2 v2.130.1 // indirect
+	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
@@ -93,7 +93,13 @@ require (
 )
 
 replace (
+	// k8sutils requires this via its own local-only replace, which doesn't propagate to us.
+	github.com/odigos-io/odigos/actions => ../actions
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
+	// Same as actions above, required transitively via k8sutils.
+	github.com/odigos-io/odigos/odigosauth => ../odigosauth
+	// argo-rollouts@v1.9.1 requires this via its own internal-only replace, which doesn't propagate to us.
+	k8s.io/kubelet => k8s.io/kubelet v0.34.1
 )

@@ -5,10 +5,10 @@ description: |
   spans once it is instrumented via the OBI container override
   (opentelemetry-ebpf-instrumentation). The frontend's /buy traffic fans out
   to shipping (via SHIPPING_SERVICE_HOST), so OBI should produce server spans
-  reported under the configured service name.
+  reported under the Source's otelServiceName override (shipping-reported).
 query: |
   length([?(
-    span.serviceName == 'shipping' &&
+    span.serviceName == 'shipping-reported' &&
     span.kind == 'server'
   )]) > `0`
 expected:

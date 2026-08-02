@@ -11,3 +11,9 @@ kubeadmConfigPatches:
   serializeImagePulls: false
   maxParallelImagePulls: 5
 
+kubeadmConfigPatches:
+- |
+  apiVersion: kubelet.config.k8s.io/v1beta1
+  kind: KubeletConfiguration
+  serializeImagePulls: false
+  maxParallelImagePulls: 5

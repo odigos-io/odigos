@@ -9,14 +9,16 @@ import (
 )
 
 type Action struct {
-	ID         string        `json:"id"`
-	Type       ActionType    `json:"type"`
-	Name       *string       `json:"name,omitempty"`
-	Notes      *string       `json:"notes,omitempty"`
-	Disabled   bool          `json:"disabled"`
-	Signals    []SignalType  `json:"signals"`
-	Fields     *ActionFields `json:"fields"`
-	Conditions []*Condition  `json:"conditions,omitempty"`
+	ID          string                    `json:"id"`
+	Type        ActionType                `json:"type"`
+	Name        *string                   `json:"name,omitempty"`
+	Notes       *string                   `json:"notes,omitempty"`
+	Disabled    bool                      `json:"disabled"`
+	Signals     []SignalType              `json:"signals"`
+	Fields      *ActionFields             `json:"fields"`
+	UIGenerated bool                      `json:"uiGenerated"`
+	Conditions  []*Condition              `json:"conditions,omitempty"`
+	Statuses    []*DesiredConditionStatus `json:"statuses"`
 }
 
 type ActionFieldYamlProperties struct {
@@ -29,39 +31,47 @@ type ActionFieldYamlProperties struct {
 }
 
 type ActionFields struct {
-	CollectContainerAttributes   *bool                          `json:"collectContainerAttributes,omitempty"`
-	CollectReplicaSetAttributes  *bool                          `json:"collectReplicaSetAttributes,omitempty"`
-	CollectWorkloadID            *bool                          `json:"collectWorkloadId,omitempty"`
-	CollectClusterID             *bool                          `json:"collectClusterId,omitempty"`
-	LabelsAttributes             []*K8sLabelAttribute           `json:"labelsAttributes,omitempty"`
-	AnnotationsAttributes        []*K8sAnnotationAttribute      `json:"annotationsAttributes,omitempty"`
-	ClusterAttributes            []*ClusterAttribute            `json:"clusterAttributes,omitempty"`
-	OverwriteExistingValues      *bool                          `json:"overwriteExistingValues,omitempty"`
-	AttributeNamesToDelete       []string                       `json:"attributeNamesToDelete,omitempty"`
-	Renames                      *string                        `json:"renames,omitempty"`
-	PiiCategories                []string                       `json:"piiCategories,omitempty"`
-	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroup `json:"urlTemplatizationRulesGroups,omitempty"`
-	ExtractAttribute             *ExtractAttribute              `json:"extractAttribute,omitempty"`
-	Scopes                       *SourcesScopes                 `json:"scopes,omitempty"`
-	TemplatizeLiterals           *bool                          `json:"templatizeLiterals,omitempty"`
+	CollectContainerAttributes     *bool                            `json:"collectContainerAttributes,omitempty"`
+	CollectReplicaSetAttributes    *bool                            `json:"collectReplicaSetAttributes,omitempty"`
+	CollectWorkloadID              *bool                            `json:"collectWorkloadId,omitempty"`
+	CollectClusterID               *bool                            `json:"collectClusterId,omitempty"`
+	LabelsAttributes               []*K8sLabelAttribute             `json:"labelsAttributes,omitempty"`
+	AnnotationsAttributes          []*K8sAnnotationAttribute        `json:"annotationsAttributes,omitempty"`
+	ClusterAttributes              []*ClusterAttribute              `json:"clusterAttributes,omitempty"`
+	OverwriteExistingValues        *bool                            `json:"overwriteExistingValues,omitempty"`
+	AttributeNamesToDelete         []string                         `json:"attributeNamesToDelete,omitempty"`
+	Renames                        *string                          `json:"renames,omitempty"`
+	PiiCategories                  []string                         `json:"piiCategories,omitempty"`
+	CustomFormatMaskings           []*CustomFormatMasking           `json:"customFormatMaskings,omitempty"`
+	CustomRegexMaskings            []*CustomRegexMasking            `json:"customRegexMaskings,omitempty"`
+	URLTemplatizationRulesGroups   []*URLTemplatizationRulesGroup   `json:"urlTemplatizationRulesGroups,omitempty"`
+	URLTemplatizationDefaultGroups []*URLTemplatizationDefaultGroup `json:"urlTemplatizationDefaultGroups,omitempty"`
+	ExtractAttribute               *ExtractAttribute                `json:"extractAttribute,omitempty"`
+	Scopes                         *SourcesScopes                   `json:"scopes,omitempty"`
+	TemplatizeLiterals             *bool                            `json:"templatizeLiterals,omitempty"`
+	RemovePostgresCastOperator     *bool                            `json:"removePostgresCastOperator,omitempty"`
 }
 
 type ActionFieldsInput struct {
-	CollectContainerAttributes   *bool                               `json:"collectContainerAttributes,omitempty"`
-	CollectReplicaSetAttributes  *bool                               `json:"collectReplicaSetAttributes,omitempty"`
-	CollectWorkloadID            *bool                               `json:"collectWorkloadId,omitempty"`
-	CollectClusterID             *bool                               `json:"collectClusterId,omitempty"`
-	LabelsAttributes             []*K8sLabelAttributeInput           `json:"labelsAttributes,omitempty"`
-	AnnotationsAttributes        []*K8sAnnotationAttributeInput      `json:"annotationsAttributes,omitempty"`
-	ClusterAttributes            []*ClusterAttributeInput            `json:"clusterAttributes,omitempty"`
-	OverwriteExistingValues      *bool                               `json:"overwriteExistingValues,omitempty"`
-	AttributeNamesToDelete       []string                            `json:"attributeNamesToDelete,omitempty"`
-	Renames                      *string                             `json:"renames,omitempty"`
-	PiiCategories                []string                            `json:"piiCategories,omitempty"`
-	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroupInput `json:"urlTemplatizationRulesGroups,omitempty"`
-	ExtractAttribute             *ExtractAttributeInput              `json:"extractAttribute,omitempty"`
-	Scopes                       *SourcesScopesInput                 `json:"scopes,omitempty"`
-	TemplatizeLiterals           *bool                               `json:"templatizeLiterals,omitempty"`
+	CollectContainerAttributes     *bool                                 `json:"collectContainerAttributes,omitempty"`
+	CollectReplicaSetAttributes    *bool                                 `json:"collectReplicaSetAttributes,omitempty"`
+	CollectWorkloadID              *bool                                 `json:"collectWorkloadId,omitempty"`
+	CollectClusterID               *bool                                 `json:"collectClusterId,omitempty"`
+	LabelsAttributes               []*K8sLabelAttributeInput             `json:"labelsAttributes,omitempty"`
+	AnnotationsAttributes          []*K8sAnnotationAttributeInput        `json:"annotationsAttributes,omitempty"`
+	ClusterAttributes              []*ClusterAttributeInput              `json:"clusterAttributes,omitempty"`
+	OverwriteExistingValues        *bool                                 `json:"overwriteExistingValues,omitempty"`
+	AttributeNamesToDelete         []string                              `json:"attributeNamesToDelete,omitempty"`
+	Renames                        *string                               `json:"renames,omitempty"`
+	PiiCategories                  []string                              `json:"piiCategories,omitempty"`
+	CustomFormatMaskings           []*CustomFormatMaskingInput           `json:"customFormatMaskings,omitempty"`
+	CustomRegexMaskings            []*CustomRegexMaskingInput            `json:"customRegexMaskings,omitempty"`
+	URLTemplatizationRulesGroups   []*URLTemplatizationRulesGroupInput   `json:"urlTemplatizationRulesGroups,omitempty"`
+	URLTemplatizationDefaultGroups []*URLTemplatizationDefaultGroupInput `json:"urlTemplatizationDefaultGroups,omitempty"`
+	ExtractAttribute               *ExtractAttributeInput                `json:"extractAttribute,omitempty"`
+	Scopes                         *SourcesScopesInput                   `json:"scopes,omitempty"`
+	TemplatizeLiterals             *bool                                 `json:"templatizeLiterals,omitempty"`
+	RemovePostgresCastOperator     *bool                                 `json:"removePostgresCastOperator,omitempty"`
 }
 
 type ActionInput struct {
@@ -76,6 +86,8 @@ type ActionInput struct {
 type ActionTypeOption struct {
 	Type           string                       `json:"type"`
 	DisplayName    string                       `json:"displayName"`
+	Category       string                       `json:"category"`
+	Subtitle       string                       `json:"subtitle"`
 	Description    string                       `json:"description"`
 	AllowedSignals []SignalType                 `json:"allowedSignals"`
 	DocsURL        string                       `json:"docsUrl"`
@@ -314,20 +326,40 @@ type CostReductionRuleInput struct {
 	Notes            *string                            `json:"notes,omitempty"`
 }
 
+type CustomFormatMasking struct {
+	LookupKey  string               `json:"lookupKey"`
+	DataFormat ExtractionDataFormat `json:"dataFormat"`
+}
+
+type CustomFormatMaskingInput struct {
+	LookupKey  string               `json:"lookupKey"`
+	DataFormat ExtractionDataFormat `json:"dataFormat"`
+}
+
 type CustomInstrumentations struct {
 	Golang []*GolangCustomProbe `json:"golang,omitempty"`
 	Java   []*JavaCustomProbe   `json:"java,omitempty"`
+	Php    []*PhpCustomProbe    `json:"php,omitempty"`
 }
 
 type CustomInstrumentationsInput struct {
 	Golang []*GolangCustomProbeInput `json:"golang,omitempty"`
 	Java   []*JavaCustomProbeInput   `json:"java,omitempty"`
+	Php    []*PhpCustomProbeInput    `json:"php,omitempty"`
 }
 
 type CustomReadDataLabel struct {
 	Condition string `json:"condition"`
 	Title     string `json:"title"`
 	Value     string `json:"value"`
+}
+
+type CustomRegexMasking struct {
+	Regex string `json:"regex"`
+}
+
+type CustomRegexMaskingInput struct {
+	Regex string `json:"regex"`
 }
 
 type DataStream struct {
@@ -1135,7 +1167,7 @@ type K8sWorkloadRuntimeInfoContainer struct {
 	CriErrorMessage         *string             `json:"criErrorMessage,omitempty"`
 	LibcType                *string             `json:"libcType,omitempty"`
 	SecureExecutionMode     *bool               `json:"secureExecutionMode,omitempty"`
-	OtherAgentName          *string             `json:"otherAgentName,omitempty"`
+	OtherAgentNames         []string            `json:"otherAgentNames,omitempty"`
 }
 
 type K8sWorkloadTelemetryMetrics struct {
@@ -1432,6 +1464,16 @@ type PersistNamespaceSourceInput struct {
 	Kind              K8sResourceKind `json:"kind"`
 	Selected          bool            `json:"selected"`
 	CurrentStreamName string          `json:"currentStreamName"`
+}
+
+type PhpCustomProbe struct {
+	ClassName    *string `json:"className,omitempty"`
+	FunctionName *string `json:"functionName,omitempty"`
+}
+
+type PhpCustomProbeInput struct {
+	ClassName    *string `json:"className,omitempty"`
+	FunctionName *string `json:"functionName,omitempty"`
 }
 
 type PodAnalyze struct {
@@ -1791,23 +1833,47 @@ type URLTemplatizationRuleInput struct {
 	Examples []string `json:"examples,omitempty"`
 }
 
+type URLTemplatizationDefaultGroup struct {
+	Scopes     *SourcesScopes                      `json:"scopes,omitempty"`
+	Disabled   *bool                               `json:"disabled,omitempty"`
+	SkipPolicy *URLTemplatizationDefaultSkipPolicy `json:"skipPolicy,omitempty"`
+}
+
+type URLTemplatizationDefaultGroupInput struct {
+	Scopes     *SourcesScopesInput                      `json:"scopes,omitempty"`
+	Disabled   *bool                                    `json:"disabled,omitempty"`
+	SkipPolicy *URLTemplatizationDefaultSkipPolicyInput `json:"skipPolicy,omitempty"`
+}
+
+type URLTemplatizationDefaultSkipPolicy struct {
+	SkipForNonSuccessCodes *bool `json:"skipForNonSuccessCodes,omitempty"`
+	SkipHTTPStatusCodes    []int `json:"skipHttpStatusCodes,omitempty"`
+}
+
+type URLTemplatizationDefaultSkipPolicyInput struct {
+	SkipForNonSuccessCodes *bool `json:"skipForNonSuccessCodes,omitempty"`
+	SkipHTTPStatusCodes    []int `json:"skipHttpStatusCodes,omitempty"`
+}
+
 type URLTemplatizationRulesGroup struct {
+	Scopes                    *SourcesScopes                  `json:"scopes,omitempty"`
+	TemplatizationRules       []*URLTemplatizationRule        `json:"templatizationRules"`
 	FilterK8sNamespace        *string                         `json:"filterK8sNamespace,omitempty"`
 	FilterK8sWorkloadKind     *K8sResourceKind                `json:"filterK8sWorkloadKind,omitempty"`
 	FilterK8sWorkloadName     *string                         `json:"filterK8sWorkloadName,omitempty"`
 	FilterProgrammingLanguage *string                         `json:"filterProgrammingLanguage,omitempty"`
 	WorkloadFilters           []*TemplatizationWorkloadFilter `json:"workloadFilters,omitempty"`
-	TemplatizationRules       []*URLTemplatizationRule        `json:"templatizationRules"`
 	Notes                     *string                         `json:"notes,omitempty"`
 }
 
 type URLTemplatizationRulesGroupInput struct {
+	Scopes                    *SourcesScopesInput                  `json:"scopes,omitempty"`
+	TemplatizationRules       []*URLTemplatizationRuleInput        `json:"templatizationRules"`
 	FilterK8sNamespace        *string                              `json:"filterK8sNamespace,omitempty"`
 	FilterK8sWorkloadKind     *K8sResourceKind                     `json:"filterK8sWorkloadKind,omitempty"`
 	FilterK8sWorkloadName     *string                              `json:"filterK8sWorkloadName,omitempty"`
 	FilterProgrammingLanguage *string                              `json:"filterProgrammingLanguage,omitempty"`
 	WorkloadFilters           []*TemplatizationWorkloadFilterInput `json:"workloadFilters,omitempty"`
-	TemplatizationRules       []*URLTemplatizationRuleInput        `json:"templatizationRules"`
 	Notes                     *string                              `json:"notes,omitempty"`
 }
 

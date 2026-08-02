@@ -62,6 +62,15 @@ spec:
                   All containers not listed will retain their default behavior.
                 items:
                   properties:
+                    allowConcurrentAgents:
+                      description: |-
+                        Odigos by default will attempt to detect if another agent is already running in the container,
+                        and if so, will avoid adding odigos agent to the container.
+                        This option allows to override this setting for a specific container in a source.
+                        Can be used for selective setting of which containers should run odigos concurrently with other agents.
+                        empty means take odigos global config for this setting.
+                        when not empty, the value will override the global config for this container
+                      type: boolean
                     containerName:
                       description: The name of the container to override.
                       type: string
@@ -137,11 +146,16 @@ spec:
                           - glibc
                           - musl
                           type: string
-                        otherAgent:
-                          properties:
-                            name:
-                              type: string
-                          type: object
+                        otherAgents:
+                          description: |-
+                            OtherAgents lists other instrumentation agents detected in the container
+                            (a process can carry more than one); empty when none.
+                          items:
+                            properties:
+                              name:
+                                type: string
+                            type: object
+                          type: array
                         runtimeUpdateState:
                           description: A temporary variable used during migration
                             to track whether the new runtime detection process has

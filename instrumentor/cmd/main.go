@@ -20,6 +20,7 @@ import (
 	"flag"
 	"os"
 
+	"github.com/odigos-io/odigos/actions"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor"
@@ -52,6 +53,11 @@ func main() {
 	managerOptions.Logger = commonlogger.ToLogr()
 
 	logger.Info("Starting Odigos Community Instrumentor")
+
+	if err := actions.Load(); err != nil {
+		logger.Error("unable to load actions catalog", "err", err)
+		os.Exit(1)
+	}
 
 	distrosGetter, err := distros.NewCommunityGetter()
 	if err != nil {

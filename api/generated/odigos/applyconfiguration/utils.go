@@ -103,6 +103,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.ProcessorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ProcessorSpec"):
 		return &odigosv1alpha1.ProcessorSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ProcessorStatus"):
+		return &odigosv1alpha1.ProcessorStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RuntimeDetailsByContainer"):
 		return &odigosv1alpha1.RuntimeDetailsByContainerApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Sampling"):

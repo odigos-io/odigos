@@ -239,7 +239,9 @@ type RuntimeDetailsByContainer struct {
 	Language       common.ProgrammingLanguage `json:"language"`
 	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
 	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
+	// OtherAgents lists other instrumentation agents detected in the container
+	// (a process can carry more than one); empty when none.
+	OtherAgents    []OtherAgent               `json:"otherAgents,omitempty"`
 	LibCType       *common.LibCType           `json:"libCType,omitempty"`
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.

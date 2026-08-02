@@ -16,3 +16,17 @@ jobs:
         run: make go-mod-tidy
       - name: Check clean repository
         run: make check-clean-work-tree
+
+  # go mod tidy only resolves what's actually compiled, so it can pass even when a module's full
+  # dependency graph is unresolvable (see CORE-1400). This reproduces gopls/GoLand's `go list -m all`
+  # per module so a broken module graph fails CI instead of surfacing as red imports in a contributor's IDE.
+  verify-go-mod-graph:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.4"
+      - name: run make verify-go-mod-graph
+        run: make verify-go-mod-graph
