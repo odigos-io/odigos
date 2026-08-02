@@ -286,7 +286,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 			continue
 		}
 
-		allowConcurrentAgents := resolveAllowConcurrentAgents(rulesForContainer, effectiveConfig)
+		allowConcurrentAgents := resolveAllowConcurrentAgents(rulesForContainer, effectiveConfig, containerOverride)
 		agentConfig := calculateContainerAgentConfig(containerName, containerDistro, effectiveConfig, containerRuntimeDetails, rollbackOccurred, existingBackoffReason, allowConcurrentAgents)
 		// add the dynamic agent configs to enabled agents
 		if agentConfig.AgentEnabled {
@@ -657,7 +657,13 @@ func gotReadySignals(cg *odigosv1.CollectorsGroup) (bool, string) {
 // resolveAllowConcurrentAgents returns the effective allow_concurrent_agents for a
 // container: the last matching InstrumentationRule that sets it wins (rules are sorted
 // deterministically), otherwise the global config (nil = false).
-func resolveAllowConcurrentAgents(rules []odigosv1.InstrumentationRule, cfg *common.OdigosConfiguration) bool {
+func resolveAllowConcurrentAgents(rules []odigosv1.InstrumentationRule, cfg *common.OdigosConfiguration, containerOverride *odigosv1.ContainerOverride) bool {
+
+	// setting from container override is taken if set (regardless of rule or global config).
+	if containerOverride != nil && containerOverride.AllowConcurrentAgents != nil {
+		return *containerOverride.AllowConcurrentAgents
+	}
+
 	allow := cfg.AllowConcurrentAgents != nil && *cfg.AllowConcurrentAgents
 	for i := range rules {
 		if rules[i].Spec.AllowConcurrentAgents != nil {
