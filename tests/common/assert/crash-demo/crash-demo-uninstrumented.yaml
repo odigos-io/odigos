@@ -37,6 +37,5 @@ status:
   runtimeDetailsByContainer:
   - containerName: api
     language: javascript
-    runtimeUpdateState: Succeeded
     runtimeVersion: 20.19.2
     secureExecutionMode: false

@@ -273,16 +273,6 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 
 	envVarNames = append(envVarNames, consts.LdPreloadEnvVarName)
 
-	// Verify if environment variables already exist in the container manifest.
-	// If they exist, set the RuntimeUpdateState as ProcessingStateSkipped.
-	if envsExistsInManifest := checkEnvVarsInContainerManifest(container, envVarNames); envsExistsInManifest {
-		runtimeDetailsByContainer := results.containerNameToNewRuntimeDetails[container.Name]
-		state := odigosv1.ProcessingStateSkipped
-		runtimeDetailsByContainer.RuntimeUpdateState = &state
-		results.containerNameToNewRuntimeDetails[container.Name] = runtimeDetailsByContainer
-	}
-
-	// Environment variables do not exist in the manifest; fetch them from the container's Image
 	fetchAndSetEnvFromContainerRuntime(ctx, criClient, pod, container, envVarNames, results, procEnvVars)
 }
 
@@ -299,19 +289,14 @@ func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrappe
 	envVars, err := criClient.GetContainerEnvVarsList(ctx, envVarKeys, containerID)
 	runtimeDetailsByContainer := results.containerNameToNewRuntimeDetails[container.Name]
 
-	var state odigosv1.ProcessingState
-
 	if err != nil {
 		var criErrorMessage *string
 		// If the CRI request fails, we can still attempt to check the /proc/<pid>/environ file.
-		// This is only applicable if the relevant value in /proc is EMPTY and we are certain it wasn't present in the manifest (as indicated by reaching this point in the code).
-		// In such cases, we can mark the state as `ProcessingStateSucceeded` and proceed without setting any environment variables.
+		// This is only applicable if the relevant value in /proc is EMPTY.
+		// In such cases, proceed without setting any environment variables or error.
 		for _, envVarKey := range envVarKeys {
 			procEnvVarValue, exists := procEnvVars[envVarKey]
-			if !exists || procEnvVarValue == "" {
-				state = odigosv1.ProcessingStateSucceeded
-			} else {
-				state = odigosv1.ProcessingStateFailed
+			if exists && procEnvVarValue != "" {
 				errMessage := fmt.Sprintf("CRI communication error for container %s in pod %s/%s",
 					container.Name, pod.Namespace, pod.Name)
 				criErrorMessage = &errMessage
@@ -324,11 +309,8 @@ func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrappe
 		runtimeDetailsByContainer.CriErrorMessage = criErrorMessage
 
 	} else {
-		state = odigosv1.ProcessingStateSucceeded
 		runtimeDetailsByContainer.EnvFromContainerRuntime = envVars
 	}
-
-	runtimeDetailsByContainer.RuntimeUpdateState = &state
 
 	// Update the results map with the modified runtime details
 	results.containerNameToNewRuntimeDetails[container.Name] = runtimeDetailsByContainer
@@ -342,22 +324,6 @@ func getContainerID(containerStatuses []corev1.ContainerStatus, containerName st
 		}
 	}
 	return ""
-}
-
-func checkEnvVarsInContainerManifest(container corev1.Container, envVarNames []string) bool {
-	// Create a map for quick lookup of envVar names
-	envVarSet := make(map[string]struct{})
-	for _, name := range envVarNames {
-		envVarSet[name] = struct{}{}
-	}
-
-	// Iterate over the container's environment variables
-	for _, containerEnvVar := range container.Env {
-		if _, exists := envVarSet[containerEnvVar.Name]; exists {
-			return true
-		}
-	}
-	return false
 }
 
 func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclient client.Client, instrumentationConfig *odigosv1.InstrumentationConfig, inspectionResults InspectionResults) error {
