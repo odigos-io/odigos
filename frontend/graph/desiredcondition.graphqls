@@ -106,5 +106,5 @@ type DesiredConditionActionItem {
 
 enum DesiredConditionActionItemType {
   RolloutWorkload
-  AllowConcurrentAgents
+  AllowConcurrentAgentsForContainer
 }

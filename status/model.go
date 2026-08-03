@@ -75,6 +75,6 @@ type ActionItem struct {
 type ActionItemType string
 
 const (
-	ActionItemTypeRolloutWorkload       ActionItemType = "RolloutWorkload"
-	ActionItemTypeAllowConcurrentAgents ActionItemType = "AllowConcurrentAgents"
+	ActionItemTypeRolloutWorkload                   ActionItemType = "RolloutWorkload"
+	ActionItemTypeAllowConcurrentAgentsForContainer ActionItemType = "AllowConcurrentAgentsForContainer"
 )

@@ -77,11 +77,12 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;EnabledWithOtherAgents;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff
 type AgentEnabledReason string
 
 const (
 	AgentEnabledReasonEnabledSuccessfully            AgentEnabledReason = "EnabledSuccessfully"
+	AgentEnabledReasonEnabledWithOtherAgents         AgentEnabledReason = "EnabledWithOtherAgents"
 	AgentEnabledReasonWaitingForRuntimeInspection    AgentEnabledReason = "WaitingForRuntimeInspection"
 	AgentEnabledReasonWaitingForNodeCollector        AgentEnabledReason = "WaitingForNodeCollector"
 	AgentEnabledReasonIgnoredContainer               AgentEnabledReason = "IgnoredContainer"
@@ -136,6 +137,8 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 	switch reason {
 	case AgentEnabledReasonEnabledSuccessfully:
 		return 0
+	case AgentEnabledReasonEnabledWithOtherAgents:
+		return 5
 	case AgentEnabledReasonRuntimeDetailsUnavailable:
 		return 10
 	case AgentEnabledReasonWaitingForRuntimeInspection:
@@ -170,18 +173,7 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 func IsReasonStatusDisabled(reason string) bool {
 	switch reason {
 	// Agent-related reasons
-	case string(AgentEnabledReasonUnsupportedProgrammingLanguage),
-		string(AgentEnabledReasonUnsupportedRuntimeVersion),
-		string(RuntimeDetectionReasonNoRunningPods),
-		string(AgentEnabledReasonNoCollectedSignals),
-		string(AgentEnabledReasonIgnoredContainer),
-		string(AgentEnabledReasonNoAvailableAgent),
-		string(AgentEnabledReasonInjectionConflict),
-		string(AgentEnabledReasonOtherAgentDetected),
-		string(AgentEnabledReasonCrashLoopBackOff),
-		string(AgentEnabledReasonImagePullBackOff),
-		string(AgentEnabledReasonRuntimeDetailsUnavailable):
-
+	case string(RuntimeDetectionReasonNoRunningPods):
 		return true
 
 	// rollout-related reasons
@@ -220,8 +212,8 @@ type RuntimeDetailsByContainer struct {
 	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
 	// OtherAgents lists other instrumentation agents detected in the container
 	// (a process can carry more than one); empty when none.
-	OtherAgents    []OtherAgent               `json:"otherAgents,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+	OtherAgents []OtherAgent     `json:"otherAgents,omitempty"`
+	LibCType    *common.LibCType `json:"libCType,omitempty"`
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.
 	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`

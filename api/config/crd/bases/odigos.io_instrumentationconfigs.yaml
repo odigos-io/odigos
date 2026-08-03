@@ -110,6 +110,7 @@ spec:
                       description: An enum reason for the agent injection decision.
                       enum:
                       - EnabledSuccessfully
+                      - EnabledWithOtherAgents
                       - WaitingForRuntimeInspection
                       - WaitingForNodeCollector
                       - IgnoredContainer

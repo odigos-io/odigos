@@ -24,6 +24,7 @@ type AgentEnabledReason string
 
 const (
 	AgentEnabledReasonEnabledSuccessfully            AgentEnabledReason = "EnabledSuccessfully"
+	AgentEnabledReasonEnabledWithOtherAgents         AgentEnabledReason = "EnabledWithOtherAgents"
 	AgentEnabledReasonWaitingForRuntimeInspection    AgentEnabledReason = "WaitingForRuntimeInspection"
 	AgentEnabledReasonWaitingForNodeCollector        AgentEnabledReason = "WaitingForNodeCollector"
 	AgentEnabledReasonIgnoredContainer               AgentEnabledReason = "IgnoredContainer"
@@ -48,6 +49,15 @@ var (
 		Message:            "agent injection enabled successfully",
 		K8sConditionStatus: metav1.ConditionTrue,
 		OdigosSeverity:     status.OdigosSeveritySuccess,
+	})
+	AgentEnabledEnabledWithOtherAgents = status.WithMessageTemplate(status.Reason{
+		Name:               string(AgentEnabledReasonEnabledWithOtherAgents),
+		Title:              "Enabled With Other Agents",
+		Summary:            "Instrumentation agent injection is enabled while other instrumentation agents are also present in the container.",
+		Description:        "Concurrent agents are allowed for this container, so Odigos enabled agent injection\neven though another instrumentation agent was detected. Running multiple agents\ntogether is not recommended; disable the other agent(s) when possible for better\nperformance and reliability.\n",
+		Message:            "agent enabled alongside other instrumentation agent(s)",
+		K8sConditionStatus: metav1.ConditionTrue,
+		OdigosSeverity:     status.OdigosSeverityNotice,
 	})
 	AgentEnabledWaitingForRuntimeInspection = status.WithMessageTemplate(status.Reason{
 		Name:               string(AgentEnabledReasonWaitingForRuntimeInspection),
@@ -140,8 +150,8 @@ var (
 		OdigosSeverity:     status.OdigosSeverityNotice,
 		ActionItems: []status.ActionItem{
 			{
-				Type:       status.ActionItemTypeAllowConcurrentAgents,
-				ButtonText: "Allow Concurrent Agents",
+				Type:       status.ActionItemTypeAllowConcurrentAgentsForContainer,
+				ButtonText: "Run Odigos With Other Agents",
 			},
 		},
 	})
@@ -175,6 +185,7 @@ var (
 
 	AgentEnabledByReason = map[string]status.Reason{
 		string(AgentEnabledReasonEnabledSuccessfully):            AgentEnabledEnabledSuccessfully,
+		string(AgentEnabledReasonEnabledWithOtherAgents):         AgentEnabledEnabledWithOtherAgents,
 		string(AgentEnabledReasonWaitingForRuntimeInspection):    AgentEnabledWaitingForRuntimeInspection,
 		string(AgentEnabledReasonWaitingForNodeCollector):        AgentEnabledWaitingForNodeCollector,
 		string(AgentEnabledReasonIgnoredContainer):               AgentEnabledIgnoredContainer,

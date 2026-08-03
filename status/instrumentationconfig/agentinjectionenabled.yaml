@@ -36,6 +36,18 @@ spec:
       the source for agent injection. Pods may still need a rollout before the agent
       is applied; that progress is reported by the PodsManifestInjection condition.
 
+  - name: "EnabledWithOtherAgents"
+    title: "Enabled With Other Agents"
+    k8sConditionStatus: "True"
+    odigosSeverity: "Notice"
+    summary: "Instrumentation agent injection is enabled while other instrumentation agents are also present in the container."
+    message: "agent enabled alongside other instrumentation agent(s)"
+    description: |
+      Concurrent agents are allowed for this container, so Odigos enabled agent injection
+      even though another instrumentation agent was detected. Running multiple agents
+      together is not recommended; disable the other agent(s) when possible for better
+      performance and reliability.
+
   - name: "WaitingForRuntimeInspection"
     title: "Waiting for Runtime Inspection"
     k8sConditionStatus: "Unknown"
@@ -148,7 +160,7 @@ spec:
       Disable the other agent(s), or enable concurrent agents if that is intentional.
     actionItems:
     - type: "AllowConcurrentAgentsForContainer"
-      buttonText: "Allow Concurrent Agents"
+      buttonText: "Run Odigos With Other Agents"
 
   - name: "RuntimeDetailsUnavailable"
     title: "Runtime Details Unavailable"

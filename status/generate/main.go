@@ -313,8 +313,8 @@ func actionItemTypeConst(actionType status.ActionItemType) string {
 	switch actionType {
 	case status.ActionItemTypeRolloutWorkload:
 		return "status.ActionItemTypeRolloutWorkload"
-	case status.ActionItemTypeAllowConcurrentAgents:
-		return "status.ActionItemTypeAllowConcurrentAgents"
+	case status.ActionItemTypeAllowConcurrentAgentsForContainer:
+		return "status.ActionItemTypeAllowConcurrentAgentsForContainer"
 	default:
 		fatal(fmt.Errorf("unknown action item type %q", actionType))
 		return ""
