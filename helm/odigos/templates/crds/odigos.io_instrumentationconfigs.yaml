@@ -917,12 +917,6 @@ spec:
                                 type: string
                             type: object
                           type: array
-                        runtimeUpdateState:
-                          description: A temporary variable used during migration
-                            to track whether the new runtime detection process has
-                            been executed. If empty, it indicates the process has
-                            not yet been run. This field may be removed later.
-                          type: string
                         runtimeVersion:
                           type: string
                         secureExecutionMode:
@@ -1540,12 +1534,6 @@ spec:
                             type: string
                         type: object
                       type: array
-                    runtimeUpdateState:
-                      description: A temporary variable used during migration to track
-                        whether the new runtime detection process has been executed.
-                        If empty, it indicates the process has not yet been run. This
-                        field may be removed later.
-                      type: string
                     runtimeVersion:
                       type: string
                     secureExecutionMode:
