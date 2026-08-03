@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	github.com/99designs/gqlgen v0.17.70
-	github.com/argoproj/argo-rollouts v1.8.3
+	github.com/argoproj/argo-rollouts v1.9.1
 	github.com/coreos/go-oidc/v3 v3.14.1
 	github.com/distribution/reference v0.6.0
 	github.com/gin-contrib/cors v1.7.5
@@ -402,4 +402,6 @@ replace (
 	// Pyroscope (and Mimir) expect KnownFields YAML decoding; upstream v3.0.1 lacks DecodeWithOptions.
 	// Matches github.com/grafana/pyroscope go.mod.
 	gopkg.in/yaml.v3 => github.com/colega/go-yaml-yaml v0.0.0-20220720105220-255a8d16d094
+	// argo-rollouts@v1.9.1 requires this via its own internal-only replace, which doesn't propagate to us.
+	k8s.io/kubelet => k8s.io/kubelet v0.34.1
 )

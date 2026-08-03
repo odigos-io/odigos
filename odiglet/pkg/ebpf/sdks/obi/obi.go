@@ -74,7 +74,7 @@ func obiConfigForOdigos() *obipkg.Config {
 
 	cfg.Traces.Instrumentations = append(cfg.Traces.Instrumentations, instrumentations.InstrumentationDNS)
 
-	cfg.Metrics.Features = export.FeatureNetwork | export.FeatureStats
+	cfg.Metrics.Features = export.FeatureNetwork | export.FeatureNetworkFlowPackets | export.FeatureNetworkInterZone | export.FeatureStats
 
 	return &cfg
 }

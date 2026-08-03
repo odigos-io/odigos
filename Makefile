@@ -256,9 +256,6 @@ restart-collector:
 	-kubectl -n odigos-system patch daemonset odiglet -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
 
 deploy-%:
-	@if [ "$*" = "odiglet" ]; then \
-		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws; \
-	fi
 	$(MAKE) build-$* ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX)
 	$(MAKE) load-to-kind-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
 	@if [ "$*" != "agents" ]; then \
@@ -284,6 +281,17 @@ go-mod-tidy: $(ALL_GO_MOD_DIRS:%=go-mod-tidy/%)
 go-mod-tidy/%: DIR=$*
 go-mod-tidy/%:
 	@cd $(DIR) && go mod tidy -compat=1.21
+
+# `go build`/`go test`/`go mod tidy` only need to resolve packages actually compiled, so a module whose
+# graph contains an unresolvable dependency (e.g. one only reachable via another module's own internal-only
+# replace directive) can pass all three while still being completely broken for tooling that loads the whole
+# module graph, like gopls/GoLand's `go list -m all`. This target reproduces that exact call per module so
+# CI catches it instead of a contributor's IDE (see CORE-1400).
+.PHONY: verify-go-mod-graph
+verify-go-mod-graph: $(ALL_GO_MOD_DIRS:%=verify-go-mod-graph/%)
+verify-go-mod-graph/%: DIR=$*
+verify-go-mod-graph/%:
+	@cd $(DIR) && go list -mod=mod -m all > /dev/null
 
 .PHONY: update-dep
 update-dep: $(ALL_GO_MOD_DIRS:%=update-dep/%)

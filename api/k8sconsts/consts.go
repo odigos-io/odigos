@@ -12,9 +12,8 @@ const (
 )
 
 const (
-	DefaultPprofEndpointPort      int32 = 6060
-	DevicePluginPprofEndpointPort int32 = 6061
-	CollectorsPprofEndpointPort   int32 = 1777
+	DefaultPprofEndpointPort    int32 = 6060
+	CollectorsPprofEndpointPort int32 = 1777
 )
 
 const (
