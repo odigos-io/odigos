@@ -7,6 +7,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
+	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 )
 
 func TimedWallEnabled(effectiveConfig *common.OdigosConfiguration) bool {
@@ -23,7 +24,7 @@ func CalculateIdGeneratorConfig(effectiveConfig *common.OdigosConfiguration) (*a
 	sourceId, err := strconv.ParseUint(effectiveConfig.TraceIdSuffix, 16, 8)
 	if err != nil {
 		return nil, &odigosv1.AgentDisabledInfo{
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonInjectionConflict),
 			AgentEnabledMessage: fmt.Sprintf("failed to parse trace id suffix: %s. trace id suffix must be a single byte hex value (for example 'A3')", err),
 		}
 	}
