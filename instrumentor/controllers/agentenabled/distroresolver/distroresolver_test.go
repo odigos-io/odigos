@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	"github.com/odigos-io/odigos/distros"
+	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 	"github.com/stretchr/testify/require"
 )
 
@@ -121,5 +122,5 @@ func TestResolveDistroForContainer_nonWildcardEnforcesRuntimeSemver(t *testing.T
 	d, info := ResolveDistroForContainer(config, rt, dpl, g, nil, "c1")
 	require.Nil(t, d)
 	require.NotNil(t, info)
-	require.Equal(t, odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion, info.AgentEnabledReason)
+	require.Equal(t, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonUnsupportedRuntimeVersion), info.AgentEnabledReason)
 }

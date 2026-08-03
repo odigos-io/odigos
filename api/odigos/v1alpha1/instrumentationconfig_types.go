@@ -30,31 +30,10 @@ const (
 	MarkedForInstrumentationStatusConditionType = "MarkedForInstrumentation"
 	// Describe the runtime detection status of this workload.
 	RuntimeDetectionStatusConditionType = "RuntimeDetection"
-	// this const is the Type field in the conditions of the InstrumentationConfigStatus.
-	AgentEnabledStatusConditionType = "AgentEnabled"
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
 	// the rollout is needed to update the instrumentation done by the Pods webhook.
 	WorkloadRolloutStatusConditionType = "WorkloadRollout"
-	// reports whether running pods have the instrumentation agent applied as desired.
-	PodsManifestInjectionStatusConditionType = "PodsManifestInjection"
 )
-
-func StatusConditionTypeLogicalOrder(condType string) int {
-	switch condType {
-	case MarkedForInstrumentationStatusConditionType:
-		return 1
-	case RuntimeDetectionStatusConditionType:
-		return 2
-	case AgentEnabledStatusConditionType:
-		return 3
-	case WorkloadRolloutStatusConditionType:
-		return 4
-	case PodsManifestInjectionStatusConditionType:
-		return 5
-	default:
-		return 6
-	}
-}
 
 // +kubebuilder:validation:Enum=WorkloadSource;NamespaceSource;WorkloadSourceDisabled;NoSource;RetirableError
 type MarkedForInstrumentationReason string

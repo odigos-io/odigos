@@ -1,0 +1,185 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Status
+metadata:
+  name: agent-injection-enabled
+  ownerResource: instrumentationconfig
+  scope: source
+  component: instrumentor
+spec:
+  type: 'AgentEnabled'
+
+  docs:
+    title: "Instrumentation Agent Injection Enabled"
+    summary: "Reports whether Odigos decided to enable instrumentation agent injection for this source, and why."
+    description: |
+      For each source, Odigos decides whether instrumentation agent injection should be
+      enabled for its containers. That decision depends on runtime inspection results,
+      collector readiness, supported languages and runtime versions, user configuration
+      (ignored containers, collected signals), and conflict checks (other agents,
+      injection method).
+
+      This condition is written on the InstrumentationConfig and mirrored per container in
+      ContainerAgentConfig. When agent injection is not enabled, the reason explains why.
+      Runtime callers may override the default message with more specific context
+      (for example language name, distro name, or conflict details).
+
+  reasons:
+
+  - name: "EnabledSuccessfully"
+    title: "Agent Injection Enabled"
+    k8sConditionStatus: "True"
+    odigosSeverity: "Success"
+    summary: "Instrumentation agent injection is enabled for this source."
+    message: "agent injection enabled successfully"
+    description: |
+      Odigos determined that at least one container should be instrumented and marked
+      the source for agent injection. Pods may still need a rollout before the agent
+      is applied; that progress is reported by the PodsManifestInjection condition.
+
+  - name: "WaitingForRuntimeInspection"
+    title: "Waiting for Runtime Inspection"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Irrelevant"
+    summary: "Agent injection enablement is waiting for runtime inspection to complete."
+    message: "waiting for runtime inspection to complete"
+    description: |
+      Runtime details (language, version, libc, and related signals) are not yet available.
+      Odigos waits for odiglet to finish inspecting running pods before deciding whether
+      agent injection can be enabled. This is typically short-lived.
+
+  - name: "WaitingForNodeCollector"
+    title: "Waiting for Node Collector"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "Agent injection enablement is waiting for the OpenTelemetry node collector to be ready."
+    message: "waiting for OpenTelemetry Collector to be created"
+    description: |
+      The node collectors group is not ready yet, so no signals can be collected.
+      Odigos will not enable agent injection until the collector pipeline is available.
+
+  - name: "IgnoredContainer"
+    title: "Container Ignored"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Disabled"
+    summary: "This container is ignored by configuration, so agent injection is not enabled."
+    message: "container is ignored"
+    description: |
+      The container is listed as ignored (for example via instrumentation rules or
+      container ignore settings). Odigos intentionally skips agent injection for it.
+
+  - name: "NoCollectedSignals"
+    title: "No Signals Collected"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Notice"
+    summary: "No observability signals are enabled for collection, so agent injection is not enabled."
+    message: "all signals are disabled, no agent will be injected"
+    description: |
+      Traces, metrics, and logs are all disabled for this source (globally via the
+      collectors pipeline or via instrumentation rules). With nothing to collect,
+      Odigos does not enable instrumentation agent injection.
+
+  - name: "UnsupportedProgrammingLanguage"
+    title: "Unsupported Programming Language"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Unsupported"
+    summary: "The detected or requested programming language is not supported for instrumentation."
+    message: "unknown programming language"
+    description: |
+      Runtime inspection found an unsupported or unknown language, or a requested
+      OpenTelemetry distro does not support the container language.
+      Odigos cannot enable agent injection until a supported language is available.
+
+  - name: "NoAvailableAgent"
+    title: "No Available Agent"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Unsupported"
+    summary: "No instrumentation agent is available for the detected language or platform."
+    message: "no instrumentation agent is available"
+    description: |
+      Odigos could not select an OpenTelemetry distribution for this container.
+      Common cases include undetected language/platform, languages with support still
+      coming, or no matching default distro. Use a container language override when
+      detection cannot determine the language.
+
+  - name: "InjectionConflict"
+    title: "Injection Conflict"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Unsupported"
+    summary: "Agent injection cannot be enabled because of a conflict with the current container environment."
+    message: "agent injection conflicts with the current container environment"
+    description: |
+      Agent injection is blocked by the container environment or configuration.
+      Examples include secure execution mode with the loader injection method,
+      an existing LD_PRELOAD value when loader injection is required, a missing
+      injection method for the selected distro, or invalid agent-level settings.
+
+  - name: "UnsupportedRuntimeVersion"
+    title: "Unsupported Runtime Version"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Unsupported"
+    summary: "The detected runtime version is outside the versions supported by the selected agent."
+    message: "runtime version is not supported by the instrumentation agent"
+    description: |
+      The selected OpenTelemetry distribution declares supported runtime versions,
+      and the detected version does not match. Upgrade or change the runtime, or
+      choose a different instrumentation approach if available.
+
+  - name: "MissingDistroParameter"
+    title: "Missing Distro Parameter"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Unsupported"
+    summary: "A required parameter for the selected OpenTelemetry distro could not be determined."
+    message: "required distro parameter is missing"
+    description: |
+      Some distributions need additional parameters before injection (for example libc
+      type, runtime major.minor version, or environment variables from the container
+      runtime). When detection cannot supply a required parameter, agent injection is
+      not enabled.
+
+  - name: "OtherAgentDetected"
+    title: "Other Agent Detected"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Notice"
+    summary: "Another instrumentation agent was detected in the container, so Odigos did not enable agent injection."
+    message: "odigos agent not enabled due to other instrumentation agent(s) detected running in the container"
+    description: |
+      Runtime inspection found one or more other instrumentation agents already running.
+      When concurrent agents are not allowed, Odigos leaves agent injection disabled.
+      Disable the other agent(s), or enable concurrent agents if that is intentional.
+    actionItems:
+    - type: "AllowConcurrentAgentsForContainer"
+      buttonText: "Allow Concurrent Agents"
+
+  - name: "RuntimeDetailsUnavailable"
+    title: "Runtime Details Unavailable"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Irrelevant"
+    summary: "There are no running pods to inspect, so runtime details and agent injection enablement are unavailable."
+    message: "runtime details are unavailable"
+    description: |
+      Agent injection enablement needs runtime details from at least one running pod.
+      When the source has no running pods, Odigos cannot decide whether to enable
+      agent injection. This reason is shown instead of a waiting spinner so the UI can
+      treat the state as inactive until pods appear.
+
+  - name: "CrashLoopBackOff"
+    title: "CrashLoopBackOff Rollback"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Notice"
+    summary: "Agent injection was rolled back because pods entered CrashLoopBackOff after the agent was enabled."
+    message: "pods entered CrashLoopBackOff; instrumentation disabled"
+    description: |
+      After instrumentation was applied, pods entered CrashLoopBackOff.
+      Odigos disabled agent injection for this source to restore stability.
+      Investigate the pod failures, then recover from rollback when ready to retry.
+
+  - name: "ImagePullBackOff"
+    title: "ImagePullBackOff Rollback"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Notice"
+    summary: "Agent injection was rolled back because pods entered ImagePullBackOff after the agent was enabled."
+    message: "pods entered ImagePullBackOff; instrumentation disabled"
+    description: |
+      After instrumentation was applied, pods entered ImagePullBackOff.
+      Odigos disabled agent injection for this source to restore stability.
+      Fix the image pull issue, then recover from rollback when ready to retry.

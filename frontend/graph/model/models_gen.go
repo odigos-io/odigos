@@ -2083,16 +2083,18 @@ func (e ContainerLifecycleStatus) MarshalGQL(w io.Writer) {
 type DesiredConditionActionItemType string
 
 const (
-	DesiredConditionActionItemTypeRolloutWorkload DesiredConditionActionItemType = "RolloutWorkload"
+	DesiredConditionActionItemTypeRolloutWorkload       DesiredConditionActionItemType = "RolloutWorkload"
+	DesiredConditionActionItemTypeAllowConcurrentAgents DesiredConditionActionItemType = "AllowConcurrentAgents"
 )
 
 var AllDesiredConditionActionItemType = []DesiredConditionActionItemType{
 	DesiredConditionActionItemTypeRolloutWorkload,
+	DesiredConditionActionItemTypeAllowConcurrentAgents,
 }
 
 func (e DesiredConditionActionItemType) IsValid() bool {
 	switch e {
-	case DesiredConditionActionItemTypeRolloutWorkload:
+	case DesiredConditionActionItemTypeRolloutWorkload, DesiredConditionActionItemTypeAllowConcurrentAgents:
 		return true
 	}
 	return false
