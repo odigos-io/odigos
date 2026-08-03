@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/distros/distro"
+	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 )
 
 func DistroSupportsAgentSpanMetrics(distro *distro.OtelDistro) bool {
@@ -44,7 +45,7 @@ func CalculateAgentSpanMetricsConfig(effectiveConfig *common.OdigosConfiguration
 			interval, err := time.ParseDuration(effectiveConfig.MetricsSources.SpanMetrics.Interval)
 			if err != nil {
 				return nil, &odigosv1.AgentDisabledInfo{
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+					AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonInjectionConflict),
 					AgentEnabledMessage: fmt.Sprintf("failed to parse span metrics interval: %s", err),
 				}
 			}
@@ -59,7 +60,7 @@ func CalculateAgentSpanMetricsConfig(effectiveConfig *common.OdigosConfiguration
 				bucketDuration, err := time.ParseDuration(bucket)
 				if err != nil {
 					return nil, &odigosv1.AgentDisabledInfo{
-						AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+						AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonInjectionConflict),
 						AgentEnabledMessage: fmt.Sprintf("failed to parse span metrics histogram bucket: %s", err),
 					}
 				}
