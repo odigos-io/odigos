@@ -7,6 +7,7 @@ import (
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
+	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,10 +34,10 @@ func podHasBackOff(p *corev1.Pod) bool {
 func getPodBackOffReason(p *corev1.Pod) (odigosv1alpha1.AgentEnabledReason, string) {
 	for _, cs := range append(p.Status.InitContainerStatuses, p.Status.ContainerStatuses...) {
 		if containerutils.IsContainerInCrashLoopBackOff(&cs) {
-			return odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff, "pods entered CrashLoopBackOff; instrumentation disabled"
+			return odigosv1alpha1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonCrashLoopBackOff), agentInjectionEnabled.AgentEnabledCrashLoopBackOff.Message
 		}
 		if containerutils.IsContainerInImagePullBackOff(&cs) {
-			return odigosv1alpha1.AgentEnabledReasonImagePullBackOff, "pods entered ImagePullBackOff; instrumentation disabled"
+			return odigosv1alpha1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonImagePullBackOff), agentInjectionEnabled.AgentEnabledImagePullBackOff.Message
 		}
 	}
 	return "", ""
