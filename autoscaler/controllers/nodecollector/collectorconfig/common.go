@@ -33,11 +33,12 @@ func (c CommonSignalConfig) WithProcessors(names []string) CommonSignalConfig {
 
 const (
 	healthCheckExtensionName = "health_check"
-	// odigosebpfreceiver is only compiled into the enterprise collector image. The collector
-	// rejects unknown component types when it loads the config, even if no pipeline references
-	// them, so both the definition and the pipeline wiring must be gated on tier.
+	// odigosebpf and odigos_enterprise_auth are only compiled into the enterprise collector image.
+	// The collector rejects unknown component types when it loads the config, even if no pipeline
+	// references them, so both the definition and the pipeline wiring must be gated on tier.
 	odigosEbpfReceiverName              = "odigosebpf"
 	pprofExtensionName                  = "pprof"
+	odigosEnterpriseAuthExtensionName   = "odigos_enterprise_auth"
 	batchProcessorName                  = "batch"
 	memoryLimiterProcessorName          = "memory_limiter"
 	balancerName                        = "round_robin"
@@ -229,10 +230,26 @@ func cloneGenericMap(m config.GenericMap) config.GenericMap {
 	return out
 }
 
-func CommonConfig() config.Config {
+func CommonConfig(tier common.OdigosTier) config.Config {
+	if tier == common.CommunityOdigosTier {
+		return config.Config{
+			Extensions: commonExtensions,
+			Service:    commonService,
+		}
+	}
+
+	extensions := cloneGenericMap(commonExtensions)
+	extensions[odigosEnterpriseAuthExtensionName] = config.GenericMap{}
+
+	// commonService.Extensions is shared package state, so build a new slice instead of appending.
+	service := commonService
+	service.Extensions = make([]string, 0, len(commonService.Extensions)+1)
+	service.Extensions = append(service.Extensions, commonService.Extensions...)
+	service.Extensions = append(service.Extensions, odigosEnterpriseAuthExtensionName)
+
 	return config.Config{
-		Extensions: commonExtensions,
-		Service:    commonService,
+		Extensions: extensions,
+		Service:    service,
 	}
 }
 

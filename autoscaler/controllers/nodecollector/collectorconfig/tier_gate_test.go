@@ -86,3 +86,46 @@ func contains(haystack []string, needle string) bool {
 	}
 	return false
 }
+
+func TestCommonConfig_AuthExtensionGatedByTier(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		tier     common.OdigosTier
+		wantAuth bool
+	}{
+		{"community omits the enterprise auth extension", common.CommunityOdigosTier, false},
+		{"onprem enables the enterprise auth extension", common.OnPremOdigosTier, true},
+		{"cloud enables the enterprise auth extension", common.CloudOdigosTier, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := CommonConfig(tc.tier)
+
+			_, defined := cfg.Extensions[odigosEnterpriseAuthExtensionName]
+			assert.Equal(t, tc.wantAuth, defined, "extensions map")
+			assert.Equal(t, tc.wantAuth, contains(cfg.Service.Extensions, odigosEnterpriseAuthExtensionName),
+				"service.extensions %v", cfg.Service.Extensions)
+
+			// health_check and pprof must survive in both tiers.
+			assert.True(t, contains(cfg.Service.Extensions, healthCheckExtensionName))
+			assert.True(t, contains(cfg.Service.Extensions, pprofExtensionName))
+		})
+	}
+}
+
+// commonExtensions and commonService are package-level state; building an enterprise config must
+// not leak the auth extension into a subsequent community one.
+func TestCommonConfig_DoesNotMutateSharedExtensionState(t *testing.T) {
+	onprem := CommonConfig(common.OnPremOdigosTier)
+	require.True(t, contains(onprem.Service.Extensions, odigosEnterpriseAuthExtensionName))
+
+	community := CommonConfig(common.CommunityOdigosTier)
+	assert.False(t, contains(community.Service.Extensions, odigosEnterpriseAuthExtensionName),
+		"community service.extensions leaked: %v", community.Service.Extensions)
+	_, leaked := community.Extensions[odigosEnterpriseAuthExtensionName]
+	assert.False(t, leaked, "community extensions map leaked the auth extension")
+
+	_, inPackageState := commonExtensions[odigosEnterpriseAuthExtensionName]
+	assert.False(t, inPackageState, "package-level commonExtensions was mutated")
+	assert.False(t, contains(commonService.Extensions, odigosEnterpriseAuthExtensionName),
+		"package-level commonService.Extensions was mutated")
+}

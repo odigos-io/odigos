@@ -184,7 +184,7 @@ func calculateCollectorConfigDomains(
 
 	// common config domains - always set and active
 	configDomains := map[string]config.Config{
-		"common": collectorconfig.CommonConfig(),
+		"common": collectorconfig.CommonConfig(tier),
 	}
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
