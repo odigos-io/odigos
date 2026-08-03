@@ -1498,6 +1498,22 @@ the selected distro must match the programming language and any constraints of t
 if the programmin language is incorrect, the runtime info can be overridden to match</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>allowConcurrentAgents</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Odigos by default will attempt to detect if another agent is already running in the container,
+and if so, will avoid adding odigos agent to the container.
+This option allows to override this setting for a specific container in a source.
+Can be used for selective setting of which containers should run odigos concurrently with other agents.
+empty means take odigos global config for this setting.
+when not empty, the value will override the global config for this container</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -2689,20 +2705,6 @@ register instrumented processes for eBPF log capture.</p>
 </td>
 <td>
    <p>Configure the agent own logging configuration.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>allowConcurrentAgents</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <p>AllowConcurrentAgents overrides the global allow_concurrent_agents for the scoped
-workloads: when true, Odigos instruments the container even if another instrumentation
-agent is detected in it; when false, such containers are skipped. Unset falls back to
-the global config.</p>
 </td>
 </tr>
 </tbody>
