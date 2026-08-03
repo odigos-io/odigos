@@ -134,13 +134,17 @@ auth:
   # Built-in Keycloak configuration
   enabled: true
   # -- Browser-accessible URL of the central-backend for SSO redirect flows.
-  # This value configures both Keycloak's hostname (for token issuer) and the
-  # backend's external URL (for sign-in/sign-out redirect URLs).
+  # Configures Keycloak's hostname (for token issuer) and the backend's external URL
+  # (for browser-facing Keycloak proxy URLs during sign-in/sign-out).
   # Examples:
   #   Port-forward (default): 'http://localhost:8081'
   #   Production with ingress: 'https://central.example.com'
   # When empty, defaults to 'http://localhost:8081' (suitable for port-forward / local dev).
   externalUrl: ''
+  # -- Browser-accessible URL of the Central UI for OAuth redirect_uri (/signin).
+  # When empty, defaults to auth.externalUrl, except for local port-forward
+  # (http://localhost:8081) where the UI is reached on port 3000.
+  externalUIUrl: ''
   image: registry.odigos.io/keycloak:24.0.3
   adminUsername: admin
   # -- Keycloak admin password for internal API access.
