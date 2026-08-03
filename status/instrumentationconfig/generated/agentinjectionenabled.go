@@ -58,6 +58,12 @@ var (
 		Message:            "agent enabled alongside other instrumentation agent(s)",
 		K8sConditionStatus: metav1.ConditionTrue,
 		OdigosSeverity:     status.OdigosSeverityNotice,
+		ActionItems: []status.ActionItem{
+			{
+				Type:       status.ActionItemTypeDisallowConcurrentAgentsForContainer,
+				ButtonText: "Don't Run With Other Agents",
+			},
+		},
 	})
 	AgentEnabledWaitingForRuntimeInspection = status.WithMessageTemplate(status.Reason{
 		Name:               string(AgentEnabledReasonWaitingForRuntimeInspection),

@@ -47,6 +47,9 @@ spec:
       even though another instrumentation agent was detected. Running multiple agents
       together is not recommended; disable the other agent(s) when possible for better
       performance and reliability.
+    actionItems:
+    - type: "DisallowConcurrentAgentsForContainer"
+      buttonText: "Don't Run With Other Agents"
 
   - name: "WaitingForRuntimeInspection"
     title: "Waiting for Runtime Inspection"
