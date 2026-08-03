@@ -24,11 +24,16 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
 
 <Steps>
   <Step title="Open Add connector and choose AWS">
-    In the Central UI, open Connections / Connectors and start **Add connector**. Choose **Amazon Web Services**.
+    In the Central UI, open Connections / Connectors and start **Add connector**. Choose **AWS**.
   </Step>
 
   <Step title="Choose access level">
     Choose how much access this connector should have. The UI shows an **example IAM permissions policy** for the level you pick. You will attach that policy when you create the IAM role or user in the next step.
+
+    <img
+      src="/images/central/cloud-connectors/aws-access-level.png"
+      alt="Create Cloud Connector dialog with AWS selected and the Discovery + instrumentation access level showing an IAM policy preview"
+    />
 
     <Tabs defaultTabIndex="1">
       <Tab title="Discovery only">
@@ -76,6 +81,11 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
   <Step title="Setup credentials">
     On the **Setup credentials** screen, apply the IAM policy from the previous step in your AWS account and enter the credentials Odigos will use.
 
+    <img
+      src="/images/central/cloud-connectors/aws-setup-credentials.png"
+      alt="Setup credentials screen for an AWS connector with the authentication method set to Assume Role and CloudFormation selected as the setup method"
+    />
+
     #### 1. Choose authentication method
 
     <Tabs>
@@ -84,9 +94,13 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
 
         You still provide base access keys that are allowed to call `sts:AssumeRole` on that role (plus the Role ARN and External ID).
 
-        #### Choose setup method
+        #### 2. Choose setup method
 
-        The UI guides you through **creating the IAM role** using the workflow you prefer. Choose one.  Each path ends with the same role (trust policy + access-level permissions) and a Role ARN to paste back into Odigos.
+        Use the tool that best fits your workflow — **CloudFormation**, **Terraform**, **AWS CLI**, or **Manual**. Each path ends with the same role (trust policy + access-level permissions) and a Role ARN to paste back into Odigos.
+
+        #### 3. Create IAM role
+
+        Follow the instructions the UI shows for the method you picked, then copy the **Role ARN**.
 
         <Tabs>
           <Tab title="CloudFormation">
@@ -117,7 +131,12 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
           </Tab>
         </Tabs>
 
-        #### Enter credentials in Odigos
+        <img
+          src="/images/central/cloud-connectors/aws-create-iam-role.png"
+          alt="Create IAM role step showing CloudFormation instructions and the Enter Role ARN form with account ID, access keys, Role ARN, and External ID fields"
+        />
+
+        #### 4. Enter Role ARN
 
         Paste the values from the previous step into the form — account ID, base access keys, the Role ARN you copied, and the External ID from the UI trust policy.
 
@@ -169,16 +188,6 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
 
   <Step title="Verify and create">
     Click **Verify & Create Connector**. Central runs connection checks, then creates the credentials Secret and `OdigosCloudConnector` resource when verification succeeds.
-
-    Checks may include:
-
-    | Check | What it verifies |
-    | --- | --- |
-    | Authentication | Credentials resolve and `sts:GetCallerIdentity` succeeds |
-    | Account match | Caller identity belongs to the configured account ID |
-    | Region access | `ec2:DescribeRegions` succeeds when discovery is enabled |
-    | Lambda discovery permissions | `lambda:ListFunctions` when Lambda discovery is enabled |
-    | ECS discovery permissions | `ecs:ListClusters` when any ECS/Fargate discovery type is enabled |
 
     <Info>
       Verification covers authentication and discovery permissions for the access

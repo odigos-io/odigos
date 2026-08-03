@@ -24,6 +24,8 @@ Once a Cloud Connector is online, browse the workloads it discovered and create 
 
 Before you create Sources, add at least one destination on the connector so instrumented workloads have somewhere to export telemetry.
 
+Lambda and Cloud Run support OTLP destinations only. For more information, see [Telemetry export](/central/adding-connections/cloud-connectors/overview#telemetry-export).
+
 Follow the [Destinations overview](/enterprise/backends-overview) for how to add and configure a destination, then apply that setup on the connector in Central. The endpoint must be reachable from the cloud workloads themselves (not only from the Central cluster).
 
 ## Browse discovered workloads

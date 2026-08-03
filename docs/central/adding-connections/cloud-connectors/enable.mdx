@@ -21,6 +21,14 @@ When `cloudConnectors.enabled` is `true` and the Central install secret exists, 
 - The `connector-runtime` controller
 - Bundled PostgreSQL (`odigos-connector-postgres`) and a PVC when persistence is enabled
 
+<Warning>
+  A **StorageClass** must be defined for the Postgres PVC. Bundled Postgres
+  uses a PVC for connector state management; without a usable StorageClass the
+  PVC cannot bind. Set
+  `cloudConnectors.postgres.persistence.storageClassName` explicitly, or leave
+  it empty to use the cluster default.
+</Warning>
+
 ## Enable Cloud Connectors
 
 <Tabs>
@@ -176,6 +184,13 @@ You should see `connector-runtime` and `odigos-connector-postgres` in a Running 
     href="/central/adding-connections/cloud-connectors/add-aws-connector"
   >
     Connect an AWS account.
+  </Card>
+  <Card
+    title="Add GCP connector"
+    icon="google"
+    href="/central/adding-connections/cloud-connectors/add-gcp-connector"
+  >
+    Connect a Google Cloud project.
   </Card>
   <Card
     title="Instrument workloads"

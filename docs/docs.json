@@ -710,6 +710,7 @@
                       "central/adding-connections/cloud-connectors/overview",
                       "central/adding-connections/cloud-connectors/enable",
                       "central/adding-connections/cloud-connectors/add-aws-connector",
+                      "central/adding-connections/cloud-connectors/add-gcp-connector",
                       "central/adding-connections/cloud-connectors/instrument-workloads",
                       "central/adding-connections/cloud-connectors/manage-and-remove"
                     ]

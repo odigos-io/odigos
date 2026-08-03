@@ -66,9 +66,20 @@ Direct instrumentation depends on the workload type:
 
 Other Lambda runtimes (for example Go or .NET) can still be discovered; they are not instrumented until support for those runtimes is added.
 
+AWS Lambda Ruby supports OTLP HTTP only. See [Telemetry export](#telemetry-export) for destination protocol limits.
+
 ## Telemetry export
 
 Instrumented workloads export OpenTelemetry data to an **OTLP endpoint** you configure on the connector. That endpoint must be reachable from the cloud environment (for example from Lambda or Cloud Run).
+
+Lambda and Cloud Run support **OTLP destinations only**.
+
+Protocol support for AWS Lambda:
+
+- **Python, Node.js, Java** — OTLP gRPC and OTLP HTTP
+- **Ruby** — OTLP HTTP only
+
+GCP Cloud Run supports OTLP gRPC and OTLP HTTP.
 
 See [Add an OTLP destination](/central/adding-connections/cloud-connectors/instrument-workloads#add-an-otlp-destination). For how to add and configure destinations, see the [Destinations overview](/enterprise/backends-overview).
 
@@ -102,6 +113,13 @@ See [Add an OTLP destination](/central/adding-connections/cloud-connectors/instr
     href="/central/adding-connections/cloud-connectors/add-aws-connector"
   >
     Connect an AWS account and discover Lambda and ECS resources.
+  </Card>
+  <Card
+    title="Add GCP connector"
+    icon="google"
+    href="/central/adding-connections/cloud-connectors/add-gcp-connector"
+  >
+    Connect a Google Cloud project and discover Cloud Run services.
   </Card>
   <Card
     title="Instrument workloads"
