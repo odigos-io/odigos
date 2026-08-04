@@ -30,31 +30,10 @@ const (
 	MarkedForInstrumentationStatusConditionType = "MarkedForInstrumentation"
 	// Describe the runtime detection status of this workload.
 	RuntimeDetectionStatusConditionType = "RuntimeDetection"
-	// this const is the Type field in the conditions of the InstrumentationConfigStatus.
-	AgentEnabledStatusConditionType = "AgentEnabled"
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
 	// the rollout is needed to update the instrumentation done by the Pods webhook.
 	WorkloadRolloutStatusConditionType = "WorkloadRollout"
-	// reports whether running pods have the instrumentation agent applied as desired.
-	PodsManifestInjectionStatusConditionType = "PodsManifestInjection"
 )
-
-func StatusConditionTypeLogicalOrder(condType string) int {
-	switch condType {
-	case MarkedForInstrumentationStatusConditionType:
-		return 1
-	case RuntimeDetectionStatusConditionType:
-		return 2
-	case AgentEnabledStatusConditionType:
-		return 3
-	case WorkloadRolloutStatusConditionType:
-		return 4
-	case PodsManifestInjectionStatusConditionType:
-		return 5
-	default:
-		return 6
-	}
-}
 
 // +kubebuilder:validation:Enum=WorkloadSource;NamespaceSource;WorkloadSourceDisabled;NoSource;RetirableError
 type MarkedForInstrumentationReason string
@@ -98,11 +77,12 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;EnabledWithOtherAgents;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff
 type AgentEnabledReason string
 
 const (
 	AgentEnabledReasonEnabledSuccessfully            AgentEnabledReason = "EnabledSuccessfully"
+	AgentEnabledReasonEnabledWithOtherAgents         AgentEnabledReason = "EnabledWithOtherAgents"
 	AgentEnabledReasonWaitingForRuntimeInspection    AgentEnabledReason = "WaitingForRuntimeInspection"
 	AgentEnabledReasonWaitingForNodeCollector        AgentEnabledReason = "WaitingForNodeCollector"
 	AgentEnabledReasonIgnoredContainer               AgentEnabledReason = "IgnoredContainer"
@@ -157,6 +137,8 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 	switch reason {
 	case AgentEnabledReasonEnabledSuccessfully:
 		return 0
+	case AgentEnabledReasonEnabledWithOtherAgents:
+		return 5
 	case AgentEnabledReasonRuntimeDetailsUnavailable:
 		return 10
 	case AgentEnabledReasonWaitingForRuntimeInspection:
@@ -191,18 +173,7 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 func IsReasonStatusDisabled(reason string) bool {
 	switch reason {
 	// Agent-related reasons
-	case string(AgentEnabledReasonUnsupportedProgrammingLanguage),
-		string(AgentEnabledReasonUnsupportedRuntimeVersion),
-		string(RuntimeDetectionReasonNoRunningPods),
-		string(AgentEnabledReasonNoCollectedSignals),
-		string(AgentEnabledReasonIgnoredContainer),
-		string(AgentEnabledReasonNoAvailableAgent),
-		string(AgentEnabledReasonInjectionConflict),
-		string(AgentEnabledReasonOtherAgentDetected),
-		string(AgentEnabledReasonCrashLoopBackOff),
-		string(AgentEnabledReasonImagePullBackOff),
-		string(AgentEnabledReasonRuntimeDetailsUnavailable):
-
+	case string(RuntimeDetectionReasonNoRunningPods):
 		return true
 
 	// rollout-related reasons
@@ -225,14 +196,6 @@ type EnvVar struct {
 	Value string `json:"value"`
 }
 
-type ProcessingState string
-
-const (
-	ProcessingStateFailed    ProcessingState = "Failed"    // Used when CRI fails to detect the runtime envs
-	ProcessingStateSucceeded ProcessingState = "Succeeded" // Indicates that CRI successfully processed the runtime environments, even if no environments were detected.
-	ProcessingStateSkipped   ProcessingState = "Skipped"   // Used when env originally come from manifest
-)
-
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
 	ContainerName  string                     `json:"containerName"`
@@ -241,8 +204,8 @@ type RuntimeDetailsByContainer struct {
 	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
 	// OtherAgents lists other instrumentation agents detected in the container
 	// (a process can carry more than one); empty when none.
-	OtherAgents    []OtherAgent               `json:"otherAgents,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+	OtherAgents []OtherAgent     `json:"otherAgents,omitempty"`
+	LibCType    *common.LibCType `json:"libCType,omitempty"`
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.
 	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
@@ -255,8 +218,6 @@ type RuntimeDetailsByContainer struct {
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
 	// Holds the environment variables retrieved from the container runtime.
 	EnvFromContainerRuntime []EnvVar `json:"envFromContainerRuntime,omitempty"`
-	// A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.
-	RuntimeUpdateState *ProcessingState `json:"runtimeUpdateState,omitempty"`
 }
 
 // represents the status of odigos MANIFEST injection to existing pods template.

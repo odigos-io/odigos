@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
+	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 )
 
 func resolveDistroByOverride(overwriteDistroName string, distroGetter *distros.Getter, containerLanguage common.ProgrammingLanguage) (*distro.OtelDistro, *odigosv1.AgentDisabledInfo) {
@@ -15,7 +16,7 @@ func resolveDistroByOverride(overwriteDistroName string, distroGetter *distros.G
 	if distro == nil { // not expected to happen, here for safety net
 		message := fmt.Sprintf("requested otel distro %s is not available in this odigos tier", overwriteDistroName)
 		return nil, &odigosv1.AgentDisabledInfo{
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonNoAvailableAgent),
 			AgentEnabledMessage: message,
 		}
 	}
@@ -28,7 +29,7 @@ func resolveDistroByOverride(overwriteDistroName string, distroGetter *distros.G
 	// verify the distro matches the language, since it might be overridden by the container override.
 	if distro.Language != containerLanguage {
 		return nil, &odigosv1.AgentDisabledInfo{
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonUnsupportedProgrammingLanguage),
 			AgentEnabledMessage: fmt.Sprintf("requested otel distro %s does not support language %s", overwriteDistroName, containerLanguage),
 		}
 	}
@@ -41,12 +42,12 @@ func resolveDistroByLanguage(containerLanguage common.ProgrammingLanguage, distr
 	if !ok {
 		if containerLanguage == common.UnknownProgrammingLanguage {
 			return nil, &odigosv1.AgentDisabledInfo{
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+				AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonNoAvailableAgent),
 				AgentEnabledMessage: "runtime language/platform cannot be detected, no instrumentation agent is available. use the container override to manually specify the programming language.",
 			}
 		} else {
 			return nil, &odigosv1.AgentDisabledInfo{
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+				AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonNoAvailableAgent),
 				AgentEnabledMessage: fmt.Sprintf("support for %s is coming soon. no instrumentation agent available at the moment", containerLanguage),
 			}
 		}
@@ -59,7 +60,7 @@ func resolveDistroByLanguage(containerLanguage common.ProgrammingLanguage, distr
 	if distro == nil { // not expected to happen, here for safety net
 		message := fmt.Sprintf("otel distro %s is not available in this odigos tier", effectiveDistroName)
 		return nil, &odigosv1.AgentDisabledInfo{
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonNoAvailableAgent),
 			AgentEnabledMessage: message,
 		}
 	}
@@ -110,27 +111,27 @@ func ResolveDistroForContainer(
 ) (*distro.OtelDistro, *odigosv1.AgentDisabledInfo) {
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
 	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
-	for _, ignoredContainer := range effectiveConfig.IgnoredContainers {
-		if ignoredContainer == containerName {
+	for _, ignored := range effectiveConfig.IgnoredContainers {
+		if ignored == containerName {
 			return nil, &odigosv1.AgentDisabledInfo{
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonIgnoredContainer,
-				AgentEnabledMessage: "container is ignored",
+				AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonIgnoredContainer),
+				AgentEnabledMessage: agentInjectionEnabled.AgentEnabledIgnoredContainer.Message,
 			}
 		}
 	}
 
 	if runtimeDetails == nil {
 		return nil, &odigosv1.AgentDisabledInfo{
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonRuntimeDetailsUnavailable,
-			AgentEnabledMessage: "runtime details are unavailable",
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonRuntimeDetailsUnavailable),
+			AgentEnabledMessage: agentInjectionEnabled.AgentEnabledRuntimeDetailsUnavailable.Message,
 		}
 	}
 
 	// check unknown language first. if language is not supported, we can skip the rest of the checks.
 	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
 		return nil, &odigosv1.AgentDisabledInfo{
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
-			AgentEnabledMessage: "unknown programming language",
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonUnsupportedProgrammingLanguage),
+			AgentEnabledMessage: agentInjectionEnabled.AgentEnabledUnsupportedProgrammingLanguage.Message,
 		}
 	}
 
@@ -157,20 +158,20 @@ func ResolveDistroForContainer(
 		constraint, err := version.NewConstraint(distroToUse.RuntimeEnvironments[0].SupportedVersions)
 		if err != nil {
 			return nil, &odigosv1.AgentDisabledInfo{
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
+				AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonUnsupportedRuntimeVersion),
 				AgentEnabledMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", distroToUse.RuntimeEnvironments[0].SupportedVersions),
 			}
 		}
 		detectedVersion := common.ParseRuntimeVersion(runtimeDetails.RuntimeVersion)
 		if detectedVersion == nil {
 			return nil, &odigosv1.AgentDisabledInfo{
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
+				AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonUnsupportedRuntimeVersion),
 				AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version: %s", runtimeDetails.RuntimeVersion),
 			}
 		}
 		if !constraint.Check(detectedVersion) {
 			return nil, &odigosv1.AgentDisabledInfo{
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
+				AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonUnsupportedRuntimeVersion),
 				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", distroToUse.RuntimeEnvironments[0].Name, constraint, detectedVersion),
 			}
 		}

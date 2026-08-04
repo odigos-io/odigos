@@ -99,6 +99,7 @@ var KnownAgents = []KnownAgent{
 	{Name: OpenTelemetryAgentName, Language: common.JavascriptProgrammingLanguage, Signal: EnvValueContains,
 		Key: envNodeOptions, Match: "@opentelemetry/auto-instrumentations-node"},
 	{Name: OpenTelemetryAgentName, Language: common.PythonProgrammingLanguage, Signal: CmdlineContains, Match: "opentelemetry-instrument"},
+	{Name: OpenTelemetryAgentName, Language: common.JavaProgrammingLanguage, Signal: EnvValueContains, Key: envJavaToolOptions, Match: "wo11y-agent"},
 
 	// Grafana OpenTelemetry
 	{Name: GrafanaOtelAgentName, Language: common.JavaProgrammingLanguage, Signal: CmdlineContains, Match: "grafana-opentelemetry-java"},
