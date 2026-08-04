@@ -1,0 +1,31 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Recommendation
+metadata:
+  name: sample-health-probes
+spec:
+  type: 'SampleHealthProbes'
+  oss: true
+
+  title: 'Sample health probes'
+  summary: 'Drop Kubernetes health probe traces so the pipeline stays focused on real traffic and costs stay low.'
+  description: |
+    Liveness, readiness, and startup probes produce high-volume traces that
+    carry little signal about application behavior. Enable this
+    recommendation to sample them out via Odigos's built-in Kubernetes
+    Health Probes noisy rule, so they are not collected and exported.
+
+  docs: "https://docs.odigos.io/oss/pipeline/sampling/rules/noisy-operation#built-in-rule-kubernetes-health-probes"
+
+  pros:
+    - Reduces noise from high-volume health probe traces
+    - Lowers telemetry cost and collector load
+
+  cons:
+    - Dropped probe traces will not be available when debugging failing or flaky probes
+    - Quiet services that only receive probe traffic may look empty on dashboards
+
+  actions:
+    - type: 'DropAllHealthProbes'
+      description: 'Drop all kubelet health probes traces'
+    - type: 'SparseSampleHealthProbes'
+      description: 'Keep ~2% of kubelet health probe traces as a sparse "service is up" signal'

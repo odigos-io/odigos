@@ -1,0 +1,29 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Recommendation
+metadata:
+  name: infer-db-attributes
+spec:
+  type: 'InferDBAttributes'
+  oss: true
+
+  title: 'Infer DB attributes'
+  summary: 'Parse database query text to add OpenTelemetry attributes like db.operation.name and db.collection.name when they are missing.'
+  description: |
+    Some instrumentations record only the raw query text. Enable this
+    recommendation to derive semantic attributes (`db.operation.name`,
+    `db.collection.name`) from `db.query.text` or `db.statement`, so backends
+    can filter and group by operation and table.
+
+    When inference is unambiguous, the span name may also be updated to a
+    normalized form such as `SELECT users`, making traces easier to read and
+    improving aggregations when span metrics are enabled. Existing attribute
+    values are not overwritten.
+
+  docs: "https://docs.odigos.io/oss/pipeline/actions/attributes/inferdbattributes"
+
+  pros:
+    - Adds missing db operation and collection attributes from query text
+    - Improves usability with clearer span names and aggregations
+
+  cons:
+    - Adds a small amount of CPU overhead on the collector

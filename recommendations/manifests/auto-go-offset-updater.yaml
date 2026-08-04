@@ -1,0 +1,27 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Recommendation
+metadata:
+  name: auto-go-offset-updater
+spec:
+  type: 'AutoGoOffsetUpdater'
+  oss: false
+
+  conditions:
+    - type: 'GoEnterpriseSources'
+
+  title: 'Enable go-enterprise automatic offsets updater'
+  summary: 'Automatically keeps Go eBPF offsets up to date so applications remain instrumentable when they adopt newly released library versions.'
+  description: |
+    Every Odigos upgrade already includes up-to-date Go library support. Enable
+    this recommendation if your applications often adopt new Go library versions
+    before the next Odigos release, or if Odigos is not upgraded frequently, so
+    instrumentation keeps working without needing an upgrade.
+
+  docs: "https://docs.odigos.io/enterprise/instrumentations/golang/ebpf#about-go-offsets"
+
+  pros:
+    - Keeps Go applications instrumentable when they adopt newer library versions
+    - Avoids waiting for an Odigos upgrade or manually handling offsets on an ongoing basis
+
+  cons:
+    - Clusters without internet access cannot reach the Odigos offsets endpoint and require a custom workflow to push the updater image to an internal registry
