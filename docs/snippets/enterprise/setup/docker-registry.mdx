@@ -22,7 +22,7 @@ docker pull registry.odigos.io/odigos-enterprise-instrumentor:$VERSION
 docker pull registry.odigos.io/odigos-ui:$VERSION
 docker pull registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull registry.odigos.io/odigos-enterprise-odiglet:$VERSION
-docker pull registry.odigos.io/odigos-collector:$VERSION
+docker pull registry.odigos.io/odigos-enterprise-collector:$VERSION
 ```
 
 If you are using the [k8s-init-container](/enterprise/instrumentations/configuration/mount-method#3-InitContainer) mount method
@@ -44,7 +44,7 @@ docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-instrument
 docker pull --platform $PLATFORM registry.odigos.io/odigos-ui:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-odiglet:$VERSION
-docker pull --platform $PLATFORM registry.odigos.io/odigos-collector:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-collector:$VERSION
 ```
 
 ### Step 3: Tag the Images
@@ -56,11 +56,13 @@ docker tag registry.odigos.io/odigos-enterprise-instrumentor:$VERSION $CUSTOM_DO
 docker tag registry.odigos.io/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
 docker tag registry.odigos.io/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker tag registry.odigos.io/odigos-enterprise-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-odiglet:$VERSION
-docker tag registry.odigos.io/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
+docker tag registry.odigos.io/odigos-enterprise-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-collector:$VERSION
 ```
 
 
 > **Note:** Prior to v1.0.155, Odigos images were prefixed with `keyval/` (such as `keyval/odigos-scheduler`) In v1.0.155+, this is no longer the case, and Odigos does not assume this prefix. If you were hosting custom images prior to this version, you may have to re-tag your images to remove the `keyval/` prefix.
+
+> **Note:** Odigos Enterprise now runs a dedicated collector image, `odigos-enterprise-collector`, in place of `odigos-collector`. If you were already mirroring `odigos-collector`, mirror `odigos-enterprise-collector` as well before upgrading, otherwise the gateway and the node collectors will fail to pull.
 
 ### Step 4: Push the Images
 Now, push the tagged images to your custom Docker registry:
@@ -70,7 +72,7 @@ docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-instrumentor:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-odiglet:$VERSION
-docker push $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-collector:$VERSION
 ```
 
 ### Step 5: Configure Access for Private Registries

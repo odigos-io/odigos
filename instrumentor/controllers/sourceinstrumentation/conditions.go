@@ -9,7 +9,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	podsManifestInjection "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
+	instrumentationConfigStatus "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 )
 
 func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig, workloadObj workload.Workload) bool {
@@ -69,40 +69,41 @@ func initiateRuntimeDetailsConditionIfMissing(ic *v1alpha1.InstrumentationConfig
 }
 
 func initiateAgentEnabledConditionIfMissing(ic *v1alpha1.InstrumentationConfig) bool {
-	if meta.FindStatusCondition(ic.Status.Conditions, v1alpha1.AgentEnabledStatusConditionType) != nil {
+	if meta.FindStatusCondition(ic.Status.Conditions, instrumentationConfigStatus.AgentEnabledType) != nil {
 		// avoid adding the condition if it already exists
 		return false
 	}
 
-	// defaults, for most cases.
-	reason := string(v1alpha1.AgentEnabledReasonWaitingForRuntimeInspection)
-	message := "waiting for runtime detection to complete"
-
 	// if the runtime detection is paused due to no running pods, we can't enable the agent
 	// check for that and add a specific reason so not to have spinner in ui
 	if meta.FindStatusCondition(ic.Status.Conditions, v1alpha1.RuntimeDetectionStatusConditionType).Reason == string(v1alpha1.RuntimeDetectionReasonNoRunningPods) {
-		reason = string(v1alpha1.AgentEnabledReasonRuntimeDetailsUnavailable)
-		message = "agent disabled while no running pods available to detect source runtime"
+		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+			Type:    instrumentationConfigStatus.AgentEnabledType,
+			Status:  instrumentationConfigStatus.AgentEnabledRuntimeDetailsUnavailable.K8sConditionStatus,
+			Reason:  string(instrumentationConfigStatus.AgentEnabledReasonRuntimeDetailsUnavailable),
+			Message: instrumentationConfigStatus.AgentEnabledRuntimeDetailsUnavailable.Message,
+		})
+		return true
 	}
 
 	meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-		Type:    v1alpha1.AgentEnabledStatusConditionType,
-		Status:  metav1.ConditionUnknown,
-		Reason:  reason,
-		Message: message,
+		Type:    instrumentationConfigStatus.AgentEnabledType,
+		Status:  instrumentationConfigStatus.AgentEnabledWaitingForRuntimeInspection.K8sConditionStatus,
+		Reason:  string(instrumentationConfigStatus.AgentEnabledReasonWaitingForRuntimeInspection),
+		Message: instrumentationConfigStatus.AgentEnabledWaitingForRuntimeInspection.Message,
 	})
 
 	return true
 }
 
 func initiatePodsManifestInjectionConditionIfMissing(ic *v1alpha1.InstrumentationConfig) bool {
-	if meta.FindStatusCondition(ic.Status.Conditions, podsManifestInjection.PodsManifestInjectionType) != nil {
+	if meta.FindStatusCondition(ic.Status.Conditions, instrumentationConfigStatus.PodsManifestInjectionType) != nil {
 		return false
 	}
 
-	reason := podsManifestInjection.PodsManifestInjectionNotYetReconciled
+	reason := instrumentationConfigStatus.PodsManifestInjectionNotYetReconciled
 	meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-		Type:    podsManifestInjection.PodsManifestInjectionType,
+		Type:    instrumentationConfigStatus.PodsManifestInjectionType,
 		Status:  reason.K8sConditionStatus,
 		Reason:  reason.Name,
 		Message: reason.Message,
@@ -114,7 +115,24 @@ func initiatePodsManifestInjectionConditionIfMissing(ic *v1alpha1.Instrumentatio
 // giving the input conditions array, this function will return a new array with the conditions sorted by logical order
 func sortIcConditionsByLogicalOrder(conditions []metav1.Condition) []metav1.Condition {
 	slices.SortFunc(conditions, func(i, j metav1.Condition) int {
-		return v1alpha1.StatusConditionTypeLogicalOrder(i.Type) - v1alpha1.StatusConditionTypeLogicalOrder(j.Type)
+		return statusConditionTypeLogicalOrder(i.Type) - statusConditionTypeLogicalOrder(j.Type)
 	})
 	return conditions
+}
+
+func statusConditionTypeLogicalOrder(condType string) int {
+	switch condType {
+	case v1alpha1.MarkedForInstrumentationStatusConditionType:
+		return 1
+	case v1alpha1.RuntimeDetectionStatusConditionType:
+		return 2
+	case instrumentationConfigStatus.AgentEnabledType:
+		return 3
+	case v1alpha1.WorkloadRolloutStatusConditionType:
+		return 4
+	case instrumentationConfigStatus.PodsManifestInjectionType:
+		return 5
+	default:
+		return 6
+	}
 }
