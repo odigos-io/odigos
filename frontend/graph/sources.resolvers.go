@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -212,41 +211,11 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 	}
 
 	cont := patchSourceRequest.ContainerName
-	lang := patchSourceRequest.Language
-	vers := patchSourceRequest.Version
 	if cont != nil {
-		containerOverrides := make([]v1alpha1.ContainerOverride, 0)
-		// get previous overrides (except the one we are updating)
-		if source.Spec.ContainerOverrides != nil {
-			for _, override := range source.Spec.ContainerOverrides {
-				if override.ContainerName != *cont {
-					containerOverrides = append(containerOverrides, override)
-				}
-			}
+		containerOverrides, err := mergeContainerOverride(source.Spec.ContainerOverrides, *cont, patchSourceRequest)
+		if err != nil {
+			return false, err
 		}
-		// add the new override
-		var overrideRuntimeInfo *v1alpha1.RuntimeDetailsByContainer
-		if lang == nil || *lang == "" {
-			overrideRuntimeInfo = nil
-		} else {
-			runtimeVersion := ""
-			if vers != nil && *vers != "" {
-				if common.GetVersion(*vers) == nil {
-					return false, fmt.Errorf("invalid runtime version: %s", *vers)
-				}
-				runtimeVersion = *vers
-			}
-			overrideRuntimeInfo = &v1alpha1.RuntimeDetailsByContainer{
-				ContainerName:  *cont,
-				Language:       common.ProgrammingLanguage(*lang),
-				RuntimeVersion: runtimeVersion,
-			}
-		}
-		containerOverrides = append(containerOverrides, v1alpha1.ContainerOverride{
-			ContainerName:  *cont,
-			OtelDistroName: patchSourceRequest.OtelDistroName,
-			RuntimeInfo:    overrideRuntimeInfo,
-		})
 		// patch the source with the new container overrides
 		patchBytes, err := json.Marshal([]map[string]interface{}{
 			{

@@ -866,9 +866,10 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadContainerOverrides struct {
-		ContainerName  func(childComplexity int) int
-		OtelDistroName func(childComplexity int) int
-		RuntimeInfo    func(childComplexity int) int
+		AllowConcurrentAgents func(childComplexity int) int
+		ContainerName         func(childComplexity int) int
+		OtelDistroName        func(childComplexity int) int
+		RuntimeInfo           func(childComplexity int) int
 	}
 
 	K8sWorkloadId struct {
@@ -5364,6 +5365,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation.RuleID(childComplexity), true
+
+	case "K8sWorkloadContainerOverrides.allowConcurrentAgents":
+		if e.complexity.K8sWorkloadContainerOverrides.AllowConcurrentAgents == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadContainerOverrides.AllowConcurrentAgents(childComplexity), true
 
 	case "K8sWorkloadContainerOverrides.containerName":
 		if e.complexity.K8sWorkloadContainerOverrides.ContainerName == nil {
@@ -33280,6 +33288,8 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainer_overrides(_ contex
 				return ec.fieldContext_K8sWorkloadContainerOverrides_runtimeInfo(ctx, field)
 			case "otelDistroName":
 				return ec.fieldContext_K8sWorkloadContainerOverrides_otelDistroName(ctx, field)
+			case "allowConcurrentAgents":
+				return ec.fieldContext_K8sWorkloadContainerOverrides_allowConcurrentAgents(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sWorkloadContainerOverrides", field.Name)
 		},
@@ -34976,6 +34986,47 @@ func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_otelDistr
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadContainerOverrides_allowConcurrentAgents(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadContainerOverrides) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadContainerOverrides_allowConcurrentAgents(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AllowConcurrentAgents, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadContainerOverrides_allowConcurrentAgents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadContainerOverrides",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -58822,7 +58873,7 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"currentStreamName", "otelServiceName", "containerName", "language", "version", "otelDistroName"}
+	fieldsInOrder := [...]string{"currentStreamName", "otelServiceName", "containerName", "language", "version", "otelDistroName", "allowConcurrentAgents"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -58871,6 +58922,13 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 				return it, err
 			}
 			it.OtelDistroName = data
+		case "allowConcurrentAgents":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("allowConcurrentAgents"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AllowConcurrentAgents = data
 		}
 	}
 
@@ -65694,6 +65752,8 @@ func (ec *executionContext) _K8sWorkloadContainerOverrides(ctx context.Context, 
 			out.Values[i] = ec._K8sWorkloadContainerOverrides_runtimeInfo(ctx, field, obj)
 		case "otelDistroName":
 			out.Values[i] = ec._K8sWorkloadContainerOverrides_otelDistroName(ctx, field, obj)
+		case "allowConcurrentAgents":
+			out.Values[i] = ec._K8sWorkloadContainerOverrides_allowConcurrentAgents(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

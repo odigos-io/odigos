@@ -1060,9 +1060,10 @@ type K8sWorkloadContainerCollectorConfigTailSamplingNoisyOperation struct {
 }
 
 type K8sWorkloadContainerOverrides struct {
-	ContainerName  string                           `json:"containerName"`
-	RuntimeInfo    *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
-	OtelDistroName *string                          `json:"otelDistroName,omitempty"`
+	ContainerName         string                           `json:"containerName"`
+	RuntimeInfo           *K8sWorkloadRuntimeInfoContainer `json:"runtimeInfo,omitempty"`
+	OtelDistroName        *string                          `json:"otelDistroName,omitempty"`
+	AllowConcurrentAgents *bool                            `json:"allowConcurrentAgents,omitempty"`
 }
 
 type K8sWorkloadID struct {
@@ -1425,12 +1426,13 @@ type OverviewMetricsResponse struct {
 }
 
 type PatchSourceRequestInput struct {
-	CurrentStreamName string  `json:"currentStreamName"`
-	OtelServiceName   *string `json:"otelServiceName,omitempty"`
-	ContainerName     *string `json:"containerName,omitempty"`
-	Language          *string `json:"language,omitempty"`
-	Version           *string `json:"version,omitempty"`
-	OtelDistroName    *string `json:"otelDistroName,omitempty"`
+	CurrentStreamName     string  `json:"currentStreamName"`
+	OtelServiceName       *string `json:"otelServiceName,omitempty"`
+	ContainerName         *string `json:"containerName,omitempty"`
+	Language              *string `json:"language,omitempty"`
+	Version               *string `json:"version,omitempty"`
+	OtelDistroName        *string `json:"otelDistroName,omitempty"`
+	AllowConcurrentAgents *bool   `json:"allowConcurrentAgents,omitempty"`
 }
 
 type PayloadCollection struct {
