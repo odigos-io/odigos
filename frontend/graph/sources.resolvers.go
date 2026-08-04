@@ -215,15 +215,6 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 	lang := patchSourceRequest.Language
 	vers := patchSourceRequest.Version
 	if cont != nil {
-		containerOverrides := make([]v1alpha1.ContainerOverride, 0)
-		// get previous overrides (except the one we are updating)
-		if source.Spec.ContainerOverrides != nil {
-			for _, override := range source.Spec.ContainerOverrides {
-				if override.ContainerName != *cont {
-					containerOverrides = append(containerOverrides, override)
-				}
-			}
-		}
 		// add the new override
 		var overrideRuntimeInfo *v1alpha1.RuntimeDetailsByContainer
 		if lang == nil || *lang == "" {
@@ -242,11 +233,14 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 				RuntimeVersion: runtimeVersion,
 			}
 		}
-		containerOverrides = append(containerOverrides, v1alpha1.ContainerOverride{
-			ContainerName:  *cont,
-			OtelDistroName: patchSourceRequest.OtelDistroName,
-			RuntimeInfo:    overrideRuntimeInfo,
-		})
+		// Preserve AllowConcurrentAgents: PatchSourceRequestInput cannot set it, so rebuilding
+		// the override without copying would silently clear a kubectl/YAML opt-in.
+		containerOverrides := buildUpdatedContainerOverrides(
+			source.Spec.ContainerOverrides,
+			*cont,
+			patchSourceRequest.OtelDistroName,
+			overrideRuntimeInfo,
+		)
 		// patch the source with the new container overrides
 		patchBytes, err := json.Marshal([]map[string]interface{}{
 			{
