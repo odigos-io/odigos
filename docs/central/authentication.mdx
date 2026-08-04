@@ -15,13 +15,13 @@ Both are configured through the Central UI — Odigos will create the required K
 
 ## Configuring the External URL
 
-For SSO redirects to work, Keycloak and the Central Backend must know the **browser-accessible URL** of the Central Backend. This is set via the `auth.externalUrl` Helm value.
+For SSO redirects to work, Keycloak and the Central Backend must know the **browser-accessible URL** of the Central Backend. This is set via the `auth.externalUrl` Helm value. The Central UI URL used for OAuth `redirect_uri` (`/signin`) is configured separately via `auth.externalUIUrl` when it differs from the backend URL (e.g. local port-forward).
 
-| Environment | `auth.externalUrl` value |
-|---|---|
-| Local dev / port-forward | `http://localhost:8081` (default) |
-| Ingress with HTTPS | `https://central.example.com` |
-| LoadBalancer service | `https://central-lb.prod.internal` |
+| Environment | `auth.externalUrl` value | `auth.externalUIUrl` value |
+|---|---|---|
+| Local dev / port-forward | `http://localhost:8081` (default) | `http://localhost:3000` (auto) |
+| Ingress with HTTPS | `https://central.example.com` | same as `externalUrl` (auto) |
+| LoadBalancer service | `https://central-lb.prod.internal` | same as `externalUrl` (auto) |
 
 <Tabs>
   <Tab title="CLI">
