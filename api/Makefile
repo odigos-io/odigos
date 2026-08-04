@@ -70,10 +70,10 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	# remove the existing CRD files directory before recreating, so removed files will not be left over
 	@rm -rf config/crd/bases
 	# Regular Odigos CRDs (odigos.io + actions.odigos.io). The cloud connector CRD is intentionally
-	# excluded here and generated separately below, so it is not bundled with the rest of the CRDs and
-	# can be shipped only by the odigos-central Helm chart.
+	# excluded here and generated separately below, so its Helm chart ownership can be migrated
+	# independently from the rest of the CRDs.
 	$(CONTROLLER_GEN) crd:allowDangerousTypes=true webhook paths="./odigos/..." paths="./actions/..." output:crd:artifacts:config=config/crd/bases
-	# Cloud connector CRD, kept out of config/crd/bases so sync-helm-crd only ships it to odigos-central.
+	# Cloud connector CRD, kept out of config/crd/bases so sync-helm-crd controls its staged migration.
 	@rm -rf cloud-connectors/config/crd/bases
 	$(CONTROLLER_GEN) crd:allowDangerousTypes=true paths="./cloud-connectors/..." output:crd:artifacts:config=cloud-connectors/config/crd/bases
 
@@ -131,5 +131,7 @@ sync-helm-crd:
 	@echo "Syncing regular CRD yamls to the odigos Helm chart"
 	@rm ../helm/odigos/templates/crds/* # remove existing files so we don't get leftovers
 	@cp -r config/crd/bases/* ../helm/odigos/templates/crds/
-	@echo "Syncing cloud connector CRD only to the odigos-central chart (guarded by connectors.enabled)"
-	@{ echo '{{- if (include "connectors.enabled" .) }}'; cat cloud-connectors/config/crd/bases/odigos.io_odigoscloudconnectors.yaml; echo '{{- end }}'; } > ../helm/odigos-central/templates/crds/odigoscloudconnectors.yaml
+	@echo "Syncing protected cloud connector CRD to the odigos chart for staged ownership migration"
+	@sed '/^  annotations:$$/a\    helm.sh/resource-policy: keep' cloud-connectors/config/crd/bases/odigos.io_odigoscloudconnectors.yaml > ../helm/odigos/templates/crds/odigos.io_odigoscloudconnectors.yaml
+	@echo "Syncing protected cloud connector CRD to the odigos-central chart (guarded by connectors.enabled)"
+	@{ echo '{{- if (include "connectors.enabled" .) }}'; sed '/^  annotations:$$/a\    helm.sh/resource-policy: keep' cloud-connectors/config/crd/bases/odigos.io_odigoscloudconnectors.yaml; echo '{{- end }}'; } > ../helm/odigos-central/templates/crds/odigoscloudconnectors.yaml
