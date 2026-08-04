@@ -14,7 +14,7 @@
     "mintlify": "^4.2.696"
   },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "resolutions": {
     "tar": "^7.5.16",
