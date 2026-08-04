@@ -71,11 +71,12 @@ input PersistNamespaceSourceInput {
 input PatchSourceRequestInput {
   currentStreamName: String!
   otelServiceName: String
-  # for runtime override
+  # for container overrides
   containerName: String
   language: String
   version: String
   otelDistroName: String
+  allowConcurrentAgents: Boolean
 }
 
 type SourceConditions {

@@ -183,12 +183,17 @@ export const GET_WORKLOADS_BY_IDS = gql`
             status
             reasonEnum
             message
+            actionItems {
+              type
+              buttonText
+            }
           }
           otelDistroName
         }
         overrides {
           containerName
           otelDistroName
+          allowConcurrentAgents
           runtimeInfo {
             language
             runtimeVersion
