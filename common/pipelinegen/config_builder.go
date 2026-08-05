@@ -23,7 +23,8 @@ type GatewayConfigOptions struct {
 	// the extension and it's name are platform specific.
 	OdigosConfigExtensionName *string
 
-	// groupbytrace wait duration when tail sampling or service I/O trace correlations are active.
+	// groupbytrace wait duration when tail sampling, service I/O trace
+	// correlations, or insights are active.
 	TraceAggregationWaitDuration *string
 
 	// Tail sampling v2 processors when tail sampling is active.
@@ -33,6 +34,10 @@ type GatewayConfigOptions struct {
 
 	// Trace correlations configuration for the serviceio connector (service I/O metrics).
 	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
+
+	// Insights side-channel exporter; when active, groupbytrace is installed
+	// so the exporter sees fully assembled traces.
+	Insights *common.InsightsConfiguration
 }
 
 func GetGatewayConfig(
@@ -616,6 +621,10 @@ func traceAggregationNeeded(gatewayOptions *GatewayConfigOptions) bool {
 	if common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
 		ServiceIO: gatewayOptions.TraceCorrelationsServiceIO,
 	}) {
+		return true
+	}
+
+	if common.InsightsPipelineActive(gatewayOptions.Insights) {
 		return true
 	}
 

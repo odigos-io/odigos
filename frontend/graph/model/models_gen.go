@@ -719,6 +719,497 @@ type HTTPPayloadCollectionInput struct {
 	DropPartialPayloads *bool     `json:"dropPartialPayloads,omitempty"`
 }
 
+type Insights struct {
+	Services            []*InsightsServiceStat        `json:"services"`
+	Transactions        []*InsightsTransactionStat    `json:"transactions"`
+	Transaction         *InsightsTransaction          `json:"transaction,omitempty"`
+	Baseline            []*InsightsBaselineClass      `json:"baseline"`
+	Observations        []*InsightsObservationSummary `json:"observations"`
+	Observation         *InsightsObservation          `json:"observation,omitempty"`
+	Findings            []*InsightsFinding            `json:"findings"`
+	Anomalies           []*InsightsAnomalySummary     `json:"anomalies"`
+	Anomaly             *InsightsAnomalyIssue         `json:"anomaly,omitempty"`
+	Policies            []*InsightsPolicy             `json:"policies"`
+	LearningPolicies    []*InsightsLearningPolicy     `json:"learningPolicies"`
+	Guardrails          []*InsightsGuardrail          `json:"guardrails"`
+	GuardrailViolations []*InsightsGuardrailViolation `json:"guardrailViolations"`
+	Catalog             *InsightsCatalog              `json:"catalog"`
+	SystemSettings      *InsightsSystemSettings       `json:"systemSettings"`
+	StorageHealth       *InsightsStorageHealth        `json:"storageHealth"`
+}
+
+type InsightsAnomalyIssue struct {
+	TransactionID    string                   `json:"transactionId"`
+	Signature        string                   `json:"signature"`
+	Service          string                   `json:"service"`
+	Namespace        string                   `json:"namespace"`
+	Operation        *string                  `json:"operation,omitempty"`
+	Kind             *InsightsTransactionKind `json:"kind,omitempty"`
+	TriggeredClasses []InsightsDeviationClass `json:"triggeredClasses"`
+	Offending        *string                  `json:"offending,omitempty"`
+	PolicyID         *string                  `json:"policyId,omitempty"`
+	Occurrences      int                      `json:"occurrences"`
+	MaxScore         int                      `json:"maxScore"`
+	Severity         InsightsSeverity         `json:"severity"`
+	FirstSeen        *string                  `json:"firstSeen,omitempty"`
+	LastSeen         *string                  `json:"lastSeen,omitempty"`
+	LastTraceID      *string                  `json:"lastTraceId,omitempty"`
+	Status           InsightsAnomalyStatus    `json:"status"`
+	// JSON-encoded evidence keyed by deviation class; only available on the single-anomaly query.
+	Evidence string                  `json:"evidence"`
+	Risk     *InsightsRiskAssessment `json:"risk,omitempty"`
+}
+
+type InsightsAnomalyRefInput struct {
+	TransactionID string `json:"transactionId"`
+	Signature     string `json:"signature"`
+}
+
+type InsightsAnomalySummary struct {
+	TransactionID    string                   `json:"transactionId"`
+	Signature        string                   `json:"signature"`
+	Service          string                   `json:"service"`
+	Namespace        string                   `json:"namespace"`
+	Operation        *string                  `json:"operation,omitempty"`
+	Kind             *InsightsTransactionKind `json:"kind,omitempty"`
+	TriggeredClasses []InsightsDeviationClass `json:"triggeredClasses"`
+	Offending        *string                  `json:"offending,omitempty"`
+	PolicyID         *string                  `json:"policyId,omitempty"`
+	Occurrences      int                      `json:"occurrences"`
+	MaxScore         int                      `json:"maxScore"`
+	Severity         InsightsSeverity         `json:"severity"`
+	FirstSeen        *string                  `json:"firstSeen,omitempty"`
+	LastSeen         *string                  `json:"lastSeen,omitempty"`
+	LastTraceID      *string                  `json:"lastTraceId,omitempty"`
+	Status           InsightsAnomalyStatus    `json:"status"`
+}
+
+type InsightsBaselineClass struct {
+	TransactionID string                 `json:"transactionId"`
+	Class         InsightsDeviationClass `json:"class"`
+	// JSON-encoded baseline data; shape varies per deviation class.
+	Data                         *string `json:"data,omitempty"`
+	DataSchemaVersion            *int    `json:"dataSchemaVersion,omitempty"`
+	ObservationCount             int     `json:"observationCount"`
+	Promoted                     bool    `json:"promoted"`
+	LearningStartedAt            *string `json:"learningStartedAt,omitempty"`
+	LastChangedAt                *string `json:"lastChangedAt,omitempty"`
+	ObservationCountAtLastChange *int    `json:"observationCountAtLastChange,omitempty"`
+}
+
+type InsightsBulkResolveResult struct {
+	Resolution string `json:"resolution"`
+	Resolved   int    `json:"resolved"`
+}
+
+type InsightsCatalog struct {
+	DeviationClasses []*InsightsCatalogClass         `json:"deviationClasses"`
+	Enrichers        []*InsightsCatalogEnricher      `json:"enrichers"`
+	Categories       []*InsightsCatalogCategory      `json:"categories"`
+	GuardrailRules   []*InsightsCatalogGuardrailRule `json:"guardrailRules"`
+	SeverityBands    []*InsightsSeverityBand         `json:"severityBands"`
+	CorrelationBonus int                             `json:"correlationBonus"`
+	// JSON-encoded map[string]string.
+	Tags string `json:"tags"`
+}
+
+type InsightsCatalogCategory struct {
+	ID    string  `json:"id"`
+	Label string  `json:"label"`
+	Base  int     `json:"base"`
+	Mitre *string `json:"mitre,omitempty"`
+	Owasp *string `json:"owasp,omitempty"`
+}
+
+type InsightsCatalogClass struct {
+	ID            string  `json:"id"`
+	Label         string  `json:"label"`
+	Description   *string `json:"description,omitempty"`
+	Category      string  `json:"category"`
+	CategoryLabel *string `json:"categoryLabel,omitempty"`
+	Weight        int     `json:"weight"`
+	Mitre         *string `json:"mitre,omitempty"`
+	Owasp         *string `json:"owasp,omitempty"`
+}
+
+type InsightsCatalogEnricher struct {
+	Source      string                `json:"source"`
+	ParentClass string                `json:"parentClass"`
+	Category    string                `json:"category"`
+	Weight      int                   `json:"weight"`
+	Label       string                `json:"label"`
+	Description *string               `json:"description,omitempty"`
+	List        *InsightsEnricherList `json:"list,omitempty"`
+}
+
+type InsightsCatalogGuardrailRule struct {
+	Key         string  `json:"key"`
+	Label       string  `json:"label"`
+	Description *string `json:"description,omitempty"`
+	Category    string  `json:"category"`
+	Weight      int     `json:"weight"`
+	Hint        *string `json:"hint,omitempty"`
+}
+
+type InsightsEnricherList struct {
+	Key     string   `json:"key"`
+	Label   string   `json:"label"`
+	Hint    *string  `json:"hint,omitempty"`
+	Default []string `json:"default,omitempty"`
+}
+
+type InsightsFinding struct {
+	Kind        InsightsFindingKind `json:"kind"`
+	Service     string              `json:"service"`
+	Namespace   string              `json:"namespace"`
+	Title       string              `json:"title"`
+	Offending   *string             `json:"offending,omitempty"`
+	Score       int                 `json:"score"`
+	Severity    InsightsSeverity    `json:"severity"`
+	Occurrences int                 `json:"occurrences"`
+	LastSeen    string              `json:"lastSeen"`
+	// Union of anomaly statuses (open|baselined|dismissed) and violation statuses (open|dismissed|allowed).
+	Status string `json:"status"`
+	// Anomaly drill-down key; set when kind is anomaly.
+	TransactionID *string `json:"transactionId,omitempty"`
+	// Anomaly drill-down key; set when kind is anomaly.
+	Signature *string `json:"signature,omitempty"`
+	// Violation drill-down key; set when kind is violation.
+	ScopeKey *string `json:"scopeKey,omitempty"`
+	// Violation drill-down key; set when kind is violation.
+	RuleKey *string `json:"ruleKey,omitempty"`
+}
+
+type InsightsGuardrail struct {
+	Scope InsightsPolicyScope `json:"scope"`
+	// Format: namespace/service.
+	ScopeKey string                   `json:"scopeKey"`
+	Rules    []*InsightsGuardrailRule `json:"rules"`
+}
+
+type InsightsGuardrailInput struct {
+	Scope    InsightsPolicyScope           `json:"scope"`
+	ScopeKey string                        `json:"scopeKey"`
+	Rules    []*InsightsGuardrailRuleInput `json:"rules"`
+}
+
+type InsightsGuardrailRule struct {
+	Key       string           `json:"key"`
+	Label     string           `json:"label"`
+	Mode      InsightsRuleMode `json:"mode"`
+	Allowlist []string         `json:"allowlist,omitempty"`
+}
+
+type InsightsGuardrailRuleInput struct {
+	Key       string           `json:"key"`
+	Label     string           `json:"label"`
+	Mode      InsightsRuleMode `json:"mode"`
+	Allowlist []string         `json:"allowlist,omitempty"`
+}
+
+type InsightsGuardrailSeedInput struct {
+	ScopeKey string            `json:"scopeKey"`
+	Mode     *InsightsRuleMode `json:"mode,omitempty"`
+	// JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress.
+	Items string `json:"items"`
+}
+
+type InsightsGuardrailViolation struct {
+	Service     string                  `json:"service"`
+	Namespace   string                  `json:"namespace"`
+	ScopeKey    string                  `json:"scopeKey"`
+	RuleKey     string                  `json:"ruleKey"`
+	RuleLabel   string                  `json:"ruleLabel"`
+	Offending   *string                 `json:"offending,omitempty"`
+	Occurrences int                     `json:"occurrences"`
+	MaxScore    int                     `json:"maxScore"`
+	Severity    InsightsSeverity        `json:"severity"`
+	LastSeen    *string                 `json:"lastSeen,omitempty"`
+	Status      InsightsViolationStatus `json:"status"`
+}
+
+type InsightsLearningCondition struct {
+	Type               InsightsLearningConditionType `json:"type"`
+	MinObservations    *int                          `json:"minObservations,omitempty"`
+	MinDurationMinutes *int                          `json:"minDurationMinutes,omitempty"`
+	StableObservations *int                          `json:"stableObservations,omitempty"`
+	StableMinutes      *int                          `json:"stableMinutes,omitempty"`
+}
+
+type InsightsLearningConditionInput struct {
+	Type               InsightsLearningConditionType `json:"type"`
+	MinObservations    *int                          `json:"minObservations,omitempty"`
+	MinDurationMinutes *int                          `json:"minDurationMinutes,omitempty"`
+	StableObservations *int                          `json:"stableObservations,omitempty"`
+	StableMinutes      *int                          `json:"stableMinutes,omitempty"`
+}
+
+type InsightsLearningPolicy struct {
+	Class      InsightsDeviationClass       `json:"class"`
+	Mode       InsightsLearningMode         `json:"mode"`
+	Conditions []*InsightsLearningCondition `json:"conditions,omitempty"`
+	MinMatches *int                         `json:"minMatches,omitempty"`
+	Scope      InsightsPolicyScope          `json:"scope"`
+	ScopeKey   string                       `json:"scopeKey"`
+}
+
+type InsightsLearningPolicyInput struct {
+	Class      InsightsDeviationClass            `json:"class"`
+	Mode       InsightsLearningMode              `json:"mode"`
+	Conditions []*InsightsLearningConditionInput `json:"conditions,omitempty"`
+	MinMatches *int                              `json:"minMatches,omitempty"`
+	Scope      InsightsPolicyScope               `json:"scope"`
+	ScopeKey   string                            `json:"scopeKey"`
+}
+
+type InsightsObservation struct {
+	TraceID       string               `json:"traceId"`
+	TransactionID string               `json:"transactionId"`
+	ObservedAt    string               `json:"observedAt"`
+	DurationMs    int                  `json:"durationMs"`
+	SampleReason  InsightsSampleReason `json:"sampleReason"`
+	// Base64-encoded OTLP protobuf; only available on the single-observation query.
+	RawOtlp string `json:"rawOtlp"`
+}
+
+type InsightsObservationSummary struct {
+	TraceID       string               `json:"traceId"`
+	TransactionID string               `json:"transactionId"`
+	ObservedAt    string               `json:"observedAt"`
+	DurationMs    int                  `json:"durationMs"`
+	SampleReason  InsightsSampleReason `json:"sampleReason"`
+}
+
+type InsightsPolicy struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Enabled     bool   `json:"enabled"`
+	FireAtScore int    `json:"fireAtScore"`
+	// JSON-encoded map[string]int of per-signal weights.
+	SignalWeights *string `json:"signalWeights,omitempty"`
+	// JSON-encoded map[string][]string of enricher keyword lists.
+	EnricherLists *string             `json:"enricherLists,omitempty"`
+	Scope         InsightsPolicyScope `json:"scope"`
+	ScopeKey      string              `json:"scopeKey"`
+}
+
+type InsightsPolicyInput struct {
+	// Server-assigned; omit on create (the policy key is scope + scopeKey).
+	ID          *string `json:"id,omitempty"`
+	Name        string  `json:"name"`
+	Enabled     bool    `json:"enabled"`
+	FireAtScore int     `json:"fireAtScore"`
+	// JSON-encoded map[string]int of per-signal weights.
+	SignalWeights *string `json:"signalWeights,omitempty"`
+	// JSON-encoded map[string][]string of enricher keyword lists.
+	EnricherLists *string             `json:"enricherLists,omitempty"`
+	Scope         InsightsPolicyScope `json:"scope"`
+	ScopeKey      string              `json:"scopeKey"`
+}
+
+type InsightsPromoteResult struct {
+	TransactionID string                 `json:"transactionId"`
+	Class         InsightsDeviationClass `json:"class"`
+	Promoted      bool                   `json:"promoted"`
+}
+
+type InsightsRiskAssessment struct {
+	Score            int                   `json:"score"`
+	Severity         InsightsSeverity      `json:"severity"`
+	Correlated       bool                  `json:"correlated"`
+	CorrelationBonus int                   `json:"correlationBonus"`
+	FireAtScore      int                   `json:"fireAtScore"`
+	Categories       []string              `json:"categories,omitempty"`
+	Signals          []*InsightsRiskSignal `json:"signals"`
+}
+
+type InsightsRiskSignal struct {
+	Source       string  `json:"source"`
+	Category     string  `json:"category"`
+	Weight       int     `json:"weight"`
+	Confidence   float64 `json:"confidence"`
+	Contribution int     `json:"contribution"`
+	Rationale    *string `json:"rationale,omitempty"`
+	Mitre        *string `json:"mitre,omitempty"`
+	Owasp        *string `json:"owasp,omitempty"`
+}
+
+type InsightsServiceStat struct {
+	Namespace        string `json:"namespace"`
+	Service          string `json:"service"`
+	TransactionCount int    `json:"transactionCount"`
+	Volume           int    `json:"volume"`
+	LastSeen         string `json:"lastSeen"`
+}
+
+type InsightsSeverityBand struct {
+	Severity InsightsSeverity `json:"severity"`
+	MinScore int              `json:"minScore"`
+}
+
+type InsightsStorageConnection struct {
+	Reachable     bool    `json:"reachable"`
+	PingLatencyMs int     `json:"pingLatencyMs"`
+	Version       string  `json:"version"`
+	Database      string  `json:"database"`
+	Error         *string `json:"error,omitempty"`
+}
+
+type InsightsStorageDisk struct {
+	InsightsBytes  int                       `json:"insightsBytes"`
+	TotalBytes     int                       `json:"totalBytes"`
+	UsedBytes      int                       `json:"usedBytes"`
+	AvailableBytes int                       `json:"availableBytes"`
+	UsedPercent    float64                   `json:"usedPercent"`
+	Status         InsightsStorageDiskStatus `json:"status"`
+}
+
+type InsightsStorageHealth struct {
+	CheckedAt     string                        `json:"checkedAt"`
+	Status        InsightsStorageHealthStatus   `json:"status"`
+	Connection    *InsightsStorageConnection    `json:"connection"`
+	Disk          *InsightsStorageDisk          `json:"disk"`
+	Memory        *InsightsStorageMemory        `json:"memory"`
+	Queries       *InsightsStorageQueries       `json:"queries"`
+	Tables        []*InsightsStorageTable       `json:"tables"`
+	WritePressure *InsightsStorageWritePressure `json:"writePressure"`
+	Writeback     *InsightsStorageWriteback     `json:"writeback"`
+}
+
+type InsightsStorageMemory struct {
+	ProcessRssBytes int `json:"processRssBytes"`
+	CgroupUsedBytes int `json:"cgroupUsedBytes"`
+	// 0 means no limit.
+	CgroupTotalBytes int     `json:"cgroupTotalBytes"`
+	UptimeSeconds    float64 `json:"uptimeSeconds"`
+}
+
+type InsightsStorageQueries struct {
+	Active          int                     `json:"active"`
+	LongestSeconds  float64                 `json:"longestSeconds"`
+	PeakMemoryBytes int                     `json:"peakMemoryBytes"`
+	Items           []*InsightsStorageQuery `json:"items"`
+	RecentHeaviest  []*InsightsStorageQuery `json:"recentHeaviest"`
+	RecentLatest    []*InsightsStorageQuery `json:"recentLatest"`
+}
+
+type InsightsStorageQuery struct {
+	ElapsedSeconds float64 `json:"elapsedSeconds"`
+	User           string  `json:"user"`
+	MemoryBytes    int     `json:"memoryBytes"`
+	Query          string  `json:"query"`
+	// Omitted for still-running queries.
+	FinishedAt *string `json:"finishedAt,omitempty"`
+}
+
+type InsightsStorageTable struct {
+	Name        string `json:"name"`
+	Rows        int    `json:"rows"`
+	BytesOnDisk int    `json:"bytesOnDisk"`
+	ActiveParts int    `json:"activeParts"`
+}
+
+type InsightsStorageWritePressure struct {
+	UnfinishedMutations int `json:"unfinishedMutations"`
+	ActiveParts         int `json:"activeParts"`
+}
+
+type InsightsStorageWriteback struct {
+	FlushIntervalSeconds int     `json:"flushIntervalSeconds"`
+	EverFlushed          bool    `json:"everFlushed"`
+	LastFlushOk          bool    `json:"lastFlushOk"`
+	LastFlushAt          *string `json:"lastFlushAt,omitempty"`
+	LastFlushError       *string `json:"lastFlushError,omitempty"`
+}
+
+type InsightsSystemCapacitySettings struct {
+	MaxResidentTransactions int `json:"maxResidentTransactions"`
+	MaxBaselineSetMembers   int `json:"maxBaselineSetMembers"`
+}
+
+type InsightsSystemCapacitySettingsInput struct {
+	MaxResidentTransactions int `json:"maxResidentTransactions"`
+	MaxBaselineSetMembers   int `json:"maxBaselineSetMembers"`
+}
+
+type InsightsSystemFindingsSettings struct {
+	DefaultWindowHours int `json:"defaultWindowHours"`
+	MaxWindowHours     int `json:"maxWindowHours"`
+}
+
+type InsightsSystemFindingsSettingsInput struct {
+	DefaultWindowHours int `json:"defaultWindowHours"`
+	MaxWindowHours     int `json:"maxWindowHours"`
+}
+
+type InsightsSystemRetentionSettings struct {
+	ObservationRetentionDays int `json:"observationRetentionDays"`
+}
+
+type InsightsSystemRetentionSettingsInput struct {
+	ObservationRetentionDays int `json:"observationRetentionDays"`
+}
+
+type InsightsSystemSamplingSettings struct {
+	ExamplesPerTransaction       int `json:"examplesPerTransaction"`
+	ExampleSampleIntervalSeconds int `json:"exampleSampleIntervalSeconds"`
+}
+
+type InsightsSystemSamplingSettingsInput struct {
+	ExamplesPerTransaction       int `json:"examplesPerTransaction"`
+	ExampleSampleIntervalSeconds int `json:"exampleSampleIntervalSeconds"`
+}
+
+type InsightsSystemSettings struct {
+	Sampling  *InsightsSystemSamplingSettings  `json:"sampling"`
+	Retention *InsightsSystemRetentionSettings `json:"retention"`
+	Findings  *InsightsSystemFindingsSettings  `json:"findings"`
+	Capacity  *InsightsSystemCapacitySettings  `json:"capacity"`
+	Writeback *InsightsSystemWritebackSettings `json:"writeback"`
+}
+
+type InsightsSystemSettingsInput struct {
+	Sampling  *InsightsSystemSamplingSettingsInput  `json:"sampling"`
+	Retention *InsightsSystemRetentionSettingsInput `json:"retention"`
+	Findings  *InsightsSystemFindingsSettingsInput  `json:"findings"`
+	Capacity  *InsightsSystemCapacitySettingsInput  `json:"capacity"`
+	Writeback *InsightsSystemWritebackSettingsInput `json:"writeback"`
+}
+
+type InsightsSystemWritebackSettings struct {
+	FlushIntervalSeconds int `json:"flushIntervalSeconds"`
+}
+
+type InsightsSystemWritebackSettingsInput struct {
+	FlushIntervalSeconds int `json:"flushIntervalSeconds"`
+}
+
+type InsightsTransaction struct {
+	ID        string                  `json:"id"`
+	Service   string                  `json:"service"`
+	Namespace string                  `json:"namespace"`
+	Operation string                  `json:"operation"`
+	Kind      InsightsTransactionKind `json:"kind"`
+}
+
+type InsightsTransactionStat struct {
+	ID          string                  `json:"id"`
+	Service     string                  `json:"service"`
+	Namespace   string                  `json:"namespace"`
+	Operation   string                  `json:"operation"`
+	Kind        InsightsTransactionKind `json:"kind"`
+	Volume      int                     `json:"volume"`
+	LastSeen    string                  `json:"lastSeen"`
+	HasBaseline *bool                   `json:"hasBaseline,omitempty"`
+	Promoted    *bool                   `json:"promoted,omitempty"`
+}
+
+type InsightsViolationActionInput struct {
+	ScopeKey  string `json:"scopeKey"`
+	RuleKey   string `json:"ruleKey"`
+	Offending string `json:"offending"`
+}
+
 type InstrumentationInstanceAnalyze struct {
 	Healthy               *EntityProperty   `json:"healthy"`
 	Message               *EntityProperty   `json:"message,omitempty"`
@@ -2318,6 +2809,667 @@ func (e *FieldType) UnmarshalGQL(v any) error {
 }
 
 func (e FieldType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsAnomalyResolution string
+
+const (
+	InsightsAnomalyResolutionAccept  InsightsAnomalyResolution = "accept"
+	InsightsAnomalyResolutionDismiss InsightsAnomalyResolution = "dismiss"
+	InsightsAnomalyResolutionReopen  InsightsAnomalyResolution = "reopen"
+)
+
+var AllInsightsAnomalyResolution = []InsightsAnomalyResolution{
+	InsightsAnomalyResolutionAccept,
+	InsightsAnomalyResolutionDismiss,
+	InsightsAnomalyResolutionReopen,
+}
+
+func (e InsightsAnomalyResolution) IsValid() bool {
+	switch e {
+	case InsightsAnomalyResolutionAccept, InsightsAnomalyResolutionDismiss, InsightsAnomalyResolutionReopen:
+		return true
+	}
+	return false
+}
+
+func (e InsightsAnomalyResolution) String() string {
+	return string(e)
+}
+
+func (e *InsightsAnomalyResolution) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsAnomalyResolution(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsAnomalyResolution", str)
+	}
+	return nil
+}
+
+func (e InsightsAnomalyResolution) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsAnomalyStatus string
+
+const (
+	InsightsAnomalyStatusOpen      InsightsAnomalyStatus = "open"
+	InsightsAnomalyStatusBaselined InsightsAnomalyStatus = "baselined"
+	InsightsAnomalyStatusDismissed InsightsAnomalyStatus = "dismissed"
+)
+
+var AllInsightsAnomalyStatus = []InsightsAnomalyStatus{
+	InsightsAnomalyStatusOpen,
+	InsightsAnomalyStatusBaselined,
+	InsightsAnomalyStatusDismissed,
+}
+
+func (e InsightsAnomalyStatus) IsValid() bool {
+	switch e {
+	case InsightsAnomalyStatusOpen, InsightsAnomalyStatusBaselined, InsightsAnomalyStatusDismissed:
+		return true
+	}
+	return false
+}
+
+func (e InsightsAnomalyStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsAnomalyStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsAnomalyStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsAnomalyStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsAnomalyStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsBulkResolution string
+
+const (
+	InsightsBulkResolutionAccept  InsightsBulkResolution = "accept"
+	InsightsBulkResolutionDismiss InsightsBulkResolution = "dismiss"
+)
+
+var AllInsightsBulkResolution = []InsightsBulkResolution{
+	InsightsBulkResolutionAccept,
+	InsightsBulkResolutionDismiss,
+}
+
+func (e InsightsBulkResolution) IsValid() bool {
+	switch e {
+	case InsightsBulkResolutionAccept, InsightsBulkResolutionDismiss:
+		return true
+	}
+	return false
+}
+
+func (e InsightsBulkResolution) String() string {
+	return string(e)
+}
+
+func (e *InsightsBulkResolution) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsBulkResolution(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsBulkResolution", str)
+	}
+	return nil
+}
+
+func (e InsightsBulkResolution) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsDeviationClass string
+
+const (
+	InsightsDeviationClassD1CallEdges     InsightsDeviationClass = "D1_call_edges"
+	InsightsDeviationClassD2Egress        InsightsDeviationClass = "D2_egress"
+	InsightsDeviationClassD3Latency       InsightsDeviationClass = "D3_latency"
+	InsightsDeviationClassD4ArgsReturns   InsightsDeviationClass = "D4_args_returns"
+	InsightsDeviationClassD5Libraries     InsightsDeviationClass = "D5_libraries"
+	InsightsDeviationClassD6AttrRelations InsightsDeviationClass = "D6_attr_relations"
+	InsightsDeviationClassD7DbAccess      InsightsDeviationClass = "D7_db_access"
+	InsightsDeviationClassD8PayloadSize   InsightsDeviationClass = "D8_payload_size"
+)
+
+var AllInsightsDeviationClass = []InsightsDeviationClass{
+	InsightsDeviationClassD1CallEdges,
+	InsightsDeviationClassD2Egress,
+	InsightsDeviationClassD3Latency,
+	InsightsDeviationClassD4ArgsReturns,
+	InsightsDeviationClassD5Libraries,
+	InsightsDeviationClassD6AttrRelations,
+	InsightsDeviationClassD7DbAccess,
+	InsightsDeviationClassD8PayloadSize,
+}
+
+func (e InsightsDeviationClass) IsValid() bool {
+	switch e {
+	case InsightsDeviationClassD1CallEdges, InsightsDeviationClassD2Egress, InsightsDeviationClassD3Latency, InsightsDeviationClassD4ArgsReturns, InsightsDeviationClassD5Libraries, InsightsDeviationClassD6AttrRelations, InsightsDeviationClassD7DbAccess, InsightsDeviationClassD8PayloadSize:
+		return true
+	}
+	return false
+}
+
+func (e InsightsDeviationClass) String() string {
+	return string(e)
+}
+
+func (e *InsightsDeviationClass) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsDeviationClass(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsDeviationClass", str)
+	}
+	return nil
+}
+
+func (e InsightsDeviationClass) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsFindingKind string
+
+const (
+	InsightsFindingKindAnomaly   InsightsFindingKind = "anomaly"
+	InsightsFindingKindViolation InsightsFindingKind = "violation"
+)
+
+var AllInsightsFindingKind = []InsightsFindingKind{
+	InsightsFindingKindAnomaly,
+	InsightsFindingKindViolation,
+}
+
+func (e InsightsFindingKind) IsValid() bool {
+	switch e {
+	case InsightsFindingKindAnomaly, InsightsFindingKindViolation:
+		return true
+	}
+	return false
+}
+
+func (e InsightsFindingKind) String() string {
+	return string(e)
+}
+
+func (e *InsightsFindingKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsFindingKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsFindingKind", str)
+	}
+	return nil
+}
+
+func (e InsightsFindingKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsLearningConditionType string
+
+const (
+	InsightsLearningConditionTypeMinObservations    InsightsLearningConditionType = "min_observations"
+	InsightsLearningConditionTypeMinDuration        InsightsLearningConditionType = "min_duration"
+	InsightsLearningConditionTypeStableObservations InsightsLearningConditionType = "stable_observations"
+	InsightsLearningConditionTypeStableDuration     InsightsLearningConditionType = "stable_duration"
+)
+
+var AllInsightsLearningConditionType = []InsightsLearningConditionType{
+	InsightsLearningConditionTypeMinObservations,
+	InsightsLearningConditionTypeMinDuration,
+	InsightsLearningConditionTypeStableObservations,
+	InsightsLearningConditionTypeStableDuration,
+}
+
+func (e InsightsLearningConditionType) IsValid() bool {
+	switch e {
+	case InsightsLearningConditionTypeMinObservations, InsightsLearningConditionTypeMinDuration, InsightsLearningConditionTypeStableObservations, InsightsLearningConditionTypeStableDuration:
+		return true
+	}
+	return false
+}
+
+func (e InsightsLearningConditionType) String() string {
+	return string(e)
+}
+
+func (e *InsightsLearningConditionType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsLearningConditionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsLearningConditionType", str)
+	}
+	return nil
+}
+
+func (e InsightsLearningConditionType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsLearningMode string
+
+const (
+	InsightsLearningModeAll InsightsLearningMode = "all"
+	InsightsLearningModeAny InsightsLearningMode = "any"
+	InsightsLearningModeKOf InsightsLearningMode = "k_of"
+)
+
+var AllInsightsLearningMode = []InsightsLearningMode{
+	InsightsLearningModeAll,
+	InsightsLearningModeAny,
+	InsightsLearningModeKOf,
+}
+
+func (e InsightsLearningMode) IsValid() bool {
+	switch e {
+	case InsightsLearningModeAll, InsightsLearningModeAny, InsightsLearningModeKOf:
+		return true
+	}
+	return false
+}
+
+func (e InsightsLearningMode) String() string {
+	return string(e)
+}
+
+func (e *InsightsLearningMode) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsLearningMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsLearningMode", str)
+	}
+	return nil
+}
+
+func (e InsightsLearningMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsPolicyScope string
+
+const (
+	InsightsPolicyScopeGlobal      InsightsPolicyScope = "global"
+	InsightsPolicyScopeService     InsightsPolicyScope = "service"
+	InsightsPolicyScopeTransaction InsightsPolicyScope = "transaction"
+)
+
+var AllInsightsPolicyScope = []InsightsPolicyScope{
+	InsightsPolicyScopeGlobal,
+	InsightsPolicyScopeService,
+	InsightsPolicyScopeTransaction,
+}
+
+func (e InsightsPolicyScope) IsValid() bool {
+	switch e {
+	case InsightsPolicyScopeGlobal, InsightsPolicyScopeService, InsightsPolicyScopeTransaction:
+		return true
+	}
+	return false
+}
+
+func (e InsightsPolicyScope) String() string {
+	return string(e)
+}
+
+func (e *InsightsPolicyScope) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsPolicyScope(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsPolicyScope", str)
+	}
+	return nil
+}
+
+func (e InsightsPolicyScope) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsRuleMode string
+
+const (
+	InsightsRuleModeSuggest InsightsRuleMode = "suggest"
+	InsightsRuleModeEnforce InsightsRuleMode = "enforce"
+)
+
+var AllInsightsRuleMode = []InsightsRuleMode{
+	InsightsRuleModeSuggest,
+	InsightsRuleModeEnforce,
+}
+
+func (e InsightsRuleMode) IsValid() bool {
+	switch e {
+	case InsightsRuleModeSuggest, InsightsRuleModeEnforce:
+		return true
+	}
+	return false
+}
+
+func (e InsightsRuleMode) String() string {
+	return string(e)
+}
+
+func (e *InsightsRuleMode) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsRuleMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsRuleMode", str)
+	}
+	return nil
+}
+
+func (e InsightsRuleMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsSampleReason string
+
+const (
+	InsightsSampleReasonExample         InsightsSampleReason = "example"
+	InsightsSampleReasonAnomalyEvidence InsightsSampleReason = "anomaly_evidence"
+)
+
+var AllInsightsSampleReason = []InsightsSampleReason{
+	InsightsSampleReasonExample,
+	InsightsSampleReasonAnomalyEvidence,
+}
+
+func (e InsightsSampleReason) IsValid() bool {
+	switch e {
+	case InsightsSampleReasonExample, InsightsSampleReasonAnomalyEvidence:
+		return true
+	}
+	return false
+}
+
+func (e InsightsSampleReason) String() string {
+	return string(e)
+}
+
+func (e *InsightsSampleReason) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsSampleReason(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsSampleReason", str)
+	}
+	return nil
+}
+
+func (e InsightsSampleReason) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsSeverity string
+
+const (
+	InsightsSeverityInfo     InsightsSeverity = "info"
+	InsightsSeverityLow      InsightsSeverity = "low"
+	InsightsSeverityMedium   InsightsSeverity = "medium"
+	InsightsSeverityHigh     InsightsSeverity = "high"
+	InsightsSeverityCritical InsightsSeverity = "critical"
+)
+
+var AllInsightsSeverity = []InsightsSeverity{
+	InsightsSeverityInfo,
+	InsightsSeverityLow,
+	InsightsSeverityMedium,
+	InsightsSeverityHigh,
+	InsightsSeverityCritical,
+}
+
+func (e InsightsSeverity) IsValid() bool {
+	switch e {
+	case InsightsSeverityInfo, InsightsSeverityLow, InsightsSeverityMedium, InsightsSeverityHigh, InsightsSeverityCritical:
+		return true
+	}
+	return false
+}
+
+func (e InsightsSeverity) String() string {
+	return string(e)
+}
+
+func (e *InsightsSeverity) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsSeverity(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsSeverity", str)
+	}
+	return nil
+}
+
+func (e InsightsSeverity) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsStorageDiskStatus string
+
+const (
+	InsightsStorageDiskStatusOk       InsightsStorageDiskStatus = "ok"
+	InsightsStorageDiskStatusWarning  InsightsStorageDiskStatus = "warning"
+	InsightsStorageDiskStatusCritical InsightsStorageDiskStatus = "critical"
+)
+
+var AllInsightsStorageDiskStatus = []InsightsStorageDiskStatus{
+	InsightsStorageDiskStatusOk,
+	InsightsStorageDiskStatusWarning,
+	InsightsStorageDiskStatusCritical,
+}
+
+func (e InsightsStorageDiskStatus) IsValid() bool {
+	switch e {
+	case InsightsStorageDiskStatusOk, InsightsStorageDiskStatusWarning, InsightsStorageDiskStatusCritical:
+		return true
+	}
+	return false
+}
+
+func (e InsightsStorageDiskStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsStorageDiskStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsStorageDiskStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsStorageDiskStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsStorageDiskStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsStorageHealthStatus string
+
+const (
+	InsightsStorageHealthStatusHealthy     InsightsStorageHealthStatus = "healthy"
+	InsightsStorageHealthStatusDegraded    InsightsStorageHealthStatus = "degraded"
+	InsightsStorageHealthStatusCritical    InsightsStorageHealthStatus = "critical"
+	InsightsStorageHealthStatusUnreachable InsightsStorageHealthStatus = "unreachable"
+)
+
+var AllInsightsStorageHealthStatus = []InsightsStorageHealthStatus{
+	InsightsStorageHealthStatusHealthy,
+	InsightsStorageHealthStatusDegraded,
+	InsightsStorageHealthStatusCritical,
+	InsightsStorageHealthStatusUnreachable,
+}
+
+func (e InsightsStorageHealthStatus) IsValid() bool {
+	switch e {
+	case InsightsStorageHealthStatusHealthy, InsightsStorageHealthStatusDegraded, InsightsStorageHealthStatusCritical, InsightsStorageHealthStatusUnreachable:
+		return true
+	}
+	return false
+}
+
+func (e InsightsStorageHealthStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsStorageHealthStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsStorageHealthStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsStorageHealthStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsStorageHealthStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsTransactionKind string
+
+const (
+	InsightsTransactionKindHTTP     InsightsTransactionKind = "HTTP"
+	InsightsTransactionKindGrpc     InsightsTransactionKind = "GRPC"
+	InsightsTransactionKindConsumer InsightsTransactionKind = "CONSUMER"
+	InsightsTransactionKindProducer InsightsTransactionKind = "PRODUCER"
+	InsightsTransactionKindCron     InsightsTransactionKind = "CRON"
+	InsightsTransactionKindInternal InsightsTransactionKind = "INTERNAL"
+)
+
+var AllInsightsTransactionKind = []InsightsTransactionKind{
+	InsightsTransactionKindHTTP,
+	InsightsTransactionKindGrpc,
+	InsightsTransactionKindConsumer,
+	InsightsTransactionKindProducer,
+	InsightsTransactionKindCron,
+	InsightsTransactionKindInternal,
+}
+
+func (e InsightsTransactionKind) IsValid() bool {
+	switch e {
+	case InsightsTransactionKindHTTP, InsightsTransactionKindGrpc, InsightsTransactionKindConsumer, InsightsTransactionKindProducer, InsightsTransactionKindCron, InsightsTransactionKindInternal:
+		return true
+	}
+	return false
+}
+
+func (e InsightsTransactionKind) String() string {
+	return string(e)
+}
+
+func (e *InsightsTransactionKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsTransactionKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsTransactionKind", str)
+	}
+	return nil
+}
+
+func (e InsightsTransactionKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsViolationStatus string
+
+const (
+	InsightsViolationStatusOpen      InsightsViolationStatus = "open"
+	InsightsViolationStatusDismissed InsightsViolationStatus = "dismissed"
+	InsightsViolationStatusAllowed   InsightsViolationStatus = "allowed"
+)
+
+var AllInsightsViolationStatus = []InsightsViolationStatus{
+	InsightsViolationStatusOpen,
+	InsightsViolationStatusDismissed,
+	InsightsViolationStatusAllowed,
+}
+
+func (e InsightsViolationStatus) IsValid() bool {
+	switch e {
+	case InsightsViolationStatusOpen, InsightsViolationStatusDismissed, InsightsViolationStatusAllowed:
+		return true
+	}
+	return false
+}
+
+func (e InsightsViolationStatus) String() string {
+	return string(e)
+}
+
+func (e *InsightsViolationStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsViolationStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsViolationStatus", str)
+	}
+	return nil
+}
+
+func (e InsightsViolationStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

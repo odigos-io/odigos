@@ -1,0 +1,104 @@
+{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-insights
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-insights
+    odigos.io/system-object: "true"
+spec:
+  # No replicas field: the HPA (templates/insights/hpa.yaml) always owns the
+  # replica count, so setting it here would make helm and the HPA fight over it
+  # on every reconcile. Replicas scale freely anyway — schema migrations run once
+  # via a separate Job and baseline writes are idempotent in ClickHouse.
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-insights
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odigos-insights
+    spec:
+      serviceAccountName: odigos-insights
+      {{- if .Values.insights.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.insights.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.insights.priorityClassName }}
+      priorityClassName: {{ .Values.insights.priorityClassName }}
+      {{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      containers:
+        - name: odigos-insights
+          {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-insights" "Tag" $imageTag) }}
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: otlp-grpc
+              containerPort: 4317
+            - name: pprof
+              containerPort: 6060
+          env:
+            - name: CURRENT_NS
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: ODIGOS_ONPREM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-pro
+                  key: odigos-onprem-token
+            - name: GOMEMLIMIT
+              value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.insights.resources) }}
+            # ClickHouse password comes from the bundled secret; user and
+            # database name are hardcoded ("odigos_insights") in the
+            # ClickHouse Deployment too, so we just bake them into the DSN.
+            # randAlphaNum (used to mint the password) only produces
+            # URL-safe chars, so no encoding gymnastics are needed here.
+            # Port 9000 is ClickHouse's native protocol (what clickhouse-go
+            # speaks); 8123 is HTTP and is not used by the service.
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-insights-clickhouse
+                  key: password
+            - name: CLICKHOUSE_DSN
+              value: "clickhouse://odigos_insights:$(CLICKHOUSE_PASSWORD)@odigos-insights-clickhouse:9000/odigos_insights"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          # /readyz stays 503 until the DB is reachable AND the migration Job
+          # has applied the schema (waitForSchemaReady in insights/cmd/main.go),
+          # so a replica is kept out of the Service until its schema is ready.
+          # This is what guarantees no pod serves a stale/absent schema in the
+          # bootstrap case (fresh install / first enable, where migration runs
+          # post-install/post-upgrade) -- no wait-for-migration init container
+          # needed.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: {{ .Values.insights.resources.requests.cpu }}
+              memory: {{ .Values.insights.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.insights.resources.limits.cpu }}
+              memory: {{ .Values.insights.resources.limits.memory }}
+      {{- with .Values.insights.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.insights.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
