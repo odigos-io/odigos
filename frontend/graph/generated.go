@@ -226,6 +226,7 @@ type ComplexityRoot struct {
 
 	Config struct {
 		ClusterName           func(childComplexity int) int
+		InsightsEnabled       func(childComplexity int) int
 		InstallationMethod    func(childComplexity int) int
 		InstallationStatus    func(childComplexity int) int
 		IsCentralProxyRunning func(childComplexity int) int
@@ -2805,6 +2806,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Config.ClusterName(childComplexity), true
+
+	case "Config.insightsEnabled":
+		if e.complexity.Config.InsightsEnabled == nil {
+			break
+		}
+
+		return e.complexity.Config.InsightsEnabled(childComplexity), true
 
 	case "Config.installationMethod":
 		if e.complexity.Config.InstallationMethod == nil {
@@ -19312,6 +19320,50 @@ func (ec *executionContext) _Config_isCentralProxyRunning(ctx context.Context, f
 }
 
 func (ec *executionContext) fieldContext_Config_isCentralProxyRunning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Config",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Config_insightsEnabled(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_insightsEnabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InsightsEnabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Config_insightsEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Config",
 		Field:      field,
@@ -60069,6 +60121,8 @@ func (ec *executionContext) fieldContext_Query_config(_ context.Context, field g
 				return ec.fieldContext_Config_clusterName(ctx, field)
 			case "isCentralProxyRunning":
 				return ec.fieldContext_Config_isCentralProxyRunning(ctx, field)
+			case "insightsEnabled":
+				return ec.fieldContext_Config_insightsEnabled(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Config", field.Name)
 		},
@@ -72421,6 +72475,11 @@ func (ec *executionContext) _Config(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Config_clusterName(ctx, field, obj)
 		case "isCentralProxyRunning":
 			out.Values[i] = ec._Config_isCentralProxyRunning(ctx, field, obj)
+		case "insightsEnabled":
+			out.Values[i] = ec._Config_insightsEnabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
