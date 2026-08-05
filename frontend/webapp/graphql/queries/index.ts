@@ -14,5 +14,6 @@ export * from './service-map';
 export * from './trace-correlations';
 export * from './source';
 export * from './tokens';
+export * from './recommendations';
 export * from './sampling';
 export * from './workload';
