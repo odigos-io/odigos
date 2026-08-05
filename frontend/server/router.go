@@ -78,6 +78,7 @@ func BuildRouter(ctx context.Context, deps *Deps, opts RouterOpts) (*gin.Engine,
 			Logger:          deps.Logger,
 			PromAPI:         deps.PromAPI,
 			K8sCacheClient:  deps.K8sCacheClient,
+			InsightsClient:  deps.InsightsClient,
 			ProfileStore:    deps.ProfileStore,
 		},
 	})
