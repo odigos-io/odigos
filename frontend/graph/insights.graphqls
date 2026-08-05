@@ -1,0 +1,690 @@
+# Insights (enterprise security feature): read/write access to the odigos-insights
+# service, which learns per-transaction behavioral baselines from traces and
+# surfaces deviations as security findings.
+#
+# The GraphQL layer is a thin wrap of the insights REST API (insights/api/openapi.yaml
+# in the enterprise repo). All queries and mutations return an error when insights
+# is not enabled in the effective configuration.
+#
+# Conventions:
+# - Timestamps are RFC3339 strings.
+# - Transaction ids are int64 on the wire, exposed as ID (string) here.
+# - Free-form JSON payloads (baseline data, anomaly evidence, weight maps) are
+#   JSON-encoded strings, matching the existing schema convention for maps.
+
+enum InsightsTransactionKind {
+  HTTP
+  GRPC
+  CONSUMER
+  PRODUCER
+  CRON
+  INTERNAL
+}
+
+enum InsightsDeviationClass {
+  D1_call_edges
+  D2_egress
+  D3_latency
+  D4_args_returns
+  D5_libraries
+  D6_attr_relations
+  D7_db_access
+  D8_payload_size
+}
+
+enum InsightsSampleReason {
+  example
+  anomaly_evidence
+}
+
+enum InsightsPolicyScope {
+  global
+  service
+  transaction
+}
+
+enum InsightsSeverity {
+  info
+  low
+  medium
+  high
+  critical
+}
+
+enum InsightsFindingKind {
+  anomaly
+  violation
+}
+
+enum InsightsAnomalyStatus {
+  open
+  baselined
+  dismissed
+}
+
+enum InsightsViolationStatus {
+  open
+  dismissed
+  allowed
+}
+
+enum InsightsRuleMode {
+  suggest
+  enforce
+}
+
+enum InsightsAnomalyResolution {
+  accept
+  dismiss
+  reopen
+}
+
+enum InsightsBulkResolution {
+  accept
+  dismiss
+}
+
+enum InsightsLearningMode {
+  all
+  any
+  k_of
+}
+
+enum InsightsLearningConditionType {
+  min_observations
+  min_duration
+  stable_observations
+  stable_duration
+}
+
+enum InsightsStorageHealthStatus {
+  healthy
+  degraded
+  critical
+  unreachable
+}
+
+enum InsightsStorageDiskStatus {
+  ok
+  warning
+  critical
+}
+
+# Services / transactions
+
+type InsightsServiceStat {
+  namespace: String!
+  service: String!
+  transactionCount: Int!
+  volume: Int!
+  lastSeen: String!
+}
+
+type InsightsTransactionStat {
+  id: ID!
+  service: String!
+  namespace: String!
+  operation: String!
+  kind: InsightsTransactionKind!
+  volume: Int!
+  lastSeen: String!
+  hasBaseline: Boolean
+  promoted: Boolean
+}
+
+type InsightsTransaction {
+  id: ID!
+  service: String!
+  namespace: String!
+  operation: String!
+  kind: InsightsTransactionKind!
+}
+
+# Baselines / observations
+
+type InsightsBaselineClass {
+  transactionId: ID!
+  class: InsightsDeviationClass!
+  """JSON-encoded baseline data; shape varies per deviation class."""
+  data: String
+  dataSchemaVersion: Int
+  observationCount: Int!
+  promoted: Boolean!
+  learningStartedAt: String
+  lastChangedAt: String
+  observationCountAtLastChange: Int
+}
+
+type InsightsPromoteResult {
+  transactionId: ID!
+  class: InsightsDeviationClass!
+  promoted: Boolean!
+}
+
+type InsightsObservationSummary {
+  traceId: String!
+  transactionId: ID!
+  observedAt: String!
+  durationMs: Int!
+  sampleReason: InsightsSampleReason!
+}
+
+type InsightsObservation {
+  traceId: String!
+  transactionId: ID!
+  observedAt: String!
+  durationMs: Int!
+  sampleReason: InsightsSampleReason!
+  """Base64-encoded OTLP protobuf; only available on the single-observation query."""
+  rawOtlp: String!
+}
+
+# Alert policies / learning policies
+
+type InsightsPolicy {
+  id: ID!
+  name: String!
+  enabled: Boolean!
+  fireAtScore: Int!
+  """JSON-encoded map[string]int of per-signal weights."""
+  signalWeights: String
+  """JSON-encoded map[string][]string of enricher keyword lists."""
+  enricherLists: String
+  scope: InsightsPolicyScope!
+  scopeKey: String!
+}
+
+input InsightsPolicyInput {
+  """Server-assigned; omit on create (the policy key is scope + scopeKey)."""
+  id: ID
+  name: String!
+  enabled: Boolean!
+  fireAtScore: Int!
+  """JSON-encoded map[string]int of per-signal weights."""
+  signalWeights: String
+  """JSON-encoded map[string][]string of enricher keyword lists."""
+  enricherLists: String
+  scope: InsightsPolicyScope!
+  scopeKey: String!
+}
+
+type InsightsLearningCondition {
+  type: InsightsLearningConditionType!
+  minObservations: Int
+  minDurationMinutes: Int
+  stableObservations: Int
+  stableMinutes: Int
+}
+
+type InsightsLearningPolicy {
+  class: InsightsDeviationClass!
+  mode: InsightsLearningMode!
+  conditions: [InsightsLearningCondition!]
+  minMatches: Int
+  scope: InsightsPolicyScope!
+  scopeKey: String!
+}
+
+input InsightsLearningConditionInput {
+  type: InsightsLearningConditionType!
+  minObservations: Int
+  minDurationMinutes: Int
+  stableObservations: Int
+  stableMinutes: Int
+}
+
+input InsightsLearningPolicyInput {
+  class: InsightsDeviationClass!
+  mode: InsightsLearningMode!
+  conditions: [InsightsLearningConditionInput!]
+  minMatches: Int
+  scope: InsightsPolicyScope!
+  scopeKey: String!
+}
+
+# Findings (unified severity-ranked feed of anomalies + guardrail violations)
+
+type InsightsFinding {
+  kind: InsightsFindingKind!
+  service: String!
+  namespace: String!
+  title: String!
+  offending: String
+  score: Int!
+  severity: InsightsSeverity!
+  occurrences: Int!
+  lastSeen: String!
+  """Union of anomaly statuses (open|baselined|dismissed) and violation statuses (open|dismissed|allowed)."""
+  status: String!
+  """Anomaly drill-down key; set when kind is anomaly."""
+  transactionId: ID
+  """Anomaly drill-down key; set when kind is anomaly."""
+  signature: String
+  """Violation drill-down key; set when kind is violation."""
+  scopeKey: String
+  """Violation drill-down key; set when kind is violation."""
+  ruleKey: String
+}
+
+# Anomalies
+
+type InsightsRiskSignal {
+  source: String!
+  category: String!
+  weight: Int!
+  confidence: Float!
+  contribution: Int!
+  rationale: String
+  mitre: String
+  owasp: String
+}
+
+type InsightsRiskAssessment {
+  score: Int!
+  severity: InsightsSeverity!
+  correlated: Boolean!
+  correlationBonus: Int!
+  fireAtScore: Int!
+  categories: [String!]
+  signals: [InsightsRiskSignal!]!
+}
+
+type InsightsAnomalySummary {
+  transactionId: ID!
+  signature: String!
+  service: String!
+  namespace: String!
+  operation: String
+  kind: InsightsTransactionKind
+  triggeredClasses: [InsightsDeviationClass!]!
+  offending: String
+  policyId: ID
+  occurrences: Int!
+  maxScore: Int!
+  severity: InsightsSeverity!
+  firstSeen: String
+  lastSeen: String
+  lastTraceId: String
+  status: InsightsAnomalyStatus!
+}
+
+type InsightsAnomalyIssue {
+  transactionId: ID!
+  signature: String!
+  service: String!
+  namespace: String!
+  operation: String
+  kind: InsightsTransactionKind
+  triggeredClasses: [InsightsDeviationClass!]!
+  offending: String
+  policyId: ID
+  occurrences: Int!
+  maxScore: Int!
+  severity: InsightsSeverity!
+  firstSeen: String
+  lastSeen: String
+  lastTraceId: String
+  status: InsightsAnomalyStatus!
+  """JSON-encoded evidence keyed by deviation class; only available on the single-anomaly query."""
+  evidence: String!
+  risk: InsightsRiskAssessment
+}
+
+input InsightsAnomalyRefInput {
+  transactionId: ID!
+  signature: String!
+}
+
+type InsightsBulkResolveResult {
+  resolution: String!
+  resolved: Int!
+}
+
+# Guardrails (operator-declared L7 rules, orthogonal to learned baselines)
+
+type InsightsGuardrailRule {
+  key: String!
+  label: String!
+  mode: InsightsRuleMode!
+  allowlist: [String!]
+}
+
+type InsightsGuardrail {
+  scope: InsightsPolicyScope!
+  """Format: namespace/service."""
+  scopeKey: String!
+  rules: [InsightsGuardrailRule!]!
+}
+
+input InsightsGuardrailRuleInput {
+  key: String!
+  label: String!
+  mode: InsightsRuleMode!
+  allowlist: [String!]
+}
+
+input InsightsGuardrailInput {
+  scope: InsightsPolicyScope!
+  scopeKey: String!
+  rules: [InsightsGuardrailRuleInput!]!
+}
+
+type InsightsGuardrailViolation {
+  service: String!
+  namespace: String!
+  scopeKey: String!
+  ruleKey: String!
+  ruleLabel: String!
+  offending: String
+  occurrences: Int!
+  maxScore: Int!
+  severity: InsightsSeverity!
+  lastSeen: String
+  status: InsightsViolationStatus!
+}
+
+input InsightsViolationActionInput {
+  scopeKey: String!
+  ruleKey: String!
+  offending: String!
+}
+
+input InsightsGuardrailSeedInput {
+  scopeKey: String!
+  mode: InsightsRuleMode
+  """JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress."""
+  items: String!
+}
+
+# Catalog (risk-model reference data)
+
+type InsightsCatalogClass {
+  id: String!
+  label: String!
+  description: String
+  category: String!
+  categoryLabel: String
+  weight: Int!
+  mitre: String
+  owasp: String
+}
+
+type InsightsEnricherList {
+  key: String!
+  label: String!
+  hint: String
+  default: [String!]
+}
+
+type InsightsCatalogEnricher {
+  source: String!
+  parentClass: String!
+  category: String!
+  weight: Int!
+  label: String!
+  description: String
+  list: InsightsEnricherList
+}
+
+type InsightsCatalogCategory {
+  id: String!
+  label: String!
+  base: Int!
+  mitre: String
+  owasp: String
+}
+
+type InsightsCatalogGuardrailRule {
+  key: String!
+  label: String!
+  description: String
+  category: String!
+  weight: Int!
+  hint: String
+}
+
+type InsightsSeverityBand {
+  severity: InsightsSeverity!
+  minScore: Int!
+}
+
+type InsightsCatalog {
+  deviationClasses: [InsightsCatalogClass!]!
+  enrichers: [InsightsCatalogEnricher!]!
+  categories: [InsightsCatalogCategory!]!
+  guardrailRules: [InsightsCatalogGuardrailRule!]!
+  severityBands: [InsightsSeverityBand!]!
+  correlationBonus: Int!
+  """JSON-encoded map[string]string."""
+  tags: String!
+}
+
+# System settings (singleton engine config)
+
+type InsightsSystemSamplingSettings {
+  examplesPerTransaction: Int!
+  exampleSampleIntervalSeconds: Int!
+}
+
+type InsightsSystemRetentionSettings {
+  observationRetentionDays: Int!
+}
+
+type InsightsSystemFindingsSettings {
+  defaultWindowHours: Int!
+  maxWindowHours: Int!
+}
+
+type InsightsSystemCapacitySettings {
+  maxResidentTransactions: Int!
+  maxBaselineSetMembers: Int!
+}
+
+type InsightsSystemWritebackSettings {
+  flushIntervalSeconds: Int!
+}
+
+type InsightsSystemSettings {
+  sampling: InsightsSystemSamplingSettings!
+  retention: InsightsSystemRetentionSettings!
+  findings: InsightsSystemFindingsSettings!
+  capacity: InsightsSystemCapacitySettings!
+  writeback: InsightsSystemWritebackSettings!
+}
+
+input InsightsSystemSamplingSettingsInput {
+  examplesPerTransaction: Int!
+  exampleSampleIntervalSeconds: Int!
+}
+
+input InsightsSystemRetentionSettingsInput {
+  observationRetentionDays: Int!
+}
+
+input InsightsSystemFindingsSettingsInput {
+  defaultWindowHours: Int!
+  maxWindowHours: Int!
+}
+
+input InsightsSystemCapacitySettingsInput {
+  maxResidentTransactions: Int!
+  maxBaselineSetMembers: Int!
+}
+
+input InsightsSystemWritebackSettingsInput {
+  flushIntervalSeconds: Int!
+}
+
+input InsightsSystemSettingsInput {
+  sampling: InsightsSystemSamplingSettingsInput!
+  retention: InsightsSystemRetentionSettingsInput!
+  findings: InsightsSystemFindingsSettingsInput!
+  capacity: InsightsSystemCapacitySettingsInput!
+  writeback: InsightsSystemWritebackSettingsInput!
+}
+
+# Storage health (ClickHouse + writeback snapshot, for the settings/health page)
+
+type InsightsStorageConnection {
+  reachable: Boolean!
+  pingLatencyMs: Int!
+  version: String!
+  database: String!
+  error: String
+}
+
+type InsightsStorageDisk {
+  insightsBytes: Int!
+  totalBytes: Int!
+  usedBytes: Int!
+  availableBytes: Int!
+  usedPercent: Float!
+  status: InsightsStorageDiskStatus!
+}
+
+type InsightsStorageMemory {
+  processRssBytes: Int!
+  cgroupUsedBytes: Int!
+  """0 means no limit."""
+  cgroupTotalBytes: Int!
+  uptimeSeconds: Float!
+}
+
+type InsightsStorageQuery {
+  elapsedSeconds: Float!
+  user: String!
+  memoryBytes: Int!
+  query: String!
+  """Omitted for still-running queries."""
+  finishedAt: String
+}
+
+type InsightsStorageQueries {
+  active: Int!
+  longestSeconds: Float!
+  peakMemoryBytes: Int!
+  items: [InsightsStorageQuery!]!
+  recentHeaviest: [InsightsStorageQuery!]!
+  recentLatest: [InsightsStorageQuery!]!
+}
+
+type InsightsStorageTable {
+  name: String!
+  rows: Int!
+  bytesOnDisk: Int!
+  activeParts: Int!
+}
+
+type InsightsStorageWritePressure {
+  unfinishedMutations: Int!
+  activeParts: Int!
+}
+
+type InsightsStorageWriteback {
+  flushIntervalSeconds: Int!
+  everFlushed: Boolean!
+  lastFlushOk: Boolean!
+  lastFlushAt: String
+  lastFlushError: String
+}
+
+type InsightsStorageHealth {
+  checkedAt: String!
+  status: InsightsStorageHealthStatus!
+  connection: InsightsStorageConnection!
+  disk: InsightsStorageDisk!
+  memory: InsightsStorageMemory!
+  queries: InsightsStorageQueries!
+  tables: [InsightsStorageTable!]!
+  writePressure: InsightsStorageWritePressure!
+  writeback: InsightsStorageWriteback!
+}
+
+# Root
+
+type Insights {
+  services: [InsightsServiceStat!]!
+  transactions(
+    namespace: String
+    service: String
+    kind: InsightsTransactionKind
+  ): [InsightsTransactionStat!]!
+  transaction(id: ID!): InsightsTransaction
+  baseline(transactionId: ID!): [InsightsBaselineClass!]!
+  observations(
+    transactionId: ID!
+    sampleReason: InsightsSampleReason
+  ): [InsightsObservationSummary!]!
+  observation(transactionId: ID!, traceId: String!): InsightsObservation
+  findings(
+    windowHours: Int
+    service: String
+    namespace: String
+    status: String
+    kind: InsightsFindingKind
+  ): [InsightsFinding!]!
+  anomalies(
+    windowHours: Int
+    service: String
+    namespace: String
+    status: String
+  ): [InsightsAnomalySummary!]!
+  anomaly(transactionId: ID!, signature: String!): InsightsAnomalyIssue
+  policies: [InsightsPolicy!]!
+  learningPolicies: [InsightsLearningPolicy!]!
+  guardrails: [InsightsGuardrail!]!
+  guardrailViolations(
+    windowHours: Int
+    service: String
+    namespace: String
+    status: String
+  ): [InsightsGuardrailViolation!]!
+  catalog: InsightsCatalog!
+  systemSettings: InsightsSystemSettings!
+  storageHealth: InsightsStorageHealth!
+}
+
+extend type Query {
+  """
+  Insights (enterprise security feature). Nullable so a failure or a disabled
+  feature does not null out sibling query fields; resolvers return an error
+  when insights is not enabled in the effective configuration.
+  """
+  insights: Insights
+}
+
+extend type Mutation {
+  promoteInsightsBaselineClass(
+    transactionId: ID!
+    class: InsightsDeviationClass!
+  ): InsightsPromoteResult!
+  resetInsightsBaselineClass(
+    transactionId: ID!
+    class: InsightsDeviationClass!
+  ): Boolean!
+  resetInsightsTransactionBaselines(transactionId: ID!): Boolean!
+  upsertInsightsPolicy(policy: InsightsPolicyInput!): InsightsPolicy!
+  deleteInsightsPolicy(scope: InsightsPolicyScope!, scopeKey: String!): Boolean!
+  upsertInsightsLearningPolicy(policy: InsightsLearningPolicyInput!): InsightsLearningPolicy!
+  deleteInsightsLearningPolicy(
+    class: InsightsDeviationClass!
+    scope: InsightsPolicyScope!
+    scopeKey: String!
+  ): Boolean!
+  resolveInsightsAnomaly(
+    transactionId: ID!
+    signature: String!
+    resolution: InsightsAnomalyResolution!
+  ): Boolean!
+  bulkResolveInsightsAnomalies(
+    resolution: InsightsBulkResolution!
+    items: [InsightsAnomalyRefInput!]!
+  ): InsightsBulkResolveResult!
+  upsertInsightsGuardrail(guardrail: InsightsGuardrailInput!): InsightsGuardrail!
+  deleteInsightsGuardrail(scopeKey: String!): Boolean!
+  seedInsightsGuardrail(seed: InsightsGuardrailSeedInput!): Boolean!
+  allowInsightsGuardrailViolation(action: InsightsViolationActionInput!): Boolean!
+  dismissInsightsGuardrailViolation(action: InsightsViolationActionInput!): Boolean!
+  reopenInsightsGuardrailViolation(action: InsightsViolationActionInput!): Boolean!
+  updateInsightsSystemSettings(settings: InsightsSystemSettingsInput!): InsightsSystemSettings!
+}
