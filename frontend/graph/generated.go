@@ -1080,6 +1080,7 @@ type ComplexityRoot struct {
 		RestartPod                          func(childComplexity int, namespace string, name string) int
 		RestartWorkloads                    func(childComplexity int, sourceIds []*model.K8sSourceID) int
 		SetComponentLogLevel                func(childComplexity int, component *model.OdigosComponent, level model.OdigosLogLevel) int
+		SetRecommendationDismissed          func(childComplexity int, name string, dismissed bool) int
 		TestConnectionForDestination        func(childComplexity int, destination model.DestinationInput) int
 		UninstrumentCluster                 func(childComplexity int) int
 		UpdateAPIToken                      func(childComplexity int, token string) int
@@ -1296,6 +1297,7 @@ type ComplexityRoot struct {
 		ConditionsMet           func(childComplexity int) int
 		Cons                    func(childComplexity int) int
 		Description             func(childComplexity int) int
+		Dismissed               func(childComplexity int) int
 		DocsURL                 func(childComplexity int) int
 		Name                    func(childComplexity int) int
 		Oss                     func(childComplexity int) int
@@ -1654,6 +1656,7 @@ type MutationResolver interface {
 	DisableSourceProfiling(ctx context.Context, namespace string, kind string, name string) (*model.DisableProfilingResult, error)
 	ClearSourceProfilingBuffer(ctx context.Context, namespace string, kind string, name string) (*model.ClearProfilingBufferResult, error)
 	ConfigureProfilingCache(ctx context.Context, maxSlots *int, slotMaxBytes *int, slotTTLSeconds *int) (*model.ProfilingSlots, error)
+	SetRecommendationDismissed(ctx context.Context, name string, dismissed bool) (*model.Recommendation, error)
 	UpdateLocalUISamplingConfig(ctx context.Context, config *model.SamplingConfigInput) (bool, error)
 	CreateNoisyOperationRule(ctx context.Context, samplingID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
 	UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
@@ -6447,6 +6450,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SetComponentLogLevel(childComplexity, args["component"].(*model.OdigosComponent), args["level"].(model.OdigosLogLevel)), true
 
+	case "Mutation.setRecommendationDismissed":
+		if e.complexity.Mutation.SetRecommendationDismissed == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setRecommendationDismissed_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetRecommendationDismissed(childComplexity, args["name"].(string), args["dismissed"].(bool)), true
+
 	case "Mutation.testConnectionForDestination":
 		if e.complexity.Mutation.TestConnectionForDestination == nil {
 			break
@@ -7569,6 +7584,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Recommendation.Description(childComplexity), true
+
+	case "Recommendation.dismissed":
+		if e.complexity.Recommendation.Dismissed == nil {
+			break
+		}
+
+		return e.complexity.Recommendation.Dismissed(childComplexity), true
 
 	case "Recommendation.docsUrl":
 		if e.complexity.Recommendation.DocsURL == nil {
@@ -9916,6 +9938,57 @@ func (ec *executionContext) field_Mutation_setComponentLogLevel_argsLevel(
 	}
 
 	var zeroVal model.OdigosLogLevel
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_setRecommendationDismissed_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_setRecommendationDismissed_argsName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg0
+	arg1, err := ec.field_Mutation_setRecommendationDismissed_argsDismissed(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["dismissed"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_setRecommendationDismissed_argsName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["name"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+	if tmp, ok := rawArgs["name"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_setRecommendationDismissed_argsDismissed(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (bool, error) {
+	if _, ok := rawArgs["dismissed"]; !ok {
+		var zeroVal bool
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("dismissed"))
+	if tmp, ok := rawArgs["dismissed"]; ok {
+		return ec.unmarshalNBoolean2bool(ctx, tmp)
+	}
+
+	var zeroVal bool
 	return zeroVal, nil
 }
 
@@ -17104,6 +17177,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_recommendations(_ conte
 				return ec.fieldContext_Recommendation_applied(ctx, field)
 			case "conditionsMet":
 				return ec.fieldContext_Recommendation_conditionsMet(ctx, field)
+			case "dismissed":
+				return ec.fieldContext_Recommendation_dismissed(ctx, field)
 			case "oss":
 				return ec.fieldContext_Recommendation_oss(ctx, field)
 			case "requireOdigosDeployment":
@@ -41375,6 +41450,95 @@ func (ec *executionContext) fieldContext_Mutation_configureProfilingCache(ctx co
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_setRecommendationDismissed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_setRecommendationDismissed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SetRecommendationDismissed(rctx, fc.Args["name"].(string), fc.Args["dismissed"].(bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Recommendation)
+	fc.Result = res
+	return ec.marshalNRecommendation2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_setRecommendationDismissed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Recommendation_name(ctx, field)
+			case "type":
+				return ec.fieldContext_Recommendation_type(ctx, field)
+			case "applied":
+				return ec.fieldContext_Recommendation_applied(ctx, field)
+			case "conditionsMet":
+				return ec.fieldContext_Recommendation_conditionsMet(ctx, field)
+			case "dismissed":
+				return ec.fieldContext_Recommendation_dismissed(ctx, field)
+			case "oss":
+				return ec.fieldContext_Recommendation_oss(ctx, field)
+			case "requireOdigosDeployment":
+				return ec.fieldContext_Recommendation_requireOdigosDeployment(ctx, field)
+			case "catalogConditions":
+				return ec.fieldContext_Recommendation_catalogConditions(ctx, field)
+			case "appliedWhen":
+				return ec.fieldContext_Recommendation_appliedWhen(ctx, field)
+			case "title":
+				return ec.fieldContext_Recommendation_title(ctx, field)
+			case "summary":
+				return ec.fieldContext_Recommendation_summary(ctx, field)
+			case "description":
+				return ec.fieldContext_Recommendation_description(ctx, field)
+			case "docsUrl":
+				return ec.fieldContext_Recommendation_docsUrl(ctx, field)
+			case "pros":
+				return ec.fieldContext_Recommendation_pros(ctx, field)
+			case "cons":
+				return ec.fieldContext_Recommendation_cons(ctx, field)
+			case "actions":
+				return ec.fieldContext_Recommendation_actions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Recommendation", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setRecommendationDismissed_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_updateLocalUiSamplingConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_updateLocalUiSamplingConfig(ctx, field)
 	if err != nil {
@@ -49009,6 +49173,50 @@ func (ec *executionContext) _Recommendation_conditionsMet(ctx context.Context, f
 }
 
 func (ec *executionContext) fieldContext_Recommendation_conditionsMet(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Recommendation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Recommendation_dismissed(ctx context.Context, field graphql.CollectedField, obj *model.Recommendation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Recommendation_dismissed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Dismissed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Recommendation_dismissed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Recommendation",
 		Field:      field,
@@ -68491,6 +68699,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "setRecommendationDismissed":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setRecommendationDismissed(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "updateLocalUiSamplingConfig":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateLocalUiSamplingConfig(ctx, field)
@@ -70436,6 +70651,11 @@ func (ec *executionContext) _Recommendation(ctx context.Context, sel ast.Selecti
 			}
 		case "conditionsMet":
 			out.Values[i] = ec._Recommendation_conditionsMet(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "dismissed":
+			out.Values[i] = ec._Recommendation_dismissed(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -76201,6 +76421,10 @@ func (ec *executionContext) marshalNProvenanceEntry2ᚖgithubᚗcomᚋodigosᚑi
 		return graphql.Null
 	}
 	return ec._ProvenanceEntry(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRecommendation2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendation(ctx context.Context, sel ast.SelectionSet, v model.Recommendation) graphql.Marshaler {
+	return ec._Recommendation(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNRecommendation2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Recommendation) graphql.Marshaler {

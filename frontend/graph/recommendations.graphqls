@@ -39,6 +39,8 @@ type Recommendation {
   applied: Boolean!
   # Whether the catalog prerequisites for this recommendation currently hold.
   conditionsMet: Boolean!
+  # Whether the user dismissed this recommendation (odigos.io/recommendation-dismissed label).
+  dismissed: Boolean!
 
   # Catalog / manifest fields
   oss: Boolean!
@@ -56,4 +58,9 @@ type Recommendation {
 
 extend type ComputePlatform {
   recommendations: [Recommendation!]!
+}
+
+extend type Mutation {
+  # Sets or clears the odigos.io/recommendation-dismissed label on the Recommendation CR.
+  setRecommendationDismissed(name: ID!, dismissed: Boolean!): Recommendation!
 }

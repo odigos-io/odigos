@@ -15,3 +15,8 @@ import (
 func (r *computePlatformResolver) Recommendations(ctx context.Context, obj *model.ComputePlatform) ([]*model.Recommendation, error) {
 	return services.GetRecommendations(ctx)
 }
+
+// SetRecommendationDismissed is the resolver for the setRecommendationDismissed field.
+func (r *mutationResolver) SetRecommendationDismissed(ctx context.Context, name string, dismissed bool) (*model.Recommendation, error) {
+	return services.SetRecommendationDismissed(ctx, name, dismissed)
+}

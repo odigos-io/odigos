@@ -1559,6 +1559,7 @@ type Recommendation struct {
 	Type                    RecommendationType                `json:"type"`
 	Applied                 bool                              `json:"applied"`
 	ConditionsMet           bool                              `json:"conditionsMet"`
+	Dismissed               bool                              `json:"dismissed"`
 	Oss                     bool                              `json:"oss"`
 	RequireOdigosDeployment bool                              `json:"requireOdigosDeployment"`
 	CatalogConditions       []*RecommendationCatalogCondition `json:"catalogConditions"`

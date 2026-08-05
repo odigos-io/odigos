@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -33,6 +34,31 @@ func GetRecommendations(ctx context.Context) ([]*model.Recommendation, error) {
 	return response, nil
 }
 
+func SetRecommendationDismissed(ctx context.Context, name string, dismissed bool) (*model.Recommendation, error) {
+	odigosNs := env.GetCurrentNamespace()
+
+	rec, err := kube.DefaultClient.OdigosClient.Recommendations(odigosNs).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recommendation %q: %v", name, err)
+	}
+
+	if dismissed {
+		if rec.Labels == nil {
+			rec.Labels = map[string]string{}
+		}
+		rec.Labels[k8sconsts.RecommendationDismissedLabel] = "true"
+	} else if rec.Labels != nil {
+		delete(rec.Labels, k8sconsts.RecommendationDismissedLabel)
+	}
+
+	updated, err := kube.DefaultClient.OdigosClient.Recommendations(odigosNs).Update(ctx, rec, metav1.UpdateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update recommendation %q dismissed state: %v", name, err)
+	}
+
+	return convertRecommendationToModel(updated)
+}
+
 func convertRecommendationToModel(rec *v1alpha1.Recommendation) (*model.Recommendation, error) {
 	recType, err := toGraphRecommendationType(rec.Spec.Type)
 	if err != nil {
@@ -52,6 +78,7 @@ func convertRecommendationToModel(rec *v1alpha1.Recommendation) (*model.Recommen
 		Type:                    recType,
 		Applied:                 rec.Spec.Applied,
 		ConditionsMet:           rec.Spec.ConditionsMet,
+		Dismissed:               isRecommendationDismissed(rec),
 		Oss:                     catalog.OSS,
 		RequireOdigosDeployment: catalog.RequireOdigosDeployment,
 		CatalogConditions:       toCatalogConditions(catalog.Conditions),
@@ -64,6 +91,10 @@ func convertRecommendationToModel(rec *v1alpha1.Recommendation) (*model.Recommen
 		Cons:                    nonNilStrings(catalog.Cons),
 		Actions:                 toCatalogActions(catalog.Actions),
 	}, nil
+}
+
+func isRecommendationDismissed(rec *v1alpha1.Recommendation) bool {
+	return rec.Labels[k8sconsts.RecommendationDismissedLabel] == "true"
 }
 
 func toCatalogConditions(conditions []recommendations.Condition) []*model.RecommendationCatalogCondition {
