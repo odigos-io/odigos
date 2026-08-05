@@ -663,6 +663,47 @@
               "required": [],
               "title": "affinity"
             },
+            "config": {
+              "additionalProperties": false,
+              "description": "Curated ClickHouse server settings mounted into config.d / users.d.\nDefaults follow common Kubernetes guidance: leave headroom under the\npod memory limit, bound concurrent queries, and cap single-query memory.",
+              "properties": {
+                "extraConfig": {
+                  "default": "",
+                  "description": "Optional raw XML merged as config.d/odigos-extra.xml. Escape hatch\nfor advanced tuning; prefer the curated knobs above when possible.\nExample:\n  extraConfig: |\n    \u003cclickhouse\u003e\n      \u003ctimezone\u003eUTC\u003c/timezone\u003e\n    \u003c/clickhouse\u003e",
+                  "required": [],
+                  "title": "extraConfig"
+                },
+                "logLevel": {
+                  "default": "information",
+                  "description": "ClickHouse logger level (trace, debug, information, warning, error).",
+                  "required": [],
+                  "title": "logLevel"
+                },
+                "maxConcurrentQueries": {
+                  "default": "100",
+                  "description": "Max queries executing at once (server-wide). Caps concurrent load\nfrom Insights flushes and UI reads.",
+                  "minimum": 1,
+                  "required": [],
+                  "title": "maxConcurrentQueries"
+                },
+                "maxMemoryUsagePerQuery": {
+                  "default": "1Gi",
+                  "description": "Per-query memory cap (users.xml). Examples: \"1Gi\"\nEmpty string keeps ClickHouse's default.",
+                  "required": [],
+                  "title": "maxMemoryUsagePerQuery"
+                },
+                "maxServerMemoryUsageToRamRatio": {
+                  "default": "0.85",
+                  "description": "Fraction of detected RAM (pod limit) ClickHouse may use.\nLeave headroom for the OS page cache and background merges so the\nkubelet does not OOM-kill the pod.",
+                  "maximum": 1,
+                  "minimum": 0.1,
+                  "required": [],
+                  "title": "maxServerMemoryUsageToRamRatio"
+                }
+              },
+              "required": [],
+              "title": "config"
+            },
             "image": {
               "additionalProperties": false,
               "description": "ClickHouse server image. Third-party image (not built by Odigos);\noverride repository/tag for private mirrors or version pins.",

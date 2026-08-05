@@ -85,6 +85,20 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/clickhouse
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/odigos.xml
+              subPath: odigos.xml
+              readOnly: true
+            - name: config
+              mountPath: /etc/clickhouse-server/users.d/odigos.xml
+              subPath: users.xml
+              readOnly: true
+            {{- if .Values.insights.clickhouse.config.extraConfig }}
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/odigos-extra.xml
+              subPath: odigos-extra.xml
+              readOnly: true
+            {{- end }}
       {{- with .Values.insights.clickhouse.tolerations }}
       tolerations: {{ toYaml . | nindent 8 }}
       {{- end }}
@@ -95,4 +109,7 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: odigos-insights-clickhouse
+        - name: config
+          configMap:
+            name: odigos-insights-clickhouse
 {{- end }}

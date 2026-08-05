@@ -1324,6 +1324,56 @@ insights:
     # @schema
     # priorityClassName: ''
 
+    # @schema
+    # description: |-
+    #   Curated ClickHouse server settings mounted into config.d / users.d.
+    #   Defaults follow common Kubernetes guidance: leave headroom under the
+    #   pod memory limit, bound concurrent queries, and cap single-query memory.
+    # @schema
+    config:
+      # @schema
+      # description: |-
+      #   Fraction of detected RAM (pod limit) ClickHouse may use.
+      #   Leave headroom for the OS page cache and background merges so the
+      #   kubelet does not OOM-kill the pod.
+      # minimum: 0.1
+      # maximum: 1
+      # @schema
+      maxServerMemoryUsageToRamRatio: 0.85
+
+      # @schema
+      # description: |-
+      #   Max queries executing at once (server-wide). Caps concurrent load
+      #   from Insights flushes and UI reads.
+      # minimum: 1
+      # @schema
+      maxConcurrentQueries: 100
+
+      # @schema
+      # description: |-
+      #   ClickHouse logger level (trace, debug, information, warning, error).
+      # @schema
+      logLevel: information
+
+      # @schema
+      # description: |-
+      #   Per-query memory cap (users.xml). Examples: "1Gi"
+      #   Empty string keeps ClickHouse's default.
+      # @schema
+      maxMemoryUsagePerQuery: "1Gi"
+
+      # @schema
+      # description: |-
+      #   Optional raw XML merged as config.d/odigos-extra.xml. Escape hatch
+      #   for advanced tuning; prefer the curated knobs above when possible.
+      #   Example:
+      #     extraConfig: |
+      #       <clickhouse>
+      #         <timezone>UTC</timezone>
+      #       </clickhouse>
+      # @schema
+      extraConfig: ""
+
     storage:
       # @schema
       # description: |-
