@@ -1,6 +1,7 @@
 package recommendations
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/odigos-io/odigos/common"
@@ -47,6 +48,15 @@ func TestLoad(t *testing.T) {
 	if rec.Remediations[1].Steps[1].Value != 2 {
 		t.Fatalf("Remediations[1].Steps[1].Value = %#v, want 2", rec.Remediations[1].Steps[1].Value)
 	}
+	if len(rec.Remediations[0].ApplyExamples) != 1 {
+		t.Fatalf("Remediations[0].ApplyExamples len = %d, want 1", len(rec.Remediations[0].ApplyExamples))
+	}
+	if rec.Remediations[0].ApplyExamples[0].Type != ApplyExampleTypeHelmValues {
+		t.Fatalf("ApplyExamples[0].Type = %q, want %q", rec.Remediations[0].ApplyExamples[0].Type, ApplyExampleTypeHelmValues)
+	}
+	if !strings.Contains(rec.Remediations[0].ApplyExamples[0].Content, "k8sHealthProbesSampling") {
+		t.Fatalf("ApplyExamples[0].Content missing k8sHealthProbesSampling: %q", rec.Remediations[0].ApplyExamples[0].Content)
+	}
 	if len(rec.AppliedWhen) != 1 {
 		t.Fatalf("AppliedWhen len = %d, want 1", len(rec.AppliedWhen))
 	}
@@ -85,6 +95,20 @@ func TestLoad(t *testing.T) {
 	}
 	if rec.Type != common.RecommendationTypeUrlTemplatization {
 		t.Fatalf("Type = %q, want UrlTemplatization", rec.Type)
+	}
+	if len(rec.Remediations) != 1 || rec.Remediations[0].Type != "EnableUrlTemplatization" {
+		t.Fatalf("Remediations = %+v, want EnableUrlTemplatization", rec.Remediations)
+	}
+	if len(rec.Remediations[0].ApplyExamples) != 1 || rec.Remediations[0].ApplyExamples[0].Type != ApplyExampleTypeOdigosAction {
+		t.Fatalf("ApplyExamples = %+v, want OdigosAction", rec.Remediations[0].ApplyExamples)
+	}
+
+	rec, ok = GetByType(common.RecommendationTypeInferDBAttributes)
+	if !ok {
+		t.Fatal("GetByType(InferDBAttributes) not found")
+	}
+	if len(rec.Remediations) != 1 || rec.Remediations[0].ApplyExamples[0].Type != ApplyExampleTypeOdigosAction {
+		t.Fatalf("InferDBAttributes ApplyExamples = %+v, want OdigosAction", rec.Remediations)
 	}
 
 	for _, rec := range Get() {

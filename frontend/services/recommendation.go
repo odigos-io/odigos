@@ -132,9 +132,21 @@ func toCatalogRemediations(remediations []recommendations.Remediation) []*model.
 	result := make([]*model.RecommendationCatalogRemediation, 0, len(remediations))
 	for _, r := range remediations {
 		result = append(result, &model.RecommendationCatalogRemediation{
-			Type:       r.Type,
-			ButtonText: r.ButtonText,
-			Tooltip:    r.Tooltip,
+			Type:          r.Type,
+			ButtonText:    r.ButtonText,
+			Tooltip:       r.Tooltip,
+			ApplyExamples: toCatalogApplyExamples(r.ApplyExamples),
+		})
+	}
+	return result
+}
+
+func toCatalogApplyExamples(examples []recommendations.ApplyExample) []*model.RecommendationCatalogApplyExample {
+	result := make([]*model.RecommendationCatalogApplyExample, 0, len(examples))
+	for _, e := range examples {
+		result = append(result, &model.RecommendationCatalogApplyExample{
+			Type:    e.Type,
+			Content: e.Content,
 		})
 	}
 	return result

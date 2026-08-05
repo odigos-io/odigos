@@ -28,3 +28,20 @@ spec:
     - type: ActionExists
       actionType: URLTemplatization
 
+  remediations:
+    - type: EnableUrlTemplatization
+      buttonText: 'Enable'
+      tooltip: 'Create a URL Templatization action for all sources.'
+      applyExamples:
+        - type: OdigosAction
+          content: |
+            apiVersion: odigos.io/v1alpha1
+            kind: Action
+            metadata:
+              name: url-templatization
+              namespace: odigos-system
+            spec:
+              actionName: URL Templatization
+              signals:
+                - TRACES
+              urlTemplatization: {}

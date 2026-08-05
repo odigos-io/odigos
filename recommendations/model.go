@@ -86,11 +86,29 @@ type Remediation struct {
 	ButtonText string            `yaml:"buttonText"`
 	Tooltip    string            `yaml:"tooltip"`
 	Steps      []RemediationStep `yaml:"steps"`
+	// ApplyExamples are copy-paste snippets for applying this remediation outside the UI
+	// (e.g. Helm values or an Action CR).
+	ApplyExamples []ApplyExample `yaml:"applyExamples"`
 }
 
 const (
 	RemediationStepTypeEditConfig = "EditConfig"
 )
+
+const (
+	ApplyExampleTypeHelmValues   = "HelmValues"
+	ApplyExampleTypeOdigosAction = "OdigosAction"
+)
+
+// ApplyExample is a declarative snippet showing how to apply a remediation outside the UI.
+// Type selects the snippet kind; Content is the raw text (typically YAML).
+type ApplyExample struct {
+	// Type selects the example kind (e.g. HelmValues, OdigosAction).
+	Type string `yaml:"type"`
+
+	// Content is the example body to show or copy (usually a YAML fragment or full manifest).
+	Content string `yaml:"content"`
+}
 
 // RemediationStep is one operation to perform when the user chooses a remediation.
 // Type selects the operation; additional fields depend on the type.

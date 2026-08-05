@@ -1315,14 +1315,20 @@ type ComplexityRoot struct {
 		Type       func(childComplexity int) int
 	}
 
+	RecommendationCatalogApplyExample struct {
+		Content func(childComplexity int) int
+		Type    func(childComplexity int) int
+	}
+
 	RecommendationCatalogCondition struct {
 		Type func(childComplexity int) int
 	}
 
 	RecommendationCatalogRemediation struct {
-		ButtonText func(childComplexity int) int
-		Tooltip    func(childComplexity int) int
-		Type       func(childComplexity int) int
+		ApplyExamples func(childComplexity int) int
+		ButtonText    func(childComplexity int) int
+		Tooltip       func(childComplexity int) int
+		Type          func(childComplexity int) int
 	}
 
 	RemoteConfig struct {
@@ -7684,12 +7690,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RecommendationAppliedWhen.Type(childComplexity), true
 
+	case "RecommendationCatalogApplyExample.content":
+		if e.complexity.RecommendationCatalogApplyExample.Content == nil {
+			break
+		}
+
+		return e.complexity.RecommendationCatalogApplyExample.Content(childComplexity), true
+
+	case "RecommendationCatalogApplyExample.type":
+		if e.complexity.RecommendationCatalogApplyExample.Type == nil {
+			break
+		}
+
+		return e.complexity.RecommendationCatalogApplyExample.Type(childComplexity), true
+
 	case "RecommendationCatalogCondition.type":
 		if e.complexity.RecommendationCatalogCondition.Type == nil {
 			break
 		}
 
 		return e.complexity.RecommendationCatalogCondition.Type(childComplexity), true
+
+	case "RecommendationCatalogRemediation.applyExamples":
+		if e.complexity.RecommendationCatalogRemediation.ApplyExamples == nil {
+			break
+		}
+
+		return e.complexity.RecommendationCatalogRemediation.ApplyExamples(childComplexity), true
 
 	case "RecommendationCatalogRemediation.buttonText":
 		if e.complexity.RecommendationCatalogRemediation.ButtonText == nil {
@@ -49851,6 +49878,8 @@ func (ec *executionContext) fieldContext_Recommendation_remediations(_ context.C
 				return ec.fieldContext_RecommendationCatalogRemediation_buttonText(ctx, field)
 			case "tooltip":
 				return ec.fieldContext_RecommendationCatalogRemediation_tooltip(ctx, field)
+			case "applyExamples":
+				return ec.fieldContext_RecommendationCatalogRemediation_applyExamples(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RecommendationCatalogRemediation", field.Name)
 		},
@@ -49974,6 +50003,94 @@ func (ec *executionContext) _RecommendationAppliedWhen_actionType(ctx context.Co
 func (ec *executionContext) fieldContext_RecommendationAppliedWhen_actionType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "RecommendationAppliedWhen",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationCatalogApplyExample_type(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationCatalogApplyExample) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecommendationCatalogApplyExample_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecommendationCatalogApplyExample_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendationCatalogApplyExample",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationCatalogApplyExample_content(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationCatalogApplyExample) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecommendationCatalogApplyExample_content(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Content, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecommendationCatalogApplyExample_content(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendationCatalogApplyExample",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -50155,6 +50272,56 @@ func (ec *executionContext) fieldContext_RecommendationCatalogRemediation_toolti
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RecommendationCatalogRemediation_applyExamples(ctx context.Context, field graphql.CollectedField, obj *model.RecommendationCatalogRemediation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RecommendationCatalogRemediation_applyExamples(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplyExamples, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.RecommendationCatalogApplyExample)
+	fc.Result = res
+	return ec.marshalNRecommendationCatalogApplyExample2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationCatalogApplyExampleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RecommendationCatalogRemediation_applyExamples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RecommendationCatalogRemediation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "type":
+				return ec.fieldContext_RecommendationCatalogApplyExample_type(ctx, field)
+			case "content":
+				return ec.fieldContext_RecommendationCatalogApplyExample_content(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RecommendationCatalogApplyExample", field.Name)
 		},
 	}
 	return fc, nil
@@ -70958,6 +71125,50 @@ func (ec *executionContext) _RecommendationAppliedWhen(ctx context.Context, sel 
 	return out
 }
 
+var recommendationCatalogApplyExampleImplementors = []string{"RecommendationCatalogApplyExample"}
+
+func (ec *executionContext) _RecommendationCatalogApplyExample(ctx context.Context, sel ast.SelectionSet, obj *model.RecommendationCatalogApplyExample) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, recommendationCatalogApplyExampleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RecommendationCatalogApplyExample")
+		case "type":
+			out.Values[i] = ec._RecommendationCatalogApplyExample_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "content":
+			out.Values[i] = ec._RecommendationCatalogApplyExample_content(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var recommendationCatalogConditionImplementors = []string{"RecommendationCatalogCondition"}
 
 func (ec *executionContext) _RecommendationCatalogCondition(ctx context.Context, sel ast.SelectionSet, obj *model.RecommendationCatalogCondition) graphql.Marshaler {
@@ -71020,6 +71231,11 @@ func (ec *executionContext) _RecommendationCatalogRemediation(ctx context.Contex
 			}
 		case "tooltip":
 			out.Values[i] = ec._RecommendationCatalogRemediation_tooltip(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "applyExamples":
+			out.Values[i] = ec._RecommendationCatalogRemediation_applyExamples(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -76719,6 +76935,60 @@ func (ec *executionContext) marshalNRecommendationAppliedWhen2ᚖgithubᚗcomᚋ
 		return graphql.Null
 	}
 	return ec._RecommendationAppliedWhen(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRecommendationCatalogApplyExample2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationCatalogApplyExampleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RecommendationCatalogApplyExample) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRecommendationCatalogApplyExample2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationCatalogApplyExample(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNRecommendationCatalogApplyExample2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationCatalogApplyExample(ctx context.Context, sel ast.SelectionSet, v *model.RecommendationCatalogApplyExample) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RecommendationCatalogApplyExample(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNRecommendationCatalogCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationCatalogConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RecommendationCatalogCondition) graphql.Marshaler {

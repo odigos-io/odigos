@@ -40,6 +40,13 @@ spec:
         - type: EditConfig
           path: sampling.k8sHealthProbesSampling.keepPercentage
           value: 0
+      applyExamples:
+        - type: HelmValues
+          content: |
+            sampling:
+              k8sHealthProbesSampling:
+                enabled: true
+                keepPercentage: 0
     - type: SparseSampleHealthProbes
       buttonText: 'Sparse sample'
       tooltip: 'Keep ~2% of kubelet health probe traces as a sparse "service is up" signal'
@@ -50,3 +57,10 @@ spec:
         - type: EditConfig
           path: sampling.k8sHealthProbesSampling.keepPercentage
           value: 2
+      applyExamples:
+        - type: HelmValues
+          content: |
+            sampling:
+              k8sHealthProbesSampling:
+                enabled: true
+                keepPercentage: 2

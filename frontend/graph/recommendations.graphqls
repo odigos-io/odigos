@@ -32,6 +32,16 @@ type RecommendationCatalogRemediation {
   type: String!
   buttonText: String!
   tooltip: String!
+  # Copy-paste snippets for applying outside the UI (Helm values, Action CR, etc.).
+  applyExamples: [RecommendationCatalogApplyExample!]!
+}
+
+# Example of applying a remediation declaratively (not via the UI apply flow).
+type RecommendationCatalogApplyExample {
+  # HelmValues or OdigosAction.
+  type: String!
+  # Raw snippet body (typically YAML).
+  content: String!
 }
 
 # A Recommendation CR in the cluster, enriched with catalog/manifest fields.

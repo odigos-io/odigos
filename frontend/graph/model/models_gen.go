@@ -1579,14 +1579,20 @@ type RecommendationAppliedWhen struct {
 	ActionType *string `json:"actionType,omitempty"`
 }
 
+type RecommendationCatalogApplyExample struct {
+	Type    string `json:"type"`
+	Content string `json:"content"`
+}
+
 type RecommendationCatalogCondition struct {
 	Type string `json:"type"`
 }
 
 type RecommendationCatalogRemediation struct {
-	Type       string `json:"type"`
-	ButtonText string `json:"buttonText"`
-	Tooltip    string `json:"tooltip"`
+	Type          string                               `json:"type"`
+	ButtonText    string                               `json:"buttonText"`
+	Tooltip       string                               `json:"tooltip"`
+	ApplyExamples []*RecommendationCatalogApplyExample `json:"applyExamples"`
 }
 
 type RemoteConfig struct {

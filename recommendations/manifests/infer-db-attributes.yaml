@@ -32,3 +32,21 @@ spec:
   appliedWhen:
     - type: ActionExists
       actionType: InferDbAttributes
+
+  remediations:
+    - type: EnableInferDbAttributes
+      buttonText: 'Enable'
+      tooltip: 'Create an Infer DB Attributes action for all sources.'
+      applyExamples:
+        - type: OdigosAction
+          content: |
+            apiVersion: odigos.io/v1alpha1
+            kind: Action
+            metadata:
+              name: infer-db-attributes
+              namespace: odigos-system
+            spec:
+              actionName: Infer DB Attributes
+              signals:
+                - TRACES
+              inferDbAttributes: {}
