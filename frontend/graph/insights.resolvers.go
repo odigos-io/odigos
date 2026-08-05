@@ -6,174 +6,533 @@ package graph
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/services/insights"
 )
 
 // Services is the resolver for the services field.
 func (r *insightsResolver) Services(ctx context.Context, obj *model.Insights) ([]*model.InsightsServiceStat, error) {
-	panic(fmt.Errorf("not implemented: Services - services"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	stats, err := client.ListServices(ctx)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.ServiceStatsToModel(stats), nil
 }
 
 // Transactions is the resolver for the transactions field.
 func (r *insightsResolver) Transactions(ctx context.Context, obj *model.Insights, namespace *string, service *string, kind *model.InsightsTransactionKind) ([]*model.InsightsTransactionStat, error) {
-	panic(fmt.Errorf("not implemented: Transactions - transactions"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	stats, err := client.ListTransactions(ctx, insights.ListTransactionsParams{
+		Namespace: namespace,
+		Service:   service,
+		Kind:      insights.TransactionKindPtrFromModel(kind),
+	})
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.TransactionStatsToModel(stats), nil
 }
 
 // Transaction is the resolver for the transaction field.
 func (r *insightsResolver) Transaction(ctx context.Context, obj *model.Insights, id string) (*model.InsightsTransaction, error) {
-	panic(fmt.Errorf("not implemented: Transaction - transaction"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	transactionID, err := insights.ParseID(id)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	transaction, err := client.GetTransaction(ctx, transactionID)
+	if err != nil {
+		// The field is nullable, so an unknown transaction is null rather than
+		// an error — same for the other single-entity lookups below.
+		if errors.Is(err, insights.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.TransactionToModel(*transaction), nil
 }
 
 // Baseline is the resolver for the baseline field.
 func (r *insightsResolver) Baseline(ctx context.Context, obj *model.Insights, transactionID string) ([]*model.InsightsBaselineClass, error) {
-	panic(fmt.Errorf("not implemented: Baseline - baseline"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	id, err := insights.ParseID(transactionID)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	baseline, err := client.GetTransactionBaseline(ctx, id)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	converted, err := insights.BaselineClassesToModel(baseline)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return converted, nil
 }
 
 // Observations is the resolver for the observations field.
 func (r *insightsResolver) Observations(ctx context.Context, obj *model.Insights, transactionID string, sampleReason *model.InsightsSampleReason) ([]*model.InsightsObservationSummary, error) {
-	panic(fmt.Errorf("not implemented: Observations - observations"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	id, err := insights.ParseID(transactionID)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	observations, err := client.ListObservations(ctx, id, insights.ListObservationsParams{
+		SampleReason: insights.SampleReasonPtrFromModel(sampleReason),
+	})
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.ObservationSummariesToModel(observations), nil
 }
 
 // Observation is the resolver for the observation field.
 func (r *insightsResolver) Observation(ctx context.Context, obj *model.Insights, transactionID string, traceID string) (*model.InsightsObservation, error) {
-	panic(fmt.Errorf("not implemented: Observation - observation"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	id, err := insights.ParseID(transactionID)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	observation, err := client.GetObservation(ctx, id, traceID)
+	if err != nil {
+		if errors.Is(err, insights.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.ObservationToModel(*observation), nil
 }
 
 // Findings is the resolver for the findings field.
 func (r *insightsResolver) Findings(ctx context.Context, obj *model.Insights, windowHours *int, service *string, namespace *string, status *string, kind *model.InsightsFindingKind) ([]*model.InsightsFinding, error) {
-	panic(fmt.Errorf("not implemented: Findings - findings"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	findings, err := client.ListFindings(ctx, insights.ListFindingsParams{
+		WindowHours: windowHours,
+		Service:     service,
+		Namespace:   namespace,
+		Status:      status,
+		Kind:        insights.FindingKindPtrFromModel(kind),
+	})
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.FindingsToModel(findings), nil
 }
 
 // Anomalies is the resolver for the anomalies field.
 func (r *insightsResolver) Anomalies(ctx context.Context, obj *model.Insights, windowHours *int, service *string, namespace *string, status *string) ([]*model.InsightsAnomalySummary, error) {
-	panic(fmt.Errorf("not implemented: Anomalies - anomalies"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	anomalies, err := client.ListAnomalies(ctx, insights.ListAnomaliesParams{
+		WindowHours: windowHours,
+		Service:     service,
+		Namespace:   namespace,
+		Status:      status,
+	})
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.AnomalySummariesToModel(anomalies), nil
 }
 
 // Anomaly is the resolver for the anomaly field.
 func (r *insightsResolver) Anomaly(ctx context.Context, obj *model.Insights, transactionID string, signature string) (*model.InsightsAnomalyIssue, error) {
-	panic(fmt.Errorf("not implemented: Anomaly - anomaly"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	id, err := insights.ParseID(transactionID)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	anomaly, err := client.GetAnomaly(ctx, id, signature)
+	if err != nil {
+		if errors.Is(err, insights.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	converted, err := insights.AnomalyIssueToModel(*anomaly)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return converted, nil
 }
 
 // Policies is the resolver for the policies field.
 func (r *insightsResolver) Policies(ctx context.Context, obj *model.Insights) ([]*model.InsightsPolicy, error) {
-	panic(fmt.Errorf("not implemented: Policies - policies"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	policies, err := client.ListPolicies(ctx)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	converted, err := insights.PoliciesToModel(policies)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return converted, nil
 }
 
 // LearningPolicies is the resolver for the learningPolicies field.
 func (r *insightsResolver) LearningPolicies(ctx context.Context, obj *model.Insights) ([]*model.InsightsLearningPolicy, error) {
-	panic(fmt.Errorf("not implemented: LearningPolicies - learningPolicies"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	policies, err := client.ListLearningPolicies(ctx)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.LearningPoliciesToModel(policies), nil
 }
 
 // Guardrails is the resolver for the guardrails field.
 func (r *insightsResolver) Guardrails(ctx context.Context, obj *model.Insights) ([]*model.InsightsGuardrail, error) {
-	panic(fmt.Errorf("not implemented: Guardrails - guardrails"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	guardrails, err := client.ListGuardrails(ctx)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.GuardrailsToModel(guardrails), nil
 }
 
 // GuardrailViolations is the resolver for the guardrailViolations field.
 func (r *insightsResolver) GuardrailViolations(ctx context.Context, obj *model.Insights, windowHours *int, service *string, namespace *string, status *string) ([]*model.InsightsGuardrailViolation, error) {
-	panic(fmt.Errorf("not implemented: GuardrailViolations - guardrailViolations"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	violations, err := client.ListGuardrailViolations(ctx, insights.ListGuardrailViolationsParams{
+		WindowHours: windowHours,
+		Service:     service,
+		Namespace:   namespace,
+		Status:      status,
+	})
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.GuardrailViolationsToModel(violations), nil
 }
 
 // Catalog is the resolver for the catalog field.
 func (r *insightsResolver) Catalog(ctx context.Context, obj *model.Insights) (*model.InsightsCatalog, error) {
-	panic(fmt.Errorf("not implemented: Catalog - catalog"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	catalog, err := client.GetCatalog(ctx)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	converted, err := insights.CatalogToModel(*catalog)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return converted, nil
 }
 
 // SystemSettings is the resolver for the systemSettings field.
 func (r *insightsResolver) SystemSettings(ctx context.Context, obj *model.Insights) (*model.InsightsSystemSettings, error) {
-	panic(fmt.Errorf("not implemented: SystemSettings - systemSettings"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	settings, err := client.GetSystemSettings(ctx)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.SystemSettingsToModel(*settings), nil
 }
 
 // StorageHealth is the resolver for the storageHealth field.
 func (r *insightsResolver) StorageHealth(ctx context.Context, obj *model.Insights) (*model.InsightsStorageHealth, error) {
-	panic(fmt.Errorf("not implemented: StorageHealth - storageHealth"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	health, err := client.GetStorageHealth(ctx)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.StorageHealthToModel(*health), nil
 }
 
 // PromoteInsightsBaselineClass is the resolver for the promoteInsightsBaselineClass field.
 func (r *mutationResolver) PromoteInsightsBaselineClass(ctx context.Context, transactionID string, class model.InsightsDeviationClass) (*model.InsightsPromoteResult, error) {
-	panic(fmt.Errorf("not implemented: PromoteInsightsBaselineClass - promoteInsightsBaselineClass"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	id, err := insights.ParseID(transactionID)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	result, err := client.PromoteBaselineClass(ctx, id, insights.DeviationClassFromModel(class))
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.PromoteResultToModel(*result), nil
 }
 
 // ResetInsightsBaselineClass is the resolver for the resetInsightsBaselineClass field.
 func (r *mutationResolver) ResetInsightsBaselineClass(ctx context.Context, transactionID string, class model.InsightsDeviationClass) (bool, error) {
-	panic(fmt.Errorf("not implemented: ResetInsightsBaselineClass - resetInsightsBaselineClass"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	id, err := insights.ParseID(transactionID)
+	if err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	if err := client.ResetBaselineClass(ctx, id, insights.DeviationClassFromModel(class)); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
 }
 
 // ResetInsightsTransactionBaselines is the resolver for the resetInsightsTransactionBaselines field.
 func (r *mutationResolver) ResetInsightsTransactionBaselines(ctx context.Context, transactionID string) (bool, error) {
-	panic(fmt.Errorf("not implemented: ResetInsightsTransactionBaselines - resetInsightsTransactionBaselines"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	id, err := insights.ParseID(transactionID)
+	if err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	if err := client.ResetTransactionBaselines(ctx, id); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
 }
 
 // UpsertInsightsPolicy is the resolver for the upsertInsightsPolicy field.
 func (r *mutationResolver) UpsertInsightsPolicy(ctx context.Context, policy model.InsightsPolicyInput) (*model.InsightsPolicy, error) {
-	panic(fmt.Errorf("not implemented: UpsertInsightsPolicy - upsertInsightsPolicy"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	request, err := insights.PolicyFromInput(policy)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	stored, err := client.UpsertPolicyAndRead(ctx, request)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	converted, err := insights.PolicyToModel(stored)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return converted, nil
 }
 
 // DeleteInsightsPolicy is the resolver for the deleteInsightsPolicy field.
 func (r *mutationResolver) DeleteInsightsPolicy(ctx context.Context, scope model.InsightsPolicyScope, scopeKey string) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteInsightsPolicy - deleteInsightsPolicy"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err := client.DeletePolicy(ctx, insights.PolicyScopeFromModel(scope), scopeKey); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
 }
 
 // UpsertInsightsLearningPolicy is the resolver for the upsertInsightsLearningPolicy field.
 func (r *mutationResolver) UpsertInsightsLearningPolicy(ctx context.Context, policy model.InsightsLearningPolicyInput) (*model.InsightsLearningPolicy, error) {
-	panic(fmt.Errorf("not implemented: UpsertInsightsLearningPolicy - upsertInsightsLearningPolicy"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	stored, err := client.UpsertLearningPolicyAndRead(ctx, insights.LearningPolicyFromInput(policy))
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.LearningPolicyToModel(stored), nil
 }
 
 // DeleteInsightsLearningPolicy is the resolver for the deleteInsightsLearningPolicy field.
 func (r *mutationResolver) DeleteInsightsLearningPolicy(ctx context.Context, class model.InsightsDeviationClass, scope model.InsightsPolicyScope, scopeKey string) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteInsightsLearningPolicy - deleteInsightsLearningPolicy"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	err = client.DeleteLearningPolicy(ctx, insights.DeviationClassFromModel(class), insights.PolicyScopeFromModel(scope), scopeKey)
+	if err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
 }
 
 // ResolveInsightsAnomaly is the resolver for the resolveInsightsAnomaly field.
 func (r *mutationResolver) ResolveInsightsAnomaly(ctx context.Context, transactionID string, signature string, resolution model.InsightsAnomalyResolution) (bool, error) {
-	panic(fmt.Errorf("not implemented: ResolveInsightsAnomaly - resolveInsightsAnomaly"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	id, err := insights.ParseID(transactionID)
+	if err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	if err := client.ResolveAnomaly(ctx, id, signature, insights.AnomalyResolutionFromModel(resolution)); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
 }
 
 // BulkResolveInsightsAnomalies is the resolver for the bulkResolveInsightsAnomalies field.
 func (r *mutationResolver) BulkResolveInsightsAnomalies(ctx context.Context, resolution model.InsightsBulkResolution, items []*model.InsightsAnomalyRefInput) (*model.InsightsBulkResolveResult, error) {
-	panic(fmt.Errorf("not implemented: BulkResolveInsightsAnomalies - bulkResolveInsightsAnomalies"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	request, err := insights.BulkAnomalyRequestFromInput(resolution, items)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	result, err := client.BulkResolveAnomalies(ctx, request)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.BulkResolveResultToModel(*result), nil
 }
 
 // UpsertInsightsGuardrail is the resolver for the upsertInsightsGuardrail field.
 func (r *mutationResolver) UpsertInsightsGuardrail(ctx context.Context, guardrail model.InsightsGuardrailInput) (*model.InsightsGuardrail, error) {
-	panic(fmt.Errorf("not implemented: UpsertInsightsGuardrail - upsertInsightsGuardrail"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	stored, err := client.UpsertGuardrailAndRead(ctx, insights.GuardrailFromInput(guardrail))
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.GuardrailToModel(stored), nil
 }
 
 // DeleteInsightsGuardrail is the resolver for the deleteInsightsGuardrail field.
 func (r *mutationResolver) DeleteInsightsGuardrail(ctx context.Context, scopeKey string) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteInsightsGuardrail - deleteInsightsGuardrail"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err := client.DeleteGuardrail(ctx, scopeKey); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
 }
 
 // SeedInsightsGuardrail is the resolver for the seedInsightsGuardrail field.
 func (r *mutationResolver) SeedInsightsGuardrail(ctx context.Context, seed model.InsightsGuardrailSeedInput) (bool, error) {
-	panic(fmt.Errorf("not implemented: SeedInsightsGuardrail - seedInsightsGuardrail"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	request, err := insights.GuardrailSeedFromInput(seed)
+	if err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	if err := client.SeedGuardrail(ctx, request); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
 }
 
 // AllowInsightsGuardrailViolation is the resolver for the allowInsightsGuardrailViolation field.
 func (r *mutationResolver) AllowInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error) {
-	panic(fmt.Errorf("not implemented: AllowInsightsGuardrailViolation - allowInsightsGuardrailViolation"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err := client.AllowGuardrailViolation(ctx, insights.ViolationActionFromInput(action)); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
 }
 
 // DismissInsightsGuardrailViolation is the resolver for the dismissInsightsGuardrailViolation field.
 func (r *mutationResolver) DismissInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error) {
-	panic(fmt.Errorf("not implemented: DismissInsightsGuardrailViolation - dismissInsightsGuardrailViolation"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err := client.DismissGuardrailViolation(ctx, insights.ViolationActionFromInput(action)); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
 }
 
 // ReopenInsightsGuardrailViolation is the resolver for the reopenInsightsGuardrailViolation field.
 func (r *mutationResolver) ReopenInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error) {
-	panic(fmt.Errorf("not implemented: ReopenInsightsGuardrailViolation - reopenInsightsGuardrailViolation"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err := client.ReopenGuardrailViolation(ctx, insights.ViolationActionFromInput(action)); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
 }
 
 // UpdateInsightsSystemSettings is the resolver for the updateInsightsSystemSettings field.
 func (r *mutationResolver) UpdateInsightsSystemSettings(ctx context.Context, settings model.InsightsSystemSettingsInput) (*model.InsightsSystemSettings, error) {
-	panic(fmt.Errorf("not implemented: UpdateInsightsSystemSettings - updateInsightsSystemSettings"))
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	request, err := insights.SystemSettingsFromInput(settings)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	stored, err := client.UpdateSystemSettingsAndRead(ctx, request)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.SystemSettingsToModel(stored), nil
 }
 
 // Insights is the resolver for the insights field.
 func (r *queryResolver) Insights(ctx context.Context) (*model.Insights, error) {
-	panic(fmt.Errorf("not implemented: Insights - insights"))
+	// Gate here so a disabled feature fails once on the root field instead of
+	// once per selected child field; the children resolve lazily against the
+	// same gate.
+	if _, err := r.insightsClient(ctx); err != nil {
+		return nil, err
+	}
+	return &model.Insights{}, nil
 }
 
 // Insights returns InsightsResolver implementation.
