@@ -29,8 +29,24 @@ spec:
     - type: EffectiveConfig
       expression: "sampling.k8sHealthProbesSampling.enabled == `true`"
 
-  actions:
-    - type: 'DropAllHealthProbes'
-      description: 'Drop all kubelet health probes traces'
-    - type: 'SparseSampleHealthProbes'
-      description: 'Keep ~2% of kubelet health probe traces as a sparse "service is up" signal'
+  remediations:
+    - type: DropAllHealthProbes
+      buttonText: 'Drop all'
+      tooltip: 'Drop all kubelet health probes traces'
+      steps:
+        - type: EditConfig
+          path: sampling.k8sHealthProbesSampling.enabled
+          value: true
+        - type: EditConfig
+          path: sampling.k8sHealthProbesSampling.keepPercentage
+          value: 0
+    - type: SparseSampleHealthProbes
+      buttonText: 'Sparse sample'
+      tooltip: 'Keep ~2% of kubelet health probe traces as a sparse "service is up" signal'
+      steps:
+        - type: EditConfig
+          path: sampling.k8sHealthProbesSampling.enabled
+          value: true
+        - type: EditConfig
+          path: sampling.k8sHealthProbesSampling.keepPercentage
+          value: 2

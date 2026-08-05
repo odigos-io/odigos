@@ -1555,22 +1555,22 @@ type Query struct {
 }
 
 type Recommendation struct {
-	Name                    string                            `json:"name"`
-	Type                    RecommendationType                `json:"type"`
-	Applied                 bool                              `json:"applied"`
-	ConditionsMet           bool                              `json:"conditionsMet"`
-	Dismissed               bool                              `json:"dismissed"`
-	Oss                     bool                              `json:"oss"`
-	RequireOdigosDeployment bool                              `json:"requireOdigosDeployment"`
-	CatalogConditions       []*RecommendationCatalogCondition `json:"catalogConditions"`
-	AppliedWhen             []*RecommendationAppliedWhen      `json:"appliedWhen"`
-	Title                   string                            `json:"title"`
-	Summary                 string                            `json:"summary"`
-	Description             string                            `json:"description"`
-	DocsURL                 *string                           `json:"docsUrl,omitempty"`
-	Pros                    []string                          `json:"pros"`
-	Cons                    []string                          `json:"cons"`
-	Actions                 []*RecommendationCatalogAction    `json:"actions"`
+	Name                    string                              `json:"name"`
+	Type                    RecommendationType                  `json:"type"`
+	Applied                 bool                                `json:"applied"`
+	ConditionsMet           bool                                `json:"conditionsMet"`
+	Dismissed               bool                                `json:"dismissed"`
+	Oss                     bool                                `json:"oss"`
+	RequireOdigosDeployment bool                                `json:"requireOdigosDeployment"`
+	CatalogConditions       []*RecommendationCatalogCondition   `json:"catalogConditions"`
+	AppliedWhen             []*RecommendationAppliedWhen        `json:"appliedWhen"`
+	Title                   string                              `json:"title"`
+	Summary                 string                              `json:"summary"`
+	Description             string                              `json:"description"`
+	DocsURL                 *string                             `json:"docsUrl,omitempty"`
+	Pros                    []string                            `json:"pros"`
+	Cons                    []string                            `json:"cons"`
+	Remediations            []*RecommendationCatalogRemediation `json:"remediations"`
 }
 
 type RecommendationAppliedWhen struct {
@@ -1579,13 +1579,14 @@ type RecommendationAppliedWhen struct {
 	ActionType *string `json:"actionType,omitempty"`
 }
 
-type RecommendationCatalogAction struct {
-	Type        string `json:"type"`
-	Description string `json:"description"`
-}
-
 type RecommendationCatalogCondition struct {
 	Type string `json:"type"`
+}
+
+type RecommendationCatalogRemediation struct {
+	Type       string `json:"type"`
+	ButtonText string `json:"buttonText"`
+	Tooltip    string `json:"tooltip"`
 }
 
 type RemoteConfig struct {

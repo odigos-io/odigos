@@ -46,8 +46,8 @@ type Recommendation struct {
 	// Cons lists trade-offs or costs of enabling the recommendation.
 	Cons []string `yaml:"cons"`
 
-	// Actions are optional choices the user can pick when applying the recommendation.
-	Actions []Action `yaml:"actions"`
+	// Remediations are optional choices the user can pick when applying the recommendation.
+	Remediations []Remediation `yaml:"remediations"`
 }
 
 type Condition struct {
@@ -80,9 +80,32 @@ type AppliedWhenCheck struct {
 	ActionType string `yaml:"actionType,omitempty"`
 }
 
-type Action struct {
-	Type        string `yaml:"type"`
-	Description string `yaml:"description"`
+type Remediation struct {
+	// Type uniquely identifies this remediation within the recommendation (e.g. "DropAllHealthProbes").
+	Type       string            `yaml:"type"`
+	ButtonText string            `yaml:"buttonText"`
+	Tooltip    string            `yaml:"tooltip"`
+	Steps      []RemediationStep `yaml:"steps"`
+}
+
+const (
+	RemediationStepTypeEditConfig = "EditConfig"
+)
+
+// RemediationStep is one operation to perform when the user chooses a remediation.
+// Type selects the operation; additional fields depend on the type.
+type RemediationStep struct {
+	// Type selects how this step is applied (e.g. EditConfig).
+	Type string `yaml:"type"`
+
+	// Path is a dotted path into OdigosConfiguration (same shape as appliedWhen EffectiveConfig paths).
+	// Used when Type is EditConfig.
+	// Examples: "sampling.k8sHealthProbesSampling.enabled", "goAutoOffsetsMode"
+	Path string `yaml:"path,omitempty"`
+
+	// Value is the value to set at Path. Used when Type is EditConfig.
+	// Parsed as a typed YAML value (bool, number, string, map, list).
+	Value any `yaml:"value,omitempty"`
 }
 
 func (r *Recommendation) UnmarshalYAML(value *yaml.Node) error {
@@ -100,7 +123,7 @@ func (r *Recommendation) UnmarshalYAML(value *yaml.Node) error {
 			Docs                    string                   `yaml:"docs"`
 			Pros                    []string                 `yaml:"pros"`
 			Cons                    []string                 `yaml:"cons"`
-			Actions                 []Action                 `yaml:"actions"`
+			Remediations            []Remediation             `yaml:"remediations"`
 		} `yaml:"spec"`
 	}
 	if err := value.Decode(&raw); err != nil {
@@ -119,6 +142,6 @@ func (r *Recommendation) UnmarshalYAML(value *yaml.Node) error {
 	r.Docs = raw.Spec.Docs
 	r.Pros = raw.Spec.Pros
 	r.Cons = raw.Spec.Cons
-	r.Actions = raw.Spec.Actions
+	r.Remediations = raw.Spec.Remediations
 	return nil
 }

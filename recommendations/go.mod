@@ -5,6 +5,7 @@ go 1.26.2
 require (
 	github.com/odigos-io/odigos/common v0.0.0
 	gopkg.in/yaml.v3 v3.0.1
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (

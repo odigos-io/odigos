@@ -30,3 +30,25 @@ spec:
   appliedWhen:
     - type: EffectiveConfig
       expression: "goAutoOffsetsMode != 'off'"
+
+  remediations:
+    - type: DirectAutoOffsets
+      buttonText: 'Direct — requires internet'
+      tooltip: 'Nightly offsets pull from Odigos cloud. Needs internet.'
+      steps:
+        - type: EditConfig
+          path: goAutoOffsetsMode
+          value: direct
+        - type: EditConfig
+          path: goAutoOffsetsCron
+          value: '0 0 * * *'
+    - type: ImageAutoOffsets
+      buttonText: 'Mirrored image — needs local registry'
+      tooltip: 'Update Go library offsets from a mirrored offsets image on a nightly schedule. For clusters without direct internet access to Odigos cloud.'
+      steps:
+        - type: EditConfig
+          path: goAutoOffsetsMode
+          value: image
+        - type: EditConfig
+          path: goAutoOffsetsCron
+          value: '0 0 * * *'

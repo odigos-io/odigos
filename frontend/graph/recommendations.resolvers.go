@@ -20,3 +20,9 @@ func (r *computePlatformResolver) Recommendations(ctx context.Context, obj *mode
 func (r *mutationResolver) SetRecommendationDismissed(ctx context.Context, name string, dismissed bool) (*model.Recommendation, error) {
 	return services.SetRecommendationDismissed(ctx, name, dismissed)
 }
+
+// ApplyRecommendationRemediation is the resolver for the applyRecommendationRemediation field.
+func (r *mutationResolver) ApplyRecommendationRemediation(ctx context.Context, recommendationType model.RecommendationType, remediationType string) (bool, error) {
+	err := services.ApplyRecommendationRemediation(ctx, r.K8sCacheClient, recommendationType, remediationType)
+	return err == nil, err
+}

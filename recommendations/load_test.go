@@ -20,8 +20,32 @@ func TestLoad(t *testing.T) {
 	if !ok {
 		t.Fatal("GetByType(SampleHealthProbes) not found")
 	}
-	if len(rec.Actions) != 2 {
-		t.Fatalf("Actions len = %d, want 2", len(rec.Actions))
+	if len(rec.Remediations) != 2 {
+		t.Fatalf("Remediations len = %d, want 2", len(rec.Remediations))
+	}
+	if rec.Remediations[0].Type != "DropAllHealthProbes" {
+		t.Fatalf("Remediations[0].Type = %q, want DropAllHealthProbes", rec.Remediations[0].Type)
+	}
+	if rec.Remediations[1].Type != "SparseSampleHealthProbes" {
+		t.Fatalf("Remediations[1].Type = %q, want SparseSampleHealthProbes", rec.Remediations[1].Type)
+	}
+	if len(rec.Remediations[0].Steps) != 2 {
+		t.Fatalf("Remediations[0].Steps len = %d, want 2", len(rec.Remediations[0].Steps))
+	}
+	if rec.Remediations[0].Steps[0].Type != RemediationStepTypeEditConfig {
+		t.Fatalf("Remediations[0].Steps[0].Type = %q, want %q", rec.Remediations[0].Steps[0].Type, RemediationStepTypeEditConfig)
+	}
+	if rec.Remediations[0].Steps[0].Path != "sampling.k8sHealthProbesSampling.enabled" {
+		t.Fatalf("Remediations[0].Steps[0].Path = %q, want sampling.k8sHealthProbesSampling.enabled", rec.Remediations[0].Steps[0].Path)
+	}
+	if rec.Remediations[0].Steps[0].Value != true {
+		t.Fatalf("Remediations[0].Steps[0].Value = %#v, want true", rec.Remediations[0].Steps[0].Value)
+	}
+	if rec.Remediations[1].Steps[1].Path != "sampling.k8sHealthProbesSampling.keepPercentage" {
+		t.Fatalf("Remediations[1].Steps[1].Path = %q, want sampling.k8sHealthProbesSampling.keepPercentage", rec.Remediations[1].Steps[1].Path)
+	}
+	if rec.Remediations[1].Steps[1].Value != 2 {
+		t.Fatalf("Remediations[1].Steps[1].Value = %#v, want 2", rec.Remediations[1].Steps[1].Value)
 	}
 	if len(rec.AppliedWhen) != 1 {
 		t.Fatalf("AppliedWhen len = %d, want 1", len(rec.AppliedWhen))

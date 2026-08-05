@@ -36,6 +36,16 @@ func GetByK8sObjectName(k8sObjectName string) (Recommendation, bool) {
 	return recommendation, ok
 }
 
+// RemediationByType returns the remediation with the given type within this recommendation.
+func (r Recommendation) RemediationByType(remediationType string) (Remediation, bool) {
+	for _, remediation := range r.Remediations {
+		if remediation.Type == remediationType {
+			return remediation, true
+		}
+	}
+	return Remediation{}, false
+}
+
 func load(fs embed.FS) error {
 	var recs []Recommendation
 	recsByType := make(map[common.RecommendationType]Recommendation)

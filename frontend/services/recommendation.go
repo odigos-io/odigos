@@ -73,6 +73,8 @@ func convertRecommendationToModel(rec *v1alpha1.Recommendation) (*model.Recommen
 		return nil, fmt.Errorf("recommendation catalog entry not found for type %q (name %q)", rec.Spec.Type, rec.Name)
 	}
 
+	remediations := toCatalogRemediations(catalog.Remediations)
+
 	return &model.Recommendation{
 		Name:                    rec.Name,
 		Type:                    recType,
@@ -89,7 +91,7 @@ func convertRecommendationToModel(rec *v1alpha1.Recommendation) (*model.Recommen
 		DocsURL:                 optionalString(catalog.Docs),
 		Pros:                    nonNilStrings(catalog.Pros),
 		Cons:                    nonNilStrings(catalog.Cons),
-		Actions:                 toCatalogActions(catalog.Actions),
+		Remediations:            remediations,
 	}, nil
 }
 
@@ -126,12 +128,13 @@ func toAppliedWhen(checks []recommendations.AppliedWhenCheck) []*model.Recommend
 	return result
 }
 
-func toCatalogActions(actions []recommendations.Action) []*model.RecommendationCatalogAction {
-	result := make([]*model.RecommendationCatalogAction, 0, len(actions))
-	for _, a := range actions {
-		result = append(result, &model.RecommendationCatalogAction{
-			Type:        a.Type,
-			Description: a.Description,
+func toCatalogRemediations(remediations []recommendations.Remediation) []*model.RecommendationCatalogRemediation {
+	result := make([]*model.RecommendationCatalogRemediation, 0, len(remediations))
+	for _, r := range remediations {
+		result = append(result, &model.RecommendationCatalogRemediation{
+			Type:       r.Type,
+			ButtonText: r.ButtonText,
+			Tooltip:    r.Tooltip,
 		})
 	}
 	return result
