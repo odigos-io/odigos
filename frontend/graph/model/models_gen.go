@@ -260,6 +260,7 @@ type Config struct {
 	InstallationStatus    InstallationStatus  `json:"installationStatus"`
 	ClusterName           *string             `json:"clusterName,omitempty"`
 	IsCentralProxyRunning *bool               `json:"isCentralProxyRunning,omitempty"`
+	InsightsEnabled       bool                `json:"insightsEnabled"`
 }
 
 type ConfigYaml struct {
