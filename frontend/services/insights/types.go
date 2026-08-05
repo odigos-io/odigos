@@ -124,12 +124,15 @@ type Policy struct {
 	ScopeKey      string              `json:"scope_key"`
 }
 
+// LearningCondition is a single promotion criterion. JSON (un)marshaling is
+// defined in conversions.go because the REST wire form uses camelCase field
+// names — unlike the rest of the insights API, which is snake_case.
 type LearningCondition struct {
-	Type               LearningConditionType `json:"type"`
-	MinObservations    *int64                `json:"minObservations,omitempty"`
-	MinDurationMinutes *int64                `json:"minDurationMinutes,omitempty"`
-	StableObservations *int64                `json:"stableObservations,omitempty"`
-	StableMinutes      *int64                `json:"stableMinutes,omitempty"`
+	Type               LearningConditionType
+	MinObservations    *int64
+	MinDurationMinutes *int64
+	StableObservations *int64
+	StableMinutes      *int64
 }
 
 type LearningPolicy struct {

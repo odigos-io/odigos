@@ -1,0 +1,219 @@
+package insights
+
+import (
+	"encoding/json"
+	"testing"
+
+	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestLearningConditionUsesCamelCaseOnTheWire(t *testing.T) {
+	minObservations := int64(100)
+	stableMinutes := int64(1440)
+	condition := LearningCondition{
+		Type:            "min_observations",
+		MinObservations: &minObservations,
+		StableMinutes:   &stableMinutes,
+	}
+
+	encoded, err := json.Marshal(condition)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{
+		"type": "min_observations",
+		"minObservations": 100,
+		"stableMinutes": 1440
+	}`, string(encoded))
+	assert.NotContains(t, string(encoded), `"stable_minutes"`)
+	assert.NotContains(t, string(encoded), `"min_observations":`)
+	assert.Contains(t, string(encoded), `"minObservations":`)
+
+	var decoded LearningCondition
+	require.NoError(t, json.Unmarshal([]byte(`{
+		"type": "stable_duration",
+		"stableMinutes": 60,
+		"minObservations": 10
+	}`), &decoded))
+	require.NotNil(t, decoded.StableMinutes)
+	require.NotNil(t, decoded.MinObservations)
+	assert.Equal(t, LearningConditionType("stable_duration"), decoded.Type)
+	assert.Equal(t, int64(60), *decoded.StableMinutes)
+	assert.Equal(t, int64(10), *decoded.MinObservations)
+}
+
+func TestLearningPolicyRoundTripPreservesCamelCaseConditions(t *testing.T) {
+	minObservations := int64(50)
+	minMatches := 1
+	rest := LearningPolicy{
+		Class: "D2_egress",
+		Mode:  "any",
+		Conditions: []LearningCondition{{
+			Type:            "min_observations",
+			MinObservations: &minObservations,
+		}},
+		MinMatches: &minMatches,
+		Scope:      "global",
+		ScopeKey:   "",
+	}
+
+	encoded, err := json.Marshal(rest)
+	require.NoError(t, err)
+	assert.Contains(t, string(encoded), `"min_matches"`)
+	assert.Contains(t, string(encoded), `"scope_key"`)
+	assert.Contains(t, string(encoded), `"minObservations"`)
+
+	gql := LearningPolicyToModel(rest)
+	require.Len(t, gql.Conditions, 1)
+	require.NotNil(t, gql.Conditions[0].MinObservations)
+	assert.Equal(t, 50, *gql.Conditions[0].MinObservations)
+
+	back := LearningPolicyFromInput(model.InsightsLearningPolicyInput{
+		Class: gql.Class,
+		Mode:  gql.Mode,
+		Conditions: []*model.InsightsLearningConditionInput{{
+			Type:            gql.Conditions[0].Type,
+			MinObservations: gql.Conditions[0].MinObservations,
+		}},
+		MinMatches: gql.MinMatches,
+		Scope:      gql.Scope,
+		ScopeKey:   gql.ScopeKey,
+	})
+	require.Len(t, back.Conditions, 1)
+	require.NotNil(t, back.Conditions[0].MinObservations)
+	assert.Equal(t, int64(50), *back.Conditions[0].MinObservations)
+	assert.Equal(t, rest.Class, back.Class)
+	assert.Equal(t, rest.Mode, back.Mode)
+}
+
+func TestTransactionIDRoundTrip(t *testing.T) {
+	assert.Equal(t, "4211", FormatID(4211))
+	id, err := ParseID("4211")
+	require.NoError(t, err)
+	assert.Equal(t, int64(4211), id)
+
+	_, err = ParseID("not-a-number")
+	require.Error(t, err)
+
+	stat := TransactionStat{
+		ID:        4211,
+		Service:   "checkout",
+		Namespace: "prod",
+		Operation: "POST /pay",
+		Kind:      "HTTP",
+		Volume:    12,
+		LastSeen:  "2026-08-05T06:00:00Z",
+	}
+	converted := TransactionStatToModel(stat)
+	assert.Equal(t, "4211", converted.ID)
+	assert.Equal(t, model.InsightsTransactionKindHTTP, converted.Kind)
+}
+
+func TestPolicyRoundTripEncodesMapsAsJSONStrings(t *testing.T) {
+	rest := Policy{
+		ID:          7,
+		Name:        "default",
+		Enabled:     true,
+		FireAtScore: 60,
+		SignalWeights: map[string]int{
+			"D7_db_access": 30,
+		},
+		EnricherLists: map[string][]string{
+			"sensitive_tables": {"users", "secrets"},
+		},
+		Scope:    "global",
+		ScopeKey: "",
+	}
+
+	gql, err := PolicyToModel(rest)
+	require.NoError(t, err)
+	assert.Equal(t, "7", gql.ID)
+	require.NotNil(t, gql.SignalWeights)
+	require.NotNil(t, gql.EnricherLists)
+	assert.JSONEq(t, `{"D7_db_access":30}`, *gql.SignalWeights)
+	assert.JSONEq(t, `{"sensitive_tables":["users","secrets"]}`, *gql.EnricherLists)
+
+	back, err := PolicyFromInput(model.InsightsPolicyInput{
+		ID:            &gql.ID,
+		Name:          gql.Name,
+		Enabled:       gql.Enabled,
+		FireAtScore:   gql.FireAtScore,
+		SignalWeights: gql.SignalWeights,
+		EnricherLists: gql.EnricherLists,
+		Scope:         gql.Scope,
+		ScopeKey:      gql.ScopeKey,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, rest, back)
+}
+
+func TestBaselineAndAnomalyEvidenceStayJSONStrings(t *testing.T) {
+	baseline, err := BaselineClassToModel(BaselineClass{
+		TransactionID:    9,
+		Class:            "D3_latency",
+		Data:             json.RawMessage(`{"p99_ms":120}`),
+		ObservationCount: 3,
+		Promoted:         true,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, baseline.Data)
+	assert.JSONEq(t, `{"p99_ms":120}`, *baseline.Data)
+	assert.Equal(t, "9", baseline.TransactionID)
+
+	anomaly, err := AnomalyIssueToModel(AnomalyIssue{
+		TransactionID:    9,
+		Signature:        "sig",
+		Service:          "checkout",
+		Namespace:        "prod",
+		TriggeredClasses: []DeviationClass{"D2_egress"},
+		Evidence:         json.RawMessage(`{"D2_egress":{"new_peers":["1.2.3.4:443"]}}`),
+		Occurrences:      2,
+		MaxScore:         40,
+		Severity:         "medium",
+		Status:           "open",
+	})
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"D2_egress":{"new_peers":["1.2.3.4:443"]}}`, anomaly.Evidence)
+	assert.Equal(t, "9", anomaly.TransactionID)
+}
+
+func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
+	settings := SystemSettings{
+		Sampling:  SystemSamplingSettings{ExamplesPerTransaction: 3, ExampleSampleIntervalSeconds: 60},
+		Retention: SystemRetentionSettings{ObservationRetentionDays: 14},
+		Findings:  SystemFindingsSettings{DefaultWindowHours: 24, MaxWindowHours: 168},
+		Capacity:  SystemCapacitySettings{MaxResidentTransactions: 1000, MaxBaselineSetMembers: 500},
+		Writeback: SystemWritebackSettings{FlushIntervalSeconds: 30},
+	}
+	gql := SystemSettingsToModel(settings)
+	back, err := SystemSettingsFromInput(model.InsightsSystemSettingsInput{
+		Sampling:  &model.InsightsSystemSamplingSettingsInput{ExamplesPerTransaction: gql.Sampling.ExamplesPerTransaction, ExampleSampleIntervalSeconds: gql.Sampling.ExampleSampleIntervalSeconds},
+		Retention: &model.InsightsSystemRetentionSettingsInput{ObservationRetentionDays: gql.Retention.ObservationRetentionDays},
+		Findings:  &model.InsightsSystemFindingsSettingsInput{DefaultWindowHours: gql.Findings.DefaultWindowHours, MaxWindowHours: gql.Findings.MaxWindowHours},
+		Capacity:  &model.InsightsSystemCapacitySettingsInput{MaxResidentTransactions: gql.Capacity.MaxResidentTransactions, MaxBaselineSetMembers: gql.Capacity.MaxBaselineSetMembers},
+		Writeback: &model.InsightsSystemWritebackSettingsInput{FlushIntervalSeconds: gql.Writeback.FlushIntervalSeconds},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, settings, back)
+
+	items := `{"allowed_egress":["db:5432"]}`
+	seed, err := GuardrailSeedFromInput(model.InsightsGuardrailSeedInput{
+		ScopeKey: "prod/checkout",
+		Items:    items,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "prod/checkout", seed.ScopeKey)
+	assert.Equal(t, []string{"db:5432"}, seed.Items["allowed_egress"])
+}
+
+func TestBulkAnomalyRequestConvertsTransactionIDs(t *testing.T) {
+	request, err := BulkAnomalyRequestFromInput(model.InsightsBulkResolutionDismiss, []*model.InsightsAnomalyRefInput{
+		{TransactionID: "42", Signature: "abc"},
+		{TransactionID: "7", Signature: "def"},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, BulkResolution("dismiss"), request.Resolution)
+	require.Len(t, request.Items, 2)
+	assert.Equal(t, int64(42), request.Items[0].TransactionID)
+	assert.Equal(t, "abc", request.Items[0].Signature)
+}
