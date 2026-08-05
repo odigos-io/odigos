@@ -16,6 +16,10 @@ metadata:
     features.operators.openshift.io/token-auth-aws: "false"
     features.operators.openshift.io/token-auth-azure: "false"
     features.operators.openshift.io/token-auth-gcp: "false"
+    operatorframework.io/suggested-namespace: "odigos-operator-system"
+    operatorframework.io/os.linux: supported
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.arm64: supported
     operators.openshift.io/valid-subscription: Odigos Enterprise subscription (for
       enterprise features)
     support: Odigos
