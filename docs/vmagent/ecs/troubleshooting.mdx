@@ -1,0 +1,161 @@
+---
+title: "ECS Troubleshooting"
+sidebarTitle: "Troubleshooting"
+description: "View logs, run odictl against a running ECS agent, inspect the proxy's membership view, and fix the common ECS deployment failures."
+---
+
+import EnterpriseVMAgent from '/snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+<EnterpriseVMAgent />
+
+## View the logs
+
+The agent and its `odigos-otelcol` child process share the task's stdout, which
+the `awslogs` driver ships to CloudWatch Logs:
+
+```bash
+aws logs tail /odigos/ecs-agent --since 10m --follow
+aws logs tail /odigos/ecs-proxy --since 10m --follow   # Agent + Proxy mode
+```
+
+## Inspect a running agent with `odictl`
+
+With ECS Exec enabled on the service (`--enable-execute-command`) and the
+`ssmmessages` permissions on the task role, open
+[`odictl`](/vmagent/setup/configuration/odictl) inside the agent container:
+
+```bash
+TASK=$(aws ecs list-tasks --cluster "$CLUSTER" --service-name odigos-ecs-agent \
+  --desired-status RUNNING --query 'taskArns[0]' --output text)
+
+aws ecs execute-command --cluster "$CLUSTER" --task "$TASK" \
+  --container odigos-ecs-agent --interactive --command odictl
+```
+
+A shell works the same way (`--command /bin/bash`), which is useful for
+`uname -r`, checking `/sys/kernel/btf/vmlinux`, or reading
+`/etc/odigos-ecs-agent/config.yaml`.
+
+<Note>
+  `odictl` always targets **one node's** agent — there is no cluster-wide
+  `odictl`. In [Agent + Proxy](/vmagent/ecs/installation-with-proxy) mode, use the
+  Central UI for the aggregated view and the proxy's `/healthz` for membership.
+
+  Without ECS Exec, `docker exec` into the `ecs-odigos-ecs-agent-*` container on
+  the instance works too.
+</Note>
+
+## Check the proxy healthz endpoint
+
+`/healthz` returns connected agents, tombstones for departed nodes, and the last
+coverage result. The proxy image is slim and ships **no `curl`**, so use bash's
+`/dev/tcp` from inside an exec session:
+
+```bash
+PTASK=$(aws ecs list-tasks --cluster "$CLUSTER" --service-name odigos-ecs-proxy \
+  --query 'taskArns[0]' --output text)
+
+aws ecs execute-command --cluster "$CLUSTER" --task "$PTASK" \
+  --container odigos-ecs-proxy --interactive --command "/bin/bash"
+```
+
+```bash
+exec 3<>/dev/tcp/127.0.0.1/4321
+printf 'GET /healthz HTTP/1.0\r\n\r\n' >&3
+cat <&3
+```
+
+## Nothing is instrumented
+
+Work through these in order.
+
+<AccordionGroup>
+  <Accordion title="The agent logs runtime-detector stopped … verifier error … permission denied">
+    The container instance's kernel is too old — almost always Amazon Linux 2's
+    stock **4.14**. The eBPF programs need BTF/CO-RE and a modern verifier, so the
+    process detector never starts, no processes are discovered, and workload
+    reports stay empty.
+
+    Confirm it:
+
+    ```bash
+    aws ecs execute-command --cluster "$CLUSTER" --task "$TASK" \
+      --container odigos-ecs-agent --interactive --command "uname -r"
+    ```
+
+    Fix: move the instances to the **Amazon Linux 2023** ECS-optimized AMI (kernel
+    6.1), or at minimum the AL2 **kernel-5.10** ECS AMI. See
+    [System Requirements](/vmagent/ecs/requirements#container-instance-kernel-and-ami).
+  </Accordion>
+
+  <Accordion title="The daemon task is not running on every instance">
+    ```bash
+    aws ecs describe-services --cluster "$CLUSTER" --services odigos-ecs-agent \
+      --query 'services[0].{running:runningCount,desired:desiredCount,events:events[:5].message}'
+    ```
+
+    `events` names the reason: insufficient CPU/memory on the instance, image pull
+    failure, or a secret it cannot read. Instances also need the resource headroom
+    listed in [System Requirements](/vmagent/ecs/requirements#resources-per-instance).
+  </Accordion>
+
+  <Accordion title="The workload's language has no direct-attach SDK">
+    Java, Go, and C++ attach through their dynamic eBPF SDKs. Everything else is
+    covered by [OBI](/oss/instrumentations/obi). Restart-based environment
+    injection is deliberately not used on ECS, so a language that relies on it on
+    a VM behaves differently here — see
+    [what gets instrumented](/vmagent/ecs/configuration#what-gets-instrumented).
+  </Accordion>
+
+  <Accordion title="The target is not an ECS task">
+    The ECS distribution only classifies **ECS-managed containers**. Host processes
+    and `systemd` services on the container instance are ignored by design. To
+    instrument those, use the [VM Agent package](/vmagent/setup/installation) or
+    the [Docker deployment](/vmagent/setup/docker) instead.
+  </Accordion>
+</AccordionGroup>
+
+## Common failures
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `runtime-detector stopped … verifier error … permission denied` | Kernel 4.14 (Amazon Linux 2 stock AMI) | Use the AL2023 ECS-optimized AMI (kernel 6.1) |
+| `create-service: Creation of service was not idempotent` | The service already exists | Use `update-service --task-definition <family> --force-new-deployment` |
+| `register-task-definition: Role is not valid` | The IAM role doesn't exist yet, or `$ACCOUNT` was empty when the ARN was built | Create the roles first; `echo "[$ACCOUNT]"` to confirm it is non-empty **in this shell** |
+| `create-service: ClusterNotFoundException … cluster was inactive` | The cluster was deleted — it shows as `INACTIVE`, not "not found" | Recreate the cluster |
+| Task placement fails with `AccessDeniedException … secretsmanager:GetSecretValue`, even with a verified-correct policy | Possibly an AWS Organizations SCP capping the account | Use the [plain env-var token](/vmagent/ecs/installation-agent-only#step-2-store-the-license-token-in-secrets-manager) alternative |
+| Task placement fails with `ResourceNotFoundException … can't find the specified secret` | The secret referenced by the registered task definition was deleted; recreating it produces a **new** random ARN suffix | Re-substitute `$SECRET_ARN`, register a new revision, redeploy |
+| `execute-command: … was not enabled when the task was run` | The task predates `--enable-execute-command`, or the managed SSM agent isn't up yet | `update-service --force-new-deployment`, then re-list with `--desired-status RUNNING` and check `containers[0].managedAgents[0].lastStatus == RUNNING` |
+| `SessionManagerPlugin is not found` | Plugin missing locally | `brew install --cask session-manager-plugin` |
+| Agent logs `dial tcp: lookup <central-host>: no such host` — or any literal `<...>` in a hostname | A placeholder was never substituted | Re-run the substitution step and the `grep -c '<'` guard, then register a new revision |
+| Image name like `odigos-ecs-agentatest`, or a mangled ARN like `…025950698545ole/…` | zsh parsed `$var:` as a history modifier | Always brace: `"${var}:latest"`, `"arn:aws:iam::${ACCOUNT}:role/..."` |
+| Agent starts but never connects, or the collector has no destination | The persisted `config.yaml` on the instance wins over `ODIGOS_DEFAULT_CONFIG` | Change the value through Central or `odictl`, or clear `/etc/odigos-ecs-agent` on the instance — see [precedence](/vmagent/ecs/configuration#configuration-precedence-and-persistence) |
+
+## Agent + Proxy specific
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Central shows N platforms instead of 1 | The agents' `ODIGOS_DEFAULT_CONFIG` still points at Central rather than at the proxy's `host:4321` | Re-point the endpoint, register a new revision, roll the daemon |
+| Central shows one platform per node **named after the cluster**, and coverage reports every instance as uncovered | `ODIGOS_ECS_BEHIND_PROXY` is missing or `false` | Set it to `true` in the agent task definition — see [platform naming](/vmagent/ecs/configuration#platform-naming-per-mode) |
+| `--placement-constraints … Expected ',', received: '''` | The AWS CLI shorthand parser can't handle `in [...]` | Pass pure JSON, or use `ec2InstanceId == '<id>'` |
+| The proxy service redeploys forever; the old task is never replaced | A rolling deployment tries to place two host-networked tasks on one instance — port `4321` conflict | Set `minimumHealthyPercent=0,maximumPercent=100`; stop the stuck old task once to unblock the first rollout |
+| `UpdateService: … Availability Zone Rebalancing does not support maximumPercent <= 100%` | AZ rebalancing defaults to enabled on new services | Add `--availability-zone-rebalancing DISABLED` |
+| Agents cannot reach the proxy | Security group does not allow TCP 4321, or the pinned instance was replaced and its IP changed | Open 4321; re-pin and re-point, or move to the [internal NLB option](/vmagent/ecs/installation-with-proxy#step-3-give-the-proxy-a-stable-address) |
+| `/healthz` unreachable, `curl: not found` | The proxy image ships no `curl` | Use bash's `/dev/tcp` as shown [above](#check-the-proxy-healthz-endpoint) |
+| A node's config differs from the rest of the cluster | The node joined while the proxy's journal was unavailable (task replaced, journal not persisted) | Persist the journal on EFS via `ODIGOS_PROXY_JOURNAL`, or re-apply the configuration from Central |
+
+## Diagnostics for support
+
+Collect a diagnose bundle from `odictl` inside the agent container, and include:
+
+- the output of `uname -r` and `ls /sys/kernel/btf/vmlinux` from the affected instance
+- `aws logs tail /odigos/ecs-agent --since 30m`
+- the registered task definition, **with the license token redacted**:
+  ```bash
+  aws ecs describe-task-definition --task-definition odigos-ecs-agent \
+    --query 'taskDefinition.containerDefinitions[0].{image:image,env:environment,secrets:secrets}'
+  ```
+- for Agent + Proxy mode, the proxy's `/healthz` output
+
+<GettingHelp />
