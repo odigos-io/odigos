@@ -1,0 +1,306 @@
+---
+title: "Install on ECS: Single Node (Agent only)"
+sidebarTitle: "Single Node"
+description: "Deploy the Odigos ECS Agent as a daemon service. Every container instance runs one agent that connects directly to Odigos Central — no extra AWS resources."
+---
+
+import EnterpriseVMAgent from '/snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
+
+<EnterpriseVMAgent />
+
+This is the default and simplest ECS deployment: **one agent task per EC2
+container instance**, each connecting **directly** to Odigos Central. No proxy,
+no load balancer, no service discovery.
+
+It works identically whether the cluster has 1 node or 50 — the only difference
+is that **each node appears in Central as its own platform**. If you want the
+whole cluster to appear as a single platform with an aggregated workload list,
+use [Install: Agent + Proxy](/vmagent/ecs/installation-with-proxy) instead.
+
+<Info>
+  Complete the [System Requirements](/vmagent/ecs/requirements) first — in
+  particular the **EC2 launch type** and the **kernel 5.10+ with BTF**
+  requirement (use the Amazon Linux 2023 ECS-optimized AMI).
+</Info>
+
+## Step 1: Set your session variables
+
+Run every command in this guide in the **same shell**.
+
+```bash
+export AWS_REGION=<region>
+export CLUSTER=<your-ecs-cluster-name>
+export ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+export REG=${ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+export TAG=<agent-image-tag>
+export CENTRAL_ENDPOINT='<central-host>:<port>'   # e.g. central.example.com:443 (:443 implies wss)
+
+echo "ACCOUNT=$ACCOUNT REG=$REG"   # neither may be empty before continuing
+```
+
+## Step 2: Store the license token in Secrets Manager
+
+```bash
+export SECRET_ARN=$(aws secretsmanager create-secret --name odigos-onprem-token \
+  --secret-string "<YOUR_ODIGOS_ONPREM_TOKEN>" --query ARN --output text 2>/dev/null \
+  || aws secretsmanager describe-secret --secret-id odigos-onprem-token --query ARN --output text)
+
+echo "SECRET_ARN=$SECRET_ARN"   # must be non-empty
+```
+
+That create-or-fetch form is idempotent — safe to re-run if the secret already
+exists.
+
+<Accordion title="Alternative: pass the token as a plain environment variable">
+  If IAM or an AWS Organizations SCP blocks `secretsmanager:GetSecretValue`, you
+  can put the token directly in the task definition instead: drop the `secrets`
+  block and add `ODIGOS_ONPREM_TOKEN` to `environment`.
+
+  <Warning>
+    The token then becomes readable to anyone who can call
+    `ecs:DescribeTaskDefinition`. Acceptable for a throwaway test cluster, not
+    for production.
+  </Warning>
+</Accordion>
+
+## Step 3: Create the IAM roles
+
+```bash
+TRUST='{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ecs-tasks.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+
+# Execution role: image pull, logs, and the license secret.
+aws iam create-role --role-name odigos-ecs-exec-role --assume-role-policy-document "$TRUST"
+aws iam attach-role-policy --role-name odigos-ecs-exec-role \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+aws iam put-role-policy --role-name odigos-ecs-exec-role --policy-name odigos-extras \
+  --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"logs:CreateLogGroup\",\"Resource\":\"*\"},{\"Effect\":\"Allow\",\"Action\":\"secretsmanager:GetSecretValue\",\"Resource\":\"arn:aws:secretsmanager:${AWS_REGION}:${ACCOUNT}:secret:odigos-onprem-token-*\"}]}"
+
+# Task role: needed for odictl through ECS Exec.
+aws iam create-role --role-name odigos-ecs-task-role --assume-role-policy-document "$TRUST"
+aws iam put-role-policy --role-name odigos-ecs-task-role --policy-name ssm-exec \
+  --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["ssmmessages:CreateControlChannel","ssmmessages:CreateDataChannel","ssmmessages:OpenControlChannel","ssmmessages:OpenDataChannel"],"Resource":"*"}]}'
+```
+
+<Note>
+  Note the trailing `-*` on the secret ARN in the policy: Secrets Manager
+  appends a random 6-character suffix to every secret, and that suffix changes
+  if the secret is deleted and recreated. The wildcard means you never have to
+  touch this policy again.
+
+  `EntityAlreadyExists` on `create-role` means the role exists from a previous
+  attempt — safe to continue with the `attach-role-policy` / `put-role-policy`
+  commands.
+</Note>
+
+## Step 4: Register the task definition
+
+Save the task definition below as `odigos-ecs-agent.json`, then substitute your
+values.
+
+<Accordion title="odigos-ecs-agent.json">
+  ```json
+  {
+    "family": "odigos-ecs-agent",
+    "requiresCompatibilities": ["EC2"],
+    "networkMode": "host",
+    "pidMode": "host",
+    "executionRoleArn": "<EXEC_ROLE_ARN>",
+    "taskRoleArn": "<TASK_ROLE_ARN>",
+    "volumes": [
+      { "name": "docker-sock", "host": { "sourcePath": "/var/run/docker.sock" } },
+      { "name": "docker-lib", "host": { "sourcePath": "/var/lib/docker" } },
+      { "name": "sys-kernel-debug", "host": { "sourcePath": "/sys/kernel/debug" } },
+      { "name": "odigos-config", "host": { "sourcePath": "/etc/odigos-ecs-agent" } },
+      { "name": "odigos-instrumentations", "host": { "sourcePath": "/var/odigos" } }
+    ],
+    "containerDefinitions": [
+      {
+        "name": "odigos-ecs-agent",
+        "image": "<AGENT_IMAGE_URI>",
+        "essential": true,
+        "privileged": true,
+        "cpu": 512,
+        "memoryReservation": 512,
+        "memory": 2048,
+        "stopTimeout": 120,
+        "mountPoints": [
+          { "sourceVolume": "docker-sock", "containerPath": "/var/run/docker.sock", "readOnly": true },
+          { "sourceVolume": "docker-lib", "containerPath": "/var/lib/docker", "readOnly": true },
+          { "sourceVolume": "sys-kernel-debug", "containerPath": "/sys/kernel/debug", "readOnly": false },
+          { "sourceVolume": "odigos-config", "containerPath": "/etc/odigos-ecs-agent", "readOnly": false },
+          { "sourceVolume": "odigos-instrumentations", "containerPath": "/var/odigos", "readOnly": false }
+        ],
+        "environment": [
+          {
+            "name": "ODIGOS_DEFAULT_CONFIG",
+            "value": "{\"central\":{\"enabled\":true,\"endpoint\":\"<CENTRAL_ENDPOINT>\"}}"
+          }
+        ],
+        "secrets": [
+          { "name": "ODIGOS_ONPREM_TOKEN", "valueFrom": "<TOKEN_SECRET_ARN>" }
+        ],
+        "ulimits": [
+          { "name": "memlock", "softLimit": -1, "hardLimit": -1 },
+          { "name": "nofile", "softLimit": 65536, "hardLimit": 65536 }
+        ],
+        "linuxParameters": { "initProcessEnabled": true },
+        "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+            "awslogs-group": "/odigos/ecs-agent",
+            "awslogs-create-group": "true",
+            "awslogs-region": "<REGION>",
+            "awslogs-stream-prefix": "odigos-ecs-agent"
+          }
+        }
+      }
+    ]
+  }
+  ```
+
+  Every setting that looks unusual is required for a specific capability — see
+  [required permissions](/vmagent/ecs/configuration#required-permissions) before
+  changing any of them.
+</Accordion>
+
+Substitute the placeholders:
+
+```bash
+sed -e "s|<AGENT_IMAGE_URI>|${REG}/odigos-ecs-agent:${TAG}|" \
+    -e "s|<CENTRAL_ENDPOINT>|${CENTRAL_ENDPOINT}|" \
+    -e "s|<TOKEN_SECRET_ARN>|${SECRET_ARN}|" \
+    -e "s|<EXEC_ROLE_ARN>|arn:aws:iam::${ACCOUNT}:role/odigos-ecs-exec-role|" \
+    -e "s|<TASK_ROLE_ARN>|arn:aws:iam::${ACCOUNT}:role/odigos-ecs-task-role|" \
+    -e "s|<REGION>|${AWS_REGION}|" \
+    odigos-ecs-agent.json > /tmp/agent-td.json
+```
+
+<Warning>
+  **Verify before registering.** A leftover `<placeholder>` produces a task that
+  starts fine but can never connect — and the failure only shows up in the logs
+  minutes later.
+
+  ```bash
+  grep -c '<' /tmp/agent-td.json   # want 0
+  jq -r '.containerDefinitions[0].environment[] | select(.name=="ODIGOS_DEFAULT_CONFIG").value' /tmp/agent-td.json | jq .
+  # → {"central": {"enabled": true, "endpoint": "central.example.com:443"}}
+  #   confirm this is your REAL endpoint
+  ```
+</Warning>
+
+Register it:
+
+```bash
+aws ecs register-task-definition --cli-input-json file:///tmp/agent-td.json >/dev/null && echo "task definition registered"
+```
+
+## Step 5: Create the daemon service
+
+The `DAEMON` scheduling strategy runs exactly one agent task per container
+instance, including on instances that join the cluster later.
+
+```bash
+aws ecs create-service \
+  --cluster "$CLUSTER" \
+  --service-name odigos-ecs-agent \
+  --task-definition odigos-ecs-agent \
+  --scheduling-strategy DAEMON \
+  --launch-type EC2 \
+  --enable-execute-command
+```
+
+<Note>
+  `create-service` is a **one-time** operation — re-running it fails with
+  `Creation of service was not idempotent`. To roll out a new image or an env-var
+  change later, register a new task definition revision and run
+  [`update-service`](/vmagent/ecs/maintenance#upgrade) instead.
+
+  `--enable-execute-command` is what lets you later run `odictl` inside the
+  agent container.
+</Note>
+
+## Step 6: Verify
+
+<Steps>
+  <Step title="The daemon is placed on every instance">
+    ```bash
+    aws ecs describe-services --cluster "$CLUSTER" --services odigos-ecs-agent \
+      --query 'services[0].{running:runningCount,desired:desiredCount,events:events[:3].message}'
+    ```
+
+    Wait until `running == desired`. Any placement failures appear in `events` —
+    see [Troubleshooting](/vmagent/ecs/troubleshooting).
+  </Step>
+
+  <Step title="The instance kernel is supported">
+    ```bash
+    TASK=$(aws ecs list-tasks --cluster "$CLUSTER" --service-name odigos-ecs-agent \
+      --desired-status RUNNING --query 'taskArns[0]' --output text)
+
+    aws ecs execute-command --cluster "$CLUSTER" --task "$TASK" \
+      --container odigos-ecs-agent --interactive --command "uname -r"
+    ```
+
+    Expect `6.1.x` (or any 5.10+). `4.14.x` means the instance is on the Amazon
+    Linux 2 stock AMI and **nothing will be instrumented** — see
+    [System Requirements](/vmagent/ecs/requirements#container-instance-kernel-and-ami).
+  </Step>
+
+  <Step title="The agent is healthy and connected">
+    ```bash
+    aws logs tail /odigos/ecs-agent --since 5m --follow
+    ```
+
+    You want to see the agent connect to Central, and you want **no**
+    `runtime-detector stopped` errors.
+  </Step>
+
+  <Step title="The platform appears in Odigos Central">
+    Open the Central UI. You should see **one platform per container instance**,
+    each named after the ECS cluster.
+
+    Your ECS tasks written in a supported language appear as discovered
+    workloads, ready to be turned into
+    [sources](/vmagent/setup/configuration/add-sources).
+  </Step>
+</Steps>
+
+## Step 7: Build your pipeline
+
+The ECS Agent is configured exactly like any other VM Agent — from Odigos
+Central, or with `odictl` inside the agent container:
+
+```bash
+aws ecs execute-command --cluster "$CLUSTER" --task "$TASK" \
+  --container odigos-ecs-agent --interactive --command odictl
+```
+
+<CardGroup cols={2}>
+  <Card title="Add Sources" icon="plus" href="/vmagent/setup/configuration/add-sources">
+    Choose which ECS tasks to instrument.
+  </Card>
+  <Card title="Add Destinations" icon="paper-plane" href="/vmagent/setup/configuration/add-destinations">
+    Send the telemetry to your observability backend.
+  </Card>
+  <Card title="Actions" icon="wand-magic-sparkles" href="/vmagent/setup/configuration/actions/overview">
+    Transform, filter, and enrich telemetry.
+  </Card>
+  <Card title="Configuration Reference" icon="sliders" href="/vmagent/ecs/configuration">
+    ECS-specific environment variables and permissions.
+  </Card>
+</CardGroup>
+
+<Note>
+  In this mode `odictl` targets **one node's** agent — there is no cluster-wide
+  `odictl`. Configuration made through Central applies to the platform you
+  selected, i.e. that node. For cluster-wide configuration, use
+  [Agent + Proxy](/vmagent/ecs/installation-with-proxy).
+</Note>
+
+## Moving to Agent + Proxy later
+
+Nothing is thrown away. Deploy the proxy, then re-point the agents' endpoint at
+it and roll the daemon service — the agents speak the same protocol to the proxy
+that they speak to Central. See
+[Install: Agent + Proxy](/vmagent/ecs/installation-with-proxy), and remember to
+add `ODIGOS_ECS_BEHIND_PROXY=true` to the agent task definition when you do.
