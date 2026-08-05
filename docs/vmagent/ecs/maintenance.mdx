@@ -1,0 +1,183 @@
+---
+title: "Upgrade and Uninstall on ECS"
+sidebarTitle: "Upgrade & Uninstall"
+description: "Roll out a new Odigos ECS Agent version, switch between deployment modes, and remove Odigos from an ECS cluster."
+---
+
+import EnterpriseVMAgent from '/snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
+
+<EnterpriseVMAgent />
+
+## Upgrade
+
+An upgrade is a new image tag plus a new task definition revision. The agent's
+configuration and identity live on the container instance at
+`/etc/odigos-ecs-agent`, so they survive the rollout.
+
+<Steps>
+  <Step title="Mirror the new image tag">
+    Pull the new version and push it to your ECR repository, as in
+    [System Requirements](/vmagent/ecs/requirements#license-and-images). Use the
+    architecture that matches your container instances.
+  </Step>
+
+  <Step title="Register a new task definition revision">
+    Re-run the `sed` and `register-task-definition` steps from your install guide
+    with the new `TAG`. This creates a new revision of the same family
+    (`odigos-ecs-agent`).
+
+    ```bash
+    grep -c '<' /tmp/agent-td.json   # want 0
+    aws ecs register-task-definition --cli-input-json file:///tmp/agent-td.json >/dev/null
+    ```
+  </Step>
+
+  <Step title="Roll the service">
+    ```bash
+    aws ecs update-service --cluster "$CLUSTER" --service odigos-ecs-agent \
+      --task-definition odigos-ecs-agent --force-new-deployment
+    ```
+
+    ECS replaces the agent task on each instance. Instrumented workloads are not
+    restarted — instrumentation is direct-attach and the agent re-attaches to the
+    running tasks when it comes back up.
+  </Step>
+
+  <Step title="Upgrade the proxy too (Agent + Proxy mode)">
+    Same pattern for `odigos-ecs-proxy`:
+
+    ```bash
+    aws ecs update-service --cluster "$CLUSTER" --service odigos-ecs-proxy \
+      --task-definition odigos-ecs-proxy --force-new-deployment
+    ```
+
+    <Warning>
+      With a **pinned** proxy (host networking), the service must already have
+      `minimumHealthyPercent=0,maximumPercent=100` and
+      `--availability-zone-rebalancing DISABLED`, or the rollout gets stuck: ECS
+      tries to place the new task before stopping the old one, and both want port
+      `4321` on the same instance. If the deployment is already stuck, apply the
+      deployment configuration and stop the old task once to unblock it.
+    </Warning>
+
+    Upgrade the proxy and agents to the same version.
+  </Step>
+</Steps>
+
+<Note>
+  Changing an environment variable follows the exact same flow: new revision,
+  then `update-service --force-new-deployment`. Remember that values already
+  persisted in `config.yaml` on the instance
+  [take precedence](/vmagent/ecs/configuration#configuration-precedence-and-persistence)
+  over `ODIGOS_DEFAULT_CONFIG`.
+</Note>
+
+## Switch from single node to multi node
+
+No reinstall — the agents speak the same protocol to the proxy that they speak
+to Central.
+
+<Steps>
+  <Step title="Deploy the proxy">
+    Follow [Install: Agent + Proxy](/vmagent/ecs/installation-with-proxy) steps
+    3–5 (stable address, proxy task definition, proxy service).
+  </Step>
+  <Step title="Re-point the agents">
+    In the agent task definition, change `ODIGOS_DEFAULT_CONFIG`'s endpoint to the
+    proxy's `host:4321` **and** add `ODIGOS_ECS_BEHIND_PROXY=true`. Register the
+    revision.
+  </Step>
+  <Step title="Roll the daemon">
+    ```bash
+    aws ecs update-service --cluster "$CLUSTER" --service odigos-ecs-agent \
+      --task-definition odigos-ecs-agent --force-new-deployment
+    ```
+  </Step>
+</Steps>
+
+The cluster then appears in Central as one platform named after the cluster,
+replacing the per-node platforms.
+
+<Note>
+  Going the other way works the same: point the endpoint back at Central, remove
+  `ODIGOS_ECS_BEHIND_PROXY` (or set it to `false`), roll the daemon, then delete
+  the proxy service.
+</Note>
+
+## Uninstall
+
+Removing Odigos does not touch your workloads: instrumentation is attached at
+runtime, so stopping the agent stops the telemetry — your tasks keep running
+untouched.
+
+<Steps>
+  <Step title="Delete the ECS services">
+    ```bash
+    aws ecs update-service --cluster "$CLUSTER" --service odigos-ecs-agent --desired-count 0
+    aws ecs delete-service --cluster "$CLUSTER" --service odigos-ecs-agent --force
+
+    # Agent + Proxy mode
+    aws ecs update-service --cluster "$CLUSTER" --service odigos-ecs-proxy --desired-count 0
+    aws ecs delete-service --cluster "$CLUSTER" --service odigos-ecs-proxy --force
+    ```
+  </Step>
+
+  <Step title="Deregister the task definition revisions">
+    ```bash
+    for family in odigos-ecs-agent odigos-ecs-proxy; do
+      for arn in $(aws ecs list-task-definitions --family-prefix "$family" --query 'taskDefinitionArns[]' --output text); do
+        aws ecs deregister-task-definition --task-definition "$arn" >/dev/null
+      done
+    done
+    ```
+  </Step>
+
+  <Step title="Remove the leftover state on each container instance">
+    The agent's config directory and the synced instrumentation files are host
+    directories and outlive the task. On each instance:
+
+    ```bash
+    sudo rm -rf /etc/odigos-ecs-agent /var/odigos
+    ```
+
+    <Warning>
+      `/etc/odigos-ecs-agent` holds the agent's identity, license, and
+      configuration. Removing it makes any future install start fresh — leave it
+      in place if you plan to reinstall and want the configuration back.
+    </Warning>
+  </Step>
+
+  <Step title="Clean up the supporting AWS resources (optional)">
+    ```bash
+    aws logs delete-log-group --log-group-name /odigos/ecs-agent
+    aws logs delete-log-group --log-group-name /odigos/ecs-proxy
+
+    aws secretsmanager delete-secret --secret-id odigos-onprem-token --force-delete-without-recovery
+
+    aws iam delete-role-policy --role-name odigos-ecs-exec-role --policy-name odigos-extras
+    aws iam detach-role-policy --role-name odigos-ecs-exec-role \
+      --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+    aws iam delete-role --role-name odigos-ecs-exec-role
+
+    aws iam delete-role-policy --role-name odigos-ecs-task-role --policy-name ssm-exec
+    aws iam delete-role-policy --role-name odigos-ecs-task-role --policy-name odigos-coverage 2>/dev/null || true
+    aws iam delete-role --role-name odigos-ecs-task-role
+
+    aws ecr delete-repository --repository-name odigos-ecs-agent --force
+    aws ecr delete-repository --repository-name odigos-ecs-proxy --force
+    ```
+
+    Also delete the internal NLB, listener, and target group if you created them
+    for the proxy.
+
+    <Note>
+      Deleting and recreating the license secret gives it a **new** random ARN
+      suffix. The install guides' IAM policy uses a `odigos-onprem-token-*`
+      wildcard so it keeps working — but any task definition still referencing the
+      old ARN fails to start with
+      `ResourceNotFoundException ... can't find the specified secret`.
+    </Note>
+  </Step>
+</Steps>
+
+Your ECS cluster and container instances are untouched by all of the above.

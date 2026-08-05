@@ -1,0 +1,159 @@
+---
+title: "System Requirements"
+sidebarTitle: "System Requirements"
+description: "What your ECS cluster, container instances, IAM roles, and registry need before installing the Odigos ECS Agent."
+---
+
+import EnterpriseVMAgent from '/snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
+
+<EnterpriseVMAgent />
+
+Review this page before installing. The launch type and kernel requirements are
+hard requirements — the agent cannot work around them.
+
+## Cluster and launch type
+
+- An existing **Amazon ECS cluster** with **EC2 container instances**.
+- **EC2 launch type only.** [Fargate is not supported](/vmagent/ecs/overview#not-supported-fargate) —
+  the agent needs host PID, the instance's Docker socket, and eBPF.
+- Ability to run a **privileged task with `pidMode: host`** and host bind mounts
+  on the container instances (see [required permissions](/vmagent/ecs/configuration#required-permissions)).
+
+## Container instance kernel and AMI
+
+<Warning>
+  The container instance kernel must be **5.10 or newer with BTF**
+  (`/sys/kernel/btf/vmlinux` present). The agent's process detector and eBPF
+  probes require BTF/CO-RE and a modern verifier.
+
+  **Amazon Linux 2's stock kernel (4.14) does not work.** On it, the agent logs
+  `runtime-detector stopped: ... verifier error ... permission denied`, never
+  discovers processes, and nothing is instrumented.
+</Warning>
+
+- **Recommended:** the **Amazon Linux 2023** ECS-optimized AMI (kernel 6.1).
+- **Minimum:** the Amazon Linux 2 **kernel-5.10** ECS-optimized AMI.
+- Both `amd64` and `arm64` (Graviton) instances are supported — pull the image
+  for the matching architecture.
+
+Run this preflight check on a container instance before deploying:
+
+```bash
+uname -r                    # want 5.10+ (6.1.x on AL2023) — 4.14.x will fail
+ls /sys/kernel/btf/vmlinux  # must exist
+```
+
+## Resources per instance
+
+The agent task reserves modest resources on each container instance. The
+defaults in the reference task definition are a good starting point:
+
+| Setting | Default | Notes |
+|---|---|---|
+| `cpu` | `512` | CPU units for the agent and its collector child process. |
+| `memoryReservation` | `512` | Soft limit. |
+| `memory` | `2048` | Hard limit. Raise it on instances with many high-throughput tasks. |
+
+Make sure your instances have that headroom free, otherwise the daemon task
+cannot be placed.
+
+## License and images
+
+- An **Odigos Pro license token** for the VM Agent, delivered to the task as
+  `ODIGOS_ONPREM_TOKEN` (recommended: from AWS Secrets Manager).
+- The **`odigos-ecs-agent`** container image, and — for
+  [Agent + Proxy](/vmagent/ecs/installation-with-proxy) — the
+  **`odigos-ecs-proxy`** image. Both are published multi-arch (`amd64`,
+  `arm64`).
+  <Note>Obtain the images and registry credentials from your Odigos support team.</Note>
+- We recommend **mirroring both images into your own Amazon ECR repository** in
+  the cluster's account and region. ECS then pulls them with the task execution
+  role and needs no external registry credentials, and pulls stay in-region:
+
+  ```bash
+  export REGION=<region>
+  export ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+  export REG=${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com
+  export TAG=<version>
+
+  aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$REG"
+
+  for r in odigos-ecs-agent odigos-ecs-proxy; do
+    aws ecr create-repository --repository-name "$r" --region "$REGION" >/dev/null 2>&1 || true
+    docker pull --platform linux/amd64 "<ODIGOS_REGISTRY>/${r}:${TAG}"   # or linux/arm64
+    docker tag "<ODIGOS_REGISTRY>/${r}:${TAG}" "${REG}/${r}:${TAG}"
+    docker push "${REG}/${r}:${TAG}"
+  done
+  ```
+
+  Pull the architecture that matches your container instances. The proxy image
+  is only needed for the Agent + Proxy mode.
+
+## IAM roles
+
+Two roles, both trusting `ecs-tasks.amazonaws.com`:
+
+<AccordionGroup>
+  <Accordion title="Task execution role — required">
+    Used by ECS to pull the image, write logs, and read the license secret.
+
+    - Managed policy `AmazonECSTaskExecutionRolePolicy`
+    - `logs:CreateLogGroup` (the reference task definitions set
+      `awslogs-create-group: "true"`)
+    - `secretsmanager:GetSecretValue` on the license secret, when the token comes
+      from Secrets Manager
+  </Accordion>
+  <Accordion title="Task role — recommended">
+    Used by the running task itself.
+
+    - `ssmmessages:CreateControlChannel`, `ssmmessages:CreateDataChannel`,
+      `ssmmessages:OpenControlChannel`, `ssmmessages:OpenDataChannel` — required
+      for [ECS Exec](/vmagent/ecs/troubleshooting#inspect-a-running-agent-with-odictl),
+      which is how you run `odictl` against a running agent.
+    - **Proxy only, for the optional coverage check:**
+      `ecs:ListContainerInstances`, `ecs:DescribeContainerInstances`,
+      `ec2:DescribeInstances`.
+  </Accordion>
+</AccordionGroup>
+
+The install guides create both roles with copy-pasteable commands.
+
+## Network
+
+- Outbound connectivity from the container instances to your **Odigos Central**
+  endpoint (`host:port`; `:443` implies `wss`). The connection is
+  **outbound-only** — a Central instance in another AWS account or a public
+  endpoint works with no inbound rules on the cluster.
+- **Agent + Proxy mode only:** the instances' security group must allow TCP
+  **4321** to the proxy (instance-to-instance when the proxy is pinned to an
+  instance, or from the internal NLB).
+
+## Local tooling
+
+For the install and verification steps:
+
+```bash
+# AWS CLI v2, jq, and the Session Manager plugin (for ECS Exec / odictl)
+brew install jq
+brew install --cask session-manager-plugin
+```
+
+<Warning>
+  **zsh users:** always brace variables when a `:` follows them — write
+  `"${REG}/odigos-ecs-agent:${TAG}"`, not `"$REG/odigos-ecs-agent:$TAG"`, and
+  `"arn:aws:iam::${ACCOUNT}:role/..."`, not `"arn:aws:iam::$ACCOUNT:role/..."`.
+  Unbraced `$VAR:letter` is parsed by zsh as a history modifier and **silently
+  corrupts the value** — producing image names like `odigos-ecs-agentatest` and
+  truncated role ARNs.
+</Warning>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Install: Agent Only" icon="server" href="/vmagent/ecs/installation-agent-only">
+    Daemon service, each node connects to Central directly.
+  </Card>
+  <Card title="Install: Agent + Proxy" icon="sitemap" href="/vmagent/ecs/installation-with-proxy">
+    One aggregated platform per cluster.
+  </Card>
+</CardGroup>
