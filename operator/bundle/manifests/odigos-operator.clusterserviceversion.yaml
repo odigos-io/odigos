@@ -444,6 +444,7 @@ spec:
                 - odigos.io
               resources:
                 - instrumentationrules/status
+                - recommendations/status
               verbs:
                 - get
                 - patch
@@ -451,6 +452,7 @@ spec:
             - apiGroups:
                 - odigos.io
               resources:
+                - recommendations
                 - sampling
               verbs:
                 - create
