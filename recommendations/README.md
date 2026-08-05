@@ -9,7 +9,10 @@ and loaded at runtime via `go:embed`.
 ## Usage
 
 ```go
-import "github.com/odigos-io/odigos/recommendations"
+import (
+    "github.com/odigos-io/odigos/common"
+    "github.com/odigos-io/odigos/recommendations"
+)
 
 if err := recommendations.Load(); err != nil {
     return err
@@ -19,7 +22,7 @@ for _, rec := range recommendations.Get() {
     fmt.Println(rec.Type, rec.Title)
 }
 
-rec, ok := recommendations.GetByType(recommendations.RecommendationTypeInferDBAttributes)
+rec, ok := recommendations.GetByType(common.RecommendationTypeInferDBAttributes)
 if ok {
     fmt.Println(rec.Summary)
 }
@@ -28,6 +31,7 @@ if ok {
 - `Load()` parses all embedded manifests once (call during startup).
 - `Get()` returns every loaded recommendation.
 - `GetByType(type)` looks up a single recommendation by its `spec.type`.
+- `GetByK8sObjectName(name)` looks up a single recommendation by its `spec.k8sObjectName`.
 
 ## Types
 

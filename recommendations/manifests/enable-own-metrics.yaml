@@ -4,8 +4,8 @@ metadata:
   name: enable-own-metrics
 spec:
   type: 'EnableOwnMetrics'
+  k8sObjectName: 'odigos-metrics'
   oss: true
-
   requireOdigosDeployment: true
 
   title: 'Enable own metrics'
@@ -23,3 +23,7 @@ spec:
 
   cons:
     - Adds a small VictoriaMetrics instance with modest CPU, memory and network usage
+
+  appliedWhen:
+    - type: EffectiveConfig
+      expression: "odigosOwnTelemetryStore.metricsStoreDisabled == `false`"

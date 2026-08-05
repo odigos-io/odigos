@@ -4,6 +4,7 @@ metadata:
   name: url-templatization
 spec:
   type: 'UrlTemplatization'
+  k8sObjectName: 'url-templatization'
   oss: true
 
   title: 'Enable URL templatization'
@@ -22,4 +23,8 @@ spec:
     - Heuristics may miss some dynamic segments or wrongly templatize static ones
     - Incorrect results can raise cardinality and backend cost
     - Paths the heuristic cannot handle may need custom rules and ongoing maintenance
+
+  appliedWhen:
+    - type: ActionExists
+      actionType: URLTemplatization
 

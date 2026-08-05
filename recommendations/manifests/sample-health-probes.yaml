@@ -4,6 +4,7 @@ metadata:
   name: sample-health-probes
 spec:
   type: 'SampleHealthProbes'
+  k8sObjectName: 'sample-health-probes'
   oss: true
 
   title: 'Sample health probes'
@@ -23,6 +24,10 @@ spec:
   cons:
     - Dropped probe traces will not be available when debugging failing or flaky probes
     - Quiet services that only receive probe traffic may look empty on dashboards
+
+  appliedWhen:
+    - type: EffectiveConfig
+      expression: "sampling.k8sHealthProbesSampling.enabled == `true`"
 
   actions:
     - type: 'DropAllHealthProbes'

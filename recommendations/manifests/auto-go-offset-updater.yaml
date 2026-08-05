@@ -4,6 +4,7 @@ metadata:
   name: auto-go-offset-updater
 spec:
   type: 'AutoGoOffsetUpdater'
+  k8sObjectName: 'go-offset-updater'
   oss: false
 
   conditions:
@@ -25,3 +26,7 @@ spec:
 
   cons:
     - Clusters without internet access cannot reach the Odigos offsets endpoint and require a custom workflow to push the updater image to an internal registry
+
+  appliedWhen:
+    - type: EffectiveConfig
+      expression: "goAutoOffsetsMode != 'off'"

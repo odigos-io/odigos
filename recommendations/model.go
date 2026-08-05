@@ -1,15 +1,8 @@
 package recommendations
 
-import "gopkg.in/yaml.v3"
-
-type RecommendationType string
-
-const (
-	RecommendationTypeInferDBAttributes   RecommendationType = "InferDBAttributes"
-	RecommendationTypeAutoGoOffsetUpdater RecommendationType = "AutoGoOffsetUpdater"
-	RecommendationTypeEnableOwnMetrics    RecommendationType = "EnableOwnMetrics"
-	RecommendationTypeSampleHealthProbes  RecommendationType = "SampleHealthProbes"
-	RecommendationTypeUrlTemplatization   RecommendationType = "UrlTemplatization"
+import (
+	"github.com/odigos-io/odigos/common"
+	"gopkg.in/yaml.v3"
 )
 
 // Recommendation is the flat catalog entry for a single recommendation,
@@ -17,7 +10,10 @@ const (
 type Recommendation struct {
 
 	// Type uniquely identifies this recommendation (e.g. "InferDBAttributes").
-	Type RecommendationType `yaml:"type"`
+	Type common.RecommendationType `yaml:"type"`
+
+	// K8sObjectName is the metadata.name of the Recommendation CR created in the cluster.
+	K8sObjectName string `yaml:"k8sObjectName"`
 
 	// OSS is true when the recommendation is available in the open-source edition.
 	OSS bool `yaml:"oss"`
@@ -27,6 +23,10 @@ type Recommendation struct {
 
 	// Conditions are prerequisites that should hold before the recommendation is considered relevant.
 	Conditions []Condition `yaml:"conditions"`
+
+	// AppliedWhen lists checks that must all hold for the recommendation to be considered applied.
+	// Each entry is typed; currently EffectiveConfig compares a path in OdigosConfiguration to a value.
+	AppliedWhen []AppliedWhenCheck `yaml:"appliedWhen"`
 
 	// Title is the short display name shown in the UI.
 	Title string `yaml:"title"`
@@ -54,6 +54,32 @@ type Condition struct {
 	Type string `yaml:"type"`
 }
 
+const (
+	ConditionTypeGoEnterpriseSources = "GoEnterpriseSources"
+)
+
+const (
+	AppliedWhenTypeEffectiveConfig = "EffectiveConfig"
+	AppliedWhenTypeActionExists    = "ActionExists"
+)
+
+// AppliedWhenCheck is one criterion for whether a recommendation is currently applied.
+// Type selects the check kind; additional fields depend on the type.
+type AppliedWhenCheck struct {
+	// Type selects how this check is evaluated (e.g. EffectiveConfig, ActionExists).
+	Type string `yaml:"type"`
+
+	// Expression is a JMESPath expression evaluated against the effective-config YAML.
+	// It must return a boolean. Used when Type is EffectiveConfig.
+	// Examples: "goAutoOffsetsMode != 'off'", "sampling.k8sHealthProbesSampling.enabled == `true`"
+	Expression string `yaml:"expression,omitempty"`
+
+	// ActionType is the Action config type to look for (e.g. InferDbAttributes).
+	// Used when Type is ActionExists. The recommendation is applied when at least one
+	// non-disabled Action of this type exists in the cluster.
+	ActionType string `yaml:"actionType,omitempty"`
+}
+
 type Action struct {
 	Type        string `yaml:"type"`
 	Description string `yaml:"description"`
@@ -62,17 +88,19 @@ type Action struct {
 func (r *Recommendation) UnmarshalYAML(value *yaml.Node) error {
 	var raw struct {
 		Spec struct {
-			Type                    RecommendationType `yaml:"type"`
-			OSS                     bool               `yaml:"oss"`
-			RequireOdigosDeployment bool               `yaml:"requireOdigosDeployment"`
-			Conditions              []Condition        `yaml:"conditions"`
-			Title                   string             `yaml:"title"`
-			Summary                 string             `yaml:"summary"`
-			Description             string             `yaml:"description"`
-			Docs                    string             `yaml:"docs"`
-			Pros                    []string           `yaml:"pros"`
-			Cons                    []string           `yaml:"cons"`
-			Actions                 []Action           `yaml:"actions"`
+			Type                    common.RecommendationType `yaml:"type"`
+			K8sObjectName           string                   `yaml:"k8sObjectName"`
+			OSS                     bool                      `yaml:"oss"`
+			RequireOdigosDeployment bool                      `yaml:"requireOdigosDeployment"`
+			Conditions              []Condition              `yaml:"conditions"`
+			AppliedWhen             []AppliedWhenCheck       `yaml:"appliedWhen"`
+			Title                   string                   `yaml:"title"`
+			Summary                 string                   `yaml:"summary"`
+			Description             string                   `yaml:"description"`
+			Docs                    string                   `yaml:"docs"`
+			Pros                    []string                 `yaml:"pros"`
+			Cons                    []string                 `yaml:"cons"`
+			Actions                 []Action                 `yaml:"actions"`
 		} `yaml:"spec"`
 	}
 	if err := value.Decode(&raw); err != nil {
@@ -80,9 +108,11 @@ func (r *Recommendation) UnmarshalYAML(value *yaml.Node) error {
 	}
 
 	r.Type = raw.Spec.Type
+	r.K8sObjectName = raw.Spec.K8sObjectName
 	r.OSS = raw.Spec.OSS
 	r.RequireOdigosDeployment = raw.Spec.RequireOdigosDeployment
 	r.Conditions = raw.Spec.Conditions
+	r.AppliedWhen = raw.Spec.AppliedWhen
 	r.Title = raw.Spec.Title
 	r.Summary = raw.Spec.Summary
 	r.Description = raw.Spec.Description

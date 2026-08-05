@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/loglevel"
 	"github.com/odigos-io/odigos/autoscaler/controllers/metricshandler"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
+	"github.com/odigos-io/odigos/autoscaler/controllers/recommendations"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -152,6 +153,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&odigosv1.Action{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.Recommendation{}: {
+					Field: nsSelector,
+				},
 				&odigosv1.InstrumentationConfig{}: {},
 			},
 		},
@@ -185,6 +189,10 @@ func SetupWithManager(mgr manager.Manager, odigosVersion string) error {
 
 	if err = loglevel.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to create log level controller: %w", err)
+	}
+
+	if err = recommendations.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create recommendations controller: %w", err)
 	}
 
 	return nil

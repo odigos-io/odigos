@@ -4,6 +4,7 @@ metadata:
   name: infer-db-attributes
 spec:
   type: 'InferDBAttributes'
+  k8sObjectName: 'infer-db-attributes'
   oss: true
 
   title: 'Infer DB attributes'
@@ -27,3 +28,7 @@ spec:
 
   cons:
     - Adds a small amount of CPU overhead on the collector
+
+  appliedWhen:
+    - type: ActionExists
+      actionType: InferDbAttributes
