@@ -37,7 +37,7 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 		return nil, ErrorJaegerMissingURL
 	}
 
-	tls := dest.GetConfig()[JaegerTlsKey]
+	tls := config[JaegerTlsKey]
 	tlsEnabled := tls == "true"
 
 	endpoint, err := parseOtlpGrpcUrl(url, tlsEnabled)
@@ -52,7 +52,7 @@ func (j *Jaeger) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([
 	tlsConfig := GenericMap{
 		"insecure": !tlsEnabled,
 	}
-	caPem, caExists := dest.GetConfig()[JaegerCaPemKey]
+	caPem, caExists := config[JaegerCaPemKey]
 	if caExists && caPem != "" {
 		tlsConfig["ca_pem"] = caPem
 	}
