@@ -17,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/actions"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/instrumentationrules"
+	"github.com/odigos-io/odigos/recommendations"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -64,6 +65,9 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 	}
 	if err := instrumentationrules.Load(); err != nil {
 		return nil, fmt.Errorf("loading instrumentation rules data: %w", err)
+	}
+	if err := recommendations.Load(); err != nil {
+		return nil, fmt.Errorf("loading recommendations data: %w", err)
 	}
 	if err := config.Load(); err != nil {
 		return nil, fmt.Errorf("loading config data: %w", err)

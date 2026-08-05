@@ -1,0 +1,59 @@
+# =====================
+# Recommendations
+# Cluster Recommendation CRs enriched with catalog metadata from the embedded
+# YAML manifests (title, description, pros/cons, applied-when checks, etc.).
+# =====================
+
+enum RecommendationType {
+  InferDBAttributes
+  AutoGoOffsetUpdater
+  EnableOwnMetrics
+  SampleHealthProbes
+  UrlTemplatization
+}
+
+# Prerequisite listed in the recommendation catalog YAML (e.g. GoEnterpriseSources).
+type RecommendationCatalogCondition {
+  type: String!
+}
+
+# Applied-when check from the recommendation catalog YAML.
+type RecommendationAppliedWhen {
+  type: String!
+  expression: String
+  actionType: String
+}
+
+# Optional user-facing action choice when applying a recommendation.
+type RecommendationCatalogAction {
+  type: String!
+  description: String!
+}
+
+# A Recommendation CR in the cluster, enriched with catalog/manifest fields.
+type Recommendation {
+  name: ID!
+  type: RecommendationType!
+  # Whether this recommendation is currently applied (via the recommendation
+  # flow or configured organically).
+  applied: Boolean!
+  # Whether the catalog prerequisites for this recommendation currently hold.
+  conditionsMet: Boolean!
+
+  # Catalog / manifest fields
+  oss: Boolean!
+  requireOdigosDeployment: Boolean!
+  catalogConditions: [RecommendationCatalogCondition!]!
+  appliedWhen: [RecommendationAppliedWhen!]!
+  title: String!
+  summary: String!
+  description: String!
+  docsUrl: String
+  pros: [String!]!
+  cons: [String!]!
+  actions: [RecommendationCatalogAction!]!
+}
+
+extend type ComputePlatform {
+  recommendations: [Recommendation!]!
+}
