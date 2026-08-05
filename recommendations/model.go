@@ -96,7 +96,8 @@ type Remediation struct {
 }
 
 const (
-	RemediationStepTypeEditConfig = "EditConfig"
+	RemediationStepTypeEditConfig       = "EditConfig"
+	RemediationStepTypeApplyOdigosAction = "ApplyOdigosAction"
 )
 
 const (
@@ -117,7 +118,7 @@ type ApplyExample struct {
 // RemediationStep is one operation to perform when the user chooses a remediation.
 // Type selects the operation; additional fields depend on the type.
 type RemediationStep struct {
-	// Type selects how this step is applied (e.g. EditConfig).
+	// Type selects how this step is applied (e.g. EditConfig, ApplyOdigosAction).
 	Type string `yaml:"type"`
 
 	// Path is a dotted path into OdigosConfiguration (same shape as appliedWhen EffectiveConfig paths).
@@ -128,6 +129,16 @@ type RemediationStep struct {
 	// Value is the value to set at Path. Used when Type is EditConfig.
 	// Parsed as a typed YAML value (bool, number, string, map, list).
 	Value any `yaml:"value,omitempty"`
+}
+
+// OdigosActionExample returns the first ApplyExample of type OdigosAction, if any.
+func (r Remediation) OdigosActionExample() (ApplyExample, bool) {
+	for _, example := range r.ApplyExamples {
+		if example.Type == ApplyExampleTypeOdigosAction {
+			return example, true
+		}
+	}
+	return ApplyExample{}, false
 }
 
 func (r *Recommendation) UnmarshalYAML(value *yaml.Node) error {

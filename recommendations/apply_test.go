@@ -59,3 +59,19 @@ func TestApplyStepsToConfig(t *testing.T) {
 		t.Fatalf("keepPercentage = %#v, want 2", cfg.Sampling.K8sHealthProbesSampling.KeepPercentage)
 	}
 }
+
+func TestPartitionSteps(t *testing.T) {
+	steps := []RemediationStep{
+		{Type: RemediationStepTypeEditConfig, Path: "a", Value: true},
+		{Type: RemediationStepTypeApplyOdigosAction},
+		{Type: RemediationStepTypeEditConfig, Path: "b", Value: 1},
+	}
+	config := ConfigSteps(steps)
+	actions := ActionSteps(steps)
+	if len(config) != 2 {
+		t.Fatalf("ConfigSteps len = %d, want 2", len(config))
+	}
+	if len(actions) != 1 {
+		t.Fatalf("ActionSteps len = %d, want 1", len(actions))
+	}
+}

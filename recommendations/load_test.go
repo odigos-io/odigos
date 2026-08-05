@@ -113,6 +113,12 @@ func TestLoad(t *testing.T) {
 	if len(rec.Remediations) != 1 || rec.Remediations[0].ApplyExamples[0].Type != ApplyExampleTypeOdigosAction {
 		t.Fatalf("InferDBAttributes ApplyExamples = %+v, want OdigosAction", rec.Remediations)
 	}
+	if len(rec.Remediations[0].Steps) != 1 || rec.Remediations[0].Steps[0].Type != RemediationStepTypeApplyOdigosAction {
+		t.Fatalf("InferDBAttributes Steps = %+v, want ApplyOdigosAction", rec.Remediations[0].Steps)
+	}
+	if _, ok := rec.Remediations[0].OdigosActionExample(); !ok {
+		t.Fatal("InferDBAttributes missing OdigosAction applyExamples")
+	}
 
 	for _, rec := range Get() {
 		if rec.K8sObjectName == "" {

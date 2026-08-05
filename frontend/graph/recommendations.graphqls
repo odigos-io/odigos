@@ -79,6 +79,7 @@ extend type Mutation {
   # Sets or clears the odigos.io/recommendation-dismissed label on the Recommendation CR.
   setRecommendationDismissed(name: ID!, dismissed: Boolean!): Recommendation!
 
-  # Looks up the remediation in the catalog manifest and applies its steps to odigos-local-ui-config.
+  # Looks up the remediation in the catalog manifest and applies its steps
+  # (EditConfig → odigos-local-ui-config, ApplyOdigosAction → Action CR from applyExamples).
   applyRecommendationRemediation(recommendationType: RecommendationType!, remediationType: String!): Boolean!
 }

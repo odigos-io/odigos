@@ -34,6 +34,8 @@ spec:
     - type: EnableUrlTemplatization
       buttonText: 'Enable'
       tooltip: 'Create a URL Templatization action for all sources.'
+      steps:
+        - type: ApplyOdigosAction
       applyExamples:
         - type: OdigosAction
           content: |
@@ -41,7 +43,6 @@ spec:
             kind: Action
             metadata:
               name: url-templatization
-              namespace: odigos-system
             spec:
               actionName: URL Templatization
               signals:

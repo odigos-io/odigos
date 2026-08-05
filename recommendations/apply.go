@@ -51,9 +51,33 @@ func applyStep(data map[string]any, step RemediationStep) error {
 	switch step.Type {
 	case RemediationStepTypeEditConfig:
 		return applyEditConfigStep(data, step)
+	case RemediationStepTypeApplyOdigosAction:
+		return fmt.Errorf("ApplyOdigosAction cannot be applied to OdigosConfiguration")
 	default:
 		return fmt.Errorf("unknown remediation step type %q", step.Type)
 	}
+}
+
+// ConfigSteps returns only EditConfig steps from the list.
+func ConfigSteps(steps []RemediationStep) []RemediationStep {
+	var result []RemediationStep
+	for _, step := range steps {
+		if step.Type == RemediationStepTypeEditConfig {
+			result = append(result, step)
+		}
+	}
+	return result
+}
+
+// ActionSteps returns only ApplyOdigosAction steps from the list.
+func ActionSteps(steps []RemediationStep) []RemediationStep {
+	var result []RemediationStep
+	for _, step := range steps {
+		if step.Type == RemediationStepTypeApplyOdigosAction {
+			result = append(result, step)
+		}
+	}
+	return result
 }
 
 func applyEditConfigStep(data map[string]any, step RemediationStep) error {

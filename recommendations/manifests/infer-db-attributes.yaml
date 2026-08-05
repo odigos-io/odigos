@@ -39,6 +39,8 @@ spec:
     - type: EnableInferDbAttributes
       buttonText: 'Enable'
       tooltip: 'Create an Infer DB Attributes action for all sources.'
+      steps:
+        - type: ApplyOdigosAction
       applyExamples:
         - type: OdigosAction
           content: |
@@ -46,7 +48,6 @@ spec:
             kind: Action
             metadata:
               name: infer-db-attributes
-              namespace: odigos-system
             spec:
               actionName: Infer DB Attributes
               signals:

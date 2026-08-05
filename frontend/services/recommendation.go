@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/recommendations"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func GetRecommendations(ctx context.Context) ([]*model.Recommendation, error) {
@@ -73,7 +74,10 @@ func convertRecommendationToModel(rec *v1alpha1.Recommendation) (*model.Recommen
 		return nil, fmt.Errorf("recommendation catalog entry not found for type %q (name %q)", rec.Spec.Type, rec.Name)
 	}
 
-	remediations := toCatalogRemediations(catalog.Remediations)
+	remediations, err := toCatalogRemediations(catalog.Remediations)
+	if err != nil {
+		return nil, err
+	}
 
 	return &model.Recommendation{
 		Name:                    rec.Name,
@@ -129,28 +133,54 @@ func toAppliedWhen(checks []recommendations.AppliedWhenCheck) []*model.Recommend
 	return result
 }
 
-func toCatalogRemediations(remediations []recommendations.Remediation) []*model.RecommendationCatalogRemediation {
+func toCatalogRemediations(remediations []recommendations.Remediation) ([]*model.RecommendationCatalogRemediation, error) {
 	result := make([]*model.RecommendationCatalogRemediation, 0, len(remediations))
 	for _, r := range remediations {
+		examples, err := toCatalogApplyExamples(r.ApplyExamples)
+		if err != nil {
+			return nil, err
+		}
 		result = append(result, &model.RecommendationCatalogRemediation{
 			Type:          r.Type,
 			ButtonText:    r.ButtonText,
 			Tooltip:       r.Tooltip,
-			ApplyExamples: toCatalogApplyExamples(r.ApplyExamples),
+			ApplyExamples: examples,
 		})
 	}
-	return result
+	return result, nil
 }
 
-func toCatalogApplyExamples(examples []recommendations.ApplyExample) []*model.RecommendationCatalogApplyExample {
+func toCatalogApplyExamples(examples []recommendations.ApplyExample) ([]*model.RecommendationCatalogApplyExample, error) {
+	ns := env.GetCurrentNamespace()
 	result := make([]*model.RecommendationCatalogApplyExample, 0, len(examples))
 	for _, e := range examples {
+		content := e.Content
+		if e.Type == recommendations.ApplyExampleTypeOdigosAction {
+			withNS, err := injectOdigosActionNamespace(content, ns)
+			if err != nil {
+				return nil, err
+			}
+			content = withNS
+		}
 		result = append(result, &model.RecommendationCatalogApplyExample{
 			Type:    e.Type,
-			Content: e.Content,
+			Content: content,
 		})
 	}
-	return result
+	return result, nil
+}
+
+func injectOdigosActionNamespace(content, namespace string) (string, error) {
+	var action v1alpha1.Action
+	if err := yaml.Unmarshal([]byte(content), &action); err != nil {
+		return "", fmt.Errorf("parse OdigosAction applyExamples: %w", err)
+	}
+	action.Namespace = namespace
+	out, err := yaml.Marshal(&action)
+	if err != nil {
+		return "", fmt.Errorf("marshal OdigosAction applyExamples: %w", err)
+	}
+	return string(out), nil
 }
 
 func optionalString(s string) *string {
