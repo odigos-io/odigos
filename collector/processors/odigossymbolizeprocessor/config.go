@@ -14,12 +14,10 @@ type Config struct {
 
 	// MaxSymbolCache caps cached parsed binaries by count (LRU). 0 = default.
 	MaxSymbolCache int `mapstructure:"max_symbol_cache"`
-	// MaxSymbolBytes caps the total bytes of parsed symbols held across all cached
-	// binaries (LRU eviction by memory — the real guard at scale). 0 = default.
-	MaxSymbolBytes int64 `mapstructure:"max_symbol_bytes"`
-	// MaxSymtabBytes caps the transient decode: a symbol table larger than this on
-	// disk is skipped without decoding (the peak guard). 0 = default.
-	MaxSymtabBytes int64 `mapstructure:"max_symtab_bytes"`
+	// MaxMemoryBytes bounds the processor's total memory: the retained symbol
+	// cache gets it in full, the transient per-binary symtab decode gets a
+	// fraction of it (see symtabDecodeCostFactor). 0 = default (256 MiB).
+	MaxMemoryBytes int64 `mapstructure:"max_memory_bytes"`
 	// MaxMapsCache caps cached per-pid /proc maps (LRU). 0 = default.
 	MaxMapsCache int `mapstructure:"max_maps_cache"`
 	// MapsTTLSeconds is how long a cached /proc/<pid>/maps is reused. 0 = default.

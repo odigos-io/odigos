@@ -1,6 +1,9 @@
 package collectorconfig
 
 import (
+	"strings"
+
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
@@ -8,8 +11,12 @@ import (
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
 )
 
+// odigossymbolizeProcessorType matches a user's own Processor manifest against
+// the warning below.
+const odigossymbolizeProcessorType = "odigossymbolizeprocessor"
+
 // ProfilingPipelineConfig builds the node collector profiles domain when profiling is enabled.
-func ProfilingPipelineConfig(odigosNamespace string, profiling *common.ProfilingConfiguration, manifestProcessorNames []string) config.Config {
+func ProfilingPipelineConfig(logger logr.Logger, odigosNamespace string, profiling *common.ProfilingConfiguration, manifestProcessorNames []string) config.Config {
 	if !common.ProfilingPipelineActive(profiling) {
 		return config.Config{}
 	}
@@ -39,12 +46,23 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 	// symbolize processor runs after the keep-filter (only retained profiles are
 	// symbolized) and before service-name enrichment.
 	if profiling.NativeSymbolizationEnabled() {
-		processors[commonconf.ProfilingNodeSymbolizeProcessor] = commonconf.OdigosSymbolizeProcessorConfig()
+		processors[commonconf.ProfilingNodeSymbolizeProcessor] = commonconf.OdigosSymbolizeProcessorConfig(profiling.Symbolization)
 		pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeSymbolizeProcessor)
 	}
 	pipelineProcessors = append(pipelineProcessors, commonconf.ProfilingNodeServiceNameProcessor)
 	pipelineProcessors = append(pipelineProcessors, manifestProcessorNames...)
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
+
+	// A user-authored Processor CR of this type runs as its own independent
+	// instance, with its own max_memory_bytes outside maxMemoryMiB's
+	// accounting -- warn so that isn't a silent surprise.
+	for _, name := range manifestProcessorNames {
+		if procType, _, ok := strings.Cut(name, "/"); ok && procType == odigossymbolizeProcessorType {
+			logger.Info("profiles pipeline also includes a user-defined odigossymbolizeprocessor "+
+				"instance; its memory budget is independent of profiling.symbolization.maxMemoryMiB",
+				"processor", name)
+		}
+	}
 
 	return config.Config{
 		Receivers: config.GenericMap{

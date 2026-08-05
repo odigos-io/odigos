@@ -115,11 +115,17 @@ func OdigosProfilesProcessorConfig() config.GenericMap {
 }
 
 // OdigosSymbolizeProcessorConfig is the odigossymbolizeprocessor block on the node
-// collector profiles pipeline. It needs no configuration: native frames are resolved
-// on-host from /proc/<pid>/maps + ELF symbols, and frames the profiler already named
-// (interpreted runtimes, Go) pass through. Defaults to bounded caches and async parsing.
-func OdigosSymbolizeProcessorConfig() config.GenericMap {
-	return config.GenericMap{}
+// collector profiles pipeline. Needs no configuration by default.
+//
+// maxMemoryMiB is a straight MiB->bytes passthrough to max_memory_bytes; the
+// processor itself derives both its internal guards from that one value (see
+// symtabDecodeCostFactor in the symbolize package).
+func OdigosSymbolizeProcessorConfig(symbolization *odigoscommon.ProfilingSymbolizationConfiguration) config.GenericMap {
+	cfg := config.GenericMap{}
+	if symbolization != nil && symbolization.MaxMemoryMiB != nil && *symbolization.MaxMemoryMiB > 0 {
+		cfg["max_memory_bytes"] = int64(*symbolization.MaxMemoryMiB) << 20
+	}
+	return cfg
 }
 
 // ProfilingServiceNameTransformConfig sets resource attribute service.name from K8s workload
