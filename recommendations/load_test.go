@@ -21,6 +21,9 @@ func TestLoad(t *testing.T) {
 	if !ok {
 		t.Fatal("GetByType(SampleHealthProbes) not found")
 	}
+	if len(rec.Categories) != 1 || rec.Categories[0] != "Cost Optimization" {
+		t.Fatalf("SampleHealthProbes Categories = %#v, want [Cost Optimization]", rec.Categories)
+	}
 	if len(rec.Remediations) != 2 {
 		t.Fatalf("Remediations len = %d, want 2", len(rec.Remediations))
 	}

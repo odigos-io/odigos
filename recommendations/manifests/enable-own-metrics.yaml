@@ -7,6 +7,8 @@ spec:
   k8sObjectName: 'odigos-metrics'
   oss: true
   requireOdigosDeployment: true
+  categories:
+    - Usability
 
   title: 'Enable own metrics'
   summary: 'Include a lean metrics db to show relevant odigos metrics in the UI.'

@@ -6,6 +6,8 @@ spec:
   type: 'SampleHealthProbes'
   k8sObjectName: 'sample-health-probes'
   oss: true
+  categories:
+    - Cost Optimization
 
   title: 'Sample health probes'
   summary: 'Drop Kubernetes health probe traces so the pipeline stays focused on real traffic and costs stay low.'

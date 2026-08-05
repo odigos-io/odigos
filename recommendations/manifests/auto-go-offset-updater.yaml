@@ -6,6 +6,9 @@ spec:
   type: 'AutoGoOffsetUpdater'
   k8sObjectName: 'go-offset-updater'
   oss: false
+  categories:
+    - Maintenance
+    - Reliability
 
   conditions:
     - type: 'GoEnterpriseSources'

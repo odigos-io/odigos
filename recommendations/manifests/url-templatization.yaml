@@ -6,6 +6,8 @@ spec:
   type: 'UrlTemplatization'
   k8sObjectName: 'url-templatization'
   oss: true
+  categories:
+    - Normalization
 
   title: 'Enable URL templatization'
   summary: 'Replace dynamic URL path segments with templates so HTTP span names and attributes stay low-cardinality.'

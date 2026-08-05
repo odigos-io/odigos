@@ -28,6 +28,10 @@ type Recommendation struct {
 	// Each entry is typed; currently EffectiveConfig compares a path in OdigosConfiguration to a value.
 	AppliedWhen []AppliedWhenCheck `yaml:"appliedWhen"`
 
+	// Categories are UI grouping labels for this recommendation
+	// (e.g. "Enrichment", "Cost Optimization", "Usability").
+	Categories []string `yaml:"categories"`
+
 	// Title is the short display name shown in the UI.
 	Title string `yaml:"title"`
 
@@ -133,14 +137,15 @@ func (r *Recommendation) UnmarshalYAML(value *yaml.Node) error {
 			K8sObjectName           string                   `yaml:"k8sObjectName"`
 			OSS                     bool                      `yaml:"oss"`
 			RequireOdigosDeployment bool                      `yaml:"requireOdigosDeployment"`
-			Conditions              []Condition              `yaml:"conditions"`
-			AppliedWhen             []AppliedWhenCheck       `yaml:"appliedWhen"`
-			Title                   string                   `yaml:"title"`
-			Summary                 string                   `yaml:"summary"`
-			Description             string                   `yaml:"description"`
-			Docs                    string                   `yaml:"docs"`
-			Pros                    []string                 `yaml:"pros"`
-			Cons                    []string                 `yaml:"cons"`
+			Conditions              []Condition               `yaml:"conditions"`
+			AppliedWhen             []AppliedWhenCheck        `yaml:"appliedWhen"`
+			Categories              []string                  `yaml:"categories"`
+			Title                   string                    `yaml:"title"`
+			Summary                 string                    `yaml:"summary"`
+			Description             string                    `yaml:"description"`
+			Docs                    string                    `yaml:"docs"`
+			Pros                    []string                  `yaml:"pros"`
+			Cons                    []string                  `yaml:"cons"`
 			Remediations            []Remediation             `yaml:"remediations"`
 		} `yaml:"spec"`
 	}
@@ -154,6 +159,7 @@ func (r *Recommendation) UnmarshalYAML(value *yaml.Node) error {
 	r.RequireOdigosDeployment = raw.Spec.RequireOdigosDeployment
 	r.Conditions = raw.Spec.Conditions
 	r.AppliedWhen = raw.Spec.AppliedWhen
+	r.Categories = raw.Spec.Categories
 	r.Title = raw.Spec.Title
 	r.Summary = raw.Spec.Summary
 	r.Description = raw.Spec.Description

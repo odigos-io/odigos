@@ -6,6 +6,8 @@ spec:
   type: 'InferDBAttributes'
   k8sObjectName: 'infer-db-attributes'
   oss: true
+  categories:
+    - Enrichment
 
   title: 'Infer DB attributes'
   summary: 'Parse database query text to add OpenTelemetry attributes like db.operation.name and db.collection.name when they are missing.'

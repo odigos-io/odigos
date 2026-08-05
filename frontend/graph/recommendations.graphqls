@@ -61,6 +61,7 @@ type Recommendation {
   requireOdigosDeployment: Boolean!
   catalogConditions: [RecommendationCatalogCondition!]!
   appliedWhen: [RecommendationAppliedWhen!]!
+  categories: [String!]!
   title: String!
   summary: String!
   description: String!

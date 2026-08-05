@@ -85,6 +85,7 @@ func convertRecommendationToModel(rec *v1alpha1.Recommendation) (*model.Recommen
 		RequireOdigosDeployment: catalog.RequireOdigosDeployment,
 		CatalogConditions:       toCatalogConditions(catalog.Conditions),
 		AppliedWhen:             toAppliedWhen(catalog.AppliedWhen),
+		Categories:              nonNilStrings(catalog.Categories),
 		Title:                   catalog.Title,
 		Summary:                 catalog.Summary,
 		Description:             catalog.Description,

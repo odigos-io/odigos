@@ -1564,6 +1564,7 @@ type Recommendation struct {
 	RequireOdigosDeployment bool                                `json:"requireOdigosDeployment"`
 	CatalogConditions       []*RecommendationCatalogCondition   `json:"catalogConditions"`
 	AppliedWhen             []*RecommendationAppliedWhen        `json:"appliedWhen"`
+	Categories              []string                            `json:"categories"`
 	Title                   string                              `json:"title"`
 	Summary                 string                              `json:"summary"`
 	Description             string                              `json:"description"`
