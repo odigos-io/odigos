@@ -7,7 +7,7 @@ sidebarTitle: 'Add AWS'
 Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Central cluster, discovers resources across every region enabled in that account, and can instrument AWS Lambda functions when you create Sources.
 
 <Note>
-  [Enable Cloud Connectors](/central/adding-connections/cloud-connectors/enable)
+  [Enable Cloud Connectors](/cloud-connectors/enable)
   before you add a connector.
 </Note>
 
@@ -17,8 +17,8 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
 | --- | --- | --- | --- |
 | `aws.lambda` | Workload | Yes | Yes (OpenTelemetry Lambda layer) |
 | `aws.fargate-task` | Workload | Yes | Coming soon |
-| `aws.ecs-cluster` | Compute platform | Yes | Agent install coming soon |
-| `aws.fargate-cluster` | Compute platform | Yes | Agent install coming soon |
+| `aws.ecs-cluster` | Compute platform | Yes | Coming soon |
+| `aws.fargate-cluster` | Compute platform | Yes | Coming soon |
 
 ## Add the connector
 
@@ -31,7 +31,7 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
     Choose how much access this connector should have. The UI shows an **example IAM permissions policy** for the level you pick. You will attach that policy when you create the IAM role or user in the next step.
 
     <img
-      src="/images/central/cloud-connectors/aws-access-level.png"
+      src="/images/cloud-connectors/aws-access-level.png"
       alt="Create Cloud Connector dialog with AWS selected and the Discovery + instrumentation access level showing an IAM policy preview"
     />
 
@@ -60,7 +60,7 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
         | Read and update function config | `lambda:GetFunctionConfiguration`, `lambda:UpdateFunctionConfiguration` |
         | Manage OTel layers | `lambda:GetLayerVersion`, `lambda:ListLayers`, `lambda:PublishLayerVersion`, `lambda:DeleteLayerVersion` |
 
-        Lambda instrumentation also requires an [OTLP destination](/central/adding-connections/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online.
+        Lambda instrumentation also requires an [OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online.
       </Tab>
       <Tab title="Custom">
         Pick which resource types may be discovered and which may be instrumented. The UI updates the **policy preview** to match your selections so the IAM policy stays aligned with what verification will validate.
@@ -72,7 +72,7 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
     <Info>
       Use the policy preview as the source of truth for the permissions policy.
       This keeps connector access scoped — not blanket account admin. See
-      [You control the access scope](/central/adding-connections/cloud-connectors/overview#you-control-the-access-scope).
+      [You control the access scope](/cloud-connectors/overview#you-control-the-access-scope).
     </Info>
 
     Click **Next** to continue to **Setup credentials**.
@@ -82,7 +82,7 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
     On the **Setup credentials** screen, apply the IAM policy from the previous step in your AWS account and enter the credentials Odigos will use.
 
     <img
-      src="/images/central/cloud-connectors/aws-setup-credentials.png"
+      src="/images/cloud-connectors/aws-setup-credentials.png"
       alt="Setup credentials screen for an AWS connector with the authentication method set to Assume Role and CloudFormation selected as the setup method"
     />
 
@@ -132,7 +132,7 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
         </Tabs>
 
         <img
-          src="/images/central/cloud-connectors/aws-create-iam-role.png"
+          src="/images/cloud-connectors/aws-create-iam-role.png"
           alt="Create IAM role step showing CloudFormation instructions and the Enter Role ARN form with account ID, access keys, Role ARN, and External ID fields"
         />
 
@@ -204,7 +204,7 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
 
 <Check>
   When the connector shows Connected, you can browse discovered workloads and
-  start [instrumenting](/central/adding-connections/cloud-connectors/instrument-workloads).
+  start [instrumenting](/cloud-connectors/instrument-workloads).
 </Check>
 
 ## Next steps
@@ -212,7 +212,7 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
 <Card
   title="Instrument workloads"
   icon="microchip"
-  href="/central/adding-connections/cloud-connectors/instrument-workloads#add-an-otlp-destination"
+  href="/cloud-connectors/instrument-workloads#add-an-otlp-destination"
 >
   Add an OTLP destination, create Sources for discovered Lambdas, and track instrumentation.
 </Card>

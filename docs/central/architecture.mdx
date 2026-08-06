@@ -4,7 +4,7 @@ description: 'Learn about the architecture of Odigos Central, including the cent
 sidebarTitle: 'Architecture'
 ---
 
-Odigos Central consists of components deployed in a **central (management) cluster**, plus connections to remote platforms: a lightweight proxy in each **remote Kubernetes cluster**, [VM Agent](/central/adding-connections/vmagent) hosts, and optional [Cloud Connectors](/central/adding-connections/cloud-connectors/overview) for cloud accounts.
+Odigos Central consists of components deployed in a **central (management) cluster**, plus connections to remote platforms: a lightweight proxy in each **remote Kubernetes cluster**, [VM Agent](/central/adding-connections/vmagent) hosts, and optional [Cloud Connectors](/cloud-connectors/overview) for cloud accounts.
 
 ```mermaid
 flowchart TB
@@ -45,7 +45,7 @@ flowchart TB
     vms ~~~ cloud
 ```
 
-When [Cloud Connectors are enabled](/central/adding-connections/cloud-connectors/enable), the Central cluster also runs the connector-runtime controller, a dedicated PostgreSQL store for connector state, and per-account provider connector workloads (for example AWS, GCP, and other supported providers) that you create from the UI.
+When [Cloud Connectors are enabled](/cloud-connectors/enable), the Central cluster also runs the connector-runtime controller, a dedicated PostgreSQL store for connector state, and per-account provider connector workloads (for example AWS, GCP, and other supported providers) that you create from the UI.
 
 ## Components
 
@@ -54,4 +54,4 @@ When [Cloud Connectors are enabled](/central/adding-connections/cloud-connectors
 | **Central UI**      | Web interface for managing connected clusters, VM agents, cloud connectors, sources, destinations, and sampling configurations |
 | **Central Backend** | API server that stores configuration in Redis and communicates with remote platforms                            |
 | **Central Proxy**   | Lightweight service deployed in each remote cluster that bridges the central backend to local Odigos components |
-| **Cloud Connectors** (optional) | Provider runtimes in the Central cluster that discover and instrument cloud workloads for one cloud account boundary each (for example an AWS account or GCP project). See [Cloud Connectors overview](/central/adding-connections/cloud-connectors/overview). |
+| **Cloud Connectors** (optional) | Provider runtimes in the Central cluster that discover and instrument cloud workloads for one cloud account boundary each (for example an AWS account or GCP project). See [Cloud Connectors](/cloud-connectors/overview). |

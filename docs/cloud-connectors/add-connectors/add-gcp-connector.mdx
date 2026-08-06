@@ -7,7 +7,7 @@ sidebarTitle: 'Add GCP'
 Add a GCP Cloud Connector to manage **one Google Cloud project**. The connector runs in the Central cluster, discovers resources across every location in that project, and can instrument Cloud Run services when you create Sources.
 
 <Note>
-  [Enable Cloud Connectors](/central/adding-connections/cloud-connectors/enable)
+  [Enable Cloud Connectors](/cloud-connectors/enable)
   before you add a connector.
 </Note>
 
@@ -30,7 +30,7 @@ Add a GCP Cloud Connector to manage **one Google Cloud project**. The connector 
     Choose how much access this connector should have. The UI shows an **example IAM policy** for the level you pick. You will grant that role to the connector identity in the next step.
 
     <img
-      src="/images/central/cloud-connectors/gcp-access-level.png"
+      src="/images/cloud-connectors/gcp-access-level.png"
       alt="Create Cloud Connector dialog with GCP selected and the Discovery + instrumentation access level showing a custom role policy preview"
     />
 
@@ -67,7 +67,7 @@ Add a GCP Cloud Connector to manage **one Google Cloud project**. The connector 
           `roles/iam.serviceAccountUser` on the runtime service account.
         </Warning>
 
-        Cloud Run instrumentation also requires an [OTLP destination](/central/adding-connections/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online. That endpoint must be reachable **from Cloud Run**, because instrumented services export OTLP directly to it.
+        Cloud Run instrumentation also requires an [OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online. That endpoint must be reachable **from Cloud Run**, because instrumented services export OTLP directly to it.
       </Tab>
       <Tab title="Custom">
         Pick which resource types may be discovered and which may be instrumented. The UI updates the **policy preview** to match your selections so the IAM role stays aligned with what verification will validate.
@@ -79,7 +79,7 @@ Add a GCP Cloud Connector to manage **one Google Cloud project**. The connector 
     <Info>
       Use the policy preview as the source of truth for the custom role. This
       keeps connector access scoped — not blanket project owner. See
-      [You control the access scope](/central/adding-connections/cloud-connectors/overview#you-control-the-access-scope).
+      [You control the access scope](/cloud-connectors/overview#you-control-the-access-scope).
     </Info>
 
     Enable the Cloud Run, Cloud Resource Manager, Container, Compute, and IAM APIs in the project as needed, then click **Next** to continue to **Setup credentials**.
@@ -89,7 +89,7 @@ Add a GCP Cloud Connector to manage **one Google Cloud project**. The connector 
     On the **Setup credentials** screen, identify the project and enter the identity Odigos uses to access it.
 
     <img
-      src="/images/central/cloud-connectors/gcp-setup-credentials.png"
+      src="/images/cloud-connectors/gcp-setup-credentials.png"
       alt="Setup credentials screen for a GCP connector with GCP Project ID, authentication method toggle, and Service Account Key JSON fields"
     />
 
@@ -151,7 +151,7 @@ Add a GCP Cloud Connector to manage **one Google Cloud project**. The connector 
 
 <Check>
   When the connector shows Connected, you can browse discovered workloads and
-  start [instrumenting](/central/adding-connections/cloud-connectors/instrument-workloads).
+  start [instrumenting](/cloud-connectors/instrument-workloads).
 </Check>
 
 ## Next steps
@@ -159,7 +159,7 @@ Add a GCP Cloud Connector to manage **one Google Cloud project**. The connector 
 <Card
   title="Instrument workloads"
   icon="microchip"
-  href="/central/adding-connections/cloud-connectors/instrument-workloads#add-an-otlp-destination"
+  href="/cloud-connectors/instrument-workloads#add-an-otlp-destination"
 >
   Add an OTLP destination, create Sources for discovered Cloud Run services, and track instrumentation.
 </Card>

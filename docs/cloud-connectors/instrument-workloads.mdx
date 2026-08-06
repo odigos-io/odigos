@@ -16,7 +16,7 @@ Once a Cloud Connector is online, browse the workloads it discovered and create 
     At least one **OTLP destination** on that connector. See [Add an OTLP destination](#add-an-otlp-destination). Workload instrumentation is destination-gated; without a usable OTLP endpoint the connector will not attach instrumentation.
   </Step>
   <Step title="Reachable endpoint">
-    Instrumented workloads export OTLP to that destination from the cloud environment (for example from Lambda or Cloud Run). Point the destination at an endpoint those workloads can reach — for example a collector or backend with appropriate public or VPC access. See [Telemetry export](/central/adding-connections/cloud-connectors/overview#telemetry-export).
+    Instrumented workloads export OTLP to that destination from the cloud environment (for example from Lambda or Cloud Run). Point the destination at an endpoint those workloads can reach — for example a collector or backend with appropriate public or VPC access. See [Telemetry export](/cloud-connectors/overview#telemetry-export).
   </Step>
 </Steps>
 
@@ -24,7 +24,7 @@ Once a Cloud Connector is online, browse the workloads it discovered and create 
 
 Before you create Sources, add at least one destination on the connector so instrumented workloads have somewhere to export telemetry.
 
-Lambda and Cloud Run support OTLP destinations only. For more information, see [Telemetry export](/central/adding-connections/cloud-connectors/overview#telemetry-export).
+Lambda and Cloud Run support OTLP destinations only. For more information, see [Telemetry export](/cloud-connectors/overview#telemetry-export).
 
 Follow the [Destinations overview](/enterprise/backends-overview) for how to add and configure a destination, then apply that setup on the connector in Central. The endpoint must be reachable from the cloud workloads themselves (not only from the Central cluster).
 
@@ -42,7 +42,7 @@ Select the workloads to instrument and create Sources. A Source is the instrumen
 
 Enable the Source so the connector applies instrumentation to that workload. That typically means adding the Odigos OTEL SDK and collector components the runtime needs, configuring them for the workload, and configuring where telemetry is sent (the OTLP destination on the connector).
 
-See [Supported languages](/central/adding-connections/cloud-connectors/overview#supported-languages) for which runtimes each workload type can instrument.
+See [Supported languages](/cloud-connectors/overview#supported-languages) for which runtimes each workload type can instrument.
 
 ## Check Source status
 
@@ -67,13 +67,13 @@ To remove instrumentation from one or more Sources, select them with the checkbo
     Confirm an [OTLP destination](#add-an-otlp-destination) exists on the connector and the Source is enabled. See [Destinations overview](/enterprise/backends-overview) for how to add and configure destinations.
   </Accordion>
   <Accordion title="GCP: permission denied on update">
-    Grant `iam.serviceAccounts.actAs` (or `roles/iam.serviceAccountUser` on the runtime service account). See [Add GCP connector](/central/adding-connections/cloud-connectors/add-gcp-connector).
+    Grant `iam.serviceAccounts.actAs` (or `roles/iam.serviceAccountUser` on the runtime service account). See [Add GCP connector](/cloud-connectors/add-connectors/add-gcp-connector).
   </Accordion>
   <Accordion title="GCP: traces missing intermittently">
     Cloud Run CPU throttling or scale-to-zero can delay or drop background OTLP export. Prefer a reachable destination and, if needed, keep CPU allocated or a minimum instance warm on low-traffic services.
   </Accordion>
   <Accordion title="AWS: test connection passed but instrumentation fails">
-    Test connection validates discovery permissions. Grant the Lambda instrumentation IAM actions listed on the [Add AWS](/central/adding-connections/cloud-connectors/add-aws-connector) page.
+    Test connection validates discovery permissions. Grant the Lambda instrumentation IAM actions listed on the [Add AWS](/cloud-connectors/add-connectors/add-aws-connector) page.
   </Accordion>
 </AccordionGroup>
 
@@ -82,7 +82,7 @@ To remove instrumentation from one or more Sources, select them with the checkbo
 <Card
   title="Manage and remove"
   icon="trash"
-  href="/central/adding-connections/cloud-connectors/manage-and-remove"
+  href="/cloud-connectors/manage-and-remove"
 >
   Understand connector health and how deletion policies affect cloud instrumentation.
 </Card>

@@ -32,7 +32,7 @@ Three layers work together:
 2. **Connector capabilities** — When you add a connector, you choose which resource types may be discovered and which may be instrumented (per-type capabilities).
 3. **Sources** — Even after discovery, nothing is instrumented until you create Sources for the workloads you select.
 
-Provider-specific permission lists are covered on the corresponding Add connector pages (for example [Add AWS](/central/adding-connections/cloud-connectors/add-aws-connector)).
+Provider-specific permission lists are covered on the corresponding Add connector pages (for example [Add AWS](/cloud-connectors/add-connectors/add-aws-connector)).
 
 ## Workloads and compute platforms
 
@@ -51,9 +51,9 @@ Current coverage includes the following providers and resource types. Additional
 | --- | --- | --- |
 | AWS Lambda (`aws.lambda`) | Yes | Yes |
 | Amazon ECS Fargate tasks (`aws.fargate-task`) | Yes | Coming soon |
-| Amazon ECS clusters (`aws.ecs-cluster`, `aws.fargate-cluster`) | Yes | Agent install coming soon |
+| Amazon ECS clusters (`aws.ecs-cluster`, `aws.fargate-cluster`) | Yes | Coming soon |
 | GCP Cloud Run (`gcp.cloud-run`) | Yes | Yes |
-| GKE (`gcp.gke`) / Compute Engine (`gcp.gce`) | Yes | Agent install coming soon |
+| GKE (`gcp.gke`) / Compute Engine (`gcp.gce`) | Yes | Coming soon |
 
 ## Supported languages
 
@@ -81,7 +81,7 @@ Protocol support for AWS Lambda:
 
 GCP Cloud Run supports OTLP gRPC and OTLP HTTP.
 
-See [Add an OTLP destination](/central/adding-connections/cloud-connectors/instrument-workloads#add-an-otlp-destination). For how to add and configure destinations, see the [Destinations overview](/enterprise/backends-overview).
+See [Add an OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination). For how to add and configure destinations, see the [Destinations overview](/enterprise/backends-overview).
 
 ## Prerequisites
 
@@ -90,7 +90,7 @@ See [Add an OTLP destination](/central/adding-connections/cloud-connectors/instr
     Follow the [Central installation](/central/installation) guide.
   </Step>
   <Step title="Enable Cloud Connectors">
-    Set `cloudConnectors.enabled=true`. See [Enable Cloud Connectors](/central/adding-connections/cloud-connectors/enable).
+    Set `cloudConnectors.enabled=true`. See [Enable Cloud Connectors](/cloud-connectors/enable).
   </Step>
   <Step title="Prepare cloud access">
     Create a cloud identity (e.g. IAM role or service account) with only the permissions you want the connector to have. See [You control the access scope](#you-control-the-access-scope).
@@ -103,28 +103,28 @@ See [Add an OTLP destination](/central/adding-connections/cloud-connectors/instr
   <Card
     title="Enable Cloud Connectors"
     icon="toggle-on"
-    href="/central/adding-connections/cloud-connectors/enable"
+    href="/cloud-connectors/enable"
   >
     Turn on the feature in Helm or the CLI, including Postgres settings.
   </Card>
   <Card
     title="Add AWS connector"
     icon="aws"
-    href="/central/adding-connections/cloud-connectors/add-aws-connector"
+    href="/cloud-connectors/add-connectors/add-aws-connector"
   >
     Connect an AWS account and discover Lambda and ECS resources.
   </Card>
   <Card
     title="Add GCP connector"
     icon="google"
-    href="/central/adding-connections/cloud-connectors/add-gcp-connector"
+    href="/cloud-connectors/add-connectors/add-gcp-connector"
   >
     Connect a Google Cloud project and discover Cloud Run services.
   </Card>
   <Card
     title="Instrument workloads"
     icon="microchip"
-    href="/central/adding-connections/cloud-connectors/instrument-workloads"
+    href="/cloud-connectors/instrument-workloads"
   >
     Create Sources and track instrumentation after a connector is online.
   </Card>

@@ -6,7 +6,7 @@ sidebarTitle: 'Enable'
 
 Cloud Connectors are **off by default**. Until you enable them, Central does not install the connector controller, the connector PostgreSQL store, or the `OdigosCloudConnector` CRD.
 
-Enabling the feature does **not** create per-account connectors. After the subsystem is running, add a provider connector from the Central UI (for example [AWS](/central/adding-connections/cloud-connectors/add-aws-connector)).
+Enabling the feature does **not** create per-account connectors. After the subsystem is running, add an [AWS](/cloud-connectors/add-connectors/add-aws-connector) or [GCP](/cloud-connectors/add-connectors/add-gcp-connector) connector from the Central UI.
 
 <Info>
   Cloud Connectors require the same Odigos Enterprise on-prem token (or install
@@ -181,21 +181,21 @@ You should see `connector-runtime` and `odigos-connector-postgres` in a Running 
   <Card
     title="Add AWS connector"
     icon="aws"
-    href="/central/adding-connections/cloud-connectors/add-aws-connector"
+    href="/cloud-connectors/add-connectors/add-aws-connector"
   >
     Connect an AWS account.
   </Card>
   <Card
     title="Add GCP connector"
     icon="google"
-    href="/central/adding-connections/cloud-connectors/add-gcp-connector"
+    href="/cloud-connectors/add-connectors/add-gcp-connector"
   >
     Connect a Google Cloud project.
   </Card>
   <Card
     title="Instrument workloads"
     icon="microchip"
-    href="/central/adding-connections/cloud-connectors/instrument-workloads"
+    href="/cloud-connectors/instrument-workloads"
   >
     Create Sources after a connector is online.
   </Card>

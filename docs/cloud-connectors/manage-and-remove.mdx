@@ -36,7 +36,7 @@ The connectors list and detail views show installation and runtime health. The c
 
     Schema version mismatches fail connector startup (the pod does not stay healthy), which typically shows as **Starting** or, if heartbeats stop updating, **Degraded** — not a dedicated schema-mismatch phase.
 
-    Fix credentials or IAM, confirm [Cloud Connectors are enabled](/central/adding-connections/cloud-connectors/enable), and check `connector-runtime` / connector pods in the Central namespace.
+    Fix credentials or IAM, confirm [Cloud Connectors are enabled](/cloud-connectors/enable), and check `connector-runtime` / connector pods in the Central namespace.
   </Accordion>
 </AccordionGroup>
 
@@ -59,7 +59,7 @@ metadata:
   <Tab title="retain (default)">
     Deletes the connector from Central (the connector pod and related resources in the Central cluster). It does **not** uninstrument cloud workloads.
 
-    Any Odigos instrumentation already applied in the cloud account stays in place (for example Lambda layers or Cloud Run agent injection). To remove that instrumentation, [uninstrument Sources](/central/adding-connections/cloud-connectors/instrument-workloads#uninstrument-workloads) while the connector is still online, or change those resources outside Odigos after delete.
+    Any Odigos instrumentation already applied in the cloud account stays in place (for example Lambda layers or Cloud Run agent injection). To remove that instrumentation, [uninstrument Sources](/cloud-connectors/instrument-workloads#uninstrument-workloads) while the connector is still online, or change those resources outside Odigos after delete.
 
     <Info>
       Creating a connector from the Central UI typically leaves the annotation
@@ -101,14 +101,14 @@ When you delete a connector, Sources and discovery data for that account boundar
   <Card
     title="Instrument workloads"
     icon="microchip"
-    href="/central/adding-connections/cloud-connectors/instrument-workloads"
+    href="/cloud-connectors/instrument-workloads"
   >
     Create and disable Sources while the connector is online.
   </Card>
   <Card
     title="Cloud Connectors overview"
     icon="cloud"
-    href="/central/adding-connections/cloud-connectors/overview"
+    href="/cloud-connectors/overview"
   >
     Back to concepts and supported providers.
   </Card>

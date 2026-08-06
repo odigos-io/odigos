@@ -29,7 +29,7 @@ You can install Odigos Central using the CLI or Helm chart.
     | `--set auth.externalUrl` | `http://localhost:8081` | Browser-accessible URL of the Central Backend for SSO redirect flows |
     | `--set auth.adminPassword` | (auto-generated) | Admin password for Keycloak. If not provided, a random password is generated |
     | `--set auth.adminUsername` | `admin` | Admin username for Keycloak |
-    | `--set cloudConnectors.enabled` | `false` | Enable [Cloud Connectors](/central/adding-connections/cloud-connectors/enable) (controller, Postgres, CRD) |
+    | `--set cloudConnectors.enabled` | `false` | Enable [Cloud Connectors](/cloud-connectors/enable) (controller, Postgres, CRD) |
     | `--namespace`, `-n` | `odigos-central` | Target namespace for installation |
     | `--version` | (current) | Specify a specific version to install |
 
@@ -143,4 +143,4 @@ Cloud Connectors are disabled by default. To discover and instrument cloud workl
   </Tab>
 </Tabs>
 
-See [Enable Cloud Connectors](/central/adding-connections/cloud-connectors/enable) for PostgreSQL settings, verification steps, and full values.
+See [Enable Cloud Connectors](/cloud-connectors/enable) for PostgreSQL settings, verification steps, and full values.
