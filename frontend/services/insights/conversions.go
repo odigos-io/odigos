@@ -49,6 +49,10 @@ func (c *LearningCondition) UnmarshalJSON(data []byte) error {
 }
 
 // ID helpers — GraphQL exposes transaction / policy ids as ID (string); REST uses int64.
+//
+// These and the input converters further down report failures as ErrBadRequest:
+// they only ever fail on caller-supplied GraphQL arguments, so resolvers surface
+// them as invalid requests rather than as service errors.
 
 func FormatID(id int64) string {
 	return strconv.FormatInt(id, 10)
@@ -57,7 +61,7 @@ func FormatID(id int64) string {
 func ParseID(id string) (int64, error) {
 	parsed, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("invalid insights id %q: %w", id, err)
+		return 0, fmt.Errorf("%w: id %q is not a number", ErrBadRequest, id)
 	}
 	return parsed, nil
 }
@@ -120,7 +124,7 @@ func encodeOptionalJSONString(value any) (*string, error) {
 func decodeJSONString[T any](encoded string) (T, error) {
 	var value T
 	if err := json.Unmarshal([]byte(encoded), &value); err != nil {
-		return value, fmt.Errorf("decode insights json field: %w", err)
+		return value, fmt.Errorf("%w: field is not valid JSON: %v", ErrBadRequest, err)
 	}
 	return value, nil
 }
@@ -905,7 +909,7 @@ func AnomalyRefFromInput(input model.InsightsAnomalyRefInput) (AnomalyRef, error
 func BulkAnomalyRequestFromInput(resolution model.InsightsBulkResolution, items []*model.InsightsAnomalyRefInput) (BulkAnomalyRequest, error) {
 	refs, err := mapSliceErr(items, func(item *model.InsightsAnomalyRefInput) (AnomalyRef, error) {
 		if item == nil {
-			return AnomalyRef{}, fmt.Errorf("anomaly ref item is nil")
+			return AnomalyRef{}, fmt.Errorf("%w: anomaly ref item is nil", ErrBadRequest)
 		}
 		return AnomalyRefFromInput(*item)
 	})
@@ -920,7 +924,7 @@ func BulkAnomalyRequestFromInput(resolution model.InsightsBulkResolution, items 
 
 func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSettings, error) {
 	if input.Sampling == nil || input.Retention == nil || input.Findings == nil || input.Capacity == nil || input.Writeback == nil {
-		return SystemSettings{}, fmt.Errorf("system settings input is incomplete")
+		return SystemSettings{}, fmt.Errorf("%w: system settings input is incomplete", ErrBadRequest)
 	}
 	return SystemSettings{
 		Sampling: SystemSamplingSettings{

@@ -1,11 +1,15 @@
 package insights
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 var (
@@ -107,4 +111,55 @@ func containsEngineStarting(value string) bool {
 	return strings.Contains(value, "engine starting") ||
 		strings.Contains(value, "engine is starting") ||
 		strings.Contains(value, "engine not ready")
+}
+
+// Codes carried in the GraphQL error extensions, so the UI can tell "feature is
+// off" from "engine still warming up" from a real failure without matching
+// message text.
+const (
+	CodeNotEnabled     = "INSIGHTS_NOT_ENABLED"
+	CodeEngineStarting = "INSIGHTS_ENGINE_STARTING"
+	CodeBadRequest     = "INSIGHTS_BAD_REQUEST"
+	CodeNotFound       = "INSIGHTS_NOT_FOUND"
+	CodeConflict       = "INSIGHTS_CONFLICT"
+	CodeValidation     = "INSIGHTS_VALIDATION_FAILED"
+	CodeUnavailable    = "INSIGHTS_UNAVAILABLE"
+	CodeInternal       = "INSIGHTS_INTERNAL_ERROR"
+)
+
+// GraphQLError wraps an insights error for return from a resolver, tagging it
+// with the matching extensions code.
+func GraphQLError(ctx context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
+	return &gqlerror.Error{
+		Err:        err,
+		Message:    err.Error(),
+		Path:       graphql.GetPath(ctx),
+		Extensions: map[string]any{"code": errorCode(err)},
+	}
+}
+
+func errorCode(err error) string {
+	switch {
+	case errors.Is(err, ErrNotEnabled):
+		return CodeNotEnabled
+	// Engine warm-up is a service-unavailable response too, so it has to be
+	// matched before ErrUnavailable.
+	case errors.Is(err, ErrEngineStarting):
+		return CodeEngineStarting
+	case errors.Is(err, ErrBadRequest):
+		return CodeBadRequest
+	case errors.Is(err, ErrNotFound):
+		return CodeNotFound
+	case errors.Is(err, ErrConflict):
+		return CodeConflict
+	case errors.Is(err, ErrUnprocessableEntity):
+		return CodeValidation
+	case errors.Is(err, ErrUnavailable):
+		return CodeUnavailable
+	default:
+		return CodeInternal
+	}
 }
