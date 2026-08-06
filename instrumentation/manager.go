@@ -14,7 +14,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/odigos-io/odigos/common/unixfd"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 )
@@ -137,9 +136,6 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 
 	// LogsMap is the optional common eBPF map that will be used to send log events from eBPF probes.
 	LogsMap *cilumebpf.Map
-
-	// LogsAttrSubscribe streams per-process resource attributes over the logs unix socket.
-	LogsAttrSubscribe func() (updates <-chan string, snapshot []string)
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -182,7 +178,6 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 	metricsMap           *cilumebpf.Map
 	metricsAttributesMap *cilumebpf.Map
 	logsMap              *cilumebpf.Map
-	logsAttrSubscribe    func() (updates <-chan string, snapshot []string)
 }
 
 func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]](options ManagerOptions[processGroup, configGroup, processDetails]) (Manager, error) {
@@ -239,7 +234,6 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		metricsMap:            options.MetricsMap,
 		metricsAttributesMap:  options.MetricsAttributesMap,
 		logsMap:               options.LogsMap,
-		logsAttrSubscribe:     options.LogsAttrSubscribe,
 	}, nil
 }
 
@@ -437,51 +431,6 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 
 	g.Go(func() error {
 		m.runEventLoop(errCtx)
-		return nil
-	})
-
-	g.Go(func() error {
-		// No shared maps means nothing to hand out, so don't stand up a server nobody connects to.
-		if m.tracesMap == nil {
-			return nil
-		}
-
-		// Start the FD server
-		server := &unixfd.Server{
-			SocketPath: unixfd.DefaultSocketPath,
-			Logger:     commonlogger.ToLogr(),
-			TracesFDProvider: func() int {
-				return m.tracesMap.FD()
-			},
-			MetricsFDsProvider: func() []int {
-				var fds []int
-				if m.metricsMap != nil {
-					fds = append(fds, m.metricsMap.FD())
-				}
-				if m.metricsAttributesMap != nil {
-					fds = append(fds, m.metricsAttributesMap.FD())
-				}
-				return fds
-			},
-			LogsFDsProvider: func() []int {
-				if m.logsMap != nil {
-					return []int{m.logsMap.FD()}
-				}
-				return nil
-			},
-			LogsAttrSubscribe: m.logsAttrSubscribe,
-		}
-
-		// Run server in background to serve the map FD to relevant data collection client.
-		// The server will continue running until odiglet shuts down, allowing collectors to reconnect after restarts
-		// and ask for a new FD.
-		if err := server.Run(errCtx); err != nil {
-			m.logger.Error("unixfd server failed", "err", err)
-		}
-
-		m.logger.Info("eBPF maps created, FD server started",
-			"socket", unixfd.DefaultSocketPath,
-			"traces_map_fd", m.tracesMap.FD())
 		return nil
 	})
 
