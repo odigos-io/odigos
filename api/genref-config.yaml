@@ -49,6 +49,7 @@ stripPrefix:
   - github.com/tengqm/kubeconfig/config/bootstraptoken/v1.
   - github.com/odigos-io/odigos/k8sutils/pkg/
   - github.com/odigos-io/odigos/api/odigos/v1alpha1/
+  - github.com/odigos-io/odigos/api/cloud-connectors/v1alpha1/
   - github.com/odigos-io/odigos/api/actions/v1alpha1/
   - github.com/odigos-io/odigos/api/
   - github.com/odigos-io/odigos/
@@ -58,6 +59,13 @@ apis:
     title: odigos.io/v1alpha1
     package: github.com/odigos-io/odigos
     path: api/odigos/v1alpha1
+
+  # Cloud connector types share the odigos.io/v1alpha1 group but live in their own
+  # package (api/cloud-connectors/v1alpha1); documented as a separate reference page.
+  - name: cloud-connectors.odigos.io
+    title: odigos.io/v1alpha1 (Cloud Connectors)
+    package: github.com/odigos-io/odigos
+    path: api/cloud-connectors/v1alpha1
 
   - name: actions.odigos.io
     title: actions.odigos.io/v1alpha1

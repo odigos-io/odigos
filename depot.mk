@@ -1,0 +1,106 @@
+DEPOT_PROJECT ?= 570xmd9kld
+PLATFORM ?= linux/amd64
+DOCKERFILE ?= Dockerfile
+BUILD_DIR ?= .
+
+# if OUTPUT_DIR is set, the image will be downloaded as a tarball to the directory
+# example: make $@ IMAGE_TAG=v0.0.0-pr1234 OUTPUT_DIR=/tmp will download the image to /tmp/odigos-<component>.tar
+OUTPUT_DIR ?=
+
+# if both GITHUB_RUN_ID and GITHUB_REPOSITORY_NAME are set, save the image to the
+# Depot registry.
+# the tag will be in the format: <repository-name>-<component-name>-<run-id>
+# example: odigos-enterprise-autoscaler-0123456789
+GITHUB_RUN_ID ?=
+GITHUB_REPOSITORY_NAME ?=
+
+# used for cli builds to be able to override the chart version for testing (set it to 0.0.0-e2e-test)
+# this is to allow fine grained control over which version is used for which part of the image build
+CHART_VERSION ?= $(IMAGE_TAG)
+
+define depot-build
+	@if [ -z "$(strip $(IMAGE_TAG))" ]; then \
+		echo "Error: IMAGE_TAG is required. Usage: make $@ IMAGE_TAG=<tag>"; \
+		exit 1; \
+	fi
+
+	# When GITHUB_RUN_ID and GITHUB_REPOSITORY_NAME are set (e.g. in CI), save the image to the
+	# Depot registry with a tag that includes the repo and run id. This lets us pull the exact
+	# image from a given workflow run, and avoids collisions when the same component is built
+	# from different repositories that share a Depot project.
+	# Example: odigos-enterprise-autoscaler-1658821493
+	$(eval SAVE_TAG :=)
+	$(if $(strip $(GITHUB_RUN_ID)), \
+		$(if $(strip $(GITHUB_REPOSITORY_NAME)), \
+			$(eval SAVE_TAG := $(GITHUB_REPOSITORY_NAME)-$(2)-$(GITHUB_RUN_ID))))
+
+	$(eval OUTPUT_FLAG :=)
+	$(if $(strip $(OUTPUT_DIR)), \
+		$(eval OUTPUT_FLAG := --output type=docker,dest=$(OUTPUT_DIR)/odigos-$(2).tar))
+
+	@if [ -n "$(SAVE_TAG)" ] && [ -n "$(OUTPUT_DIR)" ]; then \
+		echo ""; \
+		echo "=============================================================================="; \
+		echo "  Error: cannot both download the image (OUTPUT_DIR) and save it to the"; \
+		echo "  Depot builder registry (GITHUB_RUN_ID / GITHUB_REPOSITORY_NAME)."; \
+		echo "  Depot does not support multiple outputs."; \
+		echo "=============================================================================="; \
+		echo ""; \
+		exit 1; \
+	fi
+
+	@if [ -n "$(SAVE_TAG)" ]; then \
+		MSG="Image will be uploaded to the Depot builder registry (save-tag: $(SAVE_TAG))"; \
+	elif [ -n "$(OUTPUT_DIR)" ]; then \
+		MSG="Image will be downloaded as a tarball to $(OUTPUT_DIR)/odigos-$(2).tar"; \
+	else \
+		MSG="Verifying image can be built (no registry upload or local download)"; \
+	fi; \
+	echo ""; \
+	echo "=============================================================================="; \
+	echo "  $$MSG"; \
+	echo "=============================================================================="; \
+	echo ""
+
+	depot build \
+		--project $(DEPOT_PROJECT) \
+		--platform $(PLATFORM) \
+		--provenance false \
+		--file $(1) \
+		--build-arg SERVICE_NAME=$(2) \
+		--build-arg ODIGOS_VERSION="$(IMAGE_TAG)" \
+		--build-arg VERSION="$(IMAGE_TAG)" \
+		--build-arg CHART_VERSION="$(CHART_VERSION)" \
+		--build-arg RELEASE="$(IMAGE_TAG)" \
+		$(3) \
+		$(OUTPUT_FLAG) \
+		$(if $(SAVE_TAG),--save --save-tag $(SAVE_TAG)) \
+		$(BUILD_DIR)
+endef
+
+.PHONY: depot-build-autoscaler
+depot-build-autoscaler:
+	$(call depot-build,$(DOCKERFILE),autoscaler)
+
+.PHONY: depot-build-scheduler
+depot-build-scheduler:
+	$(call depot-build,$(DOCKERFILE),scheduler)
+
+.PHONY: depot-build-collector
+depot-build-collector:
+	$(call depot-build,collector/Dockerfile,collector)
+
+# CLI image build-args (cli/Dockerfile). Overridable so CI can pass stable values and
+# avoid cache misses when commit/date change every run but the values are unused.
+# VERSION/ODIGOS_VERSION/RELEASE come from IMAGE_TAG via depot-build.
+# Defaults: current git short SHA and UTC timestamp.
+# CI example: make -f depot.mk depot-build-cli IMAGE_TAG=v0.0.0 SHORT_COMMIT=ci DATE=ci
+SHORT_COMMIT ?= $(shell git rev-parse --short HEAD)
+DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+.PHONY: depot-build-cli
+depot-build-cli:
+	$(call depot-build,cli/Dockerfile,cli,--build-arg SHORT_COMMIT=$(SHORT_COMMIT) --build-arg DATE=$(DATE))
+
+.PHONY: depot-build-all
+depot-build-all: depot-build-autoscaler depot-build-scheduler depot-build-collector

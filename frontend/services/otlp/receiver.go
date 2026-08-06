@@ -51,8 +51,8 @@ func NewReceiver(port int) (*Receiver, error) {
 	}
 
 	// we only open gRPC port on 4317 and no http port
-	cfg.GRPC = configoptional.Some(grpcCfg)
-	cfg.HTTP = configoptional.None[otlpreceiver.HTTPConfig]()
+	cfg.Protocols.GRPC = configoptional.Some(grpcCfg)
+	cfg.Protocols.HTTP = configoptional.None[otlpreceiver.HTTPConfig]()
 
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("validate receiver config: %w", err)

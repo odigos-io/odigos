@@ -46,8 +46,16 @@ func reconcileClusterCollector(ctx context.Context, k8sClient client.Client, sch
 		return ctrl.Result{}, err
 	}
 
+	var actionList odigosv1.ActionList
+	err = k8sClient.List(ctx, &actionList, client.InNamespace(odigosNs))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	configExtProcessors := commonconf.ConvertActionsToConfigExtensionProcessors(actionList)
+
 	// Add the generic batch processor to the list of processors
 	processors.Items = append(processors.Items, commonconf.GetGenericBatchProcessor())
+	processors.Items = append(processors.Items, configExtProcessors...)
 
 	err = syncGateway(&dests, &processors, &gatewayCollectorGroup, ctx, k8sClient, scheme, odigosVersion)
 	statusPatchString := commonconf.GetCollectorsGroupDeployedConditionsPatch(err, gatewayCollectorGroup.Spec.Role)

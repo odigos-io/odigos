@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"regexp"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -19,6 +21,7 @@ import (
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -397,8 +400,28 @@ func cleanObjectForExport(obj interface{}) interface{} {
 	}
 }
 
-// FetchSourceWorkloads collects workloads that are instrumented by Odigos (user's applications)
-// It reads Source CRDs to find which workloads are instrumented and collects them
+// disabledWorkloadExclusion matches workloads excluded from namespace instrumentation
+// by a Source with disableInstrumentation=true.
+type disabledWorkloadExclusion struct {
+	Namespace string
+	Kind      k8sconsts.WorkloadKind
+	Name      string
+	Regex     bool
+}
+
+type sourceWorkloadPlan struct {
+	// Namespaces covered by an enabled namespace Source.
+	namespaceSources map[string]bool
+	// Workloads with an enabled (non-disabled) workload Source.
+	explicitWorkloads []k8sconsts.PodWorkload
+	// Workload Sources that explicitly disable instrumentation (exclusions).
+	disabledExclusions []disabledWorkloadExclusion
+}
+
+// FetchSourceWorkloads collects workloads that are instrumented by Odigos (user's applications).
+// It reads Source CRDs to find which workloads are instrumented and collects them.
+// For namespace Sources, it expands to all collectable workloads in that namespace, excluding
+// workloads that have an explicit disabled Source (disableInstrumentation=true).
 func FetchSourceWorkloads(
 	ctx context.Context,
 	client kubernetes.Interface,
@@ -411,44 +434,25 @@ func FetchSourceWorkloads(
 ) error {
 	klog.V(2).InfoS("Fetching Source Workloads", "namespaceFilter", namespaceFilter)
 
-	// Create a set of allowed namespaces for quick lookup
-	allowedNamespaces := make(map[string]bool)
-	for _, ns := range namespaceFilter {
-		allowedNamespaces[ns] = true
-	}
-	filterByNamespace := len(allowedNamespaces) > 0
-
 	// List all Source CRDs using the typed client (empty namespace = all namespaces)
 	sourceList, err := odigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list Source CRDs: %w", err)
 	}
 
+	plan := categorizeSourcesForDiagnose(sourceList.Items, namespaceFilter)
+
+	toCollect := plan.explicitWorkloads
+	for ns := range plan.namespaceSources {
+		toCollect = append(toCollect, listCollectableWorkloadsInNamespace(ctx, client, dynamicClient, ns)...)
+	}
+
 	// Track collected workloads to avoid duplicates
 	collected := make(map[string]bool)
-
-	for i := range sourceList.Items {
-		source := &sourceList.Items[i]
-		wl := source.Spec.Workload
-
-		// Skip invalid entries
-		if wl.Kind == "" || wl.Name == "" || wl.Namespace == "" {
-			continue
-		}
-
-		// Skip namespace-level and static pod sources (not collectable workloads)
-		if wl.Kind == k8sconsts.WorkloadKindNamespace || wl.Kind == k8sconsts.WorkloadKindStaticPod {
-			continue
-		}
-
-		// Skip invalid workload kinds
-		if !workload.IsValidWorkloadKind(wl.Kind) {
-			klog.V(2).InfoS("Skipping invalid workload kind", "kind", wl.Kind, "name", wl.Name)
-			continue
-		}
-
-		// Apply namespace filter if provided
-		if filterByNamespace && !allowedNamespaces[wl.Namespace] {
+	for _, wl := range toCollect {
+		if isWorkloadExcluded(wl, plan.disabledExclusions) {
+			klog.V(2).InfoS("Skipping workload excluded by disabled Source",
+				"namespace", wl.Namespace, "name", wl.Name, "kind", wl.Kind)
 			continue
 		}
 
@@ -475,4 +479,206 @@ func FetchSourceWorkloads(
 
 	klog.V(2).InfoS("Finished collecting source workloads", "count", len(collected))
 	return nil
+}
+
+func categorizeSourcesForDiagnose(sources []odigosv1.Source, namespaceFilter []string) sourceWorkloadPlan {
+	// Create a set of allowed namespaces for quick lookup
+	allowedNamespaces := make(map[string]bool)
+	for _, ns := range namespaceFilter {
+		allowedNamespaces[ns] = true
+	}
+	filterByNamespace := len(allowedNamespaces) > 0
+
+	plan := sourceWorkloadPlan{
+		namespaceSources: make(map[string]bool),
+	}
+
+	for i := range sources {
+		source := &sources[i]
+		wl := source.Spec.Workload
+
+		// Skip invalid entries
+		if wl.Kind == "" || wl.Name == "" || wl.Namespace == "" {
+			continue
+		}
+
+		// Apply namespace filter if provided
+		if filterByNamespace && !allowedNamespaces[wl.Namespace] {
+			continue
+		}
+
+		// Namespace Sources are expanded later to all workloads in the namespace
+		if wl.Kind == k8sconsts.WorkloadKindNamespace {
+			if !odigosv1.IsDisabledSource(source) {
+				// For namespace Sources, Workload.Name is the k8s namespace to instrument.
+				plan.namespaceSources[wl.Name] = true
+			}
+			continue
+		}
+
+		// Skip static pod sources (not collectable workloads)
+		if wl.Kind == k8sconsts.WorkloadKindStaticPod {
+			continue
+		}
+
+		// Skip invalid workload kinds
+		if !workload.IsValidWorkloadKind(wl.Kind) {
+			klog.V(2).InfoS("Skipping invalid workload kind", "kind", wl.Kind, "name", wl.Name)
+			continue
+		}
+
+		// Disabled workload Sources exclude matching workloads from namespace expansion
+		if odigosv1.IsDisabledSource(source) {
+			plan.disabledExclusions = append(plan.disabledExclusions, disabledWorkloadExclusion{
+				Namespace: wl.Namespace,
+				Kind:      wl.Kind,
+				Name:      wl.Name,
+				Regex:     source.Spec.MatchWorkloadNameAsRegex,
+			})
+			continue
+		}
+
+		// Regex workload Sources name a pattern, not a single k8s object; skip direct collection.
+		// They will be covered when expanding a namespace Source, or left out if workload-scoped only.
+		if source.Spec.MatchWorkloadNameAsRegex {
+			continue
+		}
+
+		plan.explicitWorkloads = append(plan.explicitWorkloads, wl)
+	}
+
+	return plan
+}
+
+func isWorkloadExcluded(wl k8sconsts.PodWorkload, exclusions []disabledWorkloadExclusion) bool {
+	for _, ex := range exclusions {
+		if ex.Namespace != wl.Namespace || ex.Kind != wl.Kind {
+			continue
+		}
+		if ex.Regex {
+			matched, err := regexp.MatchString(ex.Name, wl.Name)
+			if err != nil {
+				continue
+			}
+			if matched {
+				return true
+			}
+			continue
+		}
+		if ex.Name == wl.Name {
+			return true
+		}
+	}
+	return false
+}
+
+// listCollectableWorkloadsInNamespace lists Deployments, DaemonSets, StatefulSets, CronJobs,
+// and optionally DeploymentConfigs / Argo Rollouts in the given namespace.
+func listCollectableWorkloadsInNamespace(
+	ctx context.Context,
+	client kubernetes.Interface,
+	dynamicClient dynamic.Interface,
+	namespace string,
+) []k8sconsts.PodWorkload {
+	var result []k8sconsts.PodWorkload
+
+	deployments, err := client.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		klog.V(1).ErrorS(err, "Failed to list deployments", "namespace", namespace)
+	} else {
+		for i := range deployments.Items {
+			d := &deployments.Items[i]
+			result = append(result, k8sconsts.PodWorkload{
+				Namespace: namespace,
+				Name:      d.Name,
+				Kind:      k8sconsts.WorkloadKindDeployment,
+			})
+		}
+	}
+
+	daemonsets, err := client.AppsV1().DaemonSets(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		klog.V(1).ErrorS(err, "Failed to list daemonsets", "namespace", namespace)
+	} else {
+		for i := range daemonsets.Items {
+			d := &daemonsets.Items[i]
+			result = append(result, k8sconsts.PodWorkload{
+				Namespace: namespace,
+				Name:      d.Name,
+				Kind:      k8sconsts.WorkloadKindDaemonSet,
+			})
+		}
+	}
+
+	statefulsets, err := client.AppsV1().StatefulSets(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		klog.V(1).ErrorS(err, "Failed to list statefulsets", "namespace", namespace)
+	} else {
+		for i := range statefulsets.Items {
+			s := &statefulsets.Items[i]
+			result = append(result, k8sconsts.PodWorkload{
+				Namespace: namespace,
+				Name:      s.Name,
+				Kind:      k8sconsts.WorkloadKindStatefulSet,
+			})
+		}
+	}
+
+	cronjobs, err := client.BatchV1().CronJobs(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		klog.V(1).ErrorS(err, "Failed to list cronjobs", "namespace", namespace)
+	} else {
+		for i := range cronjobs.Items {
+			c := &cronjobs.Items[i]
+			result = append(result, k8sconsts.PodWorkload{
+				Namespace: namespace,
+				Name:      c.Name,
+				Kind:      k8sconsts.WorkloadKindCronJob,
+			})
+		}
+	}
+
+	result = append(result, listDynamicWorkloadsInNamespace(ctx, dynamicClient, namespace, schema.GroupVersionResource{
+		Group:    "apps.openshift.io",
+		Version:  "v1",
+		Resource: "deploymentconfigs",
+	}, k8sconsts.WorkloadKindDeploymentConfig)...)
+
+	result = append(result, listDynamicWorkloadsInNamespace(ctx, dynamicClient, namespace, schema.GroupVersionResource{
+		Group:    "argoproj.io",
+		Version:  "v1alpha1",
+		Resource: "rollouts",
+	}, k8sconsts.WorkloadKindArgoRollout)...)
+
+	return result
+}
+
+func listDynamicWorkloadsInNamespace(
+	ctx context.Context,
+	dynamicClient dynamic.Interface,
+	namespace string,
+	gvr schema.GroupVersionResource,
+	kind k8sconsts.WorkloadKind,
+) []k8sconsts.PodWorkload {
+	if dynamicClient == nil {
+		return nil
+	}
+	list, err := dynamicClient.Resource(gvr).Namespace(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		// CRD may not be installed, or we may lack permission in this cluster.
+		if !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) && !apierrors.IsForbidden(err) {
+			klog.V(2).InfoS("Skipping dynamic workload list", "kind", kind, "namespace", namespace, "error", err)
+		}
+		return nil
+	}
+	result := make([]k8sconsts.PodWorkload, 0, len(list.Items))
+	for i := range list.Items {
+		obj := &list.Items[i]
+		result = append(result, k8sconsts.PodWorkload{
+			Namespace: namespace,
+			Name:      obj.GetName(),
+			Kind:      kind,
+		})
+	}
+	return result
 }

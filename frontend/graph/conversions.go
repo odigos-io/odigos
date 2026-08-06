@@ -26,6 +26,8 @@ func kindToGql(kind string) model.K8sResourceKind {
 		return model.K8sResourceKindDaemonSet
 	case "cronjob":
 		return model.K8sResourceKindCronJob
+	case "job":
+		return model.K8sResourceKindJob
 	case "deploymentconfig":
 		return model.K8sResourceKindDeploymentConfig
 	case "rollout":
@@ -452,6 +454,31 @@ func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *comm
 		}
 	}
 
+	if config.TraceCorrelations != nil {
+		result.TraceCorrelations = &model.TraceCorrelationsConfig{
+			ServiceIo: &model.TraceCorrelationsServiceIOConfig{},
+		}
+		if config.TraceCorrelations.ServiceIO != nil {
+			serviceIO := config.TraceCorrelations.ServiceIO
+			result.TraceCorrelations.ServiceIo.Enabled = serviceIO.Enabled
+			if serviceIO.Enabled != nil {
+				pc.record("traceCorrelations.serviceIO.enabled")
+			}
+			if len(serviceIO.InputSpanAttributes) > 0 {
+				result.TraceCorrelations.ServiceIo.InputSpanAttributes = serviceIO.InputSpanAttributes
+				pc.record("traceCorrelations.serviceIO.inputSpanAttributes")
+			}
+			if len(serviceIO.OutputSpanAttributes) > 0 {
+				result.TraceCorrelations.ServiceIo.OutputSpanAttributes = serviceIO.OutputSpanAttributes
+				pc.record("traceCorrelations.serviceIO.outputSpanAttributes")
+			}
+			if serviceIO.MetricsFlushInterval != "" {
+				result.TraceCorrelations.ServiceIo.MetricsFlushInterval = ptrStr(serviceIO.MetricsFlushInterval)
+				pc.record("traceCorrelations.serviceIO.metricsFlushInterval")
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -832,6 +859,7 @@ func headSamplingOperationMatcherToModel(matcher *sampling.HeadSamplingOperation
 			Route:       services.StringPtrIfNotEmpty(matcher.HttpServer.Route),
 			RoutePrefix: services.StringPtrIfNotEmpty(matcher.HttpServer.RoutePrefix),
 			Method:      services.StringPtrIfNotEmpty(matcher.HttpServer.Method),
+			QueryParams: headSamplingQueryParamsToModel(matcher.HttpServer.QueryParams),
 		}
 	}
 	if matcher.HttpClient != nil {
@@ -843,6 +871,20 @@ func headSamplingOperationMatcherToModel(matcher *sampling.HeadSamplingOperation
 		}
 	}
 	return result
+}
+
+func headSamplingQueryParamsToModel(in []sampling.QueryParamMatcher) []*model.HeadSamplingQueryParamMatcher {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]*model.HeadSamplingQueryParamMatcher, 0, len(in))
+	for i := range in {
+		out = append(out, &model.HeadSamplingQueryParamMatcher{
+			Name:       in[i].Name,
+			ValueExact: in[i].ValueExact,
+		})
+	}
+	return out
 }
 
 // containerCollectorConfigToModel converts InstrumentationConfig workload collector config (tail sampling) to the GraphQL model.

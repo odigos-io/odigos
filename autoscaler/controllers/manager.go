@@ -7,6 +7,7 @@ import (
 	"github.com/go-logr/logr"
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
 	"github.com/odigos-io/odigos/autoscaler/controllers/clustercollector"
 	"github.com/odigos-io/odigos/autoscaler/controllers/loglevel"
@@ -15,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,6 +55,19 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 	odigosNs := env.GetCurrentNamespace()
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	clusterCollectorLabelSelector := labels.Set(clustercollector.ClusterCollectorGateway).AsSelector()
+
+	collectorRoleReq, err := labels.NewRequirement(
+		k8sconsts.OdigosCollectorRoleLabel,
+		selection.In,
+		[]string{
+			string(k8sconsts.CollectorsRoleClusterGateway),
+			string(k8sconsts.CollectorsRoleNodeCollector),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	collectorServiceLabelSelector := labels.NewSelector().Add(*collectorRoleReq)
 
 	mgrOptions := ctrl.Options{
 		Scheme: scheme,
@@ -97,7 +112,7 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 					Field: nsSelector,
 				},
 				&corev1.Service{}: {
-					Label: clusterCollectorLabelSelector,
+					Label: collectorServiceLabelSelector,
 					Field: nsSelector,
 				},
 				&corev1.Pod{}: {
@@ -126,9 +141,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 					Field: nsSelector,
 				},
 				&apiactions.DeleteAttribute{}: {
-					Field: nsSelector,
-				},
-				&apiactions.PiiMasking{}: {
 					Field: nsSelector,
 				},
 				&apiactions.RenameAttribute{}: {

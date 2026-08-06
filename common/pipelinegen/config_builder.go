@@ -23,17 +23,22 @@ type GatewayConfigOptions struct {
 	// the extension and it's name are platform specific.
 	OdigosConfigExtensionName *string
 
-	// Sampling config option
-	SamplingEnabled              *bool
+	// groupbytrace wait duration when tail sampling, service I/O trace correlations, or insights are active.
 	TraceAggregationWaitDuration *string
-	SamplingDryRun               bool
-	SamplingSpanAttributes       *sampling.SpanSamplingAttributesConfiguration
+
+	// Tail sampling v2 processors when tail sampling is active.
+	TailSamplingEnabled    *bool
+	SamplingDryRun         bool
+	SamplingSpanAttributes *sampling.SpanSamplingAttributesConfiguration
 
 	// groupbytrace processor with sampling v2 so a trace is assembled at
 	// most once on the gateway, regardless of which consumers asked for it.
 	// Passed as the full config (not a bool) so future toggles on the same
 	// feature can be added without changing this surface.
 	Insights *common.InsightsConfiguration
+
+	// Trace correlations configuration for the serviceio connector (service I/O metrics).
+	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
 }
 
 func GetGatewayConfig(
@@ -43,22 +48,36 @@ func GetGatewayConfig(
 	dataStreamsDetails []DataStreams,
 	gatewayOptions *GatewayConfigOptions,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
-	currentConfig := GetBasicConfig()
-	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
+	cfg, err, status, signals := CalculateGatewayConfig(dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
+	if err != nil {
+		return "", err, status, signals
+	}
+
+	// yaml.Marshal sorts the maps for deterministic YAML output
+	// however, lists are kept in the order they were added, so we need to sort them manually,
+	// to avoid any unexpected changes in the YAML output.
+	slices.Sort(cfg.Service.Extensions)
+
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return "", err, status, signals
+	}
+	return string(data), nil, status, signals
 }
 
 //nolint:funlen,gocyclo // This function handles complex gateway configuration logic that is difficult to break down further
 func CalculateGatewayConfig(
-	currentConfig *config.Config,
 	dests []config.ExporterConfigurer,
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
 	gatewayOptions *GatewayConfigOptions,
-) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
+) (*config.Config, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
+	currentConfig := GetBasicConfig()
+
 	configers, err := config.LoadConfigers()
 	if err != nil {
-		return "", err, nil, nil
+		return nil, err, nil, nil
 	}
 
 	status := &config.ResourceStatuses{
@@ -67,7 +86,7 @@ func CalculateGatewayConfig(
 	}
 
 	if _, exists := currentConfig.Receivers["otlp"]; !exists {
-		return "", fmt.Errorf("missing required receiver 'otlp' on config"), status, nil
+		return nil, fmt.Errorf("missing required receiver 'otlp' on config"), status, nil
 	}
 
 	// map of destination ID to list of forward connectors
@@ -91,35 +110,20 @@ func CalculateGatewayConfig(
 		currentConfig.Processors[processorKey] = processorCfg
 	}
 
-	// groupbytrace is shared across consumers that need fully assembled traces
-	// on the root traces pipeline:
-	//   - sampling v2 (tail sampler can't decide on individual spans)
-	//   - the optional side-channel exporter tapped onto the root pipeline [odigos-insights]
-	// Tail sampling itself stays gated strictly on SamplingEnabled so that
-	// turning on the side-channel never starts dropping spans.
-	if gatewayOptions.OdigosConfigExtensionName != nil {
-		samplingOn := gatewayOptions.SamplingEnabled != nil && *gatewayOptions.SamplingEnabled
-		insightsOn := common.InsightsPipelineActive(gatewayOptions.Insights)
-		if samplingOn || insightsOn {
-			currentConfig.Processors[consts.GroupByTraceProcessorV2] = config.GenericMap{
-				"wait_duration": gatewayOptions.TraceAggregationWaitDuration,
-			}
-			sharedTraceProcessors := []string{consts.GroupByTraceProcessorV2}
-			if samplingOn {
-				currentConfig.Processors[consts.OdigosTailSamplingProcessorName] = getTailSamplingProcessorConfig(gatewayOptions)
-				sharedTraceProcessors = append(sharedTraceProcessors, consts.OdigosTailSamplingProcessorName)
-			}
-			processorsResults.TracesProcessors = append(sharedTraceProcessors, processorsResults.TracesProcessors...)
-		}
+	if traceAggregationNeeded(gatewayOptions) {
+		ensureGroupByTraceProcessor(currentConfig, &processorsResults, gatewayOptions)
 	}
 
-	allTracesProcessors := make([]string, 0, len(processorsResults.TracesProcessors)+len(processorsResults.TracesProcessorsPostSpanMetrics))
-	allTracesProcessors = append(allTracesProcessors, processorsResults.TracesProcessors...)
-	allTracesProcessors = append(allTracesProcessors, processorsResults.TracesProcessorsPostSpanMetrics...)
-
-	// TODO: this is a temporary solution to add the small batches processor to the destination pipelines
-	// we need to remove this once we have a proper way to processors per pipeline.
-	allTracesProcessors, smallBatchesEnabled := filterSmallBatchesProcessor(allTracesProcessors)
+	// If tail sampling v2 is enabled, add the tail sampling processor to the traces processors.
+	// Gated strictly on TailSamplingEnabled so insights/service-IO never start dropping spans.
+	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled && gatewayOptions.OdigosConfigExtensionName != nil {
+		processorsNames, processorsConfig := getTailSamplingProcessors(gatewayOptions)
+		for name, cfg := range processorsConfig {
+			currentConfig.Processors[name] = cfg
+		}
+		// apend processors to the front of the pipeline. this should be revisited.
+		processorsResults.TracesProcessors = append(processorsNames, processorsResults.TracesProcessors...)
+	}
 
 	unifiedDestinationPipelineNames := []string{}
 	for _, dest := range dests {
@@ -145,16 +149,15 @@ func CalculateGatewayConfig(
 			pipeline := currentConfig.Service.Pipelines[pipelineName]
 			// add the forward connector as a receiver to the pipeline
 			pipeline.Receivers = append(pipeline.Receivers, connectorName)
-			// every destination pipeline should have a generic batch processor
-			pipeline.Processors = append(pipeline.Processors, consts.GenericBatchProcessorConfigKey)
+			// every destination pipeline should have a generic batch processor, except profiles:
+			// the batch processor does not support the profiles signal in the pinned collector build.
+			if !strings.HasPrefix(pipelineName, "profiles/") {
+				pipeline.Processors = append(pipeline.Processors, consts.GenericBatchProcessorConfigKey)
+			}
 
 			// track which signals are enabled based on the destination pipeline names
 			switch {
 			case strings.HasPrefix(pipelineName, "traces/"):
-				// relevant only for traces signal
-				if smallBatchesEnabled {
-					pipeline.Processors = append(pipeline.Processors, consts.SmallBatchesProcessor)
-				}
 				tracesEnabled = true
 			case strings.HasPrefix(pipelineName, "metrics/"):
 				metricsEnabled = true
@@ -169,18 +172,6 @@ func CalculateGatewayConfig(
 		}
 
 		status.Destination[dest.GetID()] = nil // mark this destination as success
-	}
-	// Profile destinations (e.g. Pyroscope) register their pipelines directly under
-	// "profiles/<id>" and intentionally return no destination pipeline names from
-	// ModifyConfig — so they bypass the forward-connector loop above. Detect them
-	// by scanning registered pipelines so PROFILES is reflected in enabledSignals.
-	if !profilesEnabled {
-		for pipelineName := range currentConfig.Service.Pipelines {
-			if strings.HasPrefix(pipelineName, "profiles/") {
-				profilesEnabled = true
-				break
-			}
-		}
 	}
 
 	// track which signals are enabled
@@ -201,7 +192,6 @@ func CalculateGatewayConfig(
 
 	if tracesEnabled {
 		currentConfig.Processors[consts.OdigosTraceStateProcessorName] = config.GenericMap{}
-		allTracesProcessors = append(allTracesProcessors, consts.OdigosTraceStateProcessorName)
 	}
 
 	//  Add pipelines that receive from routing connectors and forward to destinations
@@ -211,17 +201,23 @@ func CalculateGatewayConfig(
 	}
 
 	// Create root pipelines for each signal and connectors
+	tracesPostForwardProcessors := processorsResults.TracesProcessorsPostSpanMetrics
+	if tracesEnabled {
+		tracesPostForwardProcessors = append(tracesPostForwardProcessors, consts.OdigosTraceStateProcessorName)
+	}
 	insertRootPipelinesToConfig(currentConfig,
-		allTracesProcessors,
+		processorsResults.TracesProcessors,
+		tracesPostForwardProcessors,
 		processorsResults.MetricsProcessors,
 		processorsResults.LogsProcessors,
+		processorsResults.ProfilesProcessors,
 		enabledSignals,
-		gatewayOptions.OdigosConfigExtensionName)
+		gatewayOptions)
 
 	// Optional: Add collector self-observability
 	if applySelfTelemetry != nil {
 		if err := applySelfTelemetry(currentConfig, unifiedDestinationPipelineNames, GetSignalsRootPipelineNames()); err != nil {
-			return "", err, status, nil
+			return nil, err, status, nil
 		}
 	}
 
@@ -231,6 +227,9 @@ func CalculateGatewayConfig(
 	// - ClusterMetricsEnabled: assume false (disabled) if nil
 	if tracesEnabled && (gatewayOptions.ServiceGraph.Disabled == nil || !*gatewayOptions.ServiceGraph.Disabled) {
 		insertServiceGraphPipeline(currentConfig, gatewayOptions.ServiceGraph.ExtraDimensions, gatewayOptions.ServiceGraph.VirtualNodePeerAttributes)
+	}
+	if tracesEnabled {
+		insertTraceCorrelationsServiceIOPipeline(currentConfig, gatewayOptions)
 	}
 	if metricsEnabled && gatewayOptions.ClusterMetricsEnabled != nil && *gatewayOptions.ClusterMetricsEnabled {
 		insertClusterMetricsResources(currentConfig, gatewayOptions.OdigosNamespace)
@@ -243,32 +242,114 @@ func CalculateGatewayConfig(
 		currentConfig.Extensions[*gatewayOptions.OdigosConfigExtensionName] = config.GenericMap{}
 	}
 
-	// Sort extensions for deterministic YAML output
-	slices.Sort(currentConfig.Service.Extensions)
-
-	// Final marshal to YAML
-	data, err := yaml.Marshal(currentConfig)
-	if err != nil {
-		return "", err, status, nil
-	}
-
-	return string(data), nil, status, enabledSignals
+	return currentConfig, nil, status, enabledSignals
 }
 
 func insertRootPipelinesToConfig(currentConfig *config.Config,
-	tracesProcessors, metricsProcessors, logsProcessors []string,
-	signals []common.ObservabilitySignal, odigosConfigExtensionName *string) {
+	tracesProcessors, tracesPostForwardProcessors, metricsProcessors, logsProcessors, profilesProcessors []string,
+	signals []common.ObservabilitySignal, gatewayOptions *GatewayConfigOptions) {
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
-		applyRootPipelineForSignal(currentConfig, common.TracesObservabilitySignal, tracesProcessors, odigosConfigExtensionName)
+		if traceAggregationNeeded(gatewayOptions) {
+			applySplitTracesRootPipelines(currentConfig, tracesProcessors, tracesPostForwardProcessors, gatewayOptions.OdigosConfigExtensionName)
+		} else {
+			allTracesProcessors := append(slices.Clone(tracesProcessors), tracesPostForwardProcessors...)
+			applyRootPipelineForSignal(currentConfig, common.TracesObservabilitySignal, allTracesProcessors, gatewayOptions.OdigosConfigExtensionName)
+		}
 	}
 
 	if slices.Contains(signals, common.MetricsObservabilitySignal) {
-		applyRootPipelineForSignal(currentConfig, common.MetricsObservabilitySignal, metricsProcessors, odigosConfigExtensionName)
+		applyRootPipelineForSignal(currentConfig, common.MetricsObservabilitySignal, metricsProcessors, gatewayOptions.OdigosConfigExtensionName)
 	}
 
 	if slices.Contains(signals, common.LogsObservabilitySignal) {
-		applyRootPipelineForSignal(currentConfig, common.LogsObservabilitySignal, logsProcessors, odigosConfigExtensionName)
+		applyRootPipelineForSignal(currentConfig, common.LogsObservabilitySignal, logsProcessors, gatewayOptions.OdigosConfigExtensionName)
 	}
+
+	if slices.Contains(signals, common.ProfilesObservabilitySignal) {
+		applyRootPipelineForSignal(currentConfig, common.ProfilesObservabilitySignal, profilesProcessors, gatewayOptions.OdigosConfigExtensionName)
+	}
+}
+
+// applySplitTracesRootPipelines forks traces after enrichment processors so complete trace batches
+// are templated before tail sampling. traces/in aggregates and forwards; traces/exporting tail-samples,
+// batches, and routes to destinations.
+func applySplitTracesRootPipelines(
+	currentConfig *config.Config,
+	tracesProcessors, tracesPostForwardProcessors []string,
+	odigosConfigExtensionName *string,
+) {
+	forwardConnectorName := consts.TracesPostGroupByForwardConnectorName
+	currentConfig.Connectors[forwardConnectorName] = config.GenericMap{}
+
+	tracesInProcessors, tracesExportingProcessors := splitTracesProcessorsForPipelines(tracesProcessors, tracesPostForwardProcessors)
+
+	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
+	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
+		Receivers:  []string{"otlp"},
+		Processors: append([]string{"resource/odigos-version"}, tracesInProcessors...),
+		Exporters:  []string{forwardConnectorName},
+	}
+
+	routerConnectorName := fmt.Sprintf("odigosrouterconnector/%s", strings.ToLower(string(common.TracesObservabilitySignal)))
+	routerConnectorCfg := config.GenericMap{}
+	if odigosConfigExtensionName != nil {
+		routerConnectorCfg["odigos_config_extension"] = *odigosConfigExtensionName
+	}
+	currentConfig.Connectors[routerConnectorName] = routerConnectorCfg
+
+	currentConfig.Service.Pipelines[consts.TracesExportingPipelineName] = config.Pipeline{
+		Receivers:  []string{forwardConnectorName},
+		Processors: tracesExportingProcessors,
+		Exporters:  []string{routerConnectorName},
+	}
+}
+
+func splitTracesProcessorsForPipelines(tracesProcessors, tracesPostForwardProcessors []string) (tracesIn, tracesExporting []string) {
+	exportingPipelineProcessors := map[string]struct{}{
+		consts.OdigosTailSamplingProcessorName: {},
+		consts.GenericBatchProcessorConfigKey:  {},
+	}
+
+	for _, processor := range tracesProcessors {
+		if processor == consts.GroupByTraceProcessor {
+			tracesIn = append(tracesIn, processor)
+			continue
+		}
+		if _, isExportingProcessor := exportingPipelineProcessors[processor]; isExportingProcessor {
+			tracesExporting = append(tracesExporting, processor)
+			continue
+		}
+		tracesIn = append(tracesIn, processor)
+	}
+
+	tracesExporting = orderExportingPipelineProcessors(tracesExporting)
+	return tracesIn, append(tracesExporting, tracesPostForwardProcessors...)
+}
+
+func orderExportingPipelineProcessors(processors []string) []string {
+	ordered := make([]string, 0, len(processors))
+	for _, processor := range []string{
+		consts.OdigosTailSamplingProcessorName,
+		consts.GenericBatchProcessorConfigKey,
+	} {
+		if slices.Contains(processors, processor) {
+			ordered = append(ordered, processor)
+		}
+	}
+	for _, processor := range processors {
+		if processor == consts.OdigosTailSamplingProcessorName || processor == consts.GenericBatchProcessorConfigKey {
+			continue
+		}
+		ordered = append(ordered, processor)
+	}
+	return ordered
+}
+
+func tracesPipelineForDownstreamConnectors(currentConfig *config.Config) string {
+	if _, exists := currentConfig.Service.Pipelines[consts.TracesExportingPipelineName]; exists {
+		return consts.TracesExportingPipelineName
+	}
+	return GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
 }
 
 func applyRootPipelineForSignal(currentConfig *config.Config, signal common.ObservabilitySignal,
@@ -333,15 +414,75 @@ func insertServiceGraphPipeline(currentConfig *config.Config, extraDimensions []
 		Exporters: []string{"prometheus/servicegraph"},
 	}
 
-	// Add the service graph exporter to the root traces pipeline
-	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
-	// This pipeline should already exist because entering this function means that traces are enabled, but we'll check just in case
-	pipeline, exists := currentConfig.Service.Pipelines[rootPipelineName]
+	// Add the service graph exporter to the traces pipeline that routes to destinations
+	// (traces/exporting when the pipeline is split, otherwise traces/in).
+	tracesPipelineName := tracesPipelineForDownstreamConnectors(currentConfig)
+	pipeline, exists := currentConfig.Service.Pipelines[tracesPipelineName]
 	if !exists {
 		return
 	}
 	pipeline.Exporters = append(pipeline.Exporters, consts.ServiceGraphConnectorName)
-	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
+	currentConfig.Service.Pipelines[tracesPipelineName] = pipeline
+}
+
+func insertTraceCorrelationsServiceIOPipeline(currentConfig *config.Config, gatewayOptions *GatewayConfigOptions) {
+	cfg := gatewayOptions.TraceCorrelationsServiceIO
+	if !common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
+		ServiceIO: cfg,
+	}) {
+		return
+	}
+
+	connectorCfg := config.GenericMap{}
+	if len(cfg.InputSpanAttributes) > 0 {
+		connectorCfg["input_span_attributes"] = cfg.InputSpanAttributes
+	}
+	if len(cfg.OutputSpanAttributes) > 0 {
+		connectorCfg["output_span_attributes"] = cfg.OutputSpanAttributes
+	}
+	if cfg.MetricsFlushInterval != "" {
+		connectorCfg["metrics_flush_interval"] = cfg.MetricsFlushInterval
+	}
+	if gatewayOptions.OdigosConfigExtensionName != nil {
+		connectorCfg["odigos_config_extension"] = *gatewayOptions.OdigosConfigExtensionName
+	}
+
+	currentConfig.Connectors[consts.ServiceIOConnectorName] = connectorCfg
+
+	exporterName := consts.TraceCorrelationsVictoriaMetricsExporterName
+	currentConfig.Exporters[exporterName] = traceCorrelationsVictoriaMetricsExporter(gatewayOptions.OdigosNamespace)
+
+	currentConfig.Service.Pipelines[consts.TraceCorrelationsMetricsPipelineName] = config.Pipeline{
+		Receivers: []string{consts.ServiceIOConnectorName},
+		Exporters: []string{exporterName},
+	}
+
+	tracesInPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
+	pipeline, exists := currentConfig.Service.Pipelines[tracesInPipelineName]
+	if !exists {
+		return
+	}
+	if !slices.Contains(pipeline.Exporters, consts.ServiceIOConnectorName) {
+		pipeline.Exporters = append(pipeline.Exporters, consts.ServiceIOConnectorName)
+	}
+	currentConfig.Service.Pipelines[tracesInPipelineName] = pipeline
+}
+
+func traceCorrelationsVictoriaMetricsExporter(odigosNamespace string) config.GenericMap {
+	endpoint := fmt.Sprintf(
+		"http://%s.%s:8428/opentelemetry",
+		consts.TraceCorrelationsMetricsServiceName,
+		odigosNamespace,
+	)
+	return config.GenericMap{
+		"endpoint": endpoint,
+		"retry_on_failure": config.GenericMap{
+			"enabled": false,
+		},
+		"tls": config.GenericMap{
+			"insecure": true,
+		},
+	}
 }
 
 func GetBasicConfig() *config.Config {
@@ -399,20 +540,6 @@ func GetBasicConfig() *config.Config {
 	}
 }
 
-func filterSmallBatchesProcessor(tracesProcessors []string) ([]string, bool) {
-	smallBatchesEnabled := false
-	filtered := make([]string, 0, len(tracesProcessors))
-
-	for _, processor := range tracesProcessors {
-		if processor == consts.SmallBatchesProcessor {
-			smallBatchesEnabled = true
-			continue // skip adding it to filtered slice
-		}
-		filtered = append(filtered, processor)
-	}
-
-	return filtered, smallBatchesEnabled
-}
 func AddServiceGraphScrapeConfig(c *config.Config) error {
 	servicegraphScrape := config.GenericMap{
 		"job_name":        consts.ServiceGraphConnectorName,
@@ -486,7 +613,50 @@ func insertClusterMetricsResources(currentConfig *config.Config, odigosNs string
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
 }
 
-func getTailSamplingProcessorConfig(gatewayOptions *GatewayConfigOptions) config.GenericMap {
+const defaultTraceAggregationWaitDuration = "30s"
+
+func traceAggregationNeeded(gatewayOptions *GatewayConfigOptions) bool {
+	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled {
+		return true
+	}
+
+	if common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
+		ServiceIO: gatewayOptions.TraceCorrelationsServiceIO,
+	}) {
+		return true
+	}
+
+	if common.InsightsPipelineActive(gatewayOptions.Insights) {
+		return true
+	}
+
+	return false
+}
+
+func ensureGroupByTraceProcessor(
+	currentConfig *config.Config,
+	processorsResults *config.CrdProcessorResults,
+	gatewayOptions *GatewayConfigOptions,
+) {
+	if slices.Contains(processorsResults.TracesProcessors, consts.GroupByTraceProcessor) {
+		return
+	}
+
+	waitDuration := defaultTraceAggregationWaitDuration
+	if gatewayOptions.TraceAggregationWaitDuration != nil && *gatewayOptions.TraceAggregationWaitDuration != "" {
+		waitDuration = *gatewayOptions.TraceAggregationWaitDuration
+	}
+
+	currentConfig.Processors[consts.GroupByTraceProcessor] = config.GenericMap{
+		"wait_duration": waitDuration,
+	}
+	processorsResults.TracesProcessors = append(
+		[]string{consts.GroupByTraceProcessor},
+		processorsResults.TracesProcessors...,
+	)
+}
+
+func getTailSamplingProcessors(gatewayOptions *GatewayConfigOptions) ([]string, map[string]config.GenericMap) {
 	tailSamplingProcessorCfg := config.GenericMap{
 		"odigos_config_extension": *gatewayOptions.OdigosConfigExtensionName,
 	}
@@ -509,5 +679,10 @@ func getTailSamplingProcessorConfig(gatewayOptions *GatewayConfigOptions) config
 		}
 		tailSamplingProcessorCfg["span_sampling_attributes"] = spanSamplingAttributesCfg
 	}
-	return tailSamplingProcessorCfg
+
+	processors := map[string]config.GenericMap{
+		consts.OdigosTailSamplingProcessorName: tailSamplingProcessorCfg,
+	}
+
+	return []string{consts.OdigosTailSamplingProcessorName}, processors
 }

@@ -10,9 +10,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/odigos-io/odigos/actions"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/common/profilecache"
 	"github.com/odigos-io/odigos/config"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/kube"
@@ -23,6 +25,8 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/metrics"
 	"github.com/odigos-io/odigos/frontend/services/otlp"
 	"github.com/odigos-io/odigos/frontend/services/profiles"
+	"github.com/odigos-io/odigos/frontend/services/tracecorrelations"
+	"github.com/odigos-io/odigos/instrumentationrules"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
@@ -35,13 +39,16 @@ type Deps struct {
 	K8sCacheClient client.Client
 	K8sCache       cache.Cache
 
-	OdigosMetrics    *collectormetrics.OdigosMetricsConsumer
-	PromAPI          v1.API
-	InsightsClient   *insights.Client
-	ProfileStore     *profiles.ProfileStore
-	ProfilingGate    *profiles.IngestGate
-	ProfilesConsumer *profiles.OdigosProfilesConsumer
-	OtlpReceiver     *otlp.Receiver
+	OdigosMetrics               *collectormetrics.OdigosMetricsConsumer
+	PromAPI                     v1.API
+	CorrelationsPromAPI         v1.API
+	CorrelationsMetricsStoreURL string
+	ProfileStore                *profiles.ProfileStore
+	ProfilingGate               *profiles.IngestGate
+	ProfilesConsumer            *profiles.OdigosProfilesConsumer
+	OtlpReceiver                *otlp.Receiver
+	// InsightsClient is the client for the Odigos Insights service.
+	InsightsClient *insights.Client
 }
 
 // Bootstrap performs the synchronous startup work: load embedded destination
@@ -55,6 +62,12 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 
 	if err := destinations.Load(); err != nil {
 		return nil, fmt.Errorf("loading destinations data: %w", err)
+	}
+	if err := actions.Load(); err != nil {
+		return nil, fmt.Errorf("loading actions data: %w", err)
+	}
+	if err := instrumentationrules.Load(); err != nil {
+		return nil, fmt.Errorf("loading instrumentation rules data: %w", err)
 	}
 	if err := config.Load(); err != nil {
 		return nil, fmt.Errorf("loading config data: %w", err)
@@ -82,13 +95,13 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		log.Error("profiling: could not load initial effective config; ingest off until effective-config is readable", "err", profCfgErr)
 	}
 	profilingGate := profiles.NewProfilesIngestGate(profilingIngest)
-	profileStore := profiles.NewProfileStore(
-		profCfg.StoreLimits.MaxSlots,
-		profCfg.StoreLimits.SlotTTLSeconds,
-		profCfg.StoreLimits.SlotMaxBytes,
-		profCfg.CleanupInterval,
-	)
-	profileStore.RunCleanup(ctx)
+	profileStore := profilecache.NewStore(profilecache.StoreConfig{
+		MaxSlots:        profCfg.StoreLimits.MaxSlots,
+		TTLSeconds:      profCfg.StoreLimits.SlotTTLSeconds,
+		SlotMaxBytes:    profCfg.StoreLimits.SlotMaxBytes,
+		CleanupInterval: profCfg.CleanupInterval,
+	})
+	go profileStore.RunCleanup(ctx)
 
 	profilesConsumer, err := profiles.NewOdigosProfilesConsumer(profileStore, profilingGate)
 	if err != nil {
@@ -112,23 +125,33 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		promAPI = api
 	}
 
+	var correlationsPromAPI v1.API
+	correlationsURL := tracecorrelations.MetricsStoreURL(flags.Namespace)
+	if api, err := metrics.NewAPIFromURL(correlationsURL); err != nil {
+		log.Warn("failed to initialize trace correlations VictoriaMetrics API", "url", correlationsURL, "err", err)
+	} else {
+		correlationsPromAPI = api
+	}
+
 	insightsClient, err := insights.NewClient(k8sconsts.InsightsHTTPEndpoint(flags.Namespace))
 	if err != nil {
 		return nil, fmt.Errorf("initializing insights client: %w", err)
 	}
 
 	return &Deps{
-		Flags:            flags,
-		Logger:           logger,
-		K8sCacheClient:   k8sCacheClient,
-		K8sCache:         k8sCache,
-		OdigosMetrics:    odigosMetrics,
-		PromAPI:          promAPI,
-		InsightsClient:   insightsClient,
-		ProfileStore:     profileStore,
-		ProfilingGate:    profilingGate,
-		ProfilesConsumer: profilesConsumer,
-		OtlpReceiver:     otlpReceiver,
+		Flags:                       flags,
+		Logger:                      logger,
+		K8sCacheClient:              k8sCacheClient,
+		K8sCache:                    k8sCache,
+		OdigosMetrics:               odigosMetrics,
+		PromAPI:                     promAPI,
+		CorrelationsPromAPI:         correlationsPromAPI,
+		CorrelationsMetricsStoreURL: correlationsURL,
+		ProfileStore:                profileStore,
+		ProfilingGate:               profilingGate,
+		ProfilesConsumer:            profilesConsumer,
+		OtlpReceiver:                otlpReceiver,
+		InsightsClient:              insightsClient,
 	}, nil
 }
 

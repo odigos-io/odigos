@@ -1,0 +1,27 @@
+# =====================
+# Metrics
+# Overview throughput/volume metrics for sources and destinations.
+# =====================
+
+type OverviewMetricsResponse {
+  sources: [SingleSourceMetricsResponse!]!
+  destinations: [SingleDestinationMetricsResponse!]!
+}
+
+type SingleSourceMetricsResponse {
+  namespace: String!
+  kind: String!
+  name: String!
+  totalDataSent: Int!
+  throughput: Int!
+}
+
+type SingleDestinationMetricsResponse {
+  id: String!
+  totalDataSent: Int!
+  throughput: Int!
+}
+
+extend type Query {
+  getOverviewMetrics: OverviewMetricsResponse!
+}

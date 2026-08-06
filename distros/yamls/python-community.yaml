@@ -32,3 +32,6 @@ spec:
   traces:
     headSampling:
       supported: true
+  ownDiagnostics:
+    odigosAgentOwnLogerSupported: true
+    openTelemetryComponentsLoggerSupported: true

@@ -1,5 +1,5 @@
 import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { awaitToast, findCrdId, getCrdById, getCrdIds, handleExceptions, updateV2Entity, visitPage, waitForGraphqlOperation } from '../functions';
+import { awaitToast, clickRetryable, findCrdId, getCrdById, getCrdIds, handleExceptions, updateV2Entity, visitPage, waitForCrdCount, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -11,6 +11,7 @@ const configCrdName = CRD_NAMES.INSTRUMENTATION_CONFIG;
 const totalEntities = SELECTED_ENTITIES.NAMESPACE_SOURCES.length;
 const indexForUpdatedSource = 0;
 const nameForUpdatedSource = SELECTED_ENTITIES.NAMESPACE_SOURCES[indexForUpdatedSource].name;
+const firstSourceName = SELECTED_ENTITIES.NAMESPACE_SOURCES[0].name;
 
 describe('Sources CRUD', () => {
   beforeEach(() => {
@@ -28,24 +29,25 @@ describe('Sources CRUD', () => {
 
   it(`Should instrument ${totalEntities} sources via API`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
-      cy.get(DATA_IDS.ADD_SOURCE).click();
+      clickRetryable(DATA_IDS.ADD_SOURCE);
 
-      // Wait for the drawer to load namespaces, then click to activate (show workloads)
-      cy.get(DATA_IDS.SELECT_NAMESPACE).should('exist').click();
+      // Wait for the drawer to load namespaces, then click to activate (show workloads).
+      // Use clickRetryable (no .should('exist') settle) so SSE/refetch re-renders don't detach the node.
+      clickRetryable(DATA_IDS.SELECT_NAMESPACE);
 
-      // Select all workloads individually via the workloads column "Select all"
-      cy.wait(500).then(() => {
-        cy.get('[data-id=workloads-select-all]').click();
+      // Wait for the first workload row before select-all — avoids clicking while the
+      // workloads column is still empty after namespace activation.
+      cy.get(DATA_IDS.SELECT_SOURCE(firstSourceName)).should('be.visible');
+      cy.get('[data-id=workloads-select-all]').click();
 
-        SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach(({ name }) => {
-          cy.get(DATA_IDS.SELECT_SOURCE(name)).should('exist');
-        });
-
-        cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
-
-        // Wait for the drawer to close (v2 closes on successful save)
-        cy.get(DATA_IDS.WIDE_DRAWER_SAVE).should('not.exist');
+      SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach(({ name }) => {
+        cy.get(DATA_IDS.SELECT_SOURCE(name)).should('exist');
       });
+
+      cy.get(DATA_IDS.WIDE_DRAWER_SAVE).click();
+
+      // Wait for the drawer to close (v2 closes on successful save)
+      cy.get(DATA_IDS.WIDE_DRAWER_SAVE).should('not.exist');
     });
   });
 
@@ -54,10 +56,7 @@ describe('Sources CRUD', () => {
   });
 
   it(`Should have >= ${totalEntities} ${configCrdName} CRDs in the cluster`, () => {
-    cy.exec(`kubectl get ${configCrdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then(({ stdout }) => {
-      const count = stdout.split('\n').filter((s) => !!s).length;
-      expect(count).to.be.gte(totalEntities);
-    });
+    waitForCrdCount({ namespace, crdName: configCrdName, minCount: totalEntities });
   });
 
   // Note: we update only 1 source, because Cypress keeps flaking when updating all of them.
@@ -92,10 +91,7 @@ describe('Sources CRUD', () => {
 
   // Note: we update only 1 source, because Cypress keeps flaking when updating all of them.
   it(`Should update "serviceName" of ${1} ${configCrdName} CRDs in the cluster`, () => {
-    cy.exec(`kubectl get ${configCrdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then(({ stdout }) => {
-      const crdIds = stdout.split('\n').filter((s) => !!s);
-      expect(crdIds.length).to.be.gte(totalEntities);
-
+    waitForCrdCount({ namespace, crdName: configCrdName, minCount: totalEntities }).then((crdIds) => {
       const crdId = crdIds.find((id) => id.indexOf(nameForUpdatedSource) !== -1) || '';
       getCrdById({ namespace, crdName: configCrdName, crdId, expectedError: '', expectedKey: 'serviceName', expectedValue: TEXTS.UPDATED_NAME });
     });
@@ -105,9 +101,7 @@ describe('Sources CRUD', () => {
     cy.exec(`kubectl delete ${sourceCrdName} --all -n ${namespace}`, { failOnNonZeroExit: false });
     cy.exec(`kubectl delete ${configCrdName} --all -n ${namespace}`, { failOnNonZeroExit: false });
 
-    cy.wait(3000).then(() => {
-      getCrdIds({ namespace, crdName: sourceCrdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
-    });
+    getCrdIds({ namespace, crdName: sourceCrdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 
   it(`Should have 0 ${configCrdName} CRDs in the cluster`, () => {

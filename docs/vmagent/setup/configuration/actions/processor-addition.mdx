@@ -4,7 +4,7 @@ sidebarTitle: "Processor Addition"
 description: "Add OpenTelemetry Collector processors to transform, filter, or enrich OpenTelemetry signals in the VM Agent"
 ---
 
-[Processor addition](./overview#processor-addition) lets you add an OpenTelemetry Collector processor to transform, filter, or enrich signals (e.g., add or delete attributes, batch, sample, mask PII). Processors defined in the [Odigos collector builder config](https://github.com/odigos-io/odigos/blob/main/collector/builder-config.yaml#L61) are supported.
+[Processor addition](/vmagent/setup/configuration/actions/overview#processor-addition) lets you add an OpenTelemetry Collector processor to transform, filter, or enrich signals (e.g., add or delete attributes, batch, sample, mask PII). Processors defined in the [Odigos collector builder config](https://github.com/odigos-io/odigos/blob/main/collector/builder-config.yaml#L61) are supported.
 
 There are two ways to add a processor addition action: using `odictl` or using YAML files.
 
@@ -64,21 +64,6 @@ There are two ways to add a processor addition action: using `odictl` or using Y
         />
 
         <Note>To cancel creating the action, press `Esc` if you are in INSERT mode, then type `:q!` to exit without saving.</Note>
-      </Step>
-      <Step title="Complete adding the action">
-        Select `OK`. The action appears in the **Actions** section in `odictl`.
-
-        <img 
-          src="../../../../images/vmagent/actions/odictl-action-processor-finish.png" 
-          alt="Complete adding the action"
-          style={{    
-            width: "700px",
-            height: "auto",
-            display: "block",
-            margin: "0 auto"
-          }}
-        />
-
       </Step>
       <Step title="Verify the action has been created">
 

@@ -381,7 +381,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 
 	// URL Templatization configuration
-	urlTemplatizationEnabled := containerConfig.Traces != nil && containerConfig.Traces.UrlTemplatization != nil && len(containerConfig.Traces.UrlTemplatization.Templates) > 0
+	urlTemplatizationEnabled := containerConfig.Traces != nil && containerConfig.Traces.UrlTemplatization != nil
 	supportsUrlTemplatization := distroMetadata.Traces != nil && distroMetadata.Traces.UrlTemplatization != nil && distroMetadata.Traces.UrlTemplatization.Supported
 	if urlTemplatizationEnabled && supportsUrlTemplatization && distroMetadata.ConfigAsEnvVars {
 		// parse URL templatization config to json using the existing AgentTracesConfig struct
@@ -414,6 +414,17 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			return false, nil, fmt.Errorf("failed to marshal span renamer config: %w", err)
 		}
 		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_SPAN_RENAMER", string(spanRenamerConfigJson))
+	}
+
+	// Custom Instrumentation configuration (native agents that receive config via env vars)
+	customInstrumentationsEnabled := containerConfig.Traces != nil && containerConfig.Traces.CustomInstrumentations != nil
+	supportsCustomInstrumentations := distroMetadata.Traces != nil && distroMetadata.Traces.CustomInstrumentations != nil && distroMetadata.Traces.CustomInstrumentations.Supported
+	if customInstrumentationsEnabled && supportsCustomInstrumentations && distroMetadata.ConfigAsEnvVars {
+		customInstrumentationsConfigJson, err := json.Marshal(containerConfig.Traces.CustomInstrumentations)
+		if err != nil {
+			return false, nil, fmt.Errorf("failed to marshal custom instrumentations config: %w", err)
+		}
+		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, k8sconsts.OdigosPhpAgentCustomInstrumentationsEnvVar, string(customInstrumentationsConfigJson))
 	}
 
 	volumeMounted := false

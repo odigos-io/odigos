@@ -21,9 +21,7 @@ TARGET?=
 RHEL?=false
 BUILD_DIR=.
 
-# RHEL-certified CLI (ko + Dockerfile.rhel-base); matches .github/workflows/publish-modules-rhel publish-cli-rhel
-CLI_RHEL_IMAGE_NAME ?= odigos-cli-rhel-certified
-CLI_RHEL_KO_BASE_IMAGE ?= $(ORG)/odigos-cli-rhel-ko-base:$(TAG)
+include cli.mk
 
 ifeq ($(RHEL),true)
     IMG_SUFFIX=-rhel-certified
@@ -78,14 +76,6 @@ lint-fix:
 	MODULE=profiles make lint FIX_LINT=true
 	MODULE=destinations make lint FIX_LINT=true
 	MODULE=procdiscovery make lint FIX_LINT=true
-
-.PHONY: cli-docs
-cli-docs:
-	rm -rf docs/snippets/shared/cli/*
-	cd scripts/cli-docgen && KUBECONFIG=KUBECONFIG go run -tags embed_manifests main.go
-	for file in docs/snippets/shared/cli/*.md; do \
-		mv $${file} $${file%.md}.mdx; \
-	done
 
 .PHONY: rbac-docs
 rbac-docs:
@@ -266,9 +256,6 @@ restart-collector:
 	-kubectl -n odigos-system patch daemonset odiglet -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
 
 deploy-%:
-	@if [ "$*" = "odiglet" ]; then \
-		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws; \
-	fi
 	$(MAKE) build-$* ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX)
 	$(MAKE) load-to-kind-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
 	@if [ "$*" != "agents" ]; then \
@@ -295,16 +282,27 @@ go-mod-tidy/%: DIR=$*
 go-mod-tidy/%:
 	@cd $(DIR) && go mod tidy -compat=1.21
 
+# `go build`/`go test`/`go mod tidy` only need to resolve packages actually compiled, so a module whose
+# graph contains an unresolvable dependency (e.g. one only reachable via another module's own internal-only
+# replace directive) can pass all three while still being completely broken for tooling that loads the whole
+# module graph, like gopls/GoLand's `go list -m all`. This target reproduces that exact call per module so
+# CI catches it instead of a contributor's IDE (see CORE-1400).
+.PHONY: verify-go-mod-graph
+verify-go-mod-graph: $(ALL_GO_MOD_DIRS:%=verify-go-mod-graph/%)
+verify-go-mod-graph/%: DIR=$*
+verify-go-mod-graph/%:
+	@cd $(DIR) && go list -mod=mod -m all > /dev/null
+
 .PHONY: update-dep
 update-dep: $(ALL_GO_MOD_DIRS:%=update-dep/%)
 update-dep/%: DIR=$*
 update-dep/%:
 	cd $(DIR) && go get $(MODULE)@$(VERSION)
 
-UNSTABLE_COLLECTOR_VERSION=v0.148.0
-STABLE_COLLECTOR_VERSION=v1.54.0
-STABLE_OTEL_GO_VERSION=v1.38.0
-UNSTABLE_OTEL_GO_VERSION=v0.63.0
+UNSTABLE_COLLECTOR_VERSION=v0.151.0
+STABLE_COLLECTOR_VERSION=v1.57.0
+STABLE_OTEL_GO_VERSION=v1.44.0
+UNSTABLE_OTEL_GO_VERSION=v0.68.0
 
 .PHONY: update-otel
 update-otel:
@@ -354,50 +352,6 @@ check-clean-work-tree:
 		echo 'Working tree is not clean, did you forget to run "make go-mod-tidy"?'; \
 		exit 1; \
 	fi
-
-# installs odigos from the local source, with local changes to api and cli directorie reflected in the odigos deployment
-.PHONY: cli-install
-cli-install:
-	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . install \
-		--version $(ODIGOS_CLI_VERSION) \
-		--nowait \
-		$(if $(CLUSTER_NAME),--cluster-name $(CLUSTER_NAME)) \
-		$(if $(CENTRAL_BACKEND_URL),--central-backend-url $(CENTRAL_BACKEND_URL)) \
-		$(FLAGS)
-
-
-.PHONY: cli-uninstall
-cli-uninstall:
-	@echo "Uninstalling odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . uninstall
-
-.PHONY: cli-upgrade
-cli-upgrade:
-	@echo "Upgrading odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . upgrade --version $(ODIGOS_CLI_VERSION) --yes
-
-.PHONY: cli-build
-cli-build:
-	@echo "Building the cli executable for tests"
-	TAG=0.0.0-e2e-test; \
-	TMPDIR=$$(mktemp -d); \
-	cp -r ./helm/odigos $$TMPDIR/odigos; \
-	sed -i.bak -E 's/^version:.*/version: '"$${TAG#v}"'/' $$TMPDIR/odigos/Chart.yaml; \
-	helm package $$TMPDIR/odigos -d cli/pkg/helm/embedded; \
-	cp -r ./helm/odigos-central $$TMPDIR/odigos-central; \
-	sed -i.bak -E 's/^version:.*/version: '"$${TAG#v}"'/' $$TMPDIR/odigos-central/Chart.yaml; \
-	helm package $$TMPDIR/odigos-central -d cli/pkg/helm/embedded; \
-	cd cli && go build -tags=embed_manifests \
-	  -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=$${TAG#v}" \
-	  -o odigos .; \
-	rm -rf $$TMPDIR
-
-
-.PHONY: cli-diagnose
-cli-diagnose:
-	@echo "Diagnosing cluster data for debugging"
-	cd ./cli ; go run -tags=embed_manifests . diagnose
 
 .PHONY: helm-install
 helm-install:
@@ -537,57 +491,6 @@ publish-to-ecr:
 	make -j 3 build-tag-push-ecr-image/collector DOCKERFILE=collector/$(DOCKERFILE) SUMMARY="Odigos Collector" DESCRIPTION="The Odigos build of the OpenTelemetry Collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	make -j 3 build-tag-push-ecr-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	echo "✅ Deployed Odigos to EKS, now install the CLI"
-
-.PHONY: build-cli-image
-build-cli-image:
-	cd cli && \
-	KO_DOCKER_REPO=$(ORG)/odigos-cli$(IMG_SUFFIX) \
-	VERSION=$(TAG) \
-	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
-	DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S') \
-	ko build --bare --tags $(TAG) --local .
-
-.PHONY: build-cli-image-rhel
-build-cli-image-rhel:
-	cd cli && $(MAKE) licenses
-	cd cli && docker build -f Dockerfile.rhel-base -t $(CLI_RHEL_KO_BASE_IMAGE) .
-	cd cli && \
-	KO_DOCKER_REPO=$(ORG)/$(CLI_RHEL_IMAGE_NAME) \
-	KO_DEFAULTBASEIMAGE=$(CLI_RHEL_KO_BASE_IMAGE) \
-	KO_CONFIG_PATH=./.ko.yaml \
-	VERSION=$(TAG) \
-	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
-	DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
-	ko build --bare --tags $(TAG) --local .
-
-.PHONY: push-cli-image-rhel
-push-cli-image-rhel:
-	@if [ "$(PUSH_IMAGE)" != "true" ]; then \
-		echo "this command will push the image to the public registry; set PUSH_IMAGE=true" >&2; \
-		exit 1; \
-	fi
-	cd cli && $(MAKE) licenses
-	docker buildx build --platform linux/amd64,linux/arm64 \
-		-f cli/Dockerfile.rhel-base \
-		-t $(CLI_RHEL_KO_BASE_IMAGE) \
-		--push \
-		cli
-	cd cli && \
-	KO_DOCKER_REPO=$(ORG)/$(CLI_RHEL_IMAGE_NAME) \
-	KO_DEFAULTBASEIMAGE=$(CLI_RHEL_KO_BASE_IMAGE) \
-	KO_CONFIG_PATH=./.ko.yaml \
-	VERSION=$(TAG) \
-	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
-	DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
-	ko build --bare --tags $(TAG) \
-		--image-label name=odigos-cli \
-		--image-label vendor=Odigos \
-		--image-label maintainer=Odigos \
-		--image-label version=$(TAG) \
-		--image-label release=$(TAG) \
-		--image-label summary="Odigos CLI" \
-		--image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
-		--platform=all .
 
 # install gatekeeper to prevent:
 # 1. privileged containers

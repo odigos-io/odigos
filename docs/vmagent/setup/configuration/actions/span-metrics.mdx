@@ -4,7 +4,7 @@ sidebarTitle: "Span Metrics"
 description: "Convert tracing spans into aggregated metrics in the Odigos VM Agent"
 ---
 
-[Span metrics](./overview#span-metrics) is a processor that turns tracing spans into aggregated metrics (e.g., request counts, latency histograms), reducing export volume and making it easier to build dashboards and alerts.
+[Span metrics](/vmagent/setup/configuration/actions/overview#span-metrics) is a processor that turns tracing spans into aggregated metrics (e.g., request counts, latency histograms), reducing export volume and making it easier to build dashboards and alerts.
 
 There are two ways to add a span metrics action: using `odictl` or using YAML files.
 
@@ -63,21 +63,6 @@ There are two ways to add a span metrics action: using `odictl` or using YAML fi
         />
 
         <Note>To cancel creating the action, press `Esc` if you are in INSERT mode, then type `:q!` to exit without saving.</Note>
-      </Step>
-      <Step title="Complete adding the action">
-        Select `OK`. The action appears in the **Actions** section in `odictl`.
-
-        <img 
-          src="../../../../images/vmagent/actions/odictl-action-span-finish.png" 
-          alt="Complete adding the action"
-          style={{    
-            width: "700px",
-            height: "auto",
-            display: "block",
-            margin: "0 auto"
-          }}
-        />
-
       </Step>
       <Step title="Verify the action has been created">
 

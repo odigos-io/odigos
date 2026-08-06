@@ -14,19 +14,22 @@ metadata:
       kind: Rollout
       name: python-rollout
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
     - message: "runtime detection completed successfully"
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
     - message: "agent enabled in 1 containers: [python-rollout]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
     - message: workload rollout finished successfully
       reason: RolloutFinished
       status: "True"
@@ -48,19 +51,22 @@ metadata:
       kind: Rollout
       name: nodejs-rollout
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
     - message: "runtime detection completed successfully"
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
     - message: "agent enabled in 1 containers: [nodejs-rollout]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
     - message: workload rollout finished successfully
       reason: RolloutFinished
       status: "True"
@@ -82,19 +88,22 @@ metadata:
       kind: Rollout
       name: java-rollout
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
       reason: NamespaceSource
       status: "True"
       type: MarkedForInstrumentation
+  (conditions[?type == 'RuntimeDetection']):
     - message: "runtime detection completed successfully"
       reason: DetectedSuccessfully
       status: "True"
       type: RuntimeDetection
+  (conditions[?type == 'AgentEnabled']):
     - message: "agent enabled in 1 containers: [java-rollout]"
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
+  (conditions[?type == 'WorkloadRollout']):
     - message: workload rollout finished successfully
       reason: RolloutFinished
       status: "True"

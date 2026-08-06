@@ -16,7 +16,10 @@ type K8sWorkloadId {
 # - namespace: namespace is set, other fields are empty.
 # - all workloads: all fields are empty.
 #
-# setting markedForInstrumentation to true will return just those that are relevant for instrumentation.
+# setting markedForInstrumentation to true returns workloads relevant to the Overview:
+# those currently marked for instrumentation (have an InstrumentationConfig), plus
+# workloads with an explicit disabled Source CR (disableInstrumentation=true).
+# Truly uninstrumented workloads (no Source / not covered) are still excluded.
 input WorkloadFilter {
   namespace: String
   kind: K8sResourceKind
@@ -28,27 +31,6 @@ input K8sWorkloadIdInput {
   namespace: String!
   kind: K8sResourceKind!
   name: String!
-}
-
-# describes a condition for a workload in odigos
-# and its status and message which describes if the condition is met or not and in what state it is.
-type DesiredConditionStatus {
-  # name of the condition, in PascalCase ("AgentInjected", "RuntimeInfo", etc.)
-  name: String!
-
-  # indicates if the desired state is met or not, and what is the progress towards it.
-  status: DesiredStateProgress!
-
-  # reasonEnum is a String, out of close set of enum values per condition type.
-  # use PascalCase for the enum values.
-  # the exact values per condition type are undocumented and should be considered internal.
-  # since it's an enum value, it is suitable for automatic processing and be used in scripts.
-  reasonEnum: String
-
-  # message is a human readable, high cardinality, free form text,
-  # that describes the status for this condition.
-  # it is used to provide additional context relevant to the human reading it.
-  message: String!
 }
 
 # Indicates if a workload in the cluster is marked for instrumentation and why.
@@ -111,10 +93,9 @@ type K8sWorkloadRuntimeInfoContainer {
   # if empty, the detection could not be completed.
   secureExecutionMode: Boolean
 
-  # if other instrumentation agent is detected to run in the container,
-  # this will be the name of the detected agent.
-  # will be empty most of the times, when no other agent is detected in the container.
-  otherAgentName: String
+  # names of other instrumentation agents detected running in the container
+  # (a process can carry more than one); empty when none.
+  otherAgentNames: [String!]
 }
 
 # describes the result of the runtime info detection for a workload.
@@ -214,10 +195,60 @@ type K8sWorkloadAgentEnabled {
   containers: [K8sWorkloadAgentEnabledContainer!]
 }
 
+# overview counts of pods by instrumentation agent injection state for a workload.
+type K8sWorkloadPodsManifestInjectionOverview {
+  # total number of pods in the workload.
+  totalPods: Int!
+
+  # total number of pods that have the agent not applied
+  # if agent is disabled for workload, this will be the total number of pods in the workload.
+  totalAgentNotAppliedPods: Int!
+  # indicates if the total number of pods that have the agent not applied is as expected.
+  agentNotAppliedOk: Boolean!
+
+  # total number of pods that have the agent applied and is up to date with latest agent meta hash.
+  # if agent is disabled for workload, this should be 0,
+  # unless there are pods that are still running after uninstrumented or disabled.
+  # if agent is enabled for workload, this should be the total number of pods in the workload,
+  # unless there are pods running previous to instrumentation,
+  # or that the pods mutation webhook in instrumentor failed to apply on them.
+  totalAgentAppliedPods: Int!
+  # indicates if the total number of pods that have the agent applied is as expected.
+  agentAppliedOk: Boolean!
+
+  # total number of pods that have the agent applied but are out of date.
+  # if agent is disabled for workload, this will be 0.
+  totalAgentOutOfDatePods: Int!
+  # indicates if the total number of pods that have the agent applied but are out of date is as expected.
+  agentOutOfDateOk: Boolean!
+}
+
 # describes the odigos instrumentation related rollout status for a workload.
 type K8sWorkloadRollout {
+  # DEPRECATED: replaced by podsManifestInjectionStatus. will be removed in the future.
+  # TODO: remove after 6 months - 2027-01-18
   # the status of the rollout. that is being tracked by odigos.
-  rolloutStatus: DesiredConditionStatus!
+  # optional when only the PodsManifestInjection condition is present.
+  # available only if the source is marked for instrumentation (has instrumentation config).
+  rolloutStatus: DesiredConditionStatus
+
+  # status of odigos agent injection into running pods of this workload.
+  # sourced from the InstrumentationConfig PodsManifestInjection condition when present.
+  # when the source is unmarked (no instrumentation config), derived from whether pods still have the agent meta hash label.
+  # covers whether pods are injected as desired, and any rollout/restart progress required to get there.
+  podsManifestInjectionStatus: DesiredConditionStatus!
+
+  # overview counts of pods by agent injection state.
+  podsManifestInjectionOverview: K8sWorkloadPodsManifestInjectionOverview!
+
+  # last time the agents meta hash value changed.
+  # sourced from InstrumentationConfig spec.agentsMetaHashChangedTime.
+  # pods created before this time may not be in alignment with the current agents meta hash.
+  # null when the source is unmarked for instrumentation.
+  # the meta hash includes things like which agent name to use for each container, critical version bumps, etc.
+  # after this time, odigos should react with auto-rollout if enabled, and reconcile relevant status with action items for users.
+  # RFC3339 format.
+  agentsMetaHashChangedTime: String
 }
 
 type K8sWorkloadAutoRollback {
@@ -238,6 +269,10 @@ type K8sWorkloadContainerOverrides {
   # when null (most times), the distro is selected based on the runtime detection values.
   # if not null, this distro is used regardless of any runtime detection values.
   otelDistroName: String
+
+  # Whether Odigos may run alongside other instrumentation agents in this container.
+  # when null, the global configuration is used.
+  allowConcurrentAgents: Boolean
 }
 
 # traces configuration for the instrumentation agent.
@@ -518,6 +553,7 @@ type K8sWorkloadConditions {
   runtimeDetection: DesiredConditionStatus
   agentInjectionEnabled: DesiredConditionStatus
   rollout: DesiredConditionStatus
+  podsManifestInjection: DesiredConditionStatus
   autoRollback: DesiredConditionStatus
   agentInjected: DesiredConditionStatus
   processesAgentHealth: DesiredConditionStatus
@@ -555,7 +591,10 @@ type K8sWorkload {
 
   agentEnabled: K8sWorkloadAgentEnabled
 
-  rollout: K8sWorkloadRollout
+  # indicate if a rollout is needed, or being auto-managed by odigos.
+  # includes an overview of the actual state of the pods in the cluster,
+  # and relevant action items for handling manual cases.
+  rollout: K8sWorkloadRollout!
 
   # status for the auto rollback feature.
   # used to monitor freshly instrumented sources and roll them back in case of any suspicious status.

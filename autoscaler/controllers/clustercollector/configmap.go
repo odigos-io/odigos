@@ -130,8 +130,10 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 				},
 			},
 		},
-		Resource: map[string]*string{
-			string(semconv.K8SPodNameKey): &podNameFromEnv,
+		Resource: &config.TelemetryResource{
+			Attributes: []config.ResourceAttribute{
+				{Name: string(semconv.K8SPodNameKey), Value: podNameFromEnv},
+			},
 		},
 	}
 
@@ -170,20 +172,31 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		OdigosConfigExtensionName: &odigosConfigExtensionName,
 		SamplingSpanAttributes:    gateway.Spec.SpanSamplingAttributes,
 	}
+	traceCorrelationsEnabled := gateway.Spec.TraceCorrelations != nil
+	if traceCorrelationsEnabled {
+		gatewayOptions.TraceCorrelationsServiceIO = gateway.Spec.TraceCorrelations.ServiceIO
+	}
 
+	tailSamplingEnabled := false
+	waitDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
 	// TailSampling is nil when inactive, non-nil when the scheduler has resolved it as active.
 	// TraceAggregationWaitDuration is already validated and defaulted by the scheduler.
 	if gateway.Spec.TailSampling != nil {
-		if gateway.Spec.TailSampling.Disabled != nil {
-			disabled := *gateway.Spec.TailSampling.Disabled
-			enabled := !disabled
-			gatewayOptions.SamplingEnabled = &enabled
+		if gateway.Spec.TailSampling.Disabled != nil && !*gateway.Spec.TailSampling.Disabled {
+			tailSamplingEnabled = true
 			if gateway.Spec.SamplingDryRun != nil {
 				gatewayOptions.SamplingDryRun = *gateway.Spec.SamplingDryRun
 			}
 		}
-		gatewayOptions.TraceAggregationWaitDuration = gateway.Spec.TailSampling.TraceAggregationWaitDuration
+		if gateway.Spec.TailSampling.TraceAggregationWaitDuration != nil && *gateway.Spec.TailSampling.TraceAggregationWaitDuration != "" {
+			waitDuration = *gateway.Spec.TailSampling.TraceAggregationWaitDuration
+		}
 	}
+
+	if tailSamplingEnabled || traceCorrelationsEnabled {
+		gatewayOptions.TraceAggregationWaitDuration = &waitDuration
+	}
+	gatewayOptions.TailSamplingEnabled = &tailSamplingEnabled
 
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
 	var profilingCfg *odigoscommon.ProfilingConfiguration
@@ -209,6 +222,9 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		common.ToExporterConfigurerArray(enabledDests),
 		common.ToProcessorConfigurerArray(processors),
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
+			// Normalize OBI metric names (obi.* -> odigos.*) once at the gateway, before metrics are
+			// routed to destinations. No-op when metrics are disabled or no obi.* metrics are present.
+			addObiMetricsRenamePipeline(c)
 			// Creating a metric pipeline (throughput metrics) for the gateway to be sent to the UI
 			if err := addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines); err != nil {
 				return err

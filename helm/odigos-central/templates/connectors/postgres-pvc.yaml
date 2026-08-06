@@ -1,0 +1,18 @@
+{{- if and (include "connectors.enabled" .) .Values.cloudConnectors.postgres.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: odigos-connector-postgres
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+spec:
+  accessModes:
+    {{- toYaml .Values.cloudConnectors.postgres.persistence.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.cloudConnectors.postgres.persistence.size }}
+  {{- if .Values.cloudConnectors.postgres.persistence.storageClassName }}
+  storageClassName: {{ .Values.cloudConnectors.postgres.persistence.storageClassName }}
+  {{- end }}
+{{- end }}

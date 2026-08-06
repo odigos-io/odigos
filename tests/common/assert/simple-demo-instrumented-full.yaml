@@ -550,6 +550,8 @@ metadata:
     instrumented-app: deployment-membership
 status:
   healthy: true
+  (identifyingAttributes[?key == 'process.pid']):
+    - (value != null): true
   reason: LoadedSuccessfully
 ---
 ### Simple-demo Deployments ###

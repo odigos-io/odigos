@@ -1,34 +1,17 @@
 'use client';
 
-import React, { useCallback } from 'react';
-import { Settings } from '@odigos/ui-kit/containers/v2';
-import { LocalUiConfigInput } from '@odigos/ui-kit/types';
-import { useConfigYamls, useEffectiveConfig, useUpdateLocalUiConfig } from '@/hooks';
+import React from 'react';
+import { PlatformType } from '@odigos/ui-kit/types';
+import { Settings } from '@odigos/ui-kit/containers';
 
+// Settings is being migrated to consume `useOdigosApi()` directly. Once that
+// migration lands, this page becomes a one-line `return <Settings />;`.
 export default function Page() {
-  const { configYamls, configYamlsLoading } = useConfigYamls();
-  const { updateLocalUiConfig, loading: saveLoading, resetLocalUiConfigToFactoryDefaults } = useUpdateLocalUiConfig();
-  const { effectiveConfig, effectiveConfigLoading, refetchEffectiveConfig } = useEffectiveConfig();
-
-  const onSave = useCallback(
-    async (config: LocalUiConfigInput) => {
-      await updateLocalUiConfig(config);
-      await refetchEffectiveConfig();
-    },
-    [updateLocalUiConfig, refetchEffectiveConfig],
-  );
-
   return (
     <Settings
-      minSupportedVersion={1.2}
-      configYamls={configYamls}
-      configYamlsLoading={configYamlsLoading}
-      effectiveConfig={effectiveConfig}
-      effectiveConfigLoading={effectiveConfigLoading}
-      refetch={refetchEffectiveConfig}
-      factoryReset={resetLocalUiConfigToFactoryDefaults}
-      onSave={onSave}
-      saveLoading={saveLoading}
+      minSupportedVersion={{
+        [PlatformType.K8s]: 1.2,
+      }}
     />
   );
 }

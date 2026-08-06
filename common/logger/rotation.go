@@ -42,6 +42,7 @@ type Option func(*initConfig)
 type initConfig struct {
 	rotation *RotationConfig
 	stdout   bool // keep writing to stdout alongside the file (default: false when rotation is set)
+	console  bool // human-readable console encoding instead of JSON
 }
 
 // WithRotation enables log file rotation. When set, the logger writes to the
@@ -61,5 +62,12 @@ func WithRotation(cfg RotationConfig) Option {
 func WithStdout(enabled bool) Option {
 	return func(c *initConfig) {
 		c.stdout = enabled
+	}
+}
+
+// WithConsole switches log output from JSON to a human-readable console format.
+func WithConsole(enabled bool) Option {
+	return func(c *initConfig) {
+		c.console = enabled
 	}
 }

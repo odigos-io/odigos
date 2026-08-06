@@ -83,6 +83,63 @@ def my_function():
          span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
 ```
 
+## Advanced Capabilities
+
+The Odigos Python agent extends the standard OpenTelemetry SDK with capabilities that apply to **all spans** — including custom spans you create with the API above. These features are configured remotely through OpAMP and take effect without restarting your application.
+
+### Head Sampling
+
+The Python agent supports [head sampling](../../pipeline/sampling/head-and-tail-sampling#head-sampling-agent) at the root span. Odigos pushes [Noisy Operation](../../pipeline/sampling/rules/noisy-operation) rules to the agent, which evaluates them through a custom `OdigosSampler` wired into the `TracerProvider`.
+
+Custom spans participate in the same sampling pipeline as auto-instrumented spans:
+
+- **Root spans** — If your custom span is the entry point of a trace (no active parent), head-sampling rules can match it and decide whether the entire trace is kept or dropped.
+- **Child spans** — Follow parent-based sampling: if the parent trace is sampled, custom child spans are recorded; if not, they are dropped (or recorded for metrics only — see [Span metrics mode](#span-metrics-mode) below).
+- **Context propagation** — Use `tracer.start_as_current_span(...)` (as shown above) so custom spans attach to the active trace and inherit the sampling decision.
+
+Head-sampling rules match HTTP server spans (`SpanKind.SERVER`) and HTTP client spans (`SpanKind.CLIENT`) using OpenTelemetry semantic conventions. The sampler accepts both stable and legacy attribute names — for example `http.request.method` and `http.method`, `server.address` and `http.host`. Server rules match on route (with `{param}` wildcard support), route prefix, and method. Client rules match on server address, templated path, path prefix, and method.
+
+When multiple rules match, the **lowest keep percentage** wins. Even when a trace is dropped, the agent attaches an `odigos` [tracestate](https://www.w3.org/TR/trace-context/#tracestate-header) entry so downstream services and the Odigos tail sampler can coordinate on the same decision.
+
+For rule configuration and evaluation order, see [Sampling rules overview](../../pipeline/sampling/rules/overview).
+
+### Dry Run Mode
+
+When cluster-wide dry run (`samplingDryRun` in [OdigosConfiguration](../../api-reference/odigos.io.v1alpha1)) is enabled, the Python agent still exports every span but annotates the sampling decision in tracestate (`dry:t` if the trace would have been kept, `dry:f` if it would have been dropped). Use dry run to validate Noisy rules before committing to real drops.
+
+### Span Metrics Mode
+
+The global `spanMetricsMode` setting controls what happens to spans that head sampling marks as not sampled:
+
+| Mode | Not-sampled spans |
+| --- | --- |
+| `sampled-spans-only` (default) | Dropped entirely — no trace export, no span metrics |
+| `all-spans` | Recorded with `RECORD_ONLY` — excluded from trace export but forwarded for span metrics computation |
+
+This applies to custom spans the same way it applies to auto-instrumented spans. If you rely on span metrics for RED dashboards, set `spanMetricsMode: all-spans` in your Odigos configuration so unsampled traffic still contributes to rate and error metrics.
+
+### Agent Diagnostics
+
+Debug logging for the Odigos Python agent and its OpenTelemetry components can be toggled at runtime through an [InstrumentationRule](../../api-reference/odigos.io.v1alpha1#odigos-io-v1alpha1-InstrumentationRule) with `agentDiagnostics`:
+
+```yaml
+spec:
+  agentDiagnostics:
+    odigosLogLevel: debug
+    openTelemetryComponentsLogLevel: debug
+```
+
+Supported levels are `error`, `warn`, `info`, and `debug`. Remote config from OpAMP **fully overrides** the startup environment variables — if a level is not set in the remote config, that logger is silenced.
+
+For the window before the first OpAMP message arrives, you can set startup log levels with environment variables:
+
+| Variable | Logger | Values |
+| --- | --- | --- |
+| `ODIGOS_LOG_LEVEL` | Odigos agent (`odigos`) | `ALL`, `VERBOSE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `NONE` |
+| `OTEL_LOG_LEVEL` | OpenTelemetry SDK components | Same as above |
+
+At `debug` level, the sampler logs each rule evaluation — useful when troubleshooting why a custom or auto-instrumented span was kept or dropped.
+
 ## Additional Information
 
 For more use cases, see the [OpenTelemetry Python API documentation](https://opentelemetry.io/docs/languages/python/instrumentation/#creating-spans).

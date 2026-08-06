@@ -18,7 +18,6 @@ var KratosProfile = profile.Profile{
 		"hostname-as-podname",
 		"code-attributes",
 		// "query-operation-detector", - disabled to be run in data collection collector
-		// "small-batches", - issue is fixed in receiver. can now handle 85MB
 		"allow_concurrent_agents",
 		"reduce-span-name-cardinality",
 		"disable-gin", // deprecated, remove after golang migrate to new config format

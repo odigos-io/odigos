@@ -41,14 +41,6 @@ type K8sAttributesResolverListerExpansion interface{}
 // K8sAttributesResolverNamespaceLister.
 type K8sAttributesResolverNamespaceListerExpansion interface{}
 
-// PiiMaskingListerExpansion allows custom methods to be added to
-// PiiMaskingLister.
-type PiiMaskingListerExpansion interface{}
-
-// PiiMaskingNamespaceListerExpansion allows custom methods to be added to
-// PiiMaskingNamespaceLister.
-type PiiMaskingNamespaceListerExpansion interface{}
-
 // RenameAttributeListerExpansion allows custom methods to be added to
 // RenameAttributeLister.
 type RenameAttributeListerExpansion interface{}

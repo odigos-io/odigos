@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { IS_LOCAL } from '@/utils';
 
 export interface CSRFTokenResponse {
@@ -85,45 +85,49 @@ export const createCSRFHeaders = (token: string | null): Record<string, string> 
 
 /**
  * Hook to manage CSRF tokens for secure requests
+ *
+ * In production we initialize `isLoading: true` so the very first
+ * render of the consumer (typically `<OdigosApiAdapter>`'s ready
+ * gate) reports the loading state. Without this, the synchronous
+ * first render sees `isLoading: false` (the React `useState` initial)
+ * before the mount-effect flips it to `true`, and any cache-first
+ * `useApiQuery` inside the provider fires its initial fetch before
+ * the CSRF header has a chance to populate. In `IS_LOCAL` mode the
+ * hook is inert (no fetch, no header), so we initialize `false` and
+ * the consumer gates skip the loader.
  */
 export const useCSRF = (): UseCSRF => {
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!IS_LOCAL);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchCSRFToken = useCallback(async () => {
-    setError(null);
-
-    // const cookieToken = getCSRFTokenFromCookie();
-    // if (cookieToken.token) {
-    //   setToken(cookieToken.token);
-    //   return;
-    // }
-
-    setIsLoading(true);
-
-    const serverToken = await getCSRFTokenFromServer();
-    setToken(serverToken.token);
-    setError(serverToken.error);
-
-    setIsLoading(false);
-  }, []);
 
   useEffect(() => {
     if (IS_LOCAL) {
       return;
     }
 
-    // Fetch token on mount
-    if (!token) {
-      fetchCSRFToken();
-      return;
-    }
+    let cancelled = false;
+
+    // All setState calls happen after `await`, never synchronously inside the
+    // effect body, so this doesn't trigger the cascading-render lint rule.
+    const fetchAndApply = async () => {
+      const serverToken = await getCSRFTokenFromServer();
+      if (cancelled) return;
+      setToken(serverToken.token);
+      setError(serverToken.error);
+      setIsLoading(false);
+    };
+
+    fetchAndApply();
 
     // Refresh token every 23 hours (before 24h expiry)
-    const refreshInterval = setInterval(() => fetchCSRFToken(), 23 * 60 * 60 * 1000);
-    return () => clearInterval(refreshInterval);
-  }, [token, fetchCSRFToken]);
+    const refreshInterval = setInterval(fetchAndApply, 23 * 60 * 60 * 1000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(refreshInterval);
+    };
+  }, []);
 
   return {
     token,

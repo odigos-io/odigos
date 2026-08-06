@@ -49,6 +49,30 @@ spec:
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-central-proxy" "Tag" $imageTag) }}
           ports:
             - containerPort: 8080
+              name: http
+          # /healthz is served as soon as the process binds the port (before effective-config is available).
+          # /readyz returns 200 only after effective-config is readable and the proxy has initialized.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 60
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 3
           env:
             - name: CURRENT_NS
               valueFrom:
@@ -74,6 +98,10 @@ spec:
             {{- end }}
             - name: GOMEMLIMIT
               value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.centralProxy.resources) }}
+            {{- if .Values.centralProxy.maxMessageSize }}
+            - name: MAX_MESSAGE_SIZE
+              value: {{ .Values.centralProxy.maxMessageSize | quote }}
+            {{- end }}
           {{- if or .Values.centralProxy.tls.caSecretName .Values.centralProxy.tls.clientCertSecretName }}
           volumeMounts:
             {{- if .Values.centralProxy.tls.caSecretName }}

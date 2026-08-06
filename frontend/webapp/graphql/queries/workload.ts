@@ -8,6 +8,9 @@ const WORKLOAD_FIELDS_SLIM = `
   }
   serviceName
   dataStreamNames
+  markedForInstrumentation {
+    markedForInstrumentation
+  }
   runtimeInfo {
     detectedLanguages
   }
@@ -93,6 +96,16 @@ export const GET_WORKLOADS_BY_IDS = gql`
           reasonEnum
           message
         }
+        podsManifestInjection {
+          name
+          status
+          reasonEnum
+          message
+          actionItems {
+            type
+            buttonText
+          }
+        }
         autoRollback {
           name
           status
@@ -116,6 +129,34 @@ export const GET_WORKLOADS_BY_IDS = gql`
           status
           reasonEnum
           message
+        }
+      }
+      rollout {
+        rolloutStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        agentsMetaHashChangedTime
+        podsManifestInjectionStatus {
+          name
+          status
+          reasonEnum
+          message
+          actionItems {
+            type
+            buttonText
+          }
+        }
+        podsManifestInjectionOverview {
+          totalPods
+          totalAgentNotAppliedPods
+          agentNotAppliedOk
+          totalAgentAppliedPods
+          agentAppliedOk
+          totalAgentOutOfDatePods
+          agentOutOfDateOk
         }
       }
       autoRollback {
@@ -142,16 +183,125 @@ export const GET_WORKLOADS_BY_IDS = gql`
             status
             reasonEnum
             message
+            actionItems {
+              type
+              buttonText
+            }
           }
           otelDistroName
         }
         overrides {
           containerName
           otelDistroName
+          allowConcurrentAgents
           runtimeInfo {
             language
             runtimeVersion
           }
+        }
+        agentConfig {
+          traces {
+            headSampling {
+              dryRun
+              spanMetricsMode
+              noisyOperations {
+                ruleId
+                name
+                disabled
+                operation {
+                  httpServer {
+                    route
+                    routePrefix
+                    method
+                    queryParams {
+                      name
+                      valueExact
+                    }
+                  }
+                  httpClient {
+                    serverAddress
+                    templatedPath
+                    templatedPathPrefix
+                    method
+                  }
+                }
+                percentageAtMost
+              }
+            }
+          }
+        }
+        collectorConfig {
+          tailSampling {
+            noisyOperations {
+              ruleId
+              name
+              disabled
+              operation {
+                httpServer {
+                  route
+                  routePrefix
+                  method
+                  queryParams {
+                    name
+                    valueExact
+                  }
+                }
+                httpClient {
+                  serverAddress
+                  templatedPath
+                  templatedPathPrefix
+                  method
+                }
+              }
+              percentageAtMost
+            }
+            highlyRelevantOperations {
+              ruleId
+              name
+              disabled
+              error
+              durationAtLeastMs
+              operation {
+                httpServer {
+                  route
+                  routePrefix
+                  method
+                }
+                kafkaConsumer {
+                  kafkaTopic
+                }
+                kafkaProducer {
+                  kafkaTopic
+                }
+              }
+              percentageAtLeast
+            }
+            costReductionRules {
+              ruleId
+              name
+              disabled
+              operation {
+                httpServer {
+                  route
+                  routePrefix
+                  method
+                }
+                kafkaConsumer {
+                  kafkaTopic
+                }
+                kafkaProducer {
+                  kafkaTopic
+                }
+              }
+              percentageAtMost
+            }
+          }
+        }
+        instrumentations {
+          name
+          healthy
+          message
+          isStandardLibrary
         }
       }
       pods {

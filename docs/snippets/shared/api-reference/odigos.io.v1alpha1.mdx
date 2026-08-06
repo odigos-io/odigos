@@ -552,7 +552,7 @@ auto_generated: true
 <code>piiMasking</code> <B>[Required]</B>
 </td>
 <td>
-<code>actions/v1alpha1.PiiMaskingConfig</code>
+<code>actions.PiiMaskingConfig</code>
 </td>
 <td>
    <p>PiiMasking is the config for the PiiMasking Action.</p>
@@ -600,6 +600,28 @@ auto_generated: true
 </td>
 <td>
    <p>ExtractAttribute is the config for the ExtractAttribute Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dbQueryTemplatization</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions.DbQueryTemplatizationConfig</code>
+</td>
+<td>
+   <p>DbQueryTemplatization is the config for the DbQueryTemplatization Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>inferDbAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions.InferDbAttributesConfig</code>
+</td>
+<td>
+   <p>InferDbAttributes is the config for the InferDbAttributes Action.</p>
 </td>
 </tr>
 </tbody>
@@ -1109,6 +1131,18 @@ and for visibility into the aggregated settings being used to derive configurati
 </tr>
 <tr>
 <td>
+<code>traceCorrelations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CollectorsGroupTraceCorrelationsSettings"><code>CollectorsGroupTraceCorrelationsSettings</code></a>
+</td>
+<td>
+   <p>TraceCorrelations holds trace correlations configuration derived from OdigosConfiguration.
+Currently only relevant for the cluster gateway collector.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>nodeSelector</code> <B>[Required]</B>
 </td>
 <td>
@@ -1225,6 +1259,35 @@ this list is calculated based on the odigos destinations that were configured</p
    <p>Represents the observations of a collectorsroup's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
 </td>
+</tr>
+</tbody>
+</table>
+
+## `CollectorsGroupTraceCorrelationsSettings` <a id="odigos-io-v1alpha1-CollectorsGroupTraceCorrelationsSettings"></a>
+
+
+**Appears in:**
+
+- [CollectorsGroupSpec](#odigos-io-v1alpha1-CollectorsGroupSpec)
+
+<p>CollectorsGroupTraceCorrelationsSettings holds trace correlations configuration
+derived from OdigosConfiguration. Currently only relevant for the cluster gateway collector.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>serviceIO</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#TraceCorrelationsServiceIOConfiguration"><code>common.TraceCorrelationsServiceIOConfiguration</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 </tbody>
 </table>
@@ -1433,6 +1496,22 @@ and the distro to use will be calculated based on this value.</p>
    <p>select one specific otel distro to use for this container.
 the selected distro must match the programming language and any constraints of the distro.
 if the programmin language is incorrect, the runtime info can be overridden to match</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>allowConcurrentAgents</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Odigos by default will attempt to detect if another agent is already running in the container,
+and if so, will avoid adding odigos agent to the container.
+This option allows to override this setting for a specific container in a source.
+Can be used for selective setting of which containers should run odigos concurrently with other agents.
+empty means take odigos global config for this setting.
+when not empty, the value will override the global config for this container</p>
 </td>
 </tr>
 </tbody>
@@ -2036,19 +2115,6 @@ Pods created before this time may not be in alignment with the AgentsMetaHash.
 e.g. can lack the odigos label, or have a different value.</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>sdkConfigs</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-SdkConfig"><code>[]SdkConfig</code></a>
-</td>
-<td>
-   <p>Configuration for the OpenTelemetry SDKs that this workload should use.
-The SDKs are identified by the programming language they are written in.
-TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.</p>
-</td>
-</tr>
 </tbody>
 </table>
 
@@ -2264,84 +2330,7 @@ and whether the values are considered a guaranteed API.</p>
 </tbody>
 </table>
 
-## `InstrumentationLibraryConfig` <a id="odigos-io-v1alpha1-InstrumentationLibraryConfig"></a>
-
-
-**Appears in:**
-
-- [SdkConfig](#odigos-io-v1alpha1-SdkConfig)
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>libraryId</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-InstrumentationLibraryId"><code>InstrumentationLibraryId</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>traceConfig</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-InstrumentationLibraryConfigTraces"><code>InstrumentationLibraryConfigTraces</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>payloadCollection</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#PayloadCollection"><code>common/api/instrumentationrules.PayloadCollection</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>codeAttributes</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CodeAttributes"><code>common/api/instrumentationrules.CodeAttributes</code></a>
-</td>
-<td>
-   <p>code attributes configuration for a specific library.
-if not set, the default code attributes configuration for the workload will be used.
-if set, but internal fields are empty, those fields will be used from the default configuration.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>headersCollection</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#HttpHeadersCollection"><code>common/api/instrumentationrules.HttpHeadersCollection</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-</tbody>
-</table>
-
 ## `InstrumentationLibraryConfigTraces` <a id="odigos-io-v1alpha1-InstrumentationLibraryConfigTraces"></a>
-
-
-**Appears in:**
-
-- [InstrumentationLibraryConfig](#odigos-io-v1alpha1-InstrumentationLibraryConfig)
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -2366,11 +2355,6 @@ If not specified, the default value for this signal should be used (whether to e
 </table>
 
 ## `InstrumentationLibraryId` <a id="odigos-io-v1alpha1-InstrumentationLibraryId"></a>
-
-
-**Appears in:**
-
-- [InstrumentationLibraryConfig](#odigos-io-v1alpha1-InstrumentationLibraryConfig)
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -2692,6 +2676,17 @@ register instrumented processes for eBPF log capture.</p>
 </tr>
 <tr>
 <td>
+<code>networkMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#NetworkMetricsConfig"><code>common/api/instrumentationrules.NetworkMetricsConfig</code></a>
+</td>
+<td>
+   <p>Configure network flow and TCP stats metrics for scoped workloads.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>traceVerbosity</code> <B>[Required]</B>
 </td>
 <td>
@@ -2984,16 +2979,6 @@ status only shows if pods exists from each category and not count, to avoid freq
 </tbody>
 </table>
 
-## `ProcessingState` <a id="odigos-io-v1alpha1-ProcessingState"></a>
-
-(Alias of `string`)
-
-**Appears in:**
-
-- [RuntimeDetailsByContainer](#odigos-io-v1alpha1-RuntimeDetailsByContainer)
-
-
-
 ## `ProcessorSpec` <a id="odigos-io-v1alpha1-ProcessorSpec"></a>
 
 
@@ -3116,7 +3101,24 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 
 <p>ProcessorStatus defines the observed state of the processor</p>
 
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
 
+
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a processor's current state.</p>
+</td>
+</tr>
+</tbody>
+</table>
 
 ## `RuntimeDetailsByContainer` <a id="odigos-io-v1alpha1-RuntimeDetailsByContainer"></a>
 
@@ -3177,14 +3179,15 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 </tr>
 <tr>
 <td>
-<code>otherAgent</code> <B>[Required]</B>
+<code>otherAgents</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-OtherAgent"><code>OtherAgent</code></a>
+<a href="#odigos-io-v1alpha1-OtherAgent"><code>[]OtherAgent</code></a>
 </td>
 <td>
-   <span class="text-muted">No description provided.</span>
-   </td>
+   <p>OtherAgents lists other instrumentation agents detected in the container
+(a process can carry more than one); empty when none.</p>
+</td>
 </tr>
 <tr>
 <td>
@@ -3235,17 +3238,6 @@ Thus, this field is set only when there is:</p>
 </td>
 <td>
    <p>Holds the environment variables retrieved from the container runtime.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>runtimeUpdateState</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-ProcessingState"><code>ProcessingState</code></a>
-</td>
-<td>
-   <p>A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.</p>
 </td>
 </tr>
 </tbody>
@@ -3365,122 +3357,6 @@ useful if you want to temporarily disable the rules but re-enable them later,</p
 <td>
    <p>Represents the observations of a Sampling's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `SdkConfig` <a id="odigos-io-v1alpha1-SdkConfig"></a>
-
-
-**Appears in:**
-
-- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-
-
-<tr>
-<td>
-<code>language</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ProgrammingLanguage"><code>common.ProgrammingLanguage</code></a>
-</td>
-<td>
-   <p>The language of the SDK being configured</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>instrumentationLibraryConfigs</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-InstrumentationLibraryConfig"><code>[]InstrumentationLibraryConfig</code></a>
-</td>
-<td>
-   <p>configurations for the instrumentation libraries the the SDK should use</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>payloadCollection</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#PayloadCollection"><code>common/api/instrumentationrules.PayloadCollection</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>codeAttributes</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CodeAttributes"><code>common/api/instrumentationrules.CodeAttributes</code></a>
-</td>
-<td>
-   <p>default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>headersCollection</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#HttpHeadersCollection"><code>common/api/instrumentationrules.HttpHeadersCollection</code></a>
-</td>
-<td>
-   <p>default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>traceConfig</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#TraceConfig"><code>common/api/instrumentationrules.TraceConfig</code></a>
-</td>
-<td>
-   <p>default configuration for library tracing.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>customInstrumentations</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#CustomInstrumentations"><code>common/api/instrumentationrules.CustomInstrumentations</code></a>
-</td>
-<td>
-   <p>list of the custom instrumentation probes the SDK should use.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>runtimeMetrics</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceAgentRuntimeMetricsConfiguration"><code>common.MetricsSourceAgentRuntimeMetricsConfiguration</code></a>
-</td>
-<td>
-   <p>configuration for runtime metrics that the SDK should generate.
-these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ebpfLogCapture</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common/api/instrumentationrules#EbpfLogCapture"><code>common/api/instrumentationrules.EbpfLogCapture</code></a>
-</td>
-<td>
-   <p>Whether eBPF-based log capture is enabled for this SDK.
-Set by the instrumentor based on InstrumentationRule ebpfLogCapture config.</p>
 </td>
 </tr>
 </tbody>

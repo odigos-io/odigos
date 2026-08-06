@@ -12,8 +12,8 @@ import (
 
 func SetupWithManager(mgr ctrl.Manager) error {
 	err := ctrl.NewControllerManagedBy(mgr).
-		For(&odigosv1.Action{}).
-		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		For(&odigosv1.Action{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&odigosv1.Processor{}, builder.MatchEveryOwner).
 		Complete(&ActionReconciler{
 			Client: mgr.GetClient(),
 		})
@@ -73,16 +73,6 @@ func SetupWithManager(mgr ctrl.Manager) error {
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&v1.RenameAttribute{}).
 		Complete(&RenameAttributeReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-		})
-	if err != nil {
-		return err
-	}
-
-	err = ctrl.NewControllerManagedBy(mgr).
-		For(&v1.PiiMasking{}).
-		Complete(&PiiMaskingReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})

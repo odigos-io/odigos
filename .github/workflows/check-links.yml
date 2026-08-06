@@ -28,6 +28,7 @@ jobs:
         with:
           args: >-
             -v -n "*.md" "**/*.md" "**/*.mdx"
+            --exclude-path "docs/snippets"
             --exclude "http://localhost*"
             --exclude "^https://logs-prod.*"
             --exclude ".*your-account.*"
@@ -36,6 +37,8 @@ jobs:
             --exclude "https://github.com/odigos-io/ui-kit"
             --exclude "http://host:port*"
             --exclude "https://www.npmjs.com/*"
+            --exclude "^https://join\\.slack\\.com/.*"
+            --exclude "^https://github\\.com/odigos-io/odigos-enterprise.*"
             --timeout 30
             --max-concurrency 2
             --retry-wait-time 15

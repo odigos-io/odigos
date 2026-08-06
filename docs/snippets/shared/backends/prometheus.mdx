@@ -52,7 +52,7 @@ To enable authentication for Prometheus remote write, check the `Use Authenticat
   ❌ Profiles
 </Accordion>
 
-- **PROMETHEUS_REMOTEWRITE_URL** `string` : Remote Write URL.
+- **PROMETHEUS_REMOTEWRITE_URL** `string` : Remote Write URL. The remote write endpoint. If the URL ends with a known remote write path (`/api/v1/write` for Prometheus/Thanos or `/api/v1/push` for Mimir) it is used as-is; otherwise `/api/v1/write` is appended.
   - This field is required
 - **PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS** `string[]` : Resource Attributes Labels (Deprecated). deprecated. will be removed soon.
   - This field is optional

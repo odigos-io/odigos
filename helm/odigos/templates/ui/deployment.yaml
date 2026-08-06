@@ -43,8 +43,10 @@ spec:
       {{- end }}
       containers:
       - name: ui
-        {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "ui" "Tag" $imageTag) }}
+        {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+        {{- $isEnterprise := not (empty (include "odigos.secretExists" .)) }}
+        {{- $uiComponent := ternary "enterprise-ui" "ui" $isEnterprise }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Component" $uiComponent "Tag" $imageTag) }}
         args:
           - --namespace=$(CURRENT_NS)
           - --address=0.0.0.0
@@ -64,9 +66,8 @@ spec:
           {{- end }}
           - name: GOMEMLIMIT
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.ui.resources) }}
-          {{- if include "odigos.secretExists" . }}
-          # Consumed by the enterprise UI's odigosauth.AssertEnterpriseOdigosToken()
-          # at startup. The community UI image ignores this env var.
+          {{- if $isEnterprise }}
+          # Consumed by the enterprise UI at startup; ignored by the community image.
           - name: ODIGOS_ONPREM_TOKEN
             valueFrom:
               secretKeyRef:

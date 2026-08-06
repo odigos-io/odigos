@@ -11,6 +11,10 @@ const (
 	ProfilingNodeK8sAttributesProcessor = "k8s_attributes/profiles-node"
 	// ProfilingNodeOdigosProfilesProcessor keeps only profiles for workloads present in odigos_config_k8s (InstrumentationConfig).
 	ProfilingNodeOdigosProfilesProcessor = "odigosprofilesprocessor/profiles-node"
+	// ProfilingNodeSymbolizeProcessor resolves native (C/C++/Rust) frames the profiler
+	// left as module+offset by reading the on-host ELF symbols. Runs on the node collector
+	// (hostPID + /proc access). Zero-config; interpreted/Go frames pass through untouched.
+	ProfilingNodeSymbolizeProcessor = "odigossymbolizeprocessor/profiles-node"
 	// ProfilingNodeServiceNameProcessor sets service.name from K8s metadata so Pyroscope
 	// (and other backends) show workload names instead of unknown_service:<process>.
 	ProfilingNodeServiceNameProcessor = "transform/profiles-service-name"

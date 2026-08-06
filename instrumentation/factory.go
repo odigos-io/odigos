@@ -2,10 +2,19 @@ package instrumentation
 
 import (
 	"context"
+	"errors"
 
 	"github.com/cilium/ebpf"
 	"go.opentelemetry.io/otel/attribute"
 )
+
+// ErrFactoryNotApplicable is returned by a generic Factory's CreateInstrumentation to signal that
+// the factory does not apply to the process at all (a permanent decision, distinct from being
+// disabled by config, which a factory expresses by attaching an instrumentation that gates itself
+// in Load). The manager treats it as a silent skip rather than a failure - the process is simply not
+// attached to that factory. It is only honored for generic factories; distro factories are selected
+// by distribution and are always expected to apply.
+var ErrFactoryNotApplicable = errors.New("instrumentation factory not applicable to process")
 
 type Config any
 

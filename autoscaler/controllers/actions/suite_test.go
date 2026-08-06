@@ -137,16 +137,6 @@ func cleanupResources() {
 		}, timeout, interval).Should(BeTrue())
 	}
 
-	// Clean up all legacy PiiMaskings
-	piiMaskingList := &actionv1.PiiMaskingList{}
-	k8sClient.List(testCtx, piiMaskingList)
-	for _, action := range piiMaskingList.Items {
-		Eventually(func() bool {
-			err := k8sClient.Delete(testCtx, &action)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-	}
-
 	// Clean up all legacy RenameAttributes
 	renameAttributeList := &actionv1.RenameAttributeList{}
 	k8sClient.List(testCtx, renameAttributeList)

@@ -50,5 +50,7 @@ type CachedPod struct {
 
 	AgentInjected       bool
 	AgentInjectedStatus *model.DesiredConditionStatus
-	Containers          []ComputedPodContainer
+	// value of the odigos agents meta hash label when present on the pod.
+	AgentsMetaHash string
+	Containers     []ComputedPodContainer
 }

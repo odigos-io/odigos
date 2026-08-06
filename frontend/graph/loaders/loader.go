@@ -244,6 +244,7 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		for _, pod := range pods {
 			ic := l.instrumentationConfigs[sourceId]
 			agentInjected, agentInjectedStatus := status.CalculatePodAgentInjectedStatus(pod, ic, automaticRolloutEnabled)
+			agentsMetaHash := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]
 			var startedPostAgentMetaHashChange *bool
 			if ic != nil && ic.Spec.AgentsMetaHashChangedTime != nil {
 				posStartTimeAfterAgentMetaHashChange := pod.CreationTimestamp.After(ic.Spec.AgentsMetaHashChangedTime.Time)
@@ -299,6 +300,7 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 				StartedPostAgentMetaHashChange: startedPostAgentMetaHashChange,
 				AgentInjected:                  agentInjected,
 				AgentInjectedStatus:            agentInjectedStatus,
+				AgentsMetaHash:                 agentsMetaHash,
 				Containers:                     containers,
 			}
 
@@ -458,10 +460,36 @@ func (l *Loaders) LoadWorkloadsWithFilter(ctx context.Context, filter *model.Wor
 		// ICs are already loaded by loadBypassWorkloads above; reuse them as the workload set.
 		// fetchInstrumentationConfigs no longer drops ICs in ignored namespaces, so every
 		// instrumented workload — including those in odigos-system — is returned here.
+		//
+		// Also include workloads with an explicit disabled Source CR. Disabling a Source
+		// deletes its InstrumentationConfig, so relying on ICs alone would hide those
+		// workloads from Overview even though the Source (and its settings) still exists.
+		seen := make(map[model.K8sWorkloadID]struct{}, len(l.instrumentationConfigs))
 		l.workloadIds = make([]model.K8sWorkloadID, 0, len(l.instrumentationConfigs))
 		for sourceId := range l.instrumentationConfigs {
 			l.workloadIds = append(l.workloadIds, sourceId)
+			seen[sourceId] = struct{}{}
 		}
+
+		l.sourcesMutex.Lock()
+		if err := l.loadSources(ctx); err != nil {
+			l.sourcesMutex.Unlock()
+			return err
+		}
+		for workloadId, source := range l.workloadSources {
+			if source == nil || !v1alpha1.IsDisabledSource(source) || source.Spec.MatchWorkloadNameAsRegex {
+				continue
+			}
+			if _, ok := seen[workloadId]; ok {
+				continue
+			}
+			if l.workloadFilter.ShouldIgnoreWorkload(workloadId) {
+				continue
+			}
+			l.workloadIds = append(l.workloadIds, workloadId)
+			seen[workloadId] = struct{}{}
+		}
+		l.sourcesMutex.Unlock()
 	} else {
 		l.sourcesMutex.Lock()
 		defer l.sourcesMutex.Unlock()

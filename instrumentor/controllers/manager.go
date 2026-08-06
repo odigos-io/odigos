@@ -10,8 +10,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
-	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
-	"github.com/odigos-io/odigos/instrumentor/controllers/podsinjectionstatus"
+	"github.com/odigos-io/odigos/instrumentor/controllers/podsmanifestinjectionstatus"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
@@ -181,12 +180,7 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 		return fmt.Errorf("failed to create controller for start language detection: %w", err)
 	}
 
-	err = instrumentationconfig.SetupWithManager(mgr)
-	if err != nil {
-		return fmt.Errorf("failed to create controller for instrumentation config: %w", err)
-	}
-
-	err = podsinjectionstatus.SetupWithManager(mgr)
+	err = podsmanifestinjectionstatus.SetupWithManager(mgr)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for pod injection: %w", err)
 	}

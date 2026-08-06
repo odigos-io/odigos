@@ -95,7 +95,7 @@ describe('Destinations CRUD', () => {
         () => {
           // Wait for the destination to delete
           waitForGraphqlOperation('DeleteDestination').then(() => {
-            awaitToast({ message: TEXTS.NOTIF_DESTINATION_DELETED(totalEntities) }, () => {
+            awaitToast({ message: TEXTS.NOTIF_DESTINATION_DELETED(SELECTED_ENTITIES.DESTINATION.TYPE) }, () => {
               getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
             });
           });

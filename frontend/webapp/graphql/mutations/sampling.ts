@@ -10,7 +10,7 @@ export const CREATE_NOISY_OPERATION_RULE = gql`
       disabled
       sourceScopes { sources { namespace kind name } namespaces languages }
       operation {
-        httpServer { route routePrefix method }
+        httpServer { route routePrefix method queryParams { name valueExact } }
         httpClient { serverAddress templatedPath templatedPathPrefix method }
       }
       percentageAtMost
@@ -27,7 +27,7 @@ export const UPDATE_NOISY_OPERATION_RULE = gql`
       disabled
       sourceScopes { sources { namespace kind name } namespaces languages }
       operation {
-        httpServer { route routePrefix method }
+        httpServer { route routePrefix method queryParams { name valueExact } }
         httpClient { serverAddress templatedPath templatedPathPrefix method }
       }
       percentageAtMost

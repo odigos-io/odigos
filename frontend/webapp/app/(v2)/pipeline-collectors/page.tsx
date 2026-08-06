@@ -1,22 +1,15 @@
 'use client';
 
 import React from 'react';
-import { useCollectors, useEffectiveConfig } from '@/hooks';
-import { PipelineCollectors } from '@odigos/ui-kit/containers/v2';
+import { PlatformType } from '@odigos/ui-kit/types';
+import { PipelineCollectors } from '@odigos/ui-kit/containers';
 
 export default function Page() {
-  const { effectiveConfig } = useEffectiveConfig();
-  const { getGatewayInfo, getGatewayPods, getNodeCollectorInfo, getNodeCollectorPods, getExtendedPodInfo } = useCollectors();
-
   return (
     <PipelineCollectors
-      minSupportedVersion={1.12}
-      effectiveConfig={effectiveConfig?.odigosOwnTelemetryStore ? { odigosOwnTelemetryStore: effectiveConfig.odigosOwnTelemetryStore } : null}
-      getGatewayInfo={getGatewayInfo}
-      getGatewayPods={getGatewayPods}
-      getNodeCollectorInfo={getNodeCollectorInfo}
-      getNodeCollectorPods={getNodeCollectorPods}
-      getExtendedPodInfo={getExtendedPodInfo}
+      minSupportedVersion={{
+        [PlatformType.K8s]: 1.12,
+      }}
     />
   );
 }

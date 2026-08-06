@@ -38,7 +38,30 @@ func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRu
 		return model.InstrumentationRuleTypeCustomInstrumentation
 	}
 
+	if rule.NetworkMetrics != nil && *rule.NetworkMetrics {
+		return model.InstrumentationRuleTypeNetworkMetrics
+	}
+
 	return model.InstrumentationRuleTypeUnknownType
+}
+
+// getNetworkMetricsInput maps the presence-based GraphQL boolean to the CRD config: `true` becomes an
+// empty `NetworkMetricsConfig{}` (enabled), while nil/false clears it (disabled).
+func getNetworkMetricsInput(input model.InstrumentationRuleInput) *instrumentationrules.NetworkMetricsConfig {
+	if input.NetworkMetrics == nil || !*input.NetworkMetrics {
+		return nil
+	}
+	return &instrumentationrules.NetworkMetricsConfig{}
+}
+
+// networkMetricsEnabledPtr reports enablement back to the UI: a non-nil config becomes `true`, a nil
+// config becomes nil (field omitted) so it doesn't spuriously mark other rule types.
+func networkMetricsEnabledPtr(cfg *instrumentationrules.NetworkMetricsConfig) *bool {
+	if cfg == nil {
+		return nil
+	}
+	enabled := true
+	return &enabled
 }
 
 // GetInstrumentationRules fetches all instrumentation rules
@@ -70,6 +93,7 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 			HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 			CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
+			NetworkMetrics:           networkMetricsEnabledPtr(r.Spec.NetworkMetrics),
 		}
 		rule.Type = deriveTypeFromRule(rule)
 
@@ -103,6 +127,7 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
+		NetworkMetrics:           networkMetricsEnabledPtr(r.Spec.NetworkMetrics),
 	}
 	rule.Type = deriveTypeFromRule(rule)
 
@@ -116,20 +141,199 @@ func getPayloadCollectionInput(input model.InstrumentationRuleInput) *instrument
 
 	payloadCollection := &instrumentationrules.PayloadCollection{}
 
-	if input.PayloadCollection.HTTPRequest != nil {
-		payloadCollection.HttpRequest = &instrumentationrules.HttpPayloadCollection{}
+	if in := input.PayloadCollection.HTTPRequest; in != nil {
+		payloadCollection.HttpRequest = fromHTTPPayloadInput(in)
 	}
-	if input.PayloadCollection.HTTPResponse != nil {
-		payloadCollection.HttpResponse = &instrumentationrules.HttpPayloadCollection{}
+	if in := input.PayloadCollection.HTTPResponse; in != nil {
+		payloadCollection.HttpResponse = fromHTTPPayloadInput(in)
 	}
-	if input.PayloadCollection.DbQuery != nil {
-		payloadCollection.DbQuery = &instrumentationrules.DbQueryPayloadCollection{}
+	if in := input.PayloadCollection.DbQuery; in != nil {
+		payloadCollection.DbQuery = fromDbQueryPayloadInput(in)
 	}
-	if input.PayloadCollection.Messaging != nil {
-		payloadCollection.Messaging = &instrumentationrules.MessagingPayloadCollection{}
+	if in := input.PayloadCollection.Messaging; in != nil {
+		payloadCollection.Messaging = fromMessagingPayloadInput(in)
 	}
 
 	return payloadCollection
+}
+
+func mergePayloadCollectionUpdate(existing *instrumentationrules.PayloadCollection, input *model.PayloadCollectionInput) *instrumentationrules.PayloadCollection {
+	if input == nil {
+		return nil
+	}
+
+	out := &instrumentationrules.PayloadCollection{}
+	if input.HTTPRequest != nil {
+		out.HttpRequest = mergeHTTPPayloadUpdate(existingHTTPPayload(existing, payloadKindHTTPRequest), input.HTTPRequest)
+	}
+	if input.HTTPResponse != nil {
+		out.HttpResponse = mergeHTTPPayloadUpdate(existingHTTPPayload(existing, payloadKindHTTPResponse), input.HTTPResponse)
+	}
+	if input.DbQuery != nil {
+		out.DbQuery = mergeDbQueryPayloadUpdate(existingDbQueryPayload(existing), input.DbQuery)
+	}
+	if input.Messaging != nil {
+		out.Messaging = mergeMessagingPayloadUpdate(existingMessagingPayload(existing), input.Messaging)
+	}
+	return out
+}
+
+// fromHTTPPayloadInput copies the advanced HTTP payload options (mime types,
+// max length, drop-partial) from the GraphQL input into the CRD config. The
+// GraphQL layer uses `[]*string` / `*int`, the CRD uses `*[]string` / `*int64`.
+func fromHTTPPayloadInput(in *model.HTTPPayloadCollectionInput) *instrumentationrules.HttpPayloadCollection {
+	cfg := &instrumentationrules.HttpPayloadCollection{
+		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
+		DropPartialPayloads: in.DropPartialPayloads,
+	}
+	if in.MimeTypes != nil {
+		mimeTypes := make([]string, 0, len(in.MimeTypes))
+		for _, m := range in.MimeTypes {
+			if m != nil {
+				mimeTypes = append(mimeTypes, *m)
+			}
+		}
+		cfg.MimeTypes = &mimeTypes
+	}
+	return cfg
+}
+
+func fromDbQueryPayloadInput(in *model.DbQueryPayloadCollectionInput) *instrumentationrules.DbQueryPayloadCollection {
+	return &instrumentationrules.DbQueryPayloadCollection{
+		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
+		DropPartialPayloads: in.DropPartialPayloads,
+	}
+}
+
+func fromMessagingPayloadInput(in *model.MessagingPayloadCollectionInput) *instrumentationrules.MessagingPayloadCollection {
+	return &instrumentationrules.MessagingPayloadCollection{
+		MaxPayloadLength:    intToInt64Ptr(in.MaxPayloadLength),
+		DropPartialPayloads: in.DropPartialPayloads,
+	}
+}
+
+func mergeHTTPPayloadUpdate(existing *instrumentationrules.HttpPayloadCollection, in *model.HTTPPayloadCollectionInput) *instrumentationrules.HttpPayloadCollection {
+	cfg := fromHTTPPayloadInput(in)
+	if existing == nil {
+		return cfg
+	}
+
+	// Older UI payload editors send `{}` for an enabled section. Treat omitted
+	// advanced fields as "unchanged" during update so limits/filters are not
+	// silently erased when a rule is opened and saved through that path.
+	if in.MimeTypes == nil {
+		cfg.MimeTypes = cloneStringSlicePtr(existing.MimeTypes)
+	}
+	if in.MaxPayloadLength == nil {
+		cfg.MaxPayloadLength = cloneInt64Ptr(existing.MaxPayloadLength)
+	}
+	if in.DropPartialPayloads == nil {
+		cfg.DropPartialPayloads = cloneBoolPtr(existing.DropPartialPayloads)
+	}
+	return cfg
+}
+
+func mergeDbQueryPayloadUpdate(existing *instrumentationrules.DbQueryPayloadCollection, in *model.DbQueryPayloadCollectionInput) *instrumentationrules.DbQueryPayloadCollection {
+	cfg := fromDbQueryPayloadInput(in)
+	if existing == nil {
+		return cfg
+	}
+	if in.MaxPayloadLength == nil {
+		cfg.MaxPayloadLength = cloneInt64Ptr(existing.MaxPayloadLength)
+	}
+	if in.DropPartialPayloads == nil {
+		cfg.DropPartialPayloads = cloneBoolPtr(existing.DropPartialPayloads)
+	}
+	return cfg
+}
+
+func mergeMessagingPayloadUpdate(existing *instrumentationrules.MessagingPayloadCollection, in *model.MessagingPayloadCollectionInput) *instrumentationrules.MessagingPayloadCollection {
+	cfg := fromMessagingPayloadInput(in)
+	if existing == nil {
+		return cfg
+	}
+	if in.MaxPayloadLength == nil {
+		cfg.MaxPayloadLength = cloneInt64Ptr(existing.MaxPayloadLength)
+	}
+	if in.DropPartialPayloads == nil {
+		cfg.DropPartialPayloads = cloneBoolPtr(existing.DropPartialPayloads)
+	}
+	return cfg
+}
+
+type payloadKind string
+
+const (
+	payloadKindHTTPRequest  payloadKind = "httpRequest"
+	payloadKindHTTPResponse payloadKind = "httpResponse"
+)
+
+func existingHTTPPayload(existing *instrumentationrules.PayloadCollection, kind payloadKind) *instrumentationrules.HttpPayloadCollection {
+	if existing == nil {
+		return nil
+	}
+	switch kind {
+	case payloadKindHTTPRequest:
+		return existing.HttpRequest
+	case payloadKindHTTPResponse:
+		return existing.HttpResponse
+	default:
+		return nil
+	}
+}
+
+func existingDbQueryPayload(existing *instrumentationrules.PayloadCollection) *instrumentationrules.DbQueryPayloadCollection {
+	if existing == nil {
+		return nil
+	}
+	return existing.DbQuery
+}
+
+func existingMessagingPayload(existing *instrumentationrules.PayloadCollection) *instrumentationrules.MessagingPayloadCollection {
+	if existing == nil {
+		return nil
+	}
+	return existing.Messaging
+}
+
+func cloneStringSlicePtr(in *[]string) *[]string {
+	if in == nil {
+		return nil
+	}
+	out := append([]string(nil), (*in)...)
+	return &out
+}
+
+func cloneInt64Ptr(in *int64) *int64 {
+	if in == nil {
+		return nil
+	}
+	out := *in
+	return &out
+}
+
+func cloneBoolPtr(in *bool) *bool {
+	if in == nil {
+		return nil
+	}
+	out := *in
+	return &out
+}
+
+func intToInt64Ptr(v *int) *int64 {
+	if v == nil {
+		return nil
+	}
+	i := int64(*v)
+	return &i
+}
+
+func int64ToIntPtr(v *int64) *int {
+	if v == nil {
+		return nil
+	}
+	i := int(*v)
+	return &i
 }
 
 func getHeadersCollectionInput(input model.InstrumentationRuleInput) *instrumentationrules.HttpHeadersCollection {
@@ -178,9 +382,9 @@ func getCodeAttributesInput(input model.InstrumentationRuleInput) *instrumentati
 	return codeAttributes
 }
 
-func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instrumentationrules.CustomInstrumentations {
+func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*instrumentationrules.CustomInstrumentations, error) {
 	if input.CustomInstrumentations == nil {
-		return nil
+		return nil, nil
 	}
 	customInstrumentations := &instrumentationrules.CustomInstrumentations{}
 	// Iterate Java custom probes and verify input
@@ -230,6 +434,20 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		}
 	}
 
+	if input.CustomInstrumentations.Php != nil {
+		customInstrumentations.Php = make([]instrumentationrules.PhpCustomProbe, 0, len(input.CustomInstrumentations.Php))
+		for _, probe := range input.CustomInstrumentations.Php {
+			apiProbe := instrumentationrules.PhpCustomProbe{}
+			if probe.ClassName != nil {
+				apiProbe.ClassName = *probe.ClassName
+			}
+			if probe.FunctionName != nil {
+				apiProbe.FunctionName = *probe.FunctionName
+			}
+			customInstrumentations.Php = append(customInstrumentations.Php, apiProbe)
+		}
+	}
+
 	// Remove duplicate Golang probes
 	uniqueGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(customInstrumentations.Golang))
 	uniqGoProbes := make(map[instrumentationrules.GolangCustomProbe]struct{})
@@ -251,7 +469,22 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		uniqueJavaProbes = append(uniqueJavaProbes, probe)
 	}
 	customInstrumentations.Java = uniqueJavaProbes
-	return customInstrumentations
+
+	// Remove duplicate PHP probes
+	uniquePhpProbes := make([]instrumentationrules.PhpCustomProbe, 0, len(customInstrumentations.Php))
+	phpSeen := make(map[instrumentationrules.PhpCustomProbe]struct{})
+	for _, probe := range customInstrumentations.Php {
+		phpSeen[probe] = struct{}{}
+	}
+	for probe := range phpSeen {
+		uniquePhpProbes = append(uniquePhpProbes, probe)
+	}
+	customInstrumentations.Php = uniquePhpProbes
+
+	if err := customInstrumentations.Verify(); err != nil {
+		return nil, err
+	}
+	return customInstrumentations, nil
 }
 
 func UpdateInstrumentationRule(ctx context.Context, id string, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
@@ -288,7 +521,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	}
 
 	if input.PayloadCollection != nil {
-		existingRule.Spec.PayloadCollection = getPayloadCollectionInput(input)
+		existingRule.Spec.PayloadCollection = mergePayloadCollectionUpdate(existingRule.Spec.PayloadCollection, input.PayloadCollection)
 	} else {
 		existingRule.Spec.PayloadCollection = nil
 	}
@@ -306,10 +539,16 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	}
 
 	if input.CustomInstrumentations != nil {
-		existingRule.Spec.CustomInstrumentations = getCustomInstrumentationsInput(input)
+		customInstrumentations, err := getCustomInstrumentationsInput(input)
+		if err != nil {
+			return nil, fmt.Errorf("invalid custom instrumentations: %w", err)
+		}
+		existingRule.Spec.CustomInstrumentations = customInstrumentations
 	} else {
 		existingRule.Spec.CustomInstrumentations = nil
 	}
+
+	existingRule.Spec.NetworkMetrics = getNetworkMetricsInput(input)
 	// Update rule in Kubernetes
 	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Update(ctx, existingRule, metav1.UpdateOptions{})
 	if err != nil {
@@ -332,6 +571,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		HeadersCollection:        convertHeadersCollection(updatedRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(updatedRule.Spec.CustomInstrumentations),
+		NetworkMetrics:           networkMetricsEnabledPtr(updatedRule.Spec.NetworkMetrics),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 	return &rule, nil
@@ -373,6 +613,11 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		instrumentationLibraries = &convertedLibraries
 	}
 
+	customInstrumentations, err := getCustomInstrumentationsInput(input)
+	if err != nil {
+		return nil, fmt.Errorf("invalid custom instrumentations: %w", err)
+	}
+
 	// Define the new rule spec based on the input
 	newRule := &v1alpha1.InstrumentationRule{
 		ObjectMeta: metav1.ObjectMeta{
@@ -387,7 +632,8 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			CodeAttributes:           getCodeAttributesInput(input),
 			HeadersCollection:        getHeadersCollectionInput(input),
 			PayloadCollection:        getPayloadCollectionInput(input),
-			CustomInstrumentations:   getCustomInstrumentationsInput(input),
+			CustomInstrumentations:   customInstrumentations,
+			NetworkMetrics:           getNetworkMetricsInput(input),
 		},
 	}
 	// Create the rule in Kubernetes
@@ -412,6 +658,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		HeadersCollection:        convertHeadersCollection(createdRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(createdRule.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(createdRule.Spec.CustomInstrumentations),
+		NetworkMetrics:           networkMetricsEnabledPtr(createdRule.Spec.NetworkMetrics),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 
@@ -542,26 +789,46 @@ func convertPayloadCollection(payload *instrumentationrules.PayloadCollection) *
 	}
 }
 
-// Helpers to create empty payloads if they exist
+// Helpers to map the stored payload configs back to the GraphQL model, carrying
+// the advanced options (mime types / max length / drop-partial) so they survive
+// a round-trip and render in the UI.
 func toHTTPPayload(payload *instrumentationrules.HttpPayloadCollection) *model.HTTPPayloadCollection {
 	if payload == nil {
 		return nil
 	}
-	return &model.HTTPPayloadCollection{}
+	out := &model.HTTPPayloadCollection{
+		MaxPayloadLength:    int64ToIntPtr(payload.MaxPayloadLength),
+		DropPartialPayloads: payload.DropPartialPayloads,
+	}
+	if payload.MimeTypes != nil {
+		mimeTypes := make([]*string, 0, len(*payload.MimeTypes))
+		for i := range *payload.MimeTypes {
+			v := (*payload.MimeTypes)[i]
+			mimeTypes = append(mimeTypes, &v)
+		}
+		out.MimeTypes = mimeTypes
+	}
+	return out
 }
 
 func toDbQueryPayload(payload *instrumentationrules.DbQueryPayloadCollection) *model.DbQueryPayloadCollection {
 	if payload == nil {
 		return nil
 	}
-	return &model.DbQueryPayloadCollection{}
+	return &model.DbQueryPayloadCollection{
+		MaxPayloadLength:    int64ToIntPtr(payload.MaxPayloadLength),
+		DropPartialPayloads: payload.DropPartialPayloads,
+	}
 }
 
 func toMessagingPayload(payload *instrumentationrules.MessagingPayloadCollection) *model.MessagingPayloadCollection {
 	if payload == nil {
 		return nil
 	}
-	return &model.MessagingPayloadCollection{}
+	return &model.MessagingPayloadCollection{
+		MaxPayloadLength:    int64ToIntPtr(payload.MaxPayloadLength),
+		DropPartialPayloads: payload.DropPartialPayloads,
+	}
 }
 
 // Converts CustomInstrumentations to GraphQL-compatible format
@@ -585,6 +852,14 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 			customInstruAsGqlModel.Java = append(customInstruAsGqlModel.Java, &model.JavaCustomProbe{
 				ClassName:  &javaProbe.ClassName,
 				MethodName: &javaProbe.MethodName,
+			})
+		}
+	}
+	if customInstruAsInstruRule.Php != nil {
+		for _, phpProbe := range customInstruAsInstruRule.Php {
+			customInstruAsGqlModel.Php = append(customInstruAsGqlModel.Php, &model.PhpCustomProbe{
+				ClassName:    &phpProbe.ClassName,
+				FunctionName: &phpProbe.FunctionName,
 			})
 		}
 	}

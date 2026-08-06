@@ -119,7 +119,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-instrumentationconfig").
 		For(&v1alpha1.InstrumentationConfig{}).
-		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

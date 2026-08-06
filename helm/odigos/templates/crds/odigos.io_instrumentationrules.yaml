@@ -157,6 +157,20 @@ spec:
                           type: string
                       type: object
                     type: array
+                  php:
+                    items:
+                      description: |-
+                        PhpCustomProbe contains the details for a custom probe for PHP applications.
+                        className is optional; when empty, functionName refers to a global function.
+                      properties:
+                        className:
+                          type: string
+                        functionName:
+                          type: string
+                      required:
+                      - functionName
+                      type: object
+                    type: array
                 type: object
               disabled:
                 description: A boolean field allowing to temporarily disable the rule,
@@ -254,6 +268,10 @@ spec:
                   - name
                   type: object
                 type: array
+              networkMetrics:
+                description: Configure network flow and TCP stats metrics for scoped
+                  workloads.
+                type: object
               notes:
                 description: 'A free-form text field that allows you to attach notes
                   regarding the rule for convenience. For example: why it was added.

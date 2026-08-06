@@ -140,9 +140,13 @@ go run -tags=embed_manifests ./cli
 To run `odigos install` cli command from a local source, use the make command from repo root:
 
 ```bash
-make cli-install
-# Installing Odigos version v0.1.81 in namespace odigos-system ...
+# ODIGOS_CLI_VERSION sets Helm image.tag (use a real published tag; local charts are often 0.0.0)
+make cli-install ODIGOS_CLI_VERSION=v1.32.2
 ```
+
+`make cli-install` uses the local Helm chart (`helm/odigos`) by default. Pass a published
+`ODIGOS_CLI_VERSION` for `image.tag`; do not confuse that with `--chart-version`.
+See comments on the `cli-install` target in `cli.mk` for chart vs image-tag overrides.
 
 If you test changes to the `install` command, you will need to `odigos uninstall` first before you can run install again.
 
@@ -174,7 +178,7 @@ make deploy-ui
 
 First - make sure you clone the [nodejs agent](https://github.com/odigos-io/opentelemetry-node) repos in the same directory as the odigos repo. e.g. `../opentelemetry-node` should exist alongside the odigos repo in your local filesystem.
 
-See the [Odigos docs](https://docs.odigos.io/intro) for the full steps on debugging Odigos locally.
+See the [Odigos docs](https://docs.odigos.io/quickstart/introduction) for the full steps on debugging Odigos locally.
 
 ### How to Build and run Odigos Frontend Locally
 

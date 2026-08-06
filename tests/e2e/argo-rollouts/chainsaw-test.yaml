@@ -15,11 +15,12 @@ spec:
     - name: Install Argo Rollouts Controller
       try:
         - script:
-            timeout: 3m
+            timeout: 1m20s
             content: |
               # Create the argo-rollouts namespace if it doesn't exist
               kubectl create namespace argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
               # Install Argo Rollouts controller
+              # Pin to v1.8.4: later versions (e.g. v1.9.1) fail on the k8s 1.21 clusters used in e2e.
               kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/download/v1.8.4/install.yaml
               # Wait for the controller to be ready
               kubectl wait --for=condition=available --timeout=120s deployment/argo-rollouts -n argo-rollouts
@@ -37,13 +38,13 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            timeout: 4m
+            timeout: 1m50s
             content: |
               ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               ../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: ../../common/assert/odigos-installed.yaml
 
     - name: Verify Node Odiglet label has been added
@@ -54,13 +55,13 @@ spec:
     - name: Assert Trace DB is up
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/simple-trace-db-running.yaml
 
     - name: Assert Argo Rollout Apps Ready
       try:
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: 02-assert-rollouts-ready.yaml
 
     - name: Instrument Namespace
@@ -76,25 +77,25 @@ spec:
     - name: Odigos pipeline ready
       try:
         - assert:
-            timeout: 1m
+            timeout: 1m10s
             file: ../../common/assert/pipeline-ready.yaml
 
     - name: Assert InstrumentationConfig Created for Rollouts
       try:
         - assert:
-            timeout: 3m
+            timeout: 3m06s
             file: 03-assert-instrumentation-configs.yaml
 
     - name: Assert Argo Rollouts Are Healthy After Instrumentation
       try:
         - assert:
-            timeout: 5m
+            timeout: 1m10s
             file: 03-assert-rollouts-healthy.yaml
 
     - name: Assert Rollout Pods Are Instrumented
       try:
         - assert:
-            timeout: 3m
+            timeout: 1m10s
             file: 03-assert-pods-instrumented.yaml
       catch:
         - script:

@@ -12,15 +12,47 @@ runs:
     - name: Tag Modules
       shell: bash
       run: |
+        git tag actions/${{ inputs.tag }}
         git tag api/${{ inputs.tag }}
+        # the collector components, pinned by the enterprise distribution's builder-config.yaml
+        git tag collector/config/configgrpc/${{ inputs.tag }}
+        git tag collector/connectors/odigosrouterconnector/${{ inputs.tag }}
+        git tag collector/connectors/servicegraphconnector/${{ inputs.tag }}
+        git tag collector/connectors/serviceioconnector/${{ inputs.tag }}
+        git tag collector/exporters/azureblobstorageexporter/${{ inputs.tag }}
+        git tag collector/exporters/googlecloudstorageexporter/${{ inputs.tag }}
+        git tag collector/exporters/mockdestinationexporter/${{ inputs.tag }}
+        git tag collector/extension/odigosconfigk8sextension/${{ inputs.tag }}
+        git tag collector/processors/odigosconditionalattributes/${{ inputs.tag }}
+        git tag collector/processors/odigosextractattributeprocessor/${{ inputs.tag }}
+        git tag collector/processors/odigoslogsresourceattrsprocessor/${{ inputs.tag }}
+        git tag collector/processors/odigospiimaskingprocessor/${{ inputs.tag }}
+        git tag collector/processors/odigosprofilesprocessor/${{ inputs.tag }}
+        git tag collector/processors/odigossqldboperationprocessor/${{ inputs.tag }}
+        git tag collector/processors/odigossqlqueryprocessor/${{ inputs.tag }}
+        git tag collector/processors/odigossymbolizeprocessor/${{ inputs.tag }}
+        git tag collector/processors/odigostailsamplingprocessor/${{ inputs.tag }}
+        git tag collector/processors/odigostracefilterprocessor/${{ inputs.tag }}
+        git tag collector/processors/odigostracestateprocessor/${{ inputs.tag }}
+        git tag collector/processors/odigostrafficmetrics/${{ inputs.tag }}
+        git tag collector/processors/odigosurltemplateprocessor/${{ inputs.tag }}
+        git tag collector/processors/odigosvmprofileattrsprocessor/${{ inputs.tag }}
+        git tag collector/providers/odigosk8scmprovider/${{ inputs.tag }}
+        git tag collector/receivers/odigosebpfreceiver/${{ inputs.tag }}
         git tag common/${{ inputs.tag }}
+        git tag config/${{ inputs.tag }}
+        git tag destinations/${{ inputs.tag }}
+        git tag deviceplugin/${{ inputs.tag }}
+        git tag distros/${{ inputs.tag }}
+        git tag frontend/${{ inputs.tag }}
         git tag instrumentation/${{ inputs.tag }}
+        git tag instrumentationrules/${{ inputs.tag }}
+        git tag instrumentor/${{ inputs.tag }}
         git tag k8sutils/${{ inputs.tag }}
         git tag odiglet/${{ inputs.tag }}
+        git tag odigosauth/${{ inputs.tag }}
         git tag opampserver/${{ inputs.tag }}
         git tag procdiscovery/${{ inputs.tag }}
         git tag profiles/${{ inputs.tag }}
-        git tag distros/${{ inputs.tag }}
-        git tag destinations/${{ inputs.tag }}
-        git tag instrumentor/${{ inputs.tag }}
+        git tag status/${{ inputs.tag }}
         git push origin --tags

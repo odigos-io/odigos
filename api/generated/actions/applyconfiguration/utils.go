@@ -55,12 +55,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &actionsv1alpha1.K8sLabelAttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtelAttributeWithValue"):
 		return &actionsv1alpha1.OtelAttributeWithValueApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("PiiMasking"):
-		return &actionsv1alpha1.PiiMaskingApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("PiiMaskingSpec"):
-		return &actionsv1alpha1.PiiMaskingSpecApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("PiiMaskingStatus"):
-		return &actionsv1alpha1.PiiMaskingStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RenameAttribute"):
 		return &actionsv1alpha1.RenameAttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RenameAttributeSpec"):

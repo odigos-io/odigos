@@ -23,6 +23,7 @@ var (
 // Options (all optional, backward-compatible):
 //   - WithRotation(cfg): write to a rotated file instead of stdout (off by default).
 //   - WithStdout(true): keep stdout when rotation is enabled (for tee-style logging).
+//   - WithConsole(true): human-readable console encoding instead of JSON.
 //
 // For non-Kubernetes binaries (e.g. vm-agent): use Init then LoggerCompat() or ToLogr()/WrapLogr for logging.
 // Do not use FromContext (it requires controller-runtime context); SetLevel still applies to the shared atom.
@@ -34,10 +35,7 @@ func Init(levelStr string, component string, opts ...Option) *zap.Logger {
 		o(&cfg)
 	}
 
-	encoderCfg := zap.NewProductionEncoderConfig()
-	encoderCfg.TimeKey = "ts"
-	encoderCfg.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoder := zapcore.NewJSONEncoder(encoderCfg)
+	encoder := buildEncoder(cfg)
 
 	ws := buildWriteSyncer(cfg)
 
@@ -48,6 +46,18 @@ func Init(levelStr string, component string, opts ...Option) *zap.Logger {
 	}
 	zap.ReplaceGlobals(instance)
 	return instance
+}
+
+func buildEncoder(cfg initConfig) zapcore.Encoder {
+	if cfg.console {
+		encoderCfg := zap.NewDevelopmentEncoderConfig()
+		encoderCfg.EncodeLevel = zapcore.CapitalLevelEncoder
+		return zapcore.NewConsoleEncoder(encoderCfg)
+	}
+	encoderCfg := zap.NewProductionEncoderConfig()
+	encoderCfg.TimeKey = "ts"
+	encoderCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+	return zapcore.NewJSONEncoder(encoderCfg)
 }
 
 // buildWriteSyncer returns the appropriate write syncer(s) based on initConfig.

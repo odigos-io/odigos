@@ -30,27 +30,10 @@ const (
 	MarkedForInstrumentationStatusConditionType = "MarkedForInstrumentation"
 	// Describe the runtime detection status of this workload.
 	RuntimeDetectionStatusConditionType = "RuntimeDetection"
-	// this const is the Type field in the conditions of the InstrumentationConfigStatus.
-	AgentEnabledStatusConditionType = "AgentEnabled"
 	// reports whether the workload associated with the InstrumentationConfig has been rolled out.
 	// the rollout is needed to update the instrumentation done by the Pods webhook.
 	WorkloadRolloutStatusConditionType = "WorkloadRollout"
 )
-
-func StatusConditionTypeLogicalOrder(condType string) int {
-	switch condType {
-	case MarkedForInstrumentationStatusConditionType:
-		return 1
-	case RuntimeDetectionStatusConditionType:
-		return 2
-	case AgentEnabledStatusConditionType:
-		return 3
-	case WorkloadRolloutStatusConditionType:
-		return 4
-	default:
-		return 5
-	}
-}
 
 // +kubebuilder:validation:Enum=WorkloadSource;NamespaceSource;WorkloadSourceDisabled;NoSource;RetirableError
 type MarkedForInstrumentationReason string
@@ -94,11 +77,12 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;EnabledWithOtherAgents;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff
 type AgentEnabledReason string
 
 const (
 	AgentEnabledReasonEnabledSuccessfully            AgentEnabledReason = "EnabledSuccessfully"
+	AgentEnabledReasonEnabledWithOtherAgents         AgentEnabledReason = "EnabledWithOtherAgents"
 	AgentEnabledReasonWaitingForRuntimeInspection    AgentEnabledReason = "WaitingForRuntimeInspection"
 	AgentEnabledReasonWaitingForNodeCollector        AgentEnabledReason = "WaitingForNodeCollector"
 	AgentEnabledReasonIgnoredContainer               AgentEnabledReason = "IgnoredContainer"
@@ -153,6 +137,8 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 	switch reason {
 	case AgentEnabledReasonEnabledSuccessfully:
 		return 0
+	case AgentEnabledReasonEnabledWithOtherAgents:
+		return 5
 	case AgentEnabledReasonRuntimeDetailsUnavailable:
 		return 10
 	case AgentEnabledReasonWaitingForRuntimeInspection:
@@ -187,18 +173,7 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 func IsReasonStatusDisabled(reason string) bool {
 	switch reason {
 	// Agent-related reasons
-	case string(AgentEnabledReasonUnsupportedProgrammingLanguage),
-		string(AgentEnabledReasonUnsupportedRuntimeVersion),
-		string(RuntimeDetectionReasonNoRunningPods),
-		string(AgentEnabledReasonNoCollectedSignals),
-		string(AgentEnabledReasonIgnoredContainer),
-		string(AgentEnabledReasonNoAvailableAgent),
-		string(AgentEnabledReasonInjectionConflict),
-		string(AgentEnabledReasonOtherAgentDetected),
-		string(AgentEnabledReasonCrashLoopBackOff),
-		string(AgentEnabledReasonImagePullBackOff),
-		string(AgentEnabledReasonRuntimeDetailsUnavailable):
-
+	case string(RuntimeDetectionReasonNoRunningPods):
 		return true
 
 	// rollout-related reasons
@@ -221,22 +196,16 @@ type EnvVar struct {
 	Value string `json:"value"`
 }
 
-type ProcessingState string
-
-const (
-	ProcessingStateFailed    ProcessingState = "Failed"    // Used when CRI fails to detect the runtime envs
-	ProcessingStateSucceeded ProcessingState = "Succeeded" // Indicates that CRI successfully processed the runtime environments, even if no environments were detected.
-	ProcessingStateSkipped   ProcessingState = "Skipped"   // Used when env originally come from manifest
-)
-
 // +kubebuilder:object:generate=true
 type RuntimeDetailsByContainer struct {
 	ContainerName  string                     `json:"containerName"`
 	Language       common.ProgrammingLanguage `json:"language"`
 	RuntimeVersion string                     `json:"runtimeVersion,omitempty"`
 	EnvVars        []EnvVar                   `json:"envVars,omitempty"`
-	OtherAgent     *OtherAgent                `json:"otherAgent,omitempty"`
-	LibCType       *common.LibCType           `json:"libCType,omitempty"`
+	// OtherAgents lists other instrumentation agents detected in the container
+	// (a process can carry more than one); empty when none.
+	OtherAgents []OtherAgent     `json:"otherAgents,omitempty"`
+	LibCType    *common.LibCType `json:"libCType,omitempty"`
 	// Indicates whether the target process is running is secure-execution mode.
 	// nil means we were unable to determine the secure-execution mode.
 	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
@@ -249,8 +218,6 @@ type RuntimeDetailsByContainer struct {
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
 	// Holds the environment variables retrieved from the container runtime.
 	EnvFromContainerRuntime []EnvVar `json:"envFromContainerRuntime,omitempty"`
-	// A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.
-	RuntimeUpdateState *ProcessingState `json:"runtimeUpdateState,omitempty"`
 }
 
 // represents the status of odigos MANIFEST injection to existing pods template.
@@ -378,11 +345,6 @@ type InstrumentationConfigSpec struct {
 	// Pods created before this time may not be in alignment with the AgentsMetaHash.
 	// e.g. can lack the odigos label, or have a different value.
 	AgentsMetaHashChangedTime *metav1.Time `json:"agentsMetaHashChangedTime,omitempty"`
-
-	// Configuration for the OpenTelemetry SDKs that this workload should use.
-	// The SDKs are identified by the programming language they are written in.
-	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
-	SdkConfigs []SdkConfig `json:"sdkConfigs,omitempty"`
 }
 
 func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName string) *ContainerAgentConfig {
@@ -392,37 +354,6 @@ func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName strin
 		}
 	}
 	return nil
-}
-
-type SdkConfig struct {
-
-	// The language of the SDK being configured
-	Language common.ProgrammingLanguage `json:"language"`
-
-	// configurations for the instrumentation libraries the the SDK should use
-	InstrumentationLibraryConfigs []InstrumentationLibraryConfig `json:"instrumentationLibraryConfigs,omitempty"`
-
-	DefaultPayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
-
-	// default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.
-	DefaultCodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
-
-	// default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.
-	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
-
-	// default configuration for library tracing.
-	DefaultTraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
-
-	// list of the custom instrumentation probes the SDK should use.
-	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
-
-	// configuration for runtime metrics that the SDK should generate.
-	// these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.
-	RuntimeMetrics *common.MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
-
-	// Whether eBPF-based log capture is enabled for this SDK.
-	// Set by the instrumentor based on InstrumentationRule ebpfLogCapture config.
-	EbpfLogCapture *instrumentationrules.EbpfLogCapture `json:"ebpfLogCapture,omitempty"`
 }
 
 type InstrumentationLibraryConfig struct {

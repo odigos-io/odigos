@@ -1,0 +1,35 @@
+{{- if (include "connectors.enabled" .) }}
+# Applies the Atlas connector migrations on install/upgrade. Connectors never migrate; they verify the
+# schema version at startup and fail fast on mismatch.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: odigos-connector-migrations
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: odigos-connector-migrations
+    spec:
+      restartPolicy: OnFailure
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      containers:
+        - name: migrations
+          {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ .Values.cloudConnectors.postgres.image | default (include "utils.imageName" (dict "Values" .Values "Component" "connector-postgres" "Tag" $imageTag)) | quote }}
+          command: ["run-migrations.sh"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-connector-postgres
+                  key: dsn
+{{- end }}

@@ -7,12 +7,13 @@ import (
 const (
 	RedHatImagePrefix = "registry.connect.redhat.com/odigos"
 	OdigosImagePrefix = "registry.odigos.io"
+	// OdigosEnterpriseRegistryPullSecretName is the dockerconfigjson secret created from onPremToken.
+	OdigosEnterpriseRegistryPullSecretName = "odigos-enterprise-registry"
 )
 
 const (
-	DefaultPprofEndpointPort      int32 = 6060
-	DevicePluginPprofEndpointPort int32 = 6061
-	CollectorsPprofEndpointPort   int32 = 1777
+	DefaultPprofEndpointPort    int32 = 6060
+	CollectorsPprofEndpointPort int32 = 1777
 )
 
 const (

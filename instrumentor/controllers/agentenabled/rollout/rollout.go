@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
+	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
@@ -93,6 +94,24 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		}
 		if !hasAgents {
 			logger.Info("skipping rollout - workload already runs without odigos agents",
+				"workload", pw.Name, "namespace", pw.Namespace)
+			return RolloutResult{}, nil
+		}
+
+		// Just because an IC is nil, it doesn't mean the workload is not instrumented.
+		// The workload may be instrumented by a source (and the IC may just temporarily be missing)
+		// So we need to check if the workload is still marked for instrumentation.
+		// For example, in a racey scenario where a workload is deleted and quickly replaced (such as with ArgoCD),
+		// the new workload may exist before the IC is actually garbage collected by the deletion of the old workload.
+		// Without this check, it would look like the IC was intentionally deleted (ie, via sourceinstrumentation controller).
+		// This is a safety check: ic==nil is the signal, but the Source is the source of truth.
+		stillInstrumented, instrumentedErr := workloadStillMarkedForInstrumentation(ctx, c, pw)
+		if instrumentedErr != nil {
+			logger.Error(instrumentedErr, "failed to check if workload is still marked for instrumentation")
+			return RolloutResult{}, instrumentedErr
+		}
+		if stillInstrumented {
+			logger.Info("skipping uninstrumentation rollout - workload is still covered by an active source",
 				"workload", pw.Name, "namespace", pw.Namespace)
 			return RolloutResult{}, nil
 		}
@@ -255,7 +274,16 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
 
-	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
+	// use the AgentsMetaHashChangedTime if it exists,
+	// so we are idempotent if the reconciler requeue for any reason.
+	var t time.Time
+	if ic.Spec.AgentsMetaHashChangedTime != nil {
+		t = ic.Spec.AgentsMetaHashChangedTime.Time
+	} else {
+		t = time.Now()
+	}
+
+	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, t)
 	if rolloutErr != nil {
 		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
 	}
@@ -279,20 +307,28 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 // this is bases on the kubectl implementation of restarting a workload
 // https://github.com/kubernetes/kubectl/blob/master/pkg/polymorphichelpers/objectrestarter.go#L32
 func rolloutRestartWorkload(ctx context.Context, workloadObj client.Object, c client.Client, ts time.Time) error {
+
+	logger := commonlogger.FromContext(ctx)
+
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, ts.Format(time.RFC3339)))
 	switch obj := workloadObj.(type) {
 	case *appsv1.Deployment:
 		if obj.Spec.Paused {
 			return errors.New("can't restart paused deployment")
 		}
+		logger.Info("auto rollout - restarting deployment", "name", obj.Name, "namespace", obj.Namespace)
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *appsv1.StatefulSet:
+		logger.Info("auto rollout - restarting stateful set", "name", obj.Name, "namespace", obj.Namespace)
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *appsv1.DaemonSet:
+		logger.Info("auto rollout - restarting daemon set", "name", obj.Name, "namespace", obj.Namespace)
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *openshiftappsv1.DeploymentConfig:
+		logger.Info("auto rollout - restarting deployment config", "name", obj.Name, "namespace", obj.Namespace)
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *argorolloutsv1alpha1.Rollout:
+		logger.Info("auto rollout - restarting argo rollout", "name", obj.Name, "namespace", obj.Namespace)
 		// Rollouts use a different field (spec.restartAt) for restarting, so we need to patch it differently
 		// https://github.com/argoproj/argo-rollouts/blob/cb1c33df7a2c2b1c2ed31b1ee0aa22621ef5577c/utils/replicaset/replicaset.go#L223-L232
 		rolloutPatch := []byte(fmt.Sprintf(`{"spec":{"restartAt":"%s"}}`, ts.Format(time.RFC3339)))
@@ -301,6 +337,7 @@ func rolloutRestartWorkload(ctx context.Context, workloadObj client.Object, c cl
 		if workload.IsStaticPod(obj) {
 			return errors.New("can't restart static pods")
 		}
+		logger.Info("auto rollout - restarting standalone pod", "name", obj.Name, "namespace", obj.Namespace)
 		return errors.New("currently not supporting standalone pods as workloads for rollout")
 	default:
 		return errors.New("unknown kind")
@@ -438,8 +475,19 @@ func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Ob
 		return false, fmt.Errorf("workloadHasOdigosAgents: listing pods failed: %w", err)
 	}
 
-	// any non-empty list means the workload still runs instrumented pods.
 	return len(pods.Items) > 0, nil
+}
+
+func workloadStillMarkedForInstrumentation(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (bool, error) {
+	sources, err := odigosv1alpha1.GetSources(ctx, c, pw)
+	if err != nil {
+		return false, err
+	}
+	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, err)
+	if err != nil {
+		return false, err
+	}
+	return enabled, nil
 }
 
 // shouldTriggerRollback checks if rollback should be triggered based on backoff state and timing.

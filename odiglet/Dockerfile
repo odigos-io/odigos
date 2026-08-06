@@ -1,4 +1,4 @@
-ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.16
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.18
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
@@ -37,15 +37,16 @@ WORKDIR /instrumentations
 
 # java-community
 ARG JAVA_OTEL_VERSION=v2.10.0
-ADD --chmod=644 https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
+ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
+RUN chmod 644 /instrumentations/java/javaagent.jar
 
 # python-community/python-community3.8
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8 /instrumentations/python3.8 /instrumentations/python3.8
-COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.87 /instrumentations/python /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.90 /instrumentations/python /instrumentations/python
 
 # nodejs-community
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.10.1 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.10.1 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.12.0 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.12.0 /instrumentations/nodejs-community /instrumentations/nodejs-community
 # nodejs-community-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.20 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.20 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
@@ -54,7 +55,7 @@ COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.20 /instrument
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 # php-community
-COPY --from=public.ecr.aws/odigos/agents/php-community:v0.3.2 /instrumentations/php /instrumentations/php
+COPY --from=public.ecr.aws/odigos/agents/php-community:v0.4.1 /instrumentations/php /instrumentations/php
 
 # ruby-community
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations/ruby /instrumentations/ruby
@@ -131,7 +132,7 @@ RUN if [ "$RHEL" = "true" ] ; then \
 
 
 # Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.48
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.52
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         GRPC_ARCH="arm64"; \
     else \

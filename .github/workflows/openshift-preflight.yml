@@ -53,6 +53,10 @@ on:
         description: "Include enterprise-odiglet"
         type: boolean
         default: false
+      enterprise-ui:
+        description: "Include enterprise-ui"
+        type: boolean
+        default: false
       ui:
         description: "Include ui"
         type: boolean
@@ -95,6 +99,7 @@ jobs:
               { service: 'collector', project_id: '69fb8cf84e6153a3a3d3dac2' },
               { service: 'odiglet', project_id: '69fb8d4ea47256655b8151e0' },
               { service: 'enterprise-odiglet', project_id: '69fb8c73eddc8ed3392e8b22' },
+              { service: 'enterprise-ui', project_id: '6a16fa165c179fa2c884833a' },
               { service: 'ui', project_id: '69fb8db4923d3eb46a14ee70' },
               { service: 'operator', project_id: '69fb896f985ff5dff75db58e' },
               { service: 'cli', project_id: '69fb8f3f923d3eb46a14f4e9' },

@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	commonlogger "github.com/odigos-io/odigos/common/logger"
@@ -228,42 +227,4 @@ func findHashVersionFiles(filePath string) ([]string, error) {
 		return nil, err
 	}
 	return matches, nil
-}
-
-func createDotnetDeprecatedDirectories(destDir string) error {
-	var err error
-	arch := getArch()
-	dotnetSoFile := "OpenTelemetry.AutoInstrumentation.Native.so"
-	glibcDir := filepath.Join(destDir, "linux-glibc")
-	muslDir := filepath.Join(destDir, "linux-musl")
-	glibcDirWithArch := filepath.Join(destDir, "linux-glibc-"+arch)
-	muslDirWithArch := filepath.Join(destDir, "linux-musl-"+arch)
-
-	err = os.MkdirAll(glibcDirWithArch, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	err = os.MkdirAll(muslDirWithArch, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = os.Symlink(filepath.Join(glibcDir, dotnetSoFile), filepath.Join(glibcDirWithArch, dotnetSoFile))
-	if err != nil {
-		return err
-	}
-	err = os.Symlink(filepath.Join(muslDir, dotnetSoFile), filepath.Join(muslDirWithArch, dotnetSoFile))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func getArch() string {
-	if runtime.GOARCH == "arm64" {
-		return "arm64"
-	}
-
-	return "x64"
 }

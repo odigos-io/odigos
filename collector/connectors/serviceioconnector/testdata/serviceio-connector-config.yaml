@@ -1,0 +1,25 @@
+receivers:
+  nop:
+
+exporters:
+  nop:
+
+connectors:
+  serviceio:
+    input_span_attributes:
+      - http.route
+      - rpc.method
+    output_span_attributes:
+      - http.route
+      - rpc.service
+      - db.system
+    metrics_flush_interval: 30s
+
+service:
+  pipelines:
+    traces:
+      receivers: [nop]
+      exporters: [serviceio]
+    metrics:
+      receivers: [serviceio]
+      exporters: [nop]

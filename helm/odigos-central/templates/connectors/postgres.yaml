@@ -1,0 +1,68 @@
+{{- if (include "connectors.enabled" .) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-connector-postgres
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: odigos-connector-postgres
+    odigos.io/system-object: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: odigos-connector-postgres
+  template:
+    metadata:
+      labels:
+        app: odigos-connector-postgres
+    spec:
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      {{- with .Values.cloudConnectors.postgres.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cloudConnectors.postgres.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cloudConnectors.postgres.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: postgres
+          {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+          image: {{ .Values.cloudConnectors.postgres.image | default (include "utils.imageName" (dict "Values" .Values "Component" "connector-postgres" "Tag" $imageTag)) | quote }}
+          ports:
+            - containerPort: {{ .Values.cloudConnectors.postgres.port }}
+              name: {{ .Values.cloudConnectors.postgres.portName }}
+          envFrom:
+            - secretRef:
+                name: odigos-connector-postgres
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "{{ .Values.cloudConnectors.postgres.username }}", "-d", "{{ .Values.cloudConnectors.postgres.database }}"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- with .Values.cloudConnectors.postgres.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: data
+        {{- if .Values.cloudConnectors.postgres.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: odigos-connector-postgres
+        {{- else }}
+          emptyDir: {}
+        {{- end }}
+{{- end }}

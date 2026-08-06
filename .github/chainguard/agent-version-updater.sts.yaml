@@ -1,7 +1,8 @@
 issuer: https://token.actions.githubusercontent.com
-subject_pattern: repo:odigos-io/odigos:ref:.*
+subject: repo:odigos-io/odigos:ref:refs/heads/main
+claim_pattern:
+  event_name: "(workflow_dispatch|repository_dispatch)"
 
 permissions:
-  actions: write
   contents: write
   pull_requests: write

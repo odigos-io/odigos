@@ -4,11 +4,16 @@ import (
 	"context"
 
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/common/profilecache"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/xconsumer"
 	"go.opentelemetry.io/collector/pdata/pprofile"
 	"go.opentelemetry.io/collector/pdata/pprofile/pprofileotlp"
 )
+
+// ProfileStore is the frontend's profile buffer; buffering/eviction/TTL lives in
+// the shared common/profilecache package (also used by the vm-agent).
+type ProfileStore = profilecache.Store
 
 type OdigosProfilesConsumer struct {
 	store    *ProfileStore

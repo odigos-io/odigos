@@ -61,9 +61,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	// The webapp bundle + /workloads page are embedded in the frontend module
-	// (webapp + graph packages); OSS has no extra mounts — MCP ships only with
-	// the enterprise UI image.
+	// The webapp bundle is embedded in the frontend module; OSS has no extra
+	// mounts — MCP ships only with the enterprise UI image.
 	r, err := server.BuildRouter(ctx, deps, server.RouterOpts{})
 	if err != nil {
 		log.Error("building router failed", "err", err)

@@ -10,7 +10,11 @@ Odigos uses the official [opentelemetry-python-instrumentation](https://github.c
 
 - In the enterprise version, Odigos leverages eBPF to enhance performance in the Python instrumentation process.
 
-- Python runtime versions 3.8 through 3.14 are supported.
+- Odigos ships **two separate Python distros** — one for Python 3.8 and one for Python 3.9 and above. Odigos selects the correct distro automatically based on the runtime version of your workload.
+
+- **Python 3.8** uses a dedicated legacy distro with OpenTelemetry instrumentation `0.54b1`.
+
+- **Python 3.9 through 3.14** uses the main distro with the latest OpenTelemetry instrumentation.
 
 ## Traces
 
@@ -18,75 +22,81 @@ Odigos will automatically instrument your Python services to record and collect 
 
 ## Instrumentation Libraries
 
-The following Python modules will be auto instrumented by Odigos:
+The following Python modules will be auto instrumented by Odigos. Supported libraries differ between the Python 3.8 and Python 3.9+ distros:
+
+<Tabs>
+
+<Tab title="Python 3.8">
+
+The Python 3.8 distro includes the libraries below. It does not include Gen AI instrumentations other than OpenAI.
 
 ### Database Clients, ORMs, and Data Access Libraries
 
 - [`aiopg`](https://pypi.org/project/aiopg/) versions `aiopg >= 0.13.0, < 2.0.0`
 - [`dbapi`](https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/dbapi/dbapi.html)
-- [`mysql`](https://pypi.org/project/mysql-connector-python/) version `mysql-connector-python >= 8.0.0, < 9.0.0`
-- [`mysqlclient`](https://pypi.org/project/mysqlclient/) version `mysqlclient < 3.0.0`
+- [`mysql`](https://pypi.org/project/mysql-connector-python/) version `mysql-connector-python >= 8.0, < 10.0`
+- [`mysqlclient`](https://pypi.org/project/mysqlclient/) version `mysqlclient < 3`
 - [`psycopg`](https://pypi.org/project/psycopg/) versions `psycopg >= 3.1.0`
-- [`psycopg2`](https://pypi.org/project/psycopg2/) versions `psycopg2 >= 2.7.3.1`
-- [`pymemcache`](https://pypi.org/project/pymemcache/) versions `pymemcache >= 1.3.5, < 5.0.0`
+- [`psycopg2`](https://pypi.org/project/psycopg2/) versions `psycopg2 >= 2.7.3.1`, `psycopg2-binary >= 2.7.3.1`
+- [`pymemcache`](https://pypi.org/project/pymemcache/) versions `pymemcache >= 1.3.5, < 5`
 - [`pymssql`](https://pypi.org/project/pymssql/) versions `pymssql >= 2.1.5, < 3`
-- [`pymongo`](https://pypi.org/project/pymongo/) versions `pymongo >= 3.1, < 5.0.0`
-- [`pymysql`](https://pypi.org/project/PyMySQL/) versions `pymysql < 2.0.0`
+- [`pymongo`](https://pypi.org/project/pymongo/) versions `pymongo >= 3.1, < 5.0`
+- [`pymysql`](https://pypi.org/project/PyMySQL/) versions `PyMySQL < 2`
 - [`redis`](https://pypi.org/project/redis/) versions `redis >= 2.6`
-- [`sqlalchemy`](https://pypi.org/project/SQLAlchemy/)
+- [`sqlalchemy`](https://pypi.org/project/SQLAlchemy/) versions `sqlalchemy >= 1.0.0, < 2.1.0`
 - [`sqlite3`](https://docs.python.org/3/library/sqlite3.html)
-- [`tortoiseorm`](https://pypi.org/project/tortoise-orm/) versions `tortoise-orm >= 0.17.0`, `pydantic >= 1.10.2`
-- [`cassandra`](https://pypi.org/project/cassandra-driver/) versions `cassandra-driver >= 3.25.0, < 4.0.0`, `scylla-driver >= 3.25.0, < 4.0.0`
-- [`elasticsearch`](https://pypi.org/project/elasticsearch/) versions `elasticsearch >= 6.0.0`
+- [`tortoiseorm`](https://pypi.org/project/tortoise-orm/) versions `tortoise-orm >= 0.17.0`
+- [`cassandra`](https://pypi.org/project/cassandra-driver/) versions `cassandra-driver ~= 3.25`, `scylla-driver ~= 3.25`
+- [`elasticsearch`](https://pypi.org/project/elasticsearch/) versions `elasticsearch >= 6.0`
 - [`asyncpg`](https://pypi.org/project/asyncpg/) versions `asyncpg >= 0.12.0`
 
 ### HTTP Frameworks
 
-- [`asgi`](https://pypi.org/project/asgiref/) versions `asgiref >= 3.0.0, < 4.0.0`
-- [`django`](https://pypi.org/project/Django/) versions `django >= 1.10.0`
+- [`asgi`](https://pypi.org/project/asgiref/) versions `asgiref ~= 3.0`
+- [`django`](https://pypi.org/project/Django/) versions `django >= 1.10`
   <Info>
     Please note that for Django instrumentation to work, you need to set the
     [DJANGO_SETTINGS_MODULE](https://docs.djangoproject.com/en/5.1/topics/settings/#envvar-DJANGO_SETTINGS_MODULE) environment variable. Make sure to
     set this in your Kubernetes manifest or Dockerfile to ensure proper configuration.
   </Info>
-- [`fastapi`](https://pypi.org/project/fastapi/) versions `fastapi >= 0.58.0, < 0.59.0`, `fastapi-slim >= 0.111.0, < 0.112.0`
-- [`flask`](https://pypi.org/project/Flask/) versions `flask >= 1.0.0`
-- [`pyramid`](https://pypi.org/project/pyramid/) versions `pyramid >= 1.7.0`
-- [`starlette`](https://pypi.org/project/starlette/) versions `starlette >= 0.13.0, < 0.14.0`
-- [`falcon`](https://pypi.org/project/falcon/) versions `falcon >= 1.4.1, < 3.1.2`
+- [`fastapi`](https://pypi.org/project/fastapi/) versions `fastapi ~= 0.58`
+- [`flask`](https://pypi.org/project/Flask/) versions `flask >= 1.0`
+- [`pyramid`](https://pypi.org/project/pyramid/) versions `pyramid >= 1.7`
+- [`starlette`](https://pypi.org/project/starlette/) versions `starlette >= 0.13, < 0.15`
+- [`falcon`](https://pypi.org/project/falcon/) versions `falcon >= 1.4.1, < 5.0.0`
 - [`tornado`](https://pypi.org/project/tornado/) versions `tornado >= 5.1.1`
 
 ### HTTP Clients
 
-- [`aiohttp-client`](https://pypi.org/project/aiohttp/) versions `aiohttp >= 3.0.0, < 4.0.0`
+- [`aiohttp-client`](https://pypi.org/project/aiohttp/) versions `aiohttp ~= 3.0`
 - [`httpx`](https://pypi.org/project/httpx/) versions `httpx >= 0.18.0`
-- [`requests`](https://pypi.org/project/requests/) versions `requests >= 2.0.0, < 3.0.0`
+- [`requests`](https://pypi.org/project/requests/) versions `requests ~= 2.0`
 - [`urllib`](https://docs.python.org/3/library/urllib.html)
 - [`urllib3`](https://pypi.org/project/urllib3/) versions `urllib3 >= 1.0.0, < 3.0.0`
 
 ### Messaging Systems Clients
 
 - [`aio-pika`](https://pypi.org/project/aio-pika/) versions `aio_pika >= 7.2.0, < 10.0.0`
-- [`celery`](https://pypi.org/project/celery/) versions `celery >= 4.0.0, < 6.0.0`
-- [`confluent-kafka`](https://pypi.org/project/confluent-kafka/) versions `confluent-kafka >= 1.8.2, <= 2.4.0`
-- [`kafka-python`](https://pypi.org/project/kafka-python/) versions `kafka-python >= 2.0.0`
+- [`celery`](https://pypi.org/project/celery/) versions `celery >= 4.0, < 6.0`
+- [`confluent-kafka`](https://pypi.org/project/confluent-kafka/) versions `confluent-kafka >= 1.8.2, <= 2.7.0`
+- [`kafka-python`](https://pypi.org/project/kafka-python/) versions `kafka-python >= 2.0, < 3.0`, `kafka-python-ng >= 2.0, < 3.0`
 - [`pika`](https://pypi.org/project/pika/) versions `pika >= 0.12.0`
-- [`remoulade`](https://pypi.org/project/remoulade/) versions `remoulade >= 0.50.0`
+- [`remoulade`](https://pypi.org/project/remoulade/) versions `remoulade >= 0.50`
 
 ### RPC (Remote Procedure Call)
 
-- [`grpc`](https://pypi.org/project/grpcio/) versions `grpcio >= 1.27.0, < 2.0.0`
+- [`grpc`](https://pypi.org/project/grpcio/) versions `grpcio >= 1.42.0`
 
 ### Web Servers
 
-- [`aiohttp-server`](https://pypi.org/project/aiohttp/) versions `aiohttp >= 3.0.0, < 4.0.0`
+- [`aiohttp-server`](https://pypi.org/project/aiohttp/) versions `aiohttp ~= 3.0`
 - [`wsgi`](https://docs.python.org/3/library/wsgiref.html)
 
 ### Cloud Services and SDKs
 
-- [`boto`](https://pypi.org/project/boto/) versions `boto >= 2.0.0, < 3.0.0`
-- [`boto3sqs`](https://pypi.org/project/boto3/) versions `boto3 >= 1.0.0, < 2.0.0`
-- [`botocore`](https://pypi.org/project/botocore/) versions `botocore >= 1.0.0, < 2.0.0`
+- [`boto`](https://pypi.org/project/boto/) versions `boto ~= 2.0`
+- [`boto3sqs`](https://pypi.org/project/boto3/) versions `boto3 ~= 1.0`
+- [`botocore`](https://pypi.org/project/botocore/) versions `botocore ~= 1.0`
 
 ### Framework and Library Utilities
 
@@ -96,13 +106,117 @@ The following Python modules will be auto instrumented by Odigos:
 
 - [`asyncio`](https://pypi.org/project/asyncio/)
 - [`click`](https://pypi.org/project/click/) versions `click >= 8.1.3, < 9.0.0`
+- [`threading`](https://docs.python.org/3/library/threading.html)
 
 ### Gen AI
 
-- [`openai`](https://pypi.org/project/openai/)
+- [`openai`](https://pypi.org/project/openai/) versions `openai >= 1.26.0`
 
 ### Loggers
 
 Automatic injection of trace context (trace id and span id) into log records for the following loggers:
 
 - [`logging`](https://docs.python.org/3/library/logging.html)
+
+</Tab>
+
+<Tab title="Python 3.9+">
+
+The Python 3.9+ distro includes the libraries below, including additional Gen AI instrumentations not available on Python 3.8.
+
+### Database Clients, ORMs, and Data Access Libraries
+
+- [`aiopg`](https://pypi.org/project/aiopg/) versions `aiopg >= 0.13.0, < 2.0.0`
+- [`dbapi`](https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/dbapi/dbapi.html)
+- [`mysql`](https://pypi.org/project/mysql-connector-python/) version `mysql-connector-python >= 8.0, < 10.0`
+- [`mysqlclient`](https://pypi.org/project/mysqlclient/) version `mysqlclient < 3`
+- [`psycopg`](https://pypi.org/project/psycopg/) versions `psycopg >= 3.1.0`
+- [`psycopg2`](https://pypi.org/project/psycopg2/) versions `psycopg2 >= 2.7.3.1`, `psycopg2-binary >= 2.7.3.1`
+- [`pymemcache`](https://pypi.org/project/pymemcache/) versions `pymemcache >= 1.3.5, < 5`
+- [`pymssql`](https://pypi.org/project/pymssql/) versions `pymssql >= 2.1.5, < 3`
+- [`pymongo`](https://pypi.org/project/pymongo/) versions `pymongo >= 3.1, < 5.0`
+- [`pymysql`](https://pypi.org/project/PyMySQL/) versions `PyMySQL < 2`
+- [`redis`](https://pypi.org/project/redis/) versions `redis >= 2.6`
+- [`sqlalchemy`](https://pypi.org/project/SQLAlchemy/) versions `sqlalchemy >= 1.0.0, < 2.1.0`
+- [`sqlite3`](https://docs.python.org/3/library/sqlite3.html)
+- [`tortoiseorm`](https://pypi.org/project/tortoise-orm/) versions `tortoise-orm >= 0.17.0`
+- [`cassandra`](https://pypi.org/project/cassandra-driver/) versions `cassandra-driver ~= 3.25`, `scylla-driver ~= 3.25`
+- [`elasticsearch`](https://pypi.org/project/elasticsearch/) versions `elasticsearch >= 6.0`
+- [`asyncpg`](https://pypi.org/project/asyncpg/) versions `asyncpg >= 0.12.0`
+
+### HTTP Frameworks
+
+- [`asgi`](https://pypi.org/project/asgiref/) versions `asgiref ~= 3.0`
+- [`django`](https://pypi.org/project/Django/) versions `django >= 2.0`
+  <Info>
+    Please note that for Django instrumentation to work, you need to set the
+    [DJANGO_SETTINGS_MODULE](https://docs.djangoproject.com/en/5.1/topics/settings/#envvar-DJANGO_SETTINGS_MODULE) environment variable. Make sure to
+    set this in your Kubernetes manifest or Dockerfile to ensure proper configuration.
+  </Info>
+- [`fastapi`](https://pypi.org/project/fastapi/) versions `fastapi ~= 0.92`
+- [`flask`](https://pypi.org/project/Flask/) versions `flask >= 1.0`
+- [`pyramid`](https://pypi.org/project/pyramid/) versions `pyramid >= 1.7`
+- [`starlette`](https://pypi.org/project/starlette/) versions `starlette >= 0.13`
+- [`falcon`](https://pypi.org/project/falcon/) versions `falcon >= 1.4.1, < 5.0.0`
+- [`tornado`](https://pypi.org/project/tornado/) versions `tornado >= 5.1.1`
+
+### HTTP Clients
+
+- [`aiohttp-client`](https://pypi.org/project/aiohttp/) versions `aiohttp ~= 3.0`
+- [`httpx`](https://pypi.org/project/httpx/) versions `httpx >= 0.18.0`
+- [`requests`](https://pypi.org/project/requests/) versions `requests ~= 2.0`
+- [`urllib`](https://docs.python.org/3/library/urllib.html)
+- [`urllib3`](https://pypi.org/project/urllib3/) versions `urllib3 >= 1.0.0, < 3.0.0`
+
+### Messaging Systems Clients
+
+- [`aio-pika`](https://pypi.org/project/aio-pika/) versions `aio_pika >= 7.2.0, < 10.0.0`
+- [`celery`](https://pypi.org/project/celery/) versions `celery >= 4.0, < 6.0`
+- [`confluent-kafka`](https://pypi.org/project/confluent-kafka/) versions `confluent-kafka >= 1.8.2, < 3.0.0`
+- [`kafka-python`](https://pypi.org/project/kafka-python/) versions `kafka-python >= 2.0, < 3.0`, `kafka-python-ng >= 2.0, < 3.0`
+- [`pika`](https://pypi.org/project/pika/) versions `pika >= 0.12.0`
+- [`remoulade`](https://pypi.org/project/remoulade/) versions `remoulade >= 0.50`
+
+### RPC (Remote Procedure Call)
+
+- [`grpc`](https://pypi.org/project/grpcio/) versions `grpcio >= 1.42.0`
+
+### Web Servers
+
+- [`aiohttp-server`](https://pypi.org/project/aiohttp/) versions `aiohttp ~= 3.0`
+- [`wsgi`](https://docs.python.org/3/library/wsgiref.html)
+
+### Cloud Services and SDKs
+
+- [`boto3sqs`](https://pypi.org/project/boto3/) versions `boto3 ~= 1.0`
+- [`botocore`](https://pypi.org/project/botocore/) versions `botocore ~= 1.0`, `aiobotocore ~= 2.0`
+
+### Framework and Library Utilities
+
+- [`jinja2`](https://pypi.org/project/Jinja2/) versions `jinja2 >= 2.7, < 4.0`
+
+### Other
+
+- [`asyncio`](https://pypi.org/project/asyncio/)
+- [`click`](https://pypi.org/project/click/) versions `click >= 8.1.3, < 9.0.0`
+- [`threading`](https://docs.python.org/3/library/threading.html)
+
+### Gen AI
+
+- [`anthropic`](https://pypi.org/project/anthropic/) versions `anthropic >= 0.3.11`
+- [`google-genai`](https://pypi.org/project/google-genai/) versions `google-genai >= 1.32.0`
+- [`langchain`](https://pypi.org/project/langchain-core/) versions `langchain-core > 0.1.0`
+- [`openai-agents`](https://pypi.org/project/openai-agents/) versions `openai-agents >= 0.3.3`
+- [`openai`](https://pypi.org/project/openai/) versions `openai >= 1.26.0`
+- [`vertexai`](https://pypi.org/project/google-cloud-aiplatform/) versions `google-cloud-aiplatform >= 1.64`
+- [`weaviate`](https://pypi.org/project/weaviate-client/) versions `weaviate-client >= 3.26.0, < 5`
+
+### Loggers
+
+Automatic injection of trace context (trace id and span id) into log records for the following loggers:
+
+- [`logging`](https://docs.python.org/3/library/logging.html)
+
+</Tab>
+
+</Tabs>

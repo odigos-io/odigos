@@ -83,6 +83,38 @@ func AssertEqualOdigosEbpfAcceptedSpans(t *testing.T, tt *componenttest.Telemetr
 	metricdatatest.AssertEqual(t, want, got, opts...)
 }
 
+func AssertEqualOdigosEbpfLogsWithContext(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos_ebpf_logs_with_context",
+		Description: "Total number of captured log records emitted with trace context (trace_id/span_id) attached. [Development]",
+		Unit:        "{logs}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos_ebpf_logs_with_context")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
+func AssertEqualOdigosEbpfLogsWithoutContext(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos_ebpf_logs_without_context",
+		Description: "Total number of captured log records emitted without trace context (no active span for the writing thread). [Development]",
+		Unit:        "{logs}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos_ebpf_logs_without_context")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
 func AssertEqualOdigosEbpfLostSamples(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_odigos_ebpf_lost_samples",

@@ -13,12 +13,12 @@ import (
 
 // GatewayDeploymentInfo is the resolver for the gatewayDeploymentInfo field.
 func (r *queryResolver) GatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error) {
-	return collectors.GetGatewayDeploymentInfo(ctx)
+	return collectors.GetGatewayDeploymentInfo(ctx, r.PromAPI)
 }
 
 // OdigletDaemonSetInfo is the resolver for the odigletDaemonSetInfo field.
 func (r *queryResolver) OdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error) {
-	return collectors.GetOdigletDaemonSetInfo(ctx)
+	return collectors.GetOdigletDaemonSetInfo(ctx, r.PromAPI)
 }
 
 // GatewayPods is the resolver for the gatewayPods field.

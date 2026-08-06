@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/odigos-io/odigos/common"
@@ -10,12 +11,14 @@ import (
 	"github.com/odigos-io/odigos/common/pipelinegen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
-var empty = struct{}{}
 
 type DummyProcessor struct {
-	ID string
+	ID        string
+	Type      string
+	OrderHint int
 }
 
 func (proc DummyProcessor) GetID() string {
@@ -31,11 +34,14 @@ func (proc DummyProcessor) GetSignals() []common.ObservabilitySignal {
 }
 
 func (proc DummyProcessor) GetType() string {
+	if proc.Type != "" {
+		return proc.Type
+	}
 	return "resource"
 }
 
 func (proc DummyProcessor) GetOrderHint() int {
-	return 0
+	return proc.OrderHint
 }
 
 type DummyDestination struct {
@@ -73,6 +79,14 @@ func openTestData(t *testing.T, path string) string {
 		t.FailNow()
 	}
 	return string(want)
+}
+
+func marshalConfig(t *testing.T, cfg *config.Config) string {
+	t.Helper()
+	slices.Sort(cfg.Service.Extensions)
+	data, err := yaml.Marshal(cfg)
+	require.NoError(t, err)
+	return string(data)
 }
 
 func TestCalculateMinimal(t *testing.T) {
@@ -120,73 +134,6 @@ func TestCalculate(t *testing.T) {
 	assert.Equal(t, signals[0], common.LogsObservabilitySignal)
 }
 
-func TestCalculateWithBaseMinimal(t *testing.T) {
-	want := openTestData(t, "testdata/withbaseminimal.yaml")
-
-	gatewayOptions := pipelinegen.GatewayConfigOptions{
-		ClusterMetricsEnabled: nil,
-		OdigosNamespace:       "odigos-system",
-	}
-	config, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
-		&config.Config{
-			Receivers: config.GenericMap{
-				"otlp": config.GenericMap{
-					"protocols": config.GenericMap{
-						"grpc": empty,
-						"http": empty,
-					},
-				},
-			},
-			Processors: config.GenericMap{
-				"batch/generic-batch-processor": config.GenericMap{},
-			},
-			Extensions: config.GenericMap{},
-			Exporters:  map[string]interface{}{},
-			Service: config.Service{
-				Pipelines:  map[string]config.Pipeline{},
-				Extensions: []string{},
-			},
-		},
-		[]config.ExporterConfigurer{},
-		[]config.ProcessorConfigurer{},
-		nil,
-		nil, &gatewayOptions,
-	)
-	assert.Nil(t, err)
-	assert.Equal(t, config, want)
-	assert.Equal(t, len(statuses.Destination), 0)
-	assert.Equal(t, len(statuses.Processor), 0)
-	assert.Equal(t, len(signals), 0)
-}
-
-func TestCalculateWithBaseNoOTLP(t *testing.T) {
-	gatewayOptions := pipelinegen.GatewayConfigOptions{
-		ClusterMetricsEnabled: nil,
-		OdigosNamespace:       "odigos-system",
-	}
-	_, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
-		&config.Config{
-			Receivers:  config.GenericMap{},
-			Processors: config.GenericMap{},
-			Extensions: config.GenericMap{},
-			Exporters:  map[string]interface{}{},
-			Service: config.Service{
-				Pipelines:  map[string]config.Pipeline{},
-				Extensions: []string{},
-			},
-		},
-		[]config.ExporterConfigurer{},
-		[]config.ProcessorConfigurer{},
-		nil,
-		nil, &gatewayOptions,
-	)
-	assert.Contains(t, err.Error(), "required receiver")
-	assert.Equal(t, len(statuses.Destination), 0)
-	assert.Equal(t, len(statuses.Processor), 0)
-	assert.Equal(t, len(signals), 0)
-}
-
-// TestCalculateDataStreamAndDestinations tests the case where we have a datastream with sources and a destination
 func TestCalculateDataStreamAndDestinations(t *testing.T) {
 	want := openTestData(t, "testdata/withdatastream.yaml")
 	gatewayOptions := pipelinegen.GatewayConfigOptions{
@@ -211,30 +158,13 @@ func TestCalculateDataStreamAndDestinations(t *testing.T) {
 		},
 	}
 
-	config, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
-		&config.Config{
-			Receivers: config.GenericMap{
-				"otlp": config.GenericMap{
-					"protocols": config.GenericMap{
-						"grpc": empty,
-						"http": empty,
-					},
-				}},
-			Processors: config.GenericMap{},
-			Extensions: config.GenericMap{},
-			Exporters:  map[string]interface{}{},
-			Connectors: config.GenericMap{},
-			Service: config.Service{
-				Pipelines:  map[string]config.Pipeline{},
-				Extensions: []string{},
-			},
-		},
+	cfg, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
 		[]config.ExporterConfigurer{dummyDest},
 		dummyProcessors,
 		nil, dataStreamDetails, &gatewayOptions,
 	)
 
-	assert.Equal(t, config, want)
+	assert.Equal(t, marshalConfig(t, cfg), want)
 	assert.Nil(t, err)
 	assert.Equal(t, len(statuses.Destination), 1)
 	assert.Equal(t, len(statuses.Processor), 0)
@@ -268,32 +198,13 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 		},
 	}
 
-	config, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
-		&config.Config{
-			Receivers: config.GenericMap{
-				"otlp": config.GenericMap{
-					"protocols": config.GenericMap{
-						"grpc": empty,
-						"http": empty,
-					},
-				}},
-			Processors: config.GenericMap{
-				"batch/generic-batch-processor": config.GenericMap{},
-			},
-			Extensions: config.GenericMap{},
-			Exporters:  map[string]interface{}{},
-			Connectors: config.GenericMap{},
-			Service: config.Service{
-				Pipelines:  map[string]config.Pipeline{},
-				Extensions: []string{},
-			},
-		},
+	cfg, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
 		[]config.ExporterConfigurer{dummyDest},
 		dummyProcessors,
 		nil, dataStreamDetails, &gatewayOptions,
 	)
 
-	assert.Equal(t, config, want)
+	assert.Equal(t, marshalConfig(t, cfg), want)
 	assert.Nil(t, err)
 	assert.Equal(t, len(statuses.Destination), 1)
 	assert.Equal(t, len(statuses.Processor), 0)
@@ -303,16 +214,15 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 
 func strPtr(b bool) *bool { return &b }
 
-// baseConfigWithSelfMetrics returns GetBasicConfig() plus the prometheus/self-metrics
-// receiver that AddServiceGraphScrapeConfig requires to attach its scrape job.
-func baseConfigWithSelfMetrics() *config.Config {
-	base := pipelinegen.GetBasicConfig()
-	base.Receivers["prometheus/self-metrics"] = config.GenericMap{
-		"config": config.GenericMap{
-			"scrape_configs": []config.GenericMap{},
-		},
+func selfMetricsReceiver() func(c *config.Config, _ []string, _ []string) error {
+	return func(c *config.Config, _ []string, _ []string) error {
+		c.Receivers["prometheus/self-metrics"] = config.GenericMap{
+			"config": config.GenericMap{
+				"scrape_configs": []config.GenericMap{},
+			},
+		}
+		return nil
 	}
-	return base
 }
 
 func TestServiceGraphOptions(t *testing.T) {
@@ -362,13 +272,13 @@ func TestServiceGraphOptions(t *testing.T) {
 				OdigosNamespace: "odigos-system",
 				ServiceGraph:    tc.opts,
 			}
-			out, err, _, _ := pipelinegen.CalculateGatewayConfig(
-				baseConfigWithSelfMetrics(),
+			cfg, err, _, _ := pipelinegen.CalculateGatewayConfig(
 				[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
 				[]config.ProcessorConfigurer{},
-				nil, nil, &gatewayOptions,
+				selfMetricsReceiver(), nil, &gatewayOptions,
 			)
 			require.NoError(t, err)
+			out := marshalConfig(t, cfg)
 
 			// assert on the YAML string directly — yaml.v2 unmarshals nested maps
 			// into map[interface{}]interface{}, making type assertions on GenericMap unreliable.
@@ -395,6 +305,138 @@ func TestServiceGraphOptions(t *testing.T) {
 	}
 }
 
+func TestTracesPipelineSplitAfterGroupByTrace(t *testing.T) {
+	ext := "odigosconfigk8s"
+	enabled := true
+	wait := "45s"
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:              "odigos-system",
+		OdigosConfigExtensionName:    &ext,
+		TailSamplingEnabled:          &enabled,
+		TraceAggregationWaitDuration: &wait,
+	}
+	cfg, err, _, signals := pipelinegen.CalculateGatewayConfig(
+		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
+		[]config.ProcessorConfigurer{},
+		nil, nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+	require.Contains(t, signals, common.TracesObservabilitySignal)
+	out := marshalConfig(t, cfg)
+
+	assert.Contains(t, out, consts.TracesPostGroupByForwardConnectorName+":")
+	assert.Contains(t, out, consts.TracesExportingPipelineName+":")
+	assert.Contains(t, out, "traces/in:\n")
+	assert.Contains(t, out, "- "+consts.GroupByTraceProcessor+"\n")
+	assert.Contains(t, out, "- "+consts.TracesPostGroupByForwardConnectorName+"\n")
+	assert.Contains(t, out, "- "+consts.OdigosTailSamplingProcessorName+"\n")
+
+	tracesIn, ok := cfg.Service.Pipelines["traces/in"]
+	require.True(t, ok)
+	assert.Equal(t, []string{"resource/odigos-version", consts.GroupByTraceProcessor}, tracesIn.Processors)
+	assert.Contains(t, tracesIn.Exporters, consts.TracesPostGroupByForwardConnectorName)
+	assert.NotContains(t, tracesIn.Processors, consts.OdigosTailSamplingProcessorName)
+	assert.NotContains(t, tracesIn.Processors, consts.GenericBatchProcessorConfigKey)
+
+	tracesExporting, ok := cfg.Service.Pipelines[consts.TracesExportingPipelineName]
+	require.True(t, ok)
+	assert.Equal(t, []string{
+		consts.OdigosTailSamplingProcessorName,
+		consts.OdigosTraceStateProcessorName,
+	}, tracesExporting.Processors)
+}
+
+func TestTracesPipelineSplitWithAdditionalProcessors(t *testing.T) {
+	ext := "odigosconfigk8s"
+	enabled := true
+	wait := "45s"
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:              "odigos-system",
+		OdigosConfigExtensionName:    &ext,
+		TailSamplingEnabled:          &enabled,
+		TraceAggregationWaitDuration: &wait,
+		TraceCorrelationsServiceIO: &common.TraceCorrelationsServiceIOConfiguration{
+			Enabled: &enabled,
+		},
+	}
+	processors := []config.ProcessorConfigurer{
+		DummyProcessor{ID: "generic-batch-processor", Type: "batch"},
+		DummyProcessor{ID: "odigos-url-templatization", Type: "odigosurltemplate", OrderHint: 1},
+	}
+	cfg, err, _, signals := pipelinegen.CalculateGatewayConfig(
+		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
+		processors,
+		nil, nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+	require.Contains(t, signals, common.TracesObservabilitySignal)
+
+	tracesIn, ok := cfg.Service.Pipelines["traces/in"]
+	require.True(t, ok)
+	assert.Equal(t, []string{
+		"resource/odigos-version",
+		consts.GroupByTraceProcessor,
+		"odigosurltemplate/odigos-url-templatization",
+	}, tracesIn.Processors)
+	assert.Contains(t, tracesIn.Exporters, consts.TracesPostGroupByForwardConnectorName)
+	assert.Contains(t, tracesIn.Exporters, consts.ServiceIOConnectorName)
+
+	tracesExporting, ok := cfg.Service.Pipelines[consts.TracesExportingPipelineName]
+	require.True(t, ok)
+	assert.Equal(t, []string{
+		consts.OdigosTailSamplingProcessorName,
+		consts.GenericBatchProcessorConfigKey,
+		consts.OdigosTraceStateProcessorName,
+	}, tracesExporting.Processors)
+}
+
+func TestTraceCorrelationsServiceIOPipeline(t *testing.T) {
+	ext := "odigosconfigk8s"
+	enabled := true
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:           "odigos-system",
+		OdigosConfigExtensionName: &ext,
+		TraceCorrelationsServiceIO: &common.TraceCorrelationsServiceIOConfiguration{
+			Enabled:              &enabled,
+			InputSpanAttributes:  []string{"http.route"},
+			OutputSpanAttributes: []string{"db.system"},
+			MetricsFlushInterval: "60s",
+		},
+	}
+	cfg, err, _, signals := pipelinegen.CalculateGatewayConfig(
+		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
+		[]config.ProcessorConfigurer{},
+		nil, nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+	require.Contains(t, signals, common.TracesObservabilitySignal)
+	out := marshalConfig(t, cfg)
+
+	assert.Contains(t, out, consts.ServiceIOConnectorName+":")
+	assert.Contains(t, out, consts.TraceCorrelationsMetricsPipelineName+":")
+	assert.Contains(t, out, consts.TraceCorrelationsVictoriaMetricsExporterName+":")
+	assert.Contains(t, out, "http://odigos-correlations-metrics.odigos-system:8428/opentelemetry\n")
+	assert.Contains(t, out, "- "+consts.ServiceIOConnectorName+"\n")
+	assert.Contains(t, out, "input_span_attributes:\n")
+	assert.Contains(t, out, "- http.route\n")
+	assert.Contains(t, out, "output_span_attributes:\n")
+	assert.Contains(t, out, "- db.system\n")
+	assert.Contains(t, out, "metrics_flush_interval: 60s\n")
+	assert.Contains(t, out, "odigos_config_extension: odigosconfigk8s\n")
+
+	tracesIn, ok := cfg.Service.Pipelines["traces/in"]
+	require.True(t, ok)
+	assert.Contains(t, tracesIn.Exporters, consts.TracesPostGroupByForwardConnectorName)
+	assert.Contains(t, tracesIn.Exporters, consts.ServiceIOConnectorName)
+	assert.Contains(t, tracesIn.Processors, consts.GroupByTraceProcessor)
+	assert.NotContains(t, tracesIn.Processors, consts.GenericBatchProcessorConfigKey)
+
+	tracesExporting, ok := cfg.Service.Pipelines[consts.TracesExportingPipelineName]
+	require.True(t, ok)
+	assert.NotContains(t, tracesExporting.Exporters, consts.ServiceIOConnectorName)
+	assert.Equal(t, []string{consts.OdigosTraceStateProcessorName}, tracesExporting.Processors)
+}
+
 // TestCalculateDataStreamMissingDestination tests the case where we have a datastream with sources but no destination
 func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 	want := openTestData(t, "testdata/sourcesnodest.yaml")
@@ -415,38 +457,21 @@ func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 		},
 	}
 
-	config, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
-		&config.Config{
-			Receivers: config.GenericMap{
-				"otlp": config.GenericMap{
-					"protocols": config.GenericMap{
-						"grpc": empty,
-						"http": empty,
-					},
-				}},
-			Processors: config.GenericMap{
-				"batch/generic-batch-processor": config.GenericMap{},
-			},
-			Extensions: config.GenericMap{},
-			Exporters:  map[string]interface{}{},
-			Connectors: config.GenericMap{},
-			Service: config.Service{
-				Pipelines: map[string]config.Pipeline{
-					"metrics/otelcol": {
-						Receivers:  []string{"prometheus/self-metrics"},
-						Processors: []string{"resource/pod-name"},
-						Exporters:  []string{"otlp_grpc/odigos-own-telemetry-ui"},
-					},
-				},
-				Extensions: []string{},
-			},
-		},
+	cfg, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
 		[]config.ExporterConfigurer{},
 		dummyProcessors,
-		nil, dataStreamDetails, &gatewayOptions,
+		func(c *config.Config, _ []string, _ []string) error {
+			c.Service.Pipelines["metrics/otelcol"] = config.Pipeline{
+				Receivers:  []string{"prometheus/self-metrics"},
+				Processors: []string{"resource/pod-name"},
+				Exporters:  []string{"otlp_grpc/odigos-own-telemetry-ui"},
+			}
+			return nil
+		},
+		dataStreamDetails, &gatewayOptions,
 	)
 
-	assert.Equal(t, want, config)
+	assert.Equal(t, want, marshalConfig(t, cfg))
 	assert.Nil(t, err)
 	assert.Equal(t, len(statuses.Destination), 0)
 	assert.Equal(t, len(statuses.Processor), 0)

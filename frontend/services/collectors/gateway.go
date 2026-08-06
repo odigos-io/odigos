@@ -9,7 +9,9 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	"github.com/odigos-io/odigos/frontend/services/metrics"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -17,7 +19,7 @@ import (
 )
 
 // GetGatewayDeploymentInfo fetches Deployment/HPA and computes the header info for the gateway deployment.
-func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error) {
+func GetGatewayDeploymentInfo(ctx context.Context, api v1.API) (*model.GatewayDeploymentInfo, error) {
 	ns := env.GetCurrentNamespace()
 
 	depList, err := kube.DefaultClient.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{LabelSelector: k8sconsts.OdigosCollectorRoleLabel + "=" + string(k8sconsts.CollectorsRoleClusterGateway)})
@@ -46,6 +48,24 @@ func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo
 	result.RolloutInProgress = rolloutInProgress
 
 	result.Hpa = computeGatewayHPA(dep, hpa)
+
+	if api != nil {
+		if traceThroughput, err := metrics.GetThroughputBytesPerSec(ctx, api, metrics.MetricClusterGatewayTraceDataSize, metrics.DefaultMetricsWindow); err == nil {
+			result.ThroughputTracesBytesPerSec = &traceThroughput
+		} else {
+			log.Printf("failed to get gateway trace throughput: %v", err)
+		}
+		if metricsThroughput, err := metrics.GetThroughputBytesPerSec(ctx, api, metrics.MetricClusterGatewayMetricDataSize, metrics.DefaultMetricsWindow); err == nil {
+			result.ThroughputMetricsBytesPerSec = &metricsThroughput
+		} else {
+			log.Printf("failed to get gateway metrics throughput: %v", err)
+		}
+		if logThroughput, err := metrics.GetThroughputBytesPerSec(ctx, api, metrics.MetricClusterGatewayLogDataSize, metrics.DefaultMetricsWindow); err == nil {
+			result.ThroughputLogsBytesPerSec = &logThroughput
+		} else {
+			log.Printf("failed to get gateway logs throughput: %v", err)
+		}
+	}
 
 	if rr := extractResourcesForContainer(dep.Spec.Template.Spec.Containers, k8sconsts.OdigosClusterCollectorContainerName); rr != nil {
 		result.Resources = rr

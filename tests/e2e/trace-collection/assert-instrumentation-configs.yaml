@@ -7,13 +7,16 @@ metadata:
   name: deployment-nodejs-minimum-version
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -23,13 +26,16 @@ metadata:
   name: deployment-nodejs-latest-version
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -39,13 +45,16 @@ metadata:
   name: deployment-nodejs-dockerfile-env
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -55,13 +64,16 @@ metadata:
   name: deployment-nodejs-manifest-env
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -71,13 +83,16 @@ metadata:
   name: deployment-java-supported-version
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -87,13 +102,16 @@ metadata:
   name: deployment-java-azul
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -103,13 +121,16 @@ metadata:
   name: deployment-java-supported-docker-env
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -119,13 +140,16 @@ metadata:
   name: deployment-java-supported-manifest-env
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -135,13 +159,16 @@ metadata:
   name: deployment-java-latest-version
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -151,13 +178,16 @@ metadata:
   name: deployment-java-old-version
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -167,13 +197,16 @@ metadata:
   name: deployment-java-unique-exec
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -183,13 +216,16 @@ metadata:
   name: deployment-python-latest-version
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -199,13 +235,16 @@ metadata:
   name: deployment-python-alpine
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -215,13 +254,16 @@ metadata:
   name: deployment-python-min-version
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -231,13 +273,16 @@ metadata:
   name: deployment-dotnet8-musl
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -247,13 +292,16 @@ metadata:
   name: deployment-dotnet6-musl
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -263,13 +311,16 @@ metadata:
   name: deployment-dotnet8-glibc
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -279,13 +330,16 @@ metadata:
   name: deployment-dotnet6-glibc
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"
 ---
@@ -295,12 +349,15 @@ metadata:
   name: deployment-python-gunicorn-server
   namespace: default
 status:
-  conditions:
+  (conditions[?type == 'MarkedForInstrumentation']):
     - type: MarkedForInstrumentation
       status: "True"
+  (conditions[?type == 'RuntimeDetection']):
     - type: RuntimeDetection
       status: "True"
+  (conditions[?type == 'AgentEnabled']):
     - type: AgentEnabled
       status: "True"
+  (conditions[?type == 'WorkloadRollout']):
     - type: WorkloadRollout
       status: "True"

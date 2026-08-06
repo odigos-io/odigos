@@ -420,7 +420,7 @@ func (h *JVMMetricsHandler) addCPUUtilizationMetric(scopeMetrics pmetric.ScopeMe
 
 	gaugeMetric := metric.SetEmptyGauge()
 	dataPoint := gaugeMetric.DataPoints().AppendEmpty()
-	utilization := float64(gauge.Value) / 1e7 // normalize values as they were scaled up to store float values as uint in ebpf maps
+	utilization := float64(gauge.Value) / 1e9 // normalize values as they were scaled up to store float values as uint in ebpf maps
 	dataPoint.SetDoubleValue(utilization)
 	now := pcommon.NewTimestampFromTime(time.Now())
 	dataPoint.SetTimestamp(now)

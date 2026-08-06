@@ -1,0 +1,131 @@
+# =====================
+# Describe
+# Diagnostic analysis of Odigos and individual sources (the "describe" views).
+# =====================
+
+# describe types
+type EntityProperty {
+  name: String!
+  value: String!
+  status: String
+  explain: String
+}
+
+type InstrumentationSourcesAnalyze {
+  instrumented: EntityProperty!
+  workload: EntityProperty
+  namespace: EntityProperty
+  instrumentedText: EntityProperty
+}
+
+type ContainerRuntimeInfoAnalyze {
+  containerName: EntityProperty!
+  language: EntityProperty!
+  runtimeVersion: EntityProperty!
+  envVars: [EntityProperty!]!
+}
+
+type RuntimeInfoAnalyze {
+  generation: EntityProperty!
+  containers: [ContainerRuntimeInfoAnalyze!]!
+}
+
+type ContainerAgentConfigAnalyze {
+  containerName: EntityProperty!
+  agentEnabled: EntityProperty!
+  reason: EntityProperty
+  message: EntityProperty
+  otelDistroName: EntityProperty
+}
+
+type OtelAgentsAnalyze {
+  created: EntityProperty!
+  createTime: EntityProperty
+  containers: [ContainerAgentConfigAnalyze!]!
+}
+
+type InstrumentationInstanceAnalyze {
+  healthy: EntityProperty!
+  message: EntityProperty
+  identifyingAttributes: [EntityProperty!]!
+}
+
+type PodContainerAnalyze {
+  containerName: EntityProperty!
+  actualDevices: EntityProperty!
+  started: EntityProperty
+  ready: EntityProperty
+  instrumentationInstances: [InstrumentationInstanceAnalyze!]!
+}
+
+type PodAnalyze {
+  podName: EntityProperty!
+  nodeName: EntityProperty!
+  phase: EntityProperty!
+  agentInjected: EntityProperty!
+  runningLatestWorkloadRevision: EntityProperty
+  containers: [PodContainerAnalyze!]!
+  manifestYAML: String
+}
+
+type SourceAnalyze {
+  name: EntityProperty!
+  kind: EntityProperty!
+  namespace: EntityProperty!
+  sourceObjects: InstrumentationSourcesAnalyze!
+
+  runtimeInfo: RuntimeInfoAnalyze!
+  otelAgents: OtelAgentsAnalyze!
+
+  totalPods: Int!
+  podsPhasesCount: String!
+  pods: [PodAnalyze!]!
+}
+
+type ClusterCollectorAnalyze {
+  enabled: EntityProperty!
+  collectorGroup: EntityProperty!
+  deployed: EntityProperty
+  deployedError: EntityProperty
+  collectorReady: EntityProperty
+  deploymentCreated: EntityProperty!
+  expectedReplicas: EntityProperty
+  healthyReplicas: EntityProperty
+  failedReplicas: EntityProperty
+  failedReplicasReason: EntityProperty
+}
+
+type NodeCollectorAnalyze {
+  enabled: EntityProperty!
+  collectorGroup: EntityProperty!
+  deployed: EntityProperty
+  deployedError: EntityProperty
+  collectorReady: EntityProperty
+  daemonSet: EntityProperty!
+  desiredNodes: EntityProperty
+  currentNodes: EntityProperty
+  updatedNodes: EntityProperty
+  availableNodes: EntityProperty
+}
+
+type OdigosAnalyze {
+  odigosVersion: EntityProperty!
+  kubernetesVersion: EntityProperty!
+  tier: EntityProperty!
+  installationMethod: EntityProperty!
+  numberOfDestinations: Int!
+  numberOfSources: Int!
+  clusterCollector: ClusterCollectorAnalyze!
+  nodeCollector: NodeCollectorAnalyze!
+  isSettled: Boolean!
+  hasErrors: Boolean!
+}
+
+extend type Query {
+  describeOdigos: OdigosAnalyze!
+  describeSource(
+    namespace: String!
+    kind: String!
+    name: String!
+  ): SourceAnalyze!
+}

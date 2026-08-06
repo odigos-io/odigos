@@ -29,8 +29,6 @@ type Interface interface {
 	DeleteAttributes() DeleteAttributeInformer
 	// K8sAttributesResolvers returns a K8sAttributesResolverInformer.
 	K8sAttributesResolvers() K8sAttributesResolverInformer
-	// PiiMaskings returns a PiiMaskingInformer.
-	PiiMaskings() PiiMaskingInformer
 	// RenameAttributes returns a RenameAttributeInformer.
 	RenameAttributes() RenameAttributeInformer
 }
@@ -59,11 +57,6 @@ func (v *version) DeleteAttributes() DeleteAttributeInformer {
 // K8sAttributesResolvers returns a K8sAttributesResolverInformer.
 func (v *version) K8sAttributesResolvers() K8sAttributesResolverInformer {
 	return &k8sAttributesResolverInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// PiiMaskings returns a PiiMaskingInformer.
-func (v *version) PiiMaskings() PiiMaskingInformer {
-	return &piiMaskingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // RenameAttributes returns a RenameAttributeInformer.

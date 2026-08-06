@@ -95,6 +95,17 @@ const (
 	UiModeReadonly UiMode = "readonly"
 )
 
+// McpAccessMode controls whether the Odigos MCP server may run write (mutating)
+// tools. It is independent of UiMode: read-only is the default, and an operator
+// raises it to read-write to let an agent change the cluster.
+// +kubebuilder:validation:Enum=read-only;read-write
+type McpAccessMode string
+
+const (
+	McpAccessModeReadOnly  McpAccessMode = "read-only"
+	McpAccessModeReadWrite McpAccessMode = "read-write"
+)
+
 // +kubebuilder:object:generate=true
 // ResourceDetectorConfig holds the configuration for a single resource detector.
 type ResourceDetectorConfig struct {
@@ -467,6 +478,38 @@ type AgentsInitContainerResources struct {
 }
 
 // +kubebuilder:object:generate=true
+type TraceCorrelationsServiceIOConfiguration struct {
+	// enable/disable for service I/O correlation metrics (serviceio connector).
+	// disabled by default.
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+
+	// OpenTelemetry span attribute names read from inbound spans when correlating service I/O
+	// on the receiving side (e.g. server spans). Each name should refer to a low-cardinality attribute.
+	InputSpanAttributes []string `json:"inputSpanAttributes,omitempty" yaml:"inputSpanAttributes,omitempty"`
+
+	// OpenTelemetry span attribute names read from outbound spans when correlating service I/O
+	// on the sending side (e.g. client/producer spans). Each name should refer to a low-cardinality attribute.
+	OutputSpanAttributes []string `json:"outputSpanAttributes,omitempty" yaml:"outputSpanAttributes,omitempty"`
+
+	// interval at which service I/O metrics are flushed (format: 15s, 1m, etc). default is 60s.
+	MetricsFlushInterval string `json:"metricsFlushInterval,omitempty" yaml:"metricsFlushInterval,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type TraceCorrelationsConfiguration struct {
+	ServiceIO *TraceCorrelationsServiceIOConfiguration `json:"serviceIO,omitempty" yaml:"serviceIO,omitempty"`
+}
+
+// TraceCorrelationsServiceIOPipelineActive reports whether the serviceio connector pipeline should be applied.
+// Service I/O correlation is opt-in: serviceIO.Enabled must be explicitly true; nil or false keeps the feature off.
+func TraceCorrelationsServiceIOPipelineActive(t *TraceCorrelationsConfiguration) bool {
+	return t != nil &&
+		t.ServiceIO != nil &&
+		t.ServiceIO.Enabled != nil &&
+		*t.ServiceIO.Enabled
+}
+
+// +kubebuilder:object:generate=true
 type MetricsSourceConfiguration struct {
 
 	// configuration for span metrics.
@@ -544,6 +587,35 @@ type ProfilingUiConfiguration struct {
 type ProfilingConfiguration struct {
 	Enabled  *bool                      `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 	Exporter *OtlpExporterConfiguration `json:"exporter,omitempty" yaml:"exporter,omitempty"`
+	// Symbolization controls how native (C/C++/Rust) frames are resolved to
+	// function names. Mirrors the VM agent's profiling.symbolization.native flag.
+	Symbolization *ProfilingSymbolizationConfiguration `json:"symbolization,omitempty" yaml:"symbolization,omitempty"`
+	// Ui tunes the UI backend's in-memory profile cache (slot count, per-slot and
+	// TTL limits). Applied live by the frontend on effective-config changes, so
+	// edits from the settings page take effect without restarting the UI pod.
+	Ui *ProfilingUiConfiguration `json:"ui,omitempty" yaml:"ui,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// ProfilingSymbolizationConfiguration controls native frame symbolization.
+type ProfilingSymbolizationConfiguration struct {
+	// Native enables on-host symbolization of native (C/C++/Rust) frames in the node
+	// collector (odigossymbolizeprocessor). On by default when profiling is enabled;
+	// set to false to leave native frames as raw addresses.
+	Native *bool `json:"native,omitempty" yaml:"native,omitempty"`
+}
+
+// NativeSymbolizationEnabled reports whether native on-host symbolization should
+// run. It is ON by default whenever profiling is enabled; a user can explicitly
+// opt out by setting symbolization.native: false.
+func (p *ProfilingConfiguration) NativeSymbolizationEnabled() bool {
+	if p == nil || p.Enabled == nil || !*p.Enabled {
+		return false // profiling itself is off
+	}
+	if p.Symbolization != nil && p.Symbolization.Native != nil {
+		return *p.Symbolization.Native // explicit opt-out/opt-in
+	}
+	return true // default ON
 }
 
 // +kubebuilder:object:generate=true
@@ -573,29 +645,34 @@ type OdigosConfiguration struct {
 	UiMode                    UiMode                         `json:"uiMode,omitempty" yaml:"uiMode"`
 	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty" yaml:"uiPaginationLimit"`
 	UiRemoteUrl               string                         `json:"uiRemoteUrl,omitempty" yaml:"uiRemoteUrl"`
+	McpAccessMode             McpAccessMode                  `json:"mcpAccessMode,omitempty" yaml:"mcpAccessMode"`
+	McpEnabled                *bool                          `json:"mcpEnabled,omitempty" yaml:"mcpEnabled"`
 	CentralBackendURL         string                         `json:"centralBackendURL,omitempty" yaml:"centralBackendURL"`
 	ClusterName               string                         `json:"clusterName,omitempty" yaml:"clusterName"`
 	MountMethod               *MountMethod                   `json:"mountMethod,omitempty" yaml:"mountMethod"`
 	//nolint:lll // CustomContainerRuntimeSocketPath line is long due to struct tag requirements
-	CustomContainerRuntimeSocketPath  string                        `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
-	AgentEnvVarsInjectionMethod       *EnvInjectionMethod           `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
-	UserInstrumentationEnvs           *UserInstrumentationEnvs      `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
-	NodeSelector                      map[string]string             `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
-	KarpenterEnabled                  *bool                         `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
-	Rollout                           *RolloutConfiguration         `json:"rollout,omitempty" yaml:"rollout"`
-	RollbackDisabled                  *bool                         `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
-	RollbackGraceTime                 string                        `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
-	RollbackStabilityWindow           string                        `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
-	Oidc                              *OidcConfiguration            `json:"oidc,omitempty" yaml:"oidc"`
-	OdigletHealthProbeBindPort        int                           `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
-	GoAutoOffsetsCron                 string                        `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
-	GoAutoOffsetsMode                 string                        `json:"goAutoOffsetsMode,omitempty" yaml:"goAutoOffsetsMode"`
-	ClickhouseJsonTypeEnabledProperty *bool                         `json:"clickhouseJsonTypeEnabled,omitempty"`
-	CheckDeviceHealthBeforeInjection  *bool                         `json:"checkDeviceHealthBeforeInjection,omitempty"`
-	ResourceSizePreset                string                        `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
-	WaspEnabled                       *bool                         `json:"waspEnabled,omitempty" yaml:"waspEnabled"`
-	MetricsSources                    *MetricsSourceConfiguration   `json:"metricsSources,omitempty" yaml:"metricsSources"`
-	AgentsInitContainerResources      *AgentsInitContainerResources `json:"agentsInitContainerResources,omitempty" yaml:"agentsInitContainerResources"`
+	CustomContainerRuntimeSocketPath  string                          `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
+	AgentEnvVarsInjectionMethod       *EnvInjectionMethod             `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
+	UserInstrumentationEnvs           *UserInstrumentationEnvs        `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
+	NodeSelector                      map[string]string               `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
+	KarpenterEnabled                  *bool                           `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
+	Rollout                           *RolloutConfiguration           `json:"rollout,omitempty" yaml:"rollout"`
+	RollbackDisabled                  *bool                           `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
+	RollbackGraceTime                 string                          `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
+	RollbackStabilityWindow           string                          `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
+	Oidc                              *OidcConfiguration              `json:"oidc,omitempty" yaml:"oidc"`
+	OdigletHealthProbeBindPort        int                             `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
+	GoAutoOffsetsCron                 string                          `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	GoAutoOffsetsMode                 string                          `json:"goAutoOffsetsMode,omitempty" yaml:"goAutoOffsetsMode"`
+	ClickhouseJsonTypeEnabledProperty *bool                           `json:"clickhouseJsonTypeEnabled,omitempty"`
+	CheckDeviceHealthBeforeInjection  *bool                           `json:"checkDeviceHealthBeforeInjection,omitempty"`
+	ResourceSizePreset                string                          `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
+	WaspEnabled                       *bool                           `json:"waspEnabled,omitempty" yaml:"waspEnabled"`
+	MetricsSources                    *MetricsSourceConfiguration     `json:"metricsSources,omitempty" yaml:"metricsSources"`
+	TraceCorrelations                 *TraceCorrelationsConfiguration `json:"traceCorrelations,omitempty" yaml:"traceCorrelations"`
+
+	//nolint:lll // AgentsInitContainerResources line is long due to struct tag requirements
+	AgentsInitContainerResources *AgentsInitContainerResources `json:"agentsInitContainerResources,omitempty" yaml:"agentsInitContainerResources"`
 
 	// traceIdSuffix when set, instruct odigos to use the "timedwall" id generator
 	// for generating trace ids.

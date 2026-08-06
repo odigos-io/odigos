@@ -88,7 +88,7 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 		w.RollbackOccurred = ic.Status.RollbackOccurred
 	}
 
-	// markedForInstrumentation
+	// markedForInstrumentation + dataStreamNames (+ serviceName fallback from Source)
 	if sources, err := l.GetSources(ctx, id); err == nil {
 		enabled, reason, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, nil)
 		if err == nil {
@@ -104,16 +104,20 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 				Message:                  reason.Message,
 			}
 		}
-	}
 
-	// dataStreamNames
-	if sources, err := l.GetSources(ctx, id); err == nil {
 		ptrNames := services.ExtractDataStreamsFromSource(sources.Workload, sources.Namespace)
 		names := make([]string, len(ptrNames))
 		for i, p := range ptrNames {
 			names[i] = *p
 		}
 		w.DataStreamNames = names
+
+		// When a Source is disabled its InstrumentationConfig is deleted; keep the
+		// configured otel service name visible from the Source CR itself.
+		if w.ServiceName == nil && sources.Workload != nil && sources.Workload.Spec.OtelServiceName != "" {
+			name := sources.Workload.Spec.OtelServiceName
+			w.ServiceName = &name
+		}
 	}
 
 	// numberOfInstances
@@ -198,13 +202,14 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 	// CachedPods are loaded once and shared across all workloads via the Loaders cache.
 	pods, _ := l.GetWorkloadPods(ctx, id)
 
-	var runtimeDetection, agentInjectionEnabled, rolloutStatus, agentInjected, processesHealth, expectingTelemetry *model.DesiredConditionStatus
+	var runtimeDetection, agentInjectionEnabled, rolloutStatus, podsManifestInjectionStatus, agentInjected, processesHealth, expectingTelemetry *model.DesiredConditionStatus
 
 	if ic != nil {
 		runtimeDetection = status.CalculateRuntimeInspectionStatus(ic)
 		agentInjectionEnabled = status.CalculateAgentInjectionEnabledStatus(ic)
 		rolloutStatus = status.CalculateRolloutStatus(ic)
 	}
+	podsManifestInjectionStatus = status.CalculatePodsManifestInjectionStatus(ic, pods)
 	agentInjected = status.CalculateAgentInjectedStatus(ic, pods)
 	containerNames := getContainerNamesWithOptionalPodManifestInjection(ic)
 	processesHealth, _ = aggregateProcessesHealthForWorkload(ctx, &id, containerNames)
@@ -226,6 +231,7 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 			RuntimeDetection:      runtimeDetection,
 			AgentInjectionEnabled: agentInjectionEnabled,
 			Rollout:               rolloutStatus,
+			PodsManifestInjection: podsManifestInjectionStatus,
 			AgentInjected:         agentInjected,
 			ProcessesAgentHealth:  processesHealth,
 			ExpectingTelemetry:    expectingTelemetry,
@@ -234,17 +240,21 @@ func (r *queryResolver) populateWorkloadFields(ctx context.Context, l *loaders.L
 
 	w.PodsAgentInjectionStatus = agentInjected
 
-	healthConditions := make([]*model.DesiredConditionStatus, 0, 6)
+	healthConditions := make([]*model.DesiredConditionStatus, 0, 7)
 	if ic != nil {
 		healthConditions = append(healthConditions, runtimeDetection, agentInjectionEnabled, rolloutStatus)
 	} else {
 		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
+		message := "workload is not marked for instrumentation"
+		if w.MarkedForInstrumentation != nil && w.MarkedForInstrumentation.Message != "" {
+			message = w.MarkedForInstrumentation.Message
+		}
 		healthConditions = append(healthConditions, &model.DesiredConditionStatus{
 			Name: status.WorkloadOdigosHealthStatus, Status: model.DesiredStateProgressDisabled,
-			ReasonEnum: &reasonStr, Message: "workload is not marked for instrumentation",
+			ReasonEnum: &reasonStr, Message: message,
 		})
 	}
-	healthConditions = append(healthConditions, agentInjected, processesHealth, expectingTelemetry)
+	healthConditions = append(healthConditions, podsManifestInjectionStatus, agentInjected, processesHealth, expectingTelemetry)
 
 	if override := status.StaticPodEnterpriseFeatureHealthStatus(id.Kind, tier); override != nil {
 		w.WorkloadOdigosHealthStatus = override

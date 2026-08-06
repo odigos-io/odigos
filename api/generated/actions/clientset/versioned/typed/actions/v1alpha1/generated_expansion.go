@@ -23,6 +23,4 @@ type DeleteAttributeExpansion interface{}
 
 type K8sAttributesResolverExpansion interface{}
 
-type PiiMaskingExpansion interface{}
-
 type RenameAttributeExpansion interface{}

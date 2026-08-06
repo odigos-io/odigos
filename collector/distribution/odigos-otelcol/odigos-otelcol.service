@@ -4,6 +4,7 @@ After=network.target
 
 [Service]
 EnvironmentFile=/etc/odigos-otelcol/odigos-otelcol.conf
+Environment="GOMEMLIMIT=1500MiB"
 ExecStart=/usr/bin/odigos-otelcol $OTELCOL_OPTIONS
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=mixed
@@ -22,6 +23,9 @@ CapabilityBoundingSet=CAP_SYS_ADMIN CAP_BPF CAP_PERFMON CAP_SYSLOG CAP_SYS_PTRAC
 # enforced and the receiver crashes with 'failed to adjust rlimit: operation
 # not permitted' regardless of the capability. Cheap to keep on all kernels.
 LimitMEMLOCK=infinity
+MemoryHigh=1800M
+MemoryMax=2G
+MemorySwapMax=0
 
 [Install]
 WantedBy=multi-user.target

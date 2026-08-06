@@ -66,6 +66,16 @@ func GetLocalUIConfig(ctx context.Context, c client.Client) (*common.OdigosConfi
 	return getOdigosConfigFromConfigMap(ctx, c, consts.OdigosLocalUiConfigName)
 }
 
+// SetMcpAccessMode persists the MCP access mode in the local UI config, which the
+// odigos-configuration controller merges into the effective config. Stored here
+// (rather than written to the effective config directly) because the effective
+// config is generated and would overwrite a direct edit.
+func SetMcpAccessMode(ctx context.Context, c client.Client, mode common.McpAccessMode) error {
+	return upsertLocalUiConfig(ctx, c, func(cfg *common.OdigosConfiguration) {
+		cfg.McpAccessMode = mode
+	})
+}
+
 // upsertLocalUiConfig applies a mutation to the odigos-local-ui-config ConfigMap,
 // creating it with proper owner references if it does not yet exist.
 func upsertLocalUiConfig(ctx context.Context, c client.Client, mutate func(cfg *common.OdigosConfiguration)) error {

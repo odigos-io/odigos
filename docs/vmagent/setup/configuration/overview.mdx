@@ -10,25 +10,25 @@ Configuration defines where telemetry comes from (sources), where it is sent (de
 
 You can configure the Odigos VM Agent in two ways:
 
-- **[odictl](./odictl)** — A terminal user interface (TUI) that you use to add and manage sources, destinations, and actions interactively.
+- **[odictl](/vmagent/setup/configuration/odictl)** — A terminal user interface (TUI) that you use to add and manage sources, destinations, and actions interactively.
 - **YAML** — Each configuration task (sources, destinations, actions) can be done via YAML; the pages linked below include a YAML tab with examples.
 
 ## Configuration tasks
 
 <CardGroup cols={2}>
-  <Card title="Add sources" icon="server" href="./add-sources">
+  <Card title="Add sources" icon="server" href="/vmagent/setup/configuration/add-sources">
     Instrument systemd services or Linux processes so the VM Agent collects their telemetry.
   </Card>
-  <Card title="Add destinations" icon="location-dot" href="./add-destinations">
+  <Card title="Add destinations" icon="location-dot" href="/vmagent/setup/configuration/add-destinations">
     Define where telemetry is sent (for example, OTLP endpoints or supported backends).
   </Card>
-  <Card title="Add actions" icon="wand-magic-sparkles" href="./actions/overview">
+  <Card title="Add actions" icon="wand-magic-sparkles" href="/vmagent/setup/configuration/actions/overview">
     Transform, filter, or enrich telemetry before it is sent to destinations.
   </Card>
-  <Card title="Instrumentation rules" icon="list-check" href="./instrumentation-rules/overview">
+  <Card title="Instrumentation rules" icon="list-check" href="/vmagent/setup/configuration/instrumentation-rules/overview">
     Control how telemetry is recorded from your sources (attributes, headers, payloads and custom instrumentation rules).
   </Card>
-  <Card title="Continuous profiling" icon="gauge-high" href="../../instrumentations/profiling/overview">
+  <Card title="Continuous profiling" icon="gauge-high" href="/vmagent/instrumentations/profiling/overview">
     Enable eBPF CPU profiling on the collector and export OTLP Profiles to Pyroscope.
   </Card>
   <Card title="Connect to Odigos Central" icon="server" href="/central/adding-connections/vmagent">
@@ -37,7 +37,7 @@ You can configure the Odigos VM Agent in two ways:
 </CardGroup>
 
 <Tip>
-Add a [destination](./add-destinations) first, then [sources](./add-sources), then [actions](./actions/overview) and [instrumentation rules](./instrumentation-rules/overview) as needed.
+Add a [destination](/vmagent/setup/configuration/add-destinations) first, then [sources](/vmagent/setup/configuration/add-sources), then [actions](/vmagent/setup/configuration/actions/overview) and [instrumentation rules](/vmagent/setup/configuration/instrumentation-rules/overview) as needed.
 </Tip>
 
-For definitions of sources, destinations, and actions, see [Key concepts](../../overview#key-concepts) in the VM Agent overview.
+For definitions of sources, destinations, and actions, see [Key concepts](/vmagent/overview#key-concepts) in the VM Agent overview.

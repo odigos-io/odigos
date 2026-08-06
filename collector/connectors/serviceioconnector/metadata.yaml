@@ -1,0 +1,16 @@
+type: serviceio
+
+status:
+  class: connector
+  stability:
+    alpha: [traces_to_metrics]
+  codeowners:
+    active: [odigos-io]
+    seeking_new: false
+
+tests:
+  config:
+    input_span_attributes:
+      - http.route
+    output_span_attributes:
+      - rpc.service

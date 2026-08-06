@@ -140,7 +140,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	}
 
 	if isProfilingEnabled(dest) {
-		addProfilesPipeline(currentConfig, "generic", dest.GetID(), genericOtlpExporterName)
+		pipelineNames = append(pipelineNames, addProfilesPipeline(currentConfig, "generic", dest.GetID(), genericOtlpExporterName))
 	}
 
 	return pipelineNames, nil

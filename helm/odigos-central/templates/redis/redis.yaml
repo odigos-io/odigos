@@ -62,6 +62,26 @@ spec:
           ports:
             - containerPort: {{ .Values.redis.port }}
               name: {{ .Values.redis.portName }}
+          {{- if .Values.redis.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "-p", "{{ .Values.redis.port }}", "ping"]
+            initialDelaySeconds: {{ .Values.redis.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.redis.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.redis.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.redis.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.redis.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.redis.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "-p", "{{ .Values.redis.port }}", "ping"]
+            initialDelaySeconds: {{ .Values.redis.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.redis.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.redis.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.redis.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.redis.readinessProbe.successThreshold }}
+          {{- end }}
           {{- if .Values.redis.resources }}
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}

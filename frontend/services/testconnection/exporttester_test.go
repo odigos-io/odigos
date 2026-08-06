@@ -33,13 +33,13 @@ func startNoOpOTLPGRPCReceiver(t *testing.T, ctx context.Context, endpoint strin
 
 	f := otlpreceiver.NewFactory()
 	cfg := f.CreateDefaultConfig().(*otlpreceiver.Config)
-	cfg.GRPC = configoptional.Some(configgrpc.ServerConfig{
+	cfg.Protocols.GRPC = configoptional.Some(configgrpc.ServerConfig{
 		NetAddr: confignet.AddrConfig{
 			Endpoint:  endpoint,
 			Transport: confignet.TransportTypeTCP,
 		},
 	})
-	cfg.HTTP = configoptional.None[otlpreceiver.HTTPConfig]()
+	cfg.Protocols.HTTP = configoptional.None[otlpreceiver.HTTPConfig]()
 
 	sink := new(consumertest.TracesSink)
 	r, err := f.CreateTraces(ctx, receivertest.NewNopSettings(f.Type()), cfg, sink)
@@ -54,9 +54,9 @@ func startNoOpOTLPHTTPReceiver(t *testing.T, ctx context.Context, endpoint strin
 
 	f := otlpreceiver.NewFactory()
 	cfg := f.CreateDefaultConfig().(*otlpreceiver.Config)
-	cfg.GRPC = configoptional.None[configgrpc.ServerConfig]()
+	cfg.Protocols.GRPC = configoptional.None[configgrpc.ServerConfig]()
 
-	httpCfg := cfg.HTTP.GetOrInsertDefault()
+	httpCfg := cfg.Protocols.HTTP.GetOrInsertDefault()
 	httpCfg.ServerConfig.NetAddr = confignet.AddrConfig{
 		Endpoint:  endpoint,
 		Transport: confignet.TransportTypeTCP,

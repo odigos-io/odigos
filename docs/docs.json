@@ -156,7 +156,9 @@
                     "group": "Advanced",
                     "icon": "gear",
                     "pages": [
-                      "oss/instrumentations/configuration/mount-method"
+                      "oss/instrumentations/configuration/mount-method",
+                      "oss/instrumentations/advanced/Istio",
+                      "oss/instrumentations/advanced/Nginx"
                     ]
                   },
                   "oss/instrumentations/obi"
@@ -167,6 +169,7 @@
                 "pages": [
                   "oss/pipeline/overview",
                   "oss/pipeline/configuration",
+                  "oss/pipeline/benchmarks",
                   "oss/pipeline/datastreams",
                   {
                     "group": "Sources",
@@ -187,7 +190,8 @@
                       "oss/pipeline/rules/codeattributes",
                       "oss/pipeline/rules/headerscollection",
                       "oss/pipeline/rules/payloadcollection",
-                      "oss/pipeline/rules/custominstrumentation"
+                      "oss/pipeline/rules/custominstrumentation",
+                      "oss/pipeline/rules/networkmetrics"
                     ]
                   },
                   {
@@ -204,7 +208,9 @@
                           "oss/pipeline/actions/attributes/renameattribute",
                           "oss/pipeline/actions/attributes/piimasking",
                           "oss/pipeline/actions/attributes/k8sattributes",
-                          "oss/pipeline/actions/attributes/extractattribute"
+                          "oss/pipeline/actions/attributes/extractattribute",
+                          "oss/pipeline/actions/attributes/dbquerytemplatization",
+                          "oss/pipeline/actions/attributes/inferdbattributes"
                         ]
                       },
                       "oss/pipeline/actions/crd",
@@ -237,7 +243,8 @@
                     "group": "Advanced",
                     "icon": "sliders",
                     "pages": [
-                      "oss/pipeline/service-graph"
+                      "oss/pipeline/service-graph",
+                      "oss/pipeline/odigos-own-metrics"
                     ]
                   }
                 ]
@@ -404,6 +411,12 @@
                 ]
               },
               {
+                "group": "Odigos AI",
+                "pages": [
+                  "enterprise/mcp/overview"
+                ]
+              },
+              {
                 "group": "Instrumentations",
                 "pages": [
                   "enterprise/instrumentations/overview",
@@ -477,7 +490,9 @@
                     "group": "Advanced",
                     "icon": "gear",
                     "pages": [
-                      "enterprise/instrumentations/configuration/mount-method"
+                      "enterprise/instrumentations/configuration/mount-method",
+                      "enterprise/instrumentations/advanced/Istio",
+                      "enterprise/instrumentations/advanced/Nginx"
                     ]
                   }
                 ]
@@ -487,6 +502,7 @@
                 "pages": [
                   "enterprise/pipeline/overview",
                   "enterprise/pipeline/configuration",
+                  "enterprise/pipeline/benchmarks",
                   "enterprise/pipeline/datastreams",
                   {
                     "group": "Sources",
@@ -507,7 +523,8 @@
                       "enterprise/pipeline/rules/codeattributes",
                       "enterprise/pipeline/rules/headerscollection",
                       "enterprise/pipeline/rules/payloadcollection",
-                      "enterprise/pipeline/rules/custominstrumentation"
+                      "enterprise/pipeline/rules/custominstrumentation",
+                      "enterprise/pipeline/rules/networkmetrics"
                     ]
                   },
                   {
@@ -524,7 +541,9 @@
                           "enterprise/pipeline/actions/attributes/renameattribute",
                           "enterprise/pipeline/actions/attributes/piimasking",
                           "enterprise/pipeline/actions/attributes/k8sattributes",
-                          "enterprise/pipeline/actions/attributes/extractattribute"
+                          "enterprise/pipeline/actions/attributes/extractattribute",
+                          "enterprise/pipeline/actions/attributes/dbquerytemplatization",
+                          "enterprise/pipeline/actions/attributes/inferdbattributes"
                         ]
                       },
                       "enterprise/pipeline/actions/crd",
@@ -557,7 +576,8 @@
                     "group": "Advanced",
                     "icon": "sliders",
                     "pages": [
-                      "enterprise/pipeline/service-graph"
+                      "enterprise/pipeline/service-graph",
+                      "enterprise/pipeline/odigos-own-metrics"
                     ]
                   }
                 ]
@@ -687,6 +707,7 @@
                 ]
               },
               "central/authentication",
+              "central/role-mappings",
               "central/upgrade",
               "central/uninstall"
             ]
@@ -705,6 +726,7 @@
                 "pages": [
                   "vmagent/setup/system-requirements",
                   "vmagent/setup/installation",
+                  "vmagent/setup/docker",
                   "vmagent/setup/upgrade",
                   "vmagent/setup/uninstall"
                 ]
@@ -716,6 +738,7 @@
                   "vmagent/setup/configuration/odictl",
                   "vmagent/setup/configuration/add-destinations",
                   "vmagent/setup/configuration/add-sources",
+                  "vmagent/setup/configuration/services-mem-limits-configuration",
                   {
                     "group": "Actions",
                     "pages": [
@@ -729,7 +752,8 @@
                     "group": "Instrumentation Rules",
                     "pages": [
                       "vmagent/setup/configuration/instrumentation-rules/overview",
-                      "vmagent/setup/configuration/instrumentation-rules/custom-instrumentation"
+                      "vmagent/setup/configuration/instrumentation-rules/custom-instrumentation",
+                      "vmagent/setup/configuration/instrumentation-rules/instrument-from-profiles"
                     ]
                   },
                   {
@@ -737,6 +761,7 @@
                     "pages": [
                       "vmagent/instrumentations/profiling/overview",
                       "vmagent/instrumentations/profiling/getting-started",
+                      "vmagent/instrumentations/profiling/view-in-odictl",
                       "vmagent/instrumentations/profiling/export-pyroscope"
                     ]
                   }

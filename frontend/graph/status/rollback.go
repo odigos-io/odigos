@@ -42,6 +42,17 @@ func CalculateAutoRollbackStatus(ic *odigosv1alpha1.InstrumentationConfig, autoR
 		return nil
 	}
 
+	// if we know it was rolled back due to auto-heal.
+	// this check must come before the AgentInjectionEnabled and config checks below:
+	// performing a rollback inherently disables agent injection (see the rollout controller,
+	// which sets Spec.AgentInjectionEnabled=false alongside Status.RollbackOccurred=true),
+	// so a rolled-back source would otherwise always report "AgentNotEnabled" and hide the
+	// recovery action from the UI. RollbackOccurred is a terminal state that requires user
+	// recovery, so it takes precedence regardless of the current injection/config state.
+	if ic.Status.RollbackOccurred {
+		return createAutoRollbackStatus(AutoRollbackReasonRollbackOccurred, "odigos detected a crash and rolled back the source to protect your application", model.DesiredStateProgressNotice)
+	}
+
 	// disabled in config
 	if !autoRollbackConfig.Enabled {
 		return createAutoRollbackStatus(AutoRollbackReasonDisabled, "Auto rollback is disabled in the odigos configuration", model.DesiredStateProgressIrrelevant)
@@ -51,11 +62,6 @@ func CalculateAutoRollbackStatus(ic *odigosv1alpha1.InstrumentationConfig, autoR
 	// in this case the auto rollback is not applicable.
 	if !ic.Spec.AgentInjectionEnabled {
 		return createAutoRollbackStatus(AutoRollbackReasonAgentNotEnabled, "odigos agent is not set to run with this source, auto rollback is not applicable", model.DesiredStateProgressIrrelevant)
-	}
-
-	// if we know it was rolled back due to auto-heal
-	if ic.Status.RollbackOccurred {
-		return createAutoRollbackStatus(AutoRollbackReasonRollbackOccurred, "odigos detected a crash and rolled back the source to protect your application", model.DesiredStateProgressNotice)
 	}
 
 	if ic.Spec.PodManifestInjectionOptional {

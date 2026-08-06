@@ -13,15 +13,26 @@ import EnterpriseVMAgent from '../../../snippets/enterprise/vmagent/enterprise-v
 - Instrument [systemd](https://systemd.io/) services and Linux processes
 - Automatic OpenTelemetry instrumentation via eBPF with no code changes
 - Distributed traces with seamless context propagation
-- Continuous CPU profiling (eBPF) with export to [Pyroscope](./instrumentations/profiling/export-pyroscope) or other OTLP Profiles backends
+- Continuous CPU profiling (eBPF) with export to [Pyroscope](/vmagent/instrumentations/profiling/export-pyroscope) or other OTLP Profiles backends
+
+## Deployment options
+
+The VM Agent can be deployed in two ways. Both instrument the same workloads and
+are configured the same way (via Odigos Central or `odictl`):
+
+- **Linux package** — install as an RPM/deb system package managed by `systemd`.
+This is the standard option for a normal Linux host. See [Installation](/vmagent/setup/installation).
+- **Docker container** — run the agent as a privileged container. Use this for
+hosts where installing a system package is not an option, such as immutable hosts
+or Compose-managed fleets. See [Docker Deployment](/vmagent/setup/docker).
 
 ## Key concepts
 
 - **Sources**: The systemd services or Linux processes you instrument with the VM Agent. 
-See [Add Sources](./setup/configuration/add-sources) to get started.
+See [Add Sources](/vmagent/setup/configuration/add-sources) to get started.
 - **Destinations**: The backends that receive your telemetry data. 
-See [Add Destinations](./setup/configuration/add-destinations) to get started.
+See [Add Destinations](/vmagent/setup/configuration/add-destinations) to get started.
 - **Actions**: Processors that transform, filter, or enrich telemetry before it is sent to destinations. 
-See [Actions overview](./setup/configuration/actions/overview) to add and manage actions.
+See [Actions overview](/vmagent/setup/configuration/actions/overview) to add and manage actions.
 - **Instrumentation rules**: Rules that control how telemetry is recorded from your sources—for example, which attributes, headers, or payloads are collected and how custom instrumentations behave. 
-See [Instrumentation rules overview](./setup/configuration/instrumentation-rules/overview) to add and manage rules.
+See [Instrumentation rules overview](/vmagent/setup/configuration/instrumentation-rules/overview) to add and manage rules.

@@ -1,0 +1,338 @@
+# =====================
+# Actions
+# Processor actions (attribute manipulation, PII masking, URL templatization,
+# attribute extraction, etc.) plus their dynamic YAML-defined catalog.
+# =====================
+
+enum ActionType {
+  K8sAttributesResolver
+  AddClusterInfo
+  DeleteAttribute
+  RenameAttribute
+  PiiMasking
+  URLTemplatization
+  ExtractAttribute
+  DbQueryTemplatization
+  InferDbAttributes
+  UnknownType
+}
+
+# ExtractionDataFormat is a pre-set definition that resolves into a regex
+# applied to the value of `lookupKey` on the span. Must be one of the supported
+# formats; see odigos.io_actions CRD for the exact backend enum.
+enum ExtractionDataFormat {
+  json
+  sql
+  resource_path
+}
+
+enum K8sAttributesFrom {
+  pod
+  namespace
+  node
+}
+
+# Dynamic, YAML-defined description of a single action form field. Mirrors
+# DestinationFieldYamlProperties so the UI can reuse the same dynamic field
+# renderer for actions.
+type ActionFieldYamlProperties {
+  name: String!
+  displayName: String!
+  componentType: String!
+  componentProperties: String! # Using String to store JSON data as a string
+  initialValue: String!
+  renderCondition: [String!]!
+}
+
+# A single action type as described by the embedded YAML action catalog. Allows
+# the UI to render the list of available actions (and, where provided, their
+# form fields) dynamically instead of from hard-coded options.
+type ActionTypeOption {
+  type: String!
+  displayName: String!
+  # Slug grouping related actions in the action picker (e.g. "enrichment").
+  # The UI resolves the human-readable section title from this slug.
+  category: String!
+  # One-line summary shown under the title in the action picker list.
+  subtitle: String!
+  # Longer summary shown at the top of the action form.
+  description: String!
+  allowedSignals: [SignalType!]!
+  docsUrl: String!
+  fields: [ActionFieldYamlProperties!]!
+}
+
+input ActionInput {
+  type: ActionType!
+  name: String
+  notes: String
+  disabled: Boolean!
+  signals: [SignalType!]!
+  fields: ActionFieldsInput!
+}
+
+input ActionFieldsInput {
+  collectContainerAttributes: Boolean
+  collectReplicaSetAttributes: Boolean
+  collectWorkloadId: Boolean
+  collectClusterId: Boolean
+  labelsAttributes: [K8sLabelAttributeInput!]
+  annotationsAttributes: [K8sAnnotationAttributeInput!]
+
+  clusterAttributes: [ClusterAttributeInput!]
+  overwriteExistingValues: Boolean
+  attributeNamesToDelete: [String!]
+  renames: String
+  piiCategories: [String!]
+  customFormatMaskings: [CustomFormatMaskingInput!]
+  customRegexMaskings: [CustomRegexMaskingInput!]
+
+  urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroupInput!]
+  urlTemplatizationDefaultGroups: [UrlTemplatizationDefaultGroupInput!]
+
+  extractAttribute: ExtractAttributeInput
+
+  scopes: SourcesScopesInput
+  templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
+}
+
+# CustomFormatMasking masks a value found by lookup key inside a data format
+# (JSON, SQL, or resource path). Used by PiiMasking.
+input CustomFormatMaskingInput {
+  lookupKey: String!
+  dataFormat: ExtractionDataFormat!
+}
+
+# CustomRegexMasking masks the value matched by a regex with a single capture group.
+# Used by PiiMasking.
+input CustomRegexMaskingInput {
+  regex: String!
+}
+
+# ExtractAttribute is the input shape for the ExtractAttribute action; mirrors
+# the `extractAttribute` field on the v1alpha1 ActionSpec (which wraps an
+# `extractions` list config).
+input ExtractAttributeInput {
+  extractions: [ExtractionInput!]!
+}
+
+# Extraction describes a single ExtractAttribute extraction rule. Either
+# (lookupKey + dataFormat) or regex must be provided; the captured value is
+# written to `targetAttributeName`.
+input ExtractionInput {
+  targetAttributeName: String!
+  lookupKey: String
+  dataFormat: ExtractionDataFormat
+  regex: String
+}
+
+input URLTemplatizationRuleInput {
+  template: String!
+  notes: String
+  examples: [String!]
+}
+
+input TemplatizationWorkloadFilterInput {
+  kind: K8sResourceKind
+  name: String
+}
+
+input UrlTemplatizationRulesGroupInput {
+  scopes: SourcesScopesInput
+  templatizationRules: [URLTemplatizationRuleInput!]!
+  # Deprecated. Accepted but ignored by the server; use scopes instead.
+  filterK8sNamespace: String
+    @deprecated(reason: "use scopes; field is ignored by the server")
+  # Deprecated. Accepted but ignored by the server; use scopes instead.
+  filterK8sWorkloadKind: K8sResourceKind
+    @deprecated(reason: "use scopes; field is ignored by the server")
+  # Deprecated. Accepted but ignored by the server; use scopes instead.
+  filterK8sWorkloadName: String
+    @deprecated(reason: "use scopes; field is ignored by the server")
+  # Deprecated. Accepted but ignored by the server; use scopes instead.
+  filterProgrammingLanguage: String
+    @deprecated(reason: "use scopes; field is ignored by the server")
+  # Deprecated. Accepted but ignored by the server; use scopes instead.
+  workloadFilters: [TemplatizationWorkloadFilterInput!]
+    @deprecated(reason: "use scopes; field is ignored by the server")
+  # Deprecated. Not present on the Action CRD; ignored by the server.
+  notes: String
+    @deprecated(reason: "removed from the action spec; field is ignored by the server")
+}
+
+input K8sLabelAttributeInput {
+  labelKey: String!
+  attributeKey: String!
+  from: K8sAttributesFrom
+  fromSources: [K8sAttributesFrom!]
+}
+
+input K8sAnnotationAttributeInput {
+  annotationKey: String!
+  attributeKey: String!
+  from: K8sAttributesFrom
+  fromSources: [K8sAttributesFrom!]
+}
+
+input ClusterAttributeInput {
+  attributeName: String!
+  attributeStringValue: String!
+}
+
+type Action {
+  id: ID!
+  type: ActionType!
+  name: String
+  notes: String
+  disabled: Boolean!
+  signals: [SignalType!]!
+  fields: ActionFields!
+  # True when this Action was created from the Odigos UI
+  # (metadata label odigos.io/managed-by=odigos-ui).
+  uiGenerated: Boolean!
+  conditions: [Condition!]
+  # Desired-state statuses derived from Action CR status conditions
+  # (e.g. TransformedToProcessor, AddedToCollectorConfig).
+  statuses: [DesiredConditionStatus!]!
+}
+
+type ActionFields {
+  collectContainerAttributes: Boolean
+  collectReplicaSetAttributes: Boolean
+  collectWorkloadId: Boolean
+  collectClusterId: Boolean
+  labelsAttributes: [K8sLabelAttribute!]
+  annotationsAttributes: [K8sAnnotationAttribute!]
+
+  clusterAttributes: [ClusterAttribute!]
+  overwriteExistingValues: Boolean
+  attributeNamesToDelete: [String!]
+  renames: String
+  piiCategories: [String!]
+  customFormatMaskings: [CustomFormatMasking!]
+  customRegexMaskings: [CustomRegexMasking!]
+
+  urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroup!]
+  urlTemplatizationDefaultGroups: [UrlTemplatizationDefaultGroup!]
+
+  extractAttribute: ExtractAttribute
+
+  scopes: SourcesScopes
+  templatizeLiterals: Boolean
+  removePostgresCastOperator: Boolean
+}
+
+type CustomFormatMasking {
+  lookupKey: String!
+  dataFormat: ExtractionDataFormat!
+}
+
+type CustomRegexMasking {
+  regex: String!
+}
+
+# ExtractAttribute mirrors the v1alpha1 `extractAttribute` config — a wrapper
+# around the list of extraction rules applied by the processor, in order.
+type ExtractAttribute {
+  extractions: [Extraction!]!
+}
+
+type Extraction {
+  targetAttributeName: String!
+  lookupKey: String
+  dataFormat: ExtractionDataFormat
+  regex: String
+}
+
+type URLTemplatizationRule {
+  template: String!
+  notes: String
+  examples: [String!]
+}
+
+type TemplatizationWorkloadFilter {
+  kind: K8sResourceKind
+  name: String
+}
+
+type UrlTemplatizationRulesGroup {
+  scopes: SourcesScopes
+  templatizationRules: [URLTemplatizationRule!]!
+  # Deprecated. Not populated by the server; use scopes instead.
+  filterK8sNamespace: String
+    @deprecated(reason: "use scopes; field is not populated by the server")
+  # Deprecated. Not populated by the server; use scopes instead.
+  filterK8sWorkloadKind: K8sResourceKind
+    @deprecated(reason: "use scopes; field is not populated by the server")
+  # Deprecated. Not populated by the server; use scopes instead.
+  filterK8sWorkloadName: String
+    @deprecated(reason: "use scopes; field is not populated by the server")
+  # Deprecated. Not populated by the server; use scopes instead.
+  filterProgrammingLanguage: String
+    @deprecated(reason: "use scopes; field is not populated by the server")
+  # Deprecated. Not populated by the server; use scopes instead.
+  workloadFilters: [TemplatizationWorkloadFilter!]
+    @deprecated(reason: "use scopes; field is not populated by the server")
+  # Deprecated. Not present on the Action CRD; not populated by the server.
+  notes: String
+    @deprecated(reason: "removed from the action spec; field is not populated by the server")
+}
+
+type UrlTemplatizationDefaultSkipPolicy {
+  skipForNonSuccessCodes: Boolean
+  skipHttpStatusCodes: [Int!]
+}
+
+type UrlTemplatizationDefaultGroup {
+  scopes: SourcesScopes
+  disabled: Boolean
+  skipPolicy: UrlTemplatizationDefaultSkipPolicy
+}
+
+input UrlTemplatizationDefaultSkipPolicyInput {
+  skipForNonSuccessCodes: Boolean
+  skipHttpStatusCodes: [Int!]
+}
+
+input UrlTemplatizationDefaultGroupInput {
+  scopes: SourcesScopesInput
+  disabled: Boolean
+  skipPolicy: UrlTemplatizationDefaultSkipPolicyInput
+}
+
+type K8sLabelAttribute {
+  labelKey: String!
+  attributeKey: String!
+  from: K8sAttributesFrom
+  fromSources: [K8sAttributesFrom!]
+}
+
+type K8sAnnotationAttribute {
+  annotationKey: String!
+  attributeKey: String!
+  from: K8sAttributesFrom
+  fromSources: [K8sAttributesFrom!]
+}
+
+type ClusterAttribute {
+  attributeName: String!
+  attributeStringValue: String!
+}
+
+extend type ComputePlatform {
+  actions: [Action!]!
+}
+
+extend type Query {
+  # Returns the dynamic, YAML-defined catalog of available action types. The UI
+  # uses this to render the action picker (and dynamic fields) instead of its
+  # hard-coded options. Nullable so older/unsupported backends can omit it.
+  actionTypes: [ActionTypeOption!]
+}
+
+extend type Mutation {
+  createAction(action: ActionInput!): Action!
+  updateAction(id: ID!, action: ActionInput!): Action!
+  deleteAction(id: ID!, actionType: String!): Boolean!
+}

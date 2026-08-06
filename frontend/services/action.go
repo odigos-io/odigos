@@ -8,16 +8,26 @@ import (
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	urlactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
-	"github.com/odigos-io/odigos/common"
+	apiactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
+	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	graphstatus "github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func deriveTypeFromAction(action *model.Action) model.ActionType {
+func deriveTypeFromAction(action *model.Action, crd *v1alpha1.Action) model.ActionType {
+	// DbQueryTemplatization and InferDbAttributes share ActionFields.scopes, and
+	// InferDbAttributes may have empty fields when scoped to all sources — derive
+	// these from the CRD config rather than field presence.
+	if crd.Spec.DbQueryTemplatization != nil {
+		return model.ActionTypeDbQueryTemplatization
+	}
+	if crd.Spec.InferDbAttributes != nil {
+		return model.ActionTypeInferDbAttributes
+	}
 	if action.Fields.CollectContainerAttributes != nil || action.Fields.CollectReplicaSetAttributes != nil || action.Fields.CollectWorkloadID != nil || action.Fields.CollectClusterID != nil || action.Fields.LabelsAttributes != nil || action.Fields.AnnotationsAttributes != nil {
 		return model.ActionTypeK8sAttributesResolver
 	}
@@ -30,8 +40,11 @@ func deriveTypeFromAction(action *model.Action) model.ActionType {
 	if action.Fields.Renames != nil {
 		return model.ActionTypeRenameAttribute
 	}
-	if action.Fields.PiiCategories != nil {
+	if action.Fields.PiiCategories != nil || action.Fields.CustomFormatMaskings != nil || action.Fields.CustomRegexMaskings != nil {
 		return model.ActionTypePiiMasking
+	}
+	if crd.Spec.URLTemplatization != nil {
+		return model.ActionTypeURLTemplatization
 	}
 	if action.Fields.URLTemplatizationRulesGroups != nil {
 		return model.ActionTypeURLTemplatization
@@ -92,6 +105,9 @@ func CreateAction(ctx context.Context, input model.ActionInput) (*model.Action, 
 	payload := &v1alpha1.Action{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "action-",
+			Labels: map[string]string{
+				k8sconsts.OdigosProfilesManagedByLabel: k8sconsts.OdigosUIManagedByValue,
+			},
 		},
 		Spec: *spec,
 	}
@@ -178,9 +194,15 @@ func getSpecFromInput(input model.ActionInput, existingAction *v1alpha1.Action) 
 	}
 	spec.RenameAttribute = renameAttribute
 
-	spec.PiiMasking = convertPiiMaskingFromInput(input.Fields, existingAction)
+	piiMasking, err := convertPiiMaskingFromInput(input.Fields, existingAction)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert pii masking: %v", err)
+	}
+	spec.PiiMasking = piiMasking
 	spec.URLTemplatization = convertUrlTemplatizationFromInput(input.Fields, existingAction)
 	spec.ExtractAttribute = convertExtractAttributeFromInput(input.Fields, existingAction)
+	spec.DbQueryTemplatization = convertDbQueryTemplatizationFromInput(input.Type, input.Fields, existingAction)
+	spec.InferDbAttributes = convertInferDbAttributesFromInput(input.Type, input.Fields, existingAction)
 
 	return &spec, nil
 }
@@ -346,29 +368,71 @@ func convertRenameAttributeFromInput(details *model.ActionFieldsInput, existingA
 	return config, nil
 }
 
-func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *actionsv1.PiiMaskingConfig {
-	withPiiMasking := false
-	var config *actionsv1.PiiMaskingConfig
+var supportedPiiCategories = map[actionsapi.PiiCategory]struct{}{
+	actionsapi.CreditCardMasking: {},
+	actionsapi.EmailMasking:      {},
+	actionsapi.JwtMasking:        {},
+	actionsapi.UuidMasking:       {},
+}
 
-	if details.PiiCategories != nil {
-		config = &actionsv1.PiiMaskingConfig{}
-
-		piiCategories := make([]actionsv1.PiiCategory, len(details.PiiCategories))
-		for i, cat := range details.PiiCategories {
-			piiCategories[i] = actionsv1.PiiCategory(cat)
-		}
-		config.PiiCategories = piiCategories
-		withPiiMasking = true
-	}
+func convertPiiMaskingFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) (*apiactions.PiiMaskingConfig, error) {
+	withPiiMasking := details.PiiCategories != nil ||
+		details.CustomFormatMaskings != nil ||
+		details.CustomRegexMaskings != nil
 
 	if !withPiiMasking {
 		if existingAction != nil && existingAction.Spec.PiiMasking != nil {
-			return existingAction.Spec.PiiMasking
+			return existingAction.Spec.PiiMasking, nil
 		}
-		return nil
+		return nil, nil
 	}
 
-	return config
+	config := &apiactions.PiiMaskingConfig{}
+	if existingAction != nil && existingAction.Spec.PiiMasking != nil {
+		// Preserve fields omitted from the input (partial update).
+		config = existingAction.Spec.PiiMasking.DeepCopy()
+	}
+
+	if details.PiiCategories != nil {
+		piiCategories := make([]actionsapi.PiiCategory, len(details.PiiCategories))
+		for i, cat := range details.PiiCategories {
+			category := actionsapi.PiiCategory(cat)
+			if _, ok := supportedPiiCategories[category]; !ok {
+				return nil, fmt.Errorf("unsupported pii category %q: supported values: CREDIT_CARD, EMAIL, JWT, UUID", cat)
+			}
+			piiCategories[i] = category
+		}
+		config.PiiCategories = piiCategories
+	}
+
+	if details.CustomFormatMaskings != nil {
+		formatMaskings := make([]actionsapi.CustomFormatMasking, 0, len(details.CustomFormatMaskings))
+		for _, m := range details.CustomFormatMaskings {
+			if m == nil {
+				continue
+			}
+			formatMaskings = append(formatMaskings, actionsapi.CustomFormatMasking{
+				LookupKey:  m.LookupKey,
+				DataFormat: actionsapi.DataFormat(m.DataFormat),
+			})
+		}
+		config.CustomFormatMaskings = formatMaskings
+	}
+
+	if details.CustomRegexMaskings != nil {
+		regexMaskings := make([]actionsapi.CustomRegexMasking, 0, len(details.CustomRegexMaskings))
+		for _, m := range details.CustomRegexMaskings {
+			if m == nil {
+				continue
+			}
+			regexMaskings = append(regexMaskings, actionsapi.CustomRegexMasking{
+				Regex: m.Regex,
+			})
+		}
+		config.CustomRegexMaskings = regexMaskings
+	}
+
+	return config, nil
 }
 
 func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
@@ -397,21 +461,33 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	}
 
 	var piiCategories []string
+	var customFormatMaskings []*model.CustomFormatMasking
+	var customRegexMaskings []*model.CustomRegexMasking
 	if action.Spec.PiiMasking != nil {
 		piiCategories = convertPiiCategoriesToModel(action.Spec.PiiMasking.PiiCategories)
+		customFormatMaskings = convertCustomFormatMaskingsToModel(action.Spec.PiiMasking.CustomFormatMaskings)
+		customRegexMaskings = convertCustomRegexMaskingsToModel(action.Spec.PiiMasking.CustomRegexMaskings)
 	}
 
 	urlTemplatizationGroups := convertUrlTemplatizationToModel(action.Spec.URLTemplatization)
+	urlTemplatizationDefaultGroups := convertUrlTemplatizationDefaultToModel(action.Spec.URLTemplatization)
 	extractAttribute := convertExtractAttributeToModel(action.Spec.ExtractAttribute)
+	scopes, templatizeLiterals, removePostgresCastOperator := convertDbActionFieldsToModel(action)
 
 	responseFields := &model.ActionFields{
-		LabelsAttributes:             labelAttrs,
-		AnnotationsAttributes:        annotAttrs,
-		ClusterAttributes:            clustAttrs,
-		Renames:                      renames,
-		PiiCategories:                piiCategories,
-		URLTemplatizationRulesGroups: urlTemplatizationGroups,
-		ExtractAttribute:             extractAttribute,
+		LabelsAttributes:               labelAttrs,
+		AnnotationsAttributes:          annotAttrs,
+		ClusterAttributes:              clustAttrs,
+		Renames:                        renames,
+		PiiCategories:                  piiCategories,
+		CustomFormatMaskings:           customFormatMaskings,
+		CustomRegexMaskings:            customRegexMaskings,
+		URLTemplatizationRulesGroups:   urlTemplatizationGroups,
+		URLTemplatizationDefaultGroups: urlTemplatizationDefaultGroups,
+		ExtractAttribute:               extractAttribute,
+		Scopes:                         scopes,
+		TemplatizeLiterals:             templatizeLiterals,
+		RemovePostgresCastOperator:     removePostgresCastOperator,
 	}
 
 	// Handle K8sAttributes fields
@@ -444,18 +520,27 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	}
 
 	response := &model.Action{
-		ID:       action.Name,
-		Name:     &action.Spec.ActionName,
-		Notes:    &action.Spec.Notes,
-		Disabled: action.Spec.Disabled,
-		Signals:  signals,
-		Fields:   responseFields,
+		ID:          action.Name,
+		Name:        &action.Spec.ActionName,
+		Notes:       &action.Spec.Notes,
+		Disabled:    action.Spec.Disabled,
+		Signals:     signals,
+		Fields:      responseFields,
+		UIGenerated: isActionUiGenerated(action),
 	}
 
-	response.Type = deriveTypeFromAction(response)
+	response.Type = deriveTypeFromAction(response, action)
 	response.Conditions = ConvertConditions(action.Status.Conditions)
+	response.Statuses = graphstatus.ConvertActionConditionsToStatuses(action.Status.Conditions, action.Generation)
 
 	return response, nil
+}
+
+func isActionUiGenerated(action *v1alpha1.Action) bool {
+	if action == nil || action.Labels == nil {
+		return false
+	}
+	return action.Labels[k8sconsts.OdigosProfilesManagedByLabel] == k8sconsts.OdigosUIManagedByValue
 }
 
 func convertLabelsAttributesToModel(labelsAttributes []actionsv1.K8sLabelAttribute) []*model.K8sLabelAttribute {
@@ -529,13 +614,40 @@ func convertClusterAttributesToModel(clusterAttributes []actionsv1.OtelAttribute
 	return result
 }
 
-func convertPiiCategoriesToModel(piiCategories []actionsv1.PiiCategory) []string {
+func convertPiiCategoriesToModel(piiCategories []actionsapi.PiiCategory) []string {
 	var result []string
 
 	for _, category := range piiCategories {
 		result = append(result, string(category))
 	}
 
+	return result
+}
+
+func convertCustomFormatMaskingsToModel(maskings []actionsapi.CustomFormatMasking) []*model.CustomFormatMasking {
+	if len(maskings) == 0 {
+		return nil
+	}
+	result := make([]*model.CustomFormatMasking, 0, len(maskings))
+	for _, m := range maskings {
+		result = append(result, &model.CustomFormatMasking{
+			LookupKey:  m.LookupKey,
+			DataFormat: model.ExtractionDataFormat(m.DataFormat),
+		})
+	}
+	return result
+}
+
+func convertCustomRegexMaskingsToModel(maskings []actionsapi.CustomRegexMasking) []*model.CustomRegexMasking {
+	if len(maskings) == 0 {
+		return nil
+	}
+	result := make([]*model.CustomRegexMasking, 0, len(maskings))
+	for _, m := range maskings {
+		result = append(result, &model.CustomRegexMasking{
+			Regex: m.Regex,
+		})
+	}
 	return result
 }
 
@@ -547,113 +659,84 @@ func stringifyMap(m map[string]string) (string, error) {
 	return string(json), nil
 }
 
-func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *urlactions.URLTemplatizationConfig {
-	if details.URLTemplatizationRulesGroups == nil {
+func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.URLTemplatizationConfig {
+	if details.URLTemplatizationRulesGroups == nil && details.URLTemplatizationDefaultGroups == nil {
 		if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
 			return existingAction.Spec.URLTemplatization
 		}
 		return nil
 	}
 
-	rules := make([]urlactions.UrlTemplatizationRule, 0, len(details.URLTemplatizationRulesGroups))
-	for _, g := range details.URLTemplatizationRulesGroups {
-		group := urlactions.UrlTemplatizationRule{}
-
-		// Fold the URL-templatization filter form into the tri-list SourcesScopes shape:
-		//   * Each WorkloadFilter row → one PodWorkload appended to Sources (with namespace baked in).
-		//   * Singleton fallback path: build one PodWorkload if a workload identity is given,
-		//     otherwise fall back to a namespace-only entry.
-		//   * FilterProgrammingLanguage → Languages.
-		scopes := &k8sconsts.SourcesScopes{}
-		if len(g.WorkloadFilters) > 0 {
-			for _, wf := range g.WorkloadFilters {
-				pw := k8sconsts.PodWorkload{}
-				if g.FilterK8sNamespace != nil {
-					pw.Namespace = *g.FilterK8sNamespace
-				}
-				if wf.Kind != nil {
-					pw.Kind = k8sconsts.WorkloadKind(*wf.Kind)
-				}
-				if wf.Name != nil {
-					pw.Name = *wf.Name
-				}
-				scopes.Sources = append(scopes.Sources, pw)
+	var rules []apiactions.UrlTemplatizationRule
+	if details.URLTemplatizationRulesGroups != nil {
+		rules = make([]apiactions.UrlTemplatizationRule, 0, len(details.URLTemplatizationRulesGroups))
+		for _, g := range details.URLTemplatizationRulesGroups {
+			group := apiactions.UrlTemplatizationRule{
+				Scopes: SourcesScopesInputToCRD(g.Scopes),
 			}
-		} else if g.FilterK8sNamespace != nil || g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil {
-			if g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil {
-				pw := k8sconsts.PodWorkload{}
-				if g.FilterK8sNamespace != nil {
-					pw.Namespace = *g.FilterK8sNamespace
-				}
-				if g.FilterK8sWorkloadKind != nil {
-					pw.Kind = k8sconsts.WorkloadKind(*g.FilterK8sWorkloadKind)
-				}
-				if g.FilterK8sWorkloadName != nil {
-					pw.Name = *g.FilterK8sWorkloadName
-				}
-				scopes.Sources = append(scopes.Sources, pw)
-			} else if g.FilterK8sNamespace != nil {
-				scopes.Namespaces = append(scopes.Namespaces, *g.FilterK8sNamespace)
-			}
-		}
-		if g.FilterProgrammingLanguage != nil {
-			scopes.Languages = append(scopes.Languages, common.ProgrammingLanguage(*g.FilterProgrammingLanguage))
-		}
-		if len(scopes.Sources) > 0 || len(scopes.Namespaces) > 0 || len(scopes.Languages) > 0 {
-			group.Scopes = scopes
-		}
 
-		for _, rule := range g.TemplatizationRules {
-			group.Templates = append(group.Templates, rule.Template)
+			for _, rule := range g.TemplatizationRules {
+				group.Templates = append(group.Templates, rule.Template)
+			}
+			rules = append(rules, group)
 		}
-		rules = append(rules, group)
+	} else if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
+		rules = existingAction.Spec.URLTemplatization.Rules
 	}
 
-	return &urlactions.URLTemplatizationConfig{
+	config := &apiactions.URLTemplatizationConfig{
 		Rules: rules,
 	}
+	// Prefer explicit default groups from the GraphQL input when provided. Otherwise preserve
+	// any YAML-managed default templatization from the existing Action so that updating
+	// rules through the UI does not silently drop it.
+	if details.URLTemplatizationDefaultGroups != nil {
+		config.Default = convertUrlTemplatizationDefaultFromInput(details.URLTemplatizationDefaultGroups)
+	} else if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
+		config.Default = existingAction.Spec.URLTemplatization.Default
+	}
+	return config
 }
 
-func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []*model.URLTemplatizationRulesGroup {
+func convertUrlTemplatizationDefaultFromInput(groups []*model.URLTemplatizationDefaultGroupInput) []apiactions.URLTemplatizationDefaultTemplatizationGroup {
+	if groups == nil {
+		return nil
+	}
+	out := make([]apiactions.URLTemplatizationDefaultTemplatizationGroup, 0, len(groups))
+	for _, g := range groups {
+		if g == nil {
+			continue
+		}
+		group := apiactions.URLTemplatizationDefaultTemplatizationGroup{
+			Scopes: SourcesScopesInputToCRD(g.Scopes),
+		}
+		if g.Disabled != nil {
+			group.Disabled = *g.Disabled
+		}
+		if g.SkipPolicy != nil {
+			skip := &actionsapi.DefaultTemplatizationSkipPolicyConfig{}
+			if g.SkipPolicy.SkipForNonSuccessCodes != nil {
+				skip.SkipForNonSuccessCodes = *g.SkipPolicy.SkipForNonSuccessCodes
+			}
+			if len(g.SkipPolicy.SkipHTTPStatusCodes) > 0 {
+				skip.SkipHttpStatusCodes = append([]int(nil), g.SkipPolicy.SkipHTTPStatusCodes...)
+			}
+			group.SkipPolicy = skip
+		}
+		out = append(out, group)
+	}
+	return out
+}
+
+func convertUrlTemplatizationToModel(cfg *apiactions.URLTemplatizationConfig) []*model.URLTemplatizationRulesGroup {
 	if cfg == nil {
 		return nil
 	}
 
 	var result []*model.URLTemplatizationRulesGroup
 	for _, g := range cfg.Rules {
-		group := &model.URLTemplatizationRulesGroup{}
-
-		// Unfold tri-list SourcesScopes back into the URL-templatization filter form.
-		// The GraphQL shape exposes only single-value FilterK8sNamespace and
-		// FilterProgrammingLanguage, so multi-namespace/multi-language scopes are
-		// projected to the first entry (best-effort; the wire format predates the list).
-		if g.Scopes != nil {
-			for _, src := range g.Scopes.Sources {
-				if src.Kind != "" || src.Name != "" {
-					filter := &model.TemplatizationWorkloadFilter{}
-					if src.Kind != "" {
-						kind := model.K8sResourceKind(src.Kind)
-						filter.Kind = &kind
-					}
-					if src.Name != "" {
-						name := src.Name
-						filter.Name = &name
-					}
-					group.WorkloadFilters = append(group.WorkloadFilters, filter)
-				}
-				if src.Namespace != "" && group.FilterK8sNamespace == nil {
-					ns := src.Namespace
-					group.FilterK8sNamespace = &ns
-				}
-			}
-			if group.FilterK8sNamespace == nil && len(g.Scopes.Namespaces) > 0 {
-				ns := g.Scopes.Namespaces[0]
-				group.FilterK8sNamespace = &ns
-			}
-			if len(g.Scopes.Languages) > 0 {
-				lang := string(g.Scopes.Languages[0])
-				group.FilterProgrammingLanguage = &lang
-			}
+		group := &model.URLTemplatizationRulesGroup{
+			Scopes: SourcesScopesCRDToModel(g.Scopes),
 		}
 
 		for _, rule := range g.Templates {
@@ -666,7 +749,37 @@ func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []
 	return result
 }
 
-func convertExtractAttributeFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *urlactions.ExtractAttributeConfig {
+func convertUrlTemplatizationDefaultToModel(cfg *apiactions.URLTemplatizationConfig) []*model.URLTemplatizationDefaultGroup {
+	if cfg == nil || len(cfg.Default) == 0 {
+		return nil
+	}
+
+	result := make([]*model.URLTemplatizationDefaultGroup, 0, len(cfg.Default))
+	for _, g := range cfg.Default {
+		group := &model.URLTemplatizationDefaultGroup{
+			Scopes: SourcesScopesCRDToModel(g.Scopes),
+		}
+		if g.Disabled {
+			disabled := true
+			group.Disabled = &disabled
+		}
+		if g.SkipPolicy != nil {
+			skipPolicy := &model.URLTemplatizationDefaultSkipPolicy{}
+			if g.SkipPolicy.SkipForNonSuccessCodes {
+				v := true
+				skipPolicy.SkipForNonSuccessCodes = &v
+			}
+			if len(g.SkipPolicy.SkipHttpStatusCodes) > 0 {
+				skipPolicy.SkipHTTPStatusCodes = append([]int(nil), g.SkipPolicy.SkipHttpStatusCodes...)
+			}
+			group.SkipPolicy = skipPolicy
+		}
+		result = append(result, group)
+	}
+	return result
+}
+
+func convertExtractAttributeFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.ExtractAttributeConfig {
 	if details.ExtractAttribute == nil {
 		if existingAction != nil && existingAction.Spec.ExtractAttribute != nil {
 			return existingAction.Spec.ExtractAttribute
@@ -674,25 +787,27 @@ func convertExtractAttributeFromInput(details *model.ActionFieldsInput, existing
 		return nil
 	}
 
-	extractions := make([]urlactions.Extraction, 0, len(details.ExtractAttribute.Extractions))
+	extractions := make([]actionsapi.Extraction, 0, len(details.ExtractAttribute.Extractions))
 	for _, e := range details.ExtractAttribute.Extractions {
-		row := urlactions.Extraction{
+		row := actionsapi.Extraction{
 			TargetAttributeName: e.TargetAttributeName,
 			LookupKey:           DerefString(e.LookupKey),
 			Regex:               DerefString(e.Regex),
 		}
 		if e.DataFormat != nil {
-			row.DataFormat = urlactions.DataFormat(*e.DataFormat)
+			row.DataFormat = actionsapi.DataFormat(*e.DataFormat)
 		}
 		extractions = append(extractions, row)
 	}
 
-	return &urlactions.ExtractAttributeConfig{
-		Extractions: extractions,
+	return &apiactions.ExtractAttributeConfig{
+		ExtractAttributeConfig: actionsapi.ExtractAttributeConfig{
+			Extractions: extractions,
+		},
 	}
 }
 
-func convertExtractAttributeToModel(cfg *urlactions.ExtractAttributeConfig) *model.ExtractAttribute {
+func convertExtractAttributeToModel(cfg *apiactions.ExtractAttributeConfig) *model.ExtractAttribute {
 	if cfg == nil {
 		return nil
 	}
@@ -720,4 +835,47 @@ func convertExtractAttributeToModel(cfg *urlactions.ExtractAttributeConfig) *mod
 	return &model.ExtractAttribute{
 		Extractions: extractions,
 	}
+}
+
+func convertDbQueryTemplatizationFromInput(actionType model.ActionType, details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.DbQueryTemplatizationConfig {
+	if actionType != model.ActionTypeDbQueryTemplatization {
+		return nil
+	}
+
+	config := &apiactions.DbQueryTemplatizationConfig{
+		Scopes: SourcesScopesInputToCRD(details.Scopes),
+	}
+	if details.TemplatizeLiterals != nil {
+		config.TemplatizeLiterals = *details.TemplatizeLiterals
+	} else if existingAction != nil && existingAction.Spec.DbQueryTemplatization != nil {
+		config.TemplatizeLiterals = existingAction.Spec.DbQueryTemplatization.TemplatizeLiterals
+	}
+	if details.RemovePostgresCastOperator != nil {
+		config.RemovePostgresCastOperator = *details.RemovePostgresCastOperator
+	} else if existingAction != nil && existingAction.Spec.DbQueryTemplatization != nil {
+		config.RemovePostgresCastOperator = existingAction.Spec.DbQueryTemplatization.RemovePostgresCastOperator
+	}
+	return config
+}
+
+func convertInferDbAttributesFromInput(actionType model.ActionType, details *model.ActionFieldsInput, _ *v1alpha1.Action) *apiactions.InferDbAttributesConfig {
+	if actionType != model.ActionTypeInferDbAttributes {
+		return nil
+	}
+
+	return &apiactions.InferDbAttributesConfig{
+		Scopes: SourcesScopesInputToCRD(details.Scopes),
+	}
+}
+
+func convertDbActionFieldsToModel(action *v1alpha1.Action) (*model.SourcesScopes, *bool, *bool) {
+	if action.Spec.DbQueryTemplatization != nil {
+		templatizeLiterals := action.Spec.DbQueryTemplatization.TemplatizeLiterals
+		removePostgresCastOperator := action.Spec.DbQueryTemplatization.RemovePostgresCastOperator
+		return SourcesScopesCRDToModel(action.Spec.DbQueryTemplatization.Scopes), &templatizeLiterals, &removePostgresCastOperator
+	}
+	if action.Spec.InferDbAttributes != nil {
+		return SourcesScopesCRDToModel(action.Spec.InferDbAttributes.Scopes), nil, nil
+	}
+	return nil, nil, nil
 }

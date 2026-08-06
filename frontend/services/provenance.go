@@ -154,6 +154,22 @@ func recordOverlayProvenance(config *common.OdigosConfiguration, provenance map[
 			provenance["componentLogLevels.collector"] = sourceName
 		}
 	}
+
+	if config.TraceCorrelations != nil && config.TraceCorrelations.ServiceIO != nil {
+		serviceIO := config.TraceCorrelations.ServiceIO
+		if serviceIO.Enabled != nil {
+			provenance["traceCorrelations.serviceIO.enabled"] = sourceName
+		}
+		if serviceIO.InputSpanAttributes != nil {
+			provenance["traceCorrelations.serviceIO.inputSpanAttributes"] = sourceName
+		}
+		if serviceIO.OutputSpanAttributes != nil {
+			provenance["traceCorrelations.serviceIO.outputSpanAttributes"] = sourceName
+		}
+		if serviceIO.MetricsFlushInterval != "" {
+			provenance["traceCorrelations.serviceIO.metricsFlushInterval"] = sourceName
+		}
+	}
 }
 
 // detectProfileProvenance identifies fields modified by profile application.

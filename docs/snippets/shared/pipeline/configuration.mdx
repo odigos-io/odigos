@@ -23,6 +23,7 @@ This approach streamlines the setup process and applies optimized defaults for c
 
 The available sizing options—`size_s`, `size_m`, `size_l`, and `size_xl`—are predefined profiles designed to simplify pipeline configuration. Each profile specifies a defined set of parameters, as detailed below:
 
+Don't know which size is the right one for your cluster? Read more in [Benchmarks](./benchmarks).
 
 **Cluster Gateway Collector**:
 
@@ -71,23 +72,23 @@ collectorGateway:
   # the memory request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
   # of the form "memory: <value>Mi".
-  # default value is 500Mi
+  # default value is 600Mi
   # If you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.
-  # requestMemoryMiB: 625
+  # requestMemoryMiB: 600
 
   # the memory limit for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource limit
   # of the form "memory: <value>Mi".
-  # default value is 625Mi
+  # default value is 600Mi
   # If you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.
-  # limitMemoryMiB: 625
+  # limitMemoryMiB: 600
 
   # the CPU request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
   # of the form "cpu: <value>m".
-  # default value is 500m
+  # default value is 1000m
   # If you set only requestCPUm, the limitCPUm will be set to the same value.
-  # requestCPUm: 500
+  # requestCPUm: 1000
 
   # the CPU limit for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource limit
@@ -98,14 +99,14 @@ collectorGateway:
 
   # The number of replicas for the cluster gateway collector deployment.
   # Also uses in MinReplicas the HPA config.
-  # minReplicas: 1
+  # minReplicas: 2
   # The maxReplicas in the HPA config.
-  # maxReplicas: 10
+  # maxReplicas: 8
 
   # sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
   # it is the hard limit after which a force garbage collection will be performed.
   # if not set, it will be 50Mi below the memory limit.
-  # memoryLimiterLimitMiB: 575
+  # memoryLimiterLimitMiB: 550
 
   # sets the "spike_limit_mib" parameter in the memory limiter configuration for the collector gateway.
   # note that this is not the processor soft limit, but the diff in MiB between the hard limit and the soft limit.
@@ -115,7 +116,7 @@ collectorGateway:
   # the GOMEMLIMIT environment variable value for the collector gateway deployment.
   # this is when go runtime will start garbage collection.
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
-  # goMemLimitMiB: 460
+  # goMemLimitMiB: 440
 
 collectorNode:
   # RequestMemoryMiB is the memory request for the node collector daemonset.

@@ -1,0 +1,14 @@
+{{- if (include "connectors.enabled" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-connector-postgres
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: odigos-connector-postgres
+  ports:
+    - name: {{ .Values.cloudConnectors.postgres.portName }}
+      port: {{ .Values.cloudConnectors.postgres.port }}
+      targetPort: {{ .Values.cloudConnectors.postgres.port }}
+{{- end }}

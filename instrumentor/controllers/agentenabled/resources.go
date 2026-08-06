@@ -81,14 +81,17 @@ func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigo
 		return nil, err
 	}
 
-	// Filter only actions that have URLTemplatization config
+	// Filter only actions that affect agent/collector per-container config.
 	agentLevelActions := []odigosv1.Action{}
 	for _, action := range actionList.Items {
 		if action.Spec.Disabled {
 			continue
 		}
 		if action.Spec.URLTemplatization != nil ||
-			action.Spec.SpanRenamer != nil {
+			action.Spec.SpanRenamer != nil ||
+			action.Spec.DbQueryTemplatization != nil ||
+			action.Spec.InferDbAttributes != nil ||
+			action.Spec.PiiMasking != nil {
 			agentLevelActions = append(agentLevelActions, action)
 		}
 	}
@@ -127,7 +130,8 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client) (*[]o
 			(ir.Spec.TraceVerbosity != nil) ||
 			(ir.Spec.CustomInstrumentations != nil) ||
 			(ir.Spec.EbpfLogCapture != nil) ||
-			(ir.Spec.AgentDiagnostics != nil) {
+			(ir.Spec.AgentDiagnostics != nil) ||
+			(ir.Spec.NetworkMetrics != nil) {
 
 			relevantIr = append(relevantIr, *ir)
 		}

@@ -68,6 +68,33 @@ func calculateTracesConfig(
 		}
 	}
 
+	// Db Query Templatization
+	dbQueryTemplatizationConfig := traces.CalculateDbQueryTemplatizationConfig(agentLevelActions, runtimeDetails.Language, pw)
+	if dbQueryTemplatizationConfig != nil {
+		if collectorConfig == nil {
+			collectorConfig = &commonapi.ContainerCollectorConfig{}
+		}
+		collectorConfig.DbQueryTemplatization = dbQueryTemplatizationConfig
+	}
+
+	// Infer Db Attributes
+	inferDbAttributesConfig := traces.CalculateInferDbAttributesConfig(agentLevelActions, runtimeDetails.Language, pw)
+	if inferDbAttributesConfig != nil {
+		if collectorConfig == nil {
+			collectorConfig = &commonapi.ContainerCollectorConfig{}
+		}
+		collectorConfig.InferDbAttributes = inferDbAttributesConfig
+	}
+
+	// PII Masking
+	piiMaskingConfig := traces.CalculatePiiMaskingConfig(agentLevelActions, runtimeDetails.Language, pw)
+	if piiMaskingConfig != nil {
+		if collectorConfig == nil {
+			collectorConfig = &commonapi.ContainerCollectorConfig{}
+		}
+		collectorConfig.PiiMasking = piiMaskingConfig
+	}
+
 	// Sampling
 	noisyOps, relevantOps, costRules := traces.CalculateSamplingCategoryRulesForContainer(samplingRules, runtimeDetails.Language, pw, containerName, d, workloadObj, effectiveConfig)
 
@@ -149,6 +176,7 @@ func calculateTracesConfig(
 func calculateMetricsConfig(
 	effectiveConfig *common.OdigosConfiguration,
 	d *distro.OtelDistro,
+	irls *[]odigosv1.InstrumentationRule,
 ) (*agentsignalconfig.AgentMetricsConfig, *odigosv1.AgentDisabledInfo) {
 	metricsConfig := &agentsignalconfig.AgentMetricsConfig{}
 
@@ -165,6 +193,9 @@ func calculateMetricsConfig(
 
 	// Runtime Metrics for supported distros
 	metricsConfig.RuntimeMetrics = metrics.CalculateAgentRuntimeMetricsConfig(d, effectiveConfig)
+
+	// Network flow / TCP stats metrics, enabled per-workload via InstrumentationRules.
+	metricsConfig.NetworkMetrics = metrics.CalculateNetworkMetricsConfig(irls)
 
 	return metricsConfig, nil
 }
@@ -205,7 +236,7 @@ func CalculateDynamicContainerConfig(
 
 	var metricsConfig *agentsignalconfig.AgentMetricsConfig
 	if enabledSignals.MetricsEnabled {
-		agentMetricsConfig, err := calculateMetricsConfig(effectiveConfig, d)
+		agentMetricsConfig, err := calculateMetricsConfig(effectiveConfig, d, irls)
 		if err != nil {
 			return nil, err
 		}

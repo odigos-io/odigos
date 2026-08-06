@@ -3,12 +3,43 @@ package graph
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/graph/status"
+	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func isOnprem(ctx context.Context) (bool, error) {
+	odigosNs := env.GetCurrentNamespace()
+	var configMap corev1.ConfigMap
+	err := kube.CacheClient.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosDeploymentConfigMapName}, &configMap)
+	if err != nil {
+		return false, err
+	}
+
+	tier := configMap.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
+	return tier == string(common.OnPremOdigosTier), nil
+}
+
+func RequireOnprem(ctx context.Context) error {
+	isOnprem, err := isOnprem(ctx)
+	if err != nil {
+		return err
+	}
+	if !isOnprem {
+		return fmt.Errorf("this feature is only supported for onprem installations")
+	}
+	return nil
+}
 
 func emptyStrToNil(str string) *string {
 	if str == "" {
@@ -46,9 +77,9 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 	if runtimeDetails.RuntimeVersion != "" {
 		runtimeVersion = &runtimeDetails.RuntimeVersion
 	}
-	var otherAgentName *string
-	if runtimeDetails.OtherAgent != nil {
-		otherAgentName = &runtimeDetails.OtherAgent.Name
+	otherAgentNames := make([]string, 0, len(runtimeDetails.OtherAgents))
+	for _, a := range runtimeDetails.OtherAgents {
+		otherAgentNames = append(otherAgentNames, a.Name)
 	}
 	var libcType *string
 	if runtimeDetails.LibCType != nil {
@@ -64,14 +95,15 @@ func runtimeDetailsContainersToModel(runtimeDetails *v1alpha1.RuntimeDetailsByCo
 		CriErrorMessage:         runtimeDetails.CriErrorMessage,
 		LibcType:                libcType,
 		SecureExecutionMode:     runtimeDetails.SecureExecutionMode,
-		OtherAgentName:          otherAgentName,
+		OtherAgentNames:         otherAgentNames,
 	}
 }
 
 func containerOverrideToModel(containerOverride *v1alpha1.ContainerOverride) *model.K8sWorkloadContainerOverrides {
 	overrides := &model.K8sWorkloadContainerOverrides{
-		ContainerName:  containerOverride.ContainerName,
-		OtelDistroName: containerOverride.OtelDistroName,
+		ContainerName:         containerOverride.ContainerName,
+		OtelDistroName:        containerOverride.OtelDistroName,
+		AllowConcurrentAgents: containerOverride.AllowConcurrentAgents,
 	}
 	if containerOverride.RuntimeInfo != nil {
 		overrides.RuntimeInfo = runtimeDetailsContainersToModel(containerOverride.RuntimeInfo)
@@ -130,8 +162,11 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 	foundExpectedInstrumentationInstances := false
 	containersWithMissingInstances := false
 	numUnhealthyProcesses := 0
+	numUnhealthyInstrumentationLibraries := 0
 	numStartingProcesses := 0
 	numHealthyProcesses := 0
+	var unhealthyProcessMessages []string
+	var unhealthyInstrumentationLibraryMessages []string
 	for _, pod := range pods {
 		for _, container := range pod.Containers {
 			_, containerPodManifestInjectionOptional := optionalPodManifestInjectionContainerNames[container.ContainerName]
@@ -176,9 +211,21 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 				if instrumentationInstance.Status.Healthy == nil {
 					numStartingProcesses++
 				} else if *instrumentationInstance.Status.Healthy {
-					numHealthyProcesses++
+					for _, c := range instrumentationInstance.Status.Components {
+						if c.Healthy != nil && !*c.Healthy {
+							numUnhealthyInstrumentationLibraries++
+							if c.Message != "" {
+								unhealthyInstrumentationLibraryMessages = append(unhealthyInstrumentationLibraryMessages, c.Message)
+							}
+							break
+						}
+						numHealthyProcesses++
+					}
 				} else {
 					numUnhealthyProcesses++
+					if instrumentationInstance.Status.Message != "" {
+						unhealthyProcessMessages = append(unhealthyProcessMessages, instrumentationInstance.Status.Message)
+					}
 				}
 			}
 		}
@@ -186,12 +233,30 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 
 	// check for any unhealthy first, regardless of any other conditions
 	if numUnhealthyProcesses > 0 {
-		reasonStr := string(status.ProcessesHealthStatusReasonSomeUnhealthy)
+		reasonStr := string(status.ProcessesHealthStatusReasonOdigosUnhealthyInSomeProcesses)
+		message := fmt.Sprintf("Found %d processes with unhealthy agent", numUnhealthyProcesses)
+		if len(unhealthyProcessMessages) > 0 {
+			message = fmt.Sprintf("%s: %s", message, strings.Join(unhealthyProcessMessages, "; "))
+		}
 		return &model.DesiredConditionStatus{
 			Name:       status.ProcessesHealthStatusName,
 			Status:     model.DesiredStateProgressFailure,
 			ReasonEnum: &reasonStr,
-			Message:    fmt.Sprintf("Found %d processes with unhealthy agent", numUnhealthyProcesses),
+			Message:    message,
+		}, nil
+	}
+
+	if numUnhealthyInstrumentationLibraries > 0 {
+		reasonStr := string(status.ProcessesHealthStatusReasonOdigosUnhealthyInSomeProcesses)
+		message := fmt.Sprintf("unhealthy instrumentation libraries in %d processes", numUnhealthyInstrumentationLibraries)
+		if len(unhealthyInstrumentationLibraryMessages) > 0 {
+			message = fmt.Sprintf("%s: %s", message, strings.Join(unhealthyInstrumentationLibraryMessages, "; "))
+		}
+		return &model.DesiredConditionStatus{
+			Name:       status.ProcessesHealthStatusName,
+			Status:     model.DesiredStateProgressFailure,
+			ReasonEnum: &reasonStr,
+			Message:    message,
 		}, nil
 	}
 

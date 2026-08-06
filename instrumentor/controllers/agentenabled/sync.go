@@ -25,6 +25,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -69,7 +70,9 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider, ro
 			allErrs = errors.Join(allErrs, workloadErr)
 		}
 		if !res.IsZero() {
-			if aggregatedResult.RequeueAfter == 0 {
+			if res.Requeue {
+				aggregatedResult.Requeue = res.Requeue
+			} else if aggregatedResult.RequeueAfter == 0 {
 				aggregatedResult.RequeueAfter = res.RequeueAfter
 			} else if res.RequeueAfter < aggregatedResult.RequeueAfter {
 				aggregatedResult.RequeueAfter = res.RequeueAfter
@@ -113,7 +116,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	}
 
 	cond := metav1.Condition{
-		Type:    odigosv1.AgentEnabledStatusConditionType,
+		Type:    agentInjectionEnabled.AgentEnabledType,
 		Status:  condition.Status,
 		Reason:  string(condition.Reason),
 		Message: condition.Message,
@@ -164,7 +167,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    odigosv1.WorkloadRolloutStatusConditionType,
 			Status:  metav1.ConditionFalse,
-			Reason:  string(odigosv1.AgentEnabledReasonCrashLoopBackOff),
+			Reason:  string(agentInjectionEnabled.AgentEnabledReasonCrashLoopBackOff),
 			Message: "Workload has pods in backoff state - not eligible for instrumentation",
 		})
 		return backoffCondition, nil
@@ -176,8 +179,12 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		ic.Spec.AgentInjectionEnabled = false
 		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		ic.Spec.Containers = []odigosv1.ContainerAgentConfig{}
+		status := metav1.ConditionUnknown
+		if r, ok := agentInjectionEnabled.AgentEnabledReasonByName(string(reason)); ok {
+			status = r.K8sConditionStatus
+		}
 		return &agentInjectedStatusCondition{
-			Status:  metav1.ConditionUnknown,
+			Status:  status,
 			Reason:  reason,
 			Message: message,
 		}, nil
@@ -190,11 +197,13 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	// Recovery from rollback is already handled in reconcileWorkload before this function is called.
 	rollbackOccurred := ic.Status.RollbackOccurred
 	// Get existing backoff reason from status conditions if available
+	crashLoopReason := odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonCrashLoopBackOff)
+	imagePullReason := odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonImagePullBackOff)
 	var existingBackoffReason odigosv1.AgentEnabledReason
 	for _, condition := range ic.Status.Conditions {
-		if condition.Type == odigosv1.AgentEnabledStatusConditionType {
+		if condition.Type == agentInjectionEnabled.AgentEnabledType {
 			reason := odigosv1.AgentEnabledReason(condition.Reason)
-			if reason == odigosv1.AgentEnabledReasonCrashLoopBackOff || reason == odigosv1.AgentEnabledReasonImagePullBackOff {
+			if reason == crashLoopReason || reason == imagePullReason {
 				existingBackoffReason = reason
 				break
 			}
@@ -203,7 +212,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	// If not found in conditions, check existing container configs
 	if existingBackoffReason == "" {
 		for _, container := range ic.Spec.Containers {
-			if container.AgentEnabledReason == odigosv1.AgentEnabledReasonCrashLoopBackOff || container.AgentEnabledReason == odigosv1.AgentEnabledReasonImagePullBackOff {
+			if container.AgentEnabledReason == crashLoopReason || container.AgentEnabledReason == imagePullReason {
 				existingBackoffReason = container.AgentEnabledReason
 				break
 			}
@@ -211,7 +220,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	}
 	// If not found in containers and we are in rollback state, default to CrashLoopBackOff
 	if rollbackOccurred && existingBackoffReason == "" {
-		existingBackoffReason = odigosv1.AgentEnabledReasonCrashLoopBackOff
+		existingBackoffReason = crashLoopReason
 	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	collectorConfigs := make([]commonapi.ContainerCollectorConfig, 0, len(ic.Spec.Containers))
@@ -284,7 +293,8 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 			continue
 		}
 
-		agentConfig := calculateContainerAgentConfig(containerName, containerDistro, effectiveConfig, containerRuntimeDetails, rollbackOccurred, existingBackoffReason)
+		allowConcurrentAgents := resolveAllowConcurrentAgents(effectiveConfig, containerOverride)
+		agentConfig := calculateContainerAgentConfig(containerName, containerDistro, effectiveConfig, containerRuntimeDetails, rollbackOccurred, existingBackoffReason, allowConcurrentAgents)
 		// add the dynamic agent configs to enabled agents
 		if agentConfig.AgentEnabled {
 			agentConfig.Traces = dynamicContainerConfigs.AgentTracesConfig
@@ -340,8 +350,8 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		}
 		updateInstrumentationConfigAgentsMetaHash(ic, string(agentsDeploymentHash))
 		return &agentInjectedStatusCondition{
-			Status:  metav1.ConditionTrue,
-			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
+			Status:  agentInjectionEnabled.AgentEnabledEnabledSuccessfully.K8sConditionStatus,
+			Reason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonEnabledSuccessfully),
 			Message: fmt.Sprintf("agent enabled in %d containers: %v", len(instrumentedContainerNames), instrumentedContainerNames),
 		}, nil
 	} else {
@@ -372,8 +382,8 @@ func hasUninstrumentedPodsWithBackoff(ctx context.Context, c client.Client, pw k
 		if hasPodInBackoff {
 			logger.Debug("workload has pods in backoff state", "workload", pw.Name, "namespace", pw.Namespace)
 			return &agentInjectedStatusCondition{
-				Status:  metav1.ConditionFalse,
-				Reason:  odigosv1.AgentEnabledReasonCrashLoopBackOff,
+				Status:  agentInjectionEnabled.AgentEnabledCrashLoopBackOff.K8sConditionStatus,
+				Reason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonCrashLoopBackOff),
 				Message: "Workload has pods in backoff state before instrumentation - cannot instrument crashlooping workload",
 			}, nil
 		}
@@ -385,16 +395,20 @@ func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentCon
 	if containerConfig.AgentEnabled {
 		// no expecting to hit this case, but for completeness
 		return &agentInjectedStatusCondition{
-			Status:  metav1.ConditionTrue,
-			Reason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
+			Status:  agentInjectionEnabled.AgentEnabledEnabledSuccessfully.K8sConditionStatus,
+			Reason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonEnabledSuccessfully),
 			Message: fmt.Sprintf("agent enabled for container %s", containerConfig.ContainerName),
 		}
-	} else {
-		return &agentInjectedStatusCondition{
-			Status:  metav1.ConditionFalse,
-			Reason:  containerConfig.AgentEnabledReason,
-			Message: containerConfig.AgentEnabledMessage,
-		}
+	}
+
+	status := metav1.ConditionFalse
+	if r, ok := agentInjectionEnabled.AgentEnabledReasonByName(string(containerConfig.AgentEnabledReason)); ok {
+		status = r.K8sConditionStatus
+	}
+	return &agentInjectedStatusCondition{
+		Status:  status,
+		Reason:  containerConfig.AgentEnabledReason,
+		Message: containerConfig.AgentEnabledMessage,
 	}
 }
 
@@ -421,7 +435,7 @@ func isLoaderInjectionSupportedByRuntimeDetails(runtimeDetails *odigosv1.Runtime
 	secureExecution := runtimeDetails.SecureExecutionMode == nil || *runtimeDetails.SecureExecutionMode
 	if secureExecution {
 		return &odigosv1.AgentDisabledInfo{
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonInjectionConflict),
 			AgentEnabledMessage: "container is running in secure execution mode and injection method is set to 'loader'",
 		}
 	}
@@ -431,7 +445,7 @@ func isLoaderInjectionSupportedByRuntimeDetails(runtimeDetails *odigosv1.Runtime
 	ldPreloadUnsetOrExpected := !ldPreloadFoundInInspection || strings.Contains(ldPreloadVal, odigosLoaderPath)
 	if !ldPreloadUnsetOrExpected {
 		return &odigosv1.AgentDisabledInfo{
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonInjectionConflict),
 			AgentEnabledMessage: "container is already using LD_PRELOAD env var, and injection method is set to 'loader'. current value: " + ldPreloadVal,
 		}
 	}
@@ -454,7 +468,7 @@ func getEnvInjectionDecision(
 		// this should never happen, as the config is reconciled with default value.
 		// it is only here as a safety net.
 		return nil, &odigosv1.AgentDisabledInfo{
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonInjectionConflict),
 			AgentEnabledMessage: "no injection method configured for odigos agent",
 		}
 	}
@@ -502,6 +516,7 @@ func calculateContainerAgentConfig(containerName string,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	rollbackOccurred bool,
 	existingBackoffReason odigosv1.AgentEnabledReason,
+	allowConcurrentAgents bool,
 ) odigosv1.ContainerAgentConfig {
 
 	distroName := d.Name
@@ -538,21 +553,22 @@ func calculateContainerAgentConfig(containerName string,
 	podManifestInjectionOptional := !distro.IsRestartRequired(d, effectiveConfig)
 
 	// check for presence of other agents
-	if runtimeDetails.OtherAgent != nil {
-		if effectiveConfig.AllowConcurrentAgents == nil || !*effectiveConfig.AllowConcurrentAgents {
+	if len(runtimeDetails.OtherAgents) > 0 {
+		otherAgents := otherAgentNames(runtimeDetails.OtherAgents)
+		if !allowConcurrentAgents {
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
 				AgentEnabled:        false,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonOtherAgentDetected,
-				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
+				AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonOtherAgentDetected),
+				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent(s) [%s] detected running in the container", otherAgents),
 			}
 		}
 		return odigosv1.ContainerAgentConfig{
 			ContainerName:                containerName,
 			AgentEnabled:                 true,
 			PodManifestInjectionOptional: podManifestInjectionOptional,
-			AgentEnabledReason:           odigosv1.AgentEnabledReasonEnabledSuccessfully,
-			AgentEnabledMessage:          fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
+			AgentEnabledReason:           odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonEnabledWithOtherAgents),
+			AgentEnabledMessage:          fmt.Sprintf("we are operating alongside other instrumentation agent(s) [%s], which is not the recommended configuration. We suggest disabling them for optimal performance.", otherAgents),
 			OtelDistroName:               distroName,
 			DistroParams:                 distroParameters,
 			EnvInjectionMethod:           envInjectionDecision,
@@ -591,18 +607,18 @@ func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.Instru
 	// Check if the node collector is ready
 	isNodeCollectorReady, message := isNodeCollectorReady(cg)
 	if !isNodeCollectorReady {
-		return false, odigosv1.AgentEnabledReasonWaitingForNodeCollector, message
+		return false, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonWaitingForNodeCollector), message
 	}
 
 	gotReadySignals, message := gotReadySignals(cg)
 	if !gotReadySignals {
-		return false, odigosv1.AgentEnabledReasonNoCollectedSignals, message
+		return false, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonNoCollectedSignals), message
 	}
 
 	// if there are any overrides, we use them (and exist early)
 	for _, containerOverride := range ic.Spec.ContainersOverrides {
 		if containerOverride.RuntimeInfo != nil {
-			return true, odigosv1.AgentEnabledReasonEnabledSuccessfully, ""
+			return true, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonEnabledSuccessfully), ""
 		}
 	}
 
@@ -613,15 +629,15 @@ func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.Instru
 		for _, condition := range ic.Status.Conditions {
 			if condition.Type == odigosv1.RuntimeDetectionStatusConditionType {
 				if odigosv1.RuntimeDetectionReason(condition.Reason) == odigosv1.RuntimeDetectionReasonNoRunningPods {
-					return false, odigosv1.AgentEnabledReasonRuntimeDetailsUnavailable, "agent will be enabled once runtime details from running pods is available"
+					return false, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonRuntimeDetailsUnavailable), "agent will be enabled once runtime details from running pods is available"
 				}
 			}
 		}
-		return false, odigosv1.AgentEnabledReasonWaitingForRuntimeInspection, "waiting for runtime inspection to complete"
+		return false, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonWaitingForRuntimeInspection), agentInjectionEnabled.AgentEnabledWaitingForRuntimeInspection.Message
 	}
 
 	// report success if both prerequisites are completed
-	return true, odigosv1.AgentEnabledReasonEnabledSuccessfully, ""
+	return true, odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonEnabledSuccessfully), ""
 }
 
 func isNodeCollectorReady(cg *odigosv1.CollectorsGroup) (bool, string) {
@@ -647,4 +663,22 @@ func gotReadySignals(cg *odigosv1.CollectorsGroup) (bool, string) {
 	}
 
 	return true, ""
+}
+
+// resolveAllowConcurrentAgents returns the effective allow_concurrent_agents for a
+// container: container override wins when set, otherwise the global config (nil = false).
+func resolveAllowConcurrentAgents(cfg *common.OdigosConfiguration, containerOverride *odigosv1.ContainerOverride) bool {
+	if containerOverride != nil && containerOverride.AllowConcurrentAgents != nil {
+		return *containerOverride.AllowConcurrentAgents
+	}
+	return cfg.AllowConcurrentAgents != nil && *cfg.AllowConcurrentAgents
+}
+
+// otherAgentNames joins detected other-agent names for user-facing messages.
+func otherAgentNames(agents []odigosv1.OtherAgent) string {
+	names := make([]string, 0, len(agents))
+	for _, a := range agents {
+		names = append(names, a.Name)
+	}
+	return strings.Join(names, ", ")
 }

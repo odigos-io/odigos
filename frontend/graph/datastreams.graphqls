@@ -1,0 +1,21 @@
+# =====================
+# Data Streams
+# Logical grouping of sources/destinations into named streams.
+# =====================
+
+type DataStream {
+  name: String!
+}
+
+input DataStreamInput {
+  name: String!
+}
+
+extend type ComputePlatform {
+  dataStreams: [DataStream!]!
+}
+
+extend type Mutation {
+  updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
+  deleteDataStream(id: ID!): Boolean!
+}

@@ -4,7 +4,7 @@ SRC_ROOT := $(shell git rev-parse --show-toplevel)/collector
 TOOLS_BIN_DIR    := $(SRC_ROOT)/.tools
 
 # Define the tool version
-BUILDER_VERSION = 0.148.0
+BUILDER_VERSION = 0.151.0
 BUILDER := $(TOOLS_BIN_DIR)/builder_$(BUILDER_VERSION)
 X_TOOLS_VERSION ?= v0.43.0
 GOVULNCHECK_VERSION ?= v1.1.4
@@ -32,7 +32,8 @@ download_builder:
 
 .PHONY: genodigoscol
 genodigoscol: download_builder
-	$(BUILDER) --ldflags="-checklinkname=0" --config builder-config.yaml --skip-compilation
+    # GOWORK=off is needed to avoid pulling errors from other unrelated workspaces modules
+	GOWORK=off $(BUILDER) --ldflags="-checklinkname=0" --config builder-config.yaml --skip-compilation
 
 .PHONY: test-odigostailsamplingprocessor
 test-odigostailsamplingprocessor:
@@ -41,7 +42,7 @@ test-odigostailsamplingprocessor:
 
 .PHONY: build-odigoscol
 build-odigoscol: download_builder test-odigostailsamplingprocessor
-	$(BUILDER) \
+	GOWORK=off $(BUILDER) \
 	--ldflags="-s -w -checklinkname=0" \
 	--config builder-config.yaml \
 	--skip-generate \

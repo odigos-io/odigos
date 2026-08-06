@@ -15,6 +15,10 @@ import (
 const (
 	otelServiceNameEnvVarName        = "OTEL_SERVICE_NAME"
 	otelResourceAttributesEnvVarName = "OTEL_RESOURCE_ATTRIBUTES"
+
+	// used when OTEL_RESOURCE_ATTRIBUTES is already set,
+	// so we can pass our values without overwriting or modifying the existing environment variable.
+	odigosResourceAttributesEnvVarName = "ODIGOS_RESOURCE_ATTRIBUTES"
 )
 
 type resourceAttribute struct {
@@ -126,9 +130,14 @@ func InjectOtelResourceAndServiceNameEnvVars(existingEnvNames EnvVarNamesMap, co
 	// OTEL_SERVICE_NAME
 	existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, otelServiceNameEnvVarName, serviceName)
 
-	// OTEL_RESOURCE_ATTRIBUTES
+	// OTEL_RESOURCE_ATTRIBUTES or ODIGOS_RESOURCE_ATTRIBUTES
 	resourceAttributes := getResourceAttributes(pw, container.Name, ownerReferences)
 	resourceAttributesEnvValue := getResourceAttributesEnvVarValue(resourceAttributes)
-	existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, otelResourceAttributesEnvVarName, resourceAttributesEnvValue)
+
+	if _, exists := existingEnvNames[otelResourceAttributesEnvVarName]; !exists {
+		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, otelResourceAttributesEnvVarName, resourceAttributesEnvValue)
+	} else {
+		existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, odigosResourceAttributesEnvVarName, resourceAttributesEnvValue)
+	}
 	return existingEnvNames
 }

@@ -43,6 +43,37 @@ func workloadKeyFromResourceAttributes(attrs pcommon.Map) (string, error) {
 	return k8sSourceKey(ns, kind, name, containerName), nil
 }
 
+func workloadIdentityFromResourceAttributes(attrs pcommon.Map) (string, pcommon.Map, error) {
+	cacheKey, err := workloadKeyFromResourceAttributes(attrs)
+	if err != nil {
+		return "", pcommon.NewMap(), err
+	}
+	return cacheKey, identifyingResourceAttributes(attrs), nil
+}
+
+func identifyingResourceAttributes(attrs pcommon.Map) pcommon.Map {
+	identity := pcommon.NewMap()
+	if ns := getNamespace(attrs); ns != "" {
+		identity.PutStr(string(semconv.K8SNamespaceNameKey), ns)
+	}
+	if containerName := getContainerName(attrs); containerName != "" {
+		identity.PutStr(string(semconv.K8SContainerNameKey), containerName)
+	}
+	for _, pair := range attrKindPairs {
+		if val, ok := attrs.Get(pair.key); ok && val.Type() == pcommon.ValueTypeStr {
+			val.CopyTo(identity.PutEmpty(pair.key))
+			return identity
+		}
+	}
+	if kind, ok := attrs.Get(consts.OdigosWorkloadKindAttribute); ok {
+		kind.CopyTo(identity.PutEmpty(consts.OdigosWorkloadKindAttribute))
+	}
+	if name, ok := attrs.Get(consts.OdigosWorkloadNameAttribute); ok {
+		name.CopyTo(identity.PutEmpty(consts.OdigosWorkloadNameAttribute))
+	}
+	return identity
+}
+
 func getNamespace(attrs pcommon.Map) string {
 	ns, ok := attrs.Get(string(semconv.K8SNamespaceNameKey))
 	if !ok {
