@@ -211,7 +211,7 @@ func init() {
 
 func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string, detectors []string, tier common.OdigosTier) config.Config {
 	receivers := cloneGenericMap(commonReceivers)
-	if tier != common.CommunityOdigosTier {
+	if tier.IsEnterprise() {
 		receivers[odigosEbpfReceiverName] = config.GenericMap{}
 	}
 	return config.Config{
