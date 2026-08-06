@@ -120,7 +120,7 @@ func TestE2E_ProfilesActions_ActionToRenderedConfig(t *testing.T) {
 	// memory_limiter, which commonProcessors() already provides — fails this test.
 	nodeCfg, err := config.MergeConfigs(map[string]config.Config{
 		"processors":                   nodeResults.ProcessorsConfig,
-		"common_application_telemetry": collectorconfig.CommonApplicationTelemetryConfig(&odigosv1.CollectorsGroup{}, false, "odigos-system", nil),
+		"common_application_telemetry": collectorconfig.CommonApplicationTelemetryConfig(&odigosv1.CollectorsGroup{}, false, "odigos-system", nil, common.OnPremOdigosTier),
 		"profiling":                    collectorconfig.ProfilingPipelineConfig("odigos-system", &common.ProfilingConfiguration{Enabled: &on}, nodeResults.ProfilesProcessors),
 	})
 	require.NoError(t, err)

@@ -44,6 +44,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/clustercollector"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	//+kubebuilder:scaffold:imports
 )
@@ -102,7 +103,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = clustercollector.SetupWithManager(k8sManager, "")
+	err = clustercollector.SetupWithManager(k8sManager, "", common.OnPremOdigosTier)
 	Expect(err).ToNot(HaveOccurred())
 
 	setupResources()

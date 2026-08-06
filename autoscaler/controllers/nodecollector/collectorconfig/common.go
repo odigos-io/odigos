@@ -22,6 +22,7 @@ type CommonSignalConfig struct {
 	OdigosNamespace          string
 	ManifestProcessorNames   []string
 	ResourceDetectionEnabled bool
+	Tier                     common.OdigosTier
 }
 
 // WithProcessors returns a copy of the config with the given manifest processor names set.
@@ -31,7 +32,10 @@ func (c CommonSignalConfig) WithProcessors(names []string) CommonSignalConfig {
 }
 
 const (
-	healthCheckExtensionName            = "health_check"
+	healthCheckExtensionName = "health_check"
+	// odigosebpfreceiver is only compiled into the enterprise collector image. The collector
+	// rejects unknown component types when it loads the config, even if no pipeline references
+	// them, so both the definition and the pipeline wiring must be gated on tier.
 	odigosEbpfReceiverName              = "odigosebpf"
 	pprofExtensionName                  = "pprof"
 	batchProcessorName                  = "batch"
@@ -188,7 +192,7 @@ func init() {
 				},
 			},
 		},
-		odigosEbpfReceiverName: config.GenericMap{},
+		// odigosEbpfReceiverName is added per tier in CommonApplicationTelemetryConfig.
 	}
 
 	commonExtensions = config.GenericMap{
@@ -205,12 +209,24 @@ func init() {
 	}
 }
 
-func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string, detectors []string) config.Config {
+func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string, detectors []string, tier common.OdigosTier) config.Config {
+	receivers := cloneGenericMap(commonReceivers)
+	if tier != common.CommunityOdigosTier {
+		receivers[odigosEbpfReceiverName] = config.GenericMap{}
+	}
 	return config.Config{
-		Receivers:  commonReceivers,
+		Receivers:  receivers,
 		Exporters:  getCommonExporters(nodeCG.Spec.OtlpExporterConfiguration, odigosNamespace),
 		Processors: commonProcessors(nodeCG, onGKE, detectors),
 	}
+}
+
+func cloneGenericMap(m config.GenericMap) config.GenericMap {
+	out := make(config.GenericMap, len(m)+1)
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
 }
 
 func CommonConfig() config.Config {
