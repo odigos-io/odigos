@@ -35,6 +35,7 @@ COPY instrumentationrules/go.mod instrumentationrules/go.sum ./instrumentationru
 COPY k8sutils/go.mod k8sutils/go.sum ./k8sutils/
 COPY odigosauth/go.mod odigosauth/go.sum ./odigosauth/
 COPY status/go.mod status/go.sum ./status/
+COPY recommendations/go.mod recommendations/go.sum ./recommendations/
 RUN --mount=type=cache,target=/go/pkg/mod cd frontend && go mod download
 
 # Copy the source for the frontend module and the modules it replaces locally
@@ -50,6 +51,7 @@ COPY instrumentationrules ./instrumentationrules
 COPY k8sutils ./k8sutils
 COPY odigosauth ./odigosauth
 COPY status ./status
+COPY recommendations ./recommendations
 COPY frontend ./frontend
 # Strip the webapp source tree but keep embed.go — the frontend/webapp Go
 # package embeds the built bundle (//go:embed all:out) and the server package

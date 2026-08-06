@@ -1,0 +1,50 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Recommendation
+metadata:
+  name: url-templatization
+spec:
+  type: 'UrlTemplatization'
+  k8sObjectName: 'url-templatization'
+  oss: true
+  categories:
+    - Normalization
+
+  title: 'Enable URL templatization'
+  summary: 'Replace dynamic URL path segments with templates so HTTP span names and attributes stay low-cardinality.'
+  description: |
+    Enable this recommendation to replace dynamic URL segments with templates
+    (for example `/user/1234` → `/user/{id}`). This keeps cardinality low,
+    improves span names, and adds a stable route attribute so you can group
+    and filter traffic by endpoint.
+
+  pros:
+    - Improves span names with templated routes
+    - Adds a stable route attribute that improves usability and metrics by endpoint
+
+  cons:
+    - Heuristics may miss some dynamic segments or wrongly templatize static ones
+    - Incorrect results can raise cardinality and backend cost
+    - Paths the heuristic cannot handle may need custom rules and ongoing maintenance
+
+  appliedWhen:
+    - type: ActionExists
+      actionType: URLTemplatization
+
+  remediations:
+    - type: EnableUrlTemplatization
+      buttonText: 'Enable'
+      tooltip: 'Create a URL Templatization action for all sources.'
+      steps:
+        - type: ApplyOdigosAction
+      applyExamples:
+        - type: OdigosAction
+          content: |
+            apiVersion: odigos.io/v1alpha1
+            kind: Action
+            metadata:
+              name: url-templatization
+            spec:
+              actionName: URL Templatization
+              signals:
+                - TRACES
+              urlTemplatization: {}

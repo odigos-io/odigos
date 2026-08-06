@@ -5,10 +5,12 @@ go 1.26.4
 require (
 	cloud.google.com/go/compute/metadata v0.9.0
 	github.com/go-logr/logr v1.4.3
+	github.com/jmespath/go-jmespath v0.4.0
 	github.com/odigos-io/odigos/actions v0.0.0
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/recommendations v0.0.0
 	github.com/odigos-io/odigos/status v0.0.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.38.2
@@ -106,6 +108,7 @@ replace (
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	// k8sutils requires this via its own local-only replace, which doesn't propagate to us.
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth
+	github.com/odigos-io/odigos/recommendations => ../recommendations
 	github.com/odigos-io/odigos/status => ../status
 	// argo-rollouts@v1.9.1 requires this via its own internal-only replace, which doesn't propagate to us.
 	k8s.io/kubelet => k8s.io/kubelet v0.34.1

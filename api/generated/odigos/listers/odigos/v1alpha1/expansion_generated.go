@@ -73,6 +73,14 @@ type ProcessorListerExpansion interface{}
 // ProcessorNamespaceLister.
 type ProcessorNamespaceListerExpansion interface{}
 
+// RecommendationListerExpansion allows custom methods to be added to
+// RecommendationLister.
+type RecommendationListerExpansion interface{}
+
+// RecommendationNamespaceListerExpansion allows custom methods to be added to
+// RecommendationNamespaceLister.
+type RecommendationNamespaceListerExpansion interface{}
+
 // SamplingListerExpansion allows custom methods to be added to
 // SamplingLister.
 type SamplingListerExpansion interface{}

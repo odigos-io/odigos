@@ -17,6 +17,7 @@ auto_generated: true
 - [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
 - [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
 - [Processor](#odigos-io-v1alpha1-Processor)
+- [Recommendation](#odigos-io-v1alpha1-Recommendation)
 - [Sampling](#odigos-io-v1alpha1-Sampling)
 - [Source](#odigos-io-v1alpha1-Source)
 
@@ -352,6 +353,55 @@ auto_generated: true
 </td>
 <td>
 <a href="#odigos-io-v1alpha1-ProcessorStatus"><code>ProcessorStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `Recommendation` <a id="odigos-io-v1alpha1-Recommendation"></a>
+
+<p>Recommendation is the Schema for enabling a catalog recommendation in the cluster.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>Recommendation</code></td></tr>
+
+
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-RecommendationSpec"><code>RecommendationSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-RecommendationStatus"><code>RecommendationStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -3115,6 +3165,86 @@ if the value is missing (or 0) the processor can be placed anywhere in the pipel
 </td>
 <td>
    <p>Represents the observations of a processor's current state.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `RecommendationSpec` <a id="odigos-io-v1alpha1-RecommendationSpec"></a>
+
+
+**Appears in:**
+
+- [Recommendation](#odigos-io-v1alpha1-Recommendation)
+
+<p>RecommendationSpec defines the desired state of Recommendation</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>type</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#RecommendationType"><code>common.RecommendationType</code></a>
+</td>
+<td>
+   <p>Type identifies which recommendation from the catalog this resource enables.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>applied</code>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Applied indicates whether this recommendation is currently applied
+(via the recommendation flow or configured organically).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>conditionsMet</code>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>ConditionsMet indicates whether the catalog prerequisites for this recommendation
+currently hold (for example GoEnterpriseSources for AutoGoOffsetUpdater).</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `RecommendationStatus` <a id="odigos-io-v1alpha1-RecommendationStatus"></a>
+
+
+**Appears in:**
+
+- [Recommendation](#odigos-io-v1alpha1-Recommendation)
+
+<p>RecommendationStatus defines the observed state of Recommendation</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+
+
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a recommendation's current state.</p>
 </td>
 </tr>
 </tbody>
