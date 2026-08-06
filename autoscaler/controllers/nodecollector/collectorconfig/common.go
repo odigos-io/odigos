@@ -198,10 +198,11 @@ func init() {
 		pprofExtensionName: config.GenericMap{
 			"endpoint": "0.0.0.0:1777",
 		},
+		k8sconsts.OdigosCapabilitiesExtensionType: config.GenericMap{},
 	}
 
 	commonService = config.Service{
-		Extensions: []string{healthCheckExtensionName, pprofExtensionName},
+		Extensions: []string{healthCheckExtensionName, pprofExtensionName, k8sconsts.OdigosCapabilitiesExtensionType},
 	}
 }
 
