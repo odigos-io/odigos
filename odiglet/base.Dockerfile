@@ -33,7 +33,8 @@ RUN apt-get update && apt-get install -y \
     llvm \
     make \
     libbpf-dev \
-    goreleaser
+    goreleaser \
+    libcap2-bin
 
 # Bring in rsync
 COPY --from=rsync-builder /rsync-install/usr/bin/rsync /usr/bin/rsync

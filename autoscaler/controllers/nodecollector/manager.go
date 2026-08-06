@@ -3,6 +3,7 @@ package nodecollector
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func SetupWithManager(mgr ctrl.Manager) error {
+func SetupWithManager(mgr ctrl.Manager, tier common.OdigosTier) error {
 
 	odigosNamespace := env.GetCurrentNamespace()
 
@@ -32,6 +33,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 				Client:          mgr.GetClient(),
 				scheme:          mgr.GetScheme(),
 				odigosNamespace: odigosNamespace,
+				tier:            tier,
 			},
 		})
 	if err != nil {
@@ -59,6 +61,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 				Client:          mgr.GetClient(),
 				scheme:          mgr.GetScheme(),
 				odigosNamespace: odigosNamespace,
+				tier:            tier,
 			},
 		})
 	if err != nil {
@@ -77,6 +80,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 				Client:          mgr.GetClient(),
 				scheme:          mgr.GetScheme(),
 				odigosNamespace: odigosNamespace,
+				tier:            tier,
 			},
 		})
 	if err != nil {
@@ -95,6 +99,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 				Client:          mgr.GetClient(),
 				scheme:          mgr.GetScheme(),
 				odigosNamespace: odigosNamespace,
+				tier:            tier,
 			},
 		})
 	if err != nil {

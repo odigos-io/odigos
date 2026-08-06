@@ -269,6 +269,10 @@ type K8sWorkloadContainerOverrides {
   # when null (most times), the distro is selected based on the runtime detection values.
   # if not null, this distro is used regardless of any runtime detection values.
   otelDistroName: String
+
+  # Whether Odigos may run alongside other instrumentation agents in this container.
+  # when null, the global configuration is used.
+  allowConcurrentAgents: Boolean
 }
 
 # traces configuration for the instrumentation agent.
