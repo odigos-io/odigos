@@ -284,7 +284,11 @@ spec:
             - name: exchange-dir
               mountPath: /var/exchange
         - name: data-collection
+          {{- if include "odigos.secretExists" . }}
+          image: '{{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-collector" "Tag" $imageTag) }}'
+          {{- else }}
           image: '{{ template "utils.imageName" (dict "Values" .Values "Component" "collector" "Tag" $imageTag) }}'
+          {{- end }}
           imagePullPolicy: IfNotPresent
           command:
             - /odigosotelcol
