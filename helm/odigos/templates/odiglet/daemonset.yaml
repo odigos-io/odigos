@@ -330,6 +330,14 @@ spec:
                 resourceFieldRef:
                   containerName: data-collection
                   resource: limits.cpu
+          {{- if include "odigos.secretExists" . }}
+            # Verified at startup by the enterprise collector's odigos_enterprise_auth extension.
+            - name: ODIGOS_ONPREM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-pro
+                  key: odigos-onprem-token
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /

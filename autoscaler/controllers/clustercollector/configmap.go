@@ -224,6 +224,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
 					return err
 				}
+				addEnterpriseAuthExtension(c)
 			}
 			c.Service.Telemetry.Logs = config.LogsConfig{Level: collectorLogLevel}
 			// Creating a metric pipeline for the incoming Odigos components metrics
