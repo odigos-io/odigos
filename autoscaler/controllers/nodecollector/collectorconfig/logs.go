@@ -17,7 +17,7 @@ const (
 
 func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string, tier common.OdigosTier) (config.GenericMap, []string) {
 
-	if tier != common.CommunityOdigosTier && isEbpfLogCaptureEnabled(sources) {
+	if tier.IsEnterprise() && isEbpfLogCaptureEnabled(sources) {
 		// eBPF receiver config lives in the common domain; no per-pipeline receiver config needed here
 		return config.GenericMap{}, []string{odigosEbpfReceiverName}
 	}

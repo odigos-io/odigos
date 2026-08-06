@@ -297,7 +297,7 @@ func calculateCollectorConfigDomains(
 
 	// The profiling pipeline's receiver is enterprise-only, so community tier never gets one
 	// regardless of what OdigosConfiguration asks for.
-	if tier != odigoscommon.CommunityOdigosTier && odigoscommon.ProfilingPipelineActive(profiling) {
+	if tier.IsEnterprise() && odigoscommon.ProfilingPipelineActive(profiling) {
 		configDomains["profiling"] = collectorconfig.ProfilingPipelineConfig(odigosNamespace, profiling, processorsResults.ProfilesProcessors)
 	}
 
