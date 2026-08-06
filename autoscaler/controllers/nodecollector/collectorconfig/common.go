@@ -110,7 +110,6 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool, detec
 }
 
 var staticProcessors config.GenericMap
-var commonReceivers config.GenericMap
 var commonExtensions config.GenericMap
 var commonService config.Service
 
@@ -178,23 +177,6 @@ func init() {
 		},
 	}
 
-	commonReceivers = config.GenericMap{
-		OTLPInReceiverName: config.GenericMap{
-			"protocols": config.GenericMap{
-				"grpc": config.GenericMap{
-					"endpoint": "0.0.0.0:4317",
-					// data collection collectors will drop data instead of backpressuring the senders (odiglet or agents),
-					// we don't want the applications to build up memory in the runtime if the pipeline is overloaded.
-					"drop_on_overload": true,
-				},
-				"http": config.GenericMap{
-					"endpoint": "0.0.0.0:4318",
-				},
-			},
-		},
-		// odigosEbpfReceiverName is added per tier in CommonApplicationTelemetryConfig.
-	}
-
 	commonExtensions = config.GenericMap{
 		healthCheckExtensionName: config.GenericMap{
 			"endpoint": "0.0.0.0:13133",
@@ -209,24 +191,37 @@ func init() {
 	}
 }
 
-func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string, detectors []string, tier common.OdigosTier) config.Config {
-	receivers := cloneGenericMap(commonReceivers)
+// commonReceivers returns the receivers every signal pipeline shares.
+func commonReceivers(tier common.OdigosTier) config.GenericMap {
+	receivers := config.GenericMap{
+		OTLPInReceiverName: config.GenericMap{
+			"protocols": config.GenericMap{
+				"grpc": config.GenericMap{
+					"endpoint": "0.0.0.0:4317",
+					// data collection collectors will drop data instead of backpressuring the senders (odiglet or agents),
+					// we don't want the applications to build up memory in the runtime if the pipeline is overloaded.
+					"drop_on_overload": true,
+				},
+				"http": config.GenericMap{
+					"endpoint": "0.0.0.0:4318",
+				},
+			},
+		},
+	}
+
 	if tier.IsEnterprise() {
 		receivers[odigosEbpfReceiverName] = config.GenericMap{}
 	}
+
+	return receivers
+}
+
+func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string, detectors []string, tier common.OdigosTier) config.Config {
 	return config.Config{
-		Receivers:  receivers,
+		Receivers:  commonReceivers(tier),
 		Exporters:  getCommonExporters(nodeCG.Spec.OtlpExporterConfiguration, odigosNamespace),
 		Processors: commonProcessors(nodeCG, onGKE, detectors),
 	}
-}
-
-func cloneGenericMap(m config.GenericMap) config.GenericMap {
-	out := make(config.GenericMap, len(m)+1)
-	for k, v := range m {
-		out[k] = v
-	}
-	return out
 }
 
 func CommonConfig() config.Config {
