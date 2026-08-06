@@ -22,14 +22,25 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-insights-clickhouse
     spec:
+      {{- if .Values.insights.clickhouse.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.insights.clickhouse.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.insights.clickhouse.priorityClassName }}
+      priorityClassName: {{ .Values.insights.clickhouse.priorityClassName }}
+      {{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       containers:
         - name: clickhouse
-          # Image, user, and database name are intentionally hardcoded:
-          # this is a bundled skeleton DB, not a tunable production install.
-          # When BYO ClickHouse support is added, switch the insights service
-          # to consume an external DSN secret and drop this Deployment.
-          image: "clickhouse/clickhouse-server:24.8-alpine"
-          imagePullPolicy: IfNotPresent
+          # User and database name stay hardcoded (odigos_insights). Image,
+          # resources, and scheduling are values-driven. When BYO ClickHouse
+          # support is added, switch the insights service to an external DSN
+          # secret and drop this Deployment.
+          image: "{{ .Values.insights.clickhouse.image.repository }}:{{ .Values.insights.clickhouse.image.tag }}"
+          imagePullPolicy: {{ .Values.insights.clickhouse.image.pullPolicy }}
           ports:
             - name: native
               containerPort: 9000
@@ -66,16 +77,39 @@ spec:
           # really dies, the Deployment controller restarts the pod anyway.
           resources:
             requests:
-              cpu: 100m
-              memory: 512Mi
+              cpu: {{ .Values.insights.clickhouse.resources.requests.cpu }}
+              memory: {{ .Values.insights.clickhouse.resources.requests.memory }}
             limits:
-              cpu: 2000m
-              memory: 2Gi
+              cpu: {{ .Values.insights.clickhouse.resources.limits.cpu }}
+              memory: {{ .Values.insights.clickhouse.resources.limits.memory }}
           volumeMounts:
             - name: data
               mountPath: /var/lib/clickhouse
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/odigos.xml
+              subPath: odigos.xml
+              readOnly: true
+            - name: config
+              mountPath: /etc/clickhouse-server/users.d/odigos.xml
+              subPath: users.xml
+              readOnly: true
+            {{- if .Values.insights.clickhouse.config.extraConfig }}
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/odigos-extra.xml
+              subPath: odigos-extra.xml
+              readOnly: true
+            {{- end }}
+      {{- with .Values.insights.clickhouse.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.insights.clickhouse.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: odigos-insights-clickhouse
+        - name: config
+          configMap:
+            name: odigos-insights-clickhouse
 {{- end }}

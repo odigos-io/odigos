@@ -10,21 +10,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/odigos-io/odigos/actions"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/common/profilecache"
 	"github.com/odigos-io/odigos/config"
-	"github.com/odigos-io/odigos/actions"
 	"github.com/odigos-io/odigos/destinations"
-	"github.com/odigos-io/odigos/instrumentationrules"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/kube/watchers"
 	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
+	"github.com/odigos-io/odigos/frontend/services/insights"
 	"github.com/odigos-io/odigos/frontend/services/metrics"
 	"github.com/odigos-io/odigos/frontend/services/otlp"
 	"github.com/odigos-io/odigos/frontend/services/profiles"
 	"github.com/odigos-io/odigos/frontend/services/tracecorrelations"
+	"github.com/odigos-io/odigos/instrumentationrules"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
@@ -32,8 +34,8 @@ import (
 // like the enterprise MCP server) needs. Constructed once at startup by
 // Bootstrap and threaded through the rest of the lifecycle.
 type Deps struct {
-	Flags         Flags
-	Logger        logr.Logger
+	Flags          Flags
+	Logger         logr.Logger
 	K8sCacheClient client.Client
 	K8sCache       cache.Cache
 
@@ -41,10 +43,11 @@ type Deps struct {
 	PromAPI                     v1.API
 	CorrelationsPromAPI         v1.API
 	CorrelationsMetricsStoreURL string
-	ProfileStore     *profiles.ProfileStore
-	ProfilingGate    *profiles.IngestGate
-	ProfilesConsumer *profiles.OdigosProfilesConsumer
-	OtlpReceiver     *otlp.Receiver
+	InsightsClient              *insights.Client
+	ProfileStore                *profiles.ProfileStore
+	ProfilingGate               *profiles.IngestGate
+	ProfilesConsumer            *profiles.OdigosProfilesConsumer
+	OtlpReceiver                *otlp.Receiver
 }
 
 // Bootstrap performs the synchronous startup work: load embedded destination
@@ -129,6 +132,11 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		correlationsPromAPI = api
 	}
 
+	insightsClient, err := insights.NewClient(k8sconsts.InsightsHTTPEndpoint(flags.Namespace))
+	if err != nil {
+		return nil, fmt.Errorf("initializing insights client: %w", err)
+	}
+
 	return &Deps{
 		Flags:                       flags,
 		Logger:                      logger,
@@ -138,6 +146,7 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		PromAPI:                     promAPI,
 		CorrelationsPromAPI:         correlationsPromAPI,
 		CorrelationsMetricsStoreURL: correlationsURL,
+		InsightsClient:              insightsClient,
 		ProfileStore:                profileStore,
 		ProfilingGate:               profilingGate,
 		ProfilesConsumer:            profilesConsumer,
