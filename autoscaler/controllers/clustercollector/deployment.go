@@ -153,7 +153,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 	extraEnvVars := []corev1.EnvVar{}
 	// The odigos_enterprise_auth extension verifies this token at startup and refuses to run
 	// without it. Community tier has neither the extension nor the odigos-pro secret.
-	if tier != common.CommunityOdigosTier {
+	if tier.IsEnterprise() {
 		extraEnvVars = append(extraEnvVars, corev1.EnvVar{
 			Name: k8sconsts.OdigosOnpremTokenEnvName,
 			ValueFrom: &corev1.EnvVarSource{

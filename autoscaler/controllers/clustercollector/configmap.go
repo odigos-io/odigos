@@ -220,7 +220,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 			}
 			// The gateway profiles pipeline receives over plain otlp so it would not crash an
 			// OSS collector, but community tier should have no profiling wiring at all.
-			if tier != odigoscommon.CommunityOdigosTier {
+			if tier.IsEnterprise() {
 				if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
 					return err
 				}

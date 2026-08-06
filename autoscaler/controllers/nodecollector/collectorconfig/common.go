@@ -111,9 +111,6 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool, detec
 }
 
 var staticProcessors config.GenericMap
-var commonReceivers config.GenericMap
-var commonExtensions config.GenericMap
-var commonService config.Service
 
 func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfiguration, odigosNamespace string) config.GenericMap {
 
@@ -178,8 +175,11 @@ func init() {
 			}},
 		},
 	}
+}
 
-	commonReceivers = config.GenericMap{
+// commonReceivers returns the receivers every signal pipeline shares.
+func commonReceivers(tier common.OdigosTier) config.GenericMap {
+	receivers := config.GenericMap{
 		OTLPInReceiverName: config.GenericMap{
 			"protocols": config.GenericMap{
 				"grpc": config.GenericMap{
@@ -193,10 +193,18 @@ func init() {
 				},
 			},
 		},
-		// odigosEbpfReceiverName is added per tier in CommonApplicationTelemetryConfig.
 	}
 
-	commonExtensions = config.GenericMap{
+	if tier.IsEnterprise() {
+		receivers[odigosEbpfReceiverName] = config.GenericMap{}
+	}
+
+	return receivers
+}
+
+// commonExtensions returns the extension definitions for the given tier.
+func commonExtensions(tier common.OdigosTier) config.GenericMap {
+	extensions := config.GenericMap{
 		healthCheckExtensionName: config.GenericMap{
 			"endpoint": "0.0.0.0:13133",
 		},
@@ -205,51 +213,36 @@ func init() {
 		},
 	}
 
-	commonService = config.Service{
-		Extensions: []string{healthCheckExtensionName, pprofExtensionName},
+	if tier.IsEnterprise() {
+		extensions[odigosEnterpriseAuthExtensionName] = config.GenericMap{}
 	}
+
+	return extensions
+}
+
+// commonService returns the service block listing the extensions commonExtensions defined.
+func commonService(tier common.OdigosTier) config.Service {
+	extensions := []string{healthCheckExtensionName, pprofExtensionName}
+
+	if tier.IsEnterprise() {
+		extensions = append(extensions, odigosEnterpriseAuthExtensionName)
+	}
+
+	return config.Service{Extensions: extensions}
 }
 
 func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string, detectors []string, tier common.OdigosTier) config.Config {
-	receivers := cloneGenericMap(commonReceivers)
-	if tier != common.CommunityOdigosTier {
-		receivers[odigosEbpfReceiverName] = config.GenericMap{}
-	}
 	return config.Config{
-		Receivers:  receivers,
+		Receivers:  commonReceivers(tier),
 		Exporters:  getCommonExporters(nodeCG.Spec.OtlpExporterConfiguration, odigosNamespace),
 		Processors: commonProcessors(nodeCG, onGKE, detectors),
 	}
 }
 
-func cloneGenericMap(m config.GenericMap) config.GenericMap {
-	out := make(config.GenericMap, len(m)+1)
-	for k, v := range m {
-		out[k] = v
-	}
-	return out
-}
-
 func CommonConfig(tier common.OdigosTier) config.Config {
-	if tier == common.CommunityOdigosTier {
-		return config.Config{
-			Extensions: commonExtensions,
-			Service:    commonService,
-		}
-	}
-
-	extensions := cloneGenericMap(commonExtensions)
-	extensions[odigosEnterpriseAuthExtensionName] = config.GenericMap{}
-
-	// commonService.Extensions is shared package state, so build a new slice instead of appending.
-	service := commonService
-	service.Extensions = make([]string, 0, len(commonService.Extensions)+1)
-	service.Extensions = append(service.Extensions, commonService.Extensions...)
-	service.Extensions = append(service.Extensions, odigosEnterpriseAuthExtensionName)
-
 	return config.Config{
-		Extensions: extensions,
-		Service:    service,
+		Extensions: commonExtensions(tier),
+		Service:    commonService(tier),
 	}
 }
 
