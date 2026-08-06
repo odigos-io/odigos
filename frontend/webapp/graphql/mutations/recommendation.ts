@@ -12,13 +12,25 @@ export const SET_RECOMMENDATION_DISMISSED = gql`
       requireOdigosDeployment
       catalogConditions { type }
       appliedWhen { type expression actionType }
+      categories
       title
       summary
       description
       docsUrl
       pros
       cons
-      actions { type description }
+      remediations {
+        type
+        buttonText
+        tooltip
+        applyExamples { type content }
+      }
     }
+  }
+`;
+
+export const APPLY_RECOMMENDATION_REMEDIATION = gql`
+  mutation ApplyRecommendationRemediation($recommendationType: RecommendationType!, $remediationType: String!) {
+    applyRecommendationRemediation(recommendationType: $recommendationType, remediationType: $remediationType)
   }
 `;

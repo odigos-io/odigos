@@ -10,13 +10,19 @@ const RECOMMENDATION_FIELDS = `
   requireOdigosDeployment
   catalogConditions { type }
   appliedWhen { type expression actionType }
+  categories
   title
   summary
   description
   docsUrl
   pros
   cons
-  actions { type description }
+  remediations {
+    type
+    buttonText
+    tooltip
+    applyExamples { type content }
+  }
 `;
 
 export const GET_RECOMMENDATIONS = gql`
