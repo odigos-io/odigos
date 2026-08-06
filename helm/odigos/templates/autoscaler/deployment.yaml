@@ -96,10 +96,8 @@ spec:
             readOnly: true
         resources:
 {{ toYaml .Values.autoscaler.resources | indent 10 }}
-        securityContext:
-          allowPrivilegeEscalation: false
-      securityContext:
-        runAsNonRoot: true
+        {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "autoscaler") | nindent 8 }}
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "autoscaler" "Base" (dict "runAsNonRoot" true)) | nindent 6 }}
       serviceAccountName: odigos-autoscaler
       volumes:
         - name: autoscaler-webhooks-cert
