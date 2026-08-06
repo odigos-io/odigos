@@ -15,7 +15,9 @@ const (
 func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings, tier common.OdigosTier) (config.GenericMap, []string) {
 	receivers := config.GenericMap{}
 	pipelineReceiverNames := []string{}
-	if tier != common.CommunityOdigosTier {
+	// odigosebpfreceiver only exists in the enterprise collector image - see the comment on
+	// odigosEbpfReceiverName in common.go.
+	if tier.IsEnterprise() {
 		pipelineReceiverNames = append(pipelineReceiverNames, odigosEbpfReceiverName)
 	}
 
