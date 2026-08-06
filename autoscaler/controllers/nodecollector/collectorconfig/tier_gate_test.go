@@ -33,9 +33,9 @@ func TestCommonApplicationTelemetryConfig_EbpfReceiverDefinitionGatedByTier(t *t
 	}
 }
 
-// The shared commonReceivers map is package-level state. Gating must not mutate it, or the first
-// enterprise-tier call would leak the receiver into every subsequent community-tier config.
-func TestCommonApplicationTelemetryConfig_DoesNotMutateSharedReceivers(t *testing.T) {
+// Each call must build its own receivers map, or an enterprise-tier config would leak the receiver
+// into every community-tier config built after it.
+func TestCommonApplicationTelemetryConfig_ReceiversAreNotSharedBetweenCalls(t *testing.T) {
 	onprem := CommonApplicationTelemetryConfig(&odigosv1.CollectorsGroup{}, false, "odigos-system", nil, common.OnPremOdigosTier)
 	_, defined := onprem.Receivers[odigosEbpfReceiverName]
 	require.True(t, defined, "precondition: onprem should define the receiver")
@@ -43,9 +43,6 @@ func TestCommonApplicationTelemetryConfig_DoesNotMutateSharedReceivers(t *testin
 	community := CommonApplicationTelemetryConfig(&odigosv1.CollectorsGroup{}, false, "odigos-system", nil, common.CommunityOdigosTier)
 	_, leaked := community.Receivers[odigosEbpfReceiverName]
 	assert.False(t, leaked, "community config must not inherit the receiver from a prior enterprise-tier call")
-
-	_, leakedIntoPackageState := commonReceivers[odigosEbpfReceiverName]
-	assert.False(t, leakedIntoPackageState, "package-level commonReceivers must stay free of the enterprise receiver")
 }
 
 func TestMetricsConfig_EbpfReceiverPipelineGatedByTier(t *testing.T) {
