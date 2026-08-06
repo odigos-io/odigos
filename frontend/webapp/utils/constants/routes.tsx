@@ -7,6 +7,7 @@ export const ROUTES = {
   SETTINGS: '/settings',
   SAMPLING: '/sampling',
   TRACE_CORRELATIONS: '/trace-correlations',
+  SECURITY: '/security',
 
   // legacy routes
   CHOOSE_STREAM: '/choose-stream',
