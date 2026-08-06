@@ -27,6 +27,7 @@ exporters:
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
+  odigos_enterprise_auth: {}
   pprof:
     endpoint: 0.0.0.0:1777
 processors:
@@ -97,6 +98,7 @@ service:
   extensions:
   - health_check
   - pprof
+  - odigos_enterprise_auth
   pipelines:
     metrics/own-metrics-ui:
       exporters:
