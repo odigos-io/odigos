@@ -180,9 +180,9 @@ func TestCalculateConfigMapData(t *testing.T) {
 				},
 			},
 		},
-		false, /* onGKE */
-		true,  /* loadBalancingNeeded */
-		nil,   /* profiling */
+		false,                   /* onGKE */
+		true,                    /* loadBalancingNeeded */
+		nil,                     /* profiling */
 		common.OnPremOdigosTier, /* tier */
 	)
 
@@ -246,9 +246,9 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 				},
 			},
 		},
-		false, /* onGKE */
-		false, /* loadBalancingNeeded */
-		nil,   /* profiling */
+		false,                   /* onGKE */
+		false,                   /* loadBalancingNeeded */
+		nil,                     /* profiling */
 		common.OnPremOdigosTier, /* tier */
 	)
 
