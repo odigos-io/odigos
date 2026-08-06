@@ -21,7 +21,7 @@ export const getNavbarIcons = (router: AppRouterInstance, currentPath: string) =
     getPayloadForIcon(router, currentPath, ROUTES.PIPELINE_COLLECTORS, 'Collectors Pipeline', PipelineCollectorIcon),
     getPayloadForIcon(router, currentPath, ROUTES.SAMPLING, 'Sampling Rules', SamplingIcon),
     getPayloadForIcon(router, currentPath, ROUTES.SETTINGS, 'Settings', SettingsIcon),
-    getPayloadForIcon(router, currentPath, ROUTES.SECURITY, 'Security', SecurityIcon),
+    getPayloadForIcon(router, currentPath, ROUTES.INSIGHTS, 'Insights', SecurityIcon),
   ];
 
   return navIcons;
