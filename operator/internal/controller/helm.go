@@ -44,6 +44,7 @@ var relatedImageEnvVars = map[string]string{
 	"autoscaler":              "RELATED_IMAGE_AUTOSCALER",
 	"cli":                     "RELATED_IMAGE_CLI",
 	"collector":               "RELATED_IMAGE_COLLECTOR",
+	"enterprise-collector":    "RELATED_IMAGE_ENTERPRISE_COLLECTOR",
 	"ui":                      "RELATED_IMAGE_FRONTEND",
 	"instrumentor":            "RELATED_IMAGE_INSTRUMENTOR",
 	"enterprise-instrumentor": "RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR",
