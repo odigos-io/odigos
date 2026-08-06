@@ -102,6 +102,7 @@ import (
 
 	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
 	serviceioconnector "github.com/odigos-io/odigos/collector/connectors/serviceioconnector"
+	odigoscapabilitiesextension "github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension"
 	odigosconfigk8sextension "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension"
 	odigosextractattributeprocessor "github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor"
 	odigoslogsresourceattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor"
@@ -144,21 +145,23 @@ func components() (otelcol.Factories, error) {
 		googleclientauthextension.NewFactory(),
 		k8sleaderelector.NewFactory(),
 		odigosconfigk8sextension.NewFactory(),
+		odigoscapabilitiesextension.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
 	}
 	factories.ExtensionModules = makeModulesMap(factories.Extensions, map[component.Type]string{
-		zpagesextension.NewFactory().Type():           "go.opentelemetry.io/collector/extension/zpagesextension v0.151.0",
-		memorylimiterextension.NewFactory().Type():    "go.opentelemetry.io/collector/extension/memorylimiterextension v0.151.0",
-		healthcheckextension.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.151.0",
-		pprofextension.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.151.0",
-		basicauthextension.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.151.0",
-		bearertokenauthextension.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.151.0",
-		oauth2clientauthextension.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.151.0",
-		googleclientauthextension.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.151.0",
-		k8sleaderelector.NewFactory().Type():          "github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.151.0",
-		odigosconfigk8sextension.NewFactory().Type():  "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.151.0",
+		zpagesextension.NewFactory().Type():             "go.opentelemetry.io/collector/extension/zpagesextension v0.151.0",
+		memorylimiterextension.NewFactory().Type():      "go.opentelemetry.io/collector/extension/memorylimiterextension v0.151.0",
+		healthcheckextension.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.151.0",
+		pprofextension.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.151.0",
+		basicauthextension.NewFactory().Type():          "github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.151.0",
+		bearertokenauthextension.NewFactory().Type():    "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.151.0",
+		oauth2clientauthextension.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.151.0",
+		googleclientauthextension.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.151.0",
+		k8sleaderelector.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.151.0",
+		odigosconfigk8sextension.NewFactory().Type():    "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.151.0",
+		odigoscapabilitiesextension.NewFactory().Type(): "github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension v0.151.0",
 	})
 
 	factories.Receivers, err = otelcol.MakeFactoryMap[receiver.Factory](

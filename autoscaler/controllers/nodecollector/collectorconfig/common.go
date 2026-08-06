@@ -211,6 +211,7 @@ func commonExtensions(tier common.OdigosTier) config.GenericMap {
 		pprofExtensionName: config.GenericMap{
 			"endpoint": "0.0.0.0:1777",
 		},
+		k8sconsts.OdigosCapabilitiesExtensionType: config.GenericMap{},
 	}
 
 	if tier.IsEnterprise() {
@@ -222,7 +223,7 @@ func commonExtensions(tier common.OdigosTier) config.GenericMap {
 
 // commonService returns the service block listing the extensions commonExtensions defined.
 func commonService(tier common.OdigosTier) config.Service {
-	extensions := []string{healthCheckExtensionName, pprofExtensionName}
+	extensions := []string{healthCheckExtensionName, pprofExtensionName, k8sconsts.OdigosCapabilitiesExtensionType}
 
 	if tier.IsEnterprise() {
 		extensions = append(extensions, odigosEnterpriseAuthExtensionName)

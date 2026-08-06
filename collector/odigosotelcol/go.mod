@@ -7,6 +7,7 @@ go 1.26.2
 require (
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.151.0
 	github.com/odigos-io/odigos/collector/connectors/serviceioconnector v0.151.0
+	github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension v0.151.0
 	github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.151.0
 	github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor v0.151.0
 	github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.151.0
@@ -796,6 +797,8 @@ replace github.com/odigos-io/odigos/common => ../../common
 replace go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
 
 replace github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension => ../extension/odigosconfigk8sextension
+
+replace github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension => ../extension/odigoscapabilitiesextension
 
 replace github.com/apache/thrift => github.com/apache/thrift v0.23.0
 
