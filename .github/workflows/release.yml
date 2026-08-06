@@ -21,7 +21,7 @@ env:
 
 jobs:
   package-helm:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     steps:
       - name: Determine Tag Value
         run: |
@@ -316,7 +316,7 @@ jobs:
 
   publish-helm:
     needs: [build-cli]
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     steps:
       - name: Determine Tag Value
         run: |
