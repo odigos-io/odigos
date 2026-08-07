@@ -175,10 +175,10 @@ jobs:
 
       - name: Check if Homebrew tap should be updated
         run: |
-          # Pre-releases always update their respective tap (homebrew-odigos-cli-rc)
+          # This recovery branch cannot assume the main-only Homebrew release identity.
           if [ "${{ env.IS_PRERELEASE }}" = "true" ]; then
-            echo "Pre-release detected, will update Homebrew RC tap"
-            echo "SKIP_HOMEBREW_UPDATE=false" >> $GITHUB_ENV
+            echo "Pre-release recovery detected, skipping Homebrew RC tap"
+            echo "SKIP_HOMEBREW_UPDATE=true" >> $GITHUB_ENV
             exit 0
           fi
 
@@ -219,6 +219,7 @@ jobs:
           echo "HOMEBREW_REPO=$HOMEBREW_REPO" >> $GITHUB_ENV
           
       - uses: odigos-io/ci-core/sts@main
+        if: env.SKIP_HOMEBREW_UPDATE != 'true'
         id: sts-goreleaser
         with:
           scope: odigos-io/${{ env.HOMEBREW_REPO }}
