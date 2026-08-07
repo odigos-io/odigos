@@ -29,6 +29,7 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /vm-data
+        {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "traceCorrelationsMetricsStore") | nindent 8 }}
         livenessProbe:
           httpGet:
             path: /health
@@ -48,6 +49,7 @@ spec:
           limits:
             cpu: 500m
             memory: 2Gi
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "traceCorrelationsMetricsStore") | nindent 6 }}
       volumes:
       - name: data
         emptyDir: {}

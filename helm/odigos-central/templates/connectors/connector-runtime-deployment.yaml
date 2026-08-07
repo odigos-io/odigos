@@ -76,8 +76,10 @@ spec:
               port: 8081
             initialDelaySeconds: 15
             periodSeconds: 20
+          {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "connectorRuntime") | nindent 10 }}
           {{- with .Values.cloudConnectors.connectorRuntime.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "connectorRuntime") | nindent 6 }}
 {{- end }}
