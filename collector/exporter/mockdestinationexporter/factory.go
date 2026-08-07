@@ -1,0 +1,106 @@
+package mockdestinationexporter
+
+import (
+	"context"
+	"time"
+
+	"go.opentelemetry.io/collector/config/configoptional"
+	"go.opentelemetry.io/collector/config/configretry"
+	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/exporter"
+
+	"github.com/odigos-io/odigos/collector/exporter/mockdestinationexporter/internal/metadata"
+
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/exporter/exporterhelper"
+)
+
+// NewFactory creates a factory for GCS exporter.
+func NewFactory() exporter.Factory {
+	return exporter.NewFactory(
+		metadata.Type,
+		createDefaultConfig,
+		exporter.WithLogs(createLogsExporter, component.StabilityLevelBeta),
+		exporter.WithTraces(createTracesExporter, component.StabilityLevelBeta),
+		exporter.WithMetrics(createMetricsExporter, component.StabilityLevelBeta))
+}
+
+func createDefaultConfig() component.Config {
+	return &Config{
+		ResponseDuration: time.Millisecond * 100,
+		RejectFraction:   0,
+		Encoding:         EncodingProto,
+		TimeoutConfig:    exporterhelper.NewDefaultTimeoutConfig(),
+		RetryConfig:      configretry.NewDefaultBackOffConfig(),
+		QueueConfig:      configoptional.Some(exporterhelper.NewDefaultQueueConfig()),
+	}
+}
+
+func createLogsExporter(
+	ctx context.Context,
+	set exporter.Settings,
+	cfg component.Config) (exporter.Logs, error) {
+
+	pCfg := cfg.(*Config)
+	gcsExporter, err := NewMockDestinationExporter(pCfg, set)
+	if err != nil {
+		return nil, err
+	}
+
+	return exporterhelper.NewLogs(
+		ctx,
+		set,
+		cfg,
+		gcsExporter.ConsumeLogs,
+		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
+		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
+		exporterhelper.WithRetry(pCfg.RetryConfig),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
+	)
+}
+
+func createTracesExporter(
+	ctx context.Context,
+	set exporter.Settings,
+	cfg component.Config) (exporter.Traces, error) {
+
+	pCfg := cfg.(*Config)
+	gcsExporter, err := NewMockDestinationExporter(pCfg, set)
+	if err != nil {
+		return nil, err
+	}
+
+	return exporterhelper.NewTraces(
+		ctx,
+		set,
+		cfg,
+		gcsExporter.ConsumeTraces,
+		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
+		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
+		exporterhelper.WithRetry(pCfg.RetryConfig),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
+	)
+}
+
+func createMetricsExporter(
+	ctx context.Context,
+	set exporter.Settings,
+	cfg component.Config) (exporter.Metrics, error) {
+
+	pCfg := cfg.(*Config)
+	gcsExporter, err := NewMockDestinationExporter(pCfg, set)
+	if err != nil {
+		return nil, err
+	}
+
+	return exporterhelper.NewMetrics(
+		ctx,
+		set,
+		cfg,
+		gcsExporter.ConsumeMetrics,
+		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
+		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
+		exporterhelper.WithRetry(pCfg.RetryConfig),
+		exporterhelper.WithQueue(pCfg.QueueConfig),
+	)
+}
