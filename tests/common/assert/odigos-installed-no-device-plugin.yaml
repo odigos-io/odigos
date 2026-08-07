@@ -82,26 +82,27 @@ spec:
     - name: data-collection
       securityContext:
         privileged: true
-      env:
-        - name: NODE_NAME
-          valueFrom:
+      # Matched by name rather than as a list, so that env vars added only on some tiers
+      # (ODIGOS_ONPREM_TOKEN on enterprise) don't fail the length check.
+      (env[?name == 'NODE_NAME']):
+        - valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        - name: NODE_IP
-          valueFrom:
+      (env[?name == 'NODE_IP']):
+        - valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        - name: POD_NAME
-          valueFrom:
+      (env[?name == 'POD_NAME']):
+        - valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        - name: GOMEMLIMIT
-          (value != null): true
-        - name: GOMAXPROCS
-          valueFrom:
+      (env[?name == 'GOMEMLIMIT']):
+        - (value != null): true
+      (env[?name == 'GOMAXPROCS']):
+        - valueFrom:
             resourceFieldRef:
               containerName: data-collection
               divisor: "0"
