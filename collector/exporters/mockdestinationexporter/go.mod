@@ -1,4 +1,4 @@
-module github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter
+module github.com/odigos-io/odigos/collector/exporters/mockdestinationexporter
 
 go 1.26.2
 

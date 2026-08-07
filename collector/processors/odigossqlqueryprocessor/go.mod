@@ -1,4 +1,4 @@
-module github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor
+module github.com/odigos-io/odigos/collector/processors/odigossqlqueryprocessor
 
 go 1.26.2
 

@@ -1,4 +1,4 @@
-module odigossqldboperationprocessor
+module github.com/odigos-io/odigos/collector/processors/odigossqldboperationprocessor
 
 go 1.26.2
 

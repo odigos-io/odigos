@@ -1,4 +1,4 @@
-module odigosconditionalattributes
+module github.com/odigos-io/odigos/collector/processors/odigosconditionalattributes
 
 go 1.26.2
 

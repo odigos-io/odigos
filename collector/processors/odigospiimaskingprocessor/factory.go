@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processorhelper"
 
-	"github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor/internal/metadata"
+	"github.com/odigos-io/odigos/collector/processors/odigospiimaskingprocessor/internal/metadata"
 )
 
 //go:generate mdatagen metadata.yaml

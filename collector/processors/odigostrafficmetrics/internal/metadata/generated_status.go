@@ -10,7 +10,7 @@ import (
 
 var (
 	Type      = component.MustNewType("odigostrafficmetrics")
-	ScopeName = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics"
+	ScopeName = "github.com/odigos-io/odigos/collector/processors/odigostrafficmetrics"
 )
 
 const (

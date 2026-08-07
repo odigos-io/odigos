@@ -1,4 +1,4 @@
-module github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor
+module github.com/odigos-io/odigos/collector/processors/odigospiimaskingprocessor
 
 go 1.26.2
 

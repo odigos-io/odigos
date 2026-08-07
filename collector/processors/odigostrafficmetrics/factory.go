@@ -3,7 +3,6 @@ package odigostrafficmetrics
 import (
 	"context"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/xconsumer"
@@ -11,6 +10,8 @@ import (
 	"go.opentelemetry.io/collector/processor/processorhelper"
 	"go.opentelemetry.io/collector/processor/processorhelper/xprocessorhelper"
 	"go.opentelemetry.io/collector/processor/xprocessor"
+
+	"github.com/odigos-io/odigos/collector/processors/odigostrafficmetrics/internal/metadata"
 )
 
 //go:generate mdatagen metadata.yaml

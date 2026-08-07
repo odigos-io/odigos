@@ -10,7 +10,7 @@ import (
 
 var (
 	Type      = component.MustNewType("odigosconditionalattributes")
-	ScopeName = "odigosconditionalattributes"
+	ScopeName = "github.com/odigos-io/odigos/collector/processors/odigosconditionalattributes"
 )
 
 const (

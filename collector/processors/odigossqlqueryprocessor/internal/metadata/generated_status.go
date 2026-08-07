@@ -10,7 +10,7 @@ import (
 
 var (
 	Type      = component.MustNewType("odigossqlquery")
-	ScopeName = "github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor"
+	ScopeName = "github.com/odigos-io/odigos/collector/processors/odigossqlqueryprocessor"
 )
 
 const (

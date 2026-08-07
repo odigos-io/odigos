@@ -10,7 +10,7 @@ import (
 
 var (
 	Type      = component.MustNewType("azureblobstorage")
-	ScopeName = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter"
+	ScopeName = "github.com/odigos-io/odigos/collector/exporters/azureblobstorageexporter"
 )
 
 const (

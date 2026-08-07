@@ -5,7 +5,7 @@ package azureblobstorageexporter
 import (
 	"context"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter/internal/metadata"
+	"github.com/odigos-io/odigos/collector/exporters/azureblobstorageexporter/internal/metadata"
 
 	"go.opentelemetry.io/collector/exporter"
 

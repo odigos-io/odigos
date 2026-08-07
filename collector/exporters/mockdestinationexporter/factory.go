@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter/internal/metadata"
 	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/exporter"
+
+	"github.com/odigos-io/odigos/collector/exporters/mockdestinationexporter/internal/metadata"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"

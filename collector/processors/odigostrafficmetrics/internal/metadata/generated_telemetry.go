@@ -13,11 +13,11 @@ import (
 )
 
 func Meter(settings component.TelemetrySettings) metric.Meter {
-	return settings.MeterProvider.Meter("github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics")
+	return settings.MeterProvider.Meter("github.com/odigos-io/odigos/collector/processors/odigostrafficmetrics")
 }
 
 func Tracer(settings component.TelemetrySettings) trace.Tracer {
-	return settings.TracerProvider.Tracer("github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics")
+	return settings.TracerProvider.Tracer("github.com/odigos-io/odigos/collector/processors/odigostrafficmetrics")
 }
 
 // TelemetryBuilder provides an interface for components to report telemetry

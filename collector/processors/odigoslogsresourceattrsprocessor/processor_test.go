@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor/internal/kube"
+	"github.com/odigos-io/odigos/collector/processors/odigoslogsresourceattrsprocessor/internal/kube"
 )
 
 // ProcessorTestSuite tests the partialK8sAttrsProcessor

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics/internal/metadata"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -15,6 +14,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
+
+	"github.com/odigos-io/odigos/collector/processors/odigostrafficmetrics/internal/metadata"
 )
 
 type dataSizesMetricsProcessor struct {

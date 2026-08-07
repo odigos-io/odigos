@@ -1,4 +1,4 @@
-module github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor
+module github.com/odigos-io/odigos/collector/processors/odigosextractattributeprocessor
 
 go 1.26.2
 

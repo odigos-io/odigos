@@ -1,4 +1,4 @@
-module github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics
+module github.com/odigos-io/odigos/collector/processors/odigostrafficmetrics
 
 go 1.26.2
 

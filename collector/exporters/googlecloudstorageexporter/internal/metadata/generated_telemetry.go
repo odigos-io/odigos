@@ -9,9 +9,9 @@ import (
 )
 
 func Meter(settings component.TelemetrySettings) metric.Meter {
-	return settings.MeterProvider.Meter("github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter")
+	return settings.MeterProvider.Meter("github.com/odigos-io/odigos/collector/exporters/googlecloudstorageexporter")
 }
 
 func Tracer(settings component.TelemetrySettings) trace.Tracer {
-	return settings.TracerProvider.Tracer("github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter")
+	return settings.TracerProvider.Tracer("github.com/odigos-io/odigos/collector/exporters/googlecloudstorageexporter")
 }

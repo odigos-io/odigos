@@ -5,7 +5,7 @@ import (
 
 	"k8s.io/client-go/rest"
 
-	"github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor/internal/kube"
+	"github.com/odigos-io/odigos/collector/processors/odigoslogsresourceattrsprocessor/internal/kube"
 )
 
 // newKubeClient is a factory function that creates a kube.Client.

@@ -1,4 +1,4 @@
-module github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor
+module github.com/odigos-io/odigos/collector/processors/odigoslogsresourceattrsprocessor
 
 go 1.26.2
 

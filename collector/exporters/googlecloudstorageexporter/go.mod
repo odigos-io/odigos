@@ -1,4 +1,4 @@
-module github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter
+module github.com/odigos-io/odigos/collector/exporters/googlecloudstorageexporter
 
 go 1.26.2
 

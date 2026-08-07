@@ -1,4 +1,4 @@
-module github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter
+module github.com/odigos-io/odigos/collector/exporters/azureblobstorageexporter
 
 go 1.26.2
 
