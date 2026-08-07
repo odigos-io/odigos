@@ -42,21 +42,22 @@ spec:
         odigos.io/collector-role: "CLUSTER_GATEWAY"
     spec:
       containers:
-        - env:
-            - name: ODIGOS_VERSION
-              valueFrom:
+        # Matched by name rather than as a list, so that env vars added only on some tiers
+        # (ODIGOS_ONPREM_TOKEN on enterprise) don't fail the length check.
+        - (env[?name == 'ODIGOS_VERSION']):
+            - valueFrom:
                 configMapKeyRef:
                   key: ODIGOS_VERSION
                   name: odigos-deployment
-            - name: POD_NAME
-              valueFrom:
+          (env[?name == 'POD_NAME']):
+            - valueFrom:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.name
-            - name: GOMEMLIMIT
-              (value != null): true
-            - name: GOMAXPROCS
-              valueFrom:
+          (env[?name == 'GOMEMLIMIT']):
+            - (value != null): true
+          (env[?name == 'GOMAXPROCS']):
+            - valueFrom:
                 resourceFieldRef:
                   containerName: gateway
                   divisor: "0"
