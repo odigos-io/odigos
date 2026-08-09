@@ -1,13 +1,16 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: head-sampling-http-nodejs
+  name: head-sampling-http-java
 spec:
   description: |
-    E2E for Odigos head sampling on HTTP route matching with nodejs-community.
-    Uses the prebuilt nodejs-head-sampling image from Artifact Registry, enables
-    sampling dry-run, generates traffic, and asserts odigos.sampling.* attributes
-    on collected spans.
+    E2E for Odigos sampling on HTTP route matching with java-community.
+    java-community does not support agent head sampling, so this scenario relies
+    on gateway tail sampling (dry-run) to stamp odigos.sampling.* attributes.
+    Uses the prebuilt java-head-sampling image from Artifact Registry.
+    GraphQL kubelet probe coverage is omitted (Java app has no /graphql endpoint).
+    HTTP client outbound asserts are omitted until tail-sampling can match url.full
+    (Java client spans lack url.template / url.path).
   skipDelete: true
   steps:
     - name: Prepare destination
@@ -25,12 +28,14 @@ spec:
         - script:
             timeout: 4m
             content: |
-              # pwd is tests/e2e/head-sampling-http-nodejs — chart lives at repo root helm/odigos
+              # pwd is tests/e2e/head-sampling-http-java — chart lives at repo root helm/odigos
+              # Tail sampling enabled (java-community has no agent head sampling). Short aggregation
+              # wait keeps e2e latency low (synthetic-apps tail-sampling uses 2s).
               helm upgrade --install odigos ../../../helm/odigos --create-namespace --namespace odigos-test \
                 --set image.tag=e2e-test \
                 --set nodeSelector."kubernetes\.io/os"=linux \
                 --set sampling.dryRun=true \
-                --set sampling.tailSampling.disabled=true \
+                --set sampling.tailSampling.traceAggregationWaitDuration=2s \
                 --set sampling.k8sHealthProbesSampling.enabled=true
               ../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
@@ -84,7 +89,7 @@ spec:
         - script:
             timeout: 1m
             content: |
-              # Allow InstrumentationConfig / OpAMP to propagate Sampling rules to nodejs-community agents.
+              # Allow Sampling CRs to land in InstrumentationConfigs and gateway tail-sampling config.
               sleep 20
 
     - name: Generate traffic
@@ -96,8 +101,8 @@ spec:
             content: |
               kubectl wait --for=condition=complete job/head-sampling-http-server-curls -n default --timeout=180s || \
                 (kubectl logs job/head-sampling-http-server-curls -n default --tail=200; exit 1)
-              kubectl wait --for=condition=complete job/kubelet-health-probes-query-params-curls -n default --timeout=180s || \
-                (kubectl logs job/kubelet-health-probes-query-params-curls -n default --tail=200; exit 1)
+              # Wait for gateway groupbytrace aggregation (traceAggregationWaitDuration=2s) plus export.
+              sleep 5
 
     - name: Assert sampling span attributes
       try:
@@ -115,9 +120,7 @@ spec:
                 queries/http-server-templatized-exact.yaml
                 queries/http-server-templatized-prefix.yaml
                 queries/http-server-templatized-prefix-nested.yaml
-                queries/http-client-exact.yaml
-                queries/http-client-post.yaml
-                queries/http-client-prefix-templatized.yaml
+                # Client asserts skipped: TS httpClient matching needs url.template; Java has url.full only.
                 queries/kubelet-liveness.yaml
                 queries/kubelet-readiness.yaml
                 queries/kubelet-startup.yaml

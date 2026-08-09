@@ -18,7 +18,7 @@ spec:
     - name: Install Test Apps
       try:
         - apply:
-            file: install-test-apps.yaml
+            file: apply/apply-test-apps.yaml
 
     - name: Install Odigos
       try:
@@ -53,7 +53,7 @@ spec:
       try:
         - assert:
             timeout: 3m
-            file: assert-apps-ready.yaml
+            file: assert/assert-apps-ready.yaml
 
     - name: Instrument namespace
       try:
@@ -80,7 +80,7 @@ spec:
       try:
         - assert:
             timeout: 3m
-            file: assert-apps-ready.yaml
+            file: assert/assert-apps-ready.yaml
         - script:
             timeout: 1m
             content: |
