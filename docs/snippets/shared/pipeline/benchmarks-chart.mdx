@@ -1,13 +1,13 @@
-export const BenchmarksChart = ({ flavor = "enterprise" }) => (
+export const BenchmarksChart = ({ instrumentation }) => (
   <Frame caption="Certified stable capacity by ResourceSizePreset">
     <img
       className="block dark:hidden"
-      src={`/images/shared/pipeline/benchmarks-${flavor}-light.png`}
+      src={`/images/shared/pipeline/${instrumentation}-light.png`}
       alt="Benchmark throughput by ResourceSizePreset"
     />
     <img
       className="hidden dark:block"
-      src={`/images/shared/pipeline/benchmarks-${flavor}-dark.png`}
+      src={`/images/shared/pipeline/${instrumentation}-dark.png`}
       alt="Benchmark throughput by ResourceSizePreset"
     />
   </Frame>
