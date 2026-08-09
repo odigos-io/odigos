@@ -1,0 +1,25 @@
+import { BenchmarksChart } from '/snippets/shared/pipeline/benchmarks-chart.mdx'
+
+export const OtlpHttpBenchmarks = () => (
+  <>
+### Cluster gateway collector, per single collector:
+
+| CPU      | Memory    | Span throughput (MB/second) | Spans/second |
+|----------|-----------|-----------------------------|--------------|
+| **300m** | **300Mi** | **47**                      | **24,500**   |
+| **1,000m** | **600Mi** | **77**                    | **40,000**   |
+| **1,250m** | **850Mi** | **96**                    | **50,000**   |
+| **1,500m** | **2,000Mi** | **106**                 | **55,500**   |
+
+<BenchmarksChart instrumentation="otlp-http" />
+
+### Maximum scaled cluster gateway capacity, for the entire cluster:
+
+| CPU      | Memory    | HPA Maximum Replicas | Span throughput (MB/second) | Spans/second |
+|----------|-----------|----------------------|-----------------------------|--------------|
+| **300m** | **300Mi** | **5**                | **235**                     | **122,500**  |
+| **1,000m** | **600Mi** | **8**              | **614**                     | **320,000**  |
+| **1,250m** | **850Mi** | **12**             | **1,151**                   | **600,000**  |
+| **1,500m** | **2,000Mi** | **15**           | **1,597**                   | **832,500**  |
+  </>
+);

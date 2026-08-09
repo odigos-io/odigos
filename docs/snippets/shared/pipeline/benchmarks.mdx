@@ -1,5 +1,7 @@
 import GettingHelp from '/snippets/shared/getting-help-section.mdx'
 import { BenchmarksChart } from '/snippets/shared/pipeline/benchmarks-chart.mdx'
+import { OtlpHttpBenchmarks } from '/snippets/shared/pipeline/benchmarks-otlp-http.mdx'
+import { EbpfHttpBenchmarks } from '/snippets/shared/pipeline/benchmarks-ebpf-http.mdx'
 
 The [ResourceSizePreset](./configuration#1-using-sizing-configuration) profiles (`size_s`, `size_m`, `size_l`, and `size_xl`) map collector resources and scaling headroom to telemetry volume. Use this page to assist you in picking a preset.
 
@@ -28,35 +30,40 @@ Do note that while span throughput is a measurable metric, there are additional 
 
 Select an instrumentation type to view the matching benchmark results:
 
+{oss ? (
+  <>
+- `otlp/http` — Ruby, PHP, .NET, Node.js, Python, Java, and others
+- `ebpf/http` — Go
+  </>
+) : (
+  <>
 - `otlp/http` — Ruby, PHP, .NET
 - `ebpf/ringbuffer` — Node.js, Python
 - `ebpf/http` — Java, Go, OBI
+  </>
+)}
 
-<Tabs>
-  <Tab title="otlp/http">
+{oss ? (
+  <Tabs>
+    <Tab title="otlp/http">
 
-### Cluster gateway collector, per single collector:
+<OtlpHttpBenchmarks />
 
-| CPU      | Memory    | Span throughput (MB/second) | Spans/second |
-|----------|-----------|-----------------------------|--------------|
-| **300m** | **300Mi** | **47**                      | **24,500**   |
-| **1,000m** | **600Mi** | **77**                    | **40,000**   |
-| **1,250m** | **850Mi** | **96**                    | **50,000**   |
-| **1,500m** | **2,000Mi** | **106**                 | **55,500**   |
+    </Tab>
+    <Tab title="ebpf/http">
 
-<BenchmarksChart instrumentation="otlp-http" />
+<EbpfHttpBenchmarks />
 
-### Maximum scaled cluster gateway capacity, for the entire cluster:
+    </Tab>
+  </Tabs>
+) : (
+  <Tabs>
+    <Tab title="otlp/http">
 
-| CPU      | Memory    | HPA Maximum Replicas | Span throughput (MB/second) | Spans/second |
-|----------|-----------|----------------------|-----------------------------|--------------|
-| **300m** | **300Mi** | **5**                | **235**                     | **122,500**  |
-| **1,000m** | **600Mi** | **8**              | **614**                     | **320,000**  |
-| **1,250m** | **850Mi** | **12**             | **1,151**                   | **600,000**  |
-| **1,500m** | **2,000Mi** | **15**           | **1,597**                   | **832,500**  |
+<OtlpHttpBenchmarks />
 
-  </Tab>
-  <Tab title="ebpf/ringbuffer">
+    </Tab>
+    <Tab title="ebpf/ringbuffer">
 
 ### Cluster gateway collector, per single collector on each node:
 
@@ -78,32 +85,14 @@ Select an instrumentation type to view the matching benchmark results:
 | **1,250m** | **850Mi** | **12**             | **1,185**                   | **618,000**  |
 | **1,500m** | **2,000Mi** | **15**           | **1,755**                   | **915,000**  |
 
-  </Tab>
-  <Tab title="ebpf/http">
+    </Tab>
+    <Tab title="ebpf/http">
 
-### Cluster gateway collector, per single collector on each node:
+<EbpfHttpBenchmarks />
 
-| CPU      | Memory    | Span throughput (MB/second) | Spans/second |
-|----------|-----------|-----------------------------|--------------|
-| **300m** | **300Mi** | **11**                      | **5,500**    |
-| **1,000m** | **600Mi** | **28**                    | **14,500**   |
-| **1,250m** | **850Mi** | **41**                    | **21,500**   |
-| **1,500m** | **2,000Mi** | **51**                  | **26,500**   |
-
-<BenchmarksChart instrumentation="ebpf-http" />
-
-### Maximum scaled cluster gateway capacity, for the entire cluster (assuming nodes are scaled accordingly):
-
-| CPU      | Memory    | HPA Maximum Replicas | Span throughput (MB/second) | Spans/second |
-|----------|-----------|----------------------|-----------------------------|--------------|
-| **300m** | **300Mi** | **5**                | **53**                      | **27,500**   |
-| **1,000m** | **600Mi** | **8**              | **222**                     | **116,000**  |
-| **1,250m** | **850Mi** | **12**             | **495**                     | **258,000**  |
-| **1,500m** | **2,000Mi** | **15**           | **762**                     | **397,500**  |
-
-  </Tab>
-</Tabs>
-
+    </Tab>
+  </Tabs>
+)}
 
 <Note>
 These throughput numbers come from the benchmark cluster described below. Actual limits vary with workload shape, destinations, and cluster size.

@@ -1,0 +1,25 @@
+import { BenchmarksChart } from '/snippets/shared/pipeline/benchmarks-chart.mdx'
+
+export const EbpfHttpBenchmarks = () => (
+  <>
+### Cluster gateway collector, per single collector on each node:
+
+| CPU      | Memory    | Span throughput (MB/second) | Spans/second |
+|----------|-----------|-----------------------------|--------------|
+| **300m** | **300Mi** | **11**                      | **5,500**    |
+| **1,000m** | **600Mi** | **28**                    | **14,500**   |
+| **1,250m** | **850Mi** | **41**                    | **21,500**   |
+| **1,500m** | **2,000Mi** | **51**                  | **26,500**   |
+
+<BenchmarksChart instrumentation="ebpf-http" />
+
+### Maximum scaled cluster gateway capacity, for the entire cluster (assuming nodes are scaled accordingly):
+
+| CPU      | Memory    | HPA Maximum Replicas | Span throughput (MB/second) | Spans/second |
+|----------|-----------|----------------------|-----------------------------|--------------|
+| **300m** | **300Mi** | **5**                | **53**                      | **27,500**   |
+| **1,000m** | **600Mi** | **8**              | **222**                     | **116,000**  |
+| **1,250m** | **850Mi** | **12**             | **495**                     | **258,000**  |
+| **1,500m** | **2,000Mi** | **15**           | **762**                     | **397,500**  |
+  </>
+);
