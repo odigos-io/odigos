@@ -5,19 +5,21 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/extension"
+
+	"github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension/internal/metadata"
 )
 
 // Type is the extension's component type.
-var Type = component.MustNewType("odigos_capabilities")
+var Type = metadata.Type
 
-const stability = component.StabilityLevelDevelopment
+//go:generate mdatagen metadata.yaml
 
 func NewFactory() extension.Factory {
 	return extension.NewFactory(
-		Type,
+		metadata.Type,
 		createDefaultConfig,
 		create,
-		stability,
+		metadata.ExtensionStability,
 	)
 }
 
