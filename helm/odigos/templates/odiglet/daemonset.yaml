@@ -284,7 +284,11 @@ spec:
             - name: exchange-dir
               mountPath: /var/exchange
         - name: data-collection
+          {{- if include "odigos.secretExists" . }}
+          image: '{{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-collector" "Tag" $imageTag) }}'
+          {{- else }}
           image: '{{ template "utils.imageName" (dict "Values" .Values "Component" "collector" "Tag" $imageTag) }}'
+          {{- end }}
           imagePullPolicy: IfNotPresent
           command:
             - /odigosotelcol
@@ -326,6 +330,14 @@ spec:
                 resourceFieldRef:
                   containerName: data-collection
                   resource: limits.cpu
+          {{- if include "odigos.secretExists" . }}
+            # Verified at startup by the enterprise collector's odigos_enterprise_auth extension.
+            - name: ODIGOS_ONPREM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: odigos-pro
+                  key: odigos-onprem-token
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /
