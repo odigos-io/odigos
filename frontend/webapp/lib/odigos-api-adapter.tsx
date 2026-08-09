@@ -450,7 +450,7 @@ const operations: OdigosApiOperations = {
   DELETE_COST_REDUCTION_RULE: { document: DELETE_COST_REDUCTION_RULE },
   UPDATE_LOCAL_UI_SAMPLING_CONFIG: { document: UPDATE_LOCAL_UI_SAMPLING_CONFIG },
 
-  // insights (security) — wire nests under `insights { … }`; kit slots are bare.
+  // insights — wire nests under `insights { … }`; kit slots are bare.
   GET_INSIGHTS_SERVICES: {
     document: GET_INSIGHTS_SERVICES,
     transformResult: (raw: unknown) => (raw as { insights?: { services?: InsightsServiceStat[] } } | null | undefined)?.insights?.services ?? [],

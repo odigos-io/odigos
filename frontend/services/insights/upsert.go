@@ -24,9 +24,8 @@ func (c *Client) UpsertPolicyAndRead(ctx context.Context, policy Policy) (Policy
 			return candidate, nil
 		}
 	}
-	// ListPolicies returns enabled policies only, so a policy that was just
-	// disabled is legitimately absent from the read-back; echo the accepted
-	// request in that case.
+	// Fallback: if the list is briefly stale after upsert, echo the accepted
+	// request for a disabled policy so the UI can still show it.
 	if !policy.Enabled {
 		return policy, nil
 	}

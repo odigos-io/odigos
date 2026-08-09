@@ -2,12 +2,12 @@ export const ROUTES = {
   ROOT: '/',
   ONBOARDING: '/onboarding',
   OVERVIEW: '/overview',
+  INSIGHTS: '/insights',
   SERVICE_MAP: '/service-map',
   PIPELINE_COLLECTORS: '/pipeline-collectors',
   SETTINGS: '/settings',
   SAMPLING: '/sampling',
   TRACE_CORRELATIONS: '/trace-correlations',
-  INSIGHTS: '/insights',
 
   // legacy routes
   CHOOSE_STREAM: '/choose-stream',
