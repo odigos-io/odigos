@@ -43,11 +43,12 @@ type Deps struct {
 	PromAPI                     v1.API
 	CorrelationsPromAPI         v1.API
 	CorrelationsMetricsStoreURL string
-	InsightsClient              *insights.Client
 	ProfileStore                *profiles.ProfileStore
 	ProfilingGate               *profiles.IngestGate
 	ProfilesConsumer            *profiles.OdigosProfilesConsumer
 	OtlpReceiver                *otlp.Receiver
+	// InsightsClient is the client for the Odigos Insights service.
+	InsightsClient *insights.Client
 }
 
 // Bootstrap performs the synchronous startup work: load embedded destination
@@ -146,11 +147,11 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		PromAPI:                     promAPI,
 		CorrelationsPromAPI:         correlationsPromAPI,
 		CorrelationsMetricsStoreURL: correlationsURL,
-		InsightsClient:              insightsClient,
 		ProfileStore:                profileStore,
 		ProfilingGate:               profilingGate,
 		ProfilesConsumer:            profilesConsumer,
 		OtlpReceiver:                otlpReceiver,
+		InsightsClient:              insightsClient,
 	}, nil
 }
 

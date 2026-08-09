@@ -23,8 +23,7 @@ type GatewayConfigOptions struct {
 	// the extension and it's name are platform specific.
 	OdigosConfigExtensionName *string
 
-	// groupbytrace wait duration when tail sampling, service I/O trace
-	// correlations, or insights are active.
+	// groupbytrace wait duration when tail sampling, service I/O trace correlations, or insights are active.
 	TraceAggregationWaitDuration *string
 
 	// Tail sampling v2 processors when tail sampling is active.
@@ -32,12 +31,14 @@ type GatewayConfigOptions struct {
 	SamplingDryRun         bool
 	SamplingSpanAttributes *sampling.SpanSamplingAttributesConfiguration
 
+	// groupbytrace processor with sampling v2 so a trace is assembled at
+	// most once on the gateway, regardless of which consumers asked for it.
+	// Passed as the full config (not a bool) so future toggles on the same
+	// feature can be added without changing this surface.
+	Insights *common.InsightsConfiguration
+
 	// Trace correlations configuration for the serviceio connector (service I/O metrics).
 	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
-
-	// Insights side-channel exporter; when active, groupbytrace is installed
-	// so the exporter sees fully assembled traces.
-	Insights *common.InsightsConfiguration
 }
 
 func GetGatewayConfig(
@@ -114,6 +115,7 @@ func CalculateGatewayConfig(
 	}
 
 	// If tail sampling v2 is enabled, add the tail sampling processor to the traces processors.
+	// Gated strictly on TailSamplingEnabled so insights/service-IO never start dropping spans.
 	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled && gatewayOptions.OdigosConfigExtensionName != nil {
 		processorsNames, processorsConfig := getTailSamplingProcessors(gatewayOptions)
 		for name, cfg := range processorsConfig {

@@ -18,10 +18,11 @@ type Resolver struct {
 	PromAPI                     v1.API
 	CorrelationsPromAPI         v1.API
 	CorrelationsMetricsStoreURL string
-	InsightsClient              *insights.Client
 	// K8sCacheClient is the controller-runtime client that reads from the informer cache (fast, no API round-trip).
 	// Use this in resolvers for read-only access to cluster state.
 	K8sCacheClient client.Client
 	// ProfileStore is the in-memory profile buffer for GraphQL.
 	ProfileStore fecommon.ProfileStoreRef
+	// InsightsClient is the client for the Odigos Insights service.
+	InsightsClient *insights.Client
 }
