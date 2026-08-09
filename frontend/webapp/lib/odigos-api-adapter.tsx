@@ -17,10 +17,10 @@
  */
 
 import React, { type FC, type PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react';
-import { normalizeActionForWire, parseRenamesString } from './action-form-normalization';
 import { useConfig, useCSRF } from '@/hooks';
-import { API, INITIAL_CONTEXT, IS_LOCAL, toPlatformType } from '@/utils';
 import { CenterThis, Loader } from '@odigos/ui-kit/components';
+import { API, INITIAL_CONTEXT, IS_LOCAL, toPlatformType } from '@/utils';
+import { normalizeActionForWire, parseRenamesString } from './action-form-normalization';
 import {
   OdigosApiProvider,
   type CreateDestinationResult,
@@ -41,6 +41,24 @@ import type {
   ExtendedPodInfo,
   FetchedConfig,
   GatewayInfo,
+  InsightsAnomalyIssue,
+  InsightsAnomalySummary,
+  InsightsBaselineClass,
+  InsightsBulkResolveResult,
+  InsightsCatalog,
+  InsightsFinding,
+  InsightsGuardrail,
+  InsightsGuardrailViolation,
+  InsightsLearningPolicy,
+  InsightsObservation,
+  InsightsObservationSummary,
+  InsightsPolicy,
+  InsightsPromoteResult,
+  InsightsServiceStat,
+  InsightsStorageHealth,
+  InsightsSystemSettings,
+  InsightsTransaction,
+  InsightsTransactionStat,
   Namespace,
   NodeCollectoInfo,
   PodInfo,
@@ -84,6 +102,22 @@ import {
   GET_NODE_COLLECTOR_INFO,
   GET_NODE_COLLECTOR_PODS,
   GET_COLLECTOR_POD_INFO,
+  GET_INSIGHTS_SERVICES,
+  GET_INSIGHTS_TRANSACTIONS,
+  GET_INSIGHTS_TRANSACTION,
+  GET_INSIGHTS_BASELINE,
+  GET_INSIGHTS_OBSERVATIONS,
+  GET_INSIGHTS_OBSERVATION,
+  GET_INSIGHTS_FINDINGS,
+  GET_INSIGHTS_ANOMALIES,
+  GET_INSIGHTS_ANOMALY,
+  GET_INSIGHTS_POLICIES,
+  GET_INSIGHTS_LEARNING_POLICIES,
+  GET_INSIGHTS_GUARDRAILS,
+  GET_INSIGHTS_GUARDRAIL_VIOLATIONS,
+  GET_INSIGHTS_CATALOG,
+  GET_INSIGHTS_SYSTEM_SETTINGS,
+  GET_INSIGHTS_STORAGE_HEALTH,
   DESCRIBE_ODIGOS,
   DESCRIBE_SOURCE,
   DOWNLOAD_DIAGNOSE,
@@ -120,6 +154,22 @@ import {
   UPDATE_LOCAL_UI_CONFIG,
   UPDATE_LOCAL_UI_SAMPLING_CONFIG,
   UPDATE_NOISY_OPERATION_RULE,
+  PROMOTE_INSIGHTS_BASELINE_CLASS,
+  RESET_INSIGHTS_BASELINE_CLASS,
+  RESET_INSIGHTS_TRANSACTION_BASELINES,
+  UPSERT_INSIGHTS_POLICY,
+  DELETE_INSIGHTS_POLICY,
+  UPSERT_INSIGHTS_LEARNING_POLICY,
+  DELETE_INSIGHTS_LEARNING_POLICY,
+  RESOLVE_INSIGHTS_ANOMALY,
+  BULK_RESOLVE_INSIGHTS_ANOMALIES,
+  UPSERT_INSIGHTS_GUARDRAIL,
+  DELETE_INSIGHTS_GUARDRAIL,
+  SEED_INSIGHTS_GUARDRAIL,
+  ALLOW_INSIGHTS_GUARDRAIL_VIOLATION,
+  DISMISS_INSIGHTS_GUARDRAIL_VIOLATION,
+  REOPEN_INSIGHTS_GUARDRAIL_VIOLATION,
+  UPDATE_INSIGHTS_SYSTEM_SETTINGS,
 } from '@/graphql';
 
 // The CREATE_DATA_STREAM op is intentionally absent: the standalone backend
@@ -399,6 +449,137 @@ const operations: OdigosApiOperations = {
   UPDATE_COST_REDUCTION_RULE: { document: UPDATE_COST_REDUCTION_RULE },
   DELETE_COST_REDUCTION_RULE: { document: DELETE_COST_REDUCTION_RULE },
   UPDATE_LOCAL_UI_SAMPLING_CONFIG: { document: UPDATE_LOCAL_UI_SAMPLING_CONFIG },
+
+  // insights — wire nests under `insights { … }`; kit slots are bare.
+  GET_INSIGHTS_SERVICES: {
+    document: GET_INSIGHTS_SERVICES,
+    transformResult: (raw: unknown) => (raw as { insights?: { services?: InsightsServiceStat[] } } | null | undefined)?.insights?.services ?? [],
+  },
+  GET_INSIGHTS_TRANSACTIONS: {
+    document: GET_INSIGHTS_TRANSACTIONS,
+    transformResult: (raw: unknown) => (raw as { insights?: { transactions?: InsightsTransactionStat[] } } | null | undefined)?.insights?.transactions ?? [],
+  },
+  GET_INSIGHTS_TRANSACTION: {
+    document: GET_INSIGHTS_TRANSACTION,
+    transformResult: (raw: unknown) => (raw as { insights?: { transaction?: InsightsTransaction } } | null | undefined)?.insights?.transaction,
+  },
+  GET_INSIGHTS_BASELINE: {
+    document: GET_INSIGHTS_BASELINE,
+    transformResult: (raw: unknown) => (raw as { insights?: { baseline?: InsightsBaselineClass[] } } | null | undefined)?.insights?.baseline ?? [],
+  },
+  GET_INSIGHTS_OBSERVATIONS: {
+    document: GET_INSIGHTS_OBSERVATIONS,
+    transformResult: (raw: unknown) => (raw as { insights?: { observations?: InsightsObservationSummary[] } } | null | undefined)?.insights?.observations ?? [],
+  },
+  GET_INSIGHTS_OBSERVATION: {
+    document: GET_INSIGHTS_OBSERVATION,
+    transformResult: (raw: unknown) => (raw as { insights?: { observation?: InsightsObservation } } | null | undefined)?.insights?.observation,
+  },
+  GET_INSIGHTS_FINDINGS: {
+    document: GET_INSIGHTS_FINDINGS,
+    transformResult: (raw: unknown) => (raw as { insights?: { findings?: InsightsFinding[] } } | null | undefined)?.insights?.findings ?? [],
+  },
+  GET_INSIGHTS_ANOMALIES: {
+    document: GET_INSIGHTS_ANOMALIES,
+    transformResult: (raw: unknown) => (raw as { insights?: { anomalies?: InsightsAnomalySummary[] } } | null | undefined)?.insights?.anomalies ?? [],
+  },
+  GET_INSIGHTS_ANOMALY: {
+    document: GET_INSIGHTS_ANOMALY,
+    transformResult: (raw: unknown) => (raw as { insights?: { anomaly?: InsightsAnomalyIssue } } | null | undefined)?.insights?.anomaly,
+  },
+  GET_INSIGHTS_POLICIES: {
+    document: GET_INSIGHTS_POLICIES,
+    transformResult: (raw: unknown) => (raw as { insights?: { policies?: InsightsPolicy[] } } | null | undefined)?.insights?.policies ?? [],
+  },
+  GET_INSIGHTS_LEARNING_POLICIES: {
+    document: GET_INSIGHTS_LEARNING_POLICIES,
+    transformResult: (raw: unknown) => (raw as { insights?: { learningPolicies?: InsightsLearningPolicy[] } } | null | undefined)?.insights?.learningPolicies ?? [],
+  },
+  GET_INSIGHTS_GUARDRAILS: {
+    document: GET_INSIGHTS_GUARDRAILS,
+    transformResult: (raw: unknown) => (raw as { insights?: { guardrails?: InsightsGuardrail[] } } | null | undefined)?.insights?.guardrails ?? [],
+  },
+  GET_INSIGHTS_GUARDRAIL_VIOLATIONS: {
+    document: GET_INSIGHTS_GUARDRAIL_VIOLATIONS,
+    transformResult: (raw: unknown) => (raw as { insights?: { guardrailViolations?: InsightsGuardrailViolation[] } } | null | undefined)?.insights?.guardrailViolations ?? [],
+  },
+  GET_INSIGHTS_CATALOG: {
+    document: GET_INSIGHTS_CATALOG,
+    transformResult: (raw: unknown) => (raw as { insights?: { catalog?: InsightsCatalog } } | null | undefined)?.insights?.catalog,
+  },
+  GET_INSIGHTS_SYSTEM_SETTINGS: {
+    document: GET_INSIGHTS_SYSTEM_SETTINGS,
+    transformResult: (raw: unknown) => (raw as { insights?: { systemSettings?: InsightsSystemSettings } } | null | undefined)?.insights?.systemSettings,
+  },
+  GET_INSIGHTS_STORAGE_HEALTH: {
+    document: GET_INSIGHTS_STORAGE_HEALTH,
+    transformResult: (raw: unknown) => (raw as { insights?: { storageHealth?: InsightsStorageHealth } } | null | undefined)?.insights?.storageHealth,
+  },
+
+  PROMOTE_INSIGHTS_BASELINE_CLASS: {
+    document: PROMOTE_INSIGHTS_BASELINE_CLASS,
+    transformResult: (raw: unknown) => (raw as { promoteInsightsBaselineClass?: InsightsPromoteResult } | null | undefined)?.promoteInsightsBaselineClass,
+  },
+  RESET_INSIGHTS_BASELINE_CLASS: {
+    document: RESET_INSIGHTS_BASELINE_CLASS,
+    transformResult: (raw: unknown) => (raw as { resetInsightsBaselineClass?: boolean } | null | undefined)?.resetInsightsBaselineClass ?? false,
+  },
+  RESET_INSIGHTS_TRANSACTION_BASELINES: {
+    document: RESET_INSIGHTS_TRANSACTION_BASELINES,
+    transformResult: (raw: unknown) => (raw as { resetInsightsTransactionBaselines?: boolean } | null | undefined)?.resetInsightsTransactionBaselines ?? false,
+  },
+  UPSERT_INSIGHTS_POLICY: {
+    document: UPSERT_INSIGHTS_POLICY,
+    transformResult: (raw: unknown) => (raw as { upsertInsightsPolicy?: InsightsPolicy } | null | undefined)?.upsertInsightsPolicy,
+  },
+  DELETE_INSIGHTS_POLICY: {
+    document: DELETE_INSIGHTS_POLICY,
+    transformResult: (raw: unknown) => (raw as { deleteInsightsPolicy?: boolean } | null | undefined)?.deleteInsightsPolicy ?? false,
+  },
+  UPSERT_INSIGHTS_LEARNING_POLICY: {
+    document: UPSERT_INSIGHTS_LEARNING_POLICY,
+    transformResult: (raw: unknown) => (raw as { upsertInsightsLearningPolicy?: InsightsLearningPolicy } | null | undefined)?.upsertInsightsLearningPolicy,
+  },
+  DELETE_INSIGHTS_LEARNING_POLICY: {
+    document: DELETE_INSIGHTS_LEARNING_POLICY,
+    transformResult: (raw: unknown) => (raw as { deleteInsightsLearningPolicy?: boolean } | null | undefined)?.deleteInsightsLearningPolicy ?? false,
+  },
+  RESOLVE_INSIGHTS_ANOMALY: {
+    document: RESOLVE_INSIGHTS_ANOMALY,
+    transformResult: (raw: unknown) => (raw as { resolveInsightsAnomaly?: boolean } | null | undefined)?.resolveInsightsAnomaly ?? false,
+  },
+  BULK_RESOLVE_INSIGHTS_ANOMALIES: {
+    document: BULK_RESOLVE_INSIGHTS_ANOMALIES,
+    transformResult: (raw: unknown) => (raw as { bulkResolveInsightsAnomalies?: InsightsBulkResolveResult } | null | undefined)?.bulkResolveInsightsAnomalies,
+  },
+  UPSERT_INSIGHTS_GUARDRAIL: {
+    document: UPSERT_INSIGHTS_GUARDRAIL,
+    transformResult: (raw: unknown) => (raw as { upsertInsightsGuardrail?: InsightsGuardrail } | null | undefined)?.upsertInsightsGuardrail,
+  },
+  DELETE_INSIGHTS_GUARDRAIL: {
+    document: DELETE_INSIGHTS_GUARDRAIL,
+    transformResult: (raw: unknown) => (raw as { deleteInsightsGuardrail?: boolean } | null | undefined)?.deleteInsightsGuardrail ?? false,
+  },
+  SEED_INSIGHTS_GUARDRAIL: {
+    document: SEED_INSIGHTS_GUARDRAIL,
+    transformResult: (raw: unknown) => (raw as { seedInsightsGuardrail?: boolean } | null | undefined)?.seedInsightsGuardrail ?? false,
+  },
+  ALLOW_INSIGHTS_GUARDRAIL_VIOLATION: {
+    document: ALLOW_INSIGHTS_GUARDRAIL_VIOLATION,
+    transformResult: (raw: unknown) => (raw as { allowInsightsGuardrailViolation?: boolean } | null | undefined)?.allowInsightsGuardrailViolation ?? false,
+  },
+  DISMISS_INSIGHTS_GUARDRAIL_VIOLATION: {
+    document: DISMISS_INSIGHTS_GUARDRAIL_VIOLATION,
+    transformResult: (raw: unknown) => (raw as { dismissInsightsGuardrailViolation?: boolean } | null | undefined)?.dismissInsightsGuardrailViolation ?? false,
+  },
+  REOPEN_INSIGHTS_GUARDRAIL_VIOLATION: {
+    document: REOPEN_INSIGHTS_GUARDRAIL_VIOLATION,
+    transformResult: (raw: unknown) => (raw as { reopenInsightsGuardrailViolation?: boolean } | null | undefined)?.reopenInsightsGuardrailViolation ?? false,
+  },
+  UPDATE_INSIGHTS_SYSTEM_SETTINGS: {
+    document: UPDATE_INSIGHTS_SYSTEM_SETTINGS,
+    transformResult: (raw: unknown) => (raw as { updateInsightsSystemSettings?: InsightsSystemSettings } | null | undefined)?.updateInsightsSystemSettings,
+  },
 };
 
 type AdapterProps = PropsWithChildren;

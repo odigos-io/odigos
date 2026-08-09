@@ -43,6 +43,7 @@ type Deps struct {
 	PromAPI                     v1.API
 	CorrelationsPromAPI         v1.API
 	CorrelationsMetricsStoreURL string
+	// InsightsClient is the client for the Odigos Insights service.
 	InsightsClient              *insights.Client
 	ProfileStore                *profiles.ProfileStore
 	ProfilingGate               *profiles.IngestGate

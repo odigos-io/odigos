@@ -32,12 +32,12 @@ type GatewayConfigOptions struct {
 	SamplingDryRun         bool
 	SamplingSpanAttributes *sampling.SpanSamplingAttributesConfiguration
 
-	// Trace correlations configuration for the serviceio connector (service I/O metrics).
-	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
-
 	// Insights side-channel exporter; when active, groupbytrace is installed
 	// so the exporter sees fully assembled traces.
 	Insights *common.InsightsConfiguration
+
+	// Trace correlations configuration for the serviceio connector (service I/O metrics).
+	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
 }
 
 func GetGatewayConfig(
@@ -114,6 +114,7 @@ func CalculateGatewayConfig(
 	}
 
 	// If tail sampling v2 is enabled, add the tail sampling processor to the traces processors.
+	// Gated strictly on TailSamplingEnabled so insights/service-IO never start dropping spans.
 	if gatewayOptions.TailSamplingEnabled != nil && *gatewayOptions.TailSamplingEnabled && gatewayOptions.OdigosConfigExtensionName != nil {
 		processorsNames, processorsConfig := getTailSamplingProcessors(gatewayOptions)
 		for name, cfg := range processorsConfig {
