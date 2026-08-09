@@ -1491,6 +1491,9 @@
                   },
                   {
                     "type": "string"
+                  },
+                  {
+                    "type": "string"
                   }
                 ],
                 "required": []

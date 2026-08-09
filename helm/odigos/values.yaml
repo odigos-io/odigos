@@ -897,6 +897,8 @@ odiglet:
       - SYS_RESOURCE
       # required for jattach - dynamically instrumenting java processes.
       - SETUID
+      # required for jattach - dynamically instrumenting java processes.
+      - SETGID
 
     # @schema
     # description: |-

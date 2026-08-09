@@ -129,7 +129,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # File capabilities so the binary can use eBPF privileges when run as non-root.
 # Setting this caps as the permitted set (=p) so that the binary can be executed with a sub set of these capabilities
 # if the environment does not require all of them. A sub-set can be configured with helm values.
-RUN setcap cap_bpf,cap_perfmon,cap_sys_admin,cap_sys_ptrace,cap_dac_read_search,cap_ipc_lock,cap_sys_resource,cap_setuid=p ./odiglet
+RUN setcap cap_bpf,cap_perfmon,cap_sys_admin,cap_sys_ptrace,cap_dac_read_search,cap_ipc_lock,cap_sys_resource,cap_setuid,cap_setgid=p ./odiglet
 RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi
