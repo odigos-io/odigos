@@ -8,11 +8,8 @@ query: |
     span.spanAttributes."odigos.sampling.category" == 'noise' &&
     span.spanAttributes."odigos.sampling.dry_run" == `true` &&
     span.spanAttributes."odigos.sampling.trace.deciding_rule.keep_percentage" == `10` &&
-    (
-      span.spanAttributes."url.path" == '/http-match/exact/post-target' ||
-      contains(span.spanAttributes."http.url", '/http-match/exact/post-target') ||
-      contains(span.spanAttributes."url.full", '/http-match/exact/post-target')
-    )
+    span.spanAttributes."http.url" &&
+    contains(span.spanAttributes."http.url", '/http-match/exact/post-target')
   ]) > `0`
 expected:
   minimum: 1
