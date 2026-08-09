@@ -15,4 +15,5 @@ export * from './trace-correlations';
 export * from './source';
 export * from './tokens';
 export * from './sampling';
+export * from './insights';
 export * from './workload';
