@@ -47,6 +47,7 @@ import type {
   ProfilingSlots,
   SamplingRules,
   SamplingRulesK8sHealthConfig,
+  InsightsPolicy,
   ServiceMapSources,
   SourceProfilingResult,
   TestConnectionResponse,
@@ -71,6 +72,7 @@ import {
   GET_POTENTIAL_DESTINATIONS,
   GET_PROFILING_SLOTS,
   GET_SAMPLING_RULES,
+  GET_INSIGHTS_POLICIES,
   GET_SERVICE_MAP,
   GET_SOURCE,
   GET_SOURCE_LIBRARIES,
@@ -101,6 +103,7 @@ import {
   DELETE_HIGHLY_RELEVANT_OPERATION_RULE,
   DELETE_INSTRUMENTATION_RULE,
   DELETE_NOISY_OPERATION_RULE,
+  DELETE_INSIGHTS_POLICY,
   ENABLE_SOURCE_PROFILING,
   PERSIST_NAMESPACES,
   PERSIST_SOURCES,
@@ -120,6 +123,7 @@ import {
   UPDATE_LOCAL_UI_CONFIG,
   UPDATE_LOCAL_UI_SAMPLING_CONFIG,
   UPDATE_NOISY_OPERATION_RULE,
+  UPSERT_INSIGHTS_POLICY,
 } from '@/graphql';
 
 // The CREATE_DATA_STREAM op is intentionally absent: the standalone backend
@@ -399,6 +403,26 @@ const operations: OdigosApiOperations = {
   UPDATE_COST_REDUCTION_RULE: { document: UPDATE_COST_REDUCTION_RULE },
   DELETE_COST_REDUCTION_RULE: { document: DELETE_COST_REDUCTION_RULE },
   UPDATE_LOCAL_UI_SAMPLING_CONFIG: { document: UPDATE_LOCAL_UI_SAMPLING_CONFIG },
+
+  // insights (detection policies) — kit slots expect bare arrays / entities
+  // after transformResult unwraps the `{ insights: { … } }` / mutation envelope.
+  GET_INSIGHTS_POLICIES: {
+    document: GET_INSIGHTS_POLICIES,
+    transformResult: (raw): InsightsPolicy[] => {
+      const env = raw as { insights?: { policies?: InsightsPolicy[] } } | null | undefined;
+      return env?.insights?.policies ?? [];
+    },
+  },
+  UPSERT_INSIGHTS_POLICY: {
+    document: UPSERT_INSIGHTS_POLICY,
+    transformResult: (raw): InsightsPolicy | undefined =>
+      (raw as { upsertInsightsPolicy?: InsightsPolicy } | null | undefined)?.upsertInsightsPolicy,
+  },
+  DELETE_INSIGHTS_POLICY: {
+    document: DELETE_INSIGHTS_POLICY,
+    transformResult: (raw): boolean =>
+      !!(raw as { deleteInsightsPolicy?: boolean } | null | undefined)?.deleteInsightsPolicy,
+  },
 };
 
 type AdapterProps = PropsWithChildren;
