@@ -8,17 +8,17 @@ The [ResourceSizePreset](./configuration#1-using-sizing-configuration) profiles 
 Span throughput is the metric we use for benchmarking and estimating the resources needed to operate Odigos.
 
 To calculate the total span throughput (bytes/second), you can either:
-- Estimate your monthly span volume in bytes, which can often be inferred from your existing observability tools. If you only know the number of spans, multiply it by the average span size in bytes to estimate the total volume. Then convert the monthly volume to bytes per second.
+- Estimate your monthly span volume in bytes, which can often be inferred from your existing observability tools. If you only know the number of spans, multiply it by the average span size in bytes to estimate the total volume. Then convert the monthly volume to bytes per second.  
 - View the span throughput in the Odigos UI under "collectors pipeline". 
 
 <Info>
 Collector pipeline UI requires enabling the [Odigos Own Metrics](./odigos-own-metrics) feature.
 </Info>
 
-Note that while **total span throughput** is the primary metric for determining the appropriate Odigos preset size, additional factors can affect the maximum span throughput your Odigos deployment can handle:
+Note that while **total span throughput** is the primary metric for determining the appropriate Odigos preset size, additional factors can affect the maximum span throughput your Odigos deployment can handle:  
 
 - **Number of instrumented pods** - each instrumented pod consumes a small amount of additional static resources in the node collector.
-- **Pipeline features** - actions and destinations consume additional collector CPU and memory resources.
+- **Pipeline features** - actions and destinations consume additional collector CPU and memory resources.  
 
 ## Cluster preset vs. total span throughput
 
@@ -41,14 +41,14 @@ The cluster gateway is a Deployment that receives telemetry from node collectors
 
 The node collector is a DaemonSet (one pod per node) that receives telemetry from apps on that node and forwards it to the cluster gateway.
 
-<NodeCollectorChart instrumentation="enterprise" />
+<NodeCollectorChart instrumentation="community" />
 
 | Size      | spans/s    | span throughput (MB/second) |
 |-----------|-----------:|----------------------------:|
-| `size_s`  | **18,000** | **34.5**  |
-| `size_m`  | **37,000** | **71.0**  |
-| `size_l`  | **51,500** | **98.8**  |
-| `size_xl` | **60,000** | **115.1** |
+| `size_s`  | **23,500** | **45.1**  |
+| `size_m`  | **35,000** | **67.1**  |
+| `size_l`  | **49,500** | **94.9**  |
+| `size_xl` | **54,500** | **104.5** |
 
 ### Maximum scaled cluster gateway capacity
 
