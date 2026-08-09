@@ -99,7 +99,8 @@ jobs:
           - "data-streams"
           - "mount-method"
           - "argo-rollouts"
-          - "head-sampling-http"
+          - "head-sampling-http-nodejs"
+          - "head-sampling-http-python"
         include:
           - kube-version: "1.21.12"
             # use 1.21.12 for systemd cgroups compatibility changes in kind 0.13 https://github.com/kubernetes-sigs/kind/releases/tag/v0.13.0

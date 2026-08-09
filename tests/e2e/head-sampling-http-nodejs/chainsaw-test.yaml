@@ -1,7 +1,7 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  name: head-sampling-http
+  name: head-sampling-http-nodejs
 spec:
   description: |
     E2E for Odigos head sampling on HTTP route matching with nodejs-community.
@@ -25,7 +25,7 @@ spec:
         - script:
             timeout: 4m
             content: |
-              # pwd is tests/e2e/head-sampling-http — chart lives at repo root helm/odigos
+              # pwd is tests/e2e/head-sampling-http-nodejs — chart lives at repo root helm/odigos
               helm upgrade --install odigos ../../../helm/odigos --create-namespace --namespace odigos-test \
                 --set image.tag=e2e-test \
                 --set nodeSelector."kubernetes\.io/os"=linux \
@@ -120,19 +120,37 @@ spec:
                 queries/kubelet-readiness.yaml
                 queries/kubelet-startup.yaml
               )
+              last_failed=""
+              last_failed_output=""
               while true; do
                 ok=true
                 for q in "${queries[@]}"; do
-                  if ! ../../common/simple_trace_db_query_runner.sh "$q"; then
+                  output=""
+                  if ! output=$(../../common/simple_trace_db_query_runner.sh "$q" 2>&1); then
                     ok=false
+                    last_failed="$q"
+                    last_failed_output="$output"
                     break
                   fi
                 done
                 if [ "$ok" = true ]; then
+                  echo "all sampling span assertions passed"
                   exit 0
                 fi
                 if [ "$(date +%s)" -ge "$deadline" ]; then
                   echo "sampling span assertions did not pass within timeout" >&2
+                  echo "first failing assertion: ${last_failed}" >&2
+                  echo "--- ${last_failed} output ---" >&2
+                  echo "${last_failed_output}" >&2
+                  echo "--- status of all queries ---" >&2
+                  for q in "${queries[@]}"; do
+                    if out=$(../../common/simple_trace_db_query_runner.sh "$q" 2>&1); then
+                      echo "PASS: $q" >&2
+                    else
+                      echo "FAIL: $q" >&2
+                      echo "$out" >&2
+                    fi
+                  done
                   exit 1
                 fi
                 sleep 2
@@ -140,10 +158,21 @@ spec:
       catch:
         - script:
             content: |
-              echo "=== Verbose query dumps ==="
+              echo "=== Per-query pass/fail summary ==="
               for q in queries/*.yaml; do
-                echo "--- $q ---"
-                ../../common/simple_trace_db_query_runner.sh "$q" --verbose || true
+                if out=$(../../common/simple_trace_db_query_runner.sh "$q" 2>&1); then
+                  echo "PASS: $q"
+                else
+                  echo "FAIL: $q"
+                  echo "$out"
+                fi
+              done
+              echo "=== Verbose dumps for failing queries ==="
+              for q in queries/*.yaml; do
+                if ! ../../common/simple_trace_db_query_runner.sh "$q" >/dev/null 2>&1; then
+                  echo "--- $q ---"
+                  ../../common/simple_trace_db_query_runner.sh "$q" --verbose || true
+                fi
               done
               echo "=== Sampling CRs ==="
               kubectl get sampling -n odigos-test -o yaml || true

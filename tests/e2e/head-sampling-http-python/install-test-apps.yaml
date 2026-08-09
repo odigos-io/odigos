@@ -1,0 +1,262 @@
+# Python head-sampling-http app (python-community instrumentation).
+# Image: us-central1-docker.pkg.dev/odigos-cloud/components/python-head-sampling:v0.0.1
+# (built from tests/common/services/python-head-sampling).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: head-sampling
+  namespace: default
+  labels:
+    app: head-sampling
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: head-sampling
+  template:
+    metadata:
+      labels:
+        app: head-sampling
+    spec:
+      containers:
+        - name: head-sampling
+          image: us-central1-docker.pkg.dev/odigos-cloud/components/python-head-sampling:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: head-sampling
+  namespace: default
+spec:
+  selector:
+    app: head-sampling
+  ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: head-sampling-http-server
+  namespace: default
+  labels:
+    app: head-sampling-http-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: head-sampling-http-server
+  template:
+    metadata:
+      labels:
+        app: head-sampling-http-server
+    spec:
+      containers:
+        - name: head-sampling-http-server
+          image: us-central1-docker.pkg.dev/odigos-cloud/components/python-head-sampling:v0.0.1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HTTP_MATCH_ENABLE_ROUTES
+              value: "true"
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: head-sampling-http-server
+  namespace: default
+spec:
+  selector:
+    app: head-sampling-http-server
+  ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: head-sampling-http-client
+  namespace: default
+  labels:
+    app: head-sampling-http-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: head-sampling-http-client
+  template:
+    metadata:
+      labels:
+        app: head-sampling-http-client
+    spec:
+      containers:
+        - name: head-sampling-http-client
+          image: us-central1-docker.pkg.dev/odigos-cloud/components/python-head-sampling:v0.0.1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HTTP_MATCH_ENABLE_ROUTES
+              value: "false"
+            - name: HTTP_MATCH_PERIODIC_OUTBOUND
+              value: "true"
+            - name: HTTP_MATCH_PEER_BASE_URL
+              value: "http://head-sampling-http-server:8080"
+            - name: HTTP_MATCH_EXACT_PEER_BASE_URL
+              value: "http://head-sampling-http-server:8080"
+            - name: HTTP_MATCH_OUTBOUND_INTERVAL_MS
+              value: "10000"
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubelet-health-probes
+  namespace: default
+  labels:
+    app: kubelet-health-probes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubelet-health-probes
+  template:
+    metadata:
+      labels:
+        app: kubelet-health-probes
+    spec:
+      containers:
+        - name: kubelet-health-probes
+          image: us-central1-docker.pkg.dev/odigos-cloud/components/python-head-sampling:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SIMULATE_STARTUP_DELAY
+              value: "true"
+          startupProbe:
+            httpGet:
+              path: /healthz/startup
+              port: 8080
+            periodSeconds: 1
+            failureThreshold: 20
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: 8080
+            periodSeconds: 2
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubelet-health-probes
+  namespace: default
+spec:
+  selector:
+    app: kubelet-health-probes
+  ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubelet-health-probes-query-params
+  namespace: default
+  labels:
+    app: kubelet-health-probes-query-params
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubelet-health-probes-query-params
+  template:
+    metadata:
+      labels:
+        app: kubelet-health-probes-query-params
+    spec:
+      containers:
+        - name: kubelet-health-probes-query-params
+          image: us-central1-docker.pkg.dev/odigos-cloud/components/python-head-sampling:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SIMULATE_STARTUP_DELAY
+              value: "true"
+          startupProbe:
+            httpGet:
+              path: /graphql?query=query%20HealthCheckStartup%7B__typename%7D
+              port: 8080
+            periodSeconds: 1
+            failureThreshold: 20
+          readinessProbe:
+            httpGet:
+              path: /graphql?query=query%20HealthCheckReady%7B__typename%7D&operationName=HealthCheckReady
+              port: 8080
+            periodSeconds: 2
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /graphql?query=query%20HealthCheckLive%7B__typename%7D&query=query%20HealthCheckLive%7Bstatus%7D
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubelet-health-probes-query-params
+  namespace: default
+spec:
+  selector:
+    app: kubelet-health-probes-query-params
+  ports:
+    - protocol: TCP
+      port: 8080

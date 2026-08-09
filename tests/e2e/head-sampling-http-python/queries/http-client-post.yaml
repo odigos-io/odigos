@@ -1,0 +1,18 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: Client POST /http-match/exact/post-target sampling (10% dry-run)
+query: |
+  length([?
+    span.serviceName == 'head-sampling-http-client' &&
+    span.kind == 'client' &&
+    span.spanAttributes."odigos.sampling.category" == 'noise' &&
+    span.spanAttributes."odigos.sampling.dry_run" == `true` &&
+    span.spanAttributes."odigos.sampling.trace.deciding_rule.keep_percentage" == `10` &&
+    (
+      span.spanAttributes."url.path" == '/http-match/exact/post-target' ||
+      contains(span.spanAttributes."http.url", '/http-match/exact/post-target') ||
+      contains(span.spanAttributes."url.full", '/http-match/exact/post-target')
+    )
+  ]) > `0`
+expected:
+  minimum: 1
