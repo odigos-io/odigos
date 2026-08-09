@@ -1,0 +1,17 @@
+{{- if not .Values.disableAutoRecommendations }}
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: enable-url-templatization
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/hook: post-install
+spec:
+  actionName: URL Templatization
+  notes: |
+    This action was applied automatically by the Odigos Helm chart with a post-install hook.
+    It is used to templatize URLs in spans to make them more readable.
+  signals:
+    - TRACES
+  urlTemplatization: {}
+{{- end }}

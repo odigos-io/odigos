@@ -1,0 +1,19 @@
+{{- if not .Values.disableAutoRecommendations }}
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: enable-infer-db-attributes
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/hook: post-install
+spec:
+  actionName: Infer DB Attributes
+  notes: |
+    This action was applied automatically by the Odigos Helm chart with a post-install hook.
+    It is used to infer database attributes from the source,
+    e.g. instrumentations that record only query text but lack opeartion or collection names,
+    will hueristically infer these attributes to make spans more useful.
+  signals:
+    - TRACES
+  inferDbAttributes: {}
+{{- end }}
