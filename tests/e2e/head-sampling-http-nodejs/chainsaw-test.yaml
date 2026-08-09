@@ -104,6 +104,8 @@ spec:
         - script:
             timeout: 3m
             content: |
+              # chainsaw invokes scripts with /usr/bin/sh (dash on Ubuntu CI); use bash for pipefail/arrays
+              bash <<'EOF'
               set -euo pipefail
               deadline=$(($(date +%s) + 170))
               queries=(
@@ -155,6 +157,7 @@ spec:
                 fi
                 sleep 2
               done
+              EOF
       catch:
         - script:
             content: |
