@@ -183,7 +183,7 @@ COPY --from=agents-builder /instrumentations/ .
 
 # make sure we run as non root user
 # this is required when this container is added to a pod that has runAsNonRoot: true
-USER 1000:1000
+USER 65532:65532
 
 ######### RHEL Odiglet #########
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS rhel
@@ -225,5 +225,5 @@ WORKDIR /instrumentations/
 COPY --from=agents-builder /instrumentations/ .
 # make sure we run as non root user
 # this is required when this container is added to a pod that has runAsNonRoot: true
-USER 1000:1000
+USER 65532:65532
 CMD ["/root/odiglet"]

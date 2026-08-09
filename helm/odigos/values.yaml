@@ -1086,8 +1086,13 @@ odiglet:
   # @schema
   # description: |-
   #   runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.
-  #   when true, each container uses the non-root USER declared in its image (e.g. 1000 for odiglet).
-  #   by default (false), all containers are forced to run as UID/GID 0, matching historical behavior.
+  #   when true, each container uses the non-root USER declared in its image (e.g. 65532).
+  #   by default (false), all containers are forced to run as UID/GID 0.
+  #
+  #   This setting only changes the UID the containers run as. It does not change the Linux capabilities
+  #   granted to odiglet (those are controlled separately via unPrivileged and the capabilities lists).
+  #   Operations relying on root's implicit filesystem access can fail as non-root:
+  #   e.g. writing agent files to root-owned host paths (/var/odigos).
   # @schema
   runAsNonRoot: false
 

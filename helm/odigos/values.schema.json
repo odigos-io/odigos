@@ -1598,7 +1598,7 @@
         },
         "runAsNonRoot": {
           "default": "false",
-          "description": "runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.\nwhen true, each container uses the non-root USER declared in its image (e.g. 1000 for odiglet).\nby default (false), all containers are forced to run as UID/GID 0, matching historical behavior.",
+          "description": "runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.\nwhen true, each container uses the non-root USER declared in its image (e.g. 65532).\nby default (false), all containers are forced to run as UID/GID 0.\n\nThis setting only changes the UID the containers run as. It does not change the Linux capabilities\ngranted to odiglet (those are controlled separately via unPrivileged and the capabilities lists).\nOperations relying on root's implicit filesystem access can fail as non-root:\ne.g. writing agent files to root-owned host paths (/var/odigos).",
           "required": [],
           "title": "runAsNonRoot"
         },
