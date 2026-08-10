@@ -55,6 +55,7 @@ import type {
   InsightsPolicy,
   InsightsPromoteResult,
   InsightsServiceStat,
+  InsightsServiceProfile,
   InsightsStorageHealth,
   InsightsSystemSettings,
   InsightsTransaction,
@@ -103,6 +104,7 @@ import {
   GET_NODE_COLLECTOR_PODS,
   GET_COLLECTOR_POD_INFO,
   GET_INSIGHTS_SERVICES,
+  GET_INSIGHTS_SERVICE_PROFILE,
   GET_INSIGHTS_TRANSACTIONS,
   GET_INSIGHTS_TRANSACTION,
   GET_INSIGHTS_BASELINE,
@@ -454,6 +456,10 @@ const operations: OdigosApiOperations = {
   GET_INSIGHTS_SERVICES: {
     document: GET_INSIGHTS_SERVICES,
     transformResult: (raw: unknown) => (raw as { insights?: { services?: InsightsServiceStat[] } } | null | undefined)?.insights?.services ?? [],
+  },
+  GET_INSIGHTS_SERVICE_PROFILE: {
+    document: GET_INSIGHTS_SERVICE_PROFILE,
+    transformResult: (raw: unknown) => (raw as { insights?: { serviceProfile?: InsightsServiceProfile } } | null | undefined)?.insights?.serviceProfile,
   },
   GET_INSIGHTS_TRANSACTIONS: {
     document: GET_INSIGHTS_TRANSACTIONS,

@@ -58,6 +58,14 @@ type ServiceStat struct {
 	LastSeen         string `json:"last_seen"`
 }
 
+type ServiceProfile struct {
+	Namespace string   `json:"namespace"`
+	Service   string   `json:"service"`
+	Callers   []string `json:"callers"`
+	Callees   []string `json:"callees"`
+	Egress    []string `json:"egress"`
+}
+
 type TransactionStat struct {
 	ID          int64           `json:"id"`
 	Service     string          `json:"service"`

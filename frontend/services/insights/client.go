@@ -42,6 +42,21 @@ func (c *Client) ListServices(ctx context.Context) ([]ServiceStat, error) {
 	return doList[ServiceStat](ctx, c, http.MethodGet, c.apiEndpoint("services"), nil)
 }
 
+func (c *Client) GetServiceProfile(ctx context.Context, namespace, service string) (*ServiceProfile, error) {
+	endpoint := c.apiEndpoint("services", "profile")
+	query := endpoint.Query()
+	if strings.TrimSpace(namespace) != "" {
+		query.Set("namespace", namespace)
+	}
+	query.Set("service", service)
+	endpoint.RawQuery = query.Encode()
+	var result ServiceProfile
+	if err := c.do(ctx, http.MethodGet, endpoint, nil, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *Client) ListTransactions(ctx context.Context, params ListTransactionsParams) ([]TransactionStat, error) {
 	endpoint := c.apiEndpoint("transactions")
 	query := endpoint.Query()
