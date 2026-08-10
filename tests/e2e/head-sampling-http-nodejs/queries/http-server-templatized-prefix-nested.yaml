@@ -1,0 +1,15 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: Root server spans for GET /http-match/tprefix/.../items/:itemId (templatized prefix nested, 50%)
+query: |
+  length([?
+    span.serviceName == 'head-sampling-http-server' &&
+    !parent &&
+    span.kind == 'server' &&
+    contains(span.spanAttributes."http.route", '/items/') &&
+    span.spanAttributes."odigos.sampling.category" == 'noise' &&
+    span.spanAttributes."odigos.sampling.dry_run" == `true` &&
+    span.spanAttributes."odigos.sampling.trace.deciding_rule.keep_percentage" == `50`
+  ]) > `0`
+expected:
+  count: 20

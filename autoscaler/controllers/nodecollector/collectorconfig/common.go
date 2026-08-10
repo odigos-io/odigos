@@ -9,6 +9,7 @@ import (
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common/consts"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
@@ -211,6 +212,7 @@ func commonExtensions(tier common.OdigosTier) config.GenericMap {
 		pprofExtensionName: config.GenericMap{
 			"endpoint": "0.0.0.0:1777",
 		},
+		consts.OdigosCapabilitiesExtensionType: config.GenericMap{},
 	}
 
 	if tier.IsEnterprise() {
@@ -222,7 +224,7 @@ func commonExtensions(tier common.OdigosTier) config.GenericMap {
 
 // commonService returns the service block listing the extensions commonExtensions defined.
 func commonService(tier common.OdigosTier) config.Service {
-	extensions := []string{healthCheckExtensionName, pprofExtensionName}
+	extensions := []string{healthCheckExtensionName, pprofExtensionName, consts.OdigosCapabilitiesExtensionType}
 
 	if tier.IsEnterprise() {
 		extensions = append(extensions, odigosEnterpriseAuthExtensionName)

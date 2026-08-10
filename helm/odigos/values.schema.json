@@ -1494,6 +1494,12 @@
                   },
                   {
                     "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
                   }
                 ],
                 "required": []
@@ -1596,6 +1602,12 @@
           "required": [],
           "title": "resources"
         },
+        "runAsNonRoot": {
+          "default": "false",
+          "description": "runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.\nwhen true, each container uses the non-root USER declared in its image (e.g. 65532).\nby default (false), all containers are forced to run as UID/GID 0.\n\nThis setting only changes the UID the containers run as. It does not change the Linux capabilities\ngranted to odiglet (those are controlled separately via unPrivileged and the capabilities lists).\nOperations relying on root's implicit filesystem access can fail as non-root:\ne.g. writing agent files to root-owned host paths (/var/odigos).",
+          "required": [],
+          "title": "runAsNonRoot"
+        },
         "tolerations": {
           "description": "This toleration with 'Exists' operator and no key/effect specified\nwill match ALL taints, allowing pods to be scheduled on any node\nregardless of its taints (including master/control-plane nodes)",
           "items": {
@@ -1628,7 +1640,7 @@
         },
         "unPrivileged": {
           "default": "false",
-          "description": "run the odiglet container without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
+          "description": "run the odiglet pod without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
           "required": [],
           "title": "unPrivileged"
         }

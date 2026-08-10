@@ -99,23 +99,19 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
 	otelconftelemetry "go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
-	collector "go.opentelemetry.io/ebpf-profiler/collector"
 
 	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
 	serviceioconnector "github.com/odigos-io/odigos/collector/connectors/serviceioconnector"
+	odigoscapabilitiesextension "github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension"
 	odigosconfigk8sextension "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension"
 	odigosextractattributeprocessor "github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor"
 	odigoslogsresourceattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor"
 	odigospiimaskingprocessor "github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor"
 	odigossqlqueryprocessor "github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor"
 	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
-	odigosprofilesprocessor "github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor"
-	odigossymbolizeprocessor "github.com/odigos-io/odigos/collector/processors/odigossymbolizeprocessor"
 	odigostailsamplingprocessor "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor"
 	odigostracefilterprocessor "github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor"
 	odigostracestateprocessor "github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor"
-	odigosvmprofileattrsprocessor "github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor"
-	odigosebpfreceiver "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
 )
 
 type aliasProvider interface{ DeprecatedAlias() component.Type }
@@ -149,21 +145,23 @@ func components() (otelcol.Factories, error) {
 		googleclientauthextension.NewFactory(),
 		k8sleaderelector.NewFactory(),
 		odigosconfigk8sextension.NewFactory(),
+		odigoscapabilitiesextension.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
 	}
 	factories.ExtensionModules = makeModulesMap(factories.Extensions, map[component.Type]string{
-		zpagesextension.NewFactory().Type():           "go.opentelemetry.io/collector/extension/zpagesextension v0.151.0",
-		memorylimiterextension.NewFactory().Type():    "go.opentelemetry.io/collector/extension/memorylimiterextension v0.151.0",
-		healthcheckextension.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.151.0",
-		pprofextension.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.151.0",
-		basicauthextension.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.151.0",
-		bearertokenauthextension.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.151.0",
-		oauth2clientauthextension.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.151.0",
-		googleclientauthextension.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.151.0",
-		k8sleaderelector.NewFactory().Type():          "github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.151.0",
-		odigosconfigk8sextension.NewFactory().Type():  "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.151.0",
+		zpagesextension.NewFactory().Type():             "go.opentelemetry.io/collector/extension/zpagesextension v0.151.0",
+		memorylimiterextension.NewFactory().Type():      "go.opentelemetry.io/collector/extension/memorylimiterextension v0.151.0",
+		healthcheckextension.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.151.0",
+		pprofextension.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.151.0",
+		basicauthextension.NewFactory().Type():          "github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.151.0",
+		bearertokenauthextension.NewFactory().Type():    "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.151.0",
+		oauth2clientauthextension.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.151.0",
+		googleclientauthextension.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.151.0",
+		k8sleaderelector.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.151.0",
+		odigosconfigk8sextension.NewFactory().Type():    "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.151.0",
+		odigoscapabilitiesextension.NewFactory().Type(): "github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension v0.151.0",
 	})
 
 	factories.Receivers, err = otelcol.MakeFactoryMap[receiver.Factory](
@@ -174,8 +172,6 @@ func components() (otelcol.Factories, error) {
 		k8sclusterreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
 		prometheusreceiver.NewFactory(),
-		odigosebpfreceiver.NewFactory(),
-		collector.NewFactory(),
 		journaldreceiver.NewFactory(),
 	)
 	if err != nil {
@@ -189,8 +185,6 @@ func components() (otelcol.Factories, error) {
 		k8sclusterreceiver.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.151.0",
 		hostmetricsreceiver.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.151.0",
 		prometheusreceiver.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.151.0",
-		odigosebpfreceiver.NewFactory().Type():   "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.151.0",
-		collector.NewFactory().Type():            "go.opentelemetry.io/ebpf-profiler v0.0.202614",
 		journaldreceiver.NewFactory().Type():     "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver v0.151.0",
 	})
 
@@ -316,9 +310,6 @@ func components() (otelcol.Factories, error) {
 		odigoslogsresourceattrsprocessor.NewFactory(),
 		odigosextractattributeprocessor.NewFactory(),
 		odigostracefilterprocessor.NewFactory(),
-		odigosprofilesprocessor.NewFactory(),
-		odigosvmprofileattrsprocessor.NewFactory(),
-		odigossymbolizeprocessor.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -355,9 +346,6 @@ func components() (otelcol.Factories, error) {
 		odigoslogsresourceattrsprocessor.NewFactory().Type(): "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.151.0",
 		odigosextractattributeprocessor.NewFactory().Type():  "github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor v0.151.0",
 		odigostracefilterprocessor.NewFactory().Type():       "github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.151.0",
-		odigosprofilesprocessor.NewFactory().Type():          "github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor v0.151.0",
-		odigosvmprofileattrsprocessor.NewFactory().Type():    "github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor v0.151.0",
-		odigossymbolizeprocessor.NewFactory().Type():         "github.com/odigos-io/odigos/collector/processors/odigossymbolizeprocessor v0.151.0",
 	})
 
 	factories.Connectors, err = otelcol.MakeFactoryMap[connector.Factory](
