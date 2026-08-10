@@ -300,6 +300,20 @@ export const GET_INSIGHTS_SERVICES = gql`
   }
 `;
 
+export const GET_INSIGHTS_SERVICE_PROFILE = gql`
+  query GetInsightsServiceProfile($namespace: String, $service: String!) {
+    insights {
+      serviceProfile(namespace: $namespace, service: $service) {
+        namespace
+        service
+        callers
+        callees
+        egress
+      }
+    }
+  }
+`;
+
 export const GET_INSIGHTS_TRANSACTIONS = gql`
   query GetInsightsTransactions($namespace: String, $service: String, $kind: InsightsTransactionKind) {
     insights {

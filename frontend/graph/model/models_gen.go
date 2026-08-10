@@ -722,6 +722,7 @@ type HTTPPayloadCollectionInput struct {
 
 type Insights struct {
 	Services            []*InsightsServiceStat        `json:"services"`
+	ServiceProfile      *InsightsServiceProfile       `json:"serviceProfile"`
 	Transactions        []*InsightsTransactionStat    `json:"transactions"`
 	Transaction         *InsightsTransaction          `json:"transaction,omitempty"`
 	Baseline            []*InsightsBaselineClass      `json:"baseline"`
@@ -1033,6 +1034,14 @@ type InsightsRiskSignal struct {
 	Rationale    *string `json:"rationale,omitempty"`
 	Mitre        *string `json:"mitre,omitempty"`
 	Owasp        *string `json:"owasp,omitempty"`
+}
+
+type InsightsServiceProfile struct {
+	Namespace string   `json:"namespace"`
+	Service   string   `json:"service"`
+	Callers   []string `json:"callers"`
+	Callees   []string `json:"callees"`
+	Egress    []string `json:"egress"`
 }
 
 type InsightsServiceStat struct {

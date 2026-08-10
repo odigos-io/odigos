@@ -166,6 +166,8 @@ models:
     fields:
       services:
         resolver: true
+      serviceProfile:
+        resolver: true
       transactions:
         resolver: true
       transaction:

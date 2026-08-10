@@ -329,6 +329,23 @@ func ServiceStatsToModel(stats []ServiceStat) []*model.InsightsServiceStat {
 	return mapSlice(stats, ServiceStatToModel)
 }
 
+func ServiceProfileToModel(profile ServiceProfile) *model.InsightsServiceProfile {
+	return &model.InsightsServiceProfile{
+		Namespace: profile.Namespace,
+		Service:   profile.Service,
+		Callers:   stringSliceOrEmpty(profile.Callers),
+		Callees:   stringSliceOrEmpty(profile.Callees),
+		Egress:    stringSliceOrEmpty(profile.Egress),
+	}
+}
+
+func stringSliceOrEmpty(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
+}
+
 func TransactionStatToModel(stat TransactionStat) *model.InsightsTransactionStat {
 	return &model.InsightsTransactionStat{
 		ID:          FormatID(stat.ID),

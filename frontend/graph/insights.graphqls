@@ -120,6 +120,14 @@ type InsightsServiceStat {
   lastSeen: String!
 }
 
+type InsightsServiceProfile {
+  namespace: String!
+  service: String!
+  callers: [String!]!
+  callees: [String!]!
+  egress: [String!]!
+}
+
 type InsightsTransactionStat {
   id: ID!
   service: String!
@@ -604,6 +612,7 @@ type InsightsStorageHealth {
 
 type Insights {
   services: [InsightsServiceStat!]!
+  serviceProfile(namespace: String, service: String!): InsightsServiceProfile!
   transactions(
     namespace: String
     service: String

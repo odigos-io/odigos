@@ -23,7 +23,8 @@ type GatewayConfigOptions struct {
 	// the extension and it's name are platform specific.
 	OdigosConfigExtensionName *string
 
-	// groupbytrace wait duration when tail sampling, service I/O trace correlations, or insights are active.
+	// groupbytrace wait duration when tail sampling, service I/O trace
+	// correlations, or insights are active.
 	TraceAggregationWaitDuration *string
 
 	// Tail sampling v2 processors when tail sampling is active.
@@ -31,10 +32,8 @@ type GatewayConfigOptions struct {
 	SamplingDryRun         bool
 	SamplingSpanAttributes *sampling.SpanSamplingAttributesConfiguration
 
-	// groupbytrace processor with sampling v2 so a trace is assembled at
-	// most once on the gateway, regardless of which consumers asked for it.
-	// Passed as the full config (not a bool) so future toggles on the same
-	// feature can be added without changing this surface.
+	// Insights side-channel exporter; when active, groupbytrace is installed
+	// so the exporter sees fully assembled traces.
 	Insights *common.InsightsConfiguration
 
 	// Trace correlations configuration for the serviceio connector (service I/O metrics).
