@@ -1,0 +1,63 @@
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: nodejs-tail-sampling-errors-rules
+  namespace: odigos-test
+spec:
+  name: nodejs tail-sampling errors rules
+  notes: >-
+    Tail sampling for error scenarios on Deployment tail-sampling-errors.
+    Error traces are highly relevant (100%). Successful /ok baseline traffic is
+    cost-reduced to 10%.
+  highlyRelevantOperations:
+    - name: high-relevance-error
+      notes: >-
+        Error traces from /error and propagated /hops failures are sampled at
+        100%.
+      error: true
+      percentageAtLeast: 100
+      sourceScopes: &errorsDeploymentScopes
+        sources:
+          - kind: Deployment
+            name: tail-sampling-errors
+            namespace: default
+  costReductionRules:
+    - name: cost-reduction-ok-baseline
+      notes: Successful /ok requests are sampled at most 10%.
+      percentageAtMost: 10
+      operation:
+        httpServer:
+          route: /ok
+      sourceScopes: *errorsDeploymentScopes
+---
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: nodejs-tail-sampling-duration-rules
+  namespace: odigos-test
+spec:
+  name: nodejs tail-sampling duration rules
+  notes: >-
+    Tail sampling for duration scenarios on Deployment tail-sampling-duration.
+    Operations above 1000ms are highly relevant (100%). Operations above 500ms
+    are sampled at least 50%. Remaining traffic is cost-reduced to 10%.
+  highlyRelevantOperations:
+    - name: high-relevance-duration-above-1000ms
+      notes: Operations with duration above 1000ms are highly relevant and sampled at 100%.
+      durationAtLeastMs: 1000
+      percentageAtLeast: 100
+      sourceScopes: &durationDeploymentScopes
+        sources:
+          - kind: Deployment
+            name: tail-sampling-duration
+            namespace: default
+    - name: duration-above-500ms
+      notes: Operations with duration above 500ms are sampled at least 50%.
+      durationAtLeastMs: 500
+      percentageAtLeast: 50
+      sourceScopes: *durationDeploymentScopes
+  costReductionRules:
+    - name: cost-reduction-rest
+      notes: Remaining duration-scenario traffic is sampled at most 10%.
+      percentageAtMost: 10
+      sourceScopes: *durationDeploymentScopes

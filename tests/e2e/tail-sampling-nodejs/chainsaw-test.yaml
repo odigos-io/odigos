@@ -1,0 +1,269 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: tail-sampling-nodejs
+spec:
+  description: |
+    E2E for Odigos gateway tail sampling with nodejs-community.
+    Uses the prebuilt nodejs-tail-sampling image from Artifact Registry, enables
+    sampling dry-run and short aggregation wait, generates error/duration traffic,
+    and asserts odigos.sampling.* span attributes plus VictoriaMetrics sampling
+    counter deltas.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: apply/apply-test-apps.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            timeout: 4m
+            content: |
+              # pwd is tests/e2e/tail-sampling-nodejs — chart lives at repo root helm/odigos
+              # Gateway tail sampling enabled. Short aggregation wait keeps e2e latency low
+              # (synthetic-apps tail-sampling uses 2s). Enable own-metrics VictoriaMetrics
+              # for sampling counter asserts (disabled by default in the chart).
+              helm upgrade --install odigos ../../../helm/odigos --create-namespace --namespace odigos-test \
+                --set image.tag=e2e-test \
+                --set nodeSelector."kubernetes\.io/os"=linux \
+                --set sampling.dryRun=true \
+                --set sampling.tailSampling.traceAggregationWaitDuration=2s \
+                --set ownTelemetry.metricsStore.disabled=false
+              ../../common/verify_odigos_installation.sh odigos-test
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Assert Apps installed
+      try:
+        - assert:
+            timeout: 3m
+            file: assert/assert-apps-ready.yaml
+
+    - name: Instrument namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Add destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Odigos pipeline ready
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Apply Sampling rules
+      try:
+        - apply:
+            file: apply/sampling-rules.yaml
+
+    - name: Wait for apps ready after instrumentation
+      try:
+        - assert:
+            timeout: 3m
+            file: assert/assert-apps-ready.yaml
+        - script:
+            timeout: 1m
+            content: |
+              # Allow InstrumentationConfig / OpAMP to propagate Sampling rules.
+              sleep 20
+
+    - name: Assert workload collector sampling config
+      try:
+        - assert:
+            timeout: 30s
+            file: assert/workload-collector-config.yaml
+      catch:
+        - script:
+            content: |
+              kubectl get instrumentationconfig -n default -o yaml
+              kubectl get sampling -n odigos-test -o yaml
+
+    - name: Record sampling trace metrics baseline
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              #!/bin/bash
+              set -euo pipefail
+              export TESTS_NAMESPACE=default
+              export ODIGOS_NAMESPACE=odigos-test
+              ../../common/victoriametrics_sampling_metrics_runner.sh record-baseline \
+                ./queries/metrics/trace-sampling-metrics.yaml \
+                ./.trace-sampling-metrics-baseline-nodejs.json
+
+    - name: Generate traffic
+      try:
+        - apply:
+            file: apply-traffic.yaml
+        - script:
+            timeout: 5m
+            content: |
+              kubectl wait --for=condition=complete job/tail-sampling-errors-curls -n default --timeout=180s || \
+                (kubectl logs job/tail-sampling-errors-curls -n default --tail=200; exit 1)
+              kubectl wait --for=condition=complete job/tail-sampling-duration-curls -n default --timeout=300s || \
+                (kubectl logs job/tail-sampling-duration-curls -n default --tail=200; exit 1)
+
+    - name: Assert sampling span attributes
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              # chainsaw invokes scripts with /usr/bin/sh (dash on Ubuntu CI); use bash for pipefail/arrays
+              bash <<'EOF'
+              set -euo pipefail
+              deadline=$(($(date +%s) + 170))
+              queries=(
+                queries/errors-healthz.yaml
+                queries/errors-ok-baseline.yaml
+                queries/errors-error-always.yaml
+                queries/errors-alternate-ok.yaml
+                queries/errors-alternate-error.yaml
+                queries/errors-hops-client-ok.yaml
+                queries/duration-healthz.yaml
+                queries/duration-ms-0.yaml
+                queries/duration-ms-600.yaml
+                queries/duration-ms-1200.yaml
+                queries/duration-short-baseline.yaml
+                queries/duration-medium-50pct.yaml
+                queries/duration-long-100pct.yaml
+              )
+              last_failed=""
+              last_failed_output=""
+              while true; do
+                ok=true
+                for q in "${queries[@]}"; do
+                  output=""
+                  if ! output=$(../../common/simple_trace_db_query_runner.sh "$q" 2>&1); then
+                    ok=false
+                    last_failed="$q"
+                    last_failed_output="$output"
+                    break
+                  fi
+                done
+                if [ "$ok" = true ]; then
+                  echo "all sampling span assertions passed"
+                  exit 0
+                fi
+                if [ "$(date +%s)" -ge "$deadline" ]; then
+                  echo "sampling span assertions did not pass within timeout" >&2
+                  echo "first failing assertion: ${last_failed}" >&2
+                  echo "--- ${last_failed} output ---" >&2
+                  echo "${last_failed_output}" >&2
+                  echo "--- status of all queries ---" >&2
+                  for q in "${queries[@]}"; do
+                    if out=$(../../common/simple_trace_db_query_runner.sh "$q" 2>&1); then
+                      echo "PASS: $q" >&2
+                    else
+                      echo "FAIL: $q" >&2
+                      echo "$out" >&2
+                    fi
+                  done
+                  exit 1
+                fi
+                sleep 2
+              done
+              EOF
+      catch:
+        - script:
+            content: |
+              echo "=== Per-query pass/fail summary ==="
+              for q in queries/*.yaml; do
+                if out=$(../../common/simple_trace_db_query_runner.sh "$q" 2>&1); then
+                  echo "PASS: $q"
+                else
+                  echo "FAIL: $q"
+                  echo "$out"
+                fi
+              done
+              echo "=== Verbose dumps for failing queries ==="
+              for q in queries/*.yaml; do
+                if ! ../../common/simple_trace_db_query_runner.sh "$q" >/dev/null 2>&1; then
+                  echo "--- $q ---"
+                  ../../common/simple_trace_db_query_runner.sh "$q" --verbose || true
+                fi
+              done
+              echo "=== Sampling CRs ==="
+              kubectl get sampling -n odigos-test -o yaml || true
+              echo "=== InstrumentationConfigs ==="
+              kubectl get instrumentationconfigs -A || true
+              echo "=== Gateway logs ==="
+              kubectl logs -n odigos-test -l odigos.io/collector-role=CLUSTER_GATEWAY --tail=80 || true
+              echo "=== App pods ==="
+              kubectl get pods -n default -o wide || true
+
+    - name: Assert sampling trace metrics
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              #!/bin/bash
+              set -euo pipefail
+              export TESTS_NAMESPACE=default
+              export ODIGOS_NAMESPACE=odigos-test
+              deadline=$(($(date +%s) + 120))
+              while true; do
+                if ../../common/victoriametrics_sampling_metrics_runner.sh assert-delta \
+                  ./queries/metrics/trace-sampling-metrics.yaml \
+                  ./.trace-sampling-metrics-baseline-nodejs.json; then
+                  exit 0
+                fi
+                if [[ $(date +%s) -ge $deadline ]]; then
+                  echo "sampling trace metrics did not match within 2m" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+      catch:
+        - script:
+            content: |
+              #!/bin/bash
+              set -euo pipefail
+              export TESTS_NAMESPACE=default
+              export ODIGOS_NAMESPACE=odigos-test
+              ../../common/victoriametrics_sampling_metrics_runner.sh assert-delta \
+                ./queries/metrics/trace-sampling-metrics.yaml \
+                ./.trace-sampling-metrics-baseline-nodejs.json || true
+              echo "--- current totals by rule name (match / keep / drop) ---"
+              base="http://odigos-victoriametrics.odigos-test.svc.cluster.local:8428"
+              for deployment in tail-sampling-errors tail-sampling-duration; do
+                ic="deployment-${deployment}"
+                kubectl get instrumentationconfig "$ic" -n default -o json | jq -r --arg dep "$deployment" '
+                  .spec.workloadCollectorConfig[0].samplingCollectorConfig as $sc |
+                  (($sc.highlyRelevantOperations // []) + ($sc.costReductionRules // []))
+                  | .[] | "\($dep)/\(.name) id=\(.id)"
+                ' | while read -r label; do
+                  id="${label##*id=}"
+                  for m in match_count_total keep_count_total drop_count_total; do
+                    q="sum(otelcol_odigos.sampling.trace.${m}{odigos.sampling.rule.id=\"${id}\"})"
+                    echo "${label} ${m}:"
+                    kubectl run "vm-debug-$RANDOM" --rm -i --restart=Never -n odigos-test \
+                      --image=curlimages/curl:8.4.0 --command -- \
+                      curl -sG "${base}/api/v1/query" --data-urlencode "query=${q}" 2>/dev/null | sed 's/pod ".*$//' || true
+                    echo ""
+                  done
+                done
+              done

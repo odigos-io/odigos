@@ -102,6 +102,7 @@ jobs:
           - "head-sampling-http-nodejs"
           - "head-sampling-http-python"
           - "head-sampling-http-java"
+          - "tail-sampling-nodejs"
         include:
           - kube-version: "1.21.12"
             # use 1.21.12 for systemd cgroups compatibility changes in kind 0.13 https://github.com/kubernetes-sigs/kind/releases/tag/v0.13.0

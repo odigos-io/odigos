@@ -1,0 +1,101 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tail-sampling-errors-curls
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: tail-sampling-errors-curls
+    spec:
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: curl
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              BASE_URL="http://tail-sampling-errors:8080"
+              echo "BASE_URL=${BASE_URL}"
+
+              call_ok() {
+                curl -sS -f -o /dev/null "${BASE_URL}$1"
+              }
+              call_err() {
+                code=$(curl -sS -o /dev/null -w "%{http_code}" "${BASE_URL}$1")
+                if [ "$code" != "500" ]; then
+                  echo "expected HTTP 500 for $1 got $code" >&2
+                  exit 1
+                fi
+              }
+              call_many_ok() {
+                count=$1
+                path=$2
+                i=1
+                while [ "$i" -le "$count" ]; do
+                  curl -sS -f -o /dev/null "${BASE_URL}${path}"
+                  i=$((i + 1))
+                done
+              }
+
+              call_ok "/healthz"
+              call_many_ok 30 "/ok"
+              call_err "/error"
+              call_ok "/alternate"
+              call_err "/alternate"
+              call_ok "/hops?hops=3"
+              echo "all curls succeeded"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tail-sampling-duration-curls
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: tail-sampling-duration-curls
+    spec:
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: curl
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              BASE_URL="http://tail-sampling-duration:8080"
+              echo "BASE_URL=${BASE_URL}"
+
+              call_ok() {
+                curl -sS -f -o /dev/null "${BASE_URL}$1"
+              }
+              call_many_ok() {
+                count=$1
+                path=$2
+                i=1
+                while [ "$i" -le "$count" ]; do
+                  curl -sS -f -o /dev/null "${BASE_URL}${path}"
+                  i=$((i + 1))
+                done
+              }
+
+              call_ok "/healthz"
+              call_ok "/duration?ms=0"
+              call_ok "/duration?ms=600"
+              call_ok "/duration?ms=1200"
+              call_many_ok 30 "/duration/short"
+              call_many_ok 6 "/duration/medium"
+              call_ok "/duration/long"
+              echo "all curls succeeded"
