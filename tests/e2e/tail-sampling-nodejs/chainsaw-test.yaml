@@ -107,13 +107,15 @@ spec:
         - script:
             timeout: 3m
             content: |
-              #!/bin/bash
+              # chainsaw invokes scripts with /usr/bin/sh (dash on Ubuntu CI); use bash for pipefail
+              bash <<'EOF'
               set -euo pipefail
               export TESTS_NAMESPACE=default
               export ODIGOS_NAMESPACE=odigos-test
               ../../common/victoriametrics_sampling_metrics_runner.sh record-baseline \
                 ./queries/metrics/trace-sampling-metrics.yaml \
                 ./.trace-sampling-metrics-baseline-nodejs.json
+              EOF
 
     - name: Generate traffic
       try:
@@ -220,7 +222,8 @@ spec:
         - script:
             timeout: 2m
             content: |
-              #!/bin/bash
+              # chainsaw invokes scripts with /usr/bin/sh (dash on Ubuntu CI); use bash for pipefail
+              bash <<'EOF'
               set -euo pipefail
               export TESTS_NAMESPACE=default
               export ODIGOS_NAMESPACE=odigos-test
@@ -237,10 +240,12 @@ spec:
                 fi
                 sleep 2
               done
+              EOF
       catch:
         - script:
             content: |
-              #!/bin/bash
+              # chainsaw invokes scripts with /usr/bin/sh (dash on Ubuntu CI); use bash for pipefail
+              bash <<'EOF'
               set -euo pipefail
               export TESTS_NAMESPACE=default
               export ODIGOS_NAMESPACE=odigos-test
@@ -267,3 +272,4 @@ spec:
                   done
                 done
               done
+              EOF
