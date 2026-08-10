@@ -7,6 +7,7 @@ go 1.26.2
 require (
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.151.0
 	github.com/odigos-io/odigos/collector/connectors/serviceioconnector v0.151.0
+	github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension v0.151.0
 	github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.151.0
 	github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor v0.151.0
 	github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.151.0
@@ -461,7 +462,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
-	github.com/knadh/koanf/v2 v2.3.4 // indirect
+	github.com/knadh/koanf/v2 v2.3.5 // indirect
 	github.com/kolo/xmlrpc v0.0.0-20220921171641-a4b6fa1dd06b // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/leodido/go-syslog/v4 v4.5.0 // indirect
@@ -717,7 +718,7 @@ require (
 	go.uber.org/zap v1.28.0 // indirect
 	go.uber.org/zap/exp v0.3.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
@@ -796,6 +797,8 @@ replace github.com/odigos-io/odigos/common => ../../common
 replace go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
 
 replace github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension => ../extension/odigosconfigk8sextension
+
+replace github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension => ../extension/odigoscapabilitiesextension
 
 replace github.com/apache/thrift => github.com/apache/thrift v0.23.0
 
