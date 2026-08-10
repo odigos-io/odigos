@@ -25,6 +25,23 @@ func (r *insightsResolver) Services(ctx context.Context, obj *model.Insights) ([
 	return insights.ServiceStatsToModel(stats), nil
 }
 
+// ServiceProfile is the resolver for the serviceProfile field.
+func (r *insightsResolver) ServiceProfile(ctx context.Context, obj *model.Insights, namespace *string, service string) (*model.InsightsServiceProfile, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ns := ""
+	if namespace != nil {
+		ns = *namespace
+	}
+	profile, err := client.GetServiceProfile(ctx, ns, service)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.ServiceProfileToModel(*profile), nil
+}
+
 // Transactions is the resolver for the transactions field.
 func (r *insightsResolver) Transactions(ctx context.Context, obj *model.Insights, namespace *string, service *string, kind *model.InsightsTransactionKind) ([]*model.InsightsTransactionStat, error) {
 	client, err := r.insightsClient(ctx)
