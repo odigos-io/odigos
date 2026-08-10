@@ -396,6 +396,10 @@ spec:
 {{- if and (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) (.Values.odiglet.noHostPathMounts) }}
 {{ fail "if HostPath mounts are not allowed mount method must be k8s-init-container" }}
 {{- end }}
+# if runAsNonRoot is set, we must be using mountMethod of "k8s-init-container", since copying/writing files on the host (/var/odigos) requires root privileges
+{{- if and .Values.odiglet.runAsNonRoot (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
+{{ fail "odiglet.runAsNonRoot is only supported with instrumentor.mountMethod=k8s-init-container" }}
+{{- end }}
 # to use device plugins we need to have the "k8s-virtual-device" mount method or non specified (default)
 # and to have hostMounts allowed
 {{- if or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device") }}
@@ -602,3 +606,11 @@ spec:
       affinity: {{ toYaml .affinity | nindent 8 }}
   {{- end }}
 {{- end }}
+      # Force UID 0 unless runAsNonRoot is opted in; otherwise image USER (non-zero) is used.
+      securityContext:
+      {{- if .Values.odiglet.runAsNonRoot }}
+        runAsNonRoot: true
+      {{- else }}
+        runAsUser: 0
+        runAsGroup: 0
+      {{- end }}

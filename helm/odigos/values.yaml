@@ -895,6 +895,10 @@ odiglet:
       - DAC_READ_SEARCH
       - IPC_LOCK
       - SYS_RESOURCE
+      # required for jattach - dynamically instrumenting java processes.
+      - SETUID
+      # required for jattach - dynamically instrumenting java processes.
+      - SETGID
 
     # @schema
     # description: |-
@@ -1073,11 +1077,24 @@ odiglet:
 
   # @schema
   # description: |-
-  #   run the odiglet container without privileged containers.
+  #   run the odiglet pod without privileged containers.
   #   when set to true, odiglet will use the set of capabilities required for eBPF operations.
   #   by default, odiglet runs as a privileged container.
   # @schema
   unPrivileged: false
+
+  # @schema
+  # description: |-
+  #   runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.
+  #   when true, each container uses the non-root USER declared in its image (e.g. 65532).
+  #   by default (false), all containers are forced to run as UID/GID 0.
+  #
+  #   This setting only changes the UID the containers run as. It does not change the Linux capabilities
+  #   granted to odiglet (those are controlled separately via unPrivileged and the capabilities lists).
+  #   Operations relying on root's implicit filesystem access can fail as non-root:
+  #   e.g. writing agent files to root-owned host paths (/var/odigos).
+  # @schema
+  runAsNonRoot: false
 
   # @schema
   # description: |-

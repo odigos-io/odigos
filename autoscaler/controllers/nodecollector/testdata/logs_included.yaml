@@ -36,6 +36,7 @@ exporters:
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
+  odigos_capabilities: {}
   odigos_enterprise_auth: {}
   pprof:
     endpoint: 0.0.0.0:1777
@@ -154,6 +155,7 @@ service:
   extensions:
   - health_check
   - pprof
+  - odigos_capabilities
   - odigos_enterprise_auth
   pipelines:
     logs:
