@@ -169,7 +169,6 @@
                 "pages": [
                   "oss/pipeline/overview",
                   "oss/pipeline/configuration",
-                  "oss/pipeline/benchmarks",
                   "oss/pipeline/datastreams",
                   {
                     "group": "Sources",
@@ -246,7 +245,8 @@
                       "oss/pipeline/service-graph",
                       "oss/pipeline/odigos-own-metrics"
                     ]
-                  }
+                  },
+                  "oss/pipeline/benchmarks"
                 ]
               },
               {
@@ -334,7 +334,6 @@
                   "oss/telemetry-types",
                   "oss/custom-resources",
                   "oss/usage-reports",
-                  "oss/benchmarks",
                   "oss/permissions"
                 ]
               },
@@ -502,7 +501,6 @@
                 "pages": [
                   "enterprise/pipeline/overview",
                   "enterprise/pipeline/configuration",
-                  "enterprise/pipeline/benchmarks",
                   "enterprise/pipeline/datastreams",
                   {
                     "group": "Sources",
@@ -579,7 +577,8 @@
                       "enterprise/pipeline/service-graph",
                       "enterprise/pipeline/odigos-own-metrics"
                     ]
-                  }
+                  },
+                  "enterprise/pipeline/benchmarks"
                 ]
               },
               {
@@ -667,7 +666,6 @@
                   "enterprise/telemetry-types",
                   "enterprise/custom-resources",
                   "enterprise/usage-reports",
-                  "enterprise/benchmarks",
                   "enterprise/permissions"
                 ]
               },
@@ -901,7 +899,7 @@
     },
     {
       "source": "/benchmarks",
-      "destination": "/oss/benchmarks"
+      "destination": "/oss/pipeline/benchmarks"
     },
     {
       "source": "/permissions",
