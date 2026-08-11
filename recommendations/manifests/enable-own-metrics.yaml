@@ -32,7 +32,7 @@ spec:
 
   remediations:
     - type: EnableOwnMetricsStore
-      buttonText: 'Enable'
+      buttonText: 'Enable own odigos metrics'
       tooltip: 'Deploy the Odigos VictoriaMetrics own metrics store.'
       applyExamples:
         - type: HelmValues

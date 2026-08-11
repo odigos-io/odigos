@@ -32,7 +32,7 @@ spec:
 
   remediations:
     - type: EnableUrlTemplatization
-      buttonText: 'Enable'
+      buttonText: 'Enable URL templatization'
       tooltip: 'Create a URL Templatization action for all sources.'
       steps:
         - type: ApplyOdigosAction
