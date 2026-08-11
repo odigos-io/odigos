@@ -136,7 +136,7 @@ RUN if [ "$RHEL" = "true" ] ; then \
 
 
 # Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.52
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.54
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         GRPC_ARCH="arm64"; \
     else \
@@ -214,7 +214,7 @@ USER 65532:65532
 CMD ["/root/odiglet"]
 
 ######### Default Odiglet #########
-FROM gcr.io/distroless/base:3443777deec6bd5c58be682f286aefffd1c871ae
+FROM gcr.io/distroless/base@sha256:f4a335ca209e1d2ee873102c17c389ad0142e3d5b21aee2817e9cc9c01d87d20
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
