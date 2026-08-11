@@ -13,8 +13,8 @@ spec:
   summary: 'Parse database query text to add OpenTelemetry attributes like db.operation.name and db.collection.name when they are missing.'
   description: |
     Some instrumentations record only the raw query text. Enable this
-    recommendation to derive semantic attributes (`db.operation.name`,
-    `db.collection.name`) from `db.query.text` or `db.statement`, so backends
+    recommendation to derive semantic attributes ('db.operation.name',
+    'db.collection.name') from 'db.query.text' or 'db.statement', so backends
     can filter and group by operation and table.
 
     When inference is unambiguous, the span name may also be updated to a

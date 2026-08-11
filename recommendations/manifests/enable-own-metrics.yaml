@@ -29,3 +29,15 @@ spec:
   appliedWhen:
     - type: EffectiveConfig
       expression: "odigosOwnTelemetryStore.metricsStoreDisabled == `false`"
+
+  remediations:
+    - type: EnableOwnMetricsStore
+      buttonText: 'Enable'
+      tooltip: 'Deploy the Odigos VictoriaMetrics own metrics store.'
+      applyExamples:
+        - type: HelmValues
+          content: |
+            ownTelemetry:
+              metricsStore:
+                disabled: false
+
