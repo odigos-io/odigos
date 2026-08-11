@@ -35,7 +35,7 @@
     "check-peer-dependencies": "^4.3.4",
     "eslint": "9.39.2",
     "eslint-config-next": "16.3.0",
-    "postcss": "^8.5.25",
+    "postcss": "^8.5.26",
     "typescript": "5.9.3"
   },
   "resolutions": {
