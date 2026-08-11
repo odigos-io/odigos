@@ -209,6 +209,43 @@ jobs:
             echo "Release version $RELEASE_VERSION is NOT newer than tap version $CURRENT_TAP_VERSION — skipping Homebrew tap update"
             echo "SKIP_HOMEBREW_UPDATE=true" >> $GITHUB_ENV
           fi
+      - name: Check if the :latest image tag should move
+        run: |
+          # Decide whether this release owns :latest, i.e. whether the tag
+          # being released is the newest version we have. Only then may the
+          # image tag move; every other release still publishes under its own
+          # version tag.
+
+          # A pre-release is never the newest shipped version.
+          if [ "${{ env.IS_PRERELEASE }}" = "true" ]; then
+            echo "Pre-release $TAG — leaving :latest where it is"
+            echo "PUSH_LATEST=false" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          # Highest stable vX.Y.Z tag in the repo. The tag being released is
+          # already among them, so it comes out on top when it really is the
+          # newest — and loses to a higher one when this is a patch cut from an
+          # older release branch.
+          HIGHEST_STABLE=$(git tag -l 'v*' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V | tail -1)
+
+          if [ -z "$HIGHEST_STABLE" ]; then
+            echo "No stable tags found — moving :latest"
+            echo "PUSH_LATEST=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          echo "Releasing: $TAG   highest stable tag: $HIGHEST_STABLE"
+          if [ "$TAG" = "$HIGHEST_STABLE" ]; then
+            echo "$TAG is the newest stable release — moving :latest"
+            echo "PUSH_LATEST=true" >> $GITHUB_ENV
+          else
+            echo "$TAG is older than $HIGHEST_STABLE — leaving :latest where it is"
+            echo "PUSH_LATEST=false" >> $GITHUB_ENV
+          fi
+
       - name: Decide which homebrew repository to authenticate against
         run: |
           HOMEBREW_REPO="homebrew-odigos-cli-rc"
@@ -265,7 +302,12 @@ jobs:
           SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
           DATE: ${{ steps.vars.outputs.date }}
         run: |
-          ko build --bare --tags latest --tags ${{ env.TAG }} --platform=linux/amd64,linux/arm64
+          KO_TAGS="--tags ${{ env.TAG }}"
+          if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
+            KO_TAGS="$KO_TAGS --tags latest"
+          fi
+          echo "ko tags: $KO_TAGS"
+          ko build --bare $KO_TAGS --platform=linux/amd64,linux/arm64
 
       - name: Install crane
         uses: imjasonh/setup-crane@v0.4
@@ -277,9 +319,16 @@ jobs:
           GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-cli
         run: |
           crane copy ${SOURCE_IMAGE}:${{ env.TAG }} ${DEST_IMAGE}:${{ env.TAG }}
-          crane copy ${SOURCE_IMAGE}:latest ${DEST_IMAGE}:latest
           crane copy ${SOURCE_IMAGE}:${{ env.TAG }} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
-          crane copy ${SOURCE_IMAGE}:latest ${GCR_PRIVATE_DEST_IMAGE}:latest
+
+          # Mirror :latest only when this release owns it, so the mirrors stay
+          # in step with the source registry.
+          if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
+            crane copy ${SOURCE_IMAGE}:latest ${DEST_IMAGE}:latest
+            crane copy ${SOURCE_IMAGE}:latest ${GCR_PRIVATE_DEST_IMAGE}:latest
+          else
+            echo "Skipping :latest mirror for ${{ env.TAG }}"
+          fi
 
       - name: Copy VictoriaMetrics image to Docker Hub and GCR
         env:
@@ -289,11 +338,18 @@ jobs:
           GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-victoria-metrics
         run: |
           crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:${{ env.TAG }}
-          crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:latest
           crane copy ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:${{ env.TAG }}
-          crane copy ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
           crane copy ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
-          crane copy ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:latest
+
+          # VICTORIA_METRICS_VERSION is pinned per branch, so :latest here
+          # tracks whichever release owns it rather than the last one to run.
+          if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
+            crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:latest
+            crane copy ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
+            crane copy ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:latest
+          else
+            echo "Skipping :latest mirror for ${{ env.TAG }}"
+          fi
 
       - name: Set notification messages
         run: |
