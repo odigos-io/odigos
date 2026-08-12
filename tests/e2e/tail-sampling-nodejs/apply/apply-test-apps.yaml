@@ -1,0 +1,74 @@
+# Node.js tail-sampling app (nodejs-community instrumentation).
+# Image: us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.1
+# (built from tests/common/services/nodejs-tail-sampling).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tail-sampling-errors
+  namespace: default
+  labels:
+    app: tail-sampling-errors
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tail-sampling-errors
+  template:
+    metadata:
+      labels:
+        app: tail-sampling-errors
+    spec:
+      containers:
+        - name: tail-sampling-errors
+          image: us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tail-sampling-errors
+  namespace: default
+spec:
+  selector:
+    app: tail-sampling-errors
+  ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tail-sampling-duration
+  namespace: default
+  labels:
+    app: tail-sampling-duration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tail-sampling-duration
+  template:
+    metadata:
+      labels:
+        app: tail-sampling-duration
+    spec:
+      containers:
+        - name: tail-sampling-duration
+          image: us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tail-sampling-duration
+  namespace: default
+spec:
+  selector:
+    app: tail-sampling-duration
+  ports:
+    - protocol: TCP
+      port: 8080
