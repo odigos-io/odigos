@@ -65,19 +65,19 @@ jobs:
       - name: Build CLI Image
         run: |
           TAG=e2e-test make build-cli-image
-          docker save registry.odigos.io/odigos-cli:e2e-test -o cli-image.tar
+          docker save docker.io/keyval/odigos-cli:e2e-test -o cli-image.tar
 
       # Victoria Metrics is published, not built in this repo. Materialize a single-platform
       # image (buildx --load) so kind load does not fail on multi-arch manifests.
       - name: Prepare Victoria Metrics Image
         run: |
-          printf 'FROM registry.odigos.io/odigos-victoria-metrics:latest\n' | docker buildx build \
+          printf 'FROM docker.io/keyval/odigos-victoria-metrics:latest\n' | docker buildx build \
             --platform=linux/$(docker version -f '{{.Server.Arch}}') \
             --pull \
-            -t registry.odigos.io/odigos-victoria-metrics:e2e-test \
+            -t docker.io/keyval/odigos-victoria-metrics:e2e-test \
             --load \
             -
-          docker save registry.odigos.io/odigos-victoria-metrics:e2e-test -o victoria-metrics-image.tar
+          docker save docker.io/keyval/odigos-victoria-metrics:e2e-test -o victoria-metrics-image.tar
 
       - name: Save Odigos images to cache
         uses: actions/cache/save@v4
