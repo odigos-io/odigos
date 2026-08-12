@@ -153,7 +153,9 @@ type InsightsTransaction {
 type InsightsBaselineClass {
   transactionId: ID!
   class: InsightsDeviationClass!
-  """JSON-encoded baseline data; shape varies per deviation class."""
+  """
+  JSON-encoded baseline data; shape varies per deviation class.
+  """
   data: String
   dataSchemaVersion: Int
   observationCount: Int!
@@ -183,7 +185,9 @@ type InsightsObservation {
   observedAt: String!
   durationMs: Int!
   sampleReason: InsightsSampleReason!
-  """Base64-encoded OTLP protobuf; only available on the single-observation query."""
+  """
+  Base64-encoded OTLP protobuf; only available on the single-observation query.
+  """
   rawOtlp: String!
 }
 
@@ -194,23 +198,33 @@ type InsightsPolicy {
   name: String!
   enabled: Boolean!
   fireAtScore: Int!
-  """JSON-encoded map[string]int of per-signal weights."""
+  """
+  JSON-encoded map[string]int of per-signal weights.
+  """
   signalWeights: String
-  """JSON-encoded map[string][]string of enricher keyword lists."""
+  """
+  JSON-encoded map[string][]string of enricher keyword lists.
+  """
   enricherLists: String
   scope: InsightsPolicyScope!
   scopeKey: String!
 }
 
 input InsightsPolicyInput {
-  """Server-assigned; omit on create (the policy key is scope + scopeKey)."""
+  """
+  Server-assigned; omit on create (the policy key is scope + scopeKey).
+  """
   id: ID
   name: String!
   enabled: Boolean!
   fireAtScore: Int!
-  """JSON-encoded map[string]int of per-signal weights."""
+  """
+  JSON-encoded map[string]int of per-signal weights.
+  """
   signalWeights: String
-  """JSON-encoded map[string][]string of enricher keyword lists."""
+  """
+  JSON-encoded map[string][]string of enricher keyword lists.
+  """
   enricherLists: String
   scope: InsightsPolicyScope!
   scopeKey: String!
@@ -262,15 +276,25 @@ type InsightsFinding {
   severity: InsightsSeverity!
   occurrences: Int!
   lastSeen: String!
-  """Union of anomaly statuses (open|baselined|dismissed) and violation statuses (open|dismissed|allowed)."""
+  """
+  Union of anomaly statuses (open|baselined|dismissed) and violation statuses (open|dismissed|allowed).
+  """
   status: String!
-  """Anomaly drill-down key; set when kind is anomaly."""
+  """
+  Anomaly drill-down key; set when kind is anomaly.
+  """
   transactionId: ID
-  """Anomaly drill-down key; set when kind is anomaly."""
+  """
+  Anomaly drill-down key; set when kind is anomaly.
+  """
   signature: String
-  """Violation drill-down key; set when kind is violation."""
+  """
+  Violation drill-down key; set when kind is violation.
+  """
   scopeKey: String
-  """Violation drill-down key; set when kind is violation."""
+  """
+  Violation drill-down key; set when kind is violation.
+  """
   ruleKey: String
 }
 
@@ -316,6 +340,53 @@ type InsightsAnomalySummary {
   status: InsightsAnomalyStatus!
 }
 
+enum InsightsAnomalyClassFindingKind {
+  structural
+  metric
+}
+
+type InsightsAnomalySpanHighlight {
+  spanId: String!
+  """
+  high | medium | low
+  """
+  severity: String!
+  reason: String!
+}
+
+type InsightsAnomalyAttrHighlight {
+  spanId: String!
+  key: String!
+  value: String!
+}
+
+type InsightsAnomalyMetricComparison {
+  observed: Int!
+  baseline: Int!
+  """
+  us | bytes
+  """
+  unit: String!
+}
+
+"""
+Render-ready explanation of one deviation class within an anomaly issue.
+Built at read time; the UI should render title/summary/highlights and not parse raw evidence.
+"""
+type InsightsAnomalyClassFinding {
+  class: InsightsDeviationClass!
+  kind: InsightsAnomalyClassFindingKind!
+  title: String!
+  summary: String!
+  spanHighlights: [InsightsAnomalySpanHighlight!]
+  attrHighlights: [InsightsAnomalyAttrHighlight!]
+  metric: InsightsAnomalyMetricComparison
+  """
+  JSON-encoded original per-class evidence blob (fallback / debug).
+  """
+  rawEvidence: String
+}
+
 type InsightsAnomalyIssue {
   transactionId: ID!
   signature: String!
@@ -333,9 +404,23 @@ type InsightsAnomalyIssue {
   lastSeen: String
   lastTraceId: String
   status: InsightsAnomalyStatus!
-  """JSON-encoded evidence keyed by deviation class; only available on the single-anomaly query."""
+  """
+  JSON-encoded evidence keyed by deviation class; only available on the single-anomaly query.
+  """
   evidence: String!
   risk: InsightsRiskAssessment
+  """
+  One render-ready finding per triggered class (title, summary, highlights). Always present on detail.
+  """
+  classFindings: [InsightsAnomalyClassFinding!]!
+  """
+  Evidence sample for this issue including rawOtlp. Omitted when no sample was retained.
+  """
+  anomalyTrace: InsightsObservation
+  """
+  Learning-phase example sample including rawOtlp for baseline compare. Omitted when none exist.
+  """
+  baselineTrace: InsightsObservation
 }
 
 input InsightsAnomalyRefInput {
@@ -359,7 +444,9 @@ type InsightsGuardrailRule {
 
 type InsightsGuardrail {
   scope: InsightsPolicyScope!
-  """Format: namespace/service."""
+  """
+  Format: namespace/service.
+  """
   scopeKey: String!
   rules: [InsightsGuardrailRule!]!
 }
@@ -400,7 +487,9 @@ input InsightsViolationActionInput {
 input InsightsGuardrailSeedInput {
   scopeKey: String!
   mode: InsightsRuleMode
-  """JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress."""
+  """
+  JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress.
+  """
   items: String!
 }
 
@@ -463,7 +552,9 @@ type InsightsCatalog {
   guardrailRules: [InsightsCatalogGuardrailRule!]!
   severityBands: [InsightsSeverityBand!]!
   correlationBonus: Int!
-  """JSON-encoded map[string]string."""
+  """
+  JSON-encoded map[string]string.
+  """
   tags: String!
 }
 
@@ -553,7 +644,9 @@ type InsightsStorageDisk {
 type InsightsStorageMemory {
   processRssBytes: Int!
   cgroupUsedBytes: Int!
-  """0 means no limit."""
+  """
+  0 means no limit.
+  """
   cgroupTotalBytes: Int!
   uptimeSeconds: Float!
 }
@@ -563,7 +656,9 @@ type InsightsStorageQuery {
   user: String!
   memoryBytes: Int!
   query: String!
-  """Omitted for still-running queries."""
+  """
+  Omitted for still-running queries.
+  """
   finishedAt: String
 }
 
@@ -674,7 +769,9 @@ extend type Mutation {
   resetInsightsTransactionBaselines(transactionId: ID!): Boolean!
   upsertInsightsPolicy(policy: InsightsPolicyInput!): InsightsPolicy!
   deleteInsightsPolicy(scope: InsightsPolicyScope!, scopeKey: String!): Boolean!
-  upsertInsightsLearningPolicy(policy: InsightsLearningPolicyInput!): InsightsLearningPolicy!
+  upsertInsightsLearningPolicy(
+    policy: InsightsLearningPolicyInput!
+  ): InsightsLearningPolicy!
   deleteInsightsLearningPolicy(
     class: InsightsDeviationClass!
     scope: InsightsPolicyScope!
@@ -689,11 +786,21 @@ extend type Mutation {
     resolution: InsightsBulkResolution!
     items: [InsightsAnomalyRefInput!]!
   ): InsightsBulkResolveResult!
-  upsertInsightsGuardrail(guardrail: InsightsGuardrailInput!): InsightsGuardrail!
+  upsertInsightsGuardrail(
+    guardrail: InsightsGuardrailInput!
+  ): InsightsGuardrail!
   deleteInsightsGuardrail(scopeKey: String!): Boolean!
   seedInsightsGuardrail(seed: InsightsGuardrailSeedInput!): Boolean!
-  allowInsightsGuardrailViolation(action: InsightsViolationActionInput!): Boolean!
-  dismissInsightsGuardrailViolation(action: InsightsViolationActionInput!): Boolean!
-  reopenInsightsGuardrailViolation(action: InsightsViolationActionInput!): Boolean!
-  updateInsightsSystemSettings(settings: InsightsSystemSettingsInput!): InsightsSystemSettings!
+  allowInsightsGuardrailViolation(
+    action: InsightsViolationActionInput!
+  ): Boolean!
+  dismissInsightsGuardrailViolation(
+    action: InsightsViolationActionInput!
+  ): Boolean!
+  reopenInsightsGuardrailViolation(
+    action: InsightsViolationActionInput!
+  ): Boolean!
+  updateInsightsSystemSettings(
+    settings: InsightsSystemSettingsInput!
+  ): InsightsSystemSettings!
 }

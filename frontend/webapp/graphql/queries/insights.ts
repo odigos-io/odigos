@@ -373,6 +373,34 @@ export const GET_INSIGHTS_ANOMALIES = gql`
   }
 `;
 
+const OBSERVATION_FIELDS = `
+  ${OBSERVATION_SUMMARY_FIELDS}
+  rawOtlp
+`;
+
+const ANOMALY_CLASS_FINDING_FIELDS = `
+  class
+  kind
+  title
+  summary
+  spanHighlights {
+    spanId
+    severity
+    reason
+  }
+  attrHighlights {
+    spanId
+    key
+    value
+  }
+  metric {
+    observed
+    baseline
+    unit
+  }
+  rawEvidence
+`;
+
 export const GET_INSIGHTS_ANOMALY = gql`
   query GetInsightsAnomaly($transactionId: ID!, $signature: String!) {
     insights {
@@ -380,6 +408,9 @@ export const GET_INSIGHTS_ANOMALY = gql`
         ${ANOMALY_SUMMARY_FIELDS}
         evidence
         risk { ${RISK_ASSESSMENT_FIELDS} }
+        classFindings { ${ANOMALY_CLASS_FINDING_FIELDS} }
+        anomalyTrace { ${OBSERVATION_FIELDS} }
+        baselineTrace { ${OBSERVATION_FIELDS} }
       }
     }
   }

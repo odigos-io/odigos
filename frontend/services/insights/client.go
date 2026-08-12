@@ -172,7 +172,46 @@ func (c *Client) GetAnomaly(ctx context.Context, transactionID int64, signature 
 	if err := c.do(ctx, http.MethodGet, c.apiEndpoint("anomalies", strconv.FormatInt(transactionID, 10), signature), nil, &result); err != nil {
 		return nil, err
 	}
+	// Insights detail should embed compare traces; older builds may omit them even
+	// when retained samples exist. Fill from the observations API when missing.
+	c.enrichAnomalyCompareTraces(ctx, &result)
 	return &result, nil
+}
+
+// enrichAnomalyCompareTraces loads anomaly/baseline OTLP samples when the anomaly
+// detail payload omitted anomaly_trace / baseline_trace.
+func (c *Client) enrichAnomalyCompareTraces(ctx context.Context, issue *AnomalyIssue) {
+	if issue == nil {
+		return
+	}
+	if issue.AnomalyTrace == nil {
+		reason := AnomalyEvidenceSampleReason(issue.Signature)
+		if obs := c.firstObservation(ctx, issue.TransactionID, &reason); obs != nil {
+			issue.AnomalyTrace = obs
+		} else if issue.LastTraceID != nil && *issue.LastTraceID != "" {
+			if obs, err := c.GetObservation(ctx, issue.TransactionID, *issue.LastTraceID); err == nil {
+				issue.AnomalyTrace = obs
+			}
+		}
+	}
+	if issue.BaselineTrace == nil {
+		reason := SampleReasonExample
+		if obs := c.firstObservation(ctx, issue.TransactionID, &reason); obs != nil {
+			issue.BaselineTrace = obs
+		}
+	}
+}
+
+func (c *Client) firstObservation(ctx context.Context, transactionID int64, reason *SampleReason) *Observation {
+	samples, err := c.ListObservations(ctx, transactionID, ListObservationsParams{SampleReason: reason})
+	if err != nil || len(samples) == 0 {
+		return nil
+	}
+	obs, err := c.GetObservation(ctx, transactionID, samples[0].TraceID)
+	if err != nil {
+		return nil
+	}
+	return obs
 }
 
 func (c *Client) ResolveAnomaly(ctx context.Context, transactionID int64, signature string, resolution AnomalyResolution) error {
