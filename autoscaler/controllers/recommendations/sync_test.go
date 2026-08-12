@@ -196,7 +196,7 @@ func TestSyncRecommendation(t *testing.T) {
 
 		// without these options a recommendation owned by an older field manager can never be
 		// updated by the autoscaler.
-		assert.Equal(t, fieldOwner, applied.opts.FieldManager)
+		assert.Equal(t, "odigos-autoscaler", applied.opts.FieldManager)
 		assert.Equal(t, ptr.To(true), applied.opts.Force)
 	})
 

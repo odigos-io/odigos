@@ -42,6 +42,30 @@ func newFakeClient(t *testing.T, objects ...client.Object) client.WithWatch {
 		Build()
 }
 
+func newRecordingClient(t *testing.T, objects ...client.Object) *recordingClient {
+	t.Helper()
+	recorder := &recordingClient{}
+	recorder.WithWatch = interceptor.NewClient(newFakeClient(t, objects...), interceptor.Funcs{
+		Apply: func(ctx context.Context, c client.WithWatch, obj runtime.ApplyConfiguration, opts ...client.ApplyOption) error {
+			if rec, ok := obj.(*odigosapply.RecommendationApplyConfiguration); ok {
+				applyOpts := &client.ApplyOptions{}
+				applyOpts.ApplyOptions(opts)
+				recorded := recordedApply{
+					name:      ptr.Deref(rec.Name, ""),
+					namespace: ptr.Deref(rec.Namespace, ""),
+					opts:      *applyOpts,
+				}
+				if rec.Spec != nil {
+					recorded.spec = *rec.Spec
+				}
+				recorder.applies = append(recorder.applies, recorded)
+			}
+			return c.Apply(ctx, obj, opts...)
+		},
+	})
+	return recorder
+}
+
 // recordedApply is a snapshot of a server side apply as it was sent by the controller. The fake
 // client both drops explicit false values from apply configurations and overwrites the
 // configuration with the merge result, so the snapshot is taken before the apply is forwarded.
@@ -55,35 +79,6 @@ type recordedApply struct {
 type recordingClient struct {
 	client.WithWatch
 	applies []recordedApply
-}
-
-func newRecordingClient(t *testing.T, objects ...client.Object) *recordingClient {
-	t.Helper()
-	recorder := &recordingClient{}
-	scheme := runtime.NewScheme()
-	require.NoError(t, clientgoscheme.AddToScheme(scheme))
-	require.NoError(t, odigosv1.AddToScheme(scheme))
-	recorder.WithWatch = interceptor.NewClient(
-		fake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...).Build(),
-		interceptor.Funcs{
-			Apply: func(ctx context.Context, c client.WithWatch, obj runtime.ApplyConfiguration, opts ...client.ApplyOption) error {
-				if rec, ok := obj.(*odigosapply.RecommendationApplyConfiguration); ok {
-					applyOpts := &client.ApplyOptions{}
-					applyOpts.ApplyOptions(opts)
-					recorded := recordedApply{
-						name:      ptr.Deref(rec.Name, ""),
-						namespace: ptr.Deref(rec.Namespace, ""),
-						opts:      *applyOpts,
-					}
-					if rec.Spec != nil {
-						recorded.spec = *rec.Spec
-					}
-					recorder.applies = append(recorder.applies, recorded)
-				}
-				return c.Apply(ctx, obj, opts...)
-			},
-		})
-	return recorder
 }
 
 // single returns the only recommendation that was applied.
