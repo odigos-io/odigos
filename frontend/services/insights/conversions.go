@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
@@ -218,7 +219,16 @@ func DeviationClassFromModel(class model.InsightsDeviationClass) DeviationClass 
 }
 
 func SampleReasonToModel(reason SampleReason) model.InsightsSampleReason {
-	return model.InsightsSampleReason(reason)
+	s := string(reason)
+	switch {
+	case s == string(model.InsightsSampleReasonExample):
+		return model.InsightsSampleReasonExample
+	case s == string(model.InsightsSampleReasonAnomalyEvidence) || strings.HasPrefix(s, "anomaly:"):
+		// Storage tags evidence as anomaly:<signature>; GraphQL keeps the legacy enum token.
+		return model.InsightsSampleReasonAnomalyEvidence
+	default:
+		return model.InsightsSampleReason(reason)
+	}
 }
 
 func SampleReasonFromModel(reason model.InsightsSampleReason) SampleReason {
@@ -562,6 +572,51 @@ func AnomalySummariesToModel(anomalies []AnomalySummary) []*model.InsightsAnomal
 	return mapSlice(anomalies, AnomalySummaryToModel)
 }
 
+func AnomalySpanHighlightToModel(highlight AnomalySpanHighlight) *model.InsightsAnomalySpanHighlight {
+	return &model.InsightsAnomalySpanHighlight{
+		SpanID:   highlight.SpanID,
+		Severity: highlight.Severity,
+		Reason:   highlight.Reason,
+	}
+}
+
+func AnomalyAttrHighlightToModel(highlight AnomalyAttrHighlight) *model.InsightsAnomalyAttrHighlight {
+	return &model.InsightsAnomalyAttrHighlight{
+		SpanID: highlight.SpanID,
+		Key:    highlight.Key,
+		Value:  highlight.Value,
+	}
+}
+
+func AnomalyMetricComparisonToModel(metric AnomalyMetricComparison) *model.InsightsAnomalyMetricComparison {
+	return &model.InsightsAnomalyMetricComparison{
+		Observed: int64ToInt(metric.Observed),
+		Baseline: int64ToInt(metric.Baseline),
+		Unit:     metric.Unit,
+	}
+}
+
+func AnomalyClassFindingToModel(finding AnomalyClassFinding) (*model.InsightsAnomalyClassFinding, error) {
+	rawEvidence, err := encodeOptionalJSONString(finding.RawEvidence)
+	if err != nil {
+		return nil, err
+	}
+	var metric *model.InsightsAnomalyMetricComparison
+	if finding.Metric != nil {
+		metric = AnomalyMetricComparisonToModel(*finding.Metric)
+	}
+	return &model.InsightsAnomalyClassFinding{
+		Class:          DeviationClassToModel(finding.Class),
+		Kind:           model.InsightsAnomalyClassFindingKind(finding.Kind),
+		Title:          finding.Title,
+		Summary:        finding.Summary,
+		SpanHighlights: mapSlice(finding.SpanHighlights, AnomalySpanHighlightToModel),
+		AttrHighlights: mapSlice(finding.AttrHighlights, AnomalyAttrHighlightToModel),
+		Metric:         metric,
+		RawEvidence:    rawEvidence,
+	}, nil
+}
+
 func AnomalyIssueToModel(anomaly AnomalyIssue) (*model.InsightsAnomalyIssue, error) {
 	evidence := "{}"
 	if len(anomaly.Evidence) > 0 {
@@ -570,6 +625,21 @@ func AnomalyIssueToModel(anomaly AnomalyIssue) (*model.InsightsAnomalyIssue, err
 	var risk *model.InsightsRiskAssessment
 	if anomaly.Risk != nil {
 		risk = RiskAssessmentToModel(*anomaly.Risk)
+	}
+	classFindings, err := mapSliceErr(anomaly.ClassFindings, AnomalyClassFindingToModel)
+	if err != nil {
+		return nil, err
+	}
+	if classFindings == nil {
+		classFindings = []*model.InsightsAnomalyClassFinding{}
+	}
+	var anomalyTrace *model.InsightsObservation
+	if anomaly.AnomalyTrace != nil {
+		anomalyTrace = ObservationToModel(*anomaly.AnomalyTrace)
+	}
+	var baselineTrace *model.InsightsObservation
+	if anomaly.BaselineTrace != nil {
+		baselineTrace = ObservationToModel(*anomaly.BaselineTrace)
 	}
 	return &model.InsightsAnomalyIssue{
 		TransactionID:    FormatID(anomaly.TransactionID),
@@ -590,6 +660,9 @@ func AnomalyIssueToModel(anomaly AnomalyIssue) (*model.InsightsAnomalyIssue, err
 		Status:           AnomalyStatusToModel(anomaly.Status),
 		Evidence:         evidence,
 		Risk:             risk,
+		ClassFindings:    classFindings,
+		AnomalyTrace:     anomalyTrace,
+		BaselineTrace:    baselineTrace,
 	}, nil
 }
 

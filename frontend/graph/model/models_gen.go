@@ -740,6 +740,26 @@ type Insights struct {
 	StorageHealth       *InsightsStorageHealth        `json:"storageHealth"`
 }
 
+type InsightsAnomalyAttrHighlight struct {
+	SpanID string `json:"spanId"`
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+}
+
+// Render-ready explanation of one deviation class within an anomaly issue.
+// Built at read time; the UI should render title/summary/highlights and not parse raw evidence.
+type InsightsAnomalyClassFinding struct {
+	Class          InsightsDeviationClass           `json:"class"`
+	Kind           InsightsAnomalyClassFindingKind  `json:"kind"`
+	Title          string                           `json:"title"`
+	Summary        string                           `json:"summary"`
+	SpanHighlights []*InsightsAnomalySpanHighlight  `json:"spanHighlights,omitempty"`
+	AttrHighlights []*InsightsAnomalyAttrHighlight  `json:"attrHighlights,omitempty"`
+	Metric         *InsightsAnomalyMetricComparison `json:"metric,omitempty"`
+	// JSON-encoded original per-class evidence blob (fallback / debug).
+	RawEvidence *string `json:"rawEvidence,omitempty"`
+}
+
 type InsightsAnomalyIssue struct {
 	TransactionID    string                   `json:"transactionId"`
 	Signature        string                   `json:"signature"`
@@ -760,11 +780,31 @@ type InsightsAnomalyIssue struct {
 	// JSON-encoded evidence keyed by deviation class; only available on the single-anomaly query.
 	Evidence string                  `json:"evidence"`
 	Risk     *InsightsRiskAssessment `json:"risk,omitempty"`
+	// One render-ready finding per triggered class (title, summary, highlights). Always present on detail.
+	ClassFindings []*InsightsAnomalyClassFinding `json:"classFindings"`
+	// Evidence sample for this issue including rawOtlp. Omitted when no sample was retained.
+	AnomalyTrace *InsightsObservation `json:"anomalyTrace,omitempty"`
+	// Learning-phase example sample including rawOtlp for baseline compare. Omitted when none exist.
+	BaselineTrace *InsightsObservation `json:"baselineTrace,omitempty"`
+}
+
+type InsightsAnomalyMetricComparison struct {
+	Observed int `json:"observed"`
+	Baseline int `json:"baseline"`
+	// us | bytes
+	Unit string `json:"unit"`
 }
 
 type InsightsAnomalyRefInput struct {
 	TransactionID string `json:"transactionId"`
 	Signature     string `json:"signature"`
+}
+
+type InsightsAnomalySpanHighlight struct {
+	SpanID string `json:"spanId"`
+	// high | medium | low
+	Severity string `json:"severity"`
+	Reason   string `json:"reason"`
 }
 
 type InsightsAnomalySummary struct {
@@ -2819,6 +2859,47 @@ func (e *FieldType) UnmarshalGQL(v any) error {
 }
 
 func (e FieldType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsAnomalyClassFindingKind string
+
+const (
+	InsightsAnomalyClassFindingKindStructural InsightsAnomalyClassFindingKind = "structural"
+	InsightsAnomalyClassFindingKindMetric     InsightsAnomalyClassFindingKind = "metric"
+)
+
+var AllInsightsAnomalyClassFindingKind = []InsightsAnomalyClassFindingKind{
+	InsightsAnomalyClassFindingKindStructural,
+	InsightsAnomalyClassFindingKindMetric,
+}
+
+func (e InsightsAnomalyClassFindingKind) IsValid() bool {
+	switch e {
+	case InsightsAnomalyClassFindingKindStructural, InsightsAnomalyClassFindingKindMetric:
+		return true
+	}
+	return false
+}
+
+func (e InsightsAnomalyClassFindingKind) String() string {
+	return string(e)
+}
+
+func (e *InsightsAnomalyClassFindingKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsAnomalyClassFindingKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsAnomalyClassFindingKind", str)
+	}
+	return nil
+}
+
+func (e InsightsAnomalyClassFindingKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

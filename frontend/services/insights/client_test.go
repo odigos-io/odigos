@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,21 +15,27 @@ import (
 
 func TestClientEscapesPathAndQueryParameters(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/prefix/api/v1/anomalies/42/sig/with spaces", r.URL.Path)
-		assert.Equal(t, "/prefix/api/v1/anomalies/42/sig%2Fwith%20spaces", r.URL.EscapedPath())
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{
-			"transaction_id": 42,
-			"signature": "sig/with spaces",
-			"service": "checkout",
-			"namespace": "prod",
-			"triggered_classes": [],
-			"evidence": {},
-			"occurrences": 1,
-			"max_score": 10,
-			"severity": "low",
-			"status": "open"
-		}`))
+		switch {
+		case r.URL.Path == "/prefix/api/v1/anomalies/42/sig/with spaces":
+			assert.Equal(t, "/prefix/api/v1/anomalies/42/sig%2Fwith%20spaces", r.URL.EscapedPath())
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"transaction_id": 42,
+				"signature": "sig/with spaces",
+				"service": "checkout",
+				"namespace": "prod",
+				"triggered_classes": [],
+				"evidence": {},
+				"occurrences": 1,
+				"max_score": 10,
+				"severity": "low",
+				"status": "open"
+			}`))
+		case strings.HasPrefix(r.URL.Path, "/prefix/api/v1/transactions/42/observations"):
+			_, _ = w.Write([]byte(`{"count":0,"items":[]}`))
+		default:
+			t.Fatalf("unexpected path %s", r.URL.Path)
+		}
 	}))
 	defer server.Close()
 
@@ -38,6 +45,77 @@ func TestClientEscapesPathAndQueryParameters(t *testing.T) {
 	result, err := client.GetAnomaly(context.Background(), 42, "sig/with spaces")
 	require.NoError(t, err)
 	assert.Equal(t, "sig/with spaces", result.Signature)
+}
+
+func TestGetAnomalyEnrichesMissingCompareTraces(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.URL.Path == "/api/v1/anomalies/9/sig":
+			_, _ = w.Write([]byte(`{
+				"transaction_id": 9,
+				"signature": "sig",
+				"service": "checkout",
+				"namespace": "prod",
+				"triggered_classes": ["D2_egress"],
+				"evidence": {},
+				"occurrences": 1,
+				"max_score": 40,
+				"severity": "medium",
+				"status": "open",
+				"last_trace_id": "trace-last"
+			}`))
+		case r.URL.Path == "/api/v1/transactions/9/observations" && r.URL.Query().Get("sample_reason") == "anomaly:sig":
+			_, _ = w.Write([]byte(`{"count":1,"items":[{
+				"trace_id":"trace-anomaly",
+				"transaction_id":9,
+				"observed_at":"2026-08-06T12:00:00Z",
+				"duration_ms":1,
+				"sample_reason":"anomaly:sig"
+			}]}`))
+		case r.URL.Path == "/api/v1/transactions/9/observations" && r.URL.Query().Get("sample_reason") == "example":
+			_, _ = w.Write([]byte(`{"count":1,"items":[{
+				"trace_id":"trace-baseline",
+				"transaction_id":9,
+				"observed_at":"2026-08-06T11:00:00Z",
+				"duration_ms":0,
+				"sample_reason":"example"
+			}]}`))
+		case r.URL.Path == "/api/v1/transactions/9/observations/trace-anomaly":
+			_, _ = w.Write([]byte(`{
+				"trace_id":"trace-anomaly",
+				"transaction_id":9,
+				"observed_at":"2026-08-06T12:00:00Z",
+				"duration_ms":1,
+				"sample_reason":"anomaly:sig",
+				"raw_otlp":"YW5vbQ=="
+			}`))
+		case r.URL.Path == "/api/v1/transactions/9/observations/trace-baseline":
+			_, _ = w.Write([]byte(`{
+				"trace_id":"trace-baseline",
+				"transaction_id":9,
+				"observed_at":"2026-08-06T11:00:00Z",
+				"duration_ms":0,
+				"sample_reason":"example",
+				"raw_otlp":"YmFzZQ=="
+			}`))
+		default:
+			t.Fatalf("unexpected %s %s?%s", r.Method, r.URL.Path, r.URL.RawQuery)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient(server.URL)
+	require.NoError(t, err)
+
+	result, err := client.GetAnomaly(context.Background(), 9, "sig")
+	require.NoError(t, err)
+	require.NotNil(t, result.AnomalyTrace)
+	assert.Equal(t, "trace-anomaly", result.AnomalyTrace.TraceID)
+	assert.Equal(t, "YW5vbQ==", result.AnomalyTrace.RawOTLP)
+	require.NotNil(t, result.BaselineTrace)
+	assert.Equal(t, "trace-baseline", result.BaselineTrace.TraceID)
+	assert.Equal(t, "YmFzZQ==", result.BaselineTrace.RawOTLP)
 }
 
 func TestClientEncodesQueryParameters(t *testing.T) {

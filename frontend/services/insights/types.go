@@ -18,6 +18,17 @@ type LearningConditionType string
 type StorageHealthStatus string
 type StorageDiskStatus string
 
+const (
+	SampleReasonExample SampleReason = "example"
+)
+
+// AnomalyEvidenceSampleReason is the storage tag for an issue's evidence sample
+// (`anomaly:<signature>`). The GraphQL enum still uses the legacy token
+// `anomaly_evidence` for filters/display.
+func AnomalyEvidenceSampleReason(signature string) SampleReason {
+	return SampleReason("anomaly:" + signature)
+}
+
 type ListTransactionsParams struct {
 	Namespace *string
 	Service   *string
@@ -209,25 +220,59 @@ type AnomalySummary struct {
 	Status           AnomalyStatus    `json:"status"`
 }
 
+type AnomalyClassFindingKind string
+
+type AnomalySpanHighlight struct {
+	SpanID   string `json:"span_id"`
+	Severity string `json:"severity"`
+	Reason   string `json:"reason"`
+}
+
+type AnomalyAttrHighlight struct {
+	SpanID string `json:"span_id"`
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+}
+
+type AnomalyMetricComparison struct {
+	Observed int64  `json:"observed"`
+	Baseline int64  `json:"baseline"`
+	Unit     string `json:"unit"`
+}
+
+type AnomalyClassFinding struct {
+	Class          DeviationClass           `json:"class"`
+	Kind           AnomalyClassFindingKind  `json:"kind"`
+	Title          string                   `json:"title"`
+	Summary        string                   `json:"summary"`
+	SpanHighlights []AnomalySpanHighlight   `json:"span_highlights,omitempty"`
+	AttrHighlights []AnomalyAttrHighlight   `json:"attr_highlights,omitempty"`
+	Metric         *AnomalyMetricComparison `json:"metric,omitempty"`
+	RawEvidence    json.RawMessage          `json:"raw_evidence,omitempty"`
+}
+
 type AnomalyIssue struct {
-	TransactionID    int64            `json:"transaction_id"`
-	Signature        string           `json:"signature"`
-	Service          string           `json:"service"`
-	Namespace        string           `json:"namespace"`
-	Operation        *string          `json:"operation,omitempty"`
-	Kind             *TransactionKind `json:"kind,omitempty"`
-	TriggeredClasses []DeviationClass `json:"triggered_classes"`
-	Offending        *string          `json:"offending,omitempty"`
-	Evidence         json.RawMessage  `json:"evidence"`
-	PolicyID         *int64           `json:"policy_id,omitempty"`
-	Occurrences      int64            `json:"occurrences"`
-	MaxScore         int              `json:"max_score"`
-	Severity         Severity         `json:"severity"`
-	FirstSeen        *string          `json:"first_seen,omitempty"`
-	LastSeen         *string          `json:"last_seen,omitempty"`
-	LastTraceID      *string          `json:"last_trace_id,omitempty"`
-	Status           AnomalyStatus    `json:"status"`
-	Risk             *RiskAssessment  `json:"risk,omitempty"`
+	TransactionID    int64                 `json:"transaction_id"`
+	Signature        string                `json:"signature"`
+	Service          string                `json:"service"`
+	Namespace        string                `json:"namespace"`
+	Operation        *string               `json:"operation,omitempty"`
+	Kind             *TransactionKind      `json:"kind,omitempty"`
+	TriggeredClasses []DeviationClass      `json:"triggered_classes"`
+	Offending        *string               `json:"offending,omitempty"`
+	Evidence         json.RawMessage       `json:"evidence"`
+	PolicyID         *int64                `json:"policy_id,omitempty"`
+	Occurrences      int64                 `json:"occurrences"`
+	MaxScore         int                   `json:"max_score"`
+	Severity         Severity              `json:"severity"`
+	FirstSeen        *string               `json:"first_seen,omitempty"`
+	LastSeen         *string               `json:"last_seen,omitempty"`
+	LastTraceID      *string               `json:"last_trace_id,omitempty"`
+	Status           AnomalyStatus         `json:"status"`
+	Risk             *RiskAssessment       `json:"risk,omitempty"`
+	ClassFindings    []AnomalyClassFinding `json:"class_findings"`
+	AnomalyTrace     *Observation          `json:"anomaly_trace,omitempty"`
+	BaselineTrace    *Observation          `json:"baseline_trace,omitempty"`
 }
 
 type AnomalyRef struct {

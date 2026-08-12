@@ -171,10 +171,48 @@ func TestBaselineAndAnomalyEvidenceStayJSONStrings(t *testing.T) {
 		MaxScore:         40,
 		Severity:         "medium",
 		Status:           "open",
+		ClassFindings: []AnomalyClassFinding{
+			{
+				Class:   "D2_egress",
+				Kind:    "structural",
+				Title:   "Unexpected egress",
+				Summary: "New peer 1.2.3.4:443 not in the learned baseline.",
+				SpanHighlights: []AnomalySpanHighlight{
+					{SpanID: "aabb", Severity: "high", Reason: "new egress peer"},
+				},
+				RawEvidence: json.RawMessage(`{"new_peers":["1.2.3.4:443"]}`),
+			},
+		},
+		AnomalyTrace: &Observation{
+			TraceID:       "trace-anomaly",
+			TransactionID: 9,
+			ObservedAt:    "2026-07-20T14:03:22Z",
+			DurationMs:    12,
+			SampleReason:  "anomaly:sig",
+			RawOTLP:       "YmFzZTY0",
+		},
+		BaselineTrace: &Observation{
+			TraceID:       "trace-baseline",
+			TransactionID: 9,
+			ObservedAt:    "2026-07-20T09:15:01Z",
+			DurationMs:    4,
+			SampleReason:  "example",
+			RawOTLP:       "YmFzZTY0",
+		},
 	})
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"D2_egress":{"new_peers":["1.2.3.4:443"]}}`, anomaly.Evidence)
 	assert.Equal(t, "9", anomaly.TransactionID)
+	require.Len(t, anomaly.ClassFindings, 1)
+	assert.Equal(t, model.InsightsAnomalyClassFindingKindStructural, anomaly.ClassFindings[0].Kind)
+	assert.Equal(t, "Unexpected egress", anomaly.ClassFindings[0].Title)
+	require.NotNil(t, anomaly.ClassFindings[0].RawEvidence)
+	assert.JSONEq(t, `{"new_peers":["1.2.3.4:443"]}`, *anomaly.ClassFindings[0].RawEvidence)
+	require.NotNil(t, anomaly.AnomalyTrace)
+	assert.Equal(t, "trace-anomaly", anomaly.AnomalyTrace.TraceID)
+	assert.Equal(t, model.InsightsSampleReasonAnomalyEvidence, anomaly.AnomalyTrace.SampleReason)
+	require.NotNil(t, anomaly.BaselineTrace)
+	assert.Equal(t, model.InsightsSampleReasonExample, anomaly.BaselineTrace.SampleReason)
 }
 
 func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
