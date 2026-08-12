@@ -45,8 +45,8 @@ COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8 /instrum
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.90 /instrumentations/python /instrumentations/python
 
 # nodejs-community
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.12.0 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.12.0 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.13.0 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.13.0 /instrumentations/nodejs-community /instrumentations/nodejs-community
 # nodejs-community-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.20 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.20 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
@@ -55,7 +55,7 @@ COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.20 /instrument
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 # php-community
-COPY --from=public.ecr.aws/odigos/agents/php-community:v0.4.1 /instrumentations/php /instrumentations/php
+COPY --from=public.ecr.aws/odigos/agents/php-community:v0.5.0 /instrumentations/php /instrumentations/php
 
 # ruby-community
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations/ruby /instrumentations/ruby
@@ -132,7 +132,7 @@ RUN if [ "$RHEL" = "true" ] ; then \
 
 
 # Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.52
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.54
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         GRPC_ARCH="arm64"; \
     else \
@@ -207,7 +207,7 @@ COPY --from=agents-builder /instrumentations/ .
 CMD ["/root/odiglet"]
 
 ######### Default Odiglet #########
-FROM gcr.io/distroless/base:3443777deec6bd5c58be682f286aefffd1c871ae
+FROM gcr.io/distroless/base@sha256:f4a335ca209e1d2ee873102c17c389ad0142e3d5b21aee2817e9cc9c01d87d20
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
