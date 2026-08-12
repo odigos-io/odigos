@@ -4,6 +4,9 @@ FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.9.0
 ARG TARGETARCH
+# SHA256 pins for the artifacts fetched in this stage. Verification runs between the
+# download and the unpack, so nothing unverified is ever extracted. Refresh these
+# together with DOTNET_OTEL_VERSION — a mismatched download fails the build.
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
     echo "arm64" > /tmp/arch_suffix; \
     else \
@@ -12,12 +15,22 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
+    case "$ARCH_SUFFIX" in \
+      x64) echo "58b6a7e5282ffba6d2f8e09c69e412711050e49a36c82d31edfd84cad3afac49  opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" | sha256sum -c - ;; \
+      arm64) echo "7600d3e1f57d06995d637c95650d9ee28b6e32cf2aa362fdb1a988267425191f  opentelemetry-dotnet-instrumentation-linux-glibc-arm64.zip" | sha256sum -c - ;; \
+      *) echo "no checksum pinned for arch $ARCH_SUFFIX" && exit 1 ;; \
+    esac && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     mv linux-$ARCH_SUFFIX linux-glibc
 
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    case "$ARCH_SUFFIX" in \
+      x64) echo "c0bc22bac5b5aa8b345cb995e87c39e080025ed5923a01d45f9d61d49c60b301  opentelemetry-dotnet-instrumentation-linux-musl-x64.zip" | sha256sum -c - ;; \
+      arm64) echo "a5494eaeeab99f298b3c875dfbac648c0e56c7f04ebc062800904cbb18251229  opentelemetry-dotnet-instrumentation-linux-musl-arm64.zip" | sha256sum -c - ;; \
+      *) echo "no checksum pinned for arch $ARCH_SUFFIX" && exit 1 ;; \
+    esac && \
     unzip -o opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
     mv linux-musl-$ARCH_SUFFIX linux-musl
@@ -27,6 +40,11 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
 # The following override the .so file with our own which is compiled on the same glibc version as the dotnet runtime.
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
+    case "$ARCH_SUFFIX" in \
+      x64) echo "1a2964dd0ac92c29d5265ffd0093cb7d69605cdd3e98374e9cf25dbfb619855c  OpenTelemetry.AutoInstrumentation.Native-x64.so" | sha256sum -c - ;; \
+      arm64) echo "06c6191aa282c1a605d919d3057b1f5ce3d1e5ada7b9804295b30bf2288976ab  OpenTelemetry.AutoInstrumentation.Native-arm64.so" | sha256sum -c - ;; \
+      *) echo "no checksum pinned for arch $ARCH_SUFFIX" && exit 1 ;; \
+    esac && \
     mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc/OpenTelemetry.AutoInstrumentation.Native.so
 
 
