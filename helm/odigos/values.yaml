@@ -66,6 +66,14 @@ clusterName: ''
 
 # @schema
 # description: |-
+#   When false (default), selected recommendation Actions (URL templatization, Infer DB Attributes)
+#   are created automatically as post-install Helm hooks. Set to true to skip auto-applying them.
+# @schema
+disableAutoRecommendations: false
+
+
+# @schema
+# description: |-
 #   Default log level for components when component-level logLevel is not set.
 #   Accepted values: debug, info, warn, error. Default: info.
 #   Set via ODIGOS_LOG_LEVEL env; change requires pod restart or rollout.

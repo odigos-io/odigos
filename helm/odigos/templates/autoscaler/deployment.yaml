@@ -64,10 +64,7 @@ spec:
           - name: ODIGOS_LOG_LEVEL
             value: {{ .Values.autoscaler.logLevel | default .Values.logLevel | default "info" | quote }}
           - name: ODIGOS_TIER
-            valueFrom:
-              configMapKeyRef:
-                key: ODIGOS_TIER
-                name: odigos-deployment
+            value: '{{- if include "odigos.secretExists" . }}onprem{{- else }}community{{- end }}'
           - name: ODIGOS_VERSION
             valueFrom:
               configMapKeyRef:
