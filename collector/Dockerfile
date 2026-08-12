@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.26.2-trixie AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.5-trixie AS builder
 # install the required tooling for calling `setcap` on the compiled binary
 RUN apt-get update && apt-get install -y --no-install-recommends libcap2-bin
 COPY ./collector/ /go/src/collector
