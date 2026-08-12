@@ -22,6 +22,7 @@ runs:
         git tag collector/exporters/azureblobstorageexporter/${{ inputs.tag }}
         git tag collector/exporters/googlecloudstorageexporter/${{ inputs.tag }}
         git tag collector/exporters/mockdestinationexporter/${{ inputs.tag }}
+        git tag collector/extension/odigoscapabilitiesextension/${{ inputs.tag }}
         git tag collector/extension/odigosconfigk8sextension/${{ inputs.tag }}
         git tag collector/processors/odigosconditionalattributes/${{ inputs.tag }}
         git tag collector/processors/odigosextractattributeprocessor/${{ inputs.tag }}
