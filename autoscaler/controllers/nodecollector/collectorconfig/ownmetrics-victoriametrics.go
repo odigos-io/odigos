@@ -28,6 +28,12 @@ const (
 	// keep the ebpf-core shared-buffer event counters (emitted by the go/java greatwall instrumentations for example)
 	ebpfCoreEventsRegexPattern = "odigos_ebpf_events_(sent|send_failed)_.*"
 
+	// Unread ringbuffer bytes
+	ebpfCoreRingbufferPendingBytes = "odigos_ebpf_ring_pending_bytes"
+
+	// Histogram for probe handler duration (_bucket/_sum/_count)
+	ebpfCoreHandlerDuration = "odigos_ebpf_probe_handler_duration_us_microseconds.*"
+
 	// the cluster collector's own-metrics OTLP http receiver listens on this port.
 	clusterCollectorOwnMetricsOtlpHttpPort = 44318
 )
@@ -36,7 +42,12 @@ func odigletMetricsReceiverConfig() config.GenericMap {
 	// The data collection collector runs as a container in the odiglet pod, so it can scrape the odiglet's metrics endpoint over localhost
 	odigletMetricsTarget := fmt.Sprintf("localhost:%d", k8sconsts.OdigletMetricsServerPort)
 
-	keepRegex := fmt.Sprintf("%s|%s", ebpfInstrumentationMetricsRegexPattern, ebpfCoreEventsRegexPattern)
+	keepRegex := fmt.Sprintf("%s|%s|%s|%s",
+		ebpfInstrumentationMetricsRegexPattern,
+		ebpfCoreEventsRegexPattern,
+		ebpfCoreRingbufferPendingBytes,
+		ebpfCoreHandlerDuration,
+	)
 
 	return config.GenericMap{
 		odigletMetricsReceiverName: config.GenericMap{
