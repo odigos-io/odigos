@@ -1,8 +1,9 @@
 package matchers
 
 import (
-	"github.com/odigos-io/odigos/common/urltemplate"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+
+	"github.com/odigos-io/odigos/common/urltemplate"
 )
 
 // given a span, will attempt to match it to a route rules based on:
