@@ -28,15 +28,3 @@ func compareHttpRoute(spanRoute string, ruleRouteExact urltemplate.PathRule, rul
 	}
 	return ruleRoutePrefix.MatchPrefix(pathSegments)
 }
-
-func comparePathToTemplate(path string, exactMatch urltemplate.PathRule, prefix urltemplate.PathRule) bool {
-	if len(exactMatch) == 0 && len(prefix) == 0 {
-		return false
-	}
-
-	pathSegments, _ := urltemplate.SplitPath(path)
-	if len(exactMatch) > 0 {
-		return exactMatch.Match(pathSegments)
-	}
-	return prefix.MatchPrefix(pathSegments)
-}
