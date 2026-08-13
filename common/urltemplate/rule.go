@@ -21,12 +21,12 @@ type RulePathSegment struct {
 // Used for URL templatization and for matching paths/routes against a rule.
 type PathRule []RulePathSegment
 
-func parseRuleTemplateString(ruleTemplateString string) (string, error) {
+func parseRuleTemplateString(ruleTemplateString string) string {
 	templateName := strings.TrimSpace(ruleTemplateString)
 	if templateName == "" {
 		templateName = "id" // default to name id if not provided
 	}
-	return templateName, nil
+	return templateName
 }
 
 // ParseUserInputRuleString splits a path rule on "/" into a PathRule.
@@ -52,10 +52,7 @@ func ParseUserInputRuleString(userInputRule string) (PathRule, error) {
 			// remove the curly braces
 			templatizationRule := segment[1 : len(segment)-1]
 			// parse the template name
-			templateName, err := parseRuleTemplateString(templatizationRule)
-			if err != nil {
-				return nil, err
-			}
+			templateName := parseRuleTemplateString(templatizationRule)
 			ruleSegments[i] = RulePathSegment{
 				TemplateName: templateName,
 			}
