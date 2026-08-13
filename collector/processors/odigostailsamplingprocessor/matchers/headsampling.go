@@ -6,6 +6,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
+	"github.com/odigos-io/odigos/common/urltemplate"
 )
 
 func NewHeadSamplingOperationMatcher(operation *commonapisampling.HeadSamplingOperationMatcher) Matcher {
@@ -27,16 +28,16 @@ func NewHeadSamplingOperationMatcher(operation *commonapisampling.HeadSamplingOp
 }
 
 type headSamplingHttpServerMatcher struct {
-	method      string
-	route       string
-	routePrefix string
+	method              string
+	routeSegments       urltemplate.PathRule
+	routePrefixSegments urltemplate.PathRule
 }
 
 func newHeadSamplingHttpServerMatcher(operation *commonapisampling.HeadSamplingHttpServerOperationMatcher) Matcher {
 	return &headSamplingHttpServerMatcher{
-		method:      operation.Method,
-		route:       operation.Route,
-		routePrefix: operation.RoutePrefix,
+		method:              operation.Method,
+		routeSegments:       parseRoutePathSegments(operation.Route),
+		routePrefixSegments: parseRoutePathSegments(operation.RoutePrefix),
 	}
 }
 
@@ -51,7 +52,7 @@ func (m *headSamplingHttpServerMatcher) Match(span ptrace.Span) bool {
 		return false
 	case m.method != "" && !compareHttpMethod(httpMethod, m.method):
 		return false
-	case (m.route != "" || m.routePrefix != "") && !matchHttpRoute(span, m.route, m.routePrefix):
+	case (len(m.routeSegments) > 0 || len(m.routePrefixSegments) > 0) && !matchHttpRoute(span, m.routeSegments, m.routePrefixSegments):
 		return false
 	default:
 		return true

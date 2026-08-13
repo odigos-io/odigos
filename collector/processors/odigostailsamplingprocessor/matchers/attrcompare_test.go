@@ -4,7 +4,20 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/odigos-io/odigos/common/urltemplate"
 )
+
+func mustParsePathRule(t *testing.T, path string) urltemplate.PathRule {
+	t.Helper()
+	if path == "" {
+		return nil
+	}
+	rule, err := urltemplate.ParseUserInputRuleString(path)
+	require.NoError(t, err)
+	return rule
+}
 
 func TestCompareHttpMethod(t *testing.T) {
 	tests := []struct {
@@ -56,6 +69,27 @@ func TestCompareHttpRoute(t *testing.T) {
 			ruleRoutePrefix: "",
 			wantMatch:       false,
 		},
+		{
+			name:            "exact templated segment matches any",
+			spanRoute:       "/users/123",
+			ruleRouteExact:  "/users/{id}",
+			ruleRoutePrefix: "",
+			wantMatch:       true,
+		},
+		{
+			name:            "exact wildcard segment matches any",
+			spanRoute:       "/users/john",
+			ruleRouteExact:  "/users/*",
+			ruleRoutePrefix: "",
+			wantMatch:       true,
+		},
+		{
+			name:            "exact templated segment count mismatch",
+			spanRoute:       "/users/123/orders",
+			ruleRouteExact:  "/users/{id}",
+			ruleRoutePrefix: "",
+			wantMatch:       false,
+		},
 		// prefix match
 		{
 			name:            "prefix match",
@@ -84,6 +118,13 @@ func TestCompareHttpRoute(t *testing.T) {
 			ruleRouteExact:  "",
 			ruleRoutePrefix: "/api",
 			wantMatch:       false,
+		},
+		{
+			name:            "prefix with templated segment",
+			spanRoute:       "/users/123/orders",
+			ruleRouteExact:  "",
+			ruleRoutePrefix: "/users/{id}",
+			wantMatch:       true,
 		},
 		// exact takes precedence when both set
 		{
@@ -118,7 +159,7 @@ func TestCompareHttpRoute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := compareHttpRoute(tt.spanRoute, tt.ruleRouteExact, tt.ruleRoutePrefix)
+			got := compareHttpRoute(tt.spanRoute, mustParsePathRule(t, tt.ruleRouteExact), mustParsePathRule(t, tt.ruleRoutePrefix))
 			assert.Equal(t, tt.wantMatch, got)
 		})
 	}
@@ -181,11 +222,18 @@ func TestComparePathToHttpRoute(t *testing.T) {
 			ruleRoutePrefix: "/api",
 			wantMatch:       false,
 		},
-		// Note: http.target with query string, and templatized path not supported yet.
+		{
+			name:            "exact templated segment matches concrete path",
+			path:            "/users/42",
+			ruleRouteExact:  "/users/{id}",
+			ruleRoutePrefix: "",
+			wantMatch:       true,
+		},
+		// Note: http.target with query string not supported yet.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := comparePathToTemplate(tt.path, tt.ruleRouteExact, tt.ruleRoutePrefix)
+			got := comparePathToTemplate(tt.path, mustParsePathRule(t, tt.ruleRouteExact), mustParsePathRule(t, tt.ruleRoutePrefix))
 			assert.Equal(t, tt.wantMatch, got)
 		})
 	}

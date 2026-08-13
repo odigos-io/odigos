@@ -1,6 +1,9 @@
 package matchers
 
-import "go.opentelemetry.io/collector/pdata/ptrace"
+import (
+	"github.com/odigos-io/odigos/common/urltemplate"
+	"go.opentelemetry.io/collector/pdata/ptrace"
+)
 
 // given a span, will attempt to match it to a route rules based on:
 // - http.route attribute (if present)
@@ -8,8 +11,8 @@ import "go.opentelemetry.io/collector/pdata/ptrace"
 // - old http.target attribute for agents not yet migrated to the new semconv (if present)
 // if no attribute is found to match the rule, it will return false (no match).
 // route matching is based on exact match and prefix match.
-func matchHttpRoute(span ptrace.Span, ruleRouteExact string, ruleRoutePrefix string) bool {
-	if ruleRouteExact == "" && ruleRoutePrefix == "" { // (should have been checked by caller, but just in case.)
+func matchHttpRoute(span ptrace.Span, ruleRouteExact urltemplate.PathRule, ruleRoutePrefix urltemplate.PathRule) bool {
+	if len(ruleRouteExact) == 0 && len(ruleRoutePrefix) == 0 { // (should have been checked by caller, but just in case.)
 		// unset means match any route
 		return true
 	}
@@ -40,7 +43,7 @@ func matchTemplatedPath(span ptrace.Span, ruleTemplatedPath string, ruleTemplate
 	if found {
 		// best case scenario (like if url templatization was run prior to the sampling)
 		// do exact match on the path.
-		return comparePathToTemplate(urlTemplate, ruleTemplatedPath, ruleTemplatedPathPrefix)
+		return comparePathToTemplate(urlTemplate, parseRoutePathSegments(ruleTemplatedPath), parseRoutePathSegments(ruleTemplatedPathPrefix))
 	}
 
 	// TODO: extract the path from either url.full or http.target attributes and compare to the rule.

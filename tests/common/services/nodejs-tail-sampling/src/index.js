@@ -1,6 +1,8 @@
 var express = require('express');
 var http = require('http');
 
+console.log('nodejs-tail-sampling server starting...');
+
 var app = express();
 var PORT = 8080;
 
@@ -44,113 +46,6 @@ function parseDelayMs(req) {
     return 0;
   }
   return ms;
-}
-
-function registerHopsRoute(path, options) {
-  var propagateError = options.propagateError;
-
-  app.get(path, function (req, res) {
-    var hops = parseHops(req);
-    var isError = shouldReturnError(req);
-    var statusCode = propagateError
-      ? (isError ? 500 : 200)
-      : (hops === 1 && isError ? 500 : 200);
-
-    if (hops === 1) {
-      return res.status(statusCode).json({
-        endpoint: path,
-        description: options.finalHopDescription,
-        hops_remaining: hops,
-        forced_error: isError,
-        status_code: statusCode,
-        error_propagates_to_client: propagateError
-      });
-    }
-
-    var nextPath = path + '?hops=' + (hops - 1) + (isError ? '&error=true' : '');
-    http.get({
-      hostname: '127.0.0.1',
-      port: PORT,
-      path: nextPath
-    }, function (selfRes) {
-      var body = '';
-
-      selfRes.setEncoding('utf8');
-      selfRes.on('data', function (chunk) {
-        body += chunk;
-      });
-      selfRes.on('end', function () {
-        res.status(statusCode).json({
-          endpoint: path,
-          description: options.hopDescription,
-          hops_remaining: hops,
-          next_path: nextPath,
-          forced_error: isError,
-          status_code: statusCode,
-          error_propagates_to_client: propagateError,
-          downstream_status_code: selfRes.statusCode,
-          downstream_body: body
-        });
-      });
-    }).on('error', function (err) {
-      res.status(502).json({
-        endpoint: path,
-        error: err.message
-      });
-    });
-  });
-}
-
-function registerTailSamplingScenarioRoutes() {
-  app.get('/sampling/tail/no-rule', function (req, res) {
-    sendScenarioResponse(req, res, {
-      endpoint: '/sampling/tail/no-rule',
-      description: 'baseline traffic sampled through the 10% cost-reduction rule'
-    });
-  });
-
-  app.get('/sampling/tail/error', function (req, res) {
-    sendScenarioResponse(req, res, {
-      endpoint: '/sampling/tail/error',
-      description: 'tail-sampling error scenario; add ?error=true to force HTTP 500'
-    });
-  });
-
-  app.get('/sampling/tail/duration/short', function (req, res) {
-    sendScenarioResponse(req, res, {
-      endpoint: '/sampling/tail/duration/short',
-      description: 'short request duration, sampled through the 10% cost-reduction rule',
-      delayMs: DURATIONS.short
-    });
-  });
-
-  app.get('/sampling/tail/duration/medium', function (req, res) {
-    sendScenarioResponse(req, res, {
-      endpoint: '/sampling/tail/duration/medium',
-      description: 'medium request duration above 500ms, sampled at 50%',
-      delayMs: DURATIONS.medium
-    });
-  });
-
-  app.get('/sampling/tail/duration/long', function (req, res) {
-    sendScenarioResponse(req, res, {
-      endpoint: '/sampling/tail/duration/long',
-      description: 'long request duration above 1000ms, sampled at 100%',
-      delayMs: DURATIONS.long
-    });
-  });
-
-  registerHopsRoute('/sampling/tail/hops', {
-    propagateError: true,
-    finalHopDescription: 'final hop returns success or error based on the error query parameter',
-    hopDescription: 'hop made an outgoing HTTP request to itself; downstream status is returned to the client'
-  });
-
-  registerHopsRoute('/sampling/tail/hops/non-propagating-error', {
-    propagateError: false,
-    finalHopDescription: 'final hop returns success or error based on the error query parameter',
-    hopDescription: 'hop made an outgoing HTTP request to itself; only the final hop reflects a forced error on the client response'
-  });
 }
 
 var alternateErrorNext = false;
@@ -269,7 +164,37 @@ app.get('/healthz', function (req, res) {
   res.status(200).json({ status: 'healthy' });
 });
 
-registerTailSamplingScenarioRoutes();
+// Express path params so http.route is templated
+// (e.g. /http-server/templated/:id/users/:name/orders/:uuid) rather than the concrete URL.
+// Callers should vary id/name/uuid per request.
+app.get('/http-server/templated/:id/users/:name/orders/:uuid', function (req, res) {
+  res.status(200).json({
+    endpoint: '/http-server/templated/:id/users/:name/orders/:uuid',
+    id: req.params.id,
+    name: req.params.name,
+    uuid: req.params.uuid,
+    description: 'templated path with id, name, and uuid segments for http.route asserts'
+  });
+});
+
+// Templated prefix: nested /items/:itemId also matches a routePrefix rule ending at /items.
+app.get('/http-server/prefix/:id/items', function (req, res) {
+  res.status(200).json({
+    endpoint: '/http-server/prefix/:id/items',
+    id: req.params.id,
+    description: 'templated prefix path for routePrefix sampling'
+  });
+});
+
+app.get('/http-server/prefix/:id/items/:itemId', function (req, res) {
+  res.status(200).json({
+    endpoint: '/http-server/prefix/:id/items/:itemId',
+    id: req.params.id,
+    itemId: req.params.itemId,
+    description: 'nested path under templated prefix for routePrefix sampling'
+  });
+});
+
 registerTailErrorScenarioRoutes();
 registerTailDurationScenarioRoutes();
 

@@ -109,7 +109,7 @@ func TestMatchHttpRoute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			span := spanWithAttrs(t, tt.attrs)
-			got := matchHttpRoute(span, tt.ruleRouteExact, tt.ruleRoutePrefix)
+			got := matchHttpRoute(span, mustParsePathRule(t, tt.ruleRouteExact), mustParsePathRule(t, tt.ruleRoutePrefix))
 			assert.Equal(t, tt.wantMatch, got)
 		})
 	}

@@ -44,3 +44,28 @@ spec:
           - durationAtLeastMs: 1000
             name: high-relevance-duration-above-1000ms
             percentageAtLeast: 100
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-tail-sampling-http-server
+  namespace: default
+  ownerReferences:
+    - kind: Deployment
+      name: tail-sampling-http-server
+spec:
+  workloadCollectorConfig:
+    - containerName: tail-sampling-http-server
+      samplingCollectorConfig:
+        (highlyRelevantOperations[?name == 'high-relevance-http-server-templated']):
+          - name: high-relevance-http-server-templated
+            operation:
+              httpServer:
+                route: /http-server/templated/{id}/users/*/orders/*
+            percentageAtLeast: 100
+        (highlyRelevantOperations[?name == 'high-relevance-http-server-templated-prefix']):
+          - name: high-relevance-http-server-templated-prefix
+            operation:
+              httpServer:
+                routePrefix: /http-server/prefix/{id}/*
+            percentageAtLeast: 100

@@ -2,7 +2,8 @@ apiVersion: e2e.tests.odigos.io/v1
 kind: SamplingTraceMetricsTest
 description: |
   Expected deltas on otelcol_odigos.sampling.trace.{match,keep,drop}_count_total
-  after tail-sampling-errors-curls and tail-sampling-duration-curls.
+  after tail-sampling-errors-curls, tail-sampling-duration-curls, and
+  tail-sampling-http-server-curls.
   Rule IDs are resolved at runtime from InstrumentationConfig.
   Record baseline immediately before trigger; assert sum(rule id) - baseline per counter.
   Every rule: delta(keep) + delta(drop) must equal delta(match). Explicit keep/drop values
@@ -42,6 +43,20 @@ rules:
   - deployment: tail-sampling-duration
     ruleName: high-relevance-duration-above-1000ms
     description: /duration?ms=1200, /duration/long (100% keep)
+    expected:
+      match: 2
+      keep: 2
+      drop: 0
+  - deployment: tail-sampling-http-server
+    ruleName: high-relevance-http-server-templated
+    description: 3x GET /http-server/templated/:id/users/:name/orders/:uuid (100% keep)
+    expected:
+      match: 3
+      keep: 3
+      drop: 0
+  - deployment: tail-sampling-http-server
+    ruleName: high-relevance-http-server-templated-prefix
+    description: GET /http-server/prefix/:id/items and nested /items/:itemId (100% keep)
     expected:
       match: 2
       keep: 2
