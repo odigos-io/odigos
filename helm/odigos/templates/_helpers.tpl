@@ -1,14 +1,15 @@
 {{- define "utils.imagePrefix" -}}
-{{- $defaultRegistry := "registry.odigos.io" -}}
+{{- $enterpriseRegistry := "registry.odigos.io" -}}
+{{- $communityRegistry := "docker.io/keyval" -}}
 {{- $redHatRegistry := "registry.connect.redhat.com/odigos" -}}
 {{- if $.Values.imagePrefix -}}
     {{- $.Values.imagePrefix -}}
+{{- else if $.Values.openshift.enabled -}}
+    {{- $redHatRegistry -}}
+{{- else if include "odigos.secretExists" . -}}
+    {{- $enterpriseRegistry -}}
 {{- else -}}
-    {{- if $.Values.openshift.enabled -}}
-        {{- $redHatRegistry -}}
-    {{- else -}}
-        {{- $defaultRegistry -}}
-    {{- end -}}
+    {{- $communityRegistry -}}
 {{- end -}}
 {{- end -}}
 
@@ -45,7 +46,7 @@ true
 {{- end -}}
 
 {{- define "odigos.usesOdigosRegistry" -}}
-{{- if eq (include "utils.imagePrefix" (dict "Values" .Values)) "registry.odigos.io" -}}
+{{- if eq (include "utils.imagePrefix" .) "registry.odigos.io" -}}
 true
 {{- end -}}
 {{- end -}}
@@ -79,7 +80,7 @@ true
   {{- if hasKey $.Values.openshift "certifiedImageTags" }}
     {{- $certified = $.Values.openshift.certifiedImageTags }}
   {{- end }}
-  {{- $prefix := include "utils.imagePrefix" (dict "Values" $.Values) -}}
+  {{- $prefix := include "utils.imagePrefix" . -}}
   {{- printf "%s/odigos-%s%s:%s" $prefix .Component (ternary "-rhel-certified" "" (and $.Values.openshift.enabled $certified)) .Tag }}
 {{- end -}}
 {{- end -}}
