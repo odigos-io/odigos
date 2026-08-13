@@ -153,7 +153,7 @@ func TestUpdateInstrumentationConfigSpec_EnablesAgentForSupportedContainer(t *te
 	containerConfig := ic.Spec.Containers[0]
 	assert.True(t, containerConfig.AgentEnabled)
 	assert.Equal(t, goDistroName, containerConfig.OtelDistroName)
-	// the go agent is loaded via eBPF, but the pod manifest still carries the odigos device
+	// the go distro declares a device, so the pod manifest has to be changed for the agent
 	assert.False(t, containerConfig.PodManifestInjectionOptional)
 	assert.False(t, ic.Spec.PodManifestInjectionOptional)
 
