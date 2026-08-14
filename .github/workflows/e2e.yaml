@@ -106,6 +106,7 @@ jobs:
           - "instrumentation-rollback-stability-window"
           - "environment-variables"
           - "trace-collection"
+          - "log-collection"
           - "source"
           - "webhooks"
           - "env-injection"
