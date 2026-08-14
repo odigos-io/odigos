@@ -22,8 +22,11 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/agentsignalconfig"
+	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -424,6 +427,11 @@ func TestInjectOdigosContainers(t *testing.T) {
 
 		assert.Equal(t, "--require /var/odigos/nodejs-community/autoinstrumentation.js",
 			webhookPodEnvValue(t, pod, 0, "NODE_OPTIONS"))
+		// this distro reports its enabled signals dynamically, so the static otel exporter
+		// env vars (which are frozen at pod creation time) must not be set
+		assert.False(t, webhookPodHasEnv(pod, 0, "OTEL_TRACES_EXPORTER"))
+		assert.False(t, webhookPodHasEnv(pod, 0, "OTEL_METRICS_EXPORTER"))
+		assert.False(t, webhookPodHasEnv(pod, 0, "OTEL_LOGS_EXPORTER"))
 	})
 
 	t.Run("a container without an agent config is not touched", func(t *testing.T) {
@@ -771,5 +779,96 @@ func TestGetInitContainerImage(t *testing.T) {
 		t.Setenv(commonconsts.OdigosVersionEnvVarName, "v1.0.0")
 
 		assert.Equal(t, "my-registry.io/odigos/odigos-agents:v1.0.0", getInitContainerImage(config))
+	})
+}
+
+// ****************
+// injectOdigos: distros that receive their configuration as env vars
+// ****************
+
+func TestInjectOdigosConfigAsEnvVars(t *testing.T) {
+	ctx := webhookTestContext()
+	req := admission.Request{AdmissionRequest: admissionv1.AdmissionRequest{Namespace: webhookNamespace}}
+
+	// php-community is the community distro that templates a static env var from a distro
+	// parameter, reports its enabled signals as static otel env vars and receives its dynamic
+	// configuration as env vars.
+	newPhpIC := func() *odigosv1.InstrumentationConfig {
+		ic := newWebhookTestIC()
+		ic.Spec.Containers[0].OtelDistroName = "php-community"
+		ic.Spec.Containers[0].DistroParams = map[string]string{distro.RuntimeVersionMajorMinorDistroParameterName: "8.3"}
+		ic.Status.RuntimeDetailsByContainer[0].Language = common.PhpProgrammingLanguage
+		return ic
+	}
+
+	t.Run("static env vars are templated with the distro params", func(t *testing.T) {
+		p := newWebhookTestPodsWebhook(t, newWebhookTestConfig(common.K8sVirtualDeviceMountMethod), newPhpIC())
+		pod := newWebhookTestPod()
+
+		require.NoError(t, p.injectOdigos(ctx, pod, req))
+
+		assert.Equal(t, ":/var/odigos/php/8.3", webhookPodEnvValue(t, pod, 0, "PHP_INI_SCAN_DIR"))
+		assert.Equal(t, "true", webhookPodEnvValue(t, pod, 0, "OTEL_PHP_AUTOLOAD_ENABLED"))
+	})
+
+	t.Run("a missing distro param fails the injection instead of templating a broken path", func(t *testing.T) {
+		ic := newPhpIC()
+		ic.Spec.Containers[0].DistroParams = nil
+		p := newWebhookTestPodsWebhook(t, newWebhookTestConfig(common.K8sVirtualDeviceMountMethod), ic)
+		pod := newWebhookTestPod()
+
+		require.Error(t, p.injectOdigos(ctx, pod, req))
+
+		assert.False(t, webhookPodHasEnv(pod, 0, "PHP_INI_SCAN_DIR"))
+	})
+
+	t.Run("enabled signals are reported as static otel env vars", func(t *testing.T) {
+		ic := newPhpIC()
+		ic.Spec.Containers[0].Traces = &agentsignalconfig.AgentTracesConfig{}
+		p := newWebhookTestPodsWebhook(t, newWebhookTestConfig(common.K8sVirtualDeviceMountMethod), ic)
+		pod := newWebhookTestPod()
+
+		require.NoError(t, p.injectOdigos(ctx, pod, req))
+
+		assert.Equal(t, "otlp", webhookPodEnvValue(t, pod, 0, "OTEL_TRACES_EXPORTER"))
+		assert.Equal(t, "none", webhookPodEnvValue(t, pod, 0, "OTEL_METRICS_EXPORTER"))
+		assert.Equal(t, "none", webhookPodEnvValue(t, pod, 0, "OTEL_LOGS_EXPORTER"))
+	})
+
+	t.Run("custom instrumentations are serialized into the container env", func(t *testing.T) {
+		ic := newPhpIC()
+		ic.Spec.Containers[0].Traces = &agentsignalconfig.AgentTracesConfig{
+			CustomInstrumentations: &instrumentationrules.CustomInstrumentations{
+				Php: []instrumentationrules.PhpCustomProbe{{ClassName: "MyClass", FunctionName: "myFunction"}},
+			},
+		}
+		p := newWebhookTestPodsWebhook(t, newWebhookTestConfig(common.K8sVirtualDeviceMountMethod), ic)
+		pod := newWebhookTestPod()
+
+		require.NoError(t, p.injectOdigos(ctx, pod, req))
+
+		assert.JSONEq(t, `{"php":[{"className":"MyClass","functionName":"myFunction"}]}`,
+			webhookPodEnvValue(t, pod, 0, k8sconsts.OdigosPhpAgentCustomInstrumentationsEnvVar))
+	})
+
+	t.Run("traces enabled without custom instrumentations means no env var", func(t *testing.T) {
+		ic := newPhpIC()
+		ic.Spec.Containers[0].Traces = &agentsignalconfig.AgentTracesConfig{}
+		p := newWebhookTestPodsWebhook(t, newWebhookTestConfig(common.K8sVirtualDeviceMountMethod), ic)
+		pod := newWebhookTestPod()
+
+		require.NoError(t, p.injectOdigos(ctx, pod, req))
+
+		assert.False(t, webhookPodHasEnv(pod, 0, k8sconsts.OdigosPhpAgentCustomInstrumentationsEnvVar))
+	})
+
+	t.Run("a distro without an opamp client does not get the opamp env vars", func(t *testing.T) {
+		p := newWebhookTestPodsWebhook(t, newWebhookTestConfig(common.K8sVirtualDeviceMountMethod), newPhpIC())
+		pod := newWebhookTestPod()
+
+		require.NoError(t, p.injectOdigos(ctx, pod, req))
+
+		assert.False(t, webhookPodHasEnv(pod, 0, "ODIGOS_OPAMP_SERVER_HOST"))
+		assert.False(t, webhookPodHasEnv(pod, 0, "ODIGOS_OPAMP_UNIX_SOCKET"))
 	})
 }
