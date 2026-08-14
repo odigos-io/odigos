@@ -51,7 +51,7 @@ Current coverage includes the following providers and resource types. Additional
 | --- | --- | --- |
 | AWS Lambda (`aws.lambda`) | Yes | Yes |
 | Amazon ECS Fargate tasks (`aws.fargate-task`) | Yes | Coming soon |
-| Amazon ECS clusters (`aws.ecs-cluster`, `aws.fargate-cluster`) | Yes | Coming soon |
+| Amazon ECS clusters (`aws.ecs-cluster`, `aws.fargate-cluster`) | Yes | n/a |
 | GCP Cloud Run (`gcp.cloud-run`) | Yes | Yes |
 | GKE (`gcp.gke`) / Compute Engine (`gcp.gce`) | Yes | Coming soon |
 
@@ -61,7 +61,7 @@ Direct instrumentation depends on the workload type:
 
 | Workload | Supported languages |
 | --- | --- |
-| AWS Lambda (`aws.lambda`) | Python, Node.js, Java, Ruby |
+| AWS Lambda (`aws.lambda`) | Java, Python, Node.js, Ruby |
 | GCP Cloud Run (`gcp.cloud-run`) | Java, Python, Node.js, .NET |
 
 Other Lambda runtimes (for example Go or .NET) can still be discovered; they are not instrumented until support for those runtimes is added.
