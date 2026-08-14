@@ -60,7 +60,7 @@ jobs:
       - name: Build and Tag Docker Images
         env:
           COMMIT_HASH: ${{ github.sha }}
-          DOCKER_REGISTRY: registry.odigos.io
+          DOCKER_REGISTRY: docker.io/keyval
         run: |
           # Build images
           make build-images TAG=${COMMIT_HASH}
@@ -77,11 +77,11 @@ jobs:
       - uses: ko-build/setup-ko@v0.9
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00
         with:
-          go-version: '1.26.4'
+          go-version: '1.26.5'
       - name: Build CLI Image
         env:
           COMMIT_HASH: ${{ github.sha }}
-          DOCKER_REGISTRY: registry.odigos.io
+          DOCKER_REGISTRY: docker.io/keyval
         run: |
           make build-cli-image TAG=${COMMIT_HASH}
           docker tag ${DOCKER_REGISTRY}/odigos-cli:${COMMIT_HASH} public.ecr.aws/y2v0v6s7/odigos-cli:${COMMIT_HASH}
