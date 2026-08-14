@@ -20,6 +20,10 @@
     {
       "product": "VM Agent",
       "icon": "desktop"
+    },
+    {
+      "product": "Cloud Connectors",
+      "icon": "cloud"
     }
   ],
   "navigation": {
@@ -701,7 +705,8 @@
                 "group": "Adding Connections",
                 "pages": [
                   "central/adding-connections/remote-clusters",
-                  "central/adding-connections/vmagent"
+                  "central/adding-connections/vmagent",
+                  "central/adding-connections/cloud-connectors"
                 ]
               },
               "central/authentication",
@@ -765,6 +770,27 @@
                   }
                 ]
               }
+            ]
+          }
+        ]
+      },
+      {
+        "product": "Cloud Connectors",
+        "groups": [
+          {
+            "group": "Cloud Connectors",
+            "pages": [
+              "cloud-connectors/overview",
+              "cloud-connectors/enable",
+              {
+                "group": "Add Connectors",
+                "pages": [
+                  "cloud-connectors/add-connectors/add-aws-connector",
+                  "cloud-connectors/add-connectors/add-gcp-connector"
+                ]
+              },
+              "cloud-connectors/instrument-workloads",
+              "cloud-connectors/manage-and-remove"
             ]
           }
         ]
