@@ -124,6 +124,15 @@ func TestCalculateEbpfLogCaptureConfig(t *testing.T) {
 			expected: &instrumentationrules.EbpfLogCapture{Enabled: &enabled},
 		},
 		{
+			name:   "a rule that does not configure ebpf log capture does not clear an enabled one",
+			distro: ebpfLogCaptureDistro(true),
+			irls: []odigosv1.InstrumentationRule{
+				ruleWith(&instrumentationrules.EbpfLogCapture{Enabled: &enabled}),
+				ruleWith(nil),
+			},
+			expected: &instrumentationrules.EbpfLogCapture{Enabled: &enabled},
+		},
+		{
 			name:   "a rule with no explicit value does not clear an enabled one",
 			distro: ebpfLogCaptureDistro(true),
 			irls: []odigosv1.InstrumentationRule{
