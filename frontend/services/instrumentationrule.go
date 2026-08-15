@@ -506,6 +506,9 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		existingRule.Spec.Scopes = nil
 	}
 
+	// The UI neither reads nor writes this field, so an omitted value means "leave as is" rather than
+	// "clear". Clearing it would drop the library scope of every rule created via kubectl/GitOps on
+	// the first save from the UI, turning a library-scoped rule into a workload-wide one.
 	if input.InstrumentationLibraries != nil {
 		convertedLibraries := make([]v1alpha1.InstrumentationLibraryGlobalId, len(input.InstrumentationLibraries))
 		for i, lib := range input.InstrumentationLibraries {
@@ -516,8 +519,6 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 			}
 		}
 		existingRule.Spec.InstrumentationLibraries = &convertedLibraries
-	} else {
-		existingRule.Spec.InstrumentationLibraries = nil
 	}
 
 	if input.PayloadCollection != nil {
