@@ -7,6 +7,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	actionsv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
+	commonapi "github.com/odigos-io/odigos/common/api"
 	commonapiactions "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/common/api/instrumentationrules"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
@@ -399,6 +400,56 @@ func TestCalculateDynamicContainerConfig_CollectorOnlyTraceFeatures(t *testing.T
 		require.Nil(t, disabledInfo)
 		require.Nil(t, configs.CollectorConfig)
 	})
+
+	// url templatization is the feature that usually creates the collector config first,
+	// so every other feature has to be able to create it on its own.
+	t.Run("each feature creates the collector config when templatization is disabled", func(t *testing.T) {
+		t.Parallel()
+
+		tests := []struct {
+			name   string
+			action odigosv1.Action
+			assert func(t *testing.T, collectorConfig *commonapi.ContainerCollectorConfig)
+		}{
+			{
+				name:   "db query templatization",
+				action: dbQueryTemplatizationAction,
+				assert: func(t *testing.T, collectorConfig *commonapi.ContainerCollectorConfig) {
+					require.NotNil(t, collectorConfig.DbQueryTemplatization)
+				},
+			},
+			{
+				name:   "infer db attributes",
+				action: inferDbAttributesAction,
+				assert: func(t *testing.T, collectorConfig *commonapi.ContainerCollectorConfig) {
+					require.NotNil(t, collectorConfig.InferDbAttributes)
+				},
+			},
+			{
+				name:   "pii masking",
+				action: piiMaskingAction,
+				assert: func(t *testing.T, collectorConfig *commonapi.ContainerCollectorConfig) {
+					require.NotNil(t, collectorConfig.PiiMasking)
+				},
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
+
+				in := newDynamicConfigInput()
+				in.agentLevelActions = []odigosv1.Action{urlTemplatizationDisablingAction(), tt.action}
+
+				configs, disabledInfo := in.calculate()
+
+				require.Nil(t, disabledInfo)
+				require.NotNil(t, configs.CollectorConfig)
+				require.Nil(t, configs.CollectorConfig.UrlTemplatization)
+				tt.assert(t, configs.CollectorConfig)
+			})
+		}
+	})
 }
 
 // these features have no collector side implementation, so each one has to land on its
@@ -607,6 +658,70 @@ func TestCalculateDynamicContainerConfig_SamplingPlacement(t *testing.T) {
 		require.Len(t, configs.CollectorConfig.TailSampling.HighlyRelevantOperations, 1)
 		require.Len(t, configs.CollectorConfig.TailSampling.CostReductionRules, 1)
 		require.Empty(t, configs.CollectorConfig.TailSampling.NoisyOperations)
+	})
+
+	// url templatization normally creates the collector config first, so tail sampling
+	// has to be able to create it on its own.
+	t.Run("tail sampling creates the collector config when templatization is disabled", func(t *testing.T) {
+		t.Parallel()
+
+		tests := []struct {
+			name          string
+			samplingRules []odigosv1.Sampling
+			assert        func(t *testing.T, tailSampling *commonapisampling.TailSamplingSourceConfig)
+		}{
+			{
+				name:          "noisy operations",
+				samplingRules: []odigosv1.Sampling{noisyOperationSamplingRule("health check")},
+				assert: func(t *testing.T, tailSampling *commonapisampling.TailSamplingSourceConfig) {
+					require.Len(t, tailSampling.NoisyOperations, 1)
+				},
+			},
+			{
+				name: "highly relevant operations",
+				samplingRules: []odigosv1.Sampling{
+					{
+						Spec: odigosv1.SamplingSpec{
+							HighlyRelevantOperations: []odigosv1.HighlyRelevantOperation{{Name: "checkout"}},
+						},
+					},
+				},
+				assert: func(t *testing.T, tailSampling *commonapisampling.TailSamplingSourceConfig) {
+					require.Len(t, tailSampling.HighlyRelevantOperations, 1)
+				},
+			},
+			{
+				name: "cost reduction rules",
+				samplingRules: []odigosv1.Sampling{
+					{
+						Spec: odigosv1.SamplingSpec{
+							CostReductionRules: []odigosv1.CostReductionRule{{Name: "static assets"}},
+						},
+					},
+				},
+				assert: func(t *testing.T, tailSampling *commonapisampling.TailSamplingSourceConfig) {
+					require.Len(t, tailSampling.CostReductionRules, 1)
+				},
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
+
+				in := newDynamicConfigInput()
+				in.agentLevelActions = []odigosv1.Action{urlTemplatizationDisablingAction()}
+				in.samplingRules = tt.samplingRules
+
+				configs, disabledInfo := in.calculate()
+
+				require.Nil(t, disabledInfo)
+				require.NotNil(t, configs.CollectorConfig)
+				require.Nil(t, configs.CollectorConfig.UrlTemplatization)
+				require.NotNil(t, configs.CollectorConfig.TailSampling)
+				tt.assert(t, configs.CollectorConfig.TailSampling)
+			})
+		}
 	})
 
 	t.Run("tail sampling carries noisy, relevant and cost rules together", func(t *testing.T) {
