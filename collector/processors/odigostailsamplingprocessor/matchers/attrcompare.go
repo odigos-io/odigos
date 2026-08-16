@@ -13,18 +13,13 @@ func compareHttpMethod(spanMethod string, ruleMethod string) bool {
 	return strings.EqualFold(ruleMethod, spanMethod)
 }
 
-// compare the http route attribute to the rule route(s).
+// compare the http route attribute to the path rule.
 // Matching is segment-based (same as url templatization): static segments must equal;
 // "*" and "{name}" match any single segment. Exact requires the same segment count;
-// prefix matches when the path starts with the rule segments.
-func compareHttpRoute(spanRoute string, ruleRouteExact urltemplate.PathRule, ruleRoutePrefix urltemplate.PathRule) bool {
-	if len(ruleRouteExact) == 0 && len(ruleRoutePrefix) == 0 {
+// prefix matches when the path starts with the rule segments (PathRule.Prefix).
+func compareHttpRoute(spanRoute string, rule urltemplate.PathRule) bool {
+	if rule.Empty() {
 		return true
 	}
-
-	pathSegments, _ := urltemplate.SplitPath(spanRoute)
-	if len(ruleRouteExact) > 0 {
-		return ruleRouteExact.Match(pathSegments)
-	}
-	return ruleRoutePrefix.MatchPrefix(pathSegments)
+	return rule.IsPathMatching(spanRoute)
 }

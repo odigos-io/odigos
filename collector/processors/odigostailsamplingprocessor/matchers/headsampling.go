@@ -28,16 +28,14 @@ func NewHeadSamplingOperationMatcher(operation *commonapisampling.HeadSamplingOp
 }
 
 type headSamplingHttpServerMatcher struct {
-	method              string
-	routeSegments       urltemplate.PathRule
-	routePrefixSegments urltemplate.PathRule
+	method string
+	route  urltemplate.PathRule
 }
 
 func newHeadSamplingHttpServerMatcher(operation *commonapisampling.HeadSamplingHttpServerOperationMatcher) Matcher {
 	return &headSamplingHttpServerMatcher{
-		method:              operation.Method,
-		routeSegments:       parseRoutePathSegments(operation.Route),
-		routePrefixSegments: parseRoutePathSegments(operation.RoutePrefix),
+		method: operation.Method,
+		route:  parseRoutePathSegments(operation.Route, operation.RoutePrefix),
 	}
 }
 
@@ -52,7 +50,7 @@ func (m *headSamplingHttpServerMatcher) Match(span ptrace.Span) bool {
 		return false
 	case m.method != "" && !compareHttpMethod(httpMethod, m.method):
 		return false
-	case (len(m.routeSegments) > 0 || len(m.routePrefixSegments) > 0) && !matchHttpRoute(span, m.routeSegments, m.routePrefixSegments):
+	case !m.route.Empty() && !matchHttpRoute(span, m.route):
 		return false
 	default:
 		return true
@@ -60,18 +58,16 @@ func (m *headSamplingHttpServerMatcher) Match(span ptrace.Span) bool {
 }
 
 type headSamplingHttpClientMatcher struct {
-	method                      string
-	serverAddress               string
-	templatedPathSegments       urltemplate.PathRule
-	templatedPathPrefixSegments urltemplate.PathRule
+	method        string
+	serverAddress string
+	templatedPath urltemplate.PathRule
 }
 
 func newHeadSamplingHttpClientMatcher(operation *commonapisampling.HeadSamplingHttpClientOperationMatcher) Matcher {
 	return &headSamplingHttpClientMatcher{
-		method:                      operation.Method,
-		serverAddress:               operation.ServerAddress,
-		templatedPathSegments:       parseRoutePathSegments(operation.TemplatedPath),
-		templatedPathPrefixSegments: parseRoutePathSegments(operation.TemplatedPathPrefix),
+		method:        operation.Method,
+		serverAddress: operation.ServerAddress,
+		templatedPath: parseRoutePathSegments(operation.TemplatedPath, operation.TemplatedPathPrefix),
 	}
 }
 
@@ -88,7 +84,7 @@ func (m *headSamplingHttpClientMatcher) Match(span ptrace.Span) bool {
 		return false
 	case m.serverAddress != "" && !matchServerAddress(span, m.serverAddress):
 		return false
-	case (len(m.templatedPathSegments) > 0 || len(m.templatedPathPrefixSegments) > 0) && !matchTemplatedPath(span, m.templatedPathSegments, m.templatedPathPrefixSegments):
+	case !m.templatedPath.Empty() && !matchTemplatedPath(span, m.templatedPath):
 		return false
 	default:
 		return true

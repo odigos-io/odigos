@@ -6,26 +6,26 @@ import (
 	"github.com/odigos-io/odigos/common/urltemplate"
 )
 
-// given a span, will attempt to match it to a route rules based on:
+// given a span, will attempt to match it to a route rule based on:
 // - http.route attribute (if present)
 // - url.path attribute (if present)
 // - old http.target attribute for agents not yet migrated to the new semconv (if present)
 // if no attribute is found to match the rule, it will return false (no match).
-// route matching is based on exact match and prefix match.
-func matchHttpRoute(span ptrace.Span, ruleRouteExact urltemplate.PathRule, ruleRoutePrefix urltemplate.PathRule) bool {
-	if len(ruleRouteExact) == 0 && len(ruleRoutePrefix) == 0 { // (should have been checked by caller, but just in case.)
+// exact vs prefix matching is recorded on the PathRule.
+func matchHttpRoute(span ptrace.Span, rule urltemplate.PathRule) bool {
+	if rule.Empty() { // (should have been checked by caller, but just in case.)
 		// unset means match any route
 		return true
 	}
 
 	httpRoute, found := getHttpRoute(span)
 	if found {
-		return compareHttpRoute(httpRoute, ruleRouteExact, ruleRoutePrefix)
+		return compareHttpRoute(httpRoute, rule)
 	}
 
 	httpPath, found := getHttpServerPath(span)
 	if found {
-		return compareHttpRoute(httpPath, ruleRouteExact, ruleRoutePrefix)
+		return compareHttpRoute(httpPath, rule)
 	}
 
 	return false // no attribute found and the rule requires a match, so no match.
@@ -34,8 +34,8 @@ func matchHttpRoute(span ptrace.Span, ruleRouteExact urltemplate.PathRule, ruleR
 // given a span and a templated path rule, will attempt to match the span to the rule.
 // will return true if there is a match.
 // if the attribute is missing (and required on the rule), it will return false (no match).
-func matchTemplatedPath(span ptrace.Span, ruleTemplatedPath urltemplate.PathRule, ruleTemplatedPathPrefix urltemplate.PathRule) bool {
-	if len(ruleTemplatedPath) == 0 && len(ruleTemplatedPathPrefix) == 0 { // (should have been checked by caller, but just in case.)
+func matchTemplatedPath(span ptrace.Span, rule urltemplate.PathRule) bool {
+	if rule.Empty() { // (should have been checked by caller, but just in case.)
 		// unset means match any path
 		return true
 	}
@@ -43,8 +43,7 @@ func matchTemplatedPath(span ptrace.Span, ruleTemplatedPath urltemplate.PathRule
 	urlTemplate, found := getHttpTemplatedPath(span)
 	if found {
 		// best case scenario (like if url templatization was run prior to the sampling)
-		// do exact match on the path.
-		return compareHttpRoute(urlTemplate, ruleTemplatedPath, ruleTemplatedPathPrefix)
+		return compareHttpRoute(urlTemplate, rule)
 	}
 
 	// TODO: extract the path from either url.full or http.target attributes and compare to the rule.

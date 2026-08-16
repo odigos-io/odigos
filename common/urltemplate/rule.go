@@ -19,7 +19,18 @@ type RulePathSegment struct {
 
 // PathRule is a parsed path pattern made of RulePathSegments.
 // Used for URL templatization and for matching paths/routes against a rule.
-type PathRule []RulePathSegment
+type PathRule struct {
+	Segments []RulePathSegment
+	Prefix   bool
+	// AllStatic is true when every segment is a literal (no * or {name}).
+	// StaticPath is then the normalized "/"-joined path used for faster matching.
+	AllStatic  bool
+	StaticPath string
+}
+
+func (r PathRule) Empty() bool {
+	return len(r.Segments) == 0
+}
 
 func parseRuleTemplateString(ruleTemplateString string) string {
 	templateName := strings.TrimSpace(ruleTemplateString)
@@ -31,7 +42,7 @@ func parseRuleTemplateString(ruleTemplateString string) string {
 
 // ParseUserInputRuleString splits a path rule on "/" into a PathRule.
 // Segments may be static ("users"), wildcard ("*"), or templated ("{name}" / "{}", defaulting to "id").
-func ParseUserInputRuleString(userInputRule string) (PathRule, error) {
+func ParseUserInputRuleString(userInputRule string, prefix bool) (PathRule, error) {
 	segments := strings.Split(userInputRule, "/")
 	if strings.HasPrefix(userInputRule, "/") {
 		// if the rule starts with a /, remove it
@@ -39,16 +50,19 @@ func ParseUserInputRuleString(userInputRule string) (PathRule, error) {
 		segments = segments[1:]
 	}
 
-	ruleSegments := make(PathRule, len(segments))
+	ruleSegments := make([]RulePathSegment, len(segments))
+	allStatic := true
 
 	for i, segment := range segments {
 		// if the segment looks like {text}, then it's a template
 		if segment == "*" {
+			allStatic = false
 			ruleSegments[i] = RulePathSegment{
 				Wildcard: true,
 			}
 			continue
 		} else if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
+			allStatic = false
 			// remove the curly braces
 			templatizationRule := segment[1 : len(segment)-1]
 			// parse the template name
@@ -64,5 +78,10 @@ func ParseUserInputRuleString(userInputRule string) (PathRule, error) {
 		}
 	}
 
-	return ruleSegments, nil
+	rule := PathRule{Segments: ruleSegments, Prefix: prefix}
+	if allStatic {
+		rule.AllStatic = true
+		rule.StaticPath = strings.Join(segments, "/")
+	}
+	return rule, nil
 }

@@ -26,17 +26,15 @@ Matching is always **one segment per rule segment**. There is no `**` / multi-se
 ## API
 
 ```go
-rule, err := urltemplate.ParseUserInputRuleString("/users/{userId}/orders/*")
+rule, err := urltemplate.ParseUserInputRuleString("/users/{userId}/orders/*", false)
 segments, hadLeadingSlash := urltemplate.SplitPath("/users/42/orders/abc") // ["users", "42", "orders", "abc"], true
 
-rule.Match(segments)       // exact: same number of segments
-rule.MatchPrefix(segments) // path starts with the rule
+rule.IsPathSegmentsMatching(segments) // exact, or prefix when PathRule.Prefix is true
 ```
 
 - `ParseUserInputRuleString` — turn a user-facing rule string into a `PathRule`
 - `SplitPath` — split a concrete path into segments and whether it had a leading `/`
-- `PathRule.Match` — full-path match (length must be equal)
-- `PathRule.MatchPrefix` — prefix match (rule length ≤ path length)
+- `PathRule.IsPathSegmentsMatching` — exact match, or prefix match when `Prefix` is true
 
 Each `RulePathSegment` is one of: static (`StaticString`), wildcard (`Wildcard`), or template (`TemplateName`).
 

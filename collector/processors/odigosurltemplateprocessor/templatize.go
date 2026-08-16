@@ -73,14 +73,14 @@ var (
 	replacementChar = regexp.MustCompile(`�`)
 )
 
-func attemptTemplateWithRule(pathSegments []string, ruleSegments urltemplate.PathRule) (string, bool) {
+func attemptTemplateWithRule(pathSegments []string, rule urltemplate.PathRule) (string, bool) {
 	// already verified that the len of the lists match pre calling this function
-	if !ruleSegments.Match(pathSegments) {
+	if !rule.IsPathSegmentsMatching(pathSegments) {
 		return "", false
 	}
 
-	result := make([]string, 0, len(ruleSegments))
-	for i, segment := range ruleSegments {
+	result := make([]string, 0, len(rule.Segments))
+	for i, segment := range rule.Segments {
 		if segment.TemplateName != "" {
 			result = append(result, "{"+segment.TemplateName+"}")
 		} else if segment.Wildcard {

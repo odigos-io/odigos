@@ -57,7 +57,7 @@ var _ xconfmap.Validator = (*Config)(nil)
 // Validate checks if the processor configuration is valid
 func (c Config) Validate() error {
 	for _, rule := range c.TemplatizationRules {
-		if _, err := urltemplate.ParseUserInputRuleString(rule); err != nil {
+		if _, err := urltemplate.ParseUserInputRuleString(rule, false); err != nil {
 			return err
 		}
 	}

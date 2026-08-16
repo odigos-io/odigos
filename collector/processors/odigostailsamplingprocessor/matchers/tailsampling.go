@@ -25,27 +25,32 @@ func NewTailSamplingOperationMatcher(operation *commonapisampling.TailSamplingOp
 
 type tailSamplingHttpServerMatcher struct {
 	method string
-
-	routeSegments       urltemplate.PathRule
-	routePrefixSegments urltemplate.PathRule
+	route  urltemplate.PathRule
 }
 
-func parseRoutePathSegments(path string) urltemplate.PathRule {
+// parseRoutePathSegments parses an exact route or a prefix route into a single PathRule.
+// Exact takes precedence when both are set; Prefix on the rule records which was chosen.
+func parseRoutePathSegments(exact, prefix string) urltemplate.PathRule {
+	path := exact
+	isPrefix := false
 	if path == "" {
-		return nil
+		path = prefix
+		isPrefix = true
 	}
-	segments, err := urltemplate.ParseUserInputRuleString(path)
+	if path == "" {
+		return urltemplate.PathRule{}
+	}
+	rule, err := urltemplate.ParseUserInputRuleString(path, isPrefix)
 	if err != nil {
-		return nil
+		return urltemplate.PathRule{}
 	}
-	return segments
+	return rule
 }
 
 func newTailSamplingHttpServerMatcher(operation *commonapisampling.TailSamplingHttpServerOperationMatcher) Matcher {
 	return &tailSamplingHttpServerMatcher{
-		method:              operation.Method,
-		routeSegments:       parseRoutePathSegments(operation.Route),
-		routePrefixSegments: parseRoutePathSegments(operation.RoutePrefix),
+		method: operation.Method,
+		route:  parseRoutePathSegments(operation.Route, operation.RoutePrefix),
 	}
 }
 
@@ -72,7 +77,7 @@ func (m *tailSamplingHttpServerMatcher) Match(span ptrace.Span) bool {
 		return false
 	}
 
-	if !matchHttpRoute(span, m.routeSegments, m.routePrefixSegments) {
+	if !matchHttpRoute(span, m.route) {
 		return false
 	}
 

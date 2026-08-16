@@ -63,11 +63,11 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 
 	parsedRules := map[int][]urltemplate.PathRule{}
 	for _, rule := range config.TemplatizationRules {
-		parsedRule, err := urltemplate.ParseUserInputRuleString(rule)
+		parsedRule, err := urltemplate.ParseUserInputRuleString(rule, false)
 		if err != nil {
 			return nil, err
 		}
-		parsedRuleNumSegments := len(parsedRule)
+		parsedRuleNumSegments := len(parsedRule.Segments)
 		if _, ok := parsedRules[parsedRuleNumSegments]; !ok {
 			parsedRules[parsedRuleNumSegments] = []urltemplate.PathRule{}
 		}
@@ -165,12 +165,12 @@ func (p *urlTemplateProcessor) OnDeleteKey(key string) {
 func (p *urlTemplateProcessor) parseRuleStrings(ruleStrings []string) map[int][]urltemplate.PathRule {
 	parsed := map[int][]urltemplate.PathRule{}
 	for _, rule := range ruleStrings {
-		parsedRule, err := urltemplate.ParseUserInputRuleString(rule)
+		parsedRule, err := urltemplate.ParseUserInputRuleString(rule, false)
 		if err != nil {
 			p.logger.Warn("invalid templatization rule; skipping", zap.String("rule", rule), zap.Error(err))
 			continue
 		}
-		n := len(parsedRule)
+		n := len(parsedRule.Segments)
 		parsed[n] = append(parsed[n], parsedRule)
 	}
 	return parsed
