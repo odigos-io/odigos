@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	// Fan-out of kubeletstats into the own-metrics → VM path.
+	// Passing kubeletstats metrics into the own-metrics -> VictoriaMetrics path.
 	// Prefer the destination metrics receiver when that pipeline exists; otherwise define the
 	// same receiver here so own-metrics works with no metrics destination (no duplicate key on merge).
 	ownKubeletFilterName        = "filter/own-kubelet"
