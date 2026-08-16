@@ -1,4 +1,4 @@
-ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.18
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.20
 
 
 ######### python Native Community Agent #########
