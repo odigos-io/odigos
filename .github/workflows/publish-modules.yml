@@ -244,6 +244,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Docker Image for ${{ matrix.service }}
+        id: build
         uses: docker/build-push-action@v6
         env:
           ODIGOS_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || steps.extract_tag.outputs.tag}}
@@ -270,6 +271,21 @@ jobs:
                 'Dockerfile' }}
           target: >-
             ${{ matrix.service == 'agents' && 'agents' || '' }}
+
+      # Runs in this job so it inherits the registry logins above. One build
+      # writes the same digest to four registries; each ref gets its own
+      # signature, because signatures live beside the image in one registry
+      # and do not travel with a copy. Signing is fail-closed: a signing
+      # failure fails this publish job.
+      - name: Sign image and attach SBOM
+        uses: odigos-io/ci-core/sign-oci@main
+        with:
+          refs: |
+            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}
+            us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-${{ matrix.service }}
+            keyval/odigos-${{ matrix.service }}
+            ghcr.io/odigos-io/odigos-${{ matrix.service }}
+          digest: ${{ steps.build.outputs.digest }}
 
       - name: Notify Slack
         if: always()
