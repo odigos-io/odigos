@@ -64,9 +64,9 @@ spec:
         {{- end -}}
         {{- $agentsImageTag := printf "%s%s" $imageTag $extendedSuffix -}}
         {{- if include "odigos.secretExists" . }}
-        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-instrumentor" "Tag" $imageTag) }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-instrumentor" "Tag" $imageTag) }}
         {{- else }}
-        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "instrumentor" "Tag" $imageTag) }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "instrumentor" "Tag" $imageTag) }}
         {{- end }}
         ports:
           - containerPort: 9443
@@ -104,9 +104,9 @@ spec:
           {{- end }}
           - name: ODIGOS_INIT_CONTAINER_IMAGE
             {{- if include "odigos.secretExists" . }}
-            value: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-agents" "Tag" $agentsImageTag) }}
+            value: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-agents" "Tag" $agentsImageTag) }}
             {{- else }}
-            value: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $imageTag) }}
+            value: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "agents" "Tag" $imageTag) }}
             {{- end }}
           - name: GOMEMLIMIT
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.instrumentor.resources) }}

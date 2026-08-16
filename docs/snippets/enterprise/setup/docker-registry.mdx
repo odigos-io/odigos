@@ -14,7 +14,7 @@ Replace `<YOUR-DESIRED-VERSION>` with the version of the Odigos images you want 
 ---
 
 ### Step 2: Pull the Images
-Start by pulling the required images from the official Odigos registry onto your local machine or CI environment:
+Start by pulling the required images from the enterprise registry (`registry.odigos.io`) onto your local machine or CI environment:
 
 ```bash
 docker pull registry.odigos.io/odigos-scheduler:$VERSION
@@ -60,7 +60,7 @@ docker tag registry.odigos.io/odigos-enterprise-collector:$VERSION $CUSTOM_DOCKE
 ```
 
 
-> **Note:** Prior to v1.0.155, Odigos images were prefixed with `keyval/` (such as `keyval/odigos-scheduler`) In v1.0.155+, this is no longer the case, and Odigos does not assume this prefix. If you were hosting custom images prior to this version, you may have to re-tag your images to remove the `keyval/` prefix.
+> **Note:** Enterprise images are hosted at `registry.odigos.io`. Image names are `odigos-<component>` or `odigos-enterprise-<component>` without an embedded `keyval/` path segment. If you previously mirrored images under an older layout, re-tag them to match this naming when pushing to your custom registry.
 
 > **Note:** Odigos Enterprise now runs a dedicated collector image, `odigos-enterprise-collector`, in place of `odigos-collector`. If you were already mirroring `odigos-collector`, mirror `odigos-enterprise-collector` as well before upgrading, otherwise the gateway and the node collectors will fail to pull.
 
