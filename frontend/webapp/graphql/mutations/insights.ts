@@ -80,6 +80,12 @@ export const RESET_INSIGHTS_TRANSACTION_BASELINES = gql`
   }
 `;
 
+export const DELETE_INSIGHTS_TRANSACTION = gql`
+  mutation DeleteInsightsTransaction($transactionId: ID!) {
+    deleteInsightsTransaction(transactionId: $transactionId)
+  }
+`;
+
 export const UPSERT_INSIGHTS_POLICY = gql`
   mutation UpsertInsightsPolicy($policy: InsightsPolicyInput!) {
     upsertInsightsPolicy(policy: $policy) { ${POLICY_FIELDS} }

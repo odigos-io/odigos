@@ -603,6 +603,7 @@ type ComplexityRoot struct {
 		Anomalies           func(childComplexity int, windowHours *int, service *string, namespace *string, status *string) int
 		Anomaly             func(childComplexity int, transactionID string, signature string) int
 		Baseline            func(childComplexity int, transactionID string) int
+		BlastRadius         func(childComplexity int, namespace *string, service string, depth *int) int
 		Catalog             func(childComplexity int) int
 		Findings            func(childComplexity int, windowHours *int, service *string, namespace *string, status *string, kind *model.InsightsFindingKind) int
 		GuardrailViolations func(childComplexity int, windowHours *int, service *string, namespace *string, status *string) int
@@ -703,6 +704,29 @@ type ComplexityRoot struct {
 		TransactionID                func(childComplexity int) int
 	}
 
+	InsightsBlastRadiusEdge struct {
+		ClientNamespace func(childComplexity int) int
+		ClientService   func(childComplexity int) int
+		ConnectionType  func(childComplexity int) int
+		FailedCount     func(childComplexity int) int
+		LastSeen        func(childComplexity int) int
+		RequestCount    func(childComplexity int) int
+		ServerNamespace func(childComplexity int) int
+		ServerService   func(childComplexity int) int
+	}
+
+	InsightsBlastRadiusNode struct {
+		IsVirtual func(childComplexity int) int
+		Namespace func(childComplexity int) int
+		Service   func(childComplexity int) int
+	}
+
+	InsightsBlastRadiusSubgraph struct {
+		Edges func(childComplexity int) int
+		Nodes func(childComplexity int) int
+		Root  func(childComplexity int) int
+	}
+
 	InsightsBulkResolveResult struct {
 		Resolution func(childComplexity int) int
 		Resolved   func(childComplexity int) int
@@ -764,20 +788,21 @@ type ComplexityRoot struct {
 	}
 
 	InsightsFinding struct {
-		Kind          func(childComplexity int) int
-		LastSeen      func(childComplexity int) int
-		Namespace     func(childComplexity int) int
-		Occurrences   func(childComplexity int) int
-		Offending     func(childComplexity int) int
-		RuleKey       func(childComplexity int) int
-		ScopeKey      func(childComplexity int) int
-		Score         func(childComplexity int) int
-		Service       func(childComplexity int) int
-		Severity      func(childComplexity int) int
-		Signature     func(childComplexity int) int
-		Status        func(childComplexity int) int
-		Title         func(childComplexity int) int
-		TransactionID func(childComplexity int) int
+		Kind             func(childComplexity int) int
+		LastSeen         func(childComplexity int) int
+		Namespace        func(childComplexity int) int
+		Occurrences      func(childComplexity int) int
+		Offending        func(childComplexity int) int
+		RuleKey          func(childComplexity int) int
+		ScopeKey         func(childComplexity int) int
+		Score            func(childComplexity int) int
+		Service          func(childComplexity int) int
+		Severity         func(childComplexity int) int
+		Signature        func(childComplexity int) int
+		Status           func(childComplexity int) int
+		Title            func(childComplexity int) int
+		TransactionID    func(childComplexity int) int
+		TriggeredClasses func(childComplexity int) int
 	}
 
 	InsightsGuardrail struct {
@@ -1499,6 +1524,7 @@ type ComplexityRoot struct {
 		DeleteInsightsGuardrail             func(childComplexity int, scopeKey string) int
 		DeleteInsightsLearningPolicy        func(childComplexity int, class model.InsightsDeviationClass, scope model.InsightsPolicyScope, scopeKey string) int
 		DeleteInsightsPolicy                func(childComplexity int, scope model.InsightsPolicyScope, scopeKey string) int
+		DeleteInsightsTransaction           func(childComplexity int, transactionID string) int
 		DeleteInstrumentationRule           func(childComplexity int, ruleID string) int
 		DeleteNoisyOperationRule            func(childComplexity int, samplingID string, ruleID string) int
 		DisableSourceProfiling              func(childComplexity int, namespace string, kind string, name string) int
@@ -2001,6 +2027,7 @@ type ComputePlatformResolver interface {
 type InsightsResolver interface {
 	Services(ctx context.Context, obj *model.Insights) ([]*model.InsightsServiceStat, error)
 	ServiceProfile(ctx context.Context, obj *model.Insights, namespace *string, service string) (*model.InsightsServiceProfile, error)
+	BlastRadius(ctx context.Context, obj *model.Insights, namespace *string, service string, depth *int) (*model.InsightsBlastRadiusSubgraph, error)
 	Transactions(ctx context.Context, obj *model.Insights, namespace *string, service *string, kind *model.InsightsTransactionKind) ([]*model.InsightsTransactionStat, error)
 	Transaction(ctx context.Context, obj *model.Insights, id string) (*model.InsightsTransaction, error)
 	Baseline(ctx context.Context, obj *model.Insights, transactionID string) ([]*model.InsightsBaselineClass, error)
@@ -2077,6 +2104,7 @@ type MutationResolver interface {
 	PromoteInsightsBaselineClass(ctx context.Context, transactionID string, class model.InsightsDeviationClass) (*model.InsightsPromoteResult, error)
 	ResetInsightsBaselineClass(ctx context.Context, transactionID string, class model.InsightsDeviationClass) (bool, error)
 	ResetInsightsTransactionBaselines(ctx context.Context, transactionID string) (bool, error)
+	DeleteInsightsTransaction(ctx context.Context, transactionID string) (bool, error)
 	UpsertInsightsPolicy(ctx context.Context, policy model.InsightsPolicyInput) (*model.InsightsPolicy, error)
 	DeleteInsightsPolicy(ctx context.Context, scope model.InsightsPolicyScope, scopeKey string) (bool, error)
 	UpsertInsightsLearningPolicy(ctx context.Context, policy model.InsightsLearningPolicyInput) (*model.InsightsLearningPolicy, error)
@@ -4727,6 +4755,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Insights.Baseline(childComplexity, args["transactionId"].(string)), true
 
+	case "Insights.blastRadius":
+		if e.complexity.Insights.BlastRadius == nil {
+			break
+		}
+
+		args, err := ec.field_Insights_blastRadius_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Insights.BlastRadius(childComplexity, args["namespace"].(*string), args["service"].(string), args["depth"].(*int)), true
+
 	case "Insights.catalog":
 		if e.complexity.Insights.Catalog == nil {
 			break
@@ -5301,6 +5341,104 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsBaselineClass.TransactionID(childComplexity), true
 
+	case "InsightsBlastRadiusEdge.clientNamespace":
+		if e.complexity.InsightsBlastRadiusEdge.ClientNamespace == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusEdge.ClientNamespace(childComplexity), true
+
+	case "InsightsBlastRadiusEdge.clientService":
+		if e.complexity.InsightsBlastRadiusEdge.ClientService == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusEdge.ClientService(childComplexity), true
+
+	case "InsightsBlastRadiusEdge.connectionType":
+		if e.complexity.InsightsBlastRadiusEdge.ConnectionType == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusEdge.ConnectionType(childComplexity), true
+
+	case "InsightsBlastRadiusEdge.failedCount":
+		if e.complexity.InsightsBlastRadiusEdge.FailedCount == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusEdge.FailedCount(childComplexity), true
+
+	case "InsightsBlastRadiusEdge.lastSeen":
+		if e.complexity.InsightsBlastRadiusEdge.LastSeen == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusEdge.LastSeen(childComplexity), true
+
+	case "InsightsBlastRadiusEdge.requestCount":
+		if e.complexity.InsightsBlastRadiusEdge.RequestCount == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusEdge.RequestCount(childComplexity), true
+
+	case "InsightsBlastRadiusEdge.serverNamespace":
+		if e.complexity.InsightsBlastRadiusEdge.ServerNamespace == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusEdge.ServerNamespace(childComplexity), true
+
+	case "InsightsBlastRadiusEdge.serverService":
+		if e.complexity.InsightsBlastRadiusEdge.ServerService == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusEdge.ServerService(childComplexity), true
+
+	case "InsightsBlastRadiusNode.isVirtual":
+		if e.complexity.InsightsBlastRadiusNode.IsVirtual == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusNode.IsVirtual(childComplexity), true
+
+	case "InsightsBlastRadiusNode.namespace":
+		if e.complexity.InsightsBlastRadiusNode.Namespace == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusNode.Namespace(childComplexity), true
+
+	case "InsightsBlastRadiusNode.service":
+		if e.complexity.InsightsBlastRadiusNode.Service == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusNode.Service(childComplexity), true
+
+	case "InsightsBlastRadiusSubgraph.edges":
+		if e.complexity.InsightsBlastRadiusSubgraph.Edges == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusSubgraph.Edges(childComplexity), true
+
+	case "InsightsBlastRadiusSubgraph.nodes":
+		if e.complexity.InsightsBlastRadiusSubgraph.Nodes == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusSubgraph.Nodes(childComplexity), true
+
+	case "InsightsBlastRadiusSubgraph.root":
+		if e.complexity.InsightsBlastRadiusSubgraph.Root == nil {
+			break
+		}
+
+		return e.complexity.InsightsBlastRadiusSubgraph.Root(childComplexity), true
+
 	case "InsightsBulkResolveResult.resolution":
 		if e.complexity.InsightsBulkResolveResult.Resolution == nil {
 			break
@@ -5671,6 +5809,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsFinding.TransactionID(childComplexity), true
+
+	case "InsightsFinding.triggeredClasses":
+		if e.complexity.InsightsFinding.TriggeredClasses == nil {
+			break
+		}
+
+		return e.complexity.InsightsFinding.TriggeredClasses(childComplexity), true
 
 	case "InsightsGuardrail.rules":
 		if e.complexity.InsightsGuardrail.Rules == nil {
@@ -8856,6 +9001,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteInsightsPolicy(childComplexity, args["scope"].(model.InsightsPolicyScope), args["scopeKey"].(string)), true
 
+	case "Mutation.deleteInsightsTransaction":
+		if e.complexity.Mutation.DeleteInsightsTransaction == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteInsightsTransaction_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteInsightsTransaction(childComplexity, args["transactionId"].(string)), true
+
 	case "Mutation.deleteInstrumentationRule":
 		if e.complexity.Mutation.DeleteInstrumentationRule == nil {
 			break
@@ -11586,6 +11743,80 @@ func (ec *executionContext) field_Insights_baseline_argsTransactionID(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Insights_blastRadius_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Insights_blastRadius_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg0
+	arg1, err := ec.field_Insights_blastRadius_argsService(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["service"] = arg1
+	arg2, err := ec.field_Insights_blastRadius_argsDepth(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["depth"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Insights_blastRadius_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal *string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_blastRadius_argsService(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["service"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("service"))
+	if tmp, ok := rawArgs["service"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_blastRadius_argsDepth(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["depth"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("depth"))
+	if tmp, ok := rawArgs["depth"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Insights_findings_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -12901,6 +13132,34 @@ func (ec *executionContext) field_Mutation_deleteInsightsPolicy_argsScopeKey(
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("scopeKey"))
 	if tmp, ok := rawArgs["scopeKey"]; ok {
 		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteInsightsTransaction_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_deleteInsightsTransaction_argsTransactionID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["transactionId"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_deleteInsightsTransaction_argsTransactionID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["transactionId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("transactionId"))
+	if tmp, ok := rawArgs["transactionId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
 	}
 
 	var zeroVal string
@@ -31231,6 +31490,69 @@ func (ec *executionContext) fieldContext_Insights_serviceProfile(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Insights_blastRadius(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Insights_blastRadius(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Insights().BlastRadius(rctx, obj, fc.Args["namespace"].(*string), fc.Args["service"].(string), fc.Args["depth"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsBlastRadiusSubgraph)
+	fc.Result = res
+	return ec.marshalNInsightsBlastRadiusSubgraph2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusSubgraph(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Insights_blastRadius(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Insights",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "root":
+				return ec.fieldContext_InsightsBlastRadiusSubgraph_root(ctx, field)
+			case "nodes":
+				return ec.fieldContext_InsightsBlastRadiusSubgraph_nodes(ctx, field)
+			case "edges":
+				return ec.fieldContext_InsightsBlastRadiusSubgraph_edges(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBlastRadiusSubgraph", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Insights_blastRadius_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Insights_transactions(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Insights_transactions(ctx, field)
 	if err != nil {
@@ -31641,6 +31963,8 @@ func (ec *executionContext) fieldContext_Insights_findings(ctx context.Context, 
 				return ec.fieldContext_InsightsFinding_transactionId(ctx, field)
 			case "signature":
 				return ec.fieldContext_InsightsFinding_signature(ctx, field)
+			case "triggeredClasses":
+				return ec.fieldContext_InsightsFinding_triggeredClasses(ctx, field)
 			case "scopeKey":
 				return ec.fieldContext_InsightsFinding_scopeKey(ctx, field)
 			case "ruleKey":
@@ -35059,6 +35383,656 @@ func (ec *executionContext) fieldContext_InsightsBaselineClass_observationCountA
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsBlastRadiusEdge_clientNamespace(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusEdge_clientNamespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientNamespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusEdge_clientNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusEdge_clientService(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusEdge_clientService(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientService, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusEdge_clientService(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusEdge_serverNamespace(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusEdge_serverNamespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServerNamespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusEdge_serverNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusEdge_serverService(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusEdge_serverService(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServerService, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusEdge_serverService(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusEdge_connectionType(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusEdge_connectionType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConnectionType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusEdge_connectionType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusEdge_requestCount(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusEdge_requestCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusEdge_requestCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusEdge_failedCount(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusEdge_failedCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FailedCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusEdge_failedCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusEdge_lastSeen(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusEdge_lastSeen(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastSeen, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusEdge_lastSeen(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusNode_namespace(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusNode_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusNode_namespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusNode_service(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusNode_service(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Service, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusNode_service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusNode_isVirtual(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusNode_isVirtual(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsVirtual, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusNode_isVirtual(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusSubgraph_root(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusSubgraph) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusSubgraph_root(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Root, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsBlastRadiusNode)
+	fc.Result = res
+	return ec.marshalNInsightsBlastRadiusNode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusNode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusSubgraph_root(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusSubgraph",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "namespace":
+				return ec.fieldContext_InsightsBlastRadiusNode_namespace(ctx, field)
+			case "service":
+				return ec.fieldContext_InsightsBlastRadiusNode_service(ctx, field)
+			case "isVirtual":
+				return ec.fieldContext_InsightsBlastRadiusNode_isVirtual(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBlastRadiusNode", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusSubgraph_nodes(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusSubgraph) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusSubgraph_nodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nodes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsBlastRadiusNode)
+	fc.Result = res
+	return ec.marshalNInsightsBlastRadiusNode2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusNodeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusSubgraph_nodes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusSubgraph",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "namespace":
+				return ec.fieldContext_InsightsBlastRadiusNode_namespace(ctx, field)
+			case "service":
+				return ec.fieldContext_InsightsBlastRadiusNode_service(ctx, field)
+			case "isVirtual":
+				return ec.fieldContext_InsightsBlastRadiusNode_isVirtual(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBlastRadiusNode", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBlastRadiusSubgraph_edges(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBlastRadiusSubgraph) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBlastRadiusSubgraph_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsBlastRadiusEdge)
+	fc.Result = res
+	return ec.marshalNInsightsBlastRadiusEdge2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBlastRadiusSubgraph_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBlastRadiusSubgraph",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "clientNamespace":
+				return ec.fieldContext_InsightsBlastRadiusEdge_clientNamespace(ctx, field)
+			case "clientService":
+				return ec.fieldContext_InsightsBlastRadiusEdge_clientService(ctx, field)
+			case "serverNamespace":
+				return ec.fieldContext_InsightsBlastRadiusEdge_serverNamespace(ctx, field)
+			case "serverService":
+				return ec.fieldContext_InsightsBlastRadiusEdge_serverService(ctx, field)
+			case "connectionType":
+				return ec.fieldContext_InsightsBlastRadiusEdge_connectionType(ctx, field)
+			case "requestCount":
+				return ec.fieldContext_InsightsBlastRadiusEdge_requestCount(ctx, field)
+			case "failedCount":
+				return ec.fieldContext_InsightsBlastRadiusEdge_failedCount(ctx, field)
+			case "lastSeen":
+				return ec.fieldContext_InsightsBlastRadiusEdge_lastSeen(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBlastRadiusEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InsightsBulkResolveResult_resolution(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBulkResolveResult) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsBulkResolveResult_resolution(ctx, field)
 	if err != nil {
@@ -37329,6 +38303,47 @@ func (ec *executionContext) fieldContext_InsightsFinding_signature(_ context.Con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsFinding_triggeredClasses(ctx context.Context, field graphql.CollectedField, obj *model.InsightsFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsFinding_triggeredClasses(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TriggeredClasses, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]model.InsightsDeviationClass)
+	fc.Result = res
+	return ec.marshalOInsightsDeviationClass2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeviationClassᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsFinding_triggeredClasses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsFinding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsDeviationClass does not have child fields")
 		},
 	}
 	return fc, nil
@@ -57868,6 +58883,61 @@ func (ec *executionContext) fieldContext_Mutation_resetInsightsTransactionBaseli
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_deleteInsightsTransaction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteInsightsTransaction(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteInsightsTransaction(rctx, fc.Args["transactionId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteInsightsTransaction(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteInsightsTransaction_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_upsertInsightsPolicy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_upsertInsightsPolicy(ctx, field)
 	if err != nil {
@@ -65691,6 +66761,8 @@ func (ec *executionContext) fieldContext_Query_insights(_ context.Context, field
 				return ec.fieldContext_Insights_services(ctx, field)
 			case "serviceProfile":
 				return ec.fieldContext_Insights_serviceProfile(ctx, field)
+			case "blastRadius":
+				return ec.fieldContext_Insights_blastRadius(ctx, field)
 			case "transactions":
 				return ec.fieldContext_Insights_transactions(ctx, field)
 			case "transaction":
@@ -82144,6 +83216,42 @@ func (ec *executionContext) _Insights(ctx context.Context, sel ast.SelectionSet,
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "blastRadius":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Insights_blastRadius(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "transactions":
 			field := field
 
@@ -83173,6 +84281,178 @@ func (ec *executionContext) _InsightsBaselineClass(ctx context.Context, sel ast.
 	return out
 }
 
+var insightsBlastRadiusEdgeImplementors = []string{"InsightsBlastRadiusEdge"}
+
+func (ec *executionContext) _InsightsBlastRadiusEdge(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBlastRadiusEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsBlastRadiusEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsBlastRadiusEdge")
+		case "clientNamespace":
+			out.Values[i] = ec._InsightsBlastRadiusEdge_clientNamespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "clientService":
+			out.Values[i] = ec._InsightsBlastRadiusEdge_clientService(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serverNamespace":
+			out.Values[i] = ec._InsightsBlastRadiusEdge_serverNamespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "serverService":
+			out.Values[i] = ec._InsightsBlastRadiusEdge_serverService(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "connectionType":
+			out.Values[i] = ec._InsightsBlastRadiusEdge_connectionType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "requestCount":
+			out.Values[i] = ec._InsightsBlastRadiusEdge_requestCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "failedCount":
+			out.Values[i] = ec._InsightsBlastRadiusEdge_failedCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastSeen":
+			out.Values[i] = ec._InsightsBlastRadiusEdge_lastSeen(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsBlastRadiusNodeImplementors = []string{"InsightsBlastRadiusNode"}
+
+func (ec *executionContext) _InsightsBlastRadiusNode(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBlastRadiusNode) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsBlastRadiusNodeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsBlastRadiusNode")
+		case "namespace":
+			out.Values[i] = ec._InsightsBlastRadiusNode_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "service":
+			out.Values[i] = ec._InsightsBlastRadiusNode_service(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isVirtual":
+			out.Values[i] = ec._InsightsBlastRadiusNode_isVirtual(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsBlastRadiusSubgraphImplementors = []string{"InsightsBlastRadiusSubgraph"}
+
+func (ec *executionContext) _InsightsBlastRadiusSubgraph(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBlastRadiusSubgraph) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsBlastRadiusSubgraphImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsBlastRadiusSubgraph")
+		case "root":
+			out.Values[i] = ec._InsightsBlastRadiusSubgraph_root(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nodes":
+			out.Values[i] = ec._InsightsBlastRadiusSubgraph_nodes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "edges":
+			out.Values[i] = ec._InsightsBlastRadiusSubgraph_edges(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var insightsBulkResolveResultImplementors = []string{"InsightsBulkResolveResult"}
 
 func (ec *executionContext) _InsightsBulkResolveResult(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBulkResolveResult) graphql.Marshaler {
@@ -83632,6 +84912,8 @@ func (ec *executionContext) _InsightsFinding(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._InsightsFinding_transactionId(ctx, field, obj)
 		case "signature":
 			out.Values[i] = ec._InsightsFinding_signature(ctx, field, obj)
+		case "triggeredClasses":
+			out.Values[i] = ec._InsightsFinding_triggeredClasses(ctx, field, obj)
 		case "scopeKey":
 			out.Values[i] = ec._InsightsFinding_scopeKey(ctx, field, obj)
 		case "ruleKey":
@@ -89330,6 +90612,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "resetInsightsTransactionBaselines":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_resetInsightsTransactionBaselines(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteInsightsTransaction":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteInsightsTransaction(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -95695,6 +96984,128 @@ func (ec *executionContext) marshalNInsightsBaselineClass2ᚖgithubᚗcomᚋodig
 	return ec._InsightsBaselineClass(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNInsightsBlastRadiusEdge2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsBlastRadiusEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsBlastRadiusEdge2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsBlastRadiusEdge2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusEdge(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBlastRadiusEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsBlastRadiusEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsBlastRadiusNode2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsBlastRadiusNode) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsBlastRadiusNode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusNode(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsBlastRadiusNode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusNode(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBlastRadiusNode) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsBlastRadiusNode(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsBlastRadiusSubgraph2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusSubgraph(ctx context.Context, sel ast.SelectionSet, v model.InsightsBlastRadiusSubgraph) graphql.Marshaler {
+	return ec._InsightsBlastRadiusSubgraph(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInsightsBlastRadiusSubgraph2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusSubgraph(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBlastRadiusSubgraph) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsBlastRadiusSubgraph(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNInsightsBulkResolution2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBulkResolution(ctx context.Context, v any) (model.InsightsBulkResolution, error) {
 	var res model.InsightsBulkResolution
 	err := res.UnmarshalGQL(v)
@@ -100805,6 +102216,71 @@ func (ec *executionContext) marshalOInsightsAnomalySpanHighlight2ᚕᚖgithubᚗ
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNInsightsAnomalySpanHighlight2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsAnomalySpanHighlight(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOInsightsDeviationClass2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeviationClassᚄ(ctx context.Context, v any) ([]model.InsightsDeviationClass, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]model.InsightsDeviationClass, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInsightsDeviationClass2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeviationClass(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOInsightsDeviationClass2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeviationClassᚄ(ctx context.Context, sel ast.SelectionSet, v []model.InsightsDeviationClass) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsDeviationClass2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeviationClass(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

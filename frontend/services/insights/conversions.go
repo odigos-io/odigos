@@ -349,6 +349,35 @@ func ServiceProfileToModel(profile ServiceProfile) *model.InsightsServiceProfile
 	}
 }
 
+func BlastRadiusNodeToModel(node BlastRadiusNode) *model.InsightsBlastRadiusNode {
+	return &model.InsightsBlastRadiusNode{
+		Namespace: node.Namespace,
+		Service:   node.Service,
+		IsVirtual: node.IsVirtual,
+	}
+}
+
+func BlastRadiusEdgeToModel(edge BlastRadiusEdge) *model.InsightsBlastRadiusEdge {
+	return &model.InsightsBlastRadiusEdge{
+		ClientNamespace: edge.ClientNamespace,
+		ClientService:   edge.ClientService,
+		ServerNamespace: edge.ServerNamespace,
+		ServerService:   edge.ServerService,
+		ConnectionType:  edge.ConnectionType,
+		RequestCount:    int64ToInt(edge.RequestCount),
+		FailedCount:     int64ToInt(edge.FailedCount),
+		LastSeen:        edge.LastSeen,
+	}
+}
+
+func BlastRadiusSubgraphToModel(subgraph BlastRadiusSubgraph) *model.InsightsBlastRadiusSubgraph {
+	return &model.InsightsBlastRadiusSubgraph{
+		Root:  BlastRadiusNodeToModel(subgraph.Root),
+		Nodes: mapSlice(subgraph.Nodes, BlastRadiusNodeToModel),
+		Edges: mapSlice(subgraph.Edges, BlastRadiusEdgeToModel),
+	}
+}
+
 func stringSliceOrEmpty(s []string) []string {
 	if s == nil {
 		return []string{}
@@ -501,20 +530,21 @@ func LearningPoliciesToModel(policies []LearningPolicy) []*model.InsightsLearnin
 
 func FindingToModel(finding Finding) *model.InsightsFinding {
 	return &model.InsightsFinding{
-		Kind:          FindingKindToModel(finding.Kind),
-		Service:       finding.Service,
-		Namespace:     finding.Namespace,
-		Title:         finding.Title,
-		Offending:     finding.Offending,
-		Score:         finding.Score,
-		Severity:      SeverityToModel(finding.Severity),
-		Occurrences:   int64ToInt(finding.Occurrences),
-		LastSeen:      finding.LastSeen,
-		Status:        finding.Status,
-		TransactionID: formatOptionalID(finding.TransactionID),
-		Signature:     finding.Signature,
-		ScopeKey:      finding.ScopeKey,
-		RuleKey:       finding.RuleKey,
+		Kind:             FindingKindToModel(finding.Kind),
+		Service:          finding.Service,
+		Namespace:        finding.Namespace,
+		Title:            finding.Title,
+		Offending:        finding.Offending,
+		Score:            finding.Score,
+		Severity:         SeverityToModel(finding.Severity),
+		Occurrences:      int64ToInt(finding.Occurrences),
+		LastSeen:         finding.LastSeen,
+		Status:           finding.Status,
+		TransactionID:    formatOptionalID(finding.TransactionID),
+		Signature:        finding.Signature,
+		TriggeredClasses: mapSlice(finding.TriggeredClasses, DeviationClassToModel),
+		ScopeKey:         finding.ScopeKey,
+		RuleKey:          finding.RuleKey,
 	}
 }
 

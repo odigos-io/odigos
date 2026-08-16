@@ -57,6 +57,24 @@ func (c *Client) GetServiceProfile(ctx context.Context, namespace, service strin
 	return &result, nil
 }
 
+func (c *Client) GetBlastRadius(ctx context.Context, namespace, service string, depth *int) (*BlastRadiusSubgraph, error) {
+	endpoint := c.apiEndpoint("services", "blast-radius")
+	query := endpoint.Query()
+	if strings.TrimSpace(namespace) != "" {
+		query.Set("namespace", namespace)
+	}
+	query.Set("service", service)
+	if depth != nil {
+		query.Set("depth", strconv.Itoa(*depth))
+	}
+	endpoint.RawQuery = query.Encode()
+	var result BlastRadiusSubgraph
+	if err := c.do(ctx, http.MethodGet, endpoint, nil, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *Client) ListTransactions(ctx context.Context, params ListTransactionsParams) ([]TransactionStat, error) {
 	endpoint := c.apiEndpoint("transactions")
 	query := endpoint.Query()
@@ -75,6 +93,10 @@ func (c *Client) GetTransaction(ctx context.Context, transactionID int64) (*Tran
 		return nil, err
 	}
 	return &result, nil
+}
+
+func (c *Client) DeleteTransaction(ctx context.Context, transactionID int64) error {
+	return c.do(ctx, http.MethodDelete, c.transactionEndpoint(transactionID), nil, nil)
 }
 
 func (c *Client) GetTransactionBaseline(ctx context.Context, transactionID int64) ([]BaselineClass, error) {

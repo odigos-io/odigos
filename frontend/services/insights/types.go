@@ -77,6 +77,29 @@ type ServiceProfile struct {
 	Egress    []string `json:"egress"`
 }
 
+type BlastRadiusNode struct {
+	Namespace string `json:"namespace"`
+	Service   string `json:"service"`
+	IsVirtual bool   `json:"is_virtual"`
+}
+
+type BlastRadiusEdge struct {
+	ClientNamespace string `json:"client_namespace"`
+	ClientService   string `json:"client_service"`
+	ServerNamespace string `json:"server_namespace"`
+	ServerService   string `json:"server_service"`
+	ConnectionType  string `json:"connection_type"`
+	RequestCount    int64  `json:"request_count"`
+	FailedCount     int64  `json:"failed_count"`
+	LastSeen        string `json:"last_seen"`
+}
+
+type BlastRadiusSubgraph struct {
+	Root  BlastRadiusNode   `json:"root"`
+	Nodes []BlastRadiusNode `json:"nodes"`
+	Edges []BlastRadiusEdge `json:"edges"`
+}
+
 type TransactionStat struct {
 	ID          int64           `json:"id"`
 	Service     string          `json:"service"`
@@ -164,20 +187,21 @@ type LearningPolicy struct {
 }
 
 type Finding struct {
-	Kind          FindingKind `json:"kind"`
-	Service       string      `json:"service"`
-	Namespace     string      `json:"namespace"`
-	Title         string      `json:"title"`
-	Offending     *string     `json:"offending,omitempty"`
-	Score         int         `json:"score"`
-	Severity      Severity    `json:"severity"`
-	Occurrences   int64       `json:"occurrences"`
-	LastSeen      string      `json:"last_seen"`
-	Status        string      `json:"status"`
-	TransactionID *int64      `json:"transaction_id,omitempty"`
-	Signature     *string     `json:"signature,omitempty"`
-	ScopeKey      *string     `json:"scope_key,omitempty"`
-	RuleKey       *string     `json:"rule_key,omitempty"`
+	Kind             FindingKind      `json:"kind"`
+	Service          string           `json:"service"`
+	Namespace        string           `json:"namespace"`
+	Title            string           `json:"title"`
+	Offending        *string          `json:"offending,omitempty"`
+	Score            int              `json:"score"`
+	Severity         Severity         `json:"severity"`
+	Occurrences      int64            `json:"occurrences"`
+	LastSeen         string           `json:"last_seen"`
+	Status           string           `json:"status"`
+	TransactionID    *int64           `json:"transaction_id,omitempty"`
+	Signature        *string          `json:"signature,omitempty"`
+	TriggeredClasses []DeviationClass `json:"triggered_classes,omitempty"`
+	ScopeKey         *string          `json:"scope_key,omitempty"`
+	RuleKey          *string          `json:"rule_key,omitempty"`
 }
 
 type RiskSignal struct {

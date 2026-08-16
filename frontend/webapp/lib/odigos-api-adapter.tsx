@@ -56,6 +56,7 @@ import type {
   InsightsPromoteResult,
   InsightsServiceStat,
   InsightsServiceProfile,
+  InsightsBlastRadiusSubgraph,
   InsightsStorageHealth,
   InsightsSystemSettings,
   InsightsTransaction,
@@ -105,6 +106,7 @@ import {
   GET_COLLECTOR_POD_INFO,
   GET_INSIGHTS_SERVICES,
   GET_INSIGHTS_SERVICE_PROFILE,
+  GET_INSIGHTS_BLAST_RADIUS,
   GET_INSIGHTS_TRANSACTIONS,
   GET_INSIGHTS_TRANSACTION,
   GET_INSIGHTS_BASELINE,
@@ -159,6 +161,7 @@ import {
   PROMOTE_INSIGHTS_BASELINE_CLASS,
   RESET_INSIGHTS_BASELINE_CLASS,
   RESET_INSIGHTS_TRANSACTION_BASELINES,
+  DELETE_INSIGHTS_TRANSACTION,
   UPSERT_INSIGHTS_POLICY,
   DELETE_INSIGHTS_POLICY,
   UPSERT_INSIGHTS_LEARNING_POLICY,
@@ -461,6 +464,10 @@ const operations: OdigosApiOperations = {
     document: GET_INSIGHTS_SERVICE_PROFILE,
     transformResult: (raw: unknown) => (raw as { insights?: { serviceProfile?: InsightsServiceProfile } } | null | undefined)?.insights?.serviceProfile,
   },
+  GET_INSIGHTS_BLAST_RADIUS: {
+    document: GET_INSIGHTS_BLAST_RADIUS,
+    transformResult: (raw: unknown) => (raw as { insights?: { blastRadius?: InsightsBlastRadiusSubgraph } } | null | undefined)?.insights?.blastRadius,
+  },
   GET_INSIGHTS_TRANSACTIONS: {
     document: GET_INSIGHTS_TRANSACTIONS,
     transformResult: (raw: unknown) => (raw as { insights?: { transactions?: InsightsTransactionStat[] } } | null | undefined)?.insights?.transactions ?? [],
@@ -533,6 +540,10 @@ const operations: OdigosApiOperations = {
   RESET_INSIGHTS_TRANSACTION_BASELINES: {
     document: RESET_INSIGHTS_TRANSACTION_BASELINES,
     transformResult: (raw: unknown) => (raw as { resetInsightsTransactionBaselines?: boolean } | null | undefined)?.resetInsightsTransactionBaselines ?? false,
+  },
+  DELETE_INSIGHTS_TRANSACTION: {
+    document: DELETE_INSIGHTS_TRANSACTION,
+    transformResult: (raw: unknown) => (raw as { deleteInsightsTransaction?: boolean } | null | undefined)?.deleteInsightsTransaction ?? false,
   },
   UPSERT_INSIGHTS_POLICY: {
     document: UPSERT_INSIGHTS_POLICY,

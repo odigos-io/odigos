@@ -168,6 +168,8 @@ models:
         resolver: true
       serviceProfile:
         resolver: true
+      blastRadius:
+        resolver: true
       transactions:
         resolver: true
       transaction:
