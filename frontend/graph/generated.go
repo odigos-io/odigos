@@ -2058,7 +2058,7 @@ type InsightsResolver interface {
 	LearningPolicies(ctx context.Context, obj *model.Insights) ([]*model.InsightsLearningPolicy, error)
 	Guardrails(ctx context.Context, obj *model.Insights) ([]*model.InsightsGuardrail, error)
 	GuardrailViolations(ctx context.Context, obj *model.Insights, windowHours *int, service *string, namespace *string, status *string) ([]*model.InsightsGuardrailViolation, error)
-
+	GuardrailViolation(ctx context.Context, obj *model.Insights, scopeKey string, ruleKey string, offending string) (*model.InsightsGuardrailViolationDetail, error)
 	Catalog(ctx context.Context, obj *model.Insights) (*model.InsightsCatalog, error)
 	SystemSettings(ctx context.Context, obj *model.Insights) (*model.InsightsSystemSettings, error)
 	StorageHealth(ctx context.Context, obj *model.Insights) (*model.InsightsStorageHealth, error)
@@ -32640,7 +32640,7 @@ func (ec *executionContext) _Insights_guardrailViolation(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.GuardrailViolation, nil
+		return ec.resolvers.Insights().GuardrailViolation(rctx, obj, fc.Args["scopeKey"].(string), fc.Args["ruleKey"].(string), fc.Args["offending"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -32658,8 +32658,8 @@ func (ec *executionContext) fieldContext_Insights_guardrailViolation(ctx context
 	fc = &graphql.FieldContext{
 		Object:     "Insights",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "service":
@@ -84592,7 +84592,38 @@ func (ec *executionContext) _Insights(ctx context.Context, sel ast.SelectionSet,
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "guardrailViolation":
-			out.Values[i] = ec._Insights_guardrailViolation(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Insights_guardrailViolation(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "catalog":
 			field := field
 
