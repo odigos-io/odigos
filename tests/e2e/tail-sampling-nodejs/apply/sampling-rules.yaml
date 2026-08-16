@@ -72,8 +72,9 @@ spec:
   notes: >-
     Tail sampling for HTTP server route matching on Deployment
     tail-sampling-http-server. Exact templated
-    /http-server/templated/:id/users/:name/orders/:uuid and prefix
-    /http-server/prefix/:id/items are highly relevant (100%).
+    /http-server/templated/:id/users/:name/orders/:uuid, prefix
+    /http-server/prefix/:id/items, and static AllStatic routes
+    (with and without a leading /) are highly relevant (100%).
   highlyRelevantOperations:
     - name: high-relevance-http-server-templated
       notes: >-
@@ -96,4 +97,22 @@ spec:
       operation:
         httpServer:
           routePrefix: /http-server/prefix/{id}/*
+      sourceScopes: *httpServerDeploymentScopes
+    - name: high-relevance-http-server-static-leading-slash
+      notes: >-
+        Static HTTP server route is sampled at 100%. Rule includes a leading /
+        so AllStatic matching still works when the user-facing route starts with /.
+      percentageAtLeast: 100
+      operation:
+        httpServer:
+          route: /http-server/static/leading-slash
+      sourceScopes: *httpServerDeploymentScopes
+    - name: high-relevance-http-server-static-no-leading-slash
+      notes: >-
+        Static HTTP server route is sampled at 100%. Rule omits the leading /
+        so AllStatic matching still works when the user-facing route has none.
+      percentageAtLeast: 100
+      operation:
+        httpServer:
+          route: http-server/static/no-leading-slash
       sourceScopes: *httpServerDeploymentScopes

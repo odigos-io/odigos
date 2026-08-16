@@ -61,3 +61,17 @@ rules:
       match: 2
       keep: 2
       drop: 0
+  - deployment: tail-sampling-http-server
+    ruleName: high-relevance-http-server-static-leading-slash
+    description: GET /http-server/static/leading-slash (100% keep; rule has leading /)
+    expected:
+      match: 1
+      keep: 1
+      drop: 0
+  - deployment: tail-sampling-http-server
+    ruleName: high-relevance-http-server-static-no-leading-slash
+    description: GET /http-server/static/no-leading-slash (100% keep; rule omits leading /)
+    expected:
+      match: 1
+      keep: 1
+      drop: 0

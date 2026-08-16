@@ -21,6 +21,8 @@ asserts.
 | GET | `/http-server/templated/:id/users/:name/orders/:uuid` | — | 200 | Templated path; vary `id` / `name` / `uuid` per call so `http.route` is the template, not the concrete URL |
 | GET | `/http-server/prefix/:id/items` | — | 200 | Templated prefix path for `routePrefix` sampling |
 | GET | `/http-server/prefix/:id/items/:itemId` | — | 200 | Nested path under the templated prefix; still matches `routePrefix` |
+| GET | `/http-server/static/leading-slash` | — | 200 | Static path; sampling rule `route` includes a leading `/` (`AllStatic`) |
+| GET | `/http-server/static/no-leading-slash` | — | 200 | Static path; sampling rule `route` omits the leading `/` (`AllStatic`) |
 
 Notes:
 
@@ -41,15 +43,15 @@ gcloud auth configure-docker us-central1-docker.pkg.dev
 
 # Build and push multi-arch (amd64 + arm64) to Artifact Registry
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -t us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.1 \
+  -t us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.3 \
   --push .
 ```
 
 ## Testing Locally
 
 ```bash
-docker build -t nodejs-tail-sampling:v0.0.1 .
-docker run -p 8080:8080 nodejs-tail-sampling:v0.0.1
+docker build -t nodejs-tail-sampling:v0.0.3 .
+docker run -p 8080:8080 nodejs-tail-sampling:v0.0.3
 
 curl http://localhost:8080/healthz
 ```
@@ -57,4 +59,4 @@ curl http://localhost:8080/healthz
 ## Usage in Tests
 
 This service is used in:
-- `tests/e2e/tail-sampling-nodejs/` (pulls `us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.1`)
+- `tests/e2e/tail-sampling-nodejs/` (pulls `us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.3`)

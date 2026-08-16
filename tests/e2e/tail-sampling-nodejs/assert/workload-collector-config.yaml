@@ -69,3 +69,15 @@ spec:
               httpServer:
                 routePrefix: /http-server/prefix/{id}/*
             percentageAtLeast: 100
+        (highlyRelevantOperations[?name == 'high-relevance-http-server-static-leading-slash']):
+          - name: high-relevance-http-server-static-leading-slash
+            operation:
+              httpServer:
+                route: /http-server/static/leading-slash
+            percentageAtLeast: 100
+        (highlyRelevantOperations[?name == 'high-relevance-http-server-static-no-leading-slash']):
+          - name: high-relevance-http-server-static-no-leading-slash
+            operation:
+              httpServer:
+                route: http-server/static/no-leading-slash
+            percentageAtLeast: 100

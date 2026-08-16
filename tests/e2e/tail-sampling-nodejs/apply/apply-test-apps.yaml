@@ -1,5 +1,5 @@
 # Node.js tail-sampling app (nodejs-community instrumentation).
-# Image: us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.2
+# Image: us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.3
 # (built from tests/common/services/nodejs-tail-sampling).
 apiVersion: apps/v1
 kind: Deployment
@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: tail-sampling-errors
-          image: us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.2
+          image: us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.3
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -56,7 +56,7 @@ spec:
     spec:
       containers:
         - name: tail-sampling-duration
-          image: us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.2
+          image: us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.3
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -92,7 +92,7 @@ spec:
     spec:
       containers:
         - name: tail-sampling-http-server
-          image: us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.2
+          image: us-central1-docker.pkg.dev/odigos-cloud/components/nodejs-tail-sampling:v0.0.3
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

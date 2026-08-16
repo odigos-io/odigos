@@ -195,6 +195,21 @@ app.get('/http-server/prefix/:id/items/:itemId', function (req, res) {
   });
 });
 
+// Static paths (no :params) so sampling AllStatic rules match http.route exactly.
+app.get('/http-server/static/leading-slash', function (req, res) {
+  res.status(200).json({
+    endpoint: '/http-server/static/leading-slash',
+    description: 'static path sampled by a rule whose route starts with /'
+  });
+});
+
+app.get('/http-server/static/no-leading-slash', function (req, res) {
+  res.status(200).json({
+    endpoint: '/http-server/static/no-leading-slash',
+    description: 'static path sampled by a rule whose route has no leading /'
+  });
+});
+
 registerTailErrorScenarioRoutes();
 registerTailDurationScenarioRoutes();
 

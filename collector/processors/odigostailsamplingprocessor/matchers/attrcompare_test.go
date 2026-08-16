@@ -79,6 +79,18 @@ func TestCompareHttpRoute(t *testing.T) {
 			wantMatch: true,
 		},
 		{
+			name:      "static AllStatic match with leading slash on rule",
+			spanRoute: "/http-server/static/leading-slash",
+			ruleRoute: "/http-server/static/leading-slash",
+			wantMatch: true,
+		},
+		{
+			name:      "static AllStatic match without leading slash on rule",
+			spanRoute: "/http-server/static/no-leading-slash",
+			ruleRoute: "http-server/static/no-leading-slash",
+			wantMatch: true,
+		},
+		{
 			name:      "exact templated segment count mismatch",
 			spanRoute: "/users/123/orders",
 			ruleRoute: "/users/{id}",
@@ -155,5 +167,17 @@ func TestParseRoutePathSegments(t *testing.T) {
 	t.Run("empty when both unset", func(t *testing.T) {
 		rule := parseRoutePathSegments("", "")
 		assert.True(t, rule.Empty())
+	})
+	t.Run("static AllStatic with leading slash", func(t *testing.T) {
+		rule := parseRoutePathSegments("/http-server/static/leading-slash", "")
+		assert.True(t, rule.AllStatic)
+		assert.Equal(t, "http-server/static/leading-slash", rule.StaticPath)
+		assert.True(t, compareHttpRoute("/http-server/static/leading-slash", rule))
+	})
+	t.Run("static AllStatic without leading slash", func(t *testing.T) {
+		rule := parseRoutePathSegments("http-server/static/no-leading-slash", "")
+		assert.True(t, rule.AllStatic)
+		assert.Equal(t, "http-server/static/no-leading-slash", rule.StaticPath)
+		assert.True(t, compareHttpRoute("/http-server/static/no-leading-slash", rule))
 	})
 }

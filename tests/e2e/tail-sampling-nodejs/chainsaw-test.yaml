@@ -157,6 +157,8 @@ spec:
                 queries/http-server-templated.yaml
                 queries/http-server-templated-prefix.yaml
                 queries/http-server-templated-prefix-nested.yaml
+                queries/http-server-static-leading-slash.yaml
+                queries/http-server-static-no-leading-slash.yaml
               )
               last_failed=""
               last_failed_output=""

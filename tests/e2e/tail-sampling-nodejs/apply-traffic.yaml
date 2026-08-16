@@ -137,4 +137,6 @@ spec:
               call_ok "/http-server/templated/3/users/carol/orders/ccc"
               call_ok "/http-server/prefix/1/items"
               call_ok "/http-server/prefix/2/items/item-7"
+              call_ok "/http-server/static/leading-slash"
+              call_ok "/http-server/static/no-leading-slash"
               echo "all curls succeeded"
