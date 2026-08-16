@@ -128,6 +128,43 @@ type InsightsServiceProfile {
   egress: [String!]!
 }
 
+"""
+One service (or virtual dependency) in a blast-radius subgraph. Identity is (namespace, service).
+"""
+type InsightsBlastRadiusNode {
+  namespace: String!
+  service: String!
+  """
+  True for an uninstrumented dependency (database, queue, external API).
+  Virtual nodes are leaves — they have no outgoing calls.
+  """
+  isVirtual: Boolean!
+}
+
+"""
+A directed client -> server edge from the gateway servicegraph connector.
+Request/failure counts are rough magnitude, not exact totals.
+"""
+type InsightsBlastRadiusEdge {
+  clientNamespace: String!
+  clientService: String!
+  serverNamespace: String!
+  serverService: String!
+  connectionType: String!
+  requestCount: Int!
+  failedCount: Int!
+  lastSeen: String!
+}
+
+"""
+Neighborhood around an anchor service: callers and callees out to the requested hop depth.
+"""
+type InsightsBlastRadiusSubgraph {
+  root: InsightsBlastRadiusNode!
+  nodes: [InsightsBlastRadiusNode!]!
+  edges: [InsightsBlastRadiusEdge!]!
+}
+
 type InsightsTransactionStat {
   id: ID!
   service: String!
@@ -288,6 +325,10 @@ type InsightsFinding {
   Anomaly drill-down key; set when kind is anomaly.
   """
   signature: String
+  """
+  Anomaly signal classes; empty/absent for violations.
+  """
+  triggeredClasses: [InsightsDeviationClass!]
   """
   Violation drill-down key; set when kind is violation.
   """
@@ -708,6 +749,14 @@ type InsightsStorageHealth {
 type Insights {
   services: [InsightsServiceStat!]!
   serviceProfile(namespace: String, service: String!): InsightsServiceProfile!
+  """
+  Service-graph neighborhood around one service (blast radius). Depth defaults to 2 (1–5).
+  """
+  blastRadius(
+    namespace: String
+    service: String!
+    depth: Int
+  ): InsightsBlastRadiusSubgraph!
   transactions(
     namespace: String
     service: String
@@ -767,6 +816,10 @@ extend type Mutation {
     class: InsightsDeviationClass!
   ): Boolean!
   resetInsightsTransactionBaselines(transactionId: ID!): Boolean!
+  """
+  Permanently removes a transaction and related state (baselines, samples, issues, txn-scoped policies).
+  """
+  deleteInsightsTransaction(transactionId: ID!): Boolean!
   upsertInsightsPolicy(policy: InsightsPolicyInput!): InsightsPolicy!
   deleteInsightsPolicy(scope: InsightsPolicyScope!, scopeKey: String!): Boolean!
   upsertInsightsLearningPolicy(

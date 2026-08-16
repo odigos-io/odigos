@@ -61,6 +61,7 @@ const FINDING_FIELDS = `
   status
   transactionId
   signature
+  triggeredClasses
   scopeKey
   ruleKey
 `;
@@ -309,6 +310,35 @@ export const GET_INSIGHTS_SERVICE_PROFILE = gql`
         callers
         callees
         egress
+      }
+    }
+  }
+`;
+
+const BLAST_RADIUS_NODE_FIELDS = `
+  namespace
+  service
+  isVirtual
+`;
+
+const BLAST_RADIUS_EDGE_FIELDS = `
+  clientNamespace
+  clientService
+  serverNamespace
+  serverService
+  connectionType
+  requestCount
+  failedCount
+  lastSeen
+`;
+
+export const GET_INSIGHTS_BLAST_RADIUS = gql`
+  query GetInsightsBlastRadius($namespace: String, $service: String!, $depth: Int) {
+    insights {
+      blastRadius(namespace: $namespace, service: $service, depth: $depth) {
+        root { ${BLAST_RADIUS_NODE_FIELDS} }
+        nodes { ${BLAST_RADIUS_NODE_FIELDS} }
+        edges { ${BLAST_RADIUS_EDGE_FIELDS} }
       }
     }
   }

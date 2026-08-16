@@ -721,8 +721,10 @@ type HTTPPayloadCollectionInput struct {
 }
 
 type Insights struct {
-	Services            []*InsightsServiceStat        `json:"services"`
-	ServiceProfile      *InsightsServiceProfile       `json:"serviceProfile"`
+	Services       []*InsightsServiceStat  `json:"services"`
+	ServiceProfile *InsightsServiceProfile `json:"serviceProfile"`
+	// Service-graph neighborhood around one service (blast radius). Depth defaults to 2 (1–5).
+	BlastRadius         *InsightsBlastRadiusSubgraph  `json:"blastRadius"`
 	Transactions        []*InsightsTransactionStat    `json:"transactions"`
 	Transaction         *InsightsTransaction          `json:"transaction,omitempty"`
 	Baseline            []*InsightsBaselineClass      `json:"baseline"`
@@ -839,6 +841,35 @@ type InsightsBaselineClass struct {
 	ObservationCountAtLastChange *int    `json:"observationCountAtLastChange,omitempty"`
 }
 
+// A directed client -> server edge from the gateway servicegraph connector.
+// Request/failure counts are rough magnitude, not exact totals.
+type InsightsBlastRadiusEdge struct {
+	ClientNamespace string `json:"clientNamespace"`
+	ClientService   string `json:"clientService"`
+	ServerNamespace string `json:"serverNamespace"`
+	ServerService   string `json:"serverService"`
+	ConnectionType  string `json:"connectionType"`
+	RequestCount    int    `json:"requestCount"`
+	FailedCount     int    `json:"failedCount"`
+	LastSeen        string `json:"lastSeen"`
+}
+
+// One service (or virtual dependency) in a blast-radius subgraph. Identity is (namespace, service).
+type InsightsBlastRadiusNode struct {
+	Namespace string `json:"namespace"`
+	Service   string `json:"service"`
+	// True for an uninstrumented dependency (database, queue, external API).
+	// Virtual nodes are leaves — they have no outgoing calls.
+	IsVirtual bool `json:"isVirtual"`
+}
+
+// Neighborhood around an anchor service: callers and callees out to the requested hop depth.
+type InsightsBlastRadiusSubgraph struct {
+	Root  *InsightsBlastRadiusNode   `json:"root"`
+	Nodes []*InsightsBlastRadiusNode `json:"nodes"`
+	Edges []*InsightsBlastRadiusEdge `json:"edges"`
+}
+
 type InsightsBulkResolveResult struct {
 	Resolution string `json:"resolution"`
 	Resolved   int    `json:"resolved"`
@@ -916,6 +947,8 @@ type InsightsFinding struct {
 	TransactionID *string `json:"transactionId,omitempty"`
 	// Anomaly drill-down key; set when kind is anomaly.
 	Signature *string `json:"signature,omitempty"`
+	// Anomaly signal classes; empty/absent for violations.
+	TriggeredClasses []InsightsDeviationClass `json:"triggeredClasses,omitempty"`
 	// Violation drill-down key; set when kind is violation.
 	ScopeKey *string `json:"scopeKey,omitempty"`
 	// Violation drill-down key; set when kind is violation.
