@@ -2,6 +2,7 @@ package odigospiimaskingprocessor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 
@@ -44,51 +45,59 @@ func newPiiMaskingProcessor(set processor.Settings, cfg *Config) *piiMaskingProc
 }
 
 func compilePiiMaskingConfig(cfg *actions.PiiMaskingConfig) (compiledPiiMaskingConfig, error) {
+	compiled := compiledPiiMaskingConfig{
+		categories: make([]actions.PiiCategory, 0, len(cfg.PiiCategories)),
+	}
+	var errs error
+
 	for i, category := range cfg.PiiCategories {
 		if _, ok := categoryMasks[category]; !ok {
-			return compiledPiiMaskingConfig{}, fmt.Errorf("piiCategories[%d]: unsupported category %q", i, category)
+			errs = errors.Join(errs, fmt.Errorf("piiCategories[%d]: unsupported category %q", i, category))
+			continue
 		}
+		compiled.categories = append(compiled.categories, category)
 	}
 
 	customMaskers, err := compileCustomMaskers(cfg)
-	if err != nil {
-		return compiledPiiMaskingConfig{}, err
-	}
-	return compiledPiiMaskingConfig{
-		categories:    append([]actions.PiiCategory(nil), cfg.PiiCategories...),
-		customMaskers: customMaskers,
-	}, nil
+	compiled.customMaskers = customMaskers
+	return compiled, errors.Join(errs, err)
 }
 
 func compileCustomMaskers(cfg *actions.PiiMaskingConfig) ([]*regexp.Regexp, error) {
 	out := make([]*regexp.Regexp, 0, len(cfg.CustomFormatMaskings)+len(cfg.CustomRegexMaskings))
+	var errs error
 
 	for i, masking := range cfg.CustomFormatMaskings {
 		if masking.LookupKey == "" {
-			return nil, fmt.Errorf("customFormatMaskings[%d]: lookupKey is required", i)
+			errs = errors.Join(errs, fmt.Errorf("customFormatMaskings[%d]: lookupKey is required", i))
+			continue
 		}
 		re, err := buildFormatMaskingRegex(masking.LookupKey, masking.DataFormat)
 		if err != nil {
-			return nil, fmt.Errorf("customFormatMaskings[%d]: %w", i, err)
+			errs = errors.Join(errs, fmt.Errorf("customFormatMaskings[%d]: %w", i, err))
+			continue
 		}
 		out = append(out, re)
 	}
 
 	for i, masking := range cfg.CustomRegexMaskings {
 		if masking.Regex == "" {
-			return nil, fmt.Errorf("customRegexMaskings[%d]: regex is required", i)
+			errs = errors.Join(errs, fmt.Errorf("customRegexMaskings[%d]: regex is required", i))
+			continue
 		}
 		re, err := regexp.Compile(masking.Regex)
 		if err != nil {
-			return nil, fmt.Errorf("customRegexMaskings[%d]: invalid regex: %w", i, err)
+			errs = errors.Join(errs, fmt.Errorf("customRegexMaskings[%d]: invalid regex: %w", i, err))
+			continue
 		}
 		if re.NumSubexp() < 1 {
-			return nil, fmt.Errorf("customRegexMaskings[%d]: regex must contain at least one capture group", i)
+			errs = errors.Join(errs, fmt.Errorf("customRegexMaskings[%d]: regex must contain at least one capture group", i))
+			continue
 		}
 		out = append(out, re)
 	}
 
-	return out, nil
+	return out, errs
 }
 
 // Start resolves odigos_config_extension for per-source config lookups.
@@ -125,19 +134,19 @@ func (p *piiMaskingProcessor) Shutdown(context.Context) error {
 
 // OnSet implements collector.WorkloadConfigCacheCallback.
 func (p *piiMaskingProcessor) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
-	if cfg.PiiMasking == nil {
+	if cfg == nil || cfg.PiiMasking == nil {
 		p.maskersCache.delete(key)
 		return
 	}
 
 	compiled, err := compilePiiMaskingConfig(cfg.PiiMasking)
 	if err != nil {
-		p.logger.Warn("invalid pii masking config; skipping", zap.String("key", key), zap.Error(err))
-		p.maskersCache.delete(key)
-		return
+		p.logger.Warn("invalid pii masking rules; skipping malformed rules", zap.String("key", key), zap.Error(err))
 	}
 	if len(compiled.categories) == 0 && len(compiled.customMaskers) == 0 {
-		p.maskersCache.delete(key)
+		if err == nil {
+			p.maskersCache.delete(key)
+		}
 		return
 	}
 	p.maskersCache.set(key, compiled)
