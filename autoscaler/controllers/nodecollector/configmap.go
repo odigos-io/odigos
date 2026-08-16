@@ -263,10 +263,20 @@ func calculateCollectorConfigDomains(
 		}
 		configDomains["own_metrics"] = ownMetricsConfig
 
-		// scrape the odiglet's prometheus /metrics endpoint and forward to the cluster collector.
-		// the cluster collector decides (via its own SendToOdigosMetricsStore setting) whether
-		// to forward these to the odigos metrics store (Victoria Metrics).
-		configDomains["odiglet_metrics"] = collectorconfig.OdigletMetricsConfig(odigosNamespace)
+		odigletMetrics := collectorconfig.OdigletMetricsConfig(odigosNamespace)
+		if kubeletStats := nodeCG.Spec.Metrics.KubeletStats; kubeletStats != nil {
+			// pass kubeletstats metrics into own-metrics -> VictoriaMetrics (filtered to odigos component cpu/memory).
+			// It is Auto-enabled with own-metrics unless globally disabled.
+			var kubeletstats *collectorconfig.KubeletstatsReceiverSpec
+			if !metricsEnabled { // metricsEnabled is true when we have a metrics destination
+				// No destination metrics pipeline — define kubeletstats in this domain.
+				kubeletstats = &collectorconfig.KubeletstatsReceiverSpec{
+					CollectionInterval: kubeletStats.Interval,
+				}
+			}
+			odigletMetrics = collectorconfig.AddKubeletToOwnMetrics(odigletMetrics, odigosNamespace, kubeletstats)
+		}
+		configDomains["odiglet_metrics"] = odigletMetrics
 	}
 
 	// traces

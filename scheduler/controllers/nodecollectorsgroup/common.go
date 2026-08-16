@@ -297,6 +297,10 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
 		}
 		metricsConfig.OdigosOwnMetrics = ownMetricsSettings
+		// Own-metrics → VicotriaMetrics also need to enable the destination kubeletstats receiver. Ensure it is enabled unless the user globally disabled kubelet stats collection.
+		if metricsConfig.KubeletStats == nil {
+			metricsConfig.KubeletStats = getKubeletStatsConfiguration(&odigosConfiguration)
+		}
 	}
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault

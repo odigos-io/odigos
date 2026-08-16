@@ -2,6 +2,7 @@ package collectorconfig
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/config"
@@ -116,4 +117,36 @@ func OdigletMetricsConfig(odigosNamespace string) config.Config {
 			Pipelines: odigletMetricsPipeline(),
 		},
 	}
+}
+
+// KubeletstatsReceiverSpec defines the kubeletstats receiver in this config domain.
+type KubeletstatsReceiverSpec struct {
+	// CollectionInterval for the kubeletstats scrape. Empty defaults to 10s.
+	CollectionInterval string
+}
+
+// AddKubeletToOwnMetrics passes kubeletstats into the own-metrics -> VictoriaMetrics path (filtered to odigos components).
+// If there's no kubeletstats receiver, it also inits it here
+func AddKubeletToOwnMetrics(ownMetricsConfig config.Config, odigosNamespace string, kubeletstatsReceiver *KubeletstatsReceiverSpec) config.Config {
+	if ownMetricsConfig.Processors == nil {
+		ownMetricsConfig.Processors = config.GenericMap{}
+	}
+	// Adds the kubelet processor to the ownmetricsconfig
+	maps.Copy(ownMetricsConfig.Processors, ownMetricsKubeletProcessorConfig(odigosNamespace))
+
+	// Adds the kubelet receiver when we don't have a metrics destinations somewhere in the pipeline - in that case the kubelestats
+	// don't have a receiver to send kubelestats metrics to
+	if kubeletstatsReceiver != nil {
+		if ownMetricsConfig.Receivers == nil {
+			ownMetricsConfig.Receivers = config.GenericMap{}
+		}
+
+		maps.Copy(ownMetricsConfig.Receivers, ownKubeletReceiverConfig(kubeletstatsReceiver.CollectionInterval))
+	}
+
+	if ownMetricsConfig.Service.Pipelines == nil {
+		ownMetricsConfig.Service.Pipelines = map[string]config.Pipeline{}
+	}
+	maps.Copy(ownMetricsConfig.Service.Pipelines, ownKubeletPipeline())
+	return ownMetricsConfig
 }
