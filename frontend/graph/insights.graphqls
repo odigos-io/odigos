@@ -35,6 +35,10 @@ enum InsightsDeviationClass {
 enum InsightsSampleReason {
   example
   anomaly_evidence
+  """
+  Guardrail violation evidence sample (`guardrail:<rule>:<offending>` in storage).
+  """
+  guardrail_evidence
 }
 
 enum InsightsPolicyScope {
@@ -519,6 +523,36 @@ type InsightsGuardrailViolation {
   status: InsightsViolationStatus!
 }
 
+"""
+Full violation for investigate. Detail path only — includes summary, span
+highlights, and optional evidenceTrace. Identity is (scopeKey, ruleKey, offending).
+"""
+type InsightsGuardrailViolationDetail {
+  service: String!
+  namespace: String!
+  scopeKey: String!
+  ruleKey: String!
+  ruleLabel: String!
+  offending: String!
+  occurrences: Int!
+  maxScore: Int!
+  severity: InsightsSeverity!
+  lastSeen: String
+  status: InsightsViolationStatus!
+  """
+  One-line explanation of what broke (service, rule, offending).
+  """
+  summary: String!
+  """
+  Spans on the evidence trace that witness the forbidden edge.
+  """
+  spanHighlights: [InsightsAnomalySpanHighlight!]
+  """
+  Captured sample including rawOtlp. Omitted when no sample was retained.
+  """
+  evidenceTrace: InsightsObservation
+}
+
 input InsightsViolationActionInput {
   scopeKey: String!
   ruleKey: String!
@@ -792,6 +826,14 @@ type Insights {
     namespace: String
     status: String
   ): [InsightsGuardrailViolation!]!
+  """
+  Violation investigate payload (summary + evidence trace). Analogous to anomaly(...).
+  """
+  guardrailViolation(
+    scopeKey: String!
+    ruleKey: String!
+    offending: String!
+  ): InsightsGuardrailViolationDetail
   catalog: InsightsCatalog!
   systemSettings: InsightsSystemSettings!
   storageHealth: InsightsStorageHealth!

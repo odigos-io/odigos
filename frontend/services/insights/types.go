@@ -341,6 +341,25 @@ type GuardrailViolation struct {
 	Status      ViolationStatus `json:"status"`
 }
 
+// GuardrailViolationDetail is the investigate payload for one violation
+// (GET /guardrails/violations/evidence). Never returned by list endpoints.
+type GuardrailViolationDetail struct {
+	Service        string                 `json:"service"`
+	Namespace      string                 `json:"namespace"`
+	ScopeKey       string                 `json:"scope_key"`
+	RuleKey        string                 `json:"rule_key"`
+	RuleLabel      string                 `json:"rule_label"`
+	Offending      string                 `json:"offending"`
+	Occurrences    int64                  `json:"occurrences"`
+	MaxScore       int                    `json:"max_score"`
+	Severity       Severity               `json:"severity"`
+	LastSeen       *string                `json:"last_seen,omitempty"`
+	Status         ViolationStatus        `json:"status"`
+	Summary        string                 `json:"summary"`
+	SpanHighlights []AnomalySpanHighlight `json:"span_highlights,omitempty"`
+	EvidenceTrace  *Observation           `json:"evidence_trace,omitempty"`
+}
+
 type ViolationActionRequest struct {
 	ScopeKey  string `json:"scope_key"`
 	RuleKey   string `json:"rule_key"`

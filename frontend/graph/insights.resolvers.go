@@ -280,6 +280,22 @@ func (r *insightsResolver) GuardrailViolations(ctx context.Context, obj *model.I
 	return insights.GuardrailViolationsToModel(violations), nil
 }
 
+// GuardrailViolation is the resolver for the guardrailViolation field.
+func (r *insightsResolver) GuardrailViolation(ctx context.Context, obj *model.Insights, scopeKey string, ruleKey string, offending string) (*model.InsightsGuardrailViolationDetail, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	detail, err := client.GetGuardrailViolation(ctx, scopeKey, ruleKey, offending)
+	if err != nil {
+		if errors.Is(err, insights.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.GuardrailViolationDetailToModel(*detail), nil
+}
+
 // Catalog is the resolver for the catalog field.
 func (r *insightsResolver) Catalog(ctx context.Context, obj *model.Insights) (*model.InsightsCatalog, error) {
 	client, err := r.insightsClient(ctx)

@@ -737,9 +737,11 @@ type Insights struct {
 	LearningPolicies    []*InsightsLearningPolicy     `json:"learningPolicies"`
 	Guardrails          []*InsightsGuardrail          `json:"guardrails"`
 	GuardrailViolations []*InsightsGuardrailViolation `json:"guardrailViolations"`
-	Catalog             *InsightsCatalog              `json:"catalog"`
-	SystemSettings      *InsightsSystemSettings       `json:"systemSettings"`
-	StorageHealth       *InsightsStorageHealth        `json:"storageHealth"`
+	// Violation investigate payload (summary + evidence trace). Analogous to anomaly(...).
+	GuardrailViolation *InsightsGuardrailViolationDetail `json:"guardrailViolation,omitempty"`
+	Catalog            *InsightsCatalog                  `json:"catalog"`
+	SystemSettings     *InsightsSystemSettings           `json:"systemSettings"`
+	StorageHealth      *InsightsStorageHealth            `json:"storageHealth"`
 }
 
 type InsightsAnomalyAttrHighlight struct {
@@ -1001,6 +1003,28 @@ type InsightsGuardrailViolation struct {
 	Severity    InsightsSeverity        `json:"severity"`
 	LastSeen    *string                 `json:"lastSeen,omitempty"`
 	Status      InsightsViolationStatus `json:"status"`
+}
+
+// Full violation for investigate. Detail path only — includes summary, span
+// highlights, and optional evidenceTrace. Identity is (scopeKey, ruleKey, offending).
+type InsightsGuardrailViolationDetail struct {
+	Service     string                  `json:"service"`
+	Namespace   string                  `json:"namespace"`
+	ScopeKey    string                  `json:"scopeKey"`
+	RuleKey     string                  `json:"ruleKey"`
+	RuleLabel   string                  `json:"ruleLabel"`
+	Offending   string                  `json:"offending"`
+	Occurrences int                     `json:"occurrences"`
+	MaxScore    int                     `json:"maxScore"`
+	Severity    InsightsSeverity        `json:"severity"`
+	LastSeen    *string                 `json:"lastSeen,omitempty"`
+	Status      InsightsViolationStatus `json:"status"`
+	// One-line explanation of what broke (service, rule, offending).
+	Summary string `json:"summary"`
+	// Spans on the evidence trace that witness the forbidden edge.
+	SpanHighlights []*InsightsAnomalySpanHighlight `json:"spanHighlights,omitempty"`
+	// Captured sample including rawOtlp. Omitted when no sample was retained.
+	EvidenceTrace *InsightsObservation `json:"evidenceTrace,omitempty"`
 }
 
 type InsightsLearningCondition struct {
@@ -3334,16 +3358,19 @@ type InsightsSampleReason string
 const (
 	InsightsSampleReasonExample         InsightsSampleReason = "example"
 	InsightsSampleReasonAnomalyEvidence InsightsSampleReason = "anomaly_evidence"
+	// Guardrail violation evidence sample (`guardrail:<rule>:<offending>` in storage).
+	InsightsSampleReasonGuardrailEvidence InsightsSampleReason = "guardrail_evidence"
 )
 
 var AllInsightsSampleReason = []InsightsSampleReason{
 	InsightsSampleReasonExample,
 	InsightsSampleReasonAnomalyEvidence,
+	InsightsSampleReasonGuardrailEvidence,
 }
 
 func (e InsightsSampleReason) IsValid() bool {
 	switch e {
-	case InsightsSampleReasonExample, InsightsSampleReasonAnomalyEvidence:
+	case InsightsSampleReasonExample, InsightsSampleReasonAnomalyEvidence, InsightsSampleReasonGuardrailEvidence:
 		return true
 	}
 	return false

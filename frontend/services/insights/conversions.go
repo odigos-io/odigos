@@ -226,6 +226,9 @@ func SampleReasonToModel(reason SampleReason) model.InsightsSampleReason {
 	case s == string(model.InsightsSampleReasonAnomalyEvidence) || strings.HasPrefix(s, "anomaly:"):
 		// Storage tags evidence as anomaly:<signature>; GraphQL keeps the legacy enum token.
 		return model.InsightsSampleReasonAnomalyEvidence
+	case s == string(model.InsightsSampleReasonGuardrailEvidence) || strings.HasPrefix(s, "guardrail:"):
+		// Storage tags evidence as guardrail:<rule>:<offending>.
+		return model.InsightsSampleReasonGuardrailEvidence
 	default:
 		return model.InsightsSampleReason(reason)
 	}
@@ -742,6 +745,29 @@ func GuardrailViolationToModel(violation GuardrailViolation) *model.InsightsGuar
 
 func GuardrailViolationsToModel(violations []GuardrailViolation) []*model.InsightsGuardrailViolation {
 	return mapSlice(violations, GuardrailViolationToModel)
+}
+
+func GuardrailViolationDetailToModel(detail GuardrailViolationDetail) *model.InsightsGuardrailViolationDetail {
+	var evidenceTrace *model.InsightsObservation
+	if detail.EvidenceTrace != nil {
+		evidenceTrace = ObservationToModel(*detail.EvidenceTrace)
+	}
+	return &model.InsightsGuardrailViolationDetail{
+		Service:        detail.Service,
+		Namespace:      detail.Namespace,
+		ScopeKey:       detail.ScopeKey,
+		RuleKey:        detail.RuleKey,
+		RuleLabel:      detail.RuleLabel,
+		Offending:      detail.Offending,
+		Occurrences:    int64ToInt(detail.Occurrences),
+		MaxScore:       detail.MaxScore,
+		Severity:       SeverityToModel(detail.Severity),
+		LastSeen:       detail.LastSeen,
+		Status:         ViolationStatusToModel(detail.Status),
+		Summary:        detail.Summary,
+		SpanHighlights: mapSlice(detail.SpanHighlights, AnomalySpanHighlightToModel),
+		EvidenceTrace:  evidenceTrace,
+	}
 }
 
 func CatalogClassToModel(class CatalogClass) *model.InsightsCatalogClass {
