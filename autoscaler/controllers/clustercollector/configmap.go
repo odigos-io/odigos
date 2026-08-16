@@ -210,6 +210,13 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	}
 	// When on, pipelinegen installs groupbytrace on traces/in so the exporter sees full traces.
 	gatewayOptions.Insights = insightsCfg
+	// Provide the insights OTLP endpoint so pipelinegen (in the common module, which
+	// cannot import api/k8sconsts) can add an OTLP exporter to metrics/servicegraph
+	// for the blast-radius topology. Target the headless Service via dns:/// so
+	// the gateway's gRPC client round_robins across insights replicas.
+	if odigoscommon.InsightsPipelineActive(insightsCfg) {
+		gatewayOptions.InsightsOtlpEndpoint = k8sconsts.InsightsOtlpGrpcDNSEndpoint(env.GetCurrentNamespace())
+	}
 	// Insights can trigger groupbytrace without tail sampling on, in which case
 	// the scheduler hasn't resolved TraceAggregationWaitDuration. Fall back to the
 	// canonical default so we never feed groupbytrace a nil wait_duration.
