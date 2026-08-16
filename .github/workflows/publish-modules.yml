@@ -116,10 +116,59 @@ jobs:
   trigger-enterprise-release-pr:
     if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: [decide, tag-modules]
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     permissions:
+      contents: read
       id-token: write
     steps:
+
+      - name: Classify release
+        id: meta
+        env:
+          TAG: ${{ needs.decide.outputs.tag }}
+        run: |
+          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-feat\. ]]; then
+            echo "kind=feature" >> "$GITHUB_OUTPUT"
+          else
+            echo "kind=official" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: steps.meta.outputs.kind == 'feature'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.decide.outputs.tag }}
+
+      - name: Read enterprise branch from tag annotation
+        if: steps.meta.outputs.kind == 'feature'
+        id: branch
+        env:
+          TAG: ${{ needs.decide.outputs.tag }}
+        run: |
+          MSG=$(git tag -l --format='%(contents)' "$TAG")
+          BRANCH=""
+          OSS_BRANCH=""
+          while IFS= read -r line; do
+            if [[ "$line" == enterprise_branch=* ]]; then
+              BRANCH="${line#enterprise_branch=}"
+            elif [[ "$line" == oss_branch=* ]]; then
+              OSS_BRANCH="${line#oss_branch=}"
+            fi
+          done <<< "$MSG"
+          if [ -z "$BRANCH" ]; then
+            echo "ERROR: feature tag $TAG is missing enterprise_branch annotation"
+            exit 1
+          fi
+          if [ -z "$OSS_BRANCH" ]; then
+            echo "ERROR: feature tag $TAG is missing oss_branch annotation"
+            exit 1
+          fi
+          echo "enterprise_branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "oss_branch=${OSS_BRANCH}" >> "$GITHUB_OUTPUT"
+          echo "Tag annotation: '${MSG}'"
+          echo "Enterprise branch: '${BRANCH}'"
+          echo "OSS branch: '${OSS_BRANCH}'"
 
       - name: Get sts tokens
         id: sts-enterprise
@@ -130,6 +179,7 @@ jobs:
           output-git-config: "false"
 
       - name: Trigger create release PR workflow
+        if: steps.meta.outputs.kind == 'official'
         uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ steps.sts-enterprise.outputs.GH_TOKEN }}
@@ -137,13 +187,22 @@ jobs:
           event-type: create_release_pr
           client-payload: '{"tag": "${{ needs.decide.outputs.tag }}"}'
 
+      - name: Trigger create feature-release PR workflow
+        if: steps.meta.outputs.kind == 'feature'
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ steps.sts-enterprise.outputs.GH_TOKEN }}
+          repository: odigos-io/odigos-enterprise
+          event-type: create_feature_release_pr
+          client-payload: '{"tag": "${{ needs.decide.outputs.tag }}", "branch": "${{ steps.branch.outputs.enterprise_branch }}", "oss_branch": "${{ steps.branch.outputs.oss_branch }}"}'
+
       - name: Notify Slack
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          success-description: "Triggered Odigos Enterprise release PR workflow"
-          failure-description: "ERROR: Failed to trigger Odigos Enterprise release PR workflow"
+          success-description: "Triggered Odigos Enterprise ${{ steps.meta.outputs.kind }} release PR workflow"
+          failure-description: "ERROR: Failed to trigger Odigos Enterprise ${{ steps.meta.outputs.kind }} release PR workflow"
           tag: ${{ needs.decide.outputs.tag }}
 
   publish-images:
