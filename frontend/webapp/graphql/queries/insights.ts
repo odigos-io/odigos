@@ -478,6 +478,23 @@ export const GET_INSIGHTS_GUARDRAIL_VIOLATIONS = gql`
   }
 `;
 
+export const GET_INSIGHTS_GUARDRAIL_VIOLATION = gql`
+  query GetInsightsGuardrailViolation($scopeKey: String!, $ruleKey: String!, $offending: String!) {
+    insights {
+      guardrailViolation(scopeKey: $scopeKey, ruleKey: $ruleKey, offending: $offending) {
+        ${GUARDRAIL_VIOLATION_FIELDS}
+        summary
+        spanHighlights {
+          spanId
+          severity
+          reason
+        }
+        evidenceTrace { ${OBSERVATION_FIELDS} }
+      }
+    }
+  }
+`;
+
 export const GET_INSIGHTS_CATALOG = gql`
   query GetInsightsCatalog {
     insights {

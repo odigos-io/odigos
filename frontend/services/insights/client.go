@@ -277,6 +277,20 @@ func (c *Client) ListGuardrailViolations(ctx context.Context, params ListGuardra
 	return doList[GuardrailViolation](ctx, c, http.MethodGet, endpoint, nil)
 }
 
+func (c *Client) GetGuardrailViolation(ctx context.Context, scopeKey, ruleKey, offending string) (*GuardrailViolationDetail, error) {
+	endpoint := c.apiEndpoint("guardrails", "violations", "evidence")
+	query := endpoint.Query()
+	query.Set("scope_key", scopeKey)
+	query.Set("rule_key", ruleKey)
+	query.Set("offending", offending)
+	endpoint.RawQuery = query.Encode()
+	var result GuardrailViolationDetail
+	if err := c.do(ctx, http.MethodGet, endpoint, nil, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *Client) AllowGuardrailViolation(ctx context.Context, request ViolationActionRequest) error {
 	return c.do(ctx, http.MethodPost, c.apiEndpoint("guardrails", "violations", "allow"), request, nil)
 }

@@ -49,6 +49,7 @@ import type {
   InsightsFinding,
   InsightsGuardrail,
   InsightsGuardrailViolation,
+  InsightsGuardrailViolationDetail,
   InsightsLearningPolicy,
   InsightsObservation,
   InsightsObservationSummary,
@@ -119,6 +120,7 @@ import {
   GET_INSIGHTS_LEARNING_POLICIES,
   GET_INSIGHTS_GUARDRAILS,
   GET_INSIGHTS_GUARDRAIL_VIOLATIONS,
+  GET_INSIGHTS_GUARDRAIL_VIOLATION,
   GET_INSIGHTS_CATALOG,
   GET_INSIGHTS_SYSTEM_SETTINGS,
   GET_INSIGHTS_STORAGE_HEALTH,
@@ -515,6 +517,10 @@ const operations: OdigosApiOperations = {
   GET_INSIGHTS_GUARDRAIL_VIOLATIONS: {
     document: GET_INSIGHTS_GUARDRAIL_VIOLATIONS,
     transformResult: (raw: unknown) => (raw as { insights?: { guardrailViolations?: InsightsGuardrailViolation[] } } | null | undefined)?.insights?.guardrailViolations ?? [],
+  },
+  GET_INSIGHTS_GUARDRAIL_VIOLATION: {
+    document: GET_INSIGHTS_GUARDRAIL_VIOLATION,
+    transformResult: (raw: unknown) => (raw as { insights?: { guardrailViolation?: InsightsGuardrailViolationDetail } } | null | undefined)?.insights?.guardrailViolation,
   },
   GET_INSIGHTS_CATALOG: {
     document: GET_INSIGHTS_CATALOG,

@@ -194,6 +194,8 @@ models:
         resolver: true
       guardrailViolations:
         resolver: true
+      guardrailViolation:
+        resolver: true
       catalog:
         resolver: true
       systemSettings:
