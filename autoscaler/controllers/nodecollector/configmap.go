@@ -264,17 +264,10 @@ func calculateCollectorConfigDomains(
 		configDomains["own_metrics"] = ownMetricsConfig
 
 		odigletMetrics := collectorconfig.OdigletMetricsConfig(odigosNamespace)
-		if kubeletStats := nodeCG.Spec.Metrics.KubeletStats; kubeletStats != nil {
-			// pass kubeletstats metrics into own-metrics -> VictoriaMetrics (filtered to odigos component cpu/memory).
-			// It is Auto-enabled with own-metrics unless globally disabled.
-			var kubeletstats *collectorconfig.KubeletstatsReceiverSpec
-			if !metricsEnabled { // metricsEnabled is true when we have a metrics destination
-				// No destination metrics pipeline — define kubeletstats in this domain.
-				kubeletstats = &collectorconfig.KubeletstatsReceiverSpec{
-					CollectionInterval: kubeletStats.Interval,
-				}
-			}
-			odigletMetrics = collectorconfig.AddKubeletToOwnMetrics(odigletMetrics, odigosNamespace, kubeletstats)
+		// Pass only when the user already enabled kubeletstats (metrics destination).
+		// Own-metrics must not start a kubelet scrape on its own.
+		if metricsEnabled && nodeCG.Spec.Metrics.KubeletStats != nil {
+			odigletMetrics = collectorconfig.AddKubeletStatsToOwnMetrics(odigletMetrics, odigosNamespace)
 		}
 		configDomains["odiglet_metrics"] = odigletMetrics
 	}

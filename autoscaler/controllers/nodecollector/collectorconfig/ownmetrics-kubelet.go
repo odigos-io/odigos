@@ -10,12 +10,9 @@ import (
 )
 
 const (
-	// Passing kubeletstats metrics into the own-metrics -> VictoriaMetrics path.
-	// Prefer the destination metrics receiver when that pipeline exists; otherwise define the
-	// same receiver here so own-metrics works with no metrics destination (no duplicate key on merge).
-	ownKubeletFilterName        = "filter/own-kubelet"
-	ownKubeletMetricsPipeline   = "metrics/own-kubelet"
-	ownKubeletCollectionDefault = "10s"
+	// Pass the destination kubeletstats receiver into own-metrics -> victoria metrics.
+	ownKubeletFilterName      = "filter/own-kubelet"
+	ownKubeletMetricsPipeline = "metrics/own-kubelet"
 )
 
 var ownMetricsKubeletMetricNames = []string{
@@ -28,21 +25,6 @@ var ownMetricsKubeletContainerNames = []string{
 	k8sconsts.OdigletContainerName,
 	k8sconsts.OdigosNodeCollectorContainerName,
 	k8sconsts.OdigosClusterCollectorContainerName,
-}
-
-// Same shape as destination metrics kubeletstats (metrics.go), used only when that domain is absent.
-func ownKubeletReceiverConfig(collectionInterval string) config.GenericMap {
-	if collectionInterval == "" {
-		collectionInterval = ownKubeletCollectionDefault
-	}
-	return config.GenericMap{
-		kubeletstatsReceiverName: config.GenericMap{
-			"auth_type":            "serviceAccount",
-			"endpoint":             "https://${env:NODE_IP}:10250",
-			"insecure_skip_verify": true,
-			"collection_interval":  collectionInterval,
-		},
-	}
 }
 
 // A processor that filters out most of the kubelet scraped metrics other than the ones in ownMetricsKubeletMetricNames
@@ -74,7 +56,7 @@ func ownMetricsKubeletProcessorConfig(odigosNamespace string) config.GenericMap 
 
 func ownKubeletPipeline() map[string]config.Pipeline {
 	return map[string]config.Pipeline{
-		// Reuses kubeletstats (destination metrics or defined locally)
+		// Reuses the destination metrics kubeletstats receiver.
 		ownKubeletMetricsPipeline: {
 			Receivers:  []string{kubeletstatsReceiverName},
 			Processors: []string{ownKubeletFilterName},
