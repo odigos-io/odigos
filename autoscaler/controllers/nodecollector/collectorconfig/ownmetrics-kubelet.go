@@ -12,7 +12,6 @@ import (
 const (
 	// Pass the destination kubeletstats receiver into own-metrics -> victoria metrics.
 	ownKubeletFilterName      = "filter/own-kubelet"
-	ownKubeletK8sAttrName     = "k8sattributes/own-kubelet"
 	ownKubeletMetricsPipeline = "metrics/own-kubelet"
 )
 
@@ -21,54 +20,32 @@ var ownMetricsKubeletMetricNames = []string{
 	"container.memory.usage",
 }
 
-// ownMetricsKubeletProcessorConfig keeps odiglet DaemonSet + gateway Deployment cpu/memory.
-// kubeletstats does not emit workload owner attrs, so k8sattributes fills those before the filter.
-// deviceplugin is intentionally dropped.
+var ownMetricsKubeletContainerNames = []string{
+	k8sconsts.OdigletContainerName,
+	k8sconsts.OdigosNodeCollectorContainerName,
+	k8sconsts.OdigosClusterCollectorContainerName,
+}
+
+// ownMetricsKubeletProcessorConfig keeps cpu/memory for odiglet, data-collection, and gateway containers.
 func ownMetricsKubeletProcessorConfig(odigosNamespace string) config.GenericMap {
+	notOurContainer := make([]string, 0, len(ownMetricsKubeletContainerNames))
+	for _, containerName := range ownMetricsKubeletContainerNames {
+		notOurContainer = append(notOurContainer,
+			fmt.Sprintf("resource.attributes[%q] != %q", string(semconv.K8SContainerNameKey), containerName))
+	}
+
 	notOurMetric := make([]string, 0, len(ownMetricsKubeletMetricNames))
 	for _, metricName := range ownMetricsKubeletMetricNames {
 		notOurMetric = append(notOurMetric, fmt.Sprintf("name != %q", metricName))
 	}
 
-	notOurWorkload := fmt.Sprintf(
-		"resource.attributes[%q] != %q and resource.attributes[%q] != %q",
-		string(semconv.K8SDaemonSetNameKey), k8sconsts.OdigletDaemonSetName,
-		string(semconv.K8SDeploymentNameKey), k8sconsts.OdigosClusterCollectorDeploymentName,
-	)
-
 	return config.GenericMap{
-		ownKubeletK8sAttrName: config.GenericMap{
-			"auth_type": "serviceAccount",
-			// Without a filter, k8sattributes LIST/WATCHes every pod in the cluster - and,
-			// because k8s.deployment.name is extracted, every replicaset too - from the node
-			// collector on every node. Scope both informers to what this pipeline can actually
-			// see: kubeletstats only reports pods on this node, and the filter below drops
-			// anything outside the odigos namespace anyway.
-			"filter": config.GenericMap{
-				"namespace":         odigosNamespace,
-				"node_from_env_var": k8sconsts.NodeNameEnvVar,
-			},
-			"extract": config.GenericMap{
-				"metadata": []string{
-					string(semconv.K8SDaemonSetNameKey),
-					string(semconv.K8SDeploymentNameKey),
-				},
-			},
-			"pod_association": []config.GenericMap{{
-				"sources": []config.GenericMap{{
-					"from": "resource_attribute",
-					"name": string(semconv.K8SPodUIDKey),
-				}},
-			}},
-		},
 		ownKubeletFilterName: config.GenericMap{
 			"error_mode": "ignore",
 			"metrics": config.GenericMap{
 				"metric": []string{
 					fmt.Sprintf("resource.attributes[%q] != %q", string(semconv.K8SNamespaceNameKey), odigosNamespace),
-					notOurWorkload,
-					fmt.Sprintf("resource.attributes[%q] == %q",
-						string(semconv.K8SContainerNameKey), k8sconsts.OdigletDevicePluginContainerName),
+					strings.Join(notOurContainer, " and "),
 					strings.Join(notOurMetric, " and "),
 				},
 			},
@@ -81,7 +58,7 @@ func ownKubeletPipeline() map[string]config.Pipeline {
 		// Reuses the destination metrics kubeletstats receiver.
 		ownKubeletMetricsPipeline: {
 			Receivers:  []string{kubeletstatsReceiverName},
-			Processors: []string{ownKubeletK8sAttrName, ownKubeletFilterName},
+			Processors: []string{ownKubeletFilterName},
 			Exporters:  []string{odigletMetricsExporterName},
 		},
 	}
