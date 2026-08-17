@@ -67,11 +67,11 @@ func compileCustomMaskers(cfg *actions.PiiMaskingConfig) ([]*regexp.Regexp, erro
 		if masking.LookupKey == "" {
 			return nil, fmt.Errorf("customFormatMaskings[%d]: lookupKey is required", i)
 		}
-		re, err := buildFormatMaskingRegex(masking.LookupKey, masking.DataFormat)
+		res, err := buildFormatMaskingRegexes(masking.LookupKey, masking.DataFormat)
 		if err != nil {
 			return nil, fmt.Errorf("customFormatMaskings[%d]: %w", i, err)
 		}
-		out = append(out, re)
+		out = append(out, res...)
 	}
 
 	for i, masking := range cfg.CustomRegexMaskings {
