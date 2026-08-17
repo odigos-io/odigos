@@ -4,9 +4,9 @@ go 1.26.2
 
 require (
 	github.com/go-logr/logr v1.4.3
-	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/k8sutils v0.0.0
+	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
 	go.opentelemetry.io/otel v1.44.0
 	google.golang.org/protobuf v1.36.11
 	k8s.io/api v0.35.4
