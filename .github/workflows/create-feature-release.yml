@@ -64,6 +64,13 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Resolved feature tag $TAG from ${{ inputs.oss_branch || 'main' }}"
 
+      # Annotated tags (git tag -a) record a tagger identity. STS output-git-config
+      # only rewrites GitHub URLs for auth and does not set user.name / user.email.
+      - name: Configure Git for bot commits
+        run: |
+          git config user.email "bot@odigos.io"
+          git config user.name "Odigos Release Bot"
+
       - name: Create and push feature-release tag
         env:
           TAG: ${{ steps.version.outputs.tag }}
