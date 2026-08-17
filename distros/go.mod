@@ -2,7 +2,7 @@ module github.com/odigos-io/odigos/distros
 
 require (
 	github.com/hashicorp/go-version v1.9.0
-	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
 	gopkg.in/yaml.v3 v3.0.1
 )
 

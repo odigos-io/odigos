@@ -2,7 +2,7 @@ module github.com/odigos-io/odigos/profiles
 
 go 1.26.2
 
-require github.com/odigos-io/odigos/common v0.0.0
+require github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

@@ -14,16 +14,16 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/grafana/pyroscope v1.21.1
 	github.com/grafana/pyroscope/api v1.5.0
-	github.com/odigos-io/odigos/actions v0.0.0
-	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/config v0.0.0
-	github.com/odigos-io/odigos/destinations v0.0.0
-	github.com/odigos-io/odigos/instrumentationrules v0.0.0
-	github.com/odigos-io/odigos/k8sutils v0.0.0
-	github.com/odigos-io/odigos/odigosauth v0.0.0
-	github.com/odigos-io/odigos/recommendations v0.0.0
-	github.com/odigos-io/odigos/status v0.0.0
+	github.com/odigos-io/odigos/actions v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/config v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/destinations v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/instrumentationrules v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/odigosauth v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/recommendations v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/status v0.0.0-00010101000000-000000000000
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.5
