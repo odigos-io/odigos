@@ -1,0 +1,77 @@
+name: Update Go Version
+
+# Keeps the Go toolchain patch version current. The version lives in .go-version
+# (consumed by every setup-go step) and in the golang: base images, which
+# dependabot handles separately.
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  update-go-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve the latest Go patch release
+        id: resolve
+        run: |
+          set -euo pipefail
+          CURRENT=$(tr -d '[:space:]' < .go-version)
+          MINOR=${CURRENT%.*}
+
+          # newest stable release on the same minor line, so this never bumps
+          # across a minor version on its own
+          LATEST=$(curl -fsSL 'https://go.dev/dl/?mode=json' \
+            | jq -r --arg m "$MINOR." '[.[] | select(.stable) | .version | ltrimstr("go")
+                | select(startswith($m))] | sort_by(split(".") | map(tonumber)) | last // empty')
+
+          if [ -z "$LATEST" ]; then
+            echo "::warning::No stable release found on the ${MINOR}.x line; nothing to do."
+            echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+
+          echo "current=$CURRENT latest=$LATEST"
+          if [ "$CURRENT" = "$LATEST" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$LATEST" > .go-version
+            echo "changed=true"   >> "$GITHUB_OUTPUT"
+            echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+            echo "latest=$LATEST"   >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create PR token
+        if: steps.resolve.outputs.changed == 'true'
+        id: create-pr-sts
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: create-pr
+          output-git-config: true
+
+      - name: Open a PR to update the Go version
+        if: steps.resolve.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.create-pr-sts.outputs.GH_TOKEN }}
+          title: "chore: update Go to ${{ steps.resolve.outputs.latest }}"
+          body: |
+            Updates `.go-version` from `${{ steps.resolve.outputs.current }}` to `${{ steps.resolve.outputs.latest }}`.
+
+            Every `setup-go` step reads this file, so no other workflow changes are needed.
+
+            The `golang:` base images in the Dockerfiles are updated separately by dependabot, and
+            `odiglet-base` needs a republish via the Publish Odiglet Base Builder workflow.
+
+            ```release-note
+            NONE
+            ```
+          base: main
+          branch: automated/update-go-version
+          commit-message: "chore: update Go to ${{ steps.resolve.outputs.latest }}"
+          labels: automated
+          delete-branch: true
