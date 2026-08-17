@@ -338,16 +338,13 @@ jobs:
           refs: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli
           digest: ${{ steps.ko-cli.outputs.digest }}
 
-      - name: Install crane
-        uses: imjasonh/setup-crane@v0.4
-
       - name: Install oras
         uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
 
       - name: Copy CLI image to Docker Hub and private GCR
         env:
           SOURCE_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli
-          DEST_IMAGE: ${{ env.DOCKERHUB_ORG }}/odigos-cli
+          DEST_IMAGE: docker.io/${{ env.DOCKERHUB_ORG }}/odigos-cli
           GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-cli
         run: |
           # oras copy -r rather than crane copy: -r copies the referrers graph
@@ -368,28 +365,28 @@ jobs:
       - name: Copy VictoriaMetrics image to Docker Hub and GCR
         id: vm-copy
         env:
-          SOURCE_IMAGE: victoriametrics/victoria-metrics:${{ env.VICTORIA_METRICS_VERSION }}
-          DOCKERHUB_DEST_IMAGE: ${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
+          SOURCE_IMAGE: docker.io/victoriametrics/victoria-metrics:${{ env.VICTORIA_METRICS_VERSION }}
+          DEST_IMAGE: docker.io/${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
           GCR_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-victoria-metrics
           GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-victoria-metrics
         run: |
-          crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:${{ env.TAG }}
-          crane copy ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:${{ env.TAG }}
-          crane copy ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
 
           # VICTORIA_METRICS_VERSION is pinned per branch, so :latest here
           # tracks whichever release owns it rather than the last one to run.
           if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
-            crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:latest
-            crane copy ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
-            crane copy ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:latest
           else
             echo "Skipping :latest mirror for ${{ env.TAG }}"
           fi
 
           # The copy preserves the upstream digest; capture it so our copies
           # can be signed by digest.
-          echo "digest=$(crane digest ${SOURCE_IMAGE})" >> "$GITHUB_OUTPUT"
+          echo "digest=$(oras resolve ${SOURCE_IMAGE})" >> "$GITHUB_OUTPUT"
 
       # VictoriaMetrics is a re-host of an upstream image under our name. The
       # signature attests that WE published this exact digest in our
@@ -399,7 +396,7 @@ jobs:
         uses: odigos-io/ci-core/sign-oci@main
         with:
           refs: |
-            ${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
+            docker.io/${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
             us-central1-docker.pkg.dev/odigos-cloud/components/odigos-victoria-metrics
             us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-victoria-metrics
           digest: ${{ steps.vm-copy.outputs.digest }}
