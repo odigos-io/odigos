@@ -82,12 +82,17 @@ jobs:
         run: |
           TAG="${{ env.TAG }}"
 
-          # Check if it's a pre-release (has additional suffix after vX.Y.Z)
-          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+- ]]; then
+          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-feat\. ]]; then
             echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+            echo "IS_FEATURE_RELEASE=true" >> $GITHUB_ENV
+            echo "This is a feature release: $TAG"
+          elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+- ]]; then
+            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+            echo "IS_FEATURE_RELEASE=false" >> $GITHUB_ENV
             echo "This is a pre-release: $TAG"
           else
             echo "IS_PRERELEASE=false" >> $GITHUB_ENV
+            echo "IS_FEATURE_RELEASE=false" >> $GITHUB_ENV
             echo "This is a stable release: $TAG"
           fi
 
@@ -175,6 +180,13 @@ jobs:
 
       - name: Check if Homebrew tap should be updated
         run: |
+          # Feature drops are not an official channel; do not move the RC tap.
+          if [ "${{ env.IS_FEATURE_RELEASE }}" = "true" ]; then
+            echo "Feature release $TAG — skipping Homebrew tap update"
+            echo "SKIP_HOMEBREW_UPDATE=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
           # Pre-releases always update their respective tap (homebrew-odigos-cli-rc)
           if [ "${{ env.IS_PRERELEASE }}" = "true" ]; then
             echo "Pre-release detected, will update Homebrew RC tap"
@@ -275,6 +287,7 @@ jobs:
           GORELEASER_CURRENT_TAG: ${{ env.TAG }}
 
       - name: Generate and update release notes
+        if: env.IS_FEATURE_RELEASE != 'true'
         uses: odigos-io/ci-core/generate-release-notes@main
         continue-on-error: true
         with:
@@ -283,7 +296,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Notify Slack (release notes)
-        if: always()
+        if: always() && env.IS_FEATURE_RELEASE != 'true'
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
@@ -393,7 +406,10 @@ jobs:
 
       - name: Set notification messages
         run: |
-          if [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
+          if [ "${{ env.IS_FEATURE_RELEASE }}" = "true" ]; then
+            echo "SUCCESS_MSG=Odigos CLI feature release completed successfully" >> $GITHUB_ENV
+            echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to registries" >> $GITHUB_ENV
+          elif [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
             echo "SUCCESS_MSG=Odigos CLI stable release completed successfully" >> $GITHUB_ENV
             echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to registries" >> $GITHUB_ENV
           else
