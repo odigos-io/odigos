@@ -38,6 +38,27 @@ const BASELINE_CLASS_FIELDS = `
   learningStartedAt
   lastChangedAt
   observationCountAtLastChange
+  learning {
+    phase
+    observationsSinceLastChange
+    quietMinutes
+    mode
+    readyToPromote
+    stability {
+      observations {
+        current
+        target
+        drivesPromotion
+        met
+      }
+      duration {
+        current
+        target
+        drivesPromotion
+        met
+      }
+    }
+  }
 `;
 
 const OBSERVATION_SUMMARY_FIELDS = `

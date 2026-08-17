@@ -698,11 +698,33 @@ type ComplexityRoot struct {
 		Data                         func(childComplexity int) int
 		DataSchemaVersion            func(childComplexity int) int
 		LastChangedAt                func(childComplexity int) int
+		Learning                     func(childComplexity int) int
 		LearningStartedAt            func(childComplexity int) int
 		ObservationCount             func(childComplexity int) int
 		ObservationCountAtLastChange func(childComplexity int) int
 		Promoted                     func(childComplexity int) int
 		TransactionID                func(childComplexity int) int
+	}
+
+	InsightsBaselineLearning struct {
+		Mode                        func(childComplexity int) int
+		ObservationsSinceLastChange func(childComplexity int) int
+		Phase                       func(childComplexity int) int
+		QuietMinutes                func(childComplexity int) int
+		ReadyToPromote              func(childComplexity int) int
+		Stability                   func(childComplexity int) int
+	}
+
+	InsightsBaselineLearningStability struct {
+		Duration     func(childComplexity int) int
+		Observations func(childComplexity int) int
+	}
+
+	InsightsBaselineStabilityProgress struct {
+		Current         func(childComplexity int) int
+		DrivesPromotion func(childComplexity int) int
+		Met             func(childComplexity int) int
+		Target          func(childComplexity int) int
 	}
 
 	InsightsBlastRadiusEdge struct {
@@ -5337,6 +5359,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsBaselineClass.LastChangedAt(childComplexity), true
 
+	case "InsightsBaselineClass.learning":
+		if e.complexity.InsightsBaselineClass.Learning == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineClass.Learning(childComplexity), true
+
 	case "InsightsBaselineClass.learningStartedAt":
 		if e.complexity.InsightsBaselineClass.LearningStartedAt == nil {
 			break
@@ -5371,6 +5400,90 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsBaselineClass.TransactionID(childComplexity), true
+
+	case "InsightsBaselineLearning.mode":
+		if e.complexity.InsightsBaselineLearning.Mode == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineLearning.Mode(childComplexity), true
+
+	case "InsightsBaselineLearning.observationsSinceLastChange":
+		if e.complexity.InsightsBaselineLearning.ObservationsSinceLastChange == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineLearning.ObservationsSinceLastChange(childComplexity), true
+
+	case "InsightsBaselineLearning.phase":
+		if e.complexity.InsightsBaselineLearning.Phase == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineLearning.Phase(childComplexity), true
+
+	case "InsightsBaselineLearning.quietMinutes":
+		if e.complexity.InsightsBaselineLearning.QuietMinutes == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineLearning.QuietMinutes(childComplexity), true
+
+	case "InsightsBaselineLearning.readyToPromote":
+		if e.complexity.InsightsBaselineLearning.ReadyToPromote == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineLearning.ReadyToPromote(childComplexity), true
+
+	case "InsightsBaselineLearning.stability":
+		if e.complexity.InsightsBaselineLearning.Stability == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineLearning.Stability(childComplexity), true
+
+	case "InsightsBaselineLearningStability.duration":
+		if e.complexity.InsightsBaselineLearningStability.Duration == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineLearningStability.Duration(childComplexity), true
+
+	case "InsightsBaselineLearningStability.observations":
+		if e.complexity.InsightsBaselineLearningStability.Observations == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineLearningStability.Observations(childComplexity), true
+
+	case "InsightsBaselineStabilityProgress.current":
+		if e.complexity.InsightsBaselineStabilityProgress.Current == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineStabilityProgress.Current(childComplexity), true
+
+	case "InsightsBaselineStabilityProgress.drivesPromotion":
+		if e.complexity.InsightsBaselineStabilityProgress.DrivesPromotion == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineStabilityProgress.DrivesPromotion(childComplexity), true
+
+	case "InsightsBaselineStabilityProgress.met":
+		if e.complexity.InsightsBaselineStabilityProgress.Met == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineStabilityProgress.Met(childComplexity), true
+
+	case "InsightsBaselineStabilityProgress.target":
+		if e.complexity.InsightsBaselineStabilityProgress.Target == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineStabilityProgress.Target(childComplexity), true
 
 	case "InsightsBlastRadiusEdge.clientNamespace":
 		if e.complexity.InsightsBlastRadiusEdge.ClientNamespace == nil {
@@ -31952,6 +32065,8 @@ func (ec *executionContext) fieldContext_Insights_baseline(ctx context.Context, 
 				return ec.fieldContext_InsightsBaselineClass_lastChangedAt(ctx, field)
 			case "observationCountAtLastChange":
 				return ec.fieldContext_InsightsBaselineClass_observationCountAtLastChange(ctx, field)
+			case "learning":
+				return ec.fieldContext_InsightsBaselineClass_learning(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsBaselineClass", field.Name)
 		},
@@ -35663,6 +35778,618 @@ func (ec *executionContext) fieldContext_InsightsBaselineClass_observationCountA
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineClass_learning(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineClass) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineClass_learning(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Learning, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsBaselineLearning)
+	fc.Result = res
+	return ec.marshalNInsightsBaselineLearning2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineLearning(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineClass_learning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineClass",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "phase":
+				return ec.fieldContext_InsightsBaselineLearning_phase(ctx, field)
+			case "observationsSinceLastChange":
+				return ec.fieldContext_InsightsBaselineLearning_observationsSinceLastChange(ctx, field)
+			case "quietMinutes":
+				return ec.fieldContext_InsightsBaselineLearning_quietMinutes(ctx, field)
+			case "mode":
+				return ec.fieldContext_InsightsBaselineLearning_mode(ctx, field)
+			case "readyToPromote":
+				return ec.fieldContext_InsightsBaselineLearning_readyToPromote(ctx, field)
+			case "stability":
+				return ec.fieldContext_InsightsBaselineLearning_stability(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBaselineLearning", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineLearning_phase(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineLearning_phase(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Phase, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsBaselineLearningPhase)
+	fc.Result = res
+	return ec.marshalNInsightsBaselineLearningPhase2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineLearningPhase(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineLearning_phase(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsBaselineLearningPhase does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineLearning_observationsSinceLastChange(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineLearning_observationsSinceLastChange(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ObservationsSinceLastChange, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineLearning_observationsSinceLastChange(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineLearning_quietMinutes(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineLearning_quietMinutes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuietMinutes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineLearning_quietMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineLearning_mode(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineLearning_mode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsLearningMode)
+	fc.Result = res
+	return ec.marshalNInsightsLearningMode2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsLearningMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineLearning_mode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsLearningMode does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineLearning_readyToPromote(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineLearning_readyToPromote(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReadyToPromote, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineLearning_readyToPromote(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineLearning_stability(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineLearning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineLearning_stability(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Stability, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsBaselineLearningStability)
+	fc.Result = res
+	return ec.marshalNInsightsBaselineLearningStability2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineLearningStability(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineLearning_stability(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "observations":
+				return ec.fieldContext_InsightsBaselineLearningStability_observations(ctx, field)
+			case "duration":
+				return ec.fieldContext_InsightsBaselineLearningStability_duration(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBaselineLearningStability", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineLearningStability_observations(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineLearningStability) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineLearningStability_observations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Observations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsBaselineStabilityProgress)
+	fc.Result = res
+	return ec.marshalNInsightsBaselineStabilityProgress2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineStabilityProgress(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineLearningStability_observations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineLearningStability",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "current":
+				return ec.fieldContext_InsightsBaselineStabilityProgress_current(ctx, field)
+			case "target":
+				return ec.fieldContext_InsightsBaselineStabilityProgress_target(ctx, field)
+			case "drivesPromotion":
+				return ec.fieldContext_InsightsBaselineStabilityProgress_drivesPromotion(ctx, field)
+			case "met":
+				return ec.fieldContext_InsightsBaselineStabilityProgress_met(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBaselineStabilityProgress", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineLearningStability_duration(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineLearningStability) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineLearningStability_duration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Duration, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsBaselineStabilityProgress)
+	fc.Result = res
+	return ec.marshalNInsightsBaselineStabilityProgress2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineStabilityProgress(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineLearningStability_duration(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineLearningStability",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "current":
+				return ec.fieldContext_InsightsBaselineStabilityProgress_current(ctx, field)
+			case "target":
+				return ec.fieldContext_InsightsBaselineStabilityProgress_target(ctx, field)
+			case "drivesPromotion":
+				return ec.fieldContext_InsightsBaselineStabilityProgress_drivesPromotion(ctx, field)
+			case "met":
+				return ec.fieldContext_InsightsBaselineStabilityProgress_met(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBaselineStabilityProgress", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineStabilityProgress_current(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineStabilityProgress) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineStabilityProgress_current(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Current, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineStabilityProgress_current(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineStabilityProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineStabilityProgress_target(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineStabilityProgress) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineStabilityProgress_target(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Target, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineStabilityProgress_target(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineStabilityProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineStabilityProgress_drivesPromotion(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineStabilityProgress) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineStabilityProgress_drivesPromotion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DrivesPromotion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineStabilityProgress_drivesPromotion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineStabilityProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineStabilityProgress_met(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineStabilityProgress) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineStabilityProgress_met(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Met, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineStabilityProgress_met(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineStabilityProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -85207,6 +85934,173 @@ func (ec *executionContext) _InsightsBaselineClass(ctx context.Context, sel ast.
 			out.Values[i] = ec._InsightsBaselineClass_lastChangedAt(ctx, field, obj)
 		case "observationCountAtLastChange":
 			out.Values[i] = ec._InsightsBaselineClass_observationCountAtLastChange(ctx, field, obj)
+		case "learning":
+			out.Values[i] = ec._InsightsBaselineClass_learning(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsBaselineLearningImplementors = []string{"InsightsBaselineLearning"}
+
+func (ec *executionContext) _InsightsBaselineLearning(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBaselineLearning) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsBaselineLearningImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsBaselineLearning")
+		case "phase":
+			out.Values[i] = ec._InsightsBaselineLearning_phase(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "observationsSinceLastChange":
+			out.Values[i] = ec._InsightsBaselineLearning_observationsSinceLastChange(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "quietMinutes":
+			out.Values[i] = ec._InsightsBaselineLearning_quietMinutes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "mode":
+			out.Values[i] = ec._InsightsBaselineLearning_mode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "readyToPromote":
+			out.Values[i] = ec._InsightsBaselineLearning_readyToPromote(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "stability":
+			out.Values[i] = ec._InsightsBaselineLearning_stability(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsBaselineLearningStabilityImplementors = []string{"InsightsBaselineLearningStability"}
+
+func (ec *executionContext) _InsightsBaselineLearningStability(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBaselineLearningStability) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsBaselineLearningStabilityImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsBaselineLearningStability")
+		case "observations":
+			out.Values[i] = ec._InsightsBaselineLearningStability_observations(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "duration":
+			out.Values[i] = ec._InsightsBaselineLearningStability_duration(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsBaselineStabilityProgressImplementors = []string{"InsightsBaselineStabilityProgress"}
+
+func (ec *executionContext) _InsightsBaselineStabilityProgress(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBaselineStabilityProgress) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsBaselineStabilityProgressImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsBaselineStabilityProgress")
+		case "current":
+			out.Values[i] = ec._InsightsBaselineStabilityProgress_current(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "target":
+			out.Values[i] = ec._InsightsBaselineStabilityProgress_target(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "drivesPromotion":
+			out.Values[i] = ec._InsightsBaselineStabilityProgress_drivesPromotion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "met":
+			out.Values[i] = ec._InsightsBaselineStabilityProgress_met(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -98026,6 +98920,46 @@ func (ec *executionContext) marshalNInsightsBaselineClass2ᚖgithubᚗcomᚋodig
 		return graphql.Null
 	}
 	return ec._InsightsBaselineClass(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsBaselineLearning2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineLearning(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBaselineLearning) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsBaselineLearning(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsBaselineLearningPhase2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineLearningPhase(ctx context.Context, v any) (model.InsightsBaselineLearningPhase, error) {
+	var res model.InsightsBaselineLearningPhase
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsBaselineLearningPhase2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineLearningPhase(ctx context.Context, sel ast.SelectionSet, v model.InsightsBaselineLearningPhase) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNInsightsBaselineLearningStability2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineLearningStability(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBaselineLearningStability) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsBaselineLearningStability(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsBaselineStabilityProgress2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineStabilityProgress(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBaselineStabilityProgress) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsBaselineStabilityProgress(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNInsightsBlastRadiusEdge2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBlastRadiusEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsBlastRadiusEdge) graphql.Marshaler {

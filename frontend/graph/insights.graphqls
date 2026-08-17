@@ -94,6 +94,17 @@ enum InsightsLearningMode {
   k_of
 }
 
+"""
+Coarse learning state for one baseline class. `promoted` means the baseline is
+frozen. `empty` means it has never grown. `learning` means it has grown and is
+still in the learning phase.
+"""
+enum InsightsBaselineLearningPhase {
+  promoted
+  empty
+  learning
+}
+
 enum InsightsLearningConditionType {
   min_observations
   min_duration
@@ -191,6 +202,41 @@ type InsightsTransaction {
 
 # Baselines / observations
 
+"""
+One stability dimension. For observations, current/target is a count. For
+duration, both are minutes. `target` is 0 when there is no policy target —
+still render `current` as "grew N ago".
+"""
+type InsightsBaselineStabilityProgress {
+  current: Int!
+  target: Int!
+  drivesPromotion: Boolean!
+  met: Boolean!
+}
+
+"""
+Both stability signals so the UI can show "X / Y observations" and
+"grew N minutes ago" together. Under `all`, one dimension `met` does not mean
+the class promotes — use `readyToPromote`.
+"""
+type InsightsBaselineLearningStability {
+  observations: InsightsBaselineStabilityProgress!
+  duration: InsightsBaselineStabilityProgress!
+}
+
+"""
+Computed learning/stability snapshot for one baseline class against its
+resolved learning policy. Always present, including on placeholder classes.
+"""
+type InsightsBaselineLearning {
+  phase: InsightsBaselineLearningPhase!
+  observationsSinceLastChange: Int!
+  quietMinutes: Int!
+  mode: InsightsLearningMode!
+  readyToPromote: Boolean!
+  stability: InsightsBaselineLearningStability!
+}
+
 type InsightsBaselineClass {
   transactionId: ID!
   class: InsightsDeviationClass!
@@ -204,6 +250,7 @@ type InsightsBaselineClass {
   learningStartedAt: String
   lastChangedAt: String
   observationCountAtLastChange: Int
+  learning: InsightsBaselineLearning!
 }
 
 type InsightsPromoteResult {

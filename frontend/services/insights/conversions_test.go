@@ -154,11 +154,30 @@ func TestBaselineAndAnomalyEvidenceStayJSONStrings(t *testing.T) {
 		Data:             json.RawMessage(`{"p99_ms":120}`),
 		ObservationCount: 3,
 		Promoted:         true,
+		Learning: BaselineLearning{
+			Phase:                       BaselineLearningPhasePromoted,
+			ObservationsSinceLastChange: 2,
+			QuietMinutes:                60,
+			Mode:                        "any",
+			ReadyToPromote:              false,
+			Stability: BaselineLearningStability{
+				Observations: BaselineStabilityProgress{Current: 2, Target: 50, DrivesPromotion: true, Met: false},
+				Duration:     BaselineStabilityProgress{Current: 60, Target: 0, DrivesPromotion: false, Met: false},
+			},
+		},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, baseline.Data)
 	assert.JSONEq(t, `{"p99_ms":120}`, *baseline.Data)
 	assert.Equal(t, "9", baseline.TransactionID)
+	require.NotNil(t, baseline.Learning)
+	assert.Equal(t, model.InsightsBaselineLearningPhasePromoted, baseline.Learning.Phase)
+	assert.Equal(t, 2, baseline.Learning.ObservationsSinceLastChange)
+	assert.Equal(t, 60, baseline.Learning.QuietMinutes)
+	assert.Equal(t, model.InsightsLearningModeAny, baseline.Learning.Mode)
+	require.NotNil(t, baseline.Learning.Stability)
+	require.NotNil(t, baseline.Learning.Stability.Observations)
+	assert.Equal(t, 50, baseline.Learning.Stability.Observations.Target)
 
 	anomaly, err := AnomalyIssueToModel(AnomalyIssue{
 		TransactionID:    9,
