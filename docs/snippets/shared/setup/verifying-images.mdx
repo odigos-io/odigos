@@ -1,0 +1,56 @@
+All Odigos container images are signed at build time with [Sigstore cosign](https://docs.sigstore.dev/)
+(keyless), and each carries a CycloneDX SBOM attestation. Signatures are stored in the
+registry next to the image and recorded in the public
+[Rekor transparency log](https://search.sigstore.dev/), so you can verify that any image
+you pull was published by the Odigos release pipeline — no keys involved.
+
+## Verify an image
+
+Verification needs [cosign](https://docs.sigstore.dev/cosign/system_config/installation/) v3+.
+Always verify by digest:
+
+```bash
+IMG=registry.odigos.io/odigos-odiglet
+DIGEST=$(docker buildx imagetools inspect "${IMG}:<version>" --format '{{.Manifest.Digest}}')
+
+cosign verify \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github\.com/odigos-io/odigos/\.github/workflows/publish-modules\.yml@refs/tags/.*$' \
+  "${IMG}@${DIGEST}"
+```
+
+To inspect the attached SBOM:
+
+```bash
+cosign verify-attestation --type cyclonedx \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github\.com/odigos-io/odigos/\.github/workflows/publish-modules\.yml@refs/tags/.*$' \
+  "${IMG}@${DIGEST}" | jq -r .payload | base64 -d | jq '.predicate.components'
+```
+
+## Signing identities
+
+Each artifact is signed by its own release workflow — never verify with a broad
+pattern like `.*odigos-io.*`. The canonical, machine-readable list of identities and
+the version each artifact is signed from lives in
+[`verification-policy.yaml`](https://github.com/odigos-io/ci-core/blob/main/verification-policy.yaml).
+
+| Artifact | Identity (regexp) |
+| --- | --- |
+| Component images (`odigos-*`) | `…/odigos-io/odigos/.github/workflows/publish-modules.yml@refs/tags/.*` |
+| CLI image (`odigos-cli`) | `…/odigos-io/odigos/.github/workflows/release.yml@refs/heads/main` |
+| Enterprise images | `…/odigos-io/odigos-enterprise/.github/workflows/release-images.yml@refs/(tags\|heads)/.*` |
+
+Two identities are expected and legitimate beyond the release workflows:
+
+- **Backfill**: historical releases were signed retroactively by
+  `odigos-io/ci-core/.github/workflows/backfill-sign.yml` — the certificate honestly
+  records the backfill identity and date, and it is auditable in Rekor.
+- **Stable `x.y.0` tags** verify against the release-candidate tag identity: the stable
+  tag is a retag of the exact RC digest, so the certificate names the RC that built it.
+
+## Air-gapped verification
+
+The Rekor proof travels inside the signature bundle, so verification works offline:
+supply `--trusted-root` with a Sigstore trusted-root file instead of relying on
+`--offline` (removed in cosign 3.x).
