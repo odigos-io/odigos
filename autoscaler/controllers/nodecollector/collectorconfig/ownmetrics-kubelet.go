@@ -39,6 +39,15 @@ func ownMetricsKubeletProcessorConfig(odigosNamespace string) config.GenericMap 
 	return config.GenericMap{
 		ownKubeletK8sAttrName: config.GenericMap{
 			"auth_type": "serviceAccount",
+			// Without a filter, k8sattributes LIST/WATCHes every pod in the cluster - and,
+			// because k8s.deployment.name is extracted, every replicaset too - from the node
+			// collector on every node. Scope both informers to what this pipeline can actually
+			// see: kubeletstats only reports pods on this node, and the filter below drops
+			// anything outside the odigos namespace anyway.
+			"filter": config.GenericMap{
+				"namespace":         odigosNamespace,
+				"node_from_env_var": k8sconsts.NodeNameEnvVar,
+			},
 			"extract": config.GenericMap{
 				"metadata": []string{
 					string(semconv.K8SDaemonSetNameKey),

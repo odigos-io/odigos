@@ -5,9 +5,11 @@ import (
 	"os"
 	"testing"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -16,6 +18,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/yaml"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -188,6 +191,56 @@ func TestCalculateConfigMapData(t *testing.T) {
 
 	assert.Equal(t, err, nil)
 	assert.Equal(t, want, got)
+}
+
+// The own-kubelet pipeline reuses the destination's kubeletstats receiver and enriches its
+// metrics with k8sattributes. Assert on the rendered config that the receiver it references
+// really exists, and that its informers are scoped - the node collector is a DaemonSet, so an
+// unscoped informer is a cluster-wide pod LIST/WATCH from every node.
+func TestCalculateConfigMapDataOwnKubeletMetrics(t *testing.T) {
+	configDomains, mergedYaml, err := calculateCollectorConfigDomains(
+		context.Background(),
+		"odigos-system",
+		&odigosv1.CollectorsGroup{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
+			Spec: odigosv1.CollectorsGroupSpec{
+				CollectorOwnMetricsPort: 4317,
+				Metrics: &odigosv1.CollectorsGroupMetricsCollectionSettings{
+					KubeletStats: &common.MetricsSourceKubeletStatsConfiguration{
+						Interval: "10s",
+					},
+					OdigosOwnMetrics: &odigosv1.OdigosOwnMetricsSettings{Interval: "10s"},
+				},
+			},
+		},
+		&odigosv1.InstrumentationConfigList{},
+		[]common.ObservabilitySignal{common.MetricsObservabilitySignal},
+		nil,
+		false,                   /* onGKE */
+		false,                   /* loadBalancingNeeded */
+		nil,                     /* profiling */
+		common.OnPremOdigosTier, /* tier */
+	)
+	assert.NoError(t, err)
+
+	odigletMetrics, ok := configDomains["odiglet_metrics"]
+	assert.True(t, ok, "odiglet_metrics domain should be configured")
+
+	pipeline, ok := odigletMetrics.Service.Pipelines["metrics/own-kubelet"]
+	assert.True(t, ok, "own-kubelet pipeline should be configured")
+	assert.Equal(t, []string{"kubeletstats"}, pipeline.Receivers)
+
+	// the receiver is owned by the metrics domain, so it must survive the merge
+	mergedConfig := config.Config{}
+	assert.NoError(t, yaml.Unmarshal([]byte(mergedYaml), &mergedConfig))
+	assert.Contains(t, mergedConfig.Receivers, "kubeletstats")
+
+	k8sAttr, ok := mergedConfig.Processors["k8sattributes/own-kubelet"].(map[string]interface{})
+	assert.True(t, ok, "k8sattributes/own-kubelet should be configured")
+	filter, ok := k8sAttr["filter"].(map[string]interface{})
+	assert.True(t, ok, "k8sattributes/own-kubelet must scope its informers with a filter")
+	assert.Equal(t, "odigos-system", filter["namespace"])
+	assert.Equal(t, k8sconsts.NodeNameEnvVar, filter["node_from_env_var"])
 }
 
 func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
