@@ -92,11 +92,7 @@ jobs:
             exit 1
           fi
 
-          git tag -a "$TAG" -m "enterprise_branch=${ENTERPRISE_BRANCH}
-
-oss_branch=${OSS_BRANCH}"
-          git push origin "$TAG"
-          echo "Pushed tag $TAG (enterprise branch ${ENTERPRISE_BRANCH}, oss branch ${OSS_BRANCH}) to kick off the release process"
+          git tag -a "$TAG" -m "enterprise_branch=${ENTERPRISE_BRANCH}"
 
       - name: Notify Slack
         if: always()
