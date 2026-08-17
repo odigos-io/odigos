@@ -834,13 +834,43 @@ type InsightsBaselineClass struct {
 	TransactionID string                 `json:"transactionId"`
 	Class         InsightsDeviationClass `json:"class"`
 	// JSON-encoded baseline data; shape varies per deviation class.
-	Data                         *string `json:"data,omitempty"`
-	DataSchemaVersion            *int    `json:"dataSchemaVersion,omitempty"`
-	ObservationCount             int     `json:"observationCount"`
-	Promoted                     bool    `json:"promoted"`
-	LearningStartedAt            *string `json:"learningStartedAt,omitempty"`
-	LastChangedAt                *string `json:"lastChangedAt,omitempty"`
-	ObservationCountAtLastChange *int    `json:"observationCountAtLastChange,omitempty"`
+	Data                         *string                   `json:"data,omitempty"`
+	DataSchemaVersion            *int                      `json:"dataSchemaVersion,omitempty"`
+	ObservationCount             int                       `json:"observationCount"`
+	Promoted                     bool                      `json:"promoted"`
+	LearningStartedAt            *string                   `json:"learningStartedAt,omitempty"`
+	LastChangedAt                *string                   `json:"lastChangedAt,omitempty"`
+	ObservationCountAtLastChange *int                      `json:"observationCountAtLastChange,omitempty"`
+	Learning                     *InsightsBaselineLearning `json:"learning"`
+}
+
+// Computed learning/stability snapshot for one baseline class against its
+// resolved learning policy. Always present, including on placeholder classes.
+type InsightsBaselineLearning struct {
+	Phase                       InsightsBaselineLearningPhase      `json:"phase"`
+	ObservationsSinceLastChange int                                `json:"observationsSinceLastChange"`
+	QuietMinutes                int                                `json:"quietMinutes"`
+	Mode                        InsightsLearningMode               `json:"mode"`
+	ReadyToPromote              bool                               `json:"readyToPromote"`
+	Stability                   *InsightsBaselineLearningStability `json:"stability"`
+}
+
+// Both stability signals so the UI can show "X / Y observations" and
+// "grew N minutes ago" together. Under `all`, one dimension `met` does not mean
+// the class promotes — use `readyToPromote`.
+type InsightsBaselineLearningStability struct {
+	Observations *InsightsBaselineStabilityProgress `json:"observations"`
+	Duration     *InsightsBaselineStabilityProgress `json:"duration"`
+}
+
+// One stability dimension. For observations, current/target is a count. For
+// duration, both are minutes. `target` is 0 when there is no policy target —
+// still render `current` as "grew N ago".
+type InsightsBaselineStabilityProgress struct {
+	Current         int  `json:"current"`
+	Target          int  `json:"target"`
+	DrivesPromotion bool `json:"drivesPromotion"`
+	Met             bool `json:"met"`
 }
 
 // A directed client -> server edge from the gateway servicegraph connector.
@@ -3043,6 +3073,52 @@ func (e *InsightsAnomalyStatus) UnmarshalGQL(v any) error {
 }
 
 func (e InsightsAnomalyStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Coarse learning state for one baseline class. `promoted` means the baseline is
+// frozen. `empty` means it has never grown. `learning` means it has grown and is
+// still in the learning phase.
+type InsightsBaselineLearningPhase string
+
+const (
+	InsightsBaselineLearningPhasePromoted InsightsBaselineLearningPhase = "promoted"
+	InsightsBaselineLearningPhaseEmpty    InsightsBaselineLearningPhase = "empty"
+	InsightsBaselineLearningPhaseLearning InsightsBaselineLearningPhase = "learning"
+)
+
+var AllInsightsBaselineLearningPhase = []InsightsBaselineLearningPhase{
+	InsightsBaselineLearningPhasePromoted,
+	InsightsBaselineLearningPhaseEmpty,
+	InsightsBaselineLearningPhaseLearning,
+}
+
+func (e InsightsBaselineLearningPhase) IsValid() bool {
+	switch e {
+	case InsightsBaselineLearningPhasePromoted, InsightsBaselineLearningPhaseEmpty, InsightsBaselineLearningPhaseLearning:
+		return true
+	}
+	return false
+}
+
+func (e InsightsBaselineLearningPhase) String() string {
+	return string(e)
+}
+
+func (e *InsightsBaselineLearningPhase) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsBaselineLearningPhase(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsBaselineLearningPhase", str)
+	}
+	return nil
+}
+
+func (e InsightsBaselineLearningPhase) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

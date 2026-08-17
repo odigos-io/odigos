@@ -121,15 +121,49 @@ type Transaction struct {
 }
 
 type BaselineClass struct {
-	TransactionID                int64           `json:"transaction_id"`
-	Class                        DeviationClass  `json:"class"`
-	Data                         json.RawMessage `json:"data,omitempty"`
-	DataSchemaVersion            *int            `json:"data_schema_version,omitempty"`
-	ObservationCount             int64           `json:"observation_count"`
-	Promoted                     bool            `json:"promoted"`
-	LearningStartedAt            *string         `json:"learning_started_at,omitempty"`
-	LastChangedAt                *string         `json:"last_changed_at,omitempty"`
-	ObservationCountAtLastChange *int64          `json:"observation_count_at_last_change,omitempty"`
+	TransactionID                int64            `json:"transaction_id"`
+	Class                        DeviationClass   `json:"class"`
+	Data                         json.RawMessage  `json:"data,omitempty"`
+	DataSchemaVersion            *int             `json:"data_schema_version,omitempty"`
+	ObservationCount             int64            `json:"observation_count"`
+	Promoted                     bool             `json:"promoted"`
+	LearningStartedAt            *string          `json:"learning_started_at,omitempty"`
+	LastChangedAt                *string          `json:"last_changed_at,omitempty"`
+	ObservationCountAtLastChange *int64           `json:"observation_count_at_last_change,omitempty"`
+	Learning                     BaselineLearning `json:"learning"`
+}
+
+// BaselineLearningPhase is the coarse learning state for one baseline class.
+type BaselineLearningPhase string
+
+const (
+	BaselineLearningPhasePromoted BaselineLearningPhase = "promoted"
+	BaselineLearningPhaseEmpty    BaselineLearningPhase = "empty"
+	BaselineLearningPhaseLearning BaselineLearningPhase = "learning"
+)
+
+// BaselineStabilityProgress is one stability dimension (observations count or duration minutes).
+type BaselineStabilityProgress struct {
+	Current         int64 `json:"current"`
+	Target          int64 `json:"target"`
+	DrivesPromotion bool  `json:"drives_promotion"`
+	Met             bool  `json:"met"`
+}
+
+// BaselineLearningStability holds both stability signals for UI progress copy.
+type BaselineLearningStability struct {
+	Observations BaselineStabilityProgress `json:"observations"`
+	Duration     BaselineStabilityProgress `json:"duration"`
+}
+
+// BaselineLearning is the computed learning/stability snapshot on each baseline row.
+type BaselineLearning struct {
+	Phase                       BaselineLearningPhase     `json:"phase"`
+	ObservationsSinceLastChange int64                     `json:"observations_since_last_change"`
+	QuietMinutes                int64                     `json:"quiet_minutes"`
+	Mode                        LearningMode              `json:"mode"`
+	ReadyToPromote              bool                      `json:"ready_to_promote"`
+	Stability                   BaselineLearningStability `json:"stability"`
 }
 
 type PromoteResult struct {

@@ -431,7 +431,31 @@ func BaselineClassToModel(baseline BaselineClass) (*model.InsightsBaselineClass,
 		LearningStartedAt:            baseline.LearningStartedAt,
 		LastChangedAt:                baseline.LastChangedAt,
 		ObservationCountAtLastChange: int64PtrToIntPtr(baseline.ObservationCountAtLastChange),
+		Learning:                     BaselineLearningToModel(baseline.Learning),
 	}, nil
+}
+
+func BaselineLearningToModel(learning BaselineLearning) *model.InsightsBaselineLearning {
+	return &model.InsightsBaselineLearning{
+		Phase:                       model.InsightsBaselineLearningPhase(learning.Phase),
+		ObservationsSinceLastChange: int64ToInt(learning.ObservationsSinceLastChange),
+		QuietMinutes:                int64ToInt(learning.QuietMinutes),
+		Mode:                        LearningModeToModel(learning.Mode),
+		ReadyToPromote:              learning.ReadyToPromote,
+		Stability: &model.InsightsBaselineLearningStability{
+			Observations: BaselineStabilityProgressToModel(learning.Stability.Observations),
+			Duration:     BaselineStabilityProgressToModel(learning.Stability.Duration),
+		},
+	}
+}
+
+func BaselineStabilityProgressToModel(progress BaselineStabilityProgress) *model.InsightsBaselineStabilityProgress {
+	return &model.InsightsBaselineStabilityProgress{
+		Current:         int64ToInt(progress.Current),
+		Target:          int64ToInt(progress.Target),
+		DrivesPromotion: progress.DrivesPromotion,
+		Met:             progress.Met,
+	}
 }
 
 func BaselineClassesToModel(baselines []BaselineClass) ([]*model.InsightsBaselineClass, error) {
