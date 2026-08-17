@@ -12,8 +12,8 @@ func TestAddKubeletStatsToOwnMetrics_ReusesDestinationReceiver(t *testing.T) {
 	if _, exists := got.Receivers[kubeletstatsReceiverName]; exists {
 		t.Fatal("must not define kubeletstats in own-metrics domain")
 	}
-	if _, exists := got.Processors[ownKubeletK8sAttrName]; !exists {
-		t.Fatal("missing k8sattributes/own-kubelet")
+	if _, exists := got.Processors["k8sattributes/own-kubelet"]; exists {
+		t.Fatal("must not use k8sattributes/own-kubelet — filter on container names only")
 	}
 	if _, exists := got.Processors[ownKubeletFilterName]; !exists {
 		t.Fatal("missing filter/own-kubelet")
@@ -25,8 +25,8 @@ func TestAddKubeletStatsToOwnMetrics_ReusesDestinationReceiver(t *testing.T) {
 	if !contains(pipeline.Receivers, kubeletstatsReceiverName) {
 		t.Fatal("own-kubelet pipeline must reuse destination kubeletstats receiver")
 	}
-	if len(pipeline.Processors) < 2 || pipeline.Processors[0] != ownKubeletK8sAttrName || pipeline.Processors[1] != ownKubeletFilterName {
-		t.Fatalf("processors want [%s %s], got %v", ownKubeletK8sAttrName, ownKubeletFilterName, pipeline.Processors)
+	if len(pipeline.Processors) != 1 || pipeline.Processors[0] != ownKubeletFilterName {
+		t.Fatalf("processors want [%s], got %v", ownKubeletFilterName, pipeline.Processors)
 	}
 }
 
