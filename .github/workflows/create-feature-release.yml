@@ -9,7 +9,7 @@ on:
         type: string
         default: main
       slug:
-        description: "Feature slug (e.g. otel-metrics). Tag will be v0.0.0-feat.<slug>.<n>"
+        description: "Tag will be v0.0.0-feat.<slug>.<N> slug must be lowercase alphanumeric and hyphens (e.g otel-metrics)"
         required: true
         type: string
       enterprise_branch:
