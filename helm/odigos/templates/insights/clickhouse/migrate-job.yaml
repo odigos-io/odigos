@@ -65,7 +65,7 @@ spec:
       containers:
         - name: migrate
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-insights" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-insights" "Tag" $imageTag) }}
           args: ["migrate"]
           env:
             - name: CLICKHOUSE_PASSWORD

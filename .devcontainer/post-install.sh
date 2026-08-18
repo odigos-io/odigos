@@ -33,7 +33,7 @@ ARCH=$(dpkg --print-architecture) && \
 
 # Install kind (latest stable release)
 log "Installing kind..."
-curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-$(dpkg --print-architecture) && \
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.32.0/kind-linux-$(dpkg --print-architecture) && \
     install -o root -g root -m 0755 kind /usr/local/bin/kind && \
     rm kind
 

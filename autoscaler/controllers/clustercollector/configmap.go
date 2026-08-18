@@ -149,7 +149,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 	return nil
 }
 
-func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) ([]odigoscommon.ObservabilitySignal, error) {
+func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, tier odigoscommon.OdigosTier) ([]odigoscommon.ObservabilitySignal, error) {
 	logger := commonlogger.FromContext(ctx)
 
 	dataStreams, err := calculateDataStreams(enabledDests)
@@ -236,8 +236,13 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 			if err := addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines); err != nil {
 				return err
 			}
-			if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
-				return err
+			// The gateway profiles pipeline receives over plain otlp so it would not crash an
+			// OSS collector, but community tier should have no profiling wiring at all.
+			if tier.IsEnterprise() {
+				if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
+					return err
+				}
+				addEnterpriseAuthExtension(c)
 			}
 			if err := addInsightsGatewayExporter(c, env.GetCurrentNamespace(), insightsCfg); err != nil {
 				return err

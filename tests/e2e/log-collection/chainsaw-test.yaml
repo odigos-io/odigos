@@ -1,0 +1,155 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: log-collection
+spec:
+  description: |
+    This e2e test verifies log collection through the filelog receiver: container stdout from
+    instrumented workloads is scraped, enriched with kubernetes resource attributes, and delivered
+    to a destination that declares the LOGS signal.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
+              P="../../.."
+              helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test \
+                --set image.tag=e2e-test \
+                --set nodeSelector."kubernetes\.io/os"=linux \
+                --set collectorNode.memoryLimit=560 \
+                --set collectorNode.limitCPUm=550
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+              ../../common/verify_odigos_installation.sh odigos-test
+        - assert:
+            timeout: 1m10s
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m10s
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Assert Apps Installed
+      try:
+        - assert:
+            timeout: 1m40s
+            file: ../../common/assert/simple-demo-installed.yaml
+
+    - name: Instrument Namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Assert Runtime Detected
+      try:
+        - assert:
+            timeout: 1m40s
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+
+    - name: Add Destination With Logs
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination-logs.yaml
+
+    # Instrumenting the namespace rolls the workloads, so this waits for the new pods rather than
+    # the ones that were running before. simple-demo-installed.yaml checks updatedReplicas, so it
+    # is only satisfied once the instrumented replica set is the ready one. Without this the
+    # traffic job can be scheduled while the frontend is still rolling and never complete.
+    - name: Assert Apps Ready After Instrumentation
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-installed.yaml
+
+    - name: Assert Pipeline
+      try:
+        - assert:
+            timeout: 1m10s
+            file: ../../common/assert/pipeline-ready.yaml
+
+    # Generating traffic before the logs pipeline exists produces no logs at all, which looks
+    # identical to collection being broken. filelog is also configured to start at the end of each
+    # file, so anything written before the receiver is running is never collected.
+    - name: Assert Logs Pipeline Ready
+      try:
+        - assert:
+            timeout: 3m
+            file: assert-logs-pipeline.yaml
+      catch:
+        - script:
+            content: |
+              kubectl get configmap odigos-node-collector-config-domains -n odigos-test -o yaml
+
+    ############# Generate Traffic #############
+    # The log line asserted below is written at the end of the /buy handler, after calls to several
+    # other services, so it only appears if the whole request succeeds. The demo workloads declare
+    # no readiness probes, which means a deployment reports ready as soon as its container starts
+    # rather than when the application is listening, and the shared one-shot traffic job would send
+    # its single request before the JVM finishes booting. curl also exits 0 on a 5xx, so a failed
+    # request looks like a successful job.
+    #
+    # Retrying until the request actually returns 200 removes both problems and makes the log line
+    # a guarantee rather than a race.
+    - name: Generate Traffic
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              kubectl delete pod traffic-generator -n default --ignore-not-found
+              # Several successful requests rather than one: filelog discovers new log files on a
+              # poll interval, so the first line written after a pod starts can be missed.
+              kubectl run traffic-generator -n default --image=curlimages/curl:8.4.0 --restart=Never --command -- \
+                sh -c 'ok=0
+                       for i in $(seq 1 30); do
+                         code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://frontend:8080/buy?id=123")
+                         echo "attempt $i: HTTP $code"
+                         [ "$code" = "200" ] && ok=$((ok+1))
+                         [ "$ok" -ge 3 ] && exit 0
+                         sleep 5
+                       done
+                       exit 1'
+              kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/traffic-generator -n default --timeout=160s
+              kubectl logs traffic-generator -n default
+              kubectl delete pod traffic-generator -n default --ignore-not-found
+      catch:
+        - script:
+            content: |
+              kubectl logs traffic-generator -n default || true
+              kubectl describe pod traffic-generator -n default || true
+
+    ############# Verify Logs #############
+    - name: Assert Logs Collected And Enriched
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh log-collection-validation.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 2
+              done
+      catch:
+        - script:
+            content: |
+              echo "Logs currently in the trace db:"
+              kubectl get --raw /api/v1/namespaces/traces/services/simple-trace-db:4318/proxy/v1/logs | jq -c '.[] | {serviceName, bodyText}'
+              echo "Frontend output that should have been collected:"
+              kubectl logs -n default -l app=frontend --tail=50 || true
+              echo "Node collector logs:"
+              kubectl logs -n odigos-test -l odigos.io/collector-role=NODE_COLLECTOR --tail=100 || true

@@ -13,6 +13,8 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/loglevel"
 	"github.com/odigos-io/odigos/autoscaler/controllers/metricshandler"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
+	"github.com/odigos-io/odigos/autoscaler/controllers/recommendations"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -152,6 +154,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&odigosv1.Action{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.Recommendation{}: {
+					Field: nsSelector,
+				},
 				&odigosv1.InstrumentationConfig{}: {},
 			},
 		},
@@ -164,13 +169,13 @@ func durationPointer(d time.Duration) *time.Duration {
 	return &d
 }
 
-func SetupWithManager(mgr manager.Manager, odigosVersion string) error {
-	err := nodecollector.SetupWithManager(mgr)
+func SetupWithManager(mgr manager.Manager, odigosVersion string, tier common.OdigosTier) error {
+	err := nodecollector.SetupWithManager(mgr, tier)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for node collector: %w", err)
 	}
 
-	err = clustercollector.SetupWithManager(mgr, odigosVersion)
+	err = clustercollector.SetupWithManager(mgr, odigosVersion, tier)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for cluster collector: %w", err)
 	}
@@ -185,6 +190,10 @@ func SetupWithManager(mgr manager.Manager, odigosVersion string) error {
 
 	if err = loglevel.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to create log level controller: %w", err)
+	}
+
+	if err = recommendations.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create recommendations controller: %w", err)
 	}
 
 	return nil

@@ -237,6 +237,7 @@ type ComputePlatform struct {
 	DataStreams          []*DataStream          `json:"dataStreams"`
 	Destinations         []*Destination         `json:"destinations"`
 	InstrumentationRules []*InstrumentationRule `json:"instrumentationRules"`
+	Recommendations      []*Recommendation      `json:"recommendations"`
 	K8sActualNamespaces  []*K8sActualNamespace  `json:"k8sActualNamespaces"`
 	K8sActualNamespace   *K8sActualNamespace    `json:"k8sActualNamespace,omitempty"`
 	Sources              []*K8sActualSource     `json:"sources"`
@@ -2179,6 +2180,48 @@ type ProvenanceEntry struct {
 }
 
 type Query struct {
+}
+
+type Recommendation struct {
+	Name                    string                              `json:"name"`
+	Type                    RecommendationType                  `json:"type"`
+	Applied                 bool                                `json:"applied"`
+	ConditionsMet           bool                                `json:"conditionsMet"`
+	Dismissed               bool                                `json:"dismissed"`
+	Oss                     bool                                `json:"oss"`
+	RequireOdigosDeployment bool                                `json:"requireOdigosDeployment"`
+	CatalogConditions       []*RecommendationCatalogCondition   `json:"catalogConditions"`
+	AppliedWhen             []*RecommendationAppliedWhen        `json:"appliedWhen"`
+	Categories              []string                            `json:"categories"`
+	Title                   string                              `json:"title"`
+	Summary                 string                              `json:"summary"`
+	Description             string                              `json:"description"`
+	DocsURL                 *string                             `json:"docsUrl,omitempty"`
+	Pros                    []string                            `json:"pros"`
+	Cons                    []string                            `json:"cons"`
+	Remediations            []*RecommendationCatalogRemediation `json:"remediations"`
+}
+
+type RecommendationAppliedWhen struct {
+	Type       string  `json:"type"`
+	Expression *string `json:"expression,omitempty"`
+	ActionType *string `json:"actionType,omitempty"`
+}
+
+type RecommendationCatalogApplyExample struct {
+	Type    string `json:"type"`
+	Content string `json:"content"`
+}
+
+type RecommendationCatalogCondition struct {
+	Type string `json:"type"`
+}
+
+type RecommendationCatalogRemediation struct {
+	Type          string                               `json:"type"`
+	ButtonText    string                               `json:"buttonText"`
+	Tooltip       string                               `json:"tooltip"`
+	ApplyExamples []*RecommendationCatalogApplyExample `json:"applyExamples"`
 }
 
 type RemoteConfig struct {
@@ -4300,6 +4343,53 @@ func (e *ProgrammingLanguage) UnmarshalGQL(v any) error {
 }
 
 func (e ProgrammingLanguage) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type RecommendationType string
+
+const (
+	RecommendationTypeInferDBAttributes   RecommendationType = "InferDBAttributes"
+	RecommendationTypeAutoGoOffsetUpdater RecommendationType = "AutoGoOffsetUpdater"
+	RecommendationTypeEnableOwnMetrics    RecommendationType = "EnableOwnMetrics"
+	RecommendationTypeSampleHealthProbes  RecommendationType = "SampleHealthProbes"
+	RecommendationTypeURLTemplatization   RecommendationType = "UrlTemplatization"
+)
+
+var AllRecommendationType = []RecommendationType{
+	RecommendationTypeInferDBAttributes,
+	RecommendationTypeAutoGoOffsetUpdater,
+	RecommendationTypeEnableOwnMetrics,
+	RecommendationTypeSampleHealthProbes,
+	RecommendationTypeURLTemplatization,
+}
+
+func (e RecommendationType) IsValid() bool {
+	switch e {
+	case RecommendationTypeInferDBAttributes, RecommendationTypeAutoGoOffsetUpdater, RecommendationTypeEnableOwnMetrics, RecommendationTypeSampleHealthProbes, RecommendationTypeURLTemplatization:
+		return true
+	}
+	return false
+}
+
+func (e RecommendationType) String() string {
+	return string(e)
+}
+
+func (e *RecommendationType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RecommendationType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RecommendationType", str)
+	}
+	return nil
+}
+
+func (e RecommendationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

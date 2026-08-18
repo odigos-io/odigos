@@ -35,7 +35,7 @@ spec:
       containers:
         - name: odigos-insights
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-insights" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-insights" "Tag" $imageTag) }}
           ports:
             - name: http
               containerPort: 8080

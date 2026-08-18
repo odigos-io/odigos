@@ -22,23 +22,20 @@ runs:
         git tag collector/exporters/azureblobstorageexporter/${{ inputs.tag }}
         git tag collector/exporters/googlecloudstorageexporter/${{ inputs.tag }}
         git tag collector/exporters/mockdestinationexporter/${{ inputs.tag }}
+        git tag collector/extension/odigoscapabilitiesextension/${{ inputs.tag }}
         git tag collector/extension/odigosconfigk8sextension/${{ inputs.tag }}
         git tag collector/processors/odigosconditionalattributes/${{ inputs.tag }}
         git tag collector/processors/odigosextractattributeprocessor/${{ inputs.tag }}
         git tag collector/processors/odigoslogsresourceattrsprocessor/${{ inputs.tag }}
         git tag collector/processors/odigospiimaskingprocessor/${{ inputs.tag }}
-        git tag collector/processors/odigosprofilesprocessor/${{ inputs.tag }}
         git tag collector/processors/odigossqldboperationprocessor/${{ inputs.tag }}
         git tag collector/processors/odigossqlqueryprocessor/${{ inputs.tag }}
-        git tag collector/processors/odigossymbolizeprocessor/${{ inputs.tag }}
         git tag collector/processors/odigostailsamplingprocessor/${{ inputs.tag }}
         git tag collector/processors/odigostracefilterprocessor/${{ inputs.tag }}
         git tag collector/processors/odigostracestateprocessor/${{ inputs.tag }}
         git tag collector/processors/odigostrafficmetrics/${{ inputs.tag }}
         git tag collector/processors/odigosurltemplateprocessor/${{ inputs.tag }}
-        git tag collector/processors/odigosvmprofileattrsprocessor/${{ inputs.tag }}
         git tag collector/providers/odigosk8scmprovider/${{ inputs.tag }}
-        git tag collector/receivers/odigosebpfreceiver/${{ inputs.tag }}
         git tag common/${{ inputs.tag }}
         git tag config/${{ inputs.tag }}
         git tag destinations/${{ inputs.tag }}
@@ -55,4 +52,5 @@ runs:
         git tag procdiscovery/${{ inputs.tag }}
         git tag profiles/${{ inputs.tag }}
         git tag status/${{ inputs.tag }}
+        git tag recommendations/${{ inputs.tag }}
         git push origin --tags
