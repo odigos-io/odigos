@@ -31,9 +31,9 @@ cosign verify-attestation --type cyclonedx \
 ## Signing identities
 
 Each artifact is signed by its own release workflow — never verify with a broad
-pattern like `.*odigos-io.*`. The canonical, machine-readable list of identities and
-the version each artifact is signed from lives in
-[`verification-policy.yaml`](https://github.com/odigos-io/ci-core/blob/main/verification-policy.yaml).
+pattern like `.*odigos-io.*`. The canonical list of identities and the version each
+artifact is signed from lives in
+[`SIGNING.md`](https://github.com/odigos-io/ci-core/blob/main/SIGNING.md).
 
 | Artifact | Identity (regexp) |
 | --- | --- |
