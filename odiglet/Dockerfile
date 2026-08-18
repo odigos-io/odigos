@@ -89,11 +89,12 @@ ENV GOTOOLCHAIN=auto
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by deviceplugin
 COPY common/ common/
-COPY deviceplugin/ ./deviceplugin/
+WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
+COPY deviceplugin/ .
 ARG TARGETARCH
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./deviceplugin/cmd
+    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
 
 ######### CSI Driver builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS csi-driver-builder
