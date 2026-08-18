@@ -16,6 +16,7 @@ extensions:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.151.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.151.0
   - gomod: github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.151.0
+  - gomod: github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension v0.151.0
 
 exporters:
   - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.151.0
@@ -92,9 +93,6 @@ processors:
   - gomod: github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.151.0
   - gomod: github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor v0.151.0
   - gomod: github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.151.0
-  - gomod: github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor v0.151.0
-  - gomod: github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor v0.151.0
-  - gomod: github.com/odigos-io/odigos/collector/processors/odigossymbolizeprocessor v0.151.0
 
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.151.0
@@ -104,9 +102,6 @@ receivers:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.151.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.151.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.151.0
-  - gomod: github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.151.0
-  - gomod: go.opentelemetry.io/ebpf-profiler v0.0.202614
-    import: go.opentelemetry.io/ebpf-profiler/collector
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver v0.151.0
 
 # https://github.com/open-telemetry/opentelemetry-collector/issues/8127
@@ -144,17 +139,14 @@ replaces:
   - github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor => ../processors/odigoslogsresourceattrsprocessor
   - github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor => ../processors/odigosextractattributeprocessor
   - github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor => ../processors/odigostracefilterprocessor
-  - github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor => ../processors/odigosprofilesprocessor
-  - github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor => ../processors/odigosvmprofileattrsprocessor
-  - github.com/odigos-io/odigos/collector/processors/odigossymbolizeprocessor => ../processors/odigossymbolizeprocessor
   - go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
   - github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
   - github.com/odigos-io/odigos/collector/connectors/serviceioconnector => ../connectors/serviceioconnector
   - github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector => ../connectors/servicegraphconnector
-  - github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
   - github.com/odigos-io/odigos/common => ../../common
   - go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
   - github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension => ../extension/odigosconfigk8sextension
+  - github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension => ../extension/odigoscapabilitiesextension
   - github.com/apache/thrift => github.com/apache/thrift v0.23.0
   - github.com/prometheus/prometheus => github.com/prometheus/prometheus v0.311.4-0.20260507094802-91c184a899b8
   # datadogexporter transitively requires this at an unresolvable DataDog-internal placeholder version.

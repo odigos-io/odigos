@@ -199,6 +199,26 @@ rules:
       - get
       - patch
       - update
+  - apiGroups:
+      - odigos.io
+    resources:
+      - recommendations
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - patch
+      - update
+      - delete
+  - apiGroups:
+      - odigos.io
+    resources:
+      - recommendations/status
+    verbs:
+      - get
+      - patch
+      - update
 {{- if .Values.openshift.enabled }}
   - apiGroups:
       - 'apps'

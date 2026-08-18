@@ -2,7 +2,7 @@ TAG ?= $(shell odigos version --cluster 2>/dev/null || odigos version --cli 2>/d
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
-ORG ?= registry.odigos.io
+ORG ?= docker.io/keyval
 # Override ORG for staging pushes
 ifeq ($(STAGING_ORG),true)
     ORG = us-central1-docker.pkg.dev/odigos-cloud/staging-components
@@ -224,9 +224,24 @@ push-images-rhel:
 load-to-kind-%:
 	kind load docker-image $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)
 
+# Victoria Metrics is not built from this repo — pull the published image and retag for e2e.
+# Materialize a single-platform image via buildx --load so kind load does not fail on
+# multi-arch manifests (ctr: content digest ... not found).
+# kind's LoadImageArchive always runs: ctr images import --all-platforms
+# See https://github.com/kubernetes-sigs/kind/issues/3795
+.PHONY: load-to-kind-victoria-metrics
+load-to-kind-victoria-metrics:
+	printf 'FROM $(ORG)/odigos-victoria-metrics:latest\n' | docker buildx build \
+		--platform=linux/$$(docker version -f '{{.Server.Arch}}') \
+		--pull \
+		-t $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG) \
+		--load \
+		-
+	kind load docker-image $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG)
+
 .PHONY: load-to-kind
 load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: restart-ui
 restart-ui:

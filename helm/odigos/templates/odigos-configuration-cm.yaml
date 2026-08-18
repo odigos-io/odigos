@@ -36,7 +36,7 @@ data:
     {{- if .Values.centralProxy.centralBackendURL }}
     centralBackendURL: {{ .Values.centralProxy.centralBackendURL }}
     {{- end }}
-    imagePrefix: {{ template "utils.imagePrefix" (dict "Values" .Values) }}
+    imagePrefix: {{ template "utils.imagePrefix" . }}
     {{- if .Values.ui.uiMode }}
     uiMode: {{ .Values.ui.uiMode }}
     {{- end }}

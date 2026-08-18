@@ -28,6 +28,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/tracecorrelations"
 	"github.com/odigos-io/odigos/instrumentationrules"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/recommendations"
 )
 
 // Deps is the dependency bundle the frontend HTTP layer (and any extra mounts
@@ -44,11 +45,11 @@ type Deps struct {
 	CorrelationsPromAPI         v1.API
 	CorrelationsMetricsStoreURL string
 	// InsightsClient is the client for the Odigos Insights service.
-	InsightsClient              *insights.Client
-	ProfileStore                *profiles.ProfileStore
-	ProfilingGate               *profiles.IngestGate
-	ProfilesConsumer            *profiles.OdigosProfilesConsumer
-	OtlpReceiver                *otlp.Receiver
+	InsightsClient   *insights.Client
+	ProfileStore     *profiles.ProfileStore
+	ProfilingGate    *profiles.IngestGate
+	ProfilesConsumer *profiles.OdigosProfilesConsumer
+	OtlpReceiver     *otlp.Receiver
 }
 
 // Bootstrap performs the synchronous startup work: load embedded destination
@@ -68,6 +69,9 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 	}
 	if err := instrumentationrules.Load(); err != nil {
 		return nil, fmt.Errorf("loading instrumentation rules data: %w", err)
+	}
+	if err := recommendations.Load(); err != nil {
+		return nil, fmt.Errorf("loading recommendations data: %w", err)
 	}
 	if err := config.Load(); err != nil {
 		return nil, fmt.Errorf("loading config data: %w", err)

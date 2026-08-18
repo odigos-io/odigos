@@ -14,15 +14,16 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/grafana/pyroscope v1.21.1
 	github.com/grafana/pyroscope/api v1.5.0
-	github.com/odigos-io/odigos/actions v0.0.0
-	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/config v0.0.0
-	github.com/odigos-io/odigos/destinations v0.0.0
-	github.com/odigos-io/odigos/instrumentationrules v0.0.0
-	github.com/odigos-io/odigos/k8sutils v0.0.0
-	github.com/odigos-io/odigos/odigosauth v0.0.0
-	github.com/odigos-io/odigos/status v0.0.0
+	github.com/odigos-io/odigos/actions v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/config v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/destinations v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/instrumentationrules v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/odigosauth v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/recommendations v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/status v0.0.0-00010101000000-000000000000
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.5
@@ -203,7 +204,7 @@ require (
 	github.com/prometheus/sigv4 v0.4.1 // indirect
 	github.com/puzpuzpuz/xsync/v4 v4.4.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/quic-go/quic-go v0.59.0 // indirect
+	github.com/quic-go/quic-go v0.59.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/samber/lo v1.52.0 // indirect
@@ -398,6 +399,7 @@ replace (
 	github.com/odigos-io/odigos/instrumentationrules => ../instrumentationrules
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth
+	github.com/odigos-io/odigos/recommendations => ../recommendations
 	github.com/odigos-io/odigos/status => ../status
 	// Pyroscope (and Mimir) expect KnownFields YAML decoding; upstream v3.0.1 lacks DecodeWithOptions.
 	// Matches github.com/grafana/pyroscope go.mod.

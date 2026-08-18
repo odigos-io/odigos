@@ -4,6 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	actionutil "github.com/odigos-io/odigos/k8sutils/pkg/action"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -19,10 +20,11 @@ type ActionReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
 	OdigosVersion string
+	Tier          common.OdigosTier
 }
 
 func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	result, err := reconcileClusterCollector(ctx, r.Client, r.Scheme, r.OdigosVersion)
+	result, err := reconcileClusterCollector(ctx, r.Client, r.Scheme, r.OdigosVersion, r.Tier)
 	if err != nil {
 		return result, err
 	}
