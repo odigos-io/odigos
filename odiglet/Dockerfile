@@ -216,16 +216,16 @@ LABEL "version"=$VERSION
 LABEL "release"=$RELEASE
 LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
+# Copy statically compiled rsync (no shared libraries needed)
+COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
-# Copy statically compiled rsync (no shared libraries needed)
-COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
-WORKDIR /instrumentations/
-COPY --from=agents-builder /instrumentations/ .
+COPY --from=agents-builder /instrumentations/ /instrumentations/
+
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
 # make sure we run as non root user
 # this is required when this container is added to a pod that has runAsNonRoot: true
 USER 65532:65532
@@ -233,14 +233,13 @@ CMD ["/root/odiglet"]
 
 ######### Default Odiglet #########
 FROM gcr.io/distroless/base@sha256:f4a335ca209e1d2ee873102c17c389ad0142e3d5b21aee2817e9cc9c01d87d20
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
+COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
-COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
-# Copy statically compiled rsync (no shared libraries needed)
-COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
-WORKDIR /instrumentations/
-COPY --from=agents-builder /instrumentations/ .
+COPY --from=agents-builder /instrumentations/ /instrumentations/
+
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 # make sure we run as non root user
 # this is required when this container is added to a pod that has runAsNonRoot: true
 USER 65532:65532
