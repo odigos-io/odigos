@@ -49,7 +49,8 @@ Run as-is — no placeholders to fill in:
 
 ```bash
 IMG=us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler
-DIGEST=$(docker buildx imagetools inspect "${IMG}:v1.35.0" --format '{{.Manifest.Digest}}')
+TAG=v1.35.0
+DIGEST=$(docker buildx imagetools inspect "${IMG}:${TAG}" --format '{{.Manifest.Digest}}')
 IDENTITY='^https://github\.com/odigos-io/(odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*|ci-core/\.github/workflows/backfill-sign\.yml@refs/heads/main)$'
 
 cosign verify \
