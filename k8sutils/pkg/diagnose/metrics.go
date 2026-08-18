@@ -67,15 +67,21 @@ func fetchMetricsFromOdigletPods(ctx context.Context, client kubernetes.Interfac
 		{k8sconsts.OdigosNodeCollectorContainerName, k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault},
 	}
 
+	lim := newLimiter(maxConcurrentK8sOps)
 	var wg sync.WaitGroup
 	for i := range pods.Items {
 		pod := &pods.Items[i]
 		podName := pod.Name
 		for _, ep := range endpoints {
+			if err := lim.acquire(ctx); err != nil {
+				wg.Wait()
+				return err
+			}
 			ep := ep
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
+				defer lim.release()
 				klog.V(2).InfoS("Fetching metrics for odiglet pod", "podName", podName, "container", ep.fileSuffix)
 				data, err := captureMetrics(ctx, client, podName, namespace, ep.port)
 				if err != nil {
@@ -106,13 +112,19 @@ func fetchMetricsFromGatewayPods(ctx context.Context, client kubernetes.Interfac
 	}
 
 	port := k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault
+	lim := newLimiter(maxConcurrentK8sOps)
 	var wg sync.WaitGroup
 	for i := range pods.Items {
+		if err := lim.acquire(ctx); err != nil {
+			wg.Wait()
+			return err
+		}
 		pod := &pods.Items[i]
 		podName := pod.Name
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			defer lim.release()
 			klog.V(2).InfoS("Fetching metrics for gateway pod", "podName", podName)
 			data, err := captureMetrics(ctx, client, podName, namespace, port)
 			if err != nil {

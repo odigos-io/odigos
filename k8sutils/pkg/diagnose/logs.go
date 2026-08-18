@@ -18,13 +18,19 @@ func FetchWorkloadLogs(
 	namespace, workloadDir string,
 	pods []corev1.Pod,
 ) error {
+	lim := newLimiter(maxConcurrentK8sOps)
 	var wg sync.WaitGroup
 
 	for i := 0; i < len(pods); i++ {
+		if err := lim.acquire(ctx); err != nil {
+			wg.Wait()
+			return err
+		}
 		pod := &pods[i]
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			defer lim.release()
 			for i := 0; i < len(pod.Spec.Containers); i++ {
 				container := &pod.Spec.Containers[i]
 				addContainerLogs(ctx, client, builder, namespace, workloadDir, pod.Name, container.Name, false)
