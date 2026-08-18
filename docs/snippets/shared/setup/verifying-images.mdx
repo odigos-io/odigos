@@ -45,29 +45,34 @@ the digest from `imagetools inspect` as above, not a per-platform child digest
 
 <Accordion title="Full worked example: verifying odigos-scheduler v1.35.0">
 
+Run as-is — no placeholders to fill in:
+
 ```bash
-$ IMG=us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler
-$ DIGEST=$(docker buildx imagetools inspect "${IMG}:v1.35.0" --format '{{.Manifest.Digest}}')
-$ echo "$DIGEST"
-sha256:f46fa614790877f65a1153078ec294fb41ab718dc0e6bd3c9a80196d170b2a25
+IMG=us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler
+DIGEST=$(docker buildx imagetools inspect "${IMG}:v1.35.0" --format '{{.Manifest.Digest}}')
+IDENTITY='^https://github\.com/odigos-io/(odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*|ci-core/\.github/workflows/backfill-sign\.yml@refs/heads/main)$'
 
-$ cosign verify \
-    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-    --certificate-identity-regexp '^https://github\.com/odigos-io/(odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*|ci-core/\.github/workflows/backfill-sign\.yml@refs/heads/main)$' \
-    "${IMG}@${DIGEST}"
+cosign verify \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp "$IDENTITY" \
+  "${IMG}@${DIGEST}"
 
+cosign verify-attestation --type cyclonedx \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp "$IDENTITY" \
+  "${IMG}@${DIGEST}" | jq -r .payload | base64 -d | jq '.predicate.components | length'
+```
+
+Expected output (trimmed):
+
+```text
 Verification for us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler@sha256:f46fa614… --
 The following checks were performed on each of these signatures:
   - The cosign claims were validated
   - Existence of the claims in the transparency log was verified offline
   - The code-signing certificate was verified using trusted certificate authority certificates
-[{"critical":{"identity":{"docker-reference":"us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler"},
+[{"critical":{"identity":{"docker-reference":"…/odigos-scheduler"},
   "image":{"docker-manifest-digest":"sha256:f46fa614…"},"type":"cosign container image signature"}, …}]
-
-$ cosign verify-attestation --type cyclonedx \
-    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-    --certificate-identity-regexp '^https://github\.com/odigos-io/(odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*|ci-core/\.github/workflows/backfill-sign\.yml@refs/heads/main)$' \
-    "${IMG}@${DIGEST}" | jq -r .payload | base64 -d | jq '.predicate.components | length'
 
 1022
 ```
