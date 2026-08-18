@@ -5360,6 +5360,18 @@ entries:
     - https://github.com/keyval-dev/odigos-charts/releases/download/odigos-0.2.03/odigos-0.2.03.tgz
     version: 0.2.03
   - apiVersion: v2
+    appVersion: v0.0.0-feat.insights.0
+    created: "2026-08-18T12:27:37.345966878Z"
+    description: Instant Distributed Tracing
+    digest: c33369387520f79ea265a645f59daedf918112235682b17bfd32fa5096f8e050
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.insights.0/helm-chart-odigos-0.0.0-feat.insights.0.tgz
+    version: 0.0.0-feat.insights.0
+  - apiVersion: v2
     appVersion: v0.0.0-feat.amir-testing.4
     created: "2026-08-18T07:05:09.027229125Z"
     description: Instant Distributed Tracing
@@ -8517,6 +8529,18 @@ entries:
     - https://github.com/odigos-io/odigos/releases/download/v1.5.0/helm-chart-odigos-central-1.5.0.tgz
     version: 1.5.0
   - apiVersion: v2
+    appVersion: v0.0.0-feat.insights.0
+    created: "2026-08-18T12:27:37.347028738Z"
+    description: Centralized components for Odigos (UI + Backend)
+    digest: fbe5fcd04775edf9a7c271211acb18d533404ab52bd9ab918a502b0684687e00
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos-central
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.insights.0/helm-chart-odigos-central-0.0.0-feat.insights.0.tgz
+    version: 0.0.0-feat.insights.0
+  - apiVersion: v2
     appVersion: v0.0.0-feat.amir-testing.4
     created: "2026-08-18T07:05:09.028306552Z"
     description: Centralized components for Odigos (UI + Backend)
@@ -8528,4 +8552,4 @@ entries:
     urls:
     - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.amir-testing.4/helm-chart-odigos-central-0.0.0-feat.amir-testing.4.tgz
     version: 0.0.0-feat.amir-testing.4
-generated: "2026-08-18T08:26:49.692884733Z"
+generated: "2026-08-18T12:27:37.340771815Z"
