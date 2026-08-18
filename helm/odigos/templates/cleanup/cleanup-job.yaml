@@ -20,5 +20,7 @@ spec:
       - name: cleanup
         image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "cli" "Tag" $imageTag) }}
         args: ["cleanup", "--yes", "--instrumentation-only", "--namespace", "{{ .Release.Namespace }}"]
+        {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "cleanup") | nindent 8 }}
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "cleanup") | nindent 6 }}
       restartPolicy: Never
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}

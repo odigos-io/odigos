@@ -95,13 +95,11 @@ spec:
           timeoutSeconds: 5
         resources:
 {{ toYaml .Values.ui.resources | indent 10 }}
-        securityContext:
-          allowPrivilegeEscalation: false
+        {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "ui") | nindent 8 }}
         volumeMounts:
           - name: ui-db-storage
             mountPath: /data
-      securityContext:
-        runAsNonRoot: true
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "ui" "Base" (dict "runAsNonRoot" true)) | nindent 6 }}
       serviceAccountName: odigos-ui
       terminationGracePeriodSeconds: 10
       volumes:

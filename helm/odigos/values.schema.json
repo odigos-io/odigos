@@ -2110,6 +2110,74 @@
       "required": [],
       "title": "scheduler"
     },
+    "securityContext": {
+      "additionalProperties": false,
+      "description": "Pod Security Standards \"Baseline\" settings applied to every Odigos pod except the\nodiglet, which is a privileged eBPF node agent and is intentionally excluded.\n`pod` is rendered as the pod-level securityContext, `container` as the container-level\nsecurityContext of every container in those pods. These controls do not constrain which\nuser a container runs as: each image keeps its own default user.",
+      "properties": {
+        "components": {
+          "additionalProperties": true,
+          "description": "Per-component overrides, keyed by component name: autoscaler, scheduler, instrumentor,\nui, centralProxy, cleanup, metricsStore, traceCorrelationsMetricsStore.\nEach key set under a component replaces that key in the defaults above, for that\ncomponent only, and setting a key to null drops it. Use the latter to exempt a\ncontainer whose entrypoint needs capabilities at startup, e.g.\n  components:\n    metricsStore:\n      container:\n        capabilities: null",
+          "required": [],
+          "title": "components"
+        },
+        "container": {
+          "additionalProperties": true,
+          "description": "Container-level securityContext applied to every container in those pods.",
+          "properties": {
+            "allowPrivilegeEscalation": {
+              "default": false,
+              "title": "allowPrivilegeEscalation",
+              "type": "boolean"
+            },
+            "capabilities": {
+              "additionalProperties": false,
+              "properties": {
+                "drop": {
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      }
+                    ],
+                    "required": []
+                  },
+                  "title": "drop",
+                  "type": "array"
+                }
+              },
+              "required": [],
+              "title": "capabilities",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "container"
+        },
+        "pod": {
+          "additionalProperties": true,
+          "description": "Pod-level securityContext.",
+          "properties": {
+            "seccompProfile": {
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "default": "RuntimeDefault",
+                  "title": "type",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "seccompProfile",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "pod"
+        }
+      },
+      "required": [],
+      "title": "securityContext"
+    },
     "signals": {
       "description": "User should be specifying the signals they want to collect.",
       "items": {
