@@ -15,18 +15,27 @@ DIGEST=$(docker buildx imagetools inspect "${IMG}:<version>" --format '{{.Manife
 
 cosign verify \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity-regexp '^https://github\.com/odigos-io/odigos/\.github/workflows/publish-modules\.yml@refs/tags/.*$' \
+  --certificate-identity-regexp '^https://github\.com/odigos-io/(odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*|ci-core/\.github/workflows/backfill-sign\.yml@refs/heads/main)$' \
   "${IMG}@${DIGEST}"
 ```
 
-To inspect the attached SBOM:
+The identity accepts two workflows on purpose: new releases are signed by the
+release pipeline, while versions published before signing went live were signed
+retroactively by the audited backfill workflow. A single-identity pattern would
+fail on one era or the other.
+
+To verify and inspect the attached SBOM (same identity rules):
 
 ```bash
 cosign verify-attestation --type cyclonedx \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity-regexp '^https://github\.com/odigos-io/odigos/\.github/workflows/publish-modules\.yml@refs/tags/.*$' \
+  --certificate-identity-regexp '^https://github\.com/odigos-io/(odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*|ci-core/\.github/workflows/backfill-sign\.yml@refs/heads/main)$' \
   "${IMG}@${DIGEST}" | jq -r .payload | base64 -d | jq '.predicate.components'
 ```
+
+The SBOM attestation is attached to the **multi-arch index digest** — always pass
+the digest from `imagetools inspect` as above, not a per-platform child digest
+(children carry signatures but no attestation).
 
 ## Signing identities
 
@@ -35,19 +44,43 @@ pattern like `.*odigos-io.*`. The canonical list of identities and the version e
 artifact is signed from lives in
 [`SIGNING.md`](https://github.com/odigos-io/ci-core/blob/main/SIGNING.md).
 
-| Artifact | Identity (regexp) |
+| Artifact | Release identity (regexp) |
 | --- | --- |
-| Component images (`odigos-*`) | `…/odigos-io/odigos/.github/workflows/publish-modules.yml@refs/tags/.*` |
-| CLI image (`odigos-cli`) | `…/odigos-io/odigos/.github/workflows/release.yml@refs/heads/main` |
-| Enterprise images | `…/odigos-io/odigos-enterprise/.github/workflows/release-images.yml@refs/(tags\|heads)/.*` |
+| Component images (`odigos-*`) | `^https://github\.com/odigos-io/odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*$` |
+| CLI image + `odigos-victoria-metrics` | `^https://github\.com/odigos-io/odigos/\.github/workflows/release\.yml@refs/heads/main$` |
+| Enterprise images (`odigos-enterprise-*`) | `^https://github\.com/odigos-io/odigos-enterprise/\.github/workflows/release-images\.yml@refs/(tags/.*\|heads/.*)$` |
+| `wasp-init` | `^https://github\.com/odigos-io/ebpf-core/\.github/workflows/build-sender\.yml@refs/(heads/main\|heads/releases/.*\|tags/.*)$` |
+| `odigos-cli-offsets` | `^https://github\.com/odigos-io/enterprise-go-instrumentation/\.github/workflows/offsets-push\.yml@refs/heads/.*$` |
+| `odigos-vmagent-instrumentations` | `^https://github\.com/odigos-io/vm-agent/\.github/workflows/publish-agents\.yml@refs/(heads/.*\|tags/agents/.*)$` |
 
-Two identities are expected and legitimate beyond the release workflows:
+To also cover retroactively signed history, combine the release identity with the
+backfill identity in one pattern, as the commands above do:
+`^https://github\.com/odigos-io/(<release workflow path>@<ref>|ci-core/\.github/workflows/backfill-sign\.yml@refs/heads/main)$`
+
+Two more certificate details are expected and legitimate:
 
 - **Backfill**: historical releases were signed retroactively by
   `odigos-io/ci-core/.github/workflows/backfill-sign.yml` — the certificate honestly
   records the backfill identity and date, and it is auditable in Rekor.
 - **Stable `x.y.0` tags** verify against the release-candidate tag identity: the stable
   tag is a retag of the exact RC digest, so the certificate names the RC that built it.
+
+## Attestable images
+
+Every image below is signed and carries a CycloneDX SBOM attestation, from the
+version listed in [`SIGNING.md`](https://github.com/odigos-io/ci-core/blob/main/SIGNING.md):
+
+- **Odigos platform**: `odigos-autoscaler`, `odigos-scheduler`, `odigos-instrumentor`,
+  `odigos-collector`, `odigos-odiglet`, `odigos-ui`, `odigos-operator`, `odigos-agents`,
+  `odigos-cli`, `odigos-victoria-metrics`
+- **Odigos Enterprise**: `odigos-enterprise-odiglet`, `odigos-enterprise-instrumentor`,
+  `odigos-enterprise-ui`, `odigos-enterprise-collector`, `odigos-enterprise-central-proxy`,
+  `odigos-enterprise-central-backend`, `odigos-enterprise-central-ui`, `odigos-enterprise-agents`,
+  `odigos-enterprise-connector-runtime`, `odigos-enterprise-connector-aws`,
+  `odigos-enterprise-connector-azure`, `odigos-enterprise-connector-gcp` — `odiglet`
+  and `agents` also publish `-extended` variants (separate digests, same identity)
+- **Supporting images**: `wasp-init`, `odigos-cli-offsets`, and
+  `odigos-vmagent-instrumentations` (signed for publishes after 2026-08-12)
 
 ## Air-gapped verification
 
