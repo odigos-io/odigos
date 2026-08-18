@@ -9,8 +9,14 @@ you pull was published by the Odigos release pipeline — no keys involved.
 Verification needs [cosign](https://docs.sigstore.dev/cosign/system_config/installation/) v3+.
 Always verify by digest:
 
+<Note>
+Verify against the canonical registry, `us-central1-docker.pkg.dev/odigos-cloud/components`.
+`registry.odigos.io` is a pull alias: images resolve through it, but signature
+discovery for retroactively signed versions does not currently surface there.
+</Note>
+
 ```bash
-IMG=registry.odigos.io/odigos-odiglet
+IMG=us-central1-docker.pkg.dev/odigos-cloud/components/odigos-odiglet
 DIGEST=$(docker buildx imagetools inspect "${IMG}:<version>" --format '{{.Manifest.Digest}}')
 
 cosign verify \
@@ -36,6 +42,45 @@ cosign verify-attestation --type cyclonedx \
 The SBOM attestation is attached to the **multi-arch index digest** — always pass
 the digest from `imagetools inspect` as above, not a per-platform child digest
 (children carry signatures but no attestation).
+
+<Accordion title="Full worked example: verifying odigos-scheduler v1.35.0">
+
+```bash
+$ IMG=us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler
+$ DIGEST=$(docker buildx imagetools inspect "${IMG}:v1.35.0" --format '{{.Manifest.Digest}}')
+$ echo "$DIGEST"
+sha256:f46fa614790877f65a1153078ec294fb41ab718dc0e6bd3c9a80196d170b2a25
+
+$ cosign verify \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+    --certificate-identity-regexp '^https://github\.com/odigos-io/(odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*|ci-core/\.github/workflows/backfill-sign\.yml@refs/heads/main)$' \
+    "${IMG}@${DIGEST}"
+
+Verification for us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler@sha256:f46fa614… --
+The following checks were performed on each of these signatures:
+  - The cosign claims were validated
+  - Existence of the claims in the transparency log was verified offline
+  - The code-signing certificate was verified using trusted certificate authority certificates
+[{"critical":{"identity":{"docker-reference":"us-central1-docker.pkg.dev/odigos-cloud/components/odigos-scheduler"},
+  "image":{"docker-manifest-digest":"sha256:f46fa614…"},"type":"cosign container image signature"}, …}]
+
+$ cosign verify-attestation --type cyclonedx \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+    --certificate-identity-regexp '^https://github\.com/odigos-io/(odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*|ci-core/\.github/workflows/backfill-sign\.yml@refs/heads/main)$' \
+    "${IMG}@${DIGEST}" | jq -r .payload | base64 -d | jq '.predicate.components | length'
+
+1022
+```
+
+The 1022 components are the SBOM contents — inspect them with
+`jq '.predicate.components'` instead of `length`, e.g. the first entries here are
+`base-files 13.8+deb13u6` and `github.com/argoproj/argo-rollouts v1.9.1`. Because
+v1.35.0 predates release-time signing, the certificate for this version names the
+audited backfill workflow (`ci-core/.github/workflows/backfill-sign.yml`) — that is
+the expected identity for retroactively signed history, and the reason the identity
+regexp accepts both workflows.
+
+</Accordion>
 
 ## Signing identities
 
