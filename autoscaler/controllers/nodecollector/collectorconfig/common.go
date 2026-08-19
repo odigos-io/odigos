@@ -135,22 +135,25 @@ func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfigurat
 
 		retryConfig := config.GenericMap{}
 		// Only set enabled if not nil to avoid possible nil pointer dereference
+		enabled := true
 		if otlpExporterConfiguration.RetryOnFailure.Enabled != nil {
-			retryConfig["enabled"] = *otlpExporterConfiguration.RetryOnFailure.Enabled
-		} else {
-			// by default, retry on failure is enabled
-			retryConfig["enabled"] = true
+			enabled = *otlpExporterConfiguration.RetryOnFailure.Enabled
 		}
+		retryConfig["enabled"] = enabled
 
-		// Only add the interval fields if they are not empty
-		if otlpExporterConfiguration.RetryOnFailure.InitialInterval != "" {
-			retryConfig["initial_interval"] = otlpExporterConfiguration.RetryOnFailure.InitialInterval
-		}
-		if otlpExporterConfiguration.RetryOnFailure.MaxInterval != "" {
-			retryConfig["max_interval"] = otlpExporterConfiguration.RetryOnFailure.MaxInterval
-		}
-		if otlpExporterConfiguration.RetryOnFailure.MaxElapsedTime != "" {
-			retryConfig["max_elapsed_time"] = otlpExporterConfiguration.RetryOnFailure.MaxElapsedTime
+		// Only add the interval fields if they are not empty, and only while retry is enabled:
+		// since collector v0.156.0 they are validated even when disabled, so forwarding these
+		// unvalidated user values while disabled would fail collector startup.
+		if enabled {
+			if otlpExporterConfiguration.RetryOnFailure.InitialInterval != "" {
+				retryConfig["initial_interval"] = otlpExporterConfiguration.RetryOnFailure.InitialInterval
+			}
+			if otlpExporterConfiguration.RetryOnFailure.MaxInterval != "" {
+				retryConfig["max_interval"] = otlpExporterConfiguration.RetryOnFailure.MaxInterval
+			}
+			if otlpExporterConfiguration.RetryOnFailure.MaxElapsedTime != "" {
+				retryConfig["max_elapsed_time"] = otlpExporterConfiguration.RetryOnFailure.MaxElapsedTime
+			}
 		}
 
 		traceExporterConfig["retry_on_failure"] = retryConfig

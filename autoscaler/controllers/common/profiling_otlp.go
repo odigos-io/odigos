@@ -24,19 +24,23 @@ func MergeProfilingOtlpExporter(base config.GenericMap, otlp *odigoscommon.OtlpE
 	}
 	if otlp.RetryOnFailure != nil {
 		retry := config.GenericMap{}
+		enabled := true
 		if otlp.RetryOnFailure.Enabled != nil {
-			retry["enabled"] = *otlp.RetryOnFailure.Enabled
-		} else {
-			retry["enabled"] = true
+			enabled = *otlp.RetryOnFailure.Enabled
 		}
-		if otlp.RetryOnFailure.InitialInterval != "" {
-			retry["initial_interval"] = otlp.RetryOnFailure.InitialInterval
-		}
-		if otlp.RetryOnFailure.MaxInterval != "" {
-			retry["max_interval"] = otlp.RetryOnFailure.MaxInterval
-		}
-		if otlp.RetryOnFailure.MaxElapsedTime != "" {
-			retry["max_elapsed_time"] = otlp.RetryOnFailure.MaxElapsedTime
+		retry["enabled"] = enabled
+		// Since collector v0.156.0 the backoff intervals are validated even when retry is disabled,
+		// so sending these unvalidated user values while disabled would fail collector startup.
+		if enabled {
+			if otlp.RetryOnFailure.InitialInterval != "" {
+				retry["initial_interval"] = otlp.RetryOnFailure.InitialInterval
+			}
+			if otlp.RetryOnFailure.MaxInterval != "" {
+				retry["max_interval"] = otlp.RetryOnFailure.MaxInterval
+			}
+			if otlp.RetryOnFailure.MaxElapsedTime != "" {
+				retry["max_elapsed_time"] = otlp.RetryOnFailure.MaxElapsedTime
+			}
 		}
 		out["retry_on_failure"] = retry
 	}
