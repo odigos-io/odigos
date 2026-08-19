@@ -63,31 +63,7 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, t
 
 			// Add retry_on_failure configuration if present
 			if nodeCG.Spec.OtlpExporterConfiguration != nil && nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure != nil {
-				retryConfig := config.GenericMap{}
-
-				// Only set enabled if not nil to avoid possible nil pointer dereference
-				enabled := true
-				if nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.Enabled != nil {
-					enabled = *nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.Enabled
-				}
-				retryConfig["enabled"] = enabled
-
-				// Only add the interval fields if they are not empty, and only while retry is enabled:
-				// since collector v0.156.0 they are validated even when disabled, so forwarding these
-				// unvalidated user values while disabled would fail collector startup.
-				if enabled {
-					if nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.InitialInterval != "" {
-						retryConfig["initial_interval"] = nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.InitialInterval
-					}
-					if nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.MaxInterval != "" {
-						retryConfig["max_interval"] = nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.MaxInterval
-					}
-					if nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.MaxElapsedTime != "" {
-						retryConfig["max_elapsed_time"] = nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.MaxElapsedTime
-					}
-				}
-
-				otlpConfig["retry_on_failure"] = retryConfig
+				otlpConfig["retry_on_failure"] = config.RetryOnFailureConfig(nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure)
 			}
 
 			exporters[odigosTracesLoadbalancingExporterName] = config.GenericMap{

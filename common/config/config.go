@@ -206,6 +206,30 @@ func mergeTelemetry(telemetry1 Telemetry, telemetry2 Telemetry) (Telemetry, erro
 	return mergedTelemetry, nil
 }
 
+func RetryOnFailureConfig(retryOnFailure *common.RetryOnFailure) GenericMap {
+	enabled := true
+	if retryOnFailure.Enabled != nil {
+		enabled = *retryOnFailure.Enabled
+	}
+
+	retryConfig := GenericMap{"enabled": enabled}
+	if !enabled {
+		return retryConfig
+	}
+
+	// Add the retry config fields only if it is enabled, otherwise they get validated anyway and the collector crashes
+	if retryOnFailure.InitialInterval != "" {
+		retryConfig["initial_interval"] = retryOnFailure.InitialInterval
+	}
+	if retryOnFailure.MaxInterval != "" {
+		retryConfig["max_interval"] = retryOnFailure.MaxInterval
+	}
+	if retryOnFailure.MaxElapsedTime != "" {
+		retryConfig["max_elapsed_time"] = retryOnFailure.MaxElapsedTime
+	}
+	return retryConfig
+}
+
 func mergeGenericMaps(maps ...GenericMap) (GenericMap, error) {
 	mergedMap := GenericMap{}
 	for _, m := range maps {
