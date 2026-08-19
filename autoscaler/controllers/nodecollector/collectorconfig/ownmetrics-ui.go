@@ -105,6 +105,12 @@ func serviceTelemetryConfigForOwnMetricsUi(ownMetricsPort int32) config.Telemetr
 				"prometheus": config.GenericMap{
 					"host": "0.0.0.0",
 					"port": ownMetricsPort,
+					// Pinned explicitly to preserve the scraped metric names.
+					// Before collector v0.152.0 we these fields passed as nil and were inferred as false, but now they are being defaulted as true.
+					// We already rely on the metric names to be formatted with these as false, so we keep it this way
+					"without_scope_info":  false,
+					"without_units":       false,
+					"without_type_suffix": false,
 				},
 			},
 		},
