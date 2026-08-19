@@ -64,6 +64,7 @@
                           "oss/setup/odigos-with-karpenter"
                         ]
                       },
+                      "oss/setup/verifying-images",
                       "oss/setup/upgrade",
                       "oss/setup/uninstall"
                     ]
@@ -383,6 +384,7 @@
                           "enterprise/setup/odigos-with-karpenter"
                         ]
                       },
+                      "enterprise/setup/verifying-images",
                       "enterprise/setup/upgrade",
                       "enterprise/setup/uninstall"
                     ]
