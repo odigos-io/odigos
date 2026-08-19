@@ -15,3 +15,12 @@ metadata:
 status:
   readyReplicas: 1
   availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tail-sampling-http-server
+  namespace: default
+status:
+  readyReplicas: 1
+  availableReplicas: 1

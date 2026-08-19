@@ -1,4 +1,4 @@
-ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.18
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.20
 
 
 ######### python Native Community Agent #########
@@ -75,7 +75,7 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest
 WORKDIR /instrumentations
 
 # java-community
-ARG JAVA_OTEL_VERSION=v2.10.0
+ARG JAVA_OTEL_VERSION=v2.20.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
