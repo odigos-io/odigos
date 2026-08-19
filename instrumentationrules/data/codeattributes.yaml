@@ -23,13 +23,13 @@ spec:
         options:
           - id: filePath
             label: Collect file path
-            tooltip: Indicates whether to record the `code.filepath` attribute.
+            tooltip: Indicates whether to record the `code.file.path` attribute.
           - id: function
             label: Collect function
             tooltip: Indicates whether to record the `code.function.name` attribute, the fully-qualified function name.
           - id: lineNumber
             label: Collect line number
-            tooltip: Indicates whether to record the `code.lineno` attribute.
+            tooltip: Indicates whether to record the `code.line.number` attribute.
     - name: codeAttributes
       displayName: Verbose data to collect
       componentType: checkboxList
@@ -38,7 +38,7 @@ spec:
         options:
           - id: column
             label: Collect column
-            tooltip: Indicates whether to record the `code.column` attribute.
+            tooltip: Indicates whether to record the `code.column.number` attribute.
           - id: namespace
             label: Collect namespace
             tooltip: Deprecated. `code.namespace` was merged into `code.function.name`; this now behaves as an alias of "Collect function".
