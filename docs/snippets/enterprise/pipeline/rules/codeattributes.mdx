@@ -18,7 +18,7 @@
     - This field is *optional*, and defaults to `false`
   </Accordion>
   <Accordion title="function">
-    **function** `boolean` : Indicates whether to record the `code.function` attribute for the method or function name, or equivalent.
+    **function** `boolean` : Indicates whether to record the `code.function.name` attribute, the fully-qualified name of the method or function (for example `com.example.OrderService.processOrder` or `main.checkIfMember`).
     - This field is *optional*, and defaults to `false`
   </Accordion>
   <Accordion title="lineNumber">
@@ -26,7 +26,7 @@
     - This field is *optional*, and defaults to `false`
   </Accordion>
   <Accordion title="namespace">
-    **namespace** `boolean` : Indicates whether to record the `code.namespace` attribute for the “namespace” within which `code.function` is defined. Usually the qualified class or module name, such that `code.namespace` + some separator + `code.function` form a unique identifier for the code unit.
+    **namespace** `boolean` : *Deprecated.* OpenTelemetry merged `code.namespace` into `code.function.name`, which is already fully qualified, so there is no longer a separate namespace attribute to record. This field is still accepted and now behaves as an alias of `function`.
     - This field is *optional*, and defaults to `false`
   </Accordion>
   <Accordion title="stackTrace">
