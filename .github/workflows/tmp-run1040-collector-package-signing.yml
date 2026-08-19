@@ -71,14 +71,18 @@ jobs:
             exit 1
           fi
 
-          command -v rpm >/dev/null || sudo apt-get install -y rpm
-          sudo rpm --import "$PUB_KEY"
+          command -v rpm >/dev/null || { sudo apt-get update && sudo apt-get install -y rpm; }
+          # Explicit scratch dbpath on import AND verify: on Debian/Ubuntu,
+          # non-root rpm reads ~/.rpmdb while sudo writes /var/lib/rpm, so a
+          # sudo import is invisible to the unprivileged -K call (NOKEY).
+          RPMDB=$(mktemp -d)
+          rpmkeys --dbpath "$RPMDB" --import "$PUB_KEY"
           for f in "${rpms[@]}"; do
             echo "verifying $f"
-            rpm -Kv "$f"
+            rpm -Kv --dbpath "$RPMDB" "$f"
             # rpm -K passes for unsigned packages too (digests only), so
             # require an actual OK GPG signature line.
-            if ! rpm -Kv "$f" | grep -Eq 'Signature, key ID [0-9a-f]+: OK'; then
+            if ! rpm -Kv --dbpath "$RPMDB" "$f" | grep -Eq 'Signature, key ID [0-9a-f]+: OK'; then
               echo "::error::$f has no valid GPG signature"
               exit 1
             fi
