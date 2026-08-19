@@ -94,6 +94,20 @@ jobs:
           echo "GORELEASER_CURRENT_TAG=$SEMVER_TAG" >> $GITHUB_ENV
           git tag -a -f "$SEMVER_TAG" -m "Release $SEMVER_TAG"
 
+      - name: Write package signing key
+        env:
+          ODIGOS_PKG_SIGNING_KEY: ${{ secrets.ODIGOS_PKG_SIGNING_KEY }}
+        run: |
+          # Fail closed: a missing signing key must abort the release rather
+          # than publish unsigned packages.
+          if [ -z "$ODIGOS_PKG_SIGNING_KEY" ]; then
+            echo "::error::ODIGOS_PKG_SIGNING_KEY secret is empty; refusing to release unsigned packages"
+            exit 1
+          fi
+          KEY_FILE="$RUNNER_TEMP/odigos-pkg-signing-key.asc"
+          (umask 077; printf '%s\n' "$ODIGOS_PKG_SIGNING_KEY" > "$KEY_FILE")
+          echo "ODIGOS_PKG_SIGNING_KEY_FILE=$KEY_FILE" >> $GITHUB_ENV
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -101,6 +115,17 @@ jobs:
           version: latest
           args: release --clean
           workdir: collector
+        env:
+          # nfpm reads the signing key passphrase from
+          # NFPM_<nfpms id>_PASSPHRASE; the nfpms id is "packages".
+          NFPM_PACKAGES_PASSPHRASE: ${{ secrets.ODIGOS_PKG_SIGNING_KEY_PASSPHRASE }}
+
+      - name: Remove package signing key
+        if: always()
+        run: |
+          if [ -n "${ODIGOS_PKG_SIGNING_KEY_FILE:-}" ] && [ -f "$ODIGOS_PKG_SIGNING_KEY_FILE" ]; then
+            shred -u "$ODIGOS_PKG_SIGNING_KEY_FILE"
+          fi
 
       - name: Upload Linux packages to Artifact Registry
         uses: odigos-io/ci-core/upload-linux-packages@v1.0.5
