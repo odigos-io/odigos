@@ -1,0 +1,74 @@
+# TEMPORARY (RUN-1038): exercises the goreleaser checksum-signing config on this
+# branch before it runs in a real release. Delete before merging.
+name: Test Sign CLI Checksums
+
+on:
+  push:
+    branches:
+      - run-1038-sign-cli-checksums
+
+jobs:
+  test-sign:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # goreleaser snapshot versioning needs the tags
+
+      # release.yml embeds the chart packaged by its package-helm job; any real
+      # chart tgz satisfies the //go:embed, so reuse one from a published release.
+      - name: Stub embedded helm chart
+        run: |
+          curl -sfL -o cli/pkg/helm/embedded/odigos-1.35.1.tgz \
+            https://github.com/odigos-io/odigos/releases/download/v1.35.1/helm-chart-odigos-1.35.1.tgz
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.6"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.2
+
+      # Snapshot mode skips only validation and the publish/announce phases —
+      # the signs pipe still runs, so keyless signing is exercised end-to-end
+      # here without publishing anything.
+      - uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 #v7.0.0
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --snapshot --clean --skip=announce,publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_PRERELEASE: "false"
+          SKIP_HOMEBREW_UPDATE: "true"
+          HOMEBREW_GITHUB_API_TOKEN: "unused-in-snapshot"
+
+      - name: Assert checksums and bundle exist
+        run: |
+          ls -la dist/
+          test -f dist/checksums.txt
+          test -f dist/checksums.txt.sigstore.json
+
+      - name: Verify checksum signature
+        run: |
+          cosign verify-blob \
+            --bundle dist/checksums.txt.sigstore.json \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp '^https://github\.com/odigos-io/odigos/\.github/workflows/test-sign-cli-checksums\.yml@.*$' \
+            dist/checksums.txt
+
+      - name: Verify rejects a wrong identity
+        run: |
+          if cosign verify-blob \
+            --bundle dist/checksums.txt.sigstore.json \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp '^https://github\.com/evil/.*$' \
+            dist/checksums.txt; then
+            echo "::error::verification succeeded with the wrong identity"
+            exit 1
+          fi
