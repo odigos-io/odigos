@@ -489,12 +489,17 @@ type SystemWritebackSettings struct {
 	FlushIntervalSeconds int `json:"flush_interval_seconds"`
 }
 
+type SystemDetectionSettings struct {
+	AutoTransactionGuardrail bool `json:"auto_transaction_guardrail"`
+}
+
 type SystemSettings struct {
 	Sampling  SystemSamplingSettings  `json:"sampling"`
 	Retention SystemRetentionSettings `json:"retention"`
 	Findings  SystemFindingsSettings  `json:"findings"`
 	Capacity  SystemCapacitySettings  `json:"capacity"`
 	Writeback SystemWritebackSettings `json:"writeback"`
+	Detection SystemDetectionSettings `json:"detection"`
 }
 
 type StorageConnection struct {
