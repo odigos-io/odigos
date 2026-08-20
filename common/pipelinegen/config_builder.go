@@ -126,7 +126,7 @@ func CalculateGatewayConfig(
 			continue
 		}
 
-		destinationPipelineNames, err := configer.ModifyConfig(dest, currentConfig)
+		destinationPipelineNames, sendingQueueApplied, err := config.ConfigureDestination(configer, dest, currentConfig)
 		if err != nil {
 			status.Destination[dest.GetID()] = err
 			continue
@@ -142,9 +142,9 @@ func CalculateGatewayConfig(
 			pipeline := currentConfig.Service.Pipelines[pipelineName]
 			// add the forward connector as a receiver to the pipeline
 			pipeline.Receivers = append(pipeline.Receivers, connectorName)
-			// every destination pipeline should have a generic batch processor, except profiles:
-			// the batch processor does not support the profiles signal in the pinned collector build.
-			if !strings.HasPrefix(pipelineName, "profiles/") {
+			// Keep the batch processor when sending_queue could not be applied.
+			// Profiles are excluded: batch processor does not support that signal.
+			if !strings.HasPrefix(pipelineName, "profiles/") && !sendingQueueApplied {
 				pipeline.Processors = append(pipeline.Processors, consts.GenericBatchProcessorConfigKey)
 			}
 
