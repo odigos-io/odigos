@@ -166,6 +166,7 @@ import {
   PROMOTE_INSIGHTS_BASELINE_CLASS,
   RESET_INSIGHTS_BASELINE_CLASS,
   RESET_INSIGHTS_TRANSACTION_BASELINES,
+  FORCE_PROMOTE_INSIGHTS_SERVICE,
   DELETE_INSIGHTS_TRANSACTION,
   UPSERT_INSIGHTS_POLICY,
   DELETE_INSIGHTS_POLICY,
@@ -549,6 +550,10 @@ const operations: OdigosApiOperations = {
   RESET_INSIGHTS_TRANSACTION_BASELINES: {
     document: RESET_INSIGHTS_TRANSACTION_BASELINES,
     transformResult: (raw: unknown) => (raw as { resetInsightsTransactionBaselines?: boolean } | null | undefined)?.resetInsightsTransactionBaselines ?? false,
+  },
+  FORCE_PROMOTE_INSIGHTS_SERVICE: {
+    document: FORCE_PROMOTE_INSIGHTS_SERVICE,
+    transformResult: (raw: unknown) => (raw as { forcePromoteInsightsService?: boolean } | null | undefined)?.forcePromoteInsightsService ?? false,
   },
   DELETE_INSIGHTS_TRANSACTION: {
     document: DELETE_INSIGHTS_TRANSACTION,

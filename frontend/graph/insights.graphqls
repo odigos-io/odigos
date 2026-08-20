@@ -906,6 +906,12 @@ extend type Mutation {
   ): Boolean!
   resetInsightsTransactionBaselines(transactionId: ID!): Boolean!
   """
+  Force-promote every scored baseline class on every transaction of a service
+  (POST /api/v1/services/transaction-guardrail/force-promote). May auto-enable
+  the transaction guardrail when the global setting is on.
+  """
+  forcePromoteInsightsService(namespace: String!, service: String!): Boolean!
+  """
   Permanently removes a transaction and related state (baselines, samples, issues, txn-scoped policies).
   """
   deleteInsightsTransaction(transactionId: ID!): Boolean!

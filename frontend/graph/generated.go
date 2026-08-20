@@ -1572,6 +1572,7 @@ type ComplexityRoot struct {
 		DisableSourceProfiling              func(childComplexity int, namespace string, kind string, name string) int
 		DismissInsightsGuardrailViolation   func(childComplexity int, action model.InsightsViolationActionInput) int
 		EnableSourceProfiling               func(childComplexity int, namespace string, kind string, name string) int
+		ForcePromoteInsightsService         func(childComplexity int, namespace string, service string) int
 		PauseOdigos                         func(childComplexity int) int
 		PersistK8sNamespaces                func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
 		PersistK8sSources                   func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
@@ -2191,6 +2192,7 @@ type MutationResolver interface {
 	PromoteInsightsBaselineClass(ctx context.Context, transactionID string, class model.InsightsDeviationClass) (*model.InsightsPromoteResult, error)
 	ResetInsightsBaselineClass(ctx context.Context, transactionID string, class model.InsightsDeviationClass) (bool, error)
 	ResetInsightsTransactionBaselines(ctx context.Context, transactionID string) (bool, error)
+	ForcePromoteInsightsService(ctx context.Context, namespace string, service string) (bool, error)
 	DeleteInsightsTransaction(ctx context.Context, transactionID string) (bool, error)
 	UpsertInsightsPolicy(ctx context.Context, policy model.InsightsPolicyInput) (*model.InsightsPolicy, error)
 	DeleteInsightsPolicy(ctx context.Context, scope model.InsightsPolicyScope, scopeKey string) (bool, error)
@@ -9382,6 +9384,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.EnableSourceProfiling(childComplexity, args["namespace"].(string), args["kind"].(string), args["name"].(string)), true
 
+	case "Mutation.forcePromoteInsightsService":
+		if e.complexity.Mutation.ForcePromoteInsightsService == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_forcePromoteInsightsService_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ForcePromoteInsightsService(childComplexity, args["namespace"].(string), args["service"].(string)), true
+
 	case "Mutation.pauseOdigos":
 		if e.complexity.Mutation.PauseOdigos == nil {
 			break
@@ -14050,6 +14064,57 @@ func (ec *executionContext) field_Mutation_enableSourceProfiling_argsName(
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 	if tmp, ok := rawArgs["name"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_forcePromoteInsightsService_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_forcePromoteInsightsService_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg0
+	arg1, err := ec.field_Mutation_forcePromoteInsightsService_argsService(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["service"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_forcePromoteInsightsService_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_forcePromoteInsightsService_argsService(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["service"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("service"))
+	if tmp, ok := rawArgs["service"]; ok {
 		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
@@ -60975,6 +61040,61 @@ func (ec *executionContext) fieldContext_Mutation_resetInsightsTransactionBaseli
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_forcePromoteInsightsService(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_forcePromoteInsightsService(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ForcePromoteInsightsService(rctx, fc.Args["namespace"].(string), fc.Args["service"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_forcePromoteInsightsService(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_forcePromoteInsightsService_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_deleteInsightsTransaction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_deleteInsightsTransaction(ctx, field)
 	if err != nil {
@@ -94392,6 +94512,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "resetInsightsTransactionBaselines":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_resetInsightsTransactionBaselines(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "forcePromoteInsightsService":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_forcePromoteInsightsService(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

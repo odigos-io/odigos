@@ -111,6 +111,17 @@ func (c *Client) PromoteBaselineClass(ctx context.Context, transactionID int64, 
 	return &result, nil
 }
 
+// ForcePromoteService promotes every scored baseline class on every transaction
+// of the service (POST /api/v1/services/transaction-guardrail/force-promote).
+func (c *Client) ForcePromoteService(ctx context.Context, namespace, service string) error {
+	endpoint := c.apiEndpoint("services", "transaction-guardrail", "force-promote")
+	query := endpoint.Query()
+	query.Set("namespace", namespace)
+	query.Set("service", service)
+	endpoint.RawQuery = query.Encode()
+	return c.do(ctx, http.MethodPost, endpoint, nil, nil)
+}
+
 func (c *Client) ResetBaselineClass(ctx context.Context, transactionID int64, class DeviationClass) error {
 	return c.do(ctx, http.MethodPost, c.transactionEndpoint(transactionID, "baseline", string(class), "reset"), nil, nil)
 }

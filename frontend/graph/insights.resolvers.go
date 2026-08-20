@@ -388,6 +388,18 @@ func (r *mutationResolver) ResetInsightsTransactionBaselines(ctx context.Context
 	return true, nil
 }
 
+// ForcePromoteInsightsService is the resolver for the forcePromoteInsightsService field.
+func (r *mutationResolver) ForcePromoteInsightsService(ctx context.Context, namespace string, service string) (bool, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err := client.ForcePromoteService(ctx, namespace, service); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
+}
+
 // DeleteInsightsTransaction is the resolver for the deleteInsightsTransaction field.
 func (r *mutationResolver) DeleteInsightsTransaction(ctx context.Context, transactionID string) (bool, error) {
 	client, err := r.insightsClient(ctx)
