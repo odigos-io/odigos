@@ -13,7 +13,7 @@ require (
 	github.com/odigos-io/odigos/recommendations v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/status v0.0.0-00010101000000-000000000000
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.38.2
+	github.com/onsi/gomega v1.42.1
 	github.com/open-policy-agent/cert-controller v0.14.0
 	github.com/prometheus/common v0.67.5
 	github.com/stretchr/testify v1.11.1
