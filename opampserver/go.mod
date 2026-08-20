@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/opampserver
 go 1.26.2
 
 require (
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
