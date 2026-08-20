@@ -65,6 +65,12 @@ func (c *Client) UpsertGuardrailAndRead(ctx context.Context, guardrail Guardrail
 }
 
 func (c *Client) UpdateSystemSettingsAndRead(ctx context.Context, settings SystemSettings) (SystemSettings, error) {
+	current, err := c.GetSystemSettings(ctx)
+	if err == nil && current != nil {
+		// GraphQL does not expose detection toggles yet; preserve the stored
+		// value so a settings save from the product UI cannot wipe them.
+		settings.Detection = current.Detection
+	}
 	if err := c.UpdateSystemSettings(ctx, settings); err != nil {
 		return SystemSettings{}, err
 	}
