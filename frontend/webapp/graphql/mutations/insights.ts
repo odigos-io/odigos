@@ -80,6 +80,12 @@ export const RESET_INSIGHTS_TRANSACTION_BASELINES = gql`
   }
 `;
 
+export const FORCE_PROMOTE_INSIGHTS_SERVICE = gql`
+  mutation ForcePromoteInsightsService($namespace: String!, $service: String!) {
+    forcePromoteInsightsService(namespace: $namespace, service: $service)
+  }
+`;
+
 export const DELETE_INSIGHTS_TRANSACTION = gql`
   mutation DeleteInsightsTransaction($transactionId: ID!) {
     deleteInsightsTransaction(transactionId: $transactionId)
