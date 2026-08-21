@@ -6,6 +6,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/status"
@@ -42,10 +43,35 @@ func syncWorkload(ctx context.Context, client ctrl.Client, pw k8sconsts.PodWorkl
 	}
 
 	var pods []corev1.Pod
-	if pw.Kind == k8sconsts.WorkloadKindStaticPod {
+	switch pw.Kind {
+	case k8sconsts.WorkloadKindStaticPod:
 		// Static pods are the workload themselves and have no label selector.
 		pods = []corev1.Pod{*workloadObj.(*corev1.Pod)}
-	} else {
+	case k8sconsts.WorkloadKindCronJob:
+		// CronJobs have no label selector. Their pods are owned by Jobs named
+		// <cronjob-name>-<timestamp>; resolve ownership the same way as ownerreference.go.
+		podList := &corev1.PodList{}
+		err = client.List(ctx, podList, ctrl.InNamespace(pw.Namespace))
+		if err != nil {
+			return err
+		}
+		for i := range podList.Items {
+			pod := &podList.Items[i]
+			for _, owner := range pod.OwnerReferences {
+				if owner.Kind != string(k8sconsts.WorkloadKindJob) {
+					continue
+				}
+				workloadName, workloadKind, err := workload.GetWorkloadNameAndKind(owner.Name, owner.Kind, pod)
+				if err != nil {
+					continue
+				}
+				if workloadKind == k8sconsts.WorkloadKindCronJob && workloadName == pw.Name {
+					pods = append(pods, *pod)
+					break
+				}
+			}
+		}
+	default:
 		genericWorkload, err := workload.ObjectToWorkload(workloadObj)
 		if err != nil {
 			return err
@@ -53,12 +79,14 @@ func syncWorkload(ctx context.Context, client ctrl.Client, pw k8sconsts.PodWorkl
 
 		labelSelector := genericWorkload.LabelSelector()
 		if labelSelector == nil {
-			// TODO: handle this case
+			logger := commonlogger.FromContext(ctx)
+			logger.Error(nil, "unexpected nil label selector for workload",
+				"name", pw.Name, "namespace", pw.Namespace, "kind", pw.Kind)
 			return nil
 		}
 
 		podList := &corev1.PodList{}
-		err = client.List(ctx, podList, ctrl.MatchingLabels(labelSelector.MatchLabels))
+		err = client.List(ctx, podList, ctrl.InNamespace(pw.Namespace), ctrl.MatchingLabels(labelSelector.MatchLabels))
 		if err != nil {
 			return err
 		}
@@ -68,6 +96,9 @@ func syncWorkload(ctx context.Context, client ctrl.Client, pw k8sconsts.PodWorkl
 	podsManifestInjectionStatus := odigosv1.PodsManifestInjectionStatus{}
 
 	for _, pod := range pods {
+		if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
+			continue
+		}
 		if agentHashValue, ok := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]; ok {
 			if agentHashValue == ic.Spec.AgentsMetaHash {
 				podsManifestInjectionStatus.HasInjectedUpToDatePods = true
