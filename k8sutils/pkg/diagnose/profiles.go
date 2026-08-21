@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -32,6 +33,7 @@ func ProfileServiceNames() []string {
 	for name := range servicesProfilingMetadata {
 		names = append(names, name)
 	}
+	sort.Strings(names)
 	return names
 }
 
@@ -142,6 +144,13 @@ func FetchServiceProfiles(ctx context.Context, client kubernetes.Interface, buil
 		return nil
 	}
 
+	// Dry-run only needs to confirm pods exist; capturing pprof (especially CPU
+	// profiles) is slow and would hit the API for data that is discarded.
+	if _, dryRun := builder.(*DryRunBuilder); dryRun {
+		return nil
+	}
+
+	lim := newLimiter(maxConcurrentK8sOps)
 	var podsWaitGroup sync.WaitGroup
 	for i := range podsToProfile.Items {
 		pod := &podsToProfile.Items[i]
@@ -155,10 +164,14 @@ func FetchServiceProfiles(ctx context.Context, client kubernetes.Interface, buil
 
 			var profileWaitGroup sync.WaitGroup
 			for _, profileMetricFunction := range ProfilingMetricsFunctions {
+				if err := lim.acquire(ctx); err != nil {
+					break
+				}
 				profileFunc := profileMetricFunction
 				profileWaitGroup.Add(1)
 
 				go func(profileFunc ProfileInterface) {
+					defer lim.release()
 					defer profileWaitGroup.Done()
 
 					const maxRetries = 3
@@ -178,7 +191,9 @@ func FetchServiceProfiles(ctx context.Context, client kubernetes.Interface, buil
 							"attempt", attempt)
 
 						if attempt < maxRetries {
-							time.Sleep(5 * time.Second)
+							if !sleepWithContext(ctx, 5*time.Second) {
+								return
+							}
 						} else {
 							klog.V(1).ErrorS(err, "Max retries reached, giving up",
 								"podName", pod.Name,
