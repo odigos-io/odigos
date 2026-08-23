@@ -40,7 +40,7 @@ debug-build-odiglet:
 	$(MAKE) generate
 	go build -o odiglet -gcflags "all=-N -l" cmd/main.go
 
-test: generate
+test: materialize-obi generate
 	go test -a -v ./...
 
 TOOLS := $(PWD)/.tools
