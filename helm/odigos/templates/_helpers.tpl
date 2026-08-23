@@ -115,6 +115,38 @@ true
   {{- regexReplaceAll "-.*" .Capabilities.KubeVersion.Version "" -}}
   {{- end }}
 
+{{/*
+  Halve a Kubernetes resource quantity (e.g. "500m" → "250m", "512Mi" → "256Mi", "1Gi" → "512Mi").
+  Bare integer CPU cores are treated as whole cores and returned in millicores.
+  Gi/Ti are converted to Mi before dividing so odd multiples (e.g. 1Gi) do not truncate to 0.
+*/}}
+{{- define "odigos.halfQuantity" -}}
+{{- $raw := . | toString -}}
+{{- $number := regexFind "^[0-9]+" $raw -}}
+{{- $unit := regexFind "[a-zA-Z]+$" $raw -}}
+{{- if not $number -}}
+  {{- fail (printf "Invalid resource quantity for halving: %q" $raw) -}}
+{{- end -}}
+{{- $num := int $number -}}
+{{- if and (not $unit) (eq $raw $number) -}}
+  {{- printf "%dm" (div (mul $num 1000) 2) -}}
+{{- else if eq $unit "Gi" -}}
+  {{- printf "%dMi" (div (mul $num 1024) 2) -}}
+{{- else if eq $unit "Ti" -}}
+  {{- printf "%dMi" (div (mul $num 1048576) 2) -}}
+{{- else -}}
+  {{- printf "%d%s" (div $num 2) $unit -}}
+{{- end -}}
+{{- end }}
+
+{{- define "odigos.halfResources" -}}
+{{- $out := dict -}}
+{{- range $k, $v := . -}}
+  {{- $_ := set $out $k (include "odigos.halfQuantity" $v) -}}
+{{- end -}}
+{{- toYaml $out -}}
+{{- end }}
+
 {{- define "odigos.odiglet.resolvedResources" -}}
 {{- $defaults := dict "cpu" "500m" "memory" "512Mi" -}}
 {{- $resources := deepCopy (.Values.odiglet.resources | default dict) -}}
@@ -126,17 +158,17 @@ true
   {{- $_ := set $resources "limits" $requests -}}
 
 {{- else if and (empty $requests) (not (empty $limits)) -}}
-  {{- $_ := set $resources "requests" $limits -}}
+  {{- $_ := set $resources "requests" (include "odigos.halfResources" $limits | fromYaml) -}}
 
 {{- else if and (empty $limits) (empty $requests) -}}
   {{- $sizingYaml := include "odigos.odiglet.sizing.resources" . -}}
   {{- $sizing := $sizingYaml | fromYaml -}}
   {{- if $sizing }}
     {{- $_ := set $resources "limits" $sizing -}}
-    {{- $_ := set $resources "requests" $sizing -}}
+    {{- $_ := set $resources "requests" (include "odigos.halfResources" $sizing | fromYaml) -}}
   {{- else }}
     {{- $_ := set $resources "limits" $defaults -}}
-    {{- $_ := set $resources "requests" $defaults -}}
+    {{- $_ := set $resources "requests" (include "odigos.halfResources" $defaults | fromYaml) -}}
   {{- end }}
 {{- end }}
 

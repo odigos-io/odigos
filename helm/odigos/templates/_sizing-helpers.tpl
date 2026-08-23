@@ -58,9 +58,9 @@
   gatewayMemoryLimit: 850
   gatewayCPURequest: 1250
   gatewayCPULimit: 1250
-  nodeMemoryRequest: 500
+  nodeMemoryRequest: 375
   nodeMemoryLimit: 750
-  nodeCPURequest: 500
+  nodeCPURequest: 375
   nodeCPULimit: 750
   {{- else if eq $s "size_xl" }}
   gatewayMinReplicas: 5
@@ -69,9 +69,9 @@
   gatewayMemoryLimit: 2000
   gatewayCPURequest: 1500
   gatewayCPULimit: 1500
-  nodeMemoryRequest: 1024
+  nodeMemoryRequest: 512
   nodeMemoryLimit: 1024
-  nodeCPURequest: 1000
+  nodeCPURequest: 500
   nodeCPULimit: 1000
   {{- else }} {{/* default size_m */}}
   gatewayMinReplicas: 2
