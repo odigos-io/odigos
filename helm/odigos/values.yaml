@@ -989,7 +989,11 @@ odiglet:
   affinity: {}
 
   # @schema
-  # description: Priority class name. Set to empty string to disable.
+  # description: |-
+  #   Priority class name for the odiglet DaemonSet. Default is system-node-critical so
+  #   odiglet is treated as a critical node pod and is not evicted under resource pressure.
+  #   Set to empty string to disable. Using any other value may allow eviction on low-resource
+  #   nodes; Helm prints a warning on install/upgrade in that case.
   # @schema
   priorityClassName: 'system-node-critical'
 
