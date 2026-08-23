@@ -241,6 +241,7 @@ func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
 		Findings:  SystemFindingsSettings{DefaultWindowHours: 24, MaxWindowHours: 168},
 		Capacity:  SystemCapacitySettings{MaxResidentTransactions: 1000, MaxBaselineSetMembers: 500},
 		Writeback: SystemWritebackSettings{FlushIntervalSeconds: 30},
+		Detection: SystemDetectionSettings{AutoTransactionGuardrail: true},
 	}
 	gql := SystemSettingsToModel(settings)
 	back, err := SystemSettingsFromInput(model.InsightsSystemSettingsInput{
@@ -249,6 +250,7 @@ func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
 		Findings:  &model.InsightsSystemFindingsSettingsInput{DefaultWindowHours: gql.Findings.DefaultWindowHours, MaxWindowHours: gql.Findings.MaxWindowHours},
 		Capacity:  &model.InsightsSystemCapacitySettingsInput{MaxResidentTransactions: gql.Capacity.MaxResidentTransactions, MaxBaselineSetMembers: gql.Capacity.MaxBaselineSetMembers},
 		Writeback: &model.InsightsSystemWritebackSettingsInput{FlushIntervalSeconds: gql.Writeback.FlushIntervalSeconds},
+		Detection: &model.InsightsSystemDetectionSettingsInput{AutoTransactionGuardrail: gql.Detection.AutoTransactionGuardrail},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, settings, back)

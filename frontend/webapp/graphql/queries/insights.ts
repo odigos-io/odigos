@@ -243,6 +243,9 @@ const SYSTEM_SETTINGS_FIELDS = `
   writeback {
     flushIntervalSeconds
   }
+  detection {
+    autoTransactionGuardrail
+  }
 `;
 
 const STORAGE_HEALTH_FIELDS = `

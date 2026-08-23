@@ -400,6 +400,30 @@ func (r *mutationResolver) ForcePromoteInsightsService(ctx context.Context, name
 	return true, nil
 }
 
+// EnableInsightsTransactionGuardrail is the resolver for the enableInsightsTransactionGuardrail field.
+func (r *mutationResolver) EnableInsightsTransactionGuardrail(ctx context.Context, namespace string, service string) (bool, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err := client.EnableTransactionGuardrail(ctx, namespace, service); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
+}
+
+// DisableInsightsTransactionGuardrail is the resolver for the disableInsightsTransactionGuardrail field.
+func (r *mutationResolver) DisableInsightsTransactionGuardrail(ctx context.Context, namespace string, service string) (bool, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err := client.DisableTransactionGuardrail(ctx, namespace, service); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
+}
+
 // DeleteInsightsTransaction is the resolver for the deleteInsightsTransaction field.
 func (r *mutationResolver) DeleteInsightsTransaction(ctx context.Context, transactionID string) (bool, error) {
 	client, err := r.insightsClient(ctx)

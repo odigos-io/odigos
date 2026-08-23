@@ -1044,6 +1044,10 @@ type ComplexityRoot struct {
 		MaxResidentTransactions func(childComplexity int) int
 	}
 
+	InsightsSystemDetectionSettings struct {
+		AutoTransactionGuardrail func(childComplexity int) int
+	}
+
 	InsightsSystemFindingsSettings struct {
 		DefaultWindowHours func(childComplexity int) int
 		MaxWindowHours     func(childComplexity int) int
@@ -1060,6 +1064,7 @@ type ComplexityRoot struct {
 
 	InsightsSystemSettings struct {
 		Capacity  func(childComplexity int) int
+		Detection func(childComplexity int) int
 		Findings  func(childComplexity int) int
 		Retention func(childComplexity int) int
 		Sampling  func(childComplexity int) int
@@ -1569,8 +1574,10 @@ type ComplexityRoot struct {
 		DeleteInsightsTransaction           func(childComplexity int, transactionID string) int
 		DeleteInstrumentationRule           func(childComplexity int, ruleID string) int
 		DeleteNoisyOperationRule            func(childComplexity int, samplingID string, ruleID string) int
+		DisableInsightsTransactionGuardrail func(childComplexity int, namespace string, service string) int
 		DisableSourceProfiling              func(childComplexity int, namespace string, kind string, name string) int
 		DismissInsightsGuardrailViolation   func(childComplexity int, action model.InsightsViolationActionInput) int
+		EnableInsightsTransactionGuardrail  func(childComplexity int, namespace string, service string) int
 		EnableSourceProfiling               func(childComplexity int, namespace string, kind string, name string) int
 		ForcePromoteInsightsService         func(childComplexity int, namespace string, service string) int
 		PauseOdigos                         func(childComplexity int) int
@@ -2193,6 +2200,8 @@ type MutationResolver interface {
 	ResetInsightsBaselineClass(ctx context.Context, transactionID string, class model.InsightsDeviationClass) (bool, error)
 	ResetInsightsTransactionBaselines(ctx context.Context, transactionID string) (bool, error)
 	ForcePromoteInsightsService(ctx context.Context, namespace string, service string) (bool, error)
+	EnableInsightsTransactionGuardrail(ctx context.Context, namespace string, service string) (bool, error)
+	DisableInsightsTransactionGuardrail(ctx context.Context, namespace string, service string) (bool, error)
 	DeleteInsightsTransaction(ctx context.Context, transactionID string) (bool, error)
 	UpsertInsightsPolicy(ctx context.Context, policy model.InsightsPolicyInput) (*model.InsightsPolicy, error)
 	DeleteInsightsPolicy(ctx context.Context, scope model.InsightsPolicyScope, scopeKey string) (bool, error)
@@ -6998,6 +7007,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsSystemCapacitySettings.MaxResidentTransactions(childComplexity), true
 
+	case "InsightsSystemDetectionSettings.autoTransactionGuardrail":
+		if e.complexity.InsightsSystemDetectionSettings.AutoTransactionGuardrail == nil {
+			break
+		}
+
+		return e.complexity.InsightsSystemDetectionSettings.AutoTransactionGuardrail(childComplexity), true
+
 	case "InsightsSystemFindingsSettings.defaultWindowHours":
 		if e.complexity.InsightsSystemFindingsSettings.DefaultWindowHours == nil {
 			break
@@ -7039,6 +7055,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsSystemSettings.Capacity(childComplexity), true
+
+	case "InsightsSystemSettings.detection":
+		if e.complexity.InsightsSystemSettings.Detection == nil {
+			break
+		}
+
+		return e.complexity.InsightsSystemSettings.Detection(childComplexity), true
 
 	case "InsightsSystemSettings.findings":
 		if e.complexity.InsightsSystemSettings.Findings == nil {
@@ -9348,6 +9371,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteNoisyOperationRule(childComplexity, args["samplingId"].(string), args["ruleId"].(string)), true
 
+	case "Mutation.disableInsightsTransactionGuardrail":
+		if e.complexity.Mutation.DisableInsightsTransactionGuardrail == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_disableInsightsTransactionGuardrail_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DisableInsightsTransactionGuardrail(childComplexity, args["namespace"].(string), args["service"].(string)), true
+
 	case "Mutation.disableSourceProfiling":
 		if e.complexity.Mutation.DisableSourceProfiling == nil {
 			break
@@ -9371,6 +9406,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DismissInsightsGuardrailViolation(childComplexity, args["action"].(model.InsightsViolationActionInput)), true
+
+	case "Mutation.enableInsightsTransactionGuardrail":
+		if e.complexity.Mutation.EnableInsightsTransactionGuardrail == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_enableInsightsTransactionGuardrail_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EnableInsightsTransactionGuardrail(childComplexity, args["namespace"].(string), args["service"].(string)), true
 
 	case "Mutation.enableSourceProfiling":
 		if e.complexity.Mutation.EnableSourceProfiling == nil {
@@ -11848,6 +11895,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputInsightsLearningPolicyInput,
 		ec.unmarshalInputInsightsPolicyInput,
 		ec.unmarshalInputInsightsSystemCapacitySettingsInput,
+		ec.unmarshalInputInsightsSystemDetectionSettingsInput,
 		ec.unmarshalInputInsightsSystemFindingsSettingsInput,
 		ec.unmarshalInputInsightsSystemRetentionSettingsInput,
 		ec.unmarshalInputInsightsSystemSamplingSettingsInput,
@@ -13895,6 +13943,57 @@ func (ec *executionContext) field_Mutation_deleteNoisyOperationRule_argsRuleID(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_disableInsightsTransactionGuardrail_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_disableInsightsTransactionGuardrail_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg0
+	arg1, err := ec.field_Mutation_disableInsightsTransactionGuardrail_argsService(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["service"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_disableInsightsTransactionGuardrail_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_disableInsightsTransactionGuardrail_argsService(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["service"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("service"))
+	if tmp, ok := rawArgs["service"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_disableSourceProfiling_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -13994,6 +14093,57 @@ func (ec *executionContext) field_Mutation_dismissInsightsGuardrailViolation_arg
 	}
 
 	var zeroVal model.InsightsViolationActionInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_enableInsightsTransactionGuardrail_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_enableInsightsTransactionGuardrail_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg0
+	arg1, err := ec.field_Mutation_enableInsightsTransactionGuardrail_argsService(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["service"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_enableInsightsTransactionGuardrail_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_enableInsightsTransactionGuardrail_argsService(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["service"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("service"))
+	if tmp, ok := rawArgs["service"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -33448,6 +33598,8 @@ func (ec *executionContext) fieldContext_Insights_systemSettings(_ context.Conte
 				return ec.fieldContext_InsightsSystemSettings_capacity(ctx, field)
 			case "writeback":
 				return ec.fieldContext_InsightsSystemSettings_writeback(ctx, field)
+			case "detection":
+				return ec.fieldContext_InsightsSystemSettings_detection(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsSystemSettings", field.Name)
 		},
@@ -46229,6 +46381,50 @@ func (ec *executionContext) fieldContext_InsightsSystemCapacitySettings_maxBasel
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsSystemDetectionSettings_autoTransactionGuardrail(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSystemDetectionSettings) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsSystemDetectionSettings_autoTransactionGuardrail(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AutoTransactionGuardrail, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsSystemDetectionSettings_autoTransactionGuardrail(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsSystemDetectionSettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InsightsSystemFindingsSettings_defaultWindowHours(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSystemFindingsSettings) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsSystemFindingsSettings_defaultWindowHours(ctx, field)
 	if err != nil {
@@ -46690,6 +46886,54 @@ func (ec *executionContext) fieldContext_InsightsSystemSettings_writeback(_ cont
 				return ec.fieldContext_InsightsSystemWritebackSettings_flushIntervalSeconds(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsSystemWritebackSettings", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsSystemSettings_detection(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSystemSettings) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsSystemSettings_detection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Detection, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsSystemDetectionSettings)
+	fc.Result = res
+	return ec.marshalNInsightsSystemDetectionSettings2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSystemDetectionSettings(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsSystemSettings_detection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsSystemSettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "autoTransactionGuardrail":
+				return ec.fieldContext_InsightsSystemDetectionSettings_autoTransactionGuardrail(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsSystemDetectionSettings", field.Name)
 		},
 	}
 	return fc, nil
@@ -61095,6 +61339,116 @@ func (ec *executionContext) fieldContext_Mutation_forcePromoteInsightsService(ct
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_enableInsightsTransactionGuardrail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_enableInsightsTransactionGuardrail(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EnableInsightsTransactionGuardrail(rctx, fc.Args["namespace"].(string), fc.Args["service"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_enableInsightsTransactionGuardrail(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_enableInsightsTransactionGuardrail_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_disableInsightsTransactionGuardrail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_disableInsightsTransactionGuardrail(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DisableInsightsTransactionGuardrail(rctx, fc.Args["namespace"].(string), fc.Args["service"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_disableInsightsTransactionGuardrail(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_disableInsightsTransactionGuardrail_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_deleteInsightsTransaction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_deleteInsightsTransaction(ctx, field)
 	if err != nil {
@@ -61905,6 +62259,8 @@ func (ec *executionContext) fieldContext_Mutation_updateInsightsSystemSettings(c
 				return ec.fieldContext_InsightsSystemSettings_capacity(ctx, field)
 			case "writeback":
 				return ec.fieldContext_InsightsSystemSettings_writeback(ctx, field)
+			case "detection":
+				return ec.fieldContext_InsightsSystemSettings_detection(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsSystemSettings", field.Name)
 		},
@@ -80897,6 +81253,33 @@ func (ec *executionContext) unmarshalInputInsightsSystemCapacitySettingsInput(ct
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputInsightsSystemDetectionSettingsInput(ctx context.Context, obj any) (model.InsightsSystemDetectionSettingsInput, error) {
+	var it model.InsightsSystemDetectionSettingsInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"autoTransactionGuardrail"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "autoTransactionGuardrail":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoTransactionGuardrail"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoTransactionGuardrail = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputInsightsSystemFindingsSettingsInput(ctx context.Context, obj any) (model.InsightsSystemFindingsSettingsInput, error) {
 	var it model.InsightsSystemFindingsSettingsInput
 	asMap := map[string]any{}
@@ -80999,7 +81382,7 @@ func (ec *executionContext) unmarshalInputInsightsSystemSettingsInput(ctx contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"sampling", "retention", "findings", "capacity", "writeback"}
+	fieldsInOrder := [...]string{"sampling", "retention", "findings", "capacity", "writeback", "detection"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -81041,6 +81424,13 @@ func (ec *executionContext) unmarshalInputInsightsSystemSettingsInput(ctx contex
 				return it, err
 			}
 			it.Writeback = data
+		case "detection":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("detection"))
+			data, err := ec.unmarshalNInsightsSystemDetectionSettingsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSystemDetectionSettingsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Detection = data
 		}
 	}
 
@@ -90230,6 +90620,45 @@ func (ec *executionContext) _InsightsSystemCapacitySettings(ctx context.Context,
 	return out
 }
 
+var insightsSystemDetectionSettingsImplementors = []string{"InsightsSystemDetectionSettings"}
+
+func (ec *executionContext) _InsightsSystemDetectionSettings(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsSystemDetectionSettings) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsSystemDetectionSettingsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsSystemDetectionSettings")
+		case "autoTransactionGuardrail":
+			out.Values[i] = ec._InsightsSystemDetectionSettings_autoTransactionGuardrail(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var insightsSystemFindingsSettingsImplementors = []string{"InsightsSystemFindingsSettings"}
 
 func (ec *executionContext) _InsightsSystemFindingsSettings(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsSystemFindingsSettings) graphql.Marshaler {
@@ -90390,6 +90819,11 @@ func (ec *executionContext) _InsightsSystemSettings(ctx context.Context, sel ast
 			}
 		case "writeback":
 			out.Values[i] = ec._InsightsSystemSettings_writeback(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "detection":
+			out.Values[i] = ec._InsightsSystemSettings_detection(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -94519,6 +94953,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "forcePromoteInsightsService":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_forcePromoteInsightsService(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "enableInsightsTransactionGuardrail":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_enableInsightsTransactionGuardrail(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "disableInsightsTransactionGuardrail":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_disableInsightsTransactionGuardrail(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -102605,6 +103053,21 @@ func (ec *executionContext) marshalNInsightsSystemCapacitySettings2ᚖgithubᚗc
 
 func (ec *executionContext) unmarshalNInsightsSystemCapacitySettingsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSystemCapacitySettingsInput(ctx context.Context, v any) (*model.InsightsSystemCapacitySettingsInput, error) {
 	res, err := ec.unmarshalInputInsightsSystemCapacitySettingsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsSystemDetectionSettings2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSystemDetectionSettings(ctx context.Context, sel ast.SelectionSet, v *model.InsightsSystemDetectionSettings) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsSystemDetectionSettings(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsSystemDetectionSettingsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSystemDetectionSettingsInput(ctx context.Context, v any) (*model.InsightsSystemDetectionSettingsInput, error) {
+	res, err := ec.unmarshalInputInsightsSystemDetectionSettingsInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

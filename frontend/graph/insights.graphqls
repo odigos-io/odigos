@@ -705,12 +705,22 @@ type InsightsSystemWritebackSettings {
   flushIntervalSeconds: Int!
 }
 
+type InsightsSystemDetectionSettings {
+  """
+  When true, automatically create an enforced allowed_transactions guardrail
+  when a service finishes promoting. Applies only going forward — already-promoted
+  services are not backfilled. Per-service disable uses rule mode off.
+  """
+  autoTransactionGuardrail: Boolean!
+}
+
 type InsightsSystemSettings {
   sampling: InsightsSystemSamplingSettings!
   retention: InsightsSystemRetentionSettings!
   findings: InsightsSystemFindingsSettings!
   capacity: InsightsSystemCapacitySettings!
   writeback: InsightsSystemWritebackSettings!
+  detection: InsightsSystemDetectionSettings!
 }
 
 input InsightsSystemSamplingSettingsInput {
@@ -736,12 +746,17 @@ input InsightsSystemWritebackSettingsInput {
   flushIntervalSeconds: Int!
 }
 
+input InsightsSystemDetectionSettingsInput {
+  autoTransactionGuardrail: Boolean!
+}
+
 input InsightsSystemSettingsInput {
   sampling: InsightsSystemSamplingSettingsInput!
   retention: InsightsSystemRetentionSettingsInput!
   findings: InsightsSystemFindingsSettingsInput!
   capacity: InsightsSystemCapacitySettingsInput!
   writeback: InsightsSystemWritebackSettingsInput!
+  detection: InsightsSystemDetectionSettingsInput!
 }
 
 # Storage health (ClickHouse + writeback snapshot, for the settings/health page)
@@ -911,6 +926,22 @@ extend type Mutation {
   the transaction guardrail when the global setting is on.
   """
   forcePromoteInsightsService(namespace: String!, service: String!): Boolean!
+  """
+  Enable a service's transaction guardrail (POST /api/v1/services/transaction-guardrail/enable).
+  Seeds allowed_transactions from current ops and sets the rule to enforce.
+  """
+  enableInsightsTransactionGuardrail(
+    namespace: String!
+    service: String!
+  ): Boolean!
+  """
+  Disable a service's transaction guardrail (POST /api/v1/services/transaction-guardrail/disable).
+  Sets allowed_transactions to mode off so auto-enable will not recreate it.
+  """
+  disableInsightsTransactionGuardrail(
+    namespace: String!
+    service: String!
+  ): Boolean!
   """
   Permanently removes a transaction and related state (baselines, samples, issues, txn-scoped policies).
   """

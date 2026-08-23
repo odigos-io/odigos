@@ -1270,6 +1270,17 @@ type InsightsSystemCapacitySettingsInput struct {
 	MaxBaselineSetMembers   int `json:"maxBaselineSetMembers"`
 }
 
+type InsightsSystemDetectionSettings struct {
+	// When true, automatically create an enforced allowed_transactions guardrail
+	// when a service finishes promoting. Applies only going forward — already-promoted
+	// services are not backfilled. Per-service disable uses rule mode off.
+	AutoTransactionGuardrail bool `json:"autoTransactionGuardrail"`
+}
+
+type InsightsSystemDetectionSettingsInput struct {
+	AutoTransactionGuardrail bool `json:"autoTransactionGuardrail"`
+}
+
 type InsightsSystemFindingsSettings struct {
 	DefaultWindowHours int `json:"defaultWindowHours"`
 	MaxWindowHours     int `json:"maxWindowHours"`
@@ -1304,6 +1315,7 @@ type InsightsSystemSettings struct {
 	Findings  *InsightsSystemFindingsSettings  `json:"findings"`
 	Capacity  *InsightsSystemCapacitySettings  `json:"capacity"`
 	Writeback *InsightsSystemWritebackSettings `json:"writeback"`
+	Detection *InsightsSystemDetectionSettings `json:"detection"`
 }
 
 type InsightsSystemSettingsInput struct {
@@ -1312,6 +1324,7 @@ type InsightsSystemSettingsInput struct {
 	Findings  *InsightsSystemFindingsSettingsInput  `json:"findings"`
 	Capacity  *InsightsSystemCapacitySettingsInput  `json:"capacity"`
 	Writeback *InsightsSystemWritebackSettingsInput `json:"writeback"`
+	Detection *InsightsSystemDetectionSettingsInput `json:"detection"`
 }
 
 type InsightsSystemWritebackSettings struct {

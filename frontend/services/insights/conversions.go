@@ -900,6 +900,9 @@ func SystemSettingsToModel(settings SystemSettings) *model.InsightsSystemSetting
 		Writeback: &model.InsightsSystemWritebackSettings{
 			FlushIntervalSeconds: settings.Writeback.FlushIntervalSeconds,
 		},
+		Detection: &model.InsightsSystemDetectionSettings{
+			AutoTransactionGuardrail: settings.Detection.AutoTransactionGuardrail,
+		},
 	}
 }
 
@@ -1093,7 +1096,7 @@ func BulkAnomalyRequestFromInput(resolution model.InsightsBulkResolution, items 
 }
 
 func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSettings, error) {
-	if input.Sampling == nil || input.Retention == nil || input.Findings == nil || input.Capacity == nil || input.Writeback == nil {
+	if input.Sampling == nil || input.Retention == nil || input.Findings == nil || input.Capacity == nil || input.Writeback == nil || input.Detection == nil {
 		return SystemSettings{}, fmt.Errorf("%w: system settings input is incomplete", ErrBadRequest)
 	}
 	return SystemSettings{
@@ -1114,6 +1117,9 @@ func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSet
 		},
 		Writeback: SystemWritebackSettings{
 			FlushIntervalSeconds: input.Writeback.FlushIntervalSeconds,
+		},
+		Detection: SystemDetectionSettings{
+			AutoTransactionGuardrail: input.Detection.AutoTransactionGuardrail,
 		},
 	}, nil
 }

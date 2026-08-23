@@ -167,6 +167,8 @@ import {
   RESET_INSIGHTS_BASELINE_CLASS,
   RESET_INSIGHTS_TRANSACTION_BASELINES,
   FORCE_PROMOTE_INSIGHTS_SERVICE,
+  ENABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
+  DISABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
   DELETE_INSIGHTS_TRANSACTION,
   UPSERT_INSIGHTS_POLICY,
   DELETE_INSIGHTS_POLICY,
@@ -554,6 +556,14 @@ const operations: OdigosApiOperations = {
   FORCE_PROMOTE_INSIGHTS_SERVICE: {
     document: FORCE_PROMOTE_INSIGHTS_SERVICE,
     transformResult: (raw: unknown) => (raw as { forcePromoteInsightsService?: boolean } | null | undefined)?.forcePromoteInsightsService ?? false,
+  },
+  ENABLE_INSIGHTS_TRANSACTION_GUARDRAIL: {
+    document: ENABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
+    transformResult: (raw: unknown) => (raw as { enableInsightsTransactionGuardrail?: boolean } | null | undefined)?.enableInsightsTransactionGuardrail ?? false,
+  },
+  DISABLE_INSIGHTS_TRANSACTION_GUARDRAIL: {
+    document: DISABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
+    transformResult: (raw: unknown) => (raw as { disableInsightsTransactionGuardrail?: boolean } | null | undefined)?.disableInsightsTransactionGuardrail ?? false,
   },
   DELETE_INSIGHTS_TRANSACTION: {
     document: DELETE_INSIGHTS_TRANSACTION,

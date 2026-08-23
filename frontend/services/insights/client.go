@@ -122,6 +122,28 @@ func (c *Client) ForcePromoteService(ctx context.Context, namespace, service str
 	return c.do(ctx, http.MethodPost, endpoint, nil, nil)
 }
 
+// EnableTransactionGuardrail enables a service's allowed_transactions guardrail
+// (POST /api/v1/services/transaction-guardrail/enable).
+func (c *Client) EnableTransactionGuardrail(ctx context.Context, namespace, service string) error {
+	endpoint := c.apiEndpoint("services", "transaction-guardrail", "enable")
+	query := endpoint.Query()
+	query.Set("namespace", namespace)
+	query.Set("service", service)
+	endpoint.RawQuery = query.Encode()
+	return c.do(ctx, http.MethodPost, endpoint, nil, nil)
+}
+
+// DisableTransactionGuardrail disables a service's allowed_transactions guardrail
+// (POST /api/v1/services/transaction-guardrail/disable).
+func (c *Client) DisableTransactionGuardrail(ctx context.Context, namespace, service string) error {
+	endpoint := c.apiEndpoint("services", "transaction-guardrail", "disable")
+	query := endpoint.Query()
+	query.Set("namespace", namespace)
+	query.Set("service", service)
+	endpoint.RawQuery = query.Encode()
+	return c.do(ctx, http.MethodPost, endpoint, nil, nil)
+}
+
 func (c *Client) ResetBaselineClass(ctx context.Context, transactionID int64, class DeviationClass) error {
 	return c.do(ctx, http.MethodPost, c.transactionEndpoint(transactionID, "baseline", string(class), "reset"), nil, nil)
 }
