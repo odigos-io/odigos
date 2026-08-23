@@ -1592,7 +1592,7 @@
         },
         "priorityClassName": {
           "default": "system-node-critical",
-          "description": "Priority class name. Set to empty string to disable.",
+          "description": "Priority class name for the odiglet DaemonSet. Default is system-node-critical so\nodiglet is treated as a critical node pod and is not evicted under resource pressure.\nSet to empty string to disable. Using any other value may allow eviction on low-resource\nnodes; Helm prints a warning on install/upgrade in that case.",
           "required": [],
           "title": "priorityClassName"
         },
