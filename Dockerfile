@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.26.6 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.27.0 AS builder
 ARG SERVICE_NAME
 
 # Copy only go.mod/go.sum for local modules to cache dependency downloads
