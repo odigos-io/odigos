@@ -226,20 +226,26 @@ func selfMetricsReceiver() func(c *config.Config, _ []string, _ []string) error 
 }
 
 func TestServiceGraphOptions(t *testing.T) {
+	// odigos' widened default naming attributes for uninstrumented virtual peers,
+	// applied whenever the operator does not configure their own. Kept in sync
+	// with pipelinegen.defaultServiceGraphPeerAttributes (unexported there).
+	defaultPeerAttrs := []string{"peer.service", "db.name", "db.system", "server.address", "net.peer.name", "rpc.service"}
+
 	tests := []struct {
-		name                       string
-		opts                       common.ServiceGraphOptions
-		wantConnector              bool
-		wantDimensions             []string
-		wantVirtualNodePeerAttrs   []string
-		wantNoVirtualNodePeerAttrs bool
+		name                     string
+		opts                     common.ServiceGraphOptions
+		wantConnector            bool
+		wantDimensions           []string
+		wantVirtualNodePeerAttrs []string
 	}{
 		{
-			name:                       "enabled by default",
-			opts:                       common.ServiceGraphOptions{},
-			wantConnector:              true,
-			wantDimensions:             []string{"service.name"},
-			wantNoVirtualNodePeerAttrs: true,
+			// With no operator override, odigos still emits its widened default so
+			// plain HTTP/gRPC egress resolves to real hosts instead of "unknown".
+			name:                     "enabled by default",
+			opts:                     common.ServiceGraphOptions{},
+			wantConnector:            true,
+			wantDimensions:           []string{"service.name"},
+			wantVirtualNodePeerAttrs: defaultPeerAttrs,
 		},
 		{
 			name:          "disabled",
@@ -251,9 +257,9 @@ func TestServiceGraphOptions(t *testing.T) {
 			opts: common.ServiceGraphOptions{
 				ExtraDimensions: []string{"k8s.namespace.name", "http.method"},
 			},
-			wantConnector:              true,
-			wantDimensions:             []string{"service.name", "k8s.namespace.name", "http.method"},
-			wantNoVirtualNodePeerAttrs: true,
+			wantConnector:            true,
+			wantDimensions:           []string{"service.name", "k8s.namespace.name", "http.method"},
+			wantVirtualNodePeerAttrs: defaultPeerAttrs,
 		},
 		{
 			name: "custom virtual node peer attributes",
@@ -294,7 +300,7 @@ func TestServiceGraphOptions(t *testing.T) {
 			for _, dim := range tc.wantDimensions {
 				assert.Contains(t, out, "- "+dim+"\n")
 			}
-			if tc.wantNoVirtualNodePeerAttrs {
+			if len(tc.wantVirtualNodePeerAttrs) == 0 {
 				assert.NotContains(t, out, "virtual_node_peer_attributes:")
 			}
 			for _, attr := range tc.wantVirtualNodePeerAttrs {
