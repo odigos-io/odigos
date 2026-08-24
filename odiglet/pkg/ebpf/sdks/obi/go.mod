@@ -3,9 +3,9 @@ module github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks/obi
 go 1.26.2
 
 require (
-	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/instrumentation v0.0.0
+	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/instrumentation v0.0.0-00010101000000-000000000000
 	go.opentelemetry.io/obi v0.10.1-0.20260706144415-c76a93c8775c
 	go.opentelemetry.io/otel v1.44.0
 )
@@ -102,7 +102,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/odigos-io/odigos/distros v0.0.0 // indirect
+	github.com/odigos-io/odigos/distros v0.0.0-00010101000000-000000000000 // indirect
 	github.com/odigos-io/runtime-detector v0.0.25 // indirect
 	github.com/ohler55/ojg v1.28.2 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect

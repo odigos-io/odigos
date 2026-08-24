@@ -42,6 +42,23 @@ func (r *insightsResolver) ServiceProfile(ctx context.Context, obj *model.Insigh
 	return insights.ServiceProfileToModel(*profile), nil
 }
 
+// BlastRadius is the resolver for the blastRadius field.
+func (r *insightsResolver) BlastRadius(ctx context.Context, obj *model.Insights, namespace *string, service string, depth *int) (*model.InsightsBlastRadiusSubgraph, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ns := ""
+	if namespace != nil {
+		ns = *namespace
+	}
+	subgraph, err := client.GetBlastRadius(ctx, ns, service, depth)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.BlastRadiusSubgraphToModel(*subgraph), nil
+}
+
 // Transactions is the resolver for the transactions field.
 func (r *insightsResolver) Transactions(ctx context.Context, obj *model.Insights, namespace *string, service *string, kind *model.InsightsTransactionKind) ([]*model.InsightsTransactionStat, error) {
 	client, err := r.insightsClient(ctx)
@@ -263,6 +280,22 @@ func (r *insightsResolver) GuardrailViolations(ctx context.Context, obj *model.I
 	return insights.GuardrailViolationsToModel(violations), nil
 }
 
+// GuardrailViolation is the resolver for the guardrailViolation field.
+func (r *insightsResolver) GuardrailViolation(ctx context.Context, obj *model.Insights, scopeKey string, ruleKey string, offending string) (*model.InsightsGuardrailViolationDetail, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	detail, err := client.GetGuardrailViolation(ctx, scopeKey, ruleKey, offending)
+	if err != nil {
+		if errors.Is(err, insights.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.GuardrailViolationDetailToModel(*detail), nil
+}
+
 // Catalog is the resolver for the catalog field.
 func (r *insightsResolver) Catalog(ctx context.Context, obj *model.Insights) (*model.InsightsCatalog, error) {
 	client, err := r.insightsClient(ctx)
@@ -350,6 +383,58 @@ func (r *mutationResolver) ResetInsightsTransactionBaselines(ctx context.Context
 		return false, insights.GraphQLError(ctx, err)
 	}
 	if err := client.ResetTransactionBaselines(ctx, id); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
+}
+
+// ForcePromoteInsightsService is the resolver for the forcePromoteInsightsService field.
+func (r *mutationResolver) ForcePromoteInsightsService(ctx context.Context, namespace string, service string) (bool, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err := client.ForcePromoteService(ctx, namespace, service); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
+}
+
+// EnableInsightsTransactionGuardrail is the resolver for the enableInsightsTransactionGuardrail field.
+func (r *mutationResolver) EnableInsightsTransactionGuardrail(ctx context.Context, namespace string, service string) (bool, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err := client.EnableTransactionGuardrail(ctx, namespace, service); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
+}
+
+// DisableInsightsTransactionGuardrail is the resolver for the disableInsightsTransactionGuardrail field.
+func (r *mutationResolver) DisableInsightsTransactionGuardrail(ctx context.Context, namespace string, service string) (bool, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err := client.DisableTransactionGuardrail(ctx, namespace, service); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
+}
+
+// DeleteInsightsTransaction is the resolver for the deleteInsightsTransaction field.
+func (r *mutationResolver) DeleteInsightsTransaction(ctx context.Context, transactionID string) (bool, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	id, err := insights.ParseID(transactionID)
+	if err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	if err := client.DeleteTransaction(ctx, id); err != nil {
 		return false, insights.GraphQLError(ctx, err)
 	}
 	return true, nil

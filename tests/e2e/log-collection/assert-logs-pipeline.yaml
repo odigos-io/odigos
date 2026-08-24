@@ -1,0 +1,10 @@
+# The node collector only builds a logs pipeline once the cluster collector reports that a
+# destination receives logs, so this waits for the logs config domain to exist and to be using the
+# filelog receiver. pipeline-ready.yaml does not cover this: it asserts the collector groups are
+# ready and their config maps are non-empty, not which signals are configured.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-node-collector-config-domains
+  namespace: odigos-test
+(contains(data.logs, 'filelog')): true

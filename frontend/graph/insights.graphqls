@@ -35,6 +35,10 @@ enum InsightsDeviationClass {
 enum InsightsSampleReason {
   example
   anomaly_evidence
+  """
+  Guardrail violation evidence sample (`guardrail:<rule>:<offending>` in storage).
+  """
+  guardrail_evidence
 }
 
 enum InsightsPolicyScope {
@@ -90,6 +94,17 @@ enum InsightsLearningMode {
   k_of
 }
 
+"""
+Coarse learning state for one baseline class. `promoted` means the baseline is
+frozen. `empty` means it has never grown. `learning` means it has grown and is
+still in the learning phase.
+"""
+enum InsightsBaselineLearningPhase {
+  promoted
+  empty
+  learning
+}
+
 enum InsightsLearningConditionType {
   min_observations
   min_duration
@@ -126,6 +141,44 @@ type InsightsServiceProfile {
   callers: [String!]!
   callees: [String!]!
   egress: [String!]!
+  transactions: [String!]!
+}
+
+"""
+One service (or virtual dependency) in a blast-radius subgraph. Identity is (namespace, service).
+"""
+type InsightsBlastRadiusNode {
+  namespace: String!
+  service: String!
+  """
+  True for an uninstrumented dependency (database, queue, external API).
+  Virtual nodes are leaves — they have no outgoing calls.
+  """
+  isVirtual: Boolean!
+}
+
+"""
+A directed client -> server edge from the gateway servicegraph connector.
+Request/failure counts are rough magnitude, not exact totals.
+"""
+type InsightsBlastRadiusEdge {
+  clientNamespace: String!
+  clientService: String!
+  serverNamespace: String!
+  serverService: String!
+  connectionType: String!
+  requestCount: Int!
+  failedCount: Int!
+  lastSeen: String!
+}
+
+"""
+Neighborhood around an anchor service: callers and callees out to the requested hop depth.
+"""
+type InsightsBlastRadiusSubgraph {
+  root: InsightsBlastRadiusNode!
+  nodes: [InsightsBlastRadiusNode!]!
+  edges: [InsightsBlastRadiusEdge!]!
 }
 
 type InsightsTransactionStat {
@@ -150,6 +203,41 @@ type InsightsTransaction {
 
 # Baselines / observations
 
+"""
+One stability dimension. For observations, current/target is a count. For
+duration, both are minutes. `target` is 0 when there is no policy target —
+still render `current` as "grew N ago".
+"""
+type InsightsBaselineStabilityProgress {
+  current: Int!
+  target: Int!
+  drivesPromotion: Boolean!
+  met: Boolean!
+}
+
+"""
+Both stability signals so the UI can show "X / Y observations" and
+"grew N minutes ago" together. Under `all`, one dimension `met` does not mean
+the class promotes — use `readyToPromote`.
+"""
+type InsightsBaselineLearningStability {
+  observations: InsightsBaselineStabilityProgress!
+  duration: InsightsBaselineStabilityProgress!
+}
+
+"""
+Computed learning/stability snapshot for one baseline class against its
+resolved learning policy. Always present, including on placeholder classes.
+"""
+type InsightsBaselineLearning {
+  phase: InsightsBaselineLearningPhase!
+  observationsSinceLastChange: Int!
+  quietMinutes: Int!
+  mode: InsightsLearningMode!
+  readyToPromote: Boolean!
+  stability: InsightsBaselineLearningStability!
+}
+
 type InsightsBaselineClass {
   transactionId: ID!
   class: InsightsDeviationClass!
@@ -163,6 +251,7 @@ type InsightsBaselineClass {
   learningStartedAt: String
   lastChangedAt: String
   observationCountAtLastChange: Int
+  learning: InsightsBaselineLearning!
 }
 
 type InsightsPromoteResult {
@@ -288,6 +377,10 @@ type InsightsFinding {
   Anomaly drill-down key; set when kind is anomaly.
   """
   signature: String
+  """
+  Anomaly signal classes; empty/absent for violations.
+  """
+  triggeredClasses: [InsightsDeviationClass!]
   """
   Violation drill-down key; set when kind is violation.
   """
@@ -478,6 +571,36 @@ type InsightsGuardrailViolation {
   status: InsightsViolationStatus!
 }
 
+"""
+Full violation for investigate. Detail path only — includes summary, span
+highlights, and optional evidenceTrace. Identity is (scopeKey, ruleKey, offending).
+"""
+type InsightsGuardrailViolationDetail {
+  service: String!
+  namespace: String!
+  scopeKey: String!
+  ruleKey: String!
+  ruleLabel: String!
+  offending: String!
+  occurrences: Int!
+  maxScore: Int!
+  severity: InsightsSeverity!
+  lastSeen: String
+  status: InsightsViolationStatus!
+  """
+  One-line explanation of what broke (service, rule, offending).
+  """
+  summary: String!
+  """
+  Spans on the evidence trace that witness the forbidden edge.
+  """
+  spanHighlights: [InsightsAnomalySpanHighlight!]
+  """
+  Captured sample including rawOtlp. Omitted when no sample was retained.
+  """
+  evidenceTrace: InsightsObservation
+}
+
 input InsightsViolationActionInput {
   scopeKey: String!
   ruleKey: String!
@@ -487,9 +610,7 @@ input InsightsViolationActionInput {
 input InsightsGuardrailSeedInput {
   scopeKey: String!
   mode: InsightsRuleMode
-  """
-  JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress.
-  """
+  """JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress | allowed_transactions."""
   items: String!
 }
 
@@ -583,12 +704,22 @@ type InsightsSystemWritebackSettings {
   flushIntervalSeconds: Int!
 }
 
+type InsightsSystemDetectionSettings {
+  """
+  When true, automatically create an enforced allowed_transactions guardrail
+  when a service finishes promoting. Applies only going forward — already-promoted
+  services are not backfilled. Per-service disable uses rule mode off.
+  """
+  autoTransactionGuardrail: Boolean!
+}
+
 type InsightsSystemSettings {
   sampling: InsightsSystemSamplingSettings!
   retention: InsightsSystemRetentionSettings!
   findings: InsightsSystemFindingsSettings!
   capacity: InsightsSystemCapacitySettings!
   writeback: InsightsSystemWritebackSettings!
+  detection: InsightsSystemDetectionSettings!
 }
 
 input InsightsSystemSamplingSettingsInput {
@@ -614,12 +745,17 @@ input InsightsSystemWritebackSettingsInput {
   flushIntervalSeconds: Int!
 }
 
+input InsightsSystemDetectionSettingsInput {
+  autoTransactionGuardrail: Boolean!
+}
+
 input InsightsSystemSettingsInput {
   sampling: InsightsSystemSamplingSettingsInput!
   retention: InsightsSystemRetentionSettingsInput!
   findings: InsightsSystemFindingsSettingsInput!
   capacity: InsightsSystemCapacitySettingsInput!
   writeback: InsightsSystemWritebackSettingsInput!
+  detection: InsightsSystemDetectionSettingsInput!
 }
 
 # Storage health (ClickHouse + writeback snapshot, for the settings/health page)
@@ -708,6 +844,14 @@ type InsightsStorageHealth {
 type Insights {
   services: [InsightsServiceStat!]!
   serviceProfile(namespace: String, service: String!): InsightsServiceProfile!
+  """
+  Service-graph neighborhood around one service (blast radius). Depth defaults to 2 (1–5).
+  """
+  blastRadius(
+    namespace: String
+    service: String!
+    depth: Int
+  ): InsightsBlastRadiusSubgraph!
   transactions(
     namespace: String
     service: String
@@ -743,6 +887,14 @@ type Insights {
     namespace: String
     status: String
   ): [InsightsGuardrailViolation!]!
+  """
+  Violation investigate payload (summary + evidence trace). Analogous to anomaly(...).
+  """
+  guardrailViolation(
+    scopeKey: String!
+    ruleKey: String!
+    offending: String!
+  ): InsightsGuardrailViolationDetail
   catalog: InsightsCatalog!
   systemSettings: InsightsSystemSettings!
   storageHealth: InsightsStorageHealth!
@@ -767,6 +919,32 @@ extend type Mutation {
     class: InsightsDeviationClass!
   ): Boolean!
   resetInsightsTransactionBaselines(transactionId: ID!): Boolean!
+  """
+  Force-promote every scored baseline class on every transaction of a service
+  (POST /api/v1/services/transaction-guardrail/force-promote). May auto-enable
+  the transaction guardrail when the global setting is on.
+  """
+  forcePromoteInsightsService(namespace: String!, service: String!): Boolean!
+  """
+  Enable a service's transaction guardrail (POST /api/v1/services/transaction-guardrail/enable).
+  Seeds allowed_transactions from current ops and sets the rule to enforce.
+  """
+  enableInsightsTransactionGuardrail(
+    namespace: String!
+    service: String!
+  ): Boolean!
+  """
+  Disable a service's transaction guardrail (POST /api/v1/services/transaction-guardrail/disable).
+  Sets allowed_transactions to mode off so auto-enable will not recreate it.
+  """
+  disableInsightsTransactionGuardrail(
+    namespace: String!
+    service: String!
+  ): Boolean!
+  """
+  Permanently removes a transaction and related state (baselines, samples, issues, txn-scoped policies).
+  """
+  deleteInsightsTransaction(transactionId: ID!): Boolean!
   upsertInsightsPolicy(policy: InsightsPolicyInput!): InsightsPolicy!
   deleteInsightsPolicy(scope: InsightsPolicyScope!, scopeKey: String!): Boolean!
   upsertInsightsLearningPolicy(

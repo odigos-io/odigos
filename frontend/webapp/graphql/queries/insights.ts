@@ -38,6 +38,27 @@ const BASELINE_CLASS_FIELDS = `
   learningStartedAt
   lastChangedAt
   observationCountAtLastChange
+  learning {
+    phase
+    observationsSinceLastChange
+    quietMinutes
+    mode
+    readyToPromote
+    stability {
+      observations {
+        current
+        target
+        drivesPromotion
+        met
+      }
+      duration {
+        current
+        target
+        drivesPromotion
+        met
+      }
+    }
+  }
 `;
 
 const OBSERVATION_SUMMARY_FIELDS = `
@@ -61,6 +82,7 @@ const FINDING_FIELDS = `
   status
   transactionId
   signature
+  triggeredClasses
   scopeKey
   ruleKey
 `;
@@ -221,6 +243,9 @@ const SYSTEM_SETTINGS_FIELDS = `
   writeback {
     flushIntervalSeconds
   }
+  detection {
+    autoTransactionGuardrail
+  }
 `;
 
 const STORAGE_HEALTH_FIELDS = `
@@ -309,6 +334,36 @@ export const GET_INSIGHTS_SERVICE_PROFILE = gql`
         callers
         callees
         egress
+        transactions
+      }
+    }
+  }
+`;
+
+const BLAST_RADIUS_NODE_FIELDS = `
+  namespace
+  service
+  isVirtual
+`;
+
+const BLAST_RADIUS_EDGE_FIELDS = `
+  clientNamespace
+  clientService
+  serverNamespace
+  serverService
+  connectionType
+  requestCount
+  failedCount
+  lastSeen
+`;
+
+export const GET_INSIGHTS_BLAST_RADIUS = gql`
+  query GetInsightsBlastRadius($namespace: String, $service: String!, $depth: Int) {
+    insights {
+      blastRadius(namespace: $namespace, service: $service, depth: $depth) {
+        root { ${BLAST_RADIUS_NODE_FIELDS} }
+        nodes { ${BLAST_RADIUS_NODE_FIELDS} }
+        edges { ${BLAST_RADIUS_EDGE_FIELDS} }
       }
     }
   }
@@ -444,6 +499,23 @@ export const GET_INSIGHTS_GUARDRAIL_VIOLATIONS = gql`
   query GetInsightsGuardrailViolations($windowHours: Int, $service: String, $namespace: String, $status: String) {
     insights {
       guardrailViolations(windowHours: $windowHours, service: $service, namespace: $namespace, status: $status) { ${GUARDRAIL_VIOLATION_FIELDS} }
+    }
+  }
+`;
+
+export const GET_INSIGHTS_GUARDRAIL_VIOLATION = gql`
+  query GetInsightsGuardrailViolation($scopeKey: String!, $ruleKey: String!, $offending: String!) {
+    insights {
+      guardrailViolation(scopeKey: $scopeKey, ruleKey: $ruleKey, offending: $offending) {
+        ${GUARDRAIL_VIOLATION_FIELDS}
+        summary
+        spanHighlights {
+          spanId
+          severity
+          reason
+        }
+        evidenceTrace { ${OBSERVATION_FIELDS} }
+      }
     }
   }
 `;

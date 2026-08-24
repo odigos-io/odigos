@@ -226,6 +226,9 @@ func SampleReasonToModel(reason SampleReason) model.InsightsSampleReason {
 	case s == string(model.InsightsSampleReasonAnomalyEvidence) || strings.HasPrefix(s, "anomaly:"):
 		// Storage tags evidence as anomaly:<signature>; GraphQL keeps the legacy enum token.
 		return model.InsightsSampleReasonAnomalyEvidence
+	case s == string(model.InsightsSampleReasonGuardrailEvidence) || strings.HasPrefix(s, "guardrail:"):
+		// Storage tags evidence as guardrail:<rule>:<offending>.
+		return model.InsightsSampleReasonGuardrailEvidence
 	default:
 		return model.InsightsSampleReason(reason)
 	}
@@ -341,11 +344,41 @@ func ServiceStatsToModel(stats []ServiceStat) []*model.InsightsServiceStat {
 
 func ServiceProfileToModel(profile ServiceProfile) *model.InsightsServiceProfile {
 	return &model.InsightsServiceProfile{
-		Namespace: profile.Namespace,
-		Service:   profile.Service,
-		Callers:   stringSliceOrEmpty(profile.Callers),
-		Callees:   stringSliceOrEmpty(profile.Callees),
-		Egress:    stringSliceOrEmpty(profile.Egress),
+		Namespace:    profile.Namespace,
+		Service:      profile.Service,
+		Callers:      stringSliceOrEmpty(profile.Callers),
+		Callees:      stringSliceOrEmpty(profile.Callees),
+		Egress:       stringSliceOrEmpty(profile.Egress),
+		Transactions: stringSliceOrEmpty(profile.Transactions),
+	}
+}
+
+func BlastRadiusNodeToModel(node BlastRadiusNode) *model.InsightsBlastRadiusNode {
+	return &model.InsightsBlastRadiusNode{
+		Namespace: node.Namespace,
+		Service:   node.Service,
+		IsVirtual: node.IsVirtual,
+	}
+}
+
+func BlastRadiusEdgeToModel(edge BlastRadiusEdge) *model.InsightsBlastRadiusEdge {
+	return &model.InsightsBlastRadiusEdge{
+		ClientNamespace: edge.ClientNamespace,
+		ClientService:   edge.ClientService,
+		ServerNamespace: edge.ServerNamespace,
+		ServerService:   edge.ServerService,
+		ConnectionType:  edge.ConnectionType,
+		RequestCount:    int64ToInt(edge.RequestCount),
+		FailedCount:     int64ToInt(edge.FailedCount),
+		LastSeen:        edge.LastSeen,
+	}
+}
+
+func BlastRadiusSubgraphToModel(subgraph BlastRadiusSubgraph) *model.InsightsBlastRadiusSubgraph {
+	return &model.InsightsBlastRadiusSubgraph{
+		Root:  BlastRadiusNodeToModel(subgraph.Root),
+		Nodes: mapSlice(subgraph.Nodes, BlastRadiusNodeToModel),
+		Edges: mapSlice(subgraph.Edges, BlastRadiusEdgeToModel),
 	}
 }
 
@@ -399,7 +432,31 @@ func BaselineClassToModel(baseline BaselineClass) (*model.InsightsBaselineClass,
 		LearningStartedAt:            baseline.LearningStartedAt,
 		LastChangedAt:                baseline.LastChangedAt,
 		ObservationCountAtLastChange: int64PtrToIntPtr(baseline.ObservationCountAtLastChange),
+		Learning:                     BaselineLearningToModel(baseline.Learning),
 	}, nil
+}
+
+func BaselineLearningToModel(learning BaselineLearning) *model.InsightsBaselineLearning {
+	return &model.InsightsBaselineLearning{
+		Phase:                       model.InsightsBaselineLearningPhase(learning.Phase),
+		ObservationsSinceLastChange: int64ToInt(learning.ObservationsSinceLastChange),
+		QuietMinutes:                int64ToInt(learning.QuietMinutes),
+		Mode:                        LearningModeToModel(learning.Mode),
+		ReadyToPromote:              learning.ReadyToPromote,
+		Stability: &model.InsightsBaselineLearningStability{
+			Observations: BaselineStabilityProgressToModel(learning.Stability.Observations),
+			Duration:     BaselineStabilityProgressToModel(learning.Stability.Duration),
+		},
+	}
+}
+
+func BaselineStabilityProgressToModel(progress BaselineStabilityProgress) *model.InsightsBaselineStabilityProgress {
+	return &model.InsightsBaselineStabilityProgress{
+		Current:         int64ToInt(progress.Current),
+		Target:          int64ToInt(progress.Target),
+		DrivesPromotion: progress.DrivesPromotion,
+		Met:             progress.Met,
+	}
 }
 
 func BaselineClassesToModel(baselines []BaselineClass) ([]*model.InsightsBaselineClass, error) {
@@ -501,20 +558,21 @@ func LearningPoliciesToModel(policies []LearningPolicy) []*model.InsightsLearnin
 
 func FindingToModel(finding Finding) *model.InsightsFinding {
 	return &model.InsightsFinding{
-		Kind:          FindingKindToModel(finding.Kind),
-		Service:       finding.Service,
-		Namespace:     finding.Namespace,
-		Title:         finding.Title,
-		Offending:     finding.Offending,
-		Score:         finding.Score,
-		Severity:      SeverityToModel(finding.Severity),
-		Occurrences:   int64ToInt(finding.Occurrences),
-		LastSeen:      finding.LastSeen,
-		Status:        finding.Status,
-		TransactionID: formatOptionalID(finding.TransactionID),
-		Signature:     finding.Signature,
-		ScopeKey:      finding.ScopeKey,
-		RuleKey:       finding.RuleKey,
+		Kind:             FindingKindToModel(finding.Kind),
+		Service:          finding.Service,
+		Namespace:        finding.Namespace,
+		Title:            finding.Title,
+		Offending:        finding.Offending,
+		Score:            finding.Score,
+		Severity:         SeverityToModel(finding.Severity),
+		Occurrences:      int64ToInt(finding.Occurrences),
+		LastSeen:         finding.LastSeen,
+		Status:           finding.Status,
+		TransactionID:    formatOptionalID(finding.TransactionID),
+		Signature:        finding.Signature,
+		TriggeredClasses: mapSlice(finding.TriggeredClasses, DeviationClassToModel),
+		ScopeKey:         finding.ScopeKey,
+		RuleKey:          finding.RuleKey,
 	}
 }
 
@@ -714,6 +772,29 @@ func GuardrailViolationsToModel(violations []GuardrailViolation) []*model.Insigh
 	return mapSlice(violations, GuardrailViolationToModel)
 }
 
+func GuardrailViolationDetailToModel(detail GuardrailViolationDetail) *model.InsightsGuardrailViolationDetail {
+	var evidenceTrace *model.InsightsObservation
+	if detail.EvidenceTrace != nil {
+		evidenceTrace = ObservationToModel(*detail.EvidenceTrace)
+	}
+	return &model.InsightsGuardrailViolationDetail{
+		Service:        detail.Service,
+		Namespace:      detail.Namespace,
+		ScopeKey:       detail.ScopeKey,
+		RuleKey:        detail.RuleKey,
+		RuleLabel:      detail.RuleLabel,
+		Offending:      detail.Offending,
+		Occurrences:    int64ToInt(detail.Occurrences),
+		MaxScore:       detail.MaxScore,
+		Severity:       SeverityToModel(detail.Severity),
+		LastSeen:       detail.LastSeen,
+		Status:         ViolationStatusToModel(detail.Status),
+		Summary:        detail.Summary,
+		SpanHighlights: mapSlice(detail.SpanHighlights, AnomalySpanHighlightToModel),
+		EvidenceTrace:  evidenceTrace,
+	}
+}
+
 func CatalogClassToModel(class CatalogClass) *model.InsightsCatalogClass {
 	return &model.InsightsCatalogClass{
 		ID:            class.ID,
@@ -819,6 +900,9 @@ func SystemSettingsToModel(settings SystemSettings) *model.InsightsSystemSetting
 		},
 		Writeback: &model.InsightsSystemWritebackSettings{
 			FlushIntervalSeconds: settings.Writeback.FlushIntervalSeconds,
+		},
+		Detection: &model.InsightsSystemDetectionSettings{
+			AutoTransactionGuardrail: settings.Detection.AutoTransactionGuardrail,
 		},
 	}
 }
@@ -1013,7 +1097,7 @@ func BulkAnomalyRequestFromInput(resolution model.InsightsBulkResolution, items 
 }
 
 func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSettings, error) {
-	if input.Sampling == nil || input.Retention == nil || input.Findings == nil || input.Capacity == nil || input.Writeback == nil {
+	if input.Sampling == nil || input.Retention == nil || input.Findings == nil || input.Capacity == nil || input.Writeback == nil || input.Detection == nil {
 		return SystemSettings{}, fmt.Errorf("%w: system settings input is incomplete", ErrBadRequest)
 	}
 	return SystemSettings{
@@ -1034,6 +1118,9 @@ func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSet
 		},
 		Writeback: SystemWritebackSettings{
 			FlushIntervalSeconds: input.Writeback.FlushIntervalSeconds,
+		},
+		Detection: SystemDetectionSettings{
+			AutoTransactionGuardrail: input.Detection.AutoTransactionGuardrail,
 		},
 	}, nil
 }

@@ -154,11 +154,30 @@ func TestBaselineAndAnomalyEvidenceStayJSONStrings(t *testing.T) {
 		Data:             json.RawMessage(`{"p99_ms":120}`),
 		ObservationCount: 3,
 		Promoted:         true,
+		Learning: BaselineLearning{
+			Phase:                       BaselineLearningPhasePromoted,
+			ObservationsSinceLastChange: 2,
+			QuietMinutes:                60,
+			Mode:                        "any",
+			ReadyToPromote:              false,
+			Stability: BaselineLearningStability{
+				Observations: BaselineStabilityProgress{Current: 2, Target: 50, DrivesPromotion: true, Met: false},
+				Duration:     BaselineStabilityProgress{Current: 60, Target: 0, DrivesPromotion: false, Met: false},
+			},
+		},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, baseline.Data)
 	assert.JSONEq(t, `{"p99_ms":120}`, *baseline.Data)
 	assert.Equal(t, "9", baseline.TransactionID)
+	require.NotNil(t, baseline.Learning)
+	assert.Equal(t, model.InsightsBaselineLearningPhasePromoted, baseline.Learning.Phase)
+	assert.Equal(t, 2, baseline.Learning.ObservationsSinceLastChange)
+	assert.Equal(t, 60, baseline.Learning.QuietMinutes)
+	assert.Equal(t, model.InsightsLearningModeAny, baseline.Learning.Mode)
+	require.NotNil(t, baseline.Learning.Stability)
+	require.NotNil(t, baseline.Learning.Stability.Observations)
+	assert.Equal(t, 50, baseline.Learning.Stability.Observations.Target)
 
 	anomaly, err := AnomalyIssueToModel(AnomalyIssue{
 		TransactionID:    9,
@@ -222,6 +241,7 @@ func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
 		Findings:  SystemFindingsSettings{DefaultWindowHours: 24, MaxWindowHours: 168},
 		Capacity:  SystemCapacitySettings{MaxResidentTransactions: 1000, MaxBaselineSetMembers: 500},
 		Writeback: SystemWritebackSettings{FlushIntervalSeconds: 30},
+		Detection: SystemDetectionSettings{AutoTransactionGuardrail: true},
 	}
 	gql := SystemSettingsToModel(settings)
 	back, err := SystemSettingsFromInput(model.InsightsSystemSettingsInput{
@@ -230,6 +250,7 @@ func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
 		Findings:  &model.InsightsSystemFindingsSettingsInput{DefaultWindowHours: gql.Findings.DefaultWindowHours, MaxWindowHours: gql.Findings.MaxWindowHours},
 		Capacity:  &model.InsightsSystemCapacitySettingsInput{MaxResidentTransactions: gql.Capacity.MaxResidentTransactions, MaxBaselineSetMembers: gql.Capacity.MaxBaselineSetMembers},
 		Writeback: &model.InsightsSystemWritebackSettingsInput{FlushIntervalSeconds: gql.Writeback.FlushIntervalSeconds},
+		Detection: &model.InsightsSystemDetectionSettingsInput{AutoTransactionGuardrail: gql.Detection.AutoTransactionGuardrail},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, settings, back)
