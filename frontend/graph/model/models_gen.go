@@ -1281,16 +1281,6 @@ type InsightsSystemDetectionSettingsInput struct {
 	AutoTransactionGuardrail bool `json:"autoTransactionGuardrail"`
 }
 
-type InsightsSystemFindingsSettings struct {
-	DefaultWindowHours int `json:"defaultWindowHours"`
-	MaxWindowHours     int `json:"maxWindowHours"`
-}
-
-type InsightsSystemFindingsSettingsInput struct {
-	DefaultWindowHours int `json:"defaultWindowHours"`
-	MaxWindowHours     int `json:"maxWindowHours"`
-}
-
 type InsightsSystemRetentionSettings struct {
 	ObservationRetentionDays int `json:"observationRetentionDays"`
 }
@@ -1312,7 +1302,6 @@ type InsightsSystemSamplingSettingsInput struct {
 type InsightsSystemSettings struct {
 	Sampling  *InsightsSystemSamplingSettings  `json:"sampling"`
 	Retention *InsightsSystemRetentionSettings `json:"retention"`
-	Findings  *InsightsSystemFindingsSettings  `json:"findings"`
 	Capacity  *InsightsSystemCapacitySettings  `json:"capacity"`
 	Writeback *InsightsSystemWritebackSettings `json:"writeback"`
 	Detection *InsightsSystemDetectionSettings `json:"detection"`
@@ -1321,7 +1310,6 @@ type InsightsSystemSettings struct {
 type InsightsSystemSettingsInput struct {
 	Sampling  *InsightsSystemSamplingSettingsInput  `json:"sampling"`
 	Retention *InsightsSystemRetentionSettingsInput `json:"retention"`
-	Findings  *InsightsSystemFindingsSettingsInput  `json:"findings"`
 	Capacity  *InsightsSystemCapacitySettingsInput  `json:"capacity"`
 	Writeback *InsightsSystemWritebackSettingsInput `json:"writeback"`
 	Detection *InsightsSystemDetectionSettingsInput `json:"detection"`

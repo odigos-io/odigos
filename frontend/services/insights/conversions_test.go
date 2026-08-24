@@ -238,7 +238,6 @@ func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
 	settings := SystemSettings{
 		Sampling:  SystemSamplingSettings{ExamplesPerTransaction: 3, ExampleSampleIntervalSeconds: 60},
 		Retention: SystemRetentionSettings{ObservationRetentionDays: 14},
-		Findings:  SystemFindingsSettings{DefaultWindowHours: 24, MaxWindowHours: 168},
 		Capacity:  SystemCapacitySettings{MaxResidentTransactions: 1000, MaxBaselineSetMembers: 500},
 		Writeback: SystemWritebackSettings{FlushIntervalSeconds: 30},
 		Detection: SystemDetectionSettings{AutoTransactionGuardrail: true},
@@ -247,7 +246,6 @@ func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
 	back, err := SystemSettingsFromInput(model.InsightsSystemSettingsInput{
 		Sampling:  &model.InsightsSystemSamplingSettingsInput{ExamplesPerTransaction: gql.Sampling.ExamplesPerTransaction, ExampleSampleIntervalSeconds: gql.Sampling.ExampleSampleIntervalSeconds},
 		Retention: &model.InsightsSystemRetentionSettingsInput{ObservationRetentionDays: gql.Retention.ObservationRetentionDays},
-		Findings:  &model.InsightsSystemFindingsSettingsInput{DefaultWindowHours: gql.Findings.DefaultWindowHours, MaxWindowHours: gql.Findings.MaxWindowHours},
 		Capacity:  &model.InsightsSystemCapacitySettingsInput{MaxResidentTransactions: gql.Capacity.MaxResidentTransactions, MaxBaselineSetMembers: gql.Capacity.MaxBaselineSetMembers},
 		Writeback: &model.InsightsSystemWritebackSettingsInput{FlushIntervalSeconds: gql.Writeback.FlushIntervalSeconds},
 		Detection: &model.InsightsSystemDetectionSettingsInput{AutoTransactionGuardrail: gql.Detection.AutoTransactionGuardrail},

@@ -232,10 +232,6 @@ const SYSTEM_SETTINGS_FIELDS = `
   retention {
     observationRetentionDays
   }
-  findings {
-    defaultWindowHours
-    maxWindowHours
-  }
   capacity {
     maxResidentTransactions
     maxBaselineSetMembers

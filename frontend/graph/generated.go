@@ -1048,11 +1048,6 @@ type ComplexityRoot struct {
 		AutoTransactionGuardrail func(childComplexity int) int
 	}
 
-	InsightsSystemFindingsSettings struct {
-		DefaultWindowHours func(childComplexity int) int
-		MaxWindowHours     func(childComplexity int) int
-	}
-
 	InsightsSystemRetentionSettings struct {
 		ObservationRetentionDays func(childComplexity int) int
 	}
@@ -1065,7 +1060,6 @@ type ComplexityRoot struct {
 	InsightsSystemSettings struct {
 		Capacity  func(childComplexity int) int
 		Detection func(childComplexity int) int
-		Findings  func(childComplexity int) int
 		Retention func(childComplexity int) int
 		Sampling  func(childComplexity int) int
 		Writeback func(childComplexity int) int
@@ -7014,20 +7008,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsSystemDetectionSettings.AutoTransactionGuardrail(childComplexity), true
 
-	case "InsightsSystemFindingsSettings.defaultWindowHours":
-		if e.complexity.InsightsSystemFindingsSettings.DefaultWindowHours == nil {
-			break
-		}
-
-		return e.complexity.InsightsSystemFindingsSettings.DefaultWindowHours(childComplexity), true
-
-	case "InsightsSystemFindingsSettings.maxWindowHours":
-		if e.complexity.InsightsSystemFindingsSettings.MaxWindowHours == nil {
-			break
-		}
-
-		return e.complexity.InsightsSystemFindingsSettings.MaxWindowHours(childComplexity), true
-
 	case "InsightsSystemRetentionSettings.observationRetentionDays":
 		if e.complexity.InsightsSystemRetentionSettings.ObservationRetentionDays == nil {
 			break
@@ -7062,13 +7042,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsSystemSettings.Detection(childComplexity), true
-
-	case "InsightsSystemSettings.findings":
-		if e.complexity.InsightsSystemSettings.Findings == nil {
-			break
-		}
-
-		return e.complexity.InsightsSystemSettings.Findings(childComplexity), true
 
 	case "InsightsSystemSettings.retention":
 		if e.complexity.InsightsSystemSettings.Retention == nil {
@@ -11896,7 +11869,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputInsightsPolicyInput,
 		ec.unmarshalInputInsightsSystemCapacitySettingsInput,
 		ec.unmarshalInputInsightsSystemDetectionSettingsInput,
-		ec.unmarshalInputInsightsSystemFindingsSettingsInput,
 		ec.unmarshalInputInsightsSystemRetentionSettingsInput,
 		ec.unmarshalInputInsightsSystemSamplingSettingsInput,
 		ec.unmarshalInputInsightsSystemSettingsInput,
@@ -33592,8 +33564,6 @@ func (ec *executionContext) fieldContext_Insights_systemSettings(_ context.Conte
 				return ec.fieldContext_InsightsSystemSettings_sampling(ctx, field)
 			case "retention":
 				return ec.fieldContext_InsightsSystemSettings_retention(ctx, field)
-			case "findings":
-				return ec.fieldContext_InsightsSystemSettings_findings(ctx, field)
 			case "capacity":
 				return ec.fieldContext_InsightsSystemSettings_capacity(ctx, field)
 			case "writeback":
@@ -46425,94 +46395,6 @@ func (ec *executionContext) fieldContext_InsightsSystemDetectionSettings_autoTra
 	return fc, nil
 }
 
-func (ec *executionContext) _InsightsSystemFindingsSettings_defaultWindowHours(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSystemFindingsSettings) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InsightsSystemFindingsSettings_defaultWindowHours(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DefaultWindowHours, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InsightsSystemFindingsSettings_defaultWindowHours(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InsightsSystemFindingsSettings",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InsightsSystemFindingsSettings_maxWindowHours(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSystemFindingsSettings) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InsightsSystemFindingsSettings_maxWindowHours(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MaxWindowHours, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InsightsSystemFindingsSettings_maxWindowHours(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InsightsSystemFindingsSettings",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _InsightsSystemRetentionSettings_observationRetentionDays(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSystemRetentionSettings) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsSystemRetentionSettings_observationRetentionDays(ctx, field)
 	if err != nil {
@@ -46738,56 +46620,6 @@ func (ec *executionContext) fieldContext_InsightsSystemSettings_retention(_ cont
 				return ec.fieldContext_InsightsSystemRetentionSettings_observationRetentionDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsSystemRetentionSettings", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _InsightsSystemSettings_findings(ctx context.Context, field graphql.CollectedField, obj *model.InsightsSystemSettings) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_InsightsSystemSettings_findings(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Findings, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.InsightsSystemFindingsSettings)
-	fc.Result = res
-	return ec.marshalNInsightsSystemFindingsSettings2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSystemFindingsSettings(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_InsightsSystemSettings_findings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "InsightsSystemSettings",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "defaultWindowHours":
-				return ec.fieldContext_InsightsSystemFindingsSettings_defaultWindowHours(ctx, field)
-			case "maxWindowHours":
-				return ec.fieldContext_InsightsSystemFindingsSettings_maxWindowHours(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type InsightsSystemFindingsSettings", field.Name)
 		},
 	}
 	return fc, nil
@@ -62253,8 +62085,6 @@ func (ec *executionContext) fieldContext_Mutation_updateInsightsSystemSettings(c
 				return ec.fieldContext_InsightsSystemSettings_sampling(ctx, field)
 			case "retention":
 				return ec.fieldContext_InsightsSystemSettings_retention(ctx, field)
-			case "findings":
-				return ec.fieldContext_InsightsSystemSettings_findings(ctx, field)
 			case "capacity":
 				return ec.fieldContext_InsightsSystemSettings_capacity(ctx, field)
 			case "writeback":
@@ -81280,40 +81110,6 @@ func (ec *executionContext) unmarshalInputInsightsSystemDetectionSettingsInput(c
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputInsightsSystemFindingsSettingsInput(ctx context.Context, obj any) (model.InsightsSystemFindingsSettingsInput, error) {
-	var it model.InsightsSystemFindingsSettingsInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"defaultWindowHours", "maxWindowHours"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "defaultWindowHours":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("defaultWindowHours"))
-			data, err := ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DefaultWindowHours = data
-		case "maxWindowHours":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxWindowHours"))
-			data, err := ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MaxWindowHours = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputInsightsSystemRetentionSettingsInput(ctx context.Context, obj any) (model.InsightsSystemRetentionSettingsInput, error) {
 	var it model.InsightsSystemRetentionSettingsInput
 	asMap := map[string]any{}
@@ -81382,7 +81178,7 @@ func (ec *executionContext) unmarshalInputInsightsSystemSettingsInput(ctx contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"sampling", "retention", "findings", "capacity", "writeback", "detection"}
+	fieldsInOrder := [...]string{"sampling", "retention", "capacity", "writeback", "detection"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -81403,13 +81199,6 @@ func (ec *executionContext) unmarshalInputInsightsSystemSettingsInput(ctx contex
 				return it, err
 			}
 			it.Retention = data
-		case "findings":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("findings"))
-			data, err := ec.unmarshalNInsightsSystemFindingsSettingsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSystemFindingsSettingsInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Findings = data
 		case "capacity":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("capacity"))
 			data, err := ec.unmarshalNInsightsSystemCapacitySettingsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSystemCapacitySettingsInput(ctx, v)
@@ -90659,50 +90448,6 @@ func (ec *executionContext) _InsightsSystemDetectionSettings(ctx context.Context
 	return out
 }
 
-var insightsSystemFindingsSettingsImplementors = []string{"InsightsSystemFindingsSettings"}
-
-func (ec *executionContext) _InsightsSystemFindingsSettings(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsSystemFindingsSettings) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, insightsSystemFindingsSettingsImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("InsightsSystemFindingsSettings")
-		case "defaultWindowHours":
-			out.Values[i] = ec._InsightsSystemFindingsSettings_defaultWindowHours(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "maxWindowHours":
-			out.Values[i] = ec._InsightsSystemFindingsSettings_maxWindowHours(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var insightsSystemRetentionSettingsImplementors = []string{"InsightsSystemRetentionSettings"}
 
 func (ec *executionContext) _InsightsSystemRetentionSettings(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsSystemRetentionSettings) graphql.Marshaler {
@@ -90804,11 +90549,6 @@ func (ec *executionContext) _InsightsSystemSettings(ctx context.Context, sel ast
 			}
 		case "retention":
 			out.Values[i] = ec._InsightsSystemSettings_retention(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "findings":
-			out.Values[i] = ec._InsightsSystemSettings_findings(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -103068,21 +102808,6 @@ func (ec *executionContext) marshalNInsightsSystemDetectionSettings2ᚖgithubᚗ
 
 func (ec *executionContext) unmarshalNInsightsSystemDetectionSettingsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSystemDetectionSettingsInput(ctx context.Context, v any) (*model.InsightsSystemDetectionSettingsInput, error) {
 	res, err := ec.unmarshalInputInsightsSystemDetectionSettingsInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInsightsSystemFindingsSettings2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSystemFindingsSettings(ctx context.Context, sel ast.SelectionSet, v *model.InsightsSystemFindingsSettings) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._InsightsSystemFindingsSettings(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNInsightsSystemFindingsSettingsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsSystemFindingsSettingsInput(ctx context.Context, v any) (*model.InsightsSystemFindingsSettingsInput, error) {
-	res, err := ec.unmarshalInputInsightsSystemFindingsSettingsInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
