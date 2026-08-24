@@ -18,7 +18,7 @@ func FetchWorkloadLogs(
 	namespace, workloadDir string,
 	pods []corev1.Pod,
 ) error {
-	lim := newLimiter(maxConcurrentK8sOps)
+	lim := newLimiter()
 	var wg sync.WaitGroup
 
 	for i := 0; i < len(pods); i++ {

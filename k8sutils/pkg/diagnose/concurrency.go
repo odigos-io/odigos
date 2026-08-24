@@ -9,11 +9,8 @@ type limiter struct {
 	sem chan struct{}
 }
 
-func newLimiter(n int) *limiter {
-	if n < 1 {
-		n = 1
-	}
-	return &limiter{sem: make(chan struct{}, n)}
+func newLimiter() *limiter {
+	return &limiter{sem: make(chan struct{}, maxConcurrentK8sOps)}
 }
 
 func (l *limiter) acquire(ctx context.Context) error {

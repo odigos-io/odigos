@@ -150,7 +150,7 @@ func FetchServiceProfiles(ctx context.Context, client kubernetes.Interface, buil
 		return nil
 	}
 
-	lim := newLimiter(maxConcurrentK8sOps)
+	lim := newLimiter()
 	var podsWaitGroup sync.WaitGroup
 	for i := range podsToProfile.Items {
 		pod := &podsToProfile.Items[i]

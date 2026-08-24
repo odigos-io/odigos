@@ -27,12 +27,23 @@ func TestCollectionContextHonorsOwnCancel(t *testing.T) {
 }
 
 func TestLimiterAcquireCanceledContext(t *testing.T) {
-	lim := newLimiter(1)
-	require.NoError(t, lim.acquire(context.Background()))
+	lim := newLimiter()
+	for i := 0; i < maxConcurrentK8sOps; i++ {
+		require.NoError(t, lim.acquire(context.Background()))
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	require.ErrorIs(t, lim.acquire(ctx), context.Canceled)
+
+	for i := 0; i < maxConcurrentK8sOps; i++ {
+		lim.release()
+	}
+}
+
+func TestLimiterAcquireRelease(t *testing.T) {
+	lim := newLimiter()
+	require.NoError(t, lim.acquire(context.Background()))
 	lim.release()
 }
 

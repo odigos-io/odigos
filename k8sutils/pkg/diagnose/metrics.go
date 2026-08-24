@@ -67,7 +67,7 @@ func fetchMetricsFromOdigletPods(ctx context.Context, client kubernetes.Interfac
 		{k8sconsts.OdigosNodeCollectorContainerName, k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault},
 	}
 
-	lim := newLimiter(maxConcurrentK8sOps)
+	lim := newLimiter()
 	var wg sync.WaitGroup
 	for i := range pods.Items {
 		pod := &pods.Items[i]
@@ -112,7 +112,7 @@ func fetchMetricsFromGatewayPods(ctx context.Context, client kubernetes.Interfac
 	}
 
 	port := k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault
-	lim := newLimiter(maxConcurrentK8sOps)
+	lim := newLimiter()
 	var wg sync.WaitGroup
 	for i := range pods.Items {
 		if err := lim.acquire(ctx); err != nil {
