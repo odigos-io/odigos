@@ -27,3 +27,5 @@ This forwards:
 ```bash
 odigos pro central ui --address 0.0.0.0
 ```
+
+For production, expose Central with an ingress instead of port-forward. Route UI and backend paths as described in [Authentication](/central/authentication#production-ingress-configuration), and set `auth.externalUrl` to the public HTTPS URL.
