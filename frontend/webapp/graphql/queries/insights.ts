@@ -365,6 +365,7 @@ export const GET_INSIGHTS_SERVICE_PROFILE = gql`
         callers
         callees
         egress
+        transactions
       }
     }
   }

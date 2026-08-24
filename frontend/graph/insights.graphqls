@@ -141,6 +141,7 @@ type InsightsServiceProfile {
   callers: [String!]!
   callees: [String!]!
   egress: [String!]!
+  transactions: [String!]!
 }
 
 """
