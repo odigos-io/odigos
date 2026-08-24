@@ -3,8 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"os"
-	"strings"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -135,12 +133,7 @@ func Bootstrap(ctx context.Context, flags Flags, logger logr.Logger) (*Deps, err
 		correlationsPromAPI = api
 	}
 
-	insightsEndpoint := k8sconsts.InsightsHTTPEndpoint(flags.Namespace)
-	if override := strings.TrimSpace(os.Getenv("ODIGOS_INSIGHTS_ENDPOINT")); override != "" {
-		insightsEndpoint = override
-	}
-
-	insightsClient, err := insights.NewClient(insightsEndpoint)
+	insightsClient, err := insights.NewClient(k8sconsts.InsightsHTTPEndpoint(flags.Namespace))
 	if err != nil {
 		return nil, fmt.Errorf("initializing insights client: %w", err)
 	}
