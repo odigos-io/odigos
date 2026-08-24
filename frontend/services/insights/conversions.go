@@ -932,10 +932,6 @@ func SystemSettingsToModel(settings SystemSettings) *model.InsightsSystemSetting
 		Retention: &model.InsightsSystemRetentionSettings{
 			ObservationRetentionDays: settings.Retention.ObservationRetentionDays,
 		},
-		Findings: &model.InsightsSystemFindingsSettings{
-			DefaultWindowHours: settings.Findings.DefaultWindowHours,
-			MaxWindowHours:     settings.Findings.MaxWindowHours,
-		},
 		Capacity: &model.InsightsSystemCapacitySettings{
 			MaxResidentTransactions: settings.Capacity.MaxResidentTransactions,
 			MaxBaselineSetMembers:   settings.Capacity.MaxBaselineSetMembers,
@@ -1157,7 +1153,7 @@ func BulkAnomalyRequestFromInput(resolution model.InsightsBulkResolution, items 
 }
 
 func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSettings, error) {
-	if input.Sampling == nil || input.Retention == nil || input.Findings == nil || input.Capacity == nil || input.Writeback == nil || input.Detection == nil || input.Identity == nil {
+	if input.Sampling == nil || input.Retention == nil || input.Capacity == nil || input.Writeback == nil || input.Detection == nil || input.Identity == nil {
 		return SystemSettings{}, fmt.Errorf("%w: system settings input is incomplete", ErrBadRequest)
 	}
 	return SystemSettings{
@@ -1167,10 +1163,6 @@ func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSet
 		},
 		Retention: SystemRetentionSettings{
 			ObservationRetentionDays: input.Retention.ObservationRetentionDays,
-		},
-		Findings: SystemFindingsSettings{
-			DefaultWindowHours: input.Findings.DefaultWindowHours,
-			MaxWindowHours:     input.Findings.MaxWindowHours,
 		},
 		Capacity: SystemCapacitySettings{
 			MaxResidentTransactions: input.Capacity.MaxResidentTransactions,

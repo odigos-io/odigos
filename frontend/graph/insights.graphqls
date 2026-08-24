@@ -775,11 +775,6 @@ type InsightsSystemRetentionSettings {
   observationRetentionDays: Int!
 }
 
-type InsightsSystemFindingsSettings {
-  defaultWindowHours: Int!
-  maxWindowHours: Int!
-}
-
 type InsightsSystemCapacitySettings {
   maxResidentTransactions: Int!
   maxBaselineSetMembers: Int!
@@ -818,7 +813,6 @@ type InsightsSystemIdentitySettings {
 type InsightsSystemSettings {
   sampling: InsightsSystemSamplingSettings!
   retention: InsightsSystemRetentionSettings!
-  findings: InsightsSystemFindingsSettings!
   capacity: InsightsSystemCapacitySettings!
   writeback: InsightsSystemWritebackSettings!
   detection: InsightsSystemDetectionSettings!
@@ -832,11 +826,6 @@ input InsightsSystemSamplingSettingsInput {
 
 input InsightsSystemRetentionSettingsInput {
   observationRetentionDays: Int!
-}
-
-input InsightsSystemFindingsSettingsInput {
-  defaultWindowHours: Int!
-  maxWindowHours: Int!
 }
 
 input InsightsSystemCapacitySettingsInput {
@@ -864,7 +853,6 @@ input InsightsSystemIdentitySettingsInput {
 input InsightsSystemSettingsInput {
   sampling: InsightsSystemSamplingSettingsInput!
   retention: InsightsSystemRetentionSettingsInput!
-  findings: InsightsSystemFindingsSettingsInput!
   capacity: InsightsSystemCapacitySettingsInput!
   writeback: InsightsSystemWritebackSettingsInput!
   detection: InsightsSystemDetectionSettingsInput!

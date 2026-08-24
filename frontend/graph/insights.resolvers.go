@@ -673,10 +673,15 @@ func (r *mutationResolver) UpdateInsightsSystemSettings(ctx context.Context, set
 	if err != nil {
 		return nil, err
 	}
+	current, err := client.GetSystemSettings(ctx)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
 	request, err := insights.SystemSettingsFromInput(settings)
 	if err != nil {
 		return nil, insights.GraphQLError(ctx, err)
 	}
+	request.Findings = current.Findings
 	stored, err := client.UpdateSystemSettingsAndRead(ctx, request)
 	if err != nil {
 		return nil, insights.GraphQLError(ctx, err)
