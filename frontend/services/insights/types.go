@@ -180,6 +180,14 @@ type BulkPromoteResult struct {
 	Promoted int `json:"promoted"`
 }
 
+type BulkDeleteRequest struct {
+	TransactionIDs []int64 `json:"transaction_ids"`
+}
+
+type BulkDeleteResult struct {
+	Deleted int `json:"deleted"`
+}
+
 type ObservationSummary struct {
 	TraceID       string       `json:"trace_id"`
 	TransactionID int64        `json:"transaction_id"`

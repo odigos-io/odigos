@@ -477,6 +477,27 @@ func (r *mutationResolver) DeleteInsightsTransaction(ctx context.Context, transa
 	return true, nil
 }
 
+// BulkDeleteInsightsTransactions is the resolver for the bulkDeleteInsightsTransactions field.
+func (r *mutationResolver) BulkDeleteInsightsTransactions(ctx context.Context, transactionIds []string) (*model.InsightsBulkDeleteResult, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]int64, 0, len(transactionIds))
+	for _, raw := range transactionIds {
+		id, err := insights.ParseID(raw)
+		if err != nil {
+			return nil, insights.GraphQLError(ctx, err)
+		}
+		ids = append(ids, id)
+	}
+	result, err := client.BulkDeleteTransactions(ctx, ids)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.BulkDeleteResultToModel(*result), nil
+}
+
 // UpsertInsightsPolicy is the resolver for the upsertInsightsPolicy field.
 func (r *mutationResolver) UpsertInsightsPolicy(ctx context.Context, policy model.InsightsPolicyInput) (*model.InsightsPolicy, error) {
 	client, err := r.insightsClient(ctx)

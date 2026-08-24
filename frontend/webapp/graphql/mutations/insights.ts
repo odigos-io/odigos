@@ -121,6 +121,14 @@ export const DELETE_INSIGHTS_TRANSACTION = gql`
   }
 `;
 
+export const BULK_DELETE_INSIGHTS_TRANSACTIONS = gql`
+  mutation BulkDeleteInsightsTransactions($transactionIds: [ID!]!) {
+    bulkDeleteInsightsTransactions(transactionIds: $transactionIds) {
+      deleted
+    }
+  }
+`;
+
 export const UPSERT_INSIGHTS_POLICY = gql`
   mutation UpsertInsightsPolicy($policy: InsightsPolicyInput!) {
     upsertInsightsPolicy(policy: $policy) { ${POLICY_FIELDS} }

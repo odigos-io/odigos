@@ -529,6 +529,10 @@ type InsightsBulkPromoteResult {
   promoted: Int!
 }
 
+type InsightsBulkDeleteResult {
+  deleted: Int!
+}
+
 # Guardrails (operator-declared L7 rules, orthogonal to learned baselines)
 
 type InsightsGuardrailRule {
@@ -963,6 +967,13 @@ extend type Mutation {
   Permanently removes a transaction and related state (baselines, samples, issues, txn-scoped policies).
   """
   deleteInsightsTransaction(transactionId: ID!): Boolean!
+  """
+  Permanently removes many transactions and their related state
+  (POST /api/v1/transactions).
+  """
+  bulkDeleteInsightsTransactions(
+    transactionIds: [ID!]!
+  ): InsightsBulkDeleteResult!
   upsertInsightsPolicy(policy: InsightsPolicyInput!): InsightsPolicy!
   deleteInsightsPolicy(scope: InsightsPolicyScope!, scopeKey: String!): Boolean!
   upsertInsightsLearningPolicy(

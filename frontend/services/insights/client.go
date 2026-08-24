@@ -99,6 +99,16 @@ func (c *Client) DeleteTransaction(ctx context.Context, transactionID int64) err
 	return c.do(ctx, http.MethodDelete, c.transactionEndpoint(transactionID), nil, nil)
 }
 
+// BulkDeleteTransactions permanently removes many transactions
+// (POST /api/v1/transactions).
+func (c *Client) BulkDeleteTransactions(ctx context.Context, transactionIDs []int64) (*BulkDeleteResult, error) {
+	var result BulkDeleteResult
+	if err := c.do(ctx, http.MethodPost, c.apiEndpoint("transactions"), BulkDeleteRequest{TransactionIDs: transactionIDs}, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *Client) GetTransactionBaseline(ctx context.Context, transactionID int64) ([]BaselineClass, error) {
 	return doList[BaselineClass](ctx, c, http.MethodGet, c.transactionEndpoint(transactionID, "baseline"), nil)
 }

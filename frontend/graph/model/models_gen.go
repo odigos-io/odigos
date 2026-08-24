@@ -903,6 +903,10 @@ type InsightsBlastRadiusSubgraph struct {
 	Edges []*InsightsBlastRadiusEdge `json:"edges"`
 }
 
+type InsightsBulkDeleteResult struct {
+	Deleted int `json:"deleted"`
+}
+
 type InsightsBulkPromoteResult struct {
 	Promoted int `json:"promoted"`
 }
