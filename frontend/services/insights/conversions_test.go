@@ -96,17 +96,25 @@ func TestTransactionIDRoundTrip(t *testing.T) {
 	require.Error(t, err)
 
 	stat := TransactionStat{
-		ID:        4211,
-		Service:   "checkout",
-		Namespace: "prod",
-		Operation: "POST /pay",
-		Kind:      "HTTP",
-		Volume:    12,
-		LastSeen:  "2026-08-05T06:00:00Z",
+		ID:            4211,
+		Service:       "checkout",
+		Namespace:     "prod",
+		Operation:     "POST /pay [http.response.status_code=200]",
+		OperationName: "POST /pay",
+		IdentityDimensions: []TransactionIdentityValue{
+			{Key: "http.response.status_code", Value: "200"},
+		},
+		Kind:     "HTTP",
+		Volume:   12,
+		LastSeen: "2026-08-05T06:00:00Z",
 	}
 	converted := TransactionStatToModel(stat)
 	assert.Equal(t, "4211", converted.ID)
 	assert.Equal(t, model.InsightsTransactionKindHTTP, converted.Kind)
+	assert.Equal(t, "POST /pay", converted.OperationName)
+	require.Len(t, converted.IdentityDimensions, 1)
+	assert.Equal(t, "http.response.status_code", converted.IdentityDimensions[0].Key)
+	assert.Equal(t, "200", converted.IdentityDimensions[0].Value)
 }
 
 func TestPolicyRoundTripEncodesMapsAsJSONStrings(t *testing.T) {
@@ -151,6 +159,8 @@ func TestBaselineAndAnomalyEvidenceStayJSONStrings(t *testing.T) {
 	baseline, err := BaselineClassToModel(BaselineClass{
 		TransactionID:    9,
 		Class:            "D3_latency",
+		ClassLabel:       "Request latency",
+		ClassDescription: "Learns typical request latency for this transaction.",
 		Data:             json.RawMessage(`{"p99_ms":120}`),
 		ObservationCount: 3,
 		Promoted:         true,
@@ -170,6 +180,8 @@ func TestBaselineAndAnomalyEvidenceStayJSONStrings(t *testing.T) {
 	require.NotNil(t, baseline.Data)
 	assert.JSONEq(t, `{"p99_ms":120}`, *baseline.Data)
 	assert.Equal(t, "9", baseline.TransactionID)
+	assert.Equal(t, "Request latency", baseline.ClassLabel)
+	assert.Equal(t, "Learns typical request latency for this transaction.", baseline.ClassDescription)
 	require.NotNil(t, baseline.Learning)
 	assert.Equal(t, model.InsightsBaselineLearningPhasePromoted, baseline.Learning.Phase)
 	assert.Equal(t, 2, baseline.Learning.ObservationsSinceLastChange)
@@ -242,6 +254,12 @@ func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
 		Capacity:  SystemCapacitySettings{MaxResidentTransactions: 1000, MaxBaselineSetMembers: 500},
 		Writeback: SystemWritebackSettings{FlushIntervalSeconds: 30},
 		Detection: SystemDetectionSettings{AutoTransactionGuardrail: true},
+		Identity: SystemIdentitySettings{
+			TransactionIdentityDimensions: []SystemTransactionIdentityDimension{
+				{Key: "http.response.status_code", Enabled: true},
+				{Key: "rpc.grpc.status_code", Enabled: true},
+			},
+		},
 	}
 	gql := SystemSettingsToModel(settings)
 	back, err := SystemSettingsFromInput(model.InsightsSystemSettingsInput{
@@ -251,6 +269,12 @@ func TestSystemSettingsAndGuardrailSeedRoundTrip(t *testing.T) {
 		Capacity:  &model.InsightsSystemCapacitySettingsInput{MaxResidentTransactions: gql.Capacity.MaxResidentTransactions, MaxBaselineSetMembers: gql.Capacity.MaxBaselineSetMembers},
 		Writeback: &model.InsightsSystemWritebackSettingsInput{FlushIntervalSeconds: gql.Writeback.FlushIntervalSeconds},
 		Detection: &model.InsightsSystemDetectionSettingsInput{AutoTransactionGuardrail: gql.Detection.AutoTransactionGuardrail},
+		Identity: &model.InsightsSystemIdentitySettingsInput{
+			TransactionIdentityDimensions: []*model.InsightsSystemTransactionIdentityDimensionInput{
+				{Key: "http.response.status_code", Enabled: true},
+				{Key: "rpc.grpc.status_code", Enabled: true},
+			},
+		},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, settings, back)

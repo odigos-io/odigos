@@ -59,6 +59,12 @@ const SYSTEM_SETTINGS_FIELDS = `
   detection {
     autoTransactionGuardrail
   }
+  identity {
+    transactionIdentityDimensions {
+      key
+      enabled
+    }
+  }
 `;
 
 export const PROMOTE_INSIGHTS_BASELINE_CLASS = gql`

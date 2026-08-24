@@ -100,29 +100,40 @@ type BlastRadiusSubgraph struct {
 	Edges []BlastRadiusEdge `json:"edges"`
 }
 
+type TransactionIdentityValue struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type TransactionStat struct {
-	ID          int64           `json:"id"`
-	Service     string          `json:"service"`
-	Namespace   string          `json:"namespace"`
-	Operation   string          `json:"operation"`
-	Kind        TransactionKind `json:"kind"`
-	Volume      int64           `json:"volume"`
-	LastSeen    string          `json:"last_seen"`
-	HasBaseline *bool           `json:"has_baseline,omitempty"`
-	Promoted    *bool           `json:"promoted,omitempty"`
+	ID                 int64                      `json:"id"`
+	Service            string                     `json:"service"`
+	Namespace          string                     `json:"namespace"`
+	Operation          string                     `json:"operation"`
+	OperationName      string                     `json:"operation_name"`
+	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions"`
+	Kind               TransactionKind            `json:"kind"`
+	Volume             int64                      `json:"volume"`
+	LastSeen           string                     `json:"last_seen"`
+	HasBaseline        *bool                      `json:"has_baseline,omitempty"`
+	Promoted           *bool                      `json:"promoted,omitempty"`
 }
 
 type Transaction struct {
-	ID        int64           `json:"id"`
-	Service   string          `json:"service"`
-	Namespace string          `json:"namespace"`
-	Operation string          `json:"operation"`
-	Kind      TransactionKind `json:"kind"`
+	ID                 int64                      `json:"id"`
+	Service            string                     `json:"service"`
+	Namespace          string                     `json:"namespace"`
+	Operation          string                     `json:"operation"`
+	OperationName      string                     `json:"operation_name"`
+	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions"`
+	Kind               TransactionKind            `json:"kind"`
 }
 
 type BaselineClass struct {
 	TransactionID                int64            `json:"transaction_id"`
 	Class                        DeviationClass   `json:"class"`
+	ClassLabel                   string           `json:"class_label"`
+	ClassDescription             string           `json:"class_description"`
 	Data                         json.RawMessage  `json:"data,omitempty"`
 	DataSchemaVersion            *int             `json:"data_schema_version,omitempty"`
 	ObservationCount             int64            `json:"observation_count"`
@@ -237,21 +248,24 @@ type LearningPolicy struct {
 }
 
 type Finding struct {
-	Kind             FindingKind      `json:"kind"`
-	Service          string           `json:"service"`
-	Namespace        string           `json:"namespace"`
-	Title            string           `json:"title"`
-	Offending        *string          `json:"offending,omitempty"`
-	Score            int              `json:"score"`
-	Severity         Severity         `json:"severity"`
-	Occurrences      int64            `json:"occurrences"`
-	LastSeen         string           `json:"last_seen"`
-	Status           string           `json:"status"`
-	TransactionID    *int64           `json:"transaction_id,omitempty"`
-	Signature        *string          `json:"signature,omitempty"`
-	TriggeredClasses []DeviationClass `json:"triggered_classes,omitempty"`
-	ScopeKey         *string          `json:"scope_key,omitempty"`
-	RuleKey          *string          `json:"rule_key,omitempty"`
+	Kind               FindingKind                `json:"kind"`
+	Service            string                     `json:"service"`
+	Namespace          string                     `json:"namespace"`
+	Title              string                     `json:"title"`
+	Operation          *string                    `json:"operation,omitempty"`
+	OperationName      *string                    `json:"operation_name,omitempty"`
+	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions,omitempty"`
+	Offending          *string                    `json:"offending,omitempty"`
+	Score              int                        `json:"score"`
+	Severity           Severity                   `json:"severity"`
+	Occurrences        int64                      `json:"occurrences"`
+	LastSeen           string                     `json:"last_seen"`
+	Status             string                     `json:"status"`
+	TransactionID      *int64                     `json:"transaction_id,omitempty"`
+	Signature          *string                    `json:"signature,omitempty"`
+	TriggeredClasses   []DeviationClass           `json:"triggered_classes,omitempty"`
+	ScopeKey           *string                    `json:"scope_key,omitempty"`
+	RuleKey            *string                    `json:"rule_key,omitempty"`
 }
 
 type RiskSignal struct {
@@ -276,22 +290,24 @@ type RiskAssessment struct {
 }
 
 type AnomalySummary struct {
-	TransactionID    int64            `json:"transaction_id"`
-	Signature        string           `json:"signature"`
-	Service          string           `json:"service"`
-	Namespace        string           `json:"namespace"`
-	Operation        *string          `json:"operation,omitempty"`
-	Kind             *TransactionKind `json:"kind,omitempty"`
-	TriggeredClasses []DeviationClass `json:"triggered_classes"`
-	Offending        *string          `json:"offending,omitempty"`
-	PolicyID         *int64           `json:"policy_id,omitempty"`
-	Occurrences      int64            `json:"occurrences"`
-	MaxScore         int              `json:"max_score"`
-	Severity         Severity         `json:"severity"`
-	FirstSeen        *string          `json:"first_seen,omitempty"`
-	LastSeen         *string          `json:"last_seen,omitempty"`
-	LastTraceID      *string          `json:"last_trace_id,omitempty"`
-	Status           AnomalyStatus    `json:"status"`
+	TransactionID      int64                      `json:"transaction_id"`
+	Signature          string                     `json:"signature"`
+	Service            string                     `json:"service"`
+	Namespace          string                     `json:"namespace"`
+	Operation          string                     `json:"operation"`
+	OperationName      string                     `json:"operation_name"`
+	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions"`
+	Kind               *TransactionKind           `json:"kind,omitempty"`
+	TriggeredClasses   []DeviationClass           `json:"triggered_classes"`
+	Offending          *string                    `json:"offending,omitempty"`
+	PolicyID           *int64                     `json:"policy_id,omitempty"`
+	Occurrences        int64                      `json:"occurrences"`
+	MaxScore           int                        `json:"max_score"`
+	Severity           Severity                   `json:"severity"`
+	FirstSeen          *string                    `json:"first_seen,omitempty"`
+	LastSeen           *string                    `json:"last_seen,omitempty"`
+	LastTraceID        *string                    `json:"last_trace_id,omitempty"`
+	Status             AnomalyStatus              `json:"status"`
 }
 
 type AnomalyClassFindingKind string
@@ -326,27 +342,29 @@ type AnomalyClassFinding struct {
 }
 
 type AnomalyIssue struct {
-	TransactionID    int64                 `json:"transaction_id"`
-	Signature        string                `json:"signature"`
-	Service          string                `json:"service"`
-	Namespace        string                `json:"namespace"`
-	Operation        *string               `json:"operation,omitempty"`
-	Kind             *TransactionKind      `json:"kind,omitempty"`
-	TriggeredClasses []DeviationClass      `json:"triggered_classes"`
-	Offending        *string               `json:"offending,omitempty"`
-	Evidence         json.RawMessage       `json:"evidence"`
-	PolicyID         *int64                `json:"policy_id,omitempty"`
-	Occurrences      int64                 `json:"occurrences"`
-	MaxScore         int                   `json:"max_score"`
-	Severity         Severity              `json:"severity"`
-	FirstSeen        *string               `json:"first_seen,omitempty"`
-	LastSeen         *string               `json:"last_seen,omitempty"`
-	LastTraceID      *string               `json:"last_trace_id,omitempty"`
-	Status           AnomalyStatus         `json:"status"`
-	Risk             *RiskAssessment       `json:"risk,omitempty"`
-	ClassFindings    []AnomalyClassFinding `json:"class_findings"`
-	AnomalyTrace     *Observation          `json:"anomaly_trace,omitempty"`
-	BaselineTrace    *Observation          `json:"baseline_trace,omitempty"`
+	TransactionID      int64                      `json:"transaction_id"`
+	Signature          string                     `json:"signature"`
+	Service            string                     `json:"service"`
+	Namespace          string                     `json:"namespace"`
+	Operation          string                     `json:"operation"`
+	OperationName      string                     `json:"operation_name"`
+	IdentityDimensions []TransactionIdentityValue `json:"identity_dimensions"`
+	Kind               *TransactionKind           `json:"kind,omitempty"`
+	TriggeredClasses   []DeviationClass           `json:"triggered_classes"`
+	Offending          *string                    `json:"offending,omitempty"`
+	Evidence           json.RawMessage            `json:"evidence"`
+	PolicyID           *int64                     `json:"policy_id,omitempty"`
+	Occurrences        int64                      `json:"occurrences"`
+	MaxScore           int                        `json:"max_score"`
+	Severity           Severity                   `json:"severity"`
+	FirstSeen          *string                    `json:"first_seen,omitempty"`
+	LastSeen           *string                    `json:"last_seen,omitempty"`
+	LastTraceID        *string                    `json:"last_trace_id,omitempty"`
+	Status             AnomalyStatus              `json:"status"`
+	Risk               *RiskAssessment            `json:"risk,omitempty"`
+	ClassFindings      []AnomalyClassFinding      `json:"class_findings"`
+	AnomalyTrace       *Observation               `json:"anomaly_trace,omitempty"`
+	BaselineTrace      *Observation               `json:"baseline_trace,omitempty"`
 }
 
 type AnomalyRef struct {
@@ -423,14 +441,16 @@ type GuardrailSeedRequest struct {
 }
 
 type CatalogClass struct {
-	ID            string  `json:"id"`
-	Label         string  `json:"label"`
-	Description   *string `json:"description,omitempty"`
-	Category      string  `json:"category"`
-	CategoryLabel *string `json:"category_label,omitempty"`
-	Weight        int     `json:"weight"`
-	Mitre         *string `json:"mitre,omitempty"`
-	Owasp         *string `json:"owasp,omitempty"`
+	ID                  string  `json:"id"`
+	Label               string  `json:"label"`
+	Description         *string `json:"description,omitempty"`
+	BaselineLabel       string  `json:"baseline_label"`
+	BaselineDescription *string `json:"baseline_description,omitempty"`
+	Category            string  `json:"category"`
+	CategoryLabel       *string `json:"category_label,omitempty"`
+	Weight              int     `json:"weight"`
+	Mitre               *string `json:"mitre,omitempty"`
+	Owasp               *string `json:"owasp,omitempty"`
 }
 
 type EnricherList struct {
@@ -509,13 +529,24 @@ type SystemDetectionSettings struct {
 	AutoTransactionGuardrail bool `json:"auto_transaction_guardrail"`
 }
 
+type SystemTransactionIdentityDimension struct {
+	Key     string `json:"key"`
+	Enabled bool   `json:"enabled"`
+}
+
+type SystemIdentitySettings struct {
+	TransactionIdentityDimensions []SystemTransactionIdentityDimension `json:"transaction_identity_dimensions"`
+}
+
 type SystemSettings struct {
-	Sampling  SystemSamplingSettings  `json:"sampling"`
-	Retention SystemRetentionSettings `json:"retention"`
-	Findings  SystemFindingsSettings  `json:"findings"`
-	Capacity  SystemCapacitySettings  `json:"capacity"`
-	Writeback SystemWritebackSettings `json:"writeback"`
-	Detection SystemDetectionSettings `json:"detection"`
+	Sampling          SystemSamplingSettings  `json:"sampling"`
+	Retention         SystemRetentionSettings `json:"retention"`
+	Findings          SystemFindingsSettings  `json:"findings"`
+	Capacity          SystemCapacitySettings  `json:"capacity"`
+	Writeback         SystemWritebackSettings `json:"writeback"`
+	Detection         SystemDetectionSettings `json:"detection"`
+	Identity          SystemIdentitySettings  `json:"identity"`
+	ResetTransactions *bool                   `json:"reset_transactions,omitempty"`
 }
 
 type StorageConnection struct {

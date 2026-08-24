@@ -180,11 +180,28 @@ type InsightsBlastRadiusSubgraph {
   edges: [InsightsBlastRadiusEdge!]!
 }
 
+"""
+One parsed low-cardinality dimension from the stored operation identity suffix ([key=value]).
+For display only — canonical identity remains in `operation`.
+"""
+type InsightsTransactionIdentityValue {
+  key: String!
+  value: String!
+}
+
 type InsightsTransactionStat {
   id: ID!
   service: String!
   namespace: String!
+  """
+  Full canonical identity string (hashed). Includes [key=value] suffixes when identity dimensions are enabled.
+  """
   operation: String!
+  """
+  Entry-span operation without dimension suffixes.
+  """
+  operationName: String!
+  identityDimensions: [InsightsTransactionIdentityValue!]!
   kind: InsightsTransactionKind!
   volume: Int!
   lastSeen: String!
@@ -196,7 +213,15 @@ type InsightsTransaction {
   id: ID!
   service: String!
   namespace: String!
+  """
+  Full canonical identity string (hashed, guardrails). Includes [key=value] suffixes when identity dimensions are enabled.
+  """
   operation: String!
+  """
+  Human-readable entry-span operation without dimension suffixes.
+  """
+  operationName: String!
+  identityDimensions: [InsightsTransactionIdentityValue!]!
   kind: InsightsTransactionKind!
 }
 
@@ -240,6 +265,17 @@ type InsightsBaselineLearning {
 type InsightsBaselineClass {
   transactionId: ID!
   class: InsightsDeviationClass!
+  """
+  Human-readable name for what this class learns on a transaction
+  (e.g. "Request latency" for D3_latency). Sourced from the risk catalog;
+  UI should display this and keep `class` as the stable id for promote/reset.
+  """
+  classLabel: String!
+  """
+  Tooltip text describing what this class learns for the transaction.
+  Suitable for hover UI; not the finding/anomaly wording.
+  """
+  classDescription: String!
   """
   JSON-encoded baseline data; shape varies per deviation class.
   """
@@ -358,7 +394,22 @@ type InsightsFinding {
   kind: InsightsFindingKind!
   service: String!
   namespace: String!
+  """
+  Human-readable headline. Anomalies use operationName; violations use the guardrail rule label.
+  """
   title: String!
+  """
+  Full canonical transaction operation (anomalies only). Omitted for violations.
+  """
+  operation: String
+  """
+  Entry-span operation without dimension suffixes (anomalies).
+  """
+  operationName: String
+  """
+  Parsed identity dimensions (anomalies only).
+  """
+  identityDimensions: [InsightsTransactionIdentityValue!]
   offending: String
   score: Int!
   severity: InsightsSeverity!
@@ -418,7 +469,15 @@ type InsightsAnomalySummary {
   signature: String!
   service: String!
   namespace: String!
-  operation: String
+  """
+  Full canonical identity string.
+  """
+  operation: String!
+  """
+  Entry-span operation without dimension suffixes.
+  """
+  operationName: String!
+  identityDimensions: [InsightsTransactionIdentityValue!]!
   kind: InsightsTransactionKind
   triggeredClasses: [InsightsDeviationClass!]!
   offending: String
@@ -484,7 +543,15 @@ type InsightsAnomalyIssue {
   signature: String!
   service: String!
   namespace: String!
-  operation: String
+  """
+  Full canonical identity string.
+  """
+  operation: String!
+  """
+  Entry-span operation without dimension suffixes.
+  """
+  operationName: String!
+  identityDimensions: [InsightsTransactionIdentityValue!]!
   kind: InsightsTransactionKind
   triggeredClasses: [InsightsDeviationClass!]!
   offending: String
@@ -618,7 +685,7 @@ input InsightsGuardrailSeedInput {
   scopeKey: String!
   mode: InsightsRuleMode
   """
-  JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress.
+  JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress | allowed_transactions.
   """
   items: String!
 }
@@ -629,6 +696,14 @@ type InsightsCatalogClass {
   id: String!
   label: String!
   description: String
+  """
+  Transaction-baseline name for this class (what is learned). Distinct from finding-oriented `label`.
+  """
+  baselineLabel: String!
+  """
+  Tooltip for what this class learns on a transaction baseline.
+  """
+  baselineDescription: String
   category: String!
   categoryLabel: String
   weight: Int!
@@ -722,6 +797,23 @@ type InsightsSystemDetectionSettings {
   autoTransactionGuardrail: Boolean!
 }
 
+"""
+One low-cardinality attribute (or built-in resolver key) folded into transaction identity
+from the sub-transaction entry span only.
+"""
+type InsightsSystemTransactionIdentityDimension {
+  key: String!
+  enabled: Boolean!
+}
+
+"""
+Extra dimensions appended to transaction Operation before hashing.
+Each enabled dimension multiplies cardinality. Use only low-cardinality attributes.
+"""
+type InsightsSystemIdentitySettings {
+  transactionIdentityDimensions: [InsightsSystemTransactionIdentityDimension!]!
+}
+
 type InsightsSystemSettings {
   sampling: InsightsSystemSamplingSettings!
   retention: InsightsSystemRetentionSettings!
@@ -729,6 +821,7 @@ type InsightsSystemSettings {
   capacity: InsightsSystemCapacitySettings!
   writeback: InsightsSystemWritebackSettings!
   detection: InsightsSystemDetectionSettings!
+  identity: InsightsSystemIdentitySettings!
 }
 
 input InsightsSystemSamplingSettingsInput {
@@ -758,6 +851,15 @@ input InsightsSystemDetectionSettingsInput {
   autoTransactionGuardrail: Boolean!
 }
 
+input InsightsSystemTransactionIdentityDimensionInput {
+  key: String!
+  enabled: Boolean!
+}
+
+input InsightsSystemIdentitySettingsInput {
+  transactionIdentityDimensions: [InsightsSystemTransactionIdentityDimensionInput!]!
+}
+
 input InsightsSystemSettingsInput {
   sampling: InsightsSystemSamplingSettingsInput!
   retention: InsightsSystemRetentionSettingsInput!
@@ -765,6 +867,13 @@ input InsightsSystemSettingsInput {
   capacity: InsightsSystemCapacitySettingsInput!
   writeback: InsightsSystemWritebackSettingsInput!
   detection: InsightsSystemDetectionSettingsInput!
+  identity: InsightsSystemIdentitySettingsInput!
+  """
+  Write-only. When true and identity dimensions changed vs stored settings,
+  delete all transactions and related baselines/samples/findings before applying.
+  Never returned by GET.
+  """
+  resetTransactions: Boolean
 }
 
 # Storage health (ClickHouse + writeback snapshot, for the settings/health page)
