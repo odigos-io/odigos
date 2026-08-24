@@ -751,6 +751,10 @@ type ComplexityRoot struct {
 		Root  func(childComplexity int) int
 	}
 
+	InsightsBulkPromoteResult struct {
+		Promoted func(childComplexity int) int
+	}
+
 	InsightsBulkResolveResult struct {
 		Resolution func(childComplexity int) int
 		Resolved   func(childComplexity int) int
@@ -1554,6 +1558,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AllowInsightsGuardrailViolation     func(childComplexity int, action model.InsightsViolationActionInput) int
 		ApplyRecommendationRemediation      func(childComplexity int, recommendationType model.RecommendationType, remediationType string) int
+		BulkPromoteInsightsTransactions     func(childComplexity int, transactionIds []string) int
 		BulkResolveInsightsAnomalies        func(childComplexity int, resolution model.InsightsBulkResolution, items []*model.InsightsAnomalyRefInput) int
 		ClearSourceProfilingBuffer          func(childComplexity int, namespace string, kind string, name string) int
 		ConfigureProfilingCache             func(childComplexity int, maxSlots *int, slotMaxBytes *int, slotTTLSeconds *int) int
@@ -1584,6 +1589,7 @@ type ComplexityRoot struct {
 		PersistK8sNamespaces                func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
 		PersistK8sSources                   func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
 		PromoteInsightsBaselineClass        func(childComplexity int, transactionID string, class model.InsightsDeviationClass) int
+		PromoteInsightsTransactionBaselines func(childComplexity int, transactionID string) int
 		RecoverFromRollbackForWorkload      func(childComplexity int, sourceID model.K8sSourceID) int
 		ReopenInsightsGuardrailViolation    func(childComplexity int, action model.InsightsViolationActionInput) int
 		ResetInsightsBaselineClass          func(childComplexity int, transactionID string, class model.InsightsDeviationClass) int
@@ -2199,6 +2205,8 @@ type MutationResolver interface {
 	PromoteInsightsBaselineClass(ctx context.Context, transactionID string, class model.InsightsDeviationClass) (*model.InsightsPromoteResult, error)
 	ResetInsightsBaselineClass(ctx context.Context, transactionID string, class model.InsightsDeviationClass) (bool, error)
 	ResetInsightsTransactionBaselines(ctx context.Context, transactionID string) (bool, error)
+	PromoteInsightsTransactionBaselines(ctx context.Context, transactionID string) (bool, error)
+	BulkPromoteInsightsTransactions(ctx context.Context, transactionIds []string) (*model.InsightsBulkPromoteResult, error)
 	ForcePromoteInsightsService(ctx context.Context, namespace string, service string) (bool, error)
 	EnableInsightsTransactionGuardrail(ctx context.Context, namespace string, service string) (bool, error)
 	DisableInsightsTransactionGuardrail(ctx context.Context, namespace string, service string) (bool, error)
@@ -5648,6 +5656,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsBlastRadiusSubgraph.Root(childComplexity), true
+
+	case "InsightsBulkPromoteResult.promoted":
+		if e.complexity.InsightsBulkPromoteResult.Promoted == nil {
+			break
+		}
+
+		return e.complexity.InsightsBulkPromoteResult.Promoted(childComplexity), true
 
 	case "InsightsBulkResolveResult.resolution":
 		if e.complexity.InsightsBulkResolveResult.Resolution == nil {
@@ -9131,6 +9146,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ApplyRecommendationRemediation(childComplexity, args["recommendationType"].(model.RecommendationType), args["remediationType"].(string)), true
 
+	case "Mutation.bulkPromoteInsightsTransactions":
+		if e.complexity.Mutation.BulkPromoteInsightsTransactions == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_bulkPromoteInsightsTransactions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.BulkPromoteInsightsTransactions(childComplexity, args["transactionIds"].([]string)), true
+
 	case "Mutation.bulkResolveInsightsAnomalies":
 		if e.complexity.Mutation.BulkResolveInsightsAnomalies == nil {
 			break
@@ -9485,6 +9512,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.PromoteInsightsBaselineClass(childComplexity, args["transactionId"].(string), args["class"].(model.InsightsDeviationClass)), true
+
+	case "Mutation.promoteInsightsTransactionBaselines":
+		if e.complexity.Mutation.PromoteInsightsTransactionBaselines == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_promoteInsightsTransactionBaselines_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PromoteInsightsTransactionBaselines(childComplexity, args["transactionId"].(string)), true
 
 	case "Mutation.recoverFromRollbackForWorkload":
 		if e.complexity.Mutation.RecoverFromRollbackForWorkload == nil {
@@ -13015,6 +13054,34 @@ func (ec *executionContext) field_Mutation_applyRecommendationRemediation_argsRe
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_bulkPromoteInsightsTransactions_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_bulkPromoteInsightsTransactions_argsTransactionIds(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["transactionIds"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_bulkPromoteInsightsTransactions_argsTransactionIds(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]string, error) {
+	if _, ok := rawArgs["transactionIds"]; !ok {
+		var zeroVal []string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("transactionIds"))
+	if tmp, ok := rawArgs["transactionIds"]; ok {
+		return ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
+	}
+
+	var zeroVal []string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_bulkResolveInsightsAnomalies_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -14376,6 +14443,34 @@ func (ec *executionContext) field_Mutation_promoteInsightsBaselineClass_argsClas
 	}
 
 	var zeroVal model.InsightsDeviationClass
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_promoteInsightsTransactionBaselines_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_promoteInsightsTransactionBaselines_argsTransactionID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["transactionId"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_promoteInsightsTransactionBaselines_argsTransactionID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["transactionId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("transactionId"))
+	if tmp, ok := rawArgs["transactionId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -37708,6 +37803,50 @@ func (ec *executionContext) fieldContext_InsightsBlastRadiusSubgraph_edges(_ con
 				return ec.fieldContext_InsightsBlastRadiusEdge_lastSeen(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsBlastRadiusEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBulkPromoteResult_promoted(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBulkPromoteResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBulkPromoteResult_promoted(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Promoted, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBulkPromoteResult_promoted(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBulkPromoteResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -61278,6 +61417,120 @@ func (ec *executionContext) fieldContext_Mutation_resetInsightsTransactionBaseli
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_resetInsightsTransactionBaselines_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_promoteInsightsTransactionBaselines(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_promoteInsightsTransactionBaselines(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PromoteInsightsTransactionBaselines(rctx, fc.Args["transactionId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_promoteInsightsTransactionBaselines(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_promoteInsightsTransactionBaselines_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_bulkPromoteInsightsTransactions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_bulkPromoteInsightsTransactions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().BulkPromoteInsightsTransactions(rctx, fc.Args["transactionIds"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsBulkPromoteResult)
+	fc.Result = res
+	return ec.marshalNInsightsBulkPromoteResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBulkPromoteResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_bulkPromoteInsightsTransactions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "promoted":
+				return ec.fieldContext_InsightsBulkPromoteResult_promoted(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBulkPromoteResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_bulkPromoteInsightsTransactions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -88648,6 +88901,45 @@ func (ec *executionContext) _InsightsBlastRadiusSubgraph(ctx context.Context, se
 	return out
 }
 
+var insightsBulkPromoteResultImplementors = []string{"InsightsBulkPromoteResult"}
+
+func (ec *executionContext) _InsightsBulkPromoteResult(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBulkPromoteResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsBulkPromoteResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsBulkPromoteResult")
+		case "promoted":
+			out.Values[i] = ec._InsightsBulkPromoteResult_promoted(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var insightsBulkResolveResultImplementors = []string{"InsightsBulkResolveResult"}
 
 func (ec *executionContext) _InsightsBulkResolveResult(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBulkResolveResult) graphql.Marshaler {
@@ -94946,6 +95238,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "resetInsightsTransactionBaselines":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_resetInsightsTransactionBaselines(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "promoteInsightsTransactionBaselines":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_promoteInsightsTransactionBaselines(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "bulkPromoteInsightsTransactions":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_bulkPromoteInsightsTransactions(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -101417,6 +101723,36 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNID2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNInsightsAnomalyAttrHighlight2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsAnomalyAttrHighlight(ctx context.Context, sel ast.SelectionSet, v *model.InsightsAnomalyAttrHighlight) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -101809,6 +102145,20 @@ func (ec *executionContext) marshalNInsightsBlastRadiusSubgraph2ᚖgithubᚗcom�
 		return graphql.Null
 	}
 	return ec._InsightsBlastRadiusSubgraph(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsBulkPromoteResult2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBulkPromoteResult(ctx context.Context, sel ast.SelectionSet, v model.InsightsBulkPromoteResult) graphql.Marshaler {
+	return ec._InsightsBulkPromoteResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInsightsBulkPromoteResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBulkPromoteResult(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBulkPromoteResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsBulkPromoteResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNInsightsBulkResolution2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBulkResolution(ctx context.Context, v any) (model.InsightsBulkResolution, error) {

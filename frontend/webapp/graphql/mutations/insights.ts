@@ -83,6 +83,20 @@ export const RESET_INSIGHTS_TRANSACTION_BASELINES = gql`
   }
 `;
 
+export const PROMOTE_INSIGHTS_TRANSACTION_BASELINES = gql`
+  mutation PromoteInsightsTransactionBaselines($transactionId: ID!) {
+    promoteInsightsTransactionBaselines(transactionId: $transactionId)
+  }
+`;
+
+export const BULK_PROMOTE_INSIGHTS_TRANSACTIONS = gql`
+  mutation BulkPromoteInsightsTransactions($transactionIds: [ID!]!) {
+    bulkPromoteInsightsTransactions(transactionIds: $transactionIds) {
+      promoted
+    }
+  }
+`;
+
 export const FORCE_PROMOTE_INSIGHTS_SERVICE = gql`
   mutation ForcePromoteInsightsService($namespace: String!, $service: String!) {
     forcePromoteInsightsService(namespace: $namespace, service: $service)

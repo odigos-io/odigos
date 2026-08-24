@@ -111,6 +111,22 @@ func (c *Client) PromoteBaselineClass(ctx context.Context, transactionID int64, 
 	return &result, nil
 }
 
+// PromoteTransactionBaselines force-promotes every scored baseline class of one
+// transaction (POST /api/v1/transactions/{id}/baselines/promote).
+func (c *Client) PromoteTransactionBaselines(ctx context.Context, transactionID int64) error {
+	return c.do(ctx, http.MethodPost, c.transactionEndpoint(transactionID, "baselines", "promote"), nil, nil)
+}
+
+// BulkPromoteTransactions force-promotes every scored baseline class on each
+// listed transaction (POST /api/v1/transactions/promote).
+func (c *Client) BulkPromoteTransactions(ctx context.Context, transactionIDs []int64) (*BulkPromoteResult, error) {
+	var result BulkPromoteResult
+	if err := c.do(ctx, http.MethodPost, c.apiEndpoint("transactions", "promote"), BulkPromoteRequest{TransactionIDs: transactionIDs}, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // ForcePromoteService promotes every scored baseline class on every transaction
 // of the service (POST /api/v1/services/transaction-guardrail/force-promote).
 func (c *Client) ForcePromoteService(ctx context.Context, namespace, service string) error {

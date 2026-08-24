@@ -44,6 +44,7 @@ import type {
   InsightsAnomalyIssue,
   InsightsAnomalySummary,
   InsightsBaselineClass,
+  InsightsBulkPromoteResult,
   InsightsBulkResolveResult,
   InsightsCatalog,
   InsightsFinding,
@@ -166,6 +167,8 @@ import {
   PROMOTE_INSIGHTS_BASELINE_CLASS,
   RESET_INSIGHTS_BASELINE_CLASS,
   RESET_INSIGHTS_TRANSACTION_BASELINES,
+  PROMOTE_INSIGHTS_TRANSACTION_BASELINES,
+  BULK_PROMOTE_INSIGHTS_TRANSACTIONS,
   FORCE_PROMOTE_INSIGHTS_SERVICE,
   ENABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
   DISABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
@@ -552,6 +555,14 @@ const operations: OdigosApiOperations = {
   RESET_INSIGHTS_TRANSACTION_BASELINES: {
     document: RESET_INSIGHTS_TRANSACTION_BASELINES,
     transformResult: (raw: unknown) => (raw as { resetInsightsTransactionBaselines?: boolean } | null | undefined)?.resetInsightsTransactionBaselines ?? false,
+  },
+  PROMOTE_INSIGHTS_TRANSACTION_BASELINES: {
+    document: PROMOTE_INSIGHTS_TRANSACTION_BASELINES,
+    transformResult: (raw: unknown) => (raw as { promoteInsightsTransactionBaselines?: boolean } | null | undefined)?.promoteInsightsTransactionBaselines ?? false,
+  },
+  BULK_PROMOTE_INSIGHTS_TRANSACTIONS: {
+    document: BULK_PROMOTE_INSIGHTS_TRANSACTIONS,
+    transformResult: (raw: unknown) => (raw as { bulkPromoteInsightsTransactions?: InsightsBulkPromoteResult } | null | undefined)?.bulkPromoteInsightsTransactions,
   },
   FORCE_PROMOTE_INSIGHTS_SERVICE: {
     document: FORCE_PROMOTE_INSIGHTS_SERVICE,

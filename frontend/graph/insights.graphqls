@@ -525,6 +525,10 @@ type InsightsBulkResolveResult {
   resolved: Int!
 }
 
+type InsightsBulkPromoteResult {
+  promoted: Int!
+}
+
 # Guardrails (operator-declared L7 rules, orthogonal to learned baselines)
 
 type InsightsGuardrailRule {
@@ -920,6 +924,19 @@ extend type Mutation {
     class: InsightsDeviationClass!
   ): Boolean!
   resetInsightsTransactionBaselines(transactionId: ID!): Boolean!
+  """
+  Force-promote every scored baseline class of one transaction
+  (POST /api/v1/transactions/{id}/baselines/promote). May auto-enable the
+  transaction guardrail when the global setting is on.
+  """
+  promoteInsightsTransactionBaselines(transactionId: ID!): Boolean!
+  """
+  Force-promote every scored baseline class on each listed transaction
+  (POST /api/v1/transactions/promote).
+  """
+  bulkPromoteInsightsTransactions(
+    transactionIds: [ID!]!
+  ): InsightsBulkPromoteResult!
   """
   Force-promote every scored baseline class on every transaction of a service
   (POST /api/v1/services/transaction-guardrail/force-promote). May auto-enable

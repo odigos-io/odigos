@@ -388,6 +388,43 @@ func (r *mutationResolver) ResetInsightsTransactionBaselines(ctx context.Context
 	return true, nil
 }
 
+// PromoteInsightsTransactionBaselines is the resolver for the promoteInsightsTransactionBaselines field.
+func (r *mutationResolver) PromoteInsightsTransactionBaselines(ctx context.Context, transactionID string) (bool, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return false, err
+	}
+	id, err := insights.ParseID(transactionID)
+	if err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	if err := client.PromoteTransactionBaselines(ctx, id); err != nil {
+		return false, insights.GraphQLError(ctx, err)
+	}
+	return true, nil
+}
+
+// BulkPromoteInsightsTransactions is the resolver for the bulkPromoteInsightsTransactions field.
+func (r *mutationResolver) BulkPromoteInsightsTransactions(ctx context.Context, transactionIds []string) (*model.InsightsBulkPromoteResult, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]int64, 0, len(transactionIds))
+	for _, raw := range transactionIds {
+		id, err := insights.ParseID(raw)
+		if err != nil {
+			return nil, insights.GraphQLError(ctx, err)
+		}
+		ids = append(ids, id)
+	}
+	result, err := client.BulkPromoteTransactions(ctx, ids)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	return insights.BulkPromoteResultToModel(*result), nil
+}
+
 // ForcePromoteInsightsService is the resolver for the forcePromoteInsightsService field.
 func (r *mutationResolver) ForcePromoteInsightsService(ctx context.Context, namespace string, service string) (bool, error) {
 	client, err := r.insightsClient(ctx)

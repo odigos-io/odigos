@@ -172,6 +172,14 @@ type PromoteResult struct {
 	Promoted      bool           `json:"promoted"`
 }
 
+type BulkPromoteRequest struct {
+	TransactionIDs []int64 `json:"transaction_ids"`
+}
+
+type BulkPromoteResult struct {
+	Promoted int `json:"promoted"`
+}
+
 type ObservationSummary struct {
 	TraceID       string       `json:"trace_id"`
 	TransactionID int64        `json:"transaction_id"`

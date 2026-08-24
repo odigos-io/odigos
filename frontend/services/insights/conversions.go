@@ -470,6 +470,12 @@ func PromoteResultToModel(result PromoteResult) *model.InsightsPromoteResult {
 	}
 }
 
+func BulkPromoteResultToModel(result BulkPromoteResult) *model.InsightsBulkPromoteResult {
+	return &model.InsightsBulkPromoteResult{
+		Promoted: result.Promoted,
+	}
+}
+
 func ObservationSummaryToModel(observation ObservationSummary) *model.InsightsObservationSummary {
 	return &model.InsightsObservationSummary{
 		TraceID:       observation.TraceID,
