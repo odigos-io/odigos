@@ -55,6 +55,12 @@ const SYSTEM_SETTINGS_FIELDS = `
   detection {
     autoTransactionGuardrail
   }
+  identity {
+    transactionIdentityDimensions {
+      key
+      enabled
+    }
+  }
 `;
 
 export const PROMOTE_INSIGHTS_BASELINE_CLASS = gql`
@@ -79,6 +85,20 @@ export const RESET_INSIGHTS_TRANSACTION_BASELINES = gql`
   }
 `;
 
+export const PROMOTE_INSIGHTS_TRANSACTION_BASELINES = gql`
+  mutation PromoteInsightsTransactionBaselines($transactionId: ID!) {
+    promoteInsightsTransactionBaselines(transactionId: $transactionId)
+  }
+`;
+
+export const BULK_PROMOTE_INSIGHTS_TRANSACTIONS = gql`
+  mutation BulkPromoteInsightsTransactions($transactionIds: [ID!]!) {
+    bulkPromoteInsightsTransactions(transactionIds: $transactionIds) {
+      promoted
+    }
+  }
+`;
+
 export const FORCE_PROMOTE_INSIGHTS_SERVICE = gql`
   mutation ForcePromoteInsightsService($namespace: String!, $service: String!) {
     forcePromoteInsightsService(namespace: $namespace, service: $service)
@@ -100,6 +120,14 @@ export const DISABLE_INSIGHTS_TRANSACTION_GUARDRAIL = gql`
 export const DELETE_INSIGHTS_TRANSACTION = gql`
   mutation DeleteInsightsTransaction($transactionId: ID!) {
     deleteInsightsTransaction(transactionId: $transactionId)
+  }
+`;
+
+export const BULK_DELETE_INSIGHTS_TRANSACTIONS = gql`
+  mutation BulkDeleteInsightsTransactions($transactionIds: [ID!]!) {
+    bulkDeleteInsightsTransactions(transactionIds: $transactionIds) {
+      deleted
+    }
   }
 `;
 

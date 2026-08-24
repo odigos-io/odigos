@@ -389,17 +389,34 @@ func stringSliceOrEmpty(s []string) []string {
 	return s
 }
 
+func TransactionIdentityValueToModel(dim TransactionIdentityValue) *model.InsightsTransactionIdentityValue {
+	return &model.InsightsTransactionIdentityValue{
+		Key:   dim.Key,
+		Value: dim.Value,
+	}
+}
+
+func TransactionIdentityValuesToModel(dims []TransactionIdentityValue) []*model.InsightsTransactionIdentityValue {
+	out := mapSlice(dims, TransactionIdentityValueToModel)
+	if out == nil {
+		return []*model.InsightsTransactionIdentityValue{}
+	}
+	return out
+}
+
 func TransactionStatToModel(stat TransactionStat) *model.InsightsTransactionStat {
 	return &model.InsightsTransactionStat{
-		ID:          FormatID(stat.ID),
-		Service:     stat.Service,
-		Namespace:   stat.Namespace,
-		Operation:   stat.Operation,
-		Kind:        TransactionKindToModel(stat.Kind),
-		Volume:      int64ToInt(stat.Volume),
-		LastSeen:    stat.LastSeen,
-		HasBaseline: stat.HasBaseline,
-		Promoted:    stat.Promoted,
+		ID:                 FormatID(stat.ID),
+		Service:            stat.Service,
+		Namespace:          stat.Namespace,
+		Operation:          stat.Operation,
+		OperationName:      stat.OperationName,
+		IdentityDimensions: TransactionIdentityValuesToModel(stat.IdentityDimensions),
+		Kind:               TransactionKindToModel(stat.Kind),
+		Volume:             int64ToInt(stat.Volume),
+		LastSeen:           stat.LastSeen,
+		HasBaseline:        stat.HasBaseline,
+		Promoted:           stat.Promoted,
 	}
 }
 
@@ -409,11 +426,13 @@ func TransactionStatsToModel(stats []TransactionStat) []*model.InsightsTransacti
 
 func TransactionToModel(transaction Transaction) *model.InsightsTransaction {
 	return &model.InsightsTransaction{
-		ID:        FormatID(transaction.ID),
-		Service:   transaction.Service,
-		Namespace: transaction.Namespace,
-		Operation: transaction.Operation,
-		Kind:      TransactionKindToModel(transaction.Kind),
+		ID:                 FormatID(transaction.ID),
+		Service:            transaction.Service,
+		Namespace:          transaction.Namespace,
+		Operation:          transaction.Operation,
+		OperationName:      transaction.OperationName,
+		IdentityDimensions: TransactionIdentityValuesToModel(transaction.IdentityDimensions),
+		Kind:               TransactionKindToModel(transaction.Kind),
 	}
 }
 
@@ -425,6 +444,8 @@ func BaselineClassToModel(baseline BaselineClass) (*model.InsightsBaselineClass,
 	return &model.InsightsBaselineClass{
 		TransactionID:                FormatID(baseline.TransactionID),
 		Class:                        DeviationClassToModel(baseline.Class),
+		ClassLabel:                   baseline.ClassLabel,
+		ClassDescription:             baseline.ClassDescription,
 		Data:                         data,
 		DataSchemaVersion:            baseline.DataSchemaVersion,
 		ObservationCount:             int64ToInt(baseline.ObservationCount),
@@ -468,6 +489,18 @@ func PromoteResultToModel(result PromoteResult) *model.InsightsPromoteResult {
 		TransactionID: FormatID(result.TransactionID),
 		Class:         DeviationClassToModel(result.Class),
 		Promoted:      result.Promoted,
+	}
+}
+
+func BulkPromoteResultToModel(result BulkPromoteResult) *model.InsightsBulkPromoteResult {
+	return &model.InsightsBulkPromoteResult{
+		Promoted: result.Promoted,
+	}
+}
+
+func BulkDeleteResultToModel(result BulkDeleteResult) *model.InsightsBulkDeleteResult {
+	return &model.InsightsBulkDeleteResult{
+		Deleted: result.Deleted,
 	}
 }
 
@@ -558,21 +591,24 @@ func LearningPoliciesToModel(policies []LearningPolicy) []*model.InsightsLearnin
 
 func FindingToModel(finding Finding) *model.InsightsFinding {
 	return &model.InsightsFinding{
-		Kind:             FindingKindToModel(finding.Kind),
-		Service:          finding.Service,
-		Namespace:        finding.Namespace,
-		Title:            finding.Title,
-		Offending:        finding.Offending,
-		Score:            finding.Score,
-		Severity:         SeverityToModel(finding.Severity),
-		Occurrences:      int64ToInt(finding.Occurrences),
-		LastSeen:         finding.LastSeen,
-		Status:           finding.Status,
-		TransactionID:    formatOptionalID(finding.TransactionID),
-		Signature:        finding.Signature,
-		TriggeredClasses: mapSlice(finding.TriggeredClasses, DeviationClassToModel),
-		ScopeKey:         finding.ScopeKey,
-		RuleKey:          finding.RuleKey,
+		Kind:               FindingKindToModel(finding.Kind),
+		Service:            finding.Service,
+		Namespace:          finding.Namespace,
+		Title:              finding.Title,
+		Operation:          finding.Operation,
+		OperationName:      finding.OperationName,
+		IdentityDimensions: mapSlice(finding.IdentityDimensions, TransactionIdentityValueToModel),
+		Offending:          finding.Offending,
+		Score:              finding.Score,
+		Severity:           SeverityToModel(finding.Severity),
+		Occurrences:        int64ToInt(finding.Occurrences),
+		LastSeen:           finding.LastSeen,
+		Status:             finding.Status,
+		TransactionID:      formatOptionalID(finding.TransactionID),
+		Signature:          finding.Signature,
+		TriggeredClasses:   mapSlice(finding.TriggeredClasses, DeviationClassToModel),
+		ScopeKey:           finding.ScopeKey,
+		RuleKey:            finding.RuleKey,
 	}
 }
 
@@ -607,22 +643,24 @@ func RiskAssessmentToModel(risk RiskAssessment) *model.InsightsRiskAssessment {
 
 func AnomalySummaryToModel(anomaly AnomalySummary) *model.InsightsAnomalySummary {
 	return &model.InsightsAnomalySummary{
-		TransactionID:    FormatID(anomaly.TransactionID),
-		Signature:        anomaly.Signature,
-		Service:          anomaly.Service,
-		Namespace:        anomaly.Namespace,
-		Operation:        anomaly.Operation,
-		Kind:             TransactionKindPtrToModel(anomaly.Kind),
-		TriggeredClasses: mapSlice(anomaly.TriggeredClasses, DeviationClassToModel),
-		Offending:        anomaly.Offending,
-		PolicyID:         formatOptionalID(anomaly.PolicyID),
-		Occurrences:      int64ToInt(anomaly.Occurrences),
-		MaxScore:         anomaly.MaxScore,
-		Severity:         SeverityToModel(anomaly.Severity),
-		FirstSeen:        anomaly.FirstSeen,
-		LastSeen:         anomaly.LastSeen,
-		LastTraceID:      anomaly.LastTraceID,
-		Status:           AnomalyStatusToModel(anomaly.Status),
+		TransactionID:      FormatID(anomaly.TransactionID),
+		Signature:          anomaly.Signature,
+		Service:            anomaly.Service,
+		Namespace:          anomaly.Namespace,
+		Operation:          anomaly.Operation,
+		OperationName:      anomaly.OperationName,
+		IdentityDimensions: TransactionIdentityValuesToModel(anomaly.IdentityDimensions),
+		Kind:               TransactionKindPtrToModel(anomaly.Kind),
+		TriggeredClasses:   mapSlice(anomaly.TriggeredClasses, DeviationClassToModel),
+		Offending:          anomaly.Offending,
+		PolicyID:           formatOptionalID(anomaly.PolicyID),
+		Occurrences:        int64ToInt(anomaly.Occurrences),
+		MaxScore:           anomaly.MaxScore,
+		Severity:           SeverityToModel(anomaly.Severity),
+		FirstSeen:          anomaly.FirstSeen,
+		LastSeen:           anomaly.LastSeen,
+		LastTraceID:        anomaly.LastTraceID,
+		Status:             AnomalyStatusToModel(anomaly.Status),
 	}
 }
 
@@ -700,27 +738,29 @@ func AnomalyIssueToModel(anomaly AnomalyIssue) (*model.InsightsAnomalyIssue, err
 		baselineTrace = ObservationToModel(*anomaly.BaselineTrace)
 	}
 	return &model.InsightsAnomalyIssue{
-		TransactionID:    FormatID(anomaly.TransactionID),
-		Signature:        anomaly.Signature,
-		Service:          anomaly.Service,
-		Namespace:        anomaly.Namespace,
-		Operation:        anomaly.Operation,
-		Kind:             TransactionKindPtrToModel(anomaly.Kind),
-		TriggeredClasses: mapSlice(anomaly.TriggeredClasses, DeviationClassToModel),
-		Offending:        anomaly.Offending,
-		PolicyID:         formatOptionalID(anomaly.PolicyID),
-		Occurrences:      int64ToInt(anomaly.Occurrences),
-		MaxScore:         anomaly.MaxScore,
-		Severity:         SeverityToModel(anomaly.Severity),
-		FirstSeen:        anomaly.FirstSeen,
-		LastSeen:         anomaly.LastSeen,
-		LastTraceID:      anomaly.LastTraceID,
-		Status:           AnomalyStatusToModel(anomaly.Status),
-		Evidence:         evidence,
-		Risk:             risk,
-		ClassFindings:    classFindings,
-		AnomalyTrace:     anomalyTrace,
-		BaselineTrace:    baselineTrace,
+		TransactionID:      FormatID(anomaly.TransactionID),
+		Signature:          anomaly.Signature,
+		Service:            anomaly.Service,
+		Namespace:          anomaly.Namespace,
+		Operation:          anomaly.Operation,
+		OperationName:      anomaly.OperationName,
+		IdentityDimensions: TransactionIdentityValuesToModel(anomaly.IdentityDimensions),
+		Kind:               TransactionKindPtrToModel(anomaly.Kind),
+		TriggeredClasses:   mapSlice(anomaly.TriggeredClasses, DeviationClassToModel),
+		Offending:          anomaly.Offending,
+		PolicyID:           formatOptionalID(anomaly.PolicyID),
+		Occurrences:        int64ToInt(anomaly.Occurrences),
+		MaxScore:           anomaly.MaxScore,
+		Severity:           SeverityToModel(anomaly.Severity),
+		FirstSeen:          anomaly.FirstSeen,
+		LastSeen:           anomaly.LastSeen,
+		LastTraceID:        anomaly.LastTraceID,
+		Status:             AnomalyStatusToModel(anomaly.Status),
+		Evidence:           evidence,
+		Risk:               risk,
+		ClassFindings:      classFindings,
+		AnomalyTrace:       anomalyTrace,
+		BaselineTrace:      baselineTrace,
 	}, nil
 }
 
@@ -797,14 +837,16 @@ func GuardrailViolationDetailToModel(detail GuardrailViolationDetail) *model.Ins
 
 func CatalogClassToModel(class CatalogClass) *model.InsightsCatalogClass {
 	return &model.InsightsCatalogClass{
-		ID:            class.ID,
-		Label:         class.Label,
-		Description:   class.Description,
-		Category:      class.Category,
-		CategoryLabel: class.CategoryLabel,
-		Weight:        class.Weight,
-		Mitre:         class.Mitre,
-		Owasp:         class.Owasp,
+		ID:                  class.ID,
+		Label:               class.Label,
+		Description:         class.Description,
+		BaselineLabel:       class.BaselineLabel,
+		BaselineDescription: class.BaselineDescription,
+		Category:            class.Category,
+		CategoryLabel:       class.CategoryLabel,
+		Weight:              class.Weight,
+		Mitre:               class.Mitre,
+		Owasp:               class.Owasp,
 	}
 }
 
@@ -900,6 +942,24 @@ func SystemSettingsToModel(settings SystemSettings) *model.InsightsSystemSetting
 		Detection: &model.InsightsSystemDetectionSettings{
 			AutoTransactionGuardrail: settings.Detection.AutoTransactionGuardrail,
 		},
+		Identity: SystemIdentitySettingsToModel(settings.Identity),
+	}
+}
+
+func SystemIdentitySettingsToModel(identity SystemIdentitySettings) *model.InsightsSystemIdentitySettings {
+	dims := mapSlice(identity.TransactionIdentityDimensions, SystemTransactionIdentityDimensionToModel)
+	if dims == nil {
+		dims = []*model.InsightsSystemTransactionIdentityDimension{}
+	}
+	return &model.InsightsSystemIdentitySettings{
+		TransactionIdentityDimensions: dims,
+	}
+}
+
+func SystemTransactionIdentityDimensionToModel(dim SystemTransactionIdentityDimension) *model.InsightsSystemTransactionIdentityDimension {
+	return &model.InsightsSystemTransactionIdentityDimension{
+		Key:     dim.Key,
+		Enabled: dim.Enabled,
 	}
 }
 
@@ -1093,7 +1153,7 @@ func BulkAnomalyRequestFromInput(resolution model.InsightsBulkResolution, items 
 }
 
 func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSettings, error) {
-	if input.Sampling == nil || input.Retention == nil || input.Capacity == nil || input.Writeback == nil || input.Detection == nil {
+	if input.Sampling == nil || input.Retention == nil || input.Capacity == nil || input.Writeback == nil || input.Detection == nil || input.Identity == nil {
 		return SystemSettings{}, fmt.Errorf("%w: system settings input is incomplete", ErrBadRequest)
 	}
 	return SystemSettings{
@@ -1114,5 +1174,24 @@ func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSet
 		Detection: SystemDetectionSettings{
 			AutoTransactionGuardrail: input.Detection.AutoTransactionGuardrail,
 		},
+		Identity:          SystemIdentitySettingsFromInput(input.Identity),
+		ResetTransactions: input.ResetTransactions,
 	}, nil
+}
+
+func SystemIdentitySettingsFromInput(identity *model.InsightsSystemIdentitySettingsInput) SystemIdentitySettings {
+	if identity == nil {
+		return SystemIdentitySettings{TransactionIdentityDimensions: []SystemTransactionIdentityDimension{}}
+	}
+	dims := make([]SystemTransactionIdentityDimension, 0, len(identity.TransactionIdentityDimensions))
+	for _, dim := range identity.TransactionIdentityDimensions {
+		if dim == nil {
+			continue
+		}
+		dims = append(dims, SystemTransactionIdentityDimension{
+			Key:     dim.Key,
+			Enabled: dim.Enabled,
+		})
+	}
+	return SystemIdentitySettings{TransactionIdentityDimensions: dims}
 }
