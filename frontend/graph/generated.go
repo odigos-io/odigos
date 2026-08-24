@@ -848,11 +848,12 @@ type ComplexityRoot struct {
 	}
 
 	InsightsServiceProfile struct {
-		Callees   func(childComplexity int) int
-		Callers   func(childComplexity int) int
-		Egress    func(childComplexity int) int
-		Namespace func(childComplexity int) int
-		Service   func(childComplexity int) int
+		Callees      func(childComplexity int) int
+		Callers      func(childComplexity int) int
+		Egress       func(childComplexity int) int
+		Namespace    func(childComplexity int) int
+		Service      func(childComplexity int) int
+		Transactions func(childComplexity int) int
 	}
 
 	InsightsServiceStat struct {
@@ -5996,6 +5997,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsServiceProfile.Service(childComplexity), true
+
+	case "InsightsServiceProfile.transactions":
+		if e.complexity.InsightsServiceProfile.Transactions == nil {
+			break
+		}
+
+		return e.complexity.InsightsServiceProfile.Transactions(childComplexity), true
 
 	case "InsightsServiceStat.lastSeen":
 		if e.complexity.InsightsServiceStat.LastSeen == nil {
@@ -31041,6 +31049,8 @@ func (ec *executionContext) fieldContext_Insights_serviceProfile(ctx context.Con
 				return ec.fieldContext_InsightsServiceProfile_callees(ctx, field)
 			case "egress":
 				return ec.fieldContext_InsightsServiceProfile_egress(ctx, field)
+			case "transactions":
+				return ec.fieldContext_InsightsServiceProfile_transactions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsServiceProfile", field.Name)
 		},
@@ -39413,6 +39423,50 @@ func (ec *executionContext) _InsightsServiceProfile_egress(ctx context.Context, 
 }
 
 func (ec *executionContext) fieldContext_InsightsServiceProfile_egress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsServiceProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsServiceProfile_transactions(ctx context.Context, field graphql.CollectedField, obj *model.InsightsServiceProfile) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsServiceProfile_transactions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Transactions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsServiceProfile_transactions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "InsightsServiceProfile",
 		Field:      field,
@@ -83023,6 +83077,11 @@ func (ec *executionContext) _InsightsServiceProfile(ctx context.Context, sel ast
 			}
 		case "egress":
 			out.Values[i] = ec._InsightsServiceProfile_egress(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "transactions":
+			out.Values[i] = ec._InsightsServiceProfile_transactions(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

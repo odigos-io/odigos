@@ -126,6 +126,7 @@ type InsightsServiceProfile {
   callers: [String!]!
   callees: [String!]!
   egress: [String!]!
+  transactions: [String!]!
 }
 
 type InsightsTransactionStat {
@@ -400,7 +401,7 @@ input InsightsViolationActionInput {
 input InsightsGuardrailSeedInput {
   scopeKey: String!
   mode: InsightsRuleMode
-  """JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress."""
+  """JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress | allowed_transactions."""
   items: String!
 }
 

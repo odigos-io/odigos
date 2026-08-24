@@ -64,6 +64,8 @@ type ServiceProfile struct {
 	Callers   []string `json:"callers"`
 	Callees   []string `json:"callees"`
 	Egress    []string `json:"egress"`
+	// Transactions are transaction identities in "KIND\toperation" format.
+	Transactions []string `json:"transactions"`
 }
 
 type TransactionStat struct {
