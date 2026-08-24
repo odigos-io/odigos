@@ -344,11 +344,12 @@ func ServiceStatsToModel(stats []ServiceStat) []*model.InsightsServiceStat {
 
 func ServiceProfileToModel(profile ServiceProfile) *model.InsightsServiceProfile {
 	return &model.InsightsServiceProfile{
-		Namespace: profile.Namespace,
-		Service:   profile.Service,
-		Callers:   stringSliceOrEmpty(profile.Callers),
-		Callees:   stringSliceOrEmpty(profile.Callees),
-		Egress:    stringSliceOrEmpty(profile.Egress),
+		Namespace:    profile.Namespace,
+		Service:      profile.Service,
+		Callers:      stringSliceOrEmpty(profile.Callers),
+		Callees:      stringSliceOrEmpty(profile.Callees),
+		Egress:       stringSliceOrEmpty(profile.Egress),
+		Transactions: stringSliceOrEmpty(profile.Transactions),
 	}
 }
 
