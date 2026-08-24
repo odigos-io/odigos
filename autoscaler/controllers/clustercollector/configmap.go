@@ -149,7 +149,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 	return nil
 }
 
-func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) ([]odigoscommon.ObservabilitySignal, error) {
+func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme, tier odigoscommon.OdigosTier) ([]odigoscommon.ObservabilitySignal, error) {
 	logger := commonlogger.FromContext(ctx)
 
 	dataStreams, err := calculateDataStreams(enabledDests)
@@ -210,6 +210,13 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	}
 	// When on, pipelinegen installs groupbytrace on traces/in so the exporter sees full traces.
 	gatewayOptions.Insights = insightsCfg
+	// Provide the insights OTLP endpoint so pipelinegen (in the common module, which
+	// cannot import api/k8sconsts) can add an OTLP exporter to metrics/servicegraph
+	// for the blast-radius topology. Target the headless Service via dns:/// so
+	// the gateway's gRPC client round_robins across insights replicas.
+	if odigoscommon.InsightsPipelineActive(insightsCfg) {
+		gatewayOptions.InsightsOtlpEndpoint = k8sconsts.InsightsOtlpGrpcDNSEndpoint(env.GetCurrentNamespace())
+	}
 	// Insights can trigger groupbytrace without tail sampling on, in which case
 	// the scheduler hasn't resolved TraceAggregationWaitDuration. Fall back to the
 	// canonical default so we never feed groupbytrace a nil wait_duration.
@@ -229,8 +236,13 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 			if err := addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines); err != nil {
 				return err
 			}
-			if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
-				return err
+			// The gateway profiles pipeline receives over plain otlp so it would not crash an
+			// OSS collector, but community tier should have no profiling wiring at all.
+			if tier.IsEnterprise() {
+				if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
+					return err
+				}
+				addEnterpriseAuthExtension(c)
 			}
 			if err := addInsightsGatewayExporter(c, env.GetCurrentNamespace(), insightsCfg); err != nil {
 				return err

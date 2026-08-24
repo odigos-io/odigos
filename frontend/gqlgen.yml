@@ -62,6 +62,8 @@ models:
         resolver: true
       dataStreams:
         resolver: true
+      recommendations:
+        resolver: true
   K8sActualNamespace:
     fields:
       sources:
@@ -168,6 +170,8 @@ models:
         resolver: true
       serviceProfile:
         resolver: true
+      blastRadius:
+        resolver: true
       transactions:
         resolver: true
       transaction:
@@ -191,6 +195,8 @@ models:
       guardrails:
         resolver: true
       guardrailViolations:
+        resolver: true
+      guardrailViolation:
         resolver: true
       catalog:
         resolver: true

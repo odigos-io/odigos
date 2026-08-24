@@ -18,6 +18,17 @@ type LearningConditionType string
 type StorageHealthStatus string
 type StorageDiskStatus string
 
+const (
+	SampleReasonExample SampleReason = "example"
+)
+
+// AnomalyEvidenceSampleReason is the storage tag for an issue's evidence sample
+// (`anomaly:<signature>`). The GraphQL enum still uses the legacy token
+// `anomaly_evidence` for filters/display.
+func AnomalyEvidenceSampleReason(signature string) SampleReason {
+	return SampleReason("anomaly:" + signature)
+}
+
 type ListTransactionsParams struct {
 	Namespace *string
 	Service   *string
@@ -68,6 +79,29 @@ type ServiceProfile struct {
 	Transactions []string `json:"transactions"`
 }
 
+type BlastRadiusNode struct {
+	Namespace string `json:"namespace"`
+	Service   string `json:"service"`
+	IsVirtual bool   `json:"is_virtual"`
+}
+
+type BlastRadiusEdge struct {
+	ClientNamespace string `json:"client_namespace"`
+	ClientService   string `json:"client_service"`
+	ServerNamespace string `json:"server_namespace"`
+	ServerService   string `json:"server_service"`
+	ConnectionType  string `json:"connection_type"`
+	RequestCount    int64  `json:"request_count"`
+	FailedCount     int64  `json:"failed_count"`
+	LastSeen        string `json:"last_seen"`
+}
+
+type BlastRadiusSubgraph struct {
+	Root  BlastRadiusNode   `json:"root"`
+	Nodes []BlastRadiusNode `json:"nodes"`
+	Edges []BlastRadiusEdge `json:"edges"`
+}
+
 type TransactionStat struct {
 	ID          int64           `json:"id"`
 	Service     string          `json:"service"`
@@ -89,15 +123,49 @@ type Transaction struct {
 }
 
 type BaselineClass struct {
-	TransactionID                int64           `json:"transaction_id"`
-	Class                        DeviationClass  `json:"class"`
-	Data                         json.RawMessage `json:"data,omitempty"`
-	DataSchemaVersion            *int            `json:"data_schema_version,omitempty"`
-	ObservationCount             int64           `json:"observation_count"`
-	Promoted                     bool            `json:"promoted"`
-	LearningStartedAt            *string         `json:"learning_started_at,omitempty"`
-	LastChangedAt                *string         `json:"last_changed_at,omitempty"`
-	ObservationCountAtLastChange *int64          `json:"observation_count_at_last_change,omitempty"`
+	TransactionID                int64            `json:"transaction_id"`
+	Class                        DeviationClass   `json:"class"`
+	Data                         json.RawMessage  `json:"data,omitempty"`
+	DataSchemaVersion            *int             `json:"data_schema_version,omitempty"`
+	ObservationCount             int64            `json:"observation_count"`
+	Promoted                     bool             `json:"promoted"`
+	LearningStartedAt            *string          `json:"learning_started_at,omitempty"`
+	LastChangedAt                *string          `json:"last_changed_at,omitempty"`
+	ObservationCountAtLastChange *int64           `json:"observation_count_at_last_change,omitempty"`
+	Learning                     BaselineLearning `json:"learning"`
+}
+
+// BaselineLearningPhase is the coarse learning state for one baseline class.
+type BaselineLearningPhase string
+
+const (
+	BaselineLearningPhasePromoted BaselineLearningPhase = "promoted"
+	BaselineLearningPhaseEmpty    BaselineLearningPhase = "empty"
+	BaselineLearningPhaseLearning BaselineLearningPhase = "learning"
+)
+
+// BaselineStabilityProgress is one stability dimension (observations count or duration minutes).
+type BaselineStabilityProgress struct {
+	Current         int64 `json:"current"`
+	Target          int64 `json:"target"`
+	DrivesPromotion bool  `json:"drives_promotion"`
+	Met             bool  `json:"met"`
+}
+
+// BaselineLearningStability holds both stability signals for UI progress copy.
+type BaselineLearningStability struct {
+	Observations BaselineStabilityProgress `json:"observations"`
+	Duration     BaselineStabilityProgress `json:"duration"`
+}
+
+// BaselineLearning is the computed learning/stability snapshot on each baseline row.
+type BaselineLearning struct {
+	Phase                       BaselineLearningPhase     `json:"phase"`
+	ObservationsSinceLastChange int64                     `json:"observations_since_last_change"`
+	QuietMinutes                int64                     `json:"quiet_minutes"`
+	Mode                        LearningMode              `json:"mode"`
+	ReadyToPromote              bool                      `json:"ready_to_promote"`
+	Stability                   BaselineLearningStability `json:"stability"`
 }
 
 type PromoteResult struct {
@@ -155,20 +223,21 @@ type LearningPolicy struct {
 }
 
 type Finding struct {
-	Kind          FindingKind `json:"kind"`
-	Service       string      `json:"service"`
-	Namespace     string      `json:"namespace"`
-	Title         string      `json:"title"`
-	Offending     *string     `json:"offending,omitempty"`
-	Score         int         `json:"score"`
-	Severity      Severity    `json:"severity"`
-	Occurrences   int64       `json:"occurrences"`
-	LastSeen      string      `json:"last_seen"`
-	Status        string      `json:"status"`
-	TransactionID *int64      `json:"transaction_id,omitempty"`
-	Signature     *string     `json:"signature,omitempty"`
-	ScopeKey      *string     `json:"scope_key,omitempty"`
-	RuleKey       *string     `json:"rule_key,omitempty"`
+	Kind             FindingKind      `json:"kind"`
+	Service          string           `json:"service"`
+	Namespace        string           `json:"namespace"`
+	Title            string           `json:"title"`
+	Offending        *string          `json:"offending,omitempty"`
+	Score            int              `json:"score"`
+	Severity         Severity         `json:"severity"`
+	Occurrences      int64            `json:"occurrences"`
+	LastSeen         string           `json:"last_seen"`
+	Status           string           `json:"status"`
+	TransactionID    *int64           `json:"transaction_id,omitempty"`
+	Signature        *string          `json:"signature,omitempty"`
+	TriggeredClasses []DeviationClass `json:"triggered_classes,omitempty"`
+	ScopeKey         *string          `json:"scope_key,omitempty"`
+	RuleKey          *string          `json:"rule_key,omitempty"`
 }
 
 type RiskSignal struct {
@@ -211,25 +280,59 @@ type AnomalySummary struct {
 	Status           AnomalyStatus    `json:"status"`
 }
 
+type AnomalyClassFindingKind string
+
+type AnomalySpanHighlight struct {
+	SpanID   string `json:"span_id"`
+	Severity string `json:"severity"`
+	Reason   string `json:"reason"`
+}
+
+type AnomalyAttrHighlight struct {
+	SpanID string `json:"span_id"`
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+}
+
+type AnomalyMetricComparison struct {
+	Observed int64  `json:"observed"`
+	Baseline int64  `json:"baseline"`
+	Unit     string `json:"unit"`
+}
+
+type AnomalyClassFinding struct {
+	Class          DeviationClass           `json:"class"`
+	Kind           AnomalyClassFindingKind  `json:"kind"`
+	Title          string                   `json:"title"`
+	Summary        string                   `json:"summary"`
+	SpanHighlights []AnomalySpanHighlight   `json:"span_highlights,omitempty"`
+	AttrHighlights []AnomalyAttrHighlight   `json:"attr_highlights,omitempty"`
+	Metric         *AnomalyMetricComparison `json:"metric,omitempty"`
+	RawEvidence    json.RawMessage          `json:"raw_evidence,omitempty"`
+}
+
 type AnomalyIssue struct {
-	TransactionID    int64            `json:"transaction_id"`
-	Signature        string           `json:"signature"`
-	Service          string           `json:"service"`
-	Namespace        string           `json:"namespace"`
-	Operation        *string          `json:"operation,omitempty"`
-	Kind             *TransactionKind `json:"kind,omitempty"`
-	TriggeredClasses []DeviationClass `json:"triggered_classes"`
-	Offending        *string          `json:"offending,omitempty"`
-	Evidence         json.RawMessage  `json:"evidence"`
-	PolicyID         *int64           `json:"policy_id,omitempty"`
-	Occurrences      int64            `json:"occurrences"`
-	MaxScore         int              `json:"max_score"`
-	Severity         Severity         `json:"severity"`
-	FirstSeen        *string          `json:"first_seen,omitempty"`
-	LastSeen         *string          `json:"last_seen,omitempty"`
-	LastTraceID      *string          `json:"last_trace_id,omitempty"`
-	Status           AnomalyStatus    `json:"status"`
-	Risk             *RiskAssessment  `json:"risk,omitempty"`
+	TransactionID    int64                 `json:"transaction_id"`
+	Signature        string                `json:"signature"`
+	Service          string                `json:"service"`
+	Namespace        string                `json:"namespace"`
+	Operation        *string               `json:"operation,omitempty"`
+	Kind             *TransactionKind      `json:"kind,omitempty"`
+	TriggeredClasses []DeviationClass      `json:"triggered_classes"`
+	Offending        *string               `json:"offending,omitempty"`
+	Evidence         json.RawMessage       `json:"evidence"`
+	PolicyID         *int64                `json:"policy_id,omitempty"`
+	Occurrences      int64                 `json:"occurrences"`
+	MaxScore         int                   `json:"max_score"`
+	Severity         Severity              `json:"severity"`
+	FirstSeen        *string               `json:"first_seen,omitempty"`
+	LastSeen         *string               `json:"last_seen,omitempty"`
+	LastTraceID      *string               `json:"last_trace_id,omitempty"`
+	Status           AnomalyStatus         `json:"status"`
+	Risk             *RiskAssessment       `json:"risk,omitempty"`
+	ClassFindings    []AnomalyClassFinding `json:"class_findings"`
+	AnomalyTrace     *Observation          `json:"anomaly_trace,omitempty"`
+	BaselineTrace    *Observation          `json:"baseline_trace,omitempty"`
 }
 
 type AnomalyRef struct {
@@ -272,6 +375,25 @@ type GuardrailViolation struct {
 	Severity    Severity        `json:"severity"`
 	LastSeen    *string         `json:"last_seen,omitempty"`
 	Status      ViolationStatus `json:"status"`
+}
+
+// GuardrailViolationDetail is the investigate payload for one violation
+// (GET /guardrails/violations/evidence). Never returned by list endpoints.
+type GuardrailViolationDetail struct {
+	Service        string                 `json:"service"`
+	Namespace      string                 `json:"namespace"`
+	ScopeKey       string                 `json:"scope_key"`
+	RuleKey        string                 `json:"rule_key"`
+	RuleLabel      string                 `json:"rule_label"`
+	Offending      string                 `json:"offending"`
+	Occurrences    int64                  `json:"occurrences"`
+	MaxScore       int                    `json:"max_score"`
+	Severity       Severity               `json:"severity"`
+	LastSeen       *string                `json:"last_seen,omitempty"`
+	Status         ViolationStatus        `json:"status"`
+	Summary        string                 `json:"summary"`
+	SpanHighlights []AnomalySpanHighlight `json:"span_highlights,omitempty"`
+	EvidenceTrace  *Observation           `json:"evidence_trace,omitempty"`
 }
 
 type ViolationActionRequest struct {
@@ -369,12 +491,17 @@ type SystemWritebackSettings struct {
 	FlushIntervalSeconds int `json:"flush_interval_seconds"`
 }
 
+type SystemDetectionSettings struct {
+	AutoTransactionGuardrail bool `json:"auto_transaction_guardrail"`
+}
+
 type SystemSettings struct {
 	Sampling  SystemSamplingSettings  `json:"sampling"`
 	Retention SystemRetentionSettings `json:"retention"`
 	Findings  SystemFindingsSettings  `json:"findings"`
 	Capacity  SystemCapacitySettings  `json:"capacity"`
 	Writeback SystemWritebackSettings `json:"writeback"`
+	Detection SystemDetectionSettings `json:"detection"`
 }
 
 type StorageConnection struct {

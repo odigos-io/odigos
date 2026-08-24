@@ -8,4 +8,5 @@ export * from './source';
 export * from './sampling';
 export * from './insights';
 export * from './profiling';
+export * from './recommendation';
 export * from './token';

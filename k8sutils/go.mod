@@ -4,10 +4,10 @@ go 1.26.2
 
 require (
 	github.com/argoproj/argo-rollouts v1.9.1
-	github.com/odigos-io/odigos/actions v0.0.0
-	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/odigosauth v0.0.0
+	github.com/odigos-io/odigos/actions v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/odigosauth v0.0.0-00010101000000-000000000000
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/stretchr/testify v1.11.1
 	github.com/tj/assert v0.0.3

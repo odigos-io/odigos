@@ -57,6 +57,24 @@ func (c *Client) GetServiceProfile(ctx context.Context, namespace, service strin
 	return &result, nil
 }
 
+func (c *Client) GetBlastRadius(ctx context.Context, namespace, service string, depth *int) (*BlastRadiusSubgraph, error) {
+	endpoint := c.apiEndpoint("services", "blast-radius")
+	query := endpoint.Query()
+	if strings.TrimSpace(namespace) != "" {
+		query.Set("namespace", namespace)
+	}
+	query.Set("service", service)
+	if depth != nil {
+		query.Set("depth", strconv.Itoa(*depth))
+	}
+	endpoint.RawQuery = query.Encode()
+	var result BlastRadiusSubgraph
+	if err := c.do(ctx, http.MethodGet, endpoint, nil, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *Client) ListTransactions(ctx context.Context, params ListTransactionsParams) ([]TransactionStat, error) {
 	endpoint := c.apiEndpoint("transactions")
 	query := endpoint.Query()
@@ -77,6 +95,10 @@ func (c *Client) GetTransaction(ctx context.Context, transactionID int64) (*Tran
 	return &result, nil
 }
 
+func (c *Client) DeleteTransaction(ctx context.Context, transactionID int64) error {
+	return c.do(ctx, http.MethodDelete, c.transactionEndpoint(transactionID), nil, nil)
+}
+
 func (c *Client) GetTransactionBaseline(ctx context.Context, transactionID int64) ([]BaselineClass, error) {
 	return doList[BaselineClass](ctx, c, http.MethodGet, c.transactionEndpoint(transactionID, "baseline"), nil)
 }
@@ -87,6 +109,39 @@ func (c *Client) PromoteBaselineClass(ctx context.Context, transactionID int64, 
 		return nil, err
 	}
 	return &result, nil
+}
+
+// ForcePromoteService promotes every scored baseline class on every transaction
+// of the service (POST /api/v1/services/transaction-guardrail/force-promote).
+func (c *Client) ForcePromoteService(ctx context.Context, namespace, service string) error {
+	endpoint := c.apiEndpoint("services", "transaction-guardrail", "force-promote")
+	query := endpoint.Query()
+	query.Set("namespace", namespace)
+	query.Set("service", service)
+	endpoint.RawQuery = query.Encode()
+	return c.do(ctx, http.MethodPost, endpoint, nil, nil)
+}
+
+// EnableTransactionGuardrail enables a service's allowed_transactions guardrail
+// (POST /api/v1/services/transaction-guardrail/enable).
+func (c *Client) EnableTransactionGuardrail(ctx context.Context, namespace, service string) error {
+	endpoint := c.apiEndpoint("services", "transaction-guardrail", "enable")
+	query := endpoint.Query()
+	query.Set("namespace", namespace)
+	query.Set("service", service)
+	endpoint.RawQuery = query.Encode()
+	return c.do(ctx, http.MethodPost, endpoint, nil, nil)
+}
+
+// DisableTransactionGuardrail disables a service's allowed_transactions guardrail
+// (POST /api/v1/services/transaction-guardrail/disable).
+func (c *Client) DisableTransactionGuardrail(ctx context.Context, namespace, service string) error {
+	endpoint := c.apiEndpoint("services", "transaction-guardrail", "disable")
+	query := endpoint.Query()
+	query.Set("namespace", namespace)
+	query.Set("service", service)
+	endpoint.RawQuery = query.Encode()
+	return c.do(ctx, http.MethodPost, endpoint, nil, nil)
 }
 
 func (c *Client) ResetBaselineClass(ctx context.Context, transactionID int64, class DeviationClass) error {
@@ -172,7 +227,46 @@ func (c *Client) GetAnomaly(ctx context.Context, transactionID int64, signature 
 	if err := c.do(ctx, http.MethodGet, c.apiEndpoint("anomalies", strconv.FormatInt(transactionID, 10), signature), nil, &result); err != nil {
 		return nil, err
 	}
+	// Insights detail should embed compare traces; older builds may omit them even
+	// when retained samples exist. Fill from the observations API when missing.
+	c.enrichAnomalyCompareTraces(ctx, &result)
 	return &result, nil
+}
+
+// enrichAnomalyCompareTraces loads anomaly/baseline OTLP samples when the anomaly
+// detail payload omitted anomaly_trace / baseline_trace.
+func (c *Client) enrichAnomalyCompareTraces(ctx context.Context, issue *AnomalyIssue) {
+	if issue == nil {
+		return
+	}
+	if issue.AnomalyTrace == nil {
+		reason := AnomalyEvidenceSampleReason(issue.Signature)
+		if obs := c.firstObservation(ctx, issue.TransactionID, &reason); obs != nil {
+			issue.AnomalyTrace = obs
+		} else if issue.LastTraceID != nil && *issue.LastTraceID != "" {
+			if obs, err := c.GetObservation(ctx, issue.TransactionID, *issue.LastTraceID); err == nil {
+				issue.AnomalyTrace = obs
+			}
+		}
+	}
+	if issue.BaselineTrace == nil {
+		reason := SampleReasonExample
+		if obs := c.firstObservation(ctx, issue.TransactionID, &reason); obs != nil {
+			issue.BaselineTrace = obs
+		}
+	}
+}
+
+func (c *Client) firstObservation(ctx context.Context, transactionID int64, reason *SampleReason) *Observation {
+	samples, err := c.ListObservations(ctx, transactionID, ListObservationsParams{SampleReason: reason})
+	if err != nil || len(samples) == 0 {
+		return nil
+	}
+	obs, err := c.GetObservation(ctx, transactionID, samples[0].TraceID)
+	if err != nil {
+		return nil
+	}
+	return obs
 }
 
 func (c *Client) ResolveAnomaly(ctx context.Context, transactionID int64, signature string, resolution AnomalyResolution) error {
@@ -214,6 +308,20 @@ func (c *Client) ListGuardrailViolations(ctx context.Context, params ListGuardra
 	endpoint := c.apiEndpoint("guardrails", "violations")
 	addFindingFilters(endpoint, params.WindowHours, params.Service, params.Namespace, params.Status)
 	return doList[GuardrailViolation](ctx, c, http.MethodGet, endpoint, nil)
+}
+
+func (c *Client) GetGuardrailViolation(ctx context.Context, scopeKey, ruleKey, offending string) (*GuardrailViolationDetail, error) {
+	endpoint := c.apiEndpoint("guardrails", "violations", "evidence")
+	query := endpoint.Query()
+	query.Set("scope_key", scopeKey)
+	query.Set("rule_key", ruleKey)
+	query.Set("offending", offending)
+	endpoint.RawQuery = query.Encode()
+	var result GuardrailViolationDetail
+	if err := c.do(ctx, http.MethodGet, endpoint, nil, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 func (c *Client) AllowGuardrailViolation(ctx context.Context, request ViolationActionRequest) error {

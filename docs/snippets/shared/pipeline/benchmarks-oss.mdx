@@ -1,0 +1,62 @@
+import { GatewayChart, NodeCollectorChart } from '/snippets/shared/pipeline/benchmarks-chart.mdx'
+import BenchmarksFooter from '/snippets/shared/pipeline/benchmarks-footer.mdx'
+
+The [ResourceSizePreset](./configuration#1-using-sizing-configuration) profiles (`size_s`, `size_m`, `size_l`, and `size_xl`) map collector resources and scaling headroom to telemetry volume. Use this page to assist you in picking a preset.
+
+## Total span throughput
+
+Span throughput is the metric we use for benchmarking and estimating the resources needed to operate Odigos.
+
+To calculate the total span throughput (bytes/second), you can either:
+- Estimate your monthly span volume in bytes, which can often be inferred from your existing observability tools. If you only know the number of spans, multiply it by the average span size in bytes to estimate the total volume. Then convert the monthly volume to bytes per second.  
+- View the span throughput in the Odigos UI under "collectors pipeline". 
+
+<Info>
+Collector pipeline UI requires enabling the [Odigos Own Metrics](./odigos-own-metrics) feature.
+</Info>
+
+Note that while **total span throughput** is the primary metric for determining the appropriate Odigos preset size, additional factors can affect the maximum span throughput your Odigos deployment can handle:  
+
+- **Number of instrumented pods** - each instrumented pod consumes a small amount of additional static resources in the node collector.
+- **Pipeline features** - actions and destinations consume additional collector CPU and memory resources.  
+
+## Cluster preset vs. total span throughput
+
+### Maximal single collector capacity
+
+#### Cluster gateway (1 pod) ([see maximum capacity here](#maximum-scaled-cluster))
+
+The cluster gateway is a Deployment that receives telemetry from node collectors, processes it, and exports it to your destinations.
+
+<GatewayChart />
+
+| Size      | spans/s    | span throughput (MB/second) |
+|-----------|-----------:|----------------------------:|
+| `size_s`  | **3,000**  | **5.8**  |
+| `size_m`  | **18,000** | **34.5** |
+| `size_l`  | **23,000** | **44.1** |
+| `size_xl` | **31,500** | **60.4** |
+
+#### Node collector
+
+The node collector is a DaemonSet (one pod per node) that receives telemetry from apps on that node and forwards it to the cluster gateway.
+
+<NodeCollectorChart instrumentation="community" />
+
+| Size      | spans/s    | span throughput (MB/second) |
+|-----------|-----------:|----------------------------:|
+| `size_s`  | **23,500** | **45.1**  |
+| `size_m`  | **35,000** | **67.1**  |
+| `size_l`  | **49,500** | **94.9**  |
+| `size_xl` | **54,500** | **104.5** |
+
+### Maximum scaled cluster gateway capacity
+
+| Size      | HPA Maximum Replicas | spans/s     | span throughput (MB/second) |
+|-----------|---------------------:|------------:|----------------------------:|
+| `size_s`  | **5**                | **15,000**  | **28.8**   |
+| `size_m`  | **8**                | **144,000** | **276.2**  |
+| `size_l`  | **12**               | **276,000** | **529.4**  |
+| `size_xl` | **15**               | **472,500** | **906.3**  |
+
+<BenchmarksFooter />

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 )
@@ -218,7 +219,19 @@ func DeviationClassFromModel(class model.InsightsDeviationClass) DeviationClass 
 }
 
 func SampleReasonToModel(reason SampleReason) model.InsightsSampleReason {
-	return model.InsightsSampleReason(reason)
+	s := string(reason)
+	switch {
+	case s == string(model.InsightsSampleReasonExample):
+		return model.InsightsSampleReasonExample
+	case s == string(model.InsightsSampleReasonAnomalyEvidence) || strings.HasPrefix(s, "anomaly:"):
+		// Storage tags evidence as anomaly:<signature>; GraphQL keeps the legacy enum token.
+		return model.InsightsSampleReasonAnomalyEvidence
+	case s == string(model.InsightsSampleReasonGuardrailEvidence) || strings.HasPrefix(s, "guardrail:"):
+		// Storage tags evidence as guardrail:<rule>:<offending>.
+		return model.InsightsSampleReasonGuardrailEvidence
+	default:
+		return model.InsightsSampleReason(reason)
+	}
 }
 
 func SampleReasonFromModel(reason model.InsightsSampleReason) SampleReason {
@@ -340,6 +353,35 @@ func ServiceProfileToModel(profile ServiceProfile) *model.InsightsServiceProfile
 	}
 }
 
+func BlastRadiusNodeToModel(node BlastRadiusNode) *model.InsightsBlastRadiusNode {
+	return &model.InsightsBlastRadiusNode{
+		Namespace: node.Namespace,
+		Service:   node.Service,
+		IsVirtual: node.IsVirtual,
+	}
+}
+
+func BlastRadiusEdgeToModel(edge BlastRadiusEdge) *model.InsightsBlastRadiusEdge {
+	return &model.InsightsBlastRadiusEdge{
+		ClientNamespace: edge.ClientNamespace,
+		ClientService:   edge.ClientService,
+		ServerNamespace: edge.ServerNamespace,
+		ServerService:   edge.ServerService,
+		ConnectionType:  edge.ConnectionType,
+		RequestCount:    int64ToInt(edge.RequestCount),
+		FailedCount:     int64ToInt(edge.FailedCount),
+		LastSeen:        edge.LastSeen,
+	}
+}
+
+func BlastRadiusSubgraphToModel(subgraph BlastRadiusSubgraph) *model.InsightsBlastRadiusSubgraph {
+	return &model.InsightsBlastRadiusSubgraph{
+		Root:  BlastRadiusNodeToModel(subgraph.Root),
+		Nodes: mapSlice(subgraph.Nodes, BlastRadiusNodeToModel),
+		Edges: mapSlice(subgraph.Edges, BlastRadiusEdgeToModel),
+	}
+}
+
 func stringSliceOrEmpty(s []string) []string {
 	if s == nil {
 		return []string{}
@@ -390,7 +432,31 @@ func BaselineClassToModel(baseline BaselineClass) (*model.InsightsBaselineClass,
 		LearningStartedAt:            baseline.LearningStartedAt,
 		LastChangedAt:                baseline.LastChangedAt,
 		ObservationCountAtLastChange: int64PtrToIntPtr(baseline.ObservationCountAtLastChange),
+		Learning:                     BaselineLearningToModel(baseline.Learning),
 	}, nil
+}
+
+func BaselineLearningToModel(learning BaselineLearning) *model.InsightsBaselineLearning {
+	return &model.InsightsBaselineLearning{
+		Phase:                       model.InsightsBaselineLearningPhase(learning.Phase),
+		ObservationsSinceLastChange: int64ToInt(learning.ObservationsSinceLastChange),
+		QuietMinutes:                int64ToInt(learning.QuietMinutes),
+		Mode:                        LearningModeToModel(learning.Mode),
+		ReadyToPromote:              learning.ReadyToPromote,
+		Stability: &model.InsightsBaselineLearningStability{
+			Observations: BaselineStabilityProgressToModel(learning.Stability.Observations),
+			Duration:     BaselineStabilityProgressToModel(learning.Stability.Duration),
+		},
+	}
+}
+
+func BaselineStabilityProgressToModel(progress BaselineStabilityProgress) *model.InsightsBaselineStabilityProgress {
+	return &model.InsightsBaselineStabilityProgress{
+		Current:         int64ToInt(progress.Current),
+		Target:          int64ToInt(progress.Target),
+		DrivesPromotion: progress.DrivesPromotion,
+		Met:             progress.Met,
+	}
 }
 
 func BaselineClassesToModel(baselines []BaselineClass) ([]*model.InsightsBaselineClass, error) {
@@ -492,20 +558,21 @@ func LearningPoliciesToModel(policies []LearningPolicy) []*model.InsightsLearnin
 
 func FindingToModel(finding Finding) *model.InsightsFinding {
 	return &model.InsightsFinding{
-		Kind:          FindingKindToModel(finding.Kind),
-		Service:       finding.Service,
-		Namespace:     finding.Namespace,
-		Title:         finding.Title,
-		Offending:     finding.Offending,
-		Score:         finding.Score,
-		Severity:      SeverityToModel(finding.Severity),
-		Occurrences:   int64ToInt(finding.Occurrences),
-		LastSeen:      finding.LastSeen,
-		Status:        finding.Status,
-		TransactionID: formatOptionalID(finding.TransactionID),
-		Signature:     finding.Signature,
-		ScopeKey:      finding.ScopeKey,
-		RuleKey:       finding.RuleKey,
+		Kind:             FindingKindToModel(finding.Kind),
+		Service:          finding.Service,
+		Namespace:        finding.Namespace,
+		Title:            finding.Title,
+		Offending:        finding.Offending,
+		Score:            finding.Score,
+		Severity:         SeverityToModel(finding.Severity),
+		Occurrences:      int64ToInt(finding.Occurrences),
+		LastSeen:         finding.LastSeen,
+		Status:           finding.Status,
+		TransactionID:    formatOptionalID(finding.TransactionID),
+		Signature:        finding.Signature,
+		TriggeredClasses: mapSlice(finding.TriggeredClasses, DeviationClassToModel),
+		ScopeKey:         finding.ScopeKey,
+		RuleKey:          finding.RuleKey,
 	}
 }
 
@@ -563,6 +630,51 @@ func AnomalySummariesToModel(anomalies []AnomalySummary) []*model.InsightsAnomal
 	return mapSlice(anomalies, AnomalySummaryToModel)
 }
 
+func AnomalySpanHighlightToModel(highlight AnomalySpanHighlight) *model.InsightsAnomalySpanHighlight {
+	return &model.InsightsAnomalySpanHighlight{
+		SpanID:   highlight.SpanID,
+		Severity: highlight.Severity,
+		Reason:   highlight.Reason,
+	}
+}
+
+func AnomalyAttrHighlightToModel(highlight AnomalyAttrHighlight) *model.InsightsAnomalyAttrHighlight {
+	return &model.InsightsAnomalyAttrHighlight{
+		SpanID: highlight.SpanID,
+		Key:    highlight.Key,
+		Value:  highlight.Value,
+	}
+}
+
+func AnomalyMetricComparisonToModel(metric AnomalyMetricComparison) *model.InsightsAnomalyMetricComparison {
+	return &model.InsightsAnomalyMetricComparison{
+		Observed: int64ToInt(metric.Observed),
+		Baseline: int64ToInt(metric.Baseline),
+		Unit:     metric.Unit,
+	}
+}
+
+func AnomalyClassFindingToModel(finding AnomalyClassFinding) (*model.InsightsAnomalyClassFinding, error) {
+	rawEvidence, err := encodeOptionalJSONString(finding.RawEvidence)
+	if err != nil {
+		return nil, err
+	}
+	var metric *model.InsightsAnomalyMetricComparison
+	if finding.Metric != nil {
+		metric = AnomalyMetricComparisonToModel(*finding.Metric)
+	}
+	return &model.InsightsAnomalyClassFinding{
+		Class:          DeviationClassToModel(finding.Class),
+		Kind:           model.InsightsAnomalyClassFindingKind(finding.Kind),
+		Title:          finding.Title,
+		Summary:        finding.Summary,
+		SpanHighlights: mapSlice(finding.SpanHighlights, AnomalySpanHighlightToModel),
+		AttrHighlights: mapSlice(finding.AttrHighlights, AnomalyAttrHighlightToModel),
+		Metric:         metric,
+		RawEvidence:    rawEvidence,
+	}, nil
+}
+
 func AnomalyIssueToModel(anomaly AnomalyIssue) (*model.InsightsAnomalyIssue, error) {
 	evidence := "{}"
 	if len(anomaly.Evidence) > 0 {
@@ -571,6 +683,21 @@ func AnomalyIssueToModel(anomaly AnomalyIssue) (*model.InsightsAnomalyIssue, err
 	var risk *model.InsightsRiskAssessment
 	if anomaly.Risk != nil {
 		risk = RiskAssessmentToModel(*anomaly.Risk)
+	}
+	classFindings, err := mapSliceErr(anomaly.ClassFindings, AnomalyClassFindingToModel)
+	if err != nil {
+		return nil, err
+	}
+	if classFindings == nil {
+		classFindings = []*model.InsightsAnomalyClassFinding{}
+	}
+	var anomalyTrace *model.InsightsObservation
+	if anomaly.AnomalyTrace != nil {
+		anomalyTrace = ObservationToModel(*anomaly.AnomalyTrace)
+	}
+	var baselineTrace *model.InsightsObservation
+	if anomaly.BaselineTrace != nil {
+		baselineTrace = ObservationToModel(*anomaly.BaselineTrace)
 	}
 	return &model.InsightsAnomalyIssue{
 		TransactionID:    FormatID(anomaly.TransactionID),
@@ -591,6 +718,9 @@ func AnomalyIssueToModel(anomaly AnomalyIssue) (*model.InsightsAnomalyIssue, err
 		Status:           AnomalyStatusToModel(anomaly.Status),
 		Evidence:         evidence,
 		Risk:             risk,
+		ClassFindings:    classFindings,
+		AnomalyTrace:     anomalyTrace,
+		BaselineTrace:    baselineTrace,
 	}, nil
 }
 
@@ -640,6 +770,29 @@ func GuardrailViolationToModel(violation GuardrailViolation) *model.InsightsGuar
 
 func GuardrailViolationsToModel(violations []GuardrailViolation) []*model.InsightsGuardrailViolation {
 	return mapSlice(violations, GuardrailViolationToModel)
+}
+
+func GuardrailViolationDetailToModel(detail GuardrailViolationDetail) *model.InsightsGuardrailViolationDetail {
+	var evidenceTrace *model.InsightsObservation
+	if detail.EvidenceTrace != nil {
+		evidenceTrace = ObservationToModel(*detail.EvidenceTrace)
+	}
+	return &model.InsightsGuardrailViolationDetail{
+		Service:        detail.Service,
+		Namespace:      detail.Namespace,
+		ScopeKey:       detail.ScopeKey,
+		RuleKey:        detail.RuleKey,
+		RuleLabel:      detail.RuleLabel,
+		Offending:      detail.Offending,
+		Occurrences:    int64ToInt(detail.Occurrences),
+		MaxScore:       detail.MaxScore,
+		Severity:       SeverityToModel(detail.Severity),
+		LastSeen:       detail.LastSeen,
+		Status:         ViolationStatusToModel(detail.Status),
+		Summary:        detail.Summary,
+		SpanHighlights: mapSlice(detail.SpanHighlights, AnomalySpanHighlightToModel),
+		EvidenceTrace:  evidenceTrace,
+	}
 }
 
 func CatalogClassToModel(class CatalogClass) *model.InsightsCatalogClass {
@@ -747,6 +900,9 @@ func SystemSettingsToModel(settings SystemSettings) *model.InsightsSystemSetting
 		},
 		Writeback: &model.InsightsSystemWritebackSettings{
 			FlushIntervalSeconds: settings.Writeback.FlushIntervalSeconds,
+		},
+		Detection: &model.InsightsSystemDetectionSettings{
+			AutoTransactionGuardrail: settings.Detection.AutoTransactionGuardrail,
 		},
 	}
 }
@@ -941,7 +1097,7 @@ func BulkAnomalyRequestFromInput(resolution model.InsightsBulkResolution, items 
 }
 
 func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSettings, error) {
-	if input.Sampling == nil || input.Retention == nil || input.Findings == nil || input.Capacity == nil || input.Writeback == nil {
+	if input.Sampling == nil || input.Retention == nil || input.Findings == nil || input.Capacity == nil || input.Writeback == nil || input.Detection == nil {
 		return SystemSettings{}, fmt.Errorf("%w: system settings input is incomplete", ErrBadRequest)
 	}
 	return SystemSettings{
@@ -962,6 +1118,9 @@ func SystemSettingsFromInput(input model.InsightsSystemSettingsInput) (SystemSet
 		},
 		Writeback: SystemWritebackSettings{
 			FlushIntervalSeconds: input.Writeback.FlushIntervalSeconds,
+		},
+		Detection: SystemDetectionSettings{
+			AutoTransactionGuardrail: input.Detection.AutoTransactionGuardrail,
 		},
 	}, nil
 }

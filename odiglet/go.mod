@@ -6,11 +6,11 @@ require (
 	github.com/cilium/ebpf v0.22.0
 	github.com/container-storage-interface/spec v1.10.0
 	github.com/go-logr/logr v1.4.3
-	github.com/odigos-io/odigos/api v0.0.0
-	github.com/odigos-io/odigos/common v0.0.0
-	github.com/odigos-io/odigos/distros v0.0.0
-	github.com/odigos-io/odigos/instrumentation v0.0.0
-	github.com/odigos-io/odigos/k8sutils v0.0.0
+	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/distros v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/instrumentation v0.0.0-00010101000000-000000000000
+	github.com/odigos-io/odigos/k8sutils v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/odiglet/pkg/ebpf/sdks/obi v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/opampserver v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/procdiscovery v0.0.0-00010101000000-000000000000
@@ -232,7 +232,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.28.0 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
-	golang.org/x/mod v0.37.0 // indirect
+	golang.org/x/mod v0.40.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/term v0.45.0 // indirect

@@ -1,0 +1,131 @@
+---
+title: 'Cloud Connectors Overview'
+description: 'Use Odigos Central Cloud Connectors to discover and instrument cloud workloads across supported providers from a single control plane.'
+sidebarTitle: 'Overview'
+---
+
+Cloud Connectors are the third connection type in Odigos Central, alongside [Remote Clusters](/central/adding-connections/remote-clusters) and [VM Agent](/central/adding-connections/vmagent).
+
+Each connector manages **one** cloud account boundary (for example an AWS account, a GCP project, or another supported provider). From Central you discover workloads in that account, create Sources for the ones you want to observe, and track instrumentation progress.
+
+## Why use Cloud Connectors?
+
+- **Unified management** — Manage serverless and cloud workloads alongside Kubernetes clusters and VM hosts from the same Central UI
+- **Automatic discovery** — Surface instrumentable workloads in the account boundary without hunting for each resource by hand
+- **Flexible scale** — Instrument one workload or many at once from discovery; nothing is instrumented until you choose
+- **Less operational overhead** — Avoid manually attaching layers, agents, or env vars on every Lambda or Cloud Run service
+- **Centralized credentials** — Cloud credentials live as Secrets in the Central cluster; one connector owns one account boundary for clear blast radius and ownership
+
+## You control the access scope
+
+Cloud Connectors do **not** get blanket access to your cloud environment. What each connector can discover and instrument is limited by the access you grant.
+
+<Info>
+  Scope is defined by your cloud permissions (e.g. IAM policies or service account
+  roles), plus the resource types you enable on the connector. Odigos only acts
+  within that boundary.
+</Info>
+
+Three layers work together:
+
+1. **Cloud credentials and permissions** — The role or service account you attach decides which APIs and resources the connector can call. Narrow policies mean a narrower discovery and instrumentation footprint.
+2. **Connector capabilities** — When you add a connector, you choose which resource types may be discovered and which may be instrumented (per-type capabilities).
+3. **Sources** — Even after discovery, nothing is instrumented until you create Sources for the workloads you select.
+
+Provider-specific permission lists are covered on the corresponding Add connector pages (for example [Add AWS](/cloud-connectors/add-connectors/add-aws-connector)).
+
+## Workloads and compute platforms
+
+Connectors organize resources into two domains:
+
+- **Workloads** — resources Odigos discovers and can instrument directly (for example AWS Lambda or GCP Cloud Run).
+- **Compute platforms** — managed environments such as ECS clusters, GKE, or Compute Engine. These can be discovered today; installing a separate Odigos agent onto them expands coverage over time.
+
+You choose which resource types to discover and instrument when you add a connector (per-type capabilities).
+
+## Resource coverage
+
+Current coverage includes the following providers and resource types. Additional providers may be added over time.
+
+| Provider | Discover | Instrument |
+| --- | --- | --- |
+| AWS Lambda (`aws.lambda`) | Yes | Yes |
+| Amazon ECS Fargate tasks (`aws.fargate-task`) | Yes | Coming soon |
+| Amazon ECS clusters (`aws.ecs-cluster`, `aws.fargate-cluster`) | Yes | n/a |
+| GCP Cloud Run (`gcp.cloud-run`) | Yes | Yes |
+| GKE (`gcp.gke`) / Compute Engine (`gcp.gce`) | Yes | Coming soon |
+
+## Supported languages
+
+Direct instrumentation depends on the workload type:
+
+| Workload | Supported languages |
+| --- | --- |
+| AWS Lambda (`aws.lambda`) | Java, Python, Node.js, Ruby |
+| GCP Cloud Run (`gcp.cloud-run`) | Java, Python, Node.js, .NET |
+
+Other Lambda runtimes (for example Go or .NET) can still be discovered; they are not instrumented until support for those runtimes is added.
+
+AWS Lambda Ruby supports OTLP HTTP only. See [Telemetry export](#telemetry-export) for destination protocol limits.
+
+## Telemetry export
+
+Instrumented workloads export OpenTelemetry data to an **OTLP endpoint** you configure on the connector. That endpoint must be reachable from the cloud environment (for example from Lambda or Cloud Run).
+
+Lambda and Cloud Run support **OTLP destinations only**.
+
+Protocol support for AWS Lambda:
+
+- **Python, Node.js, Java** — OTLP gRPC and OTLP HTTP
+- **Ruby** — OTLP HTTP only
+
+GCP Cloud Run supports OTLP gRPC and OTLP HTTP.
+
+See [Add an OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination). For how to add and configure destinations, see the [Destinations overview](/enterprise/backends-overview).
+
+## Prerequisites
+
+<Steps>
+  <Step title="Install Odigos Central">
+    Follow the [Central installation](/central/installation) guide.
+  </Step>
+  <Step title="Enable Cloud Connectors">
+    Set `cloudConnectors.enabled=true`. See [Enable Cloud Connectors](/cloud-connectors/enable).
+  </Step>
+  <Step title="Prepare cloud access">
+    Create a cloud identity (e.g. IAM role or service account) with only the permissions you want the connector to have. See [You control the access scope](#you-control-the-access-scope).
+  </Step>
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Enable Cloud Connectors"
+    icon="toggle-on"
+    href="/cloud-connectors/enable"
+  >
+    Turn on the feature in Helm or the CLI, including Postgres settings.
+  </Card>
+  <Card
+    title="Add AWS connector"
+    icon="aws"
+    href="/cloud-connectors/add-connectors/add-aws-connector"
+  >
+    Connect an AWS account and discover Lambda and ECS resources.
+  </Card>
+  <Card
+    title="Add GCP connector"
+    icon="google"
+    href="/cloud-connectors/add-connectors/add-gcp-connector"
+  >
+    Connect a Google Cloud project and discover Cloud Run services.
+  </Card>
+  <Card
+    title="Instrument workloads"
+    icon="microchip"
+    href="/cloud-connectors/instrument-workloads"
+  >
+    Create Sources and track instrumentation after a connector is online.
+  </Card>
+</CardGroup>

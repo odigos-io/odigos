@@ -86,6 +86,13 @@ jobs:
       - name: Install crane
         uses: imjasonh/setup-crane@v0.4
 
+      # oras is used for the cross-repo mirrors: `oras copy -r` carries the
+      # cosign signature and SBOM referrers with the image, which `crane copy`
+      # drops. The same-repo RC->stable retags keep crane — referrers attach
+      # to the digest, so a retag inside one repo never loses them.
+      - name: Install oras
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+
       - id: gcp-auth
         name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v3
@@ -144,7 +151,7 @@ jobs:
               # Mirror all GCR images into the private registry (components-private).
               for IMAGE_NAME in "${GCR_IMAGE_NAMES[@]}"; do
                 echo "Mirroring ${GCR_REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }} to ${GCR_PRIVATE_REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
-                if ! crane copy ${GCR_REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }} ${GCR_PRIVATE_REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
+                if ! oras copy -r ${GCR_REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }} ${GCR_PRIVATE_REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
                   echo "ERROR: Failed to mirror ${GCR_PRIVATE_REPO}/${IMAGE_NAME}${SUFFIX}"
                   FAILED_COPIES+=("${GCR_PRIVATE_REPO}/${IMAGE_NAME}${SUFFIX}")
                 else
@@ -192,7 +199,7 @@ jobs:
               fi
 
               echo "Mirroring ${GCR_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended to ${GCR_PRIVATE_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended"
-              if ! crane copy ${GCR_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended ${GCR_PRIVATE_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended; then
+              if ! oras copy -r ${GCR_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended ${GCR_PRIVATE_REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended; then
                 echo "ERROR: Failed to mirror ${GCR_PRIVATE_REPO}/${IMAGE_NAME} extended"
                 FAILED_COPIES+=("${GCR_PRIVATE_REPO}/${IMAGE_NAME}-extended")
               else

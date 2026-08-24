@@ -49,6 +49,7 @@ import type {
   InsightsFinding,
   InsightsGuardrail,
   InsightsGuardrailViolation,
+  InsightsGuardrailViolationDetail,
   InsightsLearningPolicy,
   InsightsObservation,
   InsightsObservationSummary,
@@ -56,6 +57,7 @@ import type {
   InsightsPromoteResult,
   InsightsServiceStat,
   InsightsServiceProfile,
+  InsightsBlastRadiusSubgraph,
   InsightsStorageHealth,
   InsightsSystemSettings,
   InsightsTransaction,
@@ -89,6 +91,7 @@ import {
   GET_PEER_SOURCES,
   GET_POTENTIAL_DESTINATIONS,
   GET_PROFILING_SLOTS,
+  GET_RECOMMENDATIONS,
   GET_SAMPLING_RULES,
   GET_SERVICE_MAP,
   GET_SOURCE,
@@ -105,6 +108,7 @@ import {
   GET_COLLECTOR_POD_INFO,
   GET_INSIGHTS_SERVICES,
   GET_INSIGHTS_SERVICE_PROFILE,
+  GET_INSIGHTS_BLAST_RADIUS,
   GET_INSIGHTS_TRANSACTIONS,
   GET_INSIGHTS_TRANSACTION,
   GET_INSIGHTS_BASELINE,
@@ -117,6 +121,7 @@ import {
   GET_INSIGHTS_LEARNING_POLICIES,
   GET_INSIGHTS_GUARDRAILS,
   GET_INSIGHTS_GUARDRAIL_VIOLATIONS,
+  GET_INSIGHTS_GUARDRAIL_VIOLATION,
   GET_INSIGHTS_CATALOG,
   GET_INSIGHTS_SYSTEM_SETTINGS,
   GET_INSIGHTS_STORAGE_HEALTH,
@@ -124,6 +129,7 @@ import {
   DESCRIBE_SOURCE,
   DOWNLOAD_DIAGNOSE,
   // mutations
+  APPLY_RECOMMENDATION_REMEDIATION,
   CREATE_ACTION,
   CREATE_COST_REDUCTION_RULE,
   CREATE_DESTINATION,
@@ -144,6 +150,7 @@ import {
   RESET_LOCAL_UI_CONFIG_TO_FACTORY_DEFAULTS,
   RESTART_POD,
   RESTART_WORKLOADS,
+  SET_RECOMMENDATION_DISMISSED,
   TEST_CONNECTION_MUTATION,
   UPDATE_ACTION,
   UPDATE_API_TOKEN,
@@ -159,6 +166,10 @@ import {
   PROMOTE_INSIGHTS_BASELINE_CLASS,
   RESET_INSIGHTS_BASELINE_CLASS,
   RESET_INSIGHTS_TRANSACTION_BASELINES,
+  FORCE_PROMOTE_INSIGHTS_SERVICE,
+  ENABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
+  DISABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
+  DELETE_INSIGHTS_TRANSACTION,
   UPSERT_INSIGHTS_POLICY,
   DELETE_INSIGHTS_POLICY,
   UPSERT_INSIGHTS_LEARNING_POLICY,
@@ -461,6 +472,10 @@ const operations: OdigosApiOperations = {
     document: GET_INSIGHTS_SERVICE_PROFILE,
     transformResult: (raw: unknown) => (raw as { insights?: { serviceProfile?: InsightsServiceProfile } } | null | undefined)?.insights?.serviceProfile,
   },
+  GET_INSIGHTS_BLAST_RADIUS: {
+    document: GET_INSIGHTS_BLAST_RADIUS,
+    transformResult: (raw: unknown) => (raw as { insights?: { blastRadius?: InsightsBlastRadiusSubgraph } } | null | undefined)?.insights?.blastRadius,
+  },
   GET_INSIGHTS_TRANSACTIONS: {
     document: GET_INSIGHTS_TRANSACTIONS,
     transformResult: (raw: unknown) => (raw as { insights?: { transactions?: InsightsTransactionStat[] } } | null | undefined)?.insights?.transactions ?? [],
@@ -509,6 +524,10 @@ const operations: OdigosApiOperations = {
     document: GET_INSIGHTS_GUARDRAIL_VIOLATIONS,
     transformResult: (raw: unknown) => (raw as { insights?: { guardrailViolations?: InsightsGuardrailViolation[] } } | null | undefined)?.insights?.guardrailViolations ?? [],
   },
+  GET_INSIGHTS_GUARDRAIL_VIOLATION: {
+    document: GET_INSIGHTS_GUARDRAIL_VIOLATION,
+    transformResult: (raw: unknown) => (raw as { insights?: { guardrailViolation?: InsightsGuardrailViolationDetail } } | null | undefined)?.insights?.guardrailViolation,
+  },
   GET_INSIGHTS_CATALOG: {
     document: GET_INSIGHTS_CATALOG,
     transformResult: (raw: unknown) => (raw as { insights?: { catalog?: InsightsCatalog } } | null | undefined)?.insights?.catalog,
@@ -533,6 +552,22 @@ const operations: OdigosApiOperations = {
   RESET_INSIGHTS_TRANSACTION_BASELINES: {
     document: RESET_INSIGHTS_TRANSACTION_BASELINES,
     transformResult: (raw: unknown) => (raw as { resetInsightsTransactionBaselines?: boolean } | null | undefined)?.resetInsightsTransactionBaselines ?? false,
+  },
+  FORCE_PROMOTE_INSIGHTS_SERVICE: {
+    document: FORCE_PROMOTE_INSIGHTS_SERVICE,
+    transformResult: (raw: unknown) => (raw as { forcePromoteInsightsService?: boolean } | null | undefined)?.forcePromoteInsightsService ?? false,
+  },
+  ENABLE_INSIGHTS_TRANSACTION_GUARDRAIL: {
+    document: ENABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
+    transformResult: (raw: unknown) => (raw as { enableInsightsTransactionGuardrail?: boolean } | null | undefined)?.enableInsightsTransactionGuardrail ?? false,
+  },
+  DISABLE_INSIGHTS_TRANSACTION_GUARDRAIL: {
+    document: DISABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
+    transformResult: (raw: unknown) => (raw as { disableInsightsTransactionGuardrail?: boolean } | null | undefined)?.disableInsightsTransactionGuardrail ?? false,
+  },
+  DELETE_INSIGHTS_TRANSACTION: {
+    document: DELETE_INSIGHTS_TRANSACTION,
+    transformResult: (raw: unknown) => (raw as { deleteInsightsTransaction?: boolean } | null | undefined)?.deleteInsightsTransaction ?? false,
   },
   UPSERT_INSIGHTS_POLICY: {
     document: UPSERT_INSIGHTS_POLICY,
@@ -586,6 +621,10 @@ const operations: OdigosApiOperations = {
     document: UPDATE_INSIGHTS_SYSTEM_SETTINGS,
     transformResult: (raw: unknown) => (raw as { updateInsightsSystemSettings?: InsightsSystemSettings } | null | undefined)?.updateInsightsSystemSettings,
   },
+  // recommendations
+  GET_RECOMMENDATIONS: { document: GET_RECOMMENDATIONS },
+  SET_RECOMMENDATION_DISMISSED: { document: SET_RECOMMENDATION_DISMISSED },
+  APPLY_RECOMMENDATION_REMEDIATION: { document: APPLY_RECOMMENDATION_REMEDIATION },
 };
 
 type AdapterProps = PropsWithChildren;
