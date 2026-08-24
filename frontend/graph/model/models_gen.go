@@ -1018,7 +1018,7 @@ type InsightsGuardrailRuleInput struct {
 type InsightsGuardrailSeedInput struct {
 	ScopeKey string            `json:"scopeKey"`
 	Mode     *InsightsRuleMode `json:"mode,omitempty"`
-	// JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress.
+	// JSON-encoded map[string][]string; keys: allowed_callers | allowed_callees | allowed_egress | allowed_transactions.
 	Items string `json:"items"`
 }
 
@@ -1165,11 +1165,12 @@ type InsightsRiskSignal struct {
 }
 
 type InsightsServiceProfile struct {
-	Namespace string   `json:"namespace"`
-	Service   string   `json:"service"`
-	Callers   []string `json:"callers"`
-	Callees   []string `json:"callees"`
-	Egress    []string `json:"egress"`
+	Namespace    string   `json:"namespace"`
+	Service      string   `json:"service"`
+	Callers      []string `json:"callers"`
+	Callees      []string `json:"callees"`
+	Egress       []string `json:"egress"`
+	Transactions []string `json:"transactions"`
 }
 
 type InsightsServiceStat struct {
