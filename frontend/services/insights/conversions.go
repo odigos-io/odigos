@@ -476,6 +476,12 @@ func BulkPromoteResultToModel(result BulkPromoteResult) *model.InsightsBulkPromo
 	}
 }
 
+func BulkDeleteResultToModel(result BulkDeleteResult) *model.InsightsBulkDeleteResult {
+	return &model.InsightsBulkDeleteResult{
+		Deleted: result.Deleted,
+	}
+}
+
 func ObservationSummaryToModel(observation ObservationSummary) *model.InsightsObservationSummary {
 	return &model.InsightsObservationSummary{
 		TraceID:       observation.TraceID,

@@ -44,6 +44,7 @@ import type {
   InsightsAnomalyIssue,
   InsightsAnomalySummary,
   InsightsBaselineClass,
+  InsightsBulkDeleteResult,
   InsightsBulkPromoteResult,
   InsightsBulkResolveResult,
   InsightsCatalog,
@@ -173,6 +174,7 @@ import {
   ENABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
   DISABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
   DELETE_INSIGHTS_TRANSACTION,
+  BULK_DELETE_INSIGHTS_TRANSACTIONS,
   UPSERT_INSIGHTS_POLICY,
   DELETE_INSIGHTS_POLICY,
   UPSERT_INSIGHTS_LEARNING_POLICY,
@@ -579,6 +581,10 @@ const operations: OdigosApiOperations = {
   DELETE_INSIGHTS_TRANSACTION: {
     document: DELETE_INSIGHTS_TRANSACTION,
     transformResult: (raw: unknown) => (raw as { deleteInsightsTransaction?: boolean } | null | undefined)?.deleteInsightsTransaction ?? false,
+  },
+  BULK_DELETE_INSIGHTS_TRANSACTIONS: {
+    document: BULK_DELETE_INSIGHTS_TRANSACTIONS,
+    transformResult: (raw: unknown) => (raw as { bulkDeleteInsightsTransactions?: InsightsBulkDeleteResult } | null | undefined)?.bulkDeleteInsightsTransactions,
   },
   UPSERT_INSIGHTS_POLICY: {
     document: UPSERT_INSIGHTS_POLICY,

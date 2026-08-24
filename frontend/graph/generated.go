@@ -751,6 +751,10 @@ type ComplexityRoot struct {
 		Root  func(childComplexity int) int
 	}
 
+	InsightsBulkDeleteResult struct {
+		Deleted func(childComplexity int) int
+	}
+
 	InsightsBulkPromoteResult struct {
 		Promoted func(childComplexity int) int
 	}
@@ -1558,6 +1562,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AllowInsightsGuardrailViolation     func(childComplexity int, action model.InsightsViolationActionInput) int
 		ApplyRecommendationRemediation      func(childComplexity int, recommendationType model.RecommendationType, remediationType string) int
+		BulkDeleteInsightsTransactions      func(childComplexity int, transactionIds []string) int
 		BulkPromoteInsightsTransactions     func(childComplexity int, transactionIds []string) int
 		BulkResolveInsightsAnomalies        func(childComplexity int, resolution model.InsightsBulkResolution, items []*model.InsightsAnomalyRefInput) int
 		ClearSourceProfilingBuffer          func(childComplexity int, namespace string, kind string, name string) int
@@ -2211,6 +2216,7 @@ type MutationResolver interface {
 	EnableInsightsTransactionGuardrail(ctx context.Context, namespace string, service string) (bool, error)
 	DisableInsightsTransactionGuardrail(ctx context.Context, namespace string, service string) (bool, error)
 	DeleteInsightsTransaction(ctx context.Context, transactionID string) (bool, error)
+	BulkDeleteInsightsTransactions(ctx context.Context, transactionIds []string) (*model.InsightsBulkDeleteResult, error)
 	UpsertInsightsPolicy(ctx context.Context, policy model.InsightsPolicyInput) (*model.InsightsPolicy, error)
 	DeleteInsightsPolicy(ctx context.Context, scope model.InsightsPolicyScope, scopeKey string) (bool, error)
 	UpsertInsightsLearningPolicy(ctx context.Context, policy model.InsightsLearningPolicyInput) (*model.InsightsLearningPolicy, error)
@@ -5656,6 +5662,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsBlastRadiusSubgraph.Root(childComplexity), true
+
+	case "InsightsBulkDeleteResult.deleted":
+		if e.complexity.InsightsBulkDeleteResult.Deleted == nil {
+			break
+		}
+
+		return e.complexity.InsightsBulkDeleteResult.Deleted(childComplexity), true
 
 	case "InsightsBulkPromoteResult.promoted":
 		if e.complexity.InsightsBulkPromoteResult.Promoted == nil {
@@ -9145,6 +9158,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ApplyRecommendationRemediation(childComplexity, args["recommendationType"].(model.RecommendationType), args["remediationType"].(string)), true
+
+	case "Mutation.bulkDeleteInsightsTransactions":
+		if e.complexity.Mutation.BulkDeleteInsightsTransactions == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_bulkDeleteInsightsTransactions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.BulkDeleteInsightsTransactions(childComplexity, args["transactionIds"].([]string)), true
 
 	case "Mutation.bulkPromoteInsightsTransactions":
 		if e.complexity.Mutation.BulkPromoteInsightsTransactions == nil {
@@ -13051,6 +13076,34 @@ func (ec *executionContext) field_Mutation_applyRecommendationRemediation_argsRe
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_bulkDeleteInsightsTransactions_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_bulkDeleteInsightsTransactions_argsTransactionIds(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["transactionIds"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_bulkDeleteInsightsTransactions_argsTransactionIds(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]string, error) {
+	if _, ok := rawArgs["transactionIds"]; !ok {
+		var zeroVal []string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("transactionIds"))
+	if tmp, ok := rawArgs["transactionIds"]; ok {
+		return ec.unmarshalNID2ᚕstringᚄ(ctx, tmp)
+	}
+
+	var zeroVal []string
 	return zeroVal, nil
 }
 
@@ -37808,6 +37861,50 @@ func (ec *executionContext) fieldContext_InsightsBlastRadiusSubgraph_edges(_ con
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsBulkDeleteResult_deleted(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBulkDeleteResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBulkDeleteResult_deleted(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Deleted, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBulkDeleteResult_deleted(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBulkDeleteResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InsightsBulkPromoteResult_promoted(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBulkPromoteResult) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsBulkPromoteResult_promoted(ctx, field)
 	if err != nil {
@@ -61751,6 +61848,65 @@ func (ec *executionContext) fieldContext_Mutation_deleteInsightsTransaction(ctx 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteInsightsTransaction_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_bulkDeleteInsightsTransactions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_bulkDeleteInsightsTransactions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().BulkDeleteInsightsTransactions(rctx, fc.Args["transactionIds"].([]string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsBulkDeleteResult)
+	fc.Result = res
+	return ec.marshalNInsightsBulkDeleteResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBulkDeleteResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_bulkDeleteInsightsTransactions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "deleted":
+				return ec.fieldContext_InsightsBulkDeleteResult_deleted(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBulkDeleteResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_bulkDeleteInsightsTransactions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -88901,6 +89057,45 @@ func (ec *executionContext) _InsightsBlastRadiusSubgraph(ctx context.Context, se
 	return out
 }
 
+var insightsBulkDeleteResultImplementors = []string{"InsightsBulkDeleteResult"}
+
+func (ec *executionContext) _InsightsBulkDeleteResult(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBulkDeleteResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsBulkDeleteResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsBulkDeleteResult")
+		case "deleted":
+			out.Values[i] = ec._InsightsBulkDeleteResult_deleted(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var insightsBulkPromoteResultImplementors = []string{"InsightsBulkPromoteResult"}
 
 func (ec *executionContext) _InsightsBulkPromoteResult(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBulkPromoteResult) graphql.Marshaler {
@@ -95280,6 +95475,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteInsightsTransaction":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteInsightsTransaction(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "bulkDeleteInsightsTransactions":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_bulkDeleteInsightsTransactions(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -102145,6 +102347,20 @@ func (ec *executionContext) marshalNInsightsBlastRadiusSubgraph2ᚖgithubᚗcom�
 		return graphql.Null
 	}
 	return ec._InsightsBlastRadiusSubgraph(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsBulkDeleteResult2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBulkDeleteResult(ctx context.Context, sel ast.SelectionSet, v model.InsightsBulkDeleteResult) graphql.Marshaler {
+	return ec._InsightsBulkDeleteResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInsightsBulkDeleteResult2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBulkDeleteResult(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBulkDeleteResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsBulkDeleteResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNInsightsBulkPromoteResult2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBulkPromoteResult(ctx context.Context, sel ast.SelectionSet, v model.InsightsBulkPromoteResult) graphql.Marshaler {
