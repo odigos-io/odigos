@@ -55,6 +55,29 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 			expectTLSConfig: true, // TLS config should be present
 		},
 		{
+			name: "mTLS enabled adds client cert and key env placeholders",
+			config: map[string]string{
+				"OTLP_GRPC_ENDPOINT":     "example.com:4317",
+				"OTLP_GRPC_TLS_ENABLED":  "true",
+				"OTLP_GRPC_MTLS_ENABLED": "true",
+				"OTLP_GRPC_CA_PEM":       "-----BEGIN CERTIFICATE-----\nCA\n-----END CERTIFICATE-----",
+			},
+			expectedTLS:     true,
+			expectedAuth:    false,
+			expectTLSConfig: true,
+		},
+		{
+			name: "mTLS enabled forces TLS when TLS was disabled",
+			config: map[string]string{
+				"OTLP_GRPC_ENDPOINT":     "example.com:4317",
+				"OTLP_GRPC_TLS_ENABLED":  "false",
+				"OTLP_GRPC_MTLS_ENABLED": "true",
+			},
+			expectedTLS:     true,
+			expectedAuth:    false,
+			expectTLSConfig: true,
+		},
+		{
 			name: "Neither TLS nor OAuth2 enabled - no TLS config",
 			config: map[string]string{
 				"OTLP_GRPC_ENDPOINT": "example.com:4317",
@@ -118,6 +141,18 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 					assert.False(t, tlsConfig["insecure"].(bool), "TLS should be enabled (insecure=false)")
 				} else {
 					assert.True(t, tlsConfig["insecure"].(bool), "TLS should be disabled (insecure=true)")
+				}
+
+				if tt.config["OTLP_GRPC_MTLS_ENABLED"] == "true" {
+					assert.Equal(t, "${OTLP_GRPC_CLIENT_CERT_PEM}", tlsConfig["cert_pem"])
+					assert.Equal(t, "${OTLP_GRPC_CLIENT_KEY_PEM}", tlsConfig["key_pem"])
+				} else {
+					assert.NotContains(t, tlsConfig, "cert_pem")
+					assert.NotContains(t, tlsConfig, "key_pem")
+				}
+
+				if caPem, ok := tt.config["OTLP_GRPC_CA_PEM"]; ok && caPem != "" {
+					assert.Equal(t, caPem, tlsConfig["ca_pem"])
 				}
 			} else {
 				assert.NotContains(t, exporterConfig, "tls", "TLS config should NOT be present when neither TLS nor OAuth2 are enabled")
