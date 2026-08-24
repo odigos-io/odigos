@@ -16,9 +16,21 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
 | Type | Domain | Discovery | Instrumentation |
 | --- | --- | --- | --- |
 | `aws.lambda` | Workload | Yes | Yes (OpenTelemetry Lambda layer) |
-| `aws.fargate-task` | Workload | Yes | Coming soon |
+| `aws.fargate-task` | Workload | Yes | Yes (agent-staging sidecar in the task definition) |
 | `aws.ecs-cluster` | Compute platform | Yes | Coming soon |
 | `aws.fargate-cluster` | Compute platform | Yes | Coming soon |
+
+<Info>
+  `aws.ecs-cluster` and `aws.fargate-cluster` are discovered for coverage today;
+  Odigos does not yet install a separate agent onto them. `aws.fargate-task` — an
+  individual Fargate **service** — is the ECS resource Odigos instruments directly.
+</Info>
+
+Both `aws.lambda` and `aws.fargate-task` can be instrumented **Odigos-managed** (the connector applies and
+maintains the change) or **self-managed** via your own CloudFormation, CDK, or Terraform — see
+[Odigos-managed vs. self-managed instrumentation](/cloud-connectors/overview#odigos-managed-vs-self-managed-instrumentation).
+For the self-managed path, artifact preloading, and per-language CDK/CloudFormation snippets, see the
+[AWS Connector](/cloud-connectors/aws/overview) section.
 
 ## Add the connector
 
@@ -47,20 +59,29 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
         | --- | --- |
         | Authentication | `sts:GetCallerIdentity` |
         | Region enumeration | `ec2:DescribeRegions` |
-        | Lambda discovery | `lambda:ListFunctions` |
-        | ECS / Fargate discovery | `ecs:ListClusters`, `ecs:DescribeClusters`, `ecs:ListServices`, `ecs:DescribeServices`, `ecs:ListTasks`, `ecs:DescribeTasks` |
+        | Lambda discovery | `lambda:ListFunctions`, `lambda:ListTags` |
+        | ECS / Fargate discovery | `ecs:ListClusters`, `ecs:DescribeClusters`, `ecs:ListServices`, `ecs:DescribeServices`, `ecs:ListTasks`, `ecs:DescribeTasks`, `ecs:DescribeTaskDefinition` |
+
+        <Info>
+          `ecs:DescribeTaskDefinition` is a discovery permission, not only an
+          instrumentation one — it's what lets Odigos see whether a self-managed
+          Fargate service already carries your own instrumentation, so grant it
+          even if you only ever plan to self-manage instrumentation.
+        </Info>
       </Tab>
       <Tab title="Discovery + instrumentation">
         The connector can discover resources and instrument supported workloads. Prefer this for a full setup in one step.
 
-        Includes all discovery actions, plus Lambda instrumentation:
+        Includes all discovery actions, plus Odigos-managed instrumentation for Lambda and Fargate:
 
         | Purpose | Actions |
         | --- | --- |
         | Read and update function config | `lambda:GetFunctionConfiguration`, `lambda:UpdateFunctionConfiguration` |
         | Manage OTel layers | `lambda:GetLayerVersion`, `lambda:ListLayers`, `lambda:PublishLayerVersion`, `lambda:DeleteLayerVersion` |
+        | Manage Fargate task definitions | `ecs:RegisterTaskDefinition`, `ecs:UpdateService` |
+        | Pass task/execution roles when registering a task definition | `iam:PassRole` (scope with condition `iam:PassedToService=ecs-tasks.amazonaws.com`) |
 
-        Lambda instrumentation also requires an [OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online.
+        Odigos-managed instrumentation also requires an [OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online. If you plan to self-manage instrumentation instead (your own CloudFormation/CDK/Terraform), you only need the discovery actions above — see [AWS Connector](/cloud-connectors/aws/overview).
       </Tab>
       <Tab title="Custom">
         Pick which resource types may be discovered and which may be instrumented. The UI updates the **policy preview** to match your selections so the IAM policy stays aligned with what verification will validate.
@@ -209,10 +230,19 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
 
 ## Next steps
 
-<Card
-  title="Instrument workloads"
-  icon="microchip"
-  href="/cloud-connectors/instrument-workloads#add-an-otlp-destination"
->
-  Add an OTLP destination, create Sources for discovered Lambdas, and track instrumentation.
-</Card>
+<CardGroup cols={2}>
+  <Card
+    title="Instrument workloads"
+    icon="microchip"
+    href="/cloud-connectors/instrument-workloads#add-an-otlp-destination"
+  >
+    Add an OTLP destination, create Sources for discovered Lambdas and Fargate services, and track instrumentation.
+  </Card>
+  <Card
+    title="AWS Connector"
+    icon="aws"
+    href="/cloud-connectors/aws/overview"
+  >
+    Self-managed instrumentation, artifact preloading, and CDK/CloudFormation for every language.
+  </Card>
+</CardGroup>

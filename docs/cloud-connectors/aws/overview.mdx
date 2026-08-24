@@ -1,0 +1,122 @@
+---
+title: 'AWS Connector'
+description: 'How the AWS Cloud Connector works end to end: resource types, Odigos-managed vs. self-managed instrumentation, languages, and where to go next.'
+sidebarTitle: 'Overview'
+---
+
+The AWS Connector is one running instance that owns **one AWS account**. It scans every region enabled in
+that account, discovers Lambda functions and ECS/Fargate resources, and — for the types you allow — either
+instruments them for you or reports on instrumentation you applied yourself.
+
+This page is the map. For hands-on tasks, see:
+
+<CardGroup cols={2}>
+  <Card title="Add an AWS Connector" icon="aws" href="/cloud-connectors/add-connectors/add-aws-connector">
+    Connect an account, choose an access level, and verify discovery.
+  </Card>
+
+  <Card title="Preload artifacts" icon="download" href="/cloud-connectors/aws/workloads/lambda/preload">
+    Mirror the Fargate agents image into a private registry, and preload the Lambda layer into your own account for IaC.
+  </Card>
+
+  <Card title="Instrument Lambda (CDK / CloudFormation)" icon="bolt" href="/cloud-connectors/aws/workloads/lambda/instrument">
+    Self-managed Lambda instrumentation for Java, Python, Node.js, and Ruby.
+  </Card>
+
+  <Card title="Instrument Fargate (CloudFormation)" icon="cubes" href="/cloud-connectors/aws/workloads/fargate/instrument">
+    Self-managed Fargate instrumentation for every supported language.
+  </Card>
+
+  <Card title="AWS CDK Reference" icon="code" href="/cloud-connectors/aws/workloads/lambda/cdk-reference">
+    Every option on the Lambda CDK construct, in depth.
+  </Card>
+</CardGroup>
+
+## Resource types
+
+The connector splits AWS resources into two domains — **workloads**, which it can instrument directly, and
+**compute platforms**, which it can only discover today:
+
+| Type                  | Domain           | Discovery | Instrumentation                      |
+| --------------------- | ---------------- | --------- | ------------------------------------ |
+| `aws.lambda`          | Workload         | Yes       | Yes — Odigos-managed or self-managed |
+| `aws.fargate-task`    | Workload         | Yes       | Yes — Odigos-managed or self-managed |
+| `aws.ecs-cluster`     | Compute platform | Yes       | Coming soon (agent install)          |
+| `aws.fargate-cluster` | Compute platform | Yes       | n/a (coverage only)                  |
+
+<Info>
+  `aws.fargate-task` means an ECS **service** running on Fargate — the service, not
+  the task, is the unit of instrumentation, because task ARNs are recycled on every
+  deploy while the service is a stable identity. A standalone task started outside
+  a service (for example by `RunTask` or EventBridge) can be discovered but cannot
+  be instrumented — there is no service to roll a new revision onto.
+</Info>
+
+### EC2-launch-type ECS is a separate story
+
+Everything on this page and in the AWS Connector section covers **Fargate**-launch-type ECS. EC2-launch-type
+ECS clusters are discovered as `aws.ecs-cluster` compute platforms, but Fargate forbids the privileged
+containers eBPF instrumentation needs, so EC2-backed clusters are covered by a different, cluster-wide agent
+rather than the per-service sidecar described here. That agent's automatic deployment is not yet available —
+today `aws.ecs-cluster` gives you discovery and coverage only.
+
+## Odigos-managed vs. self-managed
+
+Both workload types support two independent modes, chosen per type when you add or edit the connector. This
+is a connector-wide concept — see
+[Odigos-managed vs. self-managed instrumentation](/cloud-connectors/overview#odigos-managed-vs-self-managed-instrumentation)
+for the general rules (the marker system, why you should pick one mode per workload, and so on). On AWS
+specifically:
+
+| Mode                   | Lambda                                                                                                                         | Fargate                                                                                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Odigos-managed**     | The connector attaches the OpenTelemetry layer and sets the required environment directly on the function, and keeps it there. | The connector injects an `odigos-agent` sidecar into the service's task definition and rolls the service to the new revision, then keeps reconciling it. |
+| **Self-managed (IaC)** | You attach the layer and environment yourself via CloudFormation, CDK, Terraform, or the AWS CLI.                              | You add the sidecar and environment yourself via CloudFormation or CDK (`aws-cdk-lib/aws-ecs`).                                                          |
+
+Self-managed is the default the moment you enable discovery without instrumentation for a type — nothing
+extra to configure. See [Instrument Lambda](/cloud-connectors/aws/workloads/lambda/instrument) and
+[Instrument Fargate](/cloud-connectors/aws/workloads/fargate/instrument) for the actual snippets, and
+[Preload artifacts](/cloud-connectors/aws/workloads/lambda/preload) for getting the Lambda layer into your own
+account first if your organization requires that.
+
+## Supported languages
+
+| Workload                     | Languages                              | Notes                                                                                                                                                                         |
+| ---------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lambda (`aws.lambda`)        | Java, Python, Node.js, Ruby            | Ruby: OTLP HTTP destinations only. Other runtimes (Go, .NET) are discovered but not instrumented.                                                                             |
+| Fargate (`aws.fargate-task`) | Java, Python, Node.js, .NET, PHP, Ruby | PHP and Ruby: OTLP HTTP destinations only. .NET requires a glibc (not musl/Alpine) base image. Go and any other eBPF-based language cannot be instrumented on Fargate at all. |
+
+**If a task runs more than one container** — for example, an nginx or Envoy proxy sitting in front of your
+application — Odigos has to pick which one is the actual application to instrument. It does this by looking
+at what's really running inside each container, not by which one has a public port. That distinction
+matters: the proxy is usually the container with the port mapping, but the proxy has no code to instrument
+— it's the application container behind it that needs the agent. Picking by port would target the wrong
+container entirely.
+
+If Odigos can't confidently identify exactly one application container — none of them look like an app, or
+more than one equally do — it marks the task **unsupported** rather than guessing. The same happens if the
+task definition is already at AWS's 10-container limit, since there's no room left for the extra container
+Odigos needs to add.
+
+## Telemetry export
+
+Both Lambda and Fargate export OTLP only, and the destination must be reachable from the workload itself:
+
+* **Lambda** ships an in-process collector inside the layer. Your function's SDK exports to `localhost`
+  inside the same sandbox; the collector forwards to your configured destination *after* the handler
+  returns, so a slow or unreachable destination costs billed duration, not response latency.
+* **Fargate** has no node-local collector — each instrumented task exports **directly** to the destination
+  over its own network path. The destination endpoint must be reachable from the task's VPC (public IP or
+  NAT for a registry pull, plus whatever egress the destination itself needs).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Preload artifacts" icon="download" href="/cloud-connectors/aws/workloads/lambda/preload">
+    Fargate image mirroring and Lambda layer preloading for IaC.
+  </Card>
+
+  <Card title="Instrument workloads" icon="microchip" href="/cloud-connectors/instrument-workloads">
+    Add an OTLP destination and create Sources for Odigos-managed instrumentation.
+  </Card>
+</CardGroup>

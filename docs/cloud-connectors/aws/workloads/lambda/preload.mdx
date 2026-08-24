@@ -1,0 +1,79 @@
+---
+title: 'Preload the Lambda Layer'
+description: 'Preload the Lambda OpenTelemetry layer into your own AWS account before instrumenting with IaC.'
+sidebarTitle: 'Preload'
+---
+
+If you use **Odigos-managed** Lambda instrumentation, you can skip this page — the connector publishes the
+layer version into your account itself (`lambda:PublishLayerVersion`) the first time it instruments a
+function. Nothing to preload.
+
+If you **self-manage** instrumentation, you have two choices for where the layer your CloudFormation, CDK,
+or Terraform attaches actually lives:
+
+<Tabs>
+  <Tab title="Reference the public Odigos layer">
+    Simplest option: attach the public layer ARN Odigos publishes in every region
+    (`arn:aws:lambda:<region>:<odigos-account>:layer:odigos-otel-<language>-<arch>:<n>`) directly in your
+    function resource. No preloading, no extra deploy — see
+    [Instrument Lambda](/cloud-connectors/aws/workloads/lambda/instrument). Skip this option if your organization's
+    policy forbids attaching a Lambda layer owned by another AWS account.
+  </Tab>
+
+  <Tab title="Preload into your own account (SAR)">
+    Deploy the Odigos layer as a Serverless Application Repository (SAR) application first, so the
+    `AWS::Lambda::LayerVersion` it creates is owned by **your own** CloudFormation stack. Then reference that
+    stack's `LayerVersionArn` output everywhere you'd otherwise use the public ARN.
+
+    <Tabs>
+      <Tab title="Console">
+        Serverless Application Repository → **Available applications** → **Public applications** → search
+        `odigos-otel-<language>-<arch>` → **Deploy**. Copy the stack's `LayerVersionArn` output.
+      </Tab>
+
+      <Tab title="CloudFormation / SAM">
+        Nest it as an `AWS::Serverless::Application` in your own template, then reference its output:
+
+        ```yaml
+        Odigos:
+          Type: AWS::Serverless::Application
+          Properties:
+            Location:
+              ApplicationId: arn:aws:serverlessrepo:us-east-1:<odigos-account>:applications/odigos-otel-python-arm64
+              SemanticVersion: <layer-version> # e.g. 0.2.0 — immutable, pins the exact bytes
+        # ...
+        Layers: [!GetAtt Odigos.Outputs.LayerVersionArn]
+        ```
+      </Tab>
+
+      <Tab title="CDK">
+        Pass `layerSource: OdigosLayerSource.IN_ACCOUNT` to the CDK construct — it synthesizes exactly the
+        nested application above and wires the output ARN into your function automatically. See
+        [Choosing where the layer comes from](/cloud-connectors/aws/workloads/lambda/cdk-reference#choosing-where-the-layer-comes-from)
+        in the CDK reference.
+
+        Requires `serverlessrepo:CreateCloudFormationTemplate` and `serverlessrepo:GetApplication` on the
+        principal running `cdk deploy`.
+      </Tab>
+    </Tabs>
+
+    <Info>
+      Layer versions are retained, never deleted, when a stack update supersedes them
+      — a function still pinned to an older version would break at cold start the
+      moment it disappeared. Clean up old versions yourself once nothing references
+      them.
+    </Info>
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Instrument Lambda" icon="bolt" href="/cloud-connectors/aws/workloads/lambda/instrument">
+    CDK and CloudFormation for every supported Lambda language.
+  </Card>
+
+  <Card title="CDK reference" icon="code" href="/cloud-connectors/aws/workloads/lambda/cdk-reference">
+    Every option on the Lambda CDK construct, in depth.
+  </Card>
+</CardGroup>

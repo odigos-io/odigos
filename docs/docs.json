@@ -794,6 +794,33 @@
               "cloud-connectors/instrument-workloads",
               "cloud-connectors/manage-and-remove"
             ]
+          },
+          {
+            "group": "AWS Connector",
+            "icon": "aws",
+            "pages": [
+              "cloud-connectors/aws/overview",
+              {
+                "group": "Workloads",
+                "pages": [
+                  {
+                    "group": "Lambda",
+                    "pages": [
+                      "cloud-connectors/aws/workloads/lambda/preload",
+                      "cloud-connectors/aws/workloads/lambda/instrument",
+                      "cloud-connectors/aws/workloads/lambda/cdk-reference"
+                    ]
+                  },
+                  {
+                    "group": "Fargate",
+                    "pages": [
+                      "cloud-connectors/aws/workloads/fargate/preload",
+                      "cloud-connectors/aws/workloads/fargate/instrument"
+                    ]
+                  }
+                ]
+              }
+            ]
           }
         ]
       }

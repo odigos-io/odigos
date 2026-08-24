@@ -43,15 +43,46 @@ Connectors organize resources into two domains:
 
 You choose which resource types to discover and instrument when you add a connector (per-type capabilities).
 
+## Odigos-managed vs. self-managed instrumentation
+
+Every workload type supports two ways of getting instrumented, chosen per type when you add or edit a connector:
+
+| Discovery | Instrumentation | Mode | Who applies the change |
+| --- | --- | --- | --- |
+| On | On | **Odigos-managed (automatic)** | Odigos attaches instrumentation for you (a Lambda layer + environment, or a sidecar injected into an ECS task definition) and keeps it in place on every reconcile cycle. |
+| On | Off | **Self-managed (IaC)** | You apply the change yourself — CloudFormation, CDK, Terraform, or by hand. Odigos only discovers and reports status; it never modifies the resource. |
+| Off | — | Not discovered | The type is not surfaced at all. |
+
+There is no separate "mode" toggle — it's just whether you turned on the instrumentation capability for that type. This is what makes self-managed workloads safe by default: until you grant instrumentation access, Odigos cannot touch the resource no matter what else is enabled.
+
+<Tip>
+  Pick self-managed when your organization already provisions Lambda functions or ECS
+  task definitions through CloudFormation, CDK, or Terraform and you want that
+  pipeline to stay the source of truth. Pick Odigos-managed when you want instrumentation
+  applied and kept up to date without changing your IaC.
+</Tip>
+
+A self-managed workload shows as **Not Instrumented / Waiting for you** until Odigos observes that you've applied its instrumentation, then it flips to **Instrumented** on its own — there is nothing to click on the Odigos side. If a self-managed workload is later disabled as a Source or its Source is deleted while your instrumentation is still applied, it reports an error rather than silently going dark — Odigos never removes instrumentation it did not apply, so taking it back out is yours to do.
+
+<Warning>
+  Instrument a given workload **one way, not both**. A function or service you
+  instrument yourself and also enable as an Odigos-managed Source is owned by
+  both sides — every IaC deploy reasserts your configuration, every Odigos
+  reconcile reasserts its own, and you get a new function version or task
+  revision on every round trip.
+</Warning>
+
+For AWS specifically, see [AWS Connector](/cloud-connectors/aws/overview) for how to instrument Lambda and Fargate yourself with CloudFormation or CDK, and how to preload artifacts into your own account first.
+
 ## Resource coverage
 
 Current coverage includes the following providers and resource types. Additional providers may be added over time.
 
 | Provider | Discover | Instrument |
 | --- | --- | --- |
-| AWS Lambda (`aws.lambda`) | Yes | Yes |
-| Amazon ECS Fargate tasks (`aws.fargate-task`) | Yes | Coming soon |
-| Amazon ECS clusters (`aws.ecs-cluster`, `aws.fargate-cluster`) | Yes | n/a |
+| AWS Lambda (`aws.lambda`) | Yes | Yes — Odigos-managed or self-managed |
+| Amazon ECS Fargate tasks (`aws.fargate-task`) | Yes | Yes — Odigos-managed or self-managed |
+| Amazon ECS clusters (`aws.ecs-cluster`, `aws.fargate-cluster`) | Yes | n/a (coverage/grouping only; agent install coming soon) |
 | GCP Cloud Run (`gcp.cloud-run`) | Yes | Yes |
 | GKE (`gcp.gke`) / Compute Engine (`gcp.gce`) | Yes | Coming soon |
 
@@ -62,22 +93,28 @@ Direct instrumentation depends on the workload type:
 | Workload | Supported languages |
 | --- | --- |
 | AWS Lambda (`aws.lambda`) | Java, Python, Node.js, Ruby |
+| Amazon ECS Fargate tasks (`aws.fargate-task`) | Java, Python, Node.js, .NET, PHP, Ruby |
 | GCP Cloud Run (`gcp.cloud-run`) | Java, Python, Node.js, .NET |
 
-Other Lambda runtimes (for example Go or .NET) can still be discovered; they are not instrumented until support for those runtimes is added.
+Other Lambda runtimes (for example Go or .NET) can still be discovered; they are not instrumented until support for those runtimes is added. On Fargate, Go and any other eBPF-based language cannot be instrumented at all — Fargate does not allow the privileged containers eBPF needs — and a task with no other instrumentable container is reported unsupported.
 
-AWS Lambda Ruby supports OTLP HTTP only. See [Telemetry export](#telemetry-export) for destination protocol limits.
+AWS Lambda Ruby, and Fargate PHP and Ruby, support OTLP HTTP only. See [Telemetry export](#telemetry-export) for destination protocol limits.
 
 ## Telemetry export
 
 Instrumented workloads export OpenTelemetry data to an **OTLP endpoint** you configure on the connector. That endpoint must be reachable from the cloud environment (for example from Lambda or Cloud Run).
 
-Lambda and Cloud Run support **OTLP destinations only**.
+Lambda, Fargate, and Cloud Run support **OTLP destinations only**. Fargate tasks export **directly** to the destination — there is no node-local collector on ECS the way there is inside the Lambda layer, so the destination endpoint must be reachable from the task's VPC.
 
 Protocol support for AWS Lambda:
 
 - **Python, Node.js, Java** — OTLP gRPC and OTLP HTTP
 - **Ruby** — OTLP HTTP only
+
+Protocol support for Amazon ECS Fargate:
+
+- **Java, Python, Node.js, .NET** — prefer OTLP HTTP but honor OTLP gRPC if that's all the destination offers
+- **PHP, Ruby** — OTLP HTTP only; without an OTLP HTTP endpoint on the destination these languages cannot be instrumented at all
 
 GCP Cloud Run supports OTLP gRPC and OTLP HTTP.
 
@@ -127,5 +164,12 @@ See [Add an OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp
     href="/cloud-connectors/instrument-workloads"
   >
     Create Sources and track instrumentation after a connector is online.
+  </Card>
+  <Card
+    title="AWS Connector"
+    icon="aws"
+    href="/cloud-connectors/aws/overview"
+  >
+    Full AWS connector reference: flows, artifact preloading, and CDK/CloudFormation for every instrumentation type.
   </Card>
 </CardGroup>
