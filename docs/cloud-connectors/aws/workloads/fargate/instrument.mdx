@@ -12,9 +12,11 @@ for how that works. Want the connector to do this automatically instead? Enable 
 capability for `aws.fargate-task` on the connector.
 
 <Warning>
-  Unlike Lambda, there's no Odigos CDK construct for Fargate. If you use CDK, you'll
-  write the same task-definition changes using plain `aws-cdk-lib/aws-ecs` — see
-  [AWS CDK](#aws-cdk) below.
+  Unlike Lambda, there's no Odigos CDK construct for Fargate yet — support for it is
+  planned. Until then, if you use CDK, write the same task-definition changes using
+  plain `aws-cdk-lib/aws-ecs` — see [AWS CDK](#aws-cdk) below. Once a construct
+  ships, it'll be documented alongside the Lambda one under
+  [CDK](/cloud-connectors/aws/cdk/lambda).
 </Warning>
 
 ## How it works

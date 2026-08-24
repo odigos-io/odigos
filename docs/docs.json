@@ -807,8 +807,7 @@
                     "group": "Lambda",
                     "pages": [
                       "cloud-connectors/aws/workloads/lambda/preload",
-                      "cloud-connectors/aws/workloads/lambda/instrument",
-                      "cloud-connectors/aws/workloads/lambda/cdk-reference"
+                      "cloud-connectors/aws/workloads/lambda/instrument"
                     ]
                   },
                   {
@@ -818,6 +817,12 @@
                       "cloud-connectors/aws/workloads/fargate/instrument"
                     ]
                   }
+                ]
+              },
+              {
+                "group": "CDK",
+                "pages": [
+                  "cloud-connectors/aws/cdk/lambda"
                 ]
               }
             ]
