@@ -35,8 +35,7 @@ Lambda, there's no aspect that sweeps a whole stack — you name each container.
 
 ## How it works
 
-Fargate has no equivalent of a Lambda layer, so the agent files have to be put into the task at startup.
-The construct sets up four things that only work together:
+The construct sets up four things that work together:
 
 1. **A shared scratch volume** on the task definition, named `odigos-agent`.
 2. **An extra container**, also named `odigos-agent`, that copies the right language agent into that volume
