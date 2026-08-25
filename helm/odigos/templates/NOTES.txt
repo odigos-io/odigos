@@ -8,3 +8,10 @@ brew install odigos-io/odigos-cli/odigos
 odigos ui
 
 Then, go to: http://localhost:3000
+
+{{- $odigletPriorityClass := .Values.odiglet.priorityClassName | default "" }}
+{{- if ne $odigletPriorityClass "system-node-critical" }}
+
+WARNING: odiglet.priorityClassName is set to {{ $odigletPriorityClass | quote }} instead of "system-node-critical".
+Odiglet may be evicted from nodes under memory or CPU pressure. Keep "system-node-critical" unless you intentionally accept that risk.
+{{- end }}
