@@ -14,9 +14,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
       - name: Lint Charts
-        run: |
-          shopt -s extglob
-          helm lint helm/!(*.md)
+        run: helm lint helm/odigos helm/odigos-central
 
   generate-schema:
     runs-on: ubuntu-latest
