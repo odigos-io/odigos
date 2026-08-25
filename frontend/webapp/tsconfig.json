@@ -12,7 +12,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "paths": {
       "@/*": ["./*"]
@@ -26,5 +26,5 @@
     "noImplicitAny": true
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
-  "exclude": ["node_modules", "out", "cypress", "cypress.config.ts"]
+  "exclude": ["node_modules", "out", "cypress", "cypress.config.ts", "**/*.test.ts", "**/*.test.tsx"]
 }
