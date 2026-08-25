@@ -146,8 +146,32 @@ func TestBoundedBufferSnapshotSinceIsInclusive(t *testing.T) {
 	}
 }
 
-func TestBoundedBufferCompactsBackingArrayUnderChurn(t *testing.T) {
-	// The budget holds 10 chunks; the backing array must not grow with the number of adds.
+func TestBoundedBufferCompactsBackingArrayAfterLargeEviction(t *testing.T) {
+	b := NewBoundedBuffer(10000)
+	for range 100 {
+		b.Add(chunkOfSize(100, 'a'))
+	}
+	if cap(b.chunks) < 100 {
+		t.Fatalf("backing array cap = %d, want at least the 100 chunks added", cap(b.chunks))
+	}
+
+	// Dropping 90 of the 100 chunks in one trim must release the evicted prefix rather than
+	// re-slicing over it, otherwise the whole backing array stays reachable.
+	b.Resize(1000)
+	if len(b.chunks) != 10 {
+		t.Fatalf("live chunks = %d, want 10", len(b.chunks))
+	}
+	if cap(b.chunks) != len(b.chunks) {
+		t.Fatalf("backing array cap = %d for %d live chunks, want the array compacted", cap(b.chunks), len(b.chunks))
+	}
+	if b.Size() != 1000 {
+		t.Fatalf("size = %d, want 1000", b.Size())
+	}
+}
+
+func TestBoundedBufferStaysBoundedUnderChurn(t *testing.T) {
+	// The budget holds 10 chunks; neither the byte total nor the backing array may grow with the
+	// number of adds.
 	b := NewBoundedBuffer(1000)
 	for range 10000 {
 		b.Add(chunkOfSize(100, 'a'))
@@ -156,7 +180,7 @@ func TestBoundedBufferCompactsBackingArrayUnderChurn(t *testing.T) {
 		t.Fatalf("live chunks = %d, want 10", len(b.chunks))
 	}
 	if cap(b.chunks) > 64 {
-		t.Fatalf("backing array cap = %d after 10000 adds, want it compacted to the live size", cap(b.chunks))
+		t.Fatalf("backing array cap = %d after 10000 adds, want it bounded by the live size", cap(b.chunks))
 	}
 	if b.Size() != 1000 {
 		t.Fatalf("size = %d, want 1000", b.Size())
