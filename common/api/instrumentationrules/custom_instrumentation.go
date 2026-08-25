@@ -61,12 +61,6 @@ func (jcp *JavaCustomProbe) Verify() error {
 	return nil
 }
 
-// TODO(Barun): remove the String if you're not using it
-// String implements fmt.Stringer for convenient logging/diagnostics.
-func (jcp *JavaCustomProbe) String() string {
-	return fmt.Sprintf("%s.%s", jcp.ClassName, jcp.MethodName)
-}
-
 // golang custom probe contains the details for a custom probe for golang applications,
 // which includes the package name, function name or receiver name and method name to be instrumented.
 // +kubebuilder:object:generate=true
