@@ -17,9 +17,8 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
@@ -107,97 +106,14 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 	// For legacy clusters (<1.23): v2beta1 — no Behavior or Object metrics support
 	// ------------------------------------------------------------------
 	case kubeVersion.LessThan(version.MustParse("1.23.0")):
-		hpa = &autoscalingv2beta1.HorizontalPodAutoscaler{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "autoscaling/v2beta1",
-				Kind:       "HorizontalPodAutoscaler",
-			},
-			ObjectMeta: buildHPACommonFields(gateway),
-			Spec: autoscalingv2beta1.HorizontalPodAutoscalerSpec{
-				ScaleTargetRef: autoscalingv2beta1.CrossVersionObjectReference{
-					APIVersion: "apps/v1",
-					Kind:       "Deployment",
-					Name:       gatewayDeploymentName,
-				},
-				MinReplicas: minReplicas,
-				MaxReplicas: maxReplicas,
-				Metrics: []autoscalingv2beta1.MetricSpec{
-					{
-						Type: autoscalingv2beta1.ResourceMetricSourceType,
-						Resource: &autoscalingv2beta1.ResourceMetricSource{
-							Name:               corev1.ResourceMemory,
-							TargetAverageValue: &memQuantity,
-						},
-					},
-					{
-						Type: autoscalingv2beta1.ResourceMetricSourceType,
-						Resource: &autoscalingv2beta1.ResourceMetricSource{
-							Name:               corev1.ResourceCPU,
-							TargetAverageValue: &cpuQuantity,
-						},
-					},
-				},
-			},
-		}
+		hpa = buildv2beta1HPA(gateway, gatewayDeploymentName, minReplicas, maxReplicas, memQuantity, cpuQuantity)
 
 	// ------------------------------------------------------------------
 	// For mid-range clusters (1.23 ≤ version < 1.25): v2beta2
 	//      Supports Behavior and Object metrics
 	// ------------------------------------------------------------------
 	case kubeVersion.LessThan(version.MustParse("1.25.0")):
-		minPolicy := autoscalingv2beta2.ScalingPolicySelect("Min")
-		maxPolicy := autoscalingv2beta2.ScalingPolicySelect("Max")
-		hpa = &autoscalingv2beta2.HorizontalPodAutoscaler{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "autoscaling/v2beta2",
-				Kind:       "HorizontalPodAutoscaler",
-			},
-			ObjectMeta: buildHPACommonFields(gateway),
-			Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
-				ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{
-					APIVersion: "apps/v1",
-					Kind:       "Deployment",
-					Name:       gatewayDeploymentName,
-				},
-				MinReplicas: minReplicas,
-				MaxReplicas: maxReplicas,
-
-				// Behavior supported from v2beta2 onward
-				Behavior: &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
-					// Fast scale-up
-					ScaleUp: &autoscalingv2beta2.HPAScalingRules{
-						StabilizationWindowSeconds: ScaleUpStabilizationWindowSeconds,
-						SelectPolicy:               &maxPolicy,
-						Policies: []autoscalingv2beta2.HPAScalingPolicy{
-							{
-								Type:          autoscalingv2beta2.PodsScalingPolicy,
-								Value:         2, // add up to 2 pods every 15s
-								PeriodSeconds: 15,
-							},
-						},
-					},
-					// Slow scale-down (prevent oscillations)
-					ScaleDown: &autoscalingv2beta2.HPAScalingRules{
-						StabilizationWindowSeconds: ScaleDownStabilizationWindowSeconds, // 15 min
-						SelectPolicy:               &minPolicy,
-						Policies: []autoscalingv2beta2.HPAScalingPolicy{
-							{
-								Type:          autoscalingv2beta2.PodsScalingPolicy,
-								Value:         1,
-								PeriodSeconds: 60,
-							},
-							{
-								Type:          autoscalingv2beta2.PercentScalingPolicy,
-								Value:         25,
-								PeriodSeconds: 60,
-							},
-						},
-					},
-				},
-
-				Metrics: buildv2beta2Metrics(useCustomMetric, memQuantity, cpuQuantity),
-			},
-		}
+		hpa = buildv2beta2HPA(gateway, gatewayDeploymentName, minReplicas, maxReplicas, useCustomMetric, memQuantity, cpuQuantity)
 
 	// ------------------------------------------------------------------
 	// Modern clusters (>=1.25): v2 — fully stable API
@@ -281,45 +197,152 @@ func buildHPACommonFields(gateway *odigosv1.CollectorsGroup) metav1.ObjectMeta {
 	}
 }
 
-func buildv2beta2Metrics(useCustomMetric bool, memQuantity, cpuQuantity resource.Quantity) []autoscalingv2beta2.MetricSpec {
-	metrics := []autoscalingv2beta2.MetricSpec{}
+// The Go types for autoscaling/v2beta1 and autoscaling/v2beta2 were removed from
+// k8s.io/api in v0.36. Those API versions still exist on the clusters Odigos
+// supports (see k8sconsts.MinK8SVersionForInstallation), so the legacy objects
+// are built as unstructured instead of being dropped. Note that unstructured
+// content may only hold JSON-compatible values, hence the int64 and quantity
+// string conversions below.
+
+// newLegacyHPA wraps a hand-built HPA spec in an unstructured object carrying
+// the given legacy autoscaling API version.
+func newLegacyHPA(gateway *odigosv1.CollectorsGroup, apiVersion string, spec map[string]interface{}) *unstructured.Unstructured {
+	meta := buildHPACommonFields(gateway)
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": apiVersion,
+			"kind":       "HorizontalPodAutoscaler",
+			"metadata": map[string]interface{}{
+				"name":      meta.Name,
+				"namespace": meta.Namespace,
+			},
+			"spec": spec,
+		},
+	}
+}
+
+func legacyScaleTargetRef(deploymentName string) map[string]interface{} {
+	return map[string]interface{}{
+		"apiVersion": "apps/v1",
+		"kind":       "Deployment",
+		"name":       deploymentName,
+	}
+}
+
+func buildv2beta1HPA(gateway *odigosv1.CollectorsGroup, deploymentName string, minReplicas *int32, maxReplicas int32,
+	memQuantity, cpuQuantity resource.Quantity) *unstructured.Unstructured {
+	spec := map[string]interface{}{
+		"scaleTargetRef": legacyScaleTargetRef(deploymentName),
+		"maxReplicas":    int64(maxReplicas),
+		"metrics": []interface{}{
+			map[string]interface{}{
+				"type": "Resource",
+				"resource": map[string]interface{}{
+					"name":               string(corev1.ResourceMemory),
+					"targetAverageValue": memQuantity.String(),
+				},
+			},
+			map[string]interface{}{
+				"type": "Resource",
+				"resource": map[string]interface{}{
+					"name":               string(corev1.ResourceCPU),
+					"targetAverageValue": cpuQuantity.String(),
+				},
+			},
+		},
+	}
+	if minReplicas != nil {
+		spec["minReplicas"] = int64(*minReplicas)
+	}
+	return newLegacyHPA(gateway, "autoscaling/v2beta1", spec)
+}
+
+func buildv2beta2HPA(gateway *odigosv1.CollectorsGroup, deploymentName string, minReplicas *int32, maxReplicas int32,
+	useCustomMetric bool, memQuantity, cpuQuantity resource.Quantity) *unstructured.Unstructured {
+	spec := map[string]interface{}{
+		"scaleTargetRef": legacyScaleTargetRef(deploymentName),
+		"maxReplicas":    int64(maxReplicas),
+
+		// Behavior supported from v2beta2 onward
+		"behavior": map[string]interface{}{
+			// Fast scale-up
+			"scaleUp": map[string]interface{}{
+				"stabilizationWindowSeconds": int64(*ScaleUpStabilizationWindowSeconds),
+				"selectPolicy":               "Max",
+				"policies": []interface{}{
+					map[string]interface{}{
+						"type":          "Pods",
+						"value":         int64(2), // add up to 2 pods every 15s
+						"periodSeconds": int64(15),
+					},
+				},
+			},
+			// Slow scale-down (prevent oscillations)
+			"scaleDown": map[string]interface{}{
+				"stabilizationWindowSeconds": int64(*ScaleDownStabilizationWindowSeconds), // 15 min
+				"selectPolicy":               "Min",
+				"policies": []interface{}{
+					map[string]interface{}{
+						"type":          "Pods",
+						"value":         int64(1),
+						"periodSeconds": int64(60),
+					},
+					map[string]interface{}{
+						"type":          "Percent",
+						"value":         int64(25),
+						"periodSeconds": int64(60),
+					},
+				},
+			},
+		},
+
+		"metrics": buildv2beta2Metrics(useCustomMetric, memQuantity, cpuQuantity),
+	}
+	if minReplicas != nil {
+		spec["minReplicas"] = int64(*minReplicas)
+	}
+	return newLegacyHPA(gateway, "autoscaling/v2beta2", spec)
+}
+
+func buildv2beta2Metrics(useCustomMetric bool, memQuantity, cpuQuantity resource.Quantity) []interface{} {
+	metrics := []interface{}{}
 	if useCustomMetric {
-		metrics = append(metrics, autoscalingv2beta2.MetricSpec{
-			Type: autoscalingv2beta2.ObjectMetricSourceType,
-			Object: &autoscalingv2beta2.ObjectMetricSource{
-				DescribedObject: autoscalingv2beta2.CrossVersionObjectReference{
-					APIVersion: "apps/v1",
-					Kind:       "Deployment",
-					Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
+		metrics = append(metrics, map[string]interface{}{
+			"type": "Object",
+			"object": map[string]interface{}{
+				"describedObject": map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"name":       k8sconsts.OdigosClusterCollectorDeploymentName,
 				},
-				Metric: autoscalingv2beta2.MetricIdentifier{
-					Name: "odigos_gateway_rejections",
+				"metric": map[string]interface{}{
+					"name": "odigos_gateway_rejections",
 				},
-				Target: autoscalingv2beta2.MetricTarget{
-					Type:  autoscalingv2beta2.ValueMetricType,
-					Value: resource.NewMilliQuantity(500, resource.DecimalSI),
+				"target": map[string]interface{}{
+					"type":  "Value",
+					"value": resource.NewMilliQuantity(500, resource.DecimalSI).String(),
 				},
 			},
 		})
 	}
 	metrics = append(metrics,
-		autoscalingv2beta2.MetricSpec{
-			Type: autoscalingv2beta2.ResourceMetricSourceType,
-			Resource: &autoscalingv2beta2.ResourceMetricSource{
-				Name: corev1.ResourceMemory,
-				Target: autoscalingv2beta2.MetricTarget{
-					Type:         autoscalingv2beta2.AverageValueMetricType,
-					AverageValue: &memQuantity,
+		map[string]interface{}{
+			"type": "Resource",
+			"resource": map[string]interface{}{
+				"name": string(corev1.ResourceMemory),
+				"target": map[string]interface{}{
+					"type":         "AverageValue",
+					"averageValue": memQuantity.String(),
 				},
 			},
 		},
-		autoscalingv2beta2.MetricSpec{
-			Type: autoscalingv2beta2.ResourceMetricSourceType,
-			Resource: &autoscalingv2beta2.ResourceMetricSource{
-				Name: corev1.ResourceCPU,
-				Target: autoscalingv2beta2.MetricTarget{
-					Type:         autoscalingv2beta2.AverageValueMetricType,
-					AverageValue: &cpuQuantity,
+		map[string]interface{}{
+			"type": "Resource",
+			"resource": map[string]interface{}{
+				"name": string(corev1.ResourceCPU),
+				"target": map[string]interface{}{
+					"type":         "AverageValue",
+					"averageValue": cpuQuantity.String(),
 				},
 			},
 		},
