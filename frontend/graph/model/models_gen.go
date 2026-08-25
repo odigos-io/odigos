@@ -722,7 +722,10 @@ type HTTPPayloadCollectionInput struct {
 }
 
 type Insights struct {
-	Services       []*InsightsServiceStat  `json:"services"`
+	Services []*InsightsServiceStat `json:"services"`
+	// Every distinct service name Insights has seen. Cluster-wide candidate set for
+	// guardrail caller/callee allowlists — fetch once and combine with a service profile.
+	ServiceNames   []string                `json:"serviceNames"`
 	ServiceProfile *InsightsServiceProfile `json:"serviceProfile"`
 	// Service-graph neighborhood around one service (blast radius). Depth defaults to 2 (1–5).
 	BlastRadius         *InsightsBlastRadiusSubgraph  `json:"blastRadius"`

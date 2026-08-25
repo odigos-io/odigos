@@ -614,6 +614,7 @@ type ComplexityRoot struct {
 		Observation         func(childComplexity int, transactionID string, traceID string) int
 		Observations        func(childComplexity int, transactionID string, sampleReason *model.InsightsSampleReason) int
 		Policies            func(childComplexity int) int
+		ServiceNames        func(childComplexity int) int
 		ServiceProfile      func(childComplexity int, namespace *string, service string) int
 		Services            func(childComplexity int) int
 		StorageHealth       func(childComplexity int) int
@@ -2121,6 +2122,7 @@ type ComputePlatformResolver interface {
 }
 type InsightsResolver interface {
 	Services(ctx context.Context, obj *model.Insights) ([]*model.InsightsServiceStat, error)
+	ServiceNames(ctx context.Context, obj *model.Insights) ([]string, error)
 	ServiceProfile(ctx context.Context, obj *model.Insights, namespace *string, service string) (*model.InsightsServiceProfile, error)
 	BlastRadius(ctx context.Context, obj *model.Insights, namespace *string, service string, depth *int) (*model.InsightsBlastRadiusSubgraph, error)
 	Transactions(ctx context.Context, obj *model.Insights, namespace *string, service *string, kind *model.InsightsTransactionKind) ([]*model.InsightsTransactionStat, error)
@@ -4962,6 +4964,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Insights.Policies(childComplexity), true
+
+	case "Insights.serviceNames":
+		if e.complexity.Insights.ServiceNames == nil {
+			break
+		}
+
+		return e.complexity.Insights.ServiceNames(childComplexity), true
 
 	case "Insights.serviceProfile":
 		if e.complexity.Insights.ServiceProfile == nil {
@@ -32408,6 +32417,50 @@ func (ec *executionContext) fieldContext_Insights_services(_ context.Context, fi
 				return ec.fieldContext_InsightsServiceStat_lastSeen(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsServiceStat", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Insights_serviceNames(ctx context.Context, field graphql.CollectedField, obj *model.Insights) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Insights_serviceNames(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Insights().ServiceNames(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Insights_serviceNames(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Insights",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -69529,6 +69582,8 @@ func (ec *executionContext) fieldContext_Query_insights(_ context.Context, field
 			switch field.Name {
 			case "services":
 				return ec.fieldContext_Insights_services(ctx, field)
+			case "serviceNames":
+				return ec.fieldContext_Insights_serviceNames(ctx, field)
 			case "serviceProfile":
 				return ec.fieldContext_Insights_serviceProfile(ctx, field)
 			case "blastRadius":
@@ -87203,6 +87258,42 @@ func (ec *executionContext) _Insights(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Insights_services(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "serviceNames":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Insights_serviceNames(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

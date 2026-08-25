@@ -168,6 +168,8 @@ models:
     fields:
       services:
         resolver: true
+      serviceNames:
+        resolver: true
       serviceProfile:
         resolver: true
       blastRadius:
