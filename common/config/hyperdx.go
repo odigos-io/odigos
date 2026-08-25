@@ -17,7 +17,7 @@ func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 	exporterConfig := GenericMap{
 		"endpoint": "in-otel.hyperdx.io:4317",
 		"headers": GenericMap{
-			"authorization": "${HYPERDX_API_KEY}",
+			"authorization": SecretEnvPlaceholder("HYPERDX_API_KEY", dest),
 		},
 	}
 

@@ -102,7 +102,7 @@ func TestConnection(ctx context.Context, dest config.ExporterConfigurer, testers
 	}
 
 	// resolve ${KEY} placeholders, then flatten named maps so confmap's decoder hooks work downstream
-	replacePlaceholders(exporterRawConfig, dest.GetConfig())
+	replacePlaceholders(exporterRawConfig, dest.GetConfig(), dest.GetID())
 	connectionAttempt := connectionTester.TestExport(ctx, normalizeMap(exporterRawConfig))
 	if !connectionAttempt.Succeeded {
 		return failResult(destType, connectionAttempt.Reason, connectionAttempt.StatusCode, connectionAttempt.Message)

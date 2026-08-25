@@ -144,8 +144,8 @@ func TestGrpcOAuth2AutoTLS(t *testing.T) {
 				}
 
 				if tt.config["OTLP_GRPC_MTLS_ENABLED"] == "true" {
-					assert.Equal(t, "${OTLP_GRPC_CLIENT_CERT_PEM}", tlsConfig["cert_pem"])
-					assert.Equal(t, "${OTLP_GRPC_CLIENT_KEY_PEM}", tlsConfig["key_pem"])
+					assert.Equal(t, "${ODIGOS_DEST_test_id_OTLP_GRPC_CLIENT_CERT_PEM}", tlsConfig["cert_pem"])
+					assert.Equal(t, "${ODIGOS_DEST_test_id_OTLP_GRPC_CLIENT_KEY_PEM}", tlsConfig["key_pem"])
 				} else {
 					assert.NotContains(t, tlsConfig, "cert_pem")
 					assert.NotContains(t, tlsConfig, "key_pem")

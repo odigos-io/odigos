@@ -41,9 +41,9 @@ func (g *Qryn) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 		return nil, err
 	}
 
-	passwordPlaceholder := "${QRYN_API_SECRET}"
+	passwordPlaceholder := SecretEnvPlaceholder("QRYN_API_SECRET", dest)
 	if conf.passwordFieldName != "" {
-		passwordPlaceholder = "${" + conf.passwordFieldName + "}"
+		passwordPlaceholder = SecretEnvPlaceholder(conf.passwordFieldName, dest)
 	}
 	baseURL, err := parseURL(conf.host, conf.key, passwordPlaceholder)
 	if err != nil {

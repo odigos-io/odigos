@@ -42,7 +42,7 @@ func (j *Observe) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 		cfg.Exporters[exporterName] = GenericMap{
 			"endpoint": endpoint,
 			"headers": GenericMap{
-				"authorization":            "Bearer ${OBSERVE_TOKEN}",
+				"authorization":            "Bearer " + SecretEnvPlaceholder("OBSERVE_TOKEN", dest),
 				"x-observe-target-package": targetPackage,
 			},
 		}

@@ -30,7 +30,7 @@ func (m *Last9) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": l9OtlpEndpoint,
 		"headers": GenericMap{
-			"Authorization": "${LAST9_OTLP_BASIC_AUTH_HEADER}",
+			"Authorization": SecretEnvPlaceholder("LAST9_OTLP_BASIC_AUTH_HEADER", dest),
 		},
 	}
 	var pipelineNames []string

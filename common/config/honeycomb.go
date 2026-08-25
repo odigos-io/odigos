@@ -33,7 +33,7 @@ func (h *Honeycomb) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": fmt.Sprintf("%s:443", endpoint),
 		"headers": GenericMap{
-			"x-honeycomb-team": "${HONEYCOMB_API_KEY}",
+			"x-honeycomb-team": SecretEnvPlaceholder("HONEYCOMB_API_KEY", dest),
 		},
 	}
 

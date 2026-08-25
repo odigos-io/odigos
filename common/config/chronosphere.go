@@ -38,7 +38,7 @@ func (c *Chronosphere) ModifyConfig(dest ExporterConfigurer, currentConfig *Conf
 		},
 		"compression": "gzip",
 		"headers": GenericMap{
-			"API-Token": "${CHRONOSPHERE_API_TOKEN}",
+			"API-Token": SecretEnvPlaceholder("CHRONOSPHERE_API_TOKEN", dest),
 		},
 	}
 	var pipelineNames []string

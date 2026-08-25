@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/odigos-io/odigos/common"
@@ -63,7 +62,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		"endpoint": grpcEndpoint,
 	}
 
-	exporterConf["tls"] = buildGenericOtlpTlsConfig(config, finalTlsEnabled, mtlsEnabled)
+	exporterConf["tls"] = buildGenericOtlpTlsConfig(dest, config, finalTlsEnabled, mtlsEnabled)
 
 	// add OAuth2 authenticator extension if configured
 	if oauth2ExtensionName != "" && oauth2ExtensionConf != nil {
@@ -136,7 +135,7 @@ func (g *GenericOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 	return pipelineNames, nil
 }
 
-func buildGenericOtlpTlsConfig(config map[string]string, finalTlsEnabled, mtlsEnabled bool) GenericMap {
+func buildGenericOtlpTlsConfig(dest ExporterConfigurer, config map[string]string, finalTlsEnabled, mtlsEnabled bool) GenericMap {
 	tlsConfig := GenericMap{
 		"insecure": !finalTlsEnabled,
 	}
@@ -151,8 +150,8 @@ func buildGenericOtlpTlsConfig(config map[string]string, finalTlsEnabled, mtlsEn
 	}
 	// Client cert/key are stored in the Destination Secret and injected as env vars
 	if mtlsEnabled {
-		tlsConfig["cert_pem"] = fmt.Sprintf("${%s}", genericOtlpClientCertPemKey)
-		tlsConfig["key_pem"] = fmt.Sprintf("${%s}", genericOtlpClientKeyPemKey)
+		tlsConfig["cert_pem"] = SecretEnvPlaceholder(genericOtlpClientCertPemKey, dest)
+		tlsConfig["key_pem"] = SecretEnvPlaceholder(genericOtlpClientKeyPemKey, dest)
 	}
 	return tlsConfig
 }
@@ -177,7 +176,7 @@ func applyGrpcOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensi
 	extensionName = "oauth2client/otlpgrpc-" + dest.GetID()
 	extensionConf = &GenericMap{
 		"client_id":     clientId,
-		"client_secret": fmt.Sprintf("${%s}", otlpGrpcOAuth2ClientSecretKey),
+		"client_secret": SecretEnvPlaceholder(otlpGrpcOAuth2ClientSecretKey, dest),
 		"token_url":     tokenUrl,
 	}
 

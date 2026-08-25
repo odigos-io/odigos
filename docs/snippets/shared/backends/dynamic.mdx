@@ -27,7 +27,7 @@ icon: 'signal-stream'
 Use Dynamic Destination when you need a collector exporter configuration that is not covered by a built-in destination type (for example, OTLP with client mTLS via freeform YAML).
 
 <Note>
-  Environment variable placeholders such as `${OTLP_CA_PEM}` in `DYNAMIC_CONFIGURATION_DATA` are expanded by the gateway collector from pod environment variables. To inject those values, create a Secret in the **same namespace** as the Destination (the Odigos system namespace) whose keys match the placeholder names, and set `spec.secretRef.name` on the Destination. Without `secretRef`, the autoscaler will not mount the Secret into the gateway and the placeholders remain unset.
+  Environment variable placeholders such as `${OTLP_CA_PEM}` in `DYNAMIC_CONFIGURATION_DATA` are expanded by the gateway collector from pod environment variables. To inject those values, create a Secret in the **same namespace** as the Destination (the Odigos system namespace) whose keys match the placeholder names, and set `spec.secretRef.name` on the Destination. Without `secretRef`, the autoscaler will not mount the Secret into the gateway and the placeholders remain unset. Use unique env var names across dynamic destinations — they are mounted into the shared gateway without a destination prefix (built-in destinations are automatically scoped).
 </Note>
 
 {/*
@@ -47,7 +47,7 @@ Use Dynamic Destination when you need a collector exporter configuration that is
 - **DYNAMIC_DESTINATION_TYPE** `string` : Destination Type. The type of OpenTelemetry Collector Exporter to use for the destination.
   - This field is required
   - Example: `otlp`
-- **DYNAMIC_CONFIGURATION_DATA** `string` : Config. The raw YAML config for the Collector Exporter for this destination. To inject secrets (e.g. TLS PEMs), use ${ENV_VAR} placeholders and set Destination.spec.secretRef to a Secret in the same namespace whose keys match those variable names.
+- **DYNAMIC_CONFIGURATION_DATA** `string` : Config. The raw YAML config for the Collector Exporter for this destination. To inject secrets (e.g. TLS PEMs), use ${ENV_VAR} placeholders and set Destination.spec.secretRef to a Secret in the same namespace whose keys match those variable names. Use unique env var names across dynamic destinations — they are mounted into the shared gateway without a destination prefix.
   - This field is required
 
 ### Adding Destination to Odigos

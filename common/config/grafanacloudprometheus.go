@@ -56,7 +56,7 @@ func (g *GrafanaCloudPrometheus) ModifyConfig(dest ExporterConfigurer, currentCo
 	currentConfig.Extensions[authExtensionName] = GenericMap{
 		"client_auth": GenericMap{
 			"username": prometheusUsername,
-			"password": "${GRAFANA_CLOUD_PROMETHEUS_PASSWORD}",
+			"password": SecretEnvPlaceholder("GRAFANA_CLOUD_PROMETHEUS_PASSWORD", dest),
 		},
 	}
 

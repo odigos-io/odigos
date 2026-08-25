@@ -30,7 +30,7 @@ func (d *Datadog) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) (
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"hostname": "odigos-gateway",
 		"api": GenericMap{
-			"key":  "${DATADOG_API_KEY}",
+			"key":  SecretEnvPlaceholder("DATADOG_API_KEY", dest),
 			"site": site,
 		},
 	}

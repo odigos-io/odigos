@@ -191,7 +191,7 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		}
 		exporterConfigAuth["plain_text"] = GenericMap{
 			"username": username,
-			"password": "${KAFKA_PASSWORD}",
+			"password": SecretEnvPlaceholder("KAFKA_PASSWORD", dest),
 		}
 	}
 
