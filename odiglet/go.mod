@@ -5,7 +5,7 @@ go 1.26.4
 require (
 	github.com/cilium/ebpf v0.22.0
 	github.com/container-storage-interface/spec v1.10.0
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/distros v0.0.0-00010101000000-000000000000
