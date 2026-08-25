@@ -1,0 +1,217 @@
+---
+title: 'Odigos AWS CDK'
+description: 'What the Odigos AWS CDK package is, when to use it, and the concepts shared by the Lambda and Fargate constructs.'
+sidebarTitle: 'Overview'
+---
+
+The Odigos AWS CDK package adds OpenTelemetry instrumentation to your AWS workloads from inside your own
+[AWS CDK](https://aws.amazon.com/cdk/) application — so instrumentation ships through the same pipeline as
+the rest of your infrastructure, reviewed in a pull request and applied by `cdk deploy`.
+
+<Info>
+  **New to this?** AWS CDK is a tool for describing cloud infrastructure in a
+  programming language instead of a YAML template. If your team doesn't use CDK,
+  you don't need this section — use the CloudFormation instructions on
+  [Instrument Lambda](/cloud-connectors/aws/workloads/lambda/instrument) or
+  [Instrument Fargate](/cloud-connectors/aws/workloads/fargate/instrument), or let
+  Odigos apply instrumentation for you.
+</Info>
+
+## When you'd use this
+
+Odigos can instrument your workloads two ways, and the CDK package is for the second one:
+
+| | Odigos-managed | Self-managed, with this package |
+| --- | --- | --- |
+| Who changes the workload | Odigos, automatically | Your CDK app, on `cdk deploy` |
+| Where instrumentation is defined | In Odigos | In your own source code |
+| What Odigos does | Applies and maintains it | Watches and reports only |
+
+Pick self-managed when your infrastructure code should stay the single source of truth for what's deployed.
+Pick Odigos-managed when you'd rather not touch your infrastructure code at all. Full comparison:
+[Odigos-managed vs. self-managed instrumentation](/cloud-connectors/overview#odigos-managed-vs-self-managed-instrumentation).
+
+<Warning>
+  Don't do both to the same workload. If a function or service is instrumented by
+  your CDK app **and** also enabled as an Odigos-managed source, each side keeps
+  reasserting its own configuration — every deploy fights every reconcile, and each
+  round trip creates a new Lambda version or ECS task revision. Pick one per
+  workload.
+</Warning>
+
+## Install
+
+```bash
+npm install @odigos/aws-cdk
+```
+
+<Info>
+  **TypeScript and JavaScript only, for now.** A Python distribution
+  (`odigos-aws-cdk`) is built but not yet published — it's waiting on package-index
+  approval. Until it's out, Python CDK apps should use the
+  [CloudFormation instructions](/cloud-connectors/aws/workloads/lambda/instrument#using-cloudformation-directly)
+  instead.
+</Info>
+
+Pin an exact version. **The package version *is* the instrumentation version** — `@odigos/aws-cdk@0.0.15`
+installs the OpenTelemetry layer and agents bundle built by Odigos release `v0.0.15`, and nothing resolves
+or moves at deploy time. Upgrading is a deliberate `npm update` followed by a `cdk diff` that shows you
+exactly what changes. An instrumentation agent that silently updated itself under a deployment that changed
+nothing is not a property you want.
+
+## The two constructs
+
+| | Lambda | ECS Fargate |
+| --- | --- | --- |
+| Construct | `OdigosLambdaInstrumentation` | `OdigosFargateInstrumentation` |
+| How the agent gets there | A Lambda layer attached to the function | Copied into the task by an extra short-lived container |
+| Languages | Python, Node.js, Java, Ruby | Java, Python, Node.js, .NET, PHP, Ruby |
+| Where telemetry goes | To a collector inside the same Lambda sandbox, which forwards it on after your handler returns | Straight from your application to your destination |
+| How the language is determined | Automatically, from the function's runtime | You state it explicitly |
+
+<CardGroup cols={2}>
+  <Card title="Lambda construct" icon="bolt" href="/cloud-connectors/aws/cdk/lambda">
+    Every option for instrumenting Lambda functions.
+  </Card>
+
+  <Card title="Fargate construct" icon="cubes" href="/cloud-connectors/aws/cdk/fargate">
+    Every option for instrumenting ECS Fargate services.
+  </Card>
+</CardGroup>
+
+## Choosing a destination
+
+Both constructs take a `destination` — where your telemetry is sent. You give it an endpoint in one of two
+formats, depending on which protocol your destination speaks:
+
+<ParamField path="destination.endpoint" type="string">
+  OTLP over **gRPC**, written as a bare `host:port` with **no** `https://` prefix — for example
+  `otlp.example.com:4317`. Port 4317 is the convention.
+</ParamField>
+
+<ParamField path="destination.httpEndpoint" type="string">
+  OTLP over **HTTP**, written as a full URL **including** the scheme — for example
+  `https://otlp.example.com:4318`. Port 4318 is the convention.
+</ParamField>
+
+The two formats aren't interchangeable, and getting them mixed up is the most common mistake here — so the
+construct checks: a scheme in `endpoint`, or a missing one in `httpEndpoint`, stops the build immediately
+rather than deploying something that starts up fine and then quietly delivers nothing. Using a port that
+belongs to the other protocol (4318 with gRPC, or 4317 with HTTP) produces a warning.
+
+<Note>
+  **How many endpoints to set differs between the two constructs.** Lambda takes
+  **exactly one**. Fargate accepts **either or both**, and often should get both —
+  see [Fargate → Transport](/cloud-connectors/aws/cdk/fargate#transport) for why.
+</Note>
+
+Two more optional settings:
+
+<ParamField path="destination.insecure" type="boolean" default="false">
+  Skip TLS verification. Applies to the gRPC `endpoint` only — the HTTP exporter takes its transport from
+  the URL scheme.
+</ParamField>
+
+<ParamField path="destination.headers" type="object">
+  Headers sent with every request, which in practice means your destination's credential (an API key or
+  token).
+
+  <Warning>
+    These are stored as a plain environment variable on the workload — readable by
+    anyone who can describe the function or task definition, and visible in the AWS
+    console. For a long-lived credential, prefer a destination that authenticates by
+    network position (a private VPC endpoint, or mTLS), or send telemetry to a
+    collector you run that holds the real credential.
+  </Warning>
+</ParamField>
+
+## Choosing which signals to send
+
+OpenTelemetry produces three kinds of data, and you choose which ones to send:
+
+<ParamField path="destination.traces" type="boolean" default="true">
+  Traces — the request-by-request timelines. On by default.
+</ParamField>
+
+<ParamField path="destination.metrics" type="boolean" default="false">
+  Metrics — numeric measurements over time. **Off unless you turn it on.**
+</ParamField>
+
+<ParamField path="destination.logs" type="boolean" default="false">
+  Logs. **Off unless you turn it on.**
+</ParamField>
+
+```typescript
+destination: {
+  endpoint: 'otlp.example.com:4317',
+  metrics: true,   // off unless you ask
+  logs: true,      // off unless you ask
+}
+```
+
+Metrics and logs are off by default because sending a signal your destination doesn't accept is not free:
+every batch is rejected and then retried on a backoff, and on Lambda that retrying happens inside the time
+you're billed for. Traces are what nearly every destination accepts; the other two depend on your specific
+destination, so they're a deliberate choice.
+
+<Warning>
+  **Match this to what your destination in Odigos has enabled.** Odigos compares
+  the workload's full telemetry configuration against what it expects, so a
+  traces-only workload checked against a destination configured for all three
+  signals is reported as *drifted* — even though the workload is working fine.
+  Read the enabled signals off the destination in Odigos and state the same ones
+  here.
+</Warning>
+
+<Note>
+  Turning all three off stops the build — a workload with instrumentation but
+  nowhere to send anything would be silent, which is never what you meant.
+</Note>
+
+## How Odigos recognizes your workload
+
+Both constructs write an environment variable called **`ODIGOS_IAC`** onto everything they instrument. This
+is the one thing that tells Odigos "this workload is instrumented, and here's what with."
+
+<Warning>
+  Without that marker, Odigos reports the workload as **awaiting your deployment** —
+  no matter how completely everything else was applied. The constructs write it for
+  you, so there's nothing to switch on; it matters mainly because you'll see it in
+  a `cdk diff`, and because hand-written instrumentation has to include it too.
+</Warning>
+
+The marker also records *which version* of instrumentation you deployed — the layer ARN on Lambda, the
+agents image on Fargate. That's what lets you pin a version and have Odigos respect it, rather than
+reporting your deliberately-pinned workload as out of date the day Odigos publishes something newer.
+
+<Warning>
+  There's a second marker, **`ODIGOS_MANAGED`**, that these constructs never write —
+  and neither should you. That one is Odigos' own record of a change *it* made,
+  including the snapshot it would undo that change with. Writing it by hand claims a
+  rollback point that doesn't exist.
+</Warning>
+
+## Turning on debug logging
+
+<ParamField path="debug" type="boolean" default="false">
+  Makes the OpenTelemetry agent log verbosely, which helps when telemetry isn't arriving and you need to
+  see why. Available on both constructs.
+
+  <Warning>
+    Leave it off once you're done. It's expensive at volume, and Odigos expects it
+    **off** unless debug telemetry is also enabled on the connector — so leaving it
+    on can itself be reported as drift.
+  </Warning>
+</ParamField>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Lambda construct" icon="bolt" href="/cloud-connectors/aws/cdk/lambda">
+    Layer sources, web-server mode, Java handler interfaces.
+  </Card>
+
+  <Card title="Fargate construct" icon="cubes" href="/cloud-connectors/aws/cdk/fargate">
+    Languages, service naming, the agents image.
+  </Card>
+</CardGroup>

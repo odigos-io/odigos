@@ -43,8 +43,14 @@ language — the construct looks at each function's runtime and figures out the 
 its own.
 
 ```bash
-npm install @odigos/aws-cdk@<PACKAGE_VERSION>       # Python: pip install odigos-aws-cdk==<PACKAGE_VERSION>
+npm install @odigos/aws-cdk@<PACKAGE_VERSION>
 ```
+
+<Info>
+  TypeScript and JavaScript only, for now — a Python distribution is built but not
+  yet published. Python CDK apps should use the
+  [CloudFormation instructions](#using-cloudformation-directly) below.
+</Info>
 
 ```typescript
 import { OdigosLambdaInstrumentation } from '@odigos/aws-cdk';
@@ -70,8 +76,8 @@ function you list.
 </Warning>
 
 <Card title="Full CDK reference" icon="code" href="/cloud-connectors/aws/cdk/lambda">
-  Every option in depth — instrumenting a whole stack at once, the AWS Lambda Web Adapter, per-signal
-  opt-in, Java handler interfaces, and the complete API.
+  Every option in depth — layer sources, instrumenting a whole stack at once, the AWS Lambda Web Adapter,
+  Java handler interfaces, and the complete API.
 </Card>
 
 ## Using CloudFormation directly
