@@ -11,7 +11,7 @@ require (
 	github.com/gin-contrib/gzip v1.2.6
 	github.com/gin-gonic/gin v1.12.0
 	github.com/glebarez/sqlite v1.11.0
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/grafana/pyroscope v1.21.1
 	github.com/grafana/pyroscope/api v1.5.0
 	github.com/odigos-io/odigos/actions v0.0.0-00010101000000-000000000000
