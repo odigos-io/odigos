@@ -4,7 +4,7 @@ go 1.26.4
 
 require (
 	cloud.google.com/go/compute/metadata v0.9.0
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/odigos-io/odigos/actions v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/api v0.0.0-00010101000000-000000000000
