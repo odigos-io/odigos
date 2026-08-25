@@ -4,6 +4,8 @@ sidebarTitle: "Destinations"
 description: "Add destinations to the Odigos VM Agent so telemetry can be sent to your backends."
 ---
 
+Enable the signals you want to export on each destination (`TRACES`, `LOGS`, `PROFILES`). The agent turns on collection for those signals automatically—for example, configuring `LOGS` starts [log collection](/vmagent/setup/configuration/overview#log-collection) for instrumented sources.
+
 There are two ways to add [destinations](/vmagent/overview#key-concepts) to the Odigos VM Agent: use `odictl` or use YAML files.
 
 <Tabs>
@@ -122,6 +124,7 @@ There are two ways to add [destinations](/vmagent/overview#key-concepts) to the 
             OTLP_HTTP_TLS_ENABLED: "false"
           signals:
             - TRACES
+            - LOGS
         ```
         <Info>The above is an example of an [OTLP http](/enterprise/backends-overview) destination.</Info>
 
@@ -144,7 +147,7 @@ There are two ways to add [destinations](/vmagent/overview#key-concepts) to the 
       ```
 
       ```
-      Mar 11 20:50:18 ip-10-0-1-51 odigos-vmagent[611]: time=2026-03-11T20:50:18.401Z level=INFO source=/go/src/github.com/keyval/odigos-vmagent/pkg/components/controller/destination/controller.go:177 msg="Destination signals configured" destination=otlphttp signals=[TRACES]
+      Mar 11 20:50:18 ip-10-0-1-51 odigos-vmagent[611]: time=2026-03-11T20:50:18.401Z level=INFO source=/go/src/github.com/keyval/odigos-vmagent/pkg/components/controller/destination/controller.go:177 msg="Destination signals configured" destination=otlphttp signals=[TRACES LOGS]
       ```
 
       </Step>
