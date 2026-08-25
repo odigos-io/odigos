@@ -30,8 +30,8 @@ odigos.instrument({
 });
 ```
 
-You create the construct once, then call `instrument()` for each container you want instrumented. Unlike
-Lambda, there's no aspect that sweeps a whole stack — you name each container.
+You create the construct once, then call `instrument()` for each container you want instrumented. There's
+no automatic sweep of a whole stack — you name each container explicitly.
 
 ## How it works
 
@@ -56,12 +56,12 @@ The construct sets up four things that work together:
 
 ## Where telemetry goes
 
-**Straight from your application to your destination.** This is the substantive difference from Lambda,
-where telemetry goes to a local collector first and gets forwarded after the response is returned. A
-Fargate task has no such collector, so a slow or unreachable destination is felt by your application's own
-exporter.
+**Straight from your application to your destination.** There's no intermediate collector inside the task,
+so your application's own OpenTelemetry exporter is what makes the network call — which means a slow or
+unreachable destination is felt by the application itself.
 
-Practically, that means the destination endpoint has to be reachable from the task's network.
+Two practical consequences: the destination endpoint has to be reachable from the task's network, and it's
+worth pointing it somewhere with headroom, since your application is doing the sending.
 
 ## Stating the language
 
@@ -78,9 +78,9 @@ Practically, that means the destination endpoint has to be reachable from the ta
 | `PHP` | `PHP_INI_SCAN_DIR` | **Yes** |
 | `RUBY` | `RUBYOPT` | **Yes** |
 
-There's no auto-detection here, and unlike Lambda that isn't a stylistic choice. A Lambda function declares
-its runtime as a property CDK can simply read. A container only declares an *image* — working out the
-language would mean downloading and inspecting that image, which is network I/O a build can't do.
+There's no auto-detection here, and that's a platform constraint rather than a preference. A container
+declares only an *image* — nothing in the task definition says which language runs inside it. Working that
+out would mean downloading and inspecting the image, which is network I/O a build can't do. So you state it.
 
 <Warning>
   A wrong language here fails quietly. Staging the Java agent into a Python

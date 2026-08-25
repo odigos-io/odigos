@@ -32,9 +32,9 @@ environment variables on your application container. Here's what happens each ti
    for example `JAVA_TOOL_OPTIONS` for Java — and begins exporting telemetry.
 
 <Info>
-  There's no local collector step here the way there is for Lambda. Each Fargate
-  task sends telemetry **directly** to your OTLP destination, so that destination's
-  endpoint must be reachable from the task's network. See
+  There's no intermediate collector inside the task — each Fargate task sends
+  telemetry **directly** to your OTLP destination, so that destination's endpoint
+  must be reachable from the task's network. See
   [Telemetry export](/cloud-connectors/aws/overview#telemetry-export).
 </Info>
 
@@ -420,7 +420,7 @@ environment block passed to `addContainer`).
     Mirror the Fargate agents image into a private registry.
   </Card>
 
-  <Card title="Instrument Lambda" icon="bolt" href="/cloud-connectors/aws/workloads/lambda/instrument">
-    The same self-managed pattern for AWS Lambda, plus the Odigos CDK construct.
+  <Card title="CDK: Fargate" icon="code" href="/cloud-connectors/aws/cdk/fargate">
+    Every option on the Fargate CDK construct, in depth.
   </Card>
 </CardGroup>
