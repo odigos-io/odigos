@@ -64,9 +64,6 @@ func TestPhpCustomProbeString(t *testing.T) {
 		t.Fatalf("String() = %q, want %q", got, "bar")
 	}
 }
-package instrumentationrules
-
-import "testing"
 
 func Test_CustomInstrumentations_Verify(t *testing.T) {
 	tests := []struct {
