@@ -16,6 +16,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.36.2
 	k8s.io/apimachinery v0.36.4
 	k8s.io/client-go v0.36.4
+	k8s.io/streaming v0.36.4
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -108,7 +109,6 @@ require (
 	k8s.io/cli-runtime v0.36.2 // indirect
 	k8s.io/component-base v0.36.2 // indirect
 	k8s.io/kubectl v0.36.2 // indirect
-	k8s.io/streaming v0.36.4 // indirect
 	oras.land/oras-go/v2 v2.6.2 // indirect
 	sigs.k8s.io/controller-runtime v0.24.1 // indirect
 	sigs.k8s.io/kustomize/api v0.21.1 // indirect

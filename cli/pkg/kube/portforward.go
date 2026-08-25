@@ -11,10 +11,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
+	streamhttp "k8s.io/streaming/pkg/httpstream"
 )
 
 func PortForwardWithContext(ctx context.Context, pod *corev1.Pod, client *Client, localPort, uiPort, localAddress string) (*portforward.PortForwarder, error) {
@@ -39,7 +39,7 @@ func PortForwardWithContext(ctx context.Context, pod *corev1.Pod, client *Client
 	}
 
 	ports := fmt.Sprintf("%s:%s", localPort, uiPort)
-	fw, err := portforward.NewOnAddresses(dialer, []string{localAddress}, []string{ports}, stopChannel, readyChannel, os.Stdout, os.Stderr)
+	fw, err := portforward.NewOnAddressesForStreaming(dialer, []string{localAddress}, []string{ports}, stopChannel, readyChannel, os.Stdout, os.Stderr)
 	if err != nil {
 		return nil, err
 	}
@@ -159,17 +159,28 @@ func FindPodWithAppLabel(client *Client, ctx context.Context, namespace, appLabe
 	return pod, nil
 }
 
-func createDialer(method string, url *url.URL, cfg *rest.Config) (httpstream.Dialer, error) {
+// createDialer builds a dialer that tries SPDY-over-websocket first and falls back to plain SPDY,
+// which is what clusters older than 1.30 speak.
+//
+// The ForStreaming variants are required, not cosmetic. As of client-go v0.36 the websocket
+// round tripper reports a failed upgrade as k8s.io/streaming/pkg/httpstream.UpgradeFailureError,
+// where it previously used the identically named type from
+// k8s.io/apimachinery/pkg/util/httpstream. The two are distinct types, so testing the new error
+// with the apimachinery predicate silently returns false, the fallback never fires, and port
+// forwarding fails outright against any apiserver without websocket streaming.
+func createDialer(method string, url *url.URL, cfg *rest.Config) (streamhttp.Dialer, error) {
 	transport, upgrader, err := spdy.RoundTripperFor(cfg)
 	if err != nil {
 		return nil, err
 	}
-	spdyDialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, method, url)
+	spdyDialer := spdy.NewDialerForStreaming(upgrader, &http.Client{Transport: transport}, method, url)
 
-	tunnelDialer, err := portforward.NewSPDYOverWebsocketDialer(url, cfg)
+	tunnelDialer, err := portforward.NewSPDYOverWebsocketDialerForStreaming(url, cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	return portforward.NewFallbackDialer(tunnelDialer, spdyDialer, httpstream.IsUpgradeFailure), nil
+	return portforward.NewFallbackDialerForStreaming(tunnelDialer, spdyDialer, func(err error) bool {
+		return streamhttp.IsUpgradeFailure(err) || streamhttp.IsHTTPSProxyError(err)
+	}), nil
 }
