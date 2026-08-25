@@ -15,20 +15,28 @@ This page is the map. For hands-on tasks, see:
     Connect an account, choose an access level, and verify discovery.
   </Card>
 
-  <Card title="Preload artifacts" icon="download" href="/cloud-connectors/aws/workloads/lambda/preload">
-    Mirror the Fargate agents image into a private registry, and preload the Lambda layer into your own account for IaC.
+  <Card title="Preload Lambda layer" icon="download" href="/cloud-connectors/aws/workloads/lambda/preload">
+    Preload the Lambda layer into your own account for IaC.
+  </Card>
+
+  <Card title="Preload Fargate image" icon="download" href="/cloud-connectors/aws/workloads/fargate/preload">
+    Mirror the Fargate agents image into a private registry.
   </Card>
 
   <Card title="Instrument Lambda (CDK / CloudFormation)" icon="bolt" href="/cloud-connectors/aws/workloads/lambda/instrument">
     Self-managed Lambda instrumentation for Java, Python, Node.js, and Ruby.
   </Card>
 
-  <Card title="Instrument Fargate (CloudFormation)" icon="cubes" href="/cloud-connectors/aws/workloads/fargate/instrument">
+  <Card title="Instrument Fargate (CDK / CloudFormation)" icon="cubes" href="/cloud-connectors/aws/workloads/fargate/instrument">
     Self-managed Fargate instrumentation for every supported language.
   </Card>
 
-  <Card title="AWS CDK Reference" icon="code" href="/cloud-connectors/aws/cdk/lambda">
+  <Card title="CDK reference: Lambda" icon="code" href="/cloud-connectors/aws/cdk/lambda">
     Every option on the Lambda CDK construct, in depth.
+  </Card>
+
+  <Card title="CDK reference: Fargate" icon="code" href="/cloud-connectors/aws/cdk/fargate">
+    Every option on the Fargate CDK construct, in depth.
   </Card>
 </CardGroup>
 
@@ -71,12 +79,13 @@ specifically:
 | Mode                   | Lambda                                                                                                                         | Fargate                                                                                                                                                  |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Odigos-managed**     | The connector attaches the OpenTelemetry layer and sets the required environment directly on the function, and keeps it there. | The connector injects an `odigos-agent` sidecar into the service's task definition and rolls the service to the new revision, then keeps reconciling it. |
-| **Self-managed (IaC)** | You attach the layer and environment yourself via CloudFormation, CDK, Terraform, or the AWS CLI.                              | You add the sidecar and environment yourself via CloudFormation or CDK (`aws-cdk-lib/aws-ecs`).                                                          |
+| **Self-managed (IaC)** | You attach the layer and environment yourself via CloudFormation, the Odigos CDK construct, Terraform, or the AWS CLI.        | You add the sidecar and environment yourself via CloudFormation or the Odigos CDK construct (`@odigos/aws-cdk`).                                          |
 
 Self-managed is the default the moment you enable discovery without instrumentation for a type — nothing
 extra to configure. See [Instrument Lambda](/cloud-connectors/aws/workloads/lambda/instrument) and
 [Instrument Fargate](/cloud-connectors/aws/workloads/fargate/instrument) for the actual snippets, and
-[Preload artifacts](/cloud-connectors/aws/workloads/lambda/preload) for getting the Lambda layer into your own
+[Preload Lambda layer](/cloud-connectors/aws/workloads/lambda/preload) /
+[Preload Fargate image](/cloud-connectors/aws/workloads/fargate/preload) for getting artifacts into your own
 account first if your organization requires that.
 
 ## Supported languages
@@ -112,11 +121,11 @@ Both Lambda and Fargate export OTLP only, and the destination must be reachable 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Preload artifacts" icon="download" href="/cloud-connectors/aws/workloads/lambda/preload">
-    Fargate image mirroring and Lambda layer preloading for IaC.
-  </Card>
-
   <Card title="Instrument workloads" icon="microchip" href="/cloud-connectors/instrument-workloads">
     Add an OTLP destination and create Sources for Odigos-managed instrumentation.
+  </Card>
+
+  <Card title="CDK reference" icon="code" href="/cloud-connectors/aws/cdk/lambda">
+    The Odigos CDK construct, for both Lambda and Fargate.
   </Card>
 </CardGroup>

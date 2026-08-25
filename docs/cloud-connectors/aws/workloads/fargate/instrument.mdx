@@ -1,6 +1,6 @@
 ---
 title: 'Instrument Fargate with CloudFormation'
-description: 'Self-managed ECS Fargate instrumentation for Java, Python, Node.js, .NET, PHP, and Ruby using hand-written CloudFormation (or AWS CDK via aws-cdk-lib/aws-ecs).'
+description: 'Self-managed ECS Fargate instrumentation for Java, Python, Node.js, .NET, PHP, and Ruby using hand-written CloudFormation, or the Odigos AWS CDK construct.'
 sidebarTitle: 'Instrument Fargate'
 ---
 
@@ -11,13 +11,11 @@ and reports its status once your changes are in place; see
 for how that works. Want the connector to do this automatically instead? Enable the instrumentation
 capability for `aws.fargate-task` on the connector.
 
-<Warning>
-  Unlike Lambda, there's no Odigos CDK construct for Fargate yet — support for it is
-  planned. Until then, if you use CDK, write the same task-definition changes using
-  plain `aws-cdk-lib/aws-ecs` — see [AWS CDK](#aws-cdk) below. Once a construct
-  ships, it'll be documented alongside the Lambda one under
-  [CDK](/cloud-connectors/aws/cdk/lambda).
-</Warning>
+<Info>
+  Prefer the Odigos CDK construct? See
+  [AWS CDK Reference for Fargate](/cloud-connectors/aws/cdk/fargate). This page is the
+  hand-written CloudFormation / raw ECS form of the same change.
+</Info>
 
 ## How it works
 
@@ -406,33 +404,14 @@ Only the exact agent path, activation variable, and network protocol change per 
 
 ## AWS CDK
 
-There's no packaged Odigos construct for Fargate — you write the same four moves shown in the
-CloudFormation tabs above yourself, using the plain ECS constructs from `aws-cdk-lib/aws-ecs`:
+Prefer a construct over hand-written task-definition changes? Use
+[`@odigos/aws-cdk`](/cloud-connectors/aws/cdk/fargate) — it adds the staging container, volume, mount,
+dependency and environment in one call. The full option list and per-language activation details live on that
+page.
 
-```typescript
-taskDefinition.addVolume({ name: 'odigos-agent' });
-
-const stager = taskDefinition.addContainer('odigos-agent', {
-  image: ecs.ContainerImage.fromRegistry('registry.odigos.io/odigos-fargate-agents:<version>'),
-  essential: false,
-  command: ['sh', '-c', 'mkdir -p /var/odigos && cp -r /instrumentations/<lang> /var/odigos/<lang>'],
-});
-
-appContainer.addMountPoints({
-  sourceVolume: 'odigos-agent',
-  containerPath: '/var/odigos',
-  readOnly: true,
-});
-
-appContainer.addContainerDependencies({
-  container: stager,
-  condition: ecs.ContainerDependencyCondition.SUCCESS,
-});
-```
-
-There's no `addEnvironment` on an ECS container after the fact — pass the same `Environment` block shown in
-the CloudFormation tabs above as the `environment` prop when you call `addContainer` for your application
-container.
+If you need to stay on plain `aws-cdk-lib/aws-ecs`, apply the same four moves shown in the CloudFormation tabs
+above (`addVolume`, non-essential stager container, read-only mount + `SUCCESS` dependency, and the
+environment block passed to `addContainer`).
 
 ## Next steps
 

@@ -61,9 +61,22 @@ you own.
 
       <Step title="Point instrumentation at your mirrored image">
         <Tabs>
-          <Tab title="Self-managed (CloudFormation / CDK)">
+          <Tab title="CloudFormation">
             Replace the `Image` on the `odigos-agent` container in your task definition with your mirrored
             tag — see [Instrument Fargate](/cloud-connectors/aws/workloads/fargate/instrument).
+          </Tab>
+
+          <Tab title="CDK">
+            Pass your mirrored tag as `agentsImage` on the construct:
+
+            ```typescript
+            new OdigosFargateInstrumentation(this, 'Odigos', {
+              destination: { httpEndpoint: 'https://otlp.example.com:4318' },
+              agentsImage: '<account-id>.dkr.ecr.<region>.amazonaws.com/odigos-fargate-agents:<version>',
+            });
+            ```
+
+            See [CDK reference: Fargate](/cloud-connectors/aws/cdk/fargate#the-agents-image).
           </Tab>
 
           <Tab title="Odigos-managed">
@@ -95,5 +108,5 @@ you own.
 ## Next steps
 
 <Card title="Instrument Fargate" icon="cubes" href="/cloud-connectors/aws/workloads/fargate/instrument">
-  CloudFormation for every supported Fargate language.
+  CDK and CloudFormation for every supported Fargate language.
 </Card>

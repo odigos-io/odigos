@@ -822,7 +822,8 @@
               {
                 "group": "CDK",
                 "pages": [
-                  "cloud-connectors/aws/cdk/lambda"
+                  "cloud-connectors/aws/cdk/lambda",
+                  "cloud-connectors/aws/cdk/fargate"
                 ]
               }
             ]
