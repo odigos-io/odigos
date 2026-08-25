@@ -4,7 +4,7 @@ go 1.26.4
 
 require (
 	github.com/argoproj/argo-rollouts v1.9.1
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.9.0
 	github.com/odigos-io/odigos/actions v0.0.0-00010101000000-000000000000
