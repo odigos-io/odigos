@@ -227,3 +227,22 @@ func Test_Rollout_ICNil_HasAgents_RestartsArgoRollout(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, updatedRollout.Spec.RestartAt, "expected restartAt to be set for Argo Rollout")
 }
+
+func Test_NoRollout_ICNil_ArgoRolloutWithNilSelector(t *testing.T) {
+	// Arrange: Argo Rollout which resolves its selector from a workloadRef, so argo strips
+	// spec.selector from the stored object and odigos cannot query the rollout pods.
+	s := newTestSetup()
+	argoRollout := newMockArgoRollout(s.ns, "test-rollout")
+	argoRollout.Spec.Selector = nil
+	pw := k8sconsts.PodWorkload{Name: argoRollout.Name, Namespace: argoRollout.Namespace, Kind: k8sconsts.WorkloadKindArgoRollout}
+
+	fakeClient := s.newFakeClient(argoRollout)
+	var ic *odigosv1alpha1.InstrumentationConfig
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
+
+	// Act
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+
+	// Assert: Error returned - cannot determine which pods belong to the rollout
+	assertErrorNoStatusChange(t, rolloutResult, err)
+}
