@@ -1,4 +1,4 @@
-ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.18
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.19
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
@@ -126,6 +126,12 @@ ARG RHEL=false
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
+# A uid change at exec clears the permitted capability set, so a non-root
+# process receives capabilities only from the binary's file attributes. The
+# pod's capabilities.add sets the bounding set - the ceiling - and without
+# this the odiglet would run under securityProfile=unprivileged holding none
+# of them.
+RUN setcap cap_bpf,cap_perfmon,cap_sys_ptrace,cap_fowner,cap_dac_read_search=ep odiglet
 RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi
@@ -194,7 +200,7 @@ LABEL "version"=$VERSION
 LABEL "release"=$RELEASE
 LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /usr/local/bin/odiglet
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
@@ -204,11 +210,11 @@ COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigo
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
 COPY --from=agents-builder /instrumentations/ .
-CMD ["/root/odiglet"]
+CMD ["/usr/local/bin/odiglet"]
 
 ######### Default Odiglet #########
 FROM gcr.io/distroless/base:3443777deec6bd5c58be682f286aefffd1c871ae
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /usr/local/bin/odiglet
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
@@ -216,4 +222,4 @@ COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
 COPY --from=agents-builder /instrumentations/ .
-CMD ["/root/odiglet"]
+CMD ["/usr/local/bin/odiglet"]
