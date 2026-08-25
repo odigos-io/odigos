@@ -44,8 +44,6 @@ import type {
   InsightsAnomalyIssue,
   InsightsAnomalySummary,
   InsightsBaselineClass,
-  InsightsBulkDeleteResult,
-  InsightsBulkPromoteResult,
   InsightsBulkResolveResult,
   InsightsCatalog,
   InsightsFinding,
@@ -168,13 +166,10 @@ import {
   PROMOTE_INSIGHTS_BASELINE_CLASS,
   RESET_INSIGHTS_BASELINE_CLASS,
   RESET_INSIGHTS_TRANSACTION_BASELINES,
-  PROMOTE_INSIGHTS_TRANSACTION_BASELINES,
-  BULK_PROMOTE_INSIGHTS_TRANSACTIONS,
   FORCE_PROMOTE_INSIGHTS_SERVICE,
   ENABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
   DISABLE_INSIGHTS_TRANSACTION_GUARDRAIL,
   DELETE_INSIGHTS_TRANSACTION,
-  BULK_DELETE_INSIGHTS_TRANSACTIONS,
   UPSERT_INSIGHTS_POLICY,
   DELETE_INSIGHTS_POLICY,
   UPSERT_INSIGHTS_LEARNING_POLICY,
@@ -558,14 +553,6 @@ const operations: OdigosApiOperations = {
     document: RESET_INSIGHTS_TRANSACTION_BASELINES,
     transformResult: (raw: unknown) => (raw as { resetInsightsTransactionBaselines?: boolean } | null | undefined)?.resetInsightsTransactionBaselines ?? false,
   },
-  PROMOTE_INSIGHTS_TRANSACTION_BASELINES: {
-    document: PROMOTE_INSIGHTS_TRANSACTION_BASELINES,
-    transformResult: (raw: unknown) => (raw as { promoteInsightsTransactionBaselines?: boolean } | null | undefined)?.promoteInsightsTransactionBaselines ?? false,
-  },
-  BULK_PROMOTE_INSIGHTS_TRANSACTIONS: {
-    document: BULK_PROMOTE_INSIGHTS_TRANSACTIONS,
-    transformResult: (raw: unknown) => (raw as { bulkPromoteInsightsTransactions?: InsightsBulkPromoteResult } | null | undefined)?.bulkPromoteInsightsTransactions,
-  },
   FORCE_PROMOTE_INSIGHTS_SERVICE: {
     document: FORCE_PROMOTE_INSIGHTS_SERVICE,
     transformResult: (raw: unknown) => (raw as { forcePromoteInsightsService?: boolean } | null | undefined)?.forcePromoteInsightsService ?? false,
@@ -581,10 +568,6 @@ const operations: OdigosApiOperations = {
   DELETE_INSIGHTS_TRANSACTION: {
     document: DELETE_INSIGHTS_TRANSACTION,
     transformResult: (raw: unknown) => (raw as { deleteInsightsTransaction?: boolean } | null | undefined)?.deleteInsightsTransaction ?? false,
-  },
-  BULK_DELETE_INSIGHTS_TRANSACTIONS: {
-    document: BULK_DELETE_INSIGHTS_TRANSACTIONS,
-    transformResult: (raw: unknown) => (raw as { bulkDeleteInsightsTransactions?: InsightsBulkDeleteResult } | null | undefined)?.bulkDeleteInsightsTransactions,
   },
   UPSERT_INSIGHTS_POLICY: {
     document: UPSERT_INSIGHTS_POLICY,

@@ -13,11 +13,6 @@ const TRANSACTION_STAT_FIELDS = `
   service
   namespace
   operation
-  operationName
-  identityDimensions {
-    key
-    value
-  }
   kind
   volume
   lastSeen
@@ -30,19 +25,12 @@ const TRANSACTION_FIELDS = `
   service
   namespace
   operation
-  operationName
-  identityDimensions {
-    key
-    value
-  }
   kind
 `;
 
 const BASELINE_CLASS_FIELDS = `
   transactionId
   class
-  classLabel
-  classDescription
   data
   dataSchemaVersion
   observationCount
@@ -86,12 +74,6 @@ const FINDING_FIELDS = `
   service
   namespace
   title
-  operation
-  operationName
-  identityDimensions {
-    key
-    value
-  }
   offending
   score
   severity
@@ -111,11 +93,6 @@ const ANOMALY_SUMMARY_FIELDS = `
   service
   namespace
   operation
-  operationName
-  identityDimensions {
-    key
-    value
-  }
   kind
   triggeredClasses
   offending
@@ -204,8 +181,6 @@ const CATALOG_FIELDS = `
     id
     label
     description
-    baselineLabel
-    baselineDescription
     category
     categoryLabel
     weight
@@ -257,6 +232,10 @@ const SYSTEM_SETTINGS_FIELDS = `
   retention {
     observationRetentionDays
   }
+  findings {
+    defaultWindowHours
+    maxWindowHours
+  }
   capacity {
     maxResidentTransactions
     maxBaselineSetMembers
@@ -266,12 +245,6 @@ const SYSTEM_SETTINGS_FIELDS = `
   }
   detection {
     autoTransactionGuardrail
-  }
-  identity {
-    transactionIdentityDimensions {
-      key
-      enabled
-    }
   }
 `;
 
