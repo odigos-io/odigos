@@ -11,7 +11,7 @@ require (
 	github.com/gin-contrib/gzip v1.2.6
 	github.com/gin-gonic/gin v1.12.0
 	github.com/glebarez/sqlite v1.11.0
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/grafana/pyroscope v1.21.1
 	github.com/grafana/pyroscope/api v1.5.0
 	github.com/odigos-io/odigos/actions v0.0.0-00010101000000-000000000000
@@ -27,7 +27,7 @@ require (
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.5
-	github.com/stretchr/testify v1.11.1
+	github.com/stretchr/testify v1.12.1
 	github.com/vektah/gqlparser/v2 v2.5.27
 	go.opentelemetry.io/collector/component v1.57.0
 	go.opentelemetry.io/collector/component/componenttest v0.151.0
@@ -253,7 +253,7 @@ require (
 	go.uber.org/goleak v1.3.0 // indirect
 	go.uber.org/zap/exp v0.3.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
 	golang.org/x/mod v0.37.0 // indirect
