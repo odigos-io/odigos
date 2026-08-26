@@ -60,8 +60,12 @@ node) or **through the proxy** (multi node) — see
   intentionally not used on ECS, since ECS owns the container lifecycle.
 - **Export** — the collector runs inside the agent container with host
   networking, so instrumented tasks reach it on the instance's network
-  namespace. Destinations, actions, and rules are managed exactly as on the VM
-  Agent.
+  namespace.
+- **Configuration** — the task definition only bootstraps the agent (Central
+  or proxy endpoint, license). Sources, destinations, actions, and
+  instrumentation rules are managed from Odigos Central or with
+  [`odictl`](/vmagent/setup/configuration/odictl), exactly as on any VM Agent.
+  On ECS, `odictl` runs inside the agent container over ECS Exec.
 
 ## Choose a deployment mode
 
@@ -137,7 +141,7 @@ Select your cluster shape for the installation flow:
   **Not sure? Start single node.** The flow is identical on a 1-node or a 50-node
   cluster, and moving to Agent + Proxy later is just re-pointing the agents'
   endpoint at the proxy and rolling the daemon service — no reinstall. See
-  [Switch from single node to multi node](/vmagent/ecs/maintenance#switch-from-single-node-to-multi-node).
+  [Switch to Multi Node](/vmagent/ecs/installation-switch-to-multi-node).
 </Tip>
 
 ## What the proxy adds
@@ -197,6 +201,6 @@ mode.
     Agent + Proxy — one platform per cluster, with aggregation and config replay.
   </Card>
   <Card title="Configuration Reference" icon="sliders" href="/vmagent/ecs/configuration">
-    Every environment variable, platform naming, and required permissions.
+    Every environment variable, platform naming, and where configuration is persisted.
   </Card>
 </CardGroup>

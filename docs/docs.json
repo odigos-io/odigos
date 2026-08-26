@@ -784,7 +784,8 @@
                 "group": "Installation",
                 "pages": [
                   "vmagent/ecs/installation-agent-only",
-                  "vmagent/ecs/installation-with-proxy"
+                  "vmagent/ecs/installation-with-proxy",
+                  "vmagent/ecs/installation-switch-to-multi-node"
                 ]
               },
               "vmagent/ecs/configuration",

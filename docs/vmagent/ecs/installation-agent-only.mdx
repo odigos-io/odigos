@@ -158,8 +158,8 @@ values.
   }
   ```
 
-All settings are required for specific capabilities. For details, see [required permissions](https://www.google.com/search?q=/vmagent/ecs/configuration%23required-permissions)
-  changing any of them.
+  All settings are required for specific capabilities. For details, see
+  [required permissions](/vmagent/ecs/requirements#required-permissions).
 </Accordion>
 
 Substitute the placeholders:
@@ -298,8 +298,6 @@ aws ecs execute-command --cluster "$CLUSTER" --task "$TASK" \
 
 ## Moving to Agent + Proxy later
 
-Nothing is thrown away. Deploy the proxy, then re-point the agents' endpoint at
-it and roll the daemon service — the agents speak the same protocol to the proxy
-that they speak to Central. See
-[Install: Agent + Proxy](/vmagent/ecs/installation-with-proxy), and remember to
-add `ODIGOS_ECS_BEHIND_PROXY=true` to the agent task definition when you do.
+Nothing is thrown away. Deploy the proxy, re-point the agents, and roll the
+daemon — no reinstall. Follow
+[Switch to Multi Node](/vmagent/ecs/installation-switch-to-multi-node).

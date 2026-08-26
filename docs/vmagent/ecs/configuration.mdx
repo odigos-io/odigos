@@ -1,7 +1,7 @@
 ---
 title: "ECS Configuration Reference"
 sidebarTitle: "Configuration Reference"
-description: "Every environment variable of the Odigos ECS Agent and ECS Proxy, how platform names are derived, where configuration is persisted, and why each elevated task permission is required."
+description: "Every environment variable of the Odigos ECS Agent and ECS Proxy, how platform names are derived, and where configuration is persisted."
 ---
 
 import EnterpriseVMAgent from '/snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
@@ -87,7 +87,7 @@ identity and configuration across task restarts and image upgrades.
 | `ODIGOS_PLATFORM_TYPE` | No | Platform type reported upstream. Defaults to `aws.ecs`, matching the per-node agent. |
 | `ODIGOS_PROXY_ID` | No | Overrides the derived Central connection id. |
 | `ODIGOS_PROXY_LISTEN` | No | Agent listen address. Default `:4321`. |
-| `ODIGOS_PROXY_JOURNAL` | No | Config-journal path. Default `/var/lib/odigos-ecs-proxy/journal.jsonl`. Point it at an EFS mount if the journal must survive task replacement. |
+| `ODIGOS_PROXY_JOURNAL` | No | Config-journal **file** path. Default `/var/lib/odigos-ecs-proxy/journal.jsonl`. Point it at a file on an [EFS mount](/vmagent/ecs/installation-with-proxy#persist-the-config-journal-on-efs) if the journal must survive task replacement. |
 | `ODIGOS_COVERAGE_CHECK` | No | `true` enables the expected-vs-connected check: the proxy lists the cluster's container instances through the ECS/EC2 APIs and reports ACTIVE instances that have no connected agent. Requires `ecs:ListContainerInstances`, `ecs:DescribeContainerInstances`, and `ec2:DescribeInstances` on the task role. |
 | `ODIGOS_COVERAGE_INTERVAL` | No | Coverage check period (Go duration). Default `60s`. |
 
@@ -145,8 +145,8 @@ there is no `systemd` inside the container:
 - With host networking, the collector and OpAMP server listen on the instance's
   network namespace, reachable by instrumented tasks on localhost or the instance
   IP.
-- Collector logs are JSON-formatted on ECS (the `awslogs` driver is the primary
-  log stream).
+- Collector logs are JSON-formatted on ECS; the `awslogs` driver ships them to
+  CloudWatch Logs as the primary log stream.
 - [systemd memory limits](/vmagent/setup/configuration/services-mem-limits-configuration)
   do not apply — cap the agent with the task definition's `cpu`, `memory`, and
   `memoryReservation` instead.
@@ -159,24 +159,6 @@ task definition bind mount), and seeds them into a workload's container namespac
 when it attaches. Go, C++, and the OBI fallback are compiled into the agent
 binary and need no on-disk files.
 
-This is why `/var/odigos` must be a writable host mount.
-
-## Required permissions
-
-Each elevated setting in the agent task definition maps to a specific
-capability. These are hard requirements.
-
-| Setting | Reason |
-|---|---|
-| `pidMode: host` | Classifying and attaching to other tasks' processes via `/proc/<pid>`. |
-| `privileged: true` | eBPF program loading, perf events, and writing instrumentation files into target containers via `/proc/<pid>/root`. |
-| `networkMode: host` | The collector and OpAMP server listen on the instance's network namespace, reachable by instrumented workloads on localhost or the instance IP. |
-| `/var/run/docker.sock` (ro) | Container metadata: mapping PIDs to ECS tasks, service names, task ARNs. |
-| `/var/lib/docker` (ro) | Resolving executable paths through overlay2 for language detection. |
-| `/var/odigos` (rw) | Instrumentation files synced to the instance on startup; the source seeded into workload containers when attaching Java. |
-| `/etc/odigos-ecs-agent` (rw) | Agent configuration and identity, persisted across task restarts and upgrades. |
-| `/sys/kernel/debug` | kprobes and tracepoints used by the eBPF instrumentations. |
-| `ulimits.memlock: -1` | eBPF maps on kernels that account them against `RLIMIT_MEMLOCK`. |
-| `linuxParameters.initProcessEnabled` | Reaps child processes left by attach tooling. |
-
-The **proxy** needs none of these.
+This is why `/var/odigos` must be a writable host mount. The full list of
+elevated task settings is under
+[required permissions](/vmagent/ecs/requirements#required-permissions).

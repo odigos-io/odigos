@@ -142,7 +142,7 @@ Run the following:
 | `UpdateService: … Availability Zone Rebalancing does not support maximumPercent <= 100%` | AZ rebalancing defaults to enabled on new services | Add `--availability-zone-rebalancing DISABLED` |
 | Agents cannot reach the proxy | Security group does not allow TCP 4321, or the pinned instance was replaced and its IP changed | Open 4321; re-pin and re-point, or move to the [internal NLB option](/vmagent/ecs/installation-with-proxy#step-3-give-the-proxy-a-stable-address) |
 | `/healthz` unreachable, `curl: not found` | The proxy image ships no `curl` | Use bash's `/dev/tcp` as shown [above](#check-the-proxy-healthz-endpoint) |
-| A node's config differs from the rest of the cluster | The node joined while the proxy's journal was unavailable (task replaced, journal not persisted) | Persist the journal on EFS via `ODIGOS_PROXY_JOURNAL`, or re-apply the configuration from Central |
+| A node's config differs from the rest of the cluster | The node joined while the proxy's journal was unavailable (task replaced, journal not persisted) | Persist the journal on [EFS](/vmagent/ecs/installation-with-proxy#persist-the-config-journal-on-efs), or re-apply the configuration from Central |
 
 ## Diagnostics for support
 

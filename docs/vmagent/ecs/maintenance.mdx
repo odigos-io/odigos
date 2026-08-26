@@ -1,7 +1,7 @@
 ---
 title: "Upgrade and Uninstall on ECS"
 sidebarTitle: "Upgrade & Uninstall"
-description: "Roll out a new Odigos ECS Agent version, switch between deployment modes, and remove Odigos from an ECS cluster."
+description: "Roll out a new Odigos ECS Agent version and remove Odigos from an ECS cluster."
 ---
 
 import EnterpriseVMAgent from '/snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
@@ -70,38 +70,9 @@ configuration and identity live on the container instance at
   persisted in `config.yaml` on the instance
   [take precedence](/vmagent/ecs/configuration#configuration-precedence-and-persistence)
   over `ODIGOS_DEFAULT_CONFIG`.
-</Note>
 
-## Switch from single node to multi node
-
-No reinstall — the agents speak the same protocol to the proxy that they speak
-to Central.
-
-<Steps>
-  <Step title="Deploy the proxy">
-    Follow [Install: Agent + Proxy](/vmagent/ecs/installation-with-proxy) steps
-    3–5 (stable address, proxy task definition, proxy service).
-  </Step>
-  <Step title="Re-point the agents">
-    In the agent task definition, change `ODIGOS_DEFAULT_CONFIG`'s endpoint to the
-    proxy's `host:4321` **and** add `ODIGOS_ECS_BEHIND_PROXY=true`. Register the
-    revision.
-  </Step>
-  <Step title="Roll the daemon">
-    ```bash
-    aws ecs update-service --cluster "$CLUSTER" --service odigos-ecs-agent \
-      --task-definition odigos-ecs-agent --force-new-deployment
-    ```
-  </Step>
-</Steps>
-
-The cluster then appears in Central as one platform named after the cluster,
-replacing the per-node platforms.
-
-<Note>
-  Going the other way works the same: point the endpoint back at Central, remove
-  `ODIGOS_ECS_BEHIND_PROXY` (or set it to `false`), roll the daemon, then delete
-  the proxy service.
+  To move an existing Agent-only cluster onto the proxy without reinstalling,
+  see [Switch to Multi Node](/vmagent/ecs/installation-switch-to-multi-node).
 </Note>
 
 ## Uninstall

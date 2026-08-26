@@ -17,7 +17,27 @@ hard requirements — the agent cannot work around them.
 - **EC2 launch type only.** [Fargate is not supported](/vmagent/ecs/overview#not-supported-fargate) —
   the agent needs host PID, the instance's Docker socket, and eBPF.
 - Ability to run a **privileged task with `pidMode: host`** and host bind mounts
-  on the container instances (see [required permissions](/vmagent/ecs/configuration#required-permissions)).
+  on the container instances (see [required permissions](#required-permissions)).
+
+## Required permissions
+
+Each elevated setting in the agent task definition maps to a specific
+capability. These are hard requirements.
+
+| Setting | Reason |
+|---|---|
+| `pidMode: host` | Classifying and attaching to other tasks' processes via `/proc/<pid>`. |
+| `privileged: true` | eBPF program loading, perf events, and writing instrumentation files into target containers via `/proc/<pid>/root`. |
+| `networkMode: host` | The collector and OpAMP server listen on the instance's network namespace, reachable by instrumented workloads on localhost or the instance IP. |
+| `/var/run/docker.sock` (read-only) | Container metadata: mapping PIDs to ECS tasks, service names, task ARNs. |
+| `/var/lib/docker` (read-only) | Resolving executable paths through overlay2 for language detection. |
+| `/var/odigos` (read-write) | Instrumentation files synced to the instance on startup; the source seeded into workload containers when attaching Java. |
+| `/etc/odigos-ecs-agent` (read-write) | Agent configuration and identity, persisted across task restarts and upgrades. |
+| `/sys/kernel/debug` | kprobes and tracepoints used by the eBPF instrumentations. |
+| `ulimits.memlock: -1` | eBPF maps on kernels that account them against `RLIMIT_MEMLOCK`. |
+| `linuxParameters.initProcessEnabled` | Reaps child processes left by attach tooling. |
+
+The **proxy** needs none of these.
 
 ## Container instance kernel and AMI
 
