@@ -95,7 +95,13 @@ func (g *GoOtelEbpfSdk) Run(ctx context.Context) error {
 
 func (g *GoOtelEbpfSdk) Load(ctx context.Context) (instrumentation.Status, error) {
 	loadErr := g.inst.Load(ctx)
-	return instrumentation.Status{}, loadErr
+	if loadErr != nil {
+		// Load must release everything on failure: the manager drops an instrumentation whose Load
+		// failed without ever calling Close, so the handler built in CreateInstrumentation - and the
+		// goroutine its batch span processor holds - would be leaked for the lifetime of odiglet.
+		return instrumentation.Status{}, errors.Join(loadErr, g.th.Shutdown(ctx))
+	}
+	return instrumentation.Status{}, nil
 }
 
 func (g *GoOtelEbpfSdk) Close(ctx context.Context) error {
