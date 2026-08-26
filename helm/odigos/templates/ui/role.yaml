@@ -66,6 +66,16 @@ rules:
       - patch
       - update
       - delete
+  # Permissions for setRecommendationDismissed mutation, which only sets the
+  # odigos.io/recommendation-dismissed label. The recommendation lifecycle itself
+  # is owned by the autoscaler.
+  - apiGroups:
+      - odigos.io
+    resources:
+      - 'recommendations'
+    verbs:
+      - patch
+      - update
   {{- end }}
   - apiGroups:
       - odigos.io
