@@ -550,9 +550,8 @@ def profiles():
 
 @test
 def tracefs_host_path():
-    """odiglet.tracefsHostPath drives both the hostPath and every mountPath."""
+    """The node's tracing filesystem is mounted at a fixed /sys/kernel."""
     g = "tracefs"
-    override = "/sys/kernel/tracing"
 
     profiles = (
         ("legacy", []),
@@ -560,36 +559,18 @@ def tracefs_host_path():
         ("legacy + unPrivileged=true", TRACES_ONLY + ["--set", "odiglet.unPrivileged=true"]),
     )
 
+    # The parent directory rather than /sys/kernel/tracing, because it is a
+    # recursive bind: the tracefs submount comes with it whether the node
+    # mounts tracefs at /sys/kernel/tracing or only under
+    # /sys/kernel/debug/tracing, so one value works on both layouts.
     for label, sets in profiles:
-        c = Case(g, f"default tracefsHostPath ({label})", sets)
+        c = Case(g, f"sys-kernel is mounted ({label})", sets)
         c.eq("sys-kernel hostPath", c.volume("sys-kernel"),
              {"name": "sys-kernel", "hostPath": {"path": TRACEFS_DEFAULT}})
         c.eq("odiglet mount", c.mount("odiglet", TRACEFS_DEFAULT),
              {"name": "sys-kernel", "mountPath": TRACEFS_DEFAULT})
         c.eq("data-collection mount", c.mount("data-collection", TRACEFS_DEFAULT),
              {"name": "sys-kernel", "mountPath": TRACEFS_DEFAULT, "readOnly": True})
-
-        c = Case(g, f"tracefsHostPath={override} ({label})",
-                 sets + ["--set", f"odiglet.tracefsHostPath={override}"])
-        c.eq("sys-kernel hostPath", c.volume("sys-kernel"),
-             {"name": "sys-kernel", "hostPath": {"path": override}})
-        c.eq("odiglet mount", c.mount("odiglet", override),
-             {"name": "sys-kernel", "mountPath": override})
-        c.eq("data-collection mount", c.mount("data-collection", override),
-             {"name": "sys-kernel", "mountPath": override, "readOnly": True})
-        c.eq("the default path must not be mounted any more",
-             c.mount("odiglet", TRACEFS_DEFAULT), MISSING)
-
-    # an empty value must fall back to the parent directory, not render an empty
-    # hostPath (which the API server rejects)
-    c = Case(g, "empty tracefsHostPath falls back to /sys/kernel",
-             ["--set", "odiglet.tracefsHostPath="])
-    c.eq("sys-kernel hostPath", c.volume("sys-kernel"),
-         {"name": "sys-kernel", "hostPath": {"path": TRACEFS_DEFAULT}})
-    c.eq("odiglet mount", c.mount("odiglet", TRACEFS_DEFAULT),
-         {"name": "sys-kernel", "mountPath": TRACEFS_DEFAULT})
-    c.eq("data-collection mount", c.mount("data-collection", TRACEFS_DEFAULT),
-         {"name": "sys-kernel", "mountPath": TRACEFS_DEFAULT, "readOnly": True})
 
     # the odiglet needs to write to tracefs: the mount is never read-only,
     # in either profile.  (unprivileged-strict, which mounted it read-only,
@@ -1078,10 +1059,6 @@ def schema_guards():
     if c.rendered():
         c.eq("pod nodeSelector", (c.pod_spec() or {}).get("nodeSelector", MISSING),
              {"kubernetes.io/os": "linux"})
-
-    c = Case(g, "odiglet.tracefsHostPath can still be set",
-             ["--set", "odiglet.tracefsHostPath=/sys/kernel/tracing"])
-    c.rendered()
 
     # the same mistake once invented a property named after a comment line
     schema = json.loads((CHART / "values.schema.json").read_text())

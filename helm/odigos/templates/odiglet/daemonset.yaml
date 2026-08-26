@@ -42,7 +42,6 @@
 {{- with .Values.odiglet.odiglet.capabilities -}}{{- $odigletCaps = . -}}{{- end -}}
 {{- with .Values.odiglet.dataCollection.capabilities -}}{{- $dataCollectionCaps = . -}}{{- end -}}
 {{- $wasp := or .Values.wasp.enabled (ne $profile "legacy") -}}
-{{- $tracefsHostPath := .Values.odiglet.tracefsHostPath | default "/sys/kernel" -}}
 {{- /* The unprivileged attach interfaces are an enterprise capability. An OSS
        deployment gets the legacy profile, which is what it has always had. */ -}}
 {{- if and (ne $profile "legacy") (not (include "odigos.secretExists" .)) }}
@@ -325,7 +324,7 @@ spec:
           {{- end }}
              # needed to load eBPF tracepoints - used by runtime-detector
             - name: sys-kernel
-              mountPath: {{ $tracefsHostPath }}
+              mountPath: /sys/kernel
             - name: odigos-go-offsets
               mountPath: /offsets
             - name: exchange-dir
@@ -440,7 +439,7 @@ spec:
               readOnly: true
             {{- end }}
             - name: sys-kernel
-              mountPath: {{ $tracefsHostPath }}
+              mountPath: /sys/kernel
               readOnly: true
             - name: exchange-dir
               mountPath: /var/exchange
@@ -639,7 +638,7 @@ spec:
       {{- end }}
         - name: sys-kernel
           hostPath:
-            path: {{ $tracefsHostPath }}
+            path: /sys/kernel
       {{- if $hostPathMounts }}
         - name: host-cgroup
           hostPath:

@@ -1084,21 +1084,6 @@ odiglet:
 
   # @schema
   # description: |-
-  #   Host path mounted so the odiglet can reach the node's tracing filesystem,
-  #   which it needs to attach tracepoints and, on kernels that gate the uprobe
-  #   PMU, to register uprobes.
-  #   The default is the parent directory because it is a recursive bind: the
-  #   tracefs submount comes with it whether the node mounts tracefs at
-  #   /sys/kernel/tracing or only under /sys/kernel/debug/tracing, so one value
-  #   works on both layouts.
-  #   Narrow it to /sys/kernel/tracing on fleets known to mount it there -
-  #   systemd has since v241. Nodes that do not (Amazon Linux 2, for one) have
-  #   an empty directory at that path, and the odiglet will fail to start.
-  # @schema
-  tracefsHostPath: /sys/kernel
-
-  # @schema
-  # description: |-
   #   run the odiglet container without privileged containers.
   #   when set to true, odiglet will use the set of capabilities required for eBPF operations.
   #   by default, odiglet runs as a privileged container.
