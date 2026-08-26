@@ -78,7 +78,11 @@ LEGACY_ODIGLET_CAPS = [
     "SYS_ADMIN", "BPF", "PERFMON", "SYS_PTRACE", "DAC_READ_SEARCH", "IPC_LOCK", "SYS_RESOURCE",
 ]
 LEGACY_DATA_COLLECTION_CAPS = ["SYS_ADMIN", "BPF", "PERFMON", "IPC_LOCK"]
-PROFILE_ODIGLET_CAPS = ["BPF", "PERFMON", "SYS_PTRACE", "DAC_READ_SEARCH", "FOWNER"]
+# CAP_DAC_OVERRIDE joins the set only when the host mounts are present: the
+# agent directory and the device plugin socket are root-owned hostPaths that a
+# non-root uid has no other way to write. noHostPathMounts takes it away again.
+PROFILE_ODIGLET_CAPS_NO_HOSTPATH = ["BPF", "PERFMON", "SYS_PTRACE", "DAC_READ_SEARCH", "FOWNER"]
+PROFILE_ODIGLET_CAPS = PROFILE_ODIGLET_CAPS_NO_HOSTPATH + ["DAC_OVERRIDE"]
 
 RUN_AS = 1000
 TRACEFS_DEFAULT = "/sys/kernel"
@@ -399,6 +403,13 @@ class Case:
         spec = self.pod_spec()
         return sorted(v["name"] for v in (spec.get("volumes") or [])) if spec else []
 
+    def all_security_contexts(self):
+        """Every container's securityContext, init containers included."""
+        spec = self.pod_spec() or {}
+        return [c.get("securityContext") or {}
+                for key in ("initContainers", "containers")
+                for c in (spec.get(key) or [])]
+
     def env(self, container_name, key):
         c = self.container(container_name)
         if c is None:
@@ -429,6 +440,21 @@ SC_DROP_ALL = {
     "allowPrivilegeEscalation": False,
     "capabilities": {"drop": ["ALL"]},
 }
+
+# Same, plus the uid a profile names so that nothing in the daemonset runs as
+# root - even a container that runs no code of its own.
+SC_DROP_ALL_AS_USER = dict(SC_DROP_ALL, runAsUser=RUN_AS)
+
+
+def sc_deviceplugin_profile():
+    """The device plugin under a profile: non-root, and able to bind its socket
+    under the kubelet's root-owned directory."""
+    return {
+        "privileged": False,
+        "allowPrivilegeEscalation": False,
+        "runAsUser": RUN_AS,
+        "capabilities": {"drop": ["ALL"], "add": ["DAC_OVERRIDE"]},
+    }
 
 
 def sc_odiglet_profile(caps=None, apparmor=True):
@@ -528,12 +554,41 @@ def profiles():
     c.pod_security_context({"fsGroup": RUN_AS})
     # the standard init container is replaced by the image-pull one
     c.container_absent("init")
-    c.security_context("odigos-agents-image-pull", SC_DROP_ALL)
+    c.security_context("odigos-agents-image-pull", SC_DROP_ALL_AS_USER)
     c.security_context("odiglet", sc_odiglet_profile())
     c.security_context("data-collection", sc_data_collection_profile())
-    # deviceplugin needs the virtual-device mount method, which the profile forbids
+    # this case pins mountMethod=k8s-init-container, which renders neither
     c.container_absent("deviceplugin")
     c.container_absent("csi-driver")
+
+    # unprivileged with the host mounts kept: every container still non-root,
+    # nothing privileged, and the device plugin renders as it always has.
+    c = Case(g, "securityProfile=unprivileged with host mounts",
+             TRACES_ONLY + ENTERPRISE + PROFILE_UNPRIV)
+    c.pod_security_context({"fsGroup": RUN_AS})
+    c.security_context("init", {
+        "runAsUser": RUN_AS,
+        "allowPrivilegeEscalation": False,
+        "capabilities": {"drop": ["ALL"], "add": ["DAC_OVERRIDE"]},
+    })
+    c.security_context("odiglet", sc_odiglet_profile())
+    c.security_context("data-collection", sc_data_collection_profile())
+    c.security_context("deviceplugin", sc_deviceplugin_profile())
+    c.truthy("nothing is privileged", "privileged: true" not in c.render.stdout,
+             "'privileged: true' appears in the rendered daemonset")
+    c.truthy("no container runs as root",
+             all(sc.get("runAsUser") == RUN_AS for sc in c.all_security_contexts()),
+             f"security contexts: {c.all_security_contexts()}")
+    c.truthy("the agent directory is still mounted", "odigos" in c.volume_names(),
+             f"volumes: {c.volume_names()}")
+
+    # noHostPathMounts is the addon that narrows it further: with no root-owned
+    # hostPath to write, CAP_DAC_OVERRIDE is not granted.
+    c = Case(g, "securityProfile=unprivileged + noHostPathMounts drops DAC_OVERRIDE",
+             UNPRIV_BASE + PROFILE_UNPRIV + ["--set", "odiglet.noHostPathMounts=true"])
+    c.security_context("odiglet", sc_odiglet_profile(caps=PROFILE_ODIGLET_CAPS_NO_HOSTPATH))
+    c.truthy("the agent directory is not mounted", "odigos" not in c.volume_names(),
+             f"volumes: {c.volume_names()}")
     c.truthy("odiglet container must not be privileged anywhere",
              "privileged: true" not in c.render.stdout,
              "'privileged: true' appears in the rendered daemonset")
@@ -550,8 +605,9 @@ def profiles():
 
 @test
 def tracefs_host_path():
-    """The node's tracing filesystem is mounted at a fixed /sys/kernel."""
+    """odiglet.tracefsHostPath drives both the hostPath and every mountPath."""
     g = "tracefs"
+    override = "/run/tracing"
 
     profiles = (
         ("legacy", []),
@@ -571,6 +627,26 @@ def tracefs_host_path():
              {"name": "sys-kernel", "mountPath": TRACEFS_DEFAULT})
         c.eq("data-collection mount", c.mount("data-collection", TRACEFS_DEFAULT),
              {"name": "sys-kernel", "mountPath": TRACEFS_DEFAULT, "readOnly": True})
+
+        # A node that keeps its tracing filesystem somewhere neither of the two
+        # usual layouts covers has to be able to say so.
+        c = Case(g, f"tracefsHostPath={override} ({label})",
+                 sets + ["--set", f"odiglet.tracefsHostPath={override}"])
+        c.eq("sys-kernel hostPath", c.volume("sys-kernel"),
+             {"name": "sys-kernel", "hostPath": {"path": override}})
+        c.eq("odiglet mount", c.mount("odiglet", override),
+             {"name": "sys-kernel", "mountPath": override})
+        c.eq("data-collection mount", c.mount("data-collection", override),
+             {"name": "sys-kernel", "mountPath": override, "readOnly": True})
+        c.eq("the default path must not be mounted any more",
+             c.mount("odiglet", TRACEFS_DEFAULT), MISSING)
+
+    # an empty value must fall back to the parent directory, not render an empty
+    # hostPath, which the API server rejects
+    c = Case(g, "empty tracefsHostPath falls back to /sys/kernel",
+             ["--set", "odiglet.tracefsHostPath="])
+    c.eq("sys-kernel hostPath", c.volume("sys-kernel"),
+         {"name": "sys-kernel", "hostPath": {"path": TRACEFS_DEFAULT}})
 
     # the odiglet needs to write to tracefs: the mount is never read-only,
     # in either profile.  (unprivileged-strict, which mounted it read-only,
@@ -839,12 +915,20 @@ def platform_switches():
              "host" not in c.volume_names() and "selinux" not in c.volume_names(),
              f"volumes: {c.volume_names()}")
 
-    # openshift under a profile: the hostPath mounts are dropped, so the
-    # selinux/host mounts go with them, but nothing else changes.
+    # openshift under a profile: the profile is about privilege, not about host
+    # mounts, so openshift keeps the mounts it has always had.
     c = Case(g, "openshift.enabled=true + securityProfile=unprivileged",
              UNPRIV_BASE + PROFILE_UNPRIV + ["--set", "openshift.enabled=true"])
     c.security_context("odiglet", sc_odiglet_profile())
-    c.truthy("no host/selinux volumes (profile drops hostPath mounts)",
+    c.truthy("host/selinux volumes are kept",
+             "host" in c.volume_names() and "selinux" in c.volume_names(),
+             f"volumes: {c.volume_names()}")
+
+    # ...and noHostPathMounts is what takes them away, profile or not.
+    c = Case(g, "openshift.enabled=true + securityProfile=unprivileged + noHostPathMounts",
+             UNPRIV_BASE + PROFILE_UNPRIV
+             + ["--set", "openshift.enabled=true", "--set", "odiglet.noHostPathMounts=true"])
+    c.truthy("no host/selinux volumes",
              "host" not in c.volume_names() and "selinux" not in c.volume_names(),
              f"volumes: {c.volume_names()}")
 
@@ -970,12 +1054,27 @@ def guards():
     c.render_fails_with("metrics guard", logs_msg)
 
     # ---- mount methods ----
-    for method in ("", "k8s-virtual-device", "k8s-host-path", "k8s-csi-driver"):
+    # The profile is about privilege, not about host mounts, so it constrains
+    # the mount method only where the method itself needs privilege: the CSI
+    # driver, which a pre-existing guard refuses in unprivileged mode.
+    for method in ("", "k8s-virtual-device", "k8s-host-path", "k8s-init-container"):
         sets = TRACES_ONLY + ENTERPRISE + PROFILE_UNPRIV
         if method:
             sets += ["--set", f"instrumentor.mountMethod={method}"]
         c = Case(g, f"securityProfile=unprivileged + mountMethod={method or '<empty>'}", sets)
-        c.render_fails_with("mount-method guard", hostpath_msg)
+        c.rendered()
+
+    c = Case(g, "securityProfile=unprivileged + mountMethod=k8s-csi-driver",
+             TRACES_ONLY + ENTERPRISE + PROFILE_UNPRIV
+             + ["--set", "instrumentor.mountMethod=k8s-csi-driver"])
+    c.render_fails_with("csi guard", "CSI driver mount method requires privileged mode")
+
+    # noHostPathMounts is what withholds the host mounts, profile or not, and
+    # it still requires the mount method that needs none of them.
+    c = Case(g, "securityProfile=unprivileged + noHostPathMounts without k8s-init-container",
+             TRACES_ONLY + ENTERPRISE + PROFILE_UNPRIV
+             + ["--set", "odiglet.noHostPathMounts=true"])
+    c.render_fails_with("hostPath guard", hostpath_msg)
 
     c = Case(g, "legacy unPrivileged=true + logs", ["--set", "odiglet.unPrivileged=true"])
     c.render_fails_with("logs/metrics guard", logs_msg)
@@ -1014,6 +1113,31 @@ def image_paths():
     dockerfile = REPO / "odiglet" / "Dockerfile"
     if not dockerfile.exists():
         return
+
+    # A uid change at exec clears the permitted set, so the binary's own file
+    # capabilities are the only source of privilege for a non-root odiglet.
+    # Two properties have to hold, and neither shows up in a rendered manifest.
+    setcap = [l for l in dockerfile.read_text().splitlines() if l.startswith("RUN setcap")]
+    c = Case(g, "the odiglet file capabilities are usable in every configuration")
+    if c.truthy("odiglet/Dockerfile sets file capabilities", len(setcap) == 1,
+                f"expected exactly one 'RUN setcap' line, found {len(setcap)}"):
+        spec = setcap[0].split()[2]
+        caps, _, flags = spec.rpartition("=")
+        # Permitted-only. bprm_caps_from_vfs_caps returns -EPERM when the file's
+        # effective bit is set and the bounding set grants less than the file
+        # asks for, so '=ep' turns any narrowed capability list into a container
+        # that cannot start at all.
+        c.eq("file capabilities are permitted-only", flags, "p")
+        on_binary = {x.strip().upper().removeprefix("CAP_") for x in caps.split(",")}
+        # ...and they must cover everything any values file can grant, or the
+        # manifest would add a capability the process can never actually hold.
+        for label, granted in (
+            ("legacy", LEGACY_ODIGLET_CAPS),
+            ("profile", PROFILE_ODIGLET_CAPS),
+            ("profile + noHostPathMounts", PROFILE_ODIGLET_CAPS_NO_HOSTPATH),
+        ):
+            c.eq(f"{label} capabilities are all on the binary",
+                 sorted(set(granted) - on_binary), [])
     installed = set()
     for line in dockerfile.read_text().splitlines():
         if line.startswith("COPY"):
@@ -1095,9 +1219,20 @@ ALLOWED_DIFFS = {
         "            - /usr/local/bin/odiglet\n",
         "            - /root/odiglet\n",
     ),
+    "aux-binary-paths": (
+        # grpc_health_probe, deviceplugin and the csi driver moved out of /root
+        # for the same reason the odiglet binary did: ubi-micro ships /root as
+        # 0550, so a non-root container cannot execute anything under it
+        "                - /usr/local/bin/grpc_health_probe\n",
+        "                - /root/grpc_health_probe\n",
+    ),
+    "csi-driver-path": (
+        "            - /usr/local/bin/odigos-csi-driver\n",
+        "            - /root/odigos-csi-driver\n",
+    ),
     "deviceplugin-securitycontext": (
         # the deviceplugin container had no securityContext at all before
-        "            - /root/deviceplugin\n"
+        "            - /usr/local/bin/deviceplugin\n"
         "          securityContext:\n"
         "            privileged: false\n"
         "            allowPrivilegeEscalation: false\n"
@@ -1123,33 +1258,33 @@ ALLOWED_DIFFS = {
 
 BASELINE_CASES = [
     # (name, sets, kube, allowed diff keys)
-    ("no values set", [], "1.30.0", ["odiglet-command-path", "deviceplugin-securitycontext"]),
-    ("no values set (k8s 1.25)", [], "1.25.0", ["odiglet-command-path", "deviceplugin-securitycontext"]),
+    ("no values set", [], "1.30.0", ["odiglet-command-path", "deviceplugin-securitycontext", "aux-binary-paths", "csi-driver-path"]),
+    ("no values set (k8s 1.25)", [], "1.25.0", ["odiglet-command-path", "deviceplugin-securitycontext", "aux-binary-paths", "csi-driver-path"]),
     ("unPrivileged=true", TRACES_ONLY + ["--set", "odiglet.unPrivileged=true"], "1.30.0",
-     ["odiglet-command-path", "deviceplugin-securitycontext"]),
+     ["odiglet-command-path", "deviceplugin-securitycontext", "aux-binary-paths", "csi-driver-path"]),
     ("unPrivileged=true (k8s 1.29)", TRACES_ONLY + ["--set", "odiglet.unPrivileged=true"], "1.29.0",
-     ["odiglet-command-path", "deviceplugin-securitycontext"]),
+     ["odiglet-command-path", "deviceplugin-securitycontext", "aux-binary-paths", "csi-driver-path"]),
     ("unPrivileged=true (k8s 1.25)", TRACES_ONLY + ["--set", "odiglet.unPrivileged=true"], "1.25.0",
-     ["odiglet-command-path", "deviceplugin-securitycontext"]),
+     ["odiglet-command-path", "deviceplugin-securitycontext", "aux-binary-paths", "csi-driver-path"]),
     ("noHostPid=true", ["--set", "odiglet.noHostPid=true"], "1.30.0",
-     ["odiglet-command-path", "deviceplugin-securitycontext"]),
+     ["odiglet-command-path", "deviceplugin-securitycontext", "aux-binary-paths", "csi-driver-path"]),
     ("openshift.enabled=true", ["--set", "openshift.enabled=true"], "1.30.0",
-     ["odiglet-command-path", "deviceplugin-securitycontext"]),
+     ["odiglet-command-path", "deviceplugin-securitycontext", "aux-binary-paths", "csi-driver-path"]),
     ("gke.autopilot=true", ["--set", "gke.autopilot=true"], "1.30.0",
-     ["odiglet-command-path", "deviceplugin-securitycontext"]),
+     ["odiglet-command-path", "deviceplugin-securitycontext", "aux-binary-paths", "csi-driver-path"]),
     ("mountMethod=k8s-host-path", ["--set", "instrumentor.mountMethod=k8s-host-path"], "1.30.0",
      ["odiglet-command-path"]),
     ("mountMethod=k8s-csi-driver", ["--set", "instrumentor.mountMethod=k8s-csi-driver"], "1.30.0",
-     ["odiglet-command-path"]),
+     ["odiglet-command-path", "csi-driver-path", "aux-binary-paths"]),
     ("mountMethod=k8s-init-container", MM_INIT, "1.30.0", ["odiglet-command-path"]),
     ("noHostPathMounts=true", MM_INIT + ["--set", "odiglet.noHostPathMounts=true"], "1.30.0",
      ["odiglet-command-path"]),
     ("signals=[traces,logs]", ["--set-json", 'signals=["traces","logs"]'], "1.30.0",
-     ["odiglet-command-path", "deviceplugin-securitycontext"]),
+     ["odiglet-command-path", "deviceplugin-securitycontext", "aux-binary-paths", "csi-driver-path"]),
     ("unPrivileged=true + explicit capabilities",
      TRACES_ONLY + ["--set", "odiglet.unPrivileged=true",
                     "--set-json", 'odiglet.odiglet.capabilities=["NET_ADMIN"]'], "1.30.0",
-     ["odiglet-command-path", "deviceplugin-securitycontext"]),
+     ["odiglet-command-path", "deviceplugin-securitycontext", "aux-binary-paths", "csi-driver-path"]),
     ("unPrivileged=true + mountMethod=k8s-init-container",
      TRACES_ONLY + ["--set", "odiglet.unPrivileged=true"] + MM_INIT, "1.30.0",
      ["odiglet-command-path", "image-pull-securitycontext"]),

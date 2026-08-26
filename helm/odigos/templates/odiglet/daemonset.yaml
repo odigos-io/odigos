@@ -24,11 +24,12 @@
 {{- $privilegedRequired := or $collectLogs $collectMetrics -}}
 {{- $k8sVersion := include "utils.cleanKubeVersion" . }}
 {{- $profile := .Values.odiglet.securityProfile | default "legacy" -}}
+{{- $tracefsHostPath := .Values.odiglet.tracefsHostPath | default "/sys/kernel" -}}
 {{- $unprivileged := or .Values.odiglet.unPrivileged (ne $profile "legacy") -}}
-{{- /* Only a profile withholds the optional hostPaths. odiglet.unPrivileged
-       never did, and an existing values file that sets it must keep rendering
-       exactly as it did. */ -}}
-{{- $hostPathMounts := not (or .Values.odiglet.noHostPathMounts (ne $profile "legacy")) -}}
+{{- /* The host mounts are orthogonal to the privilege profile: noHostPathMounts
+       withholds them and nothing else does, so unprivileged, noHostPathMounts,
+       and both together are three separate choices. */ -}}
+{{- $hostPathMounts := not .Values.odiglet.noHostPathMounts -}}
 {{- $runAsUser := 1000 -}}
 {{- /* The capability sets, in order of increasing authority: what the legacy
        boolean has always granted, what a profile grants, and what an operator
@@ -37,6 +38,13 @@
 {{- $dataCollectionCaps := list "SYS_ADMIN" "BPF" "PERFMON" "IPC_LOCK" -}}
 {{- if ne $profile "legacy" -}}
   {{- $odigletCaps = list "BPF" "PERFMON" "SYS_PTRACE" "DAC_READ_SEARCH" "FOWNER" -}}
+  {{- /* The agent directory and the device plugin socket are hostPaths the
+         kubelet creates owned by root, and fsGroup does not apply to a
+         hostPath. Writing them as a non-root uid is what CAP_DAC_OVERRIDE is
+         for, and it is granted only when those paths are actually mounted. */ -}}
+  {{- if $hostPathMounts -}}
+    {{- $odigletCaps = append $odigletCaps "DAC_OVERRIDE" -}}
+  {{- end -}}
   {{- $dataCollectionCaps = list -}}
 {{- end -}}
 {{- with .Values.odiglet.odiglet.capabilities -}}{{- $odigletCaps = . -}}{{- end -}}
@@ -130,6 +138,17 @@ spec:
           {{- if not $unprivileged }}
             privileged: true
           {{- end }}
+          {{- if ne $profile "legacy" }}
+            runAsUser: {{ $runAsUser }}
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              {{- if $hostPathMounts }}
+              add:
+                - DAC_OVERRIDE
+              {{- end }}
+          {{- end }}
           env:
             - name: NODE_NAME
               valueFrom:
@@ -174,6 +193,12 @@ spec:
             capabilities:
               drop:
                 - ALL
+            {{- /* It runs nothing, so it needs no uid of its own; naming one is
+                   what keeps a profile's promise that no container in this
+                   daemonset runs as root. */}}
+            {{- if ne $profile "legacy" }}
+            runAsUser: {{ $runAsUser }}
+            {{- end }}
           {{- end }}
           # # it does not run any actual code, just pulls the image
           # we add the resources here to make sure any policy that may validate resources exist
@@ -324,7 +349,7 @@ spec:
           {{- end }}
              # needed to load eBPF tracepoints - used by runtime-detector
             - name: sys-kernel
-              mountPath: /sys/kernel
+              mountPath: {{ $tracefsHostPath }}
             - name: odigos-go-offsets
               mountPath: /offsets
             - name: exchange-dir
@@ -439,7 +464,7 @@ spec:
               readOnly: true
             {{- end }}
             - name: sys-kernel
-              mountPath: /sys/kernel
+              mountPath: {{ $tracefsHostPath }}
               readOnly: true
             - name: exchange-dir
               mountPath: /var/exchange
@@ -458,13 +483,20 @@ spec:
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
-            - /root/deviceplugin
+            - /usr/local/bin/deviceplugin
           securityContext:
             privileged: false
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+              {{- if and (ne $profile "legacy") $hostPathMounts }}
+              add:
+                - DAC_OVERRIDE
+              {{- end }}
+            {{- if ne $profile "legacy" }}
+            runAsUser: {{ $runAsUser }}
+            {{- end }}
           env:
             - name: NODE_NAME
               valueFrom:
@@ -488,7 +520,7 @@ spec:
           livenessProbe:
             exec:
               command:
-                - /root/grpc_health_probe
+                - /usr/local/bin/grpc_health_probe
                 - -addr=unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic
                 - -connect-timeout=10s
                 - -rpc-timeout=10s
@@ -496,7 +528,7 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /root/grpc_health_probe
+                - /usr/local/bin/grpc_health_probe
                 - -addr=unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic
                 - -connect-timeout=10s
                 - -rpc-timeout=10s
@@ -514,7 +546,7 @@ spec:
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           command:
-            - /root/odigos-csi-driver
+            - /usr/local/bin/odigos-csi-driver
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -540,7 +572,7 @@ spec:
           livenessProbe:
             exec:
               command:
-                - /root/grpc_health_probe
+                - /usr/local/bin/grpc_health_probe
                 - -addr=unix:///csi/csi.sock
                 - -connect-timeout=10s
                 - -rpc-timeout=10s
@@ -548,7 +580,7 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /root/grpc_health_probe
+                - /usr/local/bin/grpc_health_probe
                 - -addr=unix:///csi/csi.sock
                 - -connect-timeout=10s
                 - -rpc-timeout=10s
@@ -638,7 +670,7 @@ spec:
       {{- end }}
         - name: sys-kernel
           hostPath:
-            path: /sys/kernel
+            path: {{ $tracefsHostPath }}
       {{- if $hostPathMounts }}
         - name: host-cgroup
           hostPath:

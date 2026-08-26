@@ -1593,6 +1593,12 @@
           "required": [],
           "title": "traceIdSuffix"
         },
+        "tracefsHostPath": {
+          "default": "/sys/kernel",
+          "description": "Host path mounted so the odiglet can reach the node's tracing filesystem.\nThe default is the parent directory because it is a recursive bind: the\ntracefs submount comes with it whether the node mounts tracefs at\n/sys/kernel/tracing or only under /sys/kernel/debug/tracing, so one value\ncovers both of the usual layouts.\nSet it only for a node that keeps its tracing filesystem somewhere else.\nThe odiglet logs the path it found on the node when it cannot reach one,\nwhich is the value to put here.",
+          "required": [],
+          "title": "tracefsHostPath"
+        },
         "unPrivileged": {
           "default": "false",
           "description": "run the odiglet container without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
