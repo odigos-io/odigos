@@ -26,9 +26,12 @@ Add an AWS Cloud Connector to manage AWS accounts. The connector runs in the Cen
   individual Fargate **service** — is the ECS resource Odigos instruments directly.
 </Info>
 
-Both `aws.lambda` and `aws.fargate-task` can be instrumented **Odigos-managed** (the connector applies and
-maintains the change) or **self-managed** via your own CloudFormation, CDK, or Terraform — see
-[Odigos-managed vs. self-managed instrumentation](/cloud-connectors/overview#odigos-managed-vs-self-managed-instrumentation).
+aws.lambda and aws.fargate-task support two instrumentation approaches:
+- Odigos-managed: The connector automatically applies and maintains the required changes.
+
+- Self-managed: You maintain full control by provisioning through your own CloudFormation, CDK, or Terraform pipelines.
+
+(For a deeper comparison, see [Odigos-managed vs. self-managed instrumentation](/cloud-connectors/overview#odigos-managed-vs-self-managed-instrumentation).)
 For the self-managed path, artifact preloading, and per-language CDK/CloudFormation snippets, see the
 [AWS Connector](/cloud-connectors/aws/overview) section.
 

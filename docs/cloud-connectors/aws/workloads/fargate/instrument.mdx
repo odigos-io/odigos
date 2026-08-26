@@ -4,12 +4,11 @@ description: 'Self-managed ECS Fargate instrumentation for Java, Python, Node.js
 sidebarTitle: 'Instrument Fargate'
 ---
 
-This page shows how to instrument an ECS **service** running on Fargate yourself, by editing its task
+This page shows how to instrument an ECS **service** running on Fargate yourself via CloudFormation, by editing its task
 definition directly — no changes made by the connector on your behalf. Odigos still discovers the service
 and reports its status once your changes are in place; see
 [Odigos-managed vs. self-managed instrumentation](/cloud-connectors/overview#odigos-managed-vs-self-managed-instrumentation)
-for how that works. Want the connector to do this automatically instead? Enable the instrumentation
-capability for `aws.fargate-task` on the connector.
+for how that works. 
 
 <Info>
   Prefer the Odigos CDK construct? See
@@ -40,10 +39,7 @@ environment variables on your application container. Here's what happens each ti
 
 ## CloudFormation
 
-Merge these properties into your task definition. The four moves from [How it works](#how-it-works) above
-look like this in CloudFormation — add a volume, add the `odigos-agent` container, mount that volume
-read-only on your application container with a `SUCCESS` dependency, and add the environment variables.
-Only the exact agent path, activation variable, and network protocol change per language. Pick yours below:
+Merge these properties into your task definition. Only the exact agent path, activation variable, and network protocol change per language. Pick yours below:
 
 <Tabs>
   <Tab title="Java">

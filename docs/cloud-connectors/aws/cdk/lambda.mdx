@@ -132,8 +132,7 @@ new OdigosLambdaInstrumentation(this, 'Odigos', {
 </ParamField>
 
 <Info>
-  Ruby has no verified web-server loader, so Ruby functions are rejected in
-  `WEB_SERVER` mode.
+Ruby functions are not supported in WEB_SERVER mode because a verified web-server loader is currently unavailable.
 </Info>
 
 ## Java functions: pick the matching handler type
@@ -226,7 +225,7 @@ configuration is a circular dependency that CloudFormation refuses to deploy.
 | `LAYER_ARNS`, `ODIGOS_VERSION` | The layer-ARN table baked into the package, and the Odigos release it came from. |
 | `SAR_APPLICATIONS`, `SAR_SEMANTIC_VERSION` | The Serverless Application Repository applications backing `IN_ACCOUNT`, and their pinned version. |
 
-## Next steps
+## Related Topics
 
 <CardGroup cols={2}>
   <Card title="CDK overview" icon="code" href="/cloud-connectors/aws/cdk/overview">

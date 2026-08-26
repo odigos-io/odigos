@@ -45,7 +45,7 @@ You choose which resource types to discover and instrument when you add a connec
 
 ## Odigos-managed vs. self-managed instrumentation
 
-Every workload type supports two ways of getting instrumented, chosen per type when you add or edit a connector:
+When adding or editing a connector, choose an instrumentation method for each workload type:
 
 | Discovery | Instrumentation | Mode | Who applies the change |
 | --- | --- | --- | --- |
@@ -53,7 +53,7 @@ Every workload type supports two ways of getting instrumented, chosen per type w
 | On | Off | **Self-managed (IaC)** | You apply the change yourself — CloudFormation, CDK, Terraform, or by hand. Odigos only discovers and reports status; it never modifies the resource. |
 | Off | — | Not discovered | The type is not surfaced at all. |
 
-There is no separate "mode" toggle — it's just whether you turned on the instrumentation capability for that type. This is what makes self-managed workloads safe by default: until you grant instrumentation access, Odigos cannot touch the resource no matter what else is enabled.
+Rather than using a dedicated mode toggle, Odigos controls access through per-type instrumentation settings. This ensures self-managed workloads are safe by default—Odigos cannot touch or configure a resource unless its instrumentation capability is active.
 
 <Tip>
   Pick self-managed when your organization already provisions Lambda functions or ECS
