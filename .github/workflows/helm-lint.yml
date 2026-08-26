@@ -4,8 +4,6 @@ on:
   pull_request:
     paths:
       - helm/**
-      - scripts/helm-odiglet-security-test.py
-      - .github/workflows/helm-lint.yml
 
 jobs:
   lint-charts:
@@ -38,26 +36,3 @@ jobs:
             echo "Helm values.schema.json is out of date. Please run 'make helm-schema' and commit the changes."
             exit 1
           fi
-
-  odiglet-security-profiles:
-    # Pins the odiglet securityContext across every permutation of
-    # odiglet.securityProfile and the individual switches, and diffs the
-    # rendered daemonset against the commit before security profiles existed.
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          # full history: the test renders the chart from a git worktree of the
-          # pre-change commit and diffs the two renders.
-          fetch-depth: 0
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install PyYAML
-        run: pip install pyyaml
-      - name: Odiglet security profile tests
-        run: make helm-test

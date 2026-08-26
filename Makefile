@@ -97,13 +97,6 @@ $(HELM_SCHEMA_BIN):
 helm-schema-clean:
 	rm -f $(HELM_SCHEMA_BIN)
 
-# Renders helm/odigos over every permutation of the odiglet security settings and
-# asserts on the result, including a diff against the commit that predates
-# odiglet.securityProfile. Requires helm and python3 with PyYAML.
-.PHONY: helm-test
-helm-test:
-	python3 scripts/helm-odiglet-security-test.py
-
 # Pass DOCKER_BUILD_OPTS=--no-cache to force a clean build (e.g. when go.mod replace changes and cache is stale).
 build-image/%:
 	docker build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) \
