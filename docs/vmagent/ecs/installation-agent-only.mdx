@@ -158,8 +158,7 @@ values.
   }
   ```
 
-  Every setting that looks unusual is required for a specific capability — see
-  [required permissions](/vmagent/ecs/configuration#required-permissions) before
+All settings are required for specific capabilities. For details, see [required permissions](https://www.google.com/search?q=/vmagent/ecs/configuration%23required-permissions)
   changing any of them.
 </Accordion>
 
@@ -291,7 +290,7 @@ aws ecs execute-command --cluster "$CLUSTER" --task "$TASK" \
 </CardGroup>
 
 <Note>
-  In this mode `odictl` targets **one node's** agent — there is no cluster-wide
+  In this mode `odictl` targets **single node's** agent — there is no cluster-wide
   `odictl`. Configuration made through Central applies to the platform you
   selected, i.e. that node. For cluster-wide configuration, use
   [Agent + Proxy](/vmagent/ecs/installation-with-proxy).

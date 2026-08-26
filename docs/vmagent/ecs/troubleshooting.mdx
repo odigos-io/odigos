@@ -38,7 +38,7 @@ A shell works the same way (`--command /bin/bash`), which is useful for
 `/etc/odigos-ecs-agent/config.yaml`.
 
 <Note>
-  `odictl` always targets **one node's** agent — there is no cluster-wide
+  `odictl` always targets **single node's** agent — there is no cluster-wide
   `odictl`. In [Agent + Proxy](/vmagent/ecs/installation-with-proxy) mode, use the
   Central UI for the aggregated view and the proxy's `/healthz` for membership.
 
@@ -90,9 +90,8 @@ Work through these in order.
   </Accordion>
 
   <Accordion title="The daemon task is not running on every instance">
-    ```bash
-    aws ecs describe-services --cluster "$CLUSTER" --services odigos-ecs-agent \
-      --query 'services[0].{running:runningCount,desired:desiredCount,events:events[:5].message}'
+Run the following:
+    
     ```
 
     `events` names the reason: insufficient CPU/memory on the instance, image pull

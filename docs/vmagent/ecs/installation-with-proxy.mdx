@@ -31,9 +31,9 @@ their very first boot, with the correct proxy address baked into their first tas
 definition revision — no retry-loop noise and no redeploy.
 
 <Steps>
-  <Step title="Choose the proxy's stable address">Pinned instance, or an internal NLB.</Step>
+  <Step title="Choose the proxy's stable address">Internal NLB (preferred), or a pinned instance.</Step>
   <Step title="Deploy the proxy">One task per cluster, listening on TCP 4321.</Step>
-  <Step title="Deploy the agent daemon">Pointed at the proxy, with `ODIGOS_ECS_BEHIND_PROXY=true`.</Step>
+  <Step title="Deploy the agent daemon">Enable the proxy, with `ODIGOS_ECS_BEHIND_PROXY=true`.</Step>
 </Steps>
 
 ## Step 1: Set your session variables
@@ -419,7 +419,7 @@ aws ecs register-task-definition --cli-input-json file:///tmp/agent-td.json >/de
   report different platform names. Behind the proxy, each agent identifies itself
   by **node hostname** (the proxy is what reports the cluster name upstream, and
   its coverage check matches agent names against the instances' private DNS).
-  Leave it `false` here and every agent registers under the cluster name instead,
+  If you leave it `false` here and every agent registers under the cluster name instead,
   which makes the coverage check report **all** instances as uncovered.
 </Warning>
 
