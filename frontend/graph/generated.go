@@ -859,6 +859,7 @@ type ComplexityRoot struct {
 		Key       func(childComplexity int) int
 		Label     func(childComplexity int) int
 		Mode      func(childComplexity int) int
+		Origin    func(childComplexity int) int
 	}
 
 	InsightsGuardrailViolation struct {
@@ -6205,6 +6206,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsGuardrailRule.Mode(childComplexity), true
+
+	case "InsightsGuardrailRule.origin":
+		if e.complexity.InsightsGuardrailRule.Origin == nil {
+			break
+		}
+
+		return e.complexity.InsightsGuardrailRule.Origin(childComplexity), true
 
 	case "InsightsGuardrailViolation.lastSeen":
 		if e.complexity.InsightsGuardrailViolation.LastSeen == nil {
@@ -41169,6 +41177,8 @@ func (ec *executionContext) fieldContext_InsightsGuardrail_rules(_ context.Conte
 				return ec.fieldContext_InsightsGuardrailRule_mode(ctx, field)
 			case "allowlist":
 				return ec.fieldContext_InsightsGuardrailRule_allowlist(ctx, field)
+			case "origin":
+				return ec.fieldContext_InsightsGuardrailRule_origin(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsGuardrailRule", field.Name)
 		},
@@ -41337,6 +41347,47 @@ func (ec *executionContext) _InsightsGuardrailRule_allowlist(ctx context.Context
 }
 
 func (ec *executionContext) fieldContext_InsightsGuardrailRule_allowlist(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsGuardrailRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsGuardrailRule_origin(ctx context.Context, field graphql.CollectedField, obj *model.InsightsGuardrailRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsGuardrailRule_origin(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Origin, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsGuardrailRule_origin(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "InsightsGuardrailRule",
 		Field:      field,
@@ -82408,7 +82459,7 @@ func (ec *executionContext) unmarshalInputInsightsGuardrailRuleInput(ctx context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"key", "label", "mode", "allowlist"}
+	fieldsInOrder := [...]string{"key", "label", "mode", "allowlist", "origin"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -82443,6 +82494,13 @@ func (ec *executionContext) unmarshalInputInsightsGuardrailRuleInput(ctx context
 				return it, err
 			}
 			it.Allowlist = data
+		case "origin":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("origin"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Origin = data
 		}
 	}
 
@@ -90838,6 +90896,8 @@ func (ec *executionContext) _InsightsGuardrailRule(ctx context.Context, sel ast.
 			}
 		case "allowlist":
 			out.Values[i] = ec._InsightsGuardrailRule_allowlist(ctx, field, obj)
+		case "origin":
+			out.Values[i] = ec._InsightsGuardrailRule_origin(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

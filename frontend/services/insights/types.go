@@ -389,6 +389,8 @@ type GuardrailRule struct {
 	Label     string   `json:"label"`
 	Mode      RuleMode `json:"mode"`
 	Allowlist []string `json:"allowlist,omitempty"`
+	// Origin is how the rule was created (e.g. auto_transaction_guardrail).
+	Origin string `json:"origin,omitempty"`
 }
 
 type Guardrail struct {

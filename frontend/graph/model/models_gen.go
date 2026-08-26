@@ -1040,6 +1040,9 @@ type InsightsGuardrailRule struct {
 	Label     string           `json:"label"`
 	Mode      InsightsRuleMode `json:"mode"`
 	Allowlist []string         `json:"allowlist,omitempty"`
+	// How this rule was created. `auto_transaction_guardrail` means it was created
+	// automatically when the service's transactions promoted (not a manual edit).
+	Origin *string `json:"origin,omitempty"`
 }
 
 type InsightsGuardrailRuleInput struct {
@@ -1047,6 +1050,8 @@ type InsightsGuardrailRuleInput struct {
 	Label     string           `json:"label"`
 	Mode      InsightsRuleMode `json:"mode"`
 	Allowlist []string         `json:"allowlist,omitempty"`
+	// Preserved on save so auto-created rules keep their origin across edits.
+	Origin *string `json:"origin,omitempty"`
 }
 
 type InsightsGuardrailSeedInput struct {

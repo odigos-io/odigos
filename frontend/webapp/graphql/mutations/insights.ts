@@ -34,6 +34,7 @@ const GUARDRAIL_FIELDS = `
     label
     mode
     allowlist
+    origin
   }
 `;
 

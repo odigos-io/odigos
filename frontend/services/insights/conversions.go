@@ -772,11 +772,16 @@ func BulkResolveResultToModel(result BulkResolveResult) *model.InsightsBulkResol
 }
 
 func GuardrailRuleToModel(rule GuardrailRule) *model.InsightsGuardrailRule {
+	var origin *string
+	if rule.Origin != "" {
+		origin = &rule.Origin
+	}
 	return &model.InsightsGuardrailRule{
 		Key:       rule.Key,
 		Label:     rule.Label,
 		Mode:      RuleModeToModel(rule.Mode),
 		Allowlist: rule.Allowlist,
+		Origin:    origin,
 	}
 }
 
@@ -1082,11 +1087,16 @@ func LearningPolicyFromInput(input model.InsightsLearningPolicyInput) LearningPo
 }
 
 func GuardrailRuleFromInput(input model.InsightsGuardrailRuleInput) GuardrailRule {
+	origin := ""
+	if input.Origin != nil {
+		origin = *input.Origin
+	}
 	return GuardrailRule{
 		Key:       input.Key,
 		Label:     input.Label,
 		Mode:      RuleModeFromModel(input.Mode),
 		Allowlist: input.Allowlist,
+		Origin:    origin,
 	}
 }
 

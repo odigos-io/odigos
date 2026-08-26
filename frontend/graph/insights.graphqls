@@ -608,6 +608,11 @@ type InsightsGuardrailRule {
   label: String!
   mode: InsightsRuleMode!
   allowlist: [String!]
+  """
+  How this rule was created. `auto_transaction_guardrail` means it was created
+  automatically when the service's transactions promoted (not a manual edit).
+  """
+  origin: String
 }
 
 type InsightsGuardrail {
@@ -624,6 +629,10 @@ input InsightsGuardrailRuleInput {
   label: String!
   mode: InsightsRuleMode!
   allowlist: [String!]
+  """
+  Preserved on save so auto-created rules keep their origin across edits.
+  """
+  origin: String
 }
 
 input InsightsGuardrailInput {
