@@ -13,8 +13,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentation"
 
 	"go.opentelemetry.io/auto"
-	"go.opentelemetry.io/auto/pipeline"
-	"go.opentelemetry.io/auto/pipeline/otelsdk"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 )
 
@@ -24,9 +22,6 @@ var log = commonlogger.LoggerCompat().With("subsystem", "ebpfgosdk")
 type GoOtelEbpfSdk struct {
 	inst *auto.Instrumentation
 	cp   *configprovider.ConfigProvider[auto.InstrumentationConfig]
-	// th is the telemetry pipeline backing inst. auto.Instrumentation only shuts down a handler
-	// it built itself, so the one we hand it through auto.WithHandler is ours to shut down.
-	th *otelsdk.TraceHandler
 }
 
 // compile-time check that ConfigProvider[auto.InstrumentationConfig] implements auto.ConfigProvider
@@ -59,34 +54,22 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 
 	cp := configprovider.NewConfigProvider(initialConfig)
 
-	// The service name, resource attributes and exporter moved out of go.opentelemetry.io/auto and
-	// into the otelsdk telemetry pipeline. We configure them explicitly rather than through
-	// otelsdk.WithEnv() so the instrumented process' own OTEL_* variables cannot override what
-	// Odigos resolved for it.
-	th, err := otelsdk.NewTraceHandler(
-		ctx,
-		otelsdk.WithServiceName(settings.ServiceName),
-		otelsdk.WithResourceAttributes(settings.ResourceAttributes...),
-		otelsdk.WithTraceExporter(defaultExporter),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create trace handler: %w", err)
-	}
-
 	inst, err := auto.NewInstrumentation(
 		ctx,
 		auto.WithEnv(), // for OTEL_LOG_LEVEL
 		auto.WithPID(pid),
-		auto.WithHandler(&pipeline.Handler{TraceHandler: th}),
+		auto.WithResourceAttributes(settings.ResourceAttributes...),
+		auto.WithServiceName(settings.ServiceName),
+		auto.WithTraceExporter(defaultExporter),
+		auto.WithGlobal(),
 		auto.WithConfigProvider(cp),
 	)
 	if err != nil {
 		log.Error("instrumentation setup failed", "err", err)
-		// Nothing owns the handler yet, so shut it down here or the exporter leaks.
-		return nil, errors.Join(err, th.Shutdown(ctx))
+		return nil, err
 	}
 
-	return &GoOtelEbpfSdk{inst: inst, cp: cp, th: th}, nil
+	return &GoOtelEbpfSdk{inst: inst, cp: cp}, nil
 }
 
 func (g *GoOtelEbpfSdk) Run(ctx context.Context) error {
@@ -98,8 +81,8 @@ func (g *GoOtelEbpfSdk) Load(ctx context.Context) (instrumentation.Status, error
 	return instrumentation.Status{}, loadErr
 }
 
-func (g *GoOtelEbpfSdk) Close(ctx context.Context) error {
-	return errors.Join(g.inst.Close(), g.th.Shutdown(ctx))
+func (g *GoOtelEbpfSdk) Close(_ context.Context) error {
+	return g.inst.Close()
 }
 
 func (g *GoOtelEbpfSdk) ApplyConfig(ctx context.Context, sdkConfig instrumentation.Config) error {
