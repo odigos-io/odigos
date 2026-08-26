@@ -23,12 +23,12 @@ This page is the map. For hands-on tasks, see:
     Mirror the Fargate agents image into a private registry.
   </Card>
 
-  <Card title="Instrument Lambda (CDK / CloudFormation)" icon="bolt" href="/cloud-connectors/aws/workloads/lambda/instrument">
+  <Card title="Instrument Lambda" icon="bolt" href="/cloud-connectors/aws/workloads/lambda/instrument">
     Self-managed Lambda instrumentation for Java, Python, Node.js, and Ruby.
   </Card>
 
-  <Card title="Instrument Fargate (CDK / CloudFormation)" icon="cubes" href="/cloud-connectors/aws/workloads/fargate/instrument">
-    Self-managed Fargate instrumentation for every supported language.
+  <Card title="Instrument Fargate" icon="cubes" href="/cloud-connectors/aws/workloads/fargate/instrument">
+    Self-managed Fargate instrumentation with CloudFormation for every supported language.
   </Card>
 
   <Card title="CDK reference: Lambda" icon="code" href="/cloud-connectors/aws/cdk/lambda">
@@ -120,12 +120,22 @@ Both Lambda and Fargate export OTLP only, and the destination must be reachable 
 
 ## Next steps
 
+Self-managed instrumentation — pick your workload:
+
 <CardGroup cols={2}>
-  <Card title="Instrument workloads" icon="microchip" href="/cloud-connectors/instrument-workloads">
-    Add an OTLP destination and create Sources for Odigos-managed instrumentation.
+  <Card title="Instrument Lambda" icon="bolt" href="/cloud-connectors/aws/workloads/lambda/instrument">
+    CloudFormation or CDK for Lambda functions.
   </Card>
 
-  <Card title="Odigos AWS CDK" icon="code" href="/cloud-connectors/aws/cdk/overview">
-    Instrument from your own CDK app — both Lambda and Fargate.
+  <Card title="Instrument Fargate" icon="cubes" href="/cloud-connectors/aws/workloads/fargate/instrument">
+    CloudFormation for ECS Fargate task definitions.
   </Card>
 </CardGroup>
+
+Using `@odigos/aws-cdk`? Start from the
+[CDK overview](/cloud-connectors/aws/cdk/overview) (install, destinations, markers), then the Lambda or
+Fargate construct reference.
+
+Still setting up the connector? See
+[Add an AWS Connector](/cloud-connectors/add-connectors/add-aws-connector). For Odigos-managed Sources after
+the connector is online, create them in Central once an OTLP destination is configured.

@@ -8,6 +8,20 @@ Cloud Connectors are the third connection type in Odigos Central, alongside [Rem
 
 Each connector manages **one** cloud account boundary (for example an AWS account, a GCP project, or another supported provider). From Central you discover workloads in that account, create Sources for the ones you want to observe, and track instrumentation progress.
 
+## Prerequisites
+
+<Steps>
+  <Step title="Install Odigos Central">
+    Follow the [Central installation](/central/installation) guide.
+  </Step>
+  <Step title="Enable Cloud Connectors">
+    Set `cloudConnectors.enabled=true`. See [Enable Cloud Connectors](/cloud-connectors/enable).
+  </Step>
+  <Step title="Prepare cloud access">
+    Create a cloud identity (e.g. IAM role or service account) with only the permissions you want the connector to have. See [You control the access scope](#you-control-the-access-scope).
+  </Step>
+</Steps>
+
 ## Why use Cloud Connectors?
 
 - **Unified management** — Manage serverless and cloud workloads alongside Kubernetes clusters and VM hosts from the same Central UI
@@ -119,20 +133,6 @@ Protocol support for Amazon ECS Fargate:
 GCP Cloud Run supports OTLP gRPC and OTLP HTTP.
 
 See [Add an OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination). For how to add and configure destinations, see the [Destinations overview](/enterprise/backends-overview).
-
-## Prerequisites
-
-<Steps>
-  <Step title="Install Odigos Central">
-    Follow the [Central installation](/central/installation) guide.
-  </Step>
-  <Step title="Enable Cloud Connectors">
-    Set `cloudConnectors.enabled=true`. See [Enable Cloud Connectors](/cloud-connectors/enable).
-  </Step>
-  <Step title="Prepare cloud access">
-    Create a cloud identity (e.g. IAM role or service account) with only the permissions you want the connector to have. See [You control the access scope](#you-control-the-access-scope).
-  </Step>
-</Steps>
 
 ## Next steps
 

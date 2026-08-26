@@ -84,7 +84,7 @@ For the self-managed path, artifact preloading, and per-language CDK/CloudFormat
         | Manage Fargate task definitions | `ecs:RegisterTaskDefinition`, `ecs:UpdateService` |
         | Pass task/execution roles when registering a task definition | `iam:PassRole` (scope with condition `iam:PassedToService=ecs-tasks.amazonaws.com`) |
 
-        Odigos-managed instrumentation also requires an [OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online. If you plan to self-manage instrumentation instead (your own CloudFormation/CDK/Terraform), you only need the discovery actions above — see [AWS Connector](/cloud-connectors/aws/overview).
+        Odigos-managed instrumentation also requires an [OTLP destination](/cloud-connectors/instrument-workloads#add-an-otlp-destination) after the connector is online.
       </Tab>
       <Tab title="Custom">
         Pick which resource types may be discovered and which may be instrumented. The UI updates the **policy preview** to match your selections so the IAM policy stays aligned with what verification will validate.

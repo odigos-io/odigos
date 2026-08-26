@@ -8,9 +8,9 @@ sidebarTitle: 'Lambda'
 
 <Note>
   Read [Odigos AWS CDK](/cloud-connectors/aws/cdk/overview) first — it covers
-  installing the package, choosing a destination, which signals to send, and how
-  Odigos recognizes an instrumented workload. This page covers only what's specific
-  to Lambda.
+  installing the package and how Odigos recognizes an instrumented workload — then
+  [Destinations](/cloud-connectors/aws/cdk/destinations) for the shared `destination`
+  options. This page covers only what's specific to Lambda.
 </Note>
 
 ## Basic usage
@@ -24,9 +24,15 @@ new OdigosLambdaInstrumentation(this, 'Odigos', {
 });
 ```
 
-One call does everything for every function you list: attaches the right OpenTelemetry layer for that
-function's language and CPU architecture, sets the variable that loads it, configures where telemetry goes,
-and writes the `ODIGOS_IAC` marker.
+Typically you define **one** `OdigosLambdaInstrumentation` per CDK stack and pass it every function you
+want instrumented. One construct does everything for every function you list: attaches the right
+OpenTelemetry layer for that function's language and CPU architecture, sets the variable that loads it,
+configures where telemetry goes, and writes the `ODIGOS_IAC` marker.
+
+`serviceName` (and other construct-level options) apply to **every** function on that construct. If each
+function needs its own `serviceName`, define **one construct per function** instead of listing them
+together. The same applies whenever any other setting must differ. To instrument every function in the
+stack without listing them, use the [Aspect](#instrumenting-every-function-in-a-stack) instead.
 
 Languages supported: **Python, Node.js, Java, Ruby.** Other runtimes — Go, .NET, and custom runtimes —
 have no OpenTelemetry Lambda layer, so they can't be instrumented this way.
@@ -78,14 +84,49 @@ new OdigosLambdaInstrumentation(this, 'Odigos', {
 });
 ```
 
-Both options install byte-for-byte identical instrumentation. Use `IN_ACCOUNT` if your organization's policy
-forbids attaching a Lambda layer owned by an outside AWS account — see
-[Preload the Lambda layer](/cloud-connectors/aws/workloads/lambda/preload) for what that actually deploys.
-It needs the principal running `cdk deploy` to hold `serverlessrepo:CreateCloudFormationTemplate` and
-`serverlessrepo:GetApplication`.
+Both options install byte-for-byte identical instrumentation. **`IN_ACCOUNT` is the SAR preload path for
+CDK**: the construct nests an AWS Serverless Application Repository application into your stack, which
+publishes an `AWS::Lambda::LayerVersion` owned by **your** account and wires its ARN onto the function. You
+do not deploy SAR by hand when using this option.
+
+Use `IN_ACCOUNT` if your organization's policy forbids attaching a Lambda layer owned by an outside AWS
+account. It needs the principal running `cdk deploy` to hold `serverlessrepo:CreateCloudFormationTemplate`
+and `serverlessrepo:GetApplication`.
+
+For the same preload outside CDK (Console, CloudFormation/SAM) — or to see the Application IDs and
+`SemanticVersion` the construct pins — see
+[Preload the Lambda layer](/cloud-connectors/aws/workloads/lambda/preload).
 
 <ParamField path="layerVersion" type="lambda.ILayerVersion">
-  If you mirror the layer somewhere yourself, pass it here directly and neither option above is used.
+  Escape hatch: attach a specific layer you already own, and **skip `layerSource` entirely** — neither
+  `ODIGOS_PUBLIC` nor `IN_ACCOUNT` is consulted when this is set.
+
+  Pass any CDK [`ILayerVersion`](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_lambda.ILayerVersion.html)
+  — typically `LayerVersion.fromLayerVersionArn(...)` pointing at a layer you mirrored into your account, or
+  a `LayerVersion` construct you already defined. There is no separate allow-list: the construct attaches
+  whatever you pass.
+
+  The layer **must** be the Odigos OpenTelemetry layer (same bytes / script layout as the public or SAR
+  layer). Environment variables assume paths inside that layout; a different layer will attach but fail to
+  instrument at runtime.
+
+  ```typescript
+  import * as lambda from 'aws-cdk-lib/aws-lambda';
+
+  new OdigosLambdaInstrumentation(this, 'Odigos', {
+    destination: { endpoint: 'otlp.example.com:4317' },
+    functions: [fn],
+    layerVersion: lambda.LayerVersion.fromLayerVersionArn(
+      this,
+      'OdigosLayer',
+      'arn:aws:lambda:eu-west-1:111122223333:layer:odigos-otel-python-arm64:1',
+    ),
+  });
+  ```
+
+  One `layerVersion` is used for **every** function on this construct, so those functions must share a
+  language and architecture that match that layer. Prefer `layerSource` when you need the construct to pick
+  the right layer per function.
 </ParamField>
 
 ## Normal functions vs. web-server functions
@@ -222,14 +263,18 @@ configuration is a circular dependency that CloudFormation refuses to deploy.
 | `OdigosInstrumentationMode` | `HANDLER` \| `WEB_SERVER` |
 | `OdigosJavaHandlerDistro` | The four Java handler wrappers. |
 | `renderCollectorConfig` | The same collector-config renderer the construct uses, if you want to inspect what it produces. |
-| `LAYER_ARNS`, `ODIGOS_VERSION` | The layer-ARN table baked into the package, and the Odigos release it came from. |
-| `SAR_APPLICATIONS`, `SAR_SEMANTIC_VERSION` | The Serverless Application Repository applications backing `IN_ACCOUNT`, and their pinned version. |
+| `LAYER_ARNS`, `ODIGOS_VERSION` | The public layer-ARN table baked into the package (`ODIGOS_PUBLIC`), and the Odigos release it came from. |
+| `SAR_APPLICATIONS`, `SAR_SEMANTIC_VERSION` | What `IN_ACCOUNT` deploys under the hood: SAR Application IDs keyed by `language/architecture`, and the pinned semantic version (same bytes as this package release). You normally do **not** import these — set `layerSource: IN_ACCOUNT` instead. Use them only if you're authoring your own SAR/`AWS::Serverless::Application` template; the step-by-step is in [Preload the Lambda layer](/cloud-connectors/aws/workloads/lambda/preload). |
 
 ## Related Topics
 
 <CardGroup cols={2}>
   <Card title="CDK overview" icon="code" href="/cloud-connectors/aws/cdk/overview">
-    Destination, signals, and markers — the shared settings.
+    Install, constructs, and how Odigos recognizes instrumented workloads.
+  </Card>
+
+  <Card title="Destinations" icon="tower-broadcast" href="/cloud-connectors/aws/cdk/destinations">
+    Endpoint formats, credentials, and which signals to enable.
   </Card>
 
   <Card title="Preload the layer" icon="download" href="/cloud-connectors/aws/workloads/lambda/preload">

@@ -1,6 +1,6 @@
 ---
 title: 'Instrument Fargate with CloudFormation'
-description: 'Self-managed ECS Fargate instrumentation for Java, Python, Node.js, .NET, PHP, and Ruby using hand-written CloudFormation, or the Odigos AWS CDK construct.'
+description: 'Self-managed ECS Fargate instrumentation for Java, Python, Node.js, .NET, PHP, and Ruby using hand-written CloudFormation.'
 sidebarTitle: 'Instrument Fargate'
 ---
 
@@ -397,17 +397,6 @@ Merge these properties into your task definition. Only the exact agent path, act
     [Preload artifacts](/cloud-connectors/aws/workloads/fargate/preload).
   </Accordion>
 </AccordionGroup>
-
-## AWS CDK
-
-Prefer a construct over hand-written task-definition changes? Use
-[`@odigos/aws-cdk`](/cloud-connectors/aws/cdk/fargate) — it adds the staging container, volume, mount,
-dependency and environment in one call. The full option list and per-language activation details live on that
-page.
-
-If you need to stay on plain `aws-cdk-lib/aws-ecs`, apply the same four moves shown in the CloudFormation tabs
-above (`addVolume`, non-essential stager container, read-only mount + `SUCCESS` dependency, and the
-environment block passed to `addContainer`).
 
 ## Next steps
 

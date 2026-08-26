@@ -823,6 +823,7 @@
                 "group": "CDK",
                 "pages": [
                   "cloud-connectors/aws/cdk/overview",
+                  "cloud-connectors/aws/cdk/destinations",
                   "cloud-connectors/aws/cdk/lambda",
                   "cloud-connectors/aws/cdk/fargate"
                 ]

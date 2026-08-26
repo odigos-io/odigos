@@ -9,9 +9,9 @@ app.
 
 <Note>
   Read [Odigos AWS CDK](/cloud-connectors/aws/cdk/overview) first — it covers
-  installing the package, choosing a destination, which signals to send, and how
-  Odigos recognizes an instrumented workload. This page covers only what's specific
-  to Fargate.
+  installing the package and how Odigos recognizes an instrumented workload — then
+  [Destinations](/cloud-connectors/aws/cdk/destinations) for the shared `destination`
+  options. This page covers only what's specific to Fargate.
 </Note>
 
 ## Basic usage
@@ -69,14 +69,14 @@ worth pointing it somewhere with headroom, since your application is doing the s
   One of `JAVA`, `PYTHON`, `NODEJS`, `DOTNET`, `PHP`, `RUBY`.
 </ParamField>
 
-| Language | Loaded through | Needs `runtimeVersion`? |
+| Language | Loaded through | `runtimeVersion` prop |
 | --- | --- | --- |
-| `JAVA` — also Kotlin, Scala | `JAVA_TOOL_OPTIONS` | No |
-| `PYTHON` | `PYTHONPATH` | No |
-| `NODEJS` | `NODE_OPTIONS` | No |
-| `DOTNET` | `CORECLR_*` / `DOTNET_*` | No |
-| `PHP` | `PHP_INI_SCAN_DIR` | **Yes** |
-| `RUBY` | `RUBYOPT` | **Yes** |
+| `JAVA` — also Kotlin, Scala | `JAVA_TOOL_OPTIONS` | Ignored — one agent covers the supported JVM range |
+| `PYTHON` | `PYTHONPATH` | Ignored — one agent covers the supported Python range |
+| `NODEJS` | `NODE_OPTIONS` | Ignored — one agent covers the supported Node.js range |
+| `DOTNET` | `CORECLR_*` / `DOTNET_*` | Ignored — one agent covers the supported .NET range |
+| `PHP` | `PHP_INI_SCAN_DIR` | **Required** — picks the per-version agent folder |
+| `RUBY` | `RUBYOPT` | **Required** — picks the per-version agent folder |
 
 There's no auto-detection here, and that's a platform constraint rather than a preference. A container
 declares only an *image* — nothing in the task definition says which language runs inside it. Working that
@@ -90,7 +90,8 @@ out would mean downloading and inspecting the image, which is network I/O a buil
 
 <ParamField path="runtimeVersion" type="string">
   Your application's language version as `major.minor` — for example `"8.3"` or `"3.3"`. Required for PHP
-  and Ruby, ignored for everything else.
+  and Ruby (their agents are laid out per version in the bundle). Ignored for Java, Python, Node.js, and
+  .NET — those ship one agent that covers a range of runtime versions, so you don't declare which one.
 
   <Warning>
     PHP and Ruby agents are stored per version inside the bundle, and this value
@@ -199,8 +200,9 @@ that's needed.
 
 ## The agents image
 
-The copy step pulls its files from an image — by default the one published by this package's release,
-built for both Intel and ARM/Graviton.
+The copy step pulls its files from an image. Leave this unset unless your tasks cannot reach the public
+registry — the construct defaults to `registry.odigos.io/odigos-fargate-agents` at the tag this package
+release ships (multi-arch: Intel and ARM/Graviton).
 
 <Warning>
   **This image is pulled by your task's execution role every time a task starts.** A
@@ -210,7 +212,8 @@ built for both Intel and ARM/Graviton.
 </Warning>
 
 <ParamField path="agentsImage" type="string">
-  Point the copy step at your own mirror of the image:
+  Only set this if tasks cannot pull from `registry.odigos.io` (or your org requires images to live in a
+  registry you own). Point the copy step at your own mirror:
 
   ```typescript
   agentsImage: '111122223333.dkr.ecr.eu-west-1.amazonaws.com/odigos-fargate-agents:v0.0.15',
@@ -220,9 +223,16 @@ built for both Intel and ARM/Graviton.
   that mirror.
 </ParamField>
 
-A mirror has to be the same bundle — the environment variables name exact paths inside it. The bundle is
-Linux and glibc only: a Windows task definition stops the build, and Alpine/musl images have no .NET
-profiler available.
+The image is a normal container image whose filesystem holds the language agents (under
+`/instrumentations/<language>/…`). The construct sets environment variables that point at those exact
+paths after the copy step stages them into `/var/odigos`. A private-registry override must therefore be a
+**byte-for-byte mirror** of that image — retag and push the published `odigos-fargate-agents` image; do not
+rebuild or rearrange it. See [Preload the Fargate agents image](/cloud-connectors/aws/workloads/fargate/preload)
+for the mirror steps (and [Amazon ECR private registries](https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html)
+if you need the AWS side of hosting it).
+
+The agents themselves are Linux and glibc only: a Windows task definition stops the build, and Alpine/musl
+application images have no .NET profiler available.
 
 Whichever image you use is recorded in the `ODIGOS_IAC` marker, and Odigos holds the task to *that* image
 rather than to whatever the connector's own build happens to use. Two useful consequences:
@@ -233,7 +243,7 @@ rather than to whatever the connector's own build happens to use. Two useful con
 
 <Note>
   What *is* reported: two containers in the same task definition recording different
-  images. There's one copy step and it can't serve two different bundles.
+  agents images. There's one copy step and it can't stage two different images.
 </Note>
 
 ## API reference
@@ -246,13 +256,16 @@ rather than to whatever the connector's own build happens to use. Two useful con
 | `sidecarCommand`, `evaluateAppendPattern`, `appendSeparator` | The copy-step command and loader-value rendering, if you want to inspect what they produce. |
 | `FARGATE_AGENTS_IMAGE` | The agents image this package version uses by default. |
 | `FARGATE_DISTROS_VERSION` | The Odigos distros release the activation recipes were mirrored from. |
-| `FARGATE_AGENTS_DIR`, `FARGATE_VOLUME_NAME`, `FARGATE_SIDECAR_CONTAINER_NAME` | The mount path, volume name, and copy-step container name. |
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="CDK overview" icon="code" href="/cloud-connectors/aws/cdk/overview">
-    Destination, signals, and markers — the shared settings.
+    Install, constructs, and how Odigos recognizes instrumented workloads.
+  </Card>
+
+  <Card title="Destinations" icon="tower-broadcast" href="/cloud-connectors/aws/cdk/destinations">
+    Endpoint formats, credentials, and which signals to enable.
   </Card>
 
   <Card title="Preload the agents image" icon="download" href="/cloud-connectors/aws/workloads/fargate/preload">
