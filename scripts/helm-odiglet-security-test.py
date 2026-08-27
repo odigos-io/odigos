@@ -11,7 +11,7 @@ What it protects
   behind an Odigos Enterprise token.
 * BACKWARD COMPATIBILITY INVARIANT: with no values set, and with the legacy
   `odiglet.unPrivileged=true` set, the rendered DaemonSet is byte-identical to the
-  render of the same values from BASELINE_REF (the commit before security profiles
+  render of the same values from BASELINE_REF (the tip of main, which this branch must not change except where it says so
   were introduced), except for a small, explicitly whitelisted set of intentional
   differences.  Rendering the baseline uses a throwaway `git worktree`.
 * Every pre-existing individual switch still takes effect and still overrides the
@@ -50,7 +50,7 @@ CM_TEMPLATE = "templates/odigos-configuration-cm.yaml"
 
 # The commit right before `odiglet.securityProfile` was introduced.  The default
 # render and the legacy `odiglet.unPrivileged=true` render must not drift from it.
-BASELINE_REF = "b605830bfb1ab17fc1691fd11c5bf71d3268ff3f"
+BASELINE_REF = "19fd7b3937f3096eb48cd75a7e9b8f9aef702d4d"
 
 DEFAULT_KUBE = "1.30.0"
 
@@ -76,6 +76,8 @@ UNPRIV_BASE = TRACES_ONLY + MM_INIT + ENTERPRISE
 
 LEGACY_ODIGLET_CAPS = [
     "SYS_ADMIN", "BPF", "PERFMON", "SYS_PTRACE", "DAC_READ_SEARCH", "IPC_LOCK", "SYS_RESOURCE",
+    # jattach, which instruments Java processes dynamically.
+    "SETUID", "SETGID",
 ]
 LEGACY_DATA_COLLECTION_CAPS = ["SYS_ADMIN", "BPF", "PERFMON", "IPC_LOCK"]
 # CAP_DAC_OVERRIDE joins the set only when the host mounts are present: the
@@ -89,6 +91,12 @@ PROFILE_ODIGLET_CAPS = ["BPF", "PERFMON", "SYS_PTRACE", "DAC_OVERRIDE"]
 PROFILE_ODIGLET_CAPS_NO_HOSTPATH = PROFILE_ODIGLET_CAPS
 
 RUN_AS = 1000
+
+# The pod-level securityContext. Legacy forces uid 0 unless odiglet.runAsNonRoot
+# is opted into; a profile runs every container non-root, so the pod must not
+# force 0 over them and gives the agent an fsGroup of its own instead.
+POD_SC_LEGACY = {"runAsUser": 0, "runAsGroup": 0}
+POD_SC_PROFILE = {"runAsNonRoot": True, "fsGroup": RUN_AS}
 TRACEFS_DEFAULT = "/sys/kernel"
 
 # ---------------------------------------------------------------------------
@@ -525,7 +533,7 @@ def profiles():
 
     # ---- legacy (the chart default, default signals -> logs+metrics) ----
     c = Case(g, "legacy (default values)")
-    c.pod_security_context(MISSING)
+    c.pod_security_context(POD_SC_LEGACY)
     c.security_context("init", SC_PRIVILEGED)
     c.security_context("odiglet", SC_PRIVILEGED)
     c.security_context("data-collection", SC_PRIVILEGED)
@@ -533,7 +541,7 @@ def profiles():
 
     # legacy profile, traces only: data-collection no longer needs privileged
     c = Case(g, "legacy + traces only", TRACES_ONLY)
-    c.pod_security_context(MISSING)
+    c.pod_security_context(POD_SC_LEGACY)
     c.security_context("init", SC_PRIVILEGED)
     c.security_context("odiglet", SC_PRIVILEGED)
     c.security_context("data-collection", {
@@ -547,7 +555,7 @@ def profiles():
     c.security_context("odiglet", SC_PRIVILEGED)
     c.security_context("data-collection", SC_PRIVILEGED)
     c.security_context("deviceplugin", SC_DROP_ALL)
-    c.pod_security_context(MISSING)
+    c.pod_security_context(POD_SC_LEGACY)
 
     # legacy needs no enterprise token, with or without the value spelled out
     c = Case(g, "securityProfile=legacy needs no enterprise token", PROFILE_LEGACY)
@@ -555,7 +563,7 @@ def profiles():
 
     # ---- unprivileged ----
     c = Case(g, "securityProfile=unprivileged", UNPRIV_BASE + PROFILE_UNPRIV)
-    c.pod_security_context({"fsGroup": RUN_AS})
+    c.pod_security_context(POD_SC_PROFILE)
     # the standard init container is replaced by the image-pull one
     c.container_absent("init")
     c.security_context("odigos-agents-image-pull", SC_DROP_ALL_AS_USER)
@@ -569,7 +577,7 @@ def profiles():
     # nothing privileged, and the device plugin renders as it always has.
     c = Case(g, "securityProfile=unprivileged with host mounts",
              TRACES_ONLY + ENTERPRISE + PROFILE_UNPRIV)
-    c.pod_security_context({"fsGroup": RUN_AS})
+    c.pod_security_context(POD_SC_PROFILE)
     c.security_context("init", {
         "runAsUser": RUN_AS,
         "allowPrivilegeEscalation": False,
@@ -600,7 +608,7 @@ def profiles():
     # the same, reached through the external-secret form of the enterprise gate
     c = Case(g, "securityProfile=unprivileged (externalOnpremTokenSecret)",
              TRACES_ONLY + MM_INIT + ENTERPRISE_EXTERNAL_SECRET + PROFILE_UNPRIV)
-    c.pod_security_context({"fsGroup": RUN_AS})
+    c.pod_security_context(POD_SC_PROFILE)
     c.security_context("odiglet", sc_odiglet_profile())
     c.security_context("data-collection", sc_data_collection_profile())
     c.truthy("nothing is privileged", "privileged: true" not in c.render.stdout,
@@ -669,7 +677,7 @@ def legacy_unprivileged_switch():
     # REGRESSION 3: it once started adding runAsUser/allowPrivilegeEscalation,
     # which breaks images without file capabilities.
     c = Case(g, "unPrivileged=true alone", TRACES_ONLY + ["--set", "odiglet.unPrivileged=true"])
-    c.pod_security_context(MISSING)
+    c.pod_security_context(POD_SC_LEGACY)
     c.security_context("odiglet", sc_unprivileged_legacy())
     c.security_context("data-collection", {
         "privileged": False,
