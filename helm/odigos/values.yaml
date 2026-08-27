@@ -1227,6 +1227,48 @@ psp:
   enabled: false
 
 # @schema
+# description: |-
+#   Pod Security Standards "Baseline" settings applied to every Odigos pod except the
+#   odiglet, which is a privileged eBPF node agent and is intentionally excluded.
+#   `pod` is rendered as the pod-level securityContext, `container` as the container-level
+#   securityContext of every container in those pods. These controls do not constrain which
+#   user a container runs as: each image keeps its own default user.
+# @schema
+securityContext:
+  # @schema
+  # description: Pod-level securityContext.
+  # additionalProperties: true
+  # @schema
+  pod:
+    seccompProfile:
+      type: RuntimeDefault
+
+  # @schema
+  # description: Container-level securityContext applied to every container in those pods.
+  # additionalProperties: true
+  # @schema
+  container:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+  # @schema
+  # description: |-
+  #   Per-component overrides, keyed by component name: autoscaler, scheduler, instrumentor,
+  #   ui, centralProxy, cleanup, metricsStore, traceCorrelationsMetricsStore.
+  #   Each key set under a component replaces that key in the defaults above, for that
+  #   component only, and setting a key to null drops it. Use the latter to exempt a
+  #   container whose entrypoint needs capabilities at startup, e.g.
+  #     components:
+  #       metricsStore:
+  #         container:
+  #           capabilities: null
+  # additionalProperties: true
+  # @schema
+  components: {}
+
+# @schema
 # description: Telemetry configuration for Odigos.
 # @schema
 telemetry:
