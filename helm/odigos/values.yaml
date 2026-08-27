@@ -894,6 +894,21 @@ odiglet:
     capabilities: []
 
     # @schema
+    # type: [object, "null"]
+    # additionalProperties: true
+    # description: |-
+    #   seLinuxOptions for the odiglet container, passed through to its
+    #   securityContext.
+    #   An SELinux-enforcing node may confine the odiglet to a domain that
+    #   cannot inspect the processes it instruments, whatever capabilities it
+    #   holds - the LSM is checked before file permissions are. On Bottlerocket
+    #   the default container_t denies even "search" on another process's /proc
+    #   directory; set type: control_t, which is the narrowest of its three
+    #   types that works. Leave empty on nodes that do not enforce SELinux.
+    # @schema
+    seLinuxOptions:
+
+    # @schema
     # description: |-
     #   apparmorProfile for the odiglet container when running as unPrivileged.
     #   this will be ignored when running as privileged.

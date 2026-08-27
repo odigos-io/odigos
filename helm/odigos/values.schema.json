@@ -1536,6 +1536,17 @@
               "required": [],
               "title": "readinessProbe",
               "type": "object"
+            },
+            "seLinuxOptions": {
+              "additionalProperties": true,
+              "default": "",
+              "description": "seLinuxOptions for the odiglet container, passed through to its\nsecurityContext.\nAn SELinux-enforcing node may confine the odiglet to a domain that\ncannot inspect the processes it instruments, whatever capabilities it\nholds - the LSM is checked before file permissions are. On Bottlerocket\nthe default container_t denies even \"search\" on another process's /proc\ndirectory; set type: control_t, which is the narrowest of its three\ntypes that works. Leave empty on nodes that do not enforce SELinux.",
+              "required": [],
+              "title": "seLinuxOptions",
+              "type": [
+                "object",
+                "null"
+              ]
             }
           },
           "required": [],

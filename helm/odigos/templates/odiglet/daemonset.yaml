@@ -254,6 +254,19 @@ spec:
               {{- end }}
               drop:
                 - ALL
+            {{- /* An SELinux-enforcing node may confine the odiglet to a domain
+                   that cannot inspect the processes it instruments, whatever
+                   capabilities it holds, because the LSM is checked before the
+                   DAC. Bottlerocket is the case in hand: its container_t denies
+                   even "search" on another process's /proc directory, and
+                   control_t is the narrowest of its three types that does not.
+                   Set per deployment rather than derived from a platform flag,
+                   because the domain that works is the node's policy to
+                   decide and not something a chart can know. */ -}}
+            {{- with .Values.odiglet.odiglet.seLinuxOptions }}
+            seLinuxOptions:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
             # for Kubernetes >= 1.30 we can specify AppArmor profile in securityContext
             {{- if semverCompare ">=1.30.0" $k8sVersion }}
             {{- with .Values.odiglet.odiglet.appArmorProfile }}
