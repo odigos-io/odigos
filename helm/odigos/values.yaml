@@ -888,7 +888,7 @@ odiglet:
     #   SYS_RESOURCE required only for kernels < 5.11, used for setting rlimit for BPF maps
     #   Empty means securityProfile decides: legacy and the deprecated
     #   odiglet.unPrivileged grant the set above; securityProfile=unprivileged
-    #   grants BPF, PERFMON, SYS_PTRACE, DAC_READ_SEARCH, DAC_OVERRIDE. Setting
+    #   grants BPF, PERFMON, SYS_PTRACE, DAC_OVERRIDE. Setting
     #   this overrides whichever would apply.
     # @schema
     capabilities: []
