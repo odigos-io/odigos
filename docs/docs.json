@@ -773,6 +773,25 @@
                 ]
               }
             ]
+          },
+          {
+            "group": "ECS Agent",
+            "icon": "aws",
+            "pages": [
+              "vmagent/ecs/overview",
+              "vmagent/ecs/requirements",
+              {
+                "group": "Installation",
+                "pages": [
+                  "vmagent/ecs/installation-agent-only",
+                  "vmagent/ecs/installation-with-proxy",
+                  "vmagent/ecs/installation-switch-to-multi-node"
+                ]
+              },
+              "vmagent/ecs/configuration",
+              "vmagent/ecs/maintenance",
+              "vmagent/ecs/troubleshooting"
+            ]
           }
         ]
       },
@@ -793,6 +812,41 @@
               },
               "cloud-connectors/instrument-workloads",
               "cloud-connectors/manage-and-remove"
+            ]
+          },
+          {
+            "group": "AWS Connector",
+            "icon": "aws",
+            "pages": [
+              "cloud-connectors/aws/overview",
+              {
+                "group": "Workloads",
+                "pages": [
+                  {
+                    "group": "Lambda",
+                    "pages": [
+                      "cloud-connectors/aws/workloads/lambda/preload",
+                      "cloud-connectors/aws/workloads/lambda/instrument"
+                    ]
+                  },
+                  {
+                    "group": "Fargate",
+                    "pages": [
+                      "cloud-connectors/aws/workloads/fargate/preload",
+                      "cloud-connectors/aws/workloads/fargate/instrument"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "CDK",
+                "pages": [
+                  "cloud-connectors/aws/cdk/overview",
+                  "cloud-connectors/aws/cdk/destinations",
+                  "cloud-connectors/aws/cdk/lambda",
+                  "cloud-connectors/aws/cdk/fargate"
+                ]
+              }
             ]
           }
         ]
