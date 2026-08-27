@@ -131,19 +131,46 @@ type Transaction struct {
 	Kind               TransactionKind            `json:"kind"`
 }
 
+type BaselineHistogramUnit string
+
+const (
+	BaselineHistogramUnitUs    BaselineHistogramUnit = "us"
+	BaselineHistogramUnitBytes BaselineHistogramUnit = "bytes"
+)
+
+type BaselineHistogramBar struct {
+	Lo    int64  `json:"lo"`
+	Hi    int64  `json:"hi"`
+	Count int64  `json:"count"`
+	Label string `json:"label"`
+}
+
+type BaselineHistogramSeries struct {
+	Name  string                 `json:"name"`
+	Label string                 `json:"label"`
+	Bars  []BaselineHistogramBar `json:"bars"`
+}
+
+type BaselineHistogram struct {
+	Unit              BaselineHistogramUnit     `json:"unit"`
+	LayoutFingerprint string                    `json:"layout_fingerprint,omitempty"`
+	Series            []BaselineHistogramSeries `json:"series"`
+}
+
 type BaselineClass struct {
-	TransactionID                int64            `json:"transaction_id"`
-	Class                        DeviationClass   `json:"class"`
-	ClassLabel                   string           `json:"class_label"`
-	ClassDescription             string           `json:"class_description"`
-	Data                         json.RawMessage  `json:"data,omitempty"`
-	DataSchemaVersion            *int             `json:"data_schema_version,omitempty"`
-	ObservationCount             int64            `json:"observation_count"`
-	Promoted                     bool             `json:"promoted"`
-	LearningStartedAt            *string          `json:"learning_started_at,omitempty"`
-	LastChangedAt                *string          `json:"last_changed_at,omitempty"`
-	ObservationCountAtLastChange *int64           `json:"observation_count_at_last_change,omitempty"`
-	Learning                     BaselineLearning `json:"learning"`
+	TransactionID                int64              `json:"transaction_id"`
+	Class                        DeviationClass     `json:"class"`
+	ClassLabel                   string             `json:"class_label"`
+	ClassDescription             string             `json:"class_description"`
+	Data                         json.RawMessage    `json:"data,omitempty"`
+	Histogram                    *BaselineHistogram `json:"histogram,omitempty"`
+	DataSchemaVersion            *int               `json:"data_schema_version,omitempty"`
+	ObservationCount             int64              `json:"observation_count"`
+	Promoted                     bool               `json:"promoted"`
+	LearningStartedAt            *string            `json:"learning_started_at,omitempty"`
+	LastChangedAt                *string            `json:"last_changed_at,omitempty"`
+	ObservationCountAtLastChange *int64             `json:"observation_count_at_last_change,omitempty"`
+	Learning                     BaselineLearning   `json:"learning"`
 }
 
 // BaselineLearningPhase is the coarse learning state for one baseline class.

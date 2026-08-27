@@ -263,6 +263,34 @@ type InsightsBaselineLearning {
   stability: InsightsBaselineLearningStability!
 }
 
+enum InsightsBaselineHistogramUnit {
+  us
+  bytes
+}
+
+type InsightsBaselineHistogramBar {
+  lo: Int!
+  hi: Int!
+  count: Int!
+  label: String!
+}
+
+type InsightsBaselineHistogramSeries {
+  name: String!
+  label: String!
+  bars: [InsightsBaselineHistogramBar!]!
+}
+
+"""
+Chart-ready exponential histogram for D3_latency and D8_payload_size.
+Plot series[].bars; do not recompute bounds from raw data.
+"""
+type InsightsBaselineHistogram {
+  unit: InsightsBaselineHistogramUnit!
+  layoutFingerprint: String
+  series: [InsightsBaselineHistogramSeries!]!
+}
+
 type InsightsBaselineClass {
   transactionId: ID!
   class: InsightsDeviationClass!
@@ -281,6 +309,10 @@ type InsightsBaselineClass {
   JSON-encoded baseline data; shape varies per deviation class.
   """
   data: String
+  """
+  Chart-ready histogram for D3_latency / D8_payload_size. Omitted for other classes.
+  """
+  histogram: InsightsBaselineHistogram
   dataSchemaVersion: Int
   observationCount: Int!
   promoted: Boolean!

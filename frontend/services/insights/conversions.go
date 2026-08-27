@@ -447,6 +447,7 @@ func BaselineClassToModel(baseline BaselineClass) (*model.InsightsBaselineClass,
 		ClassLabel:                   baseline.ClassLabel,
 		ClassDescription:             baseline.ClassDescription,
 		Data:                         data,
+		Histogram:                    BaselineHistogramToModel(baseline.Histogram),
 		DataSchemaVersion:            baseline.DataSchemaVersion,
 		ObservationCount:             int64ToInt(baseline.ObservationCount),
 		Promoted:                     baseline.Promoted,
@@ -455,6 +456,37 @@ func BaselineClassToModel(baseline BaselineClass) (*model.InsightsBaselineClass,
 		ObservationCountAtLastChange: int64PtrToIntPtr(baseline.ObservationCountAtLastChange),
 		Learning:                     BaselineLearningToModel(baseline.Learning),
 	}, nil
+}
+
+func BaselineHistogramToModel(histogram *BaselineHistogram) *model.InsightsBaselineHistogram {
+	if histogram == nil {
+		return nil
+	}
+	series := make([]*model.InsightsBaselineHistogramSeries, len(histogram.Series))
+	for i, s := range histogram.Series {
+		bars := make([]*model.InsightsBaselineHistogramBar, len(s.Bars))
+		for j, b := range s.Bars {
+			bars[j] = &model.InsightsBaselineHistogramBar{
+				Lo:    int64ToInt(b.Lo),
+				Hi:    int64ToInt(b.Hi),
+				Count: int64ToInt(b.Count),
+				Label: b.Label,
+			}
+		}
+		series[i] = &model.InsightsBaselineHistogramSeries{
+			Name:  s.Name,
+			Label: s.Label,
+			Bars:  bars,
+		}
+	}
+	out := &model.InsightsBaselineHistogram{
+		Unit:   model.InsightsBaselineHistogramUnit(histogram.Unit),
+		Series: series,
+	}
+	if histogram.LayoutFingerprint != "" {
+		out.LayoutFingerprint = &histogram.LayoutFingerprint
+	}
+	return out
 }
 
 func BaselineLearningToModel(learning BaselineLearning) *model.InsightsBaselineLearning {

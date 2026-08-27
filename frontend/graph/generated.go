@@ -704,6 +704,7 @@ type ComplexityRoot struct {
 		ClassLabel                   func(childComplexity int) int
 		Data                         func(childComplexity int) int
 		DataSchemaVersion            func(childComplexity int) int
+		Histogram                    func(childComplexity int) int
 		LastChangedAt                func(childComplexity int) int
 		Learning                     func(childComplexity int) int
 		LearningStartedAt            func(childComplexity int) int
@@ -711,6 +712,25 @@ type ComplexityRoot struct {
 		ObservationCountAtLastChange func(childComplexity int) int
 		Promoted                     func(childComplexity int) int
 		TransactionID                func(childComplexity int) int
+	}
+
+	InsightsBaselineHistogram struct {
+		LayoutFingerprint func(childComplexity int) int
+		Series            func(childComplexity int) int
+		Unit              func(childComplexity int) int
+	}
+
+	InsightsBaselineHistogramBar struct {
+		Count func(childComplexity int) int
+		Hi    func(childComplexity int) int
+		Label func(childComplexity int) int
+		Lo    func(childComplexity int) int
+	}
+
+	InsightsBaselineHistogramSeries struct {
+		Bars  func(childComplexity int) int
+		Label func(childComplexity int) int
+		Name  func(childComplexity int) int
 	}
 
 	InsightsBaselineLearning struct {
@@ -5500,6 +5520,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InsightsBaselineClass.DataSchemaVersion(childComplexity), true
 
+	case "InsightsBaselineClass.histogram":
+		if e.complexity.InsightsBaselineClass.Histogram == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineClass.Histogram(childComplexity), true
+
 	case "InsightsBaselineClass.lastChangedAt":
 		if e.complexity.InsightsBaselineClass.LastChangedAt == nil {
 			break
@@ -5548,6 +5575,76 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsBaselineClass.TransactionID(childComplexity), true
+
+	case "InsightsBaselineHistogram.layoutFingerprint":
+		if e.complexity.InsightsBaselineHistogram.LayoutFingerprint == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineHistogram.LayoutFingerprint(childComplexity), true
+
+	case "InsightsBaselineHistogram.series":
+		if e.complexity.InsightsBaselineHistogram.Series == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineHistogram.Series(childComplexity), true
+
+	case "InsightsBaselineHistogram.unit":
+		if e.complexity.InsightsBaselineHistogram.Unit == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineHistogram.Unit(childComplexity), true
+
+	case "InsightsBaselineHistogramBar.count":
+		if e.complexity.InsightsBaselineHistogramBar.Count == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineHistogramBar.Count(childComplexity), true
+
+	case "InsightsBaselineHistogramBar.hi":
+		if e.complexity.InsightsBaselineHistogramBar.Hi == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineHistogramBar.Hi(childComplexity), true
+
+	case "InsightsBaselineHistogramBar.label":
+		if e.complexity.InsightsBaselineHistogramBar.Label == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineHistogramBar.Label(childComplexity), true
+
+	case "InsightsBaselineHistogramBar.lo":
+		if e.complexity.InsightsBaselineHistogramBar.Lo == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineHistogramBar.Lo(childComplexity), true
+
+	case "InsightsBaselineHistogramSeries.bars":
+		if e.complexity.InsightsBaselineHistogramSeries.Bars == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineHistogramSeries.Bars(childComplexity), true
+
+	case "InsightsBaselineHistogramSeries.label":
+		if e.complexity.InsightsBaselineHistogramSeries.Label == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineHistogramSeries.Label(childComplexity), true
+
+	case "InsightsBaselineHistogramSeries.name":
+		if e.complexity.InsightsBaselineHistogramSeries.Name == nil {
+			break
+		}
+
+		return e.complexity.InsightsBaselineHistogramSeries.Name(childComplexity), true
 
 	case "InsightsBaselineLearning.mode":
 		if e.complexity.InsightsBaselineLearning.Mode == nil {
@@ -33048,6 +33145,8 @@ func (ec *executionContext) fieldContext_Insights_baseline(ctx context.Context, 
 				return ec.fieldContext_InsightsBaselineClass_classDescription(ctx, field)
 			case "data":
 				return ec.fieldContext_InsightsBaselineClass_data(ctx, field)
+			case "histogram":
+				return ec.fieldContext_InsightsBaselineClass_histogram(ctx, field)
 			case "dataSchemaVersion":
 				return ec.fieldContext_InsightsBaselineClass_dataSchemaVersion(ctx, field)
 			case "observationCount":
@@ -36824,6 +36923,55 @@ func (ec *executionContext) fieldContext_InsightsBaselineClass_data(_ context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _InsightsBaselineClass_histogram(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineClass) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineClass_histogram(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Histogram, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InsightsBaselineHistogram)
+	fc.Result = res
+	return ec.marshalOInsightsBaselineHistogram2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogram(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineClass_histogram(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineClass",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "unit":
+				return ec.fieldContext_InsightsBaselineHistogram_unit(ctx, field)
+			case "layoutFingerprint":
+				return ec.fieldContext_InsightsBaselineHistogram_layoutFingerprint(ctx, field)
+			case "series":
+				return ec.fieldContext_InsightsBaselineHistogram_series(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBaselineHistogram", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InsightsBaselineClass_dataSchemaVersion(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineClass) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InsightsBaselineClass_dataSchemaVersion(ctx, field)
 	if err != nil {
@@ -37129,6 +37277,461 @@ func (ec *executionContext) fieldContext_InsightsBaselineClass_learning(_ contex
 				return ec.fieldContext_InsightsBaselineLearning_stability(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InsightsBaselineLearning", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineHistogram_unit(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineHistogram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineHistogram_unit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Unit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InsightsBaselineHistogramUnit)
+	fc.Result = res
+	return ec.marshalNInsightsBaselineHistogramUnit2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogramUnit(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineHistogram_unit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineHistogram",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InsightsBaselineHistogramUnit does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineHistogram_layoutFingerprint(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineHistogram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineHistogram_layoutFingerprint(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LayoutFingerprint, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineHistogram_layoutFingerprint(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineHistogram",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineHistogram_series(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineHistogram) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineHistogram_series(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Series, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsBaselineHistogramSeries)
+	fc.Result = res
+	return ec.marshalNInsightsBaselineHistogramSeries2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogramSeriesᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineHistogram_series(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineHistogram",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_InsightsBaselineHistogramSeries_name(ctx, field)
+			case "label":
+				return ec.fieldContext_InsightsBaselineHistogramSeries_label(ctx, field)
+			case "bars":
+				return ec.fieldContext_InsightsBaselineHistogramSeries_bars(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBaselineHistogramSeries", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineHistogramBar_lo(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineHistogramBar) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineHistogramBar_lo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Lo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineHistogramBar_lo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineHistogramBar",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineHistogramBar_hi(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineHistogramBar) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineHistogramBar_hi(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hi, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineHistogramBar_hi(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineHistogramBar",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineHistogramBar_count(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineHistogramBar) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineHistogramBar_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineHistogramBar_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineHistogramBar",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineHistogramBar_label(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineHistogramBar) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineHistogramBar_label(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Label, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineHistogramBar_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineHistogramBar",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineHistogramSeries_name(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineHistogramSeries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineHistogramSeries_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineHistogramSeries_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineHistogramSeries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineHistogramSeries_label(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineHistogramSeries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineHistogramSeries_label(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Label, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineHistogramSeries_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineHistogramSeries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsBaselineHistogramSeries_bars(ctx context.Context, field graphql.CollectedField, obj *model.InsightsBaselineHistogramSeries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsBaselineHistogramSeries_bars(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Bars, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InsightsBaselineHistogramBar)
+	fc.Result = res
+	return ec.marshalNInsightsBaselineHistogramBar2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogramBarᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsBaselineHistogramSeries_bars(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsBaselineHistogramSeries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "lo":
+				return ec.fieldContext_InsightsBaselineHistogramBar_lo(ctx, field)
+			case "hi":
+				return ec.fieldContext_InsightsBaselineHistogramBar_hi(ctx, field)
+			case "count":
+				return ec.fieldContext_InsightsBaselineHistogramBar_count(ctx, field)
+			case "label":
+				return ec.fieldContext_InsightsBaselineHistogramBar_label(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InsightsBaselineHistogramBar", field.Name)
 		},
 	}
 	return fc, nil
@@ -89860,6 +90463,8 @@ func (ec *executionContext) _InsightsBaselineClass(ctx context.Context, sel ast.
 			}
 		case "data":
 			out.Values[i] = ec._InsightsBaselineClass_data(ctx, field, obj)
+		case "histogram":
+			out.Values[i] = ec._InsightsBaselineClass_histogram(ctx, field, obj)
 		case "dataSchemaVersion":
 			out.Values[i] = ec._InsightsBaselineClass_dataSchemaVersion(ctx, field, obj)
 		case "observationCount":
@@ -89880,6 +90485,155 @@ func (ec *executionContext) _InsightsBaselineClass(ctx context.Context, sel ast.
 			out.Values[i] = ec._InsightsBaselineClass_observationCountAtLastChange(ctx, field, obj)
 		case "learning":
 			out.Values[i] = ec._InsightsBaselineClass_learning(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsBaselineHistogramImplementors = []string{"InsightsBaselineHistogram"}
+
+func (ec *executionContext) _InsightsBaselineHistogram(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBaselineHistogram) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsBaselineHistogramImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsBaselineHistogram")
+		case "unit":
+			out.Values[i] = ec._InsightsBaselineHistogram_unit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "layoutFingerprint":
+			out.Values[i] = ec._InsightsBaselineHistogram_layoutFingerprint(ctx, field, obj)
+		case "series":
+			out.Values[i] = ec._InsightsBaselineHistogram_series(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsBaselineHistogramBarImplementors = []string{"InsightsBaselineHistogramBar"}
+
+func (ec *executionContext) _InsightsBaselineHistogramBar(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBaselineHistogramBar) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsBaselineHistogramBarImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsBaselineHistogramBar")
+		case "lo":
+			out.Values[i] = ec._InsightsBaselineHistogramBar_lo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hi":
+			out.Values[i] = ec._InsightsBaselineHistogramBar_hi(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._InsightsBaselineHistogramBar_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "label":
+			out.Values[i] = ec._InsightsBaselineHistogramBar_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var insightsBaselineHistogramSeriesImplementors = []string{"InsightsBaselineHistogramSeries"}
+
+func (ec *executionContext) _InsightsBaselineHistogramSeries(ctx context.Context, sel ast.SelectionSet, obj *model.InsightsBaselineHistogramSeries) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, insightsBaselineHistogramSeriesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InsightsBaselineHistogramSeries")
+		case "name":
+			out.Values[i] = ec._InsightsBaselineHistogramSeries_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "label":
+			out.Values[i] = ec._InsightsBaselineHistogramSeries_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "bars":
+			out.Values[i] = ec._InsightsBaselineHistogramSeries_bars(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -103493,6 +104247,124 @@ func (ec *executionContext) marshalNInsightsBaselineClass2ᚖgithubᚗcomᚋodig
 	return ec._InsightsBaselineClass(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNInsightsBaselineHistogramBar2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogramBarᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsBaselineHistogramBar) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsBaselineHistogramBar2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogramBar(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsBaselineHistogramBar2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogramBar(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBaselineHistogramBar) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsBaselineHistogramBar(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInsightsBaselineHistogramSeries2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogramSeriesᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InsightsBaselineHistogramSeries) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInsightsBaselineHistogramSeries2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogramSeries(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInsightsBaselineHistogramSeries2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogramSeries(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBaselineHistogramSeries) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InsightsBaselineHistogramSeries(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInsightsBaselineHistogramUnit2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogramUnit(ctx context.Context, v any) (model.InsightsBaselineHistogramUnit, error) {
+	var res model.InsightsBaselineHistogramUnit
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInsightsBaselineHistogramUnit2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogramUnit(ctx context.Context, sel ast.SelectionSet, v model.InsightsBaselineHistogramUnit) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNInsightsBaselineLearning2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineLearning(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBaselineLearning) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -109237,6 +110109,13 @@ func (ec *executionContext) marshalOInsightsAnomalySpanHighlight2ᚕᚖgithubᚗ
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOInsightsBaselineHistogram2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsBaselineHistogram(ctx context.Context, sel ast.SelectionSet, v *model.InsightsBaselineHistogram) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._InsightsBaselineHistogram(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOInsightsDeviationClass2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInsightsDeviationClassᚄ(ctx context.Context, v any) ([]model.InsightsDeviationClass, error) {

@@ -191,6 +191,45 @@ func TestBaselineAndAnomalyEvidenceStayJSONStrings(t *testing.T) {
 	require.NotNil(t, baseline.Learning.Stability.Observations)
 	assert.Equal(t, 50, baseline.Learning.Stability.Observations.Target)
 
+	histogramBaseline, err := BaselineClassToModel(BaselineClass{
+		TransactionID:    9,
+		Class:            "D3_latency",
+		ClassLabel:       "Request latency",
+		ClassDescription: "Learns typical request latency for this transaction.",
+		Data:             json.RawMessage(`{"latency":{"buckets":[0,0,0,0,0,0,0,140,12,3,0]}}`),
+		ObservationCount: 155,
+		Promoted:         false,
+		Learning: BaselineLearning{
+			Phase: BaselineLearningPhaseLearning,
+			Stability: BaselineLearningStability{
+				Observations: BaselineStabilityProgress{Current: 10, Target: 50, DrivesPromotion: true, Met: false},
+				Duration:     BaselineStabilityProgress{Current: 30, Target: 60, DrivesPromotion: true, Met: false},
+			},
+		},
+		Histogram: &BaselineHistogram{
+			Unit:              BaselineHistogramUnitUs,
+			LayoutFingerprint: "8f3e2a1b4c5d6e7f",
+			Series: []BaselineHistogramSeries{
+				{
+					Name:  "latency",
+					Label: "Entry latency",
+					Bars: []BaselineHistogramBar{
+						{Lo: 0, Hi: 0, Count: 0, Label: "0µs"},
+						{Lo: 64, Hi: 128, Count: 140, Label: "64–127µs"},
+						{Lo: 128, Hi: 256, Count: 12, Label: "128–255µs"},
+					},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, histogramBaseline.Histogram)
+	assert.Equal(t, model.InsightsBaselineHistogramUnitUs, histogramBaseline.Histogram.Unit)
+	require.Len(t, histogramBaseline.Histogram.Series, 1)
+	assert.Equal(t, "latency", histogramBaseline.Histogram.Series[0].Name)
+	require.Len(t, histogramBaseline.Histogram.Series[0].Bars, 3)
+	assert.Equal(t, 140, histogramBaseline.Histogram.Series[0].Bars[1].Count)
+
 	anomaly, err := AnomalyIssueToModel(AnomalyIssue{
 		TransactionID:    9,
 		Signature:        "sig",

@@ -44,6 +44,20 @@ const BASELINE_CLASS_FIELDS = `
   classLabel
   classDescription
   data
+  histogram {
+    unit
+    layoutFingerprint
+    series {
+      name
+      label
+      bars {
+        lo
+        hi
+        count
+        label
+      }
+    }
+  }
   dataSchemaVersion
   observationCount
   promoted
