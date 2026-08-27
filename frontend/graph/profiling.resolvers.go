@@ -96,8 +96,23 @@ func (r *mutationResolver) ConfigureProfilingCache(ctx context.Context, maxSlots
 		ui.SlotTTLSeconds = *slotTTLSeconds
 	}
 	// Persist to profiling.ui; the scheduler merges it into effective-config so it survives restart.
-	if _, err := services.UpdateRemoteConfig(ctx, &common.OdigosConfiguration{
-		Profiling: &common.ProfilingConfiguration{Ui: ui},
+	// Only the fields the caller supplied are written, so an edit of one limit does not reset the others.
+	if err := services.UpdateRemoteConfig(ctx, func(cfg *common.OdigosConfiguration) {
+		if cfg.Profiling == nil {
+			cfg.Profiling = &common.ProfilingConfiguration{}
+		}
+		if cfg.Profiling.Ui == nil {
+			cfg.Profiling.Ui = &common.ProfilingUiConfiguration{}
+		}
+		if maxSlots != nil {
+			cfg.Profiling.Ui.MaxSlots = *maxSlots
+		}
+		if slotMaxBytes != nil {
+			cfg.Profiling.Ui.SlotMaxBytes = *slotMaxBytes
+		}
+		if slotTTLSeconds != nil {
+			cfg.Profiling.Ui.SlotTTLSeconds = *slotTTLSeconds
+		}
 	}); err != nil {
 		return nil, err
 	}
