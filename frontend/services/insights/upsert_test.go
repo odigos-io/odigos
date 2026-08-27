@@ -150,7 +150,9 @@ func TestUpdateSystemSettingsAndReadReturnsServerDefaults(t *testing.T) {
 			"retention": {"observation_retention_days": 14},
 			"findings": {"default_window_hours": 24, "max_window_hours": 168},
 			"capacity": {"max_resident_transactions": 1000, "max_baseline_set_members": 500},
-			"writeback": {"flush_interval_seconds": 30}
+			"writeback": {"flush_interval_seconds": 30},
+			"detection": {"auto_transaction_guardrail": true},
+			"identity": {"transaction_identity_dimensions": [{"key": "http.response.status_code", "enabled": true}]}
 		}`))
 	}))
 	defer server.Close()
@@ -164,6 +166,9 @@ func TestUpdateSystemSettingsAndReadReturnsServerDefaults(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 168, stored.Findings.MaxWindowHours)
 	assert.Equal(t, 30, stored.Writeback.FlushIntervalSeconds)
+	require.Len(t, stored.Identity.TransactionIdentityDimensions, 1)
+	assert.Equal(t, "http.response.status_code", stored.Identity.TransactionIdentityDimensions[0].Key)
+	assert.True(t, stored.Identity.TransactionIdentityDimensions[0].Enabled)
 }
 
 func TestUpsertPolicyAndReadPropagatesWriteError(t *testing.T) {
