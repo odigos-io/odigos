@@ -34,7 +34,9 @@
 {{- /* The capability sets, in order of increasing authority: what the legacy
        boolean has always granted, what a profile grants, and what an operator
        asked for explicitly. */ -}}
-{{- $odigletCaps := list "SYS_ADMIN" "BPF" "PERFMON" "SYS_PTRACE" "DAC_READ_SEARCH" "IPC_LOCK" "SYS_RESOURCE" -}}
+{{- /* SETUID and SETGID are for jattach, which instruments Java processes
+       dynamically. */ -}}
+{{- $odigletCaps := list "SYS_ADMIN" "BPF" "PERFMON" "SYS_PTRACE" "DAC_READ_SEARCH" "IPC_LOCK" "SYS_RESOURCE" "SETUID" "SETGID" -}}
 {{- $dataCollectionCaps := list "SYS_ADMIN" "BPF" "PERFMON" "IPC_LOCK" -}}
 {{- if ne $profile "legacy" -}}
   {{- /* CAP_DAC_OVERRIDE alone, not CAP_FOWNER and not alongside
@@ -104,10 +106,6 @@ spec:
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- if ne $profile "legacy" }}
-      securityContext:
-        fsGroup: {{ $runAsUser }}
-      {{- end }}
       # we will always have at least one init container
       # if the mountMethod is k8s-init-container, we will pre-pull the agents image here as an init container
       # otherwise, we must be using a mountMethod that allows hostPathMounts and we will use the standard odiglet init
@@ -115,9 +113,9 @@ spec:
       {{- if (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
         - name: init
           {{- if include "odigos.secretExists" . }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
@@ -184,9 +182,9 @@ spec:
         # so it's available in the image cache when user pods need it
         - name: odigos-agents-image-pull
           {{- if include "odigos.secretExists" . }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-agents" "Tag" $odigletImageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-agents" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "agents" "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           {{- if $unprivileged }}
@@ -220,9 +218,9 @@ spec:
       containers:
         - name: odiglet
           {{- if include "odigos.secretExists" . }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           args:
             - --health-probe-bind-port={{ .Values.odiglet.odiglet.livenessProbe.httpGet.port }}
@@ -372,9 +370,9 @@ spec:
               mountPath: /var/exchange
         - name: data-collection
           {{- if include "odigos.secretExists" . }}
-          image: '{{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-collector" "Tag" $imageTag) }}'
+          image: '{{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-collector" "Tag" $imageTag) }}'
           {{- else }}
-          image: '{{ template "utils.imageName" (dict "Values" .Values "Component" "collector" "Tag" $imageTag) }}'
+          image: '{{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "collector" "Tag" $imageTag) }}'
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
@@ -488,14 +486,18 @@ spec:
 {{- if and (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) (not $hostPathMounts) }}
 {{ fail "if HostPath mounts are not allowed mount method must be k8s-init-container" }}
 {{- end }}
+# if runAsNonRoot is set, we must be using mountMethod of "k8s-init-container", since copying/writing files on the host (/var/odigos) requires root privileges
+{{- if and .Values.odiglet.runAsNonRoot (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
+{{ fail "odiglet.runAsNonRoot is only supported with instrumentor.mountMethod=k8s-init-container" }}
+{{- end }}
 # to use device plugins we need to have the "k8s-virtual-device" mount method or non specified (default)
 # and to have hostMounts allowed
 {{- if or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device") }}
         - name: deviceplugin
           {{- if include "odigos.secretExists" . }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
@@ -557,9 +559,9 @@ spec:
 {{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}
         - name: csi-driver
           {{- if include "odigos.secretExists" . }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-odiglet" "Tag" $imageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           command:
             - /usr/local/bin/odigos-csi-driver
@@ -707,3 +709,17 @@ spec:
       affinity: {{ toYaml .affinity | nindent 8 }}
   {{- end }}
 {{- end }}
+      # Force UID 0 unless runAsNonRoot is opted in; otherwise image USER (non-zero) is used.
+      securityContext:
+      {{- if ne $profile "legacy" }}
+        # A profile runs every container in this daemonset as a non-root uid,
+        # so the pod must not force 0 over them. fsGroup gives the agent a
+        # group of its own for the paths it writes.
+        runAsNonRoot: true
+        fsGroup: {{ $runAsUser }}
+      {{- else if .Values.odiglet.runAsNonRoot }}
+        runAsNonRoot: true
+      {{- else }}
+        runAsUser: 0
+        runAsGroup: 0
+      {{- end }}

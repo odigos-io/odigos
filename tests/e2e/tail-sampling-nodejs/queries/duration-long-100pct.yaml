@@ -1,0 +1,18 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: duration /duration/long — high-relevance-duration-above-1000ms (100%)
+query: |
+  length([?
+    span.serviceName == 'tail-sampling-duration' &&
+    span.kind == 'server' &&
+    span.spanAttributes."http.route" == '/duration/long' &&
+    span.spanAttributes."odigos.sampling.category" == 'highly relevant' &&
+    span.spanAttributes."odigos.sampling.dry_run" == `true` &&
+    span.spanAttributes."odigos.sampling.span.matching_rule.name" == 'high-relevance-duration-above-1000ms' &&
+    span.spanAttributes."odigos.sampling.span.matching_rule.keep_percentage" == `100` &&
+    span.spanAttributes."odigos.sampling.trace.deciding_rule.name" == 'high-relevance-duration-above-1000ms' &&
+    span.spanAttributes."odigos.sampling.trace.deciding_rule.keep_percentage" == `100` &&
+    span.spanAttributes."odigos.sampling.trace.kept" == `true`
+  ]) > `0`
+expected:
+  count: 1

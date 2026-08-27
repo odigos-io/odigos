@@ -49,7 +49,7 @@ spec:
           - --leader-elect
         command:
           - /app
-        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "autoscaler" "Tag" $imageTag) }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "autoscaler" "Tag" $imageTag) }}
         env:
           {{- if .Values.autoscaler.deploymentName }}
           - name: ODIGOS_COMPONENT_DEPLOYMENT_NAME
@@ -64,10 +64,7 @@ spec:
           - name: ODIGOS_LOG_LEVEL
             value: {{ .Values.autoscaler.logLevel | default .Values.logLevel | default "info" | quote }}
           - name: ODIGOS_TIER
-            valueFrom:
-              configMapKeyRef:
-                key: ODIGOS_TIER
-                name: odigos-deployment
+            value: '{{- if include "odigos.secretExists" . }}onprem{{- else }}community{{- end }}'
           - name: ODIGOS_VERSION
             valueFrom:
               configMapKeyRef:
@@ -75,9 +72,9 @@ spec:
                 name: odigos-deployment
           - name: ODIGOS_COLLECTOR_IMAGE
             {{- if include "odigos.secretExists" . }}
-            value: '{{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-collector" "Tag" $imageTag) }}'
+            value: '{{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "enterprise-collector" "Tag" $imageTag) }}'
             {{- else }}
-            value: '{{ template "utils.imageName" (dict "Values" .Values "Component" "collector" "Tag" $imageTag) }}'
+            value: '{{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "collector" "Tag" $imageTag) }}'
             {{- end }}
           - name: GOMEMLIMIT
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.autoscaler.resources) }}

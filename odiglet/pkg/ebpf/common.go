@@ -9,7 +9,6 @@ import (
 	"github.com/cilium/ebpf/rlimit"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	ebpfcommon "github.com/odigos-io/odigos/common/ebpf"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
@@ -29,12 +28,14 @@ type InstrumentationManagerOptions struct {
 	GenericFactories           map[string]instrumentation.Factory
 	DistributionGetter         *distros.Getter
 	OdigletHealthProbeBindPort int
-	// OnLogsMapCreated is an optional callback invoked after the logs eBPF map is created.
-	// It allows callers (e.g. enterprise odiglet) to receive the map for use with
-	// external reader mode in the log capture BPF programs.
-	OnLogsMapCreated func(*cilumebpf.Map)
-	// LogsAttrSubscribe streams per-process resource attributes to the collector.
-	LogsAttrSubscribe func() (updates <-chan string, snapshot []string)
+	// TracesMap, MetricsMap, MetricsAttributesMap and LogsMap are shared eBPF maps owned by the
+	// caller and handed to the instrumentation factories, which then run as external readers.
+	// Creating them and serving their file descriptors is enterprise-only, so OSS leaves these
+	// nil and every factory falls back to the map it creates itself.
+	TracesMap            *cilumebpf.Map
+	MetricsMap           *cilumebpf.Map
+	MetricsAttributesMap *cilumebpf.Map
+	LogsMap              *cilumebpf.Map
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
@@ -63,32 +64,10 @@ func NewManager(
 	}
 	appendEnvVarSlice = append(appendEnvVarSlice, k8sconsts.OtelResourceAttributesEnvVar)
 
-	// Create the eBPF maps
+	// The instrumentations load eBPF programs of their own, so the rlimit still has to be raised
+	// here even though odiglet itself no longer creates any map.
 	if err := rlimit.RemoveMemlock(); err != nil {
 		return nil, fmt.Errorf("failed to remove memlock rlimit: %w", err)
-	}
-
-	tracesMap, err := ebpfcommon.CreateTracesMap()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create traces map: %w", err)
-	}
-
-	metricsMap, metricsAttributesMap, err := ebpfcommon.CreateMetricsMaps()
-	if err != nil {
-		tracesMap.Close()
-		return nil, fmt.Errorf("failed to create metrics attributes eBPF maps: %w", err)
-	}
-
-	logsMap, err := ebpfcommon.CreateLogsMap()
-	if err != nil {
-		tracesMap.Close()
-		metricsMap.Close()
-		metricsAttributesMap.Close()
-		return nil, fmt.Errorf("failed to create logs eBPF map: %w", err)
-	}
-
-	if logsMap != nil && opts.OnLogsMapCreated != nil {
-		opts.OnLogsMapCreated(logsMap)
 	}
 
 	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
@@ -100,11 +79,10 @@ func NewManager(
 		DetectorOptions:         detector.DefaultK8sDetectorOptions(appendEnvVarSlice),
 		ConfigUpdates:           configUpdates,
 		InstrumentationRequests: instrumentationRequests,
-		TracesMap:               tracesMap,
-		MetricsMap:              metricsMap,
-		MetricsAttributesMap:    metricsAttributesMap,
-		LogsMap:                 logsMap,
-		LogsAttrSubscribe:       opts.LogsAttrSubscribe,
+		TracesMap:               opts.TracesMap,
+		MetricsMap:              opts.MetricsMap,
+		MetricsAttributesMap:    opts.MetricsAttributesMap,
+		LogsMap:                 opts.LogsMap,
 	}
 
 	// Add file open triggers from all distributions.

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/odigos-io/odigos/common/capabilities"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/odiglet"
@@ -33,6 +34,10 @@ func main() {
 	var healthProbeBindPort int
 	flag.IntVar(&healthProbeBindPort, "health-probe-bind-port", k8sconsts.OdigletDefaultHealthProbeBindPort, "The port the probe endpoint binds to.")
 	flag.Parse()
+
+	if err := capabilities.AlignEffectiveCapToPermitted(); err != nil {
+		logger.Warn("failed to align effective capabilities to permitted set", "err", err)
+	}
 
 	// Init Kubernetes clientset
 	cfg, err := rest.InClusterConfig()

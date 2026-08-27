@@ -259,6 +259,27 @@ func TestOAuth2Configuration(t *testing.T) {
 			expectTLSConfig: true,
 		},
 		{
+			name: "mTLS enabled adds client cert and key env placeholders",
+			config: map[string]string{
+				"OTLP_HTTP_ENDPOINT":     "https://example.com:4318",
+				"OTLP_HTTP_TLS_ENABLED":  "true",
+				"OTLP_HTTP_MTLS_ENABLED": "true",
+				"OTLP_HTTP_CA_PEM":       "-----BEGIN CERTIFICATE-----\nCA\n-----END CERTIFICATE-----",
+			},
+			expectedAuth:    false,
+			expectTLSConfig: true,
+		},
+		{
+			name: "mTLS enabled forces TLS when TLS was disabled",
+			config: map[string]string{
+				"OTLP_HTTP_ENDPOINT":     "https://example.com:4318",
+				"OTLP_HTTP_TLS_ENABLED":  "false",
+				"OTLP_HTTP_MTLS_ENABLED": "true",
+			},
+			expectedAuth:    false,
+			expectTLSConfig: true,
+		},
+		{
 			name: "Basic Auth without TLS",
 			config: map[string]string{
 				"OTLP_HTTP_ENDPOINT":            "https://example.com:4318",
@@ -373,10 +394,22 @@ func TestOAuth2Configuration(t *testing.T) {
 				assert.Contains(t, exporterConfig, "tls", "TLS config should be present")
 				tlsConfig := exporterConfig["tls"].(GenericMap)
 				// When authentication is used without explicit TLS, it should be insecure: true
-				// When TLS is explicitly enabled, it should be insecure: false
-				userTlsEnabled := tt.config["OTLP_HTTP_TLS_ENABLED"] == "true"
-				expectedInsecure := !userTlsEnabled
+				// When TLS or mTLS is explicitly enabled, it should be insecure: false
+				finalTlsEnabled := tt.config["OTLP_HTTP_TLS_ENABLED"] == "true" || tt.config["OTLP_HTTP_MTLS_ENABLED"] == "true"
+				expectedInsecure := !finalTlsEnabled
 				assert.Equal(t, expectedInsecure, tlsConfig["insecure"].(bool))
+
+				if tt.config["OTLP_HTTP_MTLS_ENABLED"] == "true" {
+					assert.Equal(t, "${OTLP_HTTP_CLIENT_CERT_PEM}", tlsConfig["cert_pem"])
+					assert.Equal(t, "${OTLP_HTTP_CLIENT_KEY_PEM}", tlsConfig["key_pem"])
+				} else {
+					assert.NotContains(t, tlsConfig, "cert_pem")
+					assert.NotContains(t, tlsConfig, "key_pem")
+				}
+
+				if caPem, ok := tt.config["OTLP_HTTP_CA_PEM"]; ok && caPem != "" {
+					assert.Equal(t, caPem, tlsConfig["ca_pem"])
+				}
 			} else {
 				assert.NotContains(t, exporterConfig, "tls", "TLS config should NOT be present when neither TLS nor authentication are enabled")
 			}

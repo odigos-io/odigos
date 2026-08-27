@@ -17,10 +17,10 @@ You can configure the Odigos VM Agent in two ways:
 
 <CardGroup cols={2}>
   <Card title="Add sources" icon="server" href="/vmagent/setup/configuration/add-sources">
-    Instrument systemd services or Linux processes so the VM Agent collects their telemetry.
+    Instrument systemd services, Linux processes, or Docker containers so the VM Agent collects their telemetry.
   </Card>
   <Card title="Add destinations" icon="location-dot" href="/vmagent/setup/configuration/add-destinations">
-    Define where telemetry is sent (for example, OTLP endpoints or supported backends).
+    Define where telemetry is sent (for example, OTLP endpoints or supported backends). Destinations with the `LOGS` signal turn on application log export automatically.
   </Card>
   <Card title="Add actions" icon="wand-magic-sparkles" href="/vmagent/setup/configuration/actions/overview">
     Transform, filter, or enrich telemetry before it is sent to destinations.
@@ -39,5 +39,19 @@ You can configure the Odigos VM Agent in two ways:
 <Tip>
 Add a [destination](/vmagent/setup/configuration/add-destinations) first, then [sources](/vmagent/setup/configuration/add-sources), then [actions](/vmagent/setup/configuration/actions/overview) and [instrumentation rules](/vmagent/setup/configuration/instrumentation-rules/overview) as needed.
 </Tip>
+
+## Log collection
+
+When a [destination](/vmagent/setup/configuration/add-destinations) is configured with the `LOGS` signal, the VM Agent automatically collects application logs from **instrumented** sources and exports them. How logs are collected depends on the source kind:
+
+| Source kind | How the VM Agent collects logs |
+|---|---|
+| `process` | Scans the process PID file descriptors for paths containing `*.log` |
+| `docker` | Streams Docker logs for the instrumented container |
+| `systemd` | Streams logs via `journalctl` for the service |
+
+<Note>
+  The odictl **Logs** panel shows live logs for the `odigos-vmagent` and `odigos-otelcol` services themselves. That is separate from application OpenTelemetry logs exported to your destination.
+</Note>
 
 For definitions of sources, destinations, and actions, see [Key concepts](/vmagent/overview#key-concepts) in the VM Agent overview.

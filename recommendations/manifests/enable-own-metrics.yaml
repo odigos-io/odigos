@@ -1,0 +1,43 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Recommendation
+metadata:
+  name: enable-own-metrics
+spec:
+  type: 'EnableOwnMetrics'
+  k8sObjectName: 'odigos-metrics'
+  oss: true
+  requireOdigosDeployment: true
+  categories:
+    - Usability
+
+  title: 'Enable own metrics'
+  summary: 'Include a lean metrics db to show relevant odigos metrics in the UI.'
+  description: |
+    When you enable this recommendation, Odigos includes a lean metrics database
+    in its deployment (victoriametrics instance). This database includes metrics that are relevant to
+    understanding Odigos's own performance and health.
+
+    Some UI elements will be available only if this recommendation is enabled.
+
+  pros:
+    - Shows Odigos performance and health metrics in the UI
+    - Makes it easier to diagnose and resolve Odigos issues
+
+  cons:
+    - Adds a small VictoriaMetrics instance with modest CPU, memory and network usage
+
+  appliedWhen:
+    - type: EffectiveConfig
+      expression: "odigosOwnTelemetryStore.metricsStoreDisabled == `false`"
+
+  remediations:
+    - type: EnableOwnMetricsStore
+      buttonText: 'Enable own odigos metrics'
+      tooltip: 'Deploy the Odigos VictoriaMetrics own metrics store.'
+      applyExamples:
+        - type: HelmValues
+          content: |
+            ownTelemetry:
+              metricsStore:
+                disabled: false
+

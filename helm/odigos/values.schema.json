@@ -528,6 +528,12 @@
       "required": [],
       "title": "collectorNode"
     },
+    "disableAutoRecommendations": {
+      "default": "false",
+      "description": "When false (default), selected recommendation Actions (URL templatization, Infer DB Attributes)\nare created automatically as post-install Helm hooks. Set to true to skip auto-applying them.",
+      "required": [],
+      "title": "disableAutoRecommendations"
+    },
     "externalOnpremPullSecret": {
       "default": "false",
       "description": "Set to true if you are providing the odigos-enterprise-registry pull secret externally (not managed by this chart).\nWhen true, the chart will not create the pull secret but will still mount odigos-enterprise-registry on Odigos workloads\nwhen pulling from registry.odigos.io. Use with externalOnpremTokenSecret for GitOps installs where Helm cannot read secrets at template time.",
@@ -610,7 +616,7 @@
     },
     "imagePrefix": {
       "default": "",
-      "description": "By default, images are pulled from odigos registry at `registry.odigos.io`\nIf you use custom or internal registry to serve in your cluster, you can set the imagePrefix to your registry.\nFor example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-\u003ccomponent\u003e:\u003ctag\u003e`",
+      "description": "Default image registry prefix. When unset:\n  - community installs use `docker.io/keyval`\n  - enterprise installs (onPremToken / odigos-pro secret) use `registry.odigos.io`\n  - OpenShift installs use `registry.connect.redhat.com/odigos`\nIf you use a custom or internal registry, set imagePrefix to your registry.\nFor example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-\u003ccomponent\u003e:\u003ctag\u003e`",
       "required": [],
       "title": "imagePrefix"
     },
@@ -1228,7 +1234,7 @@
           "description": "Configuration for the data-collection container.",
           "properties": {
             "capabilities": {
-              "description": "capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nEmpty means securityProfile decides: SYS_ADMIN, BPF, PERFMON, IPC_LOCK\nunder privileged, and none under the unprivileged profiles.",
+              "description": "capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher",
               "items": {
                 "required": []
               },
@@ -1451,7 +1457,7 @@
               "title": "appArmorProfile"
             },
             "capabilities": {
-              "description": "capabilities to add to the odiglet container when running as unPrivileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nIPC_LOCK required for mmap of perf buffers\nSYS_RESOURCE required only for kernels \u003c 5.11, used for setting rlimit for BPF maps\nEmpty means securityProfile decides: legacy and the deprecated\nodiglet.unPrivileged grant the set above; securityProfile=unprivileged\ngrants BPF, PERFMON, SYS_PTRACE, DAC_OVERRIDE. Setting\nthis overrides whichever would apply.",
+              "description": "capabilities to add to the odiglet container when running as unPrivileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nIPC_LOCK required for mmap of perf buffers\nSYS_RESOURCE required only for kernels \u003c 5.11, used for setting rlimit for BPF maps",
               "items": {
                 "required": []
               },
@@ -1564,6 +1570,12 @@
           "required": [],
           "title": "resources"
         },
+        "runAsNonRoot": {
+          "default": "false",
+          "description": "runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.\nwhen true, each container uses the non-root USER declared in its image (e.g. 65532).\nby default (false), all containers are forced to run as UID/GID 0.\n\nThis setting only changes the UID the containers run as. It does not change the Linux capabilities\ngranted to odiglet (those are controlled separately via unPrivileged and the capabilities lists).\nOperations relying on root's implicit filesystem access can fail as non-root:\ne.g. writing agent files to root-owned host paths (/var/odigos).",
+          "required": [],
+          "title": "runAsNonRoot"
+        },
         "securityProfile": {
           "default": "legacy",
           "description": "Privilege preset for the odiglet daemonset.\nlegacy: the odiglet runs privileged. The only profile Odigos OSS supports,\n  and the one to use on kernels older than 5.8, which have no CAP_BPF.\nunprivileged: no privileged container anywhere in the daemonset. The\n  odiglet runs as a non-root uid holding capabilities from the binary's\n  own file attributes. Requires Odigos Enterprise and\n  instrumentor.mountMethod=k8s-init-container. Enterprise means one of\n  onPremToken, an existing odigos-pro secret, or externalOnpremTokenSecret\n  - the last of which also needs externalOnpremPullSecret to render.\nSets defaults only; the individual settings below still override it.",
@@ -1612,7 +1624,7 @@
         },
         "unPrivileged": {
           "default": "false",
-          "description": "run the odiglet container without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
+          "description": "run the odiglet pod without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
           "required": [],
           "title": "unPrivileged"
         }

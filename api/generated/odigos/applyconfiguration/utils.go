@@ -105,6 +105,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.ProcessorSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ProcessorStatus"):
 		return &odigosv1alpha1.ProcessorStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("Recommendation"):
+		return &odigosv1alpha1.RecommendationApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("RecommendationSpec"):
+		return &odigosv1alpha1.RecommendationSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("RecommendationStatus"):
+		return &odigosv1alpha1.RecommendationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RuntimeDetailsByContainer"):
 		return &odigosv1alpha1.RuntimeDetailsByContainerApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Sampling"):

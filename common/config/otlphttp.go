@@ -17,6 +17,9 @@ const (
 	otlpHttpProfilesEndpointKey   = "OTLP_HTTP_PROFILES_ENDPOINT"
 	otlpHttpTlsKey                = "OTLP_HTTP_TLS_ENABLED"
 	otlpHttpCaPemKey              = "OTLP_HTTP_CA_PEM"
+	otlpHttpMtlsEnabledKey        = "OTLP_HTTP_MTLS_ENABLED"
+	otlpHttpClientCertPemKey      = "OTLP_HTTP_CLIENT_CERT_PEM"
+	otlpHttpClientKeyPemKey       = "OTLP_HTTP_CLIENT_KEY_PEM"
 	otlpHttpInsecureSkipVerify    = "OTLP_HTTP_INSECURE_SKIP_VERIFY"
 	otlpHttpBasicAuthUsernameKey  = "OTLP_HTTP_BASIC_AUTH_USERNAME"
 	otlpHttpBasicAuthPasswordKey  = "OTLP_HTTP_BASIC_AUTH_PASSWORD"
@@ -52,6 +55,8 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	userTlsEnabled := dest.GetConfig()[otlpHttpTlsKey] == "true"
+	mtlsEnabled := dest.GetConfig()[otlpHttpMtlsEnabledKey] == "true"
+	finalTlsEnabled := userTlsEnabled || mtlsEnabled
 
 	var parsedBase string
 	var err error
@@ -95,16 +100,21 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		exporterConf["endpoint"] = parsedBase
 	}
 
-	// Only add TLS config if TLS is explicitly enabled or authentication is being used
+	// Only add TLS config if TLS is explicitly enabled, mTLS is enabled, or authentication is being used
 	tlsConfig := GenericMap{
-		"insecure": !userTlsEnabled,
+		"insecure": !finalTlsEnabled,
 	}
-	if userTlsEnabled || hasAuthentication {
+	if finalTlsEnabled || hasAuthentication {
 		if caPem, ok := config[otlpHttpCaPemKey]; ok && caPem != "" {
 			tlsConfig["ca_pem"] = caPem
 		}
 		if insecureSkipVerify, ok := config[otlpHttpInsecureSkipVerify]; ok && insecureSkipVerify != "" {
 			tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
+		}
+		// Client cert/key are stored in the Destination Secret and injected as env vars
+		if mtlsEnabled {
+			tlsConfig["cert_pem"] = fmt.Sprintf("${%s}", otlpHttpClientCertPemKey)
+			tlsConfig["key_pem"] = fmt.Sprintf("${%s}", otlpHttpClientKeyPemKey)
 		}
 	}
 	exporterConf["tls"] = tlsConfig

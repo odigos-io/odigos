@@ -1,0 +1,12 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: errors /healthz — no odigos.sampling.* (neither cost-reduction nor error rule applies)
+query: |
+  length([?
+    span.serviceName == 'tail-sampling-errors' &&
+    span.kind == 'server' &&
+    span.spanAttributes."http.route" == '/healthz' &&
+    !(span.spanAttributes."odigos.sampling.category")
+  ]) > `0`
+expected:
+  count: 1

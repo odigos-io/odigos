@@ -1,43 +1,57 @@
 ---
 title: 'Architecture'
-description: 'Learn about the architecture of Odigos Central, including the central cluster components and remote cluster proxies.'
+description: 'Learn about the architecture of Odigos Central, including the central cluster components, remote cluster proxies, VM agents, and optional Cloud Connectors.'
 sidebarTitle: 'Architecture'
 ---
 
-Odigos Central consists of components deployed in a **central (management) cluster** and a lightweight proxy in each **remote cluster**.
+Odigos Central consists of components deployed in a **central (management) cluster**, plus connections to remote platforms: a lightweight proxy in each **remote Kubernetes cluster**, [VM Agent](/central/adding-connections/vmagent) hosts, and optional [Cloud Connectors](/cloud-connectors/overview) for cloud accounts.
 
 ```mermaid
 flowchart TB
     subgraph central [Central Cluster]
+        direction TB
         UI[Central UI<br/>Port 3000]
         Backend[Central Backend<br/>Port 8081]
         Redis[Redis<br/>Port 6379]
         Keycloak[Keycloak<br/>Port 8080]
+        CC[Cloud Connectors]
         UI --> Backend
         Backend --> Redis
         Backend --> Keycloak
     end
 
-    subgraph remote1 [Remote Cluster 1]
-        Proxy1[Central Proxy]
-        Odigos1[Odigos Components]
-        Proxy1 --> Odigos1
+    subgraph remotes [Remote Kubernetes Clusters]
+        direction TB
+        Proxy[Central Proxy]
+        Odigos[Odigos Components]
+        Proxy --> Odigos
     end
 
-    subgraph remote2 [Remote Cluster 2]
-        Proxy2[Central Proxy]
-        Odigos2[Odigos Components]
-        Proxy2 --> Odigos2
+    subgraph vms [VM Hosts]
+        VMA[VM Agent]
     end
 
-    Backend <-->|WebSocket| Proxy1
-    Backend <-->|WebSocket| Proxy2
+    subgraph cloud [Cloud Accounts]
+        CloudAcct[AWS / GCP / …]
+    end
+
+    Backend <-->|WebSocket| Proxy
+    Backend <-->|WebSocket| VMA
+    Backend <-->|WebSocket| CC
+    CC -->|Cloud APIs| CloudAcct
+
+    central ~~~ remotes
+    remotes ~~~ vms
+    vms ~~~ cloud
 ```
+
+When [Cloud Connectors are enabled](/cloud-connectors/enable), the Central cluster also runs the connector-runtime controller, a dedicated PostgreSQL store for connector state, and per-account provider connector workloads (for example AWS, GCP, and other supported providers) that you create from the UI.
 
 ## Components
 
 | Component           | Description                                                                                                     |
 | ------------------- | --------------------------------------------------------------------------------------------------------------- |
-| **Central UI**      | Web interface for managing all connected clusters, sources, destinations, and sampling configurations           |
-| **Central Backend** | API server that stores configuration in Redis and communicates with remote clusters via WebSocket               |
+| **Central UI**      | Web interface for managing connected clusters, VM agents, cloud connectors, sources, destinations, and sampling configurations |
+| **Central Backend** | API server that stores configuration in Redis and communicates with remote platforms                            |
 | **Central Proxy**   | Lightweight service deployed in each remote cluster that bridges the central backend to local Odigos components |
+| **Cloud Connectors** (optional) | Provider runtimes in the Central cluster that discover and instrument cloud workloads for one cloud account boundary each (for example an AWS account or GCP project). See [Cloud Connectors](/cloud-connectors/overview). |
