@@ -37,14 +37,14 @@
 {{- $odigletCaps := list "SYS_ADMIN" "BPF" "PERFMON" "SYS_PTRACE" "DAC_READ_SEARCH" "IPC_LOCK" "SYS_RESOURCE" -}}
 {{- $dataCollectionCaps := list "SYS_ADMIN" "BPF" "PERFMON" "IPC_LOCK" -}}
 {{- if ne $profile "legacy" -}}
-  {{- $odigletCaps = list "BPF" "PERFMON" "SYS_PTRACE" "DAC_READ_SEARCH" "FOWNER" -}}
-  {{- /* The agent directory and the device plugin socket are hostPaths the
-         kubelet creates owned by root, and fsGroup does not apply to a
-         hostPath. Writing them as a non-root uid is what CAP_DAC_OVERRIDE is
-         for, and it is granted only when those paths are actually mounted. */ -}}
-  {{- if $hostPathMounts -}}
-    {{- $odigletCaps = append $odigletCaps "DAC_OVERRIDE" -}}
-  {{- end -}}
+  {{- /* CAP_DAC_OVERRIDE, not CAP_FOWNER. The tracing filesystem's root is
+         0700 and uprobe_events 0600, both root's, and the agent reaches them
+         by being excused from the permission check rather than by widening
+         the modes and putting them back - so nothing the rest of the node can
+         see ever changes. It is also what writes the agent directory and the
+         device plugin socket, hostPaths the kubelet creates owned by root
+         that fsGroup does not apply to. */ -}}
+  {{- $odigletCaps = list "BPF" "PERFMON" "SYS_PTRACE" "DAC_READ_SEARCH" "DAC_OVERRIDE" -}}
   {{- $dataCollectionCaps = list -}}
 {{- end -}}
 {{- with .Values.odiglet.odiglet.capabilities -}}{{- $odigletCaps = . -}}{{- end -}}

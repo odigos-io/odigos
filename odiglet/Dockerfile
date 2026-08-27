@@ -131,13 +131,13 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # pod's capabilities.add sets the bounding set - the ceiling - and without
 # this the odiglet would run under securityProfile=unprivileged holding none
 # of them.
-# CAP_FOWNER relaxes the tracing filesystem's root mode when the kernel gates the
-# uprobe PMU; CAP_DAC_OVERRIDE writes the root-owned hostPaths a non-root uid
-# cannot. Permitted-only, never =ep: bprm_caps_from_vfs_caps returns -EPERM when
+# CAP_DAC_OVERRIDE opens the tracing filesystem's root-owned files, and the
+# root-owned hostPaths, for this process alone - without changing a mode, so
+# nothing the rest of the node can see is widened even briefly. Permitted-only, never =ep: bprm_caps_from_vfs_caps returns -EPERM when
 # a file's effective bit is set and the bounding set grants less than the file
 # asks for, so an effective bit here would stop the container starting wherever
 # the values narrow the capability list.
-RUN setcap cap_bpf,cap_perfmon,cap_sys_admin,cap_sys_ptrace,cap_dac_read_search,cap_fowner,cap_dac_override,cap_ipc_lock,cap_sys_resource,cap_setuid,cap_setgid=p odiglet
+RUN setcap cap_bpf,cap_perfmon,cap_sys_admin,cap_sys_ptrace,cap_dac_read_search,cap_dac_override,cap_ipc_lock,cap_sys_resource,cap_setuid,cap_setgid=p odiglet
 RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi
