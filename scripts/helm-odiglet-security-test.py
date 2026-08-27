@@ -81,7 +81,9 @@ LEGACY_DATA_COLLECTION_CAPS = ["SYS_ADMIN", "BPF", "PERFMON", "IPC_LOCK"]
 # CAP_DAC_OVERRIDE joins the set only when the host mounts are present: the
 # agent directory and the device plugin socket are root-owned hostPaths that a
 # non-root uid has no other way to write. noHostPathMounts takes it away again.
-PROFILE_ODIGLET_CAPS = ["BPF", "PERFMON", "SYS_PTRACE", "DAC_READ_SEARCH", "DAC_OVERRIDE"]
+# CAP_DAC_OVERRIDE subsumes CAP_DAC_READ_SEARCH - it bypasses the read and
+# search checks as well as the write - so the latter is not granted.
+PROFILE_ODIGLET_CAPS = ["BPF", "PERFMON", "SYS_PTRACE", "DAC_OVERRIDE"]
 # The set no longer varies with the host mounts: CAP_DAC_OVERRIDE is what opens
 # the tracing filesystem's root-owned files too, so it is needed either way.
 PROFILE_ODIGLET_CAPS_NO_HOSTPATH = PROFILE_ODIGLET_CAPS
