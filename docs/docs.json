@@ -773,6 +773,25 @@
                 ]
               }
             ]
+          },
+          {
+            "group": "ECS Agent",
+            "icon": "aws",
+            "pages": [
+              "vmagent/ecs/overview",
+              "vmagent/ecs/requirements",
+              {
+                "group": "Installation",
+                "pages": [
+                  "vmagent/ecs/installation-agent-only",
+                  "vmagent/ecs/installation-with-proxy",
+                  "vmagent/ecs/installation-switch-to-multi-node"
+                ]
+              },
+              "vmagent/ecs/configuration",
+              "vmagent/ecs/maintenance",
+              "vmagent/ecs/troubleshooting"
+            ]
           }
         ]
       },
