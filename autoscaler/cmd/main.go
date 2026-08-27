@@ -32,6 +32,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
+	"github.com/odigos-io/odigos/recommendations"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"golang.org/x/sync/errgroup"
 	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
@@ -111,6 +112,11 @@ func main() {
 
 	if err := actions.Load(); err != nil {
 		logger.Error("unable to load actions catalog", "err", err)
+		os.Exit(1)
+	}
+
+	if err := recommendations.Load(); err != nil {
+		logger.Error("unable to load recommendations catalog", "err", err)
 		os.Exit(1)
 	}
 

@@ -37,12 +37,13 @@ upgrade-image-agent-version:
 	fi
 	@echo "Updating $(AGENT_DISTRO) agent image tag to $(AGENT_VERSION) in Dockerfile and debug.Dockerfile"
 	@if [ "$(shell uname)" = "Darwin" ]; then \
-		sed -i '' -E 's|$(AGENT_DISTRO):[0-9A-Za-z._-]+|$(AGENT_DISTRO):$(AGENT_VERSION)|g' Dockerfile; \
-		sed -i '' -E 's|$(AGENT_DISTRO):[0-9A-Za-z._-]+|$(AGENT_DISTRO):$(AGENT_VERSION)|g' debug.Dockerfile; \
+		sed -i '' -E 's|$(AGENT_DISTRO):[0-9A-Za-z._-]+(@sha256:[0-9a-f]+)?|$(AGENT_DISTRO):$(AGENT_VERSION)|g' Dockerfile; \
+		sed -i '' -E 's|$(AGENT_DISTRO):[0-9A-Za-z._-]+(@sha256:[0-9a-f]+)?|$(AGENT_DISTRO):$(AGENT_VERSION)|g' debug.Dockerfile; \
 	else \
-		sed -i -E 's|$(AGENT_DISTRO):[0-9A-Za-z._-]+|$(AGENT_DISTRO):$(AGENT_VERSION)|g' Dockerfile; \
-		sed -i -E 's|$(AGENT_DISTRO):[0-9A-Za-z._-]+|$(AGENT_DISTRO):$(AGENT_VERSION)|g' debug.Dockerfile; \
+		sed -i -E 's|$(AGENT_DISTRO):[0-9A-Za-z._-]+(@sha256:[0-9a-f]+)?|$(AGENT_DISTRO):$(AGENT_VERSION)|g' Dockerfile; \
+		sed -i -E 's|$(AGENT_DISTRO):[0-9A-Za-z._-]+(@sha256:[0-9a-f]+)?|$(AGENT_DISTRO):$(AGENT_VERSION)|g' debug.Dockerfile; \
 	fi
+	@$(MAKE) -f $(MK) pin-image-agent-digest AGENT_DISTRO=$(AGENT_DISTRO) AGENT_VERSION=$(AGENT_VERSION) FILES="Dockerfile debug.Dockerfile"
 
 # python-community has two image tags pinned in the dockerfiles, this upgrades the specific agent version that needs to be updated and not python3.8
 .PHONY: upgrade-python-community-version
@@ -53,9 +54,30 @@ upgrade-python-community-version:
 	fi
 	@echo "Updating python-community agent image tag to $(AGENT_VERSION) in Dockerfile and debug.Dockerfile (preserving -py3.8 pin)"
 	@if [ "$(shell uname)" = "Darwin" ]; then \
-		sed -i '' -E 's|python-community:[0-9A-Za-z._-]+( +/instrumentations/python )|python-community:$(AGENT_VERSION)\1|g' Dockerfile; \
-		sed -i '' -E 's|python-community:[0-9A-Za-z._-]+( +/instrumentations/python )|python-community:$(AGENT_VERSION)\1|g' debug.Dockerfile; \
+		sed -i '' -E 's|python-community:[0-9A-Za-z._-]+(@sha256:[0-9a-f]+)?( +/instrumentations/python )|python-community:$(AGENT_VERSION)\2|g' Dockerfile; \
+		sed -i '' -E 's|python-community:[0-9A-Za-z._-]+(@sha256:[0-9a-f]+)?( +/instrumentations/python )|python-community:$(AGENT_VERSION)\2|g' debug.Dockerfile; \
 	else \
-		sed -i -E 's|python-community:[0-9A-Za-z._-]+( +/instrumentations/python )|python-community:$(AGENT_VERSION)\1|g' Dockerfile; \
-		sed -i -E 's|python-community:[0-9A-Za-z._-]+( +/instrumentations/python )|python-community:$(AGENT_VERSION)\1|g' debug.Dockerfile; \
+		sed -i -E 's|python-community:[0-9A-Za-z._-]+(@sha256:[0-9a-f]+)?( +/instrumentations/python )|python-community:$(AGENT_VERSION)\2|g' Dockerfile; \
+		sed -i -E 's|python-community:[0-9A-Za-z._-]+(@sha256:[0-9a-f]+)?( +/instrumentations/python )|python-community:$(AGENT_VERSION)\2|g' debug.Dockerfile; \
 	fi
+	@$(MAKE) -f $(MK) pin-image-agent-digest AGENT_DISTRO=python-community AGENT_VERSION=$(AGENT_VERSION) FILES="Dockerfile debug.Dockerfile"
+
+# Internal: rewrite `<AGENT_DISTRO>:<AGENT_VERSION>` refs in FILES to `<tag>@<manifest digest>`.
+# The dockerfiles pin agent images by digest (the digest is what the build resolves; the tag stays
+# for readability), so every tag bump must re-resolve and rewrite the digest — a tag-only bump
+# would silently keep the OLD image, because the digest wins over the tag.
+# Refusing to resolve also means a bump PR can never reference a tag that does not exist.
+.PHONY: pin-image-agent-digest
+pin-image-agent-digest:
+	@set -e; \
+	ref="public.ecr.aws/odigos/agents/$(AGENT_DISTRO):$(AGENT_VERSION)"; \
+	digest=$$(docker buildx imagetools inspect "$$ref" --format '{{.Manifest.Digest}}'); \
+	if [ -z "$$digest" ]; then echo "ERROR: could not resolve digest for $$ref (does the tag exist?)"; exit 1; fi; \
+	echo "Pinning $$ref@$$digest"; \
+	for f in $(FILES); do \
+		if [ "$$(uname)" = "Darwin" ]; then \
+			sed -i '' -E "s|$(AGENT_DISTRO):$(AGENT_VERSION)([[:space:]])|$(AGENT_DISTRO):$(AGENT_VERSION)@$$digest\1|g" $$f; \
+		else \
+			sed -i -E "s|$(AGENT_DISTRO):$(AGENT_VERSION)([[:space:]])|$(AGENT_DISTRO):$(AGENT_VERSION)@$$digest\1|g" $$f; \
+		fi; \
+	done

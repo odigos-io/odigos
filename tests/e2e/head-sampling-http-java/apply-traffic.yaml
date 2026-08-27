@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: head-sampling-http-server-curls
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: head-sampling-http-server-curls
+    spec:
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: curl
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              BASE_URL="http://head-sampling-http-server:8080"
+              echo "BASE_URL=${BASE_URL}"
+              call_many() {
+                count=$1
+                path=$2
+                echo "GET ${BASE_URL}${path} x${count}"
+                i=1
+                while [ $i -le $count ]; do
+                  curl -sS -f -o /dev/null "${BASE_URL}${path}"
+                  i=$((i + 1))
+                done
+              }
+              echo "GET ${BASE_URL}/http-match/control/no-rule"
+              curl -sS -f -o /dev/null "${BASE_URL}/http-match/control/no-rule"
+              call_many 20 "/http-match/exact/target"
+              call_many 20 "/http-match/prefix/segment"
+              call_many 20 "/http-match/prefix/segment/nested"
+              call_many 20 "/http-match/texact/res-42"
+              call_many 20 "/http-match/tprefix/tenant-a/items"
+              call_many 20 "/http-match/tprefix/tenant-b/items/item-7"
+              echo "all curls succeeded"

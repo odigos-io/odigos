@@ -2,7 +2,7 @@
 # -- Override image tag for all Odigos components (empty = chart default)
 image:
   tag: ''
-# -- Prefix/registry for all Odigos images (empty = built-in defaults)
+# -- Prefix/registry for all Odigos images (empty = registry.odigos.io)
 imagePrefix: ''
 # -- Image pull secrets for private registries (k8s secret names)
 imagePullSecrets: []
