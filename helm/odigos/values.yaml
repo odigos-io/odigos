@@ -886,12 +886,27 @@ odiglet:
     #    2. kernel.perf_event_paranoid sysctl is set to 2 or higher
     #   IPC_LOCK required for mmap of perf buffers
     #   SYS_RESOURCE required only for kernels < 5.11, used for setting rlimit for BPF maps
-    #   Empty means securityProfile decides: privileged and the deprecated
-    #   odiglet.unPrivileged grant the set above; the unprivileged profiles grant
-    #   BPF, PERFMON, SYS_PTRACE, DAC_READ_SEARCH, FOWNER. Setting this overrides
-    #   whichever would apply.
+    #   Empty means securityProfile decides: legacy and the deprecated
+    #   odiglet.unPrivileged grant the set above; securityProfile=unprivileged
+    #   grants BPF, PERFMON, SYS_PTRACE, DAC_OVERRIDE. Setting
+    #   this overrides whichever would apply.
     # @schema
     capabilities: []
+
+    # @schema
+    # type: [object, "null"]
+    # additionalProperties: true
+    # description: |-
+    #   seLinuxOptions for the odiglet container, passed through to its
+    #   securityContext.
+    #   An SELinux-enforcing node may confine the odiglet to a domain that
+    #   cannot inspect the processes it instruments, whatever capabilities it
+    #   holds - the LSM is checked before file permissions are. On Bottlerocket
+    #   the default container_t denies even "search" on another process's /proc
+    #   directory; set type: control_t, which is the narrowest of its three
+    #   types that works. Leave empty on nodes that do not enforce SELinux.
+    # @schema
+    seLinuxOptions:
 
     # @schema
     # description: |-

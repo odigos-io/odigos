@@ -1451,7 +1451,7 @@
               "title": "appArmorProfile"
             },
             "capabilities": {
-              "description": "capabilities to add to the odiglet container when running as unPrivileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nIPC_LOCK required for mmap of perf buffers\nSYS_RESOURCE required only for kernels \u003c 5.11, used for setting rlimit for BPF maps\nEmpty means securityProfile decides: privileged and the deprecated\nodiglet.unPrivileged grant the set above; the unprivileged profiles grant\nBPF, PERFMON, SYS_PTRACE, DAC_READ_SEARCH, FOWNER. Setting this overrides\nwhichever would apply.",
+              "description": "capabilities to add to the odiglet container when running as unPrivileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nIPC_LOCK required for mmap of perf buffers\nSYS_RESOURCE required only for kernels \u003c 5.11, used for setting rlimit for BPF maps\nEmpty means securityProfile decides: legacy and the deprecated\nodiglet.unPrivileged grant the set above; securityProfile=unprivileged\ngrants BPF, PERFMON, SYS_PTRACE, DAC_OVERRIDE. Setting\nthis overrides whichever would apply.",
               "items": {
                 "required": []
               },
@@ -1536,6 +1536,17 @@
               "required": [],
               "title": "readinessProbe",
               "type": "object"
+            },
+            "seLinuxOptions": {
+              "additionalProperties": true,
+              "default": "",
+              "description": "seLinuxOptions for the odiglet container, passed through to its\nsecurityContext.\nAn SELinux-enforcing node may confine the odiglet to a domain that\ncannot inspect the processes it instruments, whatever capabilities it\nholds - the LSM is checked before file permissions are. On Bottlerocket\nthe default container_t denies even \"search\" on another process's /proc\ndirectory; set type: control_t, which is the narrowest of its three\ntypes that works. Leave empty on nodes that do not enforce SELinux.",
+              "required": [],
+              "title": "seLinuxOptions",
+              "type": [
+                "object",
+                "null"
+              ]
             }
           },
           "required": [],
