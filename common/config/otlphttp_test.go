@@ -463,6 +463,10 @@ func (m *mockDestination) GetConfig() map[string]string {
 	return m.config
 }
 
+func (m *mockDestination) GetSendingQueueConfig() *SendingQueueConfig {
+	return nil
+}
+
 func (m *mockDestination) GetSignals() []common.ObservabilitySignal {
 	return []common.ObservabilitySignal{
 		common.TracesObservabilitySignal,
