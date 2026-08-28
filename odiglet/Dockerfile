@@ -76,7 +76,7 @@ COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 COPY --from=public.ecr.aws/odigos/agents/php-community:v0.5.0@sha256:2742c2e003ddece79010fd47b4da021b54e3ce046dafd850f1b4a772d38aa08b /instrumentations/php /instrumentations/php
 
 # ruby-community
-COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8@sha256:a9df41f7684f550a3b7e1693456f7c4eb4ce432aba82d4b9e22d2a73687473b1 /instrumentations/ruby /instrumentations/ruby
+COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.9@sha256:5177737aba83e507ee968223fbd821d76e2df4e74bd1711e2d49e8d59f671d8c /instrumentations/ruby /instrumentations/ruby
 
 # loader
 ARG TARGETARCH
