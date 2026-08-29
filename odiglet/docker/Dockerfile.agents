@@ -1,0 +1,16 @@
+# BusyBox agents image for init containers.
+# Expects named bake context: agents-builder (from Dockerfile.agents-builder).
+#
+# Use BusyBox instead of distroless:
+# - Provides built-in `sh`, `cp`, and other essential Unix tools.
+# - Allows `sh -c` command chaining (`cp dir1 dst1 && cp dir2 dst2`) in init containers.
+# - Very small (~1MB), making it good for init containers.
+
+FROM busybox:1.36.1 AS agents
+WORKDIR /instrumentations/
+
+COPY --from=agents-builder /instrumentations/ .
+
+# make sure we run as non root user
+# this is required when this container is added to a pod that has runAsNonRoot: true
+USER 1000:1000

@@ -88,6 +88,43 @@ jobs:
             victoria-metrics-image.tar
           key: ${{ github.run_id }}-odigos-images
 
+  # Builds the e2e image set on Depot remote builders via docker-bake.hcl (group "e2e").
+  # Does not replace build-odigos-images yet — validates the bake path in CI.
+  build-odigos-images-depot:
+    runs-on: depot-ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - uses: depot/setup-action@v1
+
+      - name: Sync agent versions from Dockerfile
+        run: make sync-agent-versions
+
+      - name: Export agent versions for bake
+        run: |
+          VERSIONS=odiglet/docker/versions
+          echo "NODEJS_COMMUNITY_VERSION=$(sed -n 's/^nodejs-community=//p' "$VERSIONS")" >> "$GITHUB_ENV"
+          echo "NODEJS_COMMUNITY_14_VERSION=$(sed -n 's/^nodejs-community-14=//p' "$VERSIONS")" >> "$GITHUB_ENV"
+          echo "PHP_COMMUNITY_VERSION=$(sed -n 's/^php-community=//p' "$VERSIONS")" >> "$GITHUB_ENV"
+          echo "RUBY_COMMUNITY_VERSION=$(sed -n 's/^ruby-community=//p' "$VERSIONS")" >> "$GITHUB_ENV"
+
+      - name: Bake e2e images (Depot)
+        uses: depot/bake-action@v1
+        env:
+          IMAGE_TAG: e2e-test
+        with:
+          project: bw5dnkcwhg
+          files: docker-bake.hcl
+          targets: e2e
+          push: false
+          provenance: false
+          set: |
+            *.platform=linux/amd64
+
   kubernetes-test:
     needs: [ build-odigos-images, build-cli ]
     runs-on: depot-ubuntu-24.04-8
