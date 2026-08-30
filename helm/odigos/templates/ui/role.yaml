@@ -66,6 +66,13 @@ rules:
       - patch
       - update
       - delete
+  - apiGroups:
+      - odigos.io
+    resources:
+      - 'recommendations'
+    verbs:
+      - update
+      - patch
   {{- end }}
   - apiGroups:
       - odigos.io
