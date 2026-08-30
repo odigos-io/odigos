@@ -1606,7 +1606,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AllowInsightsGuardrailViolation     func(childComplexity int, action model.InsightsViolationActionInput) int
+		AcceptInsightsGuardrailViolation    func(childComplexity int, action model.InsightsViolationActionInput) int
 		ApplyRecommendationRemediation      func(childComplexity int, recommendationType model.RecommendationType, remediationType string) int
 		BulkDeleteInsightsTransactions      func(childComplexity int, transactionIds []string) int
 		BulkPromoteInsightsTransactions     func(childComplexity int, transactionIds []string) int
@@ -2272,7 +2272,7 @@ type MutationResolver interface {
 	UpsertInsightsGuardrail(ctx context.Context, guardrail model.InsightsGuardrailInput) (*model.InsightsGuardrail, error)
 	DeleteInsightsGuardrail(ctx context.Context, scopeKey string) (bool, error)
 	SeedInsightsGuardrail(ctx context.Context, seed model.InsightsGuardrailSeedInput) (bool, error)
-	AllowInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error)
+	AcceptInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error)
 	DismissInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error)
 	ReopenInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error)
 	UpdateInsightsSystemSettings(ctx context.Context, settings model.InsightsSystemSettingsInput) (*model.InsightsSystemSettings, error)
@@ -9398,17 +9398,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MetricsSourceSpanMetricsConfig.ResourceMetricsKeyAttributes(childComplexity), true
 
-	case "Mutation.allowInsightsGuardrailViolation":
-		if e.complexity.Mutation.AllowInsightsGuardrailViolation == nil {
+	case "Mutation.acceptInsightsGuardrailViolation":
+		if e.complexity.Mutation.AcceptInsightsGuardrailViolation == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_allowInsightsGuardrailViolation_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_acceptInsightsGuardrailViolation_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AllowInsightsGuardrailViolation(childComplexity, args["action"].(model.InsightsViolationActionInput)), true
+		return e.complexity.Mutation.AcceptInsightsGuardrailViolation(childComplexity, args["action"].(model.InsightsViolationActionInput)), true
 
 	case "Mutation.applyRecommendationRemediation":
 		if e.complexity.Mutation.ApplyRecommendationRemediation == nil {
@@ -13264,17 +13264,17 @@ func (ec *executionContext) field_Insights_transactions_argsKind(
 	return zeroVal, nil
 }
 
-func (ec *executionContext) field_Mutation_allowInsightsGuardrailViolation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Mutation_acceptInsightsGuardrailViolation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_allowInsightsGuardrailViolation_argsAction(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_acceptInsightsGuardrailViolation_argsAction(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
 	args["action"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Mutation_allowInsightsGuardrailViolation_argsAction(
+func (ec *executionContext) field_Mutation_acceptInsightsGuardrailViolation_argsAction(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (model.InsightsViolationActionInput, error) {
@@ -64163,8 +64163,8 @@ func (ec *executionContext) fieldContext_Mutation_seedInsightsGuardrail(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_allowInsightsGuardrailViolation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_allowInsightsGuardrailViolation(ctx, field)
+func (ec *executionContext) _Mutation_acceptInsightsGuardrailViolation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_acceptInsightsGuardrailViolation(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -64177,7 +64177,7 @@ func (ec *executionContext) _Mutation_allowInsightsGuardrailViolation(ctx contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AllowInsightsGuardrailViolation(rctx, fc.Args["action"].(model.InsightsViolationActionInput))
+		return ec.resolvers.Mutation().AcceptInsightsGuardrailViolation(rctx, fc.Args["action"].(model.InsightsViolationActionInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -64194,7 +64194,7 @@ func (ec *executionContext) _Mutation_allowInsightsGuardrailViolation(ctx contex
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_allowInsightsGuardrailViolation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_acceptInsightsGuardrailViolation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -64211,7 +64211,7 @@ func (ec *executionContext) fieldContext_Mutation_allowInsightsGuardrailViolatio
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_allowInsightsGuardrailViolation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_acceptInsightsGuardrailViolation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -97609,9 +97609,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "allowInsightsGuardrailViolation":
+		case "acceptInsightsGuardrailViolation":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_allowInsightsGuardrailViolation(ctx, field)
+				return ec._Mutation_acceptInsightsGuardrailViolation(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

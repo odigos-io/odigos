@@ -184,7 +184,7 @@ import {
   UPSERT_INSIGHTS_GUARDRAIL,
   DELETE_INSIGHTS_GUARDRAIL,
   SEED_INSIGHTS_GUARDRAIL,
-  ALLOW_INSIGHTS_GUARDRAIL_VIOLATION,
+  ACCEPT_INSIGHTS_GUARDRAIL_VIOLATION,
   DISMISS_INSIGHTS_GUARDRAIL_VIOLATION,
   REOPEN_INSIGHTS_GUARDRAIL_VIOLATION,
   UPDATE_INSIGHTS_SYSTEM_SETTINGS,
@@ -622,9 +622,9 @@ const operations: OdigosApiOperations = {
     document: SEED_INSIGHTS_GUARDRAIL,
     transformResult: (raw: unknown) => (raw as { seedInsightsGuardrail?: boolean } | null | undefined)?.seedInsightsGuardrail ?? false,
   },
-  ALLOW_INSIGHTS_GUARDRAIL_VIOLATION: {
-    document: ALLOW_INSIGHTS_GUARDRAIL_VIOLATION,
-    transformResult: (raw: unknown) => (raw as { allowInsightsGuardrailViolation?: boolean } | null | undefined)?.allowInsightsGuardrailViolation ?? false,
+  ACCEPT_INSIGHTS_GUARDRAIL_VIOLATION: {
+    document: ACCEPT_INSIGHTS_GUARDRAIL_VIOLATION,
+    transformResult: (raw: unknown) => (raw as { acceptInsightsGuardrailViolation?: boolean } | null | undefined)?.acceptInsightsGuardrailViolation ?? false,
   },
   DISMISS_INSIGHTS_GUARDRAIL_VIOLATION: {
     document: DISMISS_INSIGHTS_GUARDRAIL_VIOLATION,

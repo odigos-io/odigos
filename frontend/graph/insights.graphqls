@@ -62,14 +62,14 @@ enum InsightsFindingKind {
 
 enum InsightsAnomalyStatus {
   open
-  baselined
+  accepted
   dismissed
 }
 
 enum InsightsViolationStatus {
   open
   dismissed
-  allowed
+  accepted
 }
 
 enum InsightsRuleMode {
@@ -449,7 +449,7 @@ type InsightsFinding {
   occurrences: Int!
   lastSeen: String!
   """
-  Union of anomaly statuses (open|baselined|dismissed) and violation statuses (open|dismissed|allowed).
+  Union of anomaly statuses (open|accepted|dismissed) and violation statuses (open|dismissed|accepted).
   """
   status: String!
   """
@@ -1137,7 +1137,7 @@ extend type Mutation {
   ): InsightsGuardrail!
   deleteInsightsGuardrail(scopeKey: String!): Boolean!
   seedInsightsGuardrail(seed: InsightsGuardrailSeedInput!): Boolean!
-  allowInsightsGuardrailViolation(
+  acceptInsightsGuardrailViolation(
     action: InsightsViolationActionInput!
   ): Boolean!
   dismissInsightsGuardrailViolation(

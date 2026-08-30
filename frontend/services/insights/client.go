@@ -350,8 +350,8 @@ func (c *Client) GetGuardrailViolation(ctx context.Context, scopeKey, ruleKey, o
 	return &result, nil
 }
 
-func (c *Client) AllowGuardrailViolation(ctx context.Context, request ViolationActionRequest) error {
-	return c.do(ctx, http.MethodPost, c.apiEndpoint("guardrails", "violations", "allow"), request, nil)
+func (c *Client) AcceptGuardrailViolation(ctx context.Context, request ViolationActionRequest) error {
+	return c.do(ctx, http.MethodPost, c.apiEndpoint("guardrails", "violations", "accept"), request, nil)
 }
 
 func (c *Client) DismissGuardrailViolation(ctx context.Context, request ViolationActionRequest) error {

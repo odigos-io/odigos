@@ -1031,7 +1031,7 @@ type InsightsFinding struct {
 	Severity           InsightsSeverity                    `json:"severity"`
 	Occurrences        int                                 `json:"occurrences"`
 	LastSeen           string                              `json:"lastSeen"`
-	// Union of anomaly statuses (open|baselined|dismissed) and violation statuses (open|dismissed|allowed).
+	// Union of anomaly statuses (open|accepted|dismissed) and violation statuses (open|dismissed|accepted).
 	Status string `json:"status"`
 	// Anomaly drill-down key; set when kind is anomaly.
 	TransactionID *string `json:"transactionId,omitempty"`
@@ -3187,19 +3187,19 @@ type InsightsAnomalyStatus string
 
 const (
 	InsightsAnomalyStatusOpen      InsightsAnomalyStatus = "open"
-	InsightsAnomalyStatusBaselined InsightsAnomalyStatus = "baselined"
+	InsightsAnomalyStatusAccepted  InsightsAnomalyStatus = "accepted"
 	InsightsAnomalyStatusDismissed InsightsAnomalyStatus = "dismissed"
 )
 
 var AllInsightsAnomalyStatus = []InsightsAnomalyStatus{
 	InsightsAnomalyStatusOpen,
-	InsightsAnomalyStatusBaselined,
+	InsightsAnomalyStatusAccepted,
 	InsightsAnomalyStatusDismissed,
 }
 
 func (e InsightsAnomalyStatus) IsValid() bool {
 	switch e {
-	case InsightsAnomalyStatusOpen, InsightsAnomalyStatusBaselined, InsightsAnomalyStatusDismissed:
+	case InsightsAnomalyStatusOpen, InsightsAnomalyStatusAccepted, InsightsAnomalyStatusDismissed:
 		return true
 	}
 	return false
@@ -3853,18 +3853,18 @@ type InsightsViolationStatus string
 const (
 	InsightsViolationStatusOpen      InsightsViolationStatus = "open"
 	InsightsViolationStatusDismissed InsightsViolationStatus = "dismissed"
-	InsightsViolationStatusAllowed   InsightsViolationStatus = "allowed"
+	InsightsViolationStatusAccepted  InsightsViolationStatus = "accepted"
 )
 
 var AllInsightsViolationStatus = []InsightsViolationStatus{
 	InsightsViolationStatusOpen,
 	InsightsViolationStatusDismissed,
-	InsightsViolationStatusAllowed,
+	InsightsViolationStatusAccepted,
 }
 
 func (e InsightsViolationStatus) IsValid() bool {
 	switch e {
-	case InsightsViolationStatusOpen, InsightsViolationStatusDismissed, InsightsViolationStatusAllowed:
+	case InsightsViolationStatusOpen, InsightsViolationStatusDismissed, InsightsViolationStatusAccepted:
 		return true
 	}
 	return false
