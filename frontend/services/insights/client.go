@@ -103,6 +103,16 @@ func (c *Client) DeleteTransaction(ctx context.Context, transactionID int64) err
 	return c.do(ctx, http.MethodDelete, c.transactionEndpoint(transactionID), nil, nil)
 }
 
+// BulkDeleteTransactions permanently removes many transactions
+// (POST /api/v1/transactions).
+func (c *Client) BulkDeleteTransactions(ctx context.Context, transactionIDs []int64) (*BulkDeleteResult, error) {
+	var result BulkDeleteResult
+	if err := c.do(ctx, http.MethodPost, c.apiEndpoint("transactions"), BulkDeleteRequest{TransactionIDs: transactionIDs}, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *Client) GetTransactionBaseline(ctx context.Context, transactionID int64) ([]BaselineClass, error) {
 	return doList[BaselineClass](ctx, c, http.MethodGet, c.transactionEndpoint(transactionID, "baseline"), nil)
 }
@@ -110,6 +120,22 @@ func (c *Client) GetTransactionBaseline(ctx context.Context, transactionID int64
 func (c *Client) PromoteBaselineClass(ctx context.Context, transactionID int64, class DeviationClass) (*PromoteResult, error) {
 	var result PromoteResult
 	if err := c.do(ctx, http.MethodPost, c.transactionEndpoint(transactionID, "baseline", string(class), "promote"), nil, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// PromoteTransactionBaselines force-promotes every scored baseline class of one
+// transaction (POST /api/v1/transactions/{id}/baselines/promote).
+func (c *Client) PromoteTransactionBaselines(ctx context.Context, transactionID int64) error {
+	return c.do(ctx, http.MethodPost, c.transactionEndpoint(transactionID, "baselines", "promote"), nil, nil)
+}
+
+// BulkPromoteTransactions force-promotes every scored baseline class on each
+// listed transaction (POST /api/v1/transactions/promote).
+func (c *Client) BulkPromoteTransactions(ctx context.Context, transactionIDs []int64) (*BulkPromoteResult, error) {
+	var result BulkPromoteResult
+	if err := c.do(ctx, http.MethodPost, c.apiEndpoint("transactions", "promote"), BulkPromoteRequest{TransactionIDs: transactionIDs}, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil

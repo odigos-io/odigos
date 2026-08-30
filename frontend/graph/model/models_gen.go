@@ -769,22 +769,26 @@ type InsightsAnomalyClassFinding struct {
 }
 
 type InsightsAnomalyIssue struct {
-	TransactionID    string                   `json:"transactionId"`
-	Signature        string                   `json:"signature"`
-	Service          string                   `json:"service"`
-	Namespace        string                   `json:"namespace"`
-	Operation        *string                  `json:"operation,omitempty"`
-	Kind             *InsightsTransactionKind `json:"kind,omitempty"`
-	TriggeredClasses []InsightsDeviationClass `json:"triggeredClasses"`
-	Offending        *string                  `json:"offending,omitempty"`
-	PolicyID         *string                  `json:"policyId,omitempty"`
-	Occurrences      int                      `json:"occurrences"`
-	MaxScore         int                      `json:"maxScore"`
-	Severity         InsightsSeverity         `json:"severity"`
-	FirstSeen        *string                  `json:"firstSeen,omitempty"`
-	LastSeen         *string                  `json:"lastSeen,omitempty"`
-	LastTraceID      *string                  `json:"lastTraceId,omitempty"`
-	Status           InsightsAnomalyStatus    `json:"status"`
+	TransactionID string `json:"transactionId"`
+	Signature     string `json:"signature"`
+	Service       string `json:"service"`
+	Namespace     string `json:"namespace"`
+	// Full canonical identity string.
+	Operation string `json:"operation"`
+	// Entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               *InsightsTransactionKind            `json:"kind,omitempty"`
+	TriggeredClasses   []InsightsDeviationClass            `json:"triggeredClasses"`
+	Offending          *string                             `json:"offending,omitempty"`
+	PolicyID           *string                             `json:"policyId,omitempty"`
+	Occurrences        int                                 `json:"occurrences"`
+	MaxScore           int                                 `json:"maxScore"`
+	Severity           InsightsSeverity                    `json:"severity"`
+	FirstSeen          *string                             `json:"firstSeen,omitempty"`
+	LastSeen           *string                             `json:"lastSeen,omitempty"`
+	LastTraceID        *string                             `json:"lastTraceId,omitempty"`
+	Status             InsightsAnomalyStatus               `json:"status"`
 	// JSON-encoded evidence keyed by deviation class; only available on the single-anomaly query.
 	Evidence string                  `json:"evidence"`
 	Risk     *InsightsRiskAssessment `json:"risk,omitempty"`
@@ -816,27 +820,38 @@ type InsightsAnomalySpanHighlight struct {
 }
 
 type InsightsAnomalySummary struct {
-	TransactionID    string                   `json:"transactionId"`
-	Signature        string                   `json:"signature"`
-	Service          string                   `json:"service"`
-	Namespace        string                   `json:"namespace"`
-	Operation        *string                  `json:"operation,omitempty"`
-	Kind             *InsightsTransactionKind `json:"kind,omitempty"`
-	TriggeredClasses []InsightsDeviationClass `json:"triggeredClasses"`
-	Offending        *string                  `json:"offending,omitempty"`
-	PolicyID         *string                  `json:"policyId,omitempty"`
-	Occurrences      int                      `json:"occurrences"`
-	MaxScore         int                      `json:"maxScore"`
-	Severity         InsightsSeverity         `json:"severity"`
-	FirstSeen        *string                  `json:"firstSeen,omitempty"`
-	LastSeen         *string                  `json:"lastSeen,omitempty"`
-	LastTraceID      *string                  `json:"lastTraceId,omitempty"`
-	Status           InsightsAnomalyStatus    `json:"status"`
+	TransactionID string `json:"transactionId"`
+	Signature     string `json:"signature"`
+	Service       string `json:"service"`
+	Namespace     string `json:"namespace"`
+	// Full canonical identity string.
+	Operation string `json:"operation"`
+	// Entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               *InsightsTransactionKind            `json:"kind,omitempty"`
+	TriggeredClasses   []InsightsDeviationClass            `json:"triggeredClasses"`
+	Offending          *string                             `json:"offending,omitempty"`
+	PolicyID           *string                             `json:"policyId,omitempty"`
+	Occurrences        int                                 `json:"occurrences"`
+	MaxScore           int                                 `json:"maxScore"`
+	Severity           InsightsSeverity                    `json:"severity"`
+	FirstSeen          *string                             `json:"firstSeen,omitempty"`
+	LastSeen           *string                             `json:"lastSeen,omitempty"`
+	LastTraceID        *string                             `json:"lastTraceId,omitempty"`
+	Status             InsightsAnomalyStatus               `json:"status"`
 }
 
 type InsightsBaselineClass struct {
 	TransactionID string                 `json:"transactionId"`
 	Class         InsightsDeviationClass `json:"class"`
+	// Human-readable name for what this class learns on a transaction
+	// (e.g. "Request latency" for D3_latency). Sourced from the risk catalog;
+	// UI should display this and keep `class` as the stable id for promote/reset.
+	ClassLabel string `json:"classLabel"`
+	// Tooltip text describing what this class learns for the transaction.
+	// Suitable for hover UI; not the finding/anomaly wording.
+	ClassDescription string `json:"classDescription"`
 	// JSON-encoded baseline data; shape varies per deviation class.
 	Data                         *string                   `json:"data,omitempty"`
 	DataSchemaVersion            *int                      `json:"dataSchemaVersion,omitempty"`
@@ -906,6 +921,14 @@ type InsightsBlastRadiusSubgraph struct {
 	Edges []*InsightsBlastRadiusEdge `json:"edges"`
 }
 
+type InsightsBulkDeleteResult struct {
+	Deleted int `json:"deleted"`
+}
+
+type InsightsBulkPromoteResult struct {
+	Promoted int `json:"promoted"`
+}
+
 type InsightsBulkResolveResult struct {
 	Resolution string `json:"resolution"`
 	Resolved   int    `json:"resolved"`
@@ -931,14 +954,18 @@ type InsightsCatalogCategory struct {
 }
 
 type InsightsCatalogClass struct {
-	ID            string  `json:"id"`
-	Label         string  `json:"label"`
-	Description   *string `json:"description,omitempty"`
-	Category      string  `json:"category"`
-	CategoryLabel *string `json:"categoryLabel,omitempty"`
-	Weight        int     `json:"weight"`
-	Mitre         *string `json:"mitre,omitempty"`
-	Owasp         *string `json:"owasp,omitempty"`
+	ID          string  `json:"id"`
+	Label       string  `json:"label"`
+	Description *string `json:"description,omitempty"`
+	// Transaction-baseline name for this class (what is learned). Distinct from finding-oriented `label`.
+	BaselineLabel string `json:"baselineLabel"`
+	// Tooltip for what this class learns on a transaction baseline.
+	BaselineDescription *string `json:"baselineDescription,omitempty"`
+	Category            string  `json:"category"`
+	CategoryLabel       *string `json:"categoryLabel,omitempty"`
+	Weight              int     `json:"weight"`
+	Mitre               *string `json:"mitre,omitempty"`
+	Owasp               *string `json:"owasp,omitempty"`
 }
 
 type InsightsCatalogEnricher struct {
@@ -968,15 +995,22 @@ type InsightsEnricherList struct {
 }
 
 type InsightsFinding struct {
-	Kind        InsightsFindingKind `json:"kind"`
-	Service     string              `json:"service"`
-	Namespace   string              `json:"namespace"`
-	Title       string              `json:"title"`
-	Offending   *string             `json:"offending,omitempty"`
-	Score       int                 `json:"score"`
-	Severity    InsightsSeverity    `json:"severity"`
-	Occurrences int                 `json:"occurrences"`
-	LastSeen    string              `json:"lastSeen"`
+	Kind      InsightsFindingKind `json:"kind"`
+	Service   string              `json:"service"`
+	Namespace string              `json:"namespace"`
+	// Human-readable headline. Anomalies use operationName; violations use the guardrail rule label.
+	Title string `json:"title"`
+	// Full canonical transaction operation (anomalies only). Omitted for violations.
+	Operation *string `json:"operation,omitempty"`
+	// Entry-span operation without dimension suffixes (anomalies).
+	OperationName *string `json:"operationName,omitempty"`
+	// Parsed identity dimensions (anomalies only).
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions,omitempty"`
+	Offending          *string                             `json:"offending,omitempty"`
+	Score              int                                 `json:"score"`
+	Severity           InsightsSeverity                    `json:"severity"`
+	Occurrences        int                                 `json:"occurrences"`
+	LastSeen           string                              `json:"lastSeen"`
 	// Union of anomaly statuses (open|baselined|dismissed) and violation statuses (open|dismissed|allowed).
 	Status string `json:"status"`
 	// Anomaly drill-down key; set when kind is anomaly.
@@ -1285,14 +1319,14 @@ type InsightsSystemDetectionSettingsInput struct {
 	AutoTransactionGuardrail bool `json:"autoTransactionGuardrail"`
 }
 
-type InsightsSystemFindingsSettings struct {
-	DefaultWindowHours int `json:"defaultWindowHours"`
-	MaxWindowHours     int `json:"maxWindowHours"`
+// Extra dimensions appended to transaction Operation before hashing.
+// Each enabled dimension multiplies cardinality. Use only low-cardinality attributes.
+type InsightsSystemIdentitySettings struct {
+	TransactionIdentityDimensions []*InsightsSystemTransactionIdentityDimension `json:"transactionIdentityDimensions"`
 }
 
-type InsightsSystemFindingsSettingsInput struct {
-	DefaultWindowHours int `json:"defaultWindowHours"`
-	MaxWindowHours     int `json:"maxWindowHours"`
+type InsightsSystemIdentitySettingsInput struct {
+	TransactionIdentityDimensions []*InsightsSystemTransactionIdentityDimensionInput `json:"transactionIdentityDimensions"`
 }
 
 type InsightsSystemRetentionSettings struct {
@@ -1316,19 +1350,35 @@ type InsightsSystemSamplingSettingsInput struct {
 type InsightsSystemSettings struct {
 	Sampling  *InsightsSystemSamplingSettings  `json:"sampling"`
 	Retention *InsightsSystemRetentionSettings `json:"retention"`
-	Findings  *InsightsSystemFindingsSettings  `json:"findings"`
 	Capacity  *InsightsSystemCapacitySettings  `json:"capacity"`
 	Writeback *InsightsSystemWritebackSettings `json:"writeback"`
 	Detection *InsightsSystemDetectionSettings `json:"detection"`
+	Identity  *InsightsSystemIdentitySettings  `json:"identity"`
 }
 
 type InsightsSystemSettingsInput struct {
 	Sampling  *InsightsSystemSamplingSettingsInput  `json:"sampling"`
 	Retention *InsightsSystemRetentionSettingsInput `json:"retention"`
-	Findings  *InsightsSystemFindingsSettingsInput  `json:"findings"`
 	Capacity  *InsightsSystemCapacitySettingsInput  `json:"capacity"`
 	Writeback *InsightsSystemWritebackSettingsInput `json:"writeback"`
 	Detection *InsightsSystemDetectionSettingsInput `json:"detection"`
+	Identity  *InsightsSystemIdentitySettingsInput  `json:"identity"`
+	// Write-only. When true and identity dimensions changed vs stored settings,
+	// delete all transactions and related baselines/samples/findings before applying.
+	// Never returned by GET.
+	ResetTransactions *bool `json:"resetTransactions,omitempty"`
+}
+
+// One low-cardinality attribute (or built-in resolver key) folded into transaction identity
+// from the sub-transaction entry span only.
+type InsightsSystemTransactionIdentityDimension struct {
+	Key     string `json:"key"`
+	Enabled bool   `json:"enabled"`
+}
+
+type InsightsSystemTransactionIdentityDimensionInput struct {
+	Key     string `json:"key"`
+	Enabled bool   `json:"enabled"`
 }
 
 type InsightsSystemWritebackSettings struct {
@@ -1340,23 +1390,38 @@ type InsightsSystemWritebackSettingsInput struct {
 }
 
 type InsightsTransaction struct {
-	ID        string                  `json:"id"`
-	Service   string                  `json:"service"`
-	Namespace string                  `json:"namespace"`
-	Operation string                  `json:"operation"`
-	Kind      InsightsTransactionKind `json:"kind"`
+	ID        string `json:"id"`
+	Service   string `json:"service"`
+	Namespace string `json:"namespace"`
+	// Full canonical identity string (hashed, guardrails). Includes [key=value] suffixes when identity dimensions are enabled.
+	Operation string `json:"operation"`
+	// Human-readable entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               InsightsTransactionKind             `json:"kind"`
+}
+
+// One parsed low-cardinality dimension from the stored operation identity suffix ([key=value]).
+// For display only — canonical identity remains in `operation`.
+type InsightsTransactionIdentityValue struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type InsightsTransactionStat struct {
-	ID          string                  `json:"id"`
-	Service     string                  `json:"service"`
-	Namespace   string                  `json:"namespace"`
-	Operation   string                  `json:"operation"`
-	Kind        InsightsTransactionKind `json:"kind"`
-	Volume      int                     `json:"volume"`
-	LastSeen    string                  `json:"lastSeen"`
-	HasBaseline *bool                   `json:"hasBaseline,omitempty"`
-	Promoted    *bool                   `json:"promoted,omitempty"`
+	ID        string `json:"id"`
+	Service   string `json:"service"`
+	Namespace string `json:"namespace"`
+	// Full canonical identity string (hashed). Includes [key=value] suffixes when identity dimensions are enabled.
+	Operation string `json:"operation"`
+	// Entry-span operation without dimension suffixes.
+	OperationName      string                              `json:"operationName"`
+	IdentityDimensions []*InsightsTransactionIdentityValue `json:"identityDimensions"`
+	Kind               InsightsTransactionKind             `json:"kind"`
+	Volume             int                                 `json:"volume"`
+	LastSeen           string                              `json:"lastSeen"`
+	HasBaseline        *bool                               `json:"hasBaseline,omitempty"`
+	Promoted           *bool                               `json:"promoted,omitempty"`
 }
 
 type InsightsViolationActionInput struct {
