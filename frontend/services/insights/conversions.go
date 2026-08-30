@@ -634,6 +634,7 @@ func FindingToModel(finding Finding) *model.InsightsFinding {
 		Score:              finding.Score,
 		Severity:           SeverityToModel(finding.Severity),
 		Occurrences:        int64ToInt(finding.Occurrences),
+		FirstSeen:          finding.FirstSeen,
 		LastSeen:           finding.LastSeen,
 		Status:             finding.Status,
 		TransactionID:      formatOptionalID(finding.TransactionID),

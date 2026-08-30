@@ -110,6 +110,7 @@ const FINDING_FIELDS = `
   score
   severity
   occurrences
+  firstSeen
   lastSeen
   status
   transactionId
