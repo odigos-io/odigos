@@ -5432,6 +5432,18 @@ entries:
     - https://github.com/keyval-dev/odigos-charts/releases/download/odigos-0.2.03/odigos-0.2.03.tgz
     version: 0.2.03
   - apiVersion: v2
+    appVersion: v0.0.0-feat.insights.4
+    created: "2026-08-30T11:08:01.428936327Z"
+    description: Instant Distributed Tracing
+    digest: 162733ebc27b9446196ddd80125db1af453b1e0a0c0c17f324e088f505a85029
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.insights.4/helm-chart-odigos-0.0.0-feat.insights.4.tgz
+    version: 0.0.0-feat.insights.4
+  - apiVersion: v2
     appVersion: v0.0.0-feat.insights.3
     created: "2026-08-27T12:56:59.505213294Z"
     description: Instant Distributed Tracing
@@ -8685,6 +8697,18 @@ entries:
     - https://github.com/odigos-io/odigos/releases/download/v1.5.0/helm-chart-odigos-central-1.5.0.tgz
     version: 1.5.0
   - apiVersion: v2
+    appVersion: v0.0.0-feat.insights.4
+    created: "2026-08-30T11:08:01.429987044Z"
+    description: Centralized components for Odigos (UI + Backend)
+    digest: bbec7254e5627a3720cf3d584f54ed9b24ab80143df6f2854fa560c06f429ec3
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos-central
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.insights.4/helm-chart-odigos-central-0.0.0-feat.insights.4.tgz
+    version: 0.0.0-feat.insights.4
+  - apiVersion: v2
     appVersion: v0.0.0-feat.insights.3
     created: "2026-08-27T12:56:59.506339496Z"
     description: Centralized components for Odigos (UI + Backend)
@@ -8720,4 +8744,4 @@ entries:
     urls:
     - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.amir-testing.4/helm-chart-odigos-central-0.0.0-feat.amir-testing.4.tgz
     version: 0.0.0-feat.amir-testing.4
-generated: "2026-08-27T14:15:44.237251171Z"
+generated: "2026-08-30T11:08:01.424676595Z"
