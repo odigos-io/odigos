@@ -352,6 +352,14 @@ export const GET_INSIGHTS_SERVICES = gql`
   }
 `;
 
+export const GET_INSIGHTS_SERVICE_NAMES = gql`
+  query GetInsightsServiceNames {
+    insights {
+      serviceNames
+    }
+  }
+`;
+
 export const GET_INSIGHTS_SERVICE_PROFILE = gql`
   query GetInsightsServiceProfile($namespace: String, $service: String!) {
     insights {

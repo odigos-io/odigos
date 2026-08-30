@@ -950,6 +950,11 @@ type InsightsStorageHealth {
 
 type Insights {
   services: [InsightsServiceStat!]!
+  """
+  Every distinct service name Insights has seen. Cluster-wide candidate set for
+  guardrail caller/callee allowlists — fetch once and combine with a service profile.
+  """
+  serviceNames: [String!]!
   serviceProfile(namespace: String, service: String!): InsightsServiceProfile!
   """
   Service-graph neighborhood around one service (blast radius). Depth defaults to 2 (1–5).
