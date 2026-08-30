@@ -4,13 +4,13 @@ go 1.26.2
 
 require (
 	github.com/cilium/ebpf v0.20.0
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/odigos-io/odigos/common v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/distros v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/runtime-detector v0.0.25
 	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/metric v1.44.0
-	golang.org/x/sync v0.20.0
+	golang.org/x/sync v0.22.0
 )
 
 require (

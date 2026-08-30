@@ -109,6 +109,7 @@ import {
   GET_NODE_COLLECTOR_PODS,
   GET_COLLECTOR_POD_INFO,
   GET_INSIGHTS_SERVICES,
+  GET_INSIGHTS_SERVICE_NAMES,
   GET_INSIGHTS_SERVICE_PROFILE,
   GET_INSIGHTS_BLAST_RADIUS,
   GET_INSIGHTS_TRANSACTIONS,
@@ -472,6 +473,10 @@ const operations: OdigosApiOperations = {
   GET_INSIGHTS_SERVICES: {
     document: GET_INSIGHTS_SERVICES,
     transformResult: (raw: unknown) => (raw as { insights?: { services?: InsightsServiceStat[] } } | null | undefined)?.insights?.services ?? [],
+  },
+  GET_INSIGHTS_SERVICE_NAMES: {
+    document: GET_INSIGHTS_SERVICE_NAMES,
+    transformResult: (raw: unknown) => (raw as { insights?: { serviceNames?: string[] } } | null | undefined)?.insights?.serviceNames ?? [],
   },
   GET_INSIGHTS_SERVICE_PROFILE: {
     document: GET_INSIGHTS_SERVICE_PROFILE,

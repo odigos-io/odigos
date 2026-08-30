@@ -25,6 +25,22 @@ func (r *insightsResolver) Services(ctx context.Context, obj *model.Insights) ([
 	return insights.ServiceStatsToModel(stats), nil
 }
 
+// ServiceNames is the resolver for the serviceNames field.
+func (r *insightsResolver) ServiceNames(ctx context.Context, obj *model.Insights) ([]string, error) {
+	client, err := r.insightsClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	names, err := client.ListServiceNames(ctx)
+	if err != nil {
+		return nil, insights.GraphQLError(ctx, err)
+	}
+	if names == nil {
+		return []string{}, nil
+	}
+	return names, nil
+}
+
 // ServiceProfile is the resolver for the serviceProfile field.
 func (r *insightsResolver) ServiceProfile(ctx context.Context, obj *model.Insights, namespace *string, service string) (*model.InsightsServiceProfile, error) {
 	client, err := r.insightsClient(ctx)
