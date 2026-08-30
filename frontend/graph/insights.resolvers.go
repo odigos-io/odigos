@@ -647,13 +647,13 @@ func (r *mutationResolver) SeedInsightsGuardrail(ctx context.Context, seed model
 	return true, nil
 }
 
-// AllowInsightsGuardrailViolation is the resolver for the allowInsightsGuardrailViolation field.
-func (r *mutationResolver) AllowInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error) {
+// AcceptInsightsGuardrailViolation is the resolver for the acceptInsightsGuardrailViolation field.
+func (r *mutationResolver) AcceptInsightsGuardrailViolation(ctx context.Context, action model.InsightsViolationActionInput) (bool, error) {
 	client, err := r.insightsClient(ctx)
 	if err != nil {
 		return false, err
 	}
-	if err := client.AllowGuardrailViolation(ctx, insights.ViolationActionFromInput(action)); err != nil {
+	if err := client.AcceptGuardrailViolation(ctx, insights.ViolationActionFromInput(action)); err != nil {
 		return false, insights.GraphQLError(ctx, err)
 	}
 	return true, nil
