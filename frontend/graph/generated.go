@@ -849,6 +849,7 @@ type ComplexityRoot struct {
 	}
 
 	InsightsFinding struct {
+		FirstSeen          func(childComplexity int) int
 		IdentityDimensions func(childComplexity int) int
 		Kind               func(childComplexity int) int
 		LastSeen           func(childComplexity int) int
@@ -6137,6 +6138,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InsightsEnricherList.Label(childComplexity), true
+
+	case "InsightsFinding.firstSeen":
+		if e.complexity.InsightsFinding.FirstSeen == nil {
+			break
+		}
+
+		return e.complexity.InsightsFinding.FirstSeen(childComplexity), true
 
 	case "InsightsFinding.identityDimensions":
 		if e.complexity.InsightsFinding.IdentityDimensions == nil {
@@ -33426,6 +33434,8 @@ func (ec *executionContext) fieldContext_Insights_findings(ctx context.Context, 
 				return ec.fieldContext_InsightsFinding_severity(ctx, field)
 			case "occurrences":
 				return ec.fieldContext_InsightsFinding_occurrences(ctx, field)
+			case "firstSeen":
+				return ec.fieldContext_InsightsFinding_firstSeen(ctx, field)
 			case "lastSeen":
 				return ec.fieldContext_InsightsFinding_lastSeen(ctx, field)
 			case "status":
@@ -41400,6 +41410,47 @@ func (ec *executionContext) fieldContext_InsightsFinding_occurrences(_ context.C
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InsightsFinding_firstSeen(ctx context.Context, field graphql.CollectedField, obj *model.InsightsFinding) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InsightsFinding_firstSeen(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FirstSeen, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InsightsFinding_firstSeen(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InsightsFinding",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -91621,6 +91672,8 @@ func (ec *executionContext) _InsightsFinding(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "firstSeen":
+			out.Values[i] = ec._InsightsFinding_firstSeen(ctx, field, obj)
 		case "lastSeen":
 			out.Values[i] = ec._InsightsFinding_lastSeen(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

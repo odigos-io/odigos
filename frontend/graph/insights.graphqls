@@ -447,6 +447,10 @@ type InsightsFinding {
   score: Int!
   severity: InsightsSeverity!
   occurrences: Int!
+  """
+  Earliest occurrence of this finding (anomaly or guardrail violation).
+  """
+  firstSeen: String
   lastSeen: String!
   """
   Union of anomaly statuses (open|accepted|dismissed) and violation statuses (open|dismissed|accepted).

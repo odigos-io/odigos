@@ -1033,7 +1033,9 @@ type InsightsFinding struct {
 	Score              int                                 `json:"score"`
 	Severity           InsightsSeverity                    `json:"severity"`
 	Occurrences        int                                 `json:"occurrences"`
-	LastSeen           string                              `json:"lastSeen"`
+	// Earliest occurrence of this finding (anomaly or guardrail violation).
+	FirstSeen *string `json:"firstSeen,omitempty"`
+	LastSeen  string  `json:"lastSeen"`
 	// Union of anomaly statuses (open|accepted|dismissed) and violation statuses (open|dismissed|accepted).
 	Status string `json:"status"`
 	// Anomaly drill-down key; set when kind is anomaly.

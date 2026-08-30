@@ -288,6 +288,7 @@ type Finding struct {
 	Score              int                        `json:"score"`
 	Severity           Severity                   `json:"severity"`
 	Occurrences        int64                      `json:"occurrences"`
+	FirstSeen          *string                    `json:"first_seen,omitempty"`
 	LastSeen           string                     `json:"last_seen"`
 	Status             string                     `json:"status"`
 	TransactionID      *int64                     `json:"transaction_id,omitempty"`
