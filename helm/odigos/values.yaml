@@ -35,11 +35,16 @@ images: {}
 
 # @schema
 # description: |-
-#   namespaces list not to show in odigos ui
-#   set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease
-#   you can add additional namespaces to ignore by adding them to the list
+#   Namespaces excluded from the Odigos UI so system and infrastructure namespaces
+#   (service meshes, local storage, lease holders, etc.) do not clutter the sources list.
+#   The Odigos install namespace is ignored by default; set ignoreOdigosNamespace to false to show it.
+#   When openshift.enabled is true, OpenShift system namespaces are also ignored automatically.
 # @schema
 ignoredNamespaces:
+  - local-path-storage
+  - istio-system
+  - linkerd
+  - kube-node-lease
 
 # @schema
 # description: |-
@@ -54,10 +59,14 @@ ignoreOdigosNamespace: true
 # description: |-
 #   container names to never instrument
 #   useful for sidecars which are not interesting to be instrumented
-#   set by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init
-#   you can add additional container names to ignore by adding them to the list
 # @schema
 ignoredContainers:
+  - istio-proxy
+  - vault-agent
+  - filebeat
+  - linkerd-proxy
+  - fluentd
+  - akeyless-init
 
 # @schema
 # description: Name of the cluster, will be used to identify this cluster in the centralized backend
