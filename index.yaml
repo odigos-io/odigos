@@ -5444,6 +5444,18 @@ entries:
     - https://github.com/keyval-dev/odigos-charts/releases/download/odigos-0.2.03/odigos-0.2.03.tgz
     version: 0.2.03
   - apiVersion: v2
+    appVersion: v0.0.0-feat.insights.6
+    created: "2026-08-31T13:54:28.838231424Z"
+    description: Instant Distributed Tracing
+    digest: 48a1c9b84f41af1c9bd4f96dfc89b50bcdbdcbd9e24f755f7b3c044bb933970f
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.insights.6/helm-chart-odigos-0.0.0-feat.insights.6.tgz
+    version: 0.0.0-feat.insights.6
+  - apiVersion: v2
     appVersion: v0.0.0-feat.insights.5
     created: "2026-08-31T12:12:15.107498151Z"
     description: Instant Distributed Tracing
@@ -8733,6 +8745,18 @@ entries:
     - https://github.com/odigos-io/odigos/releases/download/v1.5.0/helm-chart-odigos-central-1.5.0.tgz
     version: 1.5.0
   - apiVersion: v2
+    appVersion: v0.0.0-feat.insights.6
+    created: "2026-08-31T13:54:28.83985011Z"
+    description: Centralized components for Odigos (UI + Backend)
+    digest: 46a7aa895d853395c75b56b6f114f673f79d594392b40a0f3ce810f74a43d00e
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.19.0-0'
+    name: odigos-central
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.insights.6/helm-chart-odigos-central-0.0.0-feat.insights.6.tgz
+    version: 0.0.0-feat.insights.6
+  - apiVersion: v2
     appVersion: v0.0.0-feat.insights.5
     created: "2026-08-31T12:12:15.108524546Z"
     description: Centralized components for Odigos (UI + Backend)
@@ -8792,4 +8816,4 @@ entries:
     urls:
     - https://github.com/odigos-io/odigos/releases/download/v0.0.0-feat.amir-testing.4/helm-chart-odigos-central-0.0.0-feat.amir-testing.4.tgz
     version: 0.0.0-feat.amir-testing.4
-generated: "2026-08-31T12:12:15.102384493Z"
+generated: "2026-08-31T13:54:28.834433281Z"
