@@ -78,8 +78,8 @@ github.com/DataDog/datadog-agent/comp/core/config v0.82.0 h1:9wzoBUBxSVl5TVSq7Hz
 github.com/DataDog/datadog-agent/comp/core/config v0.82.0/go.mod h1:Gz1qEQpH5EsNlg2UWM/L/zbVRhbJXLPzvvrzSxrVz9g=
 github.com/DataDog/datadog-agent/comp/core/configstreamconsumer/def v0.82.0 h1:iUWkBEut0osUIZkS/ve6dg4zlQbhZsiGH/hOlILrj0M=
 github.com/DataDog/datadog-agent/comp/core/configstreamconsumer/def v0.82.0/go.mod h1:tXZgPI9gA5IGx0camyhFtA7iYcW5FryECASyRm2Yebs=
-github.com/DataDog/datadog-agent/comp/core/delegatedauth v0.79.0-devel h1:ADBVuz7vlOxsT9rO6JzO+51IfGNIUPWnXAIWfZq+OS4=
-github.com/DataDog/datadog-agent/comp/core/delegatedauth v0.79.0-devel/go.mod h1:MgvCdQVGRA2XmWpHeSEeBwiIDyRvuV/0AqsqY3EbeIo=
+github.com/DataDog/datadog-agent/comp/core/delegatedauth v0.82.0 h1:fUU+WEJxkgKot8iqU0X2hsCibbwhrEZHD17bhTjOZhg=
+github.com/DataDog/datadog-agent/comp/core/delegatedauth v0.82.0/go.mod h1:K2HgIPVogVcIrXHmZGLrYC2DqkJS5oiST0W3mEDPZvk=
 github.com/DataDog/datadog-agent/comp/core/flare/builder v0.82.0 h1:reZoRLf1BlpvfDd+R9G+xeYTA6klbAZurQQu/qjpGjU=
 github.com/DataDog/datadog-agent/comp/core/flare/builder v0.82.0/go.mod h1:TdMI9nGt5LyA/Bt7VmcEYzs+ZP8i7136/cxk8ClfriM=
 github.com/DataDog/datadog-agent/comp/core/flare/types v0.82.0 h1:LTnMqtkAfTykmMQWFcQaJ5ohFkVv6Z5acZJRdaNlnds=

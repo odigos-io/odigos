@@ -802,6 +802,4 @@ replace github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextens
 
 replace github.com/apache/thrift => github.com/apache/thrift v0.23.0
 
-replace github.com/DataDog/datadog-agent/comp/core/delegatedauth => github.com/DataDog/datadog-agent/comp/core/delegatedauth v0.79.0-devel
-
 exclude github.com/knadh/koanf v1.5.0

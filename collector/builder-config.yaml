@@ -148,5 +148,3 @@ replaces:
   - github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension => ../extension/odigosconfigk8sextension
   - github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension => ../extension/odigoscapabilitiesextension
   - github.com/apache/thrift => github.com/apache/thrift v0.23.0
-  # datadogexporter transitively requires this at an unresolvable DataDog-internal placeholder version.
-  - github.com/DataDog/datadog-agent/comp/core/delegatedauth => github.com/DataDog/datadog-agent/comp/core/delegatedauth v0.79.0-devel
