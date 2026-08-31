@@ -1221,6 +1221,156 @@ centralProxy:
   # priorityClassName: ''
 
 # @schema
+# description: |-
+#   Aiden is Odigos' in-cluster AI agent, running an OpenClaw gateway image built for Odigos
+#   (see aiden/README.md and `make build-aiden-image`). When enabled, Aiden connects to Google
+#   Gemini as its LLM backend, to Slack as a chat interface (via Socket Mode, so no inbound
+#   Service/Ingress is required), and to the Odigos Enterprise MCP server mounted on the `ui`
+#   Service (see ui.mcp) to inspect and configure the cluster on your behalf.
+#   Requires Odigos Enterprise (a valid on-prem token) and ui.mcp.enabled (default true).
+# @schema
+aiden:
+  # @schema
+  # description: Deploy the Aiden agent. Disabled by default; no aiden resources are rendered unless this is true.
+  # @schema
+  enabled: false
+
+  # @schema
+  # description: |-
+  #   OpenClaw image for Aiden. Defaults to the locally built Odigos Aiden image
+  #   (registry.odigos.io/odigos-aiden:dev) produced by `make build-aiden-image`, which bundles
+  #   Slack via OPENCLAW_EXTENSIONS, Gemini runtime support, and the Jaeger skill. Build before
+  #   enabling Aiden, or override repository/tag for a registry-hosted custom build.
+  # @schema
+  image:
+    # @schema
+    # description: OpenClaw image repository.
+    # @schema
+    repository: registry.odigos.io/odigos-aiden
+    # @schema
+    # description: |-
+    #   OpenClaw image tag. Local Kind workflows use `dev` (see `make deploy-aiden`). Publish a
+    #   versioned tag to your registry for non-Kind clusters.
+    # @schema
+    tag: "dev"
+    # @schema
+    # description: |-
+    #   Image pull policy. `make deploy-aiden` patches this to Never after loading into Kind.
+    # enum:
+    #   - Always
+    #   - IfNotPresent
+    #   - Never
+    # @schema
+    pullPolicy: IfNotPresent
+
+  # @schema
+  # description: |-
+  #   Jaeger Query endpoints for the bundled `jaeger` OpenClaw skill. Rendered into
+  #   odigos-aiden-config as jaeger-config.json and mounted at JAEGER_SKILL_CONFIG.
+  #   Use in-cluster Service URLs when Jaeger runs inside the cluster.
+  # @schema
+  jaeger:
+    # @schema
+    # description: Named Jaeger Query base URLs (http(s)://host:port, no trailing slash).
+    # additionalProperties: true
+    # @schema
+    endpoints:
+      default: "http://localhost:16686"
+    # @schema
+    # description: Which key from `endpoints` to use when the user does not name one.
+    # @schema
+    active: "default"
+
+  # @schema
+  # description: Configuration for reaching Google Gemini, used as Aiden's LLM backend.
+  # @schema
+  gemini:
+    # @schema
+    # description: |-
+    #   Google Gemini API key. Stored only in the odigos-aiden Kubernetes Secret; never
+    #   written to a ConfigMap or logs by this chart.
+    # @schema
+    key: ''
+    # @schema
+    # description: |-
+    #   OpenClaw model ref for Aiden's primary agent (agents.defaults.model.primary).
+    #   Flash is the default for lower cost; use google/gemini-3.1-pro-preview for heavier reasoning.
+    # @schema
+    model: google/gemini-3-flash-preview
+
+  # @schema
+  # description: Configuration for connecting Aiden to Slack.
+  # @schema
+  slack:
+    # @schema
+    # description: |-
+    #   Slack app-level token (starts with 'xapp-', requires the connections:write scope).
+    #   Used by Aiden to open an outbound Socket Mode connection to Slack, so no public
+    #   endpoint needs to be exposed for Aiden to receive messages.
+    # @schema
+    key: ''
+
+    # @schema
+    # description: |-
+    #   Slack bot user OAuth token (starts with 'xoxb-'). Used by Aiden to call the Slack Web
+    #   API, e.g. to post messages back into a channel or thread.
+    # @schema
+    botToken: ''
+
+  # @schema
+  # description: Log level for Aiden. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
+  # description: Override the global nodeSelector (values.nodeSelector) for this component
+  # @schema
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
+  tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
+  affinity: {}
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  # @schema
+  # description: Priority class name. Set to use your existing cluster priority classes.
+  # @schema
+  # priorityClassName: ''
+
+  # @schema
+  # description: |-
+  #   Deployment name. if you want the deployment (and related pods) to have a specific name.
+  #   default is 'odigos-aiden'
+  # @schema
+  # deploymentName: 'odigos-aiden'
+
+# @schema
 # description: Pod Security Policy
 # @schema
 psp:
