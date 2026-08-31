@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/confmap/xconfmap"
+	"go.opentelemetry.io/collector/confmap"
 )
 
 type Config struct {
@@ -19,7 +19,7 @@ type Config struct {
 	OdigosConfigExtension *component.ID `mapstructure:"odigos_config_extension"`
 }
 
-var _ xconfmap.Validator = (*Config)(nil)
+var _ confmap.Validator = (*Config)(nil)
 
 func (c Config) Validate() error {
 	if c.OdigosConfigExtension != nil {

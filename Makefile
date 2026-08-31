@@ -345,10 +345,10 @@ update-dep/%: DIR=$*
 update-dep/%:
 	cd $(DIR) && go get $(MODULE)@$(VERSION)
 
-UNSTABLE_COLLECTOR_VERSION=v0.151.0
-STABLE_COLLECTOR_VERSION=v1.57.0
-STABLE_OTEL_GO_VERSION=v1.44.0
-UNSTABLE_OTEL_GO_VERSION=v0.68.0
+UNSTABLE_COLLECTOR_VERSION=v0.159.0
+STABLE_COLLECTOR_VERSION=v1.65.0
+STABLE_OTEL_GO_VERSION=v1.46.0
+UNSTABLE_OTEL_GO_VERSION=v0.70.0
 
 .PHONY: update-otel
 update-otel:
@@ -560,4 +560,3 @@ install-gatekeeper:
 		backoff=$$((backoff * 2)); \
 		attempt=$$((attempt + 1)); \
 	done
-
