@@ -20,6 +20,14 @@ const (
 	traceSizeMetricName  = "otelcol_odigos_trace_data_size_bytes_total"
 	metricSizeMetricName = "otelcol_odigos_metric_data_size_bytes_total"
 	logSizeMetricName    = "otelcol_odigos_log_data_size_bytes_total"
+
+	// Collector 0.159 applies its Prometheus reader defaults to explicitly configured
+	// readers. In particular, units and type suffixes are omitted, so these metrics
+	// no longer necessarily have the legacy "_bytes_total" suffix. Keep accepting
+	// both forms to support rolling upgrades with mixed collector versions.
+	traceSizeMetricNameRaw  = "otelcol_odigos_trace_data_size"
+	metricSizeMetricNameRaw = "otelcol_odigos_metric_data_size"
+	logSizeMetricNameRaw    = "otelcol_odigos_log_data_size"
 )
 
 var (
@@ -72,6 +80,7 @@ func (c *OdigosMetricsConsumer) Capabilities() consumer.Capabilities {
 }
 
 func newTrafficMetrics(metricName string, dp pmetric.NumberDataPoint) *trafficMetrics {
+	metricName = normalizeTrafficMetricName(metricName)
 	tm := &trafficMetrics{
 		lastUpdate: dp.Timestamp().AsTime(),
 	}
@@ -86,6 +95,19 @@ func newTrafficMetrics(metricName string, dp pmetric.NumberDataPoint) *trafficMe
 	}
 
 	return tm
+}
+
+func normalizeTrafficMetricName(metricName string) string {
+	switch metricName {
+	case traceSizeMetricNameRaw:
+		return traceSizeMetricName
+	case metricSizeMetricNameRaw:
+		return metricSizeMetricName
+	case logSizeMetricNameRaw:
+		return logSizeMetricName
+	default:
+		return metricName
+	}
 }
 
 func (c *OdigosMetricsConsumer) runNotificationsLoop(ctx context.Context) {

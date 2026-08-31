@@ -122,8 +122,10 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 					"pull": config.GenericMap{
 						"exporter": config.GenericMap{
 							"prometheus": config.GenericMap{
-								"host": "0.0.0.0",
-								"port": ownTelemetryPort,
+								"host":                "0.0.0.0",
+								"port":                ownTelemetryPort,
+								"without_units":       false,
+								"without_type_suffix": false,
 							},
 						},
 					},
