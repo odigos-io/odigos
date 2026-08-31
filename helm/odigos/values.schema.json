@@ -618,8 +618,24 @@
       "title": "ignoredContainers"
     },
     "ignoredNamespaces": {
-      "default": "",
-      "description": "namespaces list not to show in odigos ui\nset by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease\nyou can add additional namespaces to ignore by adding them to the list",
+      "description": "namespaces list not to show in odigos ui\nsetting this value replaces the entire list (it does not merge with the defaults)\nthe Odigos install namespace is controlled separately by ignoreOdigosNamespace\nOpenShift system namespaces are still added automatically when openshift.enabled is true",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "required": []
+      },
       "required": [],
       "title": "ignoredNamespaces"
     },

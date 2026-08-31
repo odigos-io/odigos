@@ -26,14 +26,6 @@ const (
 var MinK8SVersionForInstallation = version.MustParse("v1.20.15-0")
 
 var (
-	// Default ignored namespaces
-	DefaultIgnoredNamespaces = []string{
-		"local-path-storage",
-		"istio-system",
-		"linkerd",
-		"kube-node-lease",
-	}
-
 	// Openshift namespaces
 	OpenshiftIgnoredNamespaces = []string{
 		"openshift",

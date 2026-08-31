@@ -102,12 +102,12 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 		return ctrl.Result{}, err
 	}
 
-	// make sure the default ignored namespaces are always present
-	defaultIgnoredNamespaces := k8sconsts.DefaultIgnoredNamespaces
+	// OpenShift system namespaces are always merged when openshift is enabled.
+	// Other defaults come from Helm ignoredNamespaces and are not re-merged here,
+	// so users can replace that list entirely.
 	if odigosConfiguration.OpenshiftEnabled {
-		defaultIgnoredNamespaces = append(defaultIgnoredNamespaces, k8sconsts.OpenshiftIgnoredNamespaces...)
+		odigosConfiguration.IgnoredNamespaces = mergeIgnoredItemLists(odigosConfiguration.IgnoredNamespaces, k8sconsts.OpenshiftIgnoredNamespaces)
 	}
-	odigosConfiguration.IgnoredNamespaces = mergeIgnoredItemLists(odigosConfiguration.IgnoredNamespaces, defaultIgnoredNamespaces)
 
 	currentNamespace := env.GetCurrentNamespace()
 	// Only add the current namespace to ignored namespaces if ignoreOdigosNamespace is not explicitly set to false

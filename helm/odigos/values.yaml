@@ -39,10 +39,15 @@ images: {}
 # @schema
 # description: |-
 #   namespaces list not to show in odigos ui
-#   set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease
-#   you can add additional namespaces to ignore by adding them to the list
+#   setting this value replaces the entire list (it does not merge with the defaults)
+#   the Odigos install namespace is controlled separately by ignoreOdigosNamespace
+#   OpenShift system namespaces are still added automatically when openshift.enabled is true
 # @schema
 ignoredNamespaces:
+  - local-path-storage
+  - istio-system
+  - linkerd
+  - kube-node-lease
 
 # @schema
 # description: |-
