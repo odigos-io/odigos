@@ -57,10 +57,15 @@ ignoreOdigosNamespace: true
 # description: |-
 #   container names to never instrument
 #   useful for sidecars which are not interesting to be instrumented
-#   set by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init
-#   you can add additional container names to ignore by adding them to the list
+#   setting this value replaces the entire list (it does not merge with the defaults)
 # @schema
 ignoredContainers:
+  - istio-proxy
+  - vault-agent
+  - filebeat
+  - linkerd-proxy
+  - fluentd
+  - akeyless-init
 
 # @schema
 # description: Name of the cluster, will be used to identify this cluster in the centralized backend

@@ -97,9 +97,6 @@ var (
 		"openshift-user-workload-monitoring",
 		"openshift-vsphere-infra",
 	}
-
-	// Default ignored container names
-	DefaultIgnoredContainers = []string{"istio-proxy", "vault-agent", "filebeat", "linkerd-proxy", "fluentd", "akeyless-init"}
 )
 
 const (

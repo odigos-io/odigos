@@ -590,8 +590,30 @@
       "title": "ignoreOdigosNamespace"
     },
     "ignoredContainers": {
-      "default": "",
-      "description": "container names to never instrument\nuseful for sidecars which are not interesting to be instrumented\nset by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init\nyou can add additional container names to ignore by adding them to the list",
+      "description": "container names to never instrument\nuseful for sidecars which are not interesting to be instrumented\nsetting this value replaces the entire list (it does not merge with the defaults)",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "required": []
+      },
       "required": [],
       "title": "ignoredContainers"
     },

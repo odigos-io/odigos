@@ -118,9 +118,6 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 		odigosConfiguration.IgnoredNamespaces = removeItemFromList(odigosConfiguration.IgnoredNamespaces, currentNamespace)
 	}
 
-	// make sure the default ignored containers are always present
-	odigosConfiguration.IgnoredContainers = mergeIgnoredItemLists(odigosConfiguration.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
-
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfiguration)
 	odigosConfiguration.Profiles = effectiveProfiles
 
