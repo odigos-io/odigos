@@ -618,7 +618,7 @@
       "title": "ignoredContainers"
     },
     "ignoredNamespaces": {
-      "description": "Namespaces ignored by the Odigos UI.\nThe Odigos install namespace is ignored by default; set ignoreOdigosNamespace to false to show it.\nWhen openshift.enabled is true, OpenShift system namespaces are also ignored automatically.",
+      "description": "Namespaces excluded from the Odigos UI so system and infrastructure namespaces\n(service meshes, local storage, lease holders, etc.) do not clutter the sources list.\nThe Odigos install namespace is ignored by default; set ignoreOdigosNamespace to false to show it.\nWhen openshift.enabled is true, OpenShift system namespaces are also ignored automatically.",
       "items": {
         "anyOf": [
           {

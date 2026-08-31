@@ -38,7 +38,8 @@ images: {}
 
 # @schema
 # description: |-
-#   Namespaces ignored by the Odigos UI.
+#   Namespaces excluded from the Odigos UI so system and infrastructure namespaces
+#   (service meshes, local storage, lease holders, etc.) do not clutter the sources list.
 #   The Odigos install namespace is ignored by default; set ignoreOdigosNamespace to false to show it.
 #   When openshift.enabled is true, OpenShift system namespaces are also ignored automatically.
 # @schema
