@@ -267,7 +267,8 @@ func insertRootPipelinesToConfig(currentConfig *config.Config,
 	signals []common.ObservabilitySignal, hasTracesDestination bool, gatewayOptions *GatewayConfigOptions) {
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
 		if traceAggregationNeeded(gatewayOptions) {
-			applySplitTracesRootPipelines(currentConfig, tracesProcessors, tracesPostForwardProcessors, gatewayOptions.OdigosConfigExtensionName, hasTracesDestination)
+			applySplitTracesRootPipelines(currentConfig, tracesProcessors, tracesPostForwardProcessors,
+				gatewayOptions.OdigosConfigExtensionName, hasTracesDestination)
 		} else {
 			allTracesProcessors := append(slices.Clone(tracesProcessors), tracesPostForwardProcessors...)
 			applyRootPipelineForSignal(currentConfig, common.TracesObservabilitySignal, allTracesProcessors, gatewayOptions.OdigosConfigExtensionName)
