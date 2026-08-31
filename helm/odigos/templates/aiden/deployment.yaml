@@ -1,0 +1,216 @@
+{{- if .Values.aiden.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-aiden
+    odigos.io/system-object: "true"
+  name: {{ .Values.aiden.deploymentName | default "odigos-aiden" }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-aiden
+  strategy:
+    # Single replica with local ephemeral state (Slack Socket Mode connection, /home/node/.openclaw);
+    # avoid two pods running the same OpenClaw gateway identity at once during a rollout.
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odigos-aiden
+    spec:
+      {{- if .Values.aiden.nodeSelector }}
+      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
+      nodeSelector:
+      {{- toYaml .Values.aiden.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      # Global nodeSelector from values.yaml
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: odigos-aiden
+        {{- end }}
+      {{- end }}
+      {{- if .Values.aiden.priorityClassName }}
+      priorityClassName: {{ .Values.aiden.priorityClassName }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # The OpenClaw gateway config directory must be seeded before the gateway starts.
+        # Seed-if-missing: /home/node/.openclaw is a plain emptyDir here (no PVC), so it is
+        # reseeded on every pod (re)start; OpenClaw itself still owns the file once running
+        # (onboard, channels add, doctor --fix, Control UI edits) for the lifetime of that pod.
+        # openclaw.json comes from the odigos-aiden-config ConfigMap; AGENTS.md is bundled in
+        # the Aiden image (see odigos-enterprise/aiden/AGENTS.md).
+        - name: init-config
+          image: "{{ .Values.aiden.image.repository }}:{{ .Values.aiden.image.tag }}"
+          imagePullPolicy: {{ .Values.aiden.image.pullPolicy | default "IfNotPresent" }}
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              [ -f /home/node/.openclaw/openclaw.json ] || cp /config/openclaw.json /home/node/.openclaw/openclaw.json
+              mkdir -p /home/node/.openclaw/workspace
+              [ -f /home/node/.openclaw/workspace/AGENTS.md ] || cp /app/aiden/AGENTS.md /home/node/.openclaw/workspace/AGENTS.md
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: openclaw-home
+              mountPath: /home/node/.openclaw
+            - name: config
+              mountPath: /config
+      containers:
+      - name: aiden
+        image: "{{ .Values.aiden.image.repository }}:{{ .Values.aiden.image.tag }}"
+        imagePullPolicy: {{ .Values.aiden.image.pullPolicy | default "IfNotPresent" }}
+        # Official OpenClaw gateway entrypoint; see https://docs.openclaw.dev/install/kubernetes.
+        command:
+          - node
+          - /app/dist/index.js
+          - gateway
+          - run
+        ports:
+          - containerPort: 18789
+            name: gateway
+            protocol: TCP
+        env:
+          - name: HOME
+            value: /home/node
+          - name: OPENCLAW_CONFIG_DIR
+            value: /home/node/.openclaw
+          - name: NODE_ENV
+            value: production
+          - name: GEMINI_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: odigos-aiden
+                key: gemini-api-key
+          # Env fallback consumed by openclaw.json's channels.slack (mode: socket) for the
+          # default Slack account; see /home/node/.openclaw/openclaw.json.
+          - name: SLACK_APP_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: odigos-aiden
+                key: slack-app-token
+          - name: SLACK_BOT_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: odigos-aiden
+                key: slack-bot-token
+          # Jaeger skill reads endpoints from Helm-rendered config (not baked into the image).
+          - name: JAEGER_SKILL_CONFIG
+            value: /config/jaeger-config.json
+          - name: GOMEMLIMIT
+            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.aiden.resources) }}
+        # Probes assert the JSON probe contract, not just the HTTP status code: the OpenClaw
+        # Control UI serves a catch-all 200 for unknown paths, so a status-only httpGet probe
+        # would pass forever even against a broken or mismatched gateway build.
+        startupProbe:
+          exec:
+            command:
+              - node
+              - -e
+              - "require('http').get('http://127.0.0.1:18789/readyz', r => { let b = ''; r.on('data', d => b += d); r.on('end', () => { try { process.exit(r.statusCode < 400 && JSON.parse(b).ready === true ? 0 : 1); } catch { process.exit(1); } }); }).on('error', () => process.exit(1))"
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+        livenessProbe:
+          exec:
+            command:
+              - node
+              - -e
+              - "require('http').get('http://127.0.0.1:18789/healthz', r => { let b = ''; r.on('data', d => b += d); r.on('end', () => { try { process.exit(r.statusCode < 400 && JSON.parse(b).ok === true ? 0 : 1); } catch { process.exit(1); } }); }).on('error', () => process.exit(1))"
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+              - node
+              - -e
+              - "require('http').get('http://127.0.0.1:18789/readyz', r => { let b = ''; r.on('data', d => b += d); r.on('end', () => { try { process.exit(r.statusCode < 400 && JSON.parse(b).ready === true ? 0 : 1); } catch { process.exit(1); } }); }).on('error', () => process.exit(1))"
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+{{ toYaml .Values.aiden.resources | indent 10 }}
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+          - name: openclaw-home
+            mountPath: /home/node/.openclaw
+          - name: openclaw-cache
+            mountPath: /home/node/.cache
+          - name: config
+            mountPath: /config
+            readOnly: true
+          - name: tmp-volume
+            mountPath: /tmp
+      serviceAccountName: odigos-aiden
+      terminationGracePeriodSeconds: 10
+      volumes:
+        # No PVC: Aiden's session/credential state does not need to survive pod restarts for
+        # this initial chart integration. The init container reseeds openclaw.json from the
+        # odigos-aiden-config ConfigMap and AGENTS.md from the Aiden image on every pod start.
+        # Attach a PVC at this mount point instead if persisted OpenClaw state (channel pairing,
+        # session history) across restarts is required.
+        - name: openclaw-home
+          emptyDir: {}
+        - name: openclaw-cache
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: odigos-aiden-config
+        - name: tmp-volume
+          emptyDir: {}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.imagePullSecrets }}
+        - name: {{ . | quote }}
+      {{- end }}
+      {{- end }}
+{{- with .Values.aiden }}
+  {{- if .tolerations }}
+      tolerations: {{ toYaml .tolerations | nindent 8 }}
+  {{- end }}
+  {{- if .affinity }}
+      affinity: {{ toYaml .affinity | nindent 8 }}
+  {{- end }}
+{{- end }}
+{{- end }}

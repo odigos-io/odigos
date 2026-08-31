@@ -63,6 +63,26 @@ true
 {{- end -}}
 {{- end -}}
 
+{{- define "odigos.validateAiden" -}}
+{{- if .Values.aiden.enabled -}}
+{{- if not (include "odigos.secretExists" .) -}}
+{{- fail "aiden.enabled is true, but Aiden requires Odigos Enterprise (a valid on-prem token) to reach the Enterprise MCP server. Set onPremToken, or ensure the odigos-pro secret exists, before enabling aiden." -}}
+{{- end -}}
+{{- if not .Values.ui.mcp.enabled -}}
+{{- fail "aiden.enabled is true, but ui.mcp.enabled is false. Aiden talks to the cluster exclusively through the Enterprise MCP server mounted on the ui Service; set ui.mcp.enabled to true (the default) to use aiden." -}}
+{{- end -}}
+{{- if not .Values.aiden.gemini.key -}}
+{{- fail "aiden.enabled is true, but aiden.gemini.key is empty. Provide a Google Gemini API key so Aiden can reach its LLM backend." -}}
+{{- end -}}
+{{- if not .Values.aiden.slack.key -}}
+{{- fail "aiden.enabled is true, but aiden.slack.key is empty. Provide a Slack app-level token (xapp-...) so Aiden can open its Socket Mode connection." -}}
+{{- end -}}
+{{- if not .Values.aiden.slack.botToken -}}
+{{- fail "aiden.enabled is true, but aiden.slack.botToken is empty. Provide a Slack bot user OAuth token (xoxb-...) so Aiden can call the Slack Web API." -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "odigos.enterpriseRegistryDockerConfigJson" -}}
 {{- $token := include "odigos.onPremToken" . -}}
 {{- $auth := printf "odigos:%s" $token | b64enc -}}
