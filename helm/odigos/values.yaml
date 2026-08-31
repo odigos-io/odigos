@@ -38,10 +38,9 @@ images: {}
 
 # @schema
 # description: |-
-#   namespaces list not to show in odigos ui
-#   setting this value replaces the entire list (it does not merge with the defaults)
-#   the Odigos install namespace is controlled separately by ignoreOdigosNamespace
-#   OpenShift system namespaces are still added automatically when openshift.enabled is true
+#   Namespaces ignored by the Odigos UI.
+#   The Odigos install namespace is ignored by default; set ignoreOdigosNamespace to false to show it.
+#   When openshift.enabled is true, OpenShift system namespaces are also ignored automatically.
 # @schema
 ignoredNamespaces:
   - local-path-storage
@@ -62,7 +61,6 @@ ignoreOdigosNamespace: true
 # description: |-
 #   container names to never instrument
 #   useful for sidecars which are not interesting to be instrumented
-#   setting this value replaces the entire list (it does not merge with the defaults)
 # @schema
 ignoredContainers:
   - istio-proxy

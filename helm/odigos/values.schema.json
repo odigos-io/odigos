@@ -590,7 +590,7 @@
       "title": "ignoreOdigosNamespace"
     },
     "ignoredContainers": {
-      "description": "container names to never instrument\nuseful for sidecars which are not interesting to be instrumented\nsetting this value replaces the entire list (it does not merge with the defaults)",
+      "description": "container names to never instrument\nuseful for sidecars which are not interesting to be instrumented",
       "items": {
         "anyOf": [
           {
@@ -618,7 +618,7 @@
       "title": "ignoredContainers"
     },
     "ignoredNamespaces": {
-      "description": "namespaces list not to show in odigos ui\nsetting this value replaces the entire list (it does not merge with the defaults)\nthe Odigos install namespace is controlled separately by ignoreOdigosNamespace\nOpenShift system namespaces are still added automatically when openshift.enabled is true",
+      "description": "Namespaces ignored by the Odigos UI.\nThe Odigos install namespace is ignored by default; set ignoreOdigosNamespace to false to show it.\nWhen openshift.enabled is true, OpenShift system namespaces are also ignored automatically.",
       "items": {
         "anyOf": [
           {
