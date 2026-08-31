@@ -54,6 +54,7 @@ type Odiglet struct {
 	criClient               *criwrapper.CriClient
 	obiManager              *obisdk.Manager
 	runnables               []Runnable
+	metricsCollector        *ebpfMetrics.EBPFMetricsCollector
 }
 
 // AddRunnable registers a task to run inside Odiglet.Run's errgroup. Call before Run; safe to
@@ -148,7 +149,7 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 
 	ebpfLogger := commonlogger.LoggerCompat().With("subsystem", "ebpfmanager")
 	metricsLogger := commonlogger.LoggerCompat().With("subsystem", "ebpfmetrics")
-	collector := ebpfMetrics.NewEBPFMetricsCollector(env.Current.NodeName, metricsLogger)
+	collector := ebpfMetrics.NewEBPFMetricsCollector(env.Current.NodeName, metricsLogger, instrumentationMgrOpts.MapMemoryReporter)
 	if err := collector.RegisterMetrics(); err != nil {
 		metricsLogger.Error("failed to register metrics", "err", err)
 	}
@@ -191,12 +192,21 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		instrumentationRequests: instrumentationRequests,
 		criClient:               &criWrapper,
 		obiManager:              obiManager,
+		metricsCollector:        collector,
 	}, nil
 }
 
 func (o *Odiglet) builtInRunnables(ebpfDone chan struct{}, logger *commonlogger.OdigosLogger) []Runnable {
 	odigosNs := env.GetCurrentNamespace()
 	runnables := []Runnable{
+		Runnable{
+			Name: "eBPF metrics reconciler",
+			// Refreshing metrics is never worth taking odiglet down for.
+			PropagateErr: false,
+			Run: func(ctx context.Context) error {
+				return o.metricsCollector.Reconcile(ctx)
+			},
+		},
 		Runnable{
 			Name: "pprof server",
 			// if we fail to start the pprof server, don't return an error as it is not critical
