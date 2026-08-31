@@ -23,7 +23,44 @@
 {{- end -}}
 {{- $privilegedRequired := or $collectLogs $collectMetrics -}}
 {{- $k8sVersion := include "utils.cleanKubeVersion" . }}
-{{- if and $privilegedRequired .Values.odiglet.unPrivileged }}
+{{- $profile := .Values.odiglet.securityProfile | default "legacy" -}}
+{{- $tracefsHostPath := .Values.odiglet.tracefsHostPath | default "/sys/kernel" -}}
+{{- $unprivileged := or .Values.odiglet.unPrivileged (ne $profile "legacy") -}}
+{{- /* The host mounts are orthogonal to the privilege profile: noHostPathMounts
+       withholds them and nothing else does, so unprivileged, noHostPathMounts,
+       and both together are three separate choices. */ -}}
+{{- $hostPathMounts := not .Values.odiglet.noHostPathMounts -}}
+{{- $runAsUser := 1000 -}}
+{{- /* The capability sets, in order of increasing authority: what the legacy
+       boolean has always granted, what a profile grants, and what an operator
+       asked for explicitly. */ -}}
+{{- /* SETUID and SETGID are for jattach, which instruments Java processes
+       dynamically. */ -}}
+{{- $odigletCaps := list "SYS_ADMIN" "BPF" "PERFMON" "SYS_PTRACE" "DAC_READ_SEARCH" "IPC_LOCK" "SYS_RESOURCE" "SETUID" "SETGID" -}}
+{{- $dataCollectionCaps := list "SYS_ADMIN" "BPF" "PERFMON" "IPC_LOCK" -}}
+{{- if ne $profile "legacy" -}}
+  {{- /* CAP_DAC_OVERRIDE alone, not CAP_FOWNER and not alongside
+         CAP_DAC_READ_SEARCH, which it subsumes: it bypasses the read and
+         search checks as well as the write. The tracing filesystem's root is
+         0700 and uprobe_events 0600, both root's, and the agent reaches them
+         by being excused from the permission check rather than by widening
+         the modes and putting them back - so nothing the rest of the node can
+         see ever changes. It is also what writes the agent directory and the
+         device plugin socket, hostPaths the kubelet creates owned by root
+         that fsGroup does not apply to, and what reads a target's
+         /proc/<pid>/environ. */ -}}
+  {{- $odigletCaps = list "BPF" "PERFMON" "SYS_PTRACE" "DAC_OVERRIDE" -}}
+  {{- $dataCollectionCaps = list -}}
+{{- end -}}
+{{- with .Values.odiglet.odiglet.capabilities -}}{{- $odigletCaps = . -}}{{- end -}}
+{{- with .Values.odiglet.dataCollection.capabilities -}}{{- $dataCollectionCaps = . -}}{{- end -}}
+{{- $wasp := or .Values.wasp.enabled (ne $profile "legacy") -}}
+{{- /* The unprivileged attach interfaces are an enterprise capability. An OSS
+       deployment gets the legacy profile, which is what it has always had. */ -}}
+{{- if and (ne $profile "legacy") (not (include "odigos.secretExists" .)) }}
+{{ fail (printf "odiglet.securityProfile=%s requires Odigos Enterprise; set onPremToken, or use securityProfile=legacy" $profile) }}
+{{- end }}
+{{- if and $privilegedRequired $unprivileged }}
 {{ fail "privileged mode is required when collecting logs or metrics, this is currently not supported in unprivileged mode" }}
 {{- end }}
 {{- if and $networkMetricsEnabled .Values.odiglet.noHostNetwork }}
@@ -54,7 +91,7 @@ spec:
         app.kubernetes.io/name: odiglet
         odigos.io/collector-role: NODE_COLLECTOR
       annotations:
-        {{- if and (.Values.odiglet.unPrivileged) (semverCompare "<1.30.0" $k8sVersion) }}
+        {{- if and $unprivileged (semverCompare "<1.30.0" $k8sVersion) }}
         # Prior to Kubernetes v1.30, AppArmor profile was specified through annotations.
         container.apparmor.security.beta.kubernetes.io/odiglet: unconfined
         {{- end }}
@@ -82,11 +119,11 @@ spec:
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
-            - /root/odiglet
+            - /usr/local/bin/odiglet
           args:
             - init
           volumeMounts:
-          {{- if not .Values.odiglet.noHostPathMounts}}
+          {{- if $hostPathMounts }}
             - name: odigos
               mountPath: /var/odigos
           {{- if .Values.openshift.enabled }}
@@ -99,8 +136,19 @@ spec:
           {{- end }}
           {{- end }}
           securityContext:
-          {{- if not .Values.odiglet.unPrivileged}}
+          {{- if not $unprivileged }}
             privileged: true
+          {{- end }}
+          {{- if ne $profile "legacy" }}
+            runAsUser: {{ $runAsUser }}
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              {{- if $hostPathMounts }}
+              add:
+                - DAC_OVERRIDE
+              {{- end }}
           {{- end }}
           env:
             - name: NODE_NAME
@@ -139,6 +187,20 @@ spec:
           image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "agents" "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
+          {{- if $unprivileged }}
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            {{- /* It runs nothing, so it needs no uid of its own; naming one is
+                   what keeps a profile's promise that no container in this
+                   daemonset runs as root. */}}
+            {{- if ne $profile "legacy" }}
+            runAsUser: {{ $runAsUser }}
+            {{- end }}
+          {{- end }}
           # # it does not run any actual code, just pulls the image
           # we add the resources here to make sure any policy that may validate resources exist
           # is satisfied, there should be no need to configure this as this is not running anything.
@@ -165,24 +227,47 @@ spec:
           {{- if .Values.odiglet.traceIdSuffix }}
             - --trace-id-suffix={{ .Values.odiglet.traceIdSuffix }}
           {{- end }}
-          {{- if .Values.wasp.enabled }}
+          {{- if $wasp }}
             - --wasp-enabled
           {{- end }}
           command:
-            - /root/odiglet
+            - /usr/local/bin/odiglet
           imagePullPolicy: IfNotPresent
           securityContext:
-            {{- if not .Values.odiglet.unPrivileged }}
+            {{- if not $unprivileged }}
             privileged: true
             {{- else }}
             privileged: false
+            {{- if ne $profile "legacy" }}
+            runAsUser: {{ $runAsUser }}
+            runAsGroup: {{ $runAsUser }}
+            # Deliberate. A uid change at exec clears the permitted set, so a
+            # non-root process receives capabilities only from the binary's
+            # file attributes, and no_new_privs is exactly what makes the
+            # kernel ignore them. Only the profiles run non-root;
+            # odiglet.unPrivileged never did.
+            allowPrivilegeEscalation: true
+            {{- end }}
             capabilities:
+              {{- with $odigletCaps }}
               add:
-              {{- with .Values.odiglet.odiglet.capabilities }}
               {{- toYaml . | nindent 14 }}
               {{- end }}
               drop:
                 - ALL
+            {{- /* An SELinux-enforcing node may confine the odiglet to a domain
+                   that cannot inspect the processes it instruments, whatever
+                   capabilities it holds, because the LSM is checked before the
+                   DAC. Bottlerocket is the case in hand: its container_t denies
+                   even "search" on another process's /proc directory, and
+                   control_t is the narrowest of its three types that does not.
+                   Set per deployment rather than derived from a platform flag,
+                   because the domain that works is the node's policy to
+                   decide and not something a chart can know. */ -}}
+            {{- with .Values.odiglet.odiglet.seLinuxOptions }}
+            seLinuxOptions:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
             # for Kubernetes >= 1.30 we can specify AppArmor profile in securityContext
             {{- if semverCompare ">=1.30.0" $k8sVersion }}
             {{- with .Values.odiglet.odiglet.appArmorProfile }}
@@ -233,7 +318,7 @@ spec:
             - name: ODIGOS_PROC_DIR
               value: /hostproc
           {{- end}}
-          {{- if not .Values.odiglet.noHostPathMounts }}
+          {{- if $hostPathMounts }}
             - name: ODIGOS_CGROUP_ROOT
               value: /host/sys/fs/cgroup
           {{- end }}
@@ -246,7 +331,7 @@ spec:
                 name: odigos-own-telemetry-otel-config
                 optional: true
           volumeMounts:
-          {{- if not .Values.odiglet.noHostPathMounts }}
+          {{- if $hostPathMounts }}
             - name: run-dir
               mountPath: /run
              {{- if .Values.odiglet.customContainerRuntimeSocketPath }}
@@ -278,7 +363,7 @@ spec:
           {{- end }}
              # needed to load eBPF tracepoints - used by runtime-detector
             - name: sys-kernel
-              mountPath: /sys/kernel
+              mountPath: {{ $tracefsHostPath }}
             - name: odigos-go-offsets
               mountPath: /offsets
             - name: exchange-dir
@@ -300,9 +385,14 @@ spec:
             privileged: true
             {{- else }}
             privileged: false
+            {{- if ne $profile "legacy" }}
+            runAsUser: {{ $runAsUser }}
+            runAsGroup: {{ $runAsUser }}
+            allowPrivilegeEscalation: false
+            {{- end }}
             capabilities:
+              {{- with $dataCollectionCaps }}
               add:
-              {{- with .Values.odiglet.dataCollection.capabilities }}
               {{- toYaml . | nindent 14 }}
               {{- end }}
               drop:
@@ -388,12 +478,12 @@ spec:
               readOnly: true
             {{- end }}
             - name: sys-kernel
-              mountPath: /sys/kernel
+              mountPath: {{ $tracefsHostPath }}
               readOnly: true
             - name: exchange-dir
               mountPath: /var/exchange
 # if hostMounts are not allowed we must use mountMethod of "k8s-init-container"
-{{- if and (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) (.Values.odiglet.noHostPathMounts) }}
+{{- if and (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) (not $hostPathMounts) }}
 {{ fail "if HostPath mounts are not allowed mount method must be k8s-init-container" }}
 {{- end }}
 # if runAsNonRoot is set, we must be using mountMethod of "k8s-init-container", since copying/writing files on the host (/var/odigos) requires root privileges
@@ -411,7 +501,20 @@ spec:
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
-            - /root/deviceplugin
+            - /usr/local/bin/deviceplugin
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              {{- if and (ne $profile "legacy") $hostPathMounts }}
+              add:
+                - DAC_OVERRIDE
+              {{- end }}
+            {{- if ne $profile "legacy" }}
+            runAsUser: {{ $runAsUser }}
+            {{- end }}
           env:
             - name: NODE_NAME
               valueFrom:
@@ -435,7 +538,7 @@ spec:
           livenessProbe:
             exec:
               command:
-                - /root/grpc_health_probe
+                - /usr/local/bin/grpc_health_probe
                 - -addr=unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic
                 - -connect-timeout=10s
                 - -rpc-timeout=10s
@@ -443,14 +546,14 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /root/grpc_health_probe
+                - /usr/local/bin/grpc_health_probe
                 - -addr=unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic
                 - -connect-timeout=10s
                 - -rpc-timeout=10s
 {{- toYaml .Values.odiglet.deviceplugin.readinessProbe | nindent 12 }}
 {{- end }}
 # CSI driver is only supported in privileged mode
-{{- if and (eq .Values.instrumentor.mountMethod "k8s-csi-driver") .Values.odiglet.unPrivileged }}
+{{- if and (eq .Values.instrumentor.mountMethod "k8s-csi-driver") $unprivileged }}
 {{ fail "CSI driver mount method requires privileged mode, this is not supported in unprivileged mode" }}
 {{- end }}
 {{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}
@@ -461,7 +564,7 @@ spec:
           image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           command:
-            - /root/odigos-csi-driver
+            - /usr/local/bin/odigos-csi-driver
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -478,7 +581,7 @@ spec:
               mountPropagation: Bidirectional
             - name: registration-dir
               mountPath: /registration
-            {{- if not .Values.odiglet.noHostPathMounts }}
+            {{- if $hostPathMounts }}
             - name: odigos
               mountPath: /var/odigos
             {{- end }}
@@ -487,7 +590,7 @@ spec:
           livenessProbe:
             exec:
               command:
-                - /root/grpc_health_probe
+                - /usr/local/bin/grpc_health_probe
                 - -addr=unix:///csi/csi.sock
                 - -connect-timeout=10s
                 - -rpc-timeout=10s
@@ -495,7 +598,7 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /root/grpc_health_probe
+                - /usr/local/bin/grpc_health_probe
                 - -addr=unix:///csi/csi.sock
                 - -connect-timeout=10s
                 - -rpc-timeout=10s
@@ -533,7 +636,7 @@ spec:
           hostPath:
             path: /
         {{- end }}
-      {{- if not .Values.odiglet.noHostPathMounts }}
+      {{- if $hostPathMounts }}
         - name: run-dir
           hostPath:
             path: /run
@@ -585,8 +688,8 @@ spec:
       {{- end }}
         - name: sys-kernel
           hostPath:
-            path: /sys/kernel
-      {{- if not .Values.odiglet.noHostPathMounts }}
+            path: {{ $tracefsHostPath }}
+      {{- if $hostPathMounts }}
         - name: host-cgroup
           hostPath:
             path: /sys/fs/cgroup
@@ -608,7 +711,13 @@ spec:
 {{- end }}
       # Force UID 0 unless runAsNonRoot is opted in; otherwise image USER (non-zero) is used.
       securityContext:
-      {{- if .Values.odiglet.runAsNonRoot }}
+      {{- if ne $profile "legacy" }}
+        # A profile runs every container in this daemonset as a non-root uid,
+        # so the pod must not force 0 over them. fsGroup gives the agent a
+        # group of its own for the paths it writes.
+        runAsNonRoot: true
+        fsGroup: {{ $runAsUser }}
+      {{- else if .Values.odiglet.runAsNonRoot }}
         runAsNonRoot: true
       {{- else }}
         runAsUser: 0

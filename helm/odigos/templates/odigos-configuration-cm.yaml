@@ -287,8 +287,8 @@ data:
     {{- if .Values.allowConcurrentAgents.enabled }}
     allowConcurrentAgents: {{ .Values.allowConcurrentAgents.enabled }}
     {{- end }}
-    {{- if .Values.wasp.enabled }}
-    waspEnabled: {{ .Values.wasp.enabled }}
+    {{- if or .Values.wasp.enabled (ne (.Values.odiglet.securityProfile | default "legacy") "legacy") }}
+    waspEnabled: true
     {{- end }}
     {{- if .Values.goAutoOffsetsCron }}
     goAutoOffsetsCron: {{ .Values.goAutoOffsetsCron }}

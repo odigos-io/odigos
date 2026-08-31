@@ -167,7 +167,11 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # File capabilities so the binary can use eBPF privileges when run as non-root.
 # Setting this caps as the permitted set (=p) so that the binary can be executed with a sub set of these capabilities
 # if the environment does not require all of them. A sub-set can be configured with helm values.
-RUN setcap cap_bpf,cap_perfmon,cap_sys_admin,cap_sys_ptrace,cap_dac_read_search,cap_ipc_lock,cap_sys_resource,cap_setuid,cap_setgid=p ./odiglet
+#
+# CAP_DAC_OVERRIDE opens the tracing filesystem's root-owned files, and the
+# root-owned hostPaths, for this process alone - without changing a mode, so
+# nothing the rest of the node can see is widened even briefly.
+RUN setcap cap_bpf,cap_perfmon,cap_sys_admin,cap_sys_ptrace,cap_dac_read_search,cap_dac_override,cap_ipc_lock,cap_sys_resource,cap_setuid,cap_setgid=p ./odiglet
 RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi
@@ -237,29 +241,29 @@ LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
-COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+COPY --from=builder /tmp/grpc_health_probe /usr/local/bin/grpc_health_probe
 COPY --from=agents-builder /instrumentations/ /instrumentations/
-COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
-COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
+COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /usr/local/bin/deviceplugin
+COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /usr/local/bin/odigos-csi-driver
 
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /usr/local/bin/odiglet
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
 # make sure we run as non root user
 # this is required when this container is added to a pod that has runAsNonRoot: true
 USER 65532:65532
-CMD ["/root/odiglet"]
+CMD ["/usr/local/bin/odiglet"]
 
 ######### Default Odiglet #########
 FROM gcr.io/distroless/base@sha256:f4a335ca209e1d2ee873102c17c389ad0142e3d5b21aee2817e9cc9c01d87d20
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
-COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+COPY --from=builder /tmp/grpc_health_probe /usr/local/bin/grpc_health_probe
 COPY --from=agents-builder /instrumentations/ /instrumentations/
-COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
-COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
+COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /usr/local/bin/deviceplugin
+COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /usr/local/bin/odigos-csi-driver
 
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /usr/local/bin/odiglet
 # make sure we run as non root user
 # this is required when this container is added to a pod that has runAsNonRoot: true
 USER 65532:65532
-CMD ["/root/odiglet"]
+CMD ["/usr/local/bin/odiglet"]

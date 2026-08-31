@@ -907,18 +907,22 @@ odiglet:
     #   IPC_LOCK required for mmap of perf buffers
     #   SYS_RESOURCE required only for kernels < 5.11, used for setting rlimit for BPF maps
     # @schema
-    capabilities:
-      - SYS_ADMIN
-      - BPF
-      - PERFMON
-      - SYS_PTRACE
-      - DAC_READ_SEARCH
-      - IPC_LOCK
-      - SYS_RESOURCE
-      # required for jattach - dynamically instrumenting java processes.
-      - SETUID
-      # required for jattach - dynamically instrumenting java processes.
-      - SETGID
+    capabilities: []
+
+    # @schema
+    # type: [object, "null"]
+    # additionalProperties: true
+    # description: |-
+    #   seLinuxOptions for the odiglet container, passed through to its
+    #   securityContext.
+    #   An SELinux-enforcing node may confine the odiglet to a domain that
+    #   cannot inspect the processes it instruments, whatever capabilities it
+    #   holds - the LSM is checked before file permissions are. On Bottlerocket
+    #   the default container_t denies even "search" on another process's /proc
+    #   directory; set type: control_t, which is the narrowest of its three
+    #   types that works. Leave empty on nodes that do not enforce SELinux.
+    # @schema
+    seLinuxOptions:
 
     # @schema
     # description: |-
@@ -957,11 +961,36 @@ odiglet:
     #    1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
     #    2. kernel.perf_event_paranoid sysctl is set to 2 or higher
     # @schema
-    capabilities:
-      - SYS_ADMIN
-      - BPF
-      - PERFMON
-      - IPC_LOCK
+    capabilities: []
+
+  # @schema
+  # description: |-
+  #   Privilege preset for the odiglet daemonset.
+  #   legacy: the odiglet runs privileged. The only profile Odigos OSS supports,
+  #     and the one to use on kernels older than 5.8, which have no CAP_BPF.
+  #   unprivileged: no privileged container anywhere in the daemonset. The
+  #     odiglet runs as a non-root uid holding capabilities from the binary's
+  #     own file attributes. Requires Odigos Enterprise and
+  #     instrumentor.mountMethod=k8s-init-container. Enterprise means one of
+  #     onPremToken, an existing odigos-pro secret, or externalOnpremTokenSecret
+  #     - the last of which also needs externalOnpremPullSecret to render.
+  #   Sets defaults only; the individual settings below still override it.
+  # enum: [legacy, unprivileged]
+  # @schema
+  securityProfile: legacy
+
+  # @schema
+  # description: |-
+  #   Host path mounted so the odiglet can reach the node's tracing filesystem.
+  #   The default is the parent directory because it is a recursive bind: the
+  #   tracefs submount comes with it whether the node mounts tracefs at
+  #   /sys/kernel/tracing or only under /sys/kernel/debug/tracing, so one value
+  #   covers both of the usual layouts.
+  #   Set it only for a node that keeps its tracing filesystem somewhere else.
+  #   The odiglet logs the path it found on the node when it cannot reach one,
+  #   which is the value to put here.
+  # @schema
+  tracefsHostPath: /sys/kernel
 
   # @schema
   # description: Uncomment to override the global nodeSelector (values.nodeSelector) for this component
