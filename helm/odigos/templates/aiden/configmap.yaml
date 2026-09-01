@@ -1,0 +1,73 @@
+{{- if .Values.aiden.enabled }}
+{{- $mcpUrl := printf "http://ui.%s.svc:3000/mcp" .Release.Namespace }}
+{{- $jaegerConfig := dict
+      "endpoints" (.Values.aiden.jaeger.endpoints | default (dict "default" "http://localhost:16686"))
+      "active" (.Values.aiden.jaeger.active | default "default")
+-}}
+{{- $openclawConfig := dict
+      "gateway" (dict
+        "mode" "local"
+        "bind" "loopback"
+        "port" 18789
+        "auth" (dict "mode" "none")
+        "controlUi" (dict "enabled" true)
+      )
+      "logging" (dict
+        "level" (.Values.aiden.logLevel | default .Values.logLevel | default "info")
+      )
+      "skills" (dict
+        "load" (dict
+          "extraDirs" (list "/app/aiden-skills")
+        )
+      )
+      "agents" (dict
+        "defaults" (dict
+          "workspace" "~/.openclaw/workspace"
+          "model" (dict "primary" (.Values.aiden.gemini.model | default "google/gemini-3-flash-preview"))
+        )
+        "list" (list
+          (dict
+            "id" "default"
+            "name" "Odigos Aiden"
+            "workspace" "~/.openclaw/workspace"
+          )
+        )
+      )
+      "channels" (dict
+        "slack" (dict
+          "enabled" true
+          "mode" "socket"
+          "appToken" (dict "source" "env" "provider" "default" "id" "SLACK_APP_TOKEN")
+          "botToken" (dict "source" "env" "provider" "default" "id" "SLACK_BOT_TOKEN")
+        )
+      )
+      "mcp" (dict
+        "servers" (dict
+          "odigos" (dict
+            "url" $mcpUrl
+            "transport" "streamable-http"
+            "enabled" true
+          )
+        )
+      )
+      "cron" (dict "enabled" false)
+-}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-aiden-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-aiden
+    odigos.io/system-object: "true"
+data:
+  # Built from Helm-native dicts and rendered with toPrettyJson (not hand-written JSON text)
+  # so namespace-derived values (mcp.servers.odigos.url) are always correctly JSON-escaped.
+  # No credentials live here: Gemini and Slack auth use env-var fallback (GEMINI_API_KEY) or
+  # explicit SecretRef objects (channels.slack.appToken/botToken) resolved from the
+  # odigos-aiden Secret's env vars at runtime, never plaintext config.
+  openclaw.json: |
+{{ toPrettyJson $openclawConfig | indent 4 }}
+  jaeger-config.json: |
+{{ toPrettyJson $jaegerConfig | indent 4 }}
+{{- end }}
