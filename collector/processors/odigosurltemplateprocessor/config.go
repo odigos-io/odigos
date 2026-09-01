@@ -7,7 +7,7 @@ import (
 	"github.com/odigos-io/odigos/common/urltemplate"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/confmap/xconfmap"
+	"go.opentelemetry.io/collector/confmap"
 )
 
 type CustomIdConfig struct {
@@ -52,7 +52,7 @@ type Config struct {
 	OdigosConfigExtension *component.ID `mapstructure:"odigos_config_extension"`
 }
 
-var _ xconfmap.Validator = (*Config)(nil)
+var _ confmap.Validator = (*Config)(nil)
 
 // Validate checks if the processor configuration is valid
 func (c Config) Validate() error {
