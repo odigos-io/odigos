@@ -42,6 +42,10 @@ func (c *Client) ListServices(ctx context.Context) ([]ServiceStat, error) {
 	return doList[ServiceStat](ctx, c, http.MethodGet, c.apiEndpoint("services"), nil)
 }
 
+func (c *Client) ListServiceNames(ctx context.Context) ([]string, error) {
+	return doList[string](ctx, c, http.MethodGet, c.apiEndpoint("service-names"), nil)
+}
+
 func (c *Client) GetServiceProfile(ctx context.Context, namespace, service string) (*ServiceProfile, error) {
 	endpoint := c.apiEndpoint("services", "profile")
 	query := endpoint.Query()
@@ -350,8 +354,8 @@ func (c *Client) GetGuardrailViolation(ctx context.Context, scopeKey, ruleKey, o
 	return &result, nil
 }
 
-func (c *Client) AllowGuardrailViolation(ctx context.Context, request ViolationActionRequest) error {
-	return c.do(ctx, http.MethodPost, c.apiEndpoint("guardrails", "violations", "allow"), request, nil)
+func (c *Client) AcceptGuardrailViolation(ctx context.Context, request ViolationActionRequest) error {
+	return c.do(ctx, http.MethodPost, c.apiEndpoint("guardrails", "violations", "accept"), request, nil)
 }
 
 func (c *Client) DismissGuardrailViolation(ctx context.Context, request ViolationActionRequest) error {

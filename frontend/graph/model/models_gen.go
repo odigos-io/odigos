@@ -722,7 +722,10 @@ type HTTPPayloadCollectionInput struct {
 }
 
 type Insights struct {
-	Services       []*InsightsServiceStat  `json:"services"`
+	Services []*InsightsServiceStat `json:"services"`
+	// Every distinct service name Insights has seen. Cluster-wide candidate set for
+	// guardrail caller/callee allowlists — fetch once and combine with a service profile.
+	ServiceNames   []string                `json:"serviceNames"`
 	ServiceProfile *InsightsServiceProfile `json:"serviceProfile"`
 	// Service-graph neighborhood around one service (blast radius). Depth defaults to 2 (1–5).
 	BlastRadius         *InsightsBlastRadiusSubgraph  `json:"blastRadius"`
@@ -850,14 +853,37 @@ type InsightsBaselineClass struct {
 	// Suitable for hover UI; not the finding/anomaly wording.
 	ClassDescription string `json:"classDescription"`
 	// JSON-encoded baseline data; shape varies per deviation class.
-	Data                         *string                   `json:"data,omitempty"`
-	DataSchemaVersion            *int                      `json:"dataSchemaVersion,omitempty"`
-	ObservationCount             int                       `json:"observationCount"`
-	Promoted                     bool                      `json:"promoted"`
-	LearningStartedAt            *string                   `json:"learningStartedAt,omitempty"`
-	LastChangedAt                *string                   `json:"lastChangedAt,omitempty"`
-	ObservationCountAtLastChange *int                      `json:"observationCountAtLastChange,omitempty"`
-	Learning                     *InsightsBaselineLearning `json:"learning"`
+	Data *string `json:"data,omitempty"`
+	// Chart-ready histogram for D3_latency / D8_payload_size. Omitted for other classes.
+	Histogram                    *InsightsBaselineHistogram `json:"histogram,omitempty"`
+	DataSchemaVersion            *int                       `json:"dataSchemaVersion,omitempty"`
+	ObservationCount             int                        `json:"observationCount"`
+	Promoted                     bool                       `json:"promoted"`
+	LearningStartedAt            *string                    `json:"learningStartedAt,omitempty"`
+	LastChangedAt                *string                    `json:"lastChangedAt,omitempty"`
+	ObservationCountAtLastChange *int                       `json:"observationCountAtLastChange,omitempty"`
+	Learning                     *InsightsBaselineLearning  `json:"learning"`
+}
+
+// Chart-ready exponential histogram for D3_latency and D8_payload_size.
+// Plot series[].bars; do not recompute bounds from raw data.
+type InsightsBaselineHistogram struct {
+	Unit              InsightsBaselineHistogramUnit      `json:"unit"`
+	LayoutFingerprint *string                            `json:"layoutFingerprint,omitempty"`
+	Series            []*InsightsBaselineHistogramSeries `json:"series"`
+}
+
+type InsightsBaselineHistogramBar struct {
+	Lo    int    `json:"lo"`
+	Hi    int    `json:"hi"`
+	Count int    `json:"count"`
+	Label string `json:"label"`
+}
+
+type InsightsBaselineHistogramSeries struct {
+	Name  string                          `json:"name"`
+	Label string                          `json:"label"`
+	Bars  []*InsightsBaselineHistogramBar `json:"bars"`
 }
 
 // Computed learning/stability snapshot for one baseline class against its
@@ -1007,8 +1033,10 @@ type InsightsFinding struct {
 	Score              int                                 `json:"score"`
 	Severity           InsightsSeverity                    `json:"severity"`
 	Occurrences        int                                 `json:"occurrences"`
-	LastSeen           string                              `json:"lastSeen"`
-	// Union of anomaly statuses (open|baselined|dismissed) and violation statuses (open|dismissed|allowed).
+	// Earliest occurrence of this finding (anomaly or guardrail violation).
+	FirstSeen *string `json:"firstSeen,omitempty"`
+	LastSeen  string  `json:"lastSeen"`
+	// Union of anomaly statuses (open|accepted|dismissed) and violation statuses (open|dismissed|accepted).
 	Status string `json:"status"`
 	// Anomaly drill-down key; set when kind is anomaly.
 	TransactionID *string `json:"transactionId,omitempty"`
@@ -1040,6 +1068,9 @@ type InsightsGuardrailRule struct {
 	Label     string           `json:"label"`
 	Mode      InsightsRuleMode `json:"mode"`
 	Allowlist []string         `json:"allowlist,omitempty"`
+	// How this rule was created. `auto_transaction_guardrail` means it was created
+	// automatically when the service's transactions promoted (not a manual edit).
+	Origin *string `json:"origin,omitempty"`
 }
 
 type InsightsGuardrailRuleInput struct {
@@ -1047,6 +1078,8 @@ type InsightsGuardrailRuleInput struct {
 	Label     string           `json:"label"`
 	Mode      InsightsRuleMode `json:"mode"`
 	Allowlist []string         `json:"allowlist,omitempty"`
+	// Preserved on save so auto-created rules keep their origin across edits.
+	Origin *string `json:"origin,omitempty"`
 }
 
 type InsightsGuardrailSeedInput struct {
@@ -3159,19 +3192,19 @@ type InsightsAnomalyStatus string
 
 const (
 	InsightsAnomalyStatusOpen      InsightsAnomalyStatus = "open"
-	InsightsAnomalyStatusBaselined InsightsAnomalyStatus = "baselined"
+	InsightsAnomalyStatusAccepted  InsightsAnomalyStatus = "accepted"
 	InsightsAnomalyStatusDismissed InsightsAnomalyStatus = "dismissed"
 )
 
 var AllInsightsAnomalyStatus = []InsightsAnomalyStatus{
 	InsightsAnomalyStatusOpen,
-	InsightsAnomalyStatusBaselined,
+	InsightsAnomalyStatusAccepted,
 	InsightsAnomalyStatusDismissed,
 }
 
 func (e InsightsAnomalyStatus) IsValid() bool {
 	switch e {
-	case InsightsAnomalyStatusOpen, InsightsAnomalyStatusBaselined, InsightsAnomalyStatusDismissed:
+	case InsightsAnomalyStatusOpen, InsightsAnomalyStatusAccepted, InsightsAnomalyStatusDismissed:
 		return true
 	}
 	return false
@@ -3195,6 +3228,47 @@ func (e *InsightsAnomalyStatus) UnmarshalGQL(v any) error {
 }
 
 func (e InsightsAnomalyStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type InsightsBaselineHistogramUnit string
+
+const (
+	InsightsBaselineHistogramUnitUs    InsightsBaselineHistogramUnit = "us"
+	InsightsBaselineHistogramUnitBytes InsightsBaselineHistogramUnit = "bytes"
+)
+
+var AllInsightsBaselineHistogramUnit = []InsightsBaselineHistogramUnit{
+	InsightsBaselineHistogramUnitUs,
+	InsightsBaselineHistogramUnitBytes,
+}
+
+func (e InsightsBaselineHistogramUnit) IsValid() bool {
+	switch e {
+	case InsightsBaselineHistogramUnitUs, InsightsBaselineHistogramUnitBytes:
+		return true
+	}
+	return false
+}
+
+func (e InsightsBaselineHistogramUnit) String() string {
+	return string(e)
+}
+
+func (e *InsightsBaselineHistogramUnit) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InsightsBaselineHistogramUnit(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InsightsBaselineHistogramUnit", str)
+	}
+	return nil
+}
+
+func (e InsightsBaselineHistogramUnit) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -3784,18 +3858,18 @@ type InsightsViolationStatus string
 const (
 	InsightsViolationStatusOpen      InsightsViolationStatus = "open"
 	InsightsViolationStatusDismissed InsightsViolationStatus = "dismissed"
-	InsightsViolationStatusAllowed   InsightsViolationStatus = "allowed"
+	InsightsViolationStatusAccepted  InsightsViolationStatus = "accepted"
 )
 
 var AllInsightsViolationStatus = []InsightsViolationStatus{
 	InsightsViolationStatusOpen,
 	InsightsViolationStatusDismissed,
-	InsightsViolationStatusAllowed,
+	InsightsViolationStatusAccepted,
 }
 
 func (e InsightsViolationStatus) IsValid() bool {
 	switch e {
-	case InsightsViolationStatusOpen, InsightsViolationStatusDismissed, InsightsViolationStatusAllowed:
+	case InsightsViolationStatusOpen, InsightsViolationStatusDismissed, InsightsViolationStatusAccepted:
 		return true
 	}
 	return false

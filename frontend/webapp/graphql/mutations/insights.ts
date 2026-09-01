@@ -34,6 +34,7 @@ const GUARDRAIL_FIELDS = `
     label
     mode
     allowlist
+    origin
   }
 `;
 
@@ -188,9 +189,9 @@ export const SEED_INSIGHTS_GUARDRAIL = gql`
   }
 `;
 
-export const ALLOW_INSIGHTS_GUARDRAIL_VIOLATION = gql`
-  mutation AllowInsightsGuardrailViolation($action: InsightsViolationActionInput!) {
-    allowInsightsGuardrailViolation(action: $action)
+export const ACCEPT_INSIGHTS_GUARDRAIL_VIOLATION = gql`
+  mutation AcceptInsightsGuardrailViolation($action: InsightsViolationActionInput!) {
+    acceptInsightsGuardrailViolation(action: $action)
   }
 `;
 

@@ -44,6 +44,20 @@ const BASELINE_CLASS_FIELDS = `
   classLabel
   classDescription
   data
+  histogram {
+    unit
+    layoutFingerprint
+    series {
+      name
+      label
+      bars {
+        lo
+        hi
+        count
+        label
+      }
+    }
+  }
   dataSchemaVersion
   observationCount
   promoted
@@ -96,6 +110,7 @@ const FINDING_FIELDS = `
   score
   severity
   occurrences
+  firstSeen
   lastSeen
   status
   transactionId
@@ -182,6 +197,7 @@ const GUARDRAIL_FIELDS = `
     label
     mode
     allowlist
+    origin
   }
 `;
 
@@ -348,6 +364,14 @@ export const GET_INSIGHTS_SERVICES = gql`
   query GetInsightsServices {
     insights {
       services { ${SERVICE_STAT_FIELDS} }
+    }
+  }
+`;
+
+export const GET_INSIGHTS_SERVICE_NAMES = gql`
+  query GetInsightsServiceNames {
+    insights {
+      serviceNames
     }
   }
 `;

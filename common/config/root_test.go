@@ -359,6 +359,43 @@ func TestServiceGraphInsights(t *testing.T) {
 	assert.Equal(t, []string{"prometheus/servicegraph", consts.ServiceGraphInsightsExporterName}, pipe.Exporters)
 }
 
+// TestInsightsEnablesTracesWithoutDestinations verifies that insights alone
+// forces the traces root pipeline and ReceiverSignals, so agents export spans
+// even when no destination is configured.
+func TestInsightsEnablesTracesWithoutDestinations(t *testing.T) {
+	on := true
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:      "odigos-system",
+		Insights:             &common.InsightsConfiguration{Enabled: &on},
+		InsightsOtlpEndpoint: "dns:///odigos-insights-headless.odigos-system:4317",
+	}
+	cfg, err, _, signals := pipelinegen.CalculateGatewayConfig(
+		nil,
+		nil,
+		selfMetricsReceiver(), nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+	require.Contains(t, signals, common.TracesObservabilitySignal)
+	require.NotContains(t, signals, common.MetricsObservabilitySignal)
+	require.NotContains(t, signals, common.LogsObservabilitySignal)
+
+	_, hasTracesIn := cfg.Service.Pipelines["traces/in"]
+	assert.True(t, hasTracesIn, "insights must create the root traces pipeline with no destinations")
+	_, hasServiceGraph := cfg.Service.Pipelines["metrics/servicegraph"]
+	assert.True(t, hasServiceGraph, "service graph should still be wired when insights enables traces")
+
+	_, hasForward := cfg.Connectors[consts.TracesPostGroupByForwardConnectorName]
+	assert.False(t, hasForward, "post-groupby forward must be skipped when there is no traces destination")
+	_, hasExporting := cfg.Service.Pipelines[consts.TracesExportingPipelineName]
+	assert.False(t, hasExporting, "traces/exporting must be skipped when there is no traces destination")
+	_, hasRouter := cfg.Connectors["odigosrouterconnector/traces"]
+	assert.False(t, hasRouter, "router must not be wired when there is no traces destination")
+
+	tracesIn := cfg.Service.Pipelines["traces/in"]
+	assert.Contains(t, tracesIn.Exporters, consts.ServiceGraphConnectorName)
+	assert.Contains(t, tracesIn.Processors, consts.GroupByTraceProcessor)
+}
+
 // TestServiceGraphInsightsDisabled verifies the insights exporter is absent
 // when insights is not active, so the default service-graph path is unchanged.
 func TestServiceGraphInsightsDisabled(t *testing.T) {

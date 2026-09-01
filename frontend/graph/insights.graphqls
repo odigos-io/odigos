@@ -62,14 +62,14 @@ enum InsightsFindingKind {
 
 enum InsightsAnomalyStatus {
   open
-  baselined
+  accepted
   dismissed
 }
 
 enum InsightsViolationStatus {
   open
   dismissed
-  allowed
+  accepted
 }
 
 enum InsightsRuleMode {
@@ -263,6 +263,34 @@ type InsightsBaselineLearning {
   stability: InsightsBaselineLearningStability!
 }
 
+enum InsightsBaselineHistogramUnit {
+  us
+  bytes
+}
+
+type InsightsBaselineHistogramBar {
+  lo: Int!
+  hi: Int!
+  count: Int!
+  label: String!
+}
+
+type InsightsBaselineHistogramSeries {
+  name: String!
+  label: String!
+  bars: [InsightsBaselineHistogramBar!]!
+}
+
+"""
+Chart-ready exponential histogram for D3_latency and D8_payload_size.
+Plot series[].bars; do not recompute bounds from raw data.
+"""
+type InsightsBaselineHistogram {
+  unit: InsightsBaselineHistogramUnit!
+  layoutFingerprint: String
+  series: [InsightsBaselineHistogramSeries!]!
+}
+
 type InsightsBaselineClass {
   transactionId: ID!
   class: InsightsDeviationClass!
@@ -281,6 +309,10 @@ type InsightsBaselineClass {
   JSON-encoded baseline data; shape varies per deviation class.
   """
   data: String
+  """
+  Chart-ready histogram for D3_latency / D8_payload_size. Omitted for other classes.
+  """
+  histogram: InsightsBaselineHistogram
   dataSchemaVersion: Int
   observationCount: Int!
   promoted: Boolean!
@@ -415,9 +447,13 @@ type InsightsFinding {
   score: Int!
   severity: InsightsSeverity!
   occurrences: Int!
+  """
+  Earliest occurrence of this finding (anomaly or guardrail violation).
+  """
+  firstSeen: String
   lastSeen: String!
   """
-  Union of anomaly statuses (open|baselined|dismissed) and violation statuses (open|dismissed|allowed).
+  Union of anomaly statuses (open|accepted|dismissed) and violation statuses (open|dismissed|accepted).
   """
   status: String!
   """
@@ -608,6 +644,11 @@ type InsightsGuardrailRule {
   label: String!
   mode: InsightsRuleMode!
   allowlist: [String!]
+  """
+  How this rule was created. `auto_transaction_guardrail` means it was created
+  automatically when the service's transactions promoted (not a manual edit).
+  """
+  origin: String
 }
 
 type InsightsGuardrail {
@@ -624,6 +665,10 @@ input InsightsGuardrailRuleInput {
   label: String!
   mode: InsightsRuleMode!
   allowlist: [String!]
+  """
+  Preserved on save so auto-created rules keep their origin across edits.
+  """
+  origin: String
 }
 
 input InsightsGuardrailInput {
@@ -950,6 +995,11 @@ type InsightsStorageHealth {
 
 type Insights {
   services: [InsightsServiceStat!]!
+  """
+  Every distinct service name Insights has seen. Cluster-wide candidate set for
+  guardrail caller/callee allowlists — fetch once and combine with a service profile.
+  """
+  serviceNames: [String!]!
   serviceProfile(namespace: String, service: String!): InsightsServiceProfile!
   """
   Service-graph neighborhood around one service (blast radius). Depth defaults to 2 (1–5).
@@ -1096,7 +1146,7 @@ extend type Mutation {
   ): InsightsGuardrail!
   deleteInsightsGuardrail(scopeKey: String!): Boolean!
   seedInsightsGuardrail(seed: InsightsGuardrailSeedInput!): Boolean!
-  allowInsightsGuardrailViolation(
+  acceptInsightsGuardrailViolation(
     action: InsightsViolationActionInput!
   ): Boolean!
   dismissInsightsGuardrailViolation(

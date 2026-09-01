@@ -109,6 +109,7 @@ import {
   GET_NODE_COLLECTOR_PODS,
   GET_COLLECTOR_POD_INFO,
   GET_INSIGHTS_SERVICES,
+  GET_INSIGHTS_SERVICE_NAMES,
   GET_INSIGHTS_SERVICE_PROFILE,
   GET_INSIGHTS_BLAST_RADIUS,
   GET_INSIGHTS_TRANSACTIONS,
@@ -184,7 +185,7 @@ import {
   UPSERT_INSIGHTS_GUARDRAIL,
   DELETE_INSIGHTS_GUARDRAIL,
   SEED_INSIGHTS_GUARDRAIL,
-  ALLOW_INSIGHTS_GUARDRAIL_VIOLATION,
+  ACCEPT_INSIGHTS_GUARDRAIL_VIOLATION,
   DISMISS_INSIGHTS_GUARDRAIL_VIOLATION,
   REOPEN_INSIGHTS_GUARDRAIL_VIOLATION,
   UPDATE_INSIGHTS_SYSTEM_SETTINGS,
@@ -473,6 +474,10 @@ const operations: OdigosApiOperations = {
     document: GET_INSIGHTS_SERVICES,
     transformResult: (raw: unknown) => (raw as { insights?: { services?: InsightsServiceStat[] } } | null | undefined)?.insights?.services ?? [],
   },
+  GET_INSIGHTS_SERVICE_NAMES: {
+    document: GET_INSIGHTS_SERVICE_NAMES,
+    transformResult: (raw: unknown) => (raw as { insights?: { serviceNames?: string[] } } | null | undefined)?.insights?.serviceNames ?? [],
+  },
   GET_INSIGHTS_SERVICE_PROFILE: {
     document: GET_INSIGHTS_SERVICE_PROFILE,
     transformResult: (raw: unknown) => (raw as { insights?: { serviceProfile?: InsightsServiceProfile } } | null | undefined)?.insights?.serviceProfile,
@@ -622,9 +627,9 @@ const operations: OdigosApiOperations = {
     document: SEED_INSIGHTS_GUARDRAIL,
     transformResult: (raw: unknown) => (raw as { seedInsightsGuardrail?: boolean } | null | undefined)?.seedInsightsGuardrail ?? false,
   },
-  ALLOW_INSIGHTS_GUARDRAIL_VIOLATION: {
-    document: ALLOW_INSIGHTS_GUARDRAIL_VIOLATION,
-    transformResult: (raw: unknown) => (raw as { allowInsightsGuardrailViolation?: boolean } | null | undefined)?.allowInsightsGuardrailViolation ?? false,
+  ACCEPT_INSIGHTS_GUARDRAIL_VIOLATION: {
+    document: ACCEPT_INSIGHTS_GUARDRAIL_VIOLATION,
+    transformResult: (raw: unknown) => (raw as { acceptInsightsGuardrailViolation?: boolean } | null | undefined)?.acceptInsightsGuardrailViolation ?? false,
   },
   DISMISS_INSIGHTS_GUARDRAIL_VIOLATION: {
     document: DISMISS_INSIGHTS_GUARDRAIL_VIOLATION,

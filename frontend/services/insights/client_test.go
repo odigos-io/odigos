@@ -266,7 +266,7 @@ func TestClientSendsJSONAndAcceptsNoContent(t *testing.T) {
 
 	client, err := NewClient(server.URL)
 	require.NoError(t, err)
-	err = client.AllowGuardrailViolation(context.Background(), ViolationActionRequest{
+	err = client.AcceptGuardrailViolation(context.Background(), ViolationActionRequest{
 		ScopeKey:  "prod/checkout",
 		RuleKey:   "allowed_egress",
 		Offending: "db:5432",

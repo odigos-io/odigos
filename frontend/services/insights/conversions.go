@@ -447,6 +447,7 @@ func BaselineClassToModel(baseline BaselineClass) (*model.InsightsBaselineClass,
 		ClassLabel:                   baseline.ClassLabel,
 		ClassDescription:             baseline.ClassDescription,
 		Data:                         data,
+		Histogram:                    BaselineHistogramToModel(baseline.Histogram),
 		DataSchemaVersion:            baseline.DataSchemaVersion,
 		ObservationCount:             int64ToInt(baseline.ObservationCount),
 		Promoted:                     baseline.Promoted,
@@ -455,6 +456,37 @@ func BaselineClassToModel(baseline BaselineClass) (*model.InsightsBaselineClass,
 		ObservationCountAtLastChange: int64PtrToIntPtr(baseline.ObservationCountAtLastChange),
 		Learning:                     BaselineLearningToModel(baseline.Learning),
 	}, nil
+}
+
+func BaselineHistogramToModel(histogram *BaselineHistogram) *model.InsightsBaselineHistogram {
+	if histogram == nil {
+		return nil
+	}
+	series := make([]*model.InsightsBaselineHistogramSeries, len(histogram.Series))
+	for i, s := range histogram.Series {
+		bars := make([]*model.InsightsBaselineHistogramBar, len(s.Bars))
+		for j, b := range s.Bars {
+			bars[j] = &model.InsightsBaselineHistogramBar{
+				Lo:    int64ToInt(b.Lo),
+				Hi:    int64ToInt(b.Hi),
+				Count: int64ToInt(b.Count),
+				Label: b.Label,
+			}
+		}
+		series[i] = &model.InsightsBaselineHistogramSeries{
+			Name:  s.Name,
+			Label: s.Label,
+			Bars:  bars,
+		}
+	}
+	out := &model.InsightsBaselineHistogram{
+		Unit:   model.InsightsBaselineHistogramUnit(histogram.Unit),
+		Series: series,
+	}
+	if histogram.LayoutFingerprint != "" {
+		out.LayoutFingerprint = &histogram.LayoutFingerprint
+	}
+	return out
 }
 
 func BaselineLearningToModel(learning BaselineLearning) *model.InsightsBaselineLearning {
@@ -602,6 +634,7 @@ func FindingToModel(finding Finding) *model.InsightsFinding {
 		Score:              finding.Score,
 		Severity:           SeverityToModel(finding.Severity),
 		Occurrences:        int64ToInt(finding.Occurrences),
+		FirstSeen:          finding.FirstSeen,
 		LastSeen:           finding.LastSeen,
 		Status:             finding.Status,
 		TransactionID:      formatOptionalID(finding.TransactionID),
@@ -772,11 +805,16 @@ func BulkResolveResultToModel(result BulkResolveResult) *model.InsightsBulkResol
 }
 
 func GuardrailRuleToModel(rule GuardrailRule) *model.InsightsGuardrailRule {
+	var origin *string
+	if rule.Origin != "" {
+		origin = &rule.Origin
+	}
 	return &model.InsightsGuardrailRule{
 		Key:       rule.Key,
 		Label:     rule.Label,
 		Mode:      RuleModeToModel(rule.Mode),
 		Allowlist: rule.Allowlist,
+		Origin:    origin,
 	}
 }
 
@@ -1082,11 +1120,16 @@ func LearningPolicyFromInput(input model.InsightsLearningPolicyInput) LearningPo
 }
 
 func GuardrailRuleFromInput(input model.InsightsGuardrailRuleInput) GuardrailRule {
+	origin := ""
+	if input.Origin != nil {
+		origin = *input.Origin
+	}
 	return GuardrailRule{
 		Key:       input.Key,
 		Label:     input.Label,
 		Mode:      RuleModeFromModel(input.Mode),
 		Allowlist: input.Allowlist,
+		Origin:    origin,
 	}
 }
 

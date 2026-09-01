@@ -125,6 +125,7 @@ func CalculateGatewayConfig(
 	destForwardConnectors := make(map[string][]string)
 
 	tracesEnabled := false
+	hasTracesDestination := false // traces can be enabled without a destination (insights case)
 	metricsEnabled := false
 	logsEnabled := false
 	profilesEnabled := false
@@ -189,6 +190,7 @@ func CalculateGatewayConfig(
 			switch {
 			case strings.HasPrefix(pipelineName, "traces/"):
 				tracesEnabled = true
+				hasTracesDestination = true
 			case strings.HasPrefix(pipelineName, "metrics/"):
 				metricsEnabled = true
 			case strings.HasPrefix(pipelineName, "logs/"):
@@ -202,6 +204,12 @@ func CalculateGatewayConfig(
 		}
 
 		status.Destination[dest.GetID()] = nil // mark this destination as success
+	}
+
+	// Insights taps the root traces pipeline; force traces on even with no destinations
+	// so the gateway receives spans and ReceiverSignals advertises traces to agents.
+	if common.InsightsPipelineActive(gatewayOptions.Insights) {
+		tracesEnabled = true
 	}
 
 	// track which signals are enabled
@@ -242,6 +250,7 @@ func CalculateGatewayConfig(
 		processorsResults.LogsProcessors,
 		processorsResults.ProfilesProcessors,
 		enabledSignals,
+		hasTracesDestination,
 		gatewayOptions)
 
 	// Optional: Add collector self-observability
@@ -277,10 +286,11 @@ func CalculateGatewayConfig(
 
 func insertRootPipelinesToConfig(currentConfig *config.Config,
 	tracesProcessors, tracesPostForwardProcessors, metricsProcessors, logsProcessors, profilesProcessors []string,
-	signals []common.ObservabilitySignal, gatewayOptions *GatewayConfigOptions) {
+	signals []common.ObservabilitySignal, hasTracesDestination bool, gatewayOptions *GatewayConfigOptions) {
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
 		if traceAggregationNeeded(gatewayOptions) {
-			applySplitTracesRootPipelines(currentConfig, tracesProcessors, tracesPostForwardProcessors, gatewayOptions.OdigosConfigExtensionName)
+			applySplitTracesRootPipelines(currentConfig, tracesProcessors, tracesPostForwardProcessors,
+				gatewayOptions.OdigosConfigExtensionName, hasTracesDestination)
 		} else {
 			allTracesProcessors := append(slices.Clone(tracesProcessors), tracesPostForwardProcessors...)
 			applyRootPipelineForSignal(currentConfig, common.TracesObservabilitySignal, allTracesProcessors, gatewayOptions.OdigosConfigExtensionName)
@@ -303,17 +313,30 @@ func insertRootPipelinesToConfig(currentConfig *config.Config,
 // applySplitTracesRootPipelines forks traces after enrichment processors so complete trace batches
 // are templated before tail sampling. traces/in aggregates and forwards; traces/exporting tail-samples,
 // batches, and routes to destinations.
+// When there is no traces destination (e.g. insights-only), skip the forward/exporting/router split
+// and keep a single traces/in pipeline — downstream taps (insights, servicegraph) attach there.
 func applySplitTracesRootPipelines(
 	currentConfig *config.Config,
 	tracesProcessors, tracesPostForwardProcessors []string,
 	odigosConfigExtensionName *string,
+	hasTracesDestination bool,
 ) {
+	tracesInProcessors, tracesExportingProcessors := splitTracesProcessorsForPipelines(tracesProcessors, tracesPostForwardProcessors)
+	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
+
+	// shortcut - for example when only insights are enabled, no need to export traces to destinations
+	if !hasTracesDestination {
+		currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
+			Receivers:  []string{"otlp"},
+			Processors: append([]string{"resource/odigos-version"}, tracesInProcessors...),
+			Exporters:  []string{},
+		}
+		return
+	}
+
 	forwardConnectorName := consts.TracesPostGroupByForwardConnectorName
 	currentConfig.Connectors[forwardConnectorName] = config.GenericMap{}
 
-	tracesInProcessors, tracesExportingProcessors := splitTracesProcessorsForPipelines(tracesProcessors, tracesPostForwardProcessors)
-
-	rootPipelineName := GetTelemetryRootPipelineName(common.TracesObservabilitySignal)
 	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
 		Receivers:  []string{"otlp"},
 		Processors: append([]string{"resource/odigos-version"}, tracesInProcessors...),
