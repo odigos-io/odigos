@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/confmap"
-	"go.opentelemetry.io/collector/confmap/xconfmap"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exportertest"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -43,7 +42,7 @@ func runExport(ctx context.Context, factory exporter.Factory, modify configModif
 	if err := exportersConf.Unmarshal(&defaultConfig); err != nil {
 		return invalidConfig(handleError(err))
 	}
-	if validator, ok := defaultConfig.(xconfmap.Validator); ok {
+	if validator, ok := defaultConfig.(confmap.Validator); ok {
 		if err := validator.Validate(); err != nil {
 			return invalidConfig(handleError(err))
 		}
