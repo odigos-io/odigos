@@ -4,11 +4,7 @@ description: "To ensure optimal performance and compatibility when deploying the
 sidebarTitle: "System Requirements"
 ---
 
-import KernelVersion from '../../../snippets/shared/ebpf-kernel-version-note.mdx'
-
-<KernelVersion />
-
-- Odigos Pro license key (or token) for the VM Agent.
+- Odigos Pro license key (or token) for the VM Agent. Apply it after install with `sudo odictl -odigos-license '<JWT>'` — see [Installation](/vmagent/setup/installation#apply-the-license).
 - A Linux host, plus deployment-specific requirements:
   - **[Package installation](/vmagent/setup/installation)** — a RHEL-compatible
     distribution (DNF), a Debian-based distribution (APT), or any Linux system
@@ -23,3 +19,33 @@ import KernelVersion from '../../../snippets/shared/ebpf-kernel-version-note.mdx
     [ECS system requirements](/vmagent/ecs/requirements) for the full list.
 - At least one process or application on the host that is written in a
   [supported language](/enterprise/instrumentations/overview).
+
+## Kernel and systemd
+
+Odigos eBPF-based data collection requires Linux kernel **5.4** or later. Prefer **5.8** or later when possible.
+
+Non-root mode (the package default) additionally requires **systemd 229 or later**, which is when `AmbientCapabilities=` became available. On older systemd the installer runs the agent as **root**, even if you request non-root.
+
+| Distro | Typical kernel | systemd | Default agent mode |
+|---|---|---|---|
+| RHEL 7, CentOS 7, Amazon Linux 2 | 3.10 / 4.14 | 219 | Root only (`AmbientCapabilities` unavailable) |
+| RHEL 8, Rocky 8 | 4.18 | 239+ | Non-root |
+| RHEL 9, Rocky 9, Amazon Linux 2023 | 5.14+ | 250+ | Non-root |
+| Debian 11–13, Ubuntu 20.04+ | 5.4+ | 245+ | Non-root |
+
+Confirm what this host can grant:
+
+```shell
+/usr/lib/odigos/bin/odigos-vmagent-caps --explain
+```
+
+Expected output:
+
+```text
+systemd version      : 257
+kernel               : 6.12.0-211.46.1.el10_2.x86_64
+ambient capabilities : supported
+capability set       : CAP_SYS_ADMIN CAP_SYS_PTRACE CAP_DAC_READ_SEARCH CAP_SYSLOG CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_NET_RAW CAP_NET_ADMIN CAP_SETUID CAP_SETGID
+```
+
+The non-root capability set is **the same on every distro** and always includes `CAP_SYS_ADMIN`. It does not switch to `CAP_BPF` / `CAP_PERFMON` on newer kernels. See [Linux Permissions](/vmagent/setup/permissions) for the full list, why each bit is required, and how to add or remove capabilities.
