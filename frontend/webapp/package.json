@@ -24,7 +24,7 @@
     "react-error-boundary": "^6.1.2",
     "rxjs": "^7.8.2",
     "styled-components": "6.5.3",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.3.0",
