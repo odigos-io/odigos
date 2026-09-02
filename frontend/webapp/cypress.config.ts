@@ -1,8 +1,23 @@
 import Cypress from 'cypress';
+import { exec as execCb } from 'child_process';
+import { promisify } from 'util';
 import fs from 'fs';
+
+const execAsync = promisify(execCb);
 
 const PORT = 3000;
 const BASE_URL = `http://localhost:${PORT}`;
+
+type ExecTaskArgs = {
+  command: string;
+  failOnNonZeroExit?: boolean;
+};
+
+type ExecTaskResult = {
+  code: number;
+  stdout: string;
+  stderr: string;
+};
 
 const config: Cypress.ConfigOptions = {
   trashAssetsBeforeRuns: true,
@@ -30,6 +45,28 @@ const config: Cypress.ConfigOptions = {
         log: (message) => {
           console.log(message);
           return null;
+        },
+        // Cypress 16 removed cy.exec(); shell out via task instead.
+        // https://on.cypress.io/task
+        async exec({ command, failOnNonZeroExit = true }: ExecTaskArgs): Promise<ExecTaskResult> {
+          try {
+            const { stdout, stderr } = await execAsync(command, {
+              shell: '/bin/bash',
+              maxBuffer: 10 * 1024 * 1024,
+            });
+            return { code: 0, stdout: stdout ?? '', stderr: stderr ?? '' };
+          } catch (error: unknown) {
+            const err = error as { code?: number; stdout?: string; stderr?: string; message?: string };
+            const result: ExecTaskResult = {
+              code: typeof err.code === 'number' ? err.code : 1,
+              stdout: err.stdout?.toString() ?? '',
+              stderr: err.stderr?.toString() ?? err.message ?? '',
+            };
+            if (failOnNonZeroExit) {
+              throw new Error(`exec failed (${result.code}): ${command}\nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
+            }
+            return result;
+          }
         },
       });
 
