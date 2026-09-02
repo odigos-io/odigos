@@ -14,6 +14,28 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 )
 
+// defaultServiceGraphPeerAttributes is odigos' default ordered list of span
+// attributes the servicegraph connector uses to name an uninstrumented
+// ("virtual") peer on a service-graph edge. The connector picks the first
+// attribute present on the client span (first match wins); when none match it
+// emits the literal "unknown", so every unnamed dependency collapses into one
+// "unknown" blast-radius node.
+//
+// The connector's own built-in default is only [peer.service, db.name,
+// db.system], which names databases but misses plain HTTP/gRPC egress: those
+// spans carry server.address / net.peer.name / rpc.service, not peer.service.
+// We widen it so external hosts (APIs, third-party endpoints) resolve to real
+// names. Ordered most-specific first: an explicit peer.service wins, then the
+// database identity, then the network host, then the RPC service.
+var defaultServiceGraphPeerAttributes = []string{
+	"peer.service",   // explicit logical peer name (operator/instrumentation intent)
+	"db.name",        // logical database
+	"db.system",      // database engine, when db.name is absent
+	"server.address", // HTTP/gRPC host (current semconv)
+	"net.peer.name",  // host on older instrumentations (deprecated semconv)
+	"rpc.service",    // gRPC service
+}
+
 type GatewayConfigOptions struct {
 	ServiceGraph          common.ServiceGraphOptions
 	ClusterMetricsEnabled *bool
@@ -443,11 +465,17 @@ func insertServiceGraphPipeline(currentConfig *config.Config, gatewayOptions *Ga
 		"dimensions":            dimensions,
 	}
 
-	// Only override virtual_node_peer_attributes when explicitly configured;
-	// otherwise the connector uses its built-in defaults [peer.service, db.name, db.system].
-	if len(virtualNodePeerAttributes) > 0 {
-		connectorCfg["virtual_node_peer_attributes"] = virtualNodePeerAttributes
+	// Name uninstrumented "virtual" peers on service-graph edges. Prefer an
+	// explicit operator list; otherwise fall back to odigos' widened default
+	// rather than the connector's narrow built-in ([peer.service, db.name,
+	// db.system]). The built-in misses plain HTTP/gRPC egress — those spans carry
+	// server.address / net.peer.name / rpc.service, not peer.service — so every
+	// such call collapses into a single "unknown" blast-radius node. See
+	// defaultServiceGraphPeerAttributes.
+	if len(virtualNodePeerAttributes) == 0 {
+		virtualNodePeerAttributes = defaultServiceGraphPeerAttributes
 	}
+	connectorCfg["virtual_node_peer_attributes"] = virtualNodePeerAttributes
 
 	currentConfig.Connectors[consts.ServiceGraphConnectorName] = connectorCfg
 
