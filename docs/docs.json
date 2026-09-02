@@ -713,6 +713,7 @@
               },
               "central/authentication",
               "central/role-mappings",
+              "central/troubleshooting",
               "central/upgrade",
               "central/uninstall"
             ]
