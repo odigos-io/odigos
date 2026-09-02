@@ -48,19 +48,21 @@ const config: Cypress.ConfigOptions = {
         },
         // Cypress 16 removed cy.exec(); shell out via task instead.
         // https://on.cypress.io/task
+        // Match legacy cy.exec() by trimming trailing newlines from stdout/stderr.
         async exec({ command, failOnNonZeroExit = true }: ExecTaskArgs): Promise<ExecTaskResult> {
+          const normalize = (s: string | undefined | null) => (s ?? '').replace(/\n+$/, '');
           try {
             const { stdout, stderr } = await execAsync(command, {
               shell: '/bin/bash',
               maxBuffer: 10 * 1024 * 1024,
             });
-            return { code: 0, stdout: stdout ?? '', stderr: stderr ?? '' };
+            return { code: 0, stdout: normalize(stdout), stderr: normalize(stderr) };
           } catch (error: unknown) {
             const err = error as { code?: number; stdout?: string; stderr?: string; message?: string };
             const result: ExecTaskResult = {
               code: typeof err.code === 'number' ? err.code : 1,
-              stdout: err.stdout?.toString() ?? '',
-              stderr: err.stderr?.toString() ?? err.message ?? '',
+              stdout: normalize(err.stdout?.toString()),
+              stderr: normalize(err.stderr?.toString() ?? err.message),
             };
             if (failOnNonZeroExit) {
               throw new Error(`exec failed (${result.code}): ${command}\nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
