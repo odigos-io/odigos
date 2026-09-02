@@ -421,9 +421,9 @@ export const GET_INSIGHTS_BLAST_RADIUS = gql`
 `;
 
 export const GET_INSIGHTS_TRANSACTIONS = gql`
-  query GetInsightsTransactions($namespace: String, $service: String, $kind: InsightsTransactionKind) {
+  query GetInsightsTransactions($namespace: String, $service: String, $kind: InsightsTransactionKind, $windowHours: Int) {
     insights {
-      transactions(namespace: $namespace, service: $service, kind: $kind) { ${TRANSACTION_STAT_FIELDS} }
+      transactions(namespace: $namespace, service: $service, kind: $kind, windowHours: $windowHours) { ${TRANSACTION_STAT_FIELDS} }
     }
   }
 `;
