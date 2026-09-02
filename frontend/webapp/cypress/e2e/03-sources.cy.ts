@@ -1,5 +1,5 @@
 import { CRD_NAMES, DATA_IDS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { awaitToast, clickRetryable, findCrdId, getCrdById, getCrdIds, handleExceptions, updateV2Entity, visitPage, waitForCrdCount, waitForGraphqlOperation } from '../functions';
+import { awaitToast, clickRetryable, cyExec, findCrdId, getCrdById, getCrdIds, handleExceptions, updateV2Entity, visitPage, waitForCrdCount, waitForGraphqlOperation } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -98,8 +98,8 @@ describe('Sources CRUD', () => {
   });
 
   it('Should uninstrument all sources via kubectl', () => {
-    cy.exec(`kubectl delete ${sourceCrdName} --all -n ${namespace}`, { failOnNonZeroExit: false });
-    cy.exec(`kubectl delete ${configCrdName} --all -n ${namespace}`, { failOnNonZeroExit: false });
+    cyExec(`kubectl delete ${sourceCrdName} --all -n ${namespace}`, { failOnNonZeroExit: false });
+    cyExec(`kubectl delete ${configCrdName} --all -n ${namespace}`, { failOnNonZeroExit: false });
 
     getCrdIds({ namespace, crdName: sourceCrdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });

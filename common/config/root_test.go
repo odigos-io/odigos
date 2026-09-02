@@ -226,20 +226,26 @@ func selfMetricsReceiver() func(c *config.Config, _ []string, _ []string) error 
 }
 
 func TestServiceGraphOptions(t *testing.T) {
+	// odigos' widened default naming attributes for uninstrumented virtual peers,
+	// applied whenever the operator does not configure their own. Kept in sync
+	// with pipelinegen.defaultServiceGraphPeerAttributes (unexported there).
+	defaultPeerAttrs := []string{"peer.service", "db.name", "db.system", "server.address", "net.peer.name", "rpc.service"}
+
 	tests := []struct {
-		name                       string
-		opts                       common.ServiceGraphOptions
-		wantConnector              bool
-		wantDimensions             []string
-		wantVirtualNodePeerAttrs   []string
-		wantNoVirtualNodePeerAttrs bool
+		name                     string
+		opts                     common.ServiceGraphOptions
+		wantConnector            bool
+		wantDimensions           []string
+		wantVirtualNodePeerAttrs []string
 	}{
 		{
-			name:                       "enabled by default",
-			opts:                       common.ServiceGraphOptions{},
-			wantConnector:              true,
-			wantDimensions:             []string{"service.name"},
-			wantNoVirtualNodePeerAttrs: true,
+			// With no operator override, odigos still emits its widened default so
+			// plain HTTP/gRPC egress resolves to real hosts instead of "unknown".
+			name:                     "enabled by default",
+			opts:                     common.ServiceGraphOptions{},
+			wantConnector:            true,
+			wantDimensions:           []string{"service.name"},
+			wantVirtualNodePeerAttrs: defaultPeerAttrs,
 		},
 		{
 			name:          "disabled",
@@ -251,9 +257,9 @@ func TestServiceGraphOptions(t *testing.T) {
 			opts: common.ServiceGraphOptions{
 				ExtraDimensions: []string{"k8s.namespace.name", "http.method"},
 			},
-			wantConnector:              true,
-			wantDimensions:             []string{"service.name", "k8s.namespace.name", "http.method"},
-			wantNoVirtualNodePeerAttrs: true,
+			wantConnector:            true,
+			wantDimensions:           []string{"service.name", "k8s.namespace.name", "http.method"},
+			wantVirtualNodePeerAttrs: defaultPeerAttrs,
 		},
 		{
 			name: "custom virtual node peer attributes",
@@ -294,7 +300,7 @@ func TestServiceGraphOptions(t *testing.T) {
 			for _, dim := range tc.wantDimensions {
 				assert.Contains(t, out, "- "+dim+"\n")
 			}
-			if tc.wantNoVirtualNodePeerAttrs {
+			if len(tc.wantVirtualNodePeerAttrs) == 0 {
 				assert.NotContains(t, out, "virtual_node_peer_attributes:")
 			}
 			for _, attr := range tc.wantVirtualNodePeerAttrs {
@@ -303,6 +309,135 @@ func TestServiceGraphOptions(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestServiceGraphInsights verifies that when insights is active the gateway
+// adds the insights OTLP exporter to the existing metrics/servicegraph pipeline
+// (alongside prometheus/servicegraph) and forces the k8s.namespace.name
+// dimension so edges can be joined to anomalies keyed by (namespace, service).
+func TestServiceGraphInsights(t *testing.T) {
+	on := true
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:      "odigos-system",
+		Insights:             &common.InsightsConfiguration{Enabled: &on},
+		InsightsOtlpEndpoint: "dns:///odigos-insights-headless.odigos-system:4317",
+		ServiceGraph: common.ServiceGraphOptions{
+			ExtraDimensions:           []string{"http.method"},
+			VirtualNodePeerAttributes: []string{"peer.service", "server.address"},
+		},
+	}
+	cfg, err, _, _ := pipelinegen.CalculateGatewayConfig(
+		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
+		[]config.ProcessorConfigurer{},
+		selfMetricsReceiver(), nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+	out := marshalConfig(t, cfg)
+
+	// One pipeline, two exporters: prometheus (UI) + OTLP (insights).
+	assert.Contains(t, out, "metrics/servicegraph:")
+	assert.Contains(t, out, "prometheus/servicegraph")
+	assert.Contains(t, out, consts.ServiceGraphInsightsExporterName+":")
+	assert.Contains(t, out, "dns:///odigos-insights-headless.odigos-system:4317")
+	assert.Contains(t, out, "balancer_name: round_robin")
+	assert.NotContains(t, out, "metrics/servicegraph-insights:")
+	assert.Contains(t, out, "resource/pod-name:")
+	assert.Contains(t, out, "k8s.pod.name")
+	assert.Contains(t, out, "${POD_NAME}")
+
+	// Namespace dimension is forced on so edges carry it; user extras and
+	// virtual-node peer attributes are preserved.
+	assert.Contains(t, out, "- k8s.namespace.name\n")
+	assert.Contains(t, out, "- http.method\n")
+	assert.Contains(t, out, "virtual_node_peer_attributes:")
+	assert.Contains(t, out, "- peer.service\n")
+	assert.Contains(t, out, "- server.address\n")
+
+	pipe, ok := cfg.Service.Pipelines["metrics/servicegraph"]
+	require.True(t, ok)
+	assert.Equal(t, []string{"resource/pod-name"}, pipe.Processors)
+	assert.Equal(t, []string{"prometheus/servicegraph", consts.ServiceGraphInsightsExporterName}, pipe.Exporters)
+}
+
+// TestInsightsEnablesTracesWithoutDestinations verifies that insights alone
+// forces the traces root pipeline and ReceiverSignals, so agents export spans
+// even when no destination is configured.
+func TestInsightsEnablesTracesWithoutDestinations(t *testing.T) {
+	on := true
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:      "odigos-system",
+		Insights:             &common.InsightsConfiguration{Enabled: &on},
+		InsightsOtlpEndpoint: "dns:///odigos-insights-headless.odigos-system:4317",
+	}
+	cfg, err, _, signals := pipelinegen.CalculateGatewayConfig(
+		nil,
+		nil,
+		selfMetricsReceiver(), nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+	require.Contains(t, signals, common.TracesObservabilitySignal)
+	require.NotContains(t, signals, common.MetricsObservabilitySignal)
+	require.NotContains(t, signals, common.LogsObservabilitySignal)
+
+	_, hasTracesIn := cfg.Service.Pipelines["traces/in"]
+	assert.True(t, hasTracesIn, "insights must create the root traces pipeline with no destinations")
+	_, hasServiceGraph := cfg.Service.Pipelines["metrics/servicegraph"]
+	assert.True(t, hasServiceGraph, "service graph should still be wired when insights enables traces")
+
+	_, hasForward := cfg.Connectors[consts.TracesPostGroupByForwardConnectorName]
+	assert.False(t, hasForward, "post-groupby forward must be skipped when there is no traces destination")
+	_, hasExporting := cfg.Service.Pipelines[consts.TracesExportingPipelineName]
+	assert.False(t, hasExporting, "traces/exporting must be skipped when there is no traces destination")
+	_, hasRouter := cfg.Connectors["odigosrouterconnector/traces"]
+	assert.False(t, hasRouter, "router must not be wired when there is no traces destination")
+
+	tracesIn := cfg.Service.Pipelines["traces/in"]
+	assert.Contains(t, tracesIn.Exporters, consts.ServiceGraphConnectorName)
+	assert.Contains(t, tracesIn.Processors, consts.GroupByTraceProcessor)
+}
+
+// TestServiceGraphInsightsDisabled verifies the insights exporter is absent
+// when insights is not active, so the default service-graph path is unchanged.
+func TestServiceGraphInsightsDisabled(t *testing.T) {
+	gatewayOptions := pipelinegen.GatewayConfigOptions{OdigosNamespace: "odigos-system"}
+	cfg, err, _, _ := pipelinegen.CalculateGatewayConfig(
+		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
+		[]config.ProcessorConfigurer{},
+		selfMetricsReceiver(), nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+	out := marshalConfig(t, cfg)
+	assert.NotContains(t, out, consts.ServiceGraphInsightsExporterName+":")
+	assert.NotContains(t, out, "metrics/servicegraph-insights:")
+
+	pipe, ok := cfg.Service.Pipelines["metrics/servicegraph"]
+	require.True(t, ok)
+	assert.Empty(t, pipe.Processors)
+	assert.Equal(t, []string{"prometheus/servicegraph"}, pipe.Exporters)
+}
+
+func TestServiceGraphInsightsDoesNotDuplicateNamespaceDimension(t *testing.T) {
+	on := true
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:      "odigos-system",
+		Insights:             &common.InsightsConfiguration{Enabled: &on},
+		InsightsOtlpEndpoint: "dns:///odigos-insights-headless.odigos-system:4317",
+		ServiceGraph: common.ServiceGraphOptions{
+			ExtraDimensions: []string{"k8s.namespace.name"},
+		},
+	}
+	cfg, err, _, _ := pipelinegen.CalculateGatewayConfig(
+		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
+		[]config.ProcessorConfigurer{},
+		selfMetricsReceiver(), nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+
+	connector, ok := cfg.Connectors[consts.ServiceGraphConnectorName].(config.GenericMap)
+	require.True(t, ok)
+	dims, ok := connector["dimensions"].([]string)
+	require.True(t, ok)
+	assert.Equal(t, []string{"service.name", "k8s.namespace.name"}, dims)
 }
 
 func TestTracesPipelineSplitAfterGroupByTrace(t *testing.T) {

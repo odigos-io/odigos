@@ -453,6 +453,8 @@ func TestOAuth2Configuration(t *testing.T) {
 type mockDestination struct {
 	id     string
 	config map[string]string
+	// when empty, all signals are reported as enabled
+	signals []common.ObservabilitySignal
 }
 
 func (m *mockDestination) GetID() string {
@@ -464,6 +466,9 @@ func (m *mockDestination) GetConfig() map[string]string {
 }
 
 func (m *mockDestination) GetSignals() []common.ObservabilitySignal {
+	if len(m.signals) > 0 {
+		return m.signals
+	}
 	return []common.ObservabilitySignal{
 		common.TracesObservabilitySignal,
 		common.MetricsObservabilitySignal,
