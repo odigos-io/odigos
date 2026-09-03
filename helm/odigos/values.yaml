@@ -744,14 +744,6 @@ ui:
   # @schema
   oidcClientSecret: ''
 
-  # @schema
-  # description: |-
-  #   centralBackendURL:
-  #    - This flag sets the URL of the central backend.
-  #    - If not set, the UI will not connect to the central backend.
-  # @schema
-  centralBackendURL: ''
-
 # @schema
 # description: Configuration for the instrumentor component.
 # @schema
