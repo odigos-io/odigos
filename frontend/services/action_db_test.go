@@ -150,6 +150,24 @@ func TestConvertInferDbAttributesPreservesScopesOnOmit(t *testing.T) {
 	}}, cfg.Scopes.Sources)
 }
 
+func TestConvertInferDbAttributesClearsScopesOnEmptyInput(t *testing.T) {
+	existing := &v1alpha1.Action{
+		Spec: v1alpha1.ActionSpec{
+			InferDbAttributes: &dbqueryactions.InferDbAttributesConfig{
+				Scopes: &k8sconsts.SourcesScopes{Namespaces: []string{"prod"}},
+			},
+		},
+	}
+
+	cfg := convertInferDbAttributesFromInput(model.ActionTypeInferDbAttributes, &model.ActionFieldsInput{
+		Scopes: &model.SourcesScopesInput{},
+	}, existing)
+
+	require.NotNil(t, cfg)
+	require.NotNil(t, cfg.Scopes)
+	require.Empty(t, cfg.Scopes.Namespaces)
+}
+
 func TestConvertDbActionFieldsToModel(t *testing.T) {
 	scopes, templatizeLiterals, removePostgresCastOperator := convertDbActionFieldsToModel(&v1alpha1.Action{
 		Spec: v1alpha1.ActionSpec{
