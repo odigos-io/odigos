@@ -211,7 +211,7 @@ mounts. Each is required for a specific capability:
 | `--init` | Reaps child processes left by attach tooling. |
 | `--ulimit memlock=-1` | eBPF maps on kernels that account them against `RLIMIT_MEMLOCK`. |
 | `/var/run/docker.sock` (ro) | Container metadata: mapping PIDs to containers, service names, restart-based instrumentation. |
-| `/var/lib/docker` (ro) | Executable path resolution through overlay2, and container JSON logs for the logs pipeline. |
+| `/var/lib/docker` (ro) | Executable path resolution through overlay2, and container JSON logs for the [logs pipeline](/vmagent/setup/configuration/overview#log-collection). |
 | `/var/odigos` (rw) | Instrumentation files must live on the host so host processes can load them. |
 | `/etc/odigos-vmagent` (rw) | Agent configuration and identity, persisted across container upgrades. |
 | `/etc/systemd/system` (rw) | Env-injection systemd instrumentation writes unit drop-ins here so the host's `systemd` picks them up. Omit on non-systemd hosts (direct-attach systemd services still work without it). |

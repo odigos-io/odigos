@@ -57,6 +57,7 @@ type OdigosReconciler struct {
 // +kubebuilder:rbac:groups=actions.odigos.io,resources=*,verbs=get;list;watch;create;patch;update;delete;deletecollection
 // +kubebuilder:rbac:groups=actions.odigos.io,resources=*/status,verbs=get;patch;update
 // +kubebuilder:rbac:groups=odigos.io,resources=instrumentationrules/status,verbs=get;patch;update
+// +kubebuilder:rbac:groups=odigos.io,resources=recommendations/status,verbs=get;patch;update
 // +kubebuilder:rbac:groups=odigos.io,resources=*,verbs=*
 // +kubebuilder:rbac:groups=odigos.io,resources=destinations/status;instrumentationinstances/status;instrumentationconfigs/status;collectorsgroups/status;processors/status,verbs=get;list;watch;patch;update
 // +kubebuilder:rbac:groups=odigos.io,resources=sources/finalizers,verbs=update
@@ -95,6 +96,7 @@ type OdigosReconciler struct {
 // +kubebuilder:rbac:groups=extensions,resources=daemonsets;deployments;replicasets,verbs=get;list;watch
 // +kubebuilder:rbac:groups="discovery.k8s.io",resources=endpointslices,verbs=get;list;watch
 // +kubebuilder:rbac:groups=odigos.io,resources=sampling,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=odigos.io,resources=recommendations,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

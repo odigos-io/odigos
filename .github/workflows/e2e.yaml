@@ -17,9 +17,9 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
-          go-version: "~1.26.4"
+          go-version: "~1.26.6"
           check-latest: true
           cache: true
           cache-dependency-path: |
@@ -65,7 +65,19 @@ jobs:
       - name: Build CLI Image
         run: |
           TAG=e2e-test make build-cli-image
-          docker save registry.odigos.io/odigos-cli:e2e-test -o cli-image.tar
+          docker save docker.io/keyval/odigos-cli:e2e-test -o cli-image.tar
+
+      # Victoria Metrics is published, not built in this repo. Materialize a single-platform
+      # image (buildx --load) so kind load does not fail on multi-arch manifests.
+      - name: Prepare Victoria Metrics Image
+        run: |
+          printf 'FROM docker.io/keyval/odigos-victoria-metrics:latest\n' | docker buildx build \
+            --platform=linux/$(docker version -f '{{.Server.Arch}}') \
+            --pull \
+            -t docker.io/keyval/odigos-victoria-metrics:e2e-test \
+            --load \
+            -
+          docker save docker.io/keyval/odigos-victoria-metrics:e2e-test -o victoria-metrics-image.tar
 
       - name: Save Odigos images to cache
         uses: actions/cache/save@v4
@@ -73,6 +85,7 @@ jobs:
           path: |
             odigos-images.tar
             cli-image.tar
+            victoria-metrics-image.tar
           key: ${{ github.run_id }}-odigos-images
 
   kubernetes-test:
@@ -93,12 +106,17 @@ jobs:
           - "instrumentation-rollback-stability-window"
           - "environment-variables"
           - "trace-collection"
+          - "log-collection"
           - "source"
           - "webhooks"
           - "env-injection"
           - "data-streams"
           - "mount-method"
           - "argo-rollouts"
+          - "head-sampling-http-nodejs"
+          - "head-sampling-http-python"
+          - "head-sampling-http-java"
+          - "tail-sampling-nodejs"
         include:
           - kube-version: "1.21.12"
             # use 1.21.12 for systemd cgroups compatibility changes in kind 0.13 https://github.com/kubernetes-sigs/kind/releases/tag/v0.13.0
@@ -133,9 +151,9 @@ jobs:
 
       - name: Set up Go
         if: steps.should-run.outputs.skip != 'true' && matrix.test-scenario == 'karpenter-mount-methods'
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
-          go-version: "~1.26.4"
+          go-version: "~1.26.6"
           check-latest: true
           cache: true
 
@@ -181,6 +199,7 @@ jobs:
           path: |
             odigos-images.tar
             cli-image.tar
+            victoria-metrics-image.tar
           fail-on-cache-miss: true
           key: ${{ github.run_id }}-odigos-images
 
@@ -196,6 +215,7 @@ jobs:
         run: |
           kind load image-archive odigos-images.tar
           kind load image-archive cli-image.tar
+          kind load image-archive victoria-metrics-image.tar
 
       - name: Restore cached CLI binary
         if: steps.should-run.outputs.skip != 'true'

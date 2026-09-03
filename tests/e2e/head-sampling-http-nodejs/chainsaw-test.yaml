@@ -1,0 +1,187 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: head-sampling-http-nodejs
+spec:
+  description: |
+    E2E for Odigos head sampling on HTTP route matching with nodejs-community.
+    Uses the prebuilt nodejs-head-sampling image from Artifact Registry, enables
+    sampling dry-run, generates traffic, and asserts odigos.sampling.* attributes
+    on collected spans.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: apply/apply-test-apps.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            timeout: 4m
+            content: |
+              # pwd is tests/e2e/head-sampling-http-nodejs — chart lives at repo root helm/odigos
+              helm upgrade --install odigos ../../../helm/odigos --create-namespace --namespace odigos-test \
+                --set image.tag=e2e-test \
+                --set nodeSelector."kubernetes\.io/os"=linux \
+                --set sampling.dryRun=true \
+                --set sampling.tailSampling.disabled=true \
+                --set sampling.k8sHealthProbesSampling.enabled=true
+              ../../common/verify_odigos_installation.sh odigos-test
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Assert Apps installed
+      try:
+        - assert:
+            timeout: 3m
+            file: assert/assert-apps-ready.yaml
+
+    - name: Instrument namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Add destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Odigos pipeline ready
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Apply Sampling rules
+      try:
+        - apply:
+            file: apply/sampling-rules.yaml
+
+    - name: Wait for apps ready after instrumentation
+      try:
+        - assert:
+            timeout: 3m
+            file: assert/assert-apps-ready.yaml
+        - script:
+            timeout: 1m
+            content: |
+              # Allow InstrumentationConfig / OpAMP to propagate Sampling rules to nodejs-community agents.
+              sleep 20
+
+    - name: Generate traffic
+      try:
+        - apply:
+            file: apply-traffic.yaml
+        - script:
+            timeout: 3m
+            content: |
+              kubectl wait --for=condition=complete job/head-sampling-http-server-curls -n default --timeout=180s || \
+                (kubectl logs job/head-sampling-http-server-curls -n default --tail=200; exit 1)
+              kubectl wait --for=condition=complete job/kubelet-health-probes-query-params-curls -n default --timeout=180s || \
+                (kubectl logs job/kubelet-health-probes-query-params-curls -n default --tail=200; exit 1)
+
+    - name: Assert sampling span attributes
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              # chainsaw invokes scripts with /usr/bin/sh (dash on Ubuntu CI); use bash for pipefail/arrays
+              bash <<'EOF'
+              set -euo pipefail
+              deadline=$(($(date +%s) + 170))
+              queries=(
+                queries/http-server-exact.yaml
+                queries/http-server-prefix.yaml
+                queries/http-server-prefix-nested.yaml
+                queries/http-server-templatized-exact.yaml
+                queries/http-server-templatized-prefix.yaml
+                queries/http-server-templatized-prefix-nested.yaml
+                queries/http-client-exact.yaml
+                queries/http-client-post.yaml
+                queries/http-client-prefix-templatized.yaml
+                queries/kubelet-liveness.yaml
+                queries/kubelet-readiness.yaml
+                queries/kubelet-startup.yaml
+              )
+              last_failed=""
+              last_failed_output=""
+              while true; do
+                ok=true
+                for q in "${queries[@]}"; do
+                  output=""
+                  if ! output=$(../../common/simple_trace_db_query_runner.sh "$q" 2>&1); then
+                    ok=false
+                    last_failed="$q"
+                    last_failed_output="$output"
+                    break
+                  fi
+                done
+                if [ "$ok" = true ]; then
+                  echo "all sampling span assertions passed"
+                  exit 0
+                fi
+                if [ "$(date +%s)" -ge "$deadline" ]; then
+                  echo "sampling span assertions did not pass within timeout" >&2
+                  echo "first failing assertion: ${last_failed}" >&2
+                  echo "--- ${last_failed} output ---" >&2
+                  echo "${last_failed_output}" >&2
+                  echo "--- status of all queries ---" >&2
+                  for q in "${queries[@]}"; do
+                    if out=$(../../common/simple_trace_db_query_runner.sh "$q" 2>&1); then
+                      echo "PASS: $q" >&2
+                    else
+                      echo "FAIL: $q" >&2
+                      echo "$out" >&2
+                    fi
+                  done
+                  exit 1
+                fi
+                sleep 2
+              done
+              EOF
+      catch:
+        - script:
+            content: |
+              echo "=== Per-query pass/fail summary ==="
+              for q in queries/*.yaml; do
+                if out=$(../../common/simple_trace_db_query_runner.sh "$q" 2>&1); then
+                  echo "PASS: $q"
+                else
+                  echo "FAIL: $q"
+                  echo "$out"
+                fi
+              done
+              echo "=== Verbose dumps for failing queries ==="
+              for q in queries/*.yaml; do
+                if ! ../../common/simple_trace_db_query_runner.sh "$q" >/dev/null 2>&1; then
+                  echo "--- $q ---"
+                  ../../common/simple_trace_db_query_runner.sh "$q" --verbose || true
+                fi
+              done
+              echo "=== Sampling CRs ==="
+              kubectl get sampling -n odigos-test -o yaml || true
+              echo "=== InstrumentationConfigs ==="
+              kubectl get instrumentationconfigs -A || true
+              echo "=== Gateway logs ==="
+              kubectl logs -n odigos-test -l odigos.io/collector-role=CLUSTER_GATEWAY --tail=80 || true
+              echo "=== App pods ==="
+              kubectl get pods -n default -o wide || true

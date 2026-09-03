@@ -99,23 +99,19 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
 	otelconftelemetry "go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
-	collector "go.opentelemetry.io/ebpf-profiler/collector"
 
 	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
 	serviceioconnector "github.com/odigos-io/odigos/collector/connectors/serviceioconnector"
+	odigoscapabilitiesextension "github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension"
 	odigosconfigk8sextension "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension"
 	odigosextractattributeprocessor "github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor"
 	odigoslogsresourceattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor"
 	odigospiimaskingprocessor "github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor"
 	odigossqlqueryprocessor "github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor"
 	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
-	odigosprofilesprocessor "github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor"
-	odigossymbolizeprocessor "github.com/odigos-io/odigos/collector/processors/odigossymbolizeprocessor"
 	odigostailsamplingprocessor "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor"
 	odigostracefilterprocessor "github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor"
 	odigostracestateprocessor "github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor"
-	odigosvmprofileattrsprocessor "github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor"
-	odigosebpfreceiver "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
 )
 
 type aliasProvider interface{ DeprecatedAlias() component.Type }
@@ -149,21 +145,23 @@ func components() (otelcol.Factories, error) {
 		googleclientauthextension.NewFactory(),
 		k8sleaderelector.NewFactory(),
 		odigosconfigk8sextension.NewFactory(),
+		odigoscapabilitiesextension.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
 	}
 	factories.ExtensionModules = makeModulesMap(factories.Extensions, map[component.Type]string{
-		zpagesextension.NewFactory().Type():           "go.opentelemetry.io/collector/extension/zpagesextension v0.151.0",
-		memorylimiterextension.NewFactory().Type():    "go.opentelemetry.io/collector/extension/memorylimiterextension v0.151.0",
-		healthcheckextension.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.151.0",
-		pprofextension.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.151.0",
-		basicauthextension.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.151.0",
-		bearertokenauthextension.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.151.0",
-		oauth2clientauthextension.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.151.0",
-		googleclientauthextension.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.151.0",
-		k8sleaderelector.NewFactory().Type():          "github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.151.0",
-		odigosconfigk8sextension.NewFactory().Type():  "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.151.0",
+		zpagesextension.NewFactory().Type():             "go.opentelemetry.io/collector/extension/zpagesextension v0.159.0",
+		memorylimiterextension.NewFactory().Type():      "go.opentelemetry.io/collector/extension/memorylimiterextension v0.159.0",
+		healthcheckextension.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.159.0",
+		pprofextension.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.159.0",
+		basicauthextension.NewFactory().Type():          "github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.159.0",
+		bearertokenauthextension.NewFactory().Type():    "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.159.0",
+		oauth2clientauthextension.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.159.0",
+		googleclientauthextension.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.159.0",
+		k8sleaderelector.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.159.0",
+		odigosconfigk8sextension.NewFactory().Type():    "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension v0.159.0",
+		odigoscapabilitiesextension.NewFactory().Type(): "github.com/odigos-io/odigos/collector/extension/odigoscapabilitiesextension v0.159.0",
 	})
 
 	factories.Receivers, err = otelcol.MakeFactoryMap[receiver.Factory](
@@ -174,24 +172,20 @@ func components() (otelcol.Factories, error) {
 		k8sclusterreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
 		prometheusreceiver.NewFactory(),
-		odigosebpfreceiver.NewFactory(),
-		collector.NewFactory(),
 		journaldreceiver.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
 	}
 	factories.ReceiverModules = makeModulesMap(factories.Receivers, map[component.Type]string{
-		otlpreceiver.NewFactory().Type():         "go.opentelemetry.io/collector/receiver/otlpreceiver v0.151.0",
-		zipkinreceiver.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.151.0",
-		filelogreceiver.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.151.0",
-		kubeletstatsreceiver.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.151.0",
-		k8sclusterreceiver.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.151.0",
-		hostmetricsreceiver.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.151.0",
-		prometheusreceiver.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.151.0",
-		odigosebpfreceiver.NewFactory().Type():   "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.151.0",
-		collector.NewFactory().Type():            "go.opentelemetry.io/ebpf-profiler v0.0.202614",
-		journaldreceiver.NewFactory().Type():     "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver v0.151.0",
+		otlpreceiver.NewFactory().Type():         "go.opentelemetry.io/collector/receiver/otlpreceiver v0.159.0",
+		zipkinreceiver.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.159.0",
+		filelogreceiver.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.159.0",
+		kubeletstatsreceiver.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.159.0",
+		k8sclusterreceiver.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.159.0",
+		hostmetricsreceiver.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.159.0",
+		prometheusreceiver.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.159.0",
+		journaldreceiver.NewFactory().Type():     "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver v0.159.0",
 	})
 
 	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](
@@ -241,47 +235,47 @@ func components() (otelcol.Factories, error) {
 		return otelcol.Factories{}, err
 	}
 	factories.ExporterModules = makeModulesMap(factories.Exporters, map[component.Type]string{
-		debugexporter.NewFactory().Type():                   "go.opentelemetry.io/collector/exporter/debugexporter v0.151.0",
-		nopexporter.NewFactory().Type():                     "go.opentelemetry.io/collector/exporter/nopexporter v0.151.0",
-		otlpexporter.NewFactory().Type():                    "go.opentelemetry.io/collector/exporter/otlpexporter v0.151.0",
-		otlphttpexporter.NewFactory().Type():                "go.opentelemetry.io/collector/exporter/otlphttpexporter v0.151.0",
-		azureblobstorageexporter.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.151.0",
-		googlecloudstorageexporter.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter v0.151.0",
-		mockdestinationexporter.NewFactory().Type():         "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter v0.151.0",
-		awscloudwatchlogsexporter.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.151.0",
-		awsemfexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.151.0",
-		awss3exporter.NewFactory().Type():                   "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.151.0",
-		awsxrayexporter.NewFactory().Type():                 "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.151.0",
-		azuredataexplorerexporter.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.151.0",
-		azuremonitorexporter.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.151.0",
-		clickhouseexporter.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.151.0",
-		cassandraexporter.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/cassandraexporter v0.151.0",
-		coralogixexporter.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/coralogixexporter v0.151.0",
-		datadogexporter.NewFactory().Type():                 "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter v0.151.0",
-		datasetexporter.NewFactory().Type():                 "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datasetexporter v0.151.0",
-		elasticsearchexporter.NewFactory().Type():           "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/elasticsearchexporter v0.151.0",
-		fileexporter.NewFactory().Type():                    "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter v0.151.0",
-		googlecloudexporter.NewFactory().Type():             "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.151.0",
-		googlecloudpubsubexporter.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudpubsubexporter v0.151.0",
-		googlemanagedprometheusexporter.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlemanagedprometheusexporter v0.151.0",
-		honeycombmarkerexporter.NewFactory().Type():         "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/honeycombmarkerexporter v0.151.0",
-		influxdbexporter.NewFactory().Type():                "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.151.0",
-		kafkaexporter.NewFactory().Type():                   "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/kafkaexporter v0.151.0",
-		loadbalancingexporter.NewFactory().Type():           "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/loadbalancingexporter v0.151.0",
-		logicmonitorexporter.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logicmonitorexporter v0.151.0",
-		logzioexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logzioexporter v0.151.0",
-		mezmoexporter.NewFactory().Type():                   "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/mezmoexporter v0.151.0",
-		opensearchexporter.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opensearchexporter v0.151.0",
-		prometheusexporter.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.151.0",
-		prometheusremotewriteexporter.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter v0.151.0",
-		pulsarexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/pulsarexporter v0.151.0",
-		sentryexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sentryexporter v0.151.0",
-		signalfxexporter.NewFactory().Type():                "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/signalfxexporter v0.151.0",
-		splunkhecexporter.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexporter v0.151.0",
-		sumologicexporter.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sumologicexporter v0.151.0",
-		syslogexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/syslogexporter v0.151.0",
-		tencentcloudlogserviceexporter.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/tencentcloudlogserviceexporter v0.151.0",
-		zipkinexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.151.0",
+		debugexporter.NewFactory().Type():                   "go.opentelemetry.io/collector/exporter/debugexporter v0.159.0",
+		nopexporter.NewFactory().Type():                     "go.opentelemetry.io/collector/exporter/nopexporter v0.159.0",
+		otlpexporter.NewFactory().Type():                    "go.opentelemetry.io/collector/exporter/otlpexporter v0.159.0",
+		otlphttpexporter.NewFactory().Type():                "go.opentelemetry.io/collector/exporter/otlphttpexporter v0.159.0",
+		azureblobstorageexporter.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.159.0",
+		googlecloudstorageexporter.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter v0.159.0",
+		mockdestinationexporter.NewFactory().Type():         "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter v0.159.0",
+		awscloudwatchlogsexporter.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.159.0",
+		awsemfexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.159.0",
+		awss3exporter.NewFactory().Type():                   "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.159.0",
+		awsxrayexporter.NewFactory().Type():                 "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.159.0",
+		azuredataexplorerexporter.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.159.0",
+		azuremonitorexporter.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.159.0",
+		clickhouseexporter.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.159.0",
+		cassandraexporter.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/cassandraexporter v0.159.0",
+		coralogixexporter.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/coralogixexporter v0.159.0",
+		datadogexporter.NewFactory().Type():                 "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter v0.159.0",
+		datasetexporter.NewFactory().Type():                 "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datasetexporter v0.159.0",
+		elasticsearchexporter.NewFactory().Type():           "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/elasticsearchexporter v0.159.0",
+		fileexporter.NewFactory().Type():                    "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter v0.159.0",
+		googlecloudexporter.NewFactory().Type():             "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.159.0",
+		googlecloudpubsubexporter.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudpubsubexporter v0.159.0",
+		googlemanagedprometheusexporter.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlemanagedprometheusexporter v0.159.0",
+		honeycombmarkerexporter.NewFactory().Type():         "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/honeycombmarkerexporter v0.159.0",
+		influxdbexporter.NewFactory().Type():                "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.159.0",
+		kafkaexporter.NewFactory().Type():                   "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/kafkaexporter v0.159.0",
+		loadbalancingexporter.NewFactory().Type():           "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/loadbalancingexporter v0.159.0",
+		logicmonitorexporter.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logicmonitorexporter v0.159.0",
+		logzioexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logzioexporter v0.159.0",
+		mezmoexporter.NewFactory().Type():                   "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/mezmoexporter v0.159.0",
+		opensearchexporter.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opensearchexporter v0.159.0",
+		prometheusexporter.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.159.0",
+		prometheusremotewriteexporter.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter v0.159.0",
+		pulsarexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/pulsarexporter v0.159.0",
+		sentryexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sentryexporter v0.159.0",
+		signalfxexporter.NewFactory().Type():                "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/signalfxexporter v0.159.0",
+		splunkhecexporter.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexporter v0.159.0",
+		sumologicexporter.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sumologicexporter v0.159.0",
+		syslogexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/syslogexporter v0.159.0",
+		tencentcloudlogserviceexporter.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/tencentcloudlogserviceexporter v0.159.0",
+		zipkinexporter.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.159.0",
 	})
 
 	factories.Processors, err = otelcol.MakeFactoryMap[processor.Factory](
@@ -316,48 +310,42 @@ func components() (otelcol.Factories, error) {
 		odigoslogsresourceattrsprocessor.NewFactory(),
 		odigosextractattributeprocessor.NewFactory(),
 		odigostracefilterprocessor.NewFactory(),
-		odigosprofilesprocessor.NewFactory(),
-		odigosvmprofileattrsprocessor.NewFactory(),
-		odigossymbolizeprocessor.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
 	}
 	factories.ProcessorModules = makeModulesMap(factories.Processors, map[component.Type]string{
-		odigostailsamplingprocessor.NewFactory().Type():      "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.151.0",
-		odigostracestateprocessor.NewFactory().Type():        "github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.151.0",
-		odigosconditionalattributes.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.151.0",
-		odigossqldboperationprocessor.NewFactory().Type():    "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.151.0",
-		odigossqlqueryprocessor.NewFactory().Type():          "github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor v0.151.0",
-		odigospiimaskingprocessor.NewFactory().Type():        "github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor v0.151.0",
-		batchprocessor.NewFactory().Type():                   "go.opentelemetry.io/collector/processor/batchprocessor v0.151.0",
-		memorylimiterprocessor.NewFactory().Type():           "go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.151.0",
-		attributesprocessor.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.151.0",
-		cumulativetodeltaprocessor.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor v0.151.0",
-		deltatorateprocessor.NewFactory().Type():             "github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor v0.151.0",
-		filterprocessor.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.151.0",
-		groupbyattrsprocessor.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.151.0",
-		groupbytraceprocessor.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor v0.151.0",
-		k8sattributesprocessor.NewFactory().Type():           "github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor v0.151.0",
-		metricsgenerationprocessor.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricsgenerationprocessor v0.151.0",
-		metricstransformprocessor.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor v0.151.0",
-		probabilisticsamplerprocessor.NewFactory().Type():    "github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.151.0",
-		redactionprocessor.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor v0.151.0",
-		resourcedetectionprocessor.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.151.0",
-		resourceprocessor.NewFactory().Type():                "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.151.0",
-		sumologicprocessor.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/processor/sumologicprocessor v0.151.0",
-		spanprocessor.NewFactory().Type():                    "github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor v0.151.0",
-		tailsamplingprocessor.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.151.0",
-		transformprocessor.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.151.0",
-		remotetapprocessor.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.151.0",
-		odigostrafficmetrics.NewFactory().Type():             "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.151.0",
-		odigosurltemplateprocessor.NewFactory().Type():       "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.151.0",
-		odigoslogsresourceattrsprocessor.NewFactory().Type(): "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.151.0",
-		odigosextractattributeprocessor.NewFactory().Type():  "github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor v0.151.0",
-		odigostracefilterprocessor.NewFactory().Type():       "github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.151.0",
-		odigosprofilesprocessor.NewFactory().Type():          "github.com/odigos-io/odigos/collector/processors/odigosprofilesprocessor v0.151.0",
-		odigosvmprofileattrsprocessor.NewFactory().Type():    "github.com/odigos-io/odigos/collector/processors/odigosvmprofileattrsprocessor v0.151.0",
-		odigossymbolizeprocessor.NewFactory().Type():         "github.com/odigos-io/odigos/collector/processors/odigossymbolizeprocessor v0.151.0",
+		odigostailsamplingprocessor.NewFactory().Type():      "github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor v0.159.0",
+		odigostracestateprocessor.NewFactory().Type():        "github.com/odigos-io/odigos/collector/processors/odigostracestateprocessor v0.159.0",
+		odigosconditionalattributes.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.159.0",
+		odigossqldboperationprocessor.NewFactory().Type():    "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.159.0",
+		odigossqlqueryprocessor.NewFactory().Type():          "github.com/odigos-io/odigos/collector/processor/odigossqlqueryprocessor v0.159.0",
+		odigospiimaskingprocessor.NewFactory().Type():        "github.com/odigos-io/odigos/collector/processor/odigospiimaskingprocessor v0.159.0",
+		batchprocessor.NewFactory().Type():                   "go.opentelemetry.io/collector/processor/batchprocessor v0.159.0",
+		memorylimiterprocessor.NewFactory().Type():           "go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.159.0",
+		attributesprocessor.NewFactory().Type():              "github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.159.0",
+		cumulativetodeltaprocessor.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor v0.159.0",
+		deltatorateprocessor.NewFactory().Type():             "github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor v0.159.0",
+		filterprocessor.NewFactory().Type():                  "github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.159.0",
+		groupbyattrsprocessor.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.159.0",
+		groupbytraceprocessor.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor v0.159.0",
+		k8sattributesprocessor.NewFactory().Type():           "github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor v0.159.0",
+		metricsgenerationprocessor.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricsgenerationprocessor v0.159.0",
+		metricstransformprocessor.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor v0.159.0",
+		probabilisticsamplerprocessor.NewFactory().Type():    "github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.159.0",
+		redactionprocessor.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor v0.159.0",
+		resourcedetectionprocessor.NewFactory().Type():       "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.159.0",
+		resourceprocessor.NewFactory().Type():                "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.159.0",
+		sumologicprocessor.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/processor/sumologicprocessor v0.159.0",
+		spanprocessor.NewFactory().Type():                    "github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor v0.159.0",
+		tailsamplingprocessor.NewFactory().Type():            "github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.159.0",
+		transformprocessor.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.159.0",
+		remotetapprocessor.NewFactory().Type():               "github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.159.0",
+		odigostrafficmetrics.NewFactory().Type():             "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.159.0",
+		odigosurltemplateprocessor.NewFactory().Type():       "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.159.0",
+		odigoslogsresourceattrsprocessor.NewFactory().Type(): "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.159.0",
+		odigosextractattributeprocessor.NewFactory().Type():  "github.com/odigos-io/odigos/collector/processor/odigosextractattributeprocessor v0.159.0",
+		odigostracefilterprocessor.NewFactory().Type():       "github.com/odigos-io/odigos/collector/processors/odigostracefilterprocessor v0.159.0",
 	})
 
 	factories.Connectors, err = otelcol.MakeFactoryMap[connector.Factory](
@@ -375,15 +363,15 @@ func components() (otelcol.Factories, error) {
 		return otelcol.Factories{}, err
 	}
 	factories.ConnectorModules = makeModulesMap(factories.Connectors, map[component.Type]string{
-		forwardconnector.NewFactory().Type():      "go.opentelemetry.io/collector/connector/forwardconnector v0.151.0",
-		countconnector.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.151.0",
-		datadogconnector.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.151.0",
-		exceptionsconnector.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector v0.151.0",
-		routingconnector.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.151.0",
-		servicegraphconnector.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.151.0",
-		spanmetricsconnector.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.151.0",
-		odigosrouterconnector.NewFactory().Type(): "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.151.0",
-		serviceioconnector.NewFactory().Type():    "github.com/odigos-io/odigos/collector/connectors/serviceioconnector v0.151.0",
+		forwardconnector.NewFactory().Type():      "go.opentelemetry.io/collector/connector/forwardconnector v0.159.0",
+		countconnector.NewFactory().Type():        "github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.159.0",
+		datadogconnector.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.159.0",
+		exceptionsconnector.NewFactory().Type():   "github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector v0.159.0",
+		routingconnector.NewFactory().Type():      "github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.159.0",
+		servicegraphconnector.NewFactory().Type(): "github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.159.0",
+		spanmetricsconnector.NewFactory().Type():  "github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.159.0",
+		odigosrouterconnector.NewFactory().Type(): "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.159.0",
+		serviceioconnector.NewFactory().Type():    "github.com/odigos-io/odigos/collector/connectors/serviceioconnector v0.159.0",
 	})
 
 	return factories, nil

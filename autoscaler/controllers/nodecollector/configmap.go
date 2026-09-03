@@ -56,7 +56,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		profilingCfg = cfg.Profiling
 	}
 
-	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg)
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded, profilingCfg, b.tier)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
@@ -177,13 +177,14 @@ func calculateCollectorConfigDomains(
 	processors []*odigosv1.Processor,
 	onGKE bool,
 	loadBalancingNeeded bool,
-	profiling *odigoscommon.ProfilingConfiguration) (map[string]config.Config, string, error) {
+	profiling *odigoscommon.ProfilingConfiguration,
+	tier odigoscommon.OdigosTier) (map[string]config.Config, string, error) {
 
 	logger := commonlogger.FromContext(ctx)
 
 	// common config domains - always set and active
 	configDomains := map[string]config.Config{
-		"common": collectorconfig.CommonConfig(),
+		"common": collectorconfig.CommonConfig(tier),
 	}
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
@@ -218,12 +219,13 @@ func calculateCollectorConfigDomains(
 
 	// resource detectors [ec2, eks, azure, aks, gcp] built once.
 	detectors := collectorconfig.BuildResourceDetectors(nodeCG.Spec.ResourceDetectors, onGKE)
-	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace, detectors)
+	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace, detectors, tier)
 
 	commonSignalConfig := collectorconfig.CommonSignalConfig{
 		Logger:                   logger.Logr(),
 		OdigosNamespace:          odigosNamespace,
 		ResourceDetectionEnabled: collectorconfig.ResourceDetectionEnabled(detectors),
+		Tier:                     tier,
 	}
 
 	// metrics
@@ -261,10 +263,13 @@ func calculateCollectorConfigDomains(
 		}
 		configDomains["own_metrics"] = ownMetricsConfig
 
-		// scrape the odiglet's prometheus /metrics endpoint and forward to the cluster collector.
-		// the cluster collector decides (via its own SendToOdigosMetricsStore setting) whether
-		// to forward these to the odigos metrics store (Victoria Metrics).
-		configDomains["odiglet_metrics"] = collectorconfig.OdigletMetricsConfig(odigosNamespace)
+		odigletMetrics := collectorconfig.OdigletMetricsConfig(odigosNamespace)
+		// Pass only when the user already enabled kubeletstats (metrics destination).
+		// Own-metrics must not start a kubelet scrape on its own.
+		if metricsEnabled && nodeCG.Spec.Metrics.KubeletStats != nil {
+			odigletMetrics = collectorconfig.AddKubeletStatsToOwnMetrics(odigletMetrics, odigosNamespace)
+		}
+		configDomains["odiglet_metrics"] = odigletMetrics
 	}
 
 	// traces
@@ -293,7 +298,9 @@ func calculateCollectorConfigDomains(
 		configDomains["logs"] = logsConfig
 	}
 
-	if odigoscommon.ProfilingPipelineActive(profiling) {
+	// The profiling pipeline's receiver is enterprise-only, so community tier never gets one
+	// regardless of what OdigosConfiguration asks for.
+	if tier.IsEnterprise() && odigoscommon.ProfilingPipelineActive(profiling) {
 		configDomains["profiling"] = collectorconfig.ProfilingPipelineConfig(odigosNamespace, profiling, processorsResults.ProfilesProcessors)
 	}
 
@@ -391,7 +398,15 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 }
 
 func isTracingLoadBalancingNeeded(_ context.Context, _ client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
-	// Tracing load balancing is required only when service graph is enabled.
+	// Tracing load balancing is required by every gateway feature that aggregates a whole trace.
+	// Without it the node collectors round-robin over the gateway replicas, so spans of the same
+	// trace reach different pods and each one only ever sees a fragment of the trace.
+	// The tail sampling and trace correlations conditions must stay in sync with the ones that
+	// install groupbytrace on the gateway in autoscaler/controllers/clustercollector/configmap.go.
 	serviceGraphEnabled := clusterCollectorGroup.Spec.ServiceGraphDisabled == nil || !*clusterCollectorGroup.Spec.ServiceGraphDisabled
-	return serviceGraphEnabled, nil
+	tailSamplingEnabled := clusterCollectorGroup.Spec.TailSampling != nil &&
+		clusterCollectorGroup.Spec.TailSampling.Disabled != nil &&
+		!*clusterCollectorGroup.Spec.TailSampling.Disabled
+	traceCorrelationsEnabled := clusterCollectorGroup.Spec.TraceCorrelations != nil
+	return serviceGraphEnabled || tailSamplingEnabled || traceCorrelationsEnabled, nil
 }

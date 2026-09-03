@@ -110,6 +110,7 @@ spec:
                       description: An enum reason for the agent injection decision.
                       enum:
                       - EnabledSuccessfully
+                      - EnabledWithOtherAgents
                       - WaitingForRuntimeInspection
                       - WaitingForNodeCollector
                       - IgnoredContainer
@@ -822,6 +823,15 @@ spec:
                   this peoperty can be used to know all container names in the workload, even if other controllers did not yet run.
                 items:
                   properties:
+                    allowConcurrentAgents:
+                      description: |-
+                        Odigos by default will attempt to detect if another agent is already running in the container,
+                        and if so, will avoid adding odigos agent to the container.
+                        This option allows to override this setting for a specific container in a source.
+                        Can be used for selective setting of which containers should run odigos concurrently with other agents.
+                        empty means take odigos global config for this setting.
+                        when not empty, the value will override the global config for this container
+                      type: boolean
                     containerName:
                       description: The name of the container to override.
                       type: string
@@ -907,12 +917,6 @@ spec:
                                 type: string
                             type: object
                           type: array
-                        runtimeUpdateState:
-                          description: A temporary variable used during migration
-                            to track whether the new runtime detection process has
-                            been executed. If empty, it indicates the process has
-                            not yet been run. This field may be removed later.
-                          type: string
                         runtimeVersion:
                           type: string
                         secureExecutionMode:
@@ -1530,12 +1534,6 @@ spec:
                             type: string
                         type: object
                       type: array
-                    runtimeUpdateState:
-                      description: A temporary variable used during migration to track
-                        whether the new runtime detection process has been executed.
-                        If empty, it indicates the process has not yet been run. This
-                        field may be removed later.
-                      type: string
                     runtimeVersion:
                       type: string
                     secureExecutionMode:

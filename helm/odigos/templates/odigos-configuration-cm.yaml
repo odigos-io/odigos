@@ -36,7 +36,7 @@ data:
     {{- if .Values.centralProxy.centralBackendURL }}
     centralBackendURL: {{ .Values.centralProxy.centralBackendURL }}
     {{- end }}
-    imagePrefix: {{ template "utils.imagePrefix" (dict "Values" .Values) }}
+    imagePrefix: {{ template "utils.imagePrefix" . }}
     {{- if .Values.ui.uiMode }}
     uiMode: {{ .Values.ui.uiMode }}
     {{- end }}
@@ -50,9 +50,6 @@ data:
     {{- if .Values.ui.uiRemoteUrl }}
     uiRemoteUrl: {{ .Values.ui.uiRemoteUrl }}
     {{- end }}
-    {{- if .Values.ui.centralBackendURL }}
-    centralBackendURL: {{ .Values.ui.centralBackendURL }}
-    {{- end }}
     {{- if or .Values.ui.oidcTenantUrl .Values.ui.oidcClientId .Values.ui.oidcClientSecret }}
     oidc:
       {{- if .Values.ui.oidcTenantUrl }}
@@ -64,6 +61,10 @@ data:
       {{- if .Values.ui.oidcClientSecret }}
       clientSecret: secretRef:odigos-oidc
       {{- end }}
+    {{- end }}
+    {{- if .Values.insights.enabled }}
+    insights:
+      enabled: {{ .Values.insights.enabled }}
     {{- end }}
     {{- if .Values.profiling.enabled }}
     {{- $pex := .Values.profiling.exporter | default dict }}

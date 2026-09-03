@@ -13,15 +13,19 @@ Before installing Odigos Central, ensure you have:
 
 ## Network Requirements
 
+In production, users typically reach a **single hostname** (ingress) that path-routes to Central UI and Central Backend. See [Authentication](/central/authentication#production-ingress-configuration) for the full path table.
+
 Ensure the following network connectivity:
 
-| Source                 | Destination     | Port | Protocol        |
-| ---------------------- | --------------- | ---- | --------------- |
-| Users                  | Central UI      | 3000 | HTTPS           |
-| Central UI             | Central Backend | 8081 | HTTP/HTTPS      |
-| Central Backend        | Redis           | 6379 | TCP             |
-| Central Backend        | Keycloak        | 8080 | HTTP            |
-| Remote Cluster Proxies | Central Backend | 8081 | WebSocket (WSS) |
+| Source | Destination | Port / path | Protocol |
+| --- | --- | --- | --- |
+| Users (browser) | Ingress hostname → Central UI | 443 (UI on 3000 behind ingress) | HTTPS |
+| Users (browser) | Ingress hostname → Central Backend | 443: `/graphql`, `/api/*`, `/realms/*` | HTTPS |
+| Central UI | Central Backend | 8081 | HTTP (in-cluster) |
+| Central Backend | Redis | 6379 | TCP |
+| Central Backend | Keycloak | 8080 | HTTP (in-cluster) |
+| Keycloak | Identity provider (e.g. Azure) | 443 | HTTPS (`login.microsoftonline.com`, `graph.microsoft.com` for Entra ID) |
+| Remote cluster proxies, VM agents, cloud connectors | Central Backend | 443: `/ws/proxy` | WebSocket (`wss` when the URL host ends with `:443`) |
 
 <Warning>
   Odigos Central is an Enterprise feature and requires a valid license token.

@@ -1,0 +1,15 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: Kubelet startup probe sampling (0% keep, dry-run)
+query: |
+  length([?
+    span.serviceName == 'kubelet-health-probes' &&
+    span.kind == 'server' &&
+    span.spanAttributes."http.route" == '/healthz/startup' &&
+    span.spanAttributes."odigos.sampling.category" == 'noise' &&
+    span.spanAttributes."odigos.sampling.dry_run" == `true` &&
+    span.spanAttributes."odigos.sampling.trace.deciding_rule.keep_percentage" == `0` &&
+    span.spanAttributes."odigos.sampling.trace.kept" == `false`
+  ]) > `0`
+expected:
+  minimum: 1

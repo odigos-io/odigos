@@ -62,8 +62,6 @@ func victoriaMetricsExporter(odigosNamespace string) config.GenericMap {
 
 // addOwnMetricsPipeline integrates own-metrics collection into the gateway config.
 func addOwnMetricsPipeline(c *config.Config, ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings, odigosNamespace string, ownTelemetryPort int32, destinationPipelineNames []string) error {
-	c.Receivers[odigosOwnTelemetryOtlpReceiverName] = receiversConfigForOwnMetricsPrometheus()
-
 	receivers := []string{odigosOwnTelemetryOtlpReceiverName}
 	exporters := []string{}
 
@@ -87,6 +85,16 @@ func addOwnMetricsPipeline(c *config.Config, ownMetricsConfig *odigosv1.OdigosOw
 		}
 	}
 
+	// A collector pipeline with no exporters fails config validation, and the gateway then refuses
+	// to start at all - every signal to every destination stops. That state is reachable whenever
+	// own metrics are only meant to reach metrics destinations and none of them contributed a
+	// metrics pipeline, e.g. the only metrics destination failed to render its exporter config and
+	// was skipped. Own metrics are diagnostics, so drop the pipeline instead.
+	if len(exporters) == 0 {
+		return nil
+	}
+
+	c.Receivers[odigosOwnTelemetryOtlpReceiverName] = receiversConfigForOwnMetricsPrometheus()
 	c.Service.Pipelines[ownMetricsStorePipelineName] = config.Pipeline{
 		Receivers: receivers,
 		Exporters: exporters,

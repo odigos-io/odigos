@@ -1,0 +1,85 @@
+# =====================
+# Recommendations
+# Cluster Recommendation CRs enriched with catalog metadata from the embedded
+# YAML manifests (title, description, pros/cons, applied-when checks, etc.).
+# =====================
+
+enum RecommendationType {
+  InferDBAttributes
+  AutoGoOffsetUpdater
+  EnableOwnMetrics
+  SampleHealthProbes
+  UrlTemplatization
+}
+
+# Prerequisite listed in the recommendation catalog YAML (e.g. GoEnterpriseSources).
+type RecommendationCatalogCondition {
+  type: String!
+}
+
+# Applied-when check from the recommendation catalog YAML.
+type RecommendationAppliedWhen {
+  type: String!
+  expression: String
+  actionType: String
+}
+
+# Optional user-facing remediation choice when applying a recommendation.
+# Apply steps live only in the catalog YAML / backend; the UI sends type via
+# applyRecommendationRemediation.
+type RecommendationCatalogRemediation {
+  # Stable id of this remediation within the recommendation (e.g. DropAllHealthProbes).
+  type: String!
+  buttonText: String!
+  tooltip: String!
+  # Copy-paste snippets for applying outside the UI (Helm values, Action CR, etc.).
+  applyExamples: [RecommendationCatalogApplyExample!]!
+}
+
+# Example of applying a remediation declaratively (not via the UI apply flow).
+type RecommendationCatalogApplyExample {
+  # HelmValues or OdigosAction.
+  type: String!
+  # Raw snippet body (typically YAML).
+  content: String!
+}
+
+# A Recommendation CR in the cluster, enriched with catalog/manifest fields.
+type Recommendation {
+  name: ID!
+  type: RecommendationType!
+  # Whether this recommendation is currently applied (via the recommendation
+  # flow or configured organically).
+  applied: Boolean!
+  # Whether the catalog prerequisites for this recommendation currently hold.
+  conditionsMet: Boolean!
+  # Whether the user dismissed this recommendation (odigos.io/recommendation-dismissed label).
+  dismissed: Boolean!
+
+  # Catalog / manifest fields
+  oss: Boolean!
+  requireOdigosDeployment: Boolean!
+  catalogConditions: [RecommendationCatalogCondition!]!
+  appliedWhen: [RecommendationAppliedWhen!]!
+  categories: [String!]!
+  title: String!
+  summary: String!
+  description: String!
+  docsUrl: String
+  pros: [String!]!
+  cons: [String!]!
+  remediations: [RecommendationCatalogRemediation!]!
+}
+
+extend type ComputePlatform {
+  recommendations: [Recommendation!]!
+}
+
+extend type Mutation {
+  # Sets or clears the odigos.io/recommendation-dismissed label on the Recommendation CR.
+  setRecommendationDismissed(name: ID!, dismissed: Boolean!): Recommendation!
+
+  # Looks up the remediation in the catalog manifest and applies its steps
+  # (EditConfig → odigos-local-ui-config, ApplyOdigosAction → Action CR from applyExamples).
+  applyRecommendationRemediation(recommendationType: RecommendationType!, remediationType: String!): Boolean!
+}
