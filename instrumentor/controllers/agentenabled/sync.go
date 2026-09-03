@@ -22,6 +22,8 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/dynamicconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signals"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -104,6 +106,12 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		return ctrl.Result{}, err
 	}
 	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
+
+	if conf.MountMethod != nil && *conf.MountMethod == common.K8sInitContainerMountMethod {
+		if _, copyErr := pro.CopyImagePullSecretsIfMissing(ctx, c, c, env.GetCurrentNamespace(), namespace, conf.ImagePullSecrets); copyErr != nil {
+			return ctrl.Result{}, copyErr
+		}
+	}
 
 	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider, conf)
 	if err != nil {
