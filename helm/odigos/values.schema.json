@@ -712,7 +712,7 @@
         },
         "clickhouse": {
           "additionalProperties": false,
-          "description": "Bundled ClickHouse for the insights service. Single replica, single PVC,\nno replication, no backups. Scale insights pods for HA of ingestion;\nkeep ClickHouse at one replica. User and database name stay hardcoded\n(odigos_insights); image, resources, scheduling, and storage are tunable.",
+          "description": "Bundled ClickHouse for the insights service. Single replica, no\nreplication, no backups. Data is on a PVC by default\n(insights.clickhouse.storage.persistence); set that to false for\nemptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at\none replica. User and database name stay hardcoded (odigos_insights);\nimage, resources, scheduling, and storage are tunable.",
           "properties": {
             "affinity": {
               "additionalProperties": true,
@@ -845,15 +845,21 @@
             "storage": {
               "additionalProperties": false,
               "properties": {
+                "persistence": {
+                  "default": "true",
+                  "description": "When true (default), ClickHouse keeps Insights data on a persistent\nvolume so it survives pod restarts. Set to false only for\ndevelopment or testing: ClickHouse then uses emptyDir, and all\nInsights data is lost when the pod is recreated or rescheduled.",
+                  "required": [],
+                  "title": "persistence"
+                },
                 "size": {
                   "default": "8Gi",
-                  "description": "PVC size for the ClickHouse data volume. Growth is driven mainly by\ntransaction cardinality and trace_observations retention (TTL).\nExpand only if the StorageClass supports volume expansion.",
+                  "description": "PVC size for the ClickHouse data volume. Growth is driven mainly by\ntransaction cardinality and trace_observations retention (TTL).\nExpand only if the StorageClass supports volume expansion.\nIgnored when persistence is false.",
                   "required": [],
                   "title": "size"
                 },
                 "storageClassName": {
                   "default": "",
-                  "description": "StorageClass for the ClickHouse PVC. Empty string uses the cluster\ndefault. Prefer a class backed by fast local/SSD block storage;\navoid slow shared NFS for MergeTree. The class is fixed at PVC\ncreation — changing this value after install does not migrate an\nexisting volume. The PVC is kept across helm uninstall\n(helm.sh/resource-policy: keep).",
+                  "description": "StorageClass for the ClickHouse PVC. Empty string uses the cluster\ndefault. Prefer a class backed by fast local/SSD block storage;\navoid slow shared NFS for MergeTree. The class is fixed at PVC\ncreation — changing this value after install does not migrate an\nexisting volume. The PVC is kept across helm uninstall\n(helm.sh/resource-policy: keep). Ignored when persistence is false.",
                   "required": [],
                   "title": "storageClassName"
                 }
