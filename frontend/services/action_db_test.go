@@ -61,6 +61,45 @@ func TestConvertDbQueryTemplatizationPreservesTemplatizeLiterals(t *testing.T) {
 	require.Equal(t, []string{"ns-a"}, cfg.Scopes.Namespaces)
 }
 
+func TestConvertDbQueryTemplatizationPreservesScopesOnOmit(t *testing.T) {
+	existing := &v1alpha1.Action{
+		Spec: v1alpha1.ActionSpec{
+			DbQueryTemplatization: &dbqueryactions.DbQueryTemplatizationConfig{
+				Scopes: &k8sconsts.SourcesScopes{Namespaces: []string{"prod"}},
+				DbQueryTemplatizationConfig: actionsapi.DbQueryTemplatizationConfig{
+					TemplatizeLiterals: true,
+				},
+			},
+		},
+	}
+
+	cfg := convertDbQueryTemplatizationFromInput(model.ActionTypeDbQueryTemplatization, &model.ActionFieldsInput{}, existing)
+
+	require.NotNil(t, cfg)
+	require.Equal(t, []string{"prod"}, cfg.Scopes.Namespaces)
+	require.True(t, cfg.TemplatizeLiterals)
+}
+
+func TestConvertDbQueryTemplatizationClearsScopesOnEmptyInput(t *testing.T) {
+	existing := &v1alpha1.Action{
+		Spec: v1alpha1.ActionSpec{
+			DbQueryTemplatization: &dbqueryactions.DbQueryTemplatizationConfig{
+				Scopes: &k8sconsts.SourcesScopes{Namespaces: []string{"prod"}},
+			},
+		},
+	}
+
+	cfg := convertDbQueryTemplatizationFromInput(model.ActionTypeDbQueryTemplatization, &model.ActionFieldsInput{
+		Scopes: &model.SourcesScopesInput{},
+	}, existing)
+
+	require.NotNil(t, cfg)
+	require.NotNil(t, cfg.Scopes)
+	require.Empty(t, cfg.Scopes.Namespaces)
+	require.Empty(t, cfg.Scopes.Sources)
+	require.Empty(t, cfg.Scopes.Languages)
+}
+
 func TestConvertInferDbAttributesFromInput(t *testing.T) {
 	cfg := convertInferDbAttributesFromInput(model.ActionTypeInferDbAttributes, &model.ActionFieldsInput{
 		Scopes: &model.SourcesScopesInput{
@@ -84,6 +123,49 @@ func TestConvertInferDbAttributesEmptyFields(t *testing.T) {
 	cfg := convertInferDbAttributesFromInput(model.ActionTypeInferDbAttributes, &model.ActionFieldsInput{}, nil)
 	require.NotNil(t, cfg)
 	require.Nil(t, cfg.Scopes)
+}
+
+func TestConvertInferDbAttributesPreservesScopesOnOmit(t *testing.T) {
+	existing := &v1alpha1.Action{
+		Spec: v1alpha1.ActionSpec{
+			InferDbAttributes: &dbqueryactions.InferDbAttributesConfig{
+				Scopes: &k8sconsts.SourcesScopes{
+					Sources: []k8sconsts.PodWorkload{{
+						Namespace: "default",
+						Kind:      k8sconsts.WorkloadKindDeployment,
+						Name:      "api",
+					}},
+				},
+			},
+		},
+	}
+
+	cfg := convertInferDbAttributesFromInput(model.ActionTypeInferDbAttributes, &model.ActionFieldsInput{}, existing)
+
+	require.NotNil(t, cfg)
+	require.Equal(t, []k8sconsts.PodWorkload{{
+		Namespace: "default",
+		Kind:      k8sconsts.WorkloadKindDeployment,
+		Name:      "api",
+	}}, cfg.Scopes.Sources)
+}
+
+func TestConvertInferDbAttributesClearsScopesOnEmptyInput(t *testing.T) {
+	existing := &v1alpha1.Action{
+		Spec: v1alpha1.ActionSpec{
+			InferDbAttributes: &dbqueryactions.InferDbAttributesConfig{
+				Scopes: &k8sconsts.SourcesScopes{Namespaces: []string{"prod"}},
+			},
+		},
+	}
+
+	cfg := convertInferDbAttributesFromInput(model.ActionTypeInferDbAttributes, &model.ActionFieldsInput{
+		Scopes: &model.SourcesScopesInput{},
+	}, existing)
+
+	require.NotNil(t, cfg)
+	require.NotNil(t, cfg.Scopes)
+	require.Empty(t, cfg.Scopes.Namespaces)
 }
 
 func TestConvertDbActionFieldsToModel(t *testing.T) {
