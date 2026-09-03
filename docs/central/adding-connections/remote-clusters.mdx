@@ -6,9 +6,7 @@ sidebarTitle: 'Remote Clusters'
 
 Once Odigos Central is running, you need to configure your remote clusters to connect to it. This is done by installing Odigos in each remote cluster with the Central Proxy configuration.
 
-Set **`centralProxy.centralBackendURL`** (and **`clusterName`**). That URL is what the Central Proxy uses to open a WebSocket to Central at `/ws/proxy`. It must be reachable **from the remote cluster**, include a scheme (`https://` in production), and match the hostname you expose for `central-backend`. If UI and backend share one ingress host, use that host — and make sure `/ws/proxy` is routed to `central-backend`, not `central-ui`. See [Authentication](/central/authentication#production-ingress-configuration).
-
-Do **not** set `ui.centralBackendURL` on a Central-managed cluster. That value is only for the per-cluster Odigos UI. Setting both writes duplicate `centralBackendURL` keys into `odigos-configuration`. See [Architecture](/central/architecture#backend-urls-helm-values).
+Set **`centralProxy.centralBackendURL`** (and **`clusterName`**). That URL is what the Central Proxy uses to open a WebSocket to Central at `/ws/proxy`. It must be reachable **from the remote cluster**, include a scheme (`https://` in production), and match the hostname you expose for `central-backend`. If UI and backend share one ingress host, use that host — and make sure `/ws/proxy` is routed to `central-backend`, not `central-ui`. See [Authentication](/central/authentication#production-ingress-configuration) and [Architecture](/central/architecture#backend-urls-helm-values).
 
 <Note>
   To connect VM hosts, see [VM Agent](/central/adding-connections/vmagent).
