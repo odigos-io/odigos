@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: head-sampling
+  namespace: default
+status:
+  readyReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: head-sampling-http-server
+  namespace: default
+status:
+  readyReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: head-sampling-http-client
+  namespace: default
+status:
+  readyReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubelet-health-probes
+  namespace: default
+status:
+  readyReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubelet-health-probes-query-params
+  namespace: default
+status:
+  readyReplicas: 1
+  availableReplicas: 1

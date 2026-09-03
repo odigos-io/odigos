@@ -1,11 +1,14 @@
 # CLI-related targets. Included from the root Makefile.
 # Shared vars from the parent Makefile:
 #   TAG                 - image / version tag (auto-detected from cluster/cli/helm if unset)
-#   ORG                 - registry org (default: registry.odigos.io); STAGING_ORG=true for staging GCR
+#   ORG                 - registry org (default: docker.io/keyval); STAGING_ORG=true for staging GCR.
+#                         Local deploy/load-to-kind auto-select registry.odigos.io + enterprise image
+#                         names when the cluster is an enterprise install (see scripts/resolve-dev-image.sh).
 #   IMG_SUFFIX          - image name suffix (empty by default; -rhel-certified when RHEL=true)
-#   ODIGOS_CLI_VERSION  - version passed to install/upgrade (default: `odigos version --cli`)
+#   ODIGOS_CLI_VERSION  - sets Helm image.tag for install/upgrade (default: `odigos version --cli`)
 #   CLUSTER_NAME        - cluster name for install (default: local-dev-cluster)
 #   CENTRAL_BACKEND_URL - optional central backend URL for install
+#   CLI_CHART_VERSION   - optional --chart-version for cli-install/upgrade (published chart; not local)
 #   FLAGS               - extra CLI flags appended to cli-install
 
 CLI_IMAGE ?= $(ORG)/odigos-cli$(IMG_SUFFIX):$(TAG)
@@ -28,32 +31,48 @@ cli-docs:
 	done
 
 # Install Odigos from local cli/ source (go run), reflecting local api/cli changes.
-# Defaults: --version=$(ODIGOS_CLI_VERSION) --nowait --cluster-name=$(CLUSTER_NAME).
-# Override: make cli-install ODIGOS_CLI_VERSION=v1.2.3 CLUSTER_NAME=my-cluster FLAGS='--set image.tag=...'
-# Set CENTRAL_BACKEND_URL to pass --central-backend-url for proxy/central setups.
+#
+# Chart vs image tag:
+#   - Default chart is the local path ../helm/odigos (works without a baked/embedded chart).
+#   - ODIGOS_CLI_VERSION maps to --set image.tag=... (a real published tag such as v1.32.2).
+#     Do not pass it as --chart-version: local charts are often version 0.0.0, and that flag
+#     also skips the embedded-chart path used by release builds.
+#   - CLI_CHART_VERSION optionally sets --chart-version and fetches that chart from the Helm
+#     repo instead of using the local chart. Distinct from CHART_VERSION used by build-cli-image.
+#
+# Examples:
+#   make cli-install ODIGOS_CLI_VERSION=v1.32.2
+#   make cli-install ODIGOS_CLI_VERSION=v1.32.2 CLUSTER_NAME=my-cluster
+#   make cli-install CLI_CHART_VERSION=1.32.2 ODIGOS_CLI_VERSION=v1.32.2
+#   make cli-install FLAGS='--set image.tag=v1.32.2'
 .PHONY: cli-install
 cli-install:
-	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	@echo "Installing odigos from source. image.tag: $(or $(ODIGOS_CLI_VERSION),<chart appVersion>)"
 	cd ./cli ; go run -tags=embed_manifests . install \
-		--version $(ODIGOS_CLI_VERSION) \
-		--nowait \
-		$(if $(CLUSTER_NAME),--cluster-name $(CLUSTER_NAME)) \
-		$(if $(CENTRAL_BACKEND_URL),--central-backend-url $(CENTRAL_BACKEND_URL)) \
+		$(if $(CLI_CHART_VERSION),--chart-version $(CLI_CHART_VERSION),--chart ../helm/odigos) \
+		$(if $(ODIGOS_CLI_VERSION),--set image.tag=$(ODIGOS_CLI_VERSION)) \
+		$(if $(CLUSTER_NAME),--set clusterName=$(CLUSTER_NAME)) \
+		$(if $(CENTRAL_BACKEND_URL),--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL)) \
 		$(FLAGS)
 
 # Uninstall Odigos from the current cluster using local cli/ source.
 .PHONY: cli-uninstall
 cli-uninstall:
-	@echo "Uninstalling odigos from source. version: $(ODIGOS_CLI_VERSION)"
+	@echo "Uninstalling odigos from source."
 	cd ./cli ; go run -tags=embed_manifests . uninstall
 
-# Upgrade an existing install using local cli/ source.
-# Defaults: --version=$(ODIGOS_CLI_VERSION) --yes.
-# Override: make cli-upgrade ODIGOS_CLI_VERSION=v1.2.3
+# Upgrade an existing install using local cli/ source (same Helm flow as install).
+# See cli-install for chart vs image.tag guidance.
+# Override: make cli-upgrade ODIGOS_CLI_VERSION=v1.32.2
 .PHONY: cli-upgrade
 cli-upgrade:
-	@echo "Upgrading odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . upgrade --version $(ODIGOS_CLI_VERSION) --yes
+	@echo "Upgrading odigos from source. image.tag: $(or $(ODIGOS_CLI_VERSION),<chart appVersion>)"
+	cd ./cli ; go run -tags=embed_manifests . upgrade \
+		$(if $(CLI_CHART_VERSION),--chart-version $(CLI_CHART_VERSION),--chart ../helm/odigos) \
+		$(if $(ODIGOS_CLI_VERSION),--set image.tag=$(ODIGOS_CLI_VERSION)) \
+		$(if $(CLUSTER_NAME),--set clusterName=$(CLUSTER_NAME)) \
+		$(if $(CENTRAL_BACKEND_URL),--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL)) \
+		$(FLAGS)
 
 # Build the cli/odigos binary for local/e2e use, with helm charts embedded.
 # Hardcodes chart/binary version to 0.0.0-e2e-test (not TAG). Output: cli/odigos.

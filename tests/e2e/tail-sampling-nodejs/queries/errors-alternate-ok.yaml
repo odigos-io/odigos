@@ -1,0 +1,12 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: errors /alternate first call HTTP 200 — no odigos.sampling.*
+query: |
+  length([?
+    span.serviceName == 'tail-sampling-errors' &&
+    span.kind == 'server' &&
+    span.spanAttributes."http.route" == '/alternate' &&
+    !(span.spanAttributes."odigos.sampling.category")
+  ]) > `0`
+expected:
+  count: 1

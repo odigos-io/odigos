@@ -528,6 +528,12 @@
       "required": [],
       "title": "collectorNode"
     },
+    "disableAutoRecommendations": {
+      "default": "false",
+      "description": "When false (default), selected recommendation Actions (URL templatization, Infer DB Attributes)\nare created automatically as post-install Helm hooks. Set to true to skip auto-applying them.",
+      "required": [],
+      "title": "disableAutoRecommendations"
+    },
     "externalOnpremPullSecret": {
       "default": "false",
       "description": "Set to true if you are providing the odigos-enterprise-registry pull secret externally (not managed by this chart).\nWhen true, the chart will not create the pull secret but will still mount odigos-enterprise-registry on Odigos workloads\nwhen pulling from registry.odigos.io. Use with externalOnpremTokenSecret for GitOps installs where Helm cannot read secrets at template time.",
@@ -584,14 +590,52 @@
       "title": "ignoreOdigosNamespace"
     },
     "ignoredContainers": {
-      "default": "",
-      "description": "container names to never instrument\nuseful for sidecars which are not interesting to be instrumented\nset by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init\nyou can add additional container names to ignore by adding them to the list",
+      "description": "container names to never instrument\nuseful for sidecars which are not interesting to be instrumented",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "required": []
+      },
       "required": [],
       "title": "ignoredContainers"
     },
     "ignoredNamespaces": {
-      "default": "",
-      "description": "namespaces list not to show in odigos ui\nset by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease\nyou can add additional namespaces to ignore by adding them to the list",
+      "description": "Namespaces excluded from the Odigos UI so system and infrastructure namespaces\n(service meshes, local storage, lease holders, etc.) do not clutter the sources list.\nThe Odigos install namespace is ignored by default; set ignoreOdigosNamespace to false to show it.\nWhen openshift.enabled is true, OpenShift system namespaces are also ignored automatically.",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "required": []
+      },
       "required": [],
       "title": "ignoredNamespaces"
     },
@@ -610,7 +654,7 @@
     },
     "imagePrefix": {
       "default": "",
-      "description": "By default, images are pulled from odigos registry at `registry.odigos.io`\nIf you use custom or internal registry to serve in your cluster, you can set the imagePrefix to your registry.\nFor example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-\u003ccomponent\u003e:\u003ctag\u003e`",
+      "description": "Default image registry prefix. When unset:\n  - community installs use `docker.io/keyval`\n  - enterprise installs (onPremToken / odigos-pro secret) use `registry.odigos.io`\n  - OpenShift installs use `registry.connect.redhat.com/odigos`\nIf you use a custom or internal registry, set imagePrefix to your registry.\nFor example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-\u003ccomponent\u003e:\u003ctag\u003e`",
       "required": [],
       "title": "imagePrefix"
     },
@@ -623,9 +667,322 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, ui, enterprise-ui, instrumentor, enterprise-instrumentor,\n  odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-insights",
       "required": [],
       "title": "images"
+    },
+    "insights": {
+      "additionalProperties": false,
+      "description": "Configuration for the Odigos Insights service (enterprise).\nWhen enabled, deploys a Go service that ingests OTLP traces, learns\nper-route baselines across multiple deviation classes (D1..D6), and\nserves anomaly queries to the UI. Requires an enterprise on-prem token\n(odigos-pro secret).",
+      "properties": {
+        "affinity": {
+          "additionalProperties": true,
+          "required": [],
+          "title": "affinity"
+        },
+        "autoscaling": {
+          "additionalProperties": false,
+          "description": "CPU-based HorizontalPodAutoscaler for insights (always on; requires\nmetrics-server). The HPA owns the replica count. min/max replicas default\nto the gateway's values.",
+          "properties": {
+            "cpuTargetUtilization": {
+              "default": "80",
+              "description": "Target average CPU utilization percentage.",
+              "maximum": 100,
+              "minimum": 1,
+              "required": [],
+              "title": "cpuTargetUtilization"
+            },
+            "maxReplicas": {
+              "default": "10",
+              "description": "Max replicas. Defaults to the gateway's maximum; uncomment to override.",
+              "minimum": 1,
+              "required": [],
+              "title": "maxReplicas"
+            },
+            "minReplicas": {
+              "default": "2",
+              "description": "Min replicas. Defaults to the gateway's minimum; uncomment to override.",
+              "minimum": 1,
+              "required": [],
+              "title": "minReplicas"
+            }
+          },
+          "required": [],
+          "title": "autoscaling"
+        },
+        "clickhouse": {
+          "additionalProperties": false,
+          "description": "Bundled ClickHouse for the insights service. Single replica, no\nreplication, no backups. Data is on a PVC by default\n(insights.clickhouse.storage.persistence); set that to false for\nemptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at\none replica. User and database name stay hardcoded (odigos_insights);\nimage, resources, scheduling, and storage are tunable.",
+          "properties": {
+            "affinity": {
+              "additionalProperties": true,
+              "required": [],
+              "title": "affinity"
+            },
+            "config": {
+              "additionalProperties": false,
+              "description": "Curated ClickHouse server settings mounted into config.d / users.d.\nDefaults follow common Kubernetes guidance: leave headroom under the\npod memory limit, bound concurrent queries, and cap single-query memory.",
+              "properties": {
+                "extraConfig": {
+                  "default": "",
+                  "description": "Optional raw XML merged as config.d/odigos-extra.xml. Escape hatch\nfor advanced tuning; prefer the curated knobs above when possible.\nExample:\n  extraConfig: |\n    \u003cclickhouse\u003e\n      \u003ctimezone\u003eUTC\u003c/timezone\u003e\n    \u003c/clickhouse\u003e",
+                  "required": [],
+                  "title": "extraConfig"
+                },
+                "logLevel": {
+                  "default": "information",
+                  "description": "ClickHouse logger level (trace, debug, information, warning, error).",
+                  "required": [],
+                  "title": "logLevel"
+                },
+                "maxConcurrentQueries": {
+                  "default": "100",
+                  "description": "Max queries executing at once (server-wide). Caps concurrent load\nfrom Insights flushes and UI reads.",
+                  "minimum": 1,
+                  "required": [],
+                  "title": "maxConcurrentQueries"
+                },
+                "maxMemoryUsagePerQuery": {
+                  "default": "1Gi",
+                  "description": "Per-query memory cap (users.xml). Examples: \"1Gi\"\nEmpty string keeps ClickHouse's default.",
+                  "required": [],
+                  "title": "maxMemoryUsagePerQuery"
+                },
+                "maxServerMemoryUsageToRamRatio": {
+                  "default": "0.85",
+                  "description": "Fraction of detected RAM (pod limit) ClickHouse may use.\nLeave headroom for the OS page cache and background merges so the\nkubelet does not OOM-kill the pod.",
+                  "maximum": 1,
+                  "minimum": 0.1,
+                  "required": [],
+                  "title": "maxServerMemoryUsageToRamRatio"
+                }
+              },
+              "required": [],
+              "title": "config"
+            },
+            "image": {
+              "additionalProperties": false,
+              "description": "ClickHouse server image. Third-party image (not built by Odigos);\noverride repository/tag for private mirrors or version pins.",
+              "properties": {
+                "pullPolicy": {
+                  "default": "IfNotPresent",
+                  "description": "Image pull policy.",
+                  "required": [],
+                  "title": "pullPolicy"
+                },
+                "repository": {
+                  "default": "clickhouse/clickhouse-server",
+                  "description": "Container image repository.",
+                  "required": [],
+                  "title": "repository"
+                },
+                "tag": {
+                  "default": "24.8-alpine",
+                  "description": "Container image tag.",
+                  "required": [],
+                  "title": "tag"
+                }
+              },
+              "required": [],
+              "title": "image"
+            },
+            "nodeSelector": {
+              "default": "",
+              "description": "Override the global nodeSelector for ClickHouse. Use this to pin the\nDB to nodes with suitable disk (e.g. SSD / stateful pool). Falls back\nto values.nodeSelector when unset. Independent of insights.nodeSelector\nso the stateful DB can be scheduled separately from the app pods.",
+              "required": [],
+              "title": "nodeSelector"
+            },
+            "priorityClassName": {
+              "default": "",
+              "description": "Priority class name for ClickHouse. Prefer a higher priority than\ngeneral workloads so the single-replica DB is not evicted under pressure.",
+              "required": [],
+              "title": "priorityClassName"
+            },
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "2000m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "2Gi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "limits",
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "100m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "512Mi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "requests",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "resources",
+              "type": "object"
+            },
+            "storage": {
+              "additionalProperties": false,
+              "properties": {
+                "persistence": {
+                  "default": "true",
+                  "description": "When true (default), ClickHouse keeps Insights data on a persistent\nvolume so it survives pod restarts. Set to false only for\ndevelopment or testing: ClickHouse then uses emptyDir, and all\nInsights data is lost when the pod is recreated or rescheduled.",
+                  "required": [],
+                  "title": "persistence"
+                },
+                "size": {
+                  "default": "8Gi",
+                  "description": "PVC size for the ClickHouse data volume. Growth is driven mainly by\ntransaction cardinality and trace_observations retention (TTL).\nExpand only if the StorageClass supports volume expansion.",
+                  "required": [],
+                  "title": "size"
+                },
+                "storageClassName": {
+                  "default": "",
+                  "description": "StorageClass for the ClickHouse PVC. Empty string uses the cluster\ndefault. Prefer a class backed by fast local/SSD block storage;\navoid slow shared NFS for MergeTree. The class is fixed at PVC\ncreation — changing this value after install does not migrate an\nexisting volume. The PVC is kept across helm uninstall\n(helm.sh/resource-policy: keep).",
+                  "required": [],
+                  "title": "storageClassName"
+                }
+              },
+              "required": [],
+              "title": "storage",
+              "type": "object"
+            },
+            "tolerations": {
+              "items": {
+                "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+                "properties": {
+                  "effect": {
+                    "type": "string"
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "operator": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "required": [],
+              "title": "tolerations"
+            }
+          },
+          "required": [],
+          "title": "clickhouse"
+        },
+        "enabled": {
+          "default": "false",
+          "description": "When true, deploys the insights service. Default false (off).",
+          "required": [],
+          "title": "enabled"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "1000m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "1Gi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "128Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "tolerations": {
+          "items": {
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "required": [],
+          "title": "tolerations"
+        }
+      },
+      "required": [],
+      "title": "insights"
     },
     "instrumentor": {
       "additionalProperties": false,
@@ -1488,6 +1845,12 @@
                   },
                   {
                     "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
                   }
                 ],
                 "required": []
@@ -1590,6 +1953,12 @@
           "required": [],
           "title": "resources"
         },
+        "runAsNonRoot": {
+          "default": "false",
+          "description": "runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.\nwhen true, each container uses the non-root USER declared in its image (e.g. 65532).\nby default (false), all containers are forced to run as UID/GID 0.\n\nThis setting only changes the UID the containers run as. It does not change the Linux capabilities\ngranted to odiglet (those are controlled separately via unPrivileged and the capabilities lists).\nOperations relying on root's implicit filesystem access can fail as non-root:\ne.g. writing agent files to root-owned host paths (/var/odigos).",
+          "required": [],
+          "title": "runAsNonRoot"
+        },
         "tolerations": {
           "description": "This toleration with 'Exists' operator and no key/effect specified\nwill match ALL taints, allowing pods to be scheduled on any node\nregardless of its taints (including master/control-plane nodes)",
           "items": {
@@ -1622,7 +1991,7 @@
         },
         "unPrivileged": {
           "default": "false",
-          "description": "run the odiglet container without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
+          "description": "run the odiglet pod without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
           "required": [],
           "title": "unPrivileged"
         }
@@ -2184,12 +2553,6 @@
           "additionalProperties": true,
           "required": [],
           "title": "affinity"
-        },
-        "centralBackendURL": {
-          "default": "",
-          "description": "centralBackendURL:\n - This flag sets the URL of the central backend.\n - If not set, the UI will not connect to the central backend.",
-          "required": [],
-          "title": "centralBackendURL"
         },
         "deploymentName": {
           "default": "odigos-ui",

@@ -91,8 +91,8 @@ func (c *cache) Get(key string) (*commonapi.ContainerCollectorConfig, bool) {
 
 // isSourceWorkloadPrefix returns true when the workload key prefix (e.g. "ns/Kind/name/")
 // has an entry in the workloadKeysIndex — i.e. an InstrumentationConfig currently exists for
-// the workload. Used by odigosprofilesprocessor (which only has ns/kind/name on the resource,
-// not k8s.container.name) to forward profiles only for active Sources.
+// the workload. Used by the enterprise profiles processors, which only have ns/kind/name on the
+// resource (not k8s.container.name), to forward profiles only for active Sources.
 func (c *cache) isSourceWorkloadPrefix(workloadKeyPrefix string) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
