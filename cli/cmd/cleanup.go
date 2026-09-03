@@ -80,6 +80,11 @@ All other Odigos components and system resources are deleted automatically by He
 				fmt.Printf("\033[31mERROR\033[0m Failed to remove all sources for cleanup: %s\n", err)
 				os.Exit(1)
 			}
+			err = removeCopiedImagePullSecrets(ctx, client, ns)
+			if err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Failed to remove copied image pull secrets: %s\n", err)
+				os.Exit(1)
+			}
 			if autoRolloutDisabled {
 				fmt.Println("Odigos is configured to NOT rollout workloads automatically; existing pods will remain instrumented until a manual rollout is triggered.")
 			} else if !cmd.Flag("no-wait").Changed {
