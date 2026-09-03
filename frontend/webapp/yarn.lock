@@ -579,12 +579,12 @@
   resolved "https://registry.npmjs.org/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@0.0.294":
-  version "0.0.294"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.294.tgz#4ac867c5ebe635e9bb13d8040466a1da7793af01"
-  integrity sha512-X6kWVTDElTJnO6Wn4JVH175PgefSYwIXxJG6L1FcWlM2AupIeLZw9AcnttRu/tOJmp3Z67eM5i2JY+KujIYXHw==
+"@odigos/ui-kit@0.0.295":
+  version "0.0.295"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.295.tgz#11a0e34c9f1f41beab9475010c0b214e8bc547d2"
+  integrity sha512-jsMRWGk7HPct+jjb27SryOncgE7HPnejLluoFUD98p1uEMc7VFkWiSWvR/1VjBEa5tecYI3pzUOYZ2t16lD2ZA==
   dependencies:
-    "@xyflow/react" "^12.11.5"
+    "@xyflow/react" "^12.11.6"
     elkjs "^0.12.0"
     javascript-time-ago "^2.6.4"
     prism-react-renderer "^2.4.1"
@@ -673,10 +673,10 @@
   resolved "https://registry.npmjs.org/@types/json5/-/json5-0.0.29.tgz"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
 
-"@types/node@26.4.0":
-  version "26.4.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-26.4.0.tgz#4c4ca071c42241fe602741d02999f16b4e64c468"
-  integrity sha512-faiGnoIrLH/V8cibOMEAZ8pMw6oXqSukl29ra4mN8GdaB2ZewzeaLj+INpV5N+Z1eKWzY+IzaIZH2EIR6YZRNQ==
+"@types/node@26.4.1":
+  version "26.4.1"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-26.4.1.tgz#3d8dc80515894958448ee266cf5d6bc3e5205bd5"
+  integrity sha512-k97ENvZWtvA6yqz5/FS6a7duDgOPEeOQOc2iKS/nY6mX6qJUKtLnWzQS+Xj6tXweyj6ZcTAK2Qecetnvi9nCLA==
   dependencies:
     undici-types "~8.3.0"
 
@@ -685,10 +685,10 @@
   resolved "https://registry.npmjs.org/@types/prismjs/-/prismjs-1.26.6.tgz"
   integrity sha512-vqlvI7qlMvcCBbVe0AKAb4f97//Hy0EBTaiW8AalRnG/xAN5zOiWWyrNqNXeq8+KAuvRewjCVY1+IPxk4RdNYw==
 
-"@types/react-dom@19.2.5":
-  version "19.2.5"
-  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-19.2.5.tgz#d4ecf8d704cab59901d3fbb0975b6f855306595f"
-  integrity sha512-fMPwH9v7r/pp43yUd2/Mbiex5KouJwwR3dzHkhLREUC6764VyDsqxhAxv6OFEYR1RhjOyD1naqba8ECDBe7ZQg==
+"@types/react-dom@19.2.7":
+  version "19.2.7"
+  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-19.2.7.tgz#eba78fc6201e564986ec40d56c86c8434593cace"
+  integrity sha512-I8bPpDLcHBv1qiIiXDCy71Rt8eQDKJP0sMSWJphDdAcdqiJ1sGpZamavoEIRZmYzjia9LuEb2HlYdDpmoENpvQ==
 
 "@types/react@19.2.18":
   version "19.2.18"
@@ -918,19 +918,19 @@
   dependencies:
     tslib "^2.3.0"
 
-"@xyflow/react@^12.11.5":
-  version "12.11.5"
-  resolved "https://registry.yarnpkg.com/@xyflow/react/-/react-12.11.5.tgz#238fef260b4334ab4b9226de8cfc74407e71fd1b"
-  integrity sha512-QqoryGkqEhWBuQN9bZWRKhwr3Uoj9lCGj/tg0NnIWHHEOXV+5c8cYsc7Q9TST63V92lHqcNV9P5cjvJ9ZAmblQ==
+"@xyflow/react@^12.11.6":
+  version "12.11.6"
+  resolved "https://registry.yarnpkg.com/@xyflow/react/-/react-12.11.6.tgz#e94c6d6d9910e5e4f6d97b9a6c25464817b85685"
+  integrity sha512-9XsEJNHjatKYndszKTF/bsU7FOP9dJ6V/EQwzy3oMdtqgBuUq7BjKSwkEo+C7s4qHstHQfwwoHA3E8QfpPxZZQ==
   dependencies:
-    "@xyflow/system" "0.0.81"
+    "@xyflow/system" "0.0.82"
     classcat "^5.0.3"
     zustand "^4.4.0"
 
-"@xyflow/system@0.0.81":
-  version "0.0.81"
-  resolved "https://registry.yarnpkg.com/@xyflow/system/-/system-0.0.81.tgz#3b704b9821d6ff99b41aad675dadc13c806ed137"
-  integrity sha512-hfbafW4i7uLq7ILok8QWFFm4KMFw22lbZNJHKfHOMSOOoCk5e5m8yfr84UV9NaJajmogWaLVnp2XFU9JQejlqg==
+"@xyflow/system@0.0.82":
+  version "0.0.82"
+  resolved "https://registry.yarnpkg.com/@xyflow/system/-/system-0.0.82.tgz#4e21201090f309d82141834a6bf90e072b929c57"
+  integrity sha512-4DKnL3CGtCGLRSmgDqaajRVgeksMXq/Yw4wPfdMfm7JvdIiWHGzVYOfFUztiATwdBXZqUU6HhehwUdbV9G23PQ==
   dependencies:
     "@types/d3-drag" "^3.0.7"
     "@types/d3-interpolate" "^3.0.4"
@@ -2598,7 +2598,7 @@ ms@^2.1.1, ms@^2.1.3:
   resolved "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
-nanoid@^3.3.17:
+nanoid@^3.3.17, nanoid@^3.3.18:
   version "3.3.18"
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.18.tgz#f66a2de1199ffde0fcf21c8a5f13106b1c081913"
   integrity sha512-DTg4MJbGMWkfi6VZFdNt2/caMbQy4Ou+Op/hJQvGEWcnVfoA1QA+xzRKAzw9jD6+GVOOeYr/mIcuDSdug6F6+w==
@@ -2829,12 +2829,21 @@ postcss-value-parser@^4.0.2, postcss-value-parser@^4.2.0:
   resolved "https://registry.npmjs.org/postcss-value-parser/-/postcss-value-parser-4.2.0.tgz"
   integrity sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==
 
-postcss@8.4.31, postcss@^8.5.18, postcss@^8.5.26:
+postcss@8.4.31, postcss@^8.5.18:
   version "8.5.26"
   resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.5.26.tgz#6e75135780c7e10df3433bf2266c552d35c8c620"
   integrity sha512-u82N74LFzG8ca+dD8puPnplTXoGH4fTPpVGuIbt36G3qvNlkvfD0lEAZSxaly3KX8TS/L1A1gsCEmvKmBcVbkQ==
   dependencies:
     nanoid "^3.3.17"
+    picocolors "^1.1.1"
+    source-map-js "^1.2.1"
+
+postcss@^8.5.27:
+  version "8.5.27"
+  resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.5.27.tgz#430accf0f7cb93fbad8a37abab86eb3df4715648"
+  integrity sha512-79Iho8QeYyooJ8e9lCRyTVlyTAkS/kXBYKff6TMzS3kEWGQ8Ds5UEtXpGrSUDLUWok6QTvxeYy0GO8fopHnaSA==
+  dependencies:
+    nanoid "^3.3.18"
     picocolors "^1.1.1"
     source-map-js "^1.2.1"
 

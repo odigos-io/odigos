@@ -1,48 +1,120 @@
 {{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
 {{- /*
-Schema migrations run exactly once per release from this Job (never from the
-serving replicas), so replicas scale without racing on DDL. The `migrate`
-entrypoint retries until ClickHouse is reachable, so it tolerates the bundled
-DB still starting up.
+Schema migrations run from this Job rather than from serving replicas, so
+multiple Insights replicas never race on DDL.
 
-The hook phase is chosen adaptively, because ClickHouse (its Secret, Service,
-Deployment and PVC) are ordinary resources that Helm applies only during the
-main release phase -- AFTER pre-* hooks and BEFORE post-* hooks:
-  - ClickHouse already exists (steady-state upgrade): run pre-upgrade, so the
-    schema is migrated BEFORE the new odigos-insights replicas roll out in the
-    main phase and new code never serves against an old schema.
-  - ClickHouse does NOT exist yet (fresh install, or the first upgrade that
-    enables insights): a pre-upgrade migration would run before the main phase
-    that creates ClickHouse, so it would have no Secret to mount and no DB to
-    reach -- this is the "secret odigos-insights-clickhouse not found"
-    CreateContainerConfigError. Fall back to post-install/post-upgrade so the
-    migration runs AFTER ClickHouse has been created.
-We deliberately keep ClickHouse as ordinary (non-hook) resources: turning the
-PVC into a hook would delete it via Helm's default before-hook-creation policy
-on every upgrade, wiping all insights data.
+There are three lifecycle cases:
 
-Either way the insights pods gate their own readiness on the schema
-(waitForSchemaReady in insights/cmd/main.go keeps /readyz at 503 until this Job
-has applied the schema), so no replica serves a missing/stale schema regardless
-of the phase chosen here.
+1. Bootstrap
+   Fresh install, or first upgrade that enables Insights.
+
+   There is no existing ClickHouse Deployment, so migration is rendered as a
+   regular Kubernetes Job. Helm does not block waiting for it.
+
+   ClickHouse and the migration Job can start asynchronously. The migrate
+   command retries until ClickHouse is reachable, and Insights replicas remain
+   unready through waitForSchemaReady until the schema is ready.
+
+2. Normal Insights upgrade
+   An existing ClickHouse Deployment is present and the requested storage mode
+   is unchanged.
+
+   Migration runs as a pre-upgrade Helm hook. Helm waits for it before applying
+   the new release, ensuring new Insights code never runs against an old schema.
+
+   A failed migration intentionally fails the Helm upgrade.
+
+3. Storage-mode transition
+   persistence=true -> false
+   persistence=false -> true
+
+   Migration must NOT run as a pre-upgrade hook.
+
+   For example, when switching true -> false because the PVC is Pending, a
+   pre-upgrade migration would wait for the old PVC-backed ClickHouse before
+   Helm is allowed to update ClickHouse to emptyDir. That creates a deadlock.
+
+   During a storage transition, migration therefore runs as a regular Job.
+   Helm first applies the desired ClickHouse storage configuration, the migrate
+   process retries until that ClickHouse is reachable, and Insights remains
+   unready until the schema exists.
+
+Regular bootstrap/transition Jobs include the Helm release revision in their
+name. This prevents immutable completed Jobs from colliding with future
+bootstrap or storage-transition Jobs.
+
+ClickHouse Secret, Service, Deployment and PVC remain ordinary Helm resources.
+The PVC has helm.sh/resource-policy: keep so Insights data is not automatically
+deleted on uninstall or when persistence is temporarily disabled.
 */}}
-{{- $clickhouseExists := lookup "v1" "Secret" .Release.Namespace "odigos-insights-clickhouse" }}
+
+{{- /*
+Inspect the ClickHouse Deployment that exists BEFORE this Helm operation.
+
+lookup intentionally reflects live cluster state. During helm template and
+client-only dry-runs it may return empty, which safely falls back to the
+non-blocking bootstrap behavior.
+*/}}
+{{- $existingClickHouse := lookup "apps/v1" "Deployment" .Release.Namespace "odigos-insights-clickhouse" }}
+{{- $clickhouseExists := not (empty $existingClickHouse) }}
+
+{{- /*
+Determine the storage mode requested by the new release.
+*/}}
+{{- $desiredPersistent := ne .Values.insights.clickhouse.storage.persistence false }}
+
+{{- /*
+Determine the storage mode used by the currently installed ClickHouse
+Deployment.
+
+Default false is intentional: if there is no existing Deployment there is no
+previous persistent mode to preserve and this is treated as bootstrap.
+*/}}
+{{- $currentlyPersistent := false }}
+
+{{- if $clickhouseExists }}
+  {{- range $volume := $existingClickHouse.spec.template.spec.volumes }}
+    {{- if eq $volume.name "data" }}
+      {{- if hasKey $volume "persistentVolumeClaim" }}
+        {{- $currentlyPersistent = true }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- /*
+A storage transition must be non-blocking so Helm can first update ClickHouse
+to the requested storage backend.
+*/}}
+{{- $storageModeChanging := and .Release.IsUpgrade $clickhouseExists (ne $currentlyPersistent $desiredPersistent) }}
+
+{{- /*
+Only an actual upgrade of an already-existing ClickHouse installation with an
+unchanged storage mode requires synchronous pre-upgrade migration.
+*/}}
+{{- $usePreUpgradeHook := and .Release.IsUpgrade $clickhouseExists (not $storageModeChanging) }}
+
 apiVersion: batch/v1
 kind: Job
 metadata:
+  {{- if $usePreUpgradeHook }}
   name: odigos-insights-migrate
+  {{- else if $storageModeChanging }}
+  name: odigos-insights-migrate-storage-transition-{{ .Release.Revision }}
+  {{- else }}
+  name: odigos-insights-migrate-bootstrap-{{ .Release.Revision }}
+  {{- end }}
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: odigos-insights-migrate
     odigos.io/system-object: "true"
+  {{- if $usePreUpgradeHook }}
   annotations:
-    {{- if $clickhouseExists }}
-    "helm.sh/hook": pre-upgrade,post-install
-    {{- else }}
-    "helm.sh/hook": post-install,post-upgrade
-    {{- end }}
+    "helm.sh/hook": pre-upgrade
     "helm.sh/hook-weight": "0"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  {{- end }}
+
 spec:
   # The process retries connecting internally; this bounds a genuinely stuck run
   # (e.g. a broken migration) instead of retrying forever.
@@ -82,7 +154,10 @@ spec:
             limits:
               cpu: 500m
               memory: 256Mi
+
       {{- with .Values.insights.tolerations }}
-      tolerations: {{ toYaml . | nindent 8 }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
+
 {{- end }}

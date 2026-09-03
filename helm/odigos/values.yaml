@@ -1306,10 +1306,12 @@ insights:
 
   # @schema
   # description: |-
-  #   Bundled ClickHouse for the insights service. Single replica, single PVC,
-  #   no replication, no backups. Scale insights pods for HA of ingestion;
-  #   keep ClickHouse at one replica. User and database name stay hardcoded
-  #   (odigos_insights); image, resources, scheduling, and storage are tunable.
+  #   Bundled ClickHouse for the insights service. Single replica, no
+  #   replication, no backups. Data is on a PVC by default
+  #   (insights.clickhouse.storage.persistence); set that to false for
+  #   emptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at
+  #   one replica. User and database name stay hardcoded (odigos_insights);
+  #   image, resources, scheduling, and storage are tunable.
   # @schema
   clickhouse:
     # @schema
@@ -1429,6 +1431,14 @@ insights:
       extraConfig: ""
 
     storage:
+      # @schema
+      # description: |-
+      #   When true (default), ClickHouse keeps Insights data on a persistent
+      #   volume so it survives pod restarts. Set to false only for
+      #   development or testing: ClickHouse then uses emptyDir, and all
+      #   Insights data is lost when the pod is recreated or rescheduled.
+      # @schema
+      persistence: true
       # @schema
       # description: |-
       #   PVC size for the ClickHouse data volume. Growth is driven mainly by
