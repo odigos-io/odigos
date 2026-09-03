@@ -44,6 +44,80 @@ func costReductionRuleFromInput(input model.CostReductionRuleInput) v1alpha1.Cos
 	}
 }
 
+// Nil SourceScopes/Operation match all sources/operations; preserve them on GraphQL omit.
+
+func mergeNoisyOperationUpdate(existing v1alpha1.NoisyOperation, input model.NoisyOperationRuleInput) v1alpha1.NoisyOperation {
+	rule := noisyOperationFromInput(input)
+	if input.Name == nil {
+		rule.Name = existing.Name
+	}
+	if input.Disabled == nil {
+		rule.Disabled = existing.Disabled
+	}
+	if input.SourceScopes == nil {
+		rule.SourceScopes = existing.SourceScopes
+	}
+	if input.Operation == nil {
+		rule.Operation = existing.Operation
+	}
+	if input.PercentageAtMost == nil {
+		rule.PercentageAtMost = existing.PercentageAtMost
+	}
+	if input.Notes == nil {
+		rule.Notes = existing.Notes
+	}
+	return rule
+}
+
+func mergeHighlyRelevantOperationUpdate(existing v1alpha1.HighlyRelevantOperation, input model.HighlyRelevantOperationRuleInput) v1alpha1.HighlyRelevantOperation {
+	rule := highlyRelevantOperationFromInput(input)
+	if input.Name == nil {
+		rule.Name = existing.Name
+	}
+	if input.Disabled == nil {
+		rule.Disabled = existing.Disabled
+	}
+	if input.SourceScopes == nil {
+		rule.SourceScopes = existing.SourceScopes
+	}
+	if input.Error == nil {
+		rule.Error = existing.Error
+	}
+	if input.DurationAtLeastMs == nil {
+		rule.DurationAtLeastMs = existing.DurationAtLeastMs
+	}
+	if input.Operation == nil {
+		rule.Operation = existing.Operation
+	}
+	if input.PercentageAtLeast == nil {
+		rule.PercentageAtLeast = existing.PercentageAtLeast
+	}
+	if input.Notes == nil {
+		rule.Notes = existing.Notes
+	}
+	return rule
+}
+
+func mergeCostReductionRuleUpdate(existing v1alpha1.CostReductionRule, input model.CostReductionRuleInput) v1alpha1.CostReductionRule {
+	rule := costReductionRuleFromInput(input)
+	if input.Name == nil {
+		rule.Name = existing.Name
+	}
+	if input.Disabled == nil {
+		rule.Disabled = existing.Disabled
+	}
+	if input.SourceScopes == nil {
+		rule.SourceScopes = existing.SourceScopes
+	}
+	if input.Operation == nil {
+		rule.Operation = existing.Operation
+	}
+	if input.Notes == nil {
+		rule.Notes = existing.Notes
+	}
+	return rule
+}
+
 // ---- CRD → Model converters ----
 
 func convertNoisyOperationToModel(rule *v1alpha1.NoisyOperation) *model.NoisyOperationRule {
