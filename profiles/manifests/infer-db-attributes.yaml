@@ -1,0 +1,10 @@
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: infer-db-attributes
+spec:
+  actionName: Infer DB Attributes
+  notes: "Auto generated rule from infer-db-attributes profile. Do not edit."
+  signals:
+    - TRACES
+  inferDbAttributes: {}
