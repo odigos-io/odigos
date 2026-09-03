@@ -498,26 +498,26 @@
   dependencies:
     "@types/mdx" "^2.0.0"
 
-"@mintlify/cli@4.0.1381":
-  version "4.0.1381"
-  resolved "https://registry.yarnpkg.com/@mintlify/cli/-/cli-4.0.1381.tgz#de930c77dcd14f0875f32bb1e2f1641fcd900ba4"
-  integrity sha512-E979Q+hZbVLGLrDLe2PW8S6jzj8OqDz8iq88TEfdKWNe1QxE6XbPeEJPKhHrSaqJwtVccJzHX7/x6w0Z4BHkiA==
+"@mintlify/cli@4.0.1408":
+  version "4.0.1408"
+  resolved "https://registry.yarnpkg.com/@mintlify/cli/-/cli-4.0.1408.tgz#b4fb5f1a7d31a22c62387c77f9e3a7e44f62829d"
+  integrity sha512-tJleAZicTFa5RJcgaUd7hhRVDTb+JpyazOxjCEuKkktHfd74TnLiVbwW78dAGNiUH1txTJ4n+tCVuRssS0WPHw==
   dependencies:
     "@inquirer/prompts" "7.9.0"
-    "@mintlify/common" "1.0.1072"
-    "@mintlify/link-rot" "3.0.1269"
-    "@mintlify/models" "0.0.344"
-    "@mintlify/prebuild" "1.0.1223"
-    "@mintlify/previewing" "4.0.1293"
-    "@mintlify/validation" "0.1.817"
-    adm-zip "0.5.16"
+    "@mintlify/common" "1.0.1094"
+    "@mintlify/link-rot" "3.0.1294"
+    "@mintlify/models" "0.0.349"
+    "@mintlify/prebuild" "1.0.1247"
+    "@mintlify/previewing" "4.0.1318"
+    "@mintlify/validation" "0.1.830"
+    adm-zip "0.6.0"
     chalk "5.2.0"
     color "4.2.3"
     detect-port "1.5.1"
     fs-extra "11.2.0"
     ink "6.3.0"
     inquirer "12.3.0"
-    js-yaml "4.1.1"
+    js-yaml "4.3.1"
     jsonc-parser "^3.3.1"
     mdast-util-mdx-jsx "3.2.0"
     open "8.4.2"
@@ -539,16 +539,16 @@
   optionalDependencies:
     keytar "7.9.0"
 
-"@mintlify/common@1.0.1072":
-  version "1.0.1072"
-  resolved "https://registry.yarnpkg.com/@mintlify/common/-/common-1.0.1072.tgz#5ced6167ca0c5d9408d0fdb9c8ca795950fb49bb"
-  integrity sha512-WfhMjF8q8CaYieg3Mor9RK1dxi6l4Bc93UrPUBZXa4jpnTbOhSxN0ZpeVAVxlAjmGXAdZI55Ktifet0ma+mXIg==
+"@mintlify/common@1.0.1094":
+  version "1.0.1094"
+  resolved "https://registry.yarnpkg.com/@mintlify/common/-/common-1.0.1094.tgz#b85f7d13a3381b35565024a21c61c4b9607a8615"
+  integrity sha512-6rce85IeVULE24RKiVPhrVyJHhrT1i6ssokBUtKTr4QN1ZSFHxJOY3jyW62XsmCMz9IUwXFtEbpAOKFS8XroGw==
   dependencies:
     "@asyncapi/parser" "3.4.0"
-    "@mintlify/mdx" "4.0.1"
-    "@mintlify/models" "0.0.344"
+    "@mintlify/mdx" "4.0.2"
+    "@mintlify/models" "0.0.349"
     "@mintlify/openapi-parser" "0.0.8"
-    "@mintlify/validation" "0.1.817"
+    "@mintlify/validation" "0.1.830"
     "@sindresorhus/slugify" "2.2.0"
     "@types/mdast" "4.0.4"
     acorn "8.11.2"
@@ -559,7 +559,7 @@
     hast-util-from-html "2.0.3"
     hast-util-to-html "9.0.4"
     ignore "7.0.5"
-    js-yaml "4.1.1"
+    js-yaml "4.3.1"
     lodash "4.18.1"
     mdast-util-from-markdown "2.0.2"
     mdast-util-gfm "3.0.0"
@@ -568,7 +568,7 @@
     micromark-extension-gfm "3.0.0"
     micromark-extension-mdxjs "3.0.0"
     openapi-types "12.1.3"
-    postcss "8.5.14"
+    postcss "8.5.23"
     rehype-stringify "10.0.1"
     remark "15.0.1"
     remark-frontmatter "5.0.0"
@@ -590,24 +590,24 @@
     vfile "6.0.3"
     xss "1.0.15"
 
-"@mintlify/link-rot@3.0.1269":
-  version "3.0.1269"
-  resolved "https://registry.yarnpkg.com/@mintlify/link-rot/-/link-rot-3.0.1269.tgz#835536179155c150b5cff55df3c0e1782928e8bc"
-  integrity sha512-cQthAOSBr/vej34i7gd8jz6BXfAXpWb2xIQDH+s6jyFSNzZuK1ZgH5DSYg+93qWDEJLcALXC2WA8dpVoNRtSNQ==
+"@mintlify/link-rot@3.0.1294":
+  version "3.0.1294"
+  resolved "https://registry.yarnpkg.com/@mintlify/link-rot/-/link-rot-3.0.1294.tgz#f72349b004d46f1ffeee20d66d58955e7868884f"
+  integrity sha512-A48JD4lr/h+hO/uqgyUOuU4G+Fg1D3GFJyDBdB5ZKnLNqopnXHVtsQgzDvPCHWc2Lj5Q/7uVhtewam/q6S/hNQ==
   dependencies:
-    "@mintlify/common" "1.0.1072"
-    "@mintlify/models" "0.0.344"
-    "@mintlify/prebuild" "1.0.1223"
-    "@mintlify/previewing" "4.0.1293"
-    "@mintlify/scraping" "4.0.939"
-    "@mintlify/validation" "0.1.817"
+    "@mintlify/common" "1.0.1094"
+    "@mintlify/models" "0.0.349"
+    "@mintlify/prebuild" "1.0.1247"
+    "@mintlify/previewing" "4.0.1318"
+    "@mintlify/scraping" "4.0.962"
+    "@mintlify/validation" "0.1.830"
     fs-extra "11.1.0"
     unist-util-visit "4.1.2"
 
-"@mintlify/mdx@4.0.1":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@mintlify/mdx/-/mdx-4.0.1.tgz#79c526260cfa5dd76766263512172f233155c2e4"
-  integrity sha512-HLOBLBe5tZk0mCWgIs9m/CLG3DargSte5a1WHmK2bHJok2wIQPQN9FshyrAa/ve0ps4EG2eJvRiorBjxNPufVg==
+"@mintlify/mdx@4.0.2":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@mintlify/mdx/-/mdx-4.0.2.tgz#85d8469ac91a2f02d3e467bf8f7f13c6cbb57416"
+  integrity sha512-LrAE0fRxZSvB4POZ50Uy5LO0bKvWbPMciE/TKUyzRk4zbexQYYRhnzz9tdQ7zis//91oikrPnKbJxCco1UlawA==
   dependencies:
     "@shikijs/transformers" "^3.23.0"
     "@shikijs/twoslash" "^3.23.0"
@@ -617,7 +617,7 @@
     mdast-util-gfm "^3.1.0"
     mdast-util-mdx-jsx "^3.2.0"
     mdast-util-to-hast "^13.2.0"
-    next-mdx-remote-client "^1.0.3"
+    next-mdx-remote-client "^2.1.11"
     rehype-katex "^7.0.1"
     remark-gfm "^4.0.0"
     remark-math "^6.0.0"
@@ -627,12 +627,12 @@
     unified "^11.0.0"
     unist-util-visit "^5.0.0"
 
-"@mintlify/models@0.0.344":
-  version "0.0.344"
-  resolved "https://registry.yarnpkg.com/@mintlify/models/-/models-0.0.344.tgz#2405936508e41dd19de9489161ded2dd3dfacf0d"
-  integrity sha512-3aY2W7u1+tj4RCBIKvSNiFrTDtMRrhHGC0n4k2tlAGNIaJMfh7voaR/32bwzVcdo4i5rkkoN30G97TMW7h3Eqg==
+"@mintlify/models@0.0.349":
+  version "0.0.349"
+  resolved "https://registry.yarnpkg.com/@mintlify/models/-/models-0.0.349.tgz#cacf41a7fef8236c265ddddb5b8dd8e38bb520a1"
+  integrity sha512-mezRN4xuYiwv1HSJCX9IIWCeBUv2ZalPo5bP7JdU6n6fBHhui1UtA2NwmXp7df/S1vglTkKWJSUJvbp/jO3GEg==
   dependencies:
-    axios "1.16.1"
+    axios "1.18.0"
     openapi-types "12.1.3"
 
 "@mintlify/openapi-parser@0.0.8":
@@ -647,33 +647,33 @@
     leven "^4.0.0"
     yaml "^2.4.5"
 
-"@mintlify/prebuild@1.0.1223":
-  version "1.0.1223"
-  resolved "https://registry.yarnpkg.com/@mintlify/prebuild/-/prebuild-1.0.1223.tgz#90d49e10fb60b98b542e94c508f41d3b610a610f"
-  integrity sha512-1YrFqGtmgt3kNMCcWHzA/JaAxZU4AhhE7dgAd+mnsb7UiL1XBQvenlZ03+jdhIWwVHyShykrn5Pn9vnfNSqaEQ==
+"@mintlify/prebuild@1.0.1247":
+  version "1.0.1247"
+  resolved "https://registry.yarnpkg.com/@mintlify/prebuild/-/prebuild-1.0.1247.tgz#54606ba284ed12d6a3c8ffb9b1cde823c407dd66"
+  integrity sha512-CIoBthsW2rCGI3Oj3hJd15B1HN0j6X3d9VPry8fiDlgcElHYzObe2ETuaMOSSLIEnc/rnaUjUuJojpHMmY8tLw==
   dependencies:
-    "@mintlify/common" "1.0.1072"
-    "@mintlify/scraping" "4.0.939"
-    "@mintlify/validation" "0.1.817"
+    "@mintlify/common" "1.0.1094"
+    "@mintlify/scraping" "4.0.962"
+    "@mintlify/validation" "0.1.830"
     chalk "5.3.0"
     favicons "7.2.0"
     fflate "^0.8.2"
     fs-extra "11.1.0"
-    js-yaml "4.1.1"
+    js-yaml "4.3.1"
     openapi-types "12.1.3"
     sharp "0.33.5"
     sharp-ico "0.1.5"
     uuid "11.1.1"
 
-"@mintlify/previewing@4.0.1293":
-  version "4.0.1293"
-  resolved "https://registry.yarnpkg.com/@mintlify/previewing/-/previewing-4.0.1293.tgz#666ce4b107762ab215b43c965e75d6941713f1f3"
-  integrity sha512-mONdPOgF6gnttHfFaASa5ReFUYZCYMyq5bW7J52zl3cc4+E19OityOOnODtJaPccF0A6osVevbu0902SIWtRQw==
+"@mintlify/previewing@4.0.1318":
+  version "4.0.1318"
+  resolved "https://registry.yarnpkg.com/@mintlify/previewing/-/previewing-4.0.1318.tgz#dc4f80bb907e0b0b0d5b138c24cad92d42b6a6fc"
+  integrity sha512-7cj/Unx2A+iIXBZbLawmP1yvn9N00YECpr+SreCljVHK/tyOz/YPYyMOmb3bI7oVXsZzO9rO1KnKIhH2gUoNtA==
   dependencies:
-    "@mintlify/common" "1.0.1072"
-    "@mintlify/prebuild" "1.0.1223"
-    "@mintlify/validation" "0.1.817"
-    adm-zip "0.5.16"
+    "@mintlify/common" "1.0.1094"
+    "@mintlify/prebuild" "1.0.1247"
+    "@mintlify/validation" "0.1.830"
+    adm-zip "0.6.0"
     better-opn "3.0.2"
     chalk "5.2.0"
     chokidar "3.5.3"
@@ -683,23 +683,23 @@
     ink "6.3.0"
     ink-spinner "5.0.0"
     is-online "10.0.0"
-    js-yaml "4.1.1"
+    js-yaml "4.3.1"
     react "19.2.3"
     socket.io "4.8.0"
-    tar "7.5.15"
+    tar "7.5.21"
     yargs "17.7.1"
 
-"@mintlify/scraping@4.0.939":
-  version "4.0.939"
-  resolved "https://registry.yarnpkg.com/@mintlify/scraping/-/scraping-4.0.939.tgz#01158ed9b0a87fe639cfb965da736a3ee3e68b6c"
-  integrity sha512-N0KaXl1rWzSn5R8kHaVak/JkOiZdB5M4RE7OnmLmz6ICuf/PU/9ejB+gk9g7e/jAnWhcY8FzqcmrXi0iqkJtSQ==
+"@mintlify/scraping@4.0.962":
+  version "4.0.962"
+  resolved "https://registry.yarnpkg.com/@mintlify/scraping/-/scraping-4.0.962.tgz#e27bf4363b770a46d507888c67051100e8238402"
+  integrity sha512-VPr0nepvcxr4LhjF6xVISRHspIdEtG1PjWGN/w2tAP78MmlEXCmXppIvAgqEyVy6fC+XCjOVMHZQPZ2nuhXp6g==
   dependencies:
-    "@mintlify/common" "1.0.1072"
+    "@mintlify/common" "1.0.1094"
     fast-xml-parser "5.7.3"
     fs-extra "11.1.1"
     graphql "16.11.0"
     hast-util-to-mdast "10.1.0"
-    js-yaml "4.1.1"
+    js-yaml "4.3.1"
     mdast-util-mdx-jsx "3.1.3"
     neotraverse "0.6.18"
     puppeteer "24.3.1"
@@ -713,15 +713,15 @@
     yargs "17.7.1"
     zod "3.24.0"
 
-"@mintlify/validation@0.1.817":
-  version "0.1.817"
-  resolved "https://registry.yarnpkg.com/@mintlify/validation/-/validation-0.1.817.tgz#2bffb60490884d4deb3bb3240580e0f90bb1ba88"
-  integrity sha512-3JNThFwqhnlsekzoSSCcDxnxdpf6dxs46yzo7vWG+NanUfAuZY+B+rXcQulyVVwvEPORZNhlqdPUntIiPIgKqQ==
+"@mintlify/validation@0.1.830":
+  version "0.1.830"
+  resolved "https://registry.yarnpkg.com/@mintlify/validation/-/validation-0.1.830.tgz#8cbab47c5fb53ab32f1c5c6d41255cb84ecefef6"
+  integrity sha512-MWgXWfmLmfjefBn39o3l5st5OrSIwAVADNFcCoz5u2gZe8lFv6TcQEPx1AooXDe1H//YS1i78MiiIpry37W65A==
   dependencies:
-    "@mintlify/mdx" "4.0.1"
-    "@mintlify/models" "0.0.344"
+    "@mintlify/mdx" "4.0.2"
+    "@mintlify/models" "0.0.349"
     fractional-indexing "3.2.0"
-    js-yaml "4.1.1"
+    js-yaml "4.3.1"
     lcm "0.0.3"
     lodash "4.18.1"
     neotraverse "0.6.18"
@@ -1154,7 +1154,7 @@
   dependencies:
     "@types/unist" "*"
 
-"@types/mdx@^2.0.0", "@types/mdx@^2.0.13":
+"@types/mdx@^2.0.0", "@types/mdx@^2.0.14":
   version "2.0.14"
   resolved "https://registry.yarnpkg.com/@types/mdx/-/mdx-2.0.14.tgz#c1e54113265b152021ab0afe0434e3cadd90bfe3"
   integrity sha512-T48PeuJtvLosNTPVhfnIp3i/n3a4g4Bad7YCq5k64D4u7NwDrAotikQ+5+sjtUvBmxCMlbo3dVL+C2dP0rWHzg==
@@ -1247,7 +1247,7 @@ address@^1.0.1:
   resolved "https://registry.yarnpkg.com/address/-/address-1.2.2.tgz#2b5248dac5485a6390532c6a517fda2e3faac89e"
   integrity sha512-4B/qKCfeE/ODUaAUpSwfzazo5x29WD4r3vXiWsB7I2mSDAihwEqKO+g8GELZUQSSAo5e1XTYh3ZVfLyxBc12nA==
 
-adm-zip@0.5.16, adm-zip@^0.6.0:
+adm-zip@0.6.0, adm-zip@^0.6.0:
   version "0.6.0"
   resolved "https://registry.yarnpkg.com/adm-zip/-/adm-zip-0.6.0.tgz#bbc5c6c333755e967a06dd98747f431e1d53a3cf"
   integrity sha512-XleryMhbuksdKtofnWZ9Sk+4CUTbms4Mb/EU32SZwToAyZ5RgVos/ki8n+yr0LWHOGKuakbXTuuYNHLQjhddgg==
@@ -1456,7 +1456,7 @@ avsc@^5.7.5:
   resolved "https://registry.yarnpkg.com/avsc/-/avsc-5.7.9.tgz#8532cd47b2fbff95be4bc470c6780c258d86680a"
   integrity sha512-yOA4wFeI7ET3v32Di/sUybQ+ttP20JHSW3mxLuNGeO0uD6PPcvLrIQXSvy/rhJOWU5JrYh7U4OHplWMmtAtjMg==
 
-axios@1.16.1, axios@1.18.1:
+axios@1.18.0, axios@1.18.1:
   version "1.18.1"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.18.1.tgz#d63f9863bcd8938815c86f9e2abd380189d96dfe"
   integrity sha512-3nTvFlvpn9Zu/RkHUqtc7/+al4UpRW5az71ap5zccp6e8RAYEzhMTecX8Dz1wWDYrPpUoB1HAQEGEAEvUr7S9g==
@@ -3709,7 +3709,7 @@ js-tokens@^4.0.0:
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
   integrity sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==
 
-js-yaml@4.1.1, js-yaml@4.3.0, js-yaml@^3.13.1, js-yaml@^4.1.0:
+js-yaml@4.3.0, js-yaml@4.3.1, js-yaml@^3.13.1, js-yaml@^4.1.0:
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.3.0.tgz#d1900572a7f7cf0b5f540c83673e60bad3436592"
   integrity sha512-1td788aAnnZ5qs7V2QIRl1owjtYpbKt749Y3xauqQgwIIGF/xXWz1wMTEBx5O3LK3lXLVuqXPdPxj2BoFHaW9Q==
@@ -4597,12 +4597,12 @@ minizlib@^3.1.0:
   dependencies:
     minipass "^7.1.2"
 
-mintlify@^4.2.778:
-  version "4.2.778"
-  resolved "https://registry.yarnpkg.com/mintlify/-/mintlify-4.2.778.tgz#3765af8c4c0ed9645bea355a23dac5ce7ade35c9"
-  integrity sha512-Duc7wXXAteCHboop9jJTqGkDwAEKibb/tYxNnn1inIMZJzDCOFOk6nyw8nzO7s+AmGBTvn1GiiJW1HWCp9/B8Q==
+mintlify@^4.2.805:
+  version "4.2.805"
+  resolved "https://registry.yarnpkg.com/mintlify/-/mintlify-4.2.805.tgz#d218ec6dac8712499308cd8fce2b9b71f275fd52"
+  integrity sha512-7tEqV/pdH6JuH5BX8kRdsgVaQVbqjB7gI1ZoVFrAKJFcwzndCUBVz6JvNsf5U9MzvCtFoWmScUUJaZjl7Yp/PA==
   dependencies:
-    "@mintlify/cli" "4.0.1381"
+    "@mintlify/cli" "4.0.1408"
 
 mitt@^3.0.1:
   version "3.0.1"
@@ -4663,15 +4663,15 @@ netmask@^2.0.2:
   resolved "https://registry.yarnpkg.com/netmask/-/netmask-2.1.1.tgz#80043d265b53aa521b3bd01e8fcdf353f9e1e81e"
   integrity sha512-eonl3sLUha+S1GzTPxychyhnUzKyeQkZ7jLjKrBagJgPla13F+uQ71HgpFefyHgqrjEbCPkDArxYsjY8/+gLKA==
 
-next-mdx-remote-client@^1.0.3:
-  version "1.1.8"
-  resolved "https://registry.yarnpkg.com/next-mdx-remote-client/-/next-mdx-remote-client-1.1.8.tgz#115911946124ae1ca83a73020c9d4c3e0d7db119"
-  integrity sha512-IElOrn02JjGQZxx+re7wMx/1AUG+Arte9aDImAtxjAfMw6xuSCaH5mTCunKelkWzFyFdRb565jO8jRICvvh96g==
+next-mdx-remote-client@^2.1.11:
+  version "2.1.12"
+  resolved "https://registry.yarnpkg.com/next-mdx-remote-client/-/next-mdx-remote-client-2.1.12.tgz#c4f57de7d750e407a4e4c08c3567f87598627e88"
+  integrity sha512-KDfhIk5aEM0kkZ0xQ8XBkmo4O5xmJeGWUomm40Ac/xhkt5sIDOTmTU/QFfmJGLJUJipD5o0BAHqVSIZKuXgNEw==
   dependencies:
     "@babel/code-frame" "^7.29.7"
     "@mdx-js/mdx" "^3.1.1"
     "@mdx-js/react" "^3.1.1"
-    "@types/mdx" "^2.0.13"
+    "@types/mdx" "^2.0.14"
     remark-mdx-remove-esm "^1.3.2"
     serialize-error "^13.0.1"
     vfile "^6.0.3"
@@ -5062,7 +5062,7 @@ postcss-value-parser@^4.0.0:
   resolved "https://registry.yarnpkg.com/postcss-value-parser/-/postcss-value-parser-4.2.0.tgz#723c09920836ba6d3e5af019f92bc0971c02e514"
   integrity sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==
 
-postcss@8.5.14, postcss@^8.4.47, postcss@^8.5.18:
+postcss@8.5.23, postcss@^8.4.47, postcss@^8.5.18:
   version "8.5.23"
   resolved "https://registry.yarnpkg.com/postcss/-/postcss-8.5.23.tgz#3493550116f478487298301d2c2e8dc5a56e6594"
   integrity sha512-g50586zr4bZmwFiTlflMu8E0bDTb5I5gertgwAKmsdUlTQIhZtunzUlD1WSzwcVWPoAVpsrA6vlfCD7oXvRwgg==
@@ -6252,7 +6252,7 @@ tar-stream@^3.1.5:
     fast-fifo "^1.2.0"
     streamx "^2.15.0"
 
-tar@7.5.15, tar@^7.5.16:
+tar@7.5.21, tar@^7.5.16:
   version "7.5.20"
   resolved "https://registry.yarnpkg.com/tar/-/tar-7.5.20.tgz#37a65aa911cbd69864002e14bf8a926a5551e240"
   integrity sha512-9FcyK4PA6+WbzlTM9WhQm6vB5W7cP7dUiPsv1g7YDwEQnQ1CGpK3MGlKk/ITVWMk05kHZuBhmVhiv8LZoy/PFQ==
