@@ -1,0 +1,115 @@
+name: 'Create Feature Release'
+
+on:
+  workflow_dispatch:
+    inputs:
+      oss_branch:
+        description: "Base OSS git ref to tag (branch, SHA, or tag)"
+        required: false
+        type: string
+        default: main
+      slug:
+        description: "Tag will be v0.0.0-feat.<slug>.<N> slug must be lowercase alphanumeric and hyphens (e.g otel-metrics)"
+        required: true
+        type: string
+      enterprise_branch:
+        description: "odigos-enterprise git ref to build against"
+        required: false
+        type: string
+        default: main
+
+permissions: read-all
+
+jobs:
+  create-feature-release:
+    runs-on: depot-ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Get sts tokens
+        id: sts-create-feature
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: push-tags
+          output-git-config: "true"
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.oss_branch || 'main' }}
+          token: ${{ steps.sts-create-feature.outputs.GH_TOKEN }}
+
+      - name: Resolve feature tag
+        id: version
+        env:
+          SLUG: ${{ inputs.slug }}
+        run: |
+          if [[ ! "$SLUG" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+            echo "Error: slug must be lowercase alphanumeric and hyphens (e.g. otel-metrics)"
+            exit 1
+          fi
+
+          PREFIX="v0.0.0-feat.${SLUG}."
+          max=-1
+          for existing in $(git tag -l "${PREFIX}*"); do
+            suffix="${existing#"$PREFIX"}"
+            if [[ "$suffix" =~ ^[0-9]+$ ]] && [ "$suffix" -gt "$max" ]; then
+              max=$suffix
+            fi
+          done
+          NEXT=$((max + 1))
+          TAG="${PREFIX}${NEXT}"
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Resolved feature tag $TAG from ${{ inputs.oss_branch || 'main' }}"
+
+      # Annotated tags (git tag -a) record a tagger identity. STS output-git-config
+      # only rewrites GitHub URLs for auth and does not set user.name / user.email.
+      - name: Configure Git for bot commits
+        run: |
+          git config user.email "bot@odigos.io"
+          git config user.name "Odigos Release Bot"
+
+      - name: Create and push feature-release tag
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          ENTERPRISE_BRANCH: ${{ inputs.enterprise_branch || 'main' }}
+          OSS_BRANCH: ${{ inputs.oss_branch || 'main' }}
+        run: |
+          if [[ -z "$ENTERPRISE_BRANCH" ]]; then
+            echo "Error: enterprise_branch is required"
+            exit 1
+          fi
+          if [[ "$ENTERPRISE_BRANCH" =~ [[:space:]] ]]; then
+            echo "Error: enterprise_branch must not contain whitespace"
+            exit 1
+          fi
+          if [[ -z "$OSS_BRANCH" ]]; then
+            echo "Error: oss_branch is required"
+            exit 1
+          fi
+          if [[ "$OSS_BRANCH" =~ [[:space:]] ]]; then
+            echo "Error: oss_branch must not contain whitespace"
+            exit 1
+          fi
+
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Error: tag $TAG already exists"
+            exit 1
+          fi
+
+          git tag -a "$TAG" \
+            -m "enterprise_branch=${ENTERPRISE_BRANCH}" \
+            -m "oss_branch=${OSS_BRANCH}"
+          git push origin "$TAG"
+          echo "Pushed tag $TAG (enterprise branch ${ENTERPRISE_BRANCH}, oss branch ${OSS_BRANCH}) to kick off the release process"
+
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Successfully created feature-release tag ${{ steps.version.outputs.tag }} (enterprise branch ${{ inputs.enterprise_branch || 'main' }})"
+          failure-description: "ERROR: Failed to create feature-release tag ${{ steps.version.outputs.tag }}"
+          tag: ${{ steps.version.outputs.tag }}

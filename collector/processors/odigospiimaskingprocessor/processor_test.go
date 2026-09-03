@@ -69,46 +69,163 @@ func TestMaskPiiData_CategoriesAndCustom(t *testing.T) {
 	}
 }
 
-func TestBuildFormatMaskingRegex(t *testing.T) {
+func TestBuildFormatMaskingRegexes(t *testing.T) {
 	tests := []struct {
-		name   string
-		key    string
-		format actions.DataFormat
-		input  string
-		want   string
+		name        string
+		key         string
+		format      actions.DataFormat
+		input       string
+		want        string
+		wantChanged bool
 	}{
 		{
-			name:   "json",
+			name:        "json",
+			key:         "user_id",
+			format:      actions.FormatJSON,
+			input:       `{"user_id": "abc123", "name": "foo"}`,
+			want:        `{"user_id": "****", "name": "foo"}`,
+			wantChanged: true,
+		},
+		{
+			name:        "json quoted value with spaces is masked in full",
+			key:         "full_name",
+			format:      actions.FormatJSON,
+			input:       `{"full_name": "Jane Q Public", "id": 7}`,
+			want:        `{"full_name": "****", "id": 7}`,
+			wantChanged: true,
+		},
+		{
+			name:        "json quoted value with comma is masked in full",
+			key:         "full_name",
+			format:      actions.FormatJSON,
+			input:       `{"full_name": "Public, Jane"}`,
+			want:        `{"full_name": "****"}`,
+			wantChanged: true,
+		},
+		{
+			name:        "json quoted value with escaped quotes is masked in full",
+			key:         "note",
+			format:      actions.FormatJSON,
+			input:       `{"note": "say \"hi\" now", "x": 1}`,
+			want:        `{"note": "****", "x": 1}`,
+			wantChanged: true,
+		},
+		{
+			name:        "json unterminated quoted value is masked in full",
+			key:         "address",
+			format:      actions.FormatJSON,
+			input:       `{"address": "742 Evergreen Terrace`,
+			want:        `{"address": "****`,
+			wantChanged: true,
+		},
+		{
+			name:        "json unquoted value",
+			key:         "user_id",
+			format:      actions.FormatJSON,
+			input:       `{user_id: 42, name: "foo"}`,
+			want:        `{user_id: ****, name: "foo"}`,
+			wantChanged: true,
+		},
+		{
+			name:   "json empty value is left as is",
+			key:    "ssn",
+			format: actions.FormatJSON,
+			input:  `{"ssn": ""}`,
+			want:   `{"ssn": ""}`,
+		},
+		{
+			name:   "json key substring does not match",
 			key:    "user_id",
 			format: actions.FormatJSON,
-			input:  `{"user_id": "abc123", "name": "foo"}`,
-			want:   `{"user_id": "****", "name": "foo"}`,
+			input:  `{"my_user_id": "Jane Q Public"}`,
+			want:   `{"my_user_id": "Jane Q Public"}`,
 		},
 		{
-			name:   "sql",
-			key:    "password",
-			format: actions.FormatSQL,
-			input:  `WHERE password = 'hunter2' AND status = 'ok'`,
-			want:   `WHERE password = '****' AND status = 'ok'`,
+			name:        "sql",
+			key:         "password",
+			format:      actions.FormatSQL,
+			input:       `WHERE password = 'hunter2' AND status = 'ok'`,
+			want:        `WHERE password = '****' AND status = 'ok'`,
+			wantChanged: true,
 		},
 		{
-			name:   "resource_path",
-			key:    "orders",
-			format: actions.FormatResourcePath,
-			input:  `/api/v1/orders/abc-123/items`,
-			want:   `/api/v1/orders/****/items`,
+			name:        "sql quoted value with spaces is masked in full",
+			key:         "password",
+			format:      actions.FormatSQL,
+			input:       `WHERE password = 'hunter2 is secret' AND status = 'ok'`,
+			want:        `WHERE password = '****' AND status = 'ok'`,
+			wantChanged: true,
+		},
+		{
+			name:        "sql quoted value with comma is masked in full",
+			key:         "address",
+			format:      actions.FormatSQL,
+			input:       `UPDATE users SET address = '742 Evergreen Terrace, Springfield' WHERE id = 1`,
+			want:        `UPDATE users SET address = '****' WHERE id = 1`,
+			wantChanged: true,
+		},
+		{
+			name:        "sql unquoted value does not swallow the rest of the statement",
+			key:         "user_id",
+			format:      actions.FormatSQL,
+			input:       `WHERE user_id = 42 AND status = 'ok'`,
+			want:        `WHERE user_id = **** AND status = 'ok'`,
+			wantChanged: true,
+		},
+		{
+			name:        "sql tight quoted value",
+			key:         "user_id",
+			format:      actions.FormatSQL,
+			input:       `WHERE user_id='abc'`,
+			want:        `WHERE user_id='****'`,
+			wantChanged: true,
+		},
+		{
+			name:        "resource_path",
+			key:         "orders",
+			format:      actions.FormatResourcePath,
+			input:       `/api/v1/orders/abc-123/items`,
+			want:        `/api/v1/orders/****/items`,
+			wantChanged: true,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			re, err := buildFormatMaskingRegex(tc.key, tc.format)
+			res, err := buildFormatMaskingRegexes(tc.key, tc.format)
 			require.NoError(t, err)
-			got, changed := maskCaptureGroups(re, tc.input)
-			assert.True(t, changed)
+			require.NotEmpty(t, res)
+
+			got := tc.input
+			changed := false
+			for _, re := range res {
+				masked, applied := maskCaptureGroups(re, got)
+				if applied {
+					got = masked
+					changed = true
+				}
+			}
 			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.wantChanged, changed)
 		})
 	}
+}
+
+func TestMaskPiiData_FormatMaskingIsIdempotent(t *testing.T) {
+	cfg, err := compilePiiMaskingConfig(&actions.PiiMaskingConfig{
+		CustomFormatMaskings: []actions.CustomFormatMasking{
+			{LookupKey: "full_name", DataFormat: actions.FormatJSON},
+			{LookupKey: "password", DataFormat: actions.FormatSQL},
+		},
+	})
+	require.NoError(t, err)
+
+	first, changed := maskPiiData(`{"full_name": "Jane Q Public"} WHERE password = 'hunter2 is secret'`, cfg)
+	require.True(t, changed)
+	assert.Equal(t, `{"full_name": "****"} WHERE password = '****'`, first)
+
+	second, _ := maskPiiData(first, cfg)
+	assert.Equal(t, first, second)
 }
 
 func TestCompilePiiMaskingConfig(t *testing.T) {
@@ -256,6 +373,39 @@ func TestExtension_PerSourceConfig(t *testing.T) {
 	msg, ok := span.Attributes().Get("message")
 	require.True(t, ok)
 	require.Equal(t, "contact ***EMAIL***", msg.Str())
+}
+
+func TestExtension_CustomFormatMaskingMasksWholeValue(t *testing.T) {
+	proc := newPiiMaskingProcessor(processortest.NewNopSettings(processortest.NopType), &Config{})
+
+	ext := &stubOdigosConfigExtension{key: "default/deployment/app/container"}
+	proc.provider = ext
+	proc.OnSet(ext.key, &commonapi.ContainerCollectorConfig{
+		PiiMasking: &actions.PiiMaskingConfig{
+			CustomFormatMaskings: []actions.CustomFormatMasking{
+				{LookupKey: "full_name", DataFormat: actions.FormatJSON},
+				{LookupKey: "address", DataFormat: actions.FormatSQL},
+			},
+		},
+	})
+
+	traces := generateTestTrace(map[string]string{
+		"http.request.body": `{"full_name": "Jane Q Public", "id": 7}`,
+		"db.query.text":     `UPDATE users SET address = '742 Evergreen Terrace' WHERE id = 1`,
+	})
+
+	out, err := proc.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+
+	body, ok := span.Attributes().Get("http.request.body")
+	require.True(t, ok)
+	assert.Equal(t, `{"full_name": "****", "id": 7}`, body.Str())
+
+	query, ok := span.Attributes().Get("db.query.text")
+	require.True(t, ok)
+	assert.Equal(t, `UPDATE users SET address = '****' WHERE id = 1`, query.Str())
 }
 
 func TestExtension_SkipsWhenNoConfig(t *testing.T) {

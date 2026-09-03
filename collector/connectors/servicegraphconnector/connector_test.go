@@ -830,6 +830,91 @@ func TestVirtualNodeEmitsAllPeerAttributesOnMetrics(t *testing.T) {
 	assert.Equal(t, "postgresql", attrs.AsRaw()["server_db.system"])
 }
 
+// TestGetPeerHostResolvesHTTPEgress is the minimal reproducer for the "unknown"
+// blast-radius node. A plain HTTP/gRPC egress span describes its peer with
+// server.address (or net.peer.name / rpc.service), not peer.service / db.*, so
+// the connector's narrow built-in peer attributes fail to name it and it
+// collapses to the literal "unknown". Widening the peer-attribute list — as
+// odigos now does by default — resolves it to the real host.
+func TestGetPeerHostResolvesHTTPEgress(t *testing.T) {
+	conn := &serviceGraphConnector{}
+	httpEgress := map[string]string{"server.address": "api.stripe.com"}
+
+	builtinDefault := []string{"peer.service", "db.name", "db.system"}
+	assert.Equal(t, "unknown", conn.getPeerHost(builtinDefault, httpEgress),
+		"bug: built-in defaults miss server.address, so the peer collapses to \"unknown\"")
+
+	widenedDefault := []string{"peer.service", "db.name", "db.system", "server.address", "net.peer.name", "rpc.service"}
+	assert.Equal(t, "api.stripe.com", conn.getPeerHost(widenedDefault, httpEgress),
+		"fix: including server.address names the peer by its host")
+
+	// First match wins: an explicit peer.service still takes priority over the
+	// lower-priority network host.
+	httpEgress["peer.service"] = "stripe"
+	assert.Equal(t, "stripe", conn.getPeerHost(widenedDefault, httpEgress))
+}
+
+// TestVirtualNodeResolvesHTTPEgressServer drives the reproducer end-to-end
+// through the connector: a client span calls an uninstrumented server carrying
+// only server.address. With server.address among the virtual-node peer
+// attributes, the emitted edge's "server" label is the host rather than
+// "unknown".
+func TestVirtualNodeResolvesHTTPEgressServer(t *testing.T) {
+	tStart := time.Date(2022, 1, 2, 3, 4, 5, 6, time.UTC)
+	tEnd := time.Date(2022, 1, 2, 3, 4, 6, 6, time.UTC)
+
+	traces := ptrace.NewTraces()
+	rs := traces.ResourceSpans().AppendEmpty()
+	rs.Resource().Attributes().PutStr(string(semconv.ServiceNameKey), "checkout")
+	ss := rs.ScopeSpans().AppendEmpty()
+	span := ss.Spans().AppendEmpty()
+	span.SetName("GET /charges")
+	span.SetSpanID(pcommon.SpanID([8]byte{1, 2, 3, 4, 5, 6, 7, 8}))
+	span.SetTraceID(pcommon.TraceID([16]byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}))
+	span.SetKind(ptrace.SpanKindClient)
+	span.SetStartTimestamp(pcommon.NewTimestampFromTime(tStart))
+	span.SetEndTimestamp(pcommon.NewTimestampFromTime(tEnd))
+	// Only a network host — the exact case the built-in default misses.
+	span.Attributes().PutStr("server.address", "api.stripe.com")
+
+	cfg := &Config{
+		Dimensions:                nil,
+		LatencyHistogramBuckets:   []time.Duration{time.Duration(0.1 * float64(time.Second)), time.Duration(1 * float64(time.Second)), time.Duration(10 * float64(time.Second))},
+		Store:                     StoreConfig{MaxItems: 10, TTL: time.Nanosecond},
+		VirtualNodePeerAttributes: []string{"peer.service", "db.name", "db.system", "server.address", "net.peer.name", "rpc.service"},
+		MetricsFlushInterval:      ptr(time.Millisecond),
+	}
+
+	set := componenttest.NewNopTelemetrySettings()
+	set.Logger = zaptest.NewLogger(t)
+	conn, err := newConnector(set, cfg, newMockMetricsExporter())
+	require.NoError(t, err)
+	require.NoError(t, conn.Start(t.Context(), componenttest.NewNopHost()))
+	require.NoError(t, conn.ConsumeTraces(t.Context(), traces))
+	conn.store.Expire()
+
+	var metrics []pmetric.Metrics
+	require.Eventually(t, func() bool {
+		metrics = conn.metricsConsumer.(*mockMetricsExporter).GetMetrics()
+		return len(metrics) > 0
+	}, 5*time.Second, 10*time.Millisecond)
+	require.NoError(t, conn.Shutdown(t.Context()))
+
+	ms := metrics[0].ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
+	var sumDP pmetric.Sum
+	for i := 0; i < ms.Len(); i++ {
+		if ms.At(i).Name() == "traces_service_graph_request_total" {
+			sumDP = ms.At(i).Sum()
+			break
+		}
+	}
+	require.Equal(t, 1, sumDP.DataPoints().Len())
+	attrs := sumDP.DataPoints().At(0).Attributes()
+	v, ok := attrs.Get("server")
+	require.True(t, ok)
+	assert.Equal(t, "api.stripe.com", v.Str(), "virtual server must be named by host, not \"unknown\"")
+}
+
 func TestExponentialHistogram(t *testing.T) {
 	// Prepare
 	set := componenttest.NewNopTelemetrySettings()

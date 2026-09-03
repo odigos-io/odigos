@@ -34,13 +34,15 @@ jobs:
         continue-on-error: true
       - name: Save autoscaler scan JSON
         if: always()
+        env:
+          RESULTS_FILE: ${{ steps.scan-autoscaler.outputs.results-file }}
         run: |
           mkdir -p /tmp/scan-results
-          cat > /tmp/scan-results/odigos-autoscaler.json << 'EOF'
-          ${{ steps.scan-autoscaler.outputs.results-json }}
-          EOF
-          jq --arg img "odigos-autoscaler" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-autoscaler.json > /tmp/scan-results/odigos-autoscaler_enriched.json
-          mv /tmp/scan-results/odigos-autoscaler_enriched.json /tmp/scan-results/odigos-autoscaler.json
+          if [ -z "${RESULTS_FILE:-}" ] || [ ! -s "$RESULTS_FILE" ]; then
+            echo "::error::No scan results produced; expected a report at '${RESULTS_FILE:-<unset>}'."
+            exit 1
+          fi
+          jq --arg img "odigos-autoscaler" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' "$RESULTS_FILE" > /tmp/scan-results/odigos-autoscaler.json
       - name: Upload autoscaler scan results
         if: always()
         uses: actions/upload-artifact@v4
@@ -81,13 +83,15 @@ jobs:
         continue-on-error: true
       - name: Save scheduler scan JSON
         if: always()
+        env:
+          RESULTS_FILE: ${{ steps.scan-scheduler.outputs.results-file }}
         run: |
           mkdir -p /tmp/scan-results
-          cat > /tmp/scan-results/odigos-scheduler.json << 'EOF'
-          ${{ steps.scan-scheduler.outputs.results-json }}
-          EOF
-          jq --arg img "odigos-scheduler" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-scheduler.json > /tmp/scan-results/odigos-scheduler_enriched.json
-          mv /tmp/scan-results/odigos-scheduler_enriched.json /tmp/scan-results/odigos-scheduler.json
+          if [ -z "${RESULTS_FILE:-}" ] || [ ! -s "$RESULTS_FILE" ]; then
+            echo "::error::No scan results produced; expected a report at '${RESULTS_FILE:-<unset>}'."
+            exit 1
+          fi
+          jq --arg img "odigos-scheduler" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' "$RESULTS_FILE" > /tmp/scan-results/odigos-scheduler.json
       - name: Upload scheduler scan results
         if: always()
         uses: actions/upload-artifact@v4
@@ -125,13 +129,15 @@ jobs:
         continue-on-error: true
       - name: Save agents scan JSON
         if: always()
+        env:
+          RESULTS_FILE: ${{ steps.scan-agents.outputs.results-file }}
         run: |
           mkdir -p /tmp/scan-results
-          cat > /tmp/scan-results/odigos-agents.json << 'EOF'
-          ${{ steps.scan-agents.outputs.results-json }}
-          EOF
-          jq --arg img "odigos-agents" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-agents.json > /tmp/scan-results/odigos-agents_enriched.json
-          mv /tmp/scan-results/odigos-agents_enriched.json /tmp/scan-results/odigos-agents.json
+          if [ -z "${RESULTS_FILE:-}" ] || [ ! -s "$RESULTS_FILE" ]; then
+            echo "::error::No scan results produced; expected a report at '${RESULTS_FILE:-<unset>}'."
+            exit 1
+          fi
+          jq --arg img "odigos-agents" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' "$RESULTS_FILE" > /tmp/scan-results/odigos-agents.json
       - name: Upload agents scan results
         if: always()
         uses: actions/upload-artifact@v4
@@ -147,9 +153,9 @@ jobs:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.26.4"
+          go-version: "1.26.6"
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v6
         with:
@@ -171,13 +177,15 @@ jobs:
         continue-on-error: true
       - name: Save instrumentor scan JSON
         if: always()
+        env:
+          RESULTS_FILE: ${{ steps.scan-instrumentor.outputs.results-file }}
         run: |
           mkdir -p /tmp/scan-results
-          cat > /tmp/scan-results/odigos-instrumentor.json << 'EOF'
-          ${{ steps.scan-instrumentor.outputs.results-json }}
-          EOF
-          jq --arg img "odigos-instrumentor" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-instrumentor.json > /tmp/scan-results/odigos-instrumentor_enriched.json
-          mv /tmp/scan-results/odigos-instrumentor_enriched.json /tmp/scan-results/odigos-instrumentor.json
+          if [ -z "${RESULTS_FILE:-}" ] || [ ! -s "$RESULTS_FILE" ]; then
+            echo "::error::No scan results produced; expected a report at '${RESULTS_FILE:-<unset>}'."
+            exit 1
+          fi
+          jq --arg img "odigos-instrumentor" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' "$RESULTS_FILE" > /tmp/scan-results/odigos-instrumentor.json
       - name: Upload instrumentor scan results
         if: always()
         uses: actions/upload-artifact@v4
@@ -217,13 +225,15 @@ jobs:
         continue-on-error: true
       - name: Save collector scan JSON
         if: always()
+        env:
+          RESULTS_FILE: ${{ steps.scan-collector.outputs.results-file }}
         run: |
           mkdir -p /tmp/scan-results
-          cat > /tmp/scan-results/odigos-collector.json << 'EOF'
-          ${{ steps.scan-collector.outputs.results-json }}
-          EOF
-          jq --arg img "odigos-collector" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-collector.json > /tmp/scan-results/odigos-collector_enriched.json
-          mv /tmp/scan-results/odigos-collector_enriched.json /tmp/scan-results/odigos-collector.json
+          if [ -z "${RESULTS_FILE:-}" ] || [ ! -s "$RESULTS_FILE" ]; then
+            echo "::error::No scan results produced; expected a report at '${RESULTS_FILE:-<unset>}'."
+            exit 1
+          fi
+          jq --arg img "odigos-collector" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' "$RESULTS_FILE" > /tmp/scan-results/odigos-collector.json
       - name: Upload collector scan results
         if: always()
         uses: actions/upload-artifact@v4
@@ -266,13 +276,15 @@ jobs:
         continue-on-error: true
       - name: Save odiglet scan JSON
         if: always()
+        env:
+          RESULTS_FILE: ${{ steps.scan-odiglet.outputs.results-file }}
         run: |
           mkdir -p /tmp/scan-results
-          cat > /tmp/scan-results/odigos-odiglet.json << 'EOF'
-          ${{ steps.scan-odiglet.outputs.results-json }}
-          EOF
-          jq --arg img "odigos-odiglet" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-odiglet.json > /tmp/scan-results/odigos-odiglet_enriched.json
-          mv /tmp/scan-results/odigos-odiglet_enriched.json /tmp/scan-results/odigos-odiglet.json
+          if [ -z "${RESULTS_FILE:-}" ] || [ ! -s "$RESULTS_FILE" ]; then
+            echo "::error::No scan results produced; expected a report at '${RESULTS_FILE:-<unset>}'."
+            exit 1
+          fi
+          jq --arg img "odigos-odiglet" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' "$RESULTS_FILE" > /tmp/scan-results/odigos-odiglet.json
       - name: Upload odiglet scan results
         if: always()
         uses: actions/upload-artifact@v4
@@ -297,7 +309,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: Install webapp dependencies
         run: yarn install --frozen-lockfile
         working-directory: frontend/webapp
@@ -310,13 +322,15 @@ jobs:
         continue-on-error: true
       - name: Save frontend webapp scan JSON
         if: always()
+        env:
+          RESULTS_FILE: ${{ steps.scan-frontend-webapp.outputs.results-file }}
         run: |
           mkdir -p /tmp/scan-results
-          cat > /tmp/scan-results/odigos-ui-webapp.json << 'EOF'
-          ${{ steps.scan-frontend-webapp.outputs.results-json }}
-          EOF
-          jq --arg img "odigos-ui-webapp" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-ui-webapp.json > /tmp/scan-results/odigos-ui-webapp_enriched.json
-          mv /tmp/scan-results/odigos-ui-webapp_enriched.json /tmp/scan-results/odigos-ui-webapp.json
+          if [ -z "${RESULTS_FILE:-}" ] || [ ! -s "$RESULTS_FILE" ]; then
+            echo "::error::No scan results produced; expected a report at '${RESULTS_FILE:-<unset>}'."
+            exit 1
+          fi
+          jq --arg img "odigos-ui-webapp" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' "$RESULTS_FILE" > /tmp/scan-results/odigos-ui-webapp.json
       - name: Upload frontend webapp scan results
         if: always()
         uses: actions/upload-artifact@v4
@@ -348,13 +362,15 @@ jobs:
         continue-on-error: true
       - name: Save frontend scan JSON
         if: always()
+        env:
+          RESULTS_FILE: ${{ steps.scan-frontend.outputs.results-file }}
         run: |
           mkdir -p /tmp/scan-results
-          cat > /tmp/scan-results/odigos-ui.json << 'EOF'
-          ${{ steps.scan-frontend.outputs.results-json }}
-          EOF
-          jq --arg img "odigos-ui" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-ui.json > /tmp/scan-results/odigos-ui_enriched.json
-          mv /tmp/scan-results/odigos-ui_enriched.json /tmp/scan-results/odigos-ui.json
+          if [ -z "${RESULTS_FILE:-}" ] || [ ! -s "$RESULTS_FILE" ]; then
+            echo "::error::No scan results produced; expected a report at '${RESULTS_FILE:-<unset>}'."
+            exit 1
+          fi
+          jq --arg img "odigos-ui" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' "$RESULTS_FILE" > /tmp/scan-results/odigos-ui.json
       - name: Upload frontend scan results
         if: always()
         uses: actions/upload-artifact@v4
@@ -400,13 +416,15 @@ jobs:
         continue-on-error: true
       - name: Save operator scan JSON
         if: always()
+        env:
+          RESULTS_FILE: ${{ steps.scan-operator.outputs.results-file }}
         run: |
           mkdir -p /tmp/scan-results
-          cat > /tmp/scan-results/odigos-operator.json << 'EOF'
-          ${{ steps.scan-operator.outputs.results-json }}
-          EOF
-          jq --arg img "odigos-operator" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-operator.json > /tmp/scan-results/odigos-operator_enriched.json
-          mv /tmp/scan-results/odigos-operator_enriched.json /tmp/scan-results/odigos-operator.json
+          if [ -z "${RESULTS_FILE:-}" ] || [ ! -s "$RESULTS_FILE" ]; then
+            echo "::error::No scan results produced; expected a report at '${RESULTS_FILE:-<unset>}'."
+            exit 1
+          fi
+          jq --arg img "odigos-operator" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' "$RESULTS_FILE" > /tmp/scan-results/odigos-operator.json
       - name: Upload operator scan results
         if: always()
         uses: actions/upload-artifact@v4
@@ -458,9 +476,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
-          go-version: "1.26.4"
+          go-version: "1.26.6"
       - name: Set up Goreleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -471,9 +489,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.26.4"
+          go-version: "1.26.6"
       - name: Test k8sutils module
         working-directory: ./k8sutils
         run: |
@@ -483,9 +501,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.26.4"
+          go-version: "1.26.6"
       - name: Test common module
         working-directory: ./common
         run: |
@@ -495,9 +513,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.26.4"
+          go-version: "1.26.6"
       - name: Test procdiscovery module
         working-directory: ./procdiscovery
         run: |

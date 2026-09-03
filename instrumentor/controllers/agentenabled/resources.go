@@ -131,8 +131,7 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client) (*[]o
 			(ir.Spec.CustomInstrumentations != nil) ||
 			(ir.Spec.EbpfLogCapture != nil) ||
 			(ir.Spec.AgentDiagnostics != nil) ||
-			(ir.Spec.NetworkMetrics != nil) ||
-			(ir.Spec.AllowConcurrentAgents != nil) {
+			(ir.Spec.NetworkMetrics != nil) {
 
 			relevantIr = append(relevantIr, *ir)
 		}

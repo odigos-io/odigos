@@ -20,6 +20,7 @@ import (
 	commonactionsapi "github.com/odigos-io/odigos/common/api/actions"
 	"github.com/odigos-io/odigos/common/collector"
 	"github.com/odigos-io/odigos/common/odigosattributes"
+	"github.com/odigos-io/odigos/common/urltemplate"
 )
 
 // Ensure urlTemplateProcessor implements the callback interface used by the extension.
@@ -36,7 +37,7 @@ type internalCustomIdConfig struct {
 type workloadUrlTemplatizationConfig struct {
 
 	// the rules to apply for templatization for this workload.
-	parsedRules map[int][]TemplatizationRule // nil means heuristic-only (no explicit rules)
+	parsedRules map[int][]urltemplate.PathRule // nil means heuristic-only (no explicit rules)
 
 	// configurations for default templatization.
 	// this will be applied if no custom templatization rules matched.
@@ -47,7 +48,7 @@ type workloadUrlTemplatizationConfig struct {
 type urlTemplateProcessor struct {
 	logger              *zap.Logger
 	cfg                 *Config
-	templatizationRules map[int][]TemplatizationRule // group templatization rules by segments length
+	templatizationRules map[int][]urltemplate.PathRule // group templatization rules by segments length
 	customIds           []internalCustomIdConfig
 
 	// provider is set in Start() when odigos_config_extension is present (the default in Odigos-managed configs).
@@ -60,15 +61,15 @@ type urlTemplateProcessor struct {
 
 func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTemplateProcessor, error) {
 
-	parsedRules := map[int][]TemplatizationRule{}
+	parsedRules := map[int][]urltemplate.PathRule{}
 	for _, rule := range config.TemplatizationRules {
-		parsedRule, err := parseUserInputRuleString(rule)
+		parsedRule, err := urltemplate.ParseUserInputRuleString(rule, false)
 		if err != nil {
 			return nil, err
 		}
-		parsedRuleNumSegments := len(parsedRule)
+		parsedRuleNumSegments := len(parsedRule.Segments)
 		if _, ok := parsedRules[parsedRuleNumSegments]; !ok {
-			parsedRules[parsedRuleNumSegments] = []TemplatizationRule{}
+			parsedRules[parsedRuleNumSegments] = []urltemplate.PathRule{}
 		}
 		parsedRules[parsedRuleNumSegments] = append(parsedRules[parsedRuleNumSegments], parsedRule)
 	}
@@ -160,16 +161,16 @@ func (p *urlTemplateProcessor) OnDeleteKey(key string) {
 }
 
 // parseRuleStrings parses a slice of rule strings into a map of segment-count → rules.
-// Each string is parsed via parseUserInputRuleString; invalid rules are skipped with a warning.
-func (p *urlTemplateProcessor) parseRuleStrings(ruleStrings []string) map[int][]TemplatizationRule {
-	parsed := map[int][]TemplatizationRule{}
+// Each string is parsed via urltemplate.ParseUserInputRuleString; invalid rules are skipped with a warning.
+func (p *urlTemplateProcessor) parseRuleStrings(ruleStrings []string) map[int][]urltemplate.PathRule {
+	parsed := map[int][]urltemplate.PathRule{}
 	for _, rule := range ruleStrings {
-		parsedRule, err := parseUserInputRuleString(rule)
+		parsedRule, err := urltemplate.ParseUserInputRuleString(rule, false)
 		if err != nil {
 			p.logger.Warn("invalid templatization rule; skipping", zap.String("rule", rule), zap.Error(err))
 			continue
 		}
-		n := len(parsedRule)
+		n := len(parsedRule.Segments)
 		parsed[n] = append(parsed[n], parsedRule)
 	}
 	return parsed
@@ -298,17 +299,6 @@ func getHttpResponseStatusCode(attr pcommon.Map) (int, bool) {
 	return 0, false
 }
 
-func splitPathToSegments(path string) ([]string, bool) {
-	hasLeadingSlash := strings.HasPrefix(path, "/")
-	if !hasLeadingSlash {
-		path = "/" + path
-	}
-
-	inputPathSegments := strings.Split(path, "/")
-	inputPathSegments = inputPathSegments[1:]
-	return inputPathSegments, hasLeadingSlash
-}
-
 // calculateTemplatedUrlFromAttrWithRules calculates a templated URL using the given rules.
 // returns the templated path and a method indicating how it was produced.
 // a nil method means templatization was skipped and the route attribute should not be set.
@@ -325,7 +315,7 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcomm
 		return "/", odigosattributes.UrlTemplatizationResultPathNormalization.Ptr()
 	}
 
-	inputPathSegments, hadLeadingSlash := splitPathToSegments(urlPath)
+	inputPathSegments, hadLeadingSlash := urltemplate.SplitPath(urlPath)
 	if len(inputPathSegments) == 1 && inputPathSegments[0] == "" {
 		// if the path is empty, we can't generate a templated url
 		return "/", odigosattributes.UrlTemplatizationResultPathNormalization.Ptr()
