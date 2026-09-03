@@ -50,9 +50,6 @@ data:
     {{- if .Values.ui.uiRemoteUrl }}
     uiRemoteUrl: {{ .Values.ui.uiRemoteUrl }}
     {{- end }}
-    {{- if .Values.ui.centralBackendURL }}
-    centralBackendURL: {{ .Values.ui.centralBackendURL }}
-    {{- end }}
     {{- if or .Values.ui.oidcTenantUrl .Values.ui.oidcClientId .Values.ui.oidcClientSecret }}
     oidc:
       {{- if .Values.ui.oidcTenantUrl }}

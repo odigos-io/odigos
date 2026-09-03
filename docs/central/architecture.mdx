@@ -54,13 +54,10 @@ Several Helm values are named `centralBackendURL`. They are **not interchangeabl
 | Value | Chart | Who uses it | When to set |
 | --- | --- | --- | --- |
 | `centralProxy.centralBackendURL` | `odigos` (each **remote** cluster) | Central Proxy WebSocket to `/ws/proxy` | **Required** to connect a remote cluster. See [Connecting Remote Clusters](/central/adding-connections/remote-clusters). |
-| `ui.centralBackendURL` | `odigos` (remote cluster) | Per-cluster Odigos UI | **Do not set** when you manage the cluster from Central UI only. |
 | `centralUI.centralBackendURL` | `odigos-central` | Central UI → backend HTTP | Optional. Default is in-cluster `http://central-backend.<namespace>:8081`. |
 | `auth.externalUrl` | `odigos-central` | Browser SSO redirects (Keycloak issuer / proxy URLs) | Set to the **browser-accessible** Central Backend URL (ingress hostname). See [Authentication](/central/authentication). |
 
 `centralProxy.centralBackendURL` is the URL **remote clusters** use to reach Central. `auth.externalUrl` is the URL **browsers** use for SSO. They are often the same public hostname when you terminate TLS on ingress, but they serve different clients.
-
-If you set both `centralProxy.centralBackendURL` and `ui.centralBackendURL` on a remote cluster, the `odigos-configuration` ConfigMap writes **two** `centralBackendURL` keys inside `config.yaml` (YAML keeps the last one). That ConfigMap has a `config.yaml` file, not a top-level key named `centralBackendURL`. Do not set `ui.centralBackendURL` for Central-managed clusters.
 
 ## Components
 
