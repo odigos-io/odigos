@@ -1013,6 +1013,7 @@ type Insights {
     namespace: String
     service: String
     kind: InsightsTransactionKind
+    windowHours: Int
   ): [InsightsTransactionStat!]!
   transaction(id: ID!): InsightsTransaction
   baseline(transactionId: ID!): [InsightsBaselineClass!]!

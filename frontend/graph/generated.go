@@ -620,7 +620,7 @@ type ComplexityRoot struct {
 		StorageHealth       func(childComplexity int) int
 		SystemSettings      func(childComplexity int) int
 		Transaction         func(childComplexity int, id string) int
-		Transactions        func(childComplexity int, namespace *string, service *string, kind *model.InsightsTransactionKind) int
+		Transactions        func(childComplexity int, namespace *string, service *string, kind *model.InsightsTransactionKind, windowHours *int) int
 	}
 
 	InsightsAnomalyAttrHighlight struct {
@@ -2182,7 +2182,7 @@ type InsightsResolver interface {
 	ServiceNames(ctx context.Context, obj *model.Insights) ([]string, error)
 	ServiceProfile(ctx context.Context, obj *model.Insights, namespace *string, service string) (*model.InsightsServiceProfile, error)
 	BlastRadius(ctx context.Context, obj *model.Insights, namespace *string, service string, depth *int) (*model.InsightsBlastRadiusSubgraph, error)
-	Transactions(ctx context.Context, obj *model.Insights, namespace *string, service *string, kind *model.InsightsTransactionKind) ([]*model.InsightsTransactionStat, error)
+	Transactions(ctx context.Context, obj *model.Insights, namespace *string, service *string, kind *model.InsightsTransactionKind, windowHours *int) ([]*model.InsightsTransactionStat, error)
 	Transaction(ctx context.Context, obj *model.Insights, id string) (*model.InsightsTransaction, error)
 	Baseline(ctx context.Context, obj *model.Insights, transactionID string) ([]*model.InsightsBaselineClass, error)
 	Observations(ctx context.Context, obj *model.Insights, transactionID string, sampleReason *model.InsightsSampleReason) ([]*model.InsightsObservationSummary, error)
@@ -5087,7 +5087,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Insights.Transactions(childComplexity, args["namespace"].(*string), args["service"].(*string), args["kind"].(*model.InsightsTransactionKind)), true
+		return e.complexity.Insights.Transactions(childComplexity, args["namespace"].(*string), args["service"].(*string), args["kind"].(*model.InsightsTransactionKind), args["windowHours"].(*int)), true
 
 	case "InsightsAnomalyAttrHighlight.key":
 		if e.complexity.InsightsAnomalyAttrHighlight.Key == nil {
@@ -13225,6 +13225,11 @@ func (ec *executionContext) field_Insights_transactions_args(ctx context.Context
 		return nil, err
 	}
 	args["kind"] = arg2
+	arg3, err := ec.field_Insights_transactions_argsWindowHours(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["windowHours"] = arg3
 	return args, nil
 }
 func (ec *executionContext) field_Insights_transactions_argsNamespace(
@@ -13278,6 +13283,24 @@ func (ec *executionContext) field_Insights_transactions_argsKind(
 	}
 
 	var zeroVal *model.InsightsTransactionKind
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Insights_transactions_argsWindowHours(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["windowHours"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("windowHours"))
+	if tmp, ok := rawArgs["windowHours"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
 	return zeroVal, nil
 }
 
@@ -33024,7 +33047,7 @@ func (ec *executionContext) _Insights_transactions(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Insights().Transactions(rctx, obj, fc.Args["namespace"].(*string), fc.Args["service"].(*string), fc.Args["kind"].(*model.InsightsTransactionKind))
+		return ec.resolvers.Insights().Transactions(rctx, obj, fc.Args["namespace"].(*string), fc.Args["service"].(*string), fc.Args["kind"].(*model.InsightsTransactionKind), fc.Args["windowHours"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
