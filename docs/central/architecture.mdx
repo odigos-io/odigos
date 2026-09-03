@@ -47,6 +47,18 @@ flowchart TB
 
 When [Cloud Connectors are enabled](/cloud-connectors/enable), the Central cluster also runs the connector-runtime controller, a dedicated PostgreSQL store for connector state, and per-account provider connector workloads (for example AWS, GCP, and other supported providers) that you create from the UI.
 
+## Backend URLs (Helm values)
+
+Several Helm values are named `centralBackendURL`. They are **not interchangeable**.
+
+| Value | Chart | Who uses it | When to set |
+| --- | --- | --- | --- |
+| `centralProxy.centralBackendURL` | `odigos` (each **remote** cluster) | Central Proxy WebSocket to `/ws/proxy` | **Required** to connect a remote cluster. See [Connecting Remote Clusters](/central/adding-connections/remote-clusters). |
+| `centralUI.centralBackendURL` | `odigos-central` | Central UI → backend HTTP | Optional. Default is in-cluster `http://central-backend.<namespace>:8081`. |
+| `auth.externalUrl` | `odigos-central` | Browser SSO redirects (Keycloak issuer / proxy URLs) | Set to the **browser-accessible** Central Backend URL (ingress hostname). See [Authentication](/central/authentication). |
+
+`centralProxy.centralBackendURL` is the URL **remote clusters** use to reach Central. `auth.externalUrl` is the URL **browsers** use for SSO. They are often the same public hostname when you terminate TLS on ingress, but they serve different clients.
+
 ## Components
 
 | Component           | Description                                                                                                     |

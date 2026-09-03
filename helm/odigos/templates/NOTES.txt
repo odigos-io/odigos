@@ -8,3 +8,23 @@ brew install odigos-io/odigos-cli/odigos
 odigos ui
 
 Then, go to: http://localhost:3000
+
+{{ if and .Values.insights.enabled (eq .Values.insights.clickhouse.storage.persistence false) }}
+{{- $existingPVC := lookup "v1" "PersistentVolumeClaim" .Release.Namespace "odigos-insights-clickhouse" }}
+
+WARNING: Insights persistence is disabled.
+
+ClickHouse is using emptyDir. Insights data will be lost when the
+ClickHouse pod is recreated or rescheduled.
+
+You can enable persistent storage by setting:
+
+  insights.clickhouse.storage.persistence=true
+
+{{ if $existingPVC }}
+A previous ClickHouse PVC named "odigos-insights-clickhouse" still exists.
+
+The PVC was intentionally retained to protect existing Insights data and is
+not used while persistence is disabled.
+{{ end }}
+{{ end }}
