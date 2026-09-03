@@ -90,6 +90,11 @@ and rollback any metadata changes made to your objects.`,
 				fmt.Printf("\033[31mERROR\033[0m Failed to remove all sources: %s\n", err)
 				os.Exit(1)
 			}
+			err = removeCopiedImagePullSecrets(ctx, client, ns)
+			if err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Failed to remove copied image pull secrets: %s\n", err)
+				os.Exit(1)
+			}
 			if autoRolloutDisabled {
 				fmt.Println("Odigos is configured to NOT rollout workloads automatically; existing pods will remain instrumented until a manual rollout is triggered.")
 			} else if !cmd.Flag("no-wait").Changed {
@@ -587,6 +592,34 @@ func cleanupNodeOdigosLabels(ctx context.Context, client *kube.Client, ns, _ str
 		}
 	}
 
+	return nil
+}
+
+func removeCopiedImagePullSecrets(ctx context.Context, client *kube.Client, odigosNs string) error {
+	l := log.Print("Removing copied image pull secrets...")
+	list, err := client.CoreV1().Secrets("").List(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
+			MatchLabels: labels.OdigosSystem,
+		}),
+	})
+	if err != nil {
+		return err
+	}
+
+	var deleteErr error
+	for _, secret := range list.Items {
+		if secret.Namespace == odigosNs {
+			continue
+		}
+		err = client.CoreV1().Secrets(secret.Namespace).Delete(ctx, secret.Name, metav1.DeleteOptions{})
+		if err != nil && !apierrors.IsNotFound(err) {
+			deleteErr = errors.Join(deleteErr, err)
+		}
+	}
+	if deleteErr != nil {
+		return deleteErr
+	}
+	l.Success()
 	return nil
 }
 

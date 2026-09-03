@@ -14,4 +14,7 @@ rules:
 - apiGroups: [""]
   resources: ["nodes"]
   verbs: ["list", "patch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["list", "delete"]
 

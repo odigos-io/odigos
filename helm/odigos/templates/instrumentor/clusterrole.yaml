@@ -29,6 +29,23 @@ rules:
       - list
       - watch
       - get
+  # create cannot be scoped with resourceNames; used to copy image pull secrets into instrumented namespaces.
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    verbs:
+      - create
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+    resourceNames:
+      - odigos-enterprise-registry
+    verbs:
+      - get
+      - update
+      - patch
   - apiGroups:
       - 'batch'
     resources:
