@@ -14,9 +14,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
       - name: Lint Charts
-        run: |
-          shopt -s extglob
-          helm lint helm/!(*.md)
+        run: helm lint helm/odigos helm/odigos-central
 
   generate-schema:
     runs-on: ubuntu-latest
@@ -24,9 +22,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
-          go-version: "1.26.5"
+          go-version: "1.26.6"
       - name: Generate Helm Schema
         run: make helm-schema
       - name: Check for schema changes

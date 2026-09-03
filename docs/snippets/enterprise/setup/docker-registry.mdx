@@ -2,18 +2,136 @@
 
 
 ### Step 1: Set Environment Variables
-First, export the `VERSION` and `CUSTOM-DOCKER-REGISTRY` environment variables in your shell:
+First, export the `VERSION`, `CUSTOM_DOCKER_REGISTRY`, `PLATFORM`, and `ODIGOS_TOKEN` environment variables in your shell:
 
 ```bash
 export VERSION=<YOUR-DESIRED-VERSION>
 export CUSTOM_DOCKER_REGISTRY=<YOUR-CUSTOM-DOCKER-REGISTRY>
 export PLATFORM=<YOUR-PLATFORM-ARCHITECTURE>
+export ODIGOS_TOKEN=<YOUR-ONPREM-TOKEN>
 ```
-Replace `<YOUR-DESIRED-VERSION>` with the version of the Odigos images you want to use, `<YOUR-CUSTOM-DOCKER-REGISTRY>` with the URL of your custom Docker registry, and `<YOUR-PLATFORM-ARCHITECTURE>` with the platform architecture of the environment where you are deploying Odigos (linux/amd64, linux/arm64).
+Replace `<YOUR-DESIRED-VERSION>` with the version of the Odigos images you want to use, `<YOUR-CUSTOM-DOCKER-REGISTRY>` with the URL of your custom Docker registry, `<YOUR-PLATFORM-ARCHITECTURE>` with the platform architecture of the environment where you are deploying Odigos (linux/amd64, linux/arm64), and `<YOUR-ONPREM-TOKEN>` with your Odigos Enterprise on-prem token.
 
 ---
 
-### Step 2: Pull the Images
+### Step 2: Authenticate to the Enterprise Registry
+
+Enterprise images are hosted on the private registry `registry.odigos.io`. Authenticate with your on-prem token before pulling. The username is always `odigos`; the password is your on-prem token.
+
+Choose the method that matches how you will pull images:
+
+<Tabs>
+  <Tab title="Docker">
+Log in with Docker so you can `docker pull` images locally or in CI:
+
+```bash
+echo "$ODIGOS_TOKEN" | docker login registry.odigos.io -u odigos --password-stdin
+```
+  </Tab>
+  <Tab title="Podman">
+Log in with Podman so you can `podman pull` images locally or in CI:
+
+```bash
+echo "$ODIGOS_TOKEN" | podman login registry.odigos.io -u odigos --password-stdin
+```
+  </Tab>
+  <Tab title="Local auth file">
+Manually generate a Docker config JSON pull secret for local Docker or Podman. Use this when `login` is not available, or you need an auth file for CI.
+
+```bash
+export ODIGOS_DOCKER_AUTH=$(echo -n "odigos:$ODIGOS_TOKEN" | base64)
+cat <<EOF > odigos-dockerconfig.json
+{
+  "auths": {
+    "registry.odigos.io": {
+      "username": "odigos",
+      "password": "$ODIGOS_TOKEN",
+      "auth": "$ODIGOS_DOCKER_AUTH"
+    }
+  }
+}
+EOF
+```
+
+For Docker, write the file to the default config path (this overwrites `~/.docker/config.json` if it already exists):
+
+```bash
+mkdir -p ~/.docker
+cp odigos-dockerconfig.json ~/.docker/config.json
+```
+
+To keep your existing Docker config, use a dedicated directory instead:
+
+```bash
+mkdir -p /tmp/odigos-docker
+cp odigos-dockerconfig.json /tmp/odigos-docker/config.json
+export DOCKER_CONFIG=/tmp/odigos-docker
+```
+
+For Podman, write the file to the default auth path:
+
+```bash
+mkdir -p ~/.config/containers
+cp odigos-dockerconfig.json ~/.config/containers/auth.json
+```
+
+Or pass the file per command:
+
+```bash
+podman pull --authfile odigos-dockerconfig.json registry.odigos.io/odigos-scheduler:$VERSION
+```
+  </Tab>
+  <Tab title="Kubernetes pull secret">
+Create a Docker registry pull secret when an in-cluster Job, GitOps tool, or other Kubernetes process needs to pull from `registry.odigos.io`.
+
+```bash
+kubectl create secret docker-registry odigos-enterprise-registry \
+  --namespace odigos-system \
+  --docker-server=registry.odigos.io \
+  --docker-username=odigos \
+  --docker-password="$ODIGOS_TOKEN"
+kubectl label secret odigos-enterprise-registry -n odigos-system odigos.io/system-object=true
+```
+
+You can use a different secret name if this credential is only for your mirroring pipeline. Use the name `odigos-enterprise-registry` if Odigos itself will pull from `registry.odigos.io`.
+
+Or apply the secret declaratively. To do so, first generate the `auth` value with:
+
+```bash
+echo -n "odigos:$ODIGOS_TOKEN" | base64
+```
+
+Then apply:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: odigos-enterprise-registry
+  namespace: odigos-system
+  labels:
+    odigos.io/system-object: "true"
+type: kubernetes.io/dockerconfigjson
+stringData:
+  .dockerconfigjson: |
+    {
+      "auths": {
+        "registry.odigos.io": {
+          "username": "odigos",
+          "password": "<TOKEN>",
+          "auth": "<BASE64_OF_odigos:TOKEN>"
+        }
+      }
+    }
+```
+  </Tab>
+</Tabs>
+
+<Info>
+  The pull, tag, and push examples below use Docker. If you authenticated with Podman, replace `docker` with `podman`.
+</Info>
+
+### Step 3: Pull the Images
 Start by pulling the required images from the enterprise registry (`registry.odigos.io`) onto your local machine or CI environment:
 
 ```bash
@@ -23,6 +141,7 @@ docker pull registry.odigos.io/odigos-ui:$VERSION
 docker pull registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull registry.odigos.io/odigos-enterprise-odiglet:$VERSION
 docker pull registry.odigos.io/odigos-enterprise-collector:$VERSION
+docker pull registry.odigos.io/odigos-victoria-metrics:$VERSION
 ```
 
 If you are using the [k8s-init-container](/enterprise/instrumentations/configuration/mount-method#3-InitContainer) mount method
@@ -45,9 +164,10 @@ docker pull --platform $PLATFORM registry.odigos.io/odigos-ui:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-autoscaler:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-odiglet:$VERSION
 docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-collector:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-victoria-metrics:$VERSION
 ```
 
-### Step 3: Tag the Images
+### Step 4: Tag the Images
 Next, Tag each image with your custom Docker registry prefix:
 
 ```bash
@@ -57,6 +177,7 @@ docker tag registry.odigos.io/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-
 docker tag registry.odigos.io/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker tag registry.odigos.io/odigos-enterprise-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-odiglet:$VERSION
 docker tag registry.odigos.io/odigos-enterprise-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-collector:$VERSION
+docker tag registry.odigos.io/odigos-victoria-metrics:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-victoria-metrics:$VERSION
 ```
 
 
@@ -64,7 +185,7 @@ docker tag registry.odigos.io/odigos-enterprise-collector:$VERSION $CUSTOM_DOCKE
 
 > **Note:** Odigos Enterprise now runs a dedicated collector image, `odigos-enterprise-collector`, in place of `odigos-collector`. If you were already mirroring `odigos-collector`, mirror `odigos-enterprise-collector` as well before upgrading, otherwise the gateway and the node collectors will fail to pull.
 
-### Step 4: Push the Images
+### Step 5: Push the Images
 Now, push the tagged images to your custom Docker registry:
 ```bash
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
@@ -73,9 +194,10 @@ docker push $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-odiglet:$VERSION
 docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-collector:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-victoria-metrics:$VERSION
 ```
 
-### Step 5: Configure Access for Private Registries
+### Step 6: Configure Access for Private Registries
 
 If your Docker registry is private, configure your Kubernetes cluster to pull images from it. Refer to the official Kubernetes documentation for guidance: [Pull an Image from a Private Registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
@@ -95,13 +217,15 @@ If your Docker registry is private, configure your Kubernetes cluster to pull im
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
 > kubectl patch deployment odigos-gateway -n $ODIGOS_NAMESPACE \
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
+> kubectl patch deployment odigos-victoriametrics -n $ODIGOS_NAMESPACE \
+> --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
 > kubectl patch daemonset odiglet -n $ODIGOS_NAMESPACE \
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
 > kubectl patch daemonset odigos-data-collection -n $ODIGOS_NAMESPACE \
 > --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
 > ```
 
-### Step 6: Install Odigos Using Custom Images
+### Step 7: Install Odigos Using Custom Images
 Finally, install Odigos using the images from your custom Docker registry:
 
 
@@ -120,3 +244,7 @@ kubectl label namespace odigos-system odigos.io/system-object="true"
   </Tab>
 
 </Tabs>
+
+<Tip>
+  These steps cover the **Odigos K8s agent** chart (`odigos`). For Odigos Central (`odigos-central`), including the bundled Keycloak image, see [Custom Docker Registry](/central/installation#custom-docker-registry).
+</Tip>

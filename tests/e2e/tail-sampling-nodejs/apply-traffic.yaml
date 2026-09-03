@@ -99,3 +99,44 @@ spec:
               call_many_ok 6 "/duration/medium"
               call_ok "/duration/long"
               echo "all curls succeeded"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tail-sampling-http-server-curls
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: tail-sampling-http-server-curls
+    spec:
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: curl
+          image: curlimages/curl:8.4.0
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              BASE_URL="http://tail-sampling-http-server:8080"
+              echo "BASE_URL=${BASE_URL}"
+
+              call_ok() {
+                curl -sS -f -o /dev/null "${BASE_URL}$1"
+              }
+
+              call_ok "/healthz"
+              # Vary path params so http.route is the Express template, not the concrete URL.
+              call_ok "/http-server/templated/1/users/alice/orders/aaa"
+              call_ok "/http-server/templated/2/users/bob/orders/bbb"
+              call_ok "/http-server/templated/3/users/carol/orders/ccc"
+              call_ok "/http-server/prefix/1/items"
+              call_ok "/http-server/prefix/2/items/item-7"
+              call_ok "/http-server/static/leading-slash"
+              call_ok "/http-server/static/no-leading-slash"
+              echo "all curls succeeded"

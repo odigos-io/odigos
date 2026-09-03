@@ -103,8 +103,10 @@ func serviceTelemetryConfigForOwnMetricsUi(ownMetricsPort int32) config.Telemetr
 		"pull": config.GenericMap{
 			"exporter": config.GenericMap{
 				"prometheus": config.GenericMap{
-					"host": "0.0.0.0",
-					"port": ownMetricsPort,
+					"host":                "0.0.0.0",
+					"port":                ownMetricsPort,
+					"without_units":       false,
+					"without_type_suffix": false,
 				},
 			},
 		},

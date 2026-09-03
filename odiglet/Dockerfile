@@ -1,4 +1,4 @@
-ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.19
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.20
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
@@ -54,7 +54,7 @@ FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS agents-builder
 WORKDIR /instrumentations
 
 # java-community
-ARG JAVA_OTEL_VERSION=v2.10.0
+ARG JAVA_OTEL_VERSION=v2.20.0
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
@@ -63,20 +63,20 @@ COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8@sha256:6
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.90@sha256:26be5a681e6cde7585f0bff6714fd74dbc90515a239d4759f5b6225591a78185 /instrumentations/python /instrumentations/python
 
 # nodejs-community
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.13.0@sha256:f908dd3a2ae4d9213d923521685b10f138d6739c902ec1f9a20c0ce5b7b435c8 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.13.0@sha256:f908dd3a2ae4d9213d923521685b10f138d6739c902ec1f9a20c0ce5b7b435c8 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.15.0@sha256:1535cef7abba747c1e1fa363ad907d485d547f8ab733d90df977f33712968078 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.15.0@sha256:1535cef7abba747c1e1fa363ad907d485d547f8ab733d90df977f33712968078 /instrumentations/nodejs-community /instrumentations/nodejs-community
 # nodejs-community-14
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.20@sha256:3bd5a2da5b6bf0874660d53c45ac8b549438cdb36e458c5e3340893658456b5c /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.20@sha256:3bd5a2da5b6bf0874660d53c45ac8b549438cdb36e458c5e3340893658456b5c /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.22@sha256:3198ee74c61539f39614ec96b4ef9c7069140079e121541231f11f8b13863283 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community-14:v0.0.22@sha256:3198ee74c61539f39614ec96b4ef9c7069140079e121541231f11f8b13863283 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
 
 # nodejs-community
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 # php-community
-COPY --from=public.ecr.aws/odigos/agents/php-community:v0.5.0@sha256:2742c2e003ddece79010fd47b4da021b54e3ce046dafd850f1b4a772d38aa08b /instrumentations/php /instrumentations/php
+COPY --from=public.ecr.aws/odigos/agents/php-community:v0.7.0@sha256:b3ed955a65f7c6f67d4143e99ab778a70126669352f14dc1d8e20687e7af9ca0 /instrumentations/php /instrumentations/php
 
 # ruby-community
-COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8@sha256:a9df41f7684f550a3b7e1693456f7c4eb4ce432aba82d4b9e22d2a73687473b1 /instrumentations/ruby /instrumentations/ruby
+COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.9@sha256:5177737aba83e507ee968223fbd821d76e2df4e74bd1711e2d49e8d59f671d8c /instrumentations/ruby /instrumentations/ruby
 
 # loader
 ARG TARGETARCH
@@ -89,12 +89,6 @@ ENV GOTOOLCHAIN=auto
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by deviceplugin
 COPY common/ common/
-COPY k8sutils/ k8sutils/
-COPY procdiscovery/ procdiscovery/
-COPY api/ api/
-COPY distros/ distros/
-COPY instrumentation/ instrumentation/
-# Build deviceplugin binary
 WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
 COPY deviceplugin/ .
 ARG TARGETARCH
@@ -126,8 +120,32 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 ######### Odiglet builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
 ENV GOTOOLCHAIN=auto
+
+# 1) Materialize OBI under .obi/ — only obi.mk (OBI_COMMIT / OBI_VERSION). Cache independently of Makefile / go.mod / sources.
+WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
+COPY odiglet/obi.mk .
+RUN make -f obi.mk materialize-obi
+
+# 2) Generate — local replace go.mod/sum only (not full sources). Cache until module metadata changes.
 WORKDIR /go/src/github.com/odigos-io/odigos
-# Copy local modules required by the build
+COPY api/go.mod api/go.sum ./api/
+COPY common/go.mod common/go.sum ./common/
+COPY k8sutils/go.mod k8sutils/go.sum ./k8sutils/
+COPY procdiscovery/go.mod procdiscovery/go.sum ./procdiscovery/
+COPY opampserver/go.mod opampserver/go.sum ./opampserver/
+COPY instrumentation/go.mod instrumentation/go.sum ./instrumentation/
+COPY distros/go.mod distros/go.sum ./distros/
+COPY odiglet/go.mod odiglet/go.sum ./odiglet/
+COPY odiglet/pkg/ebpf/sdks/obi/go.mod odiglet/pkg/ebpf/sdks/obi/go.sum ./odiglet/pkg/ebpf/sdks/obi/
+COPY odiglet/Makefile ./odiglet/
+WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
+# Same /go/pkg cache as compile so generated bpf objects are visible to the build step.
+RUN --mount=type=cache,target=/go/pkg \
+    make -f Makefile generate
+
+# 3) Compile — full sources; re-apply OBI replace (COPY overwrites go.mod) then build only.
+# No re-download: modules (+ generate artifacts) live in the shared /go/pkg cache from the generate layer.
+WORKDIR /go/src/github.com/odigos-io/odigos
 COPY api/ api/
 COPY common/ common/
 COPY k8sutils/ k8sutils/
@@ -135,15 +153,17 @@ COPY procdiscovery/ procdiscovery/
 COPY opampserver/ opampserver/
 COPY instrumentation/ instrumentation/
 COPY distros/ distros/
-WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
-COPY odiglet/ .
+COPY odiglet/ odiglet/
 
 ARG TARGETARCH
 ARG LD_FLAGS
 ARG RHEL=false
+WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
+    make go-mod-replace && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make compile-odiglet
+
 # File capabilities so the binary can use eBPF privileges when run as non-root.
 # Setting this caps as the permitted set (=p) so that the binary can be executed with a sub set of these capabilities
 # if the environment does not require all of them. A sub-set can be configured with helm values.
@@ -152,9 +172,8 @@ RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi
 
-
 # Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.54
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.55
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         GRPC_ARCH="arm64"; \
     else \
@@ -216,16 +235,16 @@ LABEL "version"=$VERSION
 LABEL "release"=$RELEASE
 LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
+# Copy statically compiled rsync (no shared libraries needed)
+COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
+COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+COPY --from=agents-builder /instrumentations/ /instrumentations/
+COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
+COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
+
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
-COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
-COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
-COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
-# Copy statically compiled rsync (no shared libraries needed)
-COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
-WORKDIR /instrumentations/
-COPY --from=agents-builder /instrumentations/ .
 # make sure we run as non root user
 # this is required when this container is added to a pod that has runAsNonRoot: true
 USER 65532:65532
@@ -233,14 +252,13 @@ CMD ["/root/odiglet"]
 
 ######### Default Odiglet #########
 FROM gcr.io/distroless/base@sha256:f4a335ca209e1d2ee873102c17c389ad0142e3d5b21aee2817e9cc9c01d87d20
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
+COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+COPY --from=agents-builder /instrumentations/ /instrumentations/
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
-COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
-# Copy statically compiled rsync (no shared libraries needed)
-COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
-WORKDIR /instrumentations/
-COPY --from=agents-builder /instrumentations/ .
+
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 # make sure we run as non root user
 # this is required when this container is added to a pod that has runAsNonRoot: true
 USER 65532:65532

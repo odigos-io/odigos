@@ -4,7 +4,7 @@ description: 'Configure authentication for Odigos Central using OIDC or SAML ide
 sidebarTitle: 'Authentication'
 ---
 
-Odigos Central includes a bundled **Keycloak** instance as its identity provider. Keycloak is **not exposed externally** — the Central Backend acts as a reverse proxy, forwarding all authentication requests (under `/realms/*`) to Keycloak internally. This means you only need to expose the Central Backend and Central UI; no separate ingress or service is needed for Keycloak.
+Odigos Central includes a bundled **Keycloak** instance as its identity provider. Keycloak is **not exposed externally** — the Central Backend acts as a reverse proxy, forwarding authentication requests (`/realms/*` and `/resources/*`) to Keycloak internally. This means you only need to expose the Central Backend and Central UI; no separate ingress or service is needed for Keycloak.
 
 Odigos Central supports two types of external SSO providers:
 
@@ -12,6 +12,10 @@ Odigos Central supports two types of external SSO providers:
 - **SAML** — for providers like Okta that use SAML 2.0
 
 Both are configured through the Central UI — Odigos will create the required Keycloak configuration automatically.
+
+<Note>
+  Helm `auth.adminUsername` and `auth.adminPassword` are the Keycloak master admin used by `central-backend`. They are not Central UI login credentials. Sign in with SSO (the first SSO user becomes an admin) or with users created in the UI. See [Troubleshooting](/central/troubleshooting#admin-credentials-vs-central-ui-login).
+</Note>
 
 ## Configuring the External URL
 
@@ -61,7 +65,7 @@ For SSO redirects to work, Keycloak and the Central Backend must know the **brow
     - **Client ID** — from your IdP application
     - **Client Secret** — from your IdP application
     - **Discovery URL** — your IdP's OpenID Connect discovery endpoint
-    - **Tenant ID** — (if required by the provider)
+    - **Tenant ID** — required for Azure AD (Entra ID)
 
     <Info>
       Odigos Central will create/update the required configuration in the bundled Keycloak for you. Avoid configuring the identity provider directly in Keycloak unless you're troubleshooting.
@@ -84,6 +88,15 @@ For SSO redirects to work, Keycloak and the Central Backend must know the **brow
 <Info>
   To grant roles automatically based on Azure AD group membership, see [Role Mappings](./role-mappings).
 </Info>
+
+### Azure AD (Entra ID) network access
+
+Keycloak must reach Microsoft from inside the cluster. Allow egress to at least:
+
+- `login.microsoftonline.com` — authorization, token, JWKS, and OpenID discovery
+- `graph.microsoft.com` — OIDC userinfo
+
+Also allow any tenant-specific discovery or token URLs you configure. If domains are blocked, or the Entra app lacks permissions, Keycloak often shows only `couldNotSendAuthenticationRequestMessage` with no error class. See [Troubleshooting](/central/troubleshooting#azure-oauth).
 
 ## SAML Provider Setup (Okta, etc.)
 
@@ -116,14 +129,24 @@ For SSO redirects to work, Keycloak and the Central Backend must know the **brow
 
 ## Production Ingress Configuration
 
-When deploying behind an ingress, route traffic to the Central Backend and Central UI services only. Keycloak does **not** need its own ingress — the Central Backend handles all `/realms/*` requests internally.
+When deploying behind an ingress, route traffic to the Central Backend and Central UI services only. Keycloak does **not** need its own ingress — the Central Backend handles `/realms/*` and `/resources/*` internally.
 
-Example routing:
+`/resources/*` serves Keycloak theme and static assets (login page CSS, JS, and images). Browsers request it during sign-in; if it is routed to `central-ui`, login pages break.
 
-| Path | Service | Port |
-|---|---|---|
-| `/` | `central-ui` | 3000 |
-| `/api/*`, `/graphql`, `/realms/*` | `central-backend` | 8081 |
+Example routing (single hostname, path-based):
+
+| Path | Service | Port | Notes |
+|---|---|---|---|
+| `/` | `central-ui` | 3000 | Central UI. Next.js also rewrites some API paths when the request hits this service. |
+| `/graphql` | `central-backend` | 8081 | GraphQL API |
+| `/api/*` | `central-backend` | 8081 | Sign-in / sign-out helpers |
+| `/realms/*` | `central-backend` | 8081 | Keycloak OIDC/SAML (proxied) |
+
+<Warning>
+  The WebSocket path is `/ws/proxy`, not `/wss/proxy`. `wss` is the TLS **scheme**. Central Proxy uses `wss` when the backend URL host ends with `:443`; otherwise it uses `ws`. Enable WebSocket upgrades (HTTP `Upgrade`) on this path.
+</Warning>
+
+Set `auth.externalUrl` (and `auth.externalUIUrl` if the UI origin differs) to the public HTTPS URL of this hostname. Remote clusters should set `centralProxy.centralBackendURL` to the same reachable backend URL. See [Architecture](/central/architecture#backend-urls-helm-values) and [Connecting Remote Clusters](/central/adding-connections/remote-clusters).
 
 <Info>
   If you're looking to enable OIDC for the **non-central** Odigos UI (not Odigos

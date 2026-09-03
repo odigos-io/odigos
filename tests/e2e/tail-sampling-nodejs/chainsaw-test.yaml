@@ -6,7 +6,7 @@ spec:
   description: |
     E2E for Odigos gateway tail sampling with nodejs-community.
     Uses the prebuilt nodejs-tail-sampling image from Artifact Registry, enables
-    sampling dry-run and short aggregation wait, generates error/duration traffic,
+    sampling dry-run and short aggregation wait, generates error/duration/http-server traffic,
     and asserts odigos.sampling.* span attributes plus VictoriaMetrics sampling
     counter deltas.
   skipDelete: true
@@ -128,6 +128,8 @@ spec:
                 (kubectl logs job/tail-sampling-errors-curls -n default --tail=200; exit 1)
               kubectl wait --for=condition=complete job/tail-sampling-duration-curls -n default --timeout=300s || \
                 (kubectl logs job/tail-sampling-duration-curls -n default --tail=200; exit 1)
+              kubectl wait --for=condition=complete job/tail-sampling-http-server-curls -n default --timeout=180s || \
+                (kubectl logs job/tail-sampling-http-server-curls -n default --tail=200; exit 1)
 
     - name: Assert sampling span attributes
       try:
@@ -152,6 +154,11 @@ spec:
                 queries/duration-short-baseline.yaml
                 queries/duration-medium-50pct.yaml
                 queries/duration-long-100pct.yaml
+                queries/http-server-templated.yaml
+                queries/http-server-templated-prefix.yaml
+                queries/http-server-templated-prefix-nested.yaml
+                queries/http-server-static-leading-slash.yaml
+                queries/http-server-static-no-leading-slash.yaml
               )
               last_failed=""
               last_failed_output=""
@@ -254,7 +261,7 @@ spec:
                 ./.trace-sampling-metrics-baseline-nodejs.json || true
               echo "--- current totals by rule name (match / keep / drop) ---"
               base="http://odigos-victoriametrics.odigos-test.svc.cluster.local:8428"
-              for deployment in tail-sampling-errors tail-sampling-duration; do
+              for deployment in tail-sampling-errors tail-sampling-duration tail-sampling-http-server; do
                 ic="deployment-${deployment}"
                 kubectl get instrumentationconfig "$ic" -n default -o json | jq -r --arg dep "$deployment" '
                   .spec.workloadCollectorConfig[0].samplingCollectorConfig as $sc |

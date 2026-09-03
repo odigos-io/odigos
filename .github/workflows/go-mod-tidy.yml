@@ -9,9 +9,9 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.26.5"
+          go-version: "1.26.6"
       - name: run make go-mod-tidy
         run: make go-mod-tidy
       - name: Check clean repository
@@ -25,8 +25,8 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.26.5"
+          go-version: "1.26.6"
       - name: run make verify-go-mod-graph
         run: make verify-go-mod-graph

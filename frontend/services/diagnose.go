@@ -74,12 +74,19 @@ func DiagnoseGraphQL(
 
 	isDryRun := dryRun != nil && *dryRun
 
+	// Detach from the GraphQL/HTTP request context. Selecting source workloads
+	// issues many concurrent API calls alongside pprof collection; if the
+	// request is aborted (proxy timeout, client cancel) client-go reports
+	// "client rate limiter Wait returned an error: context canceled".
+	collectCtx, collectCancel := diagnose.CollectionContext(ctx)
+	defer collectCancel()
+
 	if isDryRun {
 		// Create dry-run builder to estimate size
 		builder := diagnose.NewDryRunBuilder()
 
 		if err := diagnose.RunDiagnose(
-			ctx,
+			collectCtx,
 			kube.DefaultClient,
 			kube.DefaultClient.DynamicClient,
 			kube.DefaultClient.Discovery(),
@@ -142,7 +149,7 @@ func DiagnoseGraphQL(
 	}
 
 	// Channel for stage completion; send SSE for each completed stage (stage id, status success/error, and message on error).
-	stageCh := make(chan diagnose.StageResult, 10)
+	stageCh := make(chan diagnose.StageResult, len(stagesRequested)+1)
 	done := make(chan struct{})
 	go func() {
 		for result := range stageCh {
@@ -165,7 +172,7 @@ func DiagnoseGraphQL(
 
 	// Run the diagnose collection
 	if err := diagnose.RunDiagnose(
-		ctx,
+		collectCtx,
 		kube.DefaultClient,
 		kube.DefaultClient.DynamicClient,
 		kube.DefaultClient.Discovery(),

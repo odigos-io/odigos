@@ -82,12 +82,17 @@ jobs:
         run: |
           TAG="${{ env.TAG }}"
 
-          # Check if it's a pre-release (has additional suffix after vX.Y.Z)
-          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+- ]]; then
+          if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-feat\. ]]; then
             echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+            echo "IS_FEATURE_RELEASE=true" >> $GITHUB_ENV
+            echo "This is a feature release: $TAG"
+          elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+- ]]; then
+            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+            echo "IS_FEATURE_RELEASE=false" >> $GITHUB_ENV
             echo "This is a pre-release: $TAG"
           else
             echo "IS_PRERELEASE=false" >> $GITHUB_ENV
+            echo "IS_FEATURE_RELEASE=false" >> $GITHUB_ENV
             echo "This is a stable release: $TAG"
           fi
 
@@ -126,7 +131,7 @@ jobs:
 
       - name: Verify Components Image Ready
         run: |
-          declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-connector-runtime" "odigos-enterprise-connector-aws" "odigos-enterprise-connector-azure" "odigos-enterprise-connector-gcp" "odigos-enterprise-connector-postgres")
+          declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-insights" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-connector-runtime" "odigos-enterprise-connector-aws" "odigos-enterprise-connector-azure" "odigos-enterprise-connector-gcp" "odigos-enterprise-connector-postgres")
 
           TAG_TO_CHECK=${{ env.TAG }}
 
@@ -165,9 +170,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.26.5"
+          go-version: "1.26.6"
 
       - uses: actions/setup-node@v5
         with:
@@ -175,6 +180,13 @@ jobs:
 
       - name: Check if Homebrew tap should be updated
         run: |
+          # Feature drops are not an official channel; do not move the RC tap.
+          if [ "${{ env.IS_FEATURE_RELEASE }}" = "true" ]; then
+            echo "Feature release $TAG — skipping Homebrew tap update"
+            echo "SKIP_HOMEBREW_UPDATE=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
           # Pre-releases always update their respective tap (homebrew-odigos-cli-rc)
           if [ "${{ env.IS_PRERELEASE }}" = "true" ]; then
             echo "Pre-release detected, will update Homebrew RC tap"
@@ -275,6 +287,7 @@ jobs:
           GORELEASER_CURRENT_TAG: ${{ env.TAG }}
 
       - name: Generate and update release notes
+        if: env.IS_FEATURE_RELEASE != 'true'
         uses: odigos-io/ci-core/generate-release-notes@main
         continue-on-error: true
         with:
@@ -283,7 +296,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Notify Slack (release notes)
-        if: always()
+        if: always() && env.IS_FEATURE_RELEASE != 'true'
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
@@ -294,6 +307,7 @@ jobs:
       - uses: ko-build/setup-ko@v0.9
 
       - name: publish cli image to docker registries
+        id: ko-cli
         working-directory: ./cli
         env:
           KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli
@@ -307,53 +321,92 @@ jobs:
             KO_TAGS="$KO_TAGS --tags latest"
           fi
           echo "ko tags: $KO_TAGS"
-          ko build --bare $KO_TAGS --platform=linux/amd64,linux/arm64
+          # ko prints the pushed ref with its digest; capture it so the image
+          # can be signed by digest rather than by mutable tag.
+          IMAGE_REF=$(ko build --bare $KO_TAGS --platform=linux/amd64,linux/arm64)
+          echo "built: ${IMAGE_REF}"
+          case "$IMAGE_REF" in
+            *@sha256:*) echo "digest=${IMAGE_REF##*@}" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::ko did not return a digest ref: ${IMAGE_REF}"; exit 1 ;;
+          esac
 
-      - name: Install crane
-        uses: imjasonh/setup-crane@v0.4
+      # Sign at the source registry before mirroring, so the mirrors can carry
+      # the signature and SBOM along as OCI referrers. Fail-closed.
+      - name: Sign CLI image and attach SBOM
+        uses: odigos-io/ci-core/sign-oci@main
+        with:
+          refs: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli
+          digest: ${{ steps.ko-cli.outputs.digest }}
+
+      - name: Install oras
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
 
       - name: Copy CLI image to Docker Hub and private GCR
         env:
           SOURCE_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli
-          DEST_IMAGE: ${{ env.DOCKERHUB_ORG }}/odigos-cli
+          DEST_IMAGE: docker.io/${{ env.DOCKERHUB_ORG }}/odigos-cli
           GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-cli
         run: |
-          crane copy ${SOURCE_IMAGE}:${{ env.TAG }} ${DEST_IMAGE}:${{ env.TAG }}
-          crane copy ${SOURCE_IMAGE}:${{ env.TAG }} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
+          # oras copy -r rather than crane copy: -r copies the referrers graph
+          # (cosign signature and SBOM attestation) along with the image, so
+          # the mirrors stay verifiable. crane copy moves only the manifest.
+          oras copy -r ${SOURCE_IMAGE}:${{ env.TAG }} ${DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE}:${{ env.TAG }} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
 
           # Mirror :latest only when this release owns it, so the mirrors stay
           # in step with the source registry.
           if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
-            crane copy ${SOURCE_IMAGE}:latest ${DEST_IMAGE}:latest
-            crane copy ${SOURCE_IMAGE}:latest ${GCR_PRIVATE_DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE}:latest ${DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE}:latest ${GCR_PRIVATE_DEST_IMAGE}:latest
           else
             echo "Skipping :latest mirror for ${{ env.TAG }}"
           fi
 
       - name: Copy VictoriaMetrics image to Docker Hub and GCR
+        id: vm-copy
         env:
-          SOURCE_IMAGE: victoriametrics/victoria-metrics:${{ env.VICTORIA_METRICS_VERSION }}
-          DOCKERHUB_DEST_IMAGE: ${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
+          SOURCE_IMAGE: docker.io/victoriametrics/victoria-metrics:${{ env.VICTORIA_METRICS_VERSION }}
+          DEST_IMAGE: docker.io/${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
           GCR_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-victoria-metrics
           GCR_PRIVATE_DEST_IMAGE: us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-victoria-metrics
         run: |
-          crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:${{ env.TAG }}
-          crane copy ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:${{ env.TAG }}
-          crane copy ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:${{ env.TAG }}
+          oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:${{ env.TAG }}
 
           # VICTORIA_METRICS_VERSION is pinned per branch, so :latest here
           # tracks whichever release owns it rather than the last one to run.
           if [ "${{ env.PUSH_LATEST }}" = "true" ]; then
-            crane copy ${SOURCE_IMAGE} ${DOCKERHUB_DEST_IMAGE}:latest
-            crane copy ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
-            crane copy ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_DEST_IMAGE}:latest
+            oras copy -r ${SOURCE_IMAGE} ${GCR_PRIVATE_DEST_IMAGE}:latest
           else
             echo "Skipping :latest mirror for ${{ env.TAG }}"
           fi
 
+          # The copy preserves the upstream digest; capture it so our copies
+          # can be signed by digest.
+          echo "digest=$(oras resolve ${SOURCE_IMAGE})" >> "$GITHUB_OUTPUT"
+
+      # VictoriaMetrics is a re-host of an upstream image under our name. The
+      # signature attests that WE published this exact digest in our
+      # registries — not that we built it. Signed at the destinations because
+      # there is no upstream cosign signature to carry over.
+      - name: Sign re-hosted VictoriaMetrics image
+        uses: odigos-io/ci-core/sign-oci@main
+        with:
+          refs: |
+            docker.io/${{ env.DOCKERHUB_ORG }}/odigos-victoria-metrics
+            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-victoria-metrics
+            us-central1-docker.pkg.dev/odigos-cloud/components-private/odigos-victoria-metrics
+          digest: ${{ steps.vm-copy.outputs.digest }}
+
       - name: Set notification messages
         run: |
-          if [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
+          if [ "${{ env.IS_FEATURE_RELEASE }}" = "true" ]; then
+            echo "SUCCESS_MSG=Odigos CLI feature release completed successfully" >> $GITHUB_ENV
+            echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to registries" >> $GITHUB_ENV
+          elif [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
             echo "SUCCESS_MSG=Odigos CLI stable release completed successfully" >> $GITHUB_ENV
             echo "FAILURE_MSG=ERROR: Failed to publish Odigos CLI image to registries" >> $GITHUB_ENV
           else
