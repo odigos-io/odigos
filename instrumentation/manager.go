@@ -446,6 +446,19 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) metricsAttributeSet
 	)
 }
 
+// withTelemetryDistroName returns attrs with telemetry.distro.name set to distroName.
+// An existing value (for example from OTEL_RESOURCE_ATTRIBUTES) is kept. attrs is not modified.
+func withTelemetryDistroName(attrs []attribute.KeyValue, distroName string) []attribute.KeyValue {
+	for _, attr := range attrs {
+		if attr.Key == semconv.TelemetryDistroNameKey {
+			return attrs
+		}
+	}
+	out := make([]attribute.KeyValue, 0, len(attrs)+1)
+	out = append(out, attrs...)
+	return append(out, semconv.TelemetryDistroName(distroName))
+}
+
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentation(ctx context.Context, pid int) {
 	details, found := m.detailsByPid[pid]
 	if !found {
@@ -604,6 +617,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 	// Distro factory: the process's own instrumentation and the main instrumentation path - report
 	// init/load, track even on failure (so the reporter is notified on exit and a failed distro can
 	// be retried), and run.
+	// The distribution is reported as telemetry.distro.name. Generic factories do not get it, as they
+	// are not the distribution instrumenting the process.
+	settings.ResourceAttributes = withTelemetryDistroName(settings.ResourceAttributes, otelDistro.Name)
 	inst, initErr := factory.CreateInstrumentation(ctx, pid, settings)
 	reporterErr := m.handler.Reporter.OnInit(ctx, pid, initErr, pd)
 	if reporterErr != nil {
