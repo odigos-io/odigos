@@ -107,8 +107,12 @@ spec:
       {{- end }}
       volumes:
         - name: data
+          {{- if ne .Values.insights.clickhouse.storage.persistence false }}
           persistentVolumeClaim:
             claimName: odigos-insights-clickhouse
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
         - name: config
           configMap:
             name: odigos-insights-clickhouse
