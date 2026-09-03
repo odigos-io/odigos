@@ -1,4 +1,4 @@
-{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
+{{- if and .Values.insights.enabled (include "odigos.secretExists" .) (ne .Values.insights.clickhouse.storage.persistence false) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
