@@ -15,27 +15,27 @@
     "lint:fix": "next lint --fix"
   },
   "dependencies": {
-    "@apollo/client": "^4.2.8",
-    "@odigos/ui-kit": "0.0.282",
+    "@apollo/client": "^4.2.12",
+    "@odigos/ui-kit": "0.0.295",
     "graphql": "^16.14.2",
     "next": "15.5.21",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
-    "react-error-boundary": "^6.1.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-error-boundary": "^6.1.4",
     "rxjs": "^7.8.2",
-    "styled-components": "6.3.12",
-    "zustand": "^5.0.14"
+    "styled-components": "6.5.3",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.2.12",
-    "@types/node": "26.1.1",
-    "@types/react": "19.2.17",
-    "@types/react-dom": "19.2.3",
+    "@next/bundle-analyzer": "^16.3.4",
+    "@types/node": "26.4.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
     "autoprefixer": "^10.5.4",
     "check-peer-dependencies": "^4.3.4",
     "eslint": "9.39.2",
-    "eslint-config-next": "16.2.12",
-    "postcss": "^8.5.23",
+    "eslint-config-next": "16.3.4",
+    "postcss": "^8.5.27",
     "typescript": "5.9.3"
   },
   "resolutions": {

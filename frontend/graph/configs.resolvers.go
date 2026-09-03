@@ -15,14 +15,14 @@ import (
 
 // UpdateRemoteConfig is the resolver for the updateRemoteConfig field.
 func (r *mutationResolver) UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (bool, error) {
-	remoteConfig := &common.OdigosConfiguration{}
-	if config.Rollout != nil {
-		remoteConfig.Rollout = &common.RolloutConfiguration{
-			AutomaticRolloutDisabled: config.Rollout.AutomaticRolloutDisabled,
+	err := services.UpdateRemoteConfig(ctx, func(remoteConfig *common.OdigosConfiguration) {
+		if config.Rollout != nil {
+			if remoteConfig.Rollout == nil {
+				remoteConfig.Rollout = &common.RolloutConfiguration{}
+			}
+			remoteConfig.Rollout.AutomaticRolloutDisabled = config.Rollout.AutomaticRolloutDisabled
 		}
-	}
-
-	_, err := services.UpdateRemoteConfig(ctx, remoteConfig)
+	})
 	if err != nil {
 		return false, err
 	}

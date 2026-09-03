@@ -312,6 +312,7 @@ rules:
   - odigos.io
   resources:
   - instrumentationrules/status
+  - recommendations/status
   verbs:
   - get
   - patch
@@ -319,6 +320,7 @@ rules:
 - apiGroups:
   - odigos.io
   resources:
+  - recommendations
   - sampling
   verbs:
   - create

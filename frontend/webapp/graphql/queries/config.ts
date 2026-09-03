@@ -11,6 +11,7 @@ export const GET_CONFIG = gql`
       installationStatus
       clusterName
       isCentralProxyRunning
+      insightsEnabled
     }
   }
 `;

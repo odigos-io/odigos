@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -204,7 +203,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 
 	otelServiceName := patchSourceRequest.OtelServiceName
 	if otelServiceName != nil {
-		_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", fmt.Sprintf("\"%s\"", *otelServiceName))
+		_, err = services.UpdateSourceCRDSpec(ctx, nsName, source.Name, "otelServiceName", *otelServiceName)
 		if err != nil {
 			// unexpected error occurred while trying to update the source
 			return false, err
@@ -212,35 +211,11 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 	}
 
 	cont := patchSourceRequest.ContainerName
-	lang := patchSourceRequest.Language
-	vers := patchSourceRequest.Version
 	if cont != nil {
-		// add the new override
-		var overrideRuntimeInfo *v1alpha1.RuntimeDetailsByContainer
-		if lang == nil || *lang == "" {
-			overrideRuntimeInfo = nil
-		} else {
-			runtimeVersion := ""
-			if vers != nil && *vers != "" {
-				if common.GetVersion(*vers) == nil {
-					return false, fmt.Errorf("invalid runtime version: %s", *vers)
-				}
-				runtimeVersion = *vers
-			}
-			overrideRuntimeInfo = &v1alpha1.RuntimeDetailsByContainer{
-				ContainerName:  *cont,
-				Language:       common.ProgrammingLanguage(*lang),
-				RuntimeVersion: runtimeVersion,
-			}
+		containerOverrides, err := mergeContainerOverride(source.Spec.ContainerOverrides, *cont, patchSourceRequest)
+		if err != nil {
+			return false, err
 		}
-		// Preserve AllowConcurrentAgents: PatchSourceRequestInput cannot set it, so rebuilding
-		// the override without copying would silently clear a kubectl/YAML opt-in.
-		containerOverrides := buildUpdatedContainerOverrides(
-			source.Spec.ContainerOverrides,
-			*cont,
-			patchSourceRequest.OtelDistroName,
-			overrideRuntimeInfo,
-		)
 		// patch the source with the new container overrides
 		patchBytes, err := json.Marshal([]map[string]interface{}{
 			{

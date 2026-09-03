@@ -1,0 +1,40 @@
+{{- if and .Values.insights.enabled (include "odigos.secretExists" .) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-insights-clickhouse
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-insights-clickhouse
+    odigos.io/system-object: "true"
+data:
+  # Mounted at /etc/clickhouse-server/config.d/odigos.xml
+  odigos.xml: |
+    <clickhouse>
+      <!-- Cap CH below the cgroup/pod memory limit to reduce OOM kills. -->
+      <max_server_memory_usage_to_ram_ratio>{{ .Values.insights.clickhouse.config.maxServerMemoryUsageToRamRatio }}</max_server_memory_usage_to_ram_ratio>
+      <max_concurrent_queries>{{ .Values.insights.clickhouse.config.maxConcurrentQueries }}</max_concurrent_queries>
+      <logger>
+        <level>{{ .Values.insights.clickhouse.config.logLevel }}</level>
+        <!-- Bound log rotation on the container rootfs (data lives on the PVC). -->
+        <size>100M</size>
+        <count>3</count>
+      </logger>
+    </clickhouse>
+  # Mounted at /etc/clickhouse-server/users.d/odigos.xml
+  users.xml: |
+    <clickhouse>
+      <profiles>
+        <default>
+          {{- if .Values.insights.clickhouse.config.maxMemoryUsagePerQuery }}
+          <max_memory_usage>{{ .Values.insights.clickhouse.config.maxMemoryUsagePerQuery }}</max_memory_usage>
+          {{- end }}
+        </default>
+      </profiles>
+    </clickhouse>
+  {{- if .Values.insights.clickhouse.config.extraConfig }}
+  # Mounted at /etc/clickhouse-server/config.d/odigos-extra.xml
+  odigos-extra.xml: |
+    {{- .Values.insights.clickhouse.config.extraConfig | nindent 4 }}
+  {{- end }}
+{{- end }}

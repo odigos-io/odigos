@@ -1,0 +1,23 @@
+{{- if and .Values.insights.enabled (include "odigos.secretExists" .) (ne .Values.insights.clickhouse.storage.persistence false) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: odigos-insights-clickhouse
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-insights-clickhouse
+    odigos.io/system-object: "true"
+  # Keep the PVC around even if someone helm-uninstalls the release.
+  # ClickHouse data is the one thing that should survive a wipe of every
+  # other resource in the chart.
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- if .Values.insights.clickhouse.storage.storageClassName }}
+  storageClassName: {{ .Values.insights.clickhouse.storage.storageClassName | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.insights.clickhouse.storage.size }}
+{{- end }}
