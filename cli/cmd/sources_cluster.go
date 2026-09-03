@@ -146,12 +146,17 @@ func enableClusterSource(cmd *cobra.Command) {
 }
 
 func instrumentCluster(ctx context.Context, client *kube.Client, excludeNamespaces map[string]struct{}, excludeApps map[string]struct{}, dryRun bool, isRemote bool, onlyNamespace string, onlyDeployment string) {
-	systemNs := sliceToMap(k8sconsts.DefaultIgnoredNamespaces)
 	odigosNs, err := resources.GetOdigosNamespace(client, ctx)
 	if err != nil {
 		fmt.Printf("\033[31mERROR\033[0m Cannot get odigos namespace: %s\n", err)
 		os.Exit(1)
 	}
+	config, err := resources.GetCurrentConfig(ctx, client, odigosNs)
+	if err != nil {
+		fmt.Printf("\033[31mERROR\033[0m Cannot get odigos configuration: %s\n", err)
+		os.Exit(1)
+	}
+	systemNs := sliceToMap(config.IgnoredNamespaces)
 	systemNs[odigosNs] = struct{}{}
 
 	orchestrator, err := lifecycle.NewOrchestrator(client, ctx, isRemote)

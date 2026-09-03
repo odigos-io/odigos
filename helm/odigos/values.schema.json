@@ -590,14 +590,52 @@
       "title": "ignoreOdigosNamespace"
     },
     "ignoredContainers": {
-      "default": "",
-      "description": "container names to never instrument\nuseful for sidecars which are not interesting to be instrumented\nset by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init\nyou can add additional container names to ignore by adding them to the list",
+      "description": "container names to never instrument\nuseful for sidecars which are not interesting to be instrumented",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "required": []
+      },
       "required": [],
       "title": "ignoredContainers"
     },
     "ignoredNamespaces": {
-      "default": "",
-      "description": "namespaces list not to show in odigos ui\nset by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease\nyou can add additional namespaces to ignore by adding them to the list",
+      "description": "Namespaces excluded from the Odigos UI so system and infrastructure namespaces\n(service meshes, local storage, lease holders, etc.) do not clutter the sources list.\nThe Odigos install namespace is ignored by default; set ignoreOdigosNamespace to false to show it.\nWhen openshift.enabled is true, OpenShift system namespaces are also ignored automatically.",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "required": []
+      },
       "required": [],
       "title": "ignoredNamespaces"
     },
@@ -629,9 +667,316 @@
     },
     "images": {
       "additionalProperties": true,
-      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents",
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,\n  instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-insights",
       "required": [],
       "title": "images"
+    },
+    "insights": {
+      "additionalProperties": false,
+      "description": "Configuration for the Odigos Insights service (enterprise).\nWhen enabled, deploys a Go service that ingests OTLP traces, learns\nper-route baselines across multiple deviation classes (D1..D6), and\nserves anomaly queries to the UI. Requires an enterprise on-prem token\n(odigos-pro secret).",
+      "properties": {
+        "affinity": {
+          "additionalProperties": true,
+          "required": [],
+          "title": "affinity"
+        },
+        "autoscaling": {
+          "additionalProperties": false,
+          "description": "CPU-based HorizontalPodAutoscaler for insights (always on; requires\nmetrics-server). The HPA owns the replica count. min/max replicas default\nto the gateway's values.",
+          "properties": {
+            "cpuTargetUtilization": {
+              "default": "80",
+              "description": "Target average CPU utilization percentage.",
+              "maximum": 100,
+              "minimum": 1,
+              "required": [],
+              "title": "cpuTargetUtilization"
+            },
+            "maxReplicas": {
+              "default": "10",
+              "description": "Max replicas. Defaults to the gateway's maximum; uncomment to override.",
+              "minimum": 1,
+              "required": [],
+              "title": "maxReplicas"
+            },
+            "minReplicas": {
+              "default": "2",
+              "description": "Min replicas. Defaults to the gateway's minimum; uncomment to override.",
+              "minimum": 1,
+              "required": [],
+              "title": "minReplicas"
+            }
+          },
+          "required": [],
+          "title": "autoscaling"
+        },
+        "clickhouse": {
+          "additionalProperties": false,
+          "description": "Bundled ClickHouse for the insights service. Single replica, single PVC,\nno replication, no backups. Scale insights pods for HA of ingestion;\nkeep ClickHouse at one replica. User and database name stay hardcoded\n(odigos_insights); image, resources, scheduling, and storage are tunable.",
+          "properties": {
+            "affinity": {
+              "additionalProperties": true,
+              "required": [],
+              "title": "affinity"
+            },
+            "config": {
+              "additionalProperties": false,
+              "description": "Curated ClickHouse server settings mounted into config.d / users.d.\nDefaults follow common Kubernetes guidance: leave headroom under the\npod memory limit, bound concurrent queries, and cap single-query memory.",
+              "properties": {
+                "extraConfig": {
+                  "default": "",
+                  "description": "Optional raw XML merged as config.d/odigos-extra.xml. Escape hatch\nfor advanced tuning; prefer the curated knobs above when possible.\nExample:\n  extraConfig: |\n    \u003cclickhouse\u003e\n      \u003ctimezone\u003eUTC\u003c/timezone\u003e\n    \u003c/clickhouse\u003e",
+                  "required": [],
+                  "title": "extraConfig"
+                },
+                "logLevel": {
+                  "default": "information",
+                  "description": "ClickHouse logger level (trace, debug, information, warning, error).",
+                  "required": [],
+                  "title": "logLevel"
+                },
+                "maxConcurrentQueries": {
+                  "default": "100",
+                  "description": "Max queries executing at once (server-wide). Caps concurrent load\nfrom Insights flushes and UI reads.",
+                  "minimum": 1,
+                  "required": [],
+                  "title": "maxConcurrentQueries"
+                },
+                "maxMemoryUsagePerQuery": {
+                  "default": "1Gi",
+                  "description": "Per-query memory cap (users.xml). Examples: \"1Gi\"\nEmpty string keeps ClickHouse's default.",
+                  "required": [],
+                  "title": "maxMemoryUsagePerQuery"
+                },
+                "maxServerMemoryUsageToRamRatio": {
+                  "default": "0.85",
+                  "description": "Fraction of detected RAM (pod limit) ClickHouse may use.\nLeave headroom for the OS page cache and background merges so the\nkubelet does not OOM-kill the pod.",
+                  "maximum": 1,
+                  "minimum": 0.1,
+                  "required": [],
+                  "title": "maxServerMemoryUsageToRamRatio"
+                }
+              },
+              "required": [],
+              "title": "config"
+            },
+            "image": {
+              "additionalProperties": false,
+              "description": "ClickHouse server image. Third-party image (not built by Odigos);\noverride repository/tag for private mirrors or version pins.",
+              "properties": {
+                "pullPolicy": {
+                  "default": "IfNotPresent",
+                  "description": "Image pull policy.",
+                  "required": [],
+                  "title": "pullPolicy"
+                },
+                "repository": {
+                  "default": "clickhouse/clickhouse-server",
+                  "description": "Container image repository.",
+                  "required": [],
+                  "title": "repository"
+                },
+                "tag": {
+                  "default": "24.8-alpine",
+                  "description": "Container image tag.",
+                  "required": [],
+                  "title": "tag"
+                }
+              },
+              "required": [],
+              "title": "image"
+            },
+            "nodeSelector": {
+              "default": "",
+              "description": "Override the global nodeSelector for ClickHouse. Use this to pin the\nDB to nodes with suitable disk (e.g. SSD / stateful pool). Falls back\nto values.nodeSelector when unset. Independent of insights.nodeSelector\nso the stateful DB can be scheduled separately from the app pods.",
+              "required": [],
+              "title": "nodeSelector"
+            },
+            "priorityClassName": {
+              "default": "",
+              "description": "Priority class name for ClickHouse. Prefer a higher priority than\ngeneral workloads so the single-replica DB is not evicted under pressure.",
+              "required": [],
+              "title": "priorityClassName"
+            },
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "2000m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "2Gi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "limits",
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "100m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "512Mi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "requests",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "resources",
+              "type": "object"
+            },
+            "storage": {
+              "additionalProperties": false,
+              "properties": {
+                "size": {
+                  "default": "8Gi",
+                  "description": "PVC size for the ClickHouse data volume. Growth is driven mainly by\ntransaction cardinality and trace_observations retention (TTL).\nExpand only if the StorageClass supports volume expansion.",
+                  "required": [],
+                  "title": "size"
+                },
+                "storageClassName": {
+                  "default": "",
+                  "description": "StorageClass for the ClickHouse PVC. Empty string uses the cluster\ndefault. Prefer a class backed by fast local/SSD block storage;\navoid slow shared NFS for MergeTree. The class is fixed at PVC\ncreation — changing this value after install does not migrate an\nexisting volume. The PVC is kept across helm uninstall\n(helm.sh/resource-policy: keep).",
+                  "required": [],
+                  "title": "storageClassName"
+                }
+              },
+              "required": [],
+              "title": "storage",
+              "type": "object"
+            },
+            "tolerations": {
+              "items": {
+                "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+                "properties": {
+                  "effect": {
+                    "type": "string"
+                  },
+                  "key": {
+                    "type": "string"
+                  },
+                  "operator": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "required": [],
+              "title": "tolerations"
+            }
+          },
+          "required": [],
+          "title": "clickhouse"
+        },
+        "enabled": {
+          "default": "false",
+          "description": "When true, deploys the insights service. Default false (off).",
+          "required": [],
+          "title": "enabled"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "1000m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "1Gi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "128Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "tolerations": {
+          "items": {
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "required": [],
+          "title": "tolerations"
+        }
+      },
+      "required": [],
+      "title": "insights"
     },
     "instrumentor": {
       "additionalProperties": false,
