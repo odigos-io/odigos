@@ -36,6 +36,8 @@ exporters:
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
+  odigos_capabilities: {}
+  odigos_enterprise_auth: {}
   pprof:
     endpoint: 0.0.0.0:1777
 processors:
@@ -153,6 +155,8 @@ service:
   extensions:
   - health_check
   - pprof
+  - odigos_capabilities
+  - odigos_enterprise_auth
   pipelines:
     logs:
       exporters:
@@ -213,6 +217,8 @@ service:
             prometheus:
               host: 0.0.0.0
               port: 55682
+              without_type_suffix: false
+              without_units: false
     resource:
       attributes:
       - name: k8s.node.name

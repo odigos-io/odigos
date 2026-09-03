@@ -15,20 +15,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-depot-images:
-    runs-on: depot-ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v7
-      - uses: depot/setup-action@v1
-      - name: Build images with Depot
-        run: make -j -f depot.mk depot-build-all
-        env:
-          IMAGE_TAG: v0.0.0-pr${{ github.event.number || github.run_number }}
-          PLATFORM: linux/amd64,linux/arm64
-
   build-all-services:
     name: build-all-services
     strategy:
@@ -70,9 +56,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
-          go-version: "1.26.4"
+          go-version: "1.26.6"
       - name: Set up Goreleaser
         uses: goreleaser/goreleaser-action@v6
         with:

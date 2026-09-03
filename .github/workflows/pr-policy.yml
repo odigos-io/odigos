@@ -3,18 +3,27 @@ name: PR Policy
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
-    
+  # Required checks have to report on queue entries too, or the merge queue waits
+  # for a status that never arrives.
+  merge_group:
+    types: [checks_requested]
+
 permissions:
   pull-requests: read
   statuses: write
 
 jobs:
+  # Both checks are conditioned on the step rather than the job, so the job still
+  # reports a status on merge_group, where github.event.pull_request is null and
+  # there is no pull request to inspect.
   require-linear:
     runs-on: ubuntu-latest
-    steps: 
-      - uses: odigos-io/ci-core/require-linear@main
+    steps:
+      - if: ${{ github.event_name == 'pull_request' }}
+        uses: odigos-io/ci-core/require-linear@main
 
   release-note:
     runs-on: ubuntu-latest
-    steps: 
-      - uses: odigos-io/ci-core/require-release-note@main
+    steps:
+      - if: ${{ github.event_name == 'pull_request' }}
+        uses: odigos-io/ci-core/require-release-note@main

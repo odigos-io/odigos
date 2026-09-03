@@ -12,6 +12,7 @@ var AllProfiles = []profile.Profile{
 
 	aggregators.KratosProfile,
 	aggregators.GreatwallProfile,
+	aggregators.InsightsProfile,
 
 	attributes.CategoryAttributesProfile,
 	attributes.CodeAttributesProfile,
@@ -20,6 +21,8 @@ var AllProfiles = []profile.Profile{
 	attributes.FullPayloadCollectionProfile,
 	attributes.DbPayloadCollectionProfile,
 	attributes.QueryOperationDetector,
+	attributes.UrlTemplateProfile,
+	attributes.InferDbAttributesProfile,
 	attributes.SemconvUpgraderProfile,
 	attributes.SemconvDynamoProfile,
 	attributes.SemconvRedisProfile,

@@ -18,7 +18,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	common "github.com/odigos-io/odigos/common"
 )
 
@@ -44,8 +43,6 @@ type RuntimeDetailsByContainerApplyConfiguration struct {
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
 	// Holds the environment variables retrieved from the container runtime.
 	EnvFromContainerRuntime []EnvVarApplyConfiguration `json:"envFromContainerRuntime,omitempty"`
-	// A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.
-	RuntimeUpdateState *odigosv1alpha1.ProcessingState `json:"runtimeUpdateState,omitempty"`
 }
 
 // RuntimeDetailsByContainerApplyConfiguration constructs a declarative configuration of the RuntimeDetailsByContainer type for use with
@@ -138,13 +135,5 @@ func (b *RuntimeDetailsByContainerApplyConfiguration) WithEnvFromContainerRuntim
 		}
 		b.EnvFromContainerRuntime = append(b.EnvFromContainerRuntime, *values[i])
 	}
-	return b
-}
-
-// WithRuntimeUpdateState sets the RuntimeUpdateState field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the RuntimeUpdateState field is set to the value of the last call.
-func (b *RuntimeDetailsByContainerApplyConfiguration) WithRuntimeUpdateState(value odigosv1alpha1.ProcessingState) *RuntimeDetailsByContainerApplyConfiguration {
-	b.RuntimeUpdateState = &value
 	return b
 }

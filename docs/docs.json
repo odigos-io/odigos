@@ -20,6 +20,10 @@
     {
       "product": "VM Agent",
       "icon": "desktop"
+    },
+    {
+      "product": "Cloud Connectors",
+      "icon": "cloud"
     }
   ],
   "navigation": {
@@ -60,6 +64,7 @@
                           "oss/setup/odigos-with-karpenter"
                         ]
                       },
+                      "oss/setup/verifying-images",
                       "oss/setup/upgrade",
                       "oss/setup/uninstall"
                     ]
@@ -169,7 +174,6 @@
                 "pages": [
                   "oss/pipeline/overview",
                   "oss/pipeline/configuration",
-                  "oss/pipeline/benchmarks",
                   "oss/pipeline/datastreams",
                   {
                     "group": "Sources",
@@ -246,7 +250,8 @@
                       "oss/pipeline/service-graph",
                       "oss/pipeline/odigos-own-metrics"
                     ]
-                  }
+                  },
+                  "oss/pipeline/benchmarks"
                 ]
               },
               {
@@ -334,7 +339,6 @@
                   "oss/telemetry-types",
                   "oss/custom-resources",
                   "oss/usage-reports",
-                  "oss/benchmarks",
                   "oss/permissions"
                 ]
               },
@@ -380,6 +384,7 @@
                           "enterprise/setup/odigos-with-karpenter"
                         ]
                       },
+                      "enterprise/setup/verifying-images",
                       "enterprise/setup/upgrade",
                       "enterprise/setup/uninstall"
                     ]
@@ -502,7 +507,6 @@
                 "pages": [
                   "enterprise/pipeline/overview",
                   "enterprise/pipeline/configuration",
-                  "enterprise/pipeline/benchmarks",
                   "enterprise/pipeline/datastreams",
                   {
                     "group": "Sources",
@@ -579,7 +583,8 @@
                       "enterprise/pipeline/service-graph",
                       "enterprise/pipeline/odigos-own-metrics"
                     ]
-                  }
+                  },
+                  "enterprise/pipeline/benchmarks"
                 ]
               },
               {
@@ -667,7 +672,6 @@
                   "enterprise/telemetry-types",
                   "enterprise/custom-resources",
                   "enterprise/usage-reports",
-                  "enterprise/benchmarks",
                   "enterprise/permissions"
                 ]
               },
@@ -703,11 +707,13 @@
                 "group": "Adding Connections",
                 "pages": [
                   "central/adding-connections/remote-clusters",
-                  "central/adding-connections/vmagent"
+                  "central/adding-connections/vmagent",
+                  "central/adding-connections/cloud-connectors"
                 ]
               },
               "central/authentication",
               "central/role-mappings",
+              "central/troubleshooting",
               "central/upgrade",
               "central/uninstall"
             ]
@@ -765,6 +771,81 @@
                       "vmagent/instrumentations/profiling/export-pyroscope"
                     ]
                   }
+                ]
+              }
+            ]
+          },
+          {
+            "group": "ECS Agent",
+            "icon": "aws",
+            "pages": [
+              "vmagent/ecs/overview",
+              "vmagent/ecs/requirements",
+              {
+                "group": "Installation",
+                "pages": [
+                  "vmagent/ecs/installation-agent-only",
+                  "vmagent/ecs/installation-with-proxy",
+                  "vmagent/ecs/installation-switch-to-multi-node"
+                ]
+              },
+              "vmagent/ecs/configuration",
+              "vmagent/ecs/maintenance",
+              "vmagent/ecs/troubleshooting"
+            ]
+          }
+        ]
+      },
+      {
+        "product": "Cloud Connectors",
+        "groups": [
+          {
+            "group": "Cloud Connectors",
+            "pages": [
+              "cloud-connectors/overview",
+              "cloud-connectors/enable",
+              {
+                "group": "Add Connectors",
+                "pages": [
+                  "cloud-connectors/add-connectors/add-aws-connector",
+                  "cloud-connectors/add-connectors/add-gcp-connector"
+                ]
+              },
+              "cloud-connectors/instrument-workloads",
+              "cloud-connectors/manage-and-remove"
+            ]
+          },
+          {
+            "group": "AWS Connector",
+            "icon": "aws",
+            "pages": [
+              "cloud-connectors/aws/overview",
+              {
+                "group": "Workloads",
+                "pages": [
+                  {
+                    "group": "Lambda",
+                    "pages": [
+                      "cloud-connectors/aws/workloads/lambda/preload",
+                      "cloud-connectors/aws/workloads/lambda/instrument"
+                    ]
+                  },
+                  {
+                    "group": "Fargate",
+                    "pages": [
+                      "cloud-connectors/aws/workloads/fargate/preload",
+                      "cloud-connectors/aws/workloads/fargate/instrument"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "CDK",
+                "pages": [
+                  "cloud-connectors/aws/cdk/overview",
+                  "cloud-connectors/aws/cdk/destinations",
+                  "cloud-connectors/aws/cdk/lambda",
+                  "cloud-connectors/aws/cdk/fargate"
                 ]
               }
             ]
@@ -901,7 +982,7 @@
     },
     {
       "source": "/benchmarks",
-      "destination": "/oss/benchmarks"
+      "destination": "/oss/pipeline/benchmarks"
     },
     {
       "source": "/permissions",

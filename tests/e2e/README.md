@@ -74,6 +74,11 @@ Scenarios should be placed in the `tests/e2e/<scenraio-name>` directory and Trac
 After writing and testing new scenario, you should also add it to the GitHub Action file location at:
 `.github/workflows/e2e.yaml` to run it on every pull request.
 
+### Karpenter mount-methods
+
+`tests/e2e/karpenter-mount-methods` needs Karpenter KWOK (Go + ko).
+Local: `chainsaw test tests/e2e/karpenter-mount-methods`.
+
 ## Working with simple-trace-db
 
 "simple-trace-db" is an in-memory database that stores spans and allow querying them via a simple API and common query language.
