@@ -50,7 +50,7 @@
           )
         )
       )
-      "cron" (dict "enabled" false)
+      "cron" (dict "enabled" .Values.aiden.interrogation.enabled)
 -}}
 apiVersion: v1
 kind: ConfigMap

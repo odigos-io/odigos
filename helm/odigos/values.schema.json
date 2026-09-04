@@ -29,6 +29,20 @@
           "required": [],
           "title": "enabled"
         },
+        "interrogation": {
+          "additionalProperties": false,
+          "description": "Enable Aiden interrogation: collector profile/trace correlation, UI evidence inbox, and the analysis-only Slack approval cron. Requires aiden.slack.interrogationTarget.",
+          "properties": {
+            "enabled": {
+              "default": false,
+              "description": "When true (and aiden.enabled), wire collector interrogation and schedule the Aiden analysis cron.",
+              "type": "boolean"
+            }
+          },
+          "required": [],
+          "title": "interrogation",
+          "type": "object"
+        },
         "gemini": {
           "additionalProperties": false,
           "description": "Configuration for reaching Google Gemini, used as Aiden's LLM backend.",
@@ -183,6 +197,13 @@
               "description": "Slack app-level token (starts with 'xapp-', requires the connections:write scope).\nUsed by Aiden to open an outbound Socket Mode connection to Slack, so no public\nendpoint needs to be exposed for Aiden to receive messages.",
               "required": [],
               "title": "key"
+            },
+            "interrogationTarget": {
+              "default": "",
+              "description": "Slack destination for scheduled interrogation proposals (for example channel:C0123456789).",
+              "required": [],
+              "title": "interrogationTarget",
+              "type": "string"
             }
           },
           "required": [],

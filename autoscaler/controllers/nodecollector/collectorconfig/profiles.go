@@ -48,7 +48,10 @@ func ProfilingPipelineConfig(odigosNamespace string, profiling *common.Profiling
 
 	return config.Config{
 		Receivers: config.GenericMap{
-			commonconf.ProfilingReceiver: config.GenericMap{},
+			commonconf.ProfilingReceiver: config.GenericMap{
+				"obi_process_ctx": true,
+				"probe_links":     []string{"kprobe:uprobe_notify_resume"},
+			},
 		},
 		Processors: processors,
 		Exporters: config.GenericMap{
