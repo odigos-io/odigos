@@ -83,3 +83,8 @@ func TestErrNotEnabledIsMatchableWhenWrapped(t *testing.T) {
 	wrapped := fmt.Errorf("listing findings: %w", ErrNotEnabled)
 	assert.ErrorIs(t, wrapped, ErrNotEnabled)
 }
+
+func TestIsEnabledPropagatesAConfigParseFailure(t *testing.T) {
+	_, err := IsEnabled(context.Background(), newClient(effectiveConfigMap("insights: [not-a-map")))
+	require.Error(t, err)
+}
