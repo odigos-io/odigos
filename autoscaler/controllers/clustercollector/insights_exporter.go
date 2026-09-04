@@ -8,6 +8,20 @@ import (
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
 )
 
+// effectiveInsightsConfig returns the insights configuration the gateway should be
+// wired for. odigos-insights is an enterprise-only component - helm renders its
+// Deployment, Services and ClickHouse only when an on-prem token is available - so on
+// community tier the flag is ignored. Otherwise the gateway would force the traces
+// signal on cluster-wide, install groupbytrace in front of it and export every span to
+// a Service that was never deployed. Same reasoning as the tier gate around
+// addProfilingGatewayPipeline in syncConfigMap.
+func effectiveInsightsConfig(insights *common.InsightsConfiguration, tier common.OdigosTier) *common.InsightsConfiguration {
+	if !tier.IsEnterprise() {
+		return nil
+	}
+	return insights
+}
+
 // addInsightsGatewayExporter appends an OTLP gRPC exporter to the gateway's
 // root traces pipeline so every processed span fans out to the in-cluster
 // sidecar alongside the destination router. Noop when disabled or when no
