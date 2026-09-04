@@ -1,0 +1,41 @@
+# Combines all community language agents into /instrumentations.
+# Expects named bake contexts: dotnet-builder, php-community, ruby-community,
+# nodejs-community, nodejs-community-14.
+
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.20
+
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS odiglet-agents-builder
+WORKDIR /instrumentations
+
+# loader
+ARG TARGETARCH
+ARG ODIGOS_LOADER_VERSION=v0.0.8
+RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
+
+# nodejs-community-14 (named context from bake)
+COPY --from=nodejs-community-14 /instrumentations/opentelemetry-node-14 /instrumentations/opentelemetry-node-14
+COPY --from=nodejs-community-14 /instrumentations/nodejs-community-14 /instrumentations/nodejs-community-14
+
+# python-community3.8
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.73-py3.8@sha256:661308cb08d293f4ff3e1823cc7ebc0537ba53dd1fff72f61b411637d62ec3d4 /instrumentations/python3.8 /instrumentations/python3.8
+
+# java-community
+ARG JAVA_OTEL_VERSION=v2.20.0
+ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
+RUN chmod 644 /instrumentations/java/javaagent.jar
+
+# dotnet-community (named context from bake target odiglet-dotnet)
+COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
+
+# php-community (named context from bake)
+COPY --from=php-community /instrumentations/php /instrumentations/php
+
+# ruby-community (named context from bake)
+COPY --from=ruby-community /instrumentations/ruby /instrumentations/ruby
+
+# python-community/python-community3.8
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.90@sha256:26be5a681e6cde7585f0bff6714fd74dbc90515a239d4759f5b6225591a78185 /instrumentations/python /instrumentations/python
+
+# nodejs-community (named context from bake)
+COPY --from=nodejs-community /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=nodejs-community /instrumentations/nodejs-community /instrumentations/nodejs-community
