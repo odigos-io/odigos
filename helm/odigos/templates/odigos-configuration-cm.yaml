@@ -65,7 +65,11 @@ data:
       clientSecret: secretRef:odigos-oidc
       {{- end }}
     {{- end }}
-    {{- if .Values.profiling.enabled }}
+    {{- if and .Values.aiden.enabled .Values.aiden.interrogation.enabled }}
+    interrogation:
+      enabled: true
+    {{- end }}
+    {{- if or .Values.profiling.enabled (and .Values.aiden.enabled .Values.aiden.interrogation.enabled) }}
     {{- $pex := .Values.profiling.exporter | default dict }}
     {{- $pretry := $pex.retryOnFailure | default dict }}
     profiling:

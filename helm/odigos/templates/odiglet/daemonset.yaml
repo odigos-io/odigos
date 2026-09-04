@@ -276,6 +276,10 @@ spec:
             - name: hostproc
               mountPath: /hostproc
           {{- end }}
+          {{- if and (or .Values.profiling.enabled (and .Values.aiden.enabled .Values.aiden.interrogation.enabled)) (not .Values.odiglet.noHostPathMounts) }}
+            - name: host-bpffs
+              mountPath: /sys/fs/bpf
+          {{- end }}
              # needed to load eBPF tracepoints - used by runtime-detector
             - name: sys-kernel
               mountPath: /sys/kernel
@@ -390,6 +394,10 @@ spec:
             - name: sys-kernel
               mountPath: /sys/kernel
               readOnly: true
+            {{- if and (or .Values.profiling.enabled (and .Values.aiden.enabled .Values.aiden.interrogation.enabled)) (not .Values.odiglet.noHostPathMounts) }}
+            - name: host-bpffs
+              mountPath: /sys/fs/bpf
+            {{- end }}
             - name: exchange-dir
               mountPath: /var/exchange
 # if hostMounts are not allowed we must use mountMethod of "k8s-init-container"
@@ -590,6 +598,12 @@ spec:
         - name: host-cgroup
           hostPath:
             path: /sys/fs/cgroup
+            type: Directory
+      {{- end }}
+      {{- if and (or .Values.profiling.enabled (and .Values.aiden.enabled .Values.aiden.interrogation.enabled)) (not .Values.odiglet.noHostPathMounts) }}
+        - name: host-bpffs
+          hostPath:
+            path: /sys/fs/bpf
             type: Directory
       {{- end }}
         - name: odigos-go-offsets

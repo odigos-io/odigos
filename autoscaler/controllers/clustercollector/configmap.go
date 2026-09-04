@@ -200,11 +200,18 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 
 	collectorLogLevel := string(odigoscommon.LogLevelInfo)
 	var profilingCfg *odigoscommon.ProfilingConfiguration
+	var interrogationCfg *odigoscommon.InterrogationConfiguration
 	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil {
 		profilingCfg = odigosCfg.Profiling
+		interrogationCfg = odigosCfg.Interrogation
 		if odigosCfg.ComponentLogLevels != nil {
 			collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
 		}
+	}
+	gatewayOptions.Interrogation = interrogationCfg
+	if gatewayOptions.TraceAggregationWaitDuration == nil && odigoscommon.InterrogationActive(interrogationCfg) {
+		def := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
+		gatewayOptions.TraceAggregationWaitDuration = &def
 	}
 
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
@@ -224,6 +231,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 				if err := addProfilingGatewayPipeline(c, env.GetCurrentNamespace(), profilingCfg); err != nil {
 					return err
 				}
+				addInterrogationExporters(c, env.GetCurrentNamespace(), interrogationCfg)
 				addEnterpriseAuthExtension(c)
 			}
 			c.Service.Telemetry.Logs = config.LogsConfig{Level: collectorLogLevel}

@@ -31,6 +31,9 @@ type GatewayConfigOptions struct {
 	SamplingDryRun         bool
 	SamplingSpanAttributes *sampling.SpanSamplingAttributesConfiguration
 
+	// Interrogation forces assembled root traces even without a trace destination.
+	Interrogation *common.InterrogationConfiguration
+
 	// Trace correlations configuration for the serviceio connector (service I/O metrics).
 	TraceCorrelationsServiceIO *common.TraceCorrelationsServiceIOConfiguration
 }
@@ -165,6 +168,10 @@ func CalculateGatewayConfig(
 		}
 
 		status.Destination[dest.GetID()] = nil // mark this destination as success
+	}
+
+	if common.InterrogationActive(gatewayOptions.Interrogation) {
+		tracesEnabled = true
 	}
 
 	// track which signals are enabled
@@ -616,6 +623,10 @@ func traceAggregationNeeded(gatewayOptions *GatewayConfigOptions) bool {
 	if common.TraceCorrelationsServiceIOPipelineActive(&common.TraceCorrelationsConfiguration{
 		ServiceIO: gatewayOptions.TraceCorrelationsServiceIO,
 	}) {
+		return true
+	}
+
+	if common.InterrogationActive(gatewayOptions.Interrogation) {
 		return true
 	}
 

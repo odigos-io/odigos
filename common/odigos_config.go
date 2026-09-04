@@ -597,6 +597,16 @@ type ProfilingConfiguration struct {
 }
 
 // +kubebuilder:object:generate=true
+// InterrogationConfiguration enables profile/trace correlation. Model execution
+// belongs to Aiden; collectors only deliver evidence to EvidenceEndpoint.
+// Helm exposes this under aiden.interrogation (not a top-level value); the
+// configuration ConfigMap still carries this block for the autoscaler.
+type InterrogationConfiguration struct {
+	Enabled          *bool  `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	EvidenceEndpoint string `json:"evidenceEndpoint,omitempty" yaml:"evidenceEndpoint,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
 // ProfilingSymbolizationConfiguration controls native frame symbolization.
 type ProfilingSymbolizationConfiguration struct {
 	// Native enables on-host symbolization of native (C/C++/Rust) frames in the node
@@ -686,7 +696,8 @@ type OdigosConfiguration struct {
 	// ComponentLogLevels: default = global level (e.g. from Helm); per-component overrides (e.g. from UI).
 	ComponentLogLevels *ComponentLogLevels `json:"componentLogLevels,omitempty" yaml:"componentLogLevels,omitempty"`
 
-	Profiling *ProfilingConfiguration `json:"profiling,omitempty" yaml:"profiling,omitempty"`
+	Profiling     *ProfilingConfiguration     `json:"profiling,omitempty" yaml:"profiling,omitempty"`
+	Interrogation *InterrogationConfiguration `json:"interrogation,omitempty" yaml:"interrogation,omitempty"`
 }
 
 // ProfilingPipelineActive reports whether profiling pipelines and related collector settings should be applied.
@@ -698,4 +709,12 @@ func ProfilingPipelineActive(p *ProfilingConfiguration) bool {
 // ProfilingEnabled reports whether profiling is explicitly enabled on this configuration.
 func (o *OdigosConfiguration) ProfilingEnabled() bool {
 	return o != nil && ProfilingPipelineActive(o.Profiling)
+}
+
+func InterrogationActive(i *InterrogationConfiguration) bool {
+	return i != nil && i.Enabled != nil && *i.Enabled
+}
+
+func (o *OdigosConfiguration) InterrogationEnabled() bool {
+	return o != nil && InterrogationActive(o.Interrogation)
 }

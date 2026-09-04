@@ -145,6 +145,9 @@ profiling:
     slotMaxBytes: 8388608
 
 # @schema
+# description: Correlate profile stacks with grouped traces and deliver evidence to Aiden. Enabling this also activates the profiling pipeline required for correlation.
+# @schema
+# @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
 # @schema
 userInstrumentationEnvs:
@@ -1237,6 +1240,15 @@ aiden:
 
   # @schema
   # description: |-
+  #   Enable Aiden interrogation: collector profile/trace correlation, evidence delivery
+  #   to the Enterprise UI inbox, and the analysis-only cron that proposes instrumentation
+  #   for Slack approval. Requires aiden.slack.interrogationTarget.
+  # @schema
+  interrogation:
+    enabled: false
+
+  # @schema
+  # description: |-
   #   OpenClaw image for Aiden. Defaults to the locally built Odigos Aiden image
   #   (registry.odigos.io/odigos-aiden:dev) produced by `make build-aiden-image`, which bundles
   #   Slack via OPENCLAW_EXTENSIONS, Gemini runtime support, and the Jaeger skill. Build before
@@ -1316,6 +1328,11 @@ aiden:
     #   API, e.g. to post messages back into a channel or thread.
     # @schema
     botToken: ''
+
+    # @schema
+    # description: Slack destination for scheduled interrogation proposals (for example channel:C0123456789).
+    # @schema
+    interrogationTarget: ''
 
   # @schema
   # description: Log level for Aiden. Defaults to info.

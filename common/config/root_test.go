@@ -477,3 +477,53 @@ func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 	assert.Equal(t, len(statuses.Processor), 0)
 	assert.Equal(t, len(signals), 0)
 }
+
+// TestInterrogationEnablesGroupByTrace verifies that interrogation alone forces
+// the traces root pipeline with groupbytrace, so the traces-side exporter can
+// see complete traces.
+func TestInterrogationEnablesGroupByTrace(t *testing.T) {
+	on := true
+	wait := "30s"
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:              "odigos-system",
+		Interrogation:                &common.InterrogationConfiguration{Enabled: &on},
+		TraceAggregationWaitDuration: &wait,
+	}
+	cfg, err, _, signals := pipelinegen.CalculateGatewayConfig(
+		nil,
+		nil,
+		selfMetricsReceiver(), nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+	require.Contains(t, signals, common.TracesObservabilitySignal)
+
+	tracesIn, ok := cfg.Service.Pipelines["traces/in"]
+	require.True(t, ok, "interrogation must create the root traces pipeline with no destinations")
+	assert.Contains(t, tracesIn.Processors, consts.GroupByTraceProcessor)
+}
+
+func TestInterrogationWithDestinationSplitsAfterGroupBy(t *testing.T) {
+	on := true
+	ext := "odigosconfigk8s"
+	wait := "30s"
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:              "odigos-system",
+		OdigosConfigExtensionName:    &ext,
+		Interrogation:                &common.InterrogationConfiguration{Enabled: &on},
+		TraceAggregationWaitDuration: &wait,
+	}
+	cfg, err, _, _ := pipelinegen.CalculateGatewayConfig(
+		[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
+		[]config.ProcessorConfigurer{},
+		nil, nil, &gatewayOptions,
+	)
+	require.NoError(t, err)
+
+	tracesIn, ok := cfg.Service.Pipelines["traces/in"]
+	require.True(t, ok)
+	assert.Contains(t, tracesIn.Processors, consts.GroupByTraceProcessor)
+	assert.Contains(t, tracesIn.Exporters, consts.TracesPostGroupByForwardConnectorName)
+
+	_, hasExporting := cfg.Service.Pipelines[consts.TracesExportingPipelineName]
+	assert.True(t, hasExporting)
+}

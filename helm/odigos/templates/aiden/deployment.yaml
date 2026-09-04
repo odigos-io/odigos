@@ -98,6 +98,22 @@ spec:
           - /app/dist/index.js
           - gateway
           - run
+        {{- if .Values.aiden.interrogation.enabled }}
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  (
+                    until node /app/dist/index.js gateway health >/dev/null 2>&1; do sleep 2; done
+                    node /app/dist/index.js automations add "every 1m" \
+                      "Follow the interrogation skill cron analysis workflow. Process at most five pending items, one at a time. Create proposals and ask for explicit Slack approval. Never call write tools in this run." \
+                      --name odigos-interrogation --agent default --announce --channel slack \
+                      --to {{ .Values.aiden.slack.interrogationTarget | quote }}
+                  ) >/tmp/interrogation-cron-init.log 2>&1 &
+        {{- end }}
         ports:
           - containerPort: 18789
             name: gateway

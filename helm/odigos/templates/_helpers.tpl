@@ -80,6 +80,9 @@ true
 {{- if not .Values.aiden.slack.botToken -}}
 {{- fail "aiden.enabled is true, but aiden.slack.botToken is empty. Provide a Slack bot user OAuth token (xoxb-...) so Aiden can call the Slack Web API." -}}
 {{- end -}}
+{{- if and .Values.aiden.interrogation.enabled (not .Values.aiden.slack.interrogationTarget) -}}
+{{- fail "aiden.interrogation.enabled is true, but aiden.slack.interrogationTarget is empty. Set a Slack target such as channel:C0123456789." -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
