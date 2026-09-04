@@ -4,7 +4,7 @@ This guide walks you through enabling the eBPF profiling pipeline on a host, and
 
 ## Step 1: Enable the profiling pipeline
 
-Turn on the eBPF profiles pipeline on **odigos-otelcol**. You can use `odictl` or edit `/etc/odigos-vmagent/config.yaml` directly.
+Turn on the eBPF profiles pipeline on **odigos-otelcol**. You can use `odictl` or edit `/var/lib/odigos-agent/config/config.yaml` directly.
 
 <Tabs>
   <Tab title="odictl">
@@ -21,7 +21,7 @@ Turn on the eBPF profiles pipeline on **odigos-otelcol**. You can use `odictl` o
     </Steps>
   </Tab>
   <Tab title="YAML">
-    Add to `/etc/odigos-vmagent/config.yaml`:
+    Add to `/var/lib/odigos-agent/config/config.yaml`:
 
     ```yaml
     profiling:
