@@ -38,7 +38,7 @@ func (n *Dynatrace) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": baseURL + "/api/v2/otlp",
 		"headers": GenericMap{
-			"Authorization": "Api-Token ${DYNATRACE_API_TOKEN}",
+			"Authorization": "Api-Token " + SecretEnvPlaceholder("DYNATRACE_API_TOKEN", dest),
 		},
 	}
 	var pipelineNames []string

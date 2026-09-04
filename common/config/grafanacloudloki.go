@@ -54,7 +54,7 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *
 	currentConfig.Extensions[authExtensionName] = GenericMap{
 		"client_auth": GenericMap{
 			"username": lokiUsername,
-			"password": "${GRAFANA_CLOUD_LOKI_PASSWORD}",
+			"password": SecretEnvPlaceholder("GRAFANA_CLOUD_LOKI_PASSWORD", dest),
 		},
 	}
 

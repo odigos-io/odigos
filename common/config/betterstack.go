@@ -19,7 +19,7 @@ func (j *BetterStack) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]stri
 		"actions": []GenericMap{
 			{
 				"key":    "better_stack_source_token",
-				"value":  "${BETTERSTACK_TOKEN}",
+				"value":  SecretEnvPlaceholder("BETTERSTACK_TOKEN", dest),
 				"action": "insert",
 			},
 		},
