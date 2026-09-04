@@ -1,13 +1,12 @@
 package process
 
 import (
-	"bufio"
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/odigos-io/odigos/common/otheragent"
 )
@@ -292,53 +291,70 @@ func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) Proce
 		return ProcessEnvs{}
 	}
 
-	r := bufio.NewReader(strings.NewReader(string(fileContent)))
+	return parseRelevantEnvVars(fileContent, runtimeDetectionEnvs)
+}
 
-	overWriteEnvsResult := make(map[string]string)
-	detailedEnvsResult := make(map[string]string)
+// parseRelevantEnvVars extracts the small subset of environment variables that
+// Odigos needs for runtime detection and other-agent detection.
+//
+// It scans the NUL-separated /proc/<pid>/environ payload in place and only
+// allocates strings for entries that match one of the watched key sets.
+func parseRelevantEnvVars(fileContent []byte, runtimeDetectionEnvs map[string]struct{}) ProcessEnvs {
+	var overWriteEnvsResult map[string]string
+	var detailedEnvsResult map[string]string
 
-	for {
-		// The entries are  separated  by
-		// null bytes ('\0'), and there may be a null byte at the end.
-		str, err := r.ReadString(0)
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return ProcessEnvs{}
+	for len(fileContent) > 0 {
+		entry := fileContent
+		if i := bytes.IndexByte(fileContent, 0); i >= 0 {
+			entry = fileContent[:i]
+			fileContent = fileContent[i+1:]
+		} else {
+			fileContent = nil
 		}
-
-		str = strings.TrimRight(str, "\x00")
-		envParts := strings.SplitN(str, "=", 2)
-		if len(envParts) != 2 {
+		if len(entry) == 0 {
 			continue
 		}
 
-		envName := envParts[0]
-		envDetectionValue := envParts[1]
+		eq := bytes.IndexByte(entry, '=')
+		if eq <= 0 {
+			continue
+		}
+
+		// m[string(b)] map lookups do not allocate; only matched keys/values are copied.
+		name := entry[:eq]
+		value := entry[eq+1:]
 
 		if runtimeDetectionEnvs != nil {
-			if _, ok := runtimeDetectionEnvs[envName]; ok {
-				overWriteEnvsResult[envName] = envDetectionValue
+			if _, ok := runtimeDetectionEnvs[string(name)]; ok {
+				if overWriteEnvsResult == nil {
+					overWriteEnvsResult = make(map[string]string)
+				}
+				overWriteEnvsResult[string(name)] = string(value)
 			}
 		}
 
-		if _, ok := LangsVersionEnvs[envName]; ok {
-			detailedEnvsResult[envName] = envDetectionValue
+		if _, ok := LangsVersionEnvs[string(name)]; ok {
+			if detailedEnvsResult == nil {
+				detailedEnvsResult = make(map[string]string)
+			}
+			detailedEnvsResult[string(name)] = string(value)
+			continue
 		}
 
 		// Collect the keys the shared other-agent detector inspects, so detection
 		// can read them off the process env without any caller wiring.
-		if _, ok := otheragent.AgentDetectionEnvKeys[envName]; ok {
-			detailedEnvsResult[envName] = envDetectionValue
+		if _, ok := otheragent.AgentDetectionEnvKeys[string(name)]; ok {
+			if detailedEnvsResult == nil {
+				detailedEnvsResult = make(map[string]string)
+			}
+			detailedEnvsResult[string(name)] = string(value)
 		}
 	}
 
-	envs := ProcessEnvs{
+	return ProcessEnvs{
 		OverwriteEnvs: overWriteEnvsResult,
 		DetailedEnvs:  detailedEnvsResult,
 	}
-
-	return envs
 }
 
 func isSecureExecutionMode(pid int) (bool, error) {
