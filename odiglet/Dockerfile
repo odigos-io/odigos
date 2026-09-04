@@ -2,7 +2,7 @@ ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.20
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
-ARG DOTNET_OTEL_VERSION=v1.9.0
+ARG DOTNET_OTEL_VERSION=v1.16.0
 ARG TARGETARCH
 # SHA256 pins for the artifacts fetched in this stage. Verification runs between the
 # download and the unpack, so nothing unverified is ever extracted. Refresh these
@@ -54,7 +54,7 @@ FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS agents-builder
 WORKDIR /instrumentations
 
 # java-community
-ARG JAVA_OTEL_VERSION=v2.20.0
+ARG JAVA_OTEL_VERSION=v2.31.1
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
