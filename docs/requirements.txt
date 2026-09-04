@@ -1,6 +1,6 @@
 certifi==2025.6.15
 charset-normalizer==3.4.2
-idna==3.18
+idna==3.19
 numpy==2.2.3
 packaging==26.3
 PyYAML==6.0.2
