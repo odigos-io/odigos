@@ -31,7 +31,7 @@ imagePrefix:
 #       autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
 #   Supported component names: autoscaler, collector, enterprise-collector, ui, enterprise-ui,
-#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents
+#     instrumentor, enterprise-instrumentor, odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents, enterprise-insights
 # additionalProperties: true
 # @schema
 images: {}
@@ -744,14 +744,6 @@ ui:
   # @schema
   oidcClientSecret: ''
 
-  # @schema
-  # description: |-
-  #   centralBackendURL:
-  #    - This flag sets the URL of the central backend.
-  #    - If not set, the UI will not connect to the central backend.
-  # @schema
-  centralBackendURL: ''
-
 # @schema
 # description: Configuration for the instrumentor component.
 # @schema
@@ -1228,6 +1220,242 @@ centralProxy:
   # description: Priority class name. Set to use your existing cluster priority classes.
   # @schema
   # priorityClassName: ''
+
+# @schema
+# description: |-
+#   Configuration for the Odigos Insights service (enterprise).
+#   When enabled, deploys a Go service that ingests OTLP traces, learns
+#   per-route baselines across multiple deviation classes (D1..D6), and
+#   serves anomaly queries to the UI. Requires an enterprise on-prem token
+#   (odigos-pro secret).
+# @schema
+insights:
+
+  # @schema
+  # description: |-
+  #   When true, deploys the insights service. Default false (off).
+  # @schema
+  enabled: false
+
+  # @schema
+  # description: |-
+  #   CPU-based HorizontalPodAutoscaler for insights (always on; requires
+  #   metrics-server). The HPA owns the replica count. min/max replicas default
+  #   to the gateway's values.
+  # @schema
+  autoscaling:
+    # @schema
+    # description: Target average CPU utilization percentage.
+    # minimum: 1
+    # maximum: 100
+    # @schema
+    cpuTargetUtilization: 80
+
+    # @schema
+    # description: Min replicas. Defaults to the gateway's minimum; uncomment to override.
+    # minimum: 1
+    # @schema
+    # minReplicas: 2
+
+    # @schema
+    # description: Max replicas. Defaults to the gateway's maximum; uncomment to override.
+    # minimum: 1
+    # @schema
+    # maxReplicas: 10
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  # @schema
+  # description: Override the global nodeSelector (values.nodeSelector) for this component
+  # @schema
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
+  tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
+  affinity: {}
+
+  # @schema
+  # description: Priority class name. Set to use your existing cluster priority classes.
+  # @schema
+  # priorityClassName: ''
+
+  # @schema
+  # description: |-
+  #   Bundled ClickHouse for the insights service. Single replica, no
+  #   replication, no backups. Data is on a PVC by default
+  #   (insights.clickhouse.storage.persistence); set that to false for
+  #   emptyDir. Scale insights pods for HA of ingestion; keep ClickHouse at
+  #   one replica. User and database name stay hardcoded (odigos_insights);
+  #   image, resources, scheduling, and storage are tunable.
+  # @schema
+  clickhouse:
+    # @schema
+    # description: |-
+    #   ClickHouse server image. Third-party image (not built by Odigos);
+    #   override repository/tag for private mirrors or version pins.
+    # @schema
+    image:
+      # @schema
+      # description: Container image repository.
+      # @schema
+      repository: clickhouse/clickhouse-server
+      # @schema
+      # description: Container image tag.
+      # @schema
+      tag: "24.8-alpine"
+      # @schema
+      # description: Image pull policy.
+      # @schema
+      pullPolicy: IfNotPresent
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+
+    # @schema
+    # description: |-
+    #   Override the global nodeSelector for ClickHouse. Use this to pin the
+    #   DB to nodes with suitable disk (e.g. SSD / stateful pool). Falls back
+    #   to values.nodeSelector when unset. Independent of insights.nodeSelector
+    #   so the stateful DB can be scheduled separately from the app pods.
+    # @schema
+    # nodeSelector:
+    #   kubernetes.io/os: linux
+
+    # @schema
+    # items:
+    #   description: |-
+    #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+    #     Common fields: key, operator, value, effect, tolerationSeconds.
+    #   type: object
+    #   properties:
+    #     key:
+    #       type: string
+    #     operator:
+    #       type: string
+    #     value:
+    #       type: string
+    #     effect:
+    #       type: string
+    # @schema
+    tolerations: []
+    # @schema
+    # additionalProperties: true
+    # @schema
+    affinity: {}
+
+    # @schema
+    # description: |-
+    #   Priority class name for ClickHouse. Prefer a higher priority than
+    #   general workloads so the single-replica DB is not evicted under pressure.
+    # @schema
+    # priorityClassName: ''
+
+    # @schema
+    # description: |-
+    #   Curated ClickHouse server settings mounted into config.d / users.d.
+    #   Defaults follow common Kubernetes guidance: leave headroom under the
+    #   pod memory limit, bound concurrent queries, and cap single-query memory.
+    # @schema
+    config:
+      # @schema
+      # description: |-
+      #   Fraction of detected RAM (pod limit) ClickHouse may use.
+      #   Leave headroom for the OS page cache and background merges so the
+      #   kubelet does not OOM-kill the pod.
+      # minimum: 0.1
+      # maximum: 1
+      # @schema
+      maxServerMemoryUsageToRamRatio: 0.85
+
+      # @schema
+      # description: |-
+      #   Max queries executing at once (server-wide). Caps concurrent load
+      #   from Insights flushes and UI reads.
+      # minimum: 1
+      # @schema
+      maxConcurrentQueries: 100
+
+      # @schema
+      # description: |-
+      #   ClickHouse logger level (trace, debug, information, warning, error).
+      # @schema
+      logLevel: information
+
+      # @schema
+      # description: |-
+      #   Per-query memory cap (users.xml). Examples: "1Gi"
+      #   Empty string keeps ClickHouse's default.
+      # @schema
+      maxMemoryUsagePerQuery: "1Gi"
+
+      # @schema
+      # description: |-
+      #   Optional raw XML merged as config.d/odigos-extra.xml. Escape hatch
+      #   for advanced tuning; prefer the curated knobs above when possible.
+      #   Example:
+      #     extraConfig: |
+      #       <clickhouse>
+      #         <timezone>UTC</timezone>
+      #       </clickhouse>
+      # @schema
+      extraConfig: ""
+
+    storage:
+      # @schema
+      # description: |-
+      #   When true (default), ClickHouse keeps Insights data on a persistent
+      #   volume so it survives pod restarts. Set to false only for
+      #   development or testing: ClickHouse then uses emptyDir, and all
+      #   Insights data is lost when the pod is recreated or rescheduled.
+      # @schema
+      persistence: true
+      # @schema
+      # description: |-
+      #   PVC size for the ClickHouse data volume. Growth is driven mainly by
+      #   transaction cardinality and trace_observations retention (TTL).
+      #   Expand only if the StorageClass supports volume expansion.
+      # @schema
+      size: 8Gi
+      # @schema
+      # description: |-
+      #   StorageClass for the ClickHouse PVC. Empty string uses the cluster
+      #   default. Prefer a class backed by fast local/SSD block storage;
+      #   avoid slow shared NFS for MergeTree. The class is fixed at PVC
+      #   creation — changing this value after install does not migrate an
+      #   existing volume. The PVC is kept across helm uninstall
+      #   (helm.sh/resource-policy: keep).
+      # @schema
+      storageClassName: ''
 
 # @schema
 # description: Pod Security Policy

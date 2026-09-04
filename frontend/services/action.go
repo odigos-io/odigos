@@ -842,8 +842,13 @@ func convertDbQueryTemplatizationFromInput(actionType model.ActionType, details 
 		return nil
 	}
 
-	config := &apiactions.DbQueryTemplatizationConfig{
-		Scopes: SourcesScopesInputToCRD(details.Scopes),
+	config := &apiactions.DbQueryTemplatizationConfig{}
+	if details.Scopes != nil {
+		config.Scopes = SourcesScopesInputToCRD(details.Scopes)
+	} else if existingAction != nil && existingAction.Spec.DbQueryTemplatization != nil {
+		// Preserve scopes when GraphQL omits them (partial update). Empty scopes
+		// input still clears explicitly via SourcesScopesInputToCRD.
+		config.Scopes = existingAction.Spec.DbQueryTemplatization.Scopes
 	}
 	if details.TemplatizeLiterals != nil {
 		config.TemplatizeLiterals = *details.TemplatizeLiterals
@@ -858,14 +863,20 @@ func convertDbQueryTemplatizationFromInput(actionType model.ActionType, details 
 	return config
 }
 
-func convertInferDbAttributesFromInput(actionType model.ActionType, details *model.ActionFieldsInput, _ *v1alpha1.Action) *apiactions.InferDbAttributesConfig {
+func convertInferDbAttributesFromInput(actionType model.ActionType, details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *apiactions.InferDbAttributesConfig {
 	if actionType != model.ActionTypeInferDbAttributes {
 		return nil
 	}
 
-	return &apiactions.InferDbAttributesConfig{
-		Scopes: SourcesScopesInputToCRD(details.Scopes),
+	config := &apiactions.InferDbAttributesConfig{}
+	if details.Scopes != nil {
+		config.Scopes = SourcesScopesInputToCRD(details.Scopes)
+	} else if existingAction != nil && existingAction.Spec.InferDbAttributes != nil {
+		// Preserve scopes when GraphQL omits them (partial update). Empty scopes
+		// input still clears explicitly via SourcesScopesInputToCRD.
+		config.Scopes = existingAction.Spec.InferDbAttributes.Scopes
 	}
+	return config
 }
 
 func convertDbActionFieldsToModel(action *v1alpha1.Action) (*model.SourcesScopes, *bool, *bool) {
