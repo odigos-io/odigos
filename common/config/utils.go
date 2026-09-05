@@ -134,12 +134,15 @@ func parseBool(value string) bool {
 	return result
 }
 
-func parseInt(value string) int {
+// the value comes from Destination.spec.data, which has no validating webhook, so a non numeric
+// value must fail this destination and let the caller skip it rather than abort the whole config
+// computation for every destination.
+func parseInt(key string, value string) (int, error) {
 	num, err := strconv.Atoi(value)
 	if err != nil {
-		panic(err.Error())
+		return 0, fmt.Errorf("destination parameter %q must be a whole number, got %q", key, value)
 	}
-	return num
+	return num, nil
 }
 
 func errorMissingKey(key string) error {
