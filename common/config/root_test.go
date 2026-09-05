@@ -72,6 +72,67 @@ func (dest DummyTraceDestination) GetSignals() []common.ObservabilitySignal {
 	return []common.ObservabilitySignal{common.TracesObservabilitySignal}
 }
 
+// a destination whose spec.data is carried verbatim, used to drive a real configer with the
+// unvalidated values a Destination CR can hold (there is no validating webhook on Destination).
+type rawDataDestination struct {
+	ID      string
+	Type    common.DestinationType
+	Data    map[string]string
+	Signals []common.ObservabilitySignal
+}
+
+func (dest rawDataDestination) GetID() string                   { return dest.ID }
+func (dest rawDataDestination) GetType() common.DestinationType { return dest.Type }
+func (dest rawDataDestination) GetConfig() map[string]string    { return dest.Data }
+func (dest rawDataDestination) GetSignals() []common.ObservabilitySignal {
+	return dest.Signals
+}
+
+// A non numeric value in one destination's spec.data must fail only that destination. Previously
+// parseInt panicked, which aborted the whole gateway config computation and left every other
+// destination unconfigured.
+func TestCalculateBadNumericDestinationDataDoesNotAbortTheGatewayConfig(t *testing.T) {
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace: "odigos-system",
+	}
+
+	badKafka := rawDataDestination{
+		ID:   "bad-kafka",
+		Type: common.KafkaDestinationType,
+		Data: map[string]string{
+			"KAFKA_PROTOCOL_VERSION":       "2.0.0",
+			"KAFKA_BROKERS":                `["broker-a:9092"]`,
+			"KAFKA_PRODUCER_REQUIRED_ACKS": "all",
+		},
+		Signals: []common.ObservabilitySignal{common.TracesObservabilitySignal},
+	}
+	healthyJaeger := rawDataDestination{
+		ID:   "healthy-jaeger",
+		Type: common.JaegerDestinationType,
+		Data: map[string]string{
+			"JAEGER_URL": "jaeger.tracing:4317",
+		},
+		Signals: []common.ObservabilitySignal{common.TracesObservabilitySignal},
+	}
+
+	cfg, err, statuses, signals := pipelinegen.CalculateGatewayConfig(
+		[]config.ExporterConfigurer{badKafka, healthyJaeger},
+		[]config.ProcessorConfigurer{},
+		nil, nil, &gatewayOptions,
+	)
+
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	assert.Equal(t, []common.ObservabilitySignal{common.TracesObservabilitySignal}, signals)
+
+	require.Error(t, statuses.Destination["bad-kafka"])
+	assert.Contains(t, statuses.Destination["bad-kafka"].Error(), "KAFKA_PRODUCER_REQUIRED_ACKS")
+	assert.NoError(t, statuses.Destination["healthy-jaeger"])
+
+	assert.NotContains(t, cfg.Service.Pipelines, "traces/kafka-bad-kafka")
+	assert.Contains(t, cfg.Service.Pipelines, "traces/jaeger-healthy-jaeger")
+}
+
 func openTestData(t *testing.T, path string) string {
 	want, err := os.ReadFile(path)
 	if err != nil {
