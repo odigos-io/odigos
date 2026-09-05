@@ -208,75 +208,12 @@ func getSpecFromInput(input model.ActionInput, existingAction *v1alpha1.Action) 
 }
 
 func convertK8sAttributesFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *actionsv1.K8sAttributesConfig {
-	withK8sAttributes := false
-	var config *actionsv1.K8sAttributesConfig
-
-	if details.CollectContainerAttributes != nil ||
+	withK8sAttributes := details.CollectContainerAttributes != nil ||
 		details.CollectReplicaSetAttributes != nil ||
 		details.CollectWorkloadID != nil ||
 		details.CollectClusterID != nil ||
 		details.LabelsAttributes != nil ||
-		details.AnnotationsAttributes != nil {
-
-		config = &actionsv1.K8sAttributesConfig{}
-
-		if details.CollectContainerAttributes != nil {
-			config.CollectContainerAttributes = *details.CollectContainerAttributes
-			withK8sAttributes = true
-		}
-		if details.CollectReplicaSetAttributes != nil {
-			config.CollectReplicaSetAttributes = *details.CollectReplicaSetAttributes
-			withK8sAttributes = true
-		}
-		if details.CollectWorkloadID != nil {
-			config.CollectWorkloadUID = *details.CollectWorkloadID
-			withK8sAttributes = true
-		}
-		if details.CollectClusterID != nil {
-			config.CollectClusterUID = *details.CollectClusterID
-			withK8sAttributes = true
-		}
-		if details.LabelsAttributes != nil {
-			config.LabelsAttributes = make([]actionsv1.K8sLabelAttribute, len(details.LabelsAttributes))
-			for i, attr := range details.LabelsAttributes {
-				config.LabelsAttributes[i] = actionsv1.K8sLabelAttribute{
-					LabelKey:     attr.LabelKey,
-					AttributeKey: attr.AttributeKey,
-				}
-				if attr.From != nil {
-					from := actionsv1.K8sAttributeSource(*attr.From)
-					config.LabelsAttributes[i].From = &from
-				}
-				if len(attr.FromSources) > 0 {
-					config.LabelsAttributes[i].FromSources = make([]actionsv1.K8sAttributeSource, len(attr.FromSources))
-					for j, source := range attr.FromSources {
-						config.LabelsAttributes[i].FromSources[j] = actionsv1.K8sAttributeSource(source)
-					}
-				}
-			}
-			withK8sAttributes = true
-		}
-		if details.AnnotationsAttributes != nil {
-			config.AnnotationsAttributes = make([]actionsv1.K8sAnnotationAttribute, len(details.AnnotationsAttributes))
-			for i, attr := range details.AnnotationsAttributes {
-				config.AnnotationsAttributes[i] = actionsv1.K8sAnnotationAttribute{
-					AnnotationKey: attr.AnnotationKey,
-					AttributeKey:  attr.AttributeKey,
-				}
-				if attr.From != nil {
-					from := string(*attr.From)
-					config.AnnotationsAttributes[i].From = &from
-				}
-				if len(attr.FromSources) > 0 {
-					config.AnnotationsAttributes[i].FromSources = make([]actionsv1.K8sAttributeSource, len(attr.FromSources))
-					for j, source := range attr.FromSources {
-						config.AnnotationsAttributes[i].FromSources[j] = actionsv1.K8sAttributeSource(source)
-					}
-				}
-			}
-			withK8sAttributes = true
-		}
-	}
+		details.AnnotationsAttributes != nil
 
 	if !withK8sAttributes {
 		if existingAction != nil && existingAction.Spec.K8sAttributes != nil {
@@ -285,37 +222,93 @@ func convertK8sAttributesFromInput(details *model.ActionFieldsInput, existingAct
 		return nil
 	}
 
+	// Preserve omitted sibling fields on partial GraphQL updates (same pattern as PiiMasking).
+	config := &actionsv1.K8sAttributesConfig{}
+	if existingAction != nil && existingAction.Spec.K8sAttributes != nil {
+		config = existingAction.Spec.K8sAttributes.DeepCopy()
+	}
+
+	if details.CollectContainerAttributes != nil {
+		config.CollectContainerAttributes = *details.CollectContainerAttributes
+	}
+	if details.CollectReplicaSetAttributes != nil {
+		config.CollectReplicaSetAttributes = *details.CollectReplicaSetAttributes
+	}
+	if details.CollectWorkloadID != nil {
+		config.CollectWorkloadUID = *details.CollectWorkloadID
+	}
+	if details.CollectClusterID != nil {
+		config.CollectClusterUID = *details.CollectClusterID
+	}
+	if details.LabelsAttributes != nil {
+		config.LabelsAttributes = make([]actionsv1.K8sLabelAttribute, len(details.LabelsAttributes))
+		for i, attr := range details.LabelsAttributes {
+			config.LabelsAttributes[i] = actionsv1.K8sLabelAttribute{
+				LabelKey:     attr.LabelKey,
+				AttributeKey: attr.AttributeKey,
+			}
+			if attr.From != nil {
+				from := actionsv1.K8sAttributeSource(*attr.From)
+				config.LabelsAttributes[i].From = &from
+			}
+			if len(attr.FromSources) > 0 {
+				config.LabelsAttributes[i].FromSources = make([]actionsv1.K8sAttributeSource, len(attr.FromSources))
+				for j, source := range attr.FromSources {
+					config.LabelsAttributes[i].FromSources[j] = actionsv1.K8sAttributeSource(source)
+				}
+			}
+		}
+	}
+	if details.AnnotationsAttributes != nil {
+		config.AnnotationsAttributes = make([]actionsv1.K8sAnnotationAttribute, len(details.AnnotationsAttributes))
+		for i, attr := range details.AnnotationsAttributes {
+			config.AnnotationsAttributes[i] = actionsv1.K8sAnnotationAttribute{
+				AnnotationKey: attr.AnnotationKey,
+				AttributeKey:  attr.AttributeKey,
+			}
+			if attr.From != nil {
+				from := string(*attr.From)
+				config.AnnotationsAttributes[i].From = &from
+			}
+			if len(attr.FromSources) > 0 {
+				config.AnnotationsAttributes[i].FromSources = make([]actionsv1.K8sAttributeSource, len(attr.FromSources))
+				for j, source := range attr.FromSources {
+					config.AnnotationsAttributes[i].FromSources[j] = actionsv1.K8sAttributeSource(source)
+				}
+			}
+		}
+	}
+
 	return config
 }
 
 func convertAddClusterInfoFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *actionsv1.AddClusterInfoConfig {
-	withAddClusterInfo := false
-	var config *actionsv1.AddClusterInfoConfig
-
-	if details.ClusterAttributes != nil || details.OverwriteExistingValues != nil {
-		config = &actionsv1.AddClusterInfoConfig{}
-
-		if details.ClusterAttributes != nil {
-			config.ClusterAttributes = make([]actionsv1.OtelAttributeWithValue, len(details.ClusterAttributes))
-			for i, attr := range details.ClusterAttributes {
-				config.ClusterAttributes[i] = actionsv1.OtelAttributeWithValue{
-					AttributeName:        attr.AttributeName,
-					AttributeStringValue: &attr.AttributeStringValue,
-				}
-			}
-			withAddClusterInfo = true
-		}
-		if details.OverwriteExistingValues != nil {
-			config.OverwriteExistingValues = *details.OverwriteExistingValues
-			withAddClusterInfo = true
-		}
-	}
+	withAddClusterInfo := details.ClusterAttributes != nil || details.OverwriteExistingValues != nil
 
 	if !withAddClusterInfo {
 		if existingAction != nil && existingAction.Spec.AddClusterInfo != nil {
 			return existingAction.Spec.AddClusterInfo
 		}
 		return nil
+	}
+
+	// Preserve omitted sibling fields on partial GraphQL updates (same pattern as PiiMasking).
+	config := &actionsv1.AddClusterInfoConfig{}
+	if existingAction != nil && existingAction.Spec.AddClusterInfo != nil {
+		config = existingAction.Spec.AddClusterInfo.DeepCopy()
+	}
+
+	if details.ClusterAttributes != nil {
+		config.ClusterAttributes = make([]actionsv1.OtelAttributeWithValue, len(details.ClusterAttributes))
+		for i, attr := range details.ClusterAttributes {
+			config.ClusterAttributes[i] = actionsv1.OtelAttributeWithValue{
+				AttributeName:        attr.AttributeName,
+				AttributeStringValue: &attr.AttributeStringValue,
+			}
+		}
+	}
+	if details.OverwriteExistingValues != nil {
+		config.OverwriteExistingValues = *details.OverwriteExistingValues
 	}
 
 	return config
