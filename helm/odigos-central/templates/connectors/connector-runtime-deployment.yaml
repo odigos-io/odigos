@@ -53,6 +53,8 @@ spec:
               value: dsn
             - name: CONNECTOR_CENTRAL_BACKEND_URL
               value: "http://central-backend:8081"
+            - name: CONNECTOR_OPAMP_ENDPOINT
+              value: {{ .Values.cloudConnectors.managedCollectors.externalEndpoint | quote }}
             - name: CONNECTOR_AWS_IMAGE
               value: {{ .Values.cloudConnectors.aws.image | default (include "utils.imageName" (dict "Values" .Values "Component" "connector-aws" "Tag" $imageTag)) | quote }}
             - name: CONNECTOR_GCP_IMAGE
