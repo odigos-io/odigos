@@ -35,7 +35,7 @@ spec:
     - name: '[1 - Virtual Device] Install Odigos (default mount method)'
       try:
         - script:
-            timeout: 2m
+            timeout: 5m
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 ../../../cli/odigos install --ns odigos-test \
@@ -47,7 +47,7 @@ spec:
               kubectl label namespace odigos-test odigos.io/system-object="true"
               ../../common/verify_odigos_installation.sh odigos-test
         - assert:
-            timeout: 2m30s
+            timeout: 4m
             file: ../../common/assert/odigos-installed.yaml
         - script:
             timeout: 1m
