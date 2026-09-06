@@ -124,7 +124,12 @@ spec:
         - script:
             timeout: 1m10s
             content: |
-              kubectl rollout restart deployment
+              # the restart annotation has a resolution of seconds, so a restart triggered by the upgrade
+              # above can still be within the same second as this one. Same guard as the first rollout.
+              sleep 2
+              for i in 1 2 3; do
+                kubectl rollout restart deployment && break || sleep 2
+              done || exit 1 # Exit with error if all attempts fail
 
     - name: 03 - Assert Environment Variables
       try:
