@@ -255,6 +255,26 @@ cloudConnectors:
     tolerations: []
     affinity: {}
 
+  # Odigos-managed telemetry Collectors, deployed into the customer's own cloud account and configured
+  # over OpAMP.
+  managedCollectors:
+    # -- Public endpoint the managed Collectors connect back to, normally
+    # wss://<central-host>/v1/opamp. Per environment: staging and production are different Central
+    # installations and therefore different endpoints.
+    #
+    # Deliberately empty by default. There is no address that is right for an unknown Central
+    # installation, and a wrong one would point Collectors running in a customer's cloud account at
+    # somebody else's endpoint. Empty means no Collector is deployed, and a connector that was allowed
+    # to manage one says so on its own resource.
+    #
+    # Must be wss:// (or https://) for any host that is not loopback: the Collector presents a bearer
+    # credential on this connection, and that credential can read the destination's own credential out
+    # of a configuration push.
+    #
+    # Changing it does not move Collectors that are already deployed — each holds the endpoint injected
+    # into its workload definition, so it is redeployed to pick up a new one.
+    externalEndpoint: ''
+
   # Provider connector runtime images the controller stamps onto per-account connector Deployments.
   aws:
     # -- Override the AWS connector image (empty = built-in odigos-enterprise-connector-aws).
