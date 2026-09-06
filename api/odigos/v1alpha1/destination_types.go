@@ -36,6 +36,40 @@ type DestinationMetricsSettings struct {
 	CollectAgentsTelemetry  *bool `json:"agentsTelemetryEnabled,omitempty"`
 }
 
+type SendingQueueBatch struct {
+	// Unit is how batch size is measured (items or bytes). Maps to exporterhelper sending_queue.batch.sizer.
+	// +optional
+	// +kubebuilder:validation:Enum=items;bytes
+	Unit string `json:"unit,omitempty"`
+	// Size is the minimum batch size before flush. Maps to exporterhelper sending_queue.batch.min_size.
+	// +optional
+	// +kubebuilder:validation:Minimum=1
+	Size int `json:"size,omitempty"`
+	// MaxSize is the maximum batch size (enables splitting). Maps to exporterhelper sending_queue.batch.max_size.
+	// 0 means no maximum (OTel default). Nil means unset (omit from config).
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	MaxSize *int `json:"maxSize,omitempty"`
+	// FlushTimeout is how long to wait before flushing a batch. Maps to exporterhelper sending_queue.batch.flush_timeout.
+	// Example: "200ms", "1s".
+	// +optional
+	FlushTimeout string `json:"flushTimeout,omitempty"`
+}
+
+type SendingQueue struct {
+	// Unit is how queue size is measured (items, bytes, requests). Maps to exporterhelper sending_queue.sizer.
+	// +optional
+	// +kubebuilder:validation:Enum=items;bytes;requests
+	Unit string `json:"unit,omitempty"`
+	// Size is the maximum queue size. Maps to exporterhelper sending_queue.queue_size.
+	// +optional
+	// +kubebuilder:validation:Minimum=1
+	Size int `json:"size,omitempty"`
+	// Batch configures exporterhelper sending_queue.batch for this destination's exporters.
+	// +optional
+	Batch *SendingQueueBatch `json:"batch,omitempty"`
+}
+
 // DestinationSpec defines the desired state of Destination
 type DestinationSpec struct {
 	Type            common.DestinationType       `json:"type"`
@@ -54,6 +88,10 @@ type DestinationSpec struct {
 	// If not specified, defaults to "all".
 	// +optional
 	SourceSelector *SourceSelector `json:"sourceSelector,omitempty"`
+
+	// SendingQueue configures exporterhelper sending_queue for this destination's exporters.
+	// +optional
+	SendingQueue *SendingQueue `json:"sendingQueue,omitempty"`
 }
 
 // DestinationStatus defines the observed state of Destination
@@ -107,6 +145,35 @@ func (dest Destination) GetSignals() []common.ObservabilitySignal {
 
 func (dest Destination) GetSecretRef() *v1.LocalObjectReference {
 	return dest.Spec.SecretRef
+}
+
+func (dest Destination) GetSendingQueueConfig() *config.SendingQueueConfig {
+	sendingQueue := config.DefaultSendingQueueConfig()
+	if dest.Spec.SendingQueue == nil {
+		return &sendingQueue
+	}
+	if dest.Spec.SendingQueue.Unit != "" {
+		sendingQueue.Unit = config.QueueUnit(dest.Spec.SendingQueue.Unit)
+	}
+	if dest.Spec.SendingQueue.Size > 0 {
+		sendingQueue.Size = dest.Spec.SendingQueue.Size
+	}
+	if dest.Spec.SendingQueue.Batch != nil {
+		if dest.Spec.SendingQueue.Batch.Unit != "" {
+			sendingQueue.Batch.Unit = config.BatchUnit(dest.Spec.SendingQueue.Batch.Unit)
+		}
+		if dest.Spec.SendingQueue.Batch.Size > 0 {
+			sendingQueue.Batch.Size = dest.Spec.SendingQueue.Batch.Size
+		}
+		// MaxSize is 0 by default (=no limit), so any non nil values apply
+		if dest.Spec.SendingQueue.Batch.MaxSize != nil {
+			sendingQueue.Batch.MaxSize = dest.Spec.SendingQueue.Batch.MaxSize
+		}
+		if dest.Spec.SendingQueue.Batch.FlushTimeout != "" {
+			sendingQueue.Batch.FlushTimeout = dest.Spec.SendingQueue.Batch.FlushTimeout
+		}
+	}
+	return &sendingQueue
 }
 
 type SourceSelector struct {

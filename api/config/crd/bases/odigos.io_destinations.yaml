@@ -88,6 +88,54 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              sendingQueue:
+                description: SendingQueue configures exporterhelper sending_queue
+                  for this destination's exporters.
+                properties:
+                  batch:
+                    description: Batch configures exporterhelper sending_queue.batch
+                      for this destination's exporters.
+                    properties:
+                      flushTimeout:
+                        description: |-
+                          FlushTimeout is how long to wait before flushing a batch.
+                          Maps to exporterhelper sending_queue.batch.flush_timeout.
+                          Example: "200ms", "1s".
+                        type: string
+                      maxSize:
+                        description: |-
+                          MaxSize is the maximum batch size (enables splitting).
+                          Maps to exporterhelper sending_queue.batch.max_size.
+                          0 means no maximum (OTel default). Nil means unset (omit from config).
+                        minimum: 0
+                        type: integer
+                      size:
+                        description: Size is the minimum batch size before flush.
+                          Maps to exporterhelper sending_queue.batch.min_size.
+                        minimum: 1
+                        type: integer
+                      unit:
+                        description: Unit is how batch size is measured (items or
+                          bytes). Maps to exporterhelper sending_queue.batch.sizer.
+                        enum:
+                        - items
+                        - bytes
+                        type: string
+                    type: object
+                  size:
+                    description: Size is the maximum queue size. Maps to exporterhelper
+                      sending_queue.queue_size.
+                    minimum: 1
+                    type: integer
+                  unit:
+                    description: Unit is how queue size is measured (items, bytes,
+                      requests). Maps to exporterhelper sending_queue.sizer.
+                    enum:
+                    - items
+                    - bytes
+                    - requests
+                    type: string
+                type: object
               signals:
                 items:
                   enum:

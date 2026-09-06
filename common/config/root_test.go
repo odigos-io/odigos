@@ -14,7 +14,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-
 type DummyProcessor struct {
 	ID        string
 	Type      string
@@ -61,13 +60,17 @@ func (dest DummyDestination) GetType() common.DestinationType {
 func (dest DummyDestination) GetConfig() map[string]string {
 	return make(map[string]string)
 }
+func (dest DummyDestination) GetSendingQueueConfig() *config.SendingQueueConfig {
+	return nil
+}
 func (dest DummyDestination) GetSignals() []common.ObservabilitySignal {
 	return []common.ObservabilitySignal{common.LogsObservabilitySignal}
 }
 
-func (dest DummyTraceDestination) GetID() string                   { return dest.ID }
-func (dest DummyTraceDestination) GetType() common.DestinationType { return "debug" }
-func (dest DummyTraceDestination) GetConfig() map[string]string    { return make(map[string]string) }
+func (dest DummyTraceDestination) GetID() string                                     { return dest.ID }
+func (dest DummyTraceDestination) GetType() common.DestinationType                   { return "debug" }
+func (dest DummyTraceDestination) GetConfig() map[string]string                      { return make(map[string]string) }
+func (dest DummyTraceDestination) GetSendingQueueConfig() *config.SendingQueueConfig { return nil }
 func (dest DummyTraceDestination) GetSignals() []common.ObservabilitySignal {
 	return []common.ObservabilitySignal{common.TracesObservabilitySignal}
 }
