@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"os"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +14,6 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
 func startLogLevelWatcher(ctx context.Context) {
@@ -26,7 +26,10 @@ func startLogLevelWatcher(ctx context.Context) {
 		return
 	}
 
-	ns := env.GetCurrentNamespace()
+	ns := consts.DefaultOdigosNamespace
+	if v, ok := os.LookupEnv(consts.CurrentNamespaceEnvVar); ok {
+		ns = v
+	}
 	var lastLevel string
 	applyLevelFromConfigMap := func(cm *corev1.ConfigMap) {
 		if cm == nil || cm.Data == nil || cm.Data[consts.OdigosConfigurationFileName] == "" {

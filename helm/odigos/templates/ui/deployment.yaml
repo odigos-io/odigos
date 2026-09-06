@@ -46,7 +46,7 @@ spec:
         {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
         {{- $isEnterprise := not (empty (include "odigos.secretExists" .)) }}
         {{- $uiComponent := ternary "enterprise-ui" "ui" $isEnterprise }}
-        image: {{ template "utils.imageName" (dict "Values" .Values "Component" $uiComponent "Tag" $imageTag) }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" $uiComponent "Tag" $imageTag) }}
         args:
           - --namespace=$(CURRENT_NS)
           - --address=0.0.0.0
@@ -57,13 +57,6 @@ spec:
                 fieldPath: metadata.namespace
           - name: ODIGOS_LOG_LEVEL
             value: {{ .Values.ui.logLevel | default .Values.logLevel | default "info" | quote }}
-          {{- if .Values.ui.centralBackendURL }}
-          - name: CENTRAL_BACKEND_WS_URL
-            valueFrom:
-              configMapKeyRef:
-                name: odigos-configuration
-                key: centralBackendURL
-          {{- end }}
           - name: GOMEMLIMIT
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.ui.resources) }}
           {{- if $isEnterprise }}

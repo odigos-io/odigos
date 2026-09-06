@@ -590,6 +590,10 @@ type ProfilingConfiguration struct {
 	// Symbolization controls how native (C/C++/Rust) frames are resolved to
 	// function names. Mirrors the VM agent's profiling.symbolization.native flag.
 	Symbolization *ProfilingSymbolizationConfiguration `json:"symbolization,omitempty" yaml:"symbolization,omitempty"`
+	// Ui tunes the UI backend's in-memory profile cache (slot count, per-slot and
+	// TTL limits). Applied live by the frontend on effective-config changes, so
+	// edits from the settings page take effect without restarting the UI pod.
+	Ui *ProfilingUiConfiguration `json:"ui,omitempty" yaml:"ui,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -612,6 +616,15 @@ func (p *ProfilingConfiguration) NativeSymbolizationEnabled() bool {
 		return *p.Symbolization.Native // explicit opt-out/opt-in
 	}
 	return true // default ON
+}
+
+// +kubebuilder:object:generate=true
+// InsightsConfiguration toggles an optional side-channel trace pipeline on
+// the cluster gateway. Disabled unless Enabled is set; when on, the gateway
+// taps the root traces pipeline (so the side-channel sees post-processed
+// spans) and forwards to a sidecar service over OTLP gRPC inside the namespace.
+type InsightsConfiguration struct {
+	Enabled *bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
@@ -683,6 +696,8 @@ type OdigosConfiguration struct {
 	ComponentLogLevels *ComponentLogLevels `json:"componentLogLevels,omitempty" yaml:"componentLogLevels,omitempty"`
 
 	Profiling *ProfilingConfiguration `json:"profiling,omitempty" yaml:"profiling,omitempty"`
+
+	Insights *InsightsConfiguration `json:"insights,omitempty" yaml:"insights,omitempty"`
 }
 
 // ProfilingPipelineActive reports whether profiling pipelines and related collector settings should be applied.
@@ -694,4 +709,17 @@ func ProfilingPipelineActive(p *ProfilingConfiguration) bool {
 // ProfilingEnabled reports whether profiling is explicitly enabled on this configuration.
 func (o *OdigosConfiguration) ProfilingEnabled() bool {
 	return o != nil && ProfilingPipelineActive(o.Profiling)
+}
+
+// InsightsPipelineActive reports whether the optional side-channel trace
+// pipeline should be wired into the cluster-gateway collector. Opt-in:
+// Enabled must be explicitly true.
+func InsightsPipelineActive(a *InsightsConfiguration) bool {
+	return a != nil && a.Enabled != nil && *a.Enabled
+}
+
+// InsightsEnabled reports whether the side-channel trace pipeline is
+// explicitly enabled on this configuration.
+func (o *OdigosConfiguration) InsightsEnabled() bool {
+	return o != nil && InsightsPipelineActive(o.Insights)
 }

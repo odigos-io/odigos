@@ -114,6 +114,7 @@ declare module 'styled-components' {
           '600': string;
         };
         pink: {
+          '500': string;
           '600': string;
         };
         orange: {

@@ -1,14 +1,29 @@
-export const BenchmarksChart = ({ flavor = "enterprise" }) => (
-  <Frame caption="Certified stable capacity by ResourceSizePreset">
+export const GatewayChart = () => (
+  <Frame caption="Cluster gateway (1 pod) — stable capacity* by ResourceSizePreset">
     <img
       className="block dark:hidden"
-      src={`/images/shared/pipeline/benchmarks-${flavor}-light.png`}
-      alt="Benchmark throughput by ResourceSizePreset"
+      src="/images/shared/pipeline/cluster-light.png"
+      alt="Cluster gateway benchmark throughput by ResourceSizePreset"
     />
     <img
       className="hidden dark:block"
-      src={`/images/shared/pipeline/benchmarks-${flavor}-dark.png`}
-      alt="Benchmark throughput by ResourceSizePreset"
+      src="/images/shared/pipeline/cluster-dark.png"
+      alt="Cluster gateway benchmark throughput by ResourceSizePreset"
+    />
+  </Frame>
+);
+
+export const NodeCollectorChart = ({ instrumentation }) => (
+  <Frame caption="Node collector — stable capacity* by ResourceSizePreset">
+    <img
+      className="block dark:hidden"
+      src={`/images/shared/pipeline/nc-${instrumentation}-light.png`}
+      alt="Node collector benchmark throughput by ResourceSizePreset"
+    />
+    <img
+      className="hidden dark:block"
+      src={`/images/shared/pipeline/nc-${instrumentation}-dark.png`}
+      alt="Node collector benchmark throughput by ResourceSizePreset"
     />
   </Frame>
 );

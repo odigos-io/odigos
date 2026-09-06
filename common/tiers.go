@@ -14,3 +14,9 @@ const (
 	// network connectivity to odigos cloud
 	OnPremOdigosTier OdigosTier = "onprem"
 )
+
+// IsEnterprise reports whether the tier ships the enterprise images and features.
+// The tier defaults to community when unset, so the check fails closed.
+func (t OdigosTier) IsEnterprise() bool {
+	return t != CommunityOdigosTier
+}

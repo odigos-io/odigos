@@ -27,6 +27,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
+	actionsapi "github.com/odigos-io/odigos/common/api/actions"
 )
 
 // extractAttributeRawConfig mirrors the snake_case shape the autoscaler
@@ -40,9 +41,9 @@ type extractAttributeRawConfig struct {
 
 type extractAttributeRawRule struct {
 	TargetAttributeName string `json:"target_attribute_name"`
-	LookupKey        string `json:"lookup_key,omitempty"`
-	DataFormat       string `json:"data_format,omitempty"`
-	Regex            string `json:"regex,omitempty"`
+	LookupKey           string `json:"lookup_key,omitempty"`
+	DataFormat          string `json:"data_format,omitempty"`
+	Regex               string `json:"regex,omitempty"`
 }
 
 var _ = Describe("ExtractAttribute Controller", func() {
@@ -69,11 +70,13 @@ var _ = Describe("ExtractAttribute Controller", func() {
 					Disabled:   false,
 					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
-						Extractions: []odigosactions.Extraction{
-							{
-								TargetAttributeName: "study.id",
-								LookupKey:        "study_id",
-								DataFormat:       odigosactions.FormatJSON,
+						ExtractAttributeConfig: actionsapi.ExtractAttributeConfig{
+							Extractions: []actionsapi.Extraction{
+								{
+									TargetAttributeName: "study.id",
+									LookupKey:           "study_id",
+									DataFormat:          actionsapi.FormatJSON,
+								},
 							},
 						},
 					},
@@ -128,10 +131,12 @@ var _ = Describe("ExtractAttribute Controller", func() {
 					ActionName: "extract via regex",
 					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
-						Extractions: []odigosactions.Extraction{
-							{
-								TargetAttributeName: "request.id",
-								Regex:            `request_id=([A-Za-z0-9-]+)`,
+						ExtractAttributeConfig: actionsapi.ExtractAttributeConfig{
+							Extractions: []actionsapi.Extraction{
+								{
+									TargetAttributeName: "request.id",
+									Regex:               `request_id=([A-Za-z0-9-]+)`,
+								},
 							},
 						},
 					},
@@ -171,20 +176,22 @@ var _ = Describe("ExtractAttribute Controller", func() {
 					ActionName: "extract multiple",
 					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
-						Extractions: []odigosactions.Extraction{
-							{
-								TargetAttributeName: "extracted_study.id",
-								LookupKey:        "studies",
-								DataFormat:       odigosactions.FormatResourcePath,
-							},
-							{
-								TargetAttributeName: "extracted_project.id",
-								LookupKey:        "projects",
-								DataFormat:       odigosactions.FormatResourcePath,
-							},
-							{
-								TargetAttributeName: "trace.id",
-								Regex:            `traceId=([0-9a-f]+)`,
+						ExtractAttributeConfig: actionsapi.ExtractAttributeConfig{
+							Extractions: []actionsapi.Extraction{
+								{
+									TargetAttributeName: "extracted_study.id",
+									LookupKey:           "studies",
+									DataFormat:          actionsapi.FormatResourcePath,
+								},
+								{
+									TargetAttributeName: "extracted_project.id",
+									LookupKey:           "projects",
+									DataFormat:          actionsapi.FormatResourcePath,
+								},
+								{
+									TargetAttributeName: "trace.id",
+									Regex:               `traceId=([0-9a-f]+)`,
+								},
 							},
 						},
 					},
@@ -235,11 +242,13 @@ var _ = Describe("ExtractAttribute Controller", func() {
 						common.LogsObservabilitySignal,
 					},
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
-						Extractions: []odigosactions.Extraction{
-							{
-								TargetAttributeName: "user.id",
-								LookupKey:        "user_id",
-								DataFormat:       odigosactions.FormatJSON,
+						ExtractAttributeConfig: actionsapi.ExtractAttributeConfig{
+							Extractions: []actionsapi.Extraction{
+								{
+									TargetAttributeName: "user.id",
+									LookupKey:           "user_id",
+									DataFormat:          actionsapi.FormatJSON,
+								},
 							},
 						},
 					},
@@ -277,12 +286,14 @@ var _ = Describe("ExtractAttribute Controller", func() {
 					ActionName: "invalid - both lookupKey and regex",
 					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
-						Extractions: []odigosactions.Extraction{
-							{
-								TargetAttributeName: "x",
-								LookupKey:        "user_id",
-								DataFormat:       odigosactions.FormatJSON,
-								Regex:            `user_id=(\d+)`,
+						ExtractAttributeConfig: actionsapi.ExtractAttributeConfig{
+							Extractions: []actionsapi.Extraction{
+								{
+									TargetAttributeName: "x",
+									LookupKey:           "user_id",
+									DataFormat:          actionsapi.FormatJSON,
+									Regex:               `user_id=(\d+)`,
+								},
 							},
 						},
 					},
@@ -313,10 +324,12 @@ var _ = Describe("ExtractAttribute Controller", func() {
 					ActionName: "invalid - missing dataFormat",
 					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
 					ExtractAttribute: &odigosactions.ExtractAttributeConfig{
-						Extractions: []odigosactions.Extraction{
-							{
-								TargetAttributeName: "x",
-								LookupKey:        "user_id",
+						ExtractAttributeConfig: actionsapi.ExtractAttributeConfig{
+							Extractions: []actionsapi.Extraction{
+								{
+									TargetAttributeName: "x",
+									LookupKey:           "user_id",
+								},
 							},
 						},
 					},

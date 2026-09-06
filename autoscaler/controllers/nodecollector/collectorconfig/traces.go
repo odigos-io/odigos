@@ -5,6 +5,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
 )
 
@@ -15,6 +16,19 @@ const (
 	odigosTracesExportingPipelineName         = "traces/exporting"
 	nopExporterName                           = "nop"
 )
+
+// tracesPipelineReceivers returns the receiver names wired into the traces pipeline.
+func tracesPipelineReceivers(tier common.OdigosTier) []string {
+	receivers := []string{OTLPInReceiverName}
+
+	// odigosebpfreceiver only exists in the enterprise collector image - see the comment on
+	// odigosEbpfReceiverName in common.go.
+	if tier.IsEnterprise() {
+		receivers = append(receivers, odigosEbpfReceiverName)
+	}
+
+	return receivers
+}
 
 func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, tracesEnabledInClusterCollector bool, loadBalancingNeeded bool) (config.GenericMap, []string) {
 
@@ -146,7 +160,7 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, opts TracesConfigOptions) co
 
 	tracePipeline := map[string]config.Pipeline{
 		odigosTracesPipelineName: {
-			Receivers:  []string{OTLPInReceiverName, odigosEbpfReceiverName},
+			Receivers:  tracesPipelineReceivers(opts.Tier),
 			Processors: tracePipelineProcessors,
 			Exporters:  tracesMainPipelineExporterNames,
 		},

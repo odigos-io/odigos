@@ -1,12 +1,13 @@
 package k8sconsts
 
 const (
-	OdigosEnvVarNamespace              = "ODIGOS_WORKLOAD_NAMESPACE"
-	OdigosEnvVarContainerName          = "ODIGOS_CONTAINER_NAME"
-	OdigosEnvVarPodName                = "ODIGOS_POD_NAME"
-	OdigosEnvVarDistroName             = "ODIGOS_DISTRO_NAME"
-	CustomContainerRuntimeSocketEnvVar = "CONTAINER_RUNTIME_SOCK"
-	OtelResourceAttributesEnvVar       = "OTEL_RESOURCE_ATTRIBUTES"
+	OdigosEnvVarNamespace                      = "ODIGOS_WORKLOAD_NAMESPACE"
+	OdigosEnvVarContainerName                  = "ODIGOS_CONTAINER_NAME"
+	OdigosEnvVarPodName                        = "ODIGOS_POD_NAME"
+	OdigosEnvVarDistroName                     = "ODIGOS_DISTRO_NAME"
+	CustomContainerRuntimeSocketEnvVar         = "CONTAINER_RUNTIME_SOCK"
+	OtelResourceAttributesEnvVar               = "OTEL_RESOURCE_ATTRIBUTES"
+	OdigosPhpAgentCustomInstrumentationsEnvVar = "ODIGOS_PHP_AGENT_CUSTOM_INSTRUMENTATIONS"
 )
 
 func OdigosInjectedEnvVars() []string {

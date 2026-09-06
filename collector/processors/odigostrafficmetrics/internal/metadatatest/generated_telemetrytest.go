@@ -53,6 +53,22 @@ func AssertEqualOdigosAcceptedMetricPoints(t *testing.T, tt *componenttest.Telem
 	metricdatatest.AssertEqual(t, want, got, opts...)
 }
 
+func AssertEqualOdigosAcceptedProfileSamples(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos_accepted_profile_samples",
+		Description: "Number of profile samples passed through the processor. [Development]",
+		Unit:        "{samples}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos_accepted_profile_samples")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
 func AssertEqualOdigosAcceptedSpans(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_odigos_accepted_spans",
@@ -97,6 +113,22 @@ func AssertEqualOdigosMetricDataSize(t *testing.T, tt *componenttest.Telemetry, 
 		},
 	}
 	got, err := tt.GetMetric("otelcol_odigos_metric_data_size")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
+func AssertEqualOdigosProfileDataSize(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos_profile_data_size",
+		Description: "Total size of profile data passed to the processor [Development]",
+		Unit:        "By",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos_profile_data_size")
 	require.NoError(t, err)
 	metricdatatest.AssertEqual(t, want, got, opts...)
 }

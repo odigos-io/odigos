@@ -3,6 +3,7 @@ package clustercollector
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	autoscalerpredicate "github.com/odigos-io/odigos/autoscaler/controllers/predicate"
+	"github.com/odigos-io/odigos/common"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -11,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
+func SetupWithManager(mgr ctrl.Manager, odigosVersion string, tier common.OdigosTier) error {
 
 	err := builder.
 		ControllerManagedBy(mgr).
@@ -26,6 +27,7 @@ func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			OdigosVersion: odigosVersion,
+			Tier:          tier,
 		})
 	if err != nil {
 		return err
@@ -42,6 +44,7 @@ func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			OdigosVersion: odigosVersion,
+			Tier:          tier,
 		})
 	if err != nil {
 		return err
@@ -61,6 +64,7 @@ func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			OdigosVersion: odigosVersion,
+			Tier:          tier,
 		})
 	if err != nil {
 		return err
@@ -77,6 +81,27 @@ func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			OdigosVersion: odigosVersion,
+			Tier:          tier,
+		})
+	if err != nil {
+		return err
+	}
+
+	// Config-extension actions (odigosConfigExtension) are converted directly into
+	// cluster collector processors and written into the gateway ConfigMap — they do
+	// not create Processor CRs. Watch Action changes so the collector config and
+	// AddedToCollectorConfig status stay in sync when those actions are created,
+	// updated, or deleted.
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("clustercollector-actions").
+		For(&odigosv1.Action{}).
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		Complete(&ActionReconciler{
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
+			Tier:          tier,
 		})
 	if err != nil {
 		return err
@@ -94,6 +119,7 @@ func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			OdigosVersion: odigosVersion,
+			Tier:          tier,
 		})
 	if err != nil {
 		return err

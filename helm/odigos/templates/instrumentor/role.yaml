@@ -68,11 +68,20 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
+      - actions/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - odigos.io
+    resources:
       - samplings/status
     verbs:
       - get
       - patch
       - update
+
   - apiGroups:
       - ''
     resources:

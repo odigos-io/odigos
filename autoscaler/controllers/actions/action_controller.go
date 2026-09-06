@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -16,7 +15,12 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	actionutil "github.com/odigos-io/odigos/k8sutils/pkg/action"
+	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	"github.com/odigos-io/odigos/status"
+	actionstatus "github.com/odigos-io/odigos/status/action/generated"
+	processorstatus "github.com/odigos-io/odigos/status/processor/generated"
 )
 
 type ActionReconciler struct {
@@ -44,19 +48,6 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 			return nil, err
 		}
 		return convertToDefaultProcessor(action, action.Spec.DeleteAttribute, config)
-	}
-
-	if action.Spec.PiiMasking != nil {
-		for _, signal := range action.Spec.Signals {
-			if _, ok := piiMaskingSupportedSignals[signal]; !ok {
-				return nil, fmt.Errorf("unsupported signal in PiiMasking action: %s", signal)
-			}
-		}
-		config, err := piiMaskingConfig(action.Spec.PiiMasking.PiiCategories)
-		if err != nil {
-			return nil, err
-		}
-		return convertToDefaultProcessor(action, action.Spec.PiiMasking, config)
 	}
 
 	if action.Spec.RenameAttribute != nil {
@@ -164,30 +155,15 @@ func convertToDefaultProcessor(action *odigosv1.Action, actionConfig ActionConfi
 	return &processor, nil
 }
 
-func (r *ActionReconciler) reportReconciledToProcessorFailed(ctx context.Context, action *odigosv1.Action, reason odigosv1.ActionTransformedToProcessorReason, err error) error {
-	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
-		Type:               odigosv1.ActionTransformedToProcessorType,
-		Status:             metav1.ConditionFalse,
-		Reason:             string(reason),
-		Message:            err.Error(),
-		ObservedGeneration: action.Generation,
+func (r *ActionReconciler) reportReconciledToProcessorFailed(ctx context.Context, action *odigosv1.Action, reason status.Reason, reconcileErr error) error {
+	message, _ := status.RenderMessage(reason, actionstatus.TransformedToProcessorMessageParams{
+		Error: reconcileErr.Error(),
 	})
-
-	if changed {
-		err := r.Status().Update(ctx, action)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (r *ActionReconciler) reportProcessorNotRequired(ctx context.Context, action *odigosv1.Action) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
-		Type:               odigosv1.ActionTransformedToProcessorType,
-		Status:             metav1.ConditionTrue,
-		Reason:             string(odigosv1.ActionTransformedToProcessorReasonProcessorNotRequired),
-		Message:            "is not required for this action type.",
+		Type:               actionstatus.TransformedToProcessorType,
+		Status:             reason.K8sConditionStatus,
+		Reason:             reason.Name,
+		Message:            message,
 		ObservedGeneration: action.Generation,
 	})
 
@@ -201,11 +177,16 @@ func (r *ActionReconciler) reportProcessorNotRequired(ctx context.Context, actio
 }
 
 func (r *ActionReconciler) reportReconciledToProcessor(ctx context.Context, action *odigosv1.Action) error {
+	reason := actionstatus.TransformedToProcessorProcessorCreated
+	if action.Spec.Disabled {
+		reason = actionstatus.TransformedToProcessorActionDisabled
+	}
+	message, _ := status.RenderMessage(reason, nil)
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
-		Type:               odigosv1.ActionTransformedToProcessorType,
-		Status:             metav1.ConditionTrue,
-		Reason:             string(odigosv1.ActionTransformedToProcessorReasonProcessorCreated),
-		Message:            "The action has been reconciled to a processor resource.",
+		Type:               actionstatus.TransformedToProcessorType,
+		Status:             reason.K8sConditionStatus,
+		Reason:             reason.Name,
+		Message:            message,
 		ObservedGeneration: action.Generation,
 	})
 
@@ -214,11 +195,67 @@ func (r *ActionReconciler) reportReconciledToProcessor(ctx context.Context, acti
 		logger.Info("Action reconciled successfully")
 		err := r.Status().Update(ctx, action)
 		if err != nil {
-			logger.Error(err, "Failed to update action status to success")
+			logger.Error(err, "Failed to update action status after reconcile")
 			return err
 		}
 	}
 	return nil
+}
+
+// clearTransformedToProcessor removes TransformedToProcessor when this action is not
+// reconciled to a Processor CR (e.g. odigosConfigExtension actions).
+func (r *ActionReconciler) clearTransformedToProcessor(ctx context.Context, action *odigosv1.Action) error {
+	if meta.FindStatusCondition(action.Status.Conditions, actionstatus.TransformedToProcessorType) == nil {
+		return nil
+	}
+	if !meta.RemoveStatusCondition(&action.Status.Conditions, actionstatus.TransformedToProcessorType) {
+		return nil
+	}
+	return r.Status().Update(ctx, action)
+}
+
+// syncAddedToCollectorConfigFromOwnedProcessor mirrors AddedToCollectorConfig from the
+// 1:1 owned Processor (same namespace/name as the Action). Shared processors are out of scope.
+func (r *ActionReconciler) syncAddedToCollectorConfigFromOwnedProcessor(ctx context.Context, action *odigosv1.Action) error {
+	processor := &odigosv1.Processor{}
+	err := r.Get(ctx, client.ObjectKey{Namespace: action.Namespace, Name: action.Name}, processor)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return r.clearAddedToCollectorConfig(ctx, action)
+		}
+		return err
+	}
+
+	cond := meta.FindStatusCondition(processor.Status.Conditions, processorstatus.AddedToCollectorConfigType)
+	if cond == nil {
+		return r.clearAddedToCollectorConfig(ctx, action)
+	}
+
+	reason, ok := actionstatus.AddedToCollectorConfigReasonByName(cond.Reason)
+	if !ok {
+		return r.clearAddedToCollectorConfig(ctx, action)
+	}
+
+	message := cond.Message
+	if message == "" {
+		message, _ = status.RenderMessage(reason, nil)
+	}
+	return odgiosK8s.UpdateStatusConditions(ctx, r.Client, action, &action.Status.Conditions,
+		reason.K8sConditionStatus,
+		actionstatus.AddedToCollectorConfigType,
+		reason.Name,
+		message,
+	)
+}
+
+func (r *ActionReconciler) clearAddedToCollectorConfig(ctx context.Context, action *odigosv1.Action) error {
+	if meta.FindStatusCondition(action.Status.Conditions, actionstatus.AddedToCollectorConfigType) == nil {
+		return nil
+	}
+	if !meta.RemoveStatusCondition(&action.Status.Conditions, actionstatus.AddedToCollectorConfigType) {
+		return nil
+	}
+	return r.Status().Update(ctx, action)
 }
 
 func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -228,18 +265,20 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			// Reconcile after delete: sync so the shared URL-templatization Processor is removed when no URL actions remain.
+
+			// Reconcile after delete: sync shared processors so they are removed when no matching actions remain.
 			if syncErr := SyncUrlTemplatizationProcessor(ctx, r.Client, URLTemplatizationSyncApplyFull); syncErr != nil {
 				logger.Error(syncErr, "sync URL templatization processor after action delete failed")
 				return ctrl.Result{}, syncErr
 			}
+
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
 	}
-	// ToDo: once we add a mutating webhook to actions, we will inject the labels for URL templatization
-	// and then we can filter out actions where we need to run SyncUrlTemplatizationProcessor
-	// Right now running for every Action so shared processor lifecycle is correctly managed
+	// ToDo: once we add a mutating webhook to actions, we will inject labels for shared-processor
+	// actions and then filter which syncs to run. Right now running for every Action so shared
+	// processor lifecycle is correctly managed.
 	if err := SyncUrlTemplatizationProcessor(ctx, r.Client, URLTemplatizationSyncCreateIfMissing); err != nil {
 		logger.Error(err, "sync URL templatization processor failed")
 		return ctrl.Result{}, err
@@ -249,16 +288,21 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return utils.K8SUpdateErrorHandler(err)
 	}
 
+	// Config-extension actions (including PiiMasking) are applied via collector config, not Processor CRs.
+	if actionutil.IsConfigExtension(action) {
+		return utils.K8SUpdateErrorHandler(r.clearTransformedToProcessor(ctx, action))
+	}
+
 	processor, err := convertActionToProcessor(ctx, r.Client, action)
 	if err != nil {
 		logger.Error(err, "Failed to convert action to processor")
-		err = r.reportReconciledToProcessorFailed(ctx, action, odigosv1.ActionTransformedToProcessorReasonFailedToTransformToProcessorReason, err)
+		err = r.reportReconciledToProcessorFailed(ctx, action, actionstatus.TransformedToProcessorFailedToTransformToProcessor, err)
 		return utils.K8SUpdateErrorHandler(err) // return error of setting status, or nil if success (since the original error is not retryable and logged)
 	}
 
 	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner(action.Name), client.ForceOwnership)
 	if err != nil {
-		statusErr := r.reportReconciledToProcessorFailed(ctx, action, odigosv1.ActionTransformedToProcessorReasonFailedToCreateProcessor, err)
+		statusErr := r.reportReconciledToProcessorFailed(ctx, action, actionstatus.TransformedToProcessorFailedToCreateProcessor, err)
 		if statusErr == nil {
 			return utils.K8SUpdateErrorHandler(err)
 		} else {
@@ -269,5 +313,14 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	err = r.reportReconciledToProcessor(ctx, action)
-	return utils.K8SUpdateErrorHandler(err) // return error of setting status, or nil if success (since the original reconcile is successful)
+	if err != nil {
+		return utils.K8SUpdateErrorHandler(err)
+	}
+
+	// Mirror AddedToCollectorConfig from the 1:1 owned Processor when present.
+	// Usually empty on first reconcile; Owns(Processor) re-triggers after collector sync.
+	if processor.Name != action.Name {
+		return ctrl.Result{}, nil
+	}
+	return utils.K8SUpdateErrorHandler(r.syncAddedToCollectorConfigFromOwnedProcessor(ctx, action))
 }

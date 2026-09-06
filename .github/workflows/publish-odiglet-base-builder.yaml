@@ -6,6 +6,10 @@ on:
       image_tag:
         description: "The new image tag for the base builder docker image (e.g. v1.0)"
         required: true
+      release_branch_count:
+        description: "How many of the newest releases/v* branches to also open a pin-bump PR against"
+        required: false
+        default: "2"
 
 permissions: read-all
 
@@ -110,11 +114,44 @@ jobs:
           failure-description: "ERROR: Failed to publish a new Odiglet Base Builder image ${{ github.event.inputs.image_tag }}"
           tag: ${{ github.event.inputs.image_tag }}
 
-  update-odiglet-dockerfiles:
+  # Resolve which branches should get the pin bump. Previously only main was
+  # updated, so release branches silently kept whatever base they were cut with.
+  resolve-update-targets:
     needs: publish-odiglet-base-builder
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.resolve.outputs.targets }}
+    steps:
+      - name: Resolve target branches
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_BRANCH_COUNT: ${{ github.event.inputs.release_branch_count }}
+        run: |
+          set -euo pipefail
+          COUNT="${RELEASE_BRANCH_COUNT:-2}"
+
+          # main, plus the newest N releases/v* branches by version
+          RELEASES=$(gh api "repos/${GITHUB_REPOSITORY}/branches?per_page=100" --paginate --jq '.[].name' \
+            | grep -E '^releases/v[0-9]+\.[0-9]+' \
+            | sort -t/ -k2 -V -r \
+            | head -n "$COUNT" || true)
+
+          # emit {branch, slug} so the PR branch name has no slashes in it
+          TARGETS=$(printf '%s\n' "main" $RELEASES \
+            | jq -R '{branch: ., slug: (. | gsub("/"; "-"))}' | jq -sc .)
+          echo "Updating: $TARGETS"
+          echo "targets=$TARGETS" >> "$GITHUB_OUTPUT"
+
+  update-odiglet-dockerfiles:
+    needs: [publish-odiglet-base-builder, resolve-update-targets]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.resolve-update-targets.outputs.targets) }}
     steps:
 
       - name: Get ro Token for this repo
@@ -125,10 +162,10 @@ jobs:
           identity: ro
           output-git-config: "false"
 
-      - name: Checkout main branch
+      - name: Checkout ${{ matrix.target.branch }}
         uses: actions/checkout@v6
         with:
-          ref: main
+          ref: ${{ matrix.target.branch }}
           token: ${{ steps.sts-this-repo.outputs.GH_TOKEN }}
 
       - name: Update Odiglet Base Builder image in dockerfiles
@@ -149,7 +186,7 @@ jobs:
         id: create-pr
         with:
           token: ${{ steps.create-pr-sts.outputs.GH_TOKEN }}
-          title: "Update Odiglet Base Builder image to ${{ github.event.inputs.image_tag }}"
+          title: "Update Odiglet Base Builder image to ${{ github.event.inputs.image_tag }} on ${{ matrix.target.branch }}"
           body: |
             #### What this PR does / why we need it:
             This is an automated PR generated after a new release of the odiglet base builder. It updates the base builder image reference in `odiglet/Dockerfile` and `odiglet/debug.Dockerfile` to `${{ github.event.inputs.image_tag }}`.
@@ -162,7 +199,8 @@ jobs:
             ```release-note
             NONE
             ```
-          base: "main"
+          base: ${{ matrix.target.branch }}
+          branch: automated/odiglet-base-${{ github.event.inputs.image_tag }}-${{ matrix.target.slug }}
           commit-message: "Update Odiglet Base Builder image to ${{ github.event.inputs.image_tag }}"
           labels: |
             automated

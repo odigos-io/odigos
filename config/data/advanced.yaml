@@ -32,7 +32,7 @@ spec:
       componentType: input
       isHelmOnly: true
       description: URL of the Odigos Central backend for proxy mode.
-      helmValuePath: centralBackendURL
+      helmValuePath: centralProxy.centralBackendURL
     - displayName: Odigos Own Telemetry Store Disabled
       componentType: toggle
       isHelmOnly: true

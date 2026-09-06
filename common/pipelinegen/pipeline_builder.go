@@ -8,7 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 )
 
-// BuildDataStreamPipelines constructs data stream pipelines for logs, metrics, traces.
+// BuildDataStreamPipelines constructs data stream pipelines for logs, metrics, traces, profiles.
 // Each pipeline receives from its routing connector and exports to all destinations relevant to the data stream.
 func buildDataStreamPipelines(
 	dataStreams []DataStreams,
@@ -17,13 +17,17 @@ func buildDataStreamPipelines(
 	pipelines := make(map[string]config.Pipeline)
 
 	for _, dataStream := range dataStreams {
-		for _, signal := range []string{"logs", "metrics", "traces"} {
+		for _, signal := range []string{"logs", "metrics", "traces", "profiles"} {
 			pipelineName := fmt.Sprintf("%s/%s", signal, dataStream.Name)
 
 			pipeline := config.Pipeline{
-				Receivers:  []string{fmt.Sprintf("odigosrouterconnector/%s", signal)},
-				Processors: []string{consts.GenericBatchProcessorConfigKey}, // every group pipeline should have a generic batch processor
-				Exporters:  []string{},
+				Receivers: []string{fmt.Sprintf("odigosrouterconnector/%s", signal)},
+				Exporters: []string{},
+			}
+			// every group pipeline should have a generic batch processor, except profiles:
+			// the batch processor does not support the profiles signal in the pinned collector build.
+			if signal != "profiles" {
+				pipeline.Processors = []string{consts.GenericBatchProcessorConfigKey}
 			}
 
 			// Add forward connectors for each destination in the group to route telemetry data

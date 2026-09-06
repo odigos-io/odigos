@@ -18,7 +18,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
@@ -31,8 +30,8 @@ import (
 type ProcessorApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                             *ProcessorSpecApplyConfiguration `json:"spec,omitempty"`
-	Status                           *odigosv1alpha1.ProcessorStatus  `json:"status,omitempty"`
+	Spec                             *ProcessorSpecApplyConfiguration   `json:"spec,omitempty"`
+	Status                           *ProcessorStatusApplyConfiguration `json:"status,omitempty"`
 }
 
 // Processor constructs a declarative configuration of the Processor type for use with
@@ -217,8 +216,8 @@ func (b *ProcessorApplyConfiguration) WithSpec(value *ProcessorSpecApplyConfigur
 // WithStatus sets the Status field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Status field is set to the value of the last call.
-func (b *ProcessorApplyConfiguration) WithStatus(value odigosv1alpha1.ProcessorStatus) *ProcessorApplyConfiguration {
-	b.Status = &value
+func (b *ProcessorApplyConfiguration) WithStatus(value *ProcessorStatusApplyConfiguration) *ProcessorApplyConfiguration {
+	b.Status = value
 	return b
 }
 

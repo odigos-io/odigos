@@ -53,8 +53,12 @@ describe('Actions CRUD', () => {
             break;
           }
           case 'PiiMasking': {
-            // The dynamic form pre-selects the "Credit card" checkbox by default
-            // (matching the old bespoke form), so no interaction is required.
+            // Credit card is pre-selected; also exercise EMAIL/JWT/UUID so CreateAction
+            // covers every category the Action CRD enum accepts. checkboxList (array mode)
+            // sets data-id from each option id, not the field name.
+            cy.get('[data-id=EMAIL]').click();
+            cy.get('[data-id=JWT]').click();
+            cy.get('[data-id=UUID]').click();
             break;
           }
           case 'ExtractAttribute': {

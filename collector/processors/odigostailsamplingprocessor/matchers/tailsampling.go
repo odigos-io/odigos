@@ -4,6 +4,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
+	"github.com/odigos-io/odigos/common/urltemplate"
 )
 
 func NewTailSamplingOperationMatcher(operation *commonapisampling.TailSamplingOperationMatcher) Matcher {
@@ -23,16 +24,33 @@ func NewTailSamplingOperationMatcher(operation *commonapisampling.TailSamplingOp
 }
 
 type tailSamplingHttpServerMatcher struct {
-	method      string
-	route       string
-	routePrefix string
+	method string
+	route  urltemplate.PathRule
+}
+
+// parseRoutePathSegments parses an exact route or a prefix route into a single PathRule.
+// Exact takes precedence when both are set; Prefix on the rule records which was chosen.
+func parseRoutePathSegments(exact, prefix string) urltemplate.PathRule {
+	path := exact
+	isPrefix := false
+	if path == "" {
+		path = prefix
+		isPrefix = true
+	}
+	if path == "" {
+		return urltemplate.PathRule{}
+	}
+	rule, err := urltemplate.ParseUserInputRuleString(path, isPrefix)
+	if err != nil {
+		return urltemplate.PathRule{}
+	}
+	return rule
 }
 
 func newTailSamplingHttpServerMatcher(operation *commonapisampling.TailSamplingHttpServerOperationMatcher) Matcher {
 	return &tailSamplingHttpServerMatcher{
-		method:      operation.Method,
-		route:       operation.Route,
-		routePrefix: operation.RoutePrefix,
+		method: operation.Method,
+		route:  parseRoutePathSegments(operation.Route, operation.RoutePrefix),
 	}
 }
 
@@ -59,7 +77,7 @@ func (m *tailSamplingHttpServerMatcher) Match(span ptrace.Span) bool {
 		return false
 	}
 
-	if !matchHttpRoute(span, m.route, m.routePrefix) {
+	if !matchHttpRoute(span, m.route) {
 		return false
 	}
 

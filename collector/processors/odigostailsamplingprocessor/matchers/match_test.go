@@ -49,67 +49,62 @@ func TestMatchServerAddress(t *testing.T) {
 
 func TestMatchHttpRoute(t *testing.T) {
 	tests := []struct {
-		name            string
-		attrs           map[string]string
-		ruleRouteExact  string
-		ruleRoutePrefix string
-		wantMatch       bool
+		name      string
+		attrs     map[string]string
+		ruleRoute string
+		prefix    bool
+		wantMatch bool
 	}{
 		{
-			name:            "both rules unset match any",
-			attrs:           map[string]string{},
-			ruleRouteExact:  "",
-			ruleRoutePrefix: "",
-			wantMatch:       true,
+			name:      "unset rule match any",
+			attrs:     map[string]string{},
+			wantMatch: true,
 		},
 		{
 			name: "match via http.route",
 			attrs: map[string]string{
 				string(semconv.HTTPRouteKey): "/users/:id",
 			},
-			ruleRouteExact:  "/users/:id",
-			ruleRoutePrefix: "",
-			wantMatch:       true,
+			ruleRoute: "/users/:id",
+			wantMatch: true,
 		},
 		{
 			name: "no match via http.route",
 			attrs: map[string]string{
 				string(semconv.HTTPRouteKey): "/users/:id",
 			},
-			ruleRouteExact:  "/orders",
-			ruleRoutePrefix: "",
-			wantMatch:       false,
+			ruleRoute: "/orders",
+			wantMatch: false,
 		},
 		{
 			name: "match via url.path when http.route absent",
 			attrs: map[string]string{
 				string(semconv.URLPathKey): "/api/v1/health",
 			},
-			ruleRouteExact:  "",
-			ruleRoutePrefix: "/api",
-			wantMatch:       true,
+			ruleRoute: "/api",
+			prefix:    true,
+			wantMatch: true,
 		},
 		{
 			name: "match via http.target when http.route and url.path absent",
 			attrs: map[string]string{
 				string(semconv_1_4_0.HTTPTargetKey): "/legacy/path",
 			},
-			ruleRouteExact:  "",
-			ruleRoutePrefix: "/legacy",
-			wantMatch:       true,
+			ruleRoute: "/legacy",
+			prefix:    true,
+			wantMatch: true,
 		},
 		{
-			name:            "no route or path attribute returns false",
-			attrs:           map[string]string{"other.attr": "value"},
-			ruleRouteExact:  "/api",
-			ruleRoutePrefix: "",
-			wantMatch:       false,
+			name:      "no route or path attribute returns false",
+			attrs:     map[string]string{"other.attr": "value"},
+			ruleRoute: "/api",
+			wantMatch: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			span := spanWithAttrs(t, tt.attrs)
-			got := matchHttpRoute(span, tt.ruleRouteExact, tt.ruleRoutePrefix)
+			got := matchHttpRoute(span, mustParsePathRulePrefix(t, tt.ruleRoute, tt.prefix))
 			assert.Equal(t, tt.wantMatch, got)
 		})
 	}

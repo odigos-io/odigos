@@ -10,6 +10,7 @@ type CrdProcessorResults struct {
 	TracesProcessorsPostSpanMetrics []string
 	MetricsProcessors               []string
 	LogsProcessors                  []string
+	ProfilesProcessors              []string
 	Errs                            map[string]error
 }
 
@@ -21,6 +22,7 @@ func CrdProcessorToConfig(processors []ProcessorConfigurer) CrdProcessorResults 
 		TracesProcessorsPostSpanMetrics: []string{},
 		MetricsProcessors:               []string{},
 		LogsProcessors:                  []string{},
+		ProfilesProcessors:              []string{},
 		Errs:                            make(map[string]error),
 	}
 
@@ -54,6 +56,9 @@ func CrdProcessorToConfig(processors []ProcessorConfigurer) CrdProcessorResults 
 		}
 		if isLoggingEnabled(processor) {
 			results.LogsProcessors = append(results.LogsProcessors, processorKey)
+		}
+		if isProfilingEnabled(processor) {
+			results.ProfilesProcessors = append(results.ProfilesProcessors, processorKey)
 		}
 	}
 	if len(results.Errs) != 0 {

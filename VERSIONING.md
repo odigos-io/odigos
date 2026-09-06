@@ -1,29 +1,11 @@
 # Versioning
 
 Odigos publishes 2 release types:
--  stable releases (`v1.0.X`)
--  release candidates (`v1.0.x-rcY`)
+-  stable releases (`v1.X.Y`)
+-  release candidates (`v1.X.0-rcY`)
+-  pre-release versions (`v1.X.0-preY`)
 
-Stable releases are the default and recommended version to install. Release candidates are opt-in and require the user to explicitly take an action to install them.
-
-## Release Process
-
-### Stable Release Process
-
-The “next stable” version is currently defined as the latest version with its patch number increased by one.
-(In the future, this definition will change to follow proper semantic versioning.)
-
-A stable version is a release candidate that has successfully completed the release‑candidate process and is then promoted to stable.
-
-### Release Candidate Process
-
-Before releasing a new stable version, we release a new "release candidate" (rc) version. This allows the odigos team to test and validate the new version, and for the community to pull in latest bug fixes and features and provide feedback.
-
-If any bugs are found in the release candidate, they should be fixed and a new release candidate should be released with the "rc" suffix incremented by 1.
-
-After a release candidate is tested and validated, it is promoted to a stable release.
-
-Release candidates are always made against the next stable version, with the "-rcY" suffix, where Y is the release candidate number, starting from 0 and incrementing by 1 on every new release candidate to the same stable release version.
+Stable releases are the default and recommended version to install. Release candidates and pre-release versions are opt-in and require the user to explicitly take an action to install them.
 
 ## Consuming Odigos Versions
 

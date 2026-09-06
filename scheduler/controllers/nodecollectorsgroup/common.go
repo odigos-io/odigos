@@ -132,13 +132,6 @@ func getResourceSettings(odigosConfiguration common.OdigosConfiguration) odigosv
 	}
 }
 
-func calculateSpanMetricsEnabled(userSettings *bool, destinationTypeManifest destinations.Destination) bool {
-	if userSettings == nil {
-		return destinationTypeManifest.Spec.Signals.Metrics.SpanMetricsEnabledByDefault
-	}
-	return *userSettings
-}
-
 func getHostMetricsConfiguration(odigosConfiguration *common.OdigosConfiguration) *common.MetricsSourceHostMetricsConfiguration {
 
 	var hostMetricsCopy common.MetricsSourceHostMetricsConfiguration
@@ -211,22 +204,17 @@ func updateMetricsSettingsForDestination(metricsConfig *odigosv1.CollectorsGroup
 		metricsConfig.AgentsTelemetry = &odigosv1.AgentsTelemetrySettings{}
 		metricsConfig.HostMetrics = getHostMetricsConfiguration(odigosConfiguration)
 		metricsConfig.KubeletStats = getKubeletStatsConfiguration(odigosConfiguration)
-		if calculateSpanMetricsEnabled(nil, destinationTypeManifest) {
-			metricsConfig.SpanMetrics = getSpanMetricsConfiguration(odigosConfiguration)
-		}
+		metricsConfig.SpanMetrics = getSpanMetricsConfiguration(odigosConfiguration)
 		return
 	}
 
-	// is span metrics not set, use the destination manifest default
-	if calculateSpanMetricsEnabled(metricsSettings.CollectSpanMetrics, destinationTypeManifest) {
+	if metricsSettings.CollectSpanMetrics == nil || *metricsSettings.CollectSpanMetrics {
 		metricsConfig.SpanMetrics = getSpanMetricsConfiguration(odigosConfiguration)
 	}
 
-	// default host metrics collection to "true"
 	if metricsSettings.CollectHostMetrics == nil || *metricsSettings.CollectHostMetrics {
 		metricsConfig.HostMetrics = getHostMetricsConfiguration(odigosConfiguration)
 	}
-	// default kubelet stats collection to "true"
 	if metricsSettings.CollectKubeletStats == nil || *metricsSettings.CollectKubeletStats {
 		metricsConfig.KubeletStats = getKubeletStatsConfiguration(odigosConfiguration)
 	}

@@ -1,73 +1,62 @@
-import GettingHelp from '/snippets/shared/getting-help-section.mdx'
-import { BenchmarksChart } from '/snippets/shared/pipeline/benchmarks-chart.mdx'
-
-export const flavor = "enterprise"
+import { GatewayChart, NodeCollectorChart } from '/snippets/shared/pipeline/benchmarks-chart.mdx'
+import BenchmarksFooter from '/snippets/shared/pipeline/benchmarks-footer.mdx'
 
 The [ResourceSizePreset](./configuration#1-using-sizing-configuration) profiles (`size_s`, `size_m`, `size_l`, and `size_xl`) map collector resources and scaling headroom to telemetry volume. Use this page to assist you in picking a preset.
 
 ## Total span throughput
 
-You should calculate your system's current span throughput in bytes/second. This will affect the size of cluster you'll need to choose.
+Span throughput is the metric we use for benchmarking and estimating the resources needed to operate Odigos.
 
-To measure throughput in the Odigos UI and get collector-level health metrics, enable the own metrics store on the [Odigos Own Metrics](./odigos-own-metrics) page, then compare your observed bytes/sec against the preset tables below.
+To calculate the total span throughput (bytes/second), you can either:
+- Estimate your monthly span volume in bytes, which can often be inferred from your existing observability tools. If you only know the number of spans, multiply it by the average span size in bytes to estimate the total volume. Then convert the monthly volume to bytes per second.
+- View the span throughput in the Odigos UI under "collectors pipeline". 
 
-Do note that while span throughput is a measurable metric, there are additional components which contribute variably to the maximal span throughput your Odigos can handle:
+<Info>
+Collector pipeline UI requires enabling the [Odigos Own Metrics](./odigos-own-metrics) feature.
+</Info>
 
-- **Number of instrumented workloads** — more services and pods mean more spans and metrics flowing through the pipeline.
-- **Telemetry volume per workload** — high-throughput APIs, verbose instrumentation, or payload collection increase per-node load.
-- **Destinations** — additional exporters, batching, and tail sampling add gateway CPU and memory pressure.
+Note that while **total span throughput** is the primary metric for determining the appropriate Odigos preset size, additional factors can affect the maximum span throughput your Odigos deployment can handle:
+
+- **Number of instrumented pods** - each instrumented pod consumes a small amount of additional static resources in the node collector.
+- **Pipeline features** - actions and destinations consume additional collector CPU and memory resources.
 
 ## Cluster preset vs. total span throughput
 
-### Cluster gateway collector, per single collector:
+### Maximal single collector capacity
 
-| Size     | Span throughput (MB/second)      | Spans/second      | Request CPU (m)      | Limit CPU (m)      | Request Memory (Mi) | Limit Memory (Mi) |
-|----------|-----------------------|----------------------|-----------------|---------------|----------------------|-------------------|
-| `size_s` | **10**                 | **5,400**                | **300m**        | **300m**      | **300Mi**            | **300Mi**         |
-| `size_m` | **35**                 | **19,200**                | **1,000m**       | **1,000m**     | **600Mi**            | **600Mi**         |
-| `size_l` | **42**                 | **23,400**               | **1,250m**       | **1,250m**     | **850Mi**            | **850Mi**         |
-| `size_xl`| **59**                 | **32,400**               | **1,500m**       | **1,500m**     | **2,000Mi**           | **2,000Mi**        |
+#### Cluster gateway (1 pod) ([see maximum capacity here](#maximum-scaled-cluster))
 
-<BenchmarksChart flavor={flavor} />
+The cluster gateway is a Deployment that receives telemetry from node collectors, processes it, and exports it to your destinations.
 
-### Maximum scaled cluster gateway capacity, for the entire cluster:
+<GatewayChart />
 
-| Size     | HPA Maximum Replicas | Span throughput (MB/second) | Spans/second |
-|----------|----------------------|-----------------------------|--------------|
-| `size_s` | **5**                | **50**                      | **27,000**    |
-| `size_m` | **8**                | **280**                     | **153,600**   |
-| `size_l` | **12**               | **504**                     | **280,800**   |
-| `size_xl`| **15**               | **885**                     | **486,000**   |
+| Size      | spans/s    | span throughput (MB/second) |
+|-----------|-----------:|----------------------------:|
+| `size_s`  | **3,000**  | **5.8**  |
+| `size_m`  | **18,000** | **34.5** |
+| `size_l`  | **23,000** | **44.1** |
+| `size_xl` | **31,500** | **60.4** |
 
+#### Node collector
 
+The node collector is a DaemonSet (one pod per node) that receives telemetry from apps on that node and forwards it to the cluster gateway.
 
-<Note>
-These throughput numbers come from the benchmark cluster described below. Actual limits vary with workload shape, destinations, and cluster size.
-</Note>
+<NodeCollectorChart instrumentation="enterprise" />
 
-## How did we test this?
+| Size      | spans/s    | span throughput (MB/second) |
+|-----------|-----------:|----------------------------:|
+| `size_s`  | **18,000** | **34.5**  |
+| `size_m`  | **37,000** | **71.0**  |
+| `size_l`  | **51,500** | **98.8**  |
+| `size_xl` | **60,000** | **115.1** |
 
-We've modeled our benchmark tests against a "typical" cluster, which has:
+### Maximum scaled cluster gateway capacity
 
-- 120 nodes
-- 500 sources (=span emitters)
-- 2 different service 
-- Span is ~1,918B, contains: 
-    - 9 HTTP semconv attributes
-    - 24 random attributes
-- Each trace has a server span and a client span
-- 100 spans per request
-- A mock destination with a 200ms response time
+| Size      | HPA Maximum Replicas | spans/s     | span throughput (MB/second) |
+|-----------|---------------------:|------------:|----------------------------:|
+| `size_s`  | **5**                | **15,000**  | **28.8**   |
+| `size_m`  | **8**                | **144,000** | **276.2**  |
+| `size_l`  | **12**               | **276,000** | **529.4**  |
+| `size_xl` | **15**               | **472,500** | **906.3**  |
 
-## Troubleshooting
-
-If you experience any of the following symptoms consistently:
-
-- Memory limit hits or OOMKills
-- CPU throttling under steady load
-- Gateway HPA scaling to max replicas frequently
-- Export backlogs or dropped spans at destinations
-
-Try to bump the preset or tune individual `collectorGateway` / `collectorNode` values on the [Configuration](./configuration) page.
-
-<GettingHelp />
+<BenchmarksFooter />

@@ -6,6 +6,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
+	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -63,7 +64,7 @@ func TestHasUninstrumentedPodsWithBackoff_CrashLoopBackOff(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, condition, "expected condition when backoff detected")
 	assert.Equal(t, metav1.ConditionFalse, condition.Status)
-	assert.Equal(t, odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff, condition.Reason)
+	assert.Equal(t, odigosv1alpha1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonCrashLoopBackOff), condition.Reason)
 }
 
 func TestHasUninstrumentedPodsWithBackoff_CrashLoopBackOff_WithOdigosLabel(t *testing.T) {

@@ -2,7 +2,13 @@ TAG ?= $(shell odigos version --cluster 2>/dev/null || odigos version --cli 2>/d
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
-ORG ?= registry.odigos.io
+ODIGOS_NS ?= odigos-system
+OSS_ORG ?= docker.io/keyval
+ENTERPRISE_ORG ?= registry.odigos.io
+# Default for builds/pushes. Local deploy/load-to-kind resolve registry + image name
+# via scripts/resolve-dev-image.sh so OSS make deploy works against enterprise
+# installs (registry.odigos.io, odigos-enterprise-ui, etc.).
+ORG ?= $(OSS_ORG)
 # Override ORG for staging pushes
 ifeq ($(STAGING_ORG),true)
     ORG = us-central1-docker.pkg.dev/odigos-cloud/staging-components
@@ -21,9 +27,7 @@ TARGET?=
 RHEL?=false
 BUILD_DIR=.
 
-# RHEL-certified CLI (ko + Dockerfile.rhel-base); matches .github/workflows/publish-modules-rhel publish-cli-rhel
-CLI_RHEL_IMAGE_NAME ?= odigos-cli-rhel-certified
-CLI_RHEL_KO_BASE_IMAGE ?= $(ORG)/odigos-cli-rhel-ko-base:$(TAG)
+include cli.mk
 
 ifeq ($(RHEL),true)
     IMG_SUFFIX=-rhel-certified
@@ -40,6 +44,24 @@ endif
 ifneq ($(strip $(TARGET)),)
   TARGET_FLAG := --target $(TARGET)
 endif
+
+# When ORG is set on the CLI or environment, force that registry in deploy resolution.
+# The Makefile default (OSS_ORG) is not forced so enterprise clusters get ENTERPRISE_ORG.
+ifneq ($(filter command line environment,$(origin ORG)),)
+  DEV_IMAGE_ORG_OVERRIDE := $(ORG)
+endif
+
+# IMAGE=registry/name:tag overrides resolution for a single-component deploy.
+# Otherwise resolve registry + repository from the live cluster / install tier.
+dev_image_repo = $(shell \
+	ODIGOS_NS=$(ODIGOS_NS) \
+	ODIGOS_ENTERPRISE=$(ODIGOS_ENTERPRISE) \
+	ORG_OVERRIDE=$(DEV_IMAGE_ORG_OVERRIDE) \
+	OSS_ORG=$(OSS_ORG) \
+	ENTERPRISE_ORG=$(ENTERPRISE_ORG) \
+	IMG_SUFFIX=$(IMG_SUFFIX) \
+	bash $(CURDIR)/scripts/resolve-dev-image.sh $(1))
+dev_image = $(or $(IMAGE),$(call dev_image_repo,$(1)):$(TAG))
 
 .PHONY: install-golangci-lint
 install-golangci-lint:
@@ -79,14 +101,6 @@ lint-fix:
 	MODULE=destinations make lint FIX_LINT=true
 	MODULE=procdiscovery make lint FIX_LINT=true
 
-.PHONY: cli-docs
-cli-docs:
-	rm -rf docs/snippets/shared/cli/*
-	cd scripts/cli-docgen && KUBECONFIG=KUBECONFIG go run -tags embed_manifests main.go
-	for file in docs/snippets/shared/cli/*.md; do \
-		mv $${file} $${file%.md}.mdx; \
-	done
-
 .PHONY: rbac-docs
 rbac-docs:
 	cd scripts/rbac-docgen && go run main.go
@@ -108,9 +122,10 @@ helm-schema-clean:
 	rm -f $(HELM_SCHEMA_BIN)
 
 # Pass DOCKER_BUILD_OPTS=--no-cache to force a clean build (e.g. when go.mod replace changes and cache is stale).
+# IMAGE= overrides the default $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) tag (used by deploy-*).
 build-image/%:
 	docker build $(DOCKER_BUILD_OPTS) $(TARGET_FLAG) \
-	-t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	-t $(or $(IMAGE),$(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)) $(BUILD_DIR) -f $(DOCKERFILE) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg ODIGOS_VERSION=$(TAG) \
 	--build-arg VERSION=$(TAG) \
@@ -240,46 +255,62 @@ push-images-rhel:
 	$(MAKE) push-images RHEL=true TAG=$(TAG) ORG=$(ORG)
 
 load-to-kind-%:
-	kind load docker-image $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)
+	kind load docker-image $(call dev_image,$*)
+
+# Victoria Metrics is not built from this repo — pull the published image and retag for e2e.
+# Materialize a single-platform image via buildx --load so kind load does not fail on
+# multi-arch manifests (ctr: content digest ... not found).
+# kind's LoadImageArchive always runs: ctr images import --all-platforms
+# See https://github.com/kubernetes-sigs/kind/issues/3795
+.PHONY: load-to-kind-victoria-metrics
+load-to-kind-victoria-metrics:
+	printf 'FROM $(ORG)/odigos-victoria-metrics:latest\n' | docker buildx build \
+		--platform=linux/$$(docker version -f '{{.Server.Arch}}') \
+		--pull \
+		-t $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG) \
+		--load \
+		-
+	kind load docker-image $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG)
 
 .PHONY: load-to-kind
 load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-browser-proxy load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-browser-proxy load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: restart-ui
 restart-ui:
-	-kubectl rollout restart deployment odigos-ui -n odigos-system
+	-kubectl rollout restart deployment odigos-ui -n $(ODIGOS_NS)
 
 .PHONY: restart-odiglet
 restart-odiglet:
-	-kubectl rollout restart daemonset odiglet -n odigos-system
+	-kubectl rollout restart daemonset odiglet -n $(ODIGOS_NS)
 
 .PHONY: restart-autoscaler
 restart-autoscaler:
-	-kubectl rollout restart deployment odigos-autoscaler -n odigos-system
+	-kubectl rollout restart deployment odigos-autoscaler -n $(ODIGOS_NS)
 
 .PHONY: restart-instrumentor
 restart-instrumentor:
-	-kubectl rollout restart deployment odigos-instrumentor -n odigos-system
+	-kubectl rollout restart deployment odigos-instrumentor -n $(ODIGOS_NS)
 
 .PHONY: restart-scheduler
 restart-scheduler:
-	-kubectl rollout restart deployment odigos-scheduler -n odigos-system
+	-kubectl rollout restart deployment odigos-scheduler -n $(ODIGOS_NS)
 
 .PHONY: restart-collector
 restart-collector:
-	-kubectl rollout restart deployment odigos-gateway -n odigos-system
+	-kubectl rollout restart deployment odigos-gateway -n $(ODIGOS_NS)
 	# DaemonSets don't directly support the rollout restart command in the same way Deployments do. However, you can achieve the same result by updating an environment variable or any other field in the DaemonSet's pod template, triggering a rolling update of the pods managed by the DaemonSet
 	# Restart the odiglet DaemonSet because data-collection Collector is part of it
-	-kubectl -n odigos-system patch daemonset odiglet -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
+	-kubectl -n $(ODIGOS_NS) patch daemonset odiglet -p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"kubectl.kubernetes.io/restartedAt\":\"$(date +%Y-%m-%dT%H:%M:%S%z)\"}}}}}"
 
+# Resolves registry + image name for the current install (OSS vs enterprise) so
+# `make deploy-autoscaler` from this repo tags/loads the image the cluster expects.
 deploy-%:
-	@if [ "$*" = "odiglet" ]; then \
-		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws; \
-	fi
-	$(MAKE) build-$* ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX)
-	$(MAKE) load-to-kind-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX)
-	@if [ "$*" != "agents" ]; then \
+	@img="$(call dev_image,$*)"; \
+	echo "Deploying $$img"; \
+	$(MAKE) build-$* IMAGE=$$img ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX); \
+	$(MAKE) load-to-kind-$* IMAGE=$$img ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX); \
+	if [ "$*" != "agents" ]; then \
 		$(MAKE) restart-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX); \
 	fi
 
@@ -289,11 +320,13 @@ deploy:
 
 .PHONY: debug-odiglet
 debug-odiglet:
-	docker build -t $(ORG)/odigos-odiglet:$(TAG) . -f odiglet/debug.Dockerfile
-	kind load docker-image $(ORG)/odigos-odiglet:$(TAG)
-	kubectl delete pod -n odigos-system -l app.kubernetes.io/name=odiglet
-	kubectl wait --for=condition=ready pod -n odigos-system -l app.kubernetes.io/name=odiglet --timeout=180s
-	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
+	@img="$(call dev_image,odiglet)"; \
+	echo "Building debug odiglet as $$img"; \
+	docker build -t $$img . -f odiglet/debug.Dockerfile; \
+	kind load docker-image $$img; \
+	kubectl delete pod -n $(ODIGOS_NS) -l app.kubernetes.io/name=odiglet; \
+	kubectl wait --for=condition=ready pod -n $(ODIGOS_NS) -l app.kubernetes.io/name=odiglet --timeout=180s; \
+	kubectl port-forward -n $(ODIGOS_NS) daemonset/odiglet 2345:2345
 
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -v "licenses")
 
@@ -303,16 +336,27 @@ go-mod-tidy/%: DIR=$*
 go-mod-tidy/%:
 	@cd $(DIR) && go mod tidy -compat=1.21
 
+# `go build`/`go test`/`go mod tidy` only need to resolve packages actually compiled, so a module whose
+# graph contains an unresolvable dependency (e.g. one only reachable via another module's own internal-only
+# replace directive) can pass all three while still being completely broken for tooling that loads the whole
+# module graph, like gopls/GoLand's `go list -m all`. This target reproduces that exact call per module so
+# CI catches it instead of a contributor's IDE (see CORE-1400).
+.PHONY: verify-go-mod-graph
+verify-go-mod-graph: $(ALL_GO_MOD_DIRS:%=verify-go-mod-graph/%)
+verify-go-mod-graph/%: DIR=$*
+verify-go-mod-graph/%:
+	@cd $(DIR) && go list -mod=mod -m all > /dev/null
+
 .PHONY: update-dep
 update-dep: $(ALL_GO_MOD_DIRS:%=update-dep/%)
 update-dep/%: DIR=$*
 update-dep/%:
 	cd $(DIR) && go get $(MODULE)@$(VERSION)
 
-UNSTABLE_COLLECTOR_VERSION=v0.151.0
-STABLE_COLLECTOR_VERSION=v1.57.0
-STABLE_OTEL_GO_VERSION=v1.44.0
-UNSTABLE_OTEL_GO_VERSION=v0.68.0
+UNSTABLE_COLLECTOR_VERSION=v0.159.0
+STABLE_COLLECTOR_VERSION=v1.65.0
+STABLE_OTEL_GO_VERSION=v1.46.0
+UNSTABLE_OTEL_GO_VERSION=v0.70.0
 
 .PHONY: update-otel
 update-otel:
@@ -362,50 +406,6 @@ check-clean-work-tree:
 		echo 'Working tree is not clean, did you forget to run "make go-mod-tidy"?'; \
 		exit 1; \
 	fi
-
-# installs odigos from the local source, with local changes to api and cli directorie reflected in the odigos deployment
-.PHONY: cli-install
-cli-install:
-	@echo "Installing odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . install \
-		--version $(ODIGOS_CLI_VERSION) \
-		--nowait \
-		$(if $(CLUSTER_NAME),--cluster-name $(CLUSTER_NAME)) \
-		$(if $(CENTRAL_BACKEND_URL),--central-backend-url $(CENTRAL_BACKEND_URL)) \
-		$(FLAGS)
-
-
-.PHONY: cli-uninstall
-cli-uninstall:
-	@echo "Uninstalling odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . uninstall
-
-.PHONY: cli-upgrade
-cli-upgrade:
-	@echo "Upgrading odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . upgrade --version $(ODIGOS_CLI_VERSION) --yes
-
-.PHONY: cli-build
-cli-build:
-	@echo "Building the cli executable for tests"
-	TAG=0.0.0-e2e-test; \
-	TMPDIR=$$(mktemp -d); \
-	cp -r ./helm/odigos $$TMPDIR/odigos; \
-	sed -i.bak -E 's/^version:.*/version: '"$${TAG#v}"'/' $$TMPDIR/odigos/Chart.yaml; \
-	helm package $$TMPDIR/odigos -d cli/pkg/helm/embedded; \
-	cp -r ./helm/odigos-central $$TMPDIR/odigos-central; \
-	sed -i.bak -E 's/^version:.*/version: '"$${TAG#v}"'/' $$TMPDIR/odigos-central/Chart.yaml; \
-	helm package $$TMPDIR/odigos-central -d cli/pkg/helm/embedded; \
-	cd cli && go build -tags=embed_manifests \
-	  -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=$${TAG#v}" \
-	  -o odigos .; \
-	rm -rf $$TMPDIR
-
-
-.PHONY: cli-diagnose
-cli-diagnose:
-	@echo "Diagnosing cluster data for debugging"
-	cd ./cli ; go run -tags=embed_manifests . diagnose
 
 .PHONY: helm-install
 helm-install:
@@ -547,57 +547,6 @@ publish-to-ecr:
 	make -j 3 build-tag-push-ecr-image/browser-proxy DOCKERFILE=browser-proxy/$(DOCKERFILE) SUMMARY="Browser proxy for Odigos" DESCRIPTION="Sidecar that injects the OpenTelemetry browser SDK into served HTML and proxies browser telemetry to the Odigos collector." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 	echo "✅ Deployed Odigos to EKS, now install the CLI"
 
-.PHONY: build-cli-image
-build-cli-image:
-	cd cli && \
-	KO_DOCKER_REPO=$(ORG)/odigos-cli$(IMG_SUFFIX) \
-	VERSION=$(TAG) \
-	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
-	DATE=$(shell date -u +'%Y-%m-%d_%H:%M:%S') \
-	ko build --bare --tags $(TAG) --local .
-
-.PHONY: build-cli-image-rhel
-build-cli-image-rhel:
-	cd cli && $(MAKE) licenses
-	cd cli && docker build -f Dockerfile.rhel-base -t $(CLI_RHEL_KO_BASE_IMAGE) .
-	cd cli && \
-	KO_DOCKER_REPO=$(ORG)/$(CLI_RHEL_IMAGE_NAME) \
-	KO_DEFAULTBASEIMAGE=$(CLI_RHEL_KO_BASE_IMAGE) \
-	KO_CONFIG_PATH=./.ko.yaml \
-	VERSION=$(TAG) \
-	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
-	DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
-	ko build --bare --tags $(TAG) --local .
-
-.PHONY: push-cli-image-rhel
-push-cli-image-rhel:
-	@if [ "$(PUSH_IMAGE)" != "true" ]; then \
-		echo "this command will push the image to the public registry; set PUSH_IMAGE=true" >&2; \
-		exit 1; \
-	fi
-	cd cli && $(MAKE) licenses
-	docker buildx build --platform linux/amd64,linux/arm64 \
-		-f cli/Dockerfile.rhel-base \
-		-t $(CLI_RHEL_KO_BASE_IMAGE) \
-		--push \
-		cli
-	cd cli && \
-	KO_DOCKER_REPO=$(ORG)/$(CLI_RHEL_IMAGE_NAME) \
-	KO_DEFAULTBASEIMAGE=$(CLI_RHEL_KO_BASE_IMAGE) \
-	KO_CONFIG_PATH=./.ko.yaml \
-	VERSION=$(TAG) \
-	SHORT_COMMIT=$(shell git rev-parse --short HEAD) \
-	DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
-	ko build --bare --tags $(TAG) \
-		--image-label name=odigos-cli \
-		--image-label vendor=Odigos \
-		--image-label maintainer=Odigos \
-		--image-label version=$(TAG) \
-		--image-label release=$(TAG) \
-		--image-label summary="Odigos CLI" \
-		--image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
-		--platform=all .
-
 # install gatekeeper to prevent:
 # 1. privileged containers
 # 2. hostPath volumes (except for some specific paths which are allowed on most clusters)
@@ -620,4 +569,3 @@ install-gatekeeper:
 		backoff=$$((backoff * 2)); \
 		attempt=$$((attempt + 1)); \
 	done
-

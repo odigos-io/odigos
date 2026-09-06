@@ -51,7 +51,19 @@ type LogsConfig struct {
 type Telemetry struct {
 	Metrics  MetricsConfig      `json:"metrics,omitempty"`
 	Logs     LogsConfig         `json:"logs,omitempty"`
-	Resource map[string]*string `json:"resource,omitempty"`
+	Resource *TelemetryResource `json:"resource,omitempty" yaml:"resource,omitempty"`
+}
+
+// TelemetryResource holds user-defined resource attributes attached to the collector's
+// own telemetry. It uses the otelconf declarative schema (service.telemetry.resource.attributes),
+// which replaced the deprecated inline map format.
+type TelemetryResource struct {
+	Attributes []ResourceAttribute `json:"attributes,omitempty"`
+}
+
+type ResourceAttribute struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type Service struct {
@@ -144,21 +156,19 @@ func mergeMetricsLevel(level1 string, level2 string) (string, error) {
 	}
 }
 
-func mergeTelemetryResource(resource1 map[string]*string, resource2 map[string]*string) map[string]*string {
-	if len(resource1) == 0 { // shortcut for common cases
+func mergeTelemetryResource(resource1 *TelemetryResource, resource2 *TelemetryResource) *TelemetryResource {
+	if resource1 == nil || len(resource1.Attributes) == 0 { // shortcut for common cases
 		return resource2
-	} else if len(resource2) == 0 {
+	} else if resource2 == nil || len(resource2.Attributes) == 0 {
 		return resource1
 	}
 
-	mergedResource := make(map[string]*string, len(resource1)+len(resource2))
-	for k, v := range resource1 {
-		mergedResource[k] = v
+	merged := &TelemetryResource{
+		Attributes: make([]ResourceAttribute, 0, len(resource1.Attributes)+len(resource2.Attributes)),
 	}
-	for k, v := range resource2 {
-		mergedResource[k] = v
-	}
-	return mergedResource
+	merged.Attributes = append(merged.Attributes, resource1.Attributes...)
+	merged.Attributes = append(merged.Attributes, resource2.Attributes...)
+	return merged
 }
 
 func mergeTelemetryReaders(readers1 []GenericMap, readers2 []GenericMap) []GenericMap {

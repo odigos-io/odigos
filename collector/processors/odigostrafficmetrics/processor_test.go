@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pprofiletest"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/ptracetest"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/pdata/pprofile"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor/processortest"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -37,6 +39,70 @@ func TestProcessor_Logs(t *testing.T) {
 }
 
 func TestProcessor_Metrics(t *testing.T) {
+}
+
+func generateProfileData(serviceNames ...string) pprofile.Profiles {
+	pd := pprofile.NewProfiles()
+	pd.Dictionary().StringTable().Append("")
+	for _, serviceName := range serviceNames {
+		rp := pd.ResourceProfiles().AppendEmpty()
+		rp.Resource().Attributes().PutStr(string(semconv.ServiceNameKey), serviceName)
+		prof := rp.ScopeProfiles().AppendEmpty().Profiles().AppendEmpty()
+		prof.Samples().AppendEmpty()
+	}
+	return pd
+}
+
+func TestProcessor_Profiles(t *testing.T) {
+	metricsReader := metric.NewManualReader()
+	defer metricsReader.Shutdown(context.Background())
+
+	metricProvider := metric.NewMeterProvider(
+		metric.WithReader(metricsReader),
+	)
+	defer metricProvider.Shutdown(context.Background())
+
+	set := processortest.NewNopSettings(processortest.NopType)
+	set.MeterProvider = metricProvider
+
+	tmp, err := newThroughputMeasurementProcessor(set, &Config{
+		ResourceAttributesKeys: []string{"service.name"},
+		SamplingRatio:          1,
+	})
+	require.NoError(t, err)
+
+	profiles := generateProfileData("service-name1", "service-name2")
+
+	processedProfiles, err := tmp.processProfiles(context.Background(), profiles)
+	require.NoError(t, err)
+
+	// Output profiles should be the same as input profiles (passthrough check)
+	require.NoError(t, pprofiletest.CompareProfiles(profiles, processedProfiles))
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, metricsReader.Collect(context.Background(), &rm))
+
+	var sawDataSize, sawAcceptedSamples bool
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			switch m.Name {
+			case "otelcol_odigos_profile_data_size":
+				sawDataSize = true
+				sum := m.Data.(metricdata.Sum[int64])
+				require.Equal(t, 2, len(sum.DataPoints))
+				for i := range 2 {
+					require.Greater(t, sum.DataPoints[i].Value, int64(0))
+				}
+			case "otelcol_odigos_accepted_profile_samples":
+				sawAcceptedSamples = true
+				sum := m.Data.(metricdata.Sum[int64])
+				require.Equal(t, 1, len(sum.DataPoints))
+				require.Equal(t, int64(2), sum.DataPoints[0].Value)
+			}
+		}
+	}
+	require.True(t, sawDataSize, "expected otelcol_odigos_profile_data_size metric")
+	require.True(t, sawAcceptedSamples, "expected otelcol_odigos_accepted_profile_samples metric")
 }
 
 func TestProcessor_Traces(t *testing.T) {

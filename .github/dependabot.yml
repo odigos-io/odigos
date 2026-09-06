@@ -13,16 +13,23 @@ updates:
       - /autoscaler
       - /cli
       - /common
+      - /config
       - /destinations
+      - /deviceplugin
+      - /distros
       - /frontend
       - /instrumentation
+      - /instrumentationrules
       - /instrumentor
       - /k8sutils
       - /odiglet
+      - /odigosauth
       - /opampserver
+      - /operator
       - /procdiscovery
       - /profiles
       - /scheduler
+      - /status
     schedule:
       day: sunday
       interval: weekly
@@ -76,3 +83,5 @@ updates:
       interval: weekly
     allow:
       - dependency-name: 'registry.access.redhat.com/ubi9*'
+      - dependency-name: 'golang'
+      - dependency-name: 'gcr.io/distroless/*'

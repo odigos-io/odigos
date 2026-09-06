@@ -1,5 +1,5 @@
 # Base image: Go devcontainer with Debian bookworm
-FROM mcr.microsoft.com/devcontainers/go:dev-1.26.2-bookworm
+FROM mcr.microsoft.com/devcontainers/go:1.26-trixie
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \

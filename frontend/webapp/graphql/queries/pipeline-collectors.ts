@@ -16,6 +16,9 @@ export const GET_GATEWAY_INFO = gql`
           message
         }
       }
+      throughputTracesBytesPerSec
+      throughputMetricsBytesPerSec
+      throughputLogsBytesPerSec
       resources {
         requests {
           cpu
@@ -65,6 +68,9 @@ export const GET_NODE_COLLECTOR_INFO = gql`
         desired
         ready
       }
+      throughputTracesBytesPerSec
+      throughputMetricsBytesPerSec
+      throughputLogsBytesPerSec
       resources {
         requests {
           cpu

@@ -14,6 +14,10 @@ resource "azurerm_kubernetes_cluster" "aks" {
     vm_size    = "Standard_B4ms"
   }
 
+  node_provisioning_profile {
+    mode = "Manual"
+  }
+
   identity {
     type = "SystemAssigned"
   }

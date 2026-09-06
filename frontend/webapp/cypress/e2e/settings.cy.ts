@@ -1,13 +1,33 @@
 import { CONFIG_MAPS, DATA_IDS, NAMESPACES, ROUTES, TEXTS } from '../constants';
-import { awaitToast, handleExceptions, visitPage, waitForGraphqlOperation } from '../functions';
+import { awaitToast, cyExec, handleExceptions, visitPage, waitForGraphqlOperation } from '../functions';
 
 const namespace = NAMESPACES.ODIGOS;
 const testClusterName = 'cypress-e2e-test';
 let originalClusterName = '';
 
 const getConfigMapYaml = (configMapName: string, callback: (yaml: string) => void) => {
-  cy.exec(`kubectl get configmap ${configMapName} -n ${namespace} -o jsonpath='{.data.config\\.yaml}'`).then(({ stdout }) => {
+  cyExec(`kubectl get configmap ${configMapName} -n ${namespace} -o jsonpath='{.data.config\\.yaml}'`).then(({ stdout }) => {
     callback(stdout);
+  });
+};
+
+// Parse clusterName from effective-config YAML for apples-to-apples comparison with the
+// settings input (strip trailing comments and surrounding quotes).
+const parseClusterName = (yaml: string): string => {
+  const match = yaml.match(/clusterName:\s*(.+)/);
+  if (!match) return '';
+  return match[1]
+    .replace(/\s+#.*$/, '')
+    .trim()
+    .replace(/^["']|["']$/g, '');
+};
+
+// Sync on both the GraphQL response and visible clusterName hydration. The settings form
+// schema can mount inputs before EffectiveConfig binds; waiting on the alias alone can
+// resolve while the field is still empty.
+const waitForSettingsHydrated = (expectedClusterName: string) => {
+  return waitForGraphqlOperation('GetEffectiveConfig').then(() => {
+    cy.get(DATA_IDS.SETTINGS_FIELD('clusterName')).should('exist').and('have.value', expectedClusterName);
   });
 };
 
@@ -107,12 +127,11 @@ describe('Settings CRUD', () => {
   // ── Setup ─────────────────────────────────────────────────────────────────
 
   it('Should capture initial state from the cluster', () => {
-    cy.exec(`kubectl delete configmap ${CONFIG_MAPS.LOCAL_UI_CONFIG} -n ${namespace}`, { failOnNonZeroExit: false });
+    cyExec(`kubectl delete configmap ${CONFIG_MAPS.LOCAL_UI_CONFIG} -n ${namespace}`, { failOnNonZeroExit: false });
     cy.wait(10000);
 
     getConfigMapYaml(CONFIG_MAPS.EFFECTIVE_CONFIG, (yaml) => {
-      const match = yaml.match(/clusterName:\s*(.+)/);
-      originalClusterName = match ? match[1].trim() : '';
+      originalClusterName = parseClusterName(yaml);
     });
   });
 
@@ -120,7 +139,7 @@ describe('Settings CRUD', () => {
 
   it('Should render config sections from the cluster', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
+      waitForSettingsHydrated(originalClusterName).then(() => {
         cy.contains('General').should('exist');
         cy.contains('Instrumentation').should('exist');
         cy.contains('Rollout & Rollback').should('exist');
@@ -138,15 +157,13 @@ describe('Settings CRUD', () => {
 
   it('Should render the clusterName field with its current value', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
-        cy.get(DATA_IDS.SETTINGS_FIELD('clusterName')).should('exist').and('have.value', originalClusterName);
-      });
+      waitForSettingsHydrated(originalClusterName);
     });
   });
 
   it('Should not show the Save/Cancel island when no changes are made', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
+      waitForSettingsHydrated(originalClusterName).then(() => {
         cy.get(DATA_IDS.SETTINGS_SAVE).should('not.exist');
         cy.get(DATA_IDS.SETTINGS_CANCEL).should('not.exist');
       });
@@ -157,7 +174,7 @@ describe('Settings CRUD', () => {
 
   it('Should show the Save/Cancel island when a field is modified, and revert on Cancel', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
+      waitForSettingsHydrated(originalClusterName).then(() => {
         const cancelTestValue = (originalClusterName || 'cluster') + '-cancel-test';
 
         cy.get(DATA_IDS.SETTINGS_FIELD('clusterName')).click().focused().clear().type(cancelTestValue);
@@ -177,7 +194,7 @@ describe('Settings CRUD', () => {
 
   it('Should update all non-helm-only, non-enterprise-only fields and save successfully', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
+      waitForSettingsHydrated(originalClusterName).then(() => {
         // ─ General ─
         setInput('clusterName', testClusterName);
         clickToggle('telemetryEnabled');
@@ -309,7 +326,7 @@ describe('Settings CRUD', () => {
 
   it('Should display saved values in UI fields after page refresh', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
+      waitForSettingsHydrated(testClusterName).then(() => {
         // No dirty state after fresh load
         cy.get(DATA_IDS.SETTINGS_SAVE).should('not.exist');
         cy.get(DATA_IDS.SETTINGS_CANCEL).should('not.exist');
@@ -370,7 +387,7 @@ describe('Settings CRUD', () => {
 
   it('Should reset settings via the Reset button and confirm modal', () => {
     visitPage(ROUTES.SETTINGS, () => {
-      waitForGraphqlOperation('GetEffectiveConfig').then(() => {
+      waitForSettingsHydrated(testClusterName).then(() => {
         // Reset is now an icon-only toolbar action (tooltip "Reset to defaults") — the last
         // button in the settings toolbar actions group (anchored via the labeled "Show Config YAML").
         cy.contains('Show Config YAML')

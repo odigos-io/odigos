@@ -44,6 +44,57 @@ export const visitPage = (path: string, callback?: () => void) => {
   });
 };
 
+// Click without an intervening `.should('exist')`, which settles the subject and
+// disables Cypress query re-resolution — a common flake when overview rows re-render
+// (SSE / GraphQL refetch) mid-click ("the page updated while this command was executing").
+export const clickRetryable = (selector: string, contains?: string) => {
+  if (contains != null) {
+    cy.contains(selector, contains).click();
+  } else {
+    cy.get(selector).click();
+  }
+};
+
+export const waitForDrawerClosed = () => {
+  cy.get(DATA_IDS.DRAWER).should('not.exist');
+};
+
+export type CyExecResult = { code: number; stdout: string; stderr: string };
+
+/** Drop-in for removed Cypress 16 `cy.exec()` — runs via `cy.task('exec')`. */
+export const cyExec = (command: string, options?: { failOnNonZeroExit?: boolean }) => cy.task<CyExecResult>('exec', { command, failOnNonZeroExit: options?.failOnNonZeroExit ?? true });
+
+const openOverviewEntity = ({ nodeId, nodeContains }: { nodeId: string; nodeContains?: string }) => {
+  clickRetryable(nodeId, nodeContains);
+  cy.get(DATA_IDS.DRAWER).should('exist');
+};
+
+interface WaitForCrdCountOptions {
+  namespace: string;
+  crdName: string;
+  minCount: number;
+  maxAttempts?: number;
+  intervalMs?: number;
+}
+
+// Poll until CRD count is >= minCount (create path can lag behind the UI toast on slower clusters).
+export const waitForCrdCount = ({ namespace, crdName, minCount, maxAttempts = 15, intervalMs = 2000 }: WaitForCrdCountOptions) => {
+  const attempt = (remaining: number): Cypress.Chainable<string[]> => {
+    return cyExec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`, { failOnNonZeroExit: false }).then(({ stdout }) => {
+      const crdIds = stdout.split('\n').filter((s) => !!s);
+      if (crdIds.length >= minCount) {
+        return cy.wrap(crdIds);
+      }
+      if (remaining <= 0) {
+        expect(crdIds.length).to.be.gte(minCount);
+        return cy.wrap(crdIds);
+      }
+      return cy.wait(intervalMs).then(() => attempt(remaining - 1));
+    });
+  };
+  return attempt(maxAttempts);
+};
+
 interface FindCrdOptions {
   namespace: string;
   crdName: string;
@@ -55,11 +106,11 @@ interface FindCrdOptions {
 export const findCrdId = ({ namespace, crdName, targetKey, targetValue }: FindCrdOptions, callback: (crdId: string) => void) => {
   const [parentKey, childKey] = targetKey.split('.');
 
-  cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then(({ stdout }) => {
+  cyExec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then(({ stdout }) => {
     const crdIds = stdout.split('\n').filter((str) => !!str);
 
     crdIds.forEach((crdId) => {
-      cy.exec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stdout }) => {
+      cyExec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stdout }) => {
         const parsed = JSON.parse(stdout);
         const { spec } = parsed?.items?.[0] || parsed || {};
         expect(spec).to.not.be.empty;
@@ -79,7 +130,7 @@ interface GetCrdIdsOptions {
 }
 
 export const getCrdIds = ({ namespace, crdName, expectedError, expectedLength }: GetCrdIdsOptions, callback?: (crdIds: string[]) => void) => {
-  cy.exec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then(({ stderr, stdout }) => {
+  cyExec(`kubectl get ${crdName} -n ${namespace} | awk 'NR>1 {print $1}'`).then(({ stderr, stdout }) => {
     expect(stderr).to.eq(expectedError);
 
     if (!!expectedError) {
@@ -114,7 +165,7 @@ export const getCrdById = ({ namespace, crdName, crdId, expectedError, expectedK
     throw new Error('No CRD ID provided to getCrdById');
   }
 
-  cy.exec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stderr, stdout }) => {
+  cyExec(`kubectl get ${crdName} ${crdId} -n ${namespace} -o json`).then(({ stderr, stdout }) => {
     expect(stderr).to.eq(expectedError);
 
     if (!!expectedError) {
@@ -145,13 +196,7 @@ interface UpdateEntityOptions {
 }
 
 export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: UpdateEntityOptions, callback?: () => void) => {
-  if (!!nodeContains) {
-    cy.contains(nodeId, nodeContains).should('exist').click();
-  } else {
-    cy.get(nodeId).should('exist').click();
-  }
-
-  cy.get(DATA_IDS.DRAWER).should('exist');
+  openOverviewEntity({ nodeId, nodeContains });
   cy.get(DATA_IDS.DRAWER_EDIT).click();
 
   cy.get(fieldKey).click().focused().clear().type(fieldValue);
@@ -159,6 +204,7 @@ export const updateEntity = ({ nodeId, nodeContains, fieldKey, fieldValue }: Upd
 
   cy.get(DATA_IDS.DRAWER_SAVE).click();
   cy.get(DATA_IDS.DRAWER_CLOSE).click();
+  waitForDrawerClosed();
   if (!!callback) callback();
 };
 
@@ -170,8 +216,7 @@ interface DeleteEntityOptions {
 }
 
 export const deleteEntity = ({ nodeId, nodeContains, warnModalTitle, warnModalNote }: DeleteEntityOptions, callback?: () => void) => {
-  cy.contains(nodeId, nodeContains).should('exist').click();
-  cy.get(DATA_IDS.DRAWER).should('exist');
+  openOverviewEntity({ nodeId, nodeContains });
   cy.get(DATA_IDS.DRAWER_DELETE).click();
 
   if (!!warnModalTitle) cy.get(DATA_IDS.MODAL).contains(warnModalTitle).should('exist');
@@ -180,6 +225,8 @@ export const deleteEntity = ({ nodeId, nodeContains, warnModalTitle, warnModalNo
   cy.get(DATA_IDS.APPROVE).click();
 
   if (!!callback) callback();
+
+  waitForDrawerClosed();
 };
 
 interface UpdateV2EntityOptions {
@@ -202,15 +249,9 @@ interface UpdateV2EntityOptions {
 // 1. open the entity's drawer by clicking its data-flow row
 // 2. open the drawer header's actions dropdown and click "Edit"
 // 3. update the named field and click "Save"
-// 4. close the drawer (it does not auto-close after save)
+// 4. close the drawer (it does not auto-close after save) and wait for Overlay unmount
 export const updateV2Entity = ({ nodeId, nodeContains, prefix, fieldKey, fieldValue }: UpdateV2EntityOptions, callback?: () => void) => {
-  if (!!nodeContains) {
-    cy.contains(nodeId, nodeContains).should('exist').click();
-  } else {
-    cy.get(nodeId).should('exist').click();
-  }
-
-  cy.get(DATA_IDS.DRAWER).should('exist');
+  openOverviewEntity({ nodeId, nodeContains });
 
   cy.get(DATA_IDS.DRAWER_ACTIONS).click();
   cy.get(DATA_IDS.DROPDOWN_OPTION(`${prefix}-btn-edit`)).click();
@@ -223,6 +264,7 @@ export const updateV2Entity = ({ nodeId, nodeContains, prefix, fieldKey, fieldVa
   if (!!callback) callback();
 
   cy.get(DATA_IDS.DRAWER_CLOSE).click();
+  waitForDrawerClosed();
 };
 
 interface DeleteV2EntityOptions {
@@ -235,19 +277,7 @@ interface DeleteV2EntityOptions {
 
 // v2 edit-drawer flow: open drawer → actions dropdown → "Delete" → confirm modal.
 export const deleteV2Entity = ({ nodeId, nodeContains, prefix, warnModalTitle, warnModalNote }: DeleteV2EntityOptions, callback?: () => void) => {
-  // Don't insert `.should('exist')` between the query and `.click()`: it
-  // settles the subject and disables Cypress's built-in query re-resolution,
-  // so a re-render of the overview (frequent here via the proxy round-trip +
-  // SSE-driven refetches) detaches the node mid-click ("the page updated
-  // while this command was executing"). Clicking straight off the query keeps
-  // the chain retryable, and `.click()` already asserts existence/visibility.
-  if (!!nodeContains) {
-    cy.contains(nodeId, nodeContains).click();
-  } else {
-    cy.get(nodeId).click();
-  }
-
-  cy.get(DATA_IDS.DRAWER).should('exist');
+  openOverviewEntity({ nodeId, nodeContains });
 
   cy.get(DATA_IDS.DRAWER_ACTIONS).click();
   cy.get(DATA_IDS.DROPDOWN_OPTION(`${prefix}-btn-delete`)).click();
@@ -258,6 +288,8 @@ export const deleteV2Entity = ({ nodeId, nodeContains, prefix, warnModalTitle, w
   cy.get(DATA_IDS.APPROVE).click();
 
   if (!!callback) callback();
+
+  waitForDrawerClosed();
 };
 
 interface AwaitToastOptions {

@@ -1,0 +1,154 @@
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: head-sampling-rules
+  namespace: odigos-test
+spec:
+  name: head-sampling percentage and route rules
+  notes: Sampling rules for the head-sampling Deployment (percentage / route matchers).
+  noisyOperations:
+    - name: sampled-0
+      notes: Explicit 0% sampling
+      percentageAtMost: 0
+      operation:
+        httpServer:
+          route: /sampling/percentage/sampled-0
+      sourceScopes: &headSamplingScopes
+        sources:
+          - kind: Deployment
+            name: head-sampling
+            namespace: default
+    - name: sampled-50
+      notes: 50% sampling
+      percentageAtMost: 50
+      operation:
+        httpServer:
+          route: /sampling/percentage/sampled-50
+      sourceScopes: *headSamplingScopes
+    - name: sampled-100
+      notes: 100% sampling
+      percentageAtMost: 100
+      operation:
+        httpServer:
+          route: /sampling/percentage/sampled-100
+      sourceScopes: *headSamplingScopes
+    - name: sampled-fallback
+      notes: No percentageAtMost — falls back to default 0%
+      operation:
+        httpServer:
+          route: /sampling/percentage/sampled-fallback
+      sourceScopes: *headSamplingScopes
+    - name: route-prefix-sampled-50
+      notes: 50% for routes under /sampling/route/prefix
+      percentageAtMost: 50
+      operation:
+        httpServer:
+          routePrefix: /sampling/route/prefix
+      sourceScopes: *headSamplingScopes
+    - name: exact-templated-route-sampled-50
+      notes: 50% for /sampling/route/exact/:itemId
+      percentageAtMost: 50
+      operation:
+        httpServer:
+          route: /sampling/route/exact/*
+      sourceScopes: *headSamplingScopes
+    - name: exact-templated-route-details-sampled-50
+      notes: 50% for /sampling/route/exact/:itemId/details/:detailId
+      percentageAtMost: 50
+      operation:
+        httpServer:
+          route: /sampling/route/exact/*/details/*
+      sourceScopes: *headSamplingScopes
+---
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: head-sampling-http-server-rules
+  namespace: odigos-test
+spec:
+  name: head-sampling http-server route match rules
+  notes: Head sampling for inbound /http-match/* on head-sampling-http-server.
+  noisyOperations:
+    - name: http-match-exact-route
+      notes: Exact literal path /http-match/exact/target
+      percentageAtMost: 50
+      operation:
+        httpServer:
+          route: /http-match/exact/target
+      sourceScopes: &httpServerScopes
+        sources:
+          - kind: Deployment
+            name: head-sampling-http-server
+            namespace: default
+    - name: http-match-prefix-route
+      notes: Prefix match for /http-match/prefix
+      percentageAtMost: 50
+      operation:
+        httpServer:
+          routePrefix: /http-match/prefix
+      sourceScopes: *httpServerScopes
+    - name: http-match-templatized-exact
+      notes: Templatized exact /http-match/texact/*
+      percentageAtMost: 50
+      operation:
+        httpServer:
+          route: /http-match/texact/*
+      sourceScopes: *httpServerScopes
+    - name: http-match-templatized-prefix
+      notes: Templatized prefix /http-match/tprefix/*/items
+      percentageAtMost: 50
+      operation:
+        httpServer:
+          routePrefix: /http-match/tprefix/*/items
+      sourceScopes: *httpServerScopes
+---
+apiVersion: odigos.io/v1alpha1
+kind: Sampling
+metadata:
+  name: head-sampling-http-client-rules
+  namespace: odigos-test
+spec:
+  name: head-sampling http-client outbound match rules
+  notes: Head sampling for periodic outbound HTTP client spans from head-sampling-http-client.
+  noisyOperations:
+    - name: http-match-outbound-exact
+      notes: Client GET to /http-match/exact/target
+      percentageAtMost: 50
+      operation:
+        httpClient:
+          serverAddress: head-sampling-http-server
+          templatedPath: /http-match/exact/target
+      sourceScopes: &httpClientScopes
+        sources:
+          - kind: Deployment
+            name: head-sampling-http-client
+            namespace: default
+    - name: http-match-outbound-post-exact
+      notes: Client POST to /http-match/exact/post-target
+      percentageAtMost: 10
+      operation:
+        httpClient:
+          method: POST
+          templatedPath: /http-match/exact/post-target
+      sourceScopes: *httpClientScopes
+    - name: http-match-outbound-prefix
+      notes: Prefix match for outbound /http-match/prefix
+      percentageAtMost: 50
+      operation:
+        httpClient:
+          templatedPathPrefix: /http-match/prefix
+      sourceScopes: *httpClientScopes
+    - name: http-match-outbound-templatized-exact
+      notes: Templatized exact outbound /http-match/texact/*
+      percentageAtMost: 50
+      operation:
+        httpClient:
+          templatedPath: /http-match/texact/*
+      sourceScopes: *httpClientScopes
+    - name: http-match-outbound-templatized-prefix
+      notes: Templatized prefix outbound /http-match/tprefix/*/items
+      percentageAtMost: 50
+      operation:
+        httpClient:
+          templatedPathPrefix: /http-match/tprefix/*/items
+      sourceScopes: *httpClientScopes

@@ -81,6 +81,8 @@ spec:
           value: registry.connect.redhat.com/odigos/odigos-autoscaler-rhel-certified:v1.25.0
         - name: RELATED_IMAGE_COLLECTOR
           value: registry.connect.redhat.com/odigos/odigos-collector-rhel-certified:v1.25.0
+        - name: RELATED_IMAGE_ENTERPRISE_COLLECTOR
+          value: registry.connect.redhat.com/odigos/odigos-enterprise-collector-rhel-certified:v1.25.0
         - name: RELATED_IMAGE_FRONTEND
           value: registry.connect.redhat.com/odigos/odigos-ui-rhel-certified:v1.25.0
         - name: RELATED_IMAGE_INSTRUMENTOR

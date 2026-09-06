@@ -30,4 +30,4 @@ spec:
       componentProps:
         type: textarea
         required: true
-        tooltip: The raw YAML config for the Collector Exporter for this destination.
+        tooltip: "The raw YAML config for the Collector Exporter for this destination. To inject secrets (e.g. TLS PEMs), use ${ENV_VAR} placeholders and set Destination.spec.secretRef to a Secret in the same namespace whose keys match those variable names."

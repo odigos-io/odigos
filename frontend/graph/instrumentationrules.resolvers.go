@@ -18,21 +18,32 @@ func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj 
 
 // CreateInstrumentationRule is the resolver for the createInstrumentationRule field.
 func (r *mutationResolver) CreateInstrumentationRule(ctx context.Context, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
+	err := RequireOnprem(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return services.CreateInstrumentationRule(ctx, instrumentationRule)
 }
 
 // UpdateInstrumentationRule is the resolver for the updateInstrumentationRule field.
 func (r *mutationResolver) UpdateInstrumentationRule(ctx context.Context, ruleID string, instrumentationRule model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
+	err := RequireOnprem(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return services.UpdateInstrumentationRule(ctx, ruleID, instrumentationRule)
 }
 
 // DeleteInstrumentationRule is the resolver for the deleteInstrumentationRule field.
 func (r *mutationResolver) DeleteInstrumentationRule(ctx context.Context, ruleID string) (bool, error) {
-	_, err := services.DeleteInstrumentationRule(ctx, ruleID)
+	err := RequireOnprem(ctx)
 	if err != nil {
 		return false, err
 	}
-
+	_, err = services.DeleteInstrumentationRule(ctx, ruleID)
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 

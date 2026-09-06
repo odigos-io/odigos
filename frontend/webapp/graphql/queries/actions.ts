@@ -5,6 +5,8 @@ export const GET_ACTION_TYPES = gql`
     actionTypes {
       type
       displayName
+      category
+      subtitle
       description
       allowedSignals
       docsUrl
@@ -30,6 +32,7 @@ export const GET_ACTIONS = gql`
         notes
         disabled
         signals
+        uiGenerated
         fields {
           collectContainerAttributes
           collectReplicaSetAttributes
@@ -55,7 +58,23 @@ export const GET_ACTIONS = gql`
           attributeNamesToDelete
           renames
           piiCategories
+          customFormatMaskings {
+            lookupKey
+            dataFormat
+          }
+          customRegexMaskings {
+            regex
+          }
           urlTemplatizationRulesGroups {
+            scopes {
+              namespaces
+              languages
+              sources {
+                namespace
+                kind
+                name
+              }
+            }
             filterK8sNamespace
             filterK8sWorkloadKind
             filterK8sWorkloadName
@@ -71,6 +90,22 @@ export const GET_ACTIONS = gql`
               examples
             }
           }
+          urlTemplatizationDefaultGroups {
+            disabled
+            scopes {
+              namespaces
+              languages
+              sources {
+                namespace
+                kind
+                name
+              }
+            }
+            skipPolicy {
+              skipForNonSuccessCodes
+              skipHttpStatusCodes
+            }
+          }
           extractAttribute {
             extractions {
               targetAttributeName
@@ -79,11 +114,28 @@ export const GET_ACTIONS = gql`
               regex
             }
           }
+          scopes {
+            sources {
+              namespace
+              kind
+              name
+            }
+            namespaces
+            languages
+          }
+          templatizeLiterals
+          removePostgresCastOperator
         }
         conditions {
           status
           type
           reason
+          message
+        }
+        statuses {
+          name
+          status
+          reasonEnum
           message
         }
       }

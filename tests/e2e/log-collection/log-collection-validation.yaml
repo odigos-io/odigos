@@ -1,0 +1,23 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: LogTest
+endpoint: /v1/logs
+description: |
+  This test verifies that the filelog receiver collects container stdout from instrumented
+  workloads and that the logs pipeline enriches each record with kubernetes resource attributes.
+
+  It keys on a log line the frontend writes while handling POST /buy, so it also confirms that
+  collection is picking up output produced during the traffic run rather than only startup lines.
+
+  serviceName is not reported by the application here - it is resolved by the logs processor from
+  the pod uid in the log file path - so asserting on it exercises that enrichment rather than
+  anything the workload sends.
+query: |
+  [?(
+    serviceName == 'frontend' &&
+    contains(bodyText, 'Buying product with id') &&
+    resourceAttributes."k8s.namespace.name" == 'default' &&
+    resourceAttributes."k8s.pod.name" != null &&
+    resourceAttributes."k8s.container.name" == 'frontend'
+  )]
+expected:
+  minimum: 1

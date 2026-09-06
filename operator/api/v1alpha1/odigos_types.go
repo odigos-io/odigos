@@ -75,8 +75,9 @@ type OdigosSpec struct {
 
 	// (Optional) ImagePrefix is a prefix for all container images.
 	// This should only be used if you are pulling Odigos images from the non-default registry.
-	// Default: registry.odigos.io
-	// Default (OpenShift): registry.connect.redhat.com
+	// Default (community): docker.io/keyval
+	// Default (enterprise): registry.odigos.io
+	// Default (OpenShift): registry.connect.redhat.com/odigos
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ImagePrefix string `json:"imagePrefix,omitempty"`
 

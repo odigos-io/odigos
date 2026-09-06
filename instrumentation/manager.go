@@ -14,7 +14,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/odigos-io/odigos/common/unixfd"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 )
@@ -137,9 +136,6 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 
 	// LogsMap is the optional common eBPF map that will be used to send log events from eBPF probes.
 	LogsMap *cilumebpf.Map
-
-	// LogsAttrSubscribe streams per-process resource attributes over the logs unix socket.
-	LogsAttrSubscribe func() (updates <-chan string, snapshot []string)
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -182,7 +178,6 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 	metricsMap           *cilumebpf.Map
 	metricsAttributesMap *cilumebpf.Map
 	logsMap              *cilumebpf.Map
-	logsAttrSubscribe    func() (updates <-chan string, snapshot []string)
 }
 
 func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]](options ManagerOptions[processGroup, configGroup, processDetails]) (Manager, error) {
@@ -239,7 +234,6 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		metricsMap:            options.MetricsMap,
 		metricsAttributesMap:  options.MetricsAttributesMap,
 		logsMap:               options.LogsMap,
-		logsAttrSubscribe:     options.LogsAttrSubscribe,
 	}, nil
 }
 
@@ -440,46 +434,6 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 		return nil
 	})
 
-	g.Go(func() error {
-		// Start the FD server
-		server := &unixfd.Server{
-			SocketPath: unixfd.DefaultSocketPath,
-			Logger:     commonlogger.ToLogr(),
-			TracesFDProvider: func() int {
-				return m.tracesMap.FD()
-			},
-			MetricsFDsProvider: func() []int {
-				var fds []int
-				if m.metricsMap != nil {
-					fds = append(fds, m.metricsMap.FD())
-				}
-				if m.metricsAttributesMap != nil {
-					fds = append(fds, m.metricsAttributesMap.FD())
-				}
-				return fds
-			},
-			LogsFDsProvider: func() []int {
-				if m.logsMap != nil {
-					return []int{m.logsMap.FD()}
-				}
-				return nil
-			},
-			LogsAttrSubscribe: m.logsAttrSubscribe,
-		}
-
-		// Run server in background to serve the map FD to relevant data collection client.
-		// The server will continue running until odiglet shuts down, allowing collectors to reconnect after restarts
-		// and ask for a new FD.
-		if err := server.Run(errCtx); err != nil {
-			m.logger.Error("unixfd server failed", "err", err)
-		}
-
-		m.logger.Info("eBPF maps created, FD server started",
-			"socket", unixfd.DefaultSocketPath,
-			"traces_map_fd", m.tracesMap.FD())
-		return nil
-	})
-
 	err := g.Wait()
 
 	return err
@@ -490,6 +444,19 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) metricsAttributeSet
 		semconv.TelemetryDistroName(distribution.Name),
 		semconv.TelemetrySDKLanguageKey.String(string(distribution.Language)),
 	)
+}
+
+// withTelemetryDistroName returns attrs with telemetry.distro.name set to distroName.
+// An existing value (for example from OTEL_RESOURCE_ATTRIBUTES) is kept. attrs is not modified.
+func withTelemetryDistroName(attrs []attribute.KeyValue, distroName string) []attribute.KeyValue {
+	for _, attr := range attrs {
+		if attr.Key == semconv.TelemetryDistroNameKey {
+			return attrs
+		}
+	}
+	out := make([]attribute.KeyValue, 0, len(attrs)+1)
+	out = append(out, attrs...)
+	return append(out, semconv.TelemetryDistroName(distroName))
 }
 
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentation(ctx context.Context, pid int) {
@@ -608,9 +575,11 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 		// return nil
 	}
 
+	// Without a map there is no external reader, and a factory told otherwise would skip
+	// starting its own reader loop.
 	settings.TracesMap = ReaderMap{
 		Map:            m.tracesMap,
-		ExternalReader: true,
+		ExternalReader: m.tracesMap != nil,
 	}
 
 	settings.MetricsMap = MetricsMap{
@@ -620,7 +589,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 
 	settings.LogsMap = ReaderMap{
 		Map:            m.logsMap,
-		ExternalReader: true,
+		ExternalReader: m.logsMap != nil,
 	}
 
 	// Generic factories attach to every process regardless of its distro, off the main path (no
@@ -648,6 +617,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 	// Distro factory: the process's own instrumentation and the main instrumentation path - report
 	// init/load, track even on failure (so the reporter is notified on exit and a failed distro can
 	// be retried), and run.
+	// The distribution is reported as telemetry.distro.name. Generic factories do not get it, as they
+	// are not the distribution instrumenting the process.
+	settings.ResourceAttributes = withTelemetryDistroName(settings.ResourceAttributes, otelDistro.Name)
 	inst, initErr := factory.CreateInstrumentation(ctx, pid, settings)
 	reporterErr := m.handler.Reporter.OnInit(ctx, pid, initErr, pd)
 	if reporterErr != nil {

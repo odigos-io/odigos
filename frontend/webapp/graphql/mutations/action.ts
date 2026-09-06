@@ -9,6 +9,7 @@ export const CREATE_ACTION = gql`
       notes
       disabled
       signals
+      uiGenerated
       fields {
         collectContainerAttributes
         collectReplicaSetAttributes
@@ -34,7 +35,23 @@ export const CREATE_ACTION = gql`
         attributeNamesToDelete
         renames
         piiCategories
+        customFormatMaskings {
+          lookupKey
+          dataFormat
+        }
+        customRegexMaskings {
+          regex
+        }
         urlTemplatizationRulesGroups {
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
           filterK8sNamespace
           filterK8sWorkloadKind
           filterK8sWorkloadName
@@ -50,6 +67,22 @@ export const CREATE_ACTION = gql`
             examples
           }
         }
+        urlTemplatizationDefaultGroups {
+          disabled
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
+          skipPolicy {
+            skipForNonSuccessCodes
+            skipHttpStatusCodes
+          }
+        }
         extractAttribute {
           extractions {
             targetAttributeName
@@ -58,6 +91,17 @@ export const CREATE_ACTION = gql`
             regex
           }
         }
+        scopes {
+          sources {
+            namespace
+            kind
+            name
+          }
+          namespaces
+          languages
+        }
+        templatizeLiterals
+        removePostgresCastOperator
       }
       conditions {
         status
@@ -78,6 +122,7 @@ export const UPDATE_ACTION = gql`
       notes
       disabled
       signals
+      uiGenerated
       fields {
         collectContainerAttributes
         collectReplicaSetAttributes
@@ -103,7 +148,23 @@ export const UPDATE_ACTION = gql`
         attributeNamesToDelete
         renames
         piiCategories
+        customFormatMaskings {
+          lookupKey
+          dataFormat
+        }
+        customRegexMaskings {
+          regex
+        }
         urlTemplatizationRulesGroups {
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
           filterK8sNamespace
           filterK8sWorkloadKind
           filterK8sWorkloadName
@@ -119,6 +180,22 @@ export const UPDATE_ACTION = gql`
             examples
           }
         }
+        urlTemplatizationDefaultGroups {
+          disabled
+          scopes {
+            namespaces
+            languages
+            sources {
+              namespace
+              kind
+              name
+            }
+          }
+          skipPolicy {
+            skipForNonSuccessCodes
+            skipHttpStatusCodes
+          }
+        }
         extractAttribute {
           extractions {
             targetAttributeName
@@ -127,6 +204,17 @@ export const UPDATE_ACTION = gql`
             regex
           }
         }
+        scopes {
+          sources {
+            namespace
+            kind
+            name
+          }
+          namespaces
+          languages
+        }
+        templatizeLiterals
+        removePostgresCastOperator
       }
       conditions {
         status

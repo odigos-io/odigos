@@ -21,7 +21,6 @@ var attrKindPairs = []struct {
 	{key: string(semconv.K8SDeploymentNameKey), kind: "Deployment"},
 	{key: string(semconv.K8SStatefulSetNameKey), kind: "StatefulSet"},
 	{key: string(semconv.K8SDaemonSetNameKey), kind: "DaemonSet"},
-	{key: string(semconv.K8SJobNameKey), kind: "Job"},
 	{key: string(semconv.K8SCronJobNameKey), kind: "CronJob"},
 	{key: k8SArgoRolloutNameAttribute, kind: "Rollout"},
 }
@@ -59,17 +58,20 @@ func identifyingResourceAttributes(attrs pcommon.Map) pcommon.Map {
 	if containerName := getContainerName(attrs); containerName != "" {
 		identity.PutStr(string(semconv.K8SContainerNameKey), containerName)
 	}
+
+	kind, kindOk := attrs.Get(consts.OdigosWorkloadKindAttribute)
+	name, nameOk := attrs.Get(consts.OdigosWorkloadNameAttribute)
+	if kindOk && nameOk {
+		kind.CopyTo(identity.PutEmpty(consts.OdigosWorkloadKindAttribute))
+		name.CopyTo(identity.PutEmpty(consts.OdigosWorkloadNameAttribute))
+		return identity
+	}
+
 	for _, pair := range attrKindPairs {
 		if val, ok := attrs.Get(pair.key); ok && val.Type() == pcommon.ValueTypeStr {
 			val.CopyTo(identity.PutEmpty(pair.key))
 			return identity
 		}
-	}
-	if kind, ok := attrs.Get(consts.OdigosWorkloadKindAttribute); ok {
-		kind.CopyTo(identity.PutEmpty(consts.OdigosWorkloadKindAttribute))
-	}
-	if name, ok := attrs.Get(consts.OdigosWorkloadNameAttribute); ok {
-		name.CopyTo(identity.PutEmpty(consts.OdigosWorkloadNameAttribute))
 	}
 	return identity
 }
@@ -84,22 +86,20 @@ func getNamespace(attrs pcommon.Map) string {
 
 func getKindAndName(attrs pcommon.Map) (string, string) {
 
+	// Prefer odigos-specific attributes if exists (to use openshift DeploymentConfig if exists instead of Deployment)
+	kind, kindOk := attrs.Get(consts.OdigosWorkloadKindAttribute)
+	name, nameOk := attrs.Get(consts.OdigosWorkloadNameAttribute)
+	if kindOk && nameOk {
+		return kind.Str(), name.Str()
+	}
+
 	for _, pair := range attrKindPairs {
 		if val, ok := attrs.Get(pair.key); ok && val.Type() == pcommon.ValueTypeStr {
 			return pair.kind, val.Str()
 		}
 	}
 
-	// Fallback to Odigos-specific workload attributes when no k8s workload attribute matched.
-	kind, ok := attrs.Get(consts.OdigosWorkloadKindAttribute)
-	if !ok {
-		return "", ""
-	}
-	name, ok := attrs.Get(consts.OdigosWorkloadNameAttribute)
-	if !ok {
-		return "", ""
-	}
-	return kind.Str(), name.Str()
+	return "", ""
 }
 
 func getContainerName(attrs pcommon.Map) string {

@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Runs a query from a test file against simple-trace-db and compares the number of results to the
+# expectation in the file.
+#
+# The test file may set an optional `endpoint` to query a signal other than traces, e.g.
+# `endpoint: /v1/logs`. It defaults to /v1/traces.
+#
+# Note what is being counted differs by endpoint: /v1/traces returns an object keyed by trace id so
+# the count is traces, while /v1/logs returns an array so the count is individual log records.
+
 # Ensure the script fails if any command fails
 set -e
 
@@ -42,12 +51,18 @@ function process_yaml_file() {
   echo "Dest service: $dest_service"
   echo "Dest port: $dest_port"
 
+  endpoint=$(yq e '.endpoint' "$file")
+  if [ "$endpoint" == "null" ] || [ -z "$endpoint" ]; then
+    endpoint="/v1/traces"
+  fi
+  echo "Endpoint: $endpoint"
+
   query=$(yq '.query' "$file")
   encoded_query=$(urlencode "$query")
   expected_count=$(yq e '.expected.count' "$file")
   minimum_count=$(yq e '.expected.minimum' "$file")
 
-  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy/v1/traces\?jmespath=$encoded_query)
+  response=$(kubectl get --raw /api/v1/namespaces/$dest_namespace/services/$dest_service:$dest_port/proxy$endpoint\?jmespath=$encoded_query)
 
   if [ "$verbose" == "true" ]; then
     echo "============== Raw response from trace db ===================="
@@ -55,25 +70,25 @@ function process_yaml_file() {
     echo "========================================================="
   fi
 
-  num_of_traces=$(echo "$response" | jq 'keys | length')
+  num_of_results=$(echo "$response" | jq 'length')
 
   if [ "$expected_count" != "null" ]; then
-    # if num_of_traces not equal to expected_count
-    if [ "$num_of_traces" -ne "$expected_count" ]; then
-      echo "Test FAILED: expected $expected_count got $num_of_traces"
+    # if num_of_results not equal to expected_count
+    if [ "$num_of_results" -ne "$expected_count" ]; then
+      echo "Test FAILED: expected $expected_count got $num_of_results"
       exit 1
     else
-      echo "Test PASSED: expected $expected_count got $num_of_traces"
+      echo "Test PASSED: expected $expected_count got $num_of_results"
       exit 0
     fi
   fi
 
   if [ "$minimum_count" != "null" ]; then
-    if [ "$num_of_traces" -lt "$minimum_count" ]; then
-      echo "Test FAILED: expected at least $minimum_count got $num_of_traces"
+    if [ "$num_of_results" -lt "$minimum_count" ]; then
+      echo "Test FAILED: expected at least $minimum_count got $num_of_results"
       exit 1
     else
-      echo "Test PASSED: expected at least $minimum_count got $num_of_traces"
+      echo "Test PASSED: expected at least $minimum_count got $num_of_results"
       exit 0
     fi
   fi

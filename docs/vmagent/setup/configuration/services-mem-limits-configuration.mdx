@@ -1,0 +1,210 @@
+---
+title: "Managing Service Resources"
+sidebarTitle: "Managing Service Resources"
+description: "Configure systemd memory limits for the odigos-otelcol and odigos-vmagent services"
+---
+
+The Odigos VM Agent runs as two systemd services on your host:
+
+- <Badge color="blue">odigos-otelcol</Badge> — the Odigos distribution of the OpenTelemetry Collector.
+- <Badge color="blue">odigos-vmagent</Badge> — the VM Agent that discovers, instruments, and manages processes.
+
+You can cap how much memory each service is allowed to use with the systemd `MemoryMax` (hard limit)
+and `MemoryHigh` (soft throttling limit) directives. This is useful on hosts where you need to
+guarantee that the agent never competes with your application workloads for memory.
+
+Both services are Go binaries, so you should also set the [`GOMEMLIMIT`](https://pkg.go.dev/runtime#hdr-Environment_Variables)
+environment variable. This tells the Go runtime a soft memory ceiling and makes the garbage collector
+run more aggressively as the process approaches it — reclaiming memory *before* systemd throttles or
+OOM-kills the service.
+
+## Default limits
+
+Both services **ship with memory limits already configured** out of the box, so you only need the steps
+on this page if you want to change them. The default values in the packaged unit files are:
+
+<CodeGroup>
+```ini odigos-otelcol
+[Service]
+Environment="GOMEMLIMIT=1500MiB"
+LimitMEMLOCK=infinity
+MemoryHigh=1800M
+MemoryMax=2G
+MemorySwapMax=0
+```
+
+```ini odigos-vmagent
+[Service]
+Environment="GOMEMLIMIT=750MiB"
+LimitMEMLOCK=infinity
+MemoryAccounting=yes
+MemoryHigh=750M
+MemoryMax=1G
+MemorySwapMax=0
+```
+</CodeGroup>
+
+<Note>
+`MemorySwapMax=0` disables swap usage for the service, and `MemoryAccounting=yes` enables per-service
+memory tracking so the limits above are enforced. `LimitMEMLOCK=infinity` is required by the eBPF
+profiler and is unrelated to the memory caps.
+</Note>
+
+<Warning>
+Editing systemd units requires **root / `sudo`** privileges. All commands on this page must be run
+as `root` or with `sudo`.
+</Warning>
+
+## How systemd memory limits work
+
+| Directive | Behavior |
+|-----------|----------|
+| **`MemoryHigh`** | Soft limit. When the service exceeds it, the kernel aggressively reclaims memory and throttles the process, but does **not** kill it. Use this as an early back-pressure signal. |
+| **`MemoryMax`** | Hard limit. If the service cannot be kept under this value, the kernel's OOM killer terminates it (systemd then restarts it because both units use `Restart=on-failure`). |
+| **`GOMEMLIMIT`** | Go runtime soft memory limit (environment variable). As the process nears this value the Go garbage collector works harder to keep usage down. It does not kill the process; it complements the systemd limits by avoiding the OOM condition in the first place. |
+
+<Tip>
+Order your limits so the runtime reacts first: `GOMEMLIMIT` &lt; `MemoryHigh` &lt; `MemoryMax`.
+For example `GOMEMLIMIT=450MiB`, `MemoryHigh=475M`, and `MemoryMax=512M`. A common rule of thumb is
+to set `GOMEMLIMIT` to roughly 85–90% of `MemoryMax`, leaving headroom for non-heap memory (stacks,
+mmap, eBPF maps) so the GC — not the OOM killer — is the first line of defense.
+</Tip>
+
+<Warning>
+`GOMEMLIMIT` accepts Go byte-size suffixes (`MiB`, `GiB`) — **not** systemd's `M`/`G`.
+For example, use `GOMEMLIMIT=450MiB`, not `GOMEMLIMIT=450M`.
+</Warning>
+
+## Editing the memory limits
+
+The recommended way to change unit settings is a systemd **drop-in override**. This keeps your changes
+separate from the packaged unit file, so they are preserved across upgrades of the Odigos packages.
+
+<Steps>
+<Step title="Open a drop-in override for the service">
+
+Use `systemctl edit` to create an override file. Run the command for the service you want to limit:
+
+<CodeGroup>
+```shell odigos-otelcol
+sudo systemctl edit odigos-otelcol.service
+```
+
+```shell odigos-vmagent
+sudo systemctl edit odigos-vmagent.service
+```
+</CodeGroup>
+
+This opens an editor for a new file at
+`/etc/systemd/system/<service>.service.d/override.conf`.
+
+</Step>
+
+<Step title="Add the memory limits">
+
+Add a `[Service]` section with the limits you want. Set the systemd memory caps **and** the
+`GOMEMLIMIT` environment variable for the Go runtime. For example, to cap `odigos-otelcol` at 512 MB:
+
+```ini
+[Service]
+MemoryHigh=475M
+MemoryMax=512M
+Environment=GOMEMLIMIT=450MiB
+```
+
+Do the same for `odigos-vmagent` with values that suit your host, for example:
+
+```ini
+[Service]
+MemoryHigh=240M
+MemoryMax=256M
+Environment=GOMEMLIMIT=220MiB
+```
+
+<Note>
+`MemoryHigh` / `MemoryMax` accept the usual systemd suffixes (`M`, `G`) or a percentage of total host
+memory (for example `MemoryMax=10%`); use `infinity` to remove a limit. `GOMEMLIMIT` uses Go
+byte-size suffixes (`MiB`, `GiB`) and can be set to `off` to disable the runtime limit.
+</Note>
+
+</Step>
+
+<Step title="Reload systemd and restart the service">
+
+Apply the new configuration and restart the affected service:
+
+<CodeGroup>
+```shell odigos-otelcol
+sudo systemctl daemon-reload
+sudo systemctl restart odigos-otelcol.service
+```
+
+```shell odigos-vmagent
+sudo systemctl daemon-reload
+sudo systemctl restart odigos-vmagent.service
+```
+</CodeGroup>
+
+</Step>
+
+<Step title="Verify the applied limits">
+
+Confirm that systemd is enforcing the values you set, including the `GOMEMLIMIT` environment variable:
+
+<CodeGroup>
+```shell odigos-otelcol
+systemctl show odigos-otelcol.service -p MemoryHigh -p MemoryMax -p Environment
+```
+
+```shell odigos-vmagent
+systemctl show odigos-vmagent.service -p MemoryHigh -p MemoryMax -p Environment
+```
+</CodeGroup>
+
+You can also watch live memory usage of a running service with:
+
+```shell
+systemctl status odigos-otelcol.service
+```
+
+</Step>
+</Steps>
+
+## Editing the unit files directly (alternative)
+
+If you prefer, you can edit the packaged unit files in place instead of using drop-ins. The unit files
+are located at:
+
+- `/etc/systemd/system/odigos-otelcol.service`
+- `/etc/systemd/system/odigos-vmagent.service`
+
+Add `MemoryHigh`, `MemoryMax`, and `Environment=GOMEMLIMIT=...` under the existing `[Service]`
+section, then reload and restart:
+
+```shell
+sudo systemctl daemon-reload
+sudo systemctl restart odigos-otelcol.service
+sudo systemctl restart odigos-vmagent.service
+```
+
+<Note>
+For `odigos-otelcol` you can alternatively set `GOMEMLIMIT` in its environment file at
+`/etc/odigos-otelcol/odigos-otelcol.conf` instead of using `Environment=` in the unit.
+</Note>
+
+<Warning>
+Changes made directly to the packaged unit files may be **overwritten when you upgrade the Odigos
+packages**. Prefer the drop-in override method above so your limits survive upgrades.
+</Warning>
+
+## Removing the limits
+
+To remove your custom limits, delete the drop-in override and reload systemd:
+
+```shell
+sudo rm /etc/systemd/system/odigos-otelcol.service.d/override.conf
+sudo rm /etc/systemd/system/odigos-vmagent.service.d/override.conf
+sudo systemctl daemon-reload
+sudo systemctl restart odigos-otelcol.service
+sudo systemctl restart odigos-vmagent.service
+```

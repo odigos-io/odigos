@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.26.4 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.6 AS builder
 ARG SERVICE_NAME
 
 # Copy only go.mod/go.sum for local modules to cache dependency downloads
@@ -11,6 +11,8 @@ COPY distros/go.mod distros/go.sum distros/
 COPY destinations/go.mod destinations/go.sum destinations/
 COPY config/go.mod config/go.sum config/
 COPY status/go.mod status/go.sum status/
+COPY actions/go.mod actions/go.sum actions/
+COPY recommendations/go.mod recommendations/go.sum recommendations/
 COPY $SERVICE_NAME/go.mod $SERVICE_NAME/go.sum $SERVICE_NAME/
 
 # go mod download must run from the service module so it resolves that go.mod
@@ -29,6 +31,8 @@ COPY distros/ distros/
 COPY destinations/ destinations/
 COPY config/ config/
 COPY status/ status/
+COPY actions/ actions/
+COPY recommendations/ recommendations/
 COPY $SERVICE_NAME/ $SERVICE_NAME/
 WORKDIR /workspace/$SERVICE_NAME
 # Build for target architecture

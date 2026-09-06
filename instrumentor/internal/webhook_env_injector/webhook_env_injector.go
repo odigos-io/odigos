@@ -206,24 +206,10 @@ func applyOdigosEnvDefaults(container *corev1.Container, appendEnvVars []distroT
 }
 
 func shouldInject(runtimeDetails *odigosv1.RuntimeDetailsByContainer, logger logr.Logger, containerName string) bool {
-
-	// Skip injection if runtimeDetails.RuntimeUpdateState is nil.
-	// This indicates that either the new runtime detection or the new runtime detection migrator did not run for this container.
-	if runtimeDetails.RuntimeUpdateState == nil {
-		logger.Info("RuntimeUpdateState is nil, skipping environment variable injection", "container", containerName)
+	if runtimeDetails.CriErrorMessage != nil {
+		logger.Info("CRI error message present, skipping environment variable injection", "container", containerName, "message", *runtimeDetails.CriErrorMessage)
 		return false
 	}
-
-	if *runtimeDetails.RuntimeUpdateState == odigosv1.ProcessingStateFailed {
-		var criErrorMessage string
-		if runtimeDetails.CriErrorMessage != nil {
-			criErrorMessage = *runtimeDetails.CriErrorMessage
-		}
-		logger.Info("CRI error message present, skipping environment variable injection", "container", containerName, "message", criErrorMessage)
-		return false
-	}
-
-	// All conditions are satisfied
 	return true
 }
 

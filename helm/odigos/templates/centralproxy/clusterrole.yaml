@@ -15,6 +15,11 @@ rules:
   - apiGroups: ["batch"]
     resources: ["cronjobs"]
     verbs: ["list", "watch"]
+{{- if .Values.openshift.enabled }}
+  - apiGroups: ["apps.openshift.io"]
+    resources: ["deploymentconfigs"]
+    verbs: ["list", "watch"]
+{{- end }}
   - apiGroups: ["odigos.io"]
     resources: ["instrumentationconfigs", "sources"]
     verbs: ["list", "watch"]

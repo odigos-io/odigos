@@ -31,6 +31,8 @@ type InstrumentationRuleExpansion interface{}
 
 type ProcessorExpansion interface{}
 
+type RecommendationExpansion interface{}
+
 type SamplingExpansion interface{}
 
 type SourceExpansion interface{}

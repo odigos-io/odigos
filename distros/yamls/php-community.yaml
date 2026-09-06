@@ -33,3 +33,8 @@ spec:
       - '{{ODIGOS_AGENTS_DIR}}/php'
     device: 'instrumentation.odigos.io/generic'
     k8sAttrsViaEnvVars: true
+  traces:
+    customInstrumentations:
+      supported: true
+  # PHP receives dynamic config via env vars and requires a pod restart to apply changes.
+  configAsEnvVars: true

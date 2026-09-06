@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -70,10 +71,11 @@ func syncService(gateway *odigosv1.CollectorsGroup, ctx context.Context, c clien
 func updateGatewaySvc(svc *v1.Service, collectorsGroup *odigosv1.CollectorsGroup) {
 	svc.Spec.Ports = []v1.ServicePort{
 		{
-			Name:       "otlp",
-			Protocol:   "TCP",
-			Port:       4317,
-			TargetPort: intstr.FromInt(4317),
+			Name:        "otlp",
+			Protocol:    "TCP",
+			AppProtocol: ptr.To("grpc"),
+			Port:        4317,
+			TargetPort:  intstr.FromInt(4317),
 		},
 		{
 			Name:       "otlphttp",

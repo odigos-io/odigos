@@ -3,8 +3,10 @@ kind: Action
 metadata:
   type: K8sAttributesResolver
   displayName: Kubernetes Attributes
+  category: enrichment
 spec:
   docsUrl: https://docs.odigos.io/pipeline/actions/attributes/k8sattributes
+  subtitle: Add dynamic k8s resource attributes to your data.
   description: This action adds kubernetes related resource attributes to spans, metrics data points and log records.
   signals:
     traces:

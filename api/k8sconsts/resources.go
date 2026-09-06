@@ -14,10 +14,12 @@ const (
 	// and use the label to identify the resources that needs to be deleted.
 	OdigosProfilesHashLabel = "odigos.io/profiles-hash"
 
-	// this label is used to mark resources that are managed by a profile.
-	// when reconciling profiles, we can use this label to know which profiles needs to be deleted.
+	// OdigosProfilesManagedByLabel marks which Odigos surface manages a resource
+	// (e.g. profile reconciler, UI). When reconciling profiles, we use this label
+	// to know which resources need to be deleted.
 	OdigosProfilesManagedByLabel = "odigos.io/managed-by"
 	OdigosProfilesManagedByValue = "profile"
+	OdigosUIManagedByValue       = "odigos-ui"
 
 	// for resources auto created by a profile, this annotation will record
 	// the name of the profile that created them.

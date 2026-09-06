@@ -60,6 +60,14 @@ type ContainerOverride struct {
 	// the selected distro must match the programming language and any constraints of the distro.
 	// if the programmin language is incorrect, the runtime info can be overridden to match
 	OtelDistroName *string `json:"otelDistroName,omitempty"`
+
+	// Odigos by default will attempt to detect if another agent is already running in the container,
+	// and if so, will avoid adding odigos agent to the container.
+	// This option allows to override this setting for a specific container in a source.
+	// Can be used for selective setting of which containers should run odigos concurrently with other agents.
+	// empty means take odigos global config for this setting.
+	// when not empty, the value will override the global config for this container
+	AllowConcurrentAgents *bool `json:"allowConcurrentAgents,omitempty"`
 }
 
 type SourceSpec struct {

@@ -8,6 +8,10 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
+// DynatraceDynamizerExeSubString is the wrapper exe name used by the Dynatrace
+// agent for Go processes; the Go language inspector matches on it.
+const DynatraceDynamizerExeSubString = "oneagentdynamizer"
+
 type ProgramLanguageDetails struct {
 	Language       ProgrammingLanguage
 	RuntimeVersion string

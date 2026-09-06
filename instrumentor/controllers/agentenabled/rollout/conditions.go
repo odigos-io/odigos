@@ -2,6 +2,7 @@ package rollout
 
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -98,9 +99,13 @@ func newConditionTriggeredWithMessage(message string) metav1.Condition {
 // NewConditionAgentDisabledDueToBackoff creates a condition for when agents are disabled due to pod backoff.
 // Used when pods enter CrashLoopBackOff or ImagePullBackOff and automatic rollback is triggered.
 func newConditionAgentDisabledDueToBackoff(reason odigosv1alpha1.AgentEnabledReason, message string) metav1.Condition {
+	status := metav1.ConditionFalse
+	if r, ok := agentInjectionEnabled.AgentEnabledReasonByName(string(reason)); ok {
+		status = r.K8sConditionStatus
+	}
 	return metav1.Condition{
-		Type:    odigosv1alpha1.AgentEnabledStatusConditionType,
-		Status:  metav1.ConditionFalse,
+		Type:    agentInjectionEnabled.AgentEnabledType,
+		Status:  status,
 		Reason:  string(reason),
 		Message: message,
 	}

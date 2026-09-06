@@ -103,8 +103,10 @@ func serviceTelemetryConfigForOwnMetricsUi(ownMetricsPort int32) config.Telemetr
 		"pull": config.GenericMap{
 			"exporter": config.GenericMap{
 				"prometheus": config.GenericMap{
-					"host": "0.0.0.0",
-					"port": ownMetricsPort,
+					"host":                "0.0.0.0",
+					"port":                ownMetricsPort,
+					"without_units":       false,
+					"without_type_suffix": false,
 				},
 			},
 		},
@@ -118,14 +120,11 @@ func serviceTelemetryConfigForOwnMetricsUi(ownMetricsPort int32) config.Telemetr
 			Level:   "detailed",
 			Readers: []config.GenericMap{reader},
 		},
-		Resource: map[string]*string{
-			// The collector add "otelcol" as a service name, so we need to remove it
-			// to avoid duplication, since we are interested in the instrumented services.
-			string(semconv.ServiceNameKey): nil,
-			// The collector adds its own version as a service version, which is not needed currently.
-			string(semconv.ServiceVersionKey): nil,
-			string(semconv.K8SPodNameKey):     &podNameFromEnv,
-			string(semconv.K8SNodeNameKey):    &nodeNameFromEnv,
+		Resource: &config.TelemetryResource{
+			Attributes: []config.ResourceAttribute{
+				{Name: string(semconv.K8SNodeNameKey), Value: nodeNameFromEnv},
+				{Name: string(semconv.K8SPodNameKey), Value: podNameFromEnv},
+			},
 		},
 	}
 }

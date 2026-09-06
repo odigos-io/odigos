@@ -42,6 +42,20 @@ func ResolveProfilingFromEffectiveConfig(ctx context.Context, c client.Client) (
 	if ProfilingEnabledFromOdigosConfig(cfg) {
 		out.ReceiverOn = true
 	}
+	// Config-provided cache limits (profiling.ui) override the env defaults, so
+	// the settings page can tune them live through effective-config.
+	if cfg != nil && cfg.Profiling != nil && cfg.Profiling.Ui != nil {
+		ui := cfg.Profiling.Ui
+		if ui.MaxSlots > 0 {
+			out.StoreLimits.MaxSlots = ui.MaxSlots
+		}
+		if ui.SlotMaxBytes > 0 {
+			out.StoreLimits.SlotMaxBytes = ui.SlotMaxBytes
+		}
+		if ui.SlotTTLSeconds > 0 {
+			out.StoreLimits.SlotTTLSeconds = ui.SlotTTLSeconds
+		}
+	}
 	return out, nil
 }
 

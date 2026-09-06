@@ -18,7 +18,7 @@ spec:
       serviceAccountName: cleanup-sa
       containers:
       - name: cleanup
-        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "cli" "Tag" $imageTag) }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "cli" "Tag" $imageTag) }}
         args: ["cleanup", "--yes", "--instrumentation-only", "--namespace", "{{ .Release.Namespace }}"]
       restartPolicy: Never
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}

@@ -15,6 +15,7 @@ type Config {
   installationStatus: InstallationStatus!
   clusterName: String
   isCentralProxyRunning: Boolean
+  insightsEnabled: Boolean!
 }
 
 # Effective configuration, reflects the actual values applied to the cluster

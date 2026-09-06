@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
@@ -12,6 +13,21 @@ import (
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 )
+
+// collectionTimeout bounds diagnose collection when it is detached from an HTTP
+// request context (see CollectionContext).
+const collectionTimeout = 10 * time.Minute
+
+// maxConcurrentK8sOps caps parallel Kubernetes API calls within a diagnose stage
+// so the shared client-go rate limiter is not saturated by logs/profiles/metrics.
+const maxConcurrentK8sOps = 16
+
+// CollectionContext returns a context for diagnose collection that is not canceled
+// when parent is (for example when a GraphQL client aborts or a proxy times out).
+// A timeout is still applied so collection cannot run forever.
+func CollectionContext(parent context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.WithoutCancel(parent), collectionTimeout)
+}
 
 // Stage identifies a single phase of diagnose collection.
 // When a stage completes, a StageResult is sent on the onStageComplete channel (if non-nil).
@@ -111,7 +127,10 @@ func RunDiagnose(
 
 	if opts.IncludeSourceWorkloads {
 		runStage(&wg, StageSourceWorkloads, onStageComplete, func() error {
-			return FetchSourceWorkloads(ctx, client, dynamicClient, odigosClient, builder, rootDir, opts.SourceWorkloadNamespaces, opts.IncludeLogs)
+			// Source workloads collect YAMLs only. IncludeLogs is for Odigos
+			// component pods; fetching logs from every instrumented application
+			// saturates the API client and cancels in-flight profile lists.
+			return FetchSourceWorkloads(ctx, client, dynamicClient, odigosClient, builder, rootDir, opts.SourceWorkloadNamespaces, false)
 		})
 	}
 

@@ -1,0 +1,595 @@
+---
+title: "Install on ECS: Multi Node (Agent + Proxy)"
+sidebarTitle: "Multi Node"
+description: "Deploy the Odigos ECS Agent daemon plus the cluster-scoped ECS Proxy, so a multi-node ECS cluster appears in Odigos Central as a single platform with aggregated workloads."
+---
+
+import EnterpriseVMAgent from '/snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
+
+<EnterpriseVMAgent />
+
+This deployment runs the agent daemon on every container instance **plus one
+`odigos-ecs-proxy` task per cluster**. The agents dial the proxy instead of
+Central, so the proxy is the cluster's single upstream connection and the whole
+cluster appears in Odigos Central as **one** platform — with an aggregated
+workload list, cluster-wide configuration, a config journal for nodes that join
+later, and an optional coverage check.
+
+This guide is a **superset** of [Install: Agent Only](/vmagent/ecs/installation-agent-only):
+same agent, same task definition, plus one component. If you don't need
+cluster-wide aggregation, that guide is simpler.
+
+<Info>
+  Complete the [System Requirements](/vmagent/ecs/requirements) first. You need
+  **both** images here: `odigos-ecs-agent` and `odigos-ecs-proxy`.
+</Info>
+
+## Deployment order
+
+Deploy the **proxy first**, then the agents. That way the agents connect on
+their very first boot, with the correct proxy address baked into their first task
+definition revision — no retry-loop noise and no redeploy.
+
+<Steps>
+  <Step title="Choose the proxy's stable address">Internal NLB (preferred), or a pinned instance for test/dev.</Step>
+  <Step title="Deploy the proxy">One task per cluster, listening on TCP 4321.</Step>
+  <Step title="Deploy the agent daemon">Enable the proxy, with `ODIGOS_ECS_BEHIND_PROXY=true`.</Step>
+</Steps>
+
+## Step 1: Set your session variables
+
+Run every command in this guide in the **same shell**.
+
+```bash
+export AWS_REGION=<region>
+export CLUSTER=<your-ecs-cluster-name>
+export ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+export REG=${ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+export TAG=<image-tag>
+export CENTRAL_ENDPOINT='<central-host>:<port>'   # e.g. central.example.com:443
+
+echo "ACCOUNT=$ACCOUNT REG=$REG"   # neither may be empty before continuing
+```
+
+## Step 2: License token and IAM roles
+
+Identical to the Agent-only guide — the **agent** needs the license token; the
+proxy never touches it. Both task definitions reuse the same two roles.
+
+```bash
+export SECRET_ARN=$(aws secretsmanager create-secret --name odigos-onprem-token \
+  --secret-string "<YOUR_ODIGOS_ONPREM_TOKEN>" --query ARN --output text 2>/dev/null \
+  || aws secretsmanager describe-secret --secret-id odigos-onprem-token --query ARN --output text)
+echo "SECRET_ARN=$SECRET_ARN"   # must be non-empty
+
+TRUST='{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ecs-tasks.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+
+aws iam create-role --role-name odigos-ecs-exec-role --assume-role-policy-document "$TRUST"
+aws iam attach-role-policy --role-name odigos-ecs-exec-role \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+aws iam put-role-policy --role-name odigos-ecs-exec-role --policy-name odigos-extras \
+  --policy-document "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"logs:CreateLogGroup\",\"Resource\":\"*\"},{\"Effect\":\"Allow\",\"Action\":\"secretsmanager:GetSecretValue\",\"Resource\":\"arn:aws:secretsmanager:${AWS_REGION}:${ACCOUNT}:secret:odigos-onprem-token-*\"}]}"
+
+aws iam create-role --role-name odigos-ecs-task-role --assume-role-policy-document "$TRUST"
+aws iam put-role-policy --role-name odigos-ecs-task-role --policy-name ssm-exec \
+  --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["ssmmessages:CreateControlChannel","ssmmessages:CreateDataChannel","ssmmessages:OpenControlChannel","ssmmessages:OpenDataChannel"],"Resource":"*"}]}'
+```
+
+<Accordion title="Add the coverage-check permissions to the task role (optional)">
+  The proxy's [coverage check](/vmagent/ecs/configuration#proxy-environment-variables)
+  reports ACTIVE container instances that have **no** agent connected — the check
+  that catches a daemon that failed to place, a crash-looping agent, or a license
+  failure. It calls the ECS/EC2 inventory APIs:
+
+  ```bash
+  aws iam put-role-policy --role-name odigos-ecs-task-role --policy-name odigos-coverage \
+    --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["ecs:ListContainerInstances","ecs:DescribeContainerInstances","ec2:DescribeInstances"],"Resource":"*"}]}'
+  ```
+
+  Without these permissions, leave `ODIGOS_COVERAGE_CHECK` unset — everything
+  else works.
+</Accordion>
+
+## Step 3: Give the proxy a stable address
+
+The agents need one fixed `host:4321` reachable from the container instances.
+That is the proxy's **only** networking requirement — no Cloud Map, no service
+discovery. Pick one of two options.
+
+<Warning>
+  **Option B (pinned instance) is for test and development only.** If that
+  instance is replaced, the proxy's address changes and you must re-point both
+  the placement constraint and the agents. See
+  [the pinned-IP caveat](#caveat-the-pinned-proxy-address). Use Option A
+  (internal NLB) in production.
+</Warning>
+
+<Tabs>
+  <Tab title="Option A: Internal NLB (preferred)">
+    An internal Network Load Balancer is the production method: it survives
+    instance and task replacement. The proxy runs with `awsvpc` networking and
+    registers its ENI IP in the target group.
+
+    ```bash
+    aws elbv2 create-load-balancer --name odigos-ecs-proxy --type network \
+      --scheme internal --subnets <SUBNET_IDS>
+
+    aws elbv2 create-target-group --name odigos-ecs-proxy --protocol TCP \
+      --port 4321 --target-type ip --vpc-id <VPC_ID>
+
+    aws elbv2 create-listener --load-balancer-arn <LB_ARN> --protocol TCP \
+      --port 4321 --default-actions Type=forward,TargetGroupArn=<TARGET_GROUP_ARN>
+    ```
+
+    The NLB DNS name is the agents' endpoint:
+
+    ```bash
+    export PROXY_ENDPOINT='odigos-ecs-proxy-xxxx.elb.<REGION>.amazonaws.com:4321'
+    ```
+
+    Keep `"networkMode": "awsvpc"` and the `portMappings` block in the proxy task
+    definition below.
+  </Tab>
+
+  <Tab title="Option B: Pinned instance (test/dev)">
+    Run the proxy with host networking on one designated container instance; its
+    private IP is the endpoint. No extra AWS resources, but the address is tied
+    to that instance.
+
+    First confirm the cluster actually has a registered container instance:
+
+    ```bash
+    aws ecs describe-clusters --clusters "$CLUSTER" \
+      --query 'clusters[0].{status:status,registered:registeredContainerInstancesCount}'
+    ```
+
+    If `registered` is `0`, wait for the instances to boot and register:
+
+    ```bash
+    until [ "$(aws ecs describe-clusters --clusters "$CLUSTER" --query 'clusters[0].registeredContainerInstancesCount' --output text)" -ge 1 ]; do
+      echo waiting...; sleep 10
+    done
+    ```
+
+    Then pick the instance to pin to:
+
+    ```bash
+    CI=$(aws ecs list-container-instances --cluster "$CLUSTER" --query 'containerInstanceArns[0]' --output text)
+    if [ -z "$CI" ] || [ "$CI" = "None" ]; then
+      echo "no container instances registered in $CLUSTER yet" >&2
+    else
+      export EC2_ID=$(aws ecs describe-container-instances --cluster "$CLUSTER" --container-instances "$CI" \
+        --query 'containerInstances[0].ec2InstanceId' --output text)
+      export PROXY_ENDPOINT="$(aws ec2 describe-instances --instance-ids "$EC2_ID" \
+        --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text):4321"
+      echo "proxy → $EC2_ID @ $PROXY_ENDPOINT"
+    fi
+    ```
+
+    <Warning>
+      Don't skip the guard. With no registered instances,
+      `list-container-instances` returns the literal string `None`, `EC2_ID` ends
+      up empty — and an **empty** `--instance-ids` makes `describe-instances`
+      query every instance in the region, silently handing you the private IP of
+      an unrelated EC2 instance instead of failing.
+    </Warning>
+  </Tab>
+</Tabs>
+
+<Note>
+  The container instances' security group must allow TCP **4321** — from the
+  NLB (Option A) or from the other instances (Option B).
+</Note>
+
+## Step 4: Register the proxy task definition
+
+Save this as `odigos-ecs-proxy.json`.
+
+<Accordion title="odigos-ecs-proxy.json">
+  ```json
+  {
+    "family": "odigos-ecs-proxy",
+    "requiresCompatibilities": ["EC2"],
+    "networkMode": "awsvpc",
+    "cpu": "256",
+    "memory": "512",
+    "executionRoleArn": "<EXEC_ROLE_ARN>",
+    "taskRoleArn": "<TASK_ROLE_ARN>",
+    "containerDefinitions": [
+      {
+        "name": "odigos-ecs-proxy",
+        "image": "<PROXY_IMAGE_URI>",
+        "essential": true,
+        "portMappings": [
+          { "containerPort": 4321, "protocol": "tcp" }
+        ],
+        "environment": [
+          { "name": "ODIGOS_CLUSTER_NAME", "value": "<CLUSTER>" },
+          { "name": "ODIGOS_CENTRAL_ENDPOINT", "value": "<CENTRAL_ENDPOINT>" },
+          { "name": "ODIGOS_PLATFORM_TYPE", "value": "aws.ecs" },
+          { "name": "ODIGOS_COVERAGE_CHECK", "value": "true" }
+        ],
+        "healthCheck": {
+          "command": ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/4321'"],
+          "interval": 30,
+          "timeout": 5,
+          "retries": 3,
+          "startPeriod": 10
+        },
+        "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+            "awslogs-group": "/odigos/ecs-proxy",
+            "awslogs-create-group": "true",
+            "awslogs-region": "<REGION>",
+            "awslogs-stream-prefix": "odigos-ecs-proxy"
+          }
+        }
+      }
+    ]
+  }
+  ```
+
+  <Warning>
+    **Option A (NLB) keeps the file as-is.** Option B (pinned instance) requires
+    two edits: change `"networkMode": "awsvpc"` to `"host"`, and remove the
+    `portMappings` block.
+  </Warning>
+
+  `ODIGOS_CLUSTER_NAME` becomes the platform name in Central. Drop
+  `ODIGOS_COVERAGE_CHECK` if you did not grant the coverage permissions in
+  Step 2. See the [proxy environment variables](/vmagent/ecs/configuration#proxy-environment-variables)
+  for the full list. To keep the config journal across task replacement, add
+  the EFS volume shown in [persist the config journal on EFS](#persist-the-config-journal-on-efs).
+</Accordion>
+
+```bash
+sed -e "s|<PROXY_IMAGE_URI>|${REG}/odigos-ecs-proxy:${TAG}|" \
+    -e "s|<CLUSTER>|${CLUSTER}|" \
+    -e "s|<CENTRAL_ENDPOINT>|${CENTRAL_ENDPOINT}|" \
+    -e "s|<EXEC_ROLE_ARN>|arn:aws:iam::${ACCOUNT}:role/odigos-ecs-exec-role|" \
+    -e "s|<TASK_ROLE_ARN>|arn:aws:iam::${ACCOUNT}:role/odigos-ecs-task-role|" \
+    -e "s|<REGION>|${AWS_REGION}|" \
+    odigos-ecs-proxy.json > /tmp/proxy-td.json
+
+grep -c '<' /tmp/proxy-td.json   # want 0
+jq -r '.containerDefinitions[0].environment[] | select(.name=="ODIGOS_CENTRAL_ENDPOINT").value' /tmp/proxy-td.json
+# confirm this is your REAL Central host:port, not a placeholder
+
+aws ecs register-task-definition --cli-input-json file:///tmp/proxy-td.json >/dev/null && echo "proxy task definition registered"
+```
+
+## Step 5: Create the proxy service
+
+The proxy is a **singleton** — one task per cluster. Use the tab for the address
+option you chose in [Step 3](#step-3-give-the-proxy-a-stable-address).
+
+<Tabs>
+  <Tab title="Option A: Internal NLB">
+    ```bash
+    aws ecs create-service \
+      --cluster "$CLUSTER" \
+      --service-name odigos-ecs-proxy \
+      --task-definition odigos-ecs-proxy \
+      --desired-count 1 \
+      --launch-type EC2 \
+      --enable-execute-command \
+      --network-configuration "awsvpcConfiguration={subnets=[<SUBNET_IDS>],securityGroups=[<SG_ID>]}" \
+      --load-balancers "targetGroupArn=<TARGET_GROUP_ARN>,containerName=odigos-ecs-proxy,containerPort=4321"
+    ```
+  </Tab>
+  <Tab title="Option B: Pinned instance">
+    The pinned proxy needs three flags a normal service doesn't:
+
+    1. **A JSON placement constraint.** The AWS CLI's shorthand parser cannot
+       handle `in [...]` expressions (it fails with `Expected ',', received: '''`).
+       Pass pure JSON:
+
+       ```bash
+       PLACEMENT="[{\"type\":\"memberOf\",\"expression\":\"ec2InstanceId == '${EC2_ID}'\"}]"
+       ```
+
+    2. **A stop-then-start deployment configuration.** ECS's default rollout
+       starts the new task before stopping the old one. With host networking both
+       tasks want port `4321` on the same instance, so the new task can never be
+       placed and the deployment retries indefinitely.
+
+    3. **Availability Zone Rebalancing disabled.** AZ rebalancing defaults to
+       `ENABLED` on new services and explicitly rejects `maximumPercent <= 100`,
+       failing with `Availability Zone Rebalancing does not support maximumPercent <= 100%`.
+
+    ```bash
+    aws ecs create-service \
+      --cluster "$CLUSTER" \
+      --service-name odigos-ecs-proxy \
+      --task-definition odigos-ecs-proxy \
+      --desired-count 1 \
+      --launch-type EC2 \
+      --enable-execute-command \
+      --placement-constraints "$PLACEMENT" \
+      --deployment-configuration "minimumHealthyPercent=0,maximumPercent=100" \
+      --availability-zone-rebalancing DISABLED
+    ```
+  </Tab>
+</Tabs>
+
+Wait for the proxy to come up and connect to Central before continuing:
+
+```bash
+until [ "$(aws ecs describe-services --cluster "$CLUSTER" --services odigos-ecs-proxy --query 'services[0].runningCount' --output text)" = "1" ]; do
+  echo "waiting for proxy..."; sleep 10
+done
+
+aws logs tail /odigos/ecs-proxy --since 2m --filter-pattern central
+# want: "Connected to central"
+```
+
+## Step 6: Register the agent task definition
+
+Use the **same task definition** as the Agent-only guide, with two differences:
+the endpoint is the proxy's, and `ODIGOS_ECS_BEHIND_PROXY` is `true`.
+
+<Accordion title="odigos-ecs-agent.json (proxy mode)">
+  ```json
+  {
+    "family": "odigos-ecs-agent",
+    "requiresCompatibilities": ["EC2"],
+    "networkMode": "host",
+    "pidMode": "host",
+    "executionRoleArn": "<EXEC_ROLE_ARN>",
+    "taskRoleArn": "<TASK_ROLE_ARN>",
+    "volumes": [
+      { "name": "docker-sock", "host": { "sourcePath": "/var/run/docker.sock" } },
+      { "name": "docker-lib", "host": { "sourcePath": "/var/lib/docker" } },
+      { "name": "sys-kernel-debug", "host": { "sourcePath": "/sys/kernel/debug" } },
+      { "name": "odigos-config", "host": { "sourcePath": "/etc/odigos-ecs-agent" } },
+      { "name": "odigos-instrumentations", "host": { "sourcePath": "/var/odigos" } }
+    ],
+    "containerDefinitions": [
+      {
+        "name": "odigos-ecs-agent",
+        "image": "<AGENT_IMAGE_URI>",
+        "essential": true,
+        "privileged": true,
+        "cpu": 512,
+        "memoryReservation": 512,
+        "memory": 2048,
+        "stopTimeout": 120,
+        "mountPoints": [
+          { "sourceVolume": "docker-sock", "containerPath": "/var/run/docker.sock", "readOnly": true },
+          { "sourceVolume": "docker-lib", "containerPath": "/var/lib/docker", "readOnly": true },
+          { "sourceVolume": "sys-kernel-debug", "containerPath": "/sys/kernel/debug", "readOnly": false },
+          { "sourceVolume": "odigos-config", "containerPath": "/etc/odigos-ecs-agent", "readOnly": false },
+          { "sourceVolume": "odigos-instrumentations", "containerPath": "/var/odigos", "readOnly": false }
+        ],
+        "environment": [
+          {
+            "name": "ODIGOS_DEFAULT_CONFIG",
+            "value": "{\"central\":{\"enabled\":true,\"endpoint\":\"<PROXY_ENDPOINT>\"}}"
+          },
+          { "name": "ODIGOS_ECS_BEHIND_PROXY", "value": "true" }
+        ],
+        "secrets": [
+          { "name": "ODIGOS_ONPREM_TOKEN", "valueFrom": "<TOKEN_SECRET_ARN>" }
+        ],
+        "ulimits": [
+          { "name": "memlock", "softLimit": -1, "hardLimit": -1 },
+          { "name": "nofile", "softLimit": 65536, "hardLimit": 65536 }
+        ],
+        "linuxParameters": { "initProcessEnabled": true },
+        "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+            "awslogs-group": "/odigos/ecs-agent",
+            "awslogs-create-group": "true",
+            "awslogs-region": "<REGION>",
+            "awslogs-stream-prefix": "odigos-ecs-agent"
+          }
+        }
+      }
+    ]
+  }
+  ```
+</Accordion>
+
+```bash
+sed -e "s|<AGENT_IMAGE_URI>|${REG}/odigos-ecs-agent:${TAG}|" \
+    -e "s|<PROXY_ENDPOINT>|${PROXY_ENDPOINT}|" \
+    -e "s|<TOKEN_SECRET_ARN>|${SECRET_ARN}|" \
+    -e "s|<EXEC_ROLE_ARN>|arn:aws:iam::${ACCOUNT}:role/odigos-ecs-exec-role|" \
+    -e "s|<TASK_ROLE_ARN>|arn:aws:iam::${ACCOUNT}:role/odigos-ecs-task-role|" \
+    -e "s|<REGION>|${AWS_REGION}|" \
+    odigos-ecs-agent.json > /tmp/agent-td.json
+
+grep -c '<' /tmp/agent-td.json   # want 0
+jq -r '.containerDefinitions[0].environment[] | select(.name=="ODIGOS_DEFAULT_CONFIG").value' /tmp/agent-td.json | jq .
+# → {"central": {"enabled": true, "endpoint": "10.0.1.23:4321"}}  ← the PROXY, not Central
+
+aws ecs register-task-definition --cli-input-json file:///tmp/agent-td.json >/dev/null && echo "agent task definition registered"
+```
+
+<Warning>
+  **`ODIGOS_ECS_BEHIND_PROXY=true` matters.** The agent cannot tell a proxy
+  address from a Central address — both are just `host:port` — and the two modes
+  report different platform names. Behind the proxy, each agent identifies itself
+  by **node hostname** (the proxy is what reports the cluster name upstream, and
+  its coverage check matches agent names against the instances' private DNS).
+  If you leave it `false` here and every agent registers under the cluster name instead,
+  which makes the coverage check report **all** instances as uncovered.
+</Warning>
+
+## Step 7: Create the agent daemon service
+
+```bash
+aws ecs create-service \
+  --cluster "$CLUSTER" \
+  --service-name odigos-ecs-agent \
+  --task-definition odigos-ecs-agent \
+  --scheduling-strategy DAEMON \
+  --launch-type EC2 \
+  --enable-execute-command
+```
+
+Because the proxy was already live, agents connect on their first boot. For
+later changes, use [`update-service`](/vmagent/ecs/maintenance#upgrade) —
+`create-service` is one-time.
+
+## Step 8: Verify
+
+<Steps>
+  <Step title="Every instance runs an agent, on a supported kernel">
+    ```bash
+    aws ecs describe-services --cluster "$CLUSTER" --services odigos-ecs-agent \
+      --query 'services[0].{running:runningCount,desired:desiredCount,events:events[:3].message}'
+
+    TASK=$(aws ecs list-tasks --cluster "$CLUSTER" --service-name odigos-ecs-agent \
+      --desired-status RUNNING --query 'taskArns[0]' --output text)
+
+    aws ecs execute-command --cluster "$CLUSTER" --task "$TASK" \
+      --container odigos-ecs-agent --interactive --command "uname -r"   # want 6.1.x
+    ```
+  </Step>
+
+  <Step title="Agents are connected to the proxy">
+    ```bash
+    aws logs tail /odigos/ecs-agent --since 5m
+    ```
+
+    Expect a connection to `<PROXY_ENDPOINT>` and **no** `runtime-detector stopped`
+    errors.
+  </Step>
+
+  <Step title="The proxy sees every agent">
+    The proxy's `/healthz` returns the full membership view: connected agents (id,
+    node, version, connected-at), tombstones for departed nodes, and the last
+    coverage result.
+
+    ```bash
+    PTASK=$(aws ecs list-tasks --cluster "$CLUSTER" --service-name odigos-ecs-proxy \
+      --query 'taskArns[0]' --output text)
+
+    aws ecs execute-command --cluster "$CLUSTER" --task "$PTASK" \
+      --container odigos-ecs-proxy --interactive --command "/bin/bash"
+    ```
+
+    The proxy image is slim and ships **no `curl`** — use bash's `/dev/tcp`
+    inside the session:
+
+    ```bash
+    exec 3<>/dev/tcp/127.0.0.1/4321
+    printf 'GET /healthz HTTP/1.0\r\n\r\n' >&3
+    cat <&3
+    ```
+
+    The number of connected agents should match your container-instance count.
+  </Step>
+
+  <Step title="Central shows one platform for the cluster">
+    Open the Central UI: **one** platform named after the ECS cluster (not one
+    per node), with workloads aggregated across all nodes.
+  </Step>
+</Steps>
+
+## Caveat: the pinned proxy address
+
+With **Option B**, if the pinned instance is replaced (instance failure, ASG
+replacement, manual termination) the proxy's address changes. You must:
+
+1. Re-run [Step 3](#step-3-give-the-proxy-a-stable-address) against a live
+   instance to get a new `EC2_ID` and `PROXY_ENDPOINT`.
+2. Re-create the proxy service with the new placement constraint.
+3. Re-point every agent's `ODIGOS_DEFAULT_CONFIG` at the new endpoint, register a
+   new revision, and `update-service --force-new-deployment`.
+
+If that fragility is unacceptable, use **Option A** (internal NLB) — it survives
+instance and task replacement at the cost of one extra AWS resource.
+
+## Persist the config journal on EFS
+
+By default the journal is a file on the proxy task's local storage
+(`/var/lib/odigos-ecs-proxy/journal.jsonl`). Task replacement loses it. Agents
+already persist their own config, so a healthy cluster is unaffected — the
+journal only closes the gap for a node that was **absent** when a change was
+made. If that gap matters, put the journal on EFS.
+
+`ODIGOS_PROXY_JOURNAL` is a **file path**, not a directory. Mount EFS at a
+directory and point the variable at a file inside it. Per-agent replay cursors
+are written next to that file (`journal.jsonl.cursors.json`), so the whole
+directory must be on the volume.
+
+Add a volume and mount to the [proxy task definition](#step-4-register-the-proxy-task-definition),
+and set the environment variable:
+
+```json
+{
+  "volumes": [
+    {
+      "name": "odigos-proxy-journal",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "<EFS_FILE_SYSTEM_ID>",
+        "transitEncryption": "ENABLED"
+      }
+    }
+  ],
+  "containerDefinitions": [
+    {
+      "mountPoints": [
+        {
+          "sourceVolume": "odigos-proxy-journal",
+          "containerPath": "/mnt/odigos-journal",
+          "readOnly": false
+        }
+      ],
+      "environment": [
+        { "name": "ODIGOS_PROXY_JOURNAL", "value": "/mnt/odigos-journal/journal.jsonl" }
+      ]
+    }
+  ]
+}
+```
+
+Merge those fields into `odigos-ecs-proxy.json` — do not replace the rest of
+the task definition. Then:
+
+- Create the file system in the same VPC as the proxy, with a mount target in
+  each subnet the task can land in.
+- Allow **NFS (TCP 2049)** from the proxy's security group to the EFS mount
+  targets (Option A: the task's `awsvpc` security group; Option B: the container
+  instances' security group).
+- Grant the **task role** `elasticfilesystem:ClientMount` and
+  `elasticfilesystem:ClientWrite` on that file system. If you enable IAM
+  authorization on the volume (`authorizationConfig.iam: ENABLED`), also set
+  `elasticfilesystem:ClientRootAccess` or use an access point whose POSIX user
+  the proxy can write as.
+
+An existing EFS file system is fine. This is optional: skip it if replaying
+missed mutations from Central after a proxy replacement is acceptable.
+
+## Current limits
+
+- **Journal durability** — without EFS, the config journal is lost when the
+  proxy task is replaced. See [persist the config journal on EFS](#persist-the-config-journal-on-efs).
+- **Per-node workload entries** — workload lists are concatenated across nodes,
+  so a service with tasks on several nodes currently appears once per node.
+- **Single-node targeting** — profiling jobs and diagnose bundles are served by
+  one agent; targeting a specific node is not yet supported.
+- **Coverage matching** — instances are correlated to agents by hostname; an
+  instance whose private DNS cannot be resolved is conservatively reported as
+  uncovered.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Add Sources" icon="plus" href="/vmagent/setup/configuration/add-sources">
+    Choose which ECS tasks to instrument — cluster-wide.
+  </Card>
+  <Card title="Add Destinations" icon="paper-plane" href="/vmagent/setup/configuration/add-destinations">
+    Send the telemetry to your observability backend.
+  </Card>
+  <Card title="Configuration Reference" icon="sliders" href="/vmagent/ecs/configuration">
+    Agent and proxy environment variables.
+  </Card>
+  <Card title="Troubleshooting" icon="bug" href="/vmagent/ecs/troubleshooting">
+    Logs, `odictl`, `/healthz`, and common failures.
+  </Card>
+</CardGroup>

@@ -1,0 +1,89 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Status
+metadata:
+  name: transformed-to-processor
+  ownerResource: action
+  scope: cluster
+  component: autoscaler
+spec:
+  type: 'TransformedToProcessor'
+
+  # Parameters available when rendering failure reason messages.
+  parameters:
+  - name: Error
+    description: |
+      Details of the failure when preparing this action for the collector pipeline.
+
+  docs:
+    title: "Action Ready for Collector Pipeline"
+    summary: "Reports whether this action was prepared so Odigos can include it in the collector pipeline."
+    description: |
+      This status applies to actions that are applied through the collector pipeline
+      (not odigosConfigExtension actions, which are written directly into the collector ConfigMap).
+
+      When an action is ready, Odigos prepares it for the telemetry pipeline. The autoscaler
+      then includes it in the cluster gateway or node collector ConfigMap.
+
+      This condition only means the action was prepared for the pipeline.
+      It does not mean the collector has reloaded that ConfigMap, that the collector is
+      healthy, or that the action is applied to every source.
+
+      When the action is disabled, this condition reports that state instead of readiness.
+
+  reasons:
+
+  - name: "WaitingForReconcile"
+    title: "Waiting for Reconcile"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "This action's configuration changed and Odigos has not finished applying the latest version yet."
+    message: "Waiting for the latest configuration to be applied"
+    description: |
+      The action was updated (or created), but status conditions still reflect an older
+      generation. Controllers have not finished reconciling the current configuration.
+      This is usually short-lived and resolves once reconciliation completes.
+
+  - name: "ProcessorCreated"
+    title: "Action Accepted"
+    k8sConditionStatus: "True"
+    odigosSeverity: "Success"
+    summary: "Odigos accepted this action; it still needs to be added to the collector pipeline."
+    message: "Action accepted; next it will be added to the collector pipeline."
+    description: |
+      Odigos accepted this action and prepared the first step toward applying it.
+      It still needs to be included in the collector ConfigMap (cluster gateway and/or node collector,
+      depending on the action).
+
+      This does not confirm that the collector ConfigMap was updated, that the collector has
+      reloaded, or that the pipeline is already applying the action.
+
+  - name: "ActionDisabled"
+    title: "Action Disabled"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Disabled"
+    summary: "This action is disabled, so it is not included in the collector pipeline."
+    message: "Action is disabled and will not be included in the collector pipeline."
+    description: |
+      This action is disabled. Odigos does not include it in the collector ConfigMap
+      until it is re-enabled.
+
+  - name: "FailedToCreateProcessor"
+    title: "Failed to Accept Action"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Failure"
+    summary: "Odigos could not accept this action for the collector pipeline."
+    message: "{{ .Error }}"
+    description: |
+      Odigos attempted to accept this action for the collector pipeline, but the update failed.
+      Until this succeeds, the action cannot be included in the collector ConfigMap.
+
+  - name: "FailedToTransformToProcessor"
+    title: "Failed to Prepare Action"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Failure"
+    summary: "Odigos could not prepare this action for the collector pipeline."
+    message: "{{ .Error }}"
+    description: |
+      Odigos could not prepare this action for the collector pipeline
+      (for example due to invalid or unsupported configuration). Until this succeeds,
+      the action is not added to the collector ConfigMap.

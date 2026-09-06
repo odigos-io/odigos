@@ -295,6 +295,11 @@ func getCriticalFiles(bp string) map[string]struct{} {
 	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", "obj.target", "dtrace-injector-native.node")] = struct{}{}
 	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", ".deps", "Release", "dtrace-injector-native.node.d")] = struct{}{}
 	cf[filepath.Join(bp, "nodejs-ebpf", "build", "Release", ".deps", "Release", "obj.target", "dtrace-injector-native.node.d")] = struct{}{}
+	// Community Java agent jar, attached via -javaagent at JVM startup. The agent reads its
+	// own classfiles out of the jar lazily, at request time, so rewriting the jar in place
+	// under a live JVM breaks instrumentation ("Failed to read classfile URL") until the pod
+	// restarts. The enterprise agent jar below is preserved for the same reason.
+	cf[filepath.Join(bp, "java", "javaagent.jar")] = struct{}{}
 	cf[filepath.Join(bp, "java-ebpf", "tracing_probes.so")] = struct{}{}
 	cf[filepath.Join(bp, "java-ext-ebpf", "end_span_usdt.so")] = struct{}{}
 	cf[filepath.Join(bp, "java-ext-ebpf", "javaagent.jar")] = struct{}{}

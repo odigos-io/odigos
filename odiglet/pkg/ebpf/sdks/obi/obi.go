@@ -16,6 +16,8 @@ import (
 	"go.opentelemetry.io/obi/pkg/export/instrumentations"
 	"go.opentelemetry.io/obi/pkg/instrumenter"
 	obipkg "go.opentelemetry.io/obi/pkg/obi"
+	"go.opentelemetry.io/obi/pkg/selection"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // DistroName is the Odigos Otel distribution name for OBI trace instrumentation.
@@ -72,7 +74,7 @@ func obiConfigForOdigos() *obipkg.Config {
 
 	cfg.Traces.Instrumentations = append(cfg.Traces.Instrumentations, instrumentations.InstrumentationDNS)
 
-	cfg.Metrics.Features = export.FeatureNetwork | export.FeatureStats
+	cfg.Metrics.Features = export.FeatureNetwork | export.FeatureNetworkFlowPackets | export.FeatureNetworkInterZone | export.FeatureStats
 
 	return &cfg
 }
@@ -107,20 +109,26 @@ type tracesFactory struct {
 	manager *Manager
 }
 
-func (f *tracesFactory) CreateInstrumentation(_ context.Context, pid int, _ instrumentation.Settings) (instrumentation.Instrumentation, error) {
-	return &tracesInstrumentation{manager: f.manager, pid: pid, done: make(chan struct{})}, nil
+func (f *tracesFactory) CreateInstrumentation(_ context.Context, pid int, settings instrumentation.Settings) (instrumentation.Instrumentation, error) {
+	return &tracesInstrumentation{
+		manager: f.manager,
+		pid:     pid,
+		opts:    dynamicPIDOptions(settings),
+		done:    make(chan struct{}),
+	}, nil
 }
 
 type tracesInstrumentation struct {
 	manager   *Manager
 	pid       int
+	opts      selection.DynamicPIDOptions
 	done      chan struct{}
 	closeOnce sync.Once
 }
 
 func (t *tracesInstrumentation) Load(context.Context) (instrumentation.Status, error) {
 	t.manager.ensureInstrumenterRunning()
-	t.manager.selector.Traces().AddPIDs(uint32(t.pid))
+	t.manager.selector.Traces().AddPID(uint32(t.pid), t.opts)
 	return instrumentation.Status{}, nil
 }
 
@@ -156,6 +164,7 @@ func (f *metricsFactory) CreateInstrumentation(_ context.Context, pid int, setti
 	return &metricsInstrumentation{
 		manager: f.manager,
 		pid:     pid,
+		opts:    dynamicPIDOptions(settings),
 		enabled: networkMetricsEnabled(settings.InitialConfig),
 		done:    make(chan struct{}),
 	}, nil
@@ -164,6 +173,7 @@ func (f *metricsFactory) CreateInstrumentation(_ context.Context, pid int, setti
 type metricsInstrumentation struct {
 	manager   *Manager
 	pid       int
+	opts      selection.DynamicPIDOptions
 	enabled   bool
 	done      chan struct{}
 	closeOnce sync.Once
@@ -171,9 +181,7 @@ type metricsInstrumentation struct {
 
 func (mi *metricsInstrumentation) Load(context.Context) (instrumentation.Status, error) {
 	if mi.enabled {
-		mi.manager.ensureInstrumenterRunning()
-		mi.manager.selector.NetworkMetrics().AddPIDs(uint32(mi.pid))
-		mi.manager.selector.StatsMetrics().AddPIDs(uint32(mi.pid))
+		mi.manager.setNetworkMetrics(mi.pid, true, mi.opts)
 	}
 	// OBI network metrics apply to any process (enabled per-workload via the networkMetrics
 	// InstrumentationRule) and do not own the process's InstrumentationInstance. As a generic
@@ -200,7 +208,7 @@ func (mi *metricsInstrumentation) Close(context.Context) error {
 
 func (mi *metricsInstrumentation) ApplyConfig(_ context.Context, config instrumentation.Config) error {
 	mi.enabled = networkMetricsEnabled(config)
-	mi.manager.setNetworkMetrics(mi.pid, mi.enabled)
+	mi.manager.setNetworkMetrics(mi.pid, mi.enabled, mi.opts)
 	mi.manager.maybeStopInstrumenter()
 	return nil
 }
@@ -215,7 +223,41 @@ func networkMetricsEnabled(config instrumentation.Config) bool {
 	return cc.Metrics.NetworkMetrics != nil
 }
 
-func (m *Manager) setNetworkMetrics(pid int, enabled bool) {
+// dynamicPIDOptions maps instrumentation.Settings (from InstrumentationConfig service name +
+// odiglet-built resource attributes) to OBI's per-PID DynamicPIDOptions. Service name and
+// resource attributes are shared across all signals for the same PID.
+func dynamicPIDOptions(settings instrumentation.Settings) selection.DynamicPIDOptions {
+	return selection.DynamicPIDOptions{
+		ServiceName:        settings.ServiceName,
+		ResourceAttributes: resourceAttributesMap(settings.ResourceAttributes),
+	}
+}
+
+// resourceAttributesMap converts OTel resource attributes to the string map OBI's
+// DynamicPIDOptions expects for per-PID resource decoration.
+func resourceAttributesMap(attrs []attribute.KeyValue) map[string]string {
+	if len(attrs) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(attrs))
+	for _, kv := range attrs {
+		key := string(kv.Key)
+		if key == "" {
+			continue
+		}
+		val := kv.Value.Emit()
+		if val == "" {
+			continue
+		}
+		out[key] = val
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func (m *Manager) setNetworkMetrics(pid int, enabled bool, opts selection.DynamicPIDOptions) {
 	if pid <= 0 {
 		return
 	}
@@ -224,7 +266,8 @@ func (m *Manager) setNetworkMetrics(pid int, enabled bool) {
 		return
 	}
 	m.ensureInstrumenterRunning()
-	m.selector.NetworkMetrics().AddPIDs(uint32(pid))
+	// Set identity on the first signal view; subsequent AddPIDs preserves shared attrs.
+	m.selector.NetworkMetrics().AddPID(uint32(pid), opts)
 	m.selector.StatsMetrics().AddPIDs(uint32(pid))
 }
 

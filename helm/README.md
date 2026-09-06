@@ -37,7 +37,7 @@ helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-n
 
 #### Using a Custom Docker Registry
 
-By default, images are pulled from odigos registry at `registry.odigos.io`. To use a custom Docker registry instead, set the `imagePrefix` value during installation:
+By default, community installs pull images from `docker.io/keyval` and enterprise installs (with an on-prem token) pull from `registry.odigos.io`. To use a custom Docker registry instead, set the `imagePrefix` value during installation:
 
 ```sh
 helm upgrade --install odigos odigos/odigos \

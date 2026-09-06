@@ -5,6 +5,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 )
 
 type EnabledSignals struct {
@@ -25,8 +26,8 @@ func GetEnabledSignalsForContainer(nodeCollectorsGroup *odigosv1.CollectorsGroup
 		// if the node collectors group is not created yet,
 		// it means the collectors are not running thus all signals are disabled.
 		return enabledSignals, &odigosv1.AgentDisabledInfo{
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonWaitingForNodeCollector,
-			AgentEnabledMessage: "waiting for OpenTelemetry Collector to be created",
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonWaitingForNodeCollector),
+			AgentEnabledMessage: agentInjectionEnabled.AgentEnabledWaitingForNodeCollector.Message,
 		}
 	}
 
@@ -59,8 +60,8 @@ func GetEnabledSignalsForContainer(nodeCollectorsGroup *odigosv1.CollectorsGroup
 
 	if !enabledSignals.TracesEnabled && !enabledSignals.MetricsEnabled && !enabledSignals.LogsEnabled {
 		return enabledSignals, &odigosv1.AgentDisabledInfo{
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoCollectedSignals,
-			AgentEnabledMessage: "all signals are disabled, no agent will be injected",
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonNoCollectedSignals),
+			AgentEnabledMessage: agentInjectionEnabled.AgentEnabledNoCollectedSignals.Message,
 		}
 	}
 

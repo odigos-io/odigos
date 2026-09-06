@@ -9,3 +9,6 @@ spec:
   piiMasking:
     piiCategories:
       - CREDIT_CARD
+      - EMAIL
+      - JWT
+      - UUID

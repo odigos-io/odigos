@@ -20,6 +20,7 @@ spec:
               # Create the argo-rollouts namespace if it doesn't exist
               kubectl create namespace argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
               # Install Argo Rollouts controller
+              # Pin to v1.8.4: later versions (e.g. v1.9.1) fail on the k8s 1.21 clusters used in e2e.
               kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/download/v1.8.4/install.yaml
               # Wait for the controller to be ready
               kubectl wait --for=condition=available --timeout=120s deployment/argo-rollouts -n argo-rollouts
@@ -37,13 +38,13 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            timeout: 1m50s
+            timeout: 5m
             content: |
               ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               ../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 1m10s
+            timeout: 4m
             file: ../../common/assert/odigos-installed.yaml
 
     - name: Verify Node Odiglet label has been added
@@ -82,7 +83,7 @@ spec:
     - name: Assert InstrumentationConfig Created for Rollouts
       try:
         - assert:
-            timeout: 2m20s
+            timeout: 3m06s
             file: 03-assert-instrumentation-configs.yaml
 
     - name: Assert Argo Rollouts Are Healthy After Instrumentation

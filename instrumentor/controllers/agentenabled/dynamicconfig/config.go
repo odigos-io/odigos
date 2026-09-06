@@ -68,6 +68,33 @@ func calculateTracesConfig(
 		}
 	}
 
+	// Db Query Templatization
+	dbQueryTemplatizationConfig := traces.CalculateDbQueryTemplatizationConfig(agentLevelActions, runtimeDetails.Language, pw)
+	if dbQueryTemplatizationConfig != nil {
+		if collectorConfig == nil {
+			collectorConfig = &commonapi.ContainerCollectorConfig{}
+		}
+		collectorConfig.DbQueryTemplatization = dbQueryTemplatizationConfig
+	}
+
+	// Infer Db Attributes
+	inferDbAttributesConfig := traces.CalculateInferDbAttributesConfig(agentLevelActions, runtimeDetails.Language, pw)
+	if inferDbAttributesConfig != nil {
+		if collectorConfig == nil {
+			collectorConfig = &commonapi.ContainerCollectorConfig{}
+		}
+		collectorConfig.InferDbAttributes = inferDbAttributesConfig
+	}
+
+	// PII Masking
+	piiMaskingConfig := traces.CalculatePiiMaskingConfig(agentLevelActions, runtimeDetails.Language, pw)
+	if piiMaskingConfig != nil {
+		if collectorConfig == nil {
+			collectorConfig = &commonapi.ContainerCollectorConfig{}
+		}
+		collectorConfig.PiiMasking = piiMaskingConfig
+	}
+
 	// Sampling
 	noisyOps, relevantOps, costRules := traces.CalculateSamplingCategoryRulesForContainer(samplingRules, runtimeDetails.Language, pw, containerName, d, workloadObj, effectiveConfig)
 

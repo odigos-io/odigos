@@ -1,0 +1,68 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Status
+metadata:
+  name: added-to-collector-config
+  ownerResource: processor
+  scope: cluster
+  component: autoscaler
+spec:
+  type: 'AddedToCollectorConfig'
+
+  docs:
+    title: "Processor Added to Collector Config"
+    summary: "Technical status for Processor resources: whether their configuration was written into a collector ConfigMap."
+    description: |
+      Odigos includes Processor CR configuration in a collector ConfigMap
+      (cluster gateway and/or node collector, according to spec.collectorRoles).
+      This condition reports only that the ConfigMap was updated to include the processor,
+      or that it was removed because the processor is disabled.
+
+      It is a technical status and is not a primary user-facing health signal.
+      It does not mean the collector has reloaded or accepted the config, that the collector is running,
+      that there are no collector errors, or that the processor applies to every source.
+
+    states:
+    - state: "clusterGateway"
+      summary: "Processor configuration was written into or removed from the cluster gateway collector ConfigMap."
+    - state: "nodeCollector"
+      summary: "Processor configuration was written into or removed from the node collector ConfigMap."
+
+  reasons:
+
+  - name: "ConfigUpdated"
+    title: "Added to Collector Config"
+    k8sConditionStatus: "True"
+    odigosSeverity: "Success"
+    summary: "This processor's configuration is present in a collector ConfigMap."
+    description: |
+      Odigos successfully updated a collector ConfigMap to include this processor's configuration.
+      This is a technical reconciliation status only.
+      It does not confirm that the collector has reloaded the config, is healthy, or that the processor is applied to all sources.
+    states:
+    - state: "clusterGateway"
+      title: "Added to Cluster Gateway Config"
+      summary: "This processor's configuration is present in the cluster gateway collector ConfigMap."
+      message: "Processor was added to the cluster gateway collector ConfigMap."
+    - state: "nodeCollector"
+      title: "Added to Node Collector Config"
+      summary: "This processor's configuration is present in the node collector ConfigMap."
+      message: "Processor was added to the node collector ConfigMap."
+
+  - name: "ConfigRemovedDisabled"
+    title: "Removed from Collector Config (Disabled)"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Disabled"
+    summary: "This processor is disabled, so its configuration was removed from the collector ConfigMap."
+    description: |
+      The processor is disabled (spec.disabled).
+      Odigos removed its configuration from the collector ConfigMap so it is not part of the pipeline.
+      Re-enable the processor to add it back to the collector config.
+    states:
+    - state: "clusterGateway"
+      title: "Removed from Cluster Gateway Config (Disabled)"
+      summary: "This processor is disabled, so its configuration was removed from the cluster gateway collector ConfigMap."
+      message: "Processor is disabled; removed from the cluster gateway collector ConfigMap."
+    - state: "nodeCollector"
+      title: "Removed from Node Collector Config (Disabled)"
+      summary: "This processor is disabled, so its configuration was removed from the node collector ConfigMap."
+      message: "Processor is disabled; removed from the node collector ConfigMap."

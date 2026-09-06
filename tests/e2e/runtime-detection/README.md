@@ -56,7 +56,7 @@ This test suite verifies that Odigos correctly detects programming languages, th
 - **`libCType`** - C library type detection (musl vs glibc)
 
 ### Agent Conflict Detection
-- **`otherAgent`** - Detection of existing monitoring agents (New Relic)
+- **`otherAgents`** - Detection of existing monitoring agents (New Relic); a list, since a process can carry more than one
 
 ## Test Flow
 

@@ -7,6 +7,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	distroTypes "github.com/odigos-io/odigos/distros/distro"
+	agentInjectionEnabled "github.com/odigos-io/odigos/status/instrumentationconfig/generated"
 )
 
 // DistroParams is a map of string keys to string values,
@@ -25,7 +26,7 @@ func addLibcDistroParamFromRuntimeDetails(params DistroParam, distroName string,
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
 			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonMissingDistroParameter),
 			AgentEnabledMessage: fmt.Sprintf("failed to detect libc type for opentelemetry distribution '%s' which is required for instrumentation", distroName),
 		}
 	}
@@ -39,7 +40,7 @@ func addRuntimeVersionMajorMinorDistroParamFromRuntimeDetails(params DistroParam
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
 			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonMissingDistroParameter),
 			AgentEnabledMessage: fmt.Sprintf("failed to detect runtime version for opentelemetry distribution '%s' which is required for instrumentation", distroName),
 		}
 	}
@@ -48,7 +49,7 @@ func addRuntimeVersionMajorMinorDistroParamFromRuntimeDetails(params DistroParam
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
 			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonMissingDistroParameter),
 			AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version from detection: %s", runtimeDetails.RuntimeVersion),
 		}
 	}
@@ -57,7 +58,7 @@ func addRuntimeVersionMajorMinorDistroParamFromRuntimeDetails(params DistroParam
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
 			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonMissingDistroParameter),
 			AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version as major.minor: %s", runtimeDetails.RuntimeVersion),
 		}
 	}
@@ -76,7 +77,7 @@ func processSingleRequiredParameter(existingParams DistroParam, distro *distroTy
 		return &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
 			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonMissingDistroParameter),
 			AgentEnabledMessage: fmt.Sprintf("unsupported parameter '%s' for distro '%s'", parameterName, distro.Name),
 		}
 	}
@@ -98,7 +99,7 @@ func calculateAppendEnvParameters(distro *distroTypes.OtelDistro, runtimeDetails
 		return appendEnvParams, &odigosv1.ContainerAgentConfig{
 			ContainerName:       runtimeDetails.ContainerName,
 			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonMissingDistroParameter,
+			AgentEnabledReason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonMissingDistroParameter),
 			AgentEnabledMessage: fmt.Sprintf("failed to detect environment variables from container runtime: %s", *runtimeDetails.CriErrorMessage),
 		}
 	}

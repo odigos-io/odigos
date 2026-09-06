@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/instrumentation"
 )
+
+var DevicePluginPprofEndpointPort = int(6061)
 
 // Start device manager
 // the device manager library doesn't support passing a context,
@@ -28,7 +29,7 @@ func runDeviceManager() error {
 	pprofDone := make(chan struct{})
 	go func() {
 		defer close(pprofDone)
-		err := common.StartPprofServer(ctx, commonlogger.ToLogr(), int(k8sconsts.DevicePluginPprofEndpointPort))
+		err := common.StartPprofServer(ctx, commonlogger.ToLogr(), DevicePluginPprofEndpointPort)
 		if err != nil {
 			logger.Error("Failed to start pprof server", "err", err)
 		} else {

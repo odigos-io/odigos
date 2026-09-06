@@ -37,6 +37,8 @@ type Interface interface {
 	InstrumentationRules() InstrumentationRuleInformer
 	// Processors returns a ProcessorInformer.
 	Processors() ProcessorInformer
+	// Recommendations returns a RecommendationInformer.
+	Recommendations() RecommendationInformer
 	// Samplings returns a SamplingInformer.
 	Samplings() SamplingInformer
 	// Sources returns a SourceInformer.
@@ -87,6 +89,11 @@ func (v *version) InstrumentationRules() InstrumentationRuleInformer {
 // Processors returns a ProcessorInformer.
 func (v *version) Processors() ProcessorInformer {
 	return &processorInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Recommendations returns a RecommendationInformer.
+func (v *version) Recommendations() RecommendationInformer {
+	return &recommendationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Samplings returns a SamplingInformer.

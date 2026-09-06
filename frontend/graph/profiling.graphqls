@@ -90,4 +90,14 @@ extend type Mutation {
     kind: String!
     name: String!
   ): ClearProfilingBufferResult!
+
+  """
+  Configure the in-memory profile cache: persist the limits (profiling.ui) and
+  apply them live (prune over-budget data, then resize). Omitted fields are unchanged.
+  """
+  configureProfilingCache(
+    maxSlots: Int
+    slotMaxBytes: Int
+    slotTTLSeconds: Int
+  ): ProfilingSlots!
 }

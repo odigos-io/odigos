@@ -57,11 +57,13 @@ func ActionConfigToTypeOption(actionConfig actions.Action) model.ActionTypeOptio
 	}
 
 	return model.ActionTypeOption{
-		Type:            actionConfig.Metadata.Type,
-		DisplayName:     actionConfig.Metadata.DisplayName,
-		Description:     actionConfig.Spec.Description,
-		AllowedSignals:  allowedSignals,
-		DocsURL:         actionConfig.Spec.DocsURL,
-		Fields:          fields,
+		Type:           actionConfig.Metadata.Type,
+		DisplayName:    actionConfig.Metadata.DisplayName,
+		Category:       actionConfig.Metadata.Category,
+		Subtitle:       actionConfig.Spec.Subtitle,
+		Description:    actionConfig.Spec.Description,
+		AllowedSignals: allowedSignals,
+		DocsURL:        actionConfig.Spec.DocsURL,
+		Fields:         fields,
 	}
 }

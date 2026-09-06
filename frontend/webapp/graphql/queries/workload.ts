@@ -8,6 +8,9 @@ const WORKLOAD_FIELDS_SLIM = `
   }
   serviceName
   dataStreamNames
+  markedForInstrumentation {
+    markedForInstrumentation
+  }
   runtimeInfo {
     detectedLanguages
   }
@@ -93,6 +96,16 @@ export const GET_WORKLOADS_BY_IDS = gql`
           reasonEnum
           message
         }
+        podsManifestInjection {
+          name
+          status
+          reasonEnum
+          message
+          actionItems {
+            type
+            buttonText
+          }
+        }
         autoRollback {
           name
           status
@@ -116,6 +129,34 @@ export const GET_WORKLOADS_BY_IDS = gql`
           status
           reasonEnum
           message
+        }
+      }
+      rollout {
+        rolloutStatus {
+          name
+          status
+          reasonEnum
+          message
+        }
+        agentsMetaHashChangedTime
+        podsManifestInjectionStatus {
+          name
+          status
+          reasonEnum
+          message
+          actionItems {
+            type
+            buttonText
+          }
+        }
+        podsManifestInjectionOverview {
+          totalPods
+          totalAgentNotAppliedPods
+          agentNotAppliedOk
+          totalAgentAppliedPods
+          agentAppliedOk
+          totalAgentOutOfDatePods
+          agentOutOfDateOk
         }
       }
       autoRollback {
@@ -142,12 +183,17 @@ export const GET_WORKLOADS_BY_IDS = gql`
             status
             reasonEnum
             message
+            actionItems {
+              type
+              buttonText
+            }
           }
           otelDistroName
         }
         overrides {
           containerName
           otelDistroName
+          allowConcurrentAgents
           runtimeInfo {
             language
             runtimeVersion

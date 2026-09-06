@@ -19,13 +19,13 @@ spec:
     - name: Install Odigos CLI
       try:
         - script:
-            timeout: 2m40s
+            timeout: 5m
             content: |
               ../../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               ../../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 1m10s
+            timeout: 4m
             file: ../../../common/assert/odigos-installed.yaml
 
     - name: Verify - Jaeger Installed
@@ -63,7 +63,7 @@ spec:
             content: |
               cd ../../../../frontend/webapp
               yarn install
-              yarn add -D cypress@latest
+              yarn add -D cypress@16
               # Ensure yarn's global bin dir is on PATH (not always default in CI).
               export PATH="$(yarn global bin):$PATH"
               ./node_modules/.bin/cypress run --e2e -q

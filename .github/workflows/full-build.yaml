@@ -8,24 +8,21 @@ on:
       - opened
       - synchronize
       - reopened
+      
   schedule:
     - cron: '0 0 * * *' # Nightly run at midnight
+
+  workflow_dispatch:
 
 jobs:
   build-all-services:
     name: build-all-services
     strategy:
       matrix:
-        service: [autoscaler, scheduler, instrumentor, odigos-collector, odiglet, agents, frontend, operator, browser-proxy]
+        service: [instrumentor, odiglet, agents, frontend, operator, browser-proxy]
         include:
-          - service: autoscaler
-            dockerfile_path: .
-          - service: scheduler
-            dockerfile_path: .
           - service: instrumentor
             dockerfile_path: .
-          - service: odigos-collector
-            dockerfile_path: collector
           - service: odiglet
             dockerfile_path: odiglet
           - service: agents
@@ -48,7 +45,6 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: ${{ matrix.service }}:pr-${{ github.event.number }}
           provenance: false
           file: ${{ matrix.dockerfile_path }}/Dockerfile
           context: .
@@ -62,9 +58,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
-          go-version: "1.26.4"
+          go-version: "1.26.6"
       - name: Set up Goreleaser
         uses: goreleaser/goreleaser-action@v6
         with:

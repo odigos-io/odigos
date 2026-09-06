@@ -567,10 +567,21 @@ func deleteSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 }
 
 func UpdateSourceCRDSpec(ctx context.Context, nsName string, crdName string, specField string, newValue any) (*v1alpha1.Source, error) {
-	patch := fmt.Sprintf(`[{"op": "replace", "path": "/spec/%s", "value": %v}]`, specField, newValue)
+	// the patch document must be marshalled rather than formatted, otherwise a value
+	// containing a quote closes the JSON string and the rest is parsed as patch syntax.
+	patch, err := json.Marshal([]map[string]any{
+		{
+			"op":    "replace",
+			"path":  "/spec/" + specField,
+			"value": newValue,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	source, err := kube.DefaultClient.OdigosClient.Sources(nsName).Patch(
-		ctx, crdName, types.JSONPatchType, []byte(patch), metav1.PatchOptions{},
+		ctx, crdName, types.JSONPatchType, patch, metav1.PatchOptions{},
 	)
 
 	return source, err

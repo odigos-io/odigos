@@ -28,9 +28,9 @@ type extractAttributeProcessorConfig struct {
 
 type extractAttributeRule struct {
 	TargetAttributeName string `json:"target_attribute_name"`
-	LookupKey        string `json:"lookup_key,omitempty"`
-	DataFormat       string `json:"data_format,omitempty"`
-	Regex            string `json:"regex,omitempty"`
+	LookupKey           string `json:"lookup_key,omitempty"`
+	DataFormat          string `json:"data_format,omitempty"`
+	Regex               string `json:"regex,omitempty"`
 }
 
 // extractAttributeConfig translates the API-level ExtractAttributeConfig into the processor-level config and validates cross-field invariants
@@ -75,9 +75,9 @@ func extractAttributeConfig(cfg *actions.ExtractAttributeConfig) (extractAttribu
 
 		config.Extractions = append(config.Extractions, extractAttributeRule{
 			TargetAttributeName: extraction.TargetAttributeName,
-			LookupKey:        extraction.LookupKey,
-			DataFormat:       string(extraction.DataFormat),
-			Regex:            extraction.Regex,
+			LookupKey:           extraction.LookupKey,
+			DataFormat:          string(extraction.DataFormat),
+			Regex:               extraction.Regex,
 		})
 	}
 	return config, nil

@@ -15,6 +15,9 @@ images:
 - name: controller
   newName: registry.connect.redhat.com/odigos/odigos-operator-rhel-certified
   newTag: v1.25.0
+- name: enterprise-collector
+  newName: registry.connect.redhat.com/odigos/odigos-enterprise-collector-rhel-certified
+  newTag: v1.25.0
 - name: enterprise-instrumentor
   newName: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-rhel-certified
   newTag: v1.25.0

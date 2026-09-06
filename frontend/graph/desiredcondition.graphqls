@@ -1,0 +1,111 @@
+# =====================
+# Desired Condition Status
+# Shared status model for desired-state conditions across domains
+# (workloads, actions, etc.).
+# =====================
+
+# The enum tracks for a certain state if odigos is in the desired outcome or not.
+# There are few aspects to the relevant states:
+# - Is in desried state (yes / no)
+# - Permanence (transient / permanent)
+# - User action items (yes / no)
+# - state severity - when multiple conditions should be aggregated, what should be the combined state based on severity order.
+enum DesiredStateProgress {
+  # when odigos failed to determine the current or desired state due to some internal error.
+  # the actual status is not known and can be anything.
+  Error
+
+  # Is in desried state - no
+  # Permanence - permanent
+  # User action items - yes (investigate, disable, etc.)
+  # severity - always show if exists
+  # example - exception in agent code
+  Failure
+
+  # Is in desried state - no
+  # Permanence - permanent
+  # User action items - yes (rollout / investigate)
+  # severity - show first, unless there is a failure
+  # example - manual rollout to workload required to apply instrumentation
+  Notice
+
+  # Is in desried state - no
+  # Permanence - transient (long term)
+  # User action items - no
+  # severity - show to user that something is in progress and might take a while to resolve.
+  # example - waiting for cronjob to trigger for runtime detection
+  Pending
+
+  # Is in desried state - no
+  # Permanence - transient (short term)
+  # User action items - no
+  # severity - show to user that something is in progress but expected to resolve shortly.
+  # example - waiting for collectors pipeline to be deployed and ready
+  Waiting
+
+  # Is in desried state - no
+  # Permanence - permanent
+  # User action iteams - no (only inform)
+  # severity - show after transient states to indicate that the desired state cannot be reached.
+  # example - workload language unknown or no agent available for a detected language or it's runtime version.
+  Unsupported
+
+  # Is in desried state - yes
+  # Permanence - permanent
+  # User action iteams - no (only inform)
+  # severity - indicates that the desired state is disabled by user settings, and ok
+  # example - user manually disabled instrumentation for this workload.
+  Disabled
+
+  # Is in desried state - yes
+  # Permanence - permanent
+  # User action items - no
+  # severity - show only if all states are not indicates something other than success.
+  # example - detection is ok, agent injection enabled in workload, all pods are injected with agent, all agent report healthy, telemetry is generated from workload.
+  Success
+
+  # it means that the condition is not relevant at this context yet (as it is not yet applicable)
+  # ignored for serverity calculations
+  # example - agent enabled is not relevant until runtime inspection is complete
+  Irrelevant
+
+  Unknown
+}
+
+# describes a condition and its status and message which describes if the
+# condition is met or not and in what state it is.
+type DesiredConditionStatus {
+  # name of the condition, in PascalCase ("AgentInjected", "RuntimeInfo", etc.)
+  name: String!
+
+  # indicates if the desired state is met or not, and what is the progress towards it.
+  status: DesiredStateProgress!
+
+  # reasonEnum is a String, out of close set of enum values per condition type.
+  # use PascalCase for the enum values.
+  # the exact values per condition type are undocumented and should be considered internal.
+  # since it's an enum value, it is suitable for automatic processing and be used in scripts.
+  reasonEnum: String
+
+  # message is a human readable, high cardinality, free form text,
+  # that describes the status for this condition.
+  # it is used to provide additional context relevant to the human reading it.
+  message: String!
+
+  # actions the user can take to resolve or advance this condition.
+  actionItems: [DesiredConditionActionItem!]
+}
+
+type DesiredConditionActionItem {
+  # identifies the action that the client should invoke.
+  type: DesiredConditionActionItemType!
+
+  # human-readable label describing the action.
+  buttonText: String!
+}
+
+enum DesiredConditionActionItemType {
+  RolloutWorkload
+  AllowConcurrentAgentsForContainer
+  DisallowConcurrentAgentsForContainer
+}

@@ -23,15 +23,17 @@ func Tracer(settings component.TelemetrySettings) trace.Tracer {
 // TelemetryBuilder provides an interface for components to report telemetry
 // as defined in metadata and user config.
 type TelemetryBuilder struct {
-	meter                      metric.Meter
-	mu                         sync.Mutex
-	registrations              []metric.Registration
-	OdigosAcceptedLogRecords   metric.Int64Counter
-	OdigosAcceptedMetricPoints metric.Int64Counter
-	OdigosAcceptedSpans        metric.Int64Counter
-	OdigosLogDataSize          metric.Int64Counter
-	OdigosMetricDataSize       metric.Int64Counter
-	OdigosTraceDataSize        metric.Int64Counter
+	meter                        metric.Meter
+	mu                           sync.Mutex
+	registrations                []metric.Registration
+	OdigosAcceptedLogRecords     metric.Int64Counter
+	OdigosAcceptedMetricPoints   metric.Int64Counter
+	OdigosAcceptedProfileSamples metric.Int64Counter
+	OdigosAcceptedSpans          metric.Int64Counter
+	OdigosLogDataSize            metric.Int64Counter
+	OdigosMetricDataSize         metric.Int64Counter
+	OdigosProfileDataSize        metric.Int64Counter
+	OdigosTraceDataSize          metric.Int64Counter
 }
 
 // TelemetryBuilderOption applies changes to default builder.
@@ -75,6 +77,12 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 		metric.WithUnit("{datapoints}"),
 	)
 	errs = errors.Join(errs, err)
+	builder.OdigosAcceptedProfileSamples, err = builder.meter.Int64Counter(
+		"otelcol_odigos_accepted_profile_samples",
+		metric.WithDescription("Number of profile samples passed through the processor. [Development]"),
+		metric.WithUnit("{samples}"),
+	)
+	errs = errors.Join(errs, err)
 	builder.OdigosAcceptedSpans, err = builder.meter.Int64Counter(
 		"otelcol_odigos_accepted_spans",
 		metric.WithDescription("Number of spans passed through the processor. [Development]"),
@@ -90,6 +98,12 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 	builder.OdigosMetricDataSize, err = builder.meter.Int64Counter(
 		"otelcol_odigos_metric_data_size",
 		metric.WithDescription("Total size of metric data passed to the processor [Development]"),
+		metric.WithUnit("By"),
+	)
+	errs = errors.Join(errs, err)
+	builder.OdigosProfileDataSize, err = builder.meter.Int64Counter(
+		"otelcol_odigos_profile_data_size",
+		metric.WithDescription("Total size of profile data passed to the processor [Development]"),
 		metric.WithUnit("By"),
 	)
 	errs = errors.Join(errs, err)

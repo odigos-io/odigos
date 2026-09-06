@@ -38,7 +38,30 @@ func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRu
 		return model.InstrumentationRuleTypeCustomInstrumentation
 	}
 
+	if rule.NetworkMetrics != nil && *rule.NetworkMetrics {
+		return model.InstrumentationRuleTypeNetworkMetrics
+	}
+
 	return model.InstrumentationRuleTypeUnknownType
+}
+
+// getNetworkMetricsInput maps the presence-based GraphQL boolean to the CRD config: `true` becomes an
+// empty `NetworkMetricsConfig{}` (enabled), while nil/false clears it (disabled).
+func getNetworkMetricsInput(input model.InstrumentationRuleInput) *instrumentationrules.NetworkMetricsConfig {
+	if input.NetworkMetrics == nil || !*input.NetworkMetrics {
+		return nil
+	}
+	return &instrumentationrules.NetworkMetricsConfig{}
+}
+
+// networkMetricsEnabledPtr reports enablement back to the UI: a non-nil config becomes `true`, a nil
+// config becomes nil (field omitted) so it doesn't spuriously mark other rule types.
+func networkMetricsEnabledPtr(cfg *instrumentationrules.NetworkMetricsConfig) *bool {
+	if cfg == nil {
+		return nil
+	}
+	enabled := true
+	return &enabled
 }
 
 // GetInstrumentationRules fetches all instrumentation rules
@@ -70,6 +93,7 @@ func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule,
 			HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 			CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
+			NetworkMetrics:           networkMetricsEnabledPtr(r.Spec.NetworkMetrics),
 		}
 		rule.Type = deriveTypeFromRule(rule)
 
@@ -103,6 +127,7 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
+		NetworkMetrics:           networkMetricsEnabledPtr(r.Spec.NetworkMetrics),
 	}
 	rule.Type = deriveTypeFromRule(rule)
 
@@ -357,9 +382,9 @@ func getCodeAttributesInput(input model.InstrumentationRuleInput) *instrumentati
 	return codeAttributes
 }
 
-func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instrumentationrules.CustomInstrumentations {
+func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) (*instrumentationrules.CustomInstrumentations, error) {
 	if input.CustomInstrumentations == nil {
-		return nil
+		return nil, nil
 	}
 	customInstrumentations := &instrumentationrules.CustomInstrumentations{}
 	// Iterate Java custom probes and verify input
@@ -409,6 +434,20 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		}
 	}
 
+	if input.CustomInstrumentations.Php != nil {
+		customInstrumentations.Php = make([]instrumentationrules.PhpCustomProbe, 0, len(input.CustomInstrumentations.Php))
+		for _, probe := range input.CustomInstrumentations.Php {
+			apiProbe := instrumentationrules.PhpCustomProbe{}
+			if probe.ClassName != nil {
+				apiProbe.ClassName = *probe.ClassName
+			}
+			if probe.FunctionName != nil {
+				apiProbe.FunctionName = *probe.FunctionName
+			}
+			customInstrumentations.Php = append(customInstrumentations.Php, apiProbe)
+		}
+	}
+
 	// Remove duplicate Golang probes
 	uniqueGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(customInstrumentations.Golang))
 	uniqGoProbes := make(map[instrumentationrules.GolangCustomProbe]struct{})
@@ -430,7 +469,22 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		uniqueJavaProbes = append(uniqueJavaProbes, probe)
 	}
 	customInstrumentations.Java = uniqueJavaProbes
-	return customInstrumentations
+
+	// Remove duplicate PHP probes
+	uniquePhpProbes := make([]instrumentationrules.PhpCustomProbe, 0, len(customInstrumentations.Php))
+	phpSeen := make(map[instrumentationrules.PhpCustomProbe]struct{})
+	for _, probe := range customInstrumentations.Php {
+		phpSeen[probe] = struct{}{}
+	}
+	for probe := range phpSeen {
+		uniquePhpProbes = append(uniquePhpProbes, probe)
+	}
+	customInstrumentations.Php = uniquePhpProbes
+
+	if err := customInstrumentations.Verify(); err != nil {
+		return nil, err
+	}
+	return customInstrumentations, nil
 }
 
 func UpdateInstrumentationRule(ctx context.Context, id string, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
@@ -446,10 +500,12 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	existingRule.Spec.Notes = *input.Notes
 	existingRule.Spec.Disabled = *input.Disabled
 
+	// Preserve selectors when omitted. GraphQL clients (and UI forms that don't
+	// edit SourcesScopes / InstrumentationLibraries) send nil for these fields;
+	// treating omit as clear would widen a scoped GitOps/kubectl rule cluster-wide.
+	// Explicit empty lists still clear via convertSourcesScopeInput / empty slice.
 	if input.SourcesScopes != nil {
 		existingRule.Spec.Scopes = convertSourcesScopeInput(input.SourcesScopes)
-	} else {
-		existingRule.Spec.Scopes = nil
 	}
 
 	if input.InstrumentationLibraries != nil {
@@ -462,8 +518,6 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 			}
 		}
 		existingRule.Spec.InstrumentationLibraries = &convertedLibraries
-	} else {
-		existingRule.Spec.InstrumentationLibraries = nil
 	}
 
 	if input.PayloadCollection != nil {
@@ -485,10 +539,16 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	}
 
 	if input.CustomInstrumentations != nil {
-		existingRule.Spec.CustomInstrumentations = getCustomInstrumentationsInput(input)
+		customInstrumentations, err := getCustomInstrumentationsInput(input)
+		if err != nil {
+			return nil, fmt.Errorf("invalid custom instrumentations: %w", err)
+		}
+		existingRule.Spec.CustomInstrumentations = customInstrumentations
 	} else {
 		existingRule.Spec.CustomInstrumentations = nil
 	}
+
+	existingRule.Spec.NetworkMetrics = getNetworkMetricsInput(input)
 	// Update rule in Kubernetes
 	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Update(ctx, existingRule, metav1.UpdateOptions{})
 	if err != nil {
@@ -511,6 +571,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		HeadersCollection:        convertHeadersCollection(updatedRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(updatedRule.Spec.CustomInstrumentations),
+		NetworkMetrics:           networkMetricsEnabledPtr(updatedRule.Spec.NetworkMetrics),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 	return &rule, nil
@@ -552,6 +613,11 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		instrumentationLibraries = &convertedLibraries
 	}
 
+	customInstrumentations, err := getCustomInstrumentationsInput(input)
+	if err != nil {
+		return nil, fmt.Errorf("invalid custom instrumentations: %w", err)
+	}
+
 	// Define the new rule spec based on the input
 	newRule := &v1alpha1.InstrumentationRule{
 		ObjectMeta: metav1.ObjectMeta{
@@ -566,7 +632,8 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			CodeAttributes:           getCodeAttributesInput(input),
 			HeadersCollection:        getHeadersCollectionInput(input),
 			PayloadCollection:        getPayloadCollectionInput(input),
-			CustomInstrumentations:   getCustomInstrumentationsInput(input),
+			CustomInstrumentations:   customInstrumentations,
+			NetworkMetrics:           getNetworkMetricsInput(input),
 		},
 	}
 	// Create the rule in Kubernetes
@@ -591,6 +658,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		HeadersCollection:        convertHeadersCollection(createdRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(createdRule.Spec.PayloadCollection),
 		CustomInstrumentations:   convertCustomInstrumentations(createdRule.Spec.CustomInstrumentations),
+		NetworkMetrics:           networkMetricsEnabledPtr(createdRule.Spec.NetworkMetrics),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 
@@ -784,6 +852,14 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 			customInstruAsGqlModel.Java = append(customInstruAsGqlModel.Java, &model.JavaCustomProbe{
 				ClassName:  &javaProbe.ClassName,
 				MethodName: &javaProbe.MethodName,
+			})
+		}
+	}
+	if customInstruAsInstruRule.Php != nil {
+		for _, phpProbe := range customInstruAsInstruRule.Php {
+			customInstruAsGqlModel.Php = append(customInstruAsGqlModel.Php, &model.PhpCustomProbe{
+				ClassName:    &phpProbe.ClassName,
+				FunctionName: &phpProbe.FunctionName,
 			})
 		}
 	}

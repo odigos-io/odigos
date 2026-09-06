@@ -321,12 +321,8 @@ Configuration passed to the OpenTelemetry Collector instance managed by the VM A
 
 <Accordion title="Instrumentation controller" icon="wand-magic-sparkles" defaultOpen="false">
 
-Controls how the agent instruments discovered processes. Top-level fields apply globally; the
-Java instrumentation subsection targets Java-specific behavior.
-
-| Field | Description |
-|-------|-------------|
-| **Dynamic loader match threshold percent** | Match threshold (0–100) for partial command-line matching when the dynamic loader attaches to a process. `0` = any match if the executable matches; `100` = exact match. |
+Controls how the agent instruments discovered processes. The Java instrumentation
+subsection targets Java-specific behavior.
 
 **Java instrumentation** subsection:
 

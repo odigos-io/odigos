@@ -10,8 +10,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 var (
@@ -38,16 +39,25 @@ func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigo
 			Namespace: dc.Namespace,
 			Labels:    ClusterCollectorGateway,
 		},
-		Spec: v1.ServiceSpec{
+	}
+
+	if err := ctrl.SetControllerReference(dc, dcService, b.scheme); err != nil {
+		logger.Error(err, "failed to set controller reference")
+		return err
+	}
+
+	_, err := controllerutil.CreateOrPatch(ctx, b.Client, dcService, func() error {
+		dcService.Spec = v1.ServiceSpec{
 			Selector: map[string]string{
 				k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleNodeCollector),
 			},
 			Ports: []v1.ServicePort{
 				{
-					Name:       "otlp",
-					Protocol:   "TCP",
-					Port:       4317,
-					TargetPort: intstr.FromInt(4317),
+					Name:        "otlp",
+					Protocol:    "TCP",
+					AppProtocol: ptr.To("grpc"),
+					Port:        4317,
+					TargetPort:  intstr.FromInt(4317),
 				},
 				{
 					Name:       "otlphttp",
@@ -63,14 +73,8 @@ func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigo
 				},
 			},
 			InternalTrafficPolicy: &localTrafficPolicy,
-		},
-	}
-
-	if err := ctrl.SetControllerReference(dc, dcService, b.scheme); err != nil {
-		logger.Error(err, "failed to set controller reference")
-		return err
-	}
-
-	err := b.Client.Create(ctx, dcService)
-	return client.IgnoreAlreadyExists(err)
+		}
+		return nil
+	})
+	return err
 }

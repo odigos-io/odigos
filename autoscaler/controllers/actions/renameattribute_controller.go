@@ -148,6 +148,23 @@ func renameAttributeConfig(cfg map[string]string, signals []common.Observability
 					Statements: ottlStatements,
 				},
 			}
+
+		case common.ProfilesObservabilitySignal:
+			// resource, scope and profile are the only OTTL contexts the transformprocessor accepts for profiles.
+			config.ProfileStatements = []OttlStatementConfig{
+				{
+					Context:    "resource",
+					Statements: ottlStatements,
+				},
+				{
+					Context:    "scope",
+					Statements: ottlStatements,
+				},
+				{
+					Context:    "profile",
+					Statements: ottlStatements,
+				},
+			}
 		}
 	}
 	return config, nil

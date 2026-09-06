@@ -1,0 +1,16 @@
+# The instrumentor's injection webhook only serves once its pods roll out to the
+# new version and become Ready — readiness gates on the serving cert being mounted
+# and the webhooks being registered. On a fresh install/upgrade the cert reaches
+# the pod through the mounted Secret, which the kubelet can take 30-100s to sync
+# (open-policy-agent/cert-controller#35). Asserting the rollout is complete here
+# lets the e2e wait out that window, avoiding the race where a workload is rolled
+# out and admitted without injection because the webhook isn't serving yet.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-instrumentor
+  namespace: odigos-test
+status:
+  # both replicas are on the new version AND Ready => webhook cert mounted + serving
+  updatedReplicas: 2
+  readyReplicas: 2

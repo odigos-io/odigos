@@ -39,8 +39,18 @@ spec:
             {{- if .Values.auth.externalUrl }}
             - name: CENTRAL_BACKEND_HOST
               value: {{ .Values.auth.externalUrl | quote }}
+            {{- end }}
+            {{- $externalUIUrl := .Values.auth.externalUIUrl }}
+            {{- if not $externalUIUrl }}
+              {{- if eq .Values.auth.externalUrl "http://localhost:8081" }}
+                {{- $externalUIUrl = "http://localhost:3000" }}
+              {{- else if .Values.auth.externalUrl }}
+                {{- $externalUIUrl = .Values.auth.externalUrl }}
+              {{- end }}
+            {{- end }}
+            {{- if $externalUIUrl }}
             - name: CENTRAL_UI_HOST
-              value: {{ .Values.auth.externalUrl | quote }}
+              value: {{ $externalUIUrl | quote }}
             {{- end }}
             - name: USE_K8S_SECRETS
               value: "true"
@@ -55,11 +65,19 @@ spec:
           ports:
             - containerPort: 8081
               name: http
-          readinessProbe:
+          # /healthz is served as soon as the process binds the port (before Keycloak init).
+          # /readyz returns 200 only after Keycloak+Redis init completes.
+          startupProbe:
             httpGet:
               path: /healthz
               port: 8081
-            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 60
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
             periodSeconds: 5
             failureThreshold: 60
             timeoutSeconds: 3
@@ -67,7 +85,6 @@ spec:
             httpGet:
               path: /healthz
               port: 8081
-            initialDelaySeconds: 120
             periodSeconds: 10
             failureThreshold: 3
             timeoutSeconds: 3

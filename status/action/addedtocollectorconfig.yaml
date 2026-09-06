@@ -1,0 +1,78 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Status
+metadata:
+  name: added-to-collector-config
+  ownerResource: action
+  scope: cluster
+  component: autoscaler
+spec:
+  type: 'AddedToCollectorConfig'
+
+  docs:
+    title: "Action Added to Collector Configuration"
+    summary: "Reports whether this action's settings were written into the configuration used by the Odigos collectors."
+    description: |
+      Actions that run in the collectors need their settings included in the
+      collectors' configuration (cluster collector and/or node collectors).
+
+      This status confirms that Odigos finished updating that configuration
+      to include the action, or removed it because the action is disabled.
+
+      It does not mean collectors have already reloaded their configuration,
+      are healthy, or that you will immediately see the effect in your telemetry.
+
+    states:
+    - state: "clusterGateway"
+      summary: "Action settings were written into or removed from the cluster collector configuration."
+    - state: "nodeCollector"
+      summary: "Action settings were written into or removed from the node collector configuration."
+
+  reasons:
+
+  - name: "WaitingForReconcile"
+    title: "Waiting for Reconcile"
+    k8sConditionStatus: "Unknown"
+    odigosSeverity: "Waiting"
+    summary: "This action's configuration changed and Odigos has not finished applying the latest version yet."
+    message: "Waiting for the latest configuration to be applied"
+    description: |
+      The action was updated (or created), but status conditions still reflect an older
+      generation. Controllers have not finished reconciling the current configuration.
+      This is usually short-lived and resolves once reconciliation completes.
+
+  - name: "ConfigUpdated"
+    title: "Added to Collector Configuration"
+    k8sConditionStatus: "True"
+    odigosSeverity: "Success"
+    summary: "This action's settings are present in the collector configuration."
+    description: |
+      Odigos updated the collectors' configuration to include this action.
+      Collectors may still need to reload their configuration before the change is fully active.
+      This does not by itself confirm that telemetry already reflects the action.
+    states:
+    - state: "clusterGateway"
+      title: "Added to Cluster Collector Configuration"
+      summary: "This action's settings are present in the cluster collector configuration."
+      message: "Action was added to the cluster collector configuration."
+    - state: "nodeCollector"
+      title: "Added to Node Collector Configuration"
+      summary: "This action's settings are present in the node collector configuration."
+      message: "Action was added to the node collector configuration."
+
+  - name: "ConfigRemovedDisabled"
+    title: "Removed from Collector Configuration (Disabled)"
+    k8sConditionStatus: "False"
+    odigosSeverity: "Disabled"
+    summary: "This action is disabled, so it was removed from the collector configuration."
+    description: |
+      This action is disabled, so Odigos removed it from the collectors' configuration.
+      Re-enable the action to add it back to the collector configuration.
+    states:
+    - state: "clusterGateway"
+      title: "Removed from Cluster Collector Configuration (Disabled)"
+      summary: "This action is disabled, so it was removed from the cluster collector configuration."
+      message: "Action is disabled; removed from the cluster collector configuration."
+    - state: "nodeCollector"
+      title: "Removed from Node Collector Configuration (Disabled)"
+      summary: "This action is disabled, so it was removed from the node collector configuration."
+      message: "Action is disabled; removed from the node collector configuration."

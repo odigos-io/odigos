@@ -7,14 +7,18 @@ import (
 	"github.com/go-logr/logr"
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
 	"github.com/odigos-io/odigos/autoscaler/controllers/clustercollector"
 	"github.com/odigos-io/odigos/autoscaler/controllers/loglevel"
 	"github.com/odigos-io/odigos/autoscaler/controllers/metricshandler"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
+	"github.com/odigos-io/odigos/autoscaler/controllers/recommendations"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,6 +57,19 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 	odigosNs := env.GetCurrentNamespace()
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	clusterCollectorLabelSelector := labels.Set(clustercollector.ClusterCollectorGateway).AsSelector()
+
+	collectorRoleReq, err := labels.NewRequirement(
+		k8sconsts.OdigosCollectorRoleLabel,
+		selection.In,
+		[]string{
+			string(k8sconsts.CollectorsRoleClusterGateway),
+			string(k8sconsts.CollectorsRoleNodeCollector),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	collectorServiceLabelSelector := labels.NewSelector().Add(*collectorRoleReq)
 
 	mgrOptions := ctrl.Options{
 		Scheme: scheme,
@@ -97,7 +114,7 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 					Field: nsSelector,
 				},
 				&corev1.Service{}: {
-					Label: clusterCollectorLabelSelector,
+					Label: collectorServiceLabelSelector,
 					Field: nsSelector,
 				},
 				&corev1.Pod{}: {
@@ -137,6 +154,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&odigosv1.Action{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.Recommendation{}: {
+					Field: nsSelector,
+				},
 				&odigosv1.InstrumentationConfig{}: {},
 			},
 		},
@@ -149,13 +169,13 @@ func durationPointer(d time.Duration) *time.Duration {
 	return &d
 }
 
-func SetupWithManager(mgr manager.Manager, odigosVersion string) error {
-	err := nodecollector.SetupWithManager(mgr)
+func SetupWithManager(mgr manager.Manager, odigosVersion string, tier common.OdigosTier) error {
+	err := nodecollector.SetupWithManager(mgr, tier)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for node collector: %w", err)
 	}
 
-	err = clustercollector.SetupWithManager(mgr, odigosVersion)
+	err = clustercollector.SetupWithManager(mgr, odigosVersion, tier)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for cluster collector: %w", err)
 	}
@@ -170,6 +190,10 @@ func SetupWithManager(mgr manager.Manager, odigosVersion string) error {
 
 	if err = loglevel.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to create log level controller: %w", err)
+	}
+
+	if err = recommendations.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create recommendations controller: %w", err)
 	}
 
 	return nil

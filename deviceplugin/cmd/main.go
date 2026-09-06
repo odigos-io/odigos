@@ -5,7 +5,6 @@ import (
 
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/deviceplugin/pkg"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/klog/v2"
 
 	_ "net/http/pprof"
@@ -15,12 +14,6 @@ func main() {
 	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"), "deviceplugin")
 	klog.SetLogger(commonlogger.ToLogr())
 	logger := commonlogger.LoggerCompat().With("subsystem", "startup")
-
-	// Load env
-	if err := env.Load(); err != nil {
-		logger.Error("Failed to load env", "err", err)
-		os.Exit(1)
-	}
 
 	dp := pkg.New()
 
