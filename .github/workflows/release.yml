@@ -274,6 +274,12 @@ jobs:
           identity: releaser
           output-git-config: "false"
 
+      # goreleaser invokes cosign to keyless-sign the release checksums
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.2
+
       - uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 #v7.0.0
         with:
           distribution: goreleaser

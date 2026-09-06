@@ -133,6 +133,33 @@ version listed in [`SIGNING.md`](https://github.com/odigos-io/ci-core/blob/main/
 - **Supporting images**: `wasp-init`, `odigos-cli-offsets`, and
   `odigos-vmagent-instrumentations` (signed for publishes after 2026-08-12)
 
+## CLI binary verification
+
+Every [GitHub release](https://github.com/odigos-io/odigos/releases) ships a
+`checksums.txt` covering the CLI archives, keyless-signed by the release pipeline.
+The Sigstore bundle (`checksums.txt.sigstore.json`) is published as a release asset
+next to it. Verify the checksum file, then check your downloaded archive against it:
+
+```bash
+VERSION=<version>   # the release you downloaded, e.g. v1.40.0
+BASE=https://github.com/odigos-io/odigos/releases/download/${VERSION}
+
+curl -sfLO "${BASE}/checksums.txt"
+curl -sfLO "${BASE}/checksums.txt.sigstore.json"
+
+cosign verify-blob \
+  --bundle checksums.txt.sigstore.json \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github\.com/odigos-io/odigos/\.github/workflows/release\.yml@refs/heads/main$' \
+  checksums.txt
+
+curl -sfLO "${BASE}/cli_${VERSION#v}_linux_amd64.tar.gz"   # your platform's archive
+sha256sum -c checksums.txt --ignore-missing
+```
+
+`--ignore-missing` limits the check to the archives you actually downloaded
+(on macOS use `shasum -a 256 -c checksums.txt --ignore-missing`).
+
 ## Air-gapped verification
 
 The Rekor proof travels inside the signature bundle, so verification works offline:
