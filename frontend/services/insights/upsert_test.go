@@ -186,3 +186,169 @@ func TestUpsertPolicyAndReadPropagatesWriteError(t *testing.T) {
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrEngineStarting)
 }
+
+// A write that succeeds followed by a failed or stale read-back must not look
+// like a successful save: the UI would show the pre-edit entity as persisted.
+func TestUpsertAndReadPropagatesReadBackFailures(t *testing.T) {
+	tests := []struct {
+		name         string
+		listResponse string
+		listStatus   int
+		call         func(*Client) error
+		wantErr      error
+	}{
+		{
+			name:       "policy read-back fails",
+			listStatus: http.StatusInternalServerError,
+			call: func(c *Client) error {
+				_, err := c.UpsertPolicyAndRead(context.Background(), Policy{Enabled: true})
+				return err
+			},
+			wantErr: ErrInternal,
+		},
+		{
+			name:         "learning policy is missing after the upsert",
+			listResponse: `{"count":0,"items":[]}`,
+			call: func(c *Client) error {
+				_, err := c.UpsertLearningPolicyAndRead(context.Background(), LearningPolicy{Class: "D2_egress", Scope: "global"})
+				return err
+			},
+			wantErr: ErrInternal,
+		},
+		{
+			name:       "learning policy read-back fails",
+			listStatus: http.StatusInternalServerError,
+			call: func(c *Client) error {
+				_, err := c.UpsertLearningPolicyAndRead(context.Background(), LearningPolicy{Class: "D2_egress"})
+				return err
+			},
+			wantErr: ErrInternal,
+		},
+		{
+			name:         "guardrail is missing after the upsert",
+			listResponse: `{"count":0,"items":[]}`,
+			call: func(c *Client) error {
+				_, err := c.UpsertGuardrailAndRead(context.Background(), Guardrail{ScopeKey: "prod/checkout"})
+				return err
+			},
+			wantErr: ErrInternal,
+		},
+		{
+			name:       "guardrail read-back fails",
+			listStatus: http.StatusInternalServerError,
+			call: func(c *Client) error {
+				_, err := c.UpsertGuardrailAndRead(context.Background(), Guardrail{ScopeKey: "prod/checkout"})
+				return err
+			},
+			wantErr: ErrInternal,
+		},
+		{
+			name:       "system settings read-back fails",
+			listStatus: http.StatusInternalServerError,
+			call: func(c *Client) error {
+				_, err := c.UpdateSystemSettingsAndRead(context.Background(), SystemSettings{})
+				return err
+			},
+			wantErr: ErrInternal,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodPut {
+					w.WriteHeader(http.StatusNoContent)
+					return
+				}
+				if tt.listStatus != 0 {
+					w.WriteHeader(tt.listStatus)
+					_, _ = w.Write([]byte(`{"error":{"code":"internal_error","message":"engine failed"}}`))
+					return
+				}
+				_, _ = w.Write([]byte(tt.listResponse))
+			}))
+			defer server.Close()
+
+			client, err := NewClient(server.URL)
+			require.NoError(t, err)
+
+			err = tt.call(client)
+			require.Error(t, err)
+			assert.ErrorIs(t, err, tt.wantErr)
+		})
+	}
+}
+
+// A disabled policy is allowed to be absent from the read-back, because the
+// engine drops it; echoing the request keeps the UI from reporting a failure.
+func TestUpsertPolicyAndReadEchoesADisabledPolicy(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		_, _ = w.Write([]byte(`{"count":0,"items":[]}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(server.URL)
+	require.NoError(t, err)
+
+	requested := Policy{Name: "checkout", Enabled: false, Scope: "service", ScopeKey: "prod/checkout"}
+	stored, err := client.UpsertPolicyAndRead(context.Background(), requested)
+	require.NoError(t, err)
+	assert.Equal(t, requested, stored)
+}
+
+// The read-back has to match on the full key. Matching only part of it would
+// return a sibling entity as the just-saved one.
+func TestUpsertAndReadMatchOnTheFullKey(t *testing.T) {
+	t.Run("policy matches scope and scope key", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPut {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			_, _ = w.Write([]byte(`{"count":2,"items":[
+				{"id":1,"scope":"global","scope_key":"prod/checkout"},
+				{"id":2,"scope":"service","scope_key":"prod/payments"},
+				{"id":3,"scope":"service","scope_key":"prod/checkout"}
+			]}`))
+		}))
+		defer server.Close()
+
+		client, err := NewClient(server.URL)
+		require.NoError(t, err)
+
+		stored, err := client.UpsertPolicyAndRead(context.Background(), Policy{Enabled: true, Scope: "service", ScopeKey: "prod/checkout"})
+		require.NoError(t, err)
+		assert.Equal(t, int64(3), stored.ID)
+	})
+
+	t.Run("learning policy matches class, scope and scope key", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPut {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			_, _ = w.Write([]byte(`{"count":3,"items":[
+				{"class":"D3_latency","mode":"a","scope":"service","scope_key":"prod/checkout"},
+				{"class":"D2_egress","mode":"b","scope":"global","scope_key":"prod/checkout"},
+				{"class":"D2_egress","mode":"c","scope":"service","scope_key":"prod/payments"},
+				{"class":"D2_egress","mode":"d","scope":"service","scope_key":"prod/checkout"}
+			]}`))
+		}))
+		defer server.Close()
+
+		client, err := NewClient(server.URL)
+		require.NoError(t, err)
+
+		stored, err := client.UpsertLearningPolicyAndRead(context.Background(), LearningPolicy{
+			Class:    "D2_egress",
+			Scope:    "service",
+			ScopeKey: "prod/checkout",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, LearningMode("d"), stored.Mode)
+	})
+}
