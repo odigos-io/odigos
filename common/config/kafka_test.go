@@ -94,6 +94,72 @@ func TestKafkaBrokersAreRenderedAsAList(t *testing.T) {
 	}
 }
 
+func TestKafkaNonNumericValuesAreRejected(t *testing.T) {
+	numericKeys := []string{
+		KAFKA_METADATA_MAX_RETRY,
+		KAFKA_PRODUCER_MAX_MESSAGE_BYTES,
+		KAFKA_PRODUCER_REQUIRED_ACKS,
+		KAFKA_PRODUCER_FLUSH_MAX_MESSAGES,
+	}
+	badValues := []string{"all", "", "1_000_000", "1000000 "}
+
+	for _, key := range numericKeys {
+		for _, badValue := range badValues {
+			t.Run(key+"="+badValue, func(t *testing.T) {
+				dest := &mockDestination{
+					id: "test-id",
+					config: map[string]string{
+						KAFKA_PROTOCOL_VERSION: "2.0.0",
+						KAFKA_BROKERS:          `["broker-a:9092"]`,
+						key:                    badValue,
+					},
+					signals: []common.ObservabilitySignal{common.TracesObservabilitySignal},
+				}
+
+				currentConfig := newKafkaConfig()
+				_, err := (&Kafka{}).ModifyConfig(dest, currentConfig)
+				require.Error(t, err, "a non numeric %s must fail the destination instead of panicking", key)
+				assert.Contains(t, err.Error(), key)
+				assert.Empty(t, currentConfig.Exporters)
+			})
+		}
+	}
+}
+
+func TestKafkaNumericValuesAreRenderedAsNumbers(t *testing.T) {
+	dest := &mockDestination{
+		id: "test-id",
+		config: map[string]string{
+			KAFKA_PROTOCOL_VERSION:            "2.0.0",
+			KAFKA_BROKERS:                     `["broker-a:9092"]`,
+			KAFKA_METADATA_MAX_RETRY:          "7",
+			KAFKA_PRODUCER_MAX_MESSAGE_BYTES:  "2000000",
+			KAFKA_PRODUCER_REQUIRED_ACKS:      "-1",
+			KAFKA_PRODUCER_FLUSH_MAX_MESSAGES: "100",
+		},
+		signals: []common.ObservabilitySignal{common.TracesObservabilitySignal},
+	}
+
+	currentConfig := newKafkaConfig()
+	_, err := (&Kafka{}).ModifyConfig(dest, currentConfig)
+	require.NoError(t, err)
+
+	exporter, ok := currentConfig.Exporters["kafka/kafka-test-id-traces"].(GenericMap)
+	require.True(t, ok, "expected a kafka exporter, got %v", currentConfig.Exporters)
+
+	metadata, ok := exporter["metadata"].(GenericMap)
+	require.True(t, ok)
+	retry, ok := metadata["retry"].(GenericMap)
+	require.True(t, ok)
+	assert.Equal(t, 7, retry["max"])
+
+	producer, ok := exporter["producer"].(GenericMap)
+	require.True(t, ok)
+	assert.Equal(t, 2000000, producer["max_message_bytes"])
+	assert.Equal(t, -1, producer["required_acks"])
+	assert.Equal(t, 100, producer["flush_max_messages"])
+}
+
 func TestKafkaDefaultTopicIsPerSignal(t *testing.T) {
 	dest := &mockDestination{
 		id: "test-id",
