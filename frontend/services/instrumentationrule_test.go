@@ -114,7 +114,7 @@ func TestMergePayloadCollectionUpdateReplacesExplicitAdvancedOptions(t *testing.
 	require.Nil(t, out.HttpResponse, "omitted payload sections should still be disabled")
 }
 
-func TestUpdateInstrumentationRulePreservesOmittedScopesAndLibraries(t *testing.T) {
+func TestUpdateInstrumentationRulePreservesOmittedFields(t *testing.T) {
 	ctx := context.Background()
 	ruleID := "scoped-rule"
 	ruleName := "renamed rule"
@@ -134,6 +134,10 @@ func TestUpdateInstrumentationRulePreservesOmittedScopesAndLibraries(t *testing.
 		SpanKind: common.ServerSpanKind,
 		Language: common.JavaProgrammingLanguage,
 	}}
+	headers := &apirules.HttpHeadersCollection{HeaderKeys: []string{"Authorization", "X-Request-Id"}}
+	custom := &apirules.CustomInstrumentations{
+		Java: []apirules.JavaCustomProbe{{ClassName: "com.example.Service", MethodName: "handle"}},
+	}
 
 	setFakeOdigosInstrumentationRuleClient(t, &v1alpha1.InstrumentationRule{
 		ObjectMeta: metav1.ObjectMeta{
@@ -145,6 +149,9 @@ func TestUpdateInstrumentationRulePreservesOmittedScopesAndLibraries(t *testing.
 			Notes:                    "original notes",
 			Scopes:                   scopes,
 			InstrumentationLibraries: &libraries,
+			HeadersCollection:        headers,
+			CustomInstrumentations:   custom,
+			NetworkMetrics:           &apirules.NetworkMetricsConfig{},
 			PayloadCollection:        &apirules.PayloadCollection{HttpRequest: &apirules.HttpPayloadCollection{}},
 		},
 	})
@@ -153,17 +160,55 @@ func TestUpdateInstrumentationRulePreservesOmittedScopesAndLibraries(t *testing.
 		RuleName: &ruleName,
 		Notes:    &notes,
 		Disabled: &disabled,
-		// Older UI clients omit SourcesScopes and InstrumentationLibraries on edit.
-		PayloadCollection: &model.PayloadCollectionInput{HTTPRequest: &model.HTTPPayloadCollectionInput{}},
+		// Metadata-only / partial clients omit selectors and type payloads.
 	})
 	require.NoError(t, err)
 
-	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(consts.DefaultOdigosNamespace).Get(ctx, ruleID, metav1.GetOptions{})
+	updated, err := kube.DefaultClient.OdigosClient.InstrumentationRules(consts.DefaultOdigosNamespace).Get(ctx, ruleID, metav1.GetOptions{})
 	require.NoError(t, err)
-	require.Equal(t, scopes, updatedRule.Spec.Scopes)
-	require.Equal(t, &libraries, updatedRule.Spec.InstrumentationLibraries)
-	require.Equal(t, ruleName, updatedRule.Spec.RuleName)
-	require.Equal(t, notes, updatedRule.Spec.Notes)
+	require.Equal(t, "renamed rule", updated.Spec.RuleName)
+	require.Equal(t, scopes, updated.Spec.Scopes)
+	require.Equal(t, &libraries, updated.Spec.InstrumentationLibraries)
+	require.Equal(t, headers, updated.Spec.HeadersCollection)
+	require.Equal(t, custom, updated.Spec.CustomInstrumentations)
+	require.NotNil(t, updated.Spec.NetworkMetrics)
+	require.NotNil(t, updated.Spec.PayloadCollection)
+	require.NotNil(t, updated.Spec.PayloadCollection.HttpRequest)
+}
+
+func TestUpdateInstrumentationRuleClearsScopesOnExplicitEmpty(t *testing.T) {
+	ctx := context.Background()
+	ruleID := "scoped-rule"
+	ruleName := "rule"
+	notes := "notes"
+	disabled := false
+
+	setFakeOdigosInstrumentationRuleClient(t, &v1alpha1.InstrumentationRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ruleID,
+			Namespace: consts.DefaultOdigosNamespace,
+		},
+		Spec: v1alpha1.InstrumentationRuleSpec{
+			RuleName: "rule",
+			Scopes: &k8sconsts.SourcesScopes{
+				Namespaces: []string{"payments"},
+			},
+			HeadersCollection: &apirules.HttpHeadersCollection{HeaderKeys: []string{"Authorization"}},
+		},
+	})
+
+	_, err := UpdateInstrumentationRule(ctx, ruleID, model.InstrumentationRuleInput{
+		RuleName:      &ruleName,
+		Notes:         &notes,
+		Disabled:      &disabled,
+		SourcesScopes: []*model.InstrumentationRuleSourcesScopeInput{},
+	})
+	require.NoError(t, err)
+
+	updated, err := kube.DefaultClient.OdigosClient.InstrumentationRules(consts.DefaultOdigosNamespace).Get(ctx, ruleID, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Nil(t, updated.Spec.Scopes)
+	require.Equal(t, []string{"Authorization"}, updated.Spec.HeadersCollection.HeaderKeys)
 }
 
 func TestUpdateInstrumentationRuleAllowsExplicitClearingScopesAndLibraries(t *testing.T) {

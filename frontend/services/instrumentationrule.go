@@ -500,10 +500,11 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	existingRule.Spec.Notes = *input.Notes
 	existingRule.Spec.Disabled = *input.Disabled
 
-	// Preserve selectors when omitted. GraphQL clients (and UI forms that don't
-	// edit SourcesScopes / InstrumentationLibraries) send nil for these fields;
-	// treating omit as clear would widen a scoped GitOps/kubectl rule cluster-wide.
-	// Explicit empty lists still clear via convertSourcesScopeInput / empty slice.
+	// Preserve selectors and type payloads when omitted. GraphQL clients (and UI
+	// forms that don't re-send unchanged optional fields) send nil for these;
+	// treating omit as clear would widen scoped rules or silently drop headers,
+	// payloads, custom probes, or network-metrics enablement.
+	// Explicit empty lists/objects still clear via the converters below.
 	if input.SourcesScopes != nil {
 		existingRule.Spec.Scopes = convertSourcesScopeInput(input.SourcesScopes)
 	}
@@ -522,20 +523,14 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 
 	if input.PayloadCollection != nil {
 		existingRule.Spec.PayloadCollection = mergePayloadCollectionUpdate(existingRule.Spec.PayloadCollection, input.PayloadCollection)
-	} else {
-		existingRule.Spec.PayloadCollection = nil
 	}
 
 	if input.CodeAttributes != nil {
 		existingRule.Spec.CodeAttributes = getCodeAttributesInput(input)
-	} else {
-		existingRule.Spec.CodeAttributes = nil
 	}
 
 	if input.HeadersCollection != nil {
 		existingRule.Spec.HeadersCollection = getHeadersCollectionInput(input)
-	} else {
-		existingRule.Spec.HeadersCollection = nil
 	}
 
 	if input.CustomInstrumentations != nil {
@@ -544,11 +539,11 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 			return nil, fmt.Errorf("invalid custom instrumentations: %w", err)
 		}
 		existingRule.Spec.CustomInstrumentations = customInstrumentations
-	} else {
-		existingRule.Spec.CustomInstrumentations = nil
 	}
 
-	existingRule.Spec.NetworkMetrics = getNetworkMetricsInput(input)
+	if input.NetworkMetrics != nil {
+		existingRule.Spec.NetworkMetrics = getNetworkMetricsInput(input)
+	}
 	// Update rule in Kubernetes
 	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Update(ctx, existingRule, metav1.UpdateOptions{})
 	if err != nil {
