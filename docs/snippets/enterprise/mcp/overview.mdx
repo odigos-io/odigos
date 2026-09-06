@@ -4,7 +4,7 @@ service (port `3000`).
 
 ## Requirements
 
-- Odigos Enterprise installed with a valid on-prem token
+- Odigos Enterprise **v1.30.0 or later**, installed with a valid on-prem token
 - Network access to the Odigos UI service (typically via port-forward or an
   in-cluster / load-balancer URL)
 - An MCP-compatible client (for example, Cursor)
@@ -86,7 +86,8 @@ Control MCP behavior during install or upgrade:
   </Tab>
 </Tabs>
 
-Set `ui.mcp.enabled: false` to disable the `/mcp` endpoint entirely.
+Set `ui.mcp.enabled: false` to disable the `/mcp` endpoint entirely. For the full
+list of Helm values, see [Installation Options](/enterprise/setup/installation-options).
 
 ## What you can do
 
@@ -105,9 +106,22 @@ common starting points:
 | Profile a hot path | `enable_source_profiling`, `get_source_hot_functions`, `add_custom_instrumentation` |
 | Collect support bundle | `collect_diagnose_bundle` |
 
-Write tools support `dry_run: true` (the default) so agents can preview
-changes before applying them. When the server is in read-only mode, write tools
-are not executed even with `dry_run: false`.
+Every write tool accepts a `dry_run` argument (default `true`) that the agent
+sets in the tool call. This follows the standard
+[dry-run convention](https://kubernetes.io/docs/reference/using-api/api-concepts/#dry-run)
+used across Kubernetes tooling (for example, `kubectl --dry-run`); Odigos exposes
+it as a tool argument. With `dry_run: true` the tool validates and previews the
+change without applying it; set `dry_run: false` to apply it. For example, a
+write call includes it alongside the tool's other arguments:
+
+```json
+{
+  "dry_run": false
+}
+```
+
+When the server is in read-only mode, write tools are not executed even with
+`dry_run: false`.
 
 <Info>
   Tool responses include `context` and `next_steps` hints to help agents chain
