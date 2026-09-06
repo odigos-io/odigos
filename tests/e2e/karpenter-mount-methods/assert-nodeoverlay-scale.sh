@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # After the namespace is already instrumented (virtual-device):
 # 1) Patch inventory resources (device request) and scale to 5
-# 2) Taint kind nodes so new pods cannot land there (otherwise kind has ~1024 devices and never Pendings)
+# 2) Taint cluster nodes so new pods cannot land there (otherwise local nodes have
+#    ~1024 devices and never Pendings)
 # 3) Without NodeOverlay: pods stay Pending, no NodeClaim
 # 4) Apply NodeOverlay: Karpenter creates a NodeClaim
-# 5) Immediately delete NodeClaims + KWOK nodes — they break kindnet CNI routes.
+# 5) Immediately delete NodeClaims + KWOK nodes — they can break CNI routes.
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
@@ -15,22 +16,31 @@ delete_kwok_residue() {
   kubectl get nodes -o name 2>/dev/null | grep '^node/kwok-' | xargs -r kubectl delete --ignore-not-found --force --grace-period=0 >/dev/null 2>&1 || true
 }
 
-repair_kindnet() {
-  kindnet_pod=$(kubectl get pods -n kube-system -l app=kindnet \
-    --field-selector spec.nodeName=kind-control-plane \
-    -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
-  if [[ -n "${kindnet_pod}" ]]; then
-    kubectl delete pod -n kube-system "${kindnet_pod}" --ignore-not-found --wait=false >/dev/null 2>&1 || true
+repair_cni() {
+  local cp_node cni_pod
+  cp_node=$(kubectl get nodes -l node-role.kubernetes.io/control-plane -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+  if [[ -z "${cp_node}" ]]; then
+    return 0
   fi
+  # kind used kindnet; k0s uses kube-router. Restart any matching agent pod if present.
+  for label in 'app=kindnet' 'app=kube-router' 'tier=node'; do
+    cni_pod=$(kubectl get pods -n kube-system -l "${label}" \
+      --field-selector "spec.nodeName=${cp_node}" \
+      -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+    if [[ -n "${cni_pod}" ]]; then
+      kubectl delete pod -n kube-system "${cni_pod}" --ignore-not-found --wait=false >/dev/null 2>&1 || true
+      return 0
+    fi
+  done
 }
 
-taint_kind_nodes() {
+taint_cluster_nodes() {
   for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}'); do
     kubectl taint node "${node}" CriticalAddonsOnly=true:NoSchedule --overwrite >/dev/null
   done
 }
 
-untaint_kind_nodes() {
+untaint_cluster_nodes() {
   for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}'); do
     kubectl taint node "${node}" CriticalAddonsOnly- >/dev/null 2>&1 || true
   done
@@ -39,8 +49,8 @@ untaint_kind_nodes() {
 cleanup() {
   kubectl delete nodeoverlay odigos-instrumentation --ignore-not-found >/dev/null 2>&1 || true
   delete_kwok_residue
-  repair_kindnet
-  untaint_kind_nodes
+  repair_cni
+  untaint_cluster_nodes
   kubectl patch deployment inventory -n default --type=json -p='[
     {"op":"remove","path":"/spec/template/spec/containers/0/resources"}
   ]' 2>/dev/null || true
@@ -65,8 +75,8 @@ spec:
             instrumentation.odigos.io/generic: "1"
 '
 
-echo "==> Taint kind nodes CriticalAddonsOnly so scaled pods cannot schedule on kind"
-taint_kind_nodes
+echo "==> Taint cluster nodes CriticalAddonsOnly so scaled pods cannot schedule on them"
+taint_cluster_nodes
 
 echo "==> Scale inventory to 5"
 kubectl scale deployment/inventory -n default --replicas=5
@@ -112,8 +122,8 @@ kubectl wait --for=condition=Ready nodeoverlay/odigos-instrumentation --timeout=
 echo "==> Expect Karpenter NodeClaim after NodeOverlay"
 "${SCRIPT_DIR}/assert-nodeclaim-created.sh"
 
-echo "==> Deleting NodeClaims/KWOK nodes before kindnet breaks"
+echo "==> Deleting NodeClaims/KWOK nodes before CNI breaks"
 delete_kwok_residue
-repair_kindnet
+repair_cni
 
 echo "✅ NodeOverlay enabled Karpenter NodeClaim for instrumented inventory demand"

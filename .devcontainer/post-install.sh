@@ -31,11 +31,8 @@ ARCH=$(dpkg --print-architecture) && \
     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && \
     rm kubectl
 
-# Install kind (latest stable release)
-log "Installing kind..."
-curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.32.0/kind-linux-$(dpkg --print-architecture) && \
-    install -o root -g root -m 0755 kind /usr/local/bin/kind && \
-    rm kind
+# k0s cluster helper is in the repo (scripts/k0s-cluster.sh); no separate CLI install needed.
+# Docker + kubectl are enough to create/manage the local cluster.
 
 # Add alias kc=kubectl + enable completion
 log "Adding kubectl alias and completion..."
@@ -54,8 +51,8 @@ log "Setting permissions..."
 chown -R vscode:vscode /home/vscode/.kube
 
 # Call connection script (it will no-op gracefully if no cluster yet)
-log "Attempting to connect to kind cluster..."
-.devcontainer/connect-kind.sh || true
+log "Attempting to connect to k0s cluster..."
+.devcontainer/connect-k0s.sh || true
 .devcontainer/init-docs.sh || true
 
 log "Essentials setup done."

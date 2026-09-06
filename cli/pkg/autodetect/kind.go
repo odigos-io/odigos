@@ -12,7 +12,7 @@ import (
 
 type Kind string
 
-var availableDetectors = []ClusterKindDetector{&kindDetector{}, &eksDetector{}, &gkeDetector{}, &minikubeDetector{}, &k3sDetector{}, &openshiftDetector{}, &aksDetector{}}
+var availableDetectors = []ClusterKindDetector{&kindDetector{}, &eksDetector{}, &gkeDetector{}, &minikubeDetector{}, &k3sDetector{}, &k0sDetector{}, &openshiftDetector{}, &aksDetector{}}
 
 const (
 	KindUnknown   Kind = "Unknown"
@@ -22,6 +22,7 @@ const (
 	KindGKE       Kind = "GKE"
 	KindAKS       Kind = "AKS"
 	KindK3s       Kind = "k3s"
+	KindK0s       Kind = "k0s"
 	KindOpenShift Kind = "Openshift"
 )
 

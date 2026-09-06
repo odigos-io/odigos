@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Resolve the container image repository (registry/name, no tag) for local
-# make deploy / load-to-kind workflows.
+# make deploy / load-to-k0s workflows.
 #
 # Enterprise installs (odigos-pro secret or ODIGOS_TIER=onprem) default to
 # registry.odigos.io and odigos-enterprise-* names where those differ from OSS.

@@ -20,7 +20,7 @@ You will only need to install these tools once on your computer. Next time you w
 
 #### 1. Install Homebrew
 
-    Homebrew is a package manager for macOS that simplifies the installation of software packages. We will use Homebrew to install Docker Desktop, KinD (Kubernetes in Docker), and the Odigos CLI.
+    Homebrew is a package manager for macOS that simplifies the installation of software packages. We will use Homebrew to install Docker Desktop, k0s (local Kubernetes), and the Odigos CLI.
 
     a. Locate and open the Terminal application:
 
@@ -103,52 +103,41 @@ If you see a version number, Homebrew has been successfully installed.
 
     g. Wait until you see a green dot next to "Docker Desktop is running" in the Docker Dashboard.
 
-    #### 3. Install KinD
+    #### 3. Prepare for k0s (local Kubernetes)
 
     <Warning>
-      **Mac users**: please avoid using Docker Desktop built-in Kubernetes cluster as it [does not](https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation) support bind propagation.
+      **Mac users**: please avoid using Docker Desktop built-in Kubernetes cluster as it [does not](https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation) support bind propagation. Use k0s-in-Docker instead — eBPF runs inside the Linux node containers.
     </Warning>
 
-    KinD (Kubernetes in Docker) helps set up a test environment for Odigos.
-
-    a. Go back to your Terminal window (or open a new one if you closed it).
-
-    b. Copy and paste the following command, then press `Enter`:
-
-    ```bash
-    brew install kind
-    ```
-
-    c. Wait for the installation to complete. You'll know it's done when you see the command prompt again.
+    k0s runs a full upstream Kubernetes cluster in Docker and is used for local Odigos development and demos. You only need Docker; the Odigos repository includes `./scripts/k0s-cluster.sh` to create the cluster.
 
 This is the end of the one-time installations and the following steps will be required every time:
 
     ### Setting up the cluster
-    Now that you have Kind installed, let's create a Kubernetes cluster:
+    Now that Docker is ready, let's create a Kubernetes cluster. Open a Terminal in the Odigos repository directory:
 
-    1. In the Terminal, copy and paste the following command and press `Enter`:
+    1. Remove any previous local k0s cluster (safe if none exists):
 
     ```bash
-    kind delete cluster --name odigos-demo
+    ./scripts/k0s-cluster.sh delete
     ```
-
-    This removes any existing test environment with the same name. If this is your first time, you'll see a message saying the cluster doesn't exist, which is fine.
 
     2. Create a new cluster by running:
 
     ```bash
-    kind create cluster --name odigos-demo
+    ./scripts/k0s-cluster.sh create
     ```
 
-    This command creates a new Kubernetes cluster named "odigos-demo". You'll see a lot of text appear in the Terminal. This is normal. Wait until you see a message that says "Your Kubernetes control-plane has initialized successfully!" and the command prompt appears again.
+    Wait until you see a message that the k0s cluster is ready and the command prompt appears again.
 
     3. Verify that the cluster is running:
 
     ```bash
-    kubectl cluster-info --context kind-odigos-demo
+    kubectl cluster-info
+    kubectl get nodes
     ```
 
-    This should display information about your cluster, including the Kubernetes master and CoreDNS.
+    You should see two Ready nodes: `k0s-controller` and `k0s-worker1`.
 
     ### Install the demo application
     With our Kubernetes cluster running, we'll now deploy a demo application consisting of 5 microservices written in Go, Java, Python, .NET, and Node.js:
