@@ -227,7 +227,7 @@ var _ = Describe("ExtractAttribute Controller", func() {
 			Expect(rendered.Extractions[2].DataFormat).Should(BeEmpty())
 		})
 
-		It("Should propagate Disabled and multiple Signals to the Processor", func() {
+		It("Should propagate Disabled and drop signals the processor does not support", func() {
 			By("Creating a disabled Action with multiple signals")
 			action := &odigosv1.Action{
 				ObjectMeta: metav1.ObjectMeta{
@@ -267,10 +267,9 @@ var _ = Describe("ExtractAttribute Controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			Expect(processor.Spec.Disabled).Should(BeTrue())
-			Expect(processor.Spec.Signals).Should(ContainElements(
-				common.TracesObservabilitySignal,
-				common.LogsObservabilitySignal,
-			))
+			// The processor is traces-only, so LOGS must not reach the Processor CR: the collector
+			// cannot build a logs pipeline containing it.
+			Expect(processor.Spec.Signals).Should(ConsistOf(common.TracesObservabilitySignal))
 		})
 	})
 
