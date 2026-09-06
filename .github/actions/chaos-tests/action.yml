@@ -12,15 +12,16 @@ runs:
     - name: Install Chainsaw
       uses: kyverno/action-install-chainsaw@v0.2.12
 
-    - name: Create Kind Cluster
-      uses: helm/kind-action@v1.12.0
-      with:
-        node_image: 'kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb'
-        version: 'v0.25.0'
-        cluster_name: kind-test-cluster
-        config: tests/common/apply/kind-config.yaml
-        # Ephemeral GHA runners: don't fail the job if kind/docker cleanup races.
-        ignore_failed_clean: true
+    - name: Install k3d
+      shell: bash
+      run: |
+        curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.9.0 bash
+
+    - name: Create k3d Cluster
+      shell: bash
+      run: |
+        k3d cluster create --config tests/common/apply/k3d-config.yaml \
+          --image rancher/k3s:v1.32.0-k3s1
 
     - name: Build Odigos CLI
       uses: ./.github/actions/build/cli

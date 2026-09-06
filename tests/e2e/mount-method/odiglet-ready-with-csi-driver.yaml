@@ -63,7 +63,7 @@ spec:
           (memory != null): true
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
-  nodeName: kind-control-plane
+  nodeName: k3d-odigos-server-0
   nodeSelector:
     kubernetes.io/os: linux
   serviceAccount: odiglet
@@ -148,7 +148,7 @@ spec:
           (memory != null): true
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
-  nodeName: kind-worker
+  nodeName: k3d-odigos-agent-0
   nodeSelector:
     kubernetes.io/os: linux
   serviceAccount: odiglet

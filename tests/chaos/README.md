@@ -5,7 +5,7 @@ The purpose of those tests is to tests the odigos platform with different fault 
 
 ## Tools
 
-- [Kubernetes In Docker (Kind)](https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters using Docker container “nodes”.
+- [k3d](https://k3d.io/) - a tool for running local Kubernetes (k3s) clusters using Docker container “nodes”.
 - [Chainsaw](https://kyverno.github.io/chainsaw/) - To orchestrate the different Kubernetes actions.
 - [Chaos-mesh](https://github.com/chaos-mesh/chaos-mesh) - In order to simulate faults in the cluster.
 
@@ -15,7 +15,7 @@ The purpose of those tests is to tests the odigos platform with different fault 
 
 Install these tools once when setting up your local testing environment the first time.
 
-- [Kubernetes In Docker (KinD)](https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters using Docker container “nodes”.
+- [k3d](https://k3d.io/) - a tool for running local Kubernetes (k3s) clusters using Docker container “nodes”.
 
 - [Chainsaw](https://kyverno.github.io/chainsaw/) - To orchestrate the different Kubernetes actions.
   - Hombrew:
@@ -43,7 +43,7 @@ brew install helm
 
 You can run all the below steps with `make dev-tests-setup`.
 
-- Fresh Kubernetes cluster in kubectl context. For local development, you can use KinD but also managed clusters like EKS will work. you can create the cluster with `make dev-tests-kind-cluster`.
+- Fresh Kubernetes cluster in kubectl context. For local development, you can use k3d but also managed clusters like EKS will work. you can create the cluster with `make dev-tests-k3d-cluster`.
 - Odigos CLI compiled at the `cli` directory in odigos OSS repo (which is expected to be cloned as sibling of the current repo). To compile the cli executable, go to the OSS repository and run: `make cli-build`.
 
 ### Running the Tests
