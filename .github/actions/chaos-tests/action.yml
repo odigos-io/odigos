@@ -23,6 +23,10 @@ runs:
         k3d cluster create --config tests/common/apply/k3d-config.yaml \
           --image rancher/k3s:v1.32.0-k3s1
 
+    - name: Wait for cluster readiness
+      shell: bash
+      run: bash tests/common/wait_for_cluster_ready.sh
+
     - name: Build Odigos CLI
       uses: ./.github/actions/build/cli
 

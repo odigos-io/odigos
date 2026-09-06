@@ -3,6 +3,7 @@
 #   k3d-odigos-server-0
 #   k3d-odigos-agent-0
 # Traefik is disabled so the cluster stays close to kind's minimal kubeadm setup.
+# metrics-server is kept (k3s bundles it) so HPAs and `kubectl top` work.
 apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:

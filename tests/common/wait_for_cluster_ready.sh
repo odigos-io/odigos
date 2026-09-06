@@ -13,11 +13,42 @@ READYZ_TIMEOUT_SECONDS="${READYZ_TIMEOUT_SECONDS:-180}"
 READYZ_SLEEP_SECONDS="${READYZ_SLEEP_SECONDS:-2}"
 WRITE_PROBE_TIMEOUT_SECONDS="${WRITE_PROBE_TIMEOUT_SECONDS:-60}"
 WRITE_PROBE_NAMESPACE="${WRITE_PROBE_NAMESPACE:-odigos-cluster-ready-probe}"
+CREATION_TIMEOUT_SECONDS="${CREATION_TIMEOUT_SECONDS:-300}"
 
-echo "Waiting for nodes, kube-system pods, and CoreDNS..."
+# k3s applies its packaged AddOns (coredns, metrics-server, local-storage) asynchronously from
+# /var/lib/rancher/k3s/server/manifests once the API server accepts connections, so the objects
+# may not exist yet. kubectl wait/rollout status fail immediately with NotFound rather than
+# waiting, hence the poll before each condition check.
+wait_for_creation() {
+  local deadline=$((SECONDS + CREATION_TIMEOUT_SECONDS))
+  while (( SECONDS < deadline )); do
+    if kubectl get "$@" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep "${READYZ_SLEEP_SECONDS}"
+  done
+  echo "ERROR: $* was not created within ${CREATION_TIMEOUT_SECONDS}s"
+  kubectl get addon -n kube-system || true
+  kubectl get events -n kube-system --sort-by=.lastTimestamp | tail -n 20 || true
+  exit 1
+}
+
+echo "Waiting for nodes, CoreDNS, metrics-server, and kube-system pods..."
 kubectl wait --for=condition=Ready node --all --timeout=180s
-kubectl wait -n kube-system --for=condition=Ready pod --all --timeout=300s
+
+wait_for_creation deployment/coredns -n kube-system
 kubectl rollout status -n kube-system deployment/coredns --timeout=300s
+
+wait_for_creation deployment/metrics-server -n kube-system
+kubectl rollout status -n kube-system deployment/metrics-server --timeout=300s
+
+# The aggregated metrics API only registers once metrics-server has endpoints. Until it reports
+# Available, every kubectl discovery call errors on metrics.k8s.io/v1beta1.
+wait_for_creation apiservice/v1beta1.metrics.k8s.io
+kubectl wait --for=condition=Available apiservice/v1beta1.metrics.k8s.io --timeout=300s
+
+# Last, so AddOn pods created along the way are included.
+kubectl wait -n kube-system --for=condition=Ready pod --all --timeout=300s
 
 echo "Waiting for kube-apiserver /readyz (${READYZ_REQUIRED_SUCCESSES} consecutive successes, timeout ${READYZ_TIMEOUT_SECONDS}s)..."
 successes=0
