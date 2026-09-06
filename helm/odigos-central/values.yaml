@@ -295,6 +295,45 @@ cloudConnectors:
     tolerations: []
     affinity: {}
 
+# Pod Security Standards "Baseline" settings applied to every pod in this chart.
+# `pod` is rendered as the pod-level securityContext, `container` as the container-level
+# securityContext of every container in those pods. These controls do not constrain which
+# user a container runs as: each image keeps its own default user.
+securityContext:
+  pod:
+    seccompProfile:
+      type: RuntimeDefault
+  container:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  # Per-component overrides, keyed by component name: centralBackend, centralUI, redis,
+  # keycloak, connectorRuntime, connectorMigrations, postgres. Each key set under a
+  # component replaces that key in the defaults above, for that component only, and
+  # setting a key to null drops it.
+  #
+  # The three components below are exempted from the capability drop. Each runs a
+  # third-party image as root, and root without CAP_DAC_OVERRIDE/CAP_CHOWN/CAP_SETUID
+  # cannot complete the startup work these images do.
+  components:
+    # redis-server runs as root (the image sets no USER) with its working directory /data
+    # owned by uid 999 mode 0755, so writing the RDB snapshot needs CAP_DAC_OVERRIDE.
+    # Without it Redis fails BGSAVE and, with stop-writes-on-bgsave-error, rejects writes.
+    redis:
+      container:
+        capabilities: null
+    # The postgres entrypoint runs as root and chowns/chmods PGDATA before dropping to the
+    # postgres user via gosu: that needs CAP_CHOWN, CAP_FOWNER, CAP_SETUID and CAP_SETGID.
+    postgres:
+      container:
+        capabilities: null
+    # Same image as postgres, entered through run-migrations.sh. The script is built
+    # out-of-tree and could not be inspected, so it keeps the postgres exemption.
+    connectorMigrations:
+      container:
+        capabilities: null
+
 # OpenShift-specific toggles (RBAC/SELinux/images)
 openshift:
   enabled: false

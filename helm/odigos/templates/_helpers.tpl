@@ -249,6 +249,49 @@ imagePullSecrets:
 {{- end }}
 {{- end }}
 
+{{/*
+  Renders a `securityContext:` block by layering three maps, later ones winning per key:
+  the chart-wide defaults, a template-supplied "Base" carrying securityContext keys the
+  template already set on its own, and the per-component override from values.
+  A key whose value is null is dropped, which is how a component opts out of a default.
+*/}}
+{{- define "odigos.renderSecurityContext" -}}
+{{- $ctx := deepCopy (.Defaults | default dict) -}}
+{{- range $layer := list (.Base | default dict) (.Override | default dict) -}}
+{{- range $key, $value := $layer -}}
+{{- if kindIs "invalid" $value -}}
+{{- $_ := unset $ctx $key -}}
+{{- else -}}
+{{- $_ := set $ctx $key $value -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if $ctx -}}
+securityContext:
+{{ toYaml $ctx | indent 2 -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+  Pod-level securityContext for the non-privileged Odigos components, defaulting to the
+  Kubernetes Pod Security Standards "Baseline" profile. The odiglet does not use this
+  helper: it is a privileged eBPF node agent that requires host namespaces and capabilities.
+  Usage: {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "ui") | nindent 6 }}
+*/}}
+{{- define "odigos.podSecurityContext" -}}
+{{- $components := .Values.securityContext.components | default dict -}}
+{{- include "odigos.renderSecurityContext" (dict "Defaults" .Values.securityContext.pod "Base" .Base "Override" (dig .Component "pod" dict $components)) -}}
+{{- end -}}
+
+{{/*
+  Container-level securityContext counterpart of "odigos.podSecurityContext".
+  Usage: {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "ui") | nindent 8 }}
+*/}}
+{{- define "odigos.containerSecurityContext" -}}
+{{- $components := .Values.securityContext.components | default dict -}}
+{{- include "odigos.renderSecurityContext" (dict "Defaults" .Values.securityContext.container "Base" .Base "Override" (dig .Component "container" dict $components)) -}}
+{{- end -}}
+
 {{/* Returns true when trace correlations service I/O metrics are enabled. */}}
 {{- define "traceCorrelations.serviceIO.enabled" -}}
 {{- and .Values.traceCorrelations .Values.traceCorrelations.serviceIO .Values.traceCorrelations.serviceIO.enabled -}}

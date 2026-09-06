@@ -134,10 +134,8 @@ spec:
         name: manager
         resources:
 {{ toYaml .Values.instrumentor.resources | indent 10 }}
-        securityContext:
-          allowPrivilegeEscalation: false
-      securityContext:
-        runAsNonRoot: true
+        {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "instrumentor") | nindent 8 }}
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "instrumentor" "Base" (dict "runAsNonRoot" true)) | nindent 6 }}
       serviceAccountName: odigos-instrumentor
       volumes:
         - name: instrumentor-webhooks-cert

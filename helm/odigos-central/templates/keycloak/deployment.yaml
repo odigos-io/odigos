@@ -40,19 +40,21 @@ spec:
       affinity:
         {{- toYaml .Values.auth.affinity | nindent 8 }}
       {{- end }}
+      {{- $keycloakPodBase := dict }}
       {{- if and .Values.auth.persistence.enabled .Values.auth.podSecurityContext.enabled }}
-      securityContext:
-        fsGroup: {{ .Values.auth.podSecurityContext.fsGroup }}
+        {{- $_ := set $keycloakPodBase "fsGroup" .Values.auth.podSecurityContext.fsGroup }}
       {{- end }}
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "keycloak" "Base" $keycloakPodBase) | nindent 6 }}
       containers:
         - name: keycloak
           image: {{ .Values.auth.image | quote }}
           args: ["start", "--optimized", "--http-enabled=true"]
+          {{- $keycloakContainerBase := dict }}
           {{- if and .Values.auth.persistence.enabled .Values.auth.securityContext.enabled }}
-          securityContext:
-            runAsNonRoot: {{ .Values.auth.securityContext.runAsNonRoot }}
-            allowPrivilegeEscalation: {{ .Values.auth.securityContext.allowPrivilegeEscalation }}
+            {{- $_ := set $keycloakContainerBase "runAsNonRoot" .Values.auth.securityContext.runAsNonRoot }}
+            {{- $_ := set $keycloakContainerBase "allowPrivilegeEscalation" .Values.auth.securityContext.allowPrivilegeEscalation }}
           {{- end }}
+          {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "keycloak" "Base" $keycloakContainerBase) | nindent 10 }}
           env:
             - name: JAVA_OPTS
               value: "{{ .Values.auth.javaOpts }}"

@@ -56,6 +56,7 @@ spec:
                   fieldPath: metadata.namespace
             - name: CENTRAL_BACKEND_URL
               value: {{ .Values.centralUI.centralBackendURL | default (printf "http://central-backend.%s:8081" .Release.Namespace) | quote }}
+          {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "centralUI") | nindent 10 }}
           resources:
             requests:
               cpu: {{ .Values.centralUI.resources.requests.cpu }}
@@ -63,6 +64,7 @@ spec:
             limits:
               cpu: {{ .Values.centralUI.resources.limits.cpu }}
               memory: {{ .Values.centralUI.resources.limits.memory }}
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "centralUI") | nindent 6 }}
       {{- with .Values.centralUI.nodeSelector }}
       nodeSelector: {{ toYaml . | nindent 8 }}
       {{- end }}

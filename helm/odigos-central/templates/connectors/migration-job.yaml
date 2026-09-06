@@ -32,4 +32,6 @@ spec:
                 secretKeyRef:
                   name: odigos-connector-postgres
                   key: dsn
+          {{- include "odigos.containerSecurityContext" (dict "Values" .Values "Component" "connectorMigrations") | nindent 10 }}
+      {{- include "odigos.podSecurityContext" (dict "Values" .Values "Component" "connectorMigrations") | nindent 6 }}
 {{- end }}
