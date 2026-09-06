@@ -87,6 +87,7 @@ func (c *Client) ListTransactions(ctx context.Context, params ListTransactionsPa
 	if params.Kind != nil {
 		query.Set("kind", string(*params.Kind))
 	}
+	addWindowHoursFilter(query, params.WindowHours)
 	endpoint.RawQuery = query.Encode()
 	return doList[TransactionStat](ctx, c, http.MethodGet, endpoint, nil)
 }
@@ -508,11 +509,15 @@ func addOptionalString(query url.Values, key string, value *string) {
 	}
 }
 
-func addFindingFilters(endpoint *url.URL, windowHours *int, service, namespace, status *string) {
-	query := endpoint.Query()
+func addWindowHoursFilter(query url.Values, windowHours *int) {
 	if windowHours != nil {
 		query.Set("window_hours", strconv.Itoa(*windowHours))
 	}
+}
+
+func addFindingFilters(endpoint *url.URL, windowHours *int, service, namespace, status *string) {
+	query := endpoint.Query()
+	addWindowHoursFilter(query, windowHours)
 	addOptionalString(query, "service", service)
 	addOptionalString(query, "namespace", namespace)
 	addOptionalString(query, "status", status)

@@ -142,6 +142,26 @@ func TestClientEncodesQueryParameters(t *testing.T) {
 	assert.Empty(t, items)
 }
 
+func TestClientListTransactionsWindowHours(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/api/v1/transactions", r.URL.Path)
+		assert.Equal(t, "168", r.URL.Query().Get("window_hours"))
+		_, _ = w.Write([]byte(`{"count":0,"items":[]}`))
+	}))
+	defer server.Close()
+
+	client, err := NewClient(server.URL)
+	require.NoError(t, err)
+	windowHours := 168
+
+	items, err := client.ListTransactions(context.Background(), ListTransactionsParams{
+		WindowHours: &windowHours,
+	})
+	require.NoError(t, err)
+	assert.Empty(t, items)
+}
+
 func TestClientDecodesCollectionEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)

@@ -7,6 +7,7 @@ import (
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	odigosconsts "github.com/odigos-io/odigos/common/consts"
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -110,6 +111,89 @@ func TestAddInsightsGatewayExporter_DoesNotCreateExtraPipelineOrConnector(t *tes
 		"no new connector must be created")
 	_, hasRoot := c.Service.Pipelines[rootName]
 	assert.True(t, hasRoot, "root pipeline must still exist (just with one more exporter)")
+}
+
+func TestEffectiveInsightsConfig(t *testing.T) {
+	on := true
+	cfg := &common.InsightsConfiguration{Enabled: &on}
+
+	// odigos-insights ships as the enterprise-insights image and helm renders none of its
+	// workloads without an on-prem token, so the flag must be ignored on community tier.
+	assert.Nil(t, effectiveInsightsConfig(cfg, common.CommunityOdigosTier),
+		"community tier must not wire the gateway for a service that was never deployed")
+	assert.Same(t, cfg, effectiveInsightsConfig(cfg, common.OnPremOdigosTier))
+	assert.Same(t, cfg, effectiveInsightsConfig(cfg, common.CloudOdigosTier))
+	assert.Nil(t, effectiveInsightsConfig(nil, common.OnPremOdigosTier))
+}
+
+// insightsGatewayConfig renders a gateway config the way syncConfigMap does, for a cluster
+// whose odigos configuration has insights enabled and no destinations at all.
+func insightsGatewayConfig(t *testing.T, tier common.OdigosTier) *config.Config {
+	t.Helper()
+
+	on := true
+	insightsCfg := effectiveInsightsConfig(&common.InsightsConfiguration{Enabled: &on}, tier)
+
+	ext := k8sconsts.OdigosConfigK8sExtensionType
+	tailSampling := false
+	gatewayOptions := pipelinegen.GatewayConfigOptions{
+		OdigosNamespace:           "odigos-system",
+		OdigosConfigExtensionName: &ext,
+		TailSamplingEnabled:       &tailSampling,
+		Insights:                  insightsCfg,
+	}
+	if common.InsightsPipelineActive(insightsCfg) {
+		gatewayOptions.InsightsOtlpEndpoint = k8sconsts.InsightsOtlpGrpcDNSEndpoint("odigos-system")
+		waitDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
+		gatewayOptions.TraceAggregationWaitDuration = &waitDuration
+	}
+
+	cfg, err, _, signals := pipelinegen.CalculateGatewayConfig(nil, nil,
+		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
+			if err := addSelfTelemetryPipeline(c, 8888, destinationPipelineNames, signalsRootPipelines); err != nil {
+				return err
+			}
+			return addInsightsGatewayExporter(c, "odigos-system", insightsCfg)
+		},
+		nil, &gatewayOptions)
+	require.NoError(t, err)
+
+	if tier.IsEnterprise() {
+		assert.Contains(t, signals, common.TracesObservabilitySignal,
+			"insights taps the traces pipeline, so traces must be advertised to the agents")
+	} else {
+		assert.Empty(t, signals,
+			"no destinations and no insights means the gateway should ask the agents for nothing")
+	}
+	return cfg
+}
+
+// Enabling insights without an on-prem token used to leave the odigos configuration saying
+// insights is on while helm rendered no odigos-insights workloads, so the gateway turned the
+// traces signal on cluster-wide, buffered every span in groupbytrace and exported to a Service
+// that does not exist.
+func TestGatewayConfig_InsightsIgnoredOnCommunityTier(t *testing.T) {
+	cfg := insightsGatewayConfig(t, common.CommunityOdigosTier)
+
+	assert.NotContains(t, cfg.Exporters, commonconf.InsightsGatewayExporter)
+	assert.NotContains(t, cfg.Exporters, odigosconsts.ServiceGraphInsightsExporterName)
+	assert.NotContains(t, cfg.Processors, odigosconsts.GroupByTraceProcessor)
+	assert.NotContains(t, cfg.Service.Pipelines, pipelinegen.GetTelemetryRootPipelineName(common.TracesObservabilitySignal))
+}
+
+func TestGatewayConfig_InsightsWiredOnEnterpriseTier(t *testing.T) {
+	cfg := insightsGatewayConfig(t, common.OnPremOdigosTier)
+
+	assert.Contains(t, cfg.Exporters, commonconf.InsightsGatewayExporter)
+	assert.Contains(t, cfg.Exporters, odigosconsts.ServiceGraphInsightsExporterName)
+	assert.Contains(t, cfg.Processors, odigosconsts.GroupByTraceProcessor)
+
+	rootPipe := cfg.Service.Pipelines[pipelinegen.GetTelemetryRootPipelineName(common.TracesObservabilitySignal)]
+	assert.Contains(t, rootPipe.Exporters, commonconf.InsightsGatewayExporter)
+	// Every pipeline still needs an exporter or the collector refuses to start.
+	for name, pipeline := range cfg.Service.Pipelines {
+		assert.NotEmpty(t, pipeline.Exporters, "pipeline %q has no exporters", name)
+	}
 }
 
 func TestAddInsightsGatewayExporter_PreservesExistingDestinationConfig(t *testing.T) {
