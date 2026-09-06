@@ -30,6 +30,35 @@ func TestAddKubeletStatsToOwnMetrics_ReusesDestinationReceiver(t *testing.T) {
 	}
 }
 
+func TestOwnMetricsKubeletFilterScopesToTheOdigosNamespace(t *testing.T) {
+	// Odigos can be installed in any namespace. A hardcoded one would either drop the component
+	// metrics this pipeline exists for, or forward cpu/memory for every container in the cluster.
+	got := ownMetricsKubeletProcessorConfig("custom-odigos-ns")
+
+	filter, ok := got[ownKubeletFilterName].(config.GenericMap)
+	if !ok {
+		t.Fatal("missing filter/own-kubelet")
+	}
+	metrics, ok := filter["metrics"].(config.GenericMap)
+	if !ok {
+		t.Fatal("filter has no metrics conditions")
+	}
+	conditions, ok := metrics["metric"].([]string)
+	if !ok {
+		t.Fatal("filter has no metric conditions")
+	}
+
+	var scoped bool
+	for _, condition := range conditions {
+		if condition == `resource.attributes["k8s.namespace.name"] != "custom-odigos-ns"` {
+			scoped = true
+		}
+	}
+	if !scoped {
+		t.Errorf("no condition drops metrics from outside the odigos namespace, conditions: %v", conditions)
+	}
+}
+
 func TestAddKubeletStatsToOwnMetrics_EmptyConfig(t *testing.T) {
 	got := AddKubeletStatsToOwnMetrics(config.Config{}, "odigos-system")
 	if _, exists := got.Receivers[kubeletstatsReceiverName]; exists {
