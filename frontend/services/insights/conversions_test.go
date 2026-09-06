@@ -337,3 +337,8 @@ func TestBulkAnomalyRequestConvertsTransactionIDs(t *testing.T) {
 	assert.Equal(t, int64(42), request.Items[0].TransactionID)
 	assert.Equal(t, "abc", request.Items[0].Signature)
 }
+
+func TestLearningConditionRejectsAMalformedWireValue(t *testing.T) {
+	var condition LearningCondition
+	require.Error(t, condition.UnmarshalJSON([]byte(`{"minObservations":"many"}`)))
+}
