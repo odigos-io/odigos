@@ -43,8 +43,14 @@ func aggregateConfigExtensionProcessorTypes(actions odigosv1.ActionList) map[str
 	for i := range actions.Items {
 		action := &actions.Items[i]
 		processorTypes := extractConfigExtActions(action)
+		// The Action CRD accepts any signal, but wiring a processor into a pipeline for a signal
+		// it cannot consume makes the collector fail to start, so unsupported signals are dropped.
+		supportedSignals := actionutil.SupportedSignals(action)
 		for _, processorType := range processorTypes {
 			for _, signal := range action.Spec.Signals {
+				if !slices.Contains(supportedSignals, signal) {
+					continue
+				}
 				// only if this signal is not already in the list for this processor type
 				// the list is short (<5 items) so no problem iterating it
 				if !slices.Contains(processorToSignals[processorType], signal) {
