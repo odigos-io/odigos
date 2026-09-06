@@ -76,15 +76,16 @@ func (r *insightsResolver) BlastRadius(ctx context.Context, obj *model.Insights,
 }
 
 // Transactions is the resolver for the transactions field.
-func (r *insightsResolver) Transactions(ctx context.Context, obj *model.Insights, namespace *string, service *string, kind *model.InsightsTransactionKind) ([]*model.InsightsTransactionStat, error) {
+func (r *insightsResolver) Transactions(ctx context.Context, obj *model.Insights, namespace *string, service *string, kind *model.InsightsTransactionKind, windowHours *int) ([]*model.InsightsTransactionStat, error) {
 	client, err := r.insightsClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 	stats, err := client.ListTransactions(ctx, insights.ListTransactionsParams{
-		Namespace: namespace,
-		Service:   service,
-		Kind:      insights.TransactionKindPtrFromModel(kind),
+		Namespace:   namespace,
+		Service:     service,
+		Kind:        insights.TransactionKindPtrFromModel(kind),
+		WindowHours: windowHours,
 	})
 	if err != nil {
 		return nil, insights.GraphQLError(ctx, err)

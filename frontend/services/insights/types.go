@@ -30,9 +30,10 @@ func AnomalyEvidenceSampleReason(signature string) SampleReason {
 }
 
 type ListTransactionsParams struct {
-	Namespace *string
-	Service   *string
-	Kind      *TransactionKind
+	Namespace   *string
+	Service     *string
+	Kind        *TransactionKind
+	WindowHours *int
 }
 
 type ListObservationsParams struct {
