@@ -92,6 +92,9 @@ jobs:
     runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
+      # Cap concurrent Kind clusters to reduce runner memory pressure
+      # (chainsaw signal:killed) and control-plane/readiness races under load.
+      max-parallel: 10
       matrix:
         kube-version: ["1.32", "1.23", "1.21.12"]
         test-scenario:
@@ -283,6 +286,10 @@ jobs:
               echo "--- describe deploy $ns/$name ---"
               kubectl -n "$ns" describe deploy "$name" || true
           done
+          echo "==== Runner memory ===="; free -h || true
+          echo "==== dmesg OOM / kill hints ===="
+          (sudo dmesg -T 2>/dev/null || dmesg -T 2>/dev/null || true) | \
+            grep -Ei "killed process|out of memory|oom|Memory cgroup" | tail -n 80 || true
 
       ################### Diagnose and collect logs ###################
       - name: Run diagnose command

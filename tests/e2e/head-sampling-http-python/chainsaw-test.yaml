@@ -23,7 +23,7 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            timeout: 4m
+            timeout: 5m
             content: |
               # pwd is tests/e2e/head-sampling-http-python — chart lives at repo root helm/odigos
               helm upgrade --install odigos ../../../helm/odigos --create-namespace --namespace odigos-test \
@@ -35,7 +35,7 @@ spec:
               ../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 3m
+            timeout: 4m
             file: ../../common/assert/odigos-installed.yaml
 
     - name: Verify Node Odiglet label has been added
