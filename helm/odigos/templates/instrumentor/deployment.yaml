@@ -109,7 +109,7 @@ spec:
             value: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "agents" "Tag" $imageTag) }}
             {{- end }}
           - name: ODIGOS_BROWSER_PROXY_IMAGE
-            value: {{ template "utils.imageName" (dict "Values" .Values "Component" "browser-proxy" "Tag" $imageTag) }}
+            value: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "browser-proxy" "Tag" $imageTag) }}
           - name: GOMEMLIMIT
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.instrumentor.resources) }}
         volumeMounts:
