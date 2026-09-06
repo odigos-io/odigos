@@ -73,7 +73,6 @@
                     "group": "CLI Reference",
                     "pages": [
                       "oss/cli/odigos",
-                      "oss/cli/odigos_describe",
                       "oss/cli/odigos_diagnose",
                       "oss/cli/odigos_install",
                       "oss/cli/odigos_profile",
@@ -393,7 +392,6 @@
                     "group": "CLI Reference",
                     "pages": [
                       "enterprise/cli/odigos",
-                      "enterprise/cli/odigos_describe",
                       "enterprise/cli/odigos_diagnose",
                       "enterprise/cli/odigos_install",
                       "enterprise/cli/odigos_pro",
