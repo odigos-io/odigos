@@ -316,6 +316,11 @@ func getCriticalFiles(bp string) map[string]struct{} {
 	cf[filepath.Join(bp, "python3.8", "google", "_upb", "_message.abi3.so")] = struct{}{}                  // Google protobuf library [python 3.8 distro]
 	cf[filepath.Join(bp, "python3.8", "wrapt", "_wrappers.cpython-311-aarch64-linux-gnu.so")] = struct{}{} // Wrapt library on arm64 [python 3.8 distro]
 	cf[filepath.Join(bp, "python3.8", "wrapt", "_wrappers.cpython-311-x86_64-linux-gnu.so")] = struct{}{}  // Wrapt library on x86_64 [python 3.8 distro]
+	// .NET native profiler, dlopen()ed by CoreCLR at process start via CORECLR_PROFILER_PATH
+	// (distros/yamls/dotnet-community.yaml) and mapped PROT_EXEC for the process lifetime.
+	// Rewriting it in place makes running .NET processes execute the new bytes and crash.
+	cf[filepath.Join(bp, "dotnet", "linux-glibc", "OpenTelemetry.AutoInstrumentation.Native.so")] = struct{}{}
+	cf[filepath.Join(bp, "dotnet", "linux-musl", "OpenTelemetry.AutoInstrumentation.Native.so")] = struct{}{}
 	// PHP native extension loaded by the PHP runtime via dlopen().
 	// Must be preserved during upgrades to avoid crashing running PHP-FPM processes.
 	cf[filepath.Join(bp, "php", "8.1", "opentelemetry.so")] = struct{}{}
