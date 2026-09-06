@@ -14,6 +14,7 @@ import (
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/detector"
+	"github.com/odigos-io/odigos/odiglet/pkg/metrics"
 
 	processdetector "github.com/odigos-io/runtime-detector"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,6 +37,15 @@ type InstrumentationManagerOptions struct {
 	MetricsMap           *cilumebpf.Map
 	MetricsAttributesMap *cilumebpf.Map
 	LogsMap              *cilumebpf.Map
+
+	// MapMemoryReporter supplies eBPF map memory accounting recorded when
+	// each map was loaded, so the metrics collector can report it without
+	// rediscovering it from /proc on every scrape. The accounting lives in
+	// a module OSS cannot import, so like the shared maps above this is
+	// enterprise-only: OSS leaves it nil and the collector falls back to
+	// walking /proc, which is the only source it has for maps loaded
+	// outside that accounting regardless.
+	MapMemoryReporter metrics.MapMemoryReporter
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.

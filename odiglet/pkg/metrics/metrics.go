@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cilium/ebpf"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
@@ -24,6 +25,14 @@ import (
 const (
 	perfEvent = "perf_event"
 	rss       = "Rss:"
+
+	// allPerfBuffersName and allPerfBuffersType label the synthetic entry
+	// that carries the summed userspace mmap cost of every perf buffer.
+	// It is not a real map — there is no single kernel object behind it —
+	// which is why it is aggregated under one fabricated name rather than
+	// attributed per map.
+	allPerfBuffersName = "PerfBuffersMemoryUsage"
+	allPerfBuffersType = "AllPerfBuffers"
 )
 
 var (
@@ -45,6 +54,10 @@ type EBPFMetricsCollector struct {
 	mu                 sync.RWMutex
 	nodeName           string
 	logger             *commonlogger.OdigosLogger
+
+	// reporter, when non-nil, supplies map memory recorded at load time and
+	// moves the /proc walk off the scrape path. See Reconcile.
+	reporter MapMemoryReporter
 }
 
 // Returns true of the map allocation size should be fetched from the map's memlock
@@ -67,7 +80,10 @@ func isMemlockMap(mapType ebpf.MapType) bool {
 // NewEBPFMetricsCollector creates an eBPF metrics collector. Pass a logger from the caller (e.g. odiglet main)
 // so the same logger and level are used; use commonlogger.LoggerCompat().With("subsystem", "ebpfmetrics").
 // If logger is nil, a new subsystem logger is used.
-func NewEBPFMetricsCollector(nodeName string, logger *commonlogger.OdigosLogger) *EBPFMetricsCollector {
+//
+// reporter may be nil, in which case map memory is discovered by walking
+// /proc on every scrape as before.
+func NewEBPFMetricsCollector(nodeName string, logger *commonlogger.OdigosLogger, reporter MapMemoryReporter) *EBPFMetricsCollector {
 	if logger == nil {
 		logger = commonlogger.LoggerCompat().With("subsystem", "ebpfmetrics")
 	}
@@ -76,6 +92,48 @@ func NewEBPFMetricsCollector(nodeName string, logger *commonlogger.OdigosLogger)
 		eBPFTotalProgCnt:   0,
 		nodeName:           nodeName,
 		logger:             logger,
+		reporter:           reporter,
+	}
+}
+
+// ReconcileInterval is how often Reconcile re-walks /proc when a
+// MapMemoryReporter is supplying map memory. The walk then only feeds
+// numbers the reporter cannot know (program count, and the userspace
+// mmaps behind perf buffers), none of which move quickly, so a
+// coarse interval costs nothing in fidelity and keeps an O(open fds)
+// scan off the scrape path entirely.
+const ReconcileInterval = 2 * time.Minute
+
+// Reconcile periodically refreshes the /proc-derived figures until ctx is
+// cancelled. Without a MapMemoryReporter the walk already runs per scrape
+// and this is a no-op, so callers may start it unconditionally.
+//
+// The walk also sees BPF objects the reporter cannot: maps loaded outside
+// the accounting entirely, such as OBI's. RegisterMetrics reports the
+// difference.
+func (mc *EBPFMetricsCollector) Reconcile(ctx context.Context) error {
+	if mc.reporter == nil {
+		<-ctx.Done()
+		return nil
+	}
+
+	// Populate once up front so the first scrape after startup has real
+	// numbers rather than zeros.
+	if err := mc.collectSelfTotalBPFMemlock(); err != nil {
+		mc.logger.Error("failed initial eBPF /proc reconcile", "err", err)
+	}
+
+	ticker := time.NewTicker(ReconcileInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			if err := mc.collectSelfTotalBPFMemlock(); err != nil {
+				mc.logger.Error("failed to reconcile eBPF metrics from /proc", "err", err)
+			}
+		}
 	}
 }
 
@@ -254,8 +312,8 @@ func (mc *EBPFMetricsCollector) collectSelfTotalBPFMemlock() error {
 	// Insert a fabricated eBPFMapMetrics in order to track all perf buffer memory usage
 	uniqueID := getUniqueID(BPFMapsMetrics)
 	BPFMapsMetrics[uniqueID] = eBPFMapMetrics{
-		name:        "PerfBuffersMemoryUsage",
-		mapType:     "AllPerfBuffers",
+		name:        allPerfBuffersName,
+		mapType:     allPerfBuffersType,
 		memoryUsage: totalPerfBuffersMemUsage,
 		refCnt:      uint32(totalPerfBuffers),
 	}
@@ -312,40 +370,135 @@ func (mc *EBPFMetricsCollector) RegisterMetrics() error {
 	if err != nil {
 		return err
 	}
+	untrackedGauge, err := meter.Int64ObservableGauge(
+		"bpf_maps_untracked_count",
+		metric.WithDescription("BPF maps found by walking /proc that load-time accounting did not record. Zero means the accounting sees every map this process holds; a positive value is the number loaded outside it (e.g. by OBI or another agent)"),
+		metric.WithUnit("{maps}"),
+	)
+	if err != nil {
+		return err
+	}
+
 	// The callback that runs everytime /metrics is scraped from odiglet, collects data and refreshes gauges
 	_, err = meter.RegisterCallback(
 		func(ctx context.Context, observer metric.Observer) error {
-			if err := mc.collectSelfTotalBPFMemlock(); err != nil {
-				mc.logger.Error("failed to collect eBPF metrics during scrape", "err", err)
-			}
-
-			var totalMapsMemory int64
-			mapCount := len(mc.eBPFMapsMetricsMap)
-
-			for mapId, eBPFMapMetrics := range mc.eBPFMapsMetricsMap {
-				totalMapsMemory += eBPFMapMetrics.memoryUsage
-
-				observer.ObserveInt64(eBPFMapMemoryGauge, eBPFMapMetrics.memoryUsage,
-					metric.WithAttributes(
-						attribute.String("name", eBPFMapMetrics.name),
-						attribute.Int("map_id", int(mapId)),
-						attribute.String("map_type", eBPFMapMetrics.mapType),
-						semconv.K8SNodeName(mc.nodeName),
-					),
-				)
-				observer.ObserveInt64(refCountGauge, int64(eBPFMapMetrics.refCnt),
-					metric.WithAttributes(
-						attribute.String("name", eBPFMapMetrics.name),
-					),
-				)
-			}
-
 			nodeAttrs := metric.WithAttributes(
 				semconv.K8SNodeName(mc.nodeName),
 			)
+
+			// Without a reporter the walk is the only source, so it runs
+			// here. With one it runs on Reconcile's interval and this
+			// callback does no I/O.
+			if mc.reporter == nil {
+				if err := mc.collectSelfTotalBPFMemlock(); err != nil {
+					mc.logger.Error("failed to collect eBPF metrics during scrape", "err", err)
+				}
+			}
+
+			mc.mu.RLock()
+			walkedMaps := mc.eBPFMapsMetricsMap
+			walkedProgCount := mc.eBPFTotalProgCnt
+			mc.mu.RUnlock()
+
+			var (
+				totalMapsMemory int64
+				mapCount        int
+			)
+
+			if mc.reporter != nil {
+				report := mc.reporter.MapMemorySnapshot()
+				mapCount = len(report)
+
+				// Several allocations can share a (name, type) — the same
+				// map declared by a probe loaded into many processes. OTel
+				// takes one value per attribute set per callback, so these
+				// must be summed rather than observed separately.
+				type mapKey struct{ name, mapType string }
+				byMap := make(map[mapKey]struct {
+					bytes int64
+					refs  int
+				}, len(report))
+				for _, e := range report {
+					totalMapsMemory += e.Bytes
+					k := mapKey{name: e.MapName, mapType: e.MapType}
+					agg := byMap[k]
+					agg.bytes += e.Bytes
+					agg.refs += e.Refs
+					byMap[k] = agg
+				}
+
+				for k, agg := range byMap {
+					observer.ObserveInt64(eBPFMapMemoryGauge, agg.bytes,
+						metric.WithAttributes(
+							attribute.String("name", k.name),
+							attribute.String("map_type", k.mapType),
+							semconv.K8SNodeName(mc.nodeName),
+						),
+					)
+					observer.ObserveInt64(refCountGauge, int64(agg.refs),
+						metric.WithAttributes(
+							attribute.String("name", k.name),
+						),
+					)
+				}
+
+				// Perf buffers are the one thing the reporter cannot
+				// price: the map is a few per-CPU fd slots while the cost
+				// is the reader's userspace mmap, which only the walk
+				// sees. Ring buffers are priced by the reporter.
+				for _, walked := range walkedMaps {
+					if walked.mapType != allPerfBuffersType {
+						continue
+					}
+					totalMapsMemory += walked.memoryUsage
+					mapCount++
+					observer.ObserveInt64(eBPFMapMemoryGauge, walked.memoryUsage,
+						metric.WithAttributes(
+							attribute.String("name", walked.name),
+							attribute.String("map_type", walked.mapType),
+							semconv.K8SNodeName(mc.nodeName),
+						),
+					)
+				}
+
+				// Maps the walk found that accounting never recorded. A
+				// steady zero is the evidence that load-time accounting
+				// is complete; anything else names the gap in one number
+				// instead of leaving it invisible.
+				if untracked := len(walkedMaps) - mapCount; untracked > 0 {
+					observer.ObserveInt64(untrackedGauge, int64(untracked), nodeAttrs)
+				} else {
+					observer.ObserveInt64(untrackedGauge, 0, nodeAttrs)
+				}
+			} else {
+				mapCount = len(walkedMaps)
+				for mapId, eBPFMapMetrics := range walkedMaps {
+					totalMapsMemory += eBPFMapMetrics.memoryUsage
+
+					observer.ObserveInt64(eBPFMapMemoryGauge, eBPFMapMetrics.memoryUsage,
+						metric.WithAttributes(
+							attribute.String("name", eBPFMapMetrics.name),
+							attribute.Int("map_id", int(mapId)),
+							attribute.String("map_type", eBPFMapMetrics.mapType),
+							semconv.K8SNodeName(mc.nodeName),
+						),
+					)
+					observer.ObserveInt64(refCountGauge, int64(eBPFMapMetrics.refCnt),
+						metric.WithAttributes(
+							attribute.String("name", eBPFMapMetrics.name),
+						),
+					)
+				}
+			}
+
 			observer.ObserveInt64(totalMapsMemGauge, totalMapsMemory, nodeAttrs)
 			observer.ObserveInt64(mapCountGauge, int64(mapCount), nodeAttrs)
-			observer.ObserveInt64(programCountGauge, mc.eBPFTotalProgCnt, nodeAttrs)
+			// Program count stays on the walk in both modes. Load-time
+			// accounting only sees programs loaded through it, so a
+			// static count would silently under-report every loader not
+			// yet routed that way; the walk counts every bpf-prog
+			// descriptor the process holds regardless of origin.
+			observer.ObserveInt64(programCountGauge, walkedProgCount, nodeAttrs)
 
 			return nil
 		},
@@ -354,6 +507,7 @@ func (mc *EBPFMetricsCollector) RegisterMetrics() error {
 		mapCountGauge,
 		programCountGauge,
 		refCountGauge,
+		untrackedGauge,
 	)
 
 	return err
