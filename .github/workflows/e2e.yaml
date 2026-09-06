@@ -92,9 +92,9 @@ jobs:
     runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
-      # Cap concurrent Kind clusters to reduce runner memory pressure
-      # (chainsaw signal:killed) and control-plane/readiness races under load.
-      max-parallel: 10
+      # No max-parallel: readiness recheck + apply-timeout + install waits absorb
+      # control-plane load better than serializing the matrix (which stretched CI
+      # wall-clock). Reintroduce a cap only if signal:killed / OOM returns.
       matrix:
         kube-version: ["1.32", "1.23", "1.21.12"]
         test-scenario:
