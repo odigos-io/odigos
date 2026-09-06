@@ -100,7 +100,6 @@ artifact is signed from lives in
 | Component images (`odigos-*`) | `^https://github\.com/odigos-io/odigos/\.github/workflows/publish-modules\.yml@refs/tags/v.*$` |
 | CLI image + `odigos-victoria-metrics` | `^https://github\.com/odigos-io/odigos/\.github/workflows/release\.yml@refs/heads/main$` |
 | Enterprise images (`odigos-enterprise-*`) | `^https://github\.com/odigos-io/odigos-enterprise/\.github/workflows/release-images\.yml@refs/(tags/.*\|heads/.*)$` |
-| `wasp-init` | `^https://github\.com/odigos-io/ebpf-core/\.github/workflows/build-sender\.yml@refs/(heads/main\|heads/releases/.*\|tags/.*)$` |
 | `odigos-cli-offsets` | `^https://github\.com/odigos-io/enterprise-go-instrumentation/\.github/workflows/offsets-push\.yml@refs/heads/.*$` |
 | `odigos-vmagent-instrumentations` | `^https://github\.com/odigos-io/vm-agent/\.github/workflows/publish-agents\.yml@refs/(heads/.*\|tags/agents/.*)$` |
 
@@ -130,7 +129,7 @@ version listed in [`SIGNING.md`](https://github.com/odigos-io/ci-core/blob/main/
   `odigos-enterprise-connector-runtime`, `odigos-enterprise-connector-aws`,
   `odigos-enterprise-connector-azure`, `odigos-enterprise-connector-gcp` — `odiglet`
   and `agents` also publish `-extended` variants (separate digests, same identity)
-- **Supporting images**: `wasp-init`, `odigos-cli-offsets`, and
+- **Supporting images**: `odigos-cli-offsets`, and
   `odigos-vmagent-instrumentations` (signed for publishes after 2026-08-12)
 
 ## Air-gapped verification
