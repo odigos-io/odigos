@@ -188,6 +188,14 @@ build-images:
 	# prefer to build timeconsuimg images first to make better use of parallelism
 	make -j $(nproc) build-ui build-collector build-odiglet build-autoscaler build-scheduler build-instrumentor build-agents TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
+# Extract agent image pins (tag + digest) from odiglet/Dockerfile into odiglet/docker/versions
+# for docker-bake.hcl. Same logic as odigos-local-env `make sync-agent-versions`.
+.PHONY: sync-agent-versions
+sync-agent-versions:
+	./scripts/sync-agent-versions.sh odiglet/docker/versions \
+		--from odiglet/Dockerfile \
+		nodejs-community nodejs-community-14 php-community ruby-community
+
 .PHONY: build-images-rhel
 build-images-rhel:
 	$(MAKE) build-images RHEL=true TAG=$(TAG) ORG=$(ORG)
