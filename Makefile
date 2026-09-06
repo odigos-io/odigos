@@ -450,10 +450,7 @@ dev-tests-k3d-cluster:
 	@echo "Creating a k3d cluster for development"
 	-k3d cluster delete $(K3D_CLUSTER)
 	k3d cluster create --config=tests/common/apply/k3d-config.yaml
-	kubectl wait --for=condition=Ready node --all --timeout=180s
-	# The aggregated metrics API registers a moment after the pod turns Ready. Until it is
-	# Available every kubectl discovery call errors on metrics.k8s.io/v1beta1.
-	kubectl wait --for=condition=Available apiservice/v1beta1.metrics.k8s.io --timeout=300s
+	bash tests/common/wait_for_cluster_ready.sh
 
 .PHONY: dev-tests-setup
 dev-tests-setup: TAG := e2e-test
