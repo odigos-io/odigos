@@ -109,3 +109,74 @@ func TestMatchHttpRoute(t *testing.T) {
 		})
 	}
 }
+
+func TestMatchTemplatedPath(t *testing.T) {
+	tests := []struct {
+		name      string
+		attrs     map[string]string
+		rulePath  string
+		prefix    bool
+		wantMatch bool
+	}{
+		{
+			name:      "unset rule match any",
+			attrs:     map[string]string{},
+			wantMatch: true,
+		},
+		{
+			name: "match via url.template",
+			attrs: map[string]string{
+				string(semconv.URLTemplateKey): "/users/{id}",
+			},
+			rulePath:  "/users/{id}",
+			wantMatch: true,
+		},
+		{
+			name: "templated rule matches a concrete templated path",
+			attrs: map[string]string{
+				string(semconv.URLTemplateKey): "/users/{userId}",
+			},
+			rulePath:  "/users/*",
+			wantMatch: true,
+		},
+		{
+			name: "no match via url.template",
+			attrs: map[string]string{
+				string(semconv.URLTemplateKey): "/users/{id}",
+			},
+			rulePath:  "/orders/{id}",
+			wantMatch: false,
+		},
+		{
+			name: "prefix match via url.template",
+			attrs: map[string]string{
+				string(semconv.URLTemplateKey): "/api/v1/users/{id}",
+			},
+			rulePath:  "/api/v1",
+			prefix:    true,
+			wantMatch: true,
+		},
+		{
+			// url.path is not templated, so it is not used to match a templated path rule
+			name: "no match when url.template is absent",
+			attrs: map[string]string{
+				string(semconv.URLPathKey): "/users/123",
+			},
+			rulePath:  "/users/{id}",
+			wantMatch: false,
+		},
+		{
+			name:      "no attributes returns false",
+			attrs:     map[string]string{"other.attr": "value"},
+			rulePath:  "/users/{id}",
+			wantMatch: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			span := spanWithAttrs(t, tt.attrs)
+			got := matchTemplatedPath(span, mustParsePathRulePrefix(t, tt.rulePath, tt.prefix))
+			assert.Equal(t, tt.wantMatch, got)
+		})
+	}
+}
