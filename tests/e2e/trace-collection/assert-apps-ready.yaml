@@ -7,11 +7,10 @@ metadata:
   name: nodejs-minimum-version
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -23,11 +22,10 @@ metadata:
   name: nodejs-latest-version
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -39,11 +37,10 @@ metadata:
   name: nodejs-dockerfile-env
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -55,11 +52,10 @@ metadata:
   name: nodejs-manifest-env
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -71,11 +67,10 @@ metadata:
   name: java-supported-version
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -87,11 +82,10 @@ metadata:
   name: java-azul
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -103,11 +97,10 @@ metadata:
   name: java-supported-docker-env
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -119,11 +112,10 @@ metadata:
   name: java-supported-manifest-env
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -135,11 +127,10 @@ metadata:
   name: java-latest-version
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -151,11 +142,10 @@ metadata:
   name: java-old-version
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -167,11 +157,10 @@ metadata:
   name: java-unique-exec
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -183,11 +172,10 @@ metadata:
   name: python-latest-version
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -199,11 +187,10 @@ metadata:
   name: python-alpine
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -215,11 +202,10 @@ metadata:
   name: python-min-version
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -231,11 +217,10 @@ metadata:
   name: python-gunicorn-server
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -247,11 +232,10 @@ metadata:
   name: dotnet8-musl
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -263,11 +247,10 @@ metadata:
   name: dotnet6-musl
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -279,11 +262,10 @@ metadata:
   name: dotnet8-glibc
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
@@ -295,11 +277,10 @@ metadata:
   name: dotnet6-glibc
   namespace: default
 status:
-  conditions:
-    - type: Available
-      status: "True"
-    - type: Progressing
-      status: "True"
+  (conditions[?type == 'Available']):
+    - status: "True"
+  (conditions[?type == 'Progressing']):
+    - status: "True"
   replicas: 1
   readyReplicas: 1
   availableReplicas: 1
