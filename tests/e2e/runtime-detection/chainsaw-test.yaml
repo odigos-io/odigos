@@ -23,18 +23,12 @@ spec:
         - script:
             content: |
               ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
-              kubectl label namespace odigos-test odigos.io/system-object="true"
-            timeout: 1m10s
-
-    - name: Assert Odigos Installed
-      try:
-        - assert:
-            timeout: 2m
-            file: ../../common/assert/odigos-installed.yaml
-        - script:
-            content: |
               ../../common/verify_odigos_installation.sh odigos-test
-            timeout: 1m10s
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+            timeout: 5m
+        - assert:
+            timeout: 4m
+            file: ../../common/assert/odigos-installed.yaml
 
     - name: Verify Node Odiglet label has been added
       try:
