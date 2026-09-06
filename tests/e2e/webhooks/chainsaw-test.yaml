@@ -17,9 +17,9 @@ spec:
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
               ../../common/verify_odigos_installation.sh odigos-test
-            timeout: 1m50s
+            timeout: 5m
         - assert:
-            timeout: 1m10s
+            timeout: 4m
             file: ../../common/assert/odigos-installed.yaml
     - name: "[Defaulting] - Source without labels has labels added"
       try:

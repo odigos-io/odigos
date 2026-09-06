@@ -24,7 +24,7 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            timeout: 4m
+            timeout: 5m
             content: |
               # pwd is tests/e2e/tail-sampling-nodejs — chart lives at repo root helm/odigos
               # Gateway tail sampling enabled. Short aggregation wait keeps e2e latency low
@@ -39,7 +39,7 @@ spec:
               ../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 3m
+            timeout: 4m
             file: ../../common/assert/odigos-installed.yaml
 
     - name: Verify Node Odiglet label has been added

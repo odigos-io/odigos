@@ -19,6 +19,8 @@ runs:
         version: 'v0.25.0'
         cluster_name: kind-test-cluster
         config: tests/common/apply/kind-config.yaml
+        # Ephemeral GHA runners: don't fail the job if kind/docker cleanup races.
+        ignore_failed_clean: true
 
     - name: Build Odigos CLI
       uses: ./.github/actions/build/cli
