@@ -396,14 +396,17 @@ func workloadLabelSelector(obj client.Object) (*metav1.LabelSelector, error) {
 	case *appsv1.DaemonSet:
 		selector = o.Spec.Selector
 	case *openshiftappsv1.DeploymentConfig:
-		// DeploymentConfig selector is map[string]string, convert to *metav1.LabelSelector
-		selector = &metav1.LabelSelector{
-			MatchLabels: o.Spec.Selector,
+		// DeploymentConfig selector is map[string]string, convert to *metav1.LabelSelector.
+		// an empty map must not be converted, or the resulting selector matches every pod in the namespace.
+		if len(o.Spec.Selector) > 0 {
+			selector = &metav1.LabelSelector{
+				MatchLabels: o.Spec.Selector,
+			}
 		}
 	case *argorolloutsv1alpha1.Rollout:
-		selector = &metav1.LabelSelector{
-			MatchLabels: o.Spec.Selector.MatchLabels,
-		}
+		// can be nil when the Rollout takes its selector from a workloadRef, in which case
+		// argo strips it from the stored object.
+		selector = o.Spec.Selector
 	default:
 		return nil, fmt.Errorf("workloadLabelSelector: unsupported workload kind %T", obj)
 	}

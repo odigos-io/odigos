@@ -157,6 +157,23 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		return nil, err
 	}
 
+	// The containers overrides list all the containers of the workload, and is the list the rest of
+	// this function iterates. It can be empty when the workload has no containers in its own pod
+	// template - e.g. an argo Rollout which takes its pod template from a workloadRef, in which case
+	// argo strips spec.template (and spec.selector) from the stored object. Nothing downstream can be
+	// computed for such a workload, so report it instead of continuing with an empty container list.
+	if len(ic.Spec.ContainersOverrides) == 0 {
+		ic.Spec.AgentInjectionEnabled = false
+		ic.Spec.PodManifestInjectionOptional = false
+		ic.Spec.Containers = []odigosv1.ContainerAgentConfig{}
+		updateInstrumentationConfigAgentsMetaHash(ic, "")
+		return &agentInjectedStatusCondition{
+			Status:  agentInjectionEnabled.AgentEnabledRuntimeDetailsUnavailable.K8sConditionStatus,
+			Reason:  odigosv1.AgentEnabledReason(agentInjectionEnabled.AgentEnabledReasonRuntimeDetailsUnavailable),
+			Message: "no containers are listed for this workload, agent cannot be enabled",
+		}, nil
+	}
+
 	// Check for workloads that are in backoff state and not eligible for instrumentation.
 	backoffCondition, err := hasUninstrumentedPodsWithBackoff(ctx, c, pw, ic, logger)
 	if err != nil {
