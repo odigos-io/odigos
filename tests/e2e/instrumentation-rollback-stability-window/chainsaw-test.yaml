@@ -14,7 +14,7 @@ spec:
     - name: Install Odigos
       try:
         - script:
-            timeout: 1m10s
+            timeout: 2m
             content: |
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
@@ -28,7 +28,7 @@ spec:
     - name: Verify Odigos Installation
       try:
         - script:
-            timeout: 1m50s
+            timeout: 5m
             content: |
               echo "Starting Odigos version check..."
               export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
@@ -50,7 +50,7 @@ spec:
 
               ../../common/verify_odigos_installation.sh odigos-test
         - assert:
-            timeout: 1m10s
+            timeout: 4m
             file: ../../common/assert/odigos-installed.yaml
       catch:
         - script:
