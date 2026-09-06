@@ -732,6 +732,7 @@
                 "pages": [
                   "vmagent/setup/system-requirements",
                   "vmagent/setup/installation",
+                  "vmagent/setup/permissions",
                   "vmagent/setup/docker",
                   "vmagent/setup/upgrade",
                   "vmagent/setup/uninstall"

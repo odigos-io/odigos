@@ -14,6 +14,10 @@ There are two ways to add [sources](/vmagent/overview#key-concepts) to the Odigo
   **The only exception is Go and Java processes running directly on the host (not in a container).** These are instrumented in place and are **not** restarted.
 </Warning>
 
+<Note>
+  A **non-root** agent requires additional permissions to restart services, containers, and processes. See [Additional permissions](/vmagent/setup/permissions#additional-permissions).
+</Note>
+
 <Tabs>
   <Tab title="odictl">
   <Steps>
@@ -155,10 +159,10 @@ There are two ways to add [sources](/vmagent/overview#key-concepts) to the Odigo
   </Tab>
   <Tab title="YAML">
     <Steps>
-      <Step title="Navigate to the /etc/odigos-vmagent/sources.d folder">
+      <Step title="Navigate to the /var/lib/odigos-agent/config/sources.d folder">
     
         ```shell
-        cd /etc/odigos-vmagent/sources.d
+        cd /var/lib/odigos-agent/config/sources.d
         ```
 
       </Step>
