@@ -183,6 +183,8 @@ jobs:
           version: "v0.25.0"
           cluster_name: kind
           config: tests/common/apply/kind-config.yaml
+          # Ephemeral GHA runners: don't fail the job if kind/docker cleanup races.
+          ignore_failed_clean: true
 
       - name: wait for cluster readiness
         if: steps.should-run.outputs.skip != 'true'
