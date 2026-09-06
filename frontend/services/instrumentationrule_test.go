@@ -210,3 +210,46 @@ func TestUpdateInstrumentationRuleClearsScopesOnExplicitEmpty(t *testing.T) {
 	require.Nil(t, updated.Spec.Scopes)
 	require.Equal(t, []string{"Authorization"}, updated.Spec.HeadersCollection.HeaderKeys)
 }
+
+func TestUpdateInstrumentationRuleAllowsExplicitClearingScopesAndLibraries(t *testing.T) {
+	ctx := context.Background()
+	ruleID := "scoped-rule"
+	ruleName := "cluster wide rule"
+	notes := "clear selectors"
+	disabled := false
+
+	libraries := []v1alpha1.InstrumentationLibraryGlobalId{{
+		Name:     "spring-webmvc",
+		SpanKind: common.ServerSpanKind,
+		Language: common.JavaProgrammingLanguage,
+	}}
+
+	setFakeOdigosInstrumentationRuleClient(t, &v1alpha1.InstrumentationRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ruleID,
+			Namespace: consts.DefaultOdigosNamespace,
+		},
+		Spec: v1alpha1.InstrumentationRuleSpec{
+			RuleName: "original rule",
+			Scopes: &k8sconsts.SourcesScopes{
+				Namespaces: []string{"prod"},
+			},
+			InstrumentationLibraries: &libraries,
+		},
+	})
+
+	_, err := UpdateInstrumentationRule(ctx, ruleID, model.InstrumentationRuleInput{
+		RuleName:                 &ruleName,
+		Notes:                    &notes,
+		Disabled:                 &disabled,
+		SourcesScopes:            []*model.InstrumentationRuleSourcesScopeInput{},
+		InstrumentationLibraries: []*model.InstrumentationLibraryGlobalIDInput{},
+	})
+	require.NoError(t, err)
+
+	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(consts.DefaultOdigosNamespace).Get(ctx, ruleID, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Nil(t, updatedRule.Spec.Scopes)
+	require.NotNil(t, updatedRule.Spec.InstrumentationLibraries)
+	require.Empty(t, *updatedRule.Spec.InstrumentationLibraries)
+}
