@@ -29,6 +29,9 @@
 {{- if and $networkMetricsEnabled .Values.odiglet.noHostNetwork }}
 {{ fail "odiglet.noHostNetwork cannot be true when metricsSources.networkMetrics.enabled is true, since OBI network metrics require hostNetwork" }}
 {{- end }}
+{{- if and .Values.odiglet.scheduleOnlyOnInstrumentedNodes (ne .Values.instrumentor.mountMethod "k8s-init-container") }}
+{{ fail "odiglet.scheduleOnlyOnInstrumentedNodes requires instrumentor.mountMethod=k8s-init-container" }}
+{{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -60,14 +63,22 @@ spec:
         {{- end }}
         kubectl.kubernetes.io/default-container: odiglet
     spec:
+      {{- $nodeSelector := dict }}
       {{- if .Values.odiglet.nodeSelector }}
-      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
-      nodeSelector:
-      {{- toYaml .Values.odiglet.nodeSelector | nindent 8 }}
+      {{- range $k, $v := .Values.odiglet.nodeSelector }}
+      {{- $_ := set $nodeSelector $k $v }}
+      {{- end }}
       {{- else if .Values.nodeSelector }}
-      # Global nodeSelector from values.yaml
+      {{- range $k, $v := .Values.nodeSelector }}
+      {{- $_ := set $nodeSelector $k $v }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.odiglet.scheduleOnlyOnInstrumentedNodes }}
+      {{- $_ := set $nodeSelector "odigos.io/instrumented-pods" "true" }}
+      {{- end }}
+      {{- if $nodeSelector }}
       nodeSelector:
-      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- toYaml $nodeSelector | nindent 8 }}
       {{- end }}
       # we will always have at least one init container
       # if the mountMethod is k8s-init-container, we will pre-pull the agents image here as an init container

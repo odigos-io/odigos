@@ -990,6 +990,17 @@ odiglet:
   affinity: {}
 
   # @schema
+  # description: |-
+  #   When true, odiglet DaemonSet pods are only scheduled on nodes that already
+  #   have at least one instrumented pod. By default (false), odiglet runs on all
+  #   nodes (subject to nodeSelector, affinity, and tolerations).
+  #   Requires instrumentor.mountMethod to be set to k8s-init-container.
+  #   Also set as an env var on the instrumentor so toggling this value restarts
+  #   it and enables/disables the node-label controllers.
+  # @schema
+  scheduleOnlyOnInstrumentedNodes: false
+
+  # @schema
   # description: Priority class name. Set to empty string to disable.
   # @schema
   priorityClassName: 'system-node-critical'

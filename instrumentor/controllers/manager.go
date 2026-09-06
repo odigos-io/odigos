@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
+	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentednodes"
 	"github.com/odigos-io/odigos/instrumentor/controllers/podsmanifestinjectionstatus"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 
@@ -169,7 +171,7 @@ func durationPointer(d time.Duration) *time.Duration {
 	return &d
 }
 
-func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *version.Version) error {
+func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Provider, k8sVersion *version.Version, scheduleOdigletOnlyOnInstrumentedNodes bool) error {
 	err := agentenabled.SetupWithManager(mgr, dp)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for agent enabled: %w", err)
@@ -183,6 +185,18 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 	err = podsmanifestinjectionstatus.SetupWithManager(mgr)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for pod injection: %w", err)
+	}
+
+	if scheduleOdigletOnlyOnInstrumentedNodes {
+		err = instrumentednodes.SetupWithManager(ctx, mgr)
+		if err != nil {
+			return fmt.Errorf("failed to create controller for instrumented nodes: %w", err)
+		}
+	} else {
+		err = instrumentednodes.SetupLabelCleanupWithManager(mgr)
+		if err != nil {
+			return fmt.Errorf("failed to register instrumented pods node labels cleanup: %w", err)
+		}
 	}
 
 	return nil
@@ -248,6 +262,10 @@ func podTransformFunc(obj interface{}) (interface{}, error) {
 	strippedPod := corev1.Pod{
 		ObjectMeta: pod.ObjectMeta,
 		Status:     stripedStatus,
+		// Keep NodeName so pods can be listed by node via a field index.
+		Spec: corev1.PodSpec{
+			NodeName: pod.Spec.NodeName,
+		},
 	}
 	if workload.IsStaticPod(pod) {
 		strippedPod.Spec = pod.Spec

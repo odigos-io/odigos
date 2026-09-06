@@ -108,6 +108,10 @@ spec:
             {{- else }}
             value: {{ template "utils.imageName" (dict "Values" .Values "Release" .Release "Component" "agents" "Tag" $imageTag) }}
             {{- end }}
+          {{- if .Values.odiglet.scheduleOnlyOnInstrumentedNodes }}
+          - name: ODIGOS_ODIGLET_SCHEDULE_ONLY_ON_INSTRUMENTED_NODES
+            value: "true"
+          {{- end }}
           - name: GOMEMLIMIT
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.instrumentor.resources) }}
         volumeMounts:

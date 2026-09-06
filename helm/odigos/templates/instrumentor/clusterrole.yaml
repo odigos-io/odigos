@@ -13,6 +13,8 @@ rules:
       - list
       - watch
       - get
+      - patch
+      - update
   - apiGroups:
       - ''
     resources:

@@ -99,7 +99,8 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 	}
 
 	// wire up the controllers and webhooks
-	err = controllers.SetupWithManager(mgr, dp, k8sVersion)
+	scheduleOdigletOnlyOnInstrumentedNodes := os.Getenv(k8sconsts.OdigletScheduleOnlyOnInstrumentedNodesEnvVar) == "true"
+	err = controllers.SetupWithManager(context.Background(), mgr, dp, k8sVersion, scheduleOdigletOnlyOnInstrumentedNodes)
 	if err != nil {
 		return nil, err
 	}
