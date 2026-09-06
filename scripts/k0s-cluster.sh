@@ -77,6 +77,8 @@ wait_for_nodes() {
   die "timed out waiting for ${expected} Ready nodes (have ${ready:-0})"
 }
 
+# Args after name are docker run args: [OPTIONS...] IMAGE [COMMAND...]
+# Callers must place ${K0S_IMAGE} before the container command.
 run_node() {
   local name="$1"
   shift
@@ -88,8 +90,7 @@ run_node() {
     -v /var/log/pods \
     --tmpfs /run \
     --tmpfs /tmp \
-    "$@" \
-    "${K0S_IMAGE}"
+    "$@"
 }
 
 create_cluster() {
@@ -98,6 +99,7 @@ create_cluster() {
   log "Creating controller+worker node ${K0S_CONTROLLER} (image=${K0S_IMAGE})"
   run_node "${K0S_CONTROLLER}" \
     -p "${K0S_API_PORT}:6443" \
+    "${K0S_IMAGE}" \
     k0s controller --enable-worker >/dev/null
 
   wait_for_api
@@ -107,6 +109,7 @@ create_cluster() {
   local token
   token="$(docker exec "${K0S_CONTROLLER}" k0s token create --role=worker)"
   run_node "${K0S_WORKER}" \
+    "${K0S_IMAGE}" \
     k0s worker "${token}" >/dev/null
 
   wait_for_nodes 2
