@@ -32,7 +32,6 @@ func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigo
 
 	logger := commonlogger.FromContext(ctx)
 
-	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
 	dcService := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosNodeCollectorLocalTrafficServiceName,
@@ -47,34 +46,41 @@ func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigo
 	}
 
 	_, err := controllerutil.CreateOrPatch(ctx, b.Client, dcService, func() error {
-		dcService.Spec = v1.ServiceSpec{
-			Selector: map[string]string{
-				k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleNodeCollector),
-			},
-			Ports: []v1.ServicePort{
-				{
-					Name:        "otlp",
-					Protocol:    "TCP",
-					AppProtocol: ptr.To("grpc"),
-					Port:        4317,
-					TargetPort:  intstr.FromInt(4317),
-				},
-				{
-					Name:       "otlphttp",
-					Protocol:   "TCP",
-					Port:       4318,
-					TargetPort: intstr.FromInt(4318),
-				},
-				{
-					Name:       "metrics",
-					Protocol:   "TCP",
-					Port:       8888,
-					TargetPort: intstr.FromInt32(k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault),
-				},
-			},
-			InternalTrafficPolicy: &localTrafficPolicy,
-		}
+		updateNodeCollectorLocalTrafficSvc(dcService)
 		return nil
 	})
 	return err
+}
+
+// updateNodeCollectorLocalTrafficSvc updates desired fields in place.
+// Do not replace Spec wholesale: CreateOrPatch uses a JSON merge patch, and
+// zeroing ClusterIP/Type/etc. produces nulls that the API rejects as immutable,
+// failing every reconcile and blocking SyncConfigMap.
+func updateNodeCollectorLocalTrafficSvc(svc *v1.Service) {
+	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
+	svc.Spec.Selector = map[string]string{
+		k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleNodeCollector),
+	}
+	svc.Spec.Ports = []v1.ServicePort{
+		{
+			Name:        "otlp",
+			Protocol:    "TCP",
+			AppProtocol: ptr.To("grpc"),
+			Port:        4317,
+			TargetPort:  intstr.FromInt(4317),
+		},
+		{
+			Name:       "otlphttp",
+			Protocol:   "TCP",
+			Port:       4318,
+			TargetPort: intstr.FromInt(4318),
+		},
+		{
+			Name:       "metrics",
+			Protocol:   "TCP",
+			Port:       8888,
+			TargetPort: intstr.FromInt32(k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault),
+		},
+	}
+	svc.Spec.InternalTrafficPolicy = &localTrafficPolicy
 }
