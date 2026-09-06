@@ -1,11 +1,13 @@
 // Package server implements the odigos-browser-proxy HTTP server: a reverse proxy in front of a
-// web-server container that injects the OpenTelemetry browser SDK <script> into HTML responses and
-// proxies the browser's OTLP/HTTP telemetry to the node-local collector.
+// web-server container that injects CSP-safe OpenTelemetry browser SDK <script> tags into HTML
+// responses and proxies authenticated browser OTLP/HTTP telemetry to the node-local collector.
 package server
 
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"log"
@@ -25,34 +27,46 @@ const (
 	// Upper bound on HTML bodies we will buffer to inject into. Larger responses are streamed
 	// through untouched (a multi-MB HTML document is almost certainly not a normal page).
 	maxHTMLInjectBytes = 8 << 20 // 8 MiB
-	// Upper bound on OTLP request/response bodies we relay.
-	maxOTLPBodyBytes = 16 << 20 // 16 MiB
 )
 
 // Server is the browser-proxy HTTP server.
 type Server struct {
-	cfg        *config.Config
-	snippet    []byte
-	proxy      *httputil.ReverseProxy
-	otlpClient *http.Client
+	cfg          *config.Config
+	snippet      []byte // default (no CSP nonce) injection tags
+	configJS     []byte
+	proxy        *httputil.ReverseProxy
+	otlpClient   *http.Client
+	ipLimiter    *rateLimiter
+	tokenLimiter *rateLimiter
 }
 
 // New builds a Server from the given configuration.
 func New(cfg *config.Config) (*Server, error) {
+	if cfg.ExportToken == "" {
+		tok, err := generateToken()
+		if err != nil {
+			return nil, fmt.Errorf("generate export token: %w", err)
+		}
+		cfg.ExportToken = tok
+	}
+
 	upstreamURL, err := url.Parse(cfg.Upstream)
 	if err != nil {
 		return nil, fmt.Errorf("invalid upstream URL %q: %w", cfg.Upstream, err)
 	}
 
-	snippet, err := buildSnippet(cfg)
+	configJS, err := buildConfigJS(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build injection snippet: %w", err)
+		return nil, fmt.Errorf("failed to build config.js: %w", err)
 	}
 
 	s := &Server{
-		cfg:        cfg,
-		snippet:    snippet,
-		otlpClient: &http.Client{Timeout: 30 * time.Second},
+		cfg:          cfg,
+		snippet:      buildSnippet(""),
+		configJS:     configJS,
+		otlpClient:   &http.Client{Timeout: 30 * time.Second},
+		ipLimiter:    newRateLimiter(defaultOTLPPerIPPerMin, 30),
+		tokenLimiter: newRateLimiter(defaultOTLPPerTokenPerMin, 60),
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(upstreamURL)
@@ -74,11 +88,20 @@ func New(cfg *config.Config) (*Server, error) {
 	return s, nil
 }
 
+func generateToken() (string, error) {
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(buf), nil
+}
+
 // Handler returns the root HTTP handler with routing for the reserved /__odigos/ paths and the
 // reverse proxy fallthrough.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc(config.HealthPath, s.handleHealth)
+	mux.HandleFunc(config.ConfigJsPath, s.handleConfigJS)
 	mux.HandleFunc(config.AgentJsPath, s.handleAgentJS)
 	// All OTLP signals (traces/metrics/logs) under the reserved prefix.
 	mux.HandleFunc(config.OtlpPathPrefix, s.handleOTLP)
@@ -107,6 +130,13 @@ func (s *Server) handleProxy(w http.ResponseWriter, r *http.Request) {
 	s.proxy.ServeHTTP(w, r)
 }
 
+func (s *Server) handleConfigJS(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+	w.Header().Set("Cache-Control", "private, max-age=60")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	_, _ = w.Write(s.configJS)
+}
+
 // handleAgentJS serves the browser SDK bundle from the mounted agents directory.
 func (s *Server) handleAgentJS(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(s.cfg.AgentDir, filepath.Base(s.cfg.AgentFile))
@@ -126,6 +156,7 @@ func (s *Server) handleAgentJS(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	w.Header().Set("Cache-Control", "public, max-age=300")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	http.ServeContent(w, r, s.cfg.AgentFile, info.ModTime(), f)
 }
 
@@ -170,7 +201,12 @@ func (s *Server) injectResponse(resp *http.Response) error {
 		}
 	}
 
-	injected := injectIntoHTML(decoded, s.snippet)
+	csp := resp.Header.Get("Content-Security-Policy")
+	if csp == "" {
+		csp = resp.Header.Get("Content-Security-Policy-Report-Only")
+	}
+	snippet := s.snippetForResponse(csp)
+	injected := injectIntoHTML(decoded, snippet)
 
 	out := injected
 	if encoding == "gzip" {

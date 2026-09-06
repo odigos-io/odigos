@@ -16,31 +16,38 @@ capturing browser-side telemetry such as page loads, `fetch`/`XHR` requests, and
 ## How it works
 
 Because the OpenTelemetry Web SDK runs in the browser, Odigos does not mount agent files into the
-application container or set runtime environment variables. Instead it injects a small sidecar,
-`odigos-browser-proxy`, in front of the web server container:
+application container or set runtime environment variables. Instead it injects a hardened
+same-origin gateway sidecar, `odigos-browser-proxy`, in front of the web server container:
 
 ```mermaid
 flowchart TD
     User["End-user browser"] -->|"GET / (HTML)"| SC["odigos-browser-proxy sidecar"]
     SC -->|"forward"| App["web server container<br/>(nginx / serve / ...)"]
     App -->|"HTML response"| SC
-    SC -->|"inject &lt;script&gt; + recompress"| User
+    SC -->|"inject external &lt;script&gt; tags + recompress"| User
+    User -->|"GET /__odigos/config.js"| SC
     User -->|"GET /__odigos/agent.js"| SC
-    User -->|"POST /__odigos/v1/traces (OTLP)"| SC
-    SC -->|"forward + CORS"| NC["node-local collector :4318"]
+    User -->|"POST /__odigos/v1/traces\|logs<br/>Bearer token"| SC
+    SC -->|"validate + rate limit + forward"| NC["node-local collector :4318"]
 ```
 
 The sidecar:
 
-1. **Injects** a `<script>` tag that loads the OpenTelemetry Web SDK bundle into `text/html` responses
-   (gzip-aware), configured at runtime via an injected `window.__ODIGOS__` global.
-2. **Serves** the SDK bundle at the same-origin path `/__odigos/agent.js`.
-3. **Receives** the browser's OTLP/HTTP telemetry at the same-origin path `/__odigos/v1/traces` and
-   **forwards** it to the node-local Odigos collector. Because telemetry is sent same-origin, no CORS
-   configuration or public collector endpoint is required.
+1. **Injects** CSP-safe external `<script src="/__odigos/config.js">` and
+   `<script src="/__odigos/agent.js">` tags into `text/html` responses (gzip-aware). No inline
+   JavaScript is injected, so default `script-src 'self'` CSPs keep working. When the upstream
+   response CSP includes a nonce, that nonce is copied onto the injected tags.
+2. **Serves** `/__odigos/config.js` (assigns `window.__ODIGOS__`, including a per-sidecar
+   **export token**) and the SDK bundle at `/__odigos/agent.js`.
+3. **Receives** authenticated browser OTLP/HTTP at `/__odigos/v1/*` (Bearer token + rate limits +
+   same-site Origin checks) and **forwards** it to the node-local Odigos collector. Because
+   telemetry is sent same-origin, no public collector endpoint is required.
 
 An init container installs an `iptables` rule (Istio-style) that transparently redirects the
 application's inbound traffic to the sidecar, so the Kubernetes `Service` does not need to change.
+
+Design docs for the security model live in the agent repo:
+[odigos-io/opentelemetry-browser/docs](https://github.com/odigos-io/opentelemetry-browser/tree/main/docs).
 
 ## Enabling
 
@@ -86,3 +93,8 @@ arrive at your configured destination.
 - **Service meshes:** browser instrumentation is **not supported** alongside sidecar meshes such as
   Istio or Linkerd. Both use iptables redirects; co-injecting them would collide. Odigos skips
   browser-proxy injection when an `istio-proxy` / `linkerd-proxy` container is already present.
+- **CSP:** prefer `script-src 'self'` (or allow `/__odigos/*.js`). Hash-only CSPs without `'self'`
+  need an explicit allow-list update. Nonce-based CSPs are honored automatically when present on
+  the HTML response.
+- **Security:** OTLP paths reject unauthenticated requests and apply per-IP / per-token rate limits.
+  The export token is a telemetry write credential embedded in `config.js`, not a user session secret.

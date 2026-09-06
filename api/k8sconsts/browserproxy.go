@@ -30,11 +30,15 @@ const (
 	BrowserProxyPathPrefix = "/__odigos/"
 	// Path (under the prefix) where the sidecar serves the browser SDK bundle.
 	BrowserProxyAgentJsPath = "/__odigos/agent.js"
+	// Path (under the prefix) where the sidecar serves the dynamic window.__ODIGOS__ config.
+	BrowserProxyConfigJsPath = "/__odigos/config.js"
 	// Path used by Kubernetes liveness/readiness probes on the sidecar.
 	BrowserProxyHealthPath = "/__odigos/healthz"
 	// Path (under the prefix) where the sidecar receives OTLP/HTTP traces from the browser and
-	// forwards them to the node-local collector.
+	// forwards them to the node-local collector (requires Bearer export token).
 	BrowserProxyTracesPath = "/__odigos/v1/traces"
+	// Path for OTLP/HTTP logs/events from the browser agent.
+	BrowserProxyLogsPath = "/__odigos/v1/logs"
 
 	// Image name (without prefix/tag) of the browser-proxy sidecar.
 	OdigosBrowserProxyImage = "odigos-browser-proxy"
@@ -61,6 +65,9 @@ const (
 	BrowserProxyResourceAttributesEnvVar = "ODIGOS_BROWSER_PROXY_RESOURCE_ATTRIBUTES"
 	// Comma-separated list of URLs/regexes the browser SDK may attach trace-context headers to.
 	BrowserProxyPropagateCorsUrlsEnvVar = "ODIGOS_BROWSER_PROXY_PROPAGATE_CORS_URLS"
+	// Optional fixed export token for OTLP POSTs. When unset the sidecar generates one at startup
+	// and embeds it in /__odigos/config.js.
+	BrowserProxyExportTokenEnvVar = "ODIGOS_BROWSER_PROXY_EXPORT_TOKEN"
 
 	// Init-container-only: the application's inbound port that should be redirected to the sidecar.
 	BrowserProxyAppPortEnvVar = "ODIGOS_BROWSER_PROXY_APP_PORT"

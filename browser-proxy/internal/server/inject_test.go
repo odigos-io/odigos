@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"strings"
 	"testing"
 
@@ -54,19 +53,43 @@ func TestInjectIntoHTML_CaseInsensitive(t *testing.T) {
 	}
 }
 
-func TestBuildSnippet(t *testing.T) {
+func TestBuildSnippetExternalOnly(t *testing.T) {
+	s := string(buildSnippet(""))
+	if strings.Contains(s, "window.__ODIGOS__") {
+		t.Fatalf("snippet must not contain inline config: %s", s)
+	}
+	if !strings.Contains(s, `src="`+config.ConfigJsPath+`"`) {
+		t.Fatalf("missing config.js script tag: %s", s)
+	}
+	if !strings.Contains(s, `src="`+config.AgentJsPath+`"`) {
+		t.Fatalf("missing agent script tag: %s", s)
+	}
+	if strings.Count(s, "<script") != 2 {
+		t.Fatalf("expected exactly 2 script tags: %s", s)
+	}
+}
+
+func TestBuildSnippetWithNonce(t *testing.T) {
+	s := string(buildSnippet("n-1"))
+	if strings.Count(s, `nonce="n-1"`) != 2 {
+		t.Fatalf("expected nonce on both tags: %s", s)
+	}
+}
+
+func TestBuildConfigJS(t *testing.T) {
 	cfg := &config.Config{
 		ServiceName:        "my-frontend",
 		ResourceAttributes: "k8s.namespace.name=demo,k8s.pod.name=p1",
 		PropagateCorsUrls:  "https://api.example.com,/.*backend.*/",
+		ExportToken:        "tok",
 	}
-	snippet, err := buildSnippet(cfg)
+	body, err := buildConfigJS(cfg)
 	if err != nil {
-		t.Fatalf("buildSnippet error: %v", err)
+		t.Fatalf("buildConfigJS error: %v", err)
 	}
-	s := string(snippet)
+	s := string(body)
 
-	if !strings.Contains(s, "window.__ODIGOS__=") {
+	if !strings.HasPrefix(s, "window.__ODIGOS__=") {
 		t.Fatalf("missing config assignment: %s", s)
 	}
 	if !strings.Contains(s, `"serviceName":"my-frontend"`) {
@@ -75,15 +98,23 @@ func TestBuildSnippet(t *testing.T) {
 	if !strings.Contains(s, `"tracesPath":"`+config.TracesPath+`"`) {
 		t.Fatalf("missing traces path: %s", s)
 	}
+	if !strings.Contains(s, `"logsPath":"`+config.LogsPath+`"`) {
+		t.Fatalf("missing logs path: %s", s)
+	}
+	if !strings.Contains(s, `"exportToken":"tok"`) {
+		t.Fatalf("missing export token: %s", s)
+	}
 	if !strings.Contains(s, "k8s.namespace.name") || !strings.Contains(s, "demo") {
 		t.Fatalf("missing resource attributes: %s", s)
 	}
-	if !strings.Contains(s, `src="`+config.AgentJsPath+`"`) {
-		t.Fatalf("missing agent script tag: %s", s)
+}
+
+func TestExtractCSPNonce(t *testing.T) {
+	if got := extractCSPNonce(`default-src 'self'; script-src 'nonce-XYZ' 'self'`); got != "XYZ" {
+		t.Fatalf("got %q", got)
 	}
-	// json.Marshal must escape '<' to avoid breaking out of the inline <script>.
-	if bytes.Contains(snippet, []byte("</script><script")) && strings.Count(s, "<script") != 2 {
-		t.Fatalf("unexpected extra script tags (possible injection break): %s", s)
+	if got := extractCSPNonce(`default-src 'self'`); got != "" {
+		t.Fatalf("expected empty, got %q", got)
 	}
 }
 
@@ -94,5 +125,17 @@ func TestParseResourceAttributes(t *testing.T) {
 	}
 	if parseResourceAttributes("") != nil {
 		t.Fatalf("empty input should return nil")
+	}
+}
+
+func TestHostsEqual(t *testing.T) {
+	if !hostsEqual("frontend.example.com", "frontend.example.com") {
+		t.Fatal("equal hosts")
+	}
+	if !hostsEqual("frontend.example.com:443", "frontend.example.com") {
+		t.Fatal("host with port vs without")
+	}
+	if hostsEqual("evil.example.com", "frontend.example.com") {
+		t.Fatal("different hosts")
 	}
 }

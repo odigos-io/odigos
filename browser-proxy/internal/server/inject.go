@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"regexp"
 	"strings"
 
 	"github.com/odigos-io/odigos/browser-proxy/internal/config"
@@ -13,16 +14,21 @@ import (
 type browserConfig struct {
 	ServiceName                  string            `json:"serviceName,omitempty"`
 	TracesPath                   string            `json:"tracesPath"`
+	LogsPath                     string            `json:"logsPath"`
+	ExportToken                  string            `json:"exportToken,omitempty"`
 	ResourceAttributes           map[string]string `json:"resourceAttributes,omitempty"`
 	PropagateTraceHeaderCorsUrls []string          `json:"propagateTraceHeaderCorsUrls,omitempty"`
 }
 
-// buildSnippet renders the HTML that is injected into served pages: an inline script that sets
-// window.__ODIGOS__, followed by the async <script> that loads the browser SDK bundle.
-func buildSnippet(cfg *config.Config) ([]byte, error) {
+var cspNonceRE = regexp.MustCompile(`(?i)'nonce-([^']+)'`)
+
+// buildConfigJS renders the body of /__odigos/config.js (assigns window.__ODIGOS__).
+func buildConfigJS(cfg *config.Config) ([]byte, error) {
 	bc := browserConfig{
 		ServiceName:                  cfg.ServiceName,
 		TracesPath:                   config.TracesPath,
+		LogsPath:                     config.LogsPath,
+		ExportToken:                  cfg.ExportToken,
 		ResourceAttributes:           parseResourceAttributes(cfg.ResourceAttributes),
 		PropagateTraceHeaderCorsUrls: parseList(cfg.PropagateCorsUrls),
 	}
@@ -33,15 +39,43 @@ func buildSnippet(cfg *config.Config) ([]byte, error) {
 	}
 
 	var b bytes.Buffer
-	b.WriteString("<script>window.__ODIGOS__=")
-	// json.Marshal already escapes </script> safely (it escapes '<' as \u003c by default),
-	// preventing the inline JSON from prematurely closing the script tag.
+	b.WriteString("window.__ODIGOS__=")
 	b.Write(configJSON)
-	b.WriteString(";</script>")
-	b.WriteString(`<script src="`)
-	b.WriteString(config.AgentJsPath)
-	b.WriteString(`" async></script>`)
+	b.WriteString(";")
 	return b.Bytes(), nil
+}
+
+// buildSnippet renders CSP-safe external <script> tags (no inline JS).
+// When nonce is non-empty it is attached to both tags.
+func buildSnippet(nonce string) []byte {
+	var b bytes.Buffer
+	writeScriptTag(&b, config.ConfigJsPath, false, nonce)
+	writeScriptTag(&b, config.AgentJsPath, true, nonce)
+	return b.Bytes()
+}
+
+func writeScriptTag(b *bytes.Buffer, src string, async bool, nonce string) {
+	b.WriteString(`<script src="`)
+	b.WriteString(src)
+	b.WriteByte('"')
+	if async {
+		b.WriteString(" async")
+	}
+	if nonce != "" {
+		b.WriteString(` nonce="`)
+		b.WriteString(nonce)
+		b.WriteByte('"')
+	}
+	b.WriteString("></script>")
+}
+
+// extractCSPNonce returns the first CSP nonce value from a Content-Security-Policy header, if any.
+func extractCSPNonce(cspHeader string) string {
+	m := cspNonceRE.FindStringSubmatch(cspHeader)
+	if len(m) < 2 {
+		return ""
+	}
+	return m[1]
 }
 
 // parseResourceAttributes parses an OTEL_RESOURCE_ATTRIBUTES-style string ("k1=v1,k2=v2").
@@ -129,4 +163,13 @@ func spliceAt(body, snippet []byte, idx int) []byte {
 	out = append(out, snippet...)
 	out = append(out, body[idx:]...)
 	return out
+}
+
+// snippetForResponse picks a nonce-aware injection snippet for this HTML response.
+func (s *Server) snippetForResponse(cspHeader string) []byte {
+	nonce := extractCSPNonce(cspHeader)
+	if nonce == "" {
+		return s.snippet
+	}
+	return buildSnippet(nonce)
 }

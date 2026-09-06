@@ -2,6 +2,8 @@
 package config
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
@@ -21,6 +23,7 @@ const (
 	envServiceName        = "ODIGOS_BROWSER_PROXY_SERVICE_NAME"
 	envResourceAttributes = "ODIGOS_BROWSER_PROXY_RESOURCE_ATTRIBUTES"
 	envPropagateCorsUrls  = "ODIGOS_BROWSER_PROXY_PROPAGATE_CORS_URLS"
+	envExportToken        = "ODIGOS_BROWSER_PROXY_EXPORT_TOKEN"
 	envAppPort            = "ODIGOS_BROWSER_PROXY_APP_PORT"
 	envProxyUID           = "ODIGOS_BROWSER_PROXY_UID"
 )
@@ -34,8 +37,10 @@ const (
 	// Same-origin paths the sidecar reserves for itself.
 	PathPrefix     = "/__odigos/"
 	AgentJsPath    = "/__odigos/agent.js"
+	ConfigJsPath   = "/__odigos/config.js"
 	HealthPath     = "/__odigos/healthz"
 	TracesPath     = "/__odigos/v1/traces"
+	LogsPath       = "/__odigos/v1/logs"
 	OtlpPathPrefix = "/__odigos/v1/"
 )
 
@@ -57,6 +62,9 @@ type Config struct {
 	ResourceAttributes string
 	// PropagateCorsUrls is a comma-separated list of URLs/regexes for trace-context propagation.
 	PropagateCorsUrls string
+	// ExportToken is the bearer token browsers must present on OTLP POSTs. Generated at startup
+	// when unset so every sidecar instance has a unique credential.
+	ExportToken string
 }
 
 // LoadServe loads and validates the configuration needed to run the proxy server.
@@ -70,6 +78,7 @@ func LoadServe() (*Config, error) {
 		ServiceName:        os.Getenv(envServiceName),
 		ResourceAttributes: os.Getenv(envResourceAttributes),
 		PropagateCorsUrls:  os.Getenv(envPropagateCorsUrls),
+		ExportToken:        strings.TrimSpace(os.Getenv(envExportToken)),
 	}
 
 	if cfg.Upstream == "" {
@@ -78,8 +87,23 @@ func LoadServe() (*Config, error) {
 	if cfg.OtlpHTTPEndpoint == "" {
 		return nil, fmt.Errorf("%s is required", envOtlpHTTPEndpoint)
 	}
+	if cfg.ExportToken == "" {
+		tok, err := generateExportToken()
+		if err != nil {
+			return nil, fmt.Errorf("generate export token: %w", err)
+		}
+		cfg.ExportToken = tok
+	}
 
 	return cfg, nil
+}
+
+func generateExportToken() (string, error) {
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
 
 // InitConfig holds the configuration for the iptables init mode.

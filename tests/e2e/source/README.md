@@ -22,7 +22,8 @@ It has the following phases:
        `InstrumentationConfig` is asserted to report `otelDistroName:
        opentelemetry-ebpf-instrumentation` together with `language: cplusplus`.
     6. The `browser-frontend` Source uses a `containerOverrides` entry that selects
-       `browser-community`, which injects the `odigos-browser-proxy` sidecar and iptables
+       `browser-community`, which injects the hardened `odigos-browser-proxy` sidecar (CSP-safe
+       script injection + authenticated OTLP relay) and iptables
        redirect init container (verified via `01-browser-sidecar-injected.yaml`)
     7. Generated traffic to the frontend's `/buy` endpoint fans out to the C++ `shipping`
        service (via `SHIPPING_SERVICE_HOST`) and produces server spans observable through
