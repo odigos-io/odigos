@@ -171,7 +171,7 @@ func durationPointer(d time.Duration) *time.Duration {
 	return &d
 }
 
-func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Provider, k8sVersion *version.Version, scheduleOdigletOnlyOnInstrumentedNodes bool) error {
+func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Provider, k8sVersion *version.Version, scheduleOdigletOnlyOnInstrumentedNodes bool, instrumentedPodsNodeLabelRetention time.Duration) error {
 	err := agentenabled.SetupWithManager(mgr, dp)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for agent enabled: %w", err)
@@ -188,14 +188,9 @@ func SetupWithManager(ctx context.Context, mgr manager.Manager, dp *distros.Prov
 	}
 
 	if scheduleOdigletOnlyOnInstrumentedNodes {
-		err = instrumentednodes.SetupWithManager(ctx, mgr)
+		err = instrumentednodes.SetupWithManager(ctx, mgr, instrumentedPodsNodeLabelRetention)
 		if err != nil {
 			return fmt.Errorf("failed to create controller for instrumented nodes: %w", err)
-		}
-	} else {
-		err = instrumentednodes.SetupLabelCleanupWithManager(mgr)
-		if err != nil {
-			return fmt.Errorf("failed to register instrumented pods node labels cleanup: %w", err)
 		}
 	}
 

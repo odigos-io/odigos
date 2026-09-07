@@ -29,8 +29,8 @@
 {{- if and $networkMetricsEnabled .Values.odiglet.noHostNetwork }}
 {{ fail "odiglet.noHostNetwork cannot be true when metricsSources.networkMetrics.enabled is true, since OBI network metrics require hostNetwork" }}
 {{- end }}
-{{- if and .Values.odiglet.scheduleOnlyOnInstrumentedNodes (ne .Values.instrumentor.mountMethod "k8s-init-container") }}
-{{ fail "odiglet.scheduleOnlyOnInstrumentedNodes requires instrumentor.mountMethod=k8s-init-container" }}
+{{- if and (dig "scheduleOnlyOnInstrumentedNodes" "enabled" false (.Values.odiglet | default dict)) (ne .Values.instrumentor.mountMethod "k8s-init-container") }}
+{{ fail "odiglet.scheduleOnlyOnInstrumentedNodes.enabled requires instrumentor.mountMethod=k8s-init-container" }}
 {{- end }}
 apiVersion: apps/v1
 kind: DaemonSet
@@ -72,9 +72,6 @@ spec:
       {{- range $k, $v := .Values.nodeSelector }}
       {{- $_ := set $nodeSelector $k $v }}
       {{- end }}
-      {{- end }}
-      {{- if .Values.odiglet.scheduleOnlyOnInstrumentedNodes }}
-      {{- $_ := set $nodeSelector "odigos.io/instrumented-pods" "true" }}
       {{- end }}
       {{- if $nodeSelector }}
       nodeSelector:
@@ -613,9 +610,21 @@ spec:
   {{- if .tolerations }}
       tolerations: {{ toYaml .tolerations | nindent 8 }}
   {{- end }}
-  {{- if .affinity }}
-      affinity: {{ toYaml .affinity | nindent 8 }}
-  {{- end }}
+{{- end }}
+{{- /* Exists match: label value is a discovery timestamp, not a fixed "true". */}}
+{{- if or (and .Values.odiglet.affinity (not (empty .Values.odiglet.affinity))) (dig "scheduleOnlyOnInstrumentedNodes" "enabled" false (.Values.odiglet | default dict)) }}
+      affinity:
+{{- if and .Values.odiglet.affinity (not (empty .Values.odiglet.affinity)) }}
+{{ toYaml .Values.odiglet.affinity | nindent 8 }}
+{{- end }}
+{{- if dig "scheduleOnlyOnInstrumentedNodes" "enabled" false (.Values.odiglet | default dict) }}
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: odigos.io/first-instrumented-pod-at
+                    operator: Exists
+{{- end }}
 {{- end }}
       # Force UID 0 unless runAsNonRoot is opted in; otherwise image USER (non-zero) is used.
       securityContext:

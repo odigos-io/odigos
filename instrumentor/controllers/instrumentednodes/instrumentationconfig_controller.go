@@ -3,13 +3,13 @@ package instrumentednodes
 import (
 	"context"
 	"errors"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
@@ -18,11 +18,10 @@ import (
 // that run pods belonging to the workload of the reconciled InstrumentationConfig.
 type InstrumentationConfigReconciler struct {
 	client.Client
+	NodeLabelRetention time.Duration
 }
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := commonlogger.FromContext(ctx)
-
 	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name, req.Namespace)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -34,16 +33,26 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	var syncErrs []error
-	nodesReconciler := &NodesReconciler{Client: r.Client}
+	var requeueAfter time.Duration
 	for nodeName := range nodeNames {
-		if err := nodesReconciler.syncNode(ctx, nodeName); err != nil {
+		ra, err := syncNode(ctx, r.Client, nodeName, r.NodeLabelRetention)
+		if err != nil {
 			syncErrs = append(syncErrs, err)
+			continue
+		}
+		if ra > 0 && (requeueAfter == 0 || ra < requeueAfter) {
+			requeueAfter = ra
 		}
 	}
 
-	logger.Info("synced instrumented pods node labels for instrumentation config",
-		"instrumentationConfig", req.NamespacedName, "nodes", len(nodeNames))
-	return utils.K8SUpdateErrorHandler(errors.Join(syncErrs...))
+	res, err := utils.K8SUpdateErrorHandler(errors.Join(syncErrs...))
+	if err != nil {
+		return res, err
+	}
+	if requeueAfter > 0 {
+		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	}
+	return res, nil
 }
 
 func (r *InstrumentationConfigReconciler) nodeNamesForWorkload(ctx context.Context, pw k8sconsts.PodWorkload) (map[string]struct{}, error) {

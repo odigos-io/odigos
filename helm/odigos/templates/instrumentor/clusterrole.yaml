@@ -13,8 +13,10 @@ rules:
       - list
       - watch
       - get
+      {{- if dig "scheduleOnlyOnInstrumentedNodes" "enabled" false (.Values.odiglet | default dict) }}
       - patch
       - update
+      {{- end }}
   - apiGroups:
       - ''
     resources:

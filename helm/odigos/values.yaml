@@ -991,14 +991,32 @@ odiglet:
 
   # @schema
   # description: |-
-  #   When true, odiglet DaemonSet pods are only scheduled on nodes that already
-  #   have at least one instrumented pod. By default (false), odiglet runs on all
-  #   nodes (subject to nodeSelector, affinity, and tolerations).
+  #   Schedule odiglet only on nodes that already have at least one instrumented
+  #   pod. Reduces the resources Odigos uses on the cluster, which is useful when
+  #   there are many nodes and few instrumented pods.
   #   Requires instrumentor.mountMethod to be set to k8s-init-container.
-  #   Also set as an env var on the instrumentor so toggling this value restarts
-  #   it and enables/disables the node-label controllers.
+  #   Cons: the first time an instrumented pod starts on a node there is a period
+  #   without telemetry until odiglet starts on that node; assumes additional RBAC
+  #   permissions to patch and update node labels.
   # @schema
-  scheduleOnlyOnInstrumentedNodes: false
+  scheduleOnlyOnInstrumentedNodes:
+    # @schema
+    # description: |-
+    #   When true, odiglet runs only on nodes that already have instrumented pods.
+    #   By default (false), odiglet runs on all nodes (subject to nodeSelector,
+    #   affinity, and tolerations).
+    # @schema
+    enabled: false
+
+    # @schema
+    # description: |-
+    #   How long to keep odiglet scheduled on a node after its last instrumented
+    #   pod leaves. Acts as a rate limit so odiglet is not started and stopped
+    #   too frequently. Go duration string (e.g. 5m, 1h). Set to 0s to stop
+    #   immediately. Default is 5m.
+    # type: string
+    # @schema
+    # nodeLabelRetention: "5m"
 
   # @schema
   # description: Priority class name. Set to empty string to disable.
