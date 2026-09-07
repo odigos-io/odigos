@@ -1,5 +1,6 @@
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.24
+# Aligned with operator (1.31.0); older 1.24 assets fail to start under controller-runtime v0.23 / k8s v0.35.
+ENVTEST_K8S_VERSION = 1.31.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -35,11 +36,16 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -v ./... -p 1 -coverprofile cover.out
+	@assets="$$($(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)"; \
+	if [ -z "$$assets" ]; then echo "ERROR: setup-envtest returned empty KUBEBUILDER_ASSETS"; exit 1; fi; \
+	echo "KUBEBUILDER_ASSETS=$$assets"; \
+	KUBEBUILDER_ASSETS="$$assets" go test -v ./... -p 1 -coverprofile cover.out
 
 .PHONY: test-env-overwirte
 test-env-overwirte: fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./controllers/instrumentationdevice -p 1 -coverprofile cover.out
+	@assets="$$($(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)"; \
+	if [ -z "$$assets" ]; then echo "ERROR: setup-envtest returned empty KUBEBUILDER_ASSETS"; exit 1; fi; \
+	KUBEBUILDER_ASSETS="$$assets" go test ./controllers/instrumentationdevice -p 1 -coverprofile cover.out
 
 ##@ Build
 

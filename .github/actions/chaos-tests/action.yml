@@ -12,15 +12,11 @@ runs:
     - name: Install Chainsaw
       uses: kyverno/action-install-chainsaw@v0.2.12
 
-    - name: Create Kind Cluster
-      uses: helm/kind-action@v1.12.0
-      with:
-        node_image: 'kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb'
-        version: 'v0.25.0'
-        cluster_name: kind-test-cluster
-        config: tests/common/apply/kind-config.yaml
-        # Ephemeral GHA runners: don't fail the job if kind/docker cleanup races.
-        ignore_failed_clean: true
+    - name: Create k0s Cluster
+      shell: bash
+      env:
+        K0S_IMAGE: docker.io/k0sproject/k0s:v1.32.13-k0s.0
+      run: ./scripts/k0s-cluster.sh create
 
     - name: Build Odigos CLI
       uses: ./.github/actions/build/cli

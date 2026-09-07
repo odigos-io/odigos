@@ -112,12 +112,12 @@ Add a GCP Cloud Connector to manage **one Google Cloud project**. The connector 
         3. Select **Workload identity** in Odigos. Do **not** paste a JSON key — no credentials Secret is created for this method.
 
         <Info>
-          A kind or non-GKE Central cluster has no ambient GCP identity. Use
+          A local or non-GKE Central cluster has no ambient GCP identity. Use
           **Service account key** instead.
         </Info>
       </Tab>
       <Tab title="Service account key">
-        Use a JSON key for a dedicated service account. Prefer this for local Central (for example kind) or any cluster without Workload Identity / ADC.
+        Use a JSON key for a dedicated service account. Prefer this for local Central (for example k0s) or any cluster without Workload Identity / ADC.
 
         1. Create a Google Cloud service account in the target project.
         2. Grant it the **IAM role from the access level step**.

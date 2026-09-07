@@ -154,7 +154,7 @@ If you test changes to the `install` command, you will need to `odigos uninstall
 
 The main steps involved when debugging Odigos locally are:
 
-1. Use a Kind kubernetes cluster.
+1. Use a k0s-in-Docker Kubernetes cluster (`make dev-tests-k0s-cluster` or `./scripts/k0s-cluster.sh create`).
 2. Choose one of the following options for deploy:
 
 - Deploy all pods in the odigos-system namespace:

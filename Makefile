@@ -5,10 +5,13 @@ CENTRAL_BACKEND_URL ?=
 ODIGOS_NS ?= odigos-system
 OSS_ORG ?= docker.io/keyval
 ENTERPRISE_ORG ?= registry.odigos.io
-# Default for builds/pushes. Local deploy/load-to-kind resolve registry + image name
+# Default for builds/pushes. Local deploy/load-to-k0s resolve registry + image name
 # via scripts/resolve-dev-image.sh so OSS make deploy works against enterprise
 # installs (registry.odigos.io, odigos-enterprise-ui, etc.).
 ORG ?= $(OSS_ORG)
+# Default k0s-in-Docker image (override in CI for version matrix).
+K0S_IMAGE ?= docker.io/k0sproject/k0s:v1.32.13-k0s.0
+K0S_CLUSTER_SCRIPT := ./scripts/k0s-cluster.sh
 # Override ORG for staging pushes
 ifeq ($(STAGING_ORG),true)
     ORG = us-central1-docker.pkg.dev/odigos-cloud/staging-components
@@ -246,42 +249,25 @@ push-images:
 push-images-rhel:
 	$(MAKE) push-images RHEL=true TAG=$(TAG) ORG=$(ORG)
 
-load-to-kind-%:
-	kind load docker-image $(call dev_image,$*)
+load-to-k0s-%:
+	$(K0S_CLUSTER_SCRIPT) load $(call dev_image,$*)
 
 # Victoria Metrics is not built from this repo — pull the published image and retag for e2e.
-# Materialize a single-platform image via buildx --load so kind load does not fail on
+# Materialize a single-platform image via buildx --load so import does not fail on
 # multi-arch manifests (ctr: content digest ... not found).
-# kind's LoadImageArchive always runs: ctr images import --all-platforms
-# See https://github.com/kubernetes-sigs/kind/issues/3795
-.PHONY: load-to-kind-victoria-metrics
-load-to-kind-victoria-metrics:
+.PHONY: load-to-k0s-victoria-metrics
+load-to-k0s-victoria-metrics:
 	printf 'FROM $(ORG)/odigos-victoria-metrics:latest\n' | docker buildx build \
 		--platform=linux/$$(docker version -f '{{.Server.Arch}}') \
 		--pull \
 		-t $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG) \
 		--load \
 		-
-	kind load docker-image $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG)
+	$(K0S_CLUSTER_SCRIPT) load $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG)
 
-# Victoria Metrics is not built from this repo — pull the published image and retag for e2e.
-# Materialize a single-platform image via buildx --load so kind load does not fail on
-# multi-arch manifests (ctr: content digest ... not found).
-# kind's LoadImageArchive always runs: ctr images import --all-platforms
-# See https://github.com/kubernetes-sigs/kind/issues/3795
-.PHONY: load-to-kind-victoria-metrics
-load-to-kind-victoria-metrics:
-	printf 'FROM $(ORG)/odigos-victoria-metrics:latest\n' | docker buildx build \
-		--platform=linux/$$(docker version -f '{{.Server.Arch}}') \
-		--pull \
-		-t $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG) \
-		--load \
-		-
-	kind load docker-image $(ORG)/odigos-victoria-metrics$(IMG_SUFFIX):$(TAG)
-
-.PHONY: load-to-kind
-load-to-kind:
-	make -j 6 load-to-kind-instrumentor load-to-kind-autoscaler load-to-kind-scheduler load-to-kind-odiglet load-to-kind-collector load-to-kind-ui load-to-kind-cli load-to-kind-agents load-to-kind-victoria-metrics ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
+.PHONY: load-to-k0s
+load-to-k0s:
+	make -j 6 load-to-k0s-instrumentor load-to-k0s-autoscaler load-to-k0s-scheduler load-to-k0s-odiglet load-to-k0s-collector load-to-k0s-ui load-to-k0s-cli load-to-k0s-agents load-to-k0s-victoria-metrics ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX) DOCKERFILE=$(DOCKERFILE)
 
 .PHONY: restart-ui
 restart-ui:
@@ -316,7 +302,7 @@ deploy-%:
 	@img="$(call dev_image,$*)"; \
 	echo "Deploying $$img"; \
 	$(MAKE) build-$* IMAGE=$$img ORG=$(ORG) TAG=$(TAG) DOCKERFILE=$(DOCKERFILE) IMG_SUFFIX=$(IMG_SUFFIX); \
-	$(MAKE) load-to-kind-$* IMAGE=$$img ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX); \
+	$(MAKE) load-to-k0s-$* IMAGE=$$img ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX); \
 	if [ "$*" != "agents" ]; then \
 		$(MAKE) restart-$* ORG=$(ORG) TAG=$(TAG) IMG_SUFFIX=$(IMG_SUFFIX); \
 	fi
@@ -330,7 +316,7 @@ debug-odiglet:
 	@img="$(call dev_image,odiglet)"; \
 	echo "Building debug odiglet as $$img"; \
 	docker build -t $$img . -f odiglet/debug.Dockerfile; \
-	kind load docker-image $$img; \
+	$(K0S_CLUSTER_SCRIPT) load $$img; \
 	kubectl delete pod -n $(ODIGOS_NS) -l app.kubernetes.io/name=odiglet; \
 	kubectl wait --for=condition=ready pod -n $(ODIGOS_NS) -l app.kubernetes.io/name=odiglet --timeout=180s; \
 	kubectl port-forward -n $(ODIGOS_NS) daemonset/odiglet 2345:2345
@@ -460,20 +446,19 @@ api-all:
 crd-apply: api-all cli-upgrade
 	@echo "Applying changes to CRDs in api directory"
 
-.PHONY: dev-tests-kind-cluster
-dev-tests-kind-cluster:
-	@echo "Creating a kind cluster for development"
-	kind delete cluster
-	kind create cluster --config=tests/common/apply/kind-config.yaml
+.PHONY: dev-tests-k0s-cluster
+dev-tests-k0s-cluster:
+	@echo "Creating a k0s-in-Docker cluster for development"
+	K0S_IMAGE=$(K0S_IMAGE) $(K0S_CLUSTER_SCRIPT) create
 
 .PHONY: dev-tests-setup
 dev-tests-setup: TAG := e2e-test
-dev-tests-setup: dev-tests-kind-cluster cli-build build-cli-image build-images load-to-kind
+dev-tests-setup: dev-tests-k0s-cluster cli-build build-cli-image build-images load-to-k0s
 
 # Use this target to avoid rebuilding the images if all that changed is the e2e test code
 .PHONY: dev-tests-setup-no-build
 dev-tests-setup-no-build: TAG := e2e-test
-dev-tests-setup-no-build: dev-tests-kind-cluster load-to-kind
+dev-tests-setup-no-build: dev-tests-k0s-cluster load-to-k0s
 
 # Use this for debug to add a destination which only prints samples of telemetry items to the cluster gateway collector logs
 .PHONY: dev-debug-destination
