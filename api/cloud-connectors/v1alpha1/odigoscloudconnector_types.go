@@ -58,6 +58,35 @@ type CloudConnectorComputePlatformCapability struct {
 	Installation bool `json:"installation,omitempty"`
 }
 
+// CloudConnectorCollectorCapability is the customer's allow-list entry for one managed-Collector type
+// (e.g. "aws.fargate-collector"): a telemetry Collector that Odigos runs inside the customer's own
+// cloud account so their workloads export to a nearby endpoint instead of over the internet.
+//
+// The two booleans are separate because they are separate grants. Management is the configuration
+// plane and costs the customer nothing in their account. Deployment lets Odigos create and change
+// infrastructure there, which is the permission a customer may reasonably withhold while still
+// wanting Odigos to configure a Collector they deployed themselves from published IaC.
+type CloudConnectorCollectorCapability struct {
+	// Type is the provider connector spec type key (e.g. "aws.fargate-collector").
+	// +kubebuilder:validation:Required
+	Type string `json:"type"`
+
+	// Management allows the connector to own this Collector's OpenTelemetry configuration and deliver it
+	// over OpAMP. It applies however the Collector was deployed — by Odigos, or by the customer from the
+	// IaC artifacts Odigos publishes.
+	// +kubebuilder:validation:Optional
+	Management bool `json:"management,omitempty"`
+
+	// Deployment additionally allows the connector to create and converge this Collector's
+	// infrastructure in the customer's cloud account, and to remove what it created.
+	//
+	// Deployment without Management is refused by the connector: Odigos would build a Collector it never
+	// configures, which serves an inert fallback for ever. Enable both, or leave Deployment off to own
+	// the Collector's infrastructure yourself.
+	// +kubebuilder:validation:Optional
+	Deployment bool `json:"deployment,omitempty"`
+}
+
 // CloudConnectorPhase is a coarse, cached lifecycle phase for the connector runtime. It is a cache of
 // runtime-authoritative state computed by the connector-runtime controller; the connector's Postgres
 // schema and runtime API remain authoritative.
@@ -162,6 +191,16 @@ type OdigosCloudConnectorSpec struct {
 	// aws.ec2).
 	// +kubebuilder:validation:Optional
 	ComputePlatforms []CloudConnectorComputePlatformCapability `json:"computePlatforms,omitempty"`
+
+	// Collectors is the customer's per-type allow-list for Odigos-managed telemetry Collectors running
+	// in the customer's own cloud account: whether Odigos may configure one, and whether it may also
+	// deploy and converge its infrastructure.
+	//
+	// Absent or empty means no managed Collector, and a connector image that predates this field ignores
+	// it — so a Collector is only ever built where the capability is present AND the connector
+	// understands it.
+	// +kubebuilder:validation:Optional
+	Collectors []CloudConnectorCollectorCapability `json:"collectors,omitempty"`
 
 	// Runtime configures the connector workload (image/replicas/resources).
 	// +kubebuilder:validation:Optional
