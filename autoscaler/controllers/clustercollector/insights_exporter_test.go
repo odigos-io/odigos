@@ -119,11 +119,11 @@ func TestEffectiveInsightsConfig(t *testing.T) {
 
 	// odigos-insights ships as the enterprise-insights image and helm renders none of its
 	// workloads without an on-prem token, so the flag must be ignored on community tier.
-	assert.Nil(t, effectiveInsightsConfig(cfg, common.CommunityOdigosTier),
+	assert.Nil(t, commonconf.EffectiveInsightsConfig(cfg, common.CommunityOdigosTier),
 		"community tier must not wire the gateway for a service that was never deployed")
-	assert.Same(t, cfg, effectiveInsightsConfig(cfg, common.OnPremOdigosTier))
-	assert.Same(t, cfg, effectiveInsightsConfig(cfg, common.CloudOdigosTier))
-	assert.Nil(t, effectiveInsightsConfig(nil, common.OnPremOdigosTier))
+	assert.Same(t, cfg, commonconf.EffectiveInsightsConfig(cfg, common.OnPremOdigosTier))
+	assert.Same(t, cfg, commonconf.EffectiveInsightsConfig(cfg, common.CloudOdigosTier))
+	assert.Nil(t, commonconf.EffectiveInsightsConfig(nil, common.OnPremOdigosTier))
 }
 
 // insightsGatewayConfig renders a gateway config the way syncConfigMap does, for a cluster
@@ -132,7 +132,7 @@ func insightsGatewayConfig(t *testing.T, tier common.OdigosTier) *config.Config 
 	t.Helper()
 
 	on := true
-	insightsCfg := effectiveInsightsConfig(&common.InsightsConfiguration{Enabled: &on}, tier)
+	insightsCfg := commonconf.EffectiveInsightsConfig(&common.InsightsConfiguration{Enabled: &on}, tier)
 
 	ext := k8sconsts.OdigosConfigK8sExtensionType
 	tailSampling := false
