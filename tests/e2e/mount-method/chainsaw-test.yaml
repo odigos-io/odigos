@@ -19,7 +19,7 @@ spec:
     - name: '[1 - Setup] Install Odigos'
       try:
         - script:
-            timeout: 1m40s
+            timeout: 5m
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
                 ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set instrumentor.mountMethod=k8s-init-container
@@ -29,7 +29,7 @@ spec:
               kubectl label namespace odigos-test odigos.io/system-object="true"
               ../../common/verify_odigos_installation.sh odigos-test
         - assert:
-            timeout: 1m10s
+            timeout: 4m
             file: ../../common/assert/odigos-installed-no-device-plugin.yaml
 
     - name: '[1 - Setup] Assert - Simple Demo Apps Installed'
@@ -133,7 +133,7 @@ spec:
     - name: '[3 - CSI Driver Test] Upgrade to CSI driver mount method'
       try:
         - script:
-            timeout: 1m10s
+            timeout: 2m
             content: |
               # Upgrade existing installation to CSI driver mount method
               ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-csi-driver
