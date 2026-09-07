@@ -32,7 +32,7 @@ func SetupWithManager(ctx context.Context, mgr ctrl.Manager, nodeLabelRetention 
 		return err
 	}
 
-	// check if label should be set or removed when pods are created/deleted on node
+	// check if label should be set when pods are created/scheduled on a node
 	err = builder.
 		ControllerManagedBy(mgr).
 		Named("instrumentednodes-pods").
@@ -40,7 +40,6 @@ func SetupWithManager(ctx context.Context, mgr ctrl.Manager, nodeLabelRetention 
 		WithEventFilter(&podNodeNamePredicate{}).
 		Complete(&PodsReconciler{
 			Client:             mgr.GetClient(),
-			PodNodes:           newPodNodeTracker(),
 			NodeLabelRetention: nodeLabelRetention,
 		})
 	if err != nil {

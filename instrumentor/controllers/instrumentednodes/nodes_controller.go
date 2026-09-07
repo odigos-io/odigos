@@ -48,8 +48,13 @@ func (r *NodesReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if err != nil {
 		return utils.K8SUpdateErrorHandler(err)
 	}
-	if requeueAfter > 0 {
-		return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	// Periodically re-sync so the label is cleared after instrumented pods are
+	// deleted. The pods controller cannot handle deletes (node name is unknown
+	// once the pod is gone), so this is the path that eventually removes the label.
+	// it means new pods are handled right away, but pods being deleted are handled at most 1 minute after they are deleted.
+	const periodicRequeue = time.Minute
+	if requeueAfter == 0 || requeueAfter > periodicRequeue {
+		requeueAfter = periodicRequeue
 	}
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: requeueAfter}, nil
 }
