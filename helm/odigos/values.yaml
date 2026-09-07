@@ -1020,6 +1020,10 @@ odiglet:
     #   When true, odiglet runs only on nodes that already have instrumented pods.
     #   By default (false), odiglet runs on all nodes (subject to nodeSelector,
     #   affinity, and tolerations).
+    #   When enabled together with a non-default nodeSelector, affinity, or
+    #   tolerations, those settings still apply: odiglet is scheduled only on
+    #   nodes that both carry the instrumented-pod label and satisfy the other
+    #   constraints (they are combined, not replaced).
     # @schema
     enabled: false
 

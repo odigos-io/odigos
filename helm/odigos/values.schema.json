@@ -1983,7 +1983,7 @@
           "properties": {
             "enabled": {
               "default": "false",
-              "description": "When true, odiglet runs only on nodes that already have instrumented pods.\nBy default (false), odiglet runs on all nodes (subject to nodeSelector,\naffinity, and tolerations).",
+              "description": "When true, odiglet runs only on nodes that already have instrumented pods.\nBy default (false), odiglet runs on all nodes (subject to nodeSelector,\naffinity, and tolerations).\nWhen enabled together with a non-default nodeSelector, affinity, or\ntolerations, those settings still apply: odiglet is scheduled only on\nnodes that both carry the instrumented-pod label and satisfy the other\nconstraints (they are combined, not replaced).",
               "required": [],
               "title": "enabled"
             },
