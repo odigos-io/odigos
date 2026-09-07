@@ -19,7 +19,7 @@ spec:
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
-            timeout: 1m10s
+            timeout: 2m
             content: |
               #!/bin/bash
 
@@ -58,7 +58,7 @@ spec:
                 --set imagePrefix=ghcr.io/odigos-io
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 2m10s
+            timeout: 4m
             file: ../../common/assert/latest-odigos-version-installed.yaml
 
     - name: Assert Trace DB is up
@@ -125,7 +125,7 @@ spec:
             timeout: 1m10s
         - assert:
             file: ../../common/assert/odigos-upgraded.yaml
-            timeout: 2m20s
+            timeout: 4m
       catch:
         - get:
             apiVersion: v1

@@ -190,6 +190,10 @@ spec:
               {{ toYaml . | nindent 14 }}
             {{- end }}
             {{- end }}
+            {{- with .Values.odiglet.odiglet.seLinuxOptions }}
+            seLinuxOptions:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
             {{- end }} # end of securityContext
           livenessProbe:
 {{ toYaml .Values.odiglet.odiglet.livenessProbe | indent 12 }}
