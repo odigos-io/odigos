@@ -85,37 +85,24 @@ func podHasInstrumentationConfig(ctx context.Context, c client.Client, pod *core
 func syncFirstInstrumentedPodAtNodeLabel(ctx context.Context, c client.Client, node *corev1.Node, hasInstrumented bool, nodeLabelRetention time.Duration) (time.Duration, error) {
 	labelValue, hasLabel := node.Labels[k8sconsts.FirstInstrumentedPodAtNodeLabel]
 
-	if hasInstrumented {
+	// label already reflects the desired state
+	if hasInstrumented == hasLabel {
+		return 0, nil
+	}
 
-		if hasLabel {
-			// already has label, nothing to do
-			return 0, nil
-		}
-		// set the label
+	if hasInstrumented {
+		// node just got it's first instrumented pod: sttamp it with the current time
 		now := time.Now().UTC().Format(k8sconsts.FirstInstrumentedPodAtNodeLabelTimeFormat)
 		err := patchFirstInstrumentedPodAtNodeLabel(ctx, c, node, now)
-		if err != nil {
-			return 0, err
-		}
-		return 0, nil
-
+		return 0, err
 	} else {
-
-		if !hasLabel {
-			// already has no label, nothing to do
-			return 0, nil
-		}
-		// check for rate limiting
+		// no instrumented pods left: remove the label but only after the retention period
 		requeueAfter, delayRemoval := retentionRemaining(labelValue, nodeLabelRetention)
 		if delayRemoval {
 			return requeueAfter, nil
 		}
-		// remove the label
 		err := patchFirstInstrumentedPodAtNodeLabel(ctx, c, node, nil)
-		if err != nil {
-			return 0, err
-		}
-		return 0, nil
+		return 0, err
 	}
 }
 
