@@ -22,7 +22,7 @@ spec:
       image: docker.io/keyval/odigos-odiglet:e2e-test
     - name: data-collection
       securityContext:
-        privileged: true
+        privileged: false
       env:
         - name: NODE_NAME
           valueFrom:
@@ -107,7 +107,7 @@ spec:
       image: docker.io/keyval/odigos-odiglet:e2e-test
     - name: data-collection
       securityContext:
-        privileged: true
+        privileged: false
       env:
         - name: NODE_NAME
           valueFrom:
