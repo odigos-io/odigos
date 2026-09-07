@@ -99,8 +99,7 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 	}
 
 	// wire up the controllers and webhooks
-	scheduleOdigletOnlyOnInstrumentedNodes := os.Getenv(k8sconsts.OdigletScheduleOnlyOnInstrumentedNodesEnvVar) == "true"
-	instrumentedPodsNodeLabelRetention := parseFirstInstrumentedPodAtNodeLabelRetention()
+	scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention := parseFirstInstrumentedPodAtNodeLabelRetention()
 	err = controllers.SetupWithManager(context.Background(), mgr, dp, k8sVersion, scheduleOdigletOnlyOnInstrumentedNodes, instrumentedPodsNodeLabelRetention)
 	if err != nil {
 		return nil, err
@@ -199,19 +198,19 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 	}
 }
 
-func parseFirstInstrumentedPodAtNodeLabelRetention() time.Duration {
+func parseFirstInstrumentedPodAtNodeLabelRetention() (enabled bool, retention time.Duration) {
 	raw := os.Getenv(k8sconsts.FirstInstrumentedPodAtNodeLabelRetentionEnvVar)
 	if raw == "" {
-		return 0
+		return false, 0
 	}
 	d, err := time.ParseDuration(raw)
 	if err != nil {
-		commonlogger.LoggerCompat().Error("invalid instrumented pods node label retention, using 0",
+		commonlogger.LoggerCompat().Error("invalid instrumented pods node label retention, using 5m",
 			"env", k8sconsts.FirstInstrumentedPodAtNodeLabelRetentionEnvVar, "value", raw, "err", err)
-		return 0
+		return true, 5 * time.Minute
 	}
 	if d < 0 {
-		return 0
+		d = 0
 	}
-	return d
+	return true, d
 }
