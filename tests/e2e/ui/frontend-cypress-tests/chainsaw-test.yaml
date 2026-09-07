@@ -19,13 +19,13 @@ spec:
     - name: Install Odigos CLI
       try:
         - script:
-            timeout: 2m40s
+            timeout: 5m
             content: |
               ../../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               ../../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 1m10s
+            timeout: 4m
             file: ../../../common/assert/odigos-installed.yaml
 
     - name: Verify - Jaeger Installed

@@ -3,7 +3,7 @@ name: E2E Tests
 on:
   merge_group:
   pull_request:
-    branches: [ main, 'releases/**' ]
+    branches: [main, "releases/**"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -48,7 +48,6 @@ jobs:
           path: cli/odigos
           key: ${{ github.run_id }}-odigos-cli
 
-
   build-odigos-images:
     runs-on: depot-ubuntu-24.04-8
     steps:
@@ -89,12 +88,15 @@ jobs:
           key: ${{ github.run_id }}-odigos-images
 
   kubernetes-test:
-    needs: [ build-odigos-images, build-cli ]
+    needs: [build-odigos-images, build-cli]
     runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
+      # No max-parallel: readiness recheck + apply-timeout + install waits absorb
+      # control-plane load better than serializing the matrix (which stretched CI
+      # wall-clock). Reintroduce a cap only if signal:killed / OOM returns.
       matrix:
-        kube-version: [ "1.32", "1.23", "1.21.12" ]
+        kube-version: ["1.32", "1.23", "1.21.12"]
         test-scenario:
           - "ui"
           - "helm-chart"
@@ -183,13 +185,12 @@ jobs:
           version: "v0.25.0"
           cluster_name: kind
           config: tests/common/apply/kind-config.yaml
+          # Ephemeral GHA runners: don't fail the job if kind/docker cleanup races.
+          ignore_failed_clean: true
 
       - name: wait for cluster readiness
         if: steps.should-run.outputs.skip != 'true'
-        run: |
-          kubectl wait --for=condition=Ready node --all --timeout=180s
-          kubectl wait -n kube-system --for=condition=Ready pod --all --timeout=300s
-          kubectl rollout status -n kube-system deployment/coredns --timeout=300s
+        run: bash tests/common/wait_for_kind_ready.sh
 
       - name: Restore cached Odigos images
         if: steps.should-run.outputs.skip != 'true'
@@ -259,13 +260,23 @@ jobs:
           echo "LATEST_RELEASE_TAG=$LATEST_RELEASE_TAG" >> $GITHUB_OUTPUT
           echo "Latest release tag for branch $BRANCH: $LATEST_RELEASE_TAG"
 
+      - name: recheck cluster readiness before E2E
+        if: steps.should-run.outputs.skip != 'true'
+        # Image cache restore / kind load can take ~1m; apiserver/etcd may flap in
+        # that window even after the post-create readiness gate passed.
+        run: bash tests/common/wait_for_kind_ready.sh
+
       - name: Run E2E Tests
         if: steps.should-run.outputs.skip != 'true'
         env:
           LATEST_RELEASE_TAG: ${{ steps.get-latest-tag.outputs.LATEST_RELEASE_TAG }}
         run: |
           MINOR_VERSION=$(echo ${{ matrix.kube-version }} | sed -E 's/^1\.([0-9]+).*$/\1/')
-          chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF
+          # Default apply timeout is 5s — too short when apiserver briefly flaps
+          # under runner load (context deadline exceeded on early APPLY).
+          chainsaw test tests/e2e/${{ matrix.test-scenario }} \
+            --apply-timeout 30s \
+            --values - <<EOF
           k8sMinorVersion: ${MINOR_VERSION}
           isHelm: ${{ matrix.test-scenario == 'helm-chart' || matrix.test-scenario == 'helm-upgrade' }}
           EOF
@@ -285,6 +296,10 @@ jobs:
               echo "--- describe deploy $ns/$name ---"
               kubectl -n "$ns" describe deploy "$name" || true
           done
+          echo "==== Runner memory ===="; free -h || true
+          echo "==== dmesg OOM / kill hints ===="
+          (sudo dmesg -T 2>/dev/null || dmesg -T 2>/dev/null || true) | \
+            grep -Ei "killed process|out of memory|oom|Memory cgroup" | tail -n 80 || true
 
       ################### Diagnose and collect logs ###################
       - name: Run diagnose command

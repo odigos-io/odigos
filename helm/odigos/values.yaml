@@ -922,6 +922,21 @@ odiglet:
 
     # @schema
     # description: |-
+    #   SELinux options for the odiglet container when running as unPrivileged.
+    #   Ignored when running as privileged, since container runtimes drop the label in that mode.
+    #   On SELinux enforcing nodes odiglet needs a privileged SELinux domain to inspect and
+    #   instrument application processes. "spc_t" is that domain in the standard container policy
+    #   (https://github.com/containers/container-selinux/blob/v2.232.1/container.te#L105), and on
+    #   Bottlerocket, which aliases it to its own "control_t".
+    #   Adjust the type if your nodes use a custom SELinux policy, or set to null to leave the
+    #   label to the container runtime.
+    # @schema
+    seLinuxOptions:
+      type: "spc_t"
+      level: "s0"
+
+    # @schema
+    # description: |-
     #   Percentage of the memory limit to use for GOMEMLIMIT when the odiglet
     #   memory limit is >= 500Mi. Below 500Mi the default 80% is used.
     #   Odiglet allocates significant memory for eBPF maps which live outside

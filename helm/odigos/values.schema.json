@@ -1936,6 +1936,24 @@
               "required": [],
               "title": "readinessProbe",
               "type": "object"
+            },
+            "seLinuxOptions": {
+              "additionalProperties": false,
+              "description": "SELinux options for the odiglet container when running as unPrivileged.\nIgnored when running as privileged, since container runtimes drop the label in that mode.\nOn SELinux enforcing nodes odiglet needs a privileged SELinux domain to inspect and\ninstrument application processes. \"spc_t\" is that domain in the standard container policy\n(https://github.com/containers/container-selinux/blob/v2.232.1/container.te#L105), and on\nBottlerocket, which aliases it to its own \"control_t\".\nAdjust the type if your nodes use a custom SELinux policy, or set to null to leave the\nlabel to the container runtime.",
+              "properties": {
+                "level": {
+                  "default": "s0",
+                  "title": "level",
+                  "type": "string"
+                },
+                "type": {
+                  "default": "spc_t",
+                  "title": "type",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "seLinuxOptions"
             }
           },
           "required": [],

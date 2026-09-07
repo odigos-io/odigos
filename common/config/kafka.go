@@ -151,6 +151,23 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		producerFlushMaxMessages = "0"
 	}
 
+	metadataMaxRetryValue, err := parseInt(KAFKA_METADATA_MAX_RETRY, metadataMaxRetry)
+	if err != nil {
+		return nil, err
+	}
+	producerMaxMessageBytesValue, err := parseInt(KAFKA_PRODUCER_MAX_MESSAGE_BYTES, producerMaxMessageBytes)
+	if err != nil {
+		return nil, err
+	}
+	producerRequiredAcksValue, err := parseInt(KAFKA_PRODUCER_REQUIRED_ACKS, producerRequiredAcks)
+	if err != nil {
+		return nil, err
+	}
+	producerFlushMaxMessagesValue, err := parseInt(KAFKA_PRODUCER_FLUSH_MAX_MESSAGES, producerFlushMaxMessages)
+	if err != nil {
+		return nil, err
+	}
+
 	// Modify the exporter here
 	exporterName := "kafka/" + uniqueUri
 	exporterConfig := GenericMap{
@@ -167,7 +184,7 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 		"metadata": GenericMap{
 			"full": parseBool(metadataFull),
 			"retry": GenericMap{
-				"max":     parseInt(metadataMaxRetry),
+				"max":     metadataMaxRetryValue,
 				"backoff": metadataBackoffRetry,
 			},
 		},
@@ -179,10 +196,10 @@ func (m *Kafka) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]
 			"max_elapsed_time": retryOnFailureMaxTimeElapsed,
 		},
 		"producer": GenericMap{
-			"max_message_bytes":  parseInt(producerMaxMessageBytes),
-			"required_acks":      parseInt(producerRequiredAcks),
+			"max_message_bytes":  producerMaxMessageBytesValue,
+			"required_acks":      producerRequiredAcksValue,
 			"compression":        producerCompression,
-			"flush_max_messages": parseInt(producerFlushMaxMessages),
+			"flush_max_messages": producerFlushMaxMessagesValue,
 		},
 		"auth": GenericMap{
 			"tls": GenericMap{
