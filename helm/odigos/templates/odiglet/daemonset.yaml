@@ -21,11 +21,7 @@
     {{- end -}}
   {{- end -}}
 {{- end -}}
-{{- $privilegedRequired := or $collectLogs $collectMetrics -}}
 {{- $k8sVersion := include "utils.cleanKubeVersion" . }}
-{{- if and $privilegedRequired .Values.odiglet.unPrivileged }}
-{{ fail "privileged mode is required when collecting logs or metrics, this is currently not supported in unprivileged mode" }}
-{{- end }}
 {{- if and $networkMetricsEnabled .Values.odiglet.noHostNetwork }}
 {{ fail "odiglet.noHostNetwork cannot be true when metricsSources.networkMetrics.enabled is true, since OBI network metrics require hostNetwork" }}
 {{- end }}
@@ -57,7 +53,7 @@ spec:
         app.kubernetes.io/name: odiglet
         odigos.io/collector-role: NODE_COLLECTOR
       annotations:
-        {{- if and (.Values.odiglet.unPrivileged) (semverCompare "<1.30.0" $k8sVersion) }}
+        {{- if and (not .Values.odiglet.odiglet.privileged) (semverCompare "<1.30.0" $k8sVersion) }}
         # Prior to Kubernetes v1.30, AppArmor profile was specified through annotations.
         container.apparmor.security.beta.kubernetes.io/odiglet: unconfined
         {{- end }}
@@ -107,7 +103,7 @@ spec:
           {{- end }}
           {{- end }}
           securityContext:
-          {{- if not .Values.odiglet.unPrivileged}}
+          {{- if .Values.odiglet.odiglet.privileged}}
             privileged: true
           {{- end }}
           env:
@@ -180,15 +176,20 @@ spec:
             - /root/odiglet
           imagePullPolicy: IfNotPresent
           securityContext:
-            {{- if not .Values.odiglet.unPrivileged }}
+            {{- if .Values.odiglet.odiglet.privileged }}
             privileged: true
             {{- else }}
             privileged: false
             capabilities:
               add:
-              {{- with .Values.odiglet.odiglet.capabilities }}
-              {{- toYaml . | nindent 14 }}
+              {{- $caps := .Values.odiglet.odiglet.capabilities | default list }}
+              {{- if not (include "odigos.secretExists" .) }}
+              {{- /* the community go instrumentation checks that the target process is alive with
+                     kill(pid, 0), which needs CAP_KILL when the target runs as a different user.
+                     the enterprise distro stats /proc/<pid> instead and needs no capability. */}}
+              {{- if not (has "KILL" $caps) }}{{- $caps = append $caps "KILL" }}{{- end }}
               {{- end }}
+              {{- toYaml $caps | nindent 14 }}
               drop:
                 - ALL
             # for Kubernetes >= 1.30 we can specify AppArmor profile in securityContext
@@ -308,17 +309,25 @@ spec:
             - --config=k8scm:{{ .Release.Namespace }}/odigos-data-collection/conf
             - --feature-gates=service.profilesSupport
           securityContext:
-            {{- if $privilegedRequired }}
+            {{- if .Values.odiglet.dataCollection.privileged }}
             privileged: true
             {{- else }}
             privileged: false
             capabilities:
               add:
-              {{- with .Values.odiglet.dataCollection.capabilities }}
-              {{- toYaml . | nindent 14 }}
+              {{- $caps := .Values.odiglet.dataCollection.capabilities | default list }}
+              {{- if .Values.profiling.enabled }}
+              {{- /* the eBPF profiler reads /proc/kallsyms addresses and raises RLIMIT_MEMLOCK */}}
+              {{- if not (has "SYSLOG" $caps) }}{{- $caps = append $caps "SYSLOG" }}{{- end }}
+              {{- if not (has "SYS_RESOURCE" $caps) }}{{- $caps = append $caps "SYS_RESOURCE" }}{{- end }}
               {{- end }}
+              {{- toYaml $caps | nindent 14 }}
               drop:
                 - ALL
+            {{- with .Values.odiglet.dataCollection.seLinuxOptions }}
+            seLinuxOptions:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
             {{- end }}
           env:
             - name: NODE_NAME
@@ -462,7 +471,7 @@ spec:
 {{- toYaml .Values.odiglet.deviceplugin.readinessProbe | nindent 12 }}
 {{- end }}
 # CSI driver is only supported in privileged mode
-{{- if and (eq .Values.instrumentor.mountMethod "k8s-csi-driver") .Values.odiglet.unPrivileged }}
+{{- if and (eq .Values.instrumentor.mountMethod "k8s-csi-driver") (not .Values.odiglet.odiglet.privileged) }}
 {{ fail "CSI driver mount method requires privileged mode, this is not supported in unprivileged mode" }}
 {{- end }}
 {{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}

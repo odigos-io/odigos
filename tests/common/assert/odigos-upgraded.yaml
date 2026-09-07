@@ -76,11 +76,11 @@ spec:
   (containers[?name=='odiglet']):
     - resources: {}
       securityContext:
-        privileged: true
+        privileged: false
       image: docker.io/keyval/odigos-odiglet:e2e-test
   (containers[?name=='data-collection']):
     - securityContext:
-        privileged: true
+        privileged: false
       env:
         - name: NODE_NAME
           valueFrom:
@@ -150,11 +150,11 @@ spec:
   (containers[?name=='odiglet']):
     - resources: {}
       securityContext:
-        privileged: true
+        privileged: false
       image: docker.io/keyval/odigos-odiglet:e2e-test
   (containers[?name=='data-collection']):
     - securityContext:
-        privileged: true
+        privileged: false
       env:
         - name: NODE_NAME
           valueFrom:

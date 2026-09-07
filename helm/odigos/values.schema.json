@@ -1585,7 +1585,7 @@
           "description": "Configuration for the data-collection container.",
           "properties": {
             "capabilities": {
-              "description": "capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher",
+              "description": "capabilities to add to the data-collection container when running non-privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nSYSLOG and SYS_RESOURCE are added automatically when profiling.enabled is true.",
               "items": {
                 "anyOf": [
                   {
@@ -1605,6 +1605,25 @@
               },
               "required": [],
               "title": "capabilities"
+            },
+            "privileged": {
+              "default": "false",
+              "description": "Run the data-collection container as a privileged container.",
+              "required": [],
+              "title": "privileged"
+            },
+            "seLinuxOptions": {
+              "additionalProperties": false,
+              "description": "seLinuxOptions for the data-collection container when running non-privileged.\n\"spc_t\" is the SELinux domain the container already gets when running privileged.\nThis is an advanced option and should only be changed if you know what you are doing.",
+              "properties": {
+                "type": {
+                  "default": "spc_t",
+                  "title": "type",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "seLinuxOptions"
             }
           },
           "required": [],
@@ -1810,7 +1829,7 @@
           "properties": {
             "appArmorProfile": {
               "additionalProperties": false,
-              "description": "apparmorProfile for the odiglet container when running as unPrivileged.\nthis will be ignored when running as privileged.",
+              "description": "apparmorProfile for the odiglet container when running non-privileged.\nthis will be ignored when running as privileged.",
               "properties": {
                 "type": {
                   "default": "Unconfined",
@@ -1822,9 +1841,15 @@
               "title": "appArmorProfile"
             },
             "capabilities": {
-              "description": "capabilities to add to the odiglet container when running as unPrivileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nIPC_LOCK required for mmap of perf buffers\nSYS_RESOURCE required only for kernels \u003c 5.11, used for setting rlimit for BPF maps",
+              "description": "capabilities to add to the odiglet container when running non-privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nIPC_LOCK required for mmap of perf buffers\nKILL is added automatically on community installations, where the go instrumentation\nchecks that the target process is alive by signalling it.\nSYS_RESOURCE required only for kernels \u003c 5.11, used for setting rlimit for BPF maps",
               "items": {
                 "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
                   {
                     "type": "string"
                   },
@@ -1906,6 +1931,12 @@
               "title": "livenessProbe",
               "type": "object"
             },
+            "privileged": {
+              "default": "false",
+              "description": "Run the odiglet container, and its init container, as privileged containers.",
+              "required": [],
+              "title": "privileged"
+            },
             "readinessProbe": {
               "additionalProperties": false,
               "properties": {
@@ -1939,7 +1970,7 @@
             },
             "seLinuxOptions": {
               "additionalProperties": false,
-              "description": "SELinux options for the odiglet container when running as unPrivileged.\nIgnored when running as privileged, since container runtimes drop the label in that mode.\nOn SELinux enforcing nodes odiglet needs a privileged SELinux domain to inspect and\ninstrument application processes. \"spc_t\" is that domain in the standard container policy\n(https://github.com/containers/container-selinux/blob/v2.232.1/container.te#L105), and on\nBottlerocket, which aliases it to its own \"control_t\".\nAdjust the type if your nodes use a custom SELinux policy, or set to null to leave the\nlabel to the container runtime.",
+              "description": "SELinux options for the odiglet container when running non-privileged.\nIgnored when running as privileged, since container runtimes drop the label in that mode.\nOn SELinux enforcing nodes odiglet needs a privileged SELinux domain to inspect and\ninstrument application processes. \"spc_t\" is that domain in the standard container policy\n(https://github.com/containers/container-selinux/blob/v2.232.1/container.te#L105), and on\nBottlerocket, which aliases it to its own \"control_t\".\nAdjust the type if your nodes use a custom SELinux policy, or set to null to leave the\nlabel to the container runtime.\nThis is an advanced option and should only be changed if you know what you are doing.",
               "properties": {
                 "level": {
                   "default": "s0",
@@ -1973,7 +2004,7 @@
         },
         "runAsNonRoot": {
           "default": "false",
-          "description": "runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.\nwhen true, each container uses the non-root USER declared in its image (e.g. 65532).\nby default (false), all containers are forced to run as UID/GID 0.\n\nThis setting only changes the UID the containers run as. It does not change the Linux capabilities\ngranted to odiglet (those are controlled separately via unPrivileged and the capabilities lists).\nOperations relying on root's implicit filesystem access can fail as non-root:\ne.g. writing agent files to root-owned host paths (/var/odigos).",
+          "description": "runAsNonRoot can be set to true to run the containers in the odiglet daemonset as non-root.\nwhen true, each container uses the non-root USER declared in its image (e.g. 65532).\nby default (false), all containers are forced to run as UID/GID 0.\n\nThis setting only changes the UID the containers run as. It does not change the Linux capabilities\ngranted to odiglet (those are controlled separately via the per-container privileged and capabilities values).\nOperations relying on root's implicit filesystem access can fail as non-root:\ne.g. writing agent files to root-owned host paths (/var/odigos).",
           "required": [],
           "title": "runAsNonRoot"
         },
@@ -2026,12 +2057,6 @@
           "description": "traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.\nsupported only in odigos pro (not available in community tier)",
           "required": [],
           "title": "traceIdSuffix"
-        },
-        "unPrivileged": {
-          "default": "false",
-          "description": "run the odiglet pod without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
-          "required": [],
-          "title": "unPrivileged"
         }
       },
       "required": [],

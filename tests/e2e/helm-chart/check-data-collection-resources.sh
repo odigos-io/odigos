@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-#!/usr/bin/env bash
-set -euo pipefail
-
 # Accept optional path argument
 P=${1:-"../../.."}
 
@@ -14,45 +11,37 @@ helm template odigos "$P/helm/odigos" \
   --show-only templates/odiglet/daemonset.yaml > /tmp/helm-template-output.yaml
 
 YAML_FILE="/tmp/helm-template-output.yaml"
+DC='.spec.template.spec.containers[] | select(.name=="data-collection") | .resources'
 
 echo "📋 Extracting data-collection container resources..."
-
-RESOURCES=$(grep -A 60 "name: data-collection" "$YAML_FILE" | grep -A 15 "resources:" || true)
-
-echo "🔍 Found resources section:"
-echo "$RESOURCES"
+yq "$DC" "$YAML_FILE"
 echo
 
-# --- Extraction ---
-MEMORY_REQUEST_RAW=$(echo "$RESOURCES" | grep -A 2 "requests:" | grep "memory:" | awk '{print $2}')
-MEMORY_LIMIT_RAW=$(echo "$RESOURCES" | grep -A 2 "limits:" | grep "memory:" | awk '{print $2}')
+MEMORY_REQUEST=$(yq "$DC.requests.memory" "$YAML_FILE")
+MEMORY_LIMIT=$(yq "$DC.limits.memory" "$YAML_FILE")
+CPU_REQUEST=$(yq "$DC.requests.cpu" "$YAML_FILE")
+CPU_LIMIT=$(yq "$DC.limits.cpu" "$YAML_FILE")
 
-# --- Normalization helper ---
-normalize() {
-  local val="$1"
-  # Remove quotes, carriage returns, newlines, and extra spaces
-  echo "$val" | tr -d '\r' | tr -d '\n' | sed 's/"//g' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
-}
-
-MEMORY_REQUEST=$(normalize "$MEMORY_REQUEST_RAW")
-MEMORY_LIMIT=$(normalize "$MEMORY_LIMIT_RAW")
-
-printf "🔍 Debug raw values:\n"
-printf "  MEMORY_REQUEST_RAW=[%s]\n" "$MEMORY_REQUEST_RAW"
-printf "  MEMORY_LIMIT_RAW=[%s]\n" "$MEMORY_LIMIT_RAW"
+printf "🔍 Values:\n"
+printf "  memory: request=[%s] limit=[%s]\n" "$MEMORY_REQUEST" "$MEMORY_LIMIT"
+printf "  cpu:    request=[%s] limit=[%s]\n" "$CPU_REQUEST" "$CPU_LIMIT"
 printf "\n"
 
-printf "🔍 Normalized values:\n"
-printf "  MEMORY_REQUEST=[%s]\n" "$MEMORY_REQUEST"
-printf "  MEMORY_LIMIT=[%s]\n" "$MEMORY_LIMIT"
-printf "\n"
-
-# --- Validation ---
 echo "✅ Verifying mirroring (requests should equal limits)..."
 
+rc=0
 if [[ "$MEMORY_REQUEST" == "570Mi" && "$MEMORY_LIMIT" == "570Mi" ]]; then
   echo "✅ Memory mirroring works: request=$MEMORY_REQUEST, limit=$MEMORY_LIMIT"
 else
   echo "❌ Memory mirroring failed: request='$MEMORY_REQUEST', limit='$MEMORY_LIMIT' (expected both '570Mi')"
-  exit 1
+  rc=1
 fi
+
+if [[ "$CPU_REQUEST" == "560m" && "$CPU_LIMIT" == "560m" ]]; then
+  echo "✅ CPU mirroring works: request=$CPU_REQUEST, limit=$CPU_LIMIT"
+else
+  echo "❌ CPU mirroring failed: request='$CPU_REQUEST', limit='$CPU_LIMIT' (expected both '560m')"
+  rc=1
+fi
+
+exit $rc
