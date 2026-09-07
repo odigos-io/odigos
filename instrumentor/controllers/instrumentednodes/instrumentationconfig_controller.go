@@ -92,26 +92,26 @@ func (r *InstrumentationConfigReconciler) nodeNamesForWorkload(ctx context.Conte
 			}
 		}
 		return nodes, nil
-	}
+	default:
+		genericWorkload, err := workload.ObjectToWorkload(workloadObj)
+		if err != nil {
+			return nil, err
+		}
+		labelSelector := genericWorkload.LabelSelector()
+		if labelSelector == nil {
+			return nodes, nil
+		}
 
-	genericWorkload, err := workload.ObjectToWorkload(workloadObj)
-	if err != nil {
-		return nil, err
-	}
-	labelSelector := genericWorkload.LabelSelector()
-	if labelSelector == nil {
+		var pods corev1.PodList
+		err = r.List(ctx, &pods, client.InNamespace(pw.Namespace), client.MatchingLabels(labelSelector.MatchLabels))
+		if err != nil {
+			return nil, err
+		}
+		for i := range pods.Items {
+			if pods.Items[i].Spec.NodeName != "" {
+				nodes[pods.Items[i].Spec.NodeName] = struct{}{}
+			}
+		}
 		return nodes, nil
 	}
-
-	var pods corev1.PodList
-	err = r.List(ctx, &pods, client.InNamespace(pw.Namespace), client.MatchingLabels(labelSelector.MatchLabels))
-	if err != nil {
-		return nil, err
-	}
-	for i := range pods.Items {
-		if pods.Items[i].Spec.NodeName != "" {
-			nodes[pods.Items[i].Spec.NodeName] = struct{}{}
-		}
-	}
-	return nodes, nil
 }
