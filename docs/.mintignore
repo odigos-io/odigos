@@ -1,0 +1,20 @@
+# Enterprise content is served only from odigos-enterprise/docs.
+enterprise/
+central/
+vmagent/
+cloud-connectors/
+snippets/enterprise/
+snippets/vmagent/
+images/enterprise/
+images/central/
+images/vmagent/
+images/cloud-connectors/
+**/*enterprise*.png
+# Public code generators include enterprise CLI commands and connector schemas.
+# Keep their output reproducible without publishing it to the OSS docs site.
+snippets/shared/cli/odigos_pro.mdx
+snippets/shared/cli/odigos_pro_*.mdx
+snippets/shared/api-reference/cloud-connectors.odigos.io.v1alpha1.mdx
+
+# Development utilities are not site assets.
+scripts/

@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Odigos",
+  "name": "Odigos Open Source",
   "colors": {
     "primary": "#30638E",
     "light": "#C0E0DE",
@@ -12,18 +12,6 @@
     {
       "product": "K8s Agent",
       "icon": "cubes"
-    },
-    {
-      "product": "Odigos Central",
-      "icon": "server"
-    },
-    {
-      "product": "VM Agent",
-      "icon": "desktop"
-    },
-    {
-      "product": "Cloud Connectors",
-      "icon": "cloud"
     }
   ],
   "navigation": {
@@ -350,511 +338,17 @@
                 ]
               }
             ]
-          },
-          {
-            "tab": "Enterprise",
-            "href": "enterprise",
-            "groups": [
-              {
-                "group": "Getting Started",
-                "pages": [
-                  "enterprise/overview",
-                  {
-                    "group": "Quickstart",
-                    "pages": [
-                      "enterprise/quickstart/introduction",
-                      "enterprise/quickstart/installation",
-                      "enterprise/quickstart/building-a-pipeline",
-                      "enterprise/quickstart/generation-data",
-                      "enterprise/quickstart/viewing-traces",
-                      "enterprise/quickstart/next-steps"
-                    ]
-                  },
-                  {
-                    "group": "Setup",
-                    "pages": [
-                      "enterprise/setup/system-requirements",
-                      {
-                        "group": "Installation",
-                        "pages": [
-                          "enterprise/setup/installation",
-                          "enterprise/setup/installation-options",
-                          "enterprise/setup/docker-registry",
-                          "enterprise/setup/odigos-with-argocd",
-                          "enterprise/setup/odigos-with-karpenter"
-                        ]
-                      },
-                      "enterprise/setup/verifying-images",
-                      "enterprise/setup/upgrade",
-                      "enterprise/setup/uninstall"
-                    ]
-                  },
-                  {
-                    "group": "CLI Reference",
-                    "pages": [
-                      "enterprise/cli/odigos",
-                      "enterprise/cli/odigos_describe",
-                      "enterprise/cli/odigos_diagnose",
-                      "enterprise/cli/odigos_install",
-                      "enterprise/cli/odigos_pro",
-                      "enterprise/cli/odigos_profile",
-                      "enterprise/cli/odigos_ui",
-                      "enterprise/cli/odigos_uninstall",
-                      "enterprise/cli/odigos_upgrade",
-                      "enterprise/cli/odigos_version",
-                      "enterprise/cli/odigos_sources"
-                    ]
-                  },
-                  {
-                    "group": "API Reference",
-                    "pages": [
-                      "enterprise/api-reference/odigos.io.v1alpha1",
-                      "enterprise/api-reference/actions.odigos.io.v1alpha1",
-                      "enterprise/api-reference/operator.odigos.io.v1alpha1"
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "Odigos AI",
-                "pages": [
-                  "enterprise/mcp/overview"
-                ]
-              },
-              {
-                "group": "Instrumentations",
-                "pages": [
-                  "enterprise/instrumentations/overview",
-                  {
-                    "group": "Go",
-                    "icon": "golang",
-                    "pages": [
-                      "enterprise/instrumentations/golang/ebpf",
-                      "enterprise/instrumentations/golang/enrichment",
-                      "enterprise/instrumentations/golang/go-hooks"
-                    ]
-                  },
-                  {
-                    "group": "Node.js",
-                    "icon": "node-js",
-                    "pages": [
-                      "enterprise/instrumentations/nodejs/ebpf",
-                      "enterprise/instrumentations/nodejs/enrichment"
-                    ]
-                  },
-                  {
-                    "group": "Python",
-                    "icon": "python",
-                    "pages": [
-                      "enterprise/instrumentations/python/native",
-                      "enterprise/instrumentations/python/enrichment"
-                    ]
-                  },
-                  {
-                    "group": "Java",
-                    "icon": "java",
-                    "pages": [
-                      "enterprise/instrumentations/java/ebpf",
-                      "enterprise/instrumentations/java/enrichment"
-                    ]
-                  },
-                  {
-                    "group": "PHP",
-                    "icon": "php",
-                    "pages": [
-                      "enterprise/instrumentations/php/native",
-                      "enterprise/instrumentations/php/enrichment"
-                    ]
-                  },
-                  {
-                    "group": "Ruby",
-                    "icon": "code",
-                    "pages": [
-                      "enterprise/instrumentations/ruby/native",
-                      "enterprise/instrumentations/ruby/enrichment"
-                    ]
-                  },
-                  {
-                    "group": ".NET",
-                    "icon": "code",
-                    "pages": [
-                      "enterprise/instrumentations/dotnet/native",
-                      "enterprise/instrumentations/dotnet/enrichment"
-                    ]
-                  },
-                  {
-                    "group": "Continuous Profiling",
-                    "icon": "gauge-high",
-                    "pages": [
-                      "enterprise/instrumentations/profiling/overview",
-                      "enterprise/instrumentations/profiling/getting-started",
-                      "enterprise/instrumentations/profiling/destinations"
-                    ]
-                  },
-                  {
-                    "group": "Advanced",
-                    "icon": "gear",
-                    "pages": [
-                      "enterprise/instrumentations/configuration/mount-method",
-                      "enterprise/instrumentations/advanced/Istio",
-                      "enterprise/instrumentations/advanced/Nginx"
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "Odigos Pipeline",
-                "pages": [
-                  "enterprise/pipeline/overview",
-                  "enterprise/pipeline/configuration",
-                  "enterprise/pipeline/datastreams",
-                  {
-                    "group": "Sources",
-                    "icon": "database",
-                    "pages": [
-                      "enterprise/pipeline/sources/introduction",
-                      "enterprise/pipeline/sources/create",
-                      "enterprise/pipeline/sources/delete",
-                      "enterprise/pipeline/sources/update",
-                      "enterprise/pipeline/sources/troubleshooting"
-                    ]
-                  },
-                  {
-                    "group": "Instrumentation Rules",
-                    "icon": "microchip",
-                    "pages": [
-                      "enterprise/pipeline/rules/introduction",
-                      "enterprise/pipeline/rules/codeattributes",
-                      "enterprise/pipeline/rules/headerscollection",
-                      "enterprise/pipeline/rules/payloadcollection",
-                      "enterprise/pipeline/rules/custominstrumentation",
-                      "enterprise/pipeline/rules/networkmetrics"
-                    ]
-                  },
-                  {
-                    "group": "Actions",
-                    "icon": "bolt",
-                    "pages": [
-                      "enterprise/pipeline/actions/introduction",
-                      {
-                        "group": "Attributes",
-                        "icon": "layer-group",
-                        "pages": [
-                          "enterprise/pipeline/actions/attributes/addclusterinfo",
-                          "enterprise/pipeline/actions/attributes/deleteattribute",
-                          "enterprise/pipeline/actions/attributes/renameattribute",
-                          "enterprise/pipeline/actions/attributes/piimasking",
-                          "enterprise/pipeline/actions/attributes/k8sattributes",
-                          "enterprise/pipeline/actions/attributes/extractattribute",
-                          "enterprise/pipeline/actions/attributes/dbquerytemplatization",
-                          "enterprise/pipeline/actions/attributes/inferdbattributes"
-                        ]
-                      },
-                      "enterprise/pipeline/actions/crd",
-                      "enterprise/pipeline/actions/troubleshooting"
-                    ]
-                  },
-                  {
-                    "group": "Sampling",
-                    "icon": "tag",
-                    "pages": [
-                      "enterprise/pipeline/sampling/introduction",
-                      "enterprise/pipeline/sampling/head-and-tail-sampling",
-                      {
-                        "group": "Rules",
-                        "icon": "list-check",
-                        "pages": [
-                          "enterprise/pipeline/sampling/rules/overview",
-                          "enterprise/pipeline/sampling/rules/noisy-operation",
-                          "enterprise/pipeline/sampling/rules/highly-relevant",
-                          "enterprise/pipeline/sampling/rules/cost-reduction"
-                        ]
-                      },
-                      "enterprise/pipeline/sampling/configuration",
-                      "enterprise/pipeline/sampling/examples",
-                      "enterprise/pipeline/sampling/considerations",
-                      "enterprise/pipeline/sampling/faqs"
-                    ]
-                  },
-                  {
-                    "group": "Advanced",
-                    "icon": "sliders",
-                    "pages": [
-                      "enterprise/pipeline/service-graph",
-                      "enterprise/pipeline/odigos-own-metrics"
-                    ]
-                  },
-                  "enterprise/pipeline/benchmarks"
-                ]
-              },
-              {
-                "group": "Destinations",
-                "pages": [
-                  "enterprise/backends-overview",
-                  {
-                    "group": "Supported Backends",
-                    "icon": "folder-tree",
-                    "pages": [
-                      "enterprise/backends/alibabacloud",
-                      "enterprise/backends/appdynamics",
-                      "enterprise/backends/awscloudwatch",
-                      "enterprise/backends/awss3",
-                      "enterprise/backends/awsxray",
-                      "enterprise/backends/axiom",
-                      "enterprise/backends/azureblob",
-                      "enterprise/backends/azuremonitor",
-                      "enterprise/backends/betterstack",
-                      "enterprise/backends/bonree",
-                      "enterprise/backends/causely",
-                      "enterprise/backends/checkly",
-                      "enterprise/backends/chronosphere",
-                      "enterprise/backends/clickhouse",
-                      "enterprise/backends/coralogix",
-                      "enterprise/backends/dash0",
-                      "enterprise/backends/datadog",
-                      "enterprise/backends/dynamic",
-                      "enterprise/backends/dynatrace",
-                      "enterprise/backends/elasticapm",
-                      "enterprise/backends/elasticsearch",
-                      "enterprise/backends/gigapipe",
-                      "enterprise/backends/googlecloudmonitoring",
-                      "enterprise/backends/googlecloudotlp",
-                      "enterprise/backends/googlecloudstorage",
-                      "enterprise/backends/grafanacloudloki",
-                      "enterprise/backends/grafanacloudprometheus",
-                      "enterprise/backends/grafanacloudtempo",
-                      "enterprise/backends/greptime",
-                      "enterprise/backends/groundcover",
-                      "enterprise/backends/honeycomb",
-                      "enterprise/backends/hyperdx",
-                      "enterprise/backends/instana",
-                      "enterprise/backends/jaeger",
-                      "enterprise/backends/kafka",
-                      "enterprise/backends/kloudmate",
-                      "enterprise/backends/last9",
-                      "enterprise/backends/lightstep",
-                      "enterprise/backends/logzio",
-                      "enterprise/backends/loki",
-                      "enterprise/backends/lumigo",
-                      "enterprise/backends/middleware",
-                      "enterprise/backends/newrelic",
-                      "enterprise/backends/observe",
-                      "enterprise/backends/oneuptime",
-                      "enterprise/backends/openobserve",
-                      "enterprise/backends/oracle",
-                      "enterprise/backends/otlp",
-                      "enterprise/backends/otlphttp",
-                      "enterprise/backends/prometheus",
-                      "enterprise/backends/pyroscope",
-                      "enterprise/backends/qryn",
-                      "enterprise/backends/quickwit",
-                      "enterprise/backends/sentry",
-                      "enterprise/backends/seq",
-                      "enterprise/backends/signalfx",
-                      "enterprise/backends/signoz",
-                      "enterprise/backends/splunk",
-                      "enterprise/backends/splunkotlp",
-                      "enterprise/backends/splunksapm",
-                      "enterprise/backends/sumologic",
-                      "enterprise/backends/telemetryhub",
-                      "enterprise/backends/tempo",
-                      "enterprise/backends/tingyun",
-                      "enterprise/backends/traceloop",
-                      "enterprise/backends/uptrace",
-                      "enterprise/backends/victoriametricscloud"
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "Concepts",
-                "pages": [
-                  "enterprise/telemetry-types",
-                  "enterprise/custom-resources",
-                  "enterprise/usage-reports",
-                  "enterprise/permissions"
-                ]
-              },
-              {
-                "group": "Authentication",
-                "pages": [
-                  "enterprise/features/oidc"
-                ]
-              },
-              {
-                "group": "Contribution Guidelines",
-                "pages": [
-                  "enterprise/adding-new-dest",
-                  "enterprise/debugging"
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "product": "Odigos Central",
-        "groups": [
-          {
-            "group": "Odigos Central",
-            "pages": [
-              "central/overview",
-              "central/architecture",
-              "central/prerequisites",
-              "central/installation",
-              "central/ui",
-              {
-                "group": "Adding Connections",
-                "pages": [
-                  "central/adding-connections/remote-clusters",
-                  "central/adding-connections/vmagent",
-                  "central/adding-connections/cloud-connectors"
-                ]
-              },
-              "central/authentication",
-              "central/role-mappings",
-              "central/troubleshooting",
-              "central/upgrade",
-              "central/uninstall"
-            ]
-          }
-        ]
-      },
-      {
-        "product": "VM Agent",
-        "groups": [
-          {
-            "group": "VM Agent",
-            "pages": [
-              "vmagent/overview",
-              {
-                "group": "Setup and Maintenance",
-                "pages": [
-                  "vmagent/setup/system-requirements",
-                  "vmagent/setup/installation",
-                  "vmagent/setup/docker",
-                  "vmagent/setup/upgrade",
-                  "vmagent/setup/uninstall"
-                ]
-              },
-              {
-                "group": "Configuration",
-                "pages": [
-                  "vmagent/setup/configuration/overview",
-                  "vmagent/setup/configuration/odictl",
-                  "vmagent/setup/configuration/add-destinations",
-                  "vmagent/setup/configuration/add-sources",
-                  "vmagent/setup/configuration/services-mem-limits-configuration",
-                  {
-                    "group": "Actions",
-                    "pages": [
-                      "vmagent/setup/configuration/actions/overview",
-                      "vmagent/setup/configuration/actions/processor-addition",
-                      "vmagent/setup/configuration/actions/span-metrics",
-                      "vmagent/setup/configuration/actions/url-templatization"
-                    ]
-                  },
-                  {
-                    "group": "Instrumentation Rules",
-                    "pages": [
-                      "vmagent/setup/configuration/instrumentation-rules/overview",
-                      "vmagent/setup/configuration/instrumentation-rules/custom-instrumentation",
-                      "vmagent/setup/configuration/instrumentation-rules/instrument-from-profiles"
-                    ]
-                  },
-                  {
-                    "group": "Continuous Profiling",
-                    "pages": [
-                      "vmagent/instrumentations/profiling/overview",
-                      "vmagent/instrumentations/profiling/getting-started",
-                      "vmagent/instrumentations/profiling/view-in-odictl",
-                      "vmagent/instrumentations/profiling/export-pyroscope"
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "group": "ECS Agent",
-            "icon": "aws",
-            "pages": [
-              "vmagent/ecs/overview",
-              "vmagent/ecs/requirements",
-              {
-                "group": "Installation",
-                "pages": [
-                  "vmagent/ecs/installation-agent-only",
-                  "vmagent/ecs/installation-with-proxy",
-                  "vmagent/ecs/installation-switch-to-multi-node"
-                ]
-              },
-              "vmagent/ecs/configuration",
-              "vmagent/ecs/maintenance",
-              "vmagent/ecs/troubleshooting"
-            ]
-          }
-        ]
-      },
-      {
-        "product": "Cloud Connectors",
-        "groups": [
-          {
-            "group": "Cloud Connectors",
-            "pages": [
-              "cloud-connectors/overview",
-              "cloud-connectors/enable",
-              {
-                "group": "Add Connectors",
-                "pages": [
-                  "cloud-connectors/add-connectors/add-aws-connector",
-                  "cloud-connectors/add-connectors/add-gcp-connector"
-                ]
-              },
-              "cloud-connectors/instrument-workloads",
-              "cloud-connectors/manage-and-remove"
-            ]
-          },
-          {
-            "group": "AWS Connector",
-            "icon": "aws",
-            "pages": [
-              "cloud-connectors/aws/overview",
-              {
-                "group": "Workloads",
-                "pages": [
-                  {
-                    "group": "Lambda",
-                    "pages": [
-                      "cloud-connectors/aws/workloads/lambda/preload",
-                      "cloud-connectors/aws/workloads/lambda/instrument"
-                    ]
-                  },
-                  {
-                    "group": "Fargate",
-                    "pages": [
-                      "cloud-connectors/aws/workloads/fargate/preload",
-                      "cloud-connectors/aws/workloads/fargate/instrument"
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "CDK",
-                "pages": [
-                  "cloud-connectors/aws/cdk/overview",
-                  "cloud-connectors/aws/cdk/destinations",
-                  "cloud-connectors/aws/cdk/lambda",
-                  "cloud-connectors/aws/cdk/fargate"
-                ]
-              }
-            ]
           }
         ]
       }
     ],
     "global": {
       "anchors": [
+        {
+          "anchor": "Enterprise docs (API key required)",
+          "href": "https://enterprise.docs.odigos.io",
+          "icon": "lock"
+        },
         {
           "anchor": "Demo",
           "href": "https://odigos.io/?demo",
@@ -882,16 +376,65 @@
     "primary": {
       "type": "github",
       "href": "https://github.com/odigos-io/odigos"
-    }
+    },
+    "links": [
+      {
+        "label": "Enterprise docs (API key required)",
+        "href": "https://enterprise.docs.odigos.io"
+      }
+    ]
   },
   "footer": {
     "socials": {
       "x": "https://twitter.com/odigosio",
       "github": "https://github.com/odigos-io/odigos",
       "slack": "https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email"
-    }
+    },
+    "links": [
+      {
+        "header": "Documentation",
+        "items": [
+          {
+            "label": "Open Source docs",
+            "href": "https://docs.odigos.io/oss/overview"
+          },
+          {
+            "label": "Enterprise docs",
+            "href": "https://enterprise.docs.odigos.io"
+          }
+        ]
+      }
+    ]
   },
   "redirects": [
+    {
+      "source": "/cli/odigos_pro_central",
+      "destination": "https://enterprise.docs.odigos.io/enterprise/cli/odigos_pro_central"
+    },
+    {
+      "source": "/cli/odigos_pro",
+      "destination": "https://enterprise.docs.odigos.io/enterprise/cli/odigos_pro"
+    },
+    {
+      "source": "/cli/odigos_pro_update-offsets",
+      "destination": "https://enterprise.docs.odigos.io/enterprise/cli/odigos_pro_update-offsets"
+    },
+    {
+      "source": "/cli/odigos_pro_central_install",
+      "destination": "https://enterprise.docs.odigos.io/enterprise/cli/odigos_pro_central_install"
+    },
+    {
+      "source": "/cli/odigos_pro_central_uninstall",
+      "destination": "https://enterprise.docs.odigos.io/enterprise/cli/odigos_pro_central_uninstall"
+    },
+    {
+      "source": "/cli/odigos_pro_central_upgrade",
+      "destination": "https://enterprise.docs.odigos.io/enterprise/cli/odigos_pro_central_upgrade"
+    },
+    {
+      "source": "/cli/odigos_pro_central_ui",
+      "destination": "https://enterprise.docs.odigos.io/enterprise/cli/odigos_pro_central_ui"
+    },
     {
       "source": "/overview",
       "destination": "/oss/overview"
@@ -914,19 +457,19 @@
     },
     {
       "source": "/enterprise/pipeline/sampling/rules",
-      "destination": "/enterprise/pipeline/sampling/rules/overview"
+      "destination": "https://enterprise.docs.odigos.io/enterprise/pipeline/sampling/rules/overview"
     },
     {
       "source": "/enterprise/pipeline/sampling/noisy-operation",
-      "destination": "/enterprise/pipeline/sampling/rules/noisy-operation"
+      "destination": "https://enterprise.docs.odigos.io/enterprise/pipeline/sampling/rules/noisy-operation"
     },
     {
       "source": "/enterprise/pipeline/sampling/highly-relevant",
-      "destination": "/enterprise/pipeline/sampling/rules/highly-relevant"
+      "destination": "https://enterprise.docs.odigos.io/enterprise/pipeline/sampling/rules/highly-relevant"
     },
     {
       "source": "/enterprise/pipeline/sampling/cost-reduction",
-      "destination": "/enterprise/pipeline/sampling/rules/cost-reduction"
+      "destination": "https://enterprise.docs.odigos.io/enterprise/pipeline/sampling/rules/cost-reduction"
     },
     {
       "source": "/oss/pipeline/actions/sampling/:slug*",
@@ -934,7 +477,7 @@
     },
     {
       "source": "/enterprise/pipeline/actions/sampling/:slug*",
-      "destination": "/enterprise/pipeline/sampling/:slug*"
+      "destination": "https://enterprise.docs.odigos.io/enterprise/pipeline/sampling/:slug*"
     },
     {
       "source": "/quickstart/:slug*",
@@ -1006,11 +549,31 @@
     },
     {
       "source": "/enterprise/pipeline/sampling/framework",
-      "destination": "/enterprise/pipeline/sampling/head-and-tail-sampling"
+      "destination": "https://enterprise.docs.odigos.io/enterprise/pipeline/sampling/head-and-tail-sampling"
     },
     {
       "source": "/central/remote-clusters",
-      "destination": "/central/adding-connections/remote-clusters"
+      "destination": "https://enterprise.docs.odigos.io/central/adding-connections/remote-clusters"
+    },
+    {
+      "source": "/enterprise/:slug*",
+      "destination": "https://enterprise.docs.odigos.io/enterprise/:slug*"
+    },
+    {
+      "source": "/central/:slug*",
+      "destination": "https://enterprise.docs.odigos.io/central/:slug*"
+    },
+    {
+      "source": "/vmagent/:slug*",
+      "destination": "https://enterprise.docs.odigos.io/vmagent/:slug*"
+    },
+    {
+      "source": "/cloud-connectors/:slug*",
+      "destination": "https://enterprise.docs.odigos.io/cloud-connectors/:slug*"
     }
-  ]
+  ],
+  "banner": {
+    "content": "These docs are only for Odigos Open Source. <a href=\"https://enterprise.docs.odigos.io\">Odigos Enterprise docs</a> require a valid enterprise API key.",
+    "dismissible": false
+  }
 }
