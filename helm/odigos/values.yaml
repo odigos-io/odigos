@@ -903,6 +903,8 @@ odiglet:
     #    1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
     #    2. kernel.perf_event_paranoid sysctl is set to 2 or higher
     #   IPC_LOCK required for mmap of perf buffers
+    #   KILL is added automatically on community installations, where the go instrumentation
+    #   checks that the target process is alive by signalling it.
     #   SYS_RESOURCE required only for kernels < 5.11, used for setting rlimit for BPF maps
     # @schema
     capabilities:

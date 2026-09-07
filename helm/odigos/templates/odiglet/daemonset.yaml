@@ -182,9 +182,14 @@ spec:
             privileged: false
             capabilities:
               add:
-              {{- with .Values.odiglet.odiglet.capabilities }}
-              {{- toYaml . | nindent 14 }}
+              {{- $caps := .Values.odiglet.odiglet.capabilities | default list }}
+              {{- if not (include "odigos.secretExists" .) }}
+              {{- /* the community go instrumentation checks that the target process is alive with
+                     kill(pid, 0), which needs CAP_KILL when the target runs as a different user.
+                     the enterprise distro stats /proc/<pid> instead and needs no capability. */}}
+              {{- if not (has "KILL" $caps) }}{{- $caps = append $caps "KILL" }}{{- end }}
               {{- end }}
+              {{- toYaml $caps | nindent 14 }}
               drop:
                 - ALL
             # for Kubernetes >= 1.30 we can specify AppArmor profile in securityContext
