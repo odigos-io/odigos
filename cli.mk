@@ -2,7 +2,7 @@
 # Shared vars from the parent Makefile:
 #   TAG                 - image / version tag (auto-detected from cluster/cli/helm if unset)
 #   ORG                 - registry org (default: docker.io/keyval); STAGING_ORG=true for staging GCR.
-#                         Local deploy/load-to-kind auto-select registry.odigos.io + enterprise image
+#                         Local deploy/load-to-k3d auto-select registry.odigos.io + enterprise image
 #                         names when the cluster is an enterprise install (see scripts/resolve-dev-image.sh).
 #   IMG_SUFFIX          - image name suffix (empty by default; -rhel-certified when RHEL=true)
 #   ODIGOS_CLI_VERSION  - sets Helm image.tag for install/upgrade (default: `odigos version --cli`)

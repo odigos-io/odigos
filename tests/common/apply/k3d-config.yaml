@@ -1,0 +1,21 @@
+# Local/CI k3d cluster matching the previous kind layout: 1 control-plane + 1 worker.
+# Default cluster name "odigos" yields nodes:
+#   k3d-odigos-server-0
+#   k3d-odigos-agent-0
+# Traefik is disabled so the cluster stays close to kind's minimal kubeadm setup.
+# metrics-server is kept (k3s bundles it) so HPAs and `kubectl top` work.
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: odigos
+servers: 1
+agents: 1
+options:
+  k3d:
+    wait: true
+    timeout: "120s"
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*

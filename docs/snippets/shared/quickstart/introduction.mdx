@@ -18,18 +18,18 @@ We are going to deploy the application in a Kubernetes cluster and use [Jaeger](
 ### Creating a Kubernetes cluster
 
 This first step is to create a Kubernetes cluster.
-We recommend using [kind](https://kind.sigs.k8s.io/) or [minikube](https://minikube.sigs.k8s.io/docs/) for trying Odigos out in a local environment.
+We recommend using [k3d](https://k3d.io/) or [minikube](https://minikube.sigs.k8s.io/docs/) for trying Odigos out in a local environment.
 
 <Warning>
-**Mac users**: please avoid using Docker Desktop built-in Kubernetes cluster as it [does not](https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation) support bind propagation.
+**Mac users**: please avoid using Docker Desktop built-in Kubernetes cluster as it [does not](https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation) support bind propagation. Use k3d (or minikube) on top of Docker Desktop / OrbStack / Colima instead — eBPF instrumentation runs inside the Linux node containers.
 </Warning>
 
 Create a new local Kubernetes cluster, by running the following command:
 
 <Tabs>
-  <Tab title="Kind">
+  <Tab title="k3d">
   ```bash
-  kind create cluster
+  k3d cluster create odigos
   ```
   </Tab>
   <Tab title="Minikube">

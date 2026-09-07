@@ -2,14 +2,14 @@ Different components of Odigos can be debugged in different ways. This page desc
 
 ## Odiglet
 
-First make sure you have a running installation of Odigos on a local Kind cluster.
+First make sure you have a running installation of Odigos on a local k3d cluster.
 From the root of the Odigos repository, run:
 
 ```bash
 TAG=<your-odigos-version> make debug-odiglet
 ```
 
-This command will replace the running Odiglet binary and run it in a container on the Kind cluster.
+This command will replace the running Odiglet binary and run it in a container on the k3d cluster.
 <Note>
 The new Odiglet will not start until a debug session is attached to it
 </Note>

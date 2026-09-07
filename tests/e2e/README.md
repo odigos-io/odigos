@@ -5,7 +5,7 @@ These tests are installing multiple microservices, instrument with Odigos, gener
 
 ## Tools
 
-- [Kubernetes In Docker (Kind)](https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters using Docker container “nodes”.
+- [k3d](https://k3d.io/) - a tool for running local Kubernetes (k3s) clusters using Docker container “nodes”. Works on macOS and Linux; eBPF workloads run inside the Linux node containers.
 - [Chainsaw](https://kyverno.github.io/chainsaw/) - To orchestrate the different Kubernetes actions.
 
 ## Running e2e locally
@@ -14,7 +14,11 @@ These tests are installing multiple microservices, instrument with Odigos, gener
 
 Install these tools once when setting up your local testing environment the first time.
 
-- [Kubernetes In Docker (KinD)](https://kind.sigs.k8s.io/) - a tool for running local Kubernetes clusters using Docker container “nodes”.
+- [k3d](https://k3d.io/) - a tool for running local Kubernetes (k3s) clusters using Docker container “nodes”.
+
+  ```bash
+  brew install k3d
+  ```
 
 - [Chainsaw](https://kyverno.github.io/chainsaw/) - To orchestrate the different Kubernetes actions.
   - Hombrew:
@@ -42,9 +46,9 @@ brew install ko
 
 You can run all the below steps with `make dev-tests-setup`.
 
-- Fresh Kubernetes cluster in kubectl context. For local development, you can use KinD but also managed clusters like EKS should work. you can create the cluster with `make dev-tests-kind-cluster`.
+- Fresh Kubernetes cluster in kubectl context. For local development, you can use k3d but also managed clusters like EKS should work. you can create the cluster with `make dev-tests-k3d-cluster`.
 - Odigos CLI compiled at the `cli` directory in odigos OSS repo (which is expected to be cloned as sibling of the current repo). To compile the cli executable, go to the OSS repository and run: `make cli-build`.
-- Odigos component images (instrumentor, autoscaler, odiglet etc) tagged with `e2e-test` preloaded to the cluster. If you are using KinD you can run: `TAG=e2e-test make build-images load-to-kind`.
+- Odigos component images (instrumentor, autoscaler, odiglet etc) tagged with `e2e-test` preloaded to the cluster. If you are using k3d you can run: `TAG=e2e-test make build-images load-to-k3d`.
 
 ### Running the Tests
 

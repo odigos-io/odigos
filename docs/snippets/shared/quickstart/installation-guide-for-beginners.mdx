@@ -20,7 +20,7 @@ You will only need to install these tools once on your computer. Next time you w
 
 #### 1. Install Homebrew
 
-    Homebrew is a package manager for macOS that simplifies the installation of software packages. We will use Homebrew to install Docker Desktop, KinD (Kubernetes in Docker), and the Odigos CLI.
+    Homebrew is a package manager for macOS that simplifies the installation of software packages. We will use Homebrew to install Docker Desktop, k3d (local Kubernetes), and the Odigos CLI.
 
     a. Locate and open the Terminal application:
 
@@ -103,20 +103,20 @@ If you see a version number, Homebrew has been successfully installed.
 
     g. Wait until you see a green dot next to "Docker Desktop is running" in the Docker Dashboard.
 
-    #### 3. Install KinD
+    #### 3. Install k3d
 
     <Warning>
-      **Mac users**: please avoid using Docker Desktop built-in Kubernetes cluster as it [does not](https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation) support bind propagation.
+      **Mac users**: please avoid using Docker Desktop built-in Kubernetes cluster as it [does not](https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation) support bind propagation. Use k3d on top of Docker instead — eBPF instrumentation runs inside the Linux node containers.
     </Warning>
 
-    KinD (Kubernetes in Docker) helps set up a test environment for Odigos.
+    k3d runs a lightweight Kubernetes (k3s) cluster in Docker and is used for local Odigos development and demos.
 
     a. Go back to your Terminal window (or open a new one if you closed it).
 
     b. Copy and paste the following command, then press `Enter`:
 
     ```bash
-    brew install kind
+    brew install k3d
     ```
 
     c. Wait for the installation to complete. You'll know it's done when you see the command prompt again.
@@ -124,12 +124,12 @@ If you see a version number, Homebrew has been successfully installed.
 This is the end of the one-time installations and the following steps will be required every time:
 
     ### Setting up the cluster
-    Now that you have Kind installed, let's create a Kubernetes cluster:
+    Now that you have k3d installed, let's create a Kubernetes cluster:
 
     1. In the Terminal, copy and paste the following command and press `Enter`:
 
     ```bash
-    kind delete cluster --name odigos-demo
+    k3d cluster delete odigos-demo
     ```
 
     This removes any existing test environment with the same name. If this is your first time, you'll see a message saying the cluster doesn't exist, which is fine.
@@ -137,15 +137,15 @@ This is the end of the one-time installations and the following steps will be re
     2. Create a new cluster by running:
 
     ```bash
-    kind create cluster --name odigos-demo
+    k3d cluster create odigos-demo
     ```
 
-    This command creates a new Kubernetes cluster named "odigos-demo". You'll see a lot of text appear in the Terminal. This is normal. Wait until you see a message that says "Your Kubernetes control-plane has initialized successfully!" and the command prompt appears again.
+    This command creates a new Kubernetes cluster named "odigos-demo". You'll see a lot of text appear in the Terminal. This is normal. Wait until you see a message that the cluster is ready and the command prompt appears again.
 
     3. Verify that the cluster is running:
 
     ```bash
-    kubectl cluster-info --context kind-odigos-demo
+    kubectl cluster-info --context k3d-odigos-demo
     ```
 
     This should display information about your cluster, including the Kubernetes master and CoreDNS.

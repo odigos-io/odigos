@@ -31,11 +31,9 @@ ARCH=$(dpkg --print-architecture) && \
     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && \
     rm kubectl
 
-# Install kind (latest stable release)
-log "Installing kind..."
-curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.32.0/kind-linux-$(dpkg --print-architecture) && \
-    install -o root -g root -m 0755 kind /usr/local/bin/kind && \
-    rm kind
+# Install k3d (pinned for reproducibility with CI)
+log "Installing k3d..."
+curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.9.0 bash
 
 # Add alias kc=kubectl + enable completion
 log "Adding kubectl alias and completion..."
@@ -54,8 +52,8 @@ log "Setting permissions..."
 chown -R vscode:vscode /home/vscode/.kube
 
 # Call connection script (it will no-op gracefully if no cluster yet)
-log "Attempting to connect to kind cluster..."
-.devcontainer/connect-kind.sh || true
+log "Attempting to connect to k3d cluster..."
+.devcontainer/connect-k3d.sh || true
 .devcontainer/init-docs.sh || true
 
 log "Essentials setup done."

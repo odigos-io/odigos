@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Wait until the local cluster is actually usable for E2E APPLY/install steps.
+#
+# The cluster can report Ready while kube-apiserver and its datastore are still
+# flapping under runner load (especially k8s 1.32). Node/pod Ready + CoreDNS
+# rollout is necessary but not sufficient — early kubectl/chainsaw writes then
+# fail with "context deadline exceeded" / "etcdserver: request timed out"
+# (DEVOPS-84).
+set -euo pipefail
+
+READYZ_REQUIRED_SUCCESSES="${READYZ_REQUIRED_SUCCESSES:-5}"
+READYZ_TIMEOUT_SECONDS="${READYZ_TIMEOUT_SECONDS:-180}"
+READYZ_SLEEP_SECONDS="${READYZ_SLEEP_SECONDS:-2}"
+WRITE_PROBE_TIMEOUT_SECONDS="${WRITE_PROBE_TIMEOUT_SECONDS:-60}"
+WRITE_PROBE_NAMESPACE="${WRITE_PROBE_NAMESPACE:-odigos-cluster-ready-probe}"
+CREATION_TIMEOUT_SECONDS="${CREATION_TIMEOUT_SECONDS:-300}"
+
+# k3s applies its packaged AddOns (coredns, metrics-server, local-storage) asynchronously from
+# /var/lib/rancher/k3s/server/manifests once the API server accepts connections, so the objects
+# may not exist yet. kubectl wait/rollout status fail immediately with NotFound rather than
+# waiting, hence the poll before each condition check.
+wait_for_creation() {
+  local deadline=$((SECONDS + CREATION_TIMEOUT_SECONDS))
+  while (( SECONDS < deadline )); do
+    if kubectl get "$@" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep "${READYZ_SLEEP_SECONDS}"
+  done
+  echo "ERROR: $* was not created within ${CREATION_TIMEOUT_SECONDS}s"
+  kubectl get addon -n kube-system || true
+  kubectl get events -n kube-system --sort-by=.lastTimestamp | tail -n 20 || true
+  exit 1
+}
+
+echo "Waiting for nodes, CoreDNS, metrics-server, and kube-system pods..."
+kubectl wait --for=condition=Ready node --all --timeout=180s
+
+wait_for_creation deployment/coredns -n kube-system
+kubectl rollout status -n kube-system deployment/coredns --timeout=300s
+
+wait_for_creation deployment/metrics-server -n kube-system
+kubectl rollout status -n kube-system deployment/metrics-server --timeout=300s
+
+# The aggregated metrics API only registers once metrics-server has endpoints. Until it reports
+# Available, every kubectl discovery call errors on metrics.k8s.io/v1beta1.
+wait_for_creation apiservice/v1beta1.metrics.k8s.io
+kubectl wait --for=condition=Available apiservice/v1beta1.metrics.k8s.io --timeout=300s
+
+# Last, so AddOn pods created along the way are included.
+kubectl wait -n kube-system --for=condition=Ready pod --all --timeout=300s
+
+echo "Waiting for kube-apiserver /readyz (${READYZ_REQUIRED_SUCCESSES} consecutive successes, timeout ${READYZ_TIMEOUT_SECONDS}s)..."
+successes=0
+deadline=$((SECONDS + READYZ_TIMEOUT_SECONDS))
+while (( successes < READYZ_REQUIRED_SUCCESSES )); do
+  if (( SECONDS >= deadline )); then
+    echo "ERROR: kube-apiserver /readyz did not stay healthy for ${READYZ_REQUIRED_SUCCESSES} consecutive checks within ${READYZ_TIMEOUT_SECONDS}s"
+    kubectl get --raw='/readyz?verbose' || true
+    kubectl get --raw='/livez?verbose' || true
+    kubectl get nodes -o wide || true
+    kubectl get pods -n kube-system -o wide || true
+    exit 1
+  fi
+
+  if kubectl get --raw='/readyz?verbose' >/tmp/odigos-cluster-readyz.out 2>/tmp/odigos-cluster-readyz.err; then
+    successes=$((successes + 1))
+    echo "readyz ok (${successes}/${READYZ_REQUIRED_SUCCESSES})"
+  else
+    successes=0
+    echo "readyz not ready; resetting consecutive success counter"
+    cat /tmp/odigos-cluster-readyz.err >&2 || true
+  fi
+  sleep "${READYZ_SLEEP_SECONDS}"
+done
+
+echo "Probing API write path (create/delete namespace)..."
+write_deadline=$((SECONDS + WRITE_PROBE_TIMEOUT_SECONDS))
+until kubectl create namespace "${WRITE_PROBE_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f - >/dev/null 2>/tmp/odigos-cluster-write-probe.err; do
+  if (( SECONDS >= write_deadline )); then
+    echo "ERROR: API write probe failed within ${WRITE_PROBE_TIMEOUT_SECONDS}s"
+    cat /tmp/odigos-cluster-write-probe.err >&2 || true
+    exit 1
+  fi
+  echo "write probe not ready; retrying..."
+  cat /tmp/odigos-cluster-write-probe.err >&2 || true
+  sleep "${READYZ_SLEEP_SECONDS}"
+done
+kubectl delete namespace "${WRITE_PROBE_NAMESPACE}" --wait=false >/dev/null 2>&1 || true
+
+echo "Control plane is ready for E2E"
