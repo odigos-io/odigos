@@ -23,3 +23,22 @@ import KernelVersion from '../../../snippets/shared/ebpf-kernel-version-note.mdx
     [ECS system requirements](/vmagent/ecs/requirements) for the full list.
 - At least one process or application on the host that is written in a
   [supported language](/enterprise/instrumentations/overview).
+
+## Disk space
+
+The host must provide the following minimum free disk capacity. If these paths
+share a filesystem, the combined free space must meet the sum of the individual
+requirements.
+
+<Note>
+  These values are planning estimates based on typical agent usage and may
+  change in future releases. Size `/tmp` according to your diagnose bundle
+  configuration if you raise the default bundle size.
+</Note>
+
+| Path | Minimum free | Purpose |
+|---|---|---|
+| `/var` | 500 MB | Instrumentation tools and agent logs |
+| `/usr` | 500 MB | Agent binaries and packages |
+| `/etc` | 2 MB | Agent configuration |
+| `/tmp` | 55 MB | Diagnose bundle generation (50 MB default bundle size) and temporary files (5 MB) |
