@@ -418,6 +418,12 @@ spec:
 {{- if and .Values.odiglet.runAsNonRoot (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
 {{ fail "odiglet.runAsNonRoot is only supported with instrumentor.mountMethod=k8s-init-container" }}
 {{- end }}
+# Without the host PID namespace, uprobes cannot be scoped to a single process, so they apply
+# to every process sharing the agent files. k8s-init-container gives each pod its own copy,
+# which keeps that scope contained to the pod.
+{{- if and .Values.odiglet.noHostPid (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
+{{ fail "odiglet.noHostPid is only supported with instrumentor.mountMethod=k8s-init-container" }}
+{{- end }}
 # to use device plugins we need to have the "k8s-virtual-device" mount method or non specified (default)
 # and to have hostMounts allowed
 {{- if or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device") }}
