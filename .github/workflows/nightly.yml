@@ -36,9 +36,6 @@ permissions:
   contents: read
 
 jobs:
-  build-images:
-    uses: ./.github/workflows/build-dev-images.yml
-
   build-cli:
     runs-on: depot-ubuntu-24.04
     steps:
@@ -77,8 +74,14 @@ jobs:
           path: cli/odigos
           key: ${{ github.run_id }}-odigos-cli
 
-  build-odigos-images:
+  # Images are built once with the e2e-test tag: the Kubernetes tests load them into kind from
+  # the cache, and the cloud suites pull the same images from ECR under the commit hash tag.
+  build-images:
     runs-on: depot-ubuntu-24.04-8
+    env:
+      COMMIT_HASH: ${{ github.sha }}
+      DOCKER_REGISTRY: docker.io/keyval
+      REGISTRY: public.ecr.aws/y2v0v6s7
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -116,8 +119,25 @@ jobs:
             victoria-metrics-image.tar
           key: ${{ github.run_id }}-odigos-images
 
+      - name: Configure AWS credentials from OIDC
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::061717858829:role/ecr-pull-push-role
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Push Docker Images to ECR
+        run: |
+          for image in collector instrumentor ui scheduler autoscaler odiglet cli; do
+            docker tag "${DOCKER_REGISTRY}/odigos-${image}:e2e-test" "${REGISTRY}/odigos-${image}:${COMMIT_HASH}"
+            docker push "${REGISTRY}/odigos-${image}:${COMMIT_HASH}"
+          done
+
   kubernetes-tests:
-    needs: [build-cli, build-odigos-images]
+    needs: [build-cli, build-images]
     runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
